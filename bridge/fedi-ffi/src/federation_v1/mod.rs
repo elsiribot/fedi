@@ -1,6 +1,7 @@
 mod dev;
 pub mod social;
 
+use std::any::Any;
 use std::collections::HashMap;
 use std::default::Default;
 use std::str::FromStr;
@@ -84,8 +85,7 @@ pub struct FederationV1 {
     pub client: Arc<Client>,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
-    pub ln_pay_states: Arc<Mutex<HashMap<OperationId, LnPayState>>>,
-    pub oob_spend_states: Arc<Mutex<HashMap<OperationId, SpendOOBState>>>,
+    pub operation_states: Arc<Mutex<HashMap<OperationId, Box<dyn Any + Send + Sync + 'static>>>>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -134,8 +134,7 @@ impl FederationV1 {
             client: ng,
             event_sink,
             task_group,
-            ln_pay_states: Arc::new(Mutex::new(HashMap::new())),
-            oob_spend_states: Default::default(),
+            operation_states: Default::default(),
         };
         federation.subscribe_balance_updates().await;
         federation.poll_scheduled_backups().await;
@@ -530,7 +529,7 @@ impl FederationV1 {
                         .await?
                         .into_stream();
                     while let Some(update) = updates.next().await {
-                        self.update_ln_pay_states(operation_id, update.clone())
+                        self.update_operation_state(operation_id, update.clone())
                             .await;
                         match update {
                             LnPayState::Success { preimage } => {
@@ -701,7 +700,7 @@ impl FederationV1 {
             .into_stream();
         let mut err = None;
         while let Some(update) = updates.next().await {
-            self.update_oob_spend_state(op_id, update.clone()).await;
+            self.update_operation_state(op_id, update.clone()).await;
             match update {
                 // TODO: intermediate states
                 fedimint_mint_client::SpendOOBState::Created => {}
@@ -1153,7 +1152,7 @@ impl FederationV1 {
         }
 
         // Return our cached outcome if we find it
-        if let Some(outcome) = self.get_ln_pay_state(&operation_id).await {
+        if let Some(outcome) = self.get_operation_state(&operation_id).await {
             return Some(outcome);
         }
 
@@ -1186,7 +1185,7 @@ impl FederationV1 {
             return Some(outcome);
         }
         // Return our cached outcome if we find it
-        if let Some(outcome) = self.get_oob_spend_state(&operation_id).await {
+        if let Some(outcome) = self.get_operation_state(&operation_id).await {
             return Some(outcome);
         }
 
@@ -1399,23 +1398,28 @@ impl FederationV1 {
         self.send_federation_event().await;
     }
 
-    async fn update_ln_pay_states(&self, operation_id: OperationId, ln_pay_state: LnPayState) {
-        let mut ln_pay_states = self.ln_pay_states.lock().await;
-        ln_pay_states.insert(operation_id, ln_pay_state);
+    async fn update_operation_state<T>(&self, operation_id: OperationId, state: T)
+    where
+        T: Send + Sync + 'static,
+    {
+        self.operation_states
+            .lock()
+            .await
+            .insert(operation_id, Box::new(state));
     }
 
-    async fn get_ln_pay_state(&self, operation_id: &OperationId) -> Option<LnPayState> {
-        let ln_pay_states = self.ln_pay_states.lock().await;
-        ln_pay_states.get(operation_id).cloned()
-    }
-
-    async fn update_oob_spend_state(&self, operation_id: OperationId, state: SpendOOBState) {
-        let mut oob_spend_states = self.oob_spend_states.lock().await;
-        oob_spend_states.insert(operation_id, state);
-    }
-
-    async fn get_oob_spend_state(&self, operation_id: &OperationId) -> Option<SpendOOBState> {
-        let oob_spend_states = self.oob_spend_states.lock().await;
-        oob_spend_states.get(operation_id).cloned()
+    async fn get_operation_state<T>(&self, operation_id: &OperationId) -> Option<T>
+    where
+        T: Clone + 'static,
+    {
+        Some(
+            self.operation_states
+                .lock()
+                .await
+                .get(operation_id)?
+                .downcast_ref::<T>()
+                .expect("incorrect type to get_operation_state")
+                .clone(),
+        )
     }
 }
