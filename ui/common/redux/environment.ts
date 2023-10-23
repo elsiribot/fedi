@@ -53,6 +53,13 @@ export const environmentSlice = createSlice({
             if (action.payload.amountInputType) {
                 state.amountInputType = action.payload.amountInputType
             }
+            if (action.payload.onchainDepositsEnabled) {
+                state.onchainDepositsEnabled =
+                    action.payload.onchainDepositsEnabled
+            }
+            if (action.payload.developerMode) {
+                state.developerMode = action.payload.developerMode
+            }
         })
     },
 })

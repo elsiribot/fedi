@@ -258,6 +258,7 @@
         },
         "developer": {
             "developer-mode-activated": "You are now a developer!",
+            "developer-mode-deactivated": "You are no longer a developer...",
             "export-transactions-csv": "Export transactions CSV",
             "nightly": "nightly",
             "share-logs": "Share logs"

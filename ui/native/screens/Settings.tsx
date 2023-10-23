@@ -221,10 +221,23 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={() => {
                         setUnlockDevModeCount(unlockDevModeCount + 1)
                         if (unlockDevModeCount > 10) {
-                            toast?.show(
-                                t('feature.developer.developer-mode-activated'),
-                            )
-                            dispatch(setDeveloperMode(true))
+                            if (developerMode) {
+                                toast?.show(
+                                    t(
+                                        'feature.developer.developer-mode-deactivated',
+                                    ),
+                                    5000,
+                                )
+                                dispatch(setDeveloperMode(false))
+                            } else {
+                                toast?.show(
+                                    t(
+                                        'feature.developer.developer-mode-activated',
+                                    ),
+                                    5000,
+                                )
+                                dispatch(setDeveloperMode(true))
+                            }
                         }
                     }}>
                     <Text style={styles(theme).sectionTitle}>
