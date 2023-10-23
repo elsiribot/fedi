@@ -76,6 +76,14 @@ const IncomingPushPayment: React.FC<IncomingPushPaymentProps> = ({
                     </Text>
                 </View>
             )
+        } else if (payment?.status === ChatPaymentStatus.canceled) {
+            return (
+                <View style={styles(theme).statusContainer}>
+                    <Text medium caption style={styles(theme).statusText}>
+                        {t('words.canceled')}
+                    </Text>
+                </View>
+            )
         } else {
             return (
                 <View style={styles(theme).statusContainer}>
