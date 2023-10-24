@@ -13,7 +13,7 @@ export interface CheckboxProps {
     defaultChecked?: boolean
     disabled?: boolean
     label?: React.ReactNode
-    labelTextProps?: TextProps
+    labelTextProps?: Partial<TextProps>
     onChange?: (checked: boolean) => void
 }
 
