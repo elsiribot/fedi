@@ -1,6 +1,7 @@
 use std::ffi::OsStr;
 use std::path::PathBuf;
 
+use anyhow::Context;
 use bitcoin::Address;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use federations::federation_command;
@@ -267,6 +268,20 @@ enum FederationSubCommand {
     PauseNpcnix(PauseNpcnixArgs),
 }
 
+/// Parse a single key-value pair
+fn parse_key_val<T, U>(s: &str) -> anyhow::Result<(T, U)>
+where
+    T: std::str::FromStr,
+    T::Err: std::error::Error + Send + Sync + 'static,
+    U: std::str::FromStr,
+    U::Err: std::error::Error + Send + Sync + 'static,
+{
+    let pos = s
+        .find('=')
+        .with_context(|| format!("invalid KEY=value: no `=` found in `{s}`"))?;
+    Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
+}
+
 #[derive(Clone, Args)]
 struct FundsSummaryArgs {
     #[arg(long, default_value = "/var/lib/fedimint")]
@@ -274,6 +289,13 @@ struct FundsSummaryArgs {
 
     #[arg(long)]
     local_recovery_tool: PathBuf,
+
+    #[arg(
+        long,
+        help = "use machine_name=pass multiple times, like --recovery-password alpha=alphapass --recovery-password bravo=bravopass etc",
+        value_parser = parse_key_val::<String, String>
+    )]
+    recovery_password: Vec<(String, String)>,
 
     #[arg(long, default_value_t = RecoveryMethodArgs::All)]
     recovery_method: RecoveryMethodArgs,
