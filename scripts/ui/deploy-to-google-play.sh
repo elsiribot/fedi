@@ -24,6 +24,24 @@ fi
 
 pushd $REPO_ROOT/ui/native/android
 
+# Build numbers are timestamp based to ensure they are always
+# increasing. Must be lower than 2,100,000,000 so the scheme is:
+# Get the last two digits of the year
+YY=$(date +"%y")
+# Get the day of the year, zero-padded
+DDD=$(date +"%j")
+# Get the current time in HHMM format
+HHMM=$(date +"%H%M")
+# Combine to form the build number
+BUILD_NUMBER="${YY}${DDD}${HHMM}"
+
+# if we are building a nightly APK from the master branch in CI...
+# modify the build numbers so the app stores will accept
+# the upload. We do not commit this since build numbers are timestamp based
+if [[ -n $GITHUB_REF && $GITHUB_REF == refs/heads/master && -n $FLAVOR && $FLAVOR == "nightly" ]]; then
+  npx react-native-version --increment-build --never-amend --set-build $BUILD_NUMBER
+fi
+
 echo "Building Android release AAB with fastlane (see $REPO_ROOT/ui/native/ios/Fastfile for lane configurations)..."
 if [ -z "${FLAVOR:-}" ]; then
     fastlane internal

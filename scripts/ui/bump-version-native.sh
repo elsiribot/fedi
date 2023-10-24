@@ -30,13 +30,6 @@ HHMM=$(date +"%H%M")
 # Combine to form the build number
 BUILD_NUMBER="${YY}${DDD}${HHMM}"
 
-# if we are building a nightly APK from the master branch in CI...
-# modify the build numbers so the app stores will accept
-# the upload. We do not commit this since build numbers are timestamp based
-if [[ -n $GITHUB_REF && $GITHUB_REF == refs/heads/master && -n $FLAVOR && $FLAVOR == "nightly" ]]; then
-  npx react-native-version --increment-build --never-amend --set-build $BUILD_NUMBER
-fi
-
 # Here we bump the version and commit to the repo, but only allow if:
 # - script is running locally
 # - script is running on a release branch in CI
