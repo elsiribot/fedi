@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ImageBackground, StyleSheet } from 'react-native'
 
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
@@ -20,59 +20,60 @@ import { NavigationHook, RootStackParamList } from '../types/navigation'
 export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
 
 const Initializing: React.FC<Props> = () => {
+    const dispatch = useAppDispatch()
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const hasLoaded = useAppSelector(selectHasLoadedFromStorage)
+    const hasStorageLoaded = useAppSelector(selectHasLoadedFromStorage)
     const isChatSupported = useIsChatSupported()
+    const [hasRefreshedFederations, setHasRefreshedFederations] =
+        useState(false)
 
-    const dispatch = useAppDispatch()
-    const { activeFederationId, federations } = useAppSelector(
-        s => s.federation,
-    )
+    const hasLoaded = hasStorageLoaded && hasRefreshedFederations
+    const hasFederation = !!activeFederation
+    const hasAuthenticatedMember = !!authenticatedMember
 
-    // once active federation ID is loaded from storage, call refreshFederations
-    // to get an updated list from the bridge
+    // Refresh federations from bridge
     useEffect(() => {
         const initializeFederations = async () => {
             try {
                 await dispatch(refreshFederations(fedimint)).unwrap()
             } catch (error) {
+                // TODO: Present the error to the user in some way. This probably
+                // means something is very, very wrong with the bridge.
                 console.error('initializeFederations', error)
             }
+            setHasRefreshedFederations(true)
         }
-        // activeFederationId should be null if there are 0 federations so
-        // this should only ever be called once
-        if (activeFederationId && federations.length === 0) {
-            initializeFederations()
-        }
-    }, [dispatch, activeFederationId, federations.length])
+        initializeFederations()
+    }, [dispatch])
 
-    // once federation is active, determine where to navigate
+    // once everything has loaded, determine where to navigate
     useEffect(() => {
-        if (activeFederation) {
-            // if chat is not supported, go Home
-            if (!isChatSupported) {
-                return navigation.replace('TabsNavigator')
-            }
-            // if chat is supported and auth is set, go Home
-            if (isChatSupported && authenticatedMember !== null) {
-                return navigation.replace('TabsNavigator')
-            }
+        if (!hasLoaded) return
+
+        if (hasFederation) {
             // if chat is supported but auth is not set, recover/create username
-            if (isChatSupported && authenticatedMember === null) {
+            // TODO: move this out of initializing, this will only send us here
+            // on first launch of app, but won't catch if you switch to a
+            // federation that's in this state!
+            if (isChatSupported && !hasAuthenticatedMember) {
                 return navigation.replace('CreateUsername')
             }
+            // Otherwise, go Home
+            return navigation.replace('TabsNavigator')
+        } else {
+            // If they don't have a federation, go to the splash screen
+            return navigation.replace('Splash')
         }
-    }, [activeFederation, authenticatedMember, isChatSupported, navigation])
-
-    // if there is no active federation go to the splash page to join
-    useEffect(() => {
-        if (hasLoaded && !activeFederationId) {
-            navigation.replace('Splash')
-        }
-    }, [navigation, dispatch, activeFederationId, hasLoaded])
+    }, [
+        hasLoaded,
+        hasFederation,
+        hasAuthenticatedMember,
+        isChatSupported,
+        navigation,
+    ])
 
     return (
         <ImageBackground
