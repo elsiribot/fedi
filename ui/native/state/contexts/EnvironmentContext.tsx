@@ -3,18 +3,15 @@ import Toast from 'react-native-easy-toast'
 
 // Define the structure of this Context and its initial state
 interface EnvironmentContextState {
-    developerMode: boolean
     toast: Toast | null
 }
 const initialState: EnvironmentContextState = {
-    developerMode: false,
     toast: null,
 }
 type AppState = typeof initialState
 
 // Define actions that can change the state within this Context
 enum ActionType {
-    CHANGE_DEVELOPER_MODE = 'CHANGE_DEVELOPER_MODE',
     INITIALIZE_TOAST_REF = 'INITIALIZE_TOAST_REF',
     RESET_ENVIRONMENT_STATE = 'RESET_ENVIRONMENT_STATE',
 }
@@ -31,12 +28,6 @@ type BaseContext = {
 export const EnvironmentContext = createContext({} as BaseContext)
 
 // Export action creators as convenience functions to trigger state changes
-export function changeDeveloperMode(enabled: boolean): Action {
-    return {
-        type: ActionType.CHANGE_DEVELOPER_MODE,
-        payload: enabled,
-    }
-}
 export function initializeToastRef(toastRef: any): Action {
     return {
         type: ActionType.INITIALIZE_TOAST_REF,
@@ -52,11 +43,6 @@ export function resetEnvironmentState(): Action {
 // Implement the reducer with actions and state changes
 export function reducer(state: AppState, action: Action): AppState {
     switch (action.type) {
-        case ActionType.CHANGE_DEVELOPER_MODE:
-            return {
-                ...state,
-                developerMode: action.payload,
-            }
         case ActionType.INITIALIZE_TOAST_REF:
             return {
                 ...state,

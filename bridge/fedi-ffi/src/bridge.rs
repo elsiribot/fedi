@@ -57,6 +57,15 @@ impl MultiFederation {
         }
     }
 
+    pub async fn generate_address(&self) -> Result<String> {
+        match self {
+            Self::V0(_) => {
+                bail!("Not supported for this version")
+            }
+            Self::V1(multi) => multi.generate_address().await,
+        }
+    }
+
     pub async fn generate_invoice(
         &self,
         amount: RpcAmount,
@@ -513,6 +522,11 @@ impl Bridge {
         federation_id: RpcFederationId,
     ) -> anyhow::Result<RpcBalanceInfo> {
         Ok(self.get_multi(&federation_id.0).await?.balance_info().await)
+    }
+
+    pub async fn generate_address(&self, federation_id: RpcFederationId) -> Result<String> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi.generate_address().await
     }
 
     pub async fn generate_invoice(

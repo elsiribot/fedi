@@ -4,16 +4,15 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 
-import { selectFederationMetadata } from '@fedi/common/redux'
+import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
 import type { Invoice, TransactionEvent } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { shouldShowOnchainDeposits } from '@fedi/common/utils/FederationUtils'
 
 import { fedimint } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import FiatAmount from '../components/feature/wallet/FiatAmount'
 import SvgImage from '../components/ui/SvgImage'
-import { useAppSelector, useBridge } from '../state/hooks'
+import { useBridge } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -24,7 +23,7 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
     const { t } = useTranslation()
     const { generateAddress } = useBridge()
     const { uri } = route.params
-    const activeFederationMetadata = useAppSelector(selectFederationMetadata)
+    const isOnchainSupported = useIsOnchainDepositSupported()
 
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [requestType, setRequestType] = useState<BitcoinOrLightning>(
@@ -141,9 +140,7 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
         return unsubscribe
     }, [transactionEventHandler])
 
-    const showOnchainDeposits =
-        activeFederationMetadata &&
-        shouldShowOnchainDeposits(activeFederationMetadata)
+    const showOnchainDeposits = isOnchainSupported
 
     if (!decodedUri.body) {
         return <ActivityIndicator />

@@ -82,6 +82,12 @@ export interface StoredStateV6 extends Omit<StoredStateV5, 'version'> {
     amountInputType?: 'sats' | 'fiat'
 }
 
+export interface StoredStateV7 extends Omit<StoredStateV6, 'version'> {
+    version: 7
+    onchainDepositsEnabled: boolean
+    developerMode: boolean
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -91,9 +97,10 @@ export type AnyStoredState =
     | StoredStateV4
     | StoredStateV5
     | StoredStateV6
+    | StoredStateV7
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV6
+export type LatestStoredState = StoredStateV7
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

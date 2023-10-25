@@ -10,7 +10,8 @@ import {
     resetFederationChatState,
     selectActiveFederation,
     selectAuthenticatedMember,
-    selectFederationCustomFediMods,
+    selectDeveloperMode,
+    setDeveloperMode,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import {
@@ -22,10 +23,7 @@ import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import SvgImage from '../components/ui/SvgImage'
-import {
-    changeDeveloperMode,
-    useEnvironmentContext,
-} from '../state/contexts/EnvironmentContext'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -34,8 +32,6 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>
 const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { state: environmentState, dispatch: environmentDispatch } =
-        useEnvironmentContext()
     const { toast } = useEnvironmentContext().state
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
 
@@ -48,7 +44,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const authenticatedGuardian = useAppSelector(
         s => s.federation.authenticatedGuardian,
     )
-    const customFediMods = useAppSelector(selectFederationCustomFediMods)
+    const developerMode = useAppSelector(selectDeveloperMode)
 
     const resetChatState = useCallback(() => {
         if (activeFederationId) {
@@ -225,15 +221,30 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={() => {
                         setUnlockDevModeCount(unlockDevModeCount + 1)
                         if (unlockDevModeCount > 10) {
-                            environmentDispatch(changeDeveloperMode(true))
+                            if (developerMode) {
+                                toast?.show(
+                                    t(
+                                        'feature.developer.developer-mode-deactivated',
+                                    ),
+                                    5000,
+                                )
+                                dispatch(setDeveloperMode(false))
+                            } else {
+                                toast?.show(
+                                    t(
+                                        'feature.developer.developer-mode-activated',
+                                    ),
+                                    5000,
+                                )
+                                dispatch(setDeveloperMode(true))
+                            }
                         }
                     }}>
                     <Text style={styles(theme).sectionTitle}>
                         {t('words.general')}
                     </Text>
                 </Pressable>
-                {(environmentState.developerMode ||
-                    customFediMods.length > 0) && (
+                {developerMode && (
                     <SettingsItem
                         image={<SvgImage name="FediLogoIcon" />}
                         label={'Developer Settings'}

@@ -295,6 +295,8 @@ impl FederationV0 {
                                     .translate(),
                                 ),
                                 direction: RpcTransactionDirection::Receive,
+                                onchain_state: None,
+                                bitcoin: None,
                                 notes: "".into(),
                                 // FIXME: map v0 to v1 states on best effort basis
                                 // ln_state: RpcLnState::from_ln_recv_state(Some(update)),
@@ -916,6 +918,8 @@ impl FederationV0 {
                             ),
                             direction: RpcTransactionDirection::Send,
                             notes,
+                            onchain_state: None,
+                            bitcoin: None,
                             ln_state: RpcLnState::from_ln_pay_state(
                                 self.get_ln_pay_outcome(op.0.operation_id, op.1)
                                     .await
@@ -939,6 +943,8 @@ impl FederationV0 {
                             ),
                             direction: RpcTransactionDirection::Receive,
                             notes,
+                            onchain_state: None,
+                            bitcoin: None,
                             ln_state: RpcLnState::from_ln_recv_state(
                                 op.1.outcome::<LnReceiveState>().translate(),
                             ),
@@ -964,6 +970,8 @@ impl FederationV0 {
                                             .expect("unix time should exist"),
                                         direction: RpcTransactionDirection::Receive,
                                         notes,
+                                        onchain_state: None,
+                                        bitcoin: None,
                                         ln_state: None,
                                         amount: RpcAmount(mint_meta.amount.translate()),
                                         lightning: None,
@@ -981,6 +989,8 @@ impl FederationV0 {
                                     .expect("unix time should exist"),
                                 direction: RpcTransactionDirection::Send,
                                 notes,
+                                onchain_state: None,
+                                bitcoin: None,
                                 ln_state: None,
                                 amount: RpcAmount(requested_amount.translate()),
                                 lightning: None,

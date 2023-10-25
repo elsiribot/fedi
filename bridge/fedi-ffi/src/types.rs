@@ -8,6 +8,7 @@ use fedimint_core::config::PeerUrl;
 use fedimint_ln_client::pay::GatewayPayError;
 use fedimint_ln_client::receive::LightningReceiveError;
 use fedimint_ln_client::{LnPayState, LnReceiveState};
+use fedimint_wallet_client::{BitcoinTransactionData, DepositState, WithdrawState};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -279,9 +280,103 @@ pub struct RpcTransaction {
     pub amount: RpcAmount,
     pub direction: RpcTransactionDirection,
     pub notes: String,
+    pub onchain_state: Option<RpcOnchainState>,
+    pub bitcoin: Option<RpcBitcoinDetails>,
     pub ln_state: Option<RpcLnState>,
     pub lightning: Option<RpcLightningDetails>,
     pub oob_state: Option<RpcOOBState>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(untagged)]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcOnchainState {
+    DepositState(RpcOnchainDepositState),
+    WithdrawState(RpcOnchainWithdrawState),
+}
+
+impl RpcOnchainState {
+    pub fn from_deposit_state(opt: Option<DepositState>) -> Option<RpcOnchainState> {
+        let state = match opt? {
+            DepositState::WaitingForTransaction => RpcOnchainDepositState::WaitingForTransaction,
+            DepositState::WaitingForConfirmation(data) => {
+                RpcOnchainDepositState::WaitingForConfirmation(
+                    RpcOnchainDepositTransactionData::new(&data),
+                )
+            }
+            DepositState::Confirmed(data) => {
+                RpcOnchainDepositState::Confirmed(RpcOnchainDepositTransactionData::new(&data))
+            }
+            DepositState::Claimed(data) => {
+                RpcOnchainDepositState::Claimed(RpcOnchainDepositTransactionData::new(&data))
+            }
+            // Ignore old state
+            DepositState::ClaimedOld => return None,
+            DepositState::Failed(_) => RpcOnchainDepositState::Failed,
+        };
+        Some(Self::DepositState(state))
+    }
+
+    pub fn from_withdraw_state(opt: Option<WithdrawState>) -> Option<RpcOnchainState> {
+        opt.map(|state| match state {
+            WithdrawState::Created => {
+                RpcOnchainState::WithdrawState(RpcOnchainWithdrawState::Created)
+            }
+            WithdrawState::Succeeded(_) => {
+                RpcOnchainState::WithdrawState(RpcOnchainWithdrawState::Succeeded)
+            }
+            WithdrawState::Failed(_) => {
+                RpcOnchainState::WithdrawState(RpcOnchainWithdrawState::Failed)
+            }
+        })
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcOnchainDepositState {
+    WaitingForTransaction,
+    WaitingForConfirmation(RpcOnchainDepositTransactionData),
+    Confirmed(RpcOnchainDepositTransactionData),
+    Claimed(RpcOnchainDepositTransactionData),
+    Failed,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcOnchainDepositTransactionData {
+    txid: String,
+}
+
+impl RpcOnchainDepositTransactionData {
+    pub fn new(data: &BitcoinTransactionData) -> Self {
+        Self {
+            txid: data.btc_transaction.txid().to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcOnchainWithdrawState {
+    Created,
+    Succeeded,
+    Failed,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcBitcoinDetails {
+    pub address: String,
+    #[ts(type = "number")]
+    pub expires_at: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]

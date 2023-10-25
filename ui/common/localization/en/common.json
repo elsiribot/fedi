@@ -81,7 +81,9 @@
         "bitcoin-address": "Bitcoin address",
         "click-for-more-details": "Click for more details",
         "connect-to-federation": "Connect to test federation",
+        "copied-bitcoin-address": "Copied bitcoin address",
         "copied-lightning-request": "Copied lightning request",
+        "copied-transaction-id": "Copied transaction ID",
         "edit-note": "Edit note",
         "expires-in": "Expires in",
         "failed-to-decode-invoice": "Failed to decode invoice",
@@ -130,6 +132,7 @@
         "invalid-federation-code": "Invalid federation code",
         "invalid-group-code": "This is not a valid group code",
         "no-lightning-gateways": "No lightning gateways found for this user",
+        "onchain-deposits-disabled": "Onchain deposits have been disabled for this federation",
         "only-group-owners-can-change-name": "Only group owners can change the group name",
         "please-force-quit-the-app": "An error occurred, please force quit the app and try again",
         "receives-have-been-disabled": "Receives have been disabled for this federation",
@@ -254,8 +257,10 @@
             "you-sent-payment": "You sent {{fiat}} ({{amount}} {{unit}}) {{memo}}"
         },
         "developer": {
-            "nightly": "nightly",
+            "developer-mode-activated": "You are now a developer!",
+            "developer-mode-deactivated": "You are no longer a developer...",
             "export-transactions-csv": "Export transactions CSV",
+            "nightly": "nightly",
             "share-logs": "Share logs"
         },
         "federations": {
@@ -358,12 +363,14 @@
             "ending-in": "Ending in <bold>{{time}}</bold>"
         },
         "receive": {
+            "add-amount": "Add an amount",
             "awaiting-withdrawal-from": "Awaiting withdrawal from {{domain}}...",
             "balance-not-spendable-offline": "This balance will not be able to be spent until you come back online",
             "bitcoin-request": "Bitcoin request",
             "camera-access-information": "To receive money offline, you will need to allow Fedi access to your camera to scan an offline payment code",
             "copied-payment-code": "Copied payment request",
             "create-lightning-request": "Create lightning request",
+            "enable-onchain-deposits": "Enable onchain deposits",
             "instructions": "Enter how much you want to receive",
             "maximum-invoice-amount": "Maximum invoice amount is {{maxAmount}} SATS",
             "onchain-notice": "On-chain deposits take ~10 hours to confirm. Use Lightning for instant transactions",
