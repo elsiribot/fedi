@@ -117,7 +117,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
 
     const getActiveGateway = (
         gatewayList: Gateway[],
-        reject: (reason: any) => void,
+        reject: (reason: string) => void,
     ): Gateway | undefined => {
         if (!gatewayList.length) {
             console.warn('No gateways found')
