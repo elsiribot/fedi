@@ -4,7 +4,7 @@
     "private": true,
     "main": "dist/index.js",
     "scripts": {
-        "dev": "rm -rf dist && webpack build --config ./webpack/webpack.injectables.config.js && webpack watch --config ./webpack/webpack.all.config.js",
+        "dev": "webpack build --config ./webpack/webpack.injectables.config.js && webpack watch --config ./webpack/webpack.all.config.js",
         "build": "rm -rf dist && webpack build --env prod  --config ./webpack/webpack.injectables.config.js && webpack build --env prod --config ./webpack/webpack.module.config.js",
         "lint": "yarn run lint:tsc && yarn run lint:eslint",
         "lint:tsc": "tsc --noEmit",
