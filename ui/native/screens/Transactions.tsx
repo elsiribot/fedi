@@ -35,8 +35,11 @@ const Transactions: React.FC<Props> = () => {
 
     useEffect(() => {
         setIsLoading(true)
-        getTransactionsList()
-        setIsLoading(false)
+        const loadTransactions = async () => {
+            await getTransactionsList()
+            setIsLoading(false)
+        }
+        loadTransactions()
     }, [getTransactionsList])
 
     if (isLoading) return <ActivityIndicator />
