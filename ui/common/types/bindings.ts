@@ -48,6 +48,8 @@ export interface RpcEcashInfo {
     federationId: RpcFederationId | null
 }
 
+export type RpcFederationId = string
+
 export interface RpcFederation {
     balance: RpcAmount
     id: RpcFederationId
@@ -59,8 +61,6 @@ export interface RpcFederation {
     nodes: Record<string, { url: string; name: string }>
     version: number
 }
-
-export type RpcFederationId = string
 
 export interface RpcInvoice {
     paymentHash: string
@@ -291,6 +291,8 @@ export interface RpcSignedLnurlMessage {
     pubkey: RpcPublicKey
 }
 
+export type RpcTransactionDirection = 'receive' | 'send'
+
 export interface RpcTransaction {
     id: string
     createdAt: number
@@ -301,8 +303,6 @@ export interface RpcTransaction {
     lightning: RpcLightningDetails | null
     oobState: RpcOOBState | null
 }
-
-export type RpcTransactionDirection = 'receive' | 'send'
 
 export interface RpcXmppCredentials {
     password: string
