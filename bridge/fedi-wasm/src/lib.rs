@@ -70,7 +70,7 @@ pub async fn fedimint_initialize_inner(event_sink: EventSink) -> anyhow::Result<
 pub async fn fedimint_rpc(method: String, payload: String) -> String {
     let value = AssertUnwindSafe(async move {
         let Some(bridge) = BRIDGE.with(|b| b.borrow().clone()) else {
-            return r#"{"error": "bridge not initialzied"}"#.to_owned();
+            return r#"{"error": "Bridge not initialized"}"#.to_owned();
         };
         fediffi::rpc::fedimint_rpc_async(bridge, method, payload).await
     })

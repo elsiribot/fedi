@@ -9,11 +9,22 @@ import init, {
 
 async function workerInit() {
     await init(new URL('@fedi/common/wasm/fedi_wasm_bg.wasm', import.meta.url))
-    await fedimint_initialize({
+    const result = await fedimint_initialize({
         event(event_name: string, data: string) {
             postMessage({ event: event_name, data })
         },
     })
+
+    try {
+        const parsedJson = JSON.parse(result)
+        if (parsedJson.error !== undefined) {
+            console.error('fedimint_initialize ', parsedJson)
+            throw new Error('Failed to initialize bridge')
+        }
+    } catch (err) {
+        console.error('Invalid json from fedimint initialize', err)
+    }
+
     postMessage({ event: 'initialized' })
 }
 
