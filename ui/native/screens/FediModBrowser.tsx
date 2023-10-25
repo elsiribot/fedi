@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { MutableRefObject, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { WebView } from 'react-native-webview'
 import {
@@ -307,6 +307,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     }
 
     const style = styles(insets)
+
+    if (isLoadingGateways) return <ActivityIndicator />
 
     return (
         <View style={style.container}>
