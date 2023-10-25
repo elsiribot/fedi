@@ -81,19 +81,17 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const [lnurlAuthRequest, setLnurlAuthRequest] = useState<
         ParsedLnurlAuth['data'] | null
     >(null)
-    const [gateways, setGateways] = useState<Gateway[]>([])
+    const gatewaysPromiseRef = useRef<Promise<Gateway[]>>()
 
     useEffect(() => {
-        const fetchGateways = async () => {
-            try {
-                const fetchedGateways = await listGateways()
-                setGateways(fetchedGateways)
-            } catch (error) {
+        gatewaysPromiseRef.current = listGateways()
+            .then(fetchedGateways => {
+                return fetchedGateways
+            })
+            .catch(error => {
                 console.error('Error fetching gateways:', error)
-            }
-        }
-
-        fetchGateways()
+                throw error
+            })
     }, [listGateways])
 
     // Intercept any URIs the user tries to navigate to that we can handle inline
@@ -115,20 +113,17 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         return false
     })
 
-    const getActiveGateway = (
-        gatewayList: Gateway[],
-        reject: (reason: string) => void,
-    ): Gateway | undefined => {
-        if (!gatewayList.length) {
-            console.warn('No gateways found')
-            reject(t('errors.no-lightning-gateways'))
+    const getActiveGateway = async (): Promise<Gateway> => {
+        const gatewayList = await gatewaysPromiseRef.current
+
+        if (!gatewayList || !gatewayList.length) {
+            throw new Error(t('errors.no-lightning-gateways'))
         }
 
         const activeGateway = gatewayList.find(g => g.active)
 
         if (!activeGateway) {
-            console.warn('No active gateway found')
-            reject(t('errors.no-lightning-gateways'))
+            throw new Error(t('errors.no-lightning-gateways'))
         }
 
         return activeGateway
@@ -145,7 +140,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 const alias = authenticatedMember?.username || ''
                 let pubkey = ''
                 try {
-                    const gateway = getActiveGateway(gateways, reject)
+                    const gateway = await getActiveGateway()
 
                     if (gateway) {
                         pubkey = gateway.nodePubKey
@@ -163,7 +158,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         [InjectionMessageType.webln_makeInvoice]: async data => {
             // Wait for user to interact with alert
             return new Promise(async (resolve, reject) => {
-                getActiveGateway(gateways, reject)
+                await getActiveGateway()
 
                 // Save these refs to we can resolve / reject elsewhere
                 overlayRejectRef.current = reject
@@ -192,8 +187,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 throw Error(t('phrases.failed-to-decode-invoice'))
             }
             // Wait for user to interact with alert
-            return new Promise((resolve, reject) => {
-                getActiveGateway(gateways, reject)
+            return new Promise(async (resolve, reject) => {
+                await getActiveGateway()
 
                 // TODO: Hoist this to respect balance changes
                 if (activeFederation!.balance < invoice.amount) {
