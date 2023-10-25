@@ -313,37 +313,33 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     return (
         <View style={style.container}>
             <FediModBrowserHeader webViewRef={webview} fediMod={fediMod} />
-            {!isLoadingGateways ? (
-                <>
-                    <WebView
-                        ref={webview}
-                        webviewDebuggingEnabled={fediModDebugMode} // required for IOS debugging
-                        source={{ uri }}
-                        injectedJavaScript={generateInjectionJs({
-                            webln: true,
-                            eruda: fediModDebugMode,
-                            nostr: nostrEnabled,
-                        })}
-                        allowsInlineMediaPlayback
-                        onMessage={onMessage}
-                        style={{ width: '100%', height: '100%', flex: 1 }}
-                    />
-                    <MakeInvoiceOverlay
-                        {...overlayProps}
-                        requestInvoiceArgs={requestInvoiceArgs}
-                        lnurlWithdrawal={lnurlWithdrawal}
-                    />
-                    <SendPaymentOverlay
-                        {...overlayProps}
-                        invoice={invoiceToPay}
-                        lnurlPayment={lnurlPayment}
-                    />
-                    <AuthOverlay
-                        {...overlayProps}
-                        lnurlAuthRequest={lnurlAuthRequest}
-                    />
-                </>
-            ) : null}
+            <WebView
+                ref={webview}
+                webviewDebuggingEnabled={fediModDebugMode} // required for IOS debugging
+                source={{ uri }}
+                injectedJavaScript={generateInjectionJs({
+                    webln: true,
+                    eruda: fediModDebugMode,
+                    nostr: nostrEnabled,
+                })}
+                allowsInlineMediaPlayback
+                onMessage={onMessage}
+                style={{ width: '100%', height: '100%', flex: 1 }}
+            />
+            <MakeInvoiceOverlay
+                {...overlayProps}
+                requestInvoiceArgs={requestInvoiceArgs}
+                lnurlWithdrawal={lnurlWithdrawal}
+            />
+            <SendPaymentOverlay
+                {...overlayProps}
+                invoice={invoiceToPay}
+                lnurlPayment={lnurlPayment}
+            />
+            <AuthOverlay
+                {...overlayProps}
+                lnurlAuthRequest={lnurlAuthRequest}
+            />
         </View>
     )
 }
