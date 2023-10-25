@@ -16,6 +16,7 @@ import { Images } from '../assets/images'
 import { fedimint } from '../bridge'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
+import { ErrorScreen } from './ErrorScreen'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
 
@@ -29,6 +30,7 @@ const Initializing: React.FC<Props> = () => {
     const isChatSupported = useIsChatSupported()
     const [hasRefreshedFederations, setHasRefreshedFederations] =
         useState(false)
+    const [bridgeError, setBridgeError] = useState<unknown | null>(null)
 
     const hasLoaded = hasStorageLoaded && hasRefreshedFederations
     const hasFederation = !!activeFederation
@@ -39,12 +41,11 @@ const Initializing: React.FC<Props> = () => {
         const initializeFederations = async () => {
             try {
                 await dispatch(refreshFederations(fedimint)).unwrap()
-            } catch (error) {
-                // TODO: Present the error to the user in some way. This probably
-                // means something is very, very wrong with the bridge.
-                console.error('initializeFederations', error)
+                setHasRefreshedFederations(true)
+            } catch (err) {
+                console.error('initializeFederations', err)
+                setBridgeError(err)
             }
-            setHasRefreshedFederations(true)
         }
         initializeFederations()
     }, [dispatch])
@@ -74,6 +75,10 @@ const Initializing: React.FC<Props> = () => {
         isChatSupported,
         navigation,
     ])
+
+    if (bridgeError) {
+        return <ErrorScreen error={bridgeError} />
+    }
 
     return (
         <ImageBackground
