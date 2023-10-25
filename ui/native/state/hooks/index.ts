@@ -12,6 +12,7 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 import { usePublishNotificationToken } from '@fedi/common/hooks/chat'
 import {
     ensureHealthyXmppStream,
+    selectActiveFederation,
     selectBtcExchangeRate,
     selectChatXmppClient,
     selectCurrency,
@@ -81,9 +82,7 @@ export const useBtcFiatPrice = () => {
 }
 
 export const useBridge = () => {
-    const activeFederationId = useAppSelector(
-        s => s.federation.activeFederationId,
-    )
+    const activeFederationId = useAppSelector(selectActiveFederation)?.id
 
     return {
         approveSocialRecoveryRequest: useCallback(
@@ -257,9 +256,7 @@ export const useXmppHealthCheck = () => {
         RNAppState.currentState,
     ) as MutableRefObject<AppStateStatus>
     const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(
-        s => s.federation.activeFederationId,
-    )
+    const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const xmppClient = useAppSelector(selectChatXmppClient)
 
     // This logic is needed to help gracefully resume the XMPP websocket stream

@@ -6,7 +6,11 @@ import { useTranslation } from 'react-i18next'
 import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
-import { joinChatGroup, selectChatGroup } from '@fedi/common/redux'
+import {
+    joinChatGroup,
+    selectActiveFederation,
+    selectChatGroup,
+} from '@fedi/common/redux'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
 import { Images } from '../assets/images'
@@ -23,9 +27,7 @@ const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { groupId } = route.params
-    const activeFederationId = useAppSelector(
-        s => s.federation.activeFederationId,
-    )
+    const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const dispatch = useAppDispatch()
     const { toast } = useEnvironmentContext().state
     const group = useAppSelector(s => selectChatGroup(s, groupId))

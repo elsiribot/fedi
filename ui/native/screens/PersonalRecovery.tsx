@@ -89,9 +89,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
-    const activeFederationId = useAppSelector(
-        s => s.federation.activeFederationId,
-    )
+    const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const dispatch = useAppDispatch()
     const [recoveryInProgress, setRecoveryInProgress] = useState<boolean>(false)
     const [seedWords, setSeedWords] = useState<SeedWords>(

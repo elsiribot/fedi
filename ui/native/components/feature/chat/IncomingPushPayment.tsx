@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { updateChatPayment } from '@fedi/common/redux'
+import { selectActiveFederation, updateChatPayment } from '@fedi/common/redux'
 import { ChatMessage, ChatPayment, ChatPaymentStatus } from '@fedi/common/types'
 
 import { fedimint } from '../../../bridge'
@@ -23,9 +23,7 @@ const IncomingPushPayment: React.FC<IncomingPushPaymentProps> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(
-        s => s.federation.activeFederationId,
-    )
+    const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const [processingRedemption, setProcessingRedemption] =
         useState<boolean>(false)
     const { payment } = message

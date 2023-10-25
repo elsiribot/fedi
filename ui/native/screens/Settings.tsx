@@ -36,9 +36,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
 
     const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(
-        s => s.federation.activeFederationId,
-    )
+    const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const authenticatedGuardian = useAppSelector(

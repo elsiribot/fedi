@@ -112,9 +112,7 @@ export function usePublishNotificationToken(
     getDeviceToken: () => Promise<string>,
 ) {
     const dispatch = useCommonDispatch()
-    const activeFederationId = useCommonSelector(
-        s => s.federation.activeFederationId,
-    )
+    const activeFederationId = useCommonSelector(selectActiveFederation)?.id
     const pushNotificationToken = useCommonSelector(selectPushNotificationToken)
 
     useEffect(() => {
@@ -173,7 +171,7 @@ export function useChatMember(memberId: string) {
  */
 export async function useMonitorChatConnection(fedimint: FedimintBridge) {
     const dispatch = useCommonDispatch()
-    const { activeFederationId } = useCommonSelector(s => s.federation)
+    const activeFederationId = useCommonSelector(selectActiveFederation)?.id
     const isChatSupported = useIsChatSupported()
     const authenticatedMember = useCommonSelector(selectAuthenticatedMember)
     const memberId = authenticatedMember?.id

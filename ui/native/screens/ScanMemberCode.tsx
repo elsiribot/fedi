@@ -5,7 +5,11 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { joinChatGroup, selectChatConnectionOptions } from '@fedi/common/redux'
+import {
+    joinChatGroup,
+    selectActiveFederation,
+    selectChatConnectionOptions,
+} from '@fedi/common/redux'
 import { decodeDirectChatLink } from '@fedi/common/utils/xmpp'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
@@ -22,9 +26,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
     const connectionOptions = useAppSelector(selectChatConnectionOptions)
-    const activeFederationId = useAppSelector(
-        s => s.federation.activeFederationId,
-    )
+    const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const dispatch = useAppDispatch()
 
     const handleUserInput = useCallback(
