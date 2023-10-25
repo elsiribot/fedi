@@ -85,7 +85,7 @@ pub fn fedimint_rpc(method: String, payload: String) -> String {
     let value = std::panic::catch_unwind(AssertUnwindSafe(|| {
         RUNTIME.block_on(async move {
             let Some(bridge) = BRIDGE.lock().await.as_ref().cloned() else {
-                return r#"{"error": "bridge not initialzied"}"#.to_owned();
+                return r#"{"error": "Bridge not initialized"}"#.to_owned();
             };
             fedimint_rpc_async(bridge, method, payload).await
         })
