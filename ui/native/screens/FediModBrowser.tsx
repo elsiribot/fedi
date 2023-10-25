@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { MutableRefObject, useEffect, useRef, useState } from 'react'
+import React, { MutableRefObject, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -81,18 +81,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const [lnurlAuthRequest, setLnurlAuthRequest] = useState<
         ParsedLnurlAuth['data'] | null
     >(null)
-    const gatewaysPromiseRef = useRef<Promise<Gateway[]>>()
-
-    useEffect(() => {
-        gatewaysPromiseRef.current = listGateways()
-            .then(fetchedGateways => {
-                return fetchedGateways
-            })
-            .catch(error => {
-                console.error('Error fetching gateways:', error)
-                throw error
-            })
-    }, [listGateways])
+    const getActiveGatewayPromiseRef = useRef<Promise<Gateway> | null>(null)
 
     // Intercept any URIs the user tries to navigate to that we can handle inline
     useOmniLinkInterceptor(parsedLink => {
@@ -113,20 +102,14 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         return false
     })
 
-    const getActiveGateway = async (): Promise<Gateway> => {
-        const gatewayList = await gatewaysPromiseRef.current
-
-        if (!gatewayList || !gatewayList.length) {
-            throw new Error(t('errors.no-lightning-gateways'))
-        }
-
-        const activeGateway = gatewayList.find(g => g.active)
-
-        if (!activeGateway) {
-            throw new Error(t('errors.no-lightning-gateways'))
-        }
-
-        return activeGateway
+    const getActiveGatewayOrThrow = async () => {
+        if (getActiveGatewayPromiseRef.current)
+            return getActiveGatewayPromiseRef.current
+        getActiveGatewayPromiseRef.current = listGateways().then(gateways => {
+            if (!gateways.length)
+                throw new Error('No available lightning gateways')
+            return gateways.find(g => g.active) || gateways[0]
+        })
     }
 
     // Handle all messages coming from a WebLN-enabled site
@@ -140,7 +123,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 const alias = authenticatedMember?.username || ''
                 let pubkey = ''
                 try {
-                    const gateway = await getActiveGateway()
+                    const gateway = await getActiveGatewayOrThrow()
 
                     if (gateway) {
                         pubkey = gateway.nodePubKey
@@ -158,7 +141,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         [InjectionMessageType.webln_makeInvoice]: async data => {
             // Wait for user to interact with alert
             return new Promise(async (resolve, reject) => {
-                await getActiveGateway()
+                await getActiveGatewayOrThrow()
 
                 // Save these refs to we can resolve / reject elsewhere
                 overlayRejectRef.current = reject
@@ -188,7 +171,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             }
             // Wait for user to interact with alert
             return new Promise(async (resolve, reject) => {
-                await getActiveGateway()
+                await getActiveGatewayOrThrow()
 
                 // TODO: Hoist this to respect balance changes
                 if (activeFederation!.balance < invoice.amount) {
