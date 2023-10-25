@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { MutableRefObject, useRef, useState } from 'react'
+import React, { MutableRefObject, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -25,6 +25,10 @@ import {
     ParsedLnurlWithdraw,
     ParserDataType,
 } from '@fedi/common/types'
+import {
+    RpcLightningGatewayV0,
+    RpcLightningGatewayV1,
+} from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import {
     InjectionMessageType,
@@ -47,6 +51,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'FediModBrowser'>
 
 type FediModResponse = RequestInvoiceResponse | SendPaymentResponse
 type FediModResolver<T> = (value: T | PromiseLike<T>) => void
+type Gateway = RpcLightningGatewayV0 | RpcLightningGatewayV1
 
 const FediModBrowser: React.FC<Props> = ({ route }) => {
     const { fediMod } = route.params
@@ -76,6 +81,23 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const [lnurlAuthRequest, setLnurlAuthRequest] = useState<
         ParsedLnurlAuth['data'] | null
     >(null)
+    const [gateways, setGateways] = useState<Gateway[]>([])
+    const [isLoadingGateways, setIsLoadingGateways] = useState<boolean>(true)
+
+    useEffect(() => {
+        const fetchGateways = async () => {
+            try {
+                const fetchedGateways = await listGateways()
+                setGateways(fetchedGateways)
+            } catch (error) {
+                console.error('Error fetching gateways:', error)
+            } finally {
+                setIsLoadingGateways(n => !n)
+            }
+        }
+
+        fetchGateways()
+    }, [listGateways])
 
     // Intercept any URIs the user tries to navigate to that we can handle inline
     useOmniLinkInterceptor(parsedLink => {
@@ -107,7 +129,11 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 const alias = authenticatedMember?.username || ''
                 let pubkey = ''
                 try {
-                    const gateways = await listGateways()
+                    if (!gateways.length) {
+                        console.warn('No gateways found for webln getinfo')
+                        reject(t('errors.no-lightning-gateways'))
+                    }
+
                     const gateway = gateways.find(g => g.active) || gateways[0]
                     if (gateway) {
                         pubkey = gateway.nodePubKey
@@ -124,7 +150,19 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         },
         [InjectionMessageType.webln_makeInvoice]: async data => {
             // Wait for user to interact with alert
-            return new Promise((resolve, reject) => {
+            return new Promise(async (resolve, reject) => {
+                if (!gateways.length) {
+                    console.warn('No gateways found for webln getinfo')
+                    reject(t('errors.no-lightning-gateways'))
+                }
+
+                const gateway = gateways.find(g => g.active)
+                if (!gateway) {
+                    console.warn(
+                        'No active gateways found for webln make invoice',
+                    )
+                    reject(t('errors.no-lightning-gateways'))
+                }
                 // Save these refs to we can resolve / reject elsewhere
                 overlayRejectRef.current = reject
                 overlayResolveRef.current =
@@ -142,6 +180,17 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             })
         },
         [InjectionMessageType.webln_sendPayment]: async data => {
+            if (!gateways.length) {
+                console.warn('No gateways found for webln send payment')
+                throw Error(t('errors.no-lightning-gateways'))
+            }
+
+            const gateway = gateways.find(g => g.active)
+            if (!gateway) {
+                console.warn('No active gateways found for webln send payment')
+                throw Error(t('errors.no-lightning-gateways'))
+            }
+
             console.info('webln:sendPayment', data)
             let invoice: Invoice
             try {
@@ -262,33 +311,37 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     return (
         <View style={style.container}>
             <FediModBrowserHeader webViewRef={webview} fediMod={fediMod} />
-            <WebView
-                ref={webview}
-                webviewDebuggingEnabled={fediModDebugMode} // required for IOS debugging
-                source={{ uri }}
-                injectedJavaScript={generateInjectionJs({
-                    webln: true,
-                    eruda: fediModDebugMode,
-                    nostr: nostrEnabled,
-                })}
-                allowsInlineMediaPlayback
-                onMessage={onMessage}
-                style={{ width: '100%', height: '100%', flex: 1 }}
-            />
-            <MakeInvoiceOverlay
-                {...overlayProps}
-                requestInvoiceArgs={requestInvoiceArgs}
-                lnurlWithdrawal={lnurlWithdrawal}
-            />
-            <SendPaymentOverlay
-                {...overlayProps}
-                invoice={invoiceToPay}
-                lnurlPayment={lnurlPayment}
-            />
-            <AuthOverlay
-                {...overlayProps}
-                lnurlAuthRequest={lnurlAuthRequest}
-            />
+            {!isLoadingGateways ? (
+                <>
+                    <WebView
+                        ref={webview}
+                        webviewDebuggingEnabled={fediModDebugMode} // required for IOS debugging
+                        source={{ uri }}
+                        injectedJavaScript={generateInjectionJs({
+                            webln: true,
+                            eruda: fediModDebugMode,
+                            nostr: nostrEnabled,
+                        })}
+                        allowsInlineMediaPlayback
+                        onMessage={onMessage}
+                        style={{ width: '100%', height: '100%', flex: 1 }}
+                    />
+                    <MakeInvoiceOverlay
+                        {...overlayProps}
+                        requestInvoiceArgs={requestInvoiceArgs}
+                        lnurlWithdrawal={lnurlWithdrawal}
+                    />
+                    <SendPaymentOverlay
+                        {...overlayProps}
+                        invoice={invoiceToPay}
+                        lnurlPayment={lnurlPayment}
+                    />
+                    <AuthOverlay
+                        {...overlayProps}
+                        lnurlAuthRequest={lnurlAuthRequest}
+                    />
+                </>
+            ) : null}
         </View>
     )
 }
