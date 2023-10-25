@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { MutableRefObject, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { WebView } from 'react-native-webview'
 import {
@@ -82,7 +82,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         ParsedLnurlAuth['data'] | null
     >(null)
     const [gateways, setGateways] = useState<Gateway[]>([])
-    const [isLoadingGateways, setIsLoadingGateways] = useState<boolean>(true)
 
     useEffect(() => {
         const fetchGateways = async () => {
@@ -91,8 +90,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 setGateways(fetchedGateways)
             } catch (error) {
                 console.error('Error fetching gateways:', error)
-            } finally {
-                setIsLoadingGateways(n => !n)
             }
         }
 
@@ -118,6 +115,25 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         return false
     })
 
+    const getActiveGateway = (
+        gatewayList: Gateway[],
+        reject: (reason: any) => void,
+    ): Gateway | undefined => {
+        if (!gatewayList.length) {
+            console.warn('No gateways found')
+            reject(t('errors.no-lightning-gateways'))
+        }
+
+        const activeGateway = gatewayList.find(g => g.active)
+
+        if (!activeGateway) {
+            console.warn('No active gateway found')
+            reject(t('errors.no-lightning-gateways'))
+        }
+
+        return activeGateway
+    }
+
     // Handle all messages coming from a WebLN-enabled site
     const onMessage = makeWebViewMessageHandler(webview, {
         [InjectionMessageType.webln_enable]: async () => {
@@ -129,12 +145,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 const alias = authenticatedMember?.username || ''
                 let pubkey = ''
                 try {
-                    if (!gateways.length) {
-                        console.warn('No gateways found for webln getinfo')
-                        reject(t('errors.no-lightning-gateways'))
-                    }
+                    const gateway = getActiveGateway(gateways, reject)
 
-                    const gateway = gateways.find(g => g.active) || gateways[0]
                     if (gateway) {
                         pubkey = gateway.nodePubKey
                     }
@@ -151,18 +163,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         [InjectionMessageType.webln_makeInvoice]: async data => {
             // Wait for user to interact with alert
             return new Promise(async (resolve, reject) => {
-                if (!gateways.length) {
-                    console.warn('No gateways found for webln getinfo')
-                    reject(t('errors.no-lightning-gateways'))
-                }
+                getActiveGateway(gateways, reject)
 
-                const gateway = gateways.find(g => g.active)
-                if (!gateway) {
-                    console.warn(
-                        'No active gateways found for webln make invoice',
-                    )
-                    reject(t('errors.no-lightning-gateways'))
-                }
                 // Save these refs to we can resolve / reject elsewhere
                 overlayRejectRef.current = reject
                 overlayResolveRef.current =
@@ -180,17 +182,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             })
         },
         [InjectionMessageType.webln_sendPayment]: async data => {
-            if (!gateways.length) {
-                console.warn('No gateways found for webln send payment')
-                throw Error(t('errors.no-lightning-gateways'))
-            }
-
-            const gateway = gateways.find(g => g.active)
-            if (!gateway) {
-                console.warn('No active gateways found for webln send payment')
-                throw Error(t('errors.no-lightning-gateways'))
-            }
-
             console.info('webln:sendPayment', data)
             let invoice: Invoice
             try {
@@ -202,6 +193,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             }
             // Wait for user to interact with alert
             return new Promise((resolve, reject) => {
+                getActiveGateway(gateways, reject)
+
                 // TODO: Hoist this to respect balance changes
                 if (activeFederation!.balance < invoice.amount) {
                     const message = t('errors.insufficient-balance', {
@@ -307,8 +300,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     }
 
     const style = styles(insets)
-
-    if (isLoadingGateways) return <ActivityIndicator />
 
     return (
         <View style={style.container}>
