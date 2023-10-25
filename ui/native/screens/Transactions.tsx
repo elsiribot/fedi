@@ -16,7 +16,6 @@ const Transactions: React.FC<Props> = () => {
     const { t } = useTranslation()
     const { listTransactions } = useBridge()
     const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState<Error | null>(null)
     // TODO: Hoist this into context so we can easily update individual
     // transactions and not have to refreshTransactions on every notes update
     const [transactionsList, setTransactionsList] = useState<Transaction[]>([])
@@ -27,10 +26,9 @@ const Transactions: React.FC<Props> = () => {
             const fetchedTransactions = await listTransactions()
             console.info('fetchedTransactions', fetchedTransactions.length)
             setTransactionsList(fetchedTransactions)
-            setError(null)
         } catch (err: any) {
             console.error('Failed to fetch transactions:', err)
-            setError(err)
+            throw new Error('Failed to fetch transactions')
         } finally {
             setIsLoading(false)
         }
