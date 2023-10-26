@@ -25,6 +25,10 @@ import {
     ParsedLnurlWithdraw,
     ParserDataType,
 } from '@fedi/common/types'
+import {
+    RpcLightningGatewayV0,
+    RpcLightningGatewayV1,
+} from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import {
     InjectionMessageType,
@@ -47,6 +51,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'FediModBrowser'>
 
 type FediModResponse = RequestInvoiceResponse | SendPaymentResponse
 type FediModResolver<T> = (value: T | PromiseLike<T>) => void
+type Gateway = RpcLightningGatewayV0 | RpcLightningGatewayV1
 
 const FediModBrowser: React.FC<Props> = ({ route }) => {
     const { fediMod } = route.params
@@ -76,6 +81,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const [lnurlAuthRequest, setLnurlAuthRequest] = useState<
         ParsedLnurlAuth['data'] | null
     >(null)
+    const getActiveGatewayPromiseRef = useRef<Promise<Gateway> | null>(null)
 
     // Intercept any URIs the user tries to navigate to that we can handle inline
     useOmniLinkInterceptor(parsedLink => {
@@ -96,6 +102,17 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         return false
     })
 
+    const getActiveGatewayOrThrow = async () => {
+        if (getActiveGatewayPromiseRef.current)
+            return getActiveGatewayPromiseRef.current
+        getActiveGatewayPromiseRef.current = listGateways().then(gateways => {
+            if (!gateways.length)
+                throw new Error('No available lightning gateways')
+            return gateways.find(g => g.active) || gateways[0]
+        })
+        return getActiveGatewayPromiseRef.current
+    }
+
     // Handle all messages coming from a WebLN-enabled site
     const onMessage = makeWebViewMessageHandler(webview, {
         [InjectionMessageType.webln_enable]: async () => {
@@ -107,8 +124,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 const alias = authenticatedMember?.username || ''
                 let pubkey = ''
                 try {
-                    const gateways = await listGateways()
-                    const gateway = gateways.find(g => g.active) || gateways[0]
+                    const gateway = await getActiveGatewayOrThrow()
+
                     if (gateway) {
                         pubkey = gateway.nodePubKey
                     }
@@ -123,8 +140,11 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             })
         },
         [InjectionMessageType.webln_makeInvoice]: async data => {
+            // Check for an active gateway or throw error
+            await getActiveGatewayOrThrow()
+
             // Wait for user to interact with alert
-            return new Promise((resolve, reject) => {
+            return new Promise(async (resolve, reject) => {
                 // Save these refs to we can resolve / reject elsewhere
                 overlayRejectRef.current = reject
                 overlayResolveRef.current =
@@ -142,6 +162,9 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             })
         },
         [InjectionMessageType.webln_sendPayment]: async data => {
+            // Check for an active gateway or throw error
+            await getActiveGatewayOrThrow()
+
             console.info('webln:sendPayment', data)
             let invoice: Invoice
             try {
@@ -152,7 +175,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 throw Error(t('phrases.failed-to-decode-invoice'))
             }
             // Wait for user to interact with alert
-            return new Promise((resolve, reject) => {
+            return new Promise(async (resolve, reject) => {
                 // TODO: Hoist this to respect balance changes
                 if (activeFederation!.balance < invoice.amount) {
                     const message = t('errors.insufficient-balance', {
