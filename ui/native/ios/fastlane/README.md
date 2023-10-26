@@ -47,10 +47,10 @@ Create a release build
 
 Create a release build (Fedi Nightly)
 
-### ios beta_nightly_ci
+### ios beta_ci_nightly
 
 ```sh
-[bundle exec] fastlane ios beta_nightly_ci
+[bundle exec] fastlane ios beta_ci_nightly
 ```
 
 Push a new beta build to TestFlight from CI (Fedi Nightly)

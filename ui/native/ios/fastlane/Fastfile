@@ -87,7 +87,7 @@ platform :ios do
   end
 
   desc "Push a new beta build to TestFlight from CI (Fedi Nightly)"
-  lane :beta_nightly_ci do
+  lane :beta_ci_nightly do
     setup_ci
     match(
       type: 'appstore',
