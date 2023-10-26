@@ -6,7 +6,7 @@ import {
     createChatGroup,
     fetchChatMembers,
     joinChatGroup,
-    selectActiveFederation,
+    selectActiveFederationId,
     selectChatXmppClient,
 } from '@fedi/common/redux'
 import { ChatType } from '@fedi/common/types'
@@ -30,7 +30,7 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
     const { push } = useRouter()
     const dispatch = useAppDispatch()
     const toast = useToast()
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const xmppClient = useAppSelector(selectChatXmppClient)
     const [joinGroupLink, setJoinGroupLink] = useState('')
     const [isCreatingGroup, setIsCreatingGroup] = useState(false)

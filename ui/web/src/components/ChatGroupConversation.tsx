@@ -5,7 +5,7 @@ import EditIcon from '@fedi/common/assets/svgs/edit.svg'
 import QRIcon from '@fedi/common/assets/svgs/qr.svg'
 import {
     configureChatGroup,
-    selectActiveFederation,
+    selectActiveFederationId,
     selectChatGroup,
     selectChatGroupRole,
     selectChatMessages,
@@ -32,7 +32,7 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const { showErrorToast } = useToast()
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const group = useAppSelector(s => selectChatGroup(s, groupId))
     const messages = useAppSelector(s => selectChatMessages(s, groupId))
     const role = useAppSelector(s => selectChatGroupRole(s, groupId))

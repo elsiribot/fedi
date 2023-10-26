@@ -89,13 +89,14 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const dispatch = useAppDispatch()
     const [recoveryInProgress, setRecoveryInProgress] = useState<boolean>(false)
     const [seedWords, setSeedWords] = useState<SeedWords>(
         new Array(12).fill(''),
     )
     const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
+
+    const activeFederationId = activeFederation?.id
 
     useEffect(() => {
         const keyboardShownListener = Keyboard.addListener(

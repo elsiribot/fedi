@@ -3,7 +3,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { selectActiveFederation, updateChatPayment } from '@fedi/common/redux'
+import { selectActiveFederationId, updateChatPayment } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { fedimint } from '../../../bridge'
@@ -25,7 +25,7 @@ const OutgoingPushPayment: React.FC<OutgoingPushPaymentProps> = ({
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
 
     let statusText: string | undefined
     let statusIcon: SvgImageName | undefined

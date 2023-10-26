@@ -13,7 +13,7 @@ import QRCode from 'react-native-qrcode-svg'
 
 import {
     completeSocialRecovery,
-    selectActiveFederation,
+    selectActiveFederationId,
 } from '@fedi/common/redux'
 import type { GuardianApproval, SocialRecoveryEvent } from '@fedi/common/types'
 
@@ -40,7 +40,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const { socialRecoveryApprovals } = useBridge()
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const dispatch = useAppDispatch()
     const [recovering, setRecovering] = useState(false)
 

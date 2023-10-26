@@ -7,7 +7,7 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
     configureChatGroup,
-    selectActiveFederation,
+    selectActiveFederationId,
     selectChatGroup,
 } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -27,7 +27,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const { groupId } = route.params
     const group = useAppSelector(s => selectChatGroup(s, groupId))
     const [groupName, setGroupName] = useState<string>(

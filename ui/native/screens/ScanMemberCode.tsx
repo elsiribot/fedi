@@ -7,7 +7,7 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
     joinChatGroup,
-    selectActiveFederation,
+    selectActiveFederationId,
     selectChatConnectionOptions,
 } from '@fedi/common/redux'
 import { decodeDirectChatLink } from '@fedi/common/utils/xmpp'
@@ -26,7 +26,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
     const connectionOptions = useAppSelector(selectChatConnectionOptions)
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const dispatch = useAppDispatch()
 
     const handleUserInput = useCallback(

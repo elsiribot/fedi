@@ -34,8 +34,9 @@ interface Props {
 
 export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     const { t } = useTranslation()
-    const balance = useAppSelector(selectActiveFederation)?.balance
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const balance = activeFederation?.balance
+    const activeFederationId = activeFederation?.id
     const sendRouteState = useRouteState('/send')
     const {
         isReadyToPay,

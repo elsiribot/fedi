@@ -7,7 +7,7 @@ import { Alert, FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
 import {
     addAdminToChatGroup,
     fetchChatGroupMembersList,
-    selectActiveFederation,
+    selectActiveFederationId,
 } from '@fedi/common/redux'
 import { ChatMember } from '@fedi/common/types'
 import { XmppMemberRole } from '@fedi/common/utils/XmlUtils'
@@ -27,7 +27,7 @@ const AddBroadcastAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const { groupId } = route.params
     const { theme } = useTheme()
     const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const { toast } = useEnvironmentContext().state
     const [usernameFilter, setUsernameFilter] = useState<string>('')
     const [visitors, setVisitors] = useState<ChatMember[]>([])

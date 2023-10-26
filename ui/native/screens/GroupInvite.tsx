@@ -8,7 +8,7 @@ import QRCode from 'react-native-qrcode-svg'
 
 import {
     joinChatGroup,
-    selectActiveFederation,
+    selectActiveFederationId,
     selectChatGroup,
 } from '@fedi/common/redux'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
@@ -27,7 +27,7 @@ const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { groupId } = route.params
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const dispatch = useAppDispatch()
     const { toast } = useEnvironmentContext().state
     const group = useAppSelector(s => selectChatGroup(s, groupId))

@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
-import { authenticateChat, selectActiveFederation } from '@fedi/common/redux'
+import { authenticateChat, selectActiveFederationId } from '@fedi/common/redux'
 
 import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
@@ -25,7 +25,7 @@ export const CreateUsername: React.FC = () => {
     const toast = useToast()
     const [username, setUsername] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const isChatSupported = useIsChatSupported()
 
     if (!federationId) {

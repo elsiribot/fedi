@@ -6,7 +6,7 @@ import { StyleSheet, View } from 'react-native'
 
 import {
     createChatGroup,
-    selectActiveFederation,
+    selectActiveFederationId,
     selectChatXmppClient,
 } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -22,7 +22,7 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const xmppClient = useAppSelector(selectChatXmppClient)
     const [groupName, setGroupName] = useState<string>('')
     const [creatingGroup, setCreatingGroup] = useState<boolean>(false)

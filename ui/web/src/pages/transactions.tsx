@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { selectActiveFederation } from '@fedi/common/redux'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import { Transaction } from '@fedi/common/types'
 
 import { ContentBlock } from '../components/ContentBlock'
@@ -19,7 +19,7 @@ import { styled, theme } from '../styles'
 const TransactionsPage: React.FC = () => {
     const { t } = useTranslation()
     const toast = useToast()
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const [isLoading, setIsLoading] = useState(true)
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [selectedTransaction, setSelectedTransaction] =

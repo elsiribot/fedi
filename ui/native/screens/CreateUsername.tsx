@@ -11,7 +11,7 @@ import {
     View,
 } from 'react-native'
 
-import { authenticateChat, selectActiveFederation } from '@fedi/common/redux'
+import { authenticateChat, selectActiveFederationId } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { fedimint } from '../bridge'
@@ -24,7 +24,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'CreateUsername'>
 const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const dispatch = useAppDispatch()
     const { toast } = useEnvironmentContext().state
     const [username, setUsername] = useState<string>('')

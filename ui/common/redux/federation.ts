@@ -298,6 +298,10 @@ export const selectActiveFederation = createSelector(
             : federations[0],
 )
 
+export const selectActiveFederationId = (s: CommonState) => {
+    return selectActiveFederation(s)?.id
+}
+
 export const selectFederationMetadata = createSelector(
     selectActiveFederation,
     activeFederation => {

@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { ImageBackground, Pressable, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { selectActiveFederation, selectFederations } from '@fedi/common/redux'
+import { selectActiveFederationId, selectFederations } from '@fedi/common/redux'
 import { Federation } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
@@ -71,7 +71,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     const drawerNavigation = props.navigation
     const mainNavigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const federations = useAppSelector(selectFederations)
 
     return (

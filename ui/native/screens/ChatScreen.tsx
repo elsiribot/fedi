@@ -9,7 +9,7 @@ import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useUpdateLastMessageSeen } from '@fedi/common/hooks/chat'
 import {
     fetchChatMembers,
-    selectActiveFederation,
+    selectActiveFederationId,
     selectChatConnectionOptions,
     selectWebsocketIsHealthy,
 } from '@fedi/common/redux'
@@ -36,7 +36,7 @@ const ChatScreen: React.FC<Props> = () => {
     const isFocused = useIsFocused()
     const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
     const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const activeChatConnectionOptions = useAppSelector(
         selectChatConnectionOptions,
     )

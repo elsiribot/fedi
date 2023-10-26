@@ -7,7 +7,7 @@ import { StyleSheet, View } from 'react-native'
 
 import {
     joinChatGroup,
-    selectActiveFederation,
+    selectActiveFederationId,
     selectChatXmppClient,
 } from '@fedi/common/redux'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
@@ -25,7 +25,7 @@ type Props = {
 const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
     const navigation = useNavigation<NavigationHook>()
     const dispatch = useAppDispatch()
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const xmppClient = useAppSelector(selectChatXmppClient)
     const { toast } = useEnvironmentContext().state
     const { t } = useTranslation()
