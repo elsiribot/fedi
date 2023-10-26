@@ -139,10 +139,11 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             })
         },
         [InjectionMessageType.webln_makeInvoice]: async data => {
+            // Check for an active gateway or throw error
+            await getActiveGatewayOrThrow()
+
             // Wait for user to interact with alert
             return new Promise(async (resolve, reject) => {
-                await getActiveGatewayOrThrow()
-
                 // Save these refs to we can resolve / reject elsewhere
                 overlayRejectRef.current = reject
                 overlayResolveRef.current =
@@ -160,6 +161,9 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             })
         },
         [InjectionMessageType.webln_sendPayment]: async data => {
+            // Check for an active gateway or throw error
+            await getActiveGatewayOrThrow()
+
             console.info('webln:sendPayment', data)
             let invoice: Invoice
             try {
@@ -171,8 +175,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             }
             // Wait for user to interact with alert
             return new Promise(async (resolve, reject) => {
-                await getActiveGatewayOrThrow()
-
                 // TODO: Hoist this to respect balance changes
                 if (activeFederation!.balance < invoice.amount) {
                     const message = t('errors.insufficient-balance', {
