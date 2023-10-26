@@ -22,6 +22,16 @@ if [[ "$MODE" == "interactive" ]]; then
   unset REPLY
   while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
   do
+    read -p "Remote bridge? (y/n) " -n 1 -r
+    echo
+  done
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    export FEDI_BRIDGE_REMOTE=1
+  fi
+
+  unset REPLY
+  while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
+  do
     read -p "Skip bridge rebuild? (y/n) " -n 1 -r
     echo
   done
