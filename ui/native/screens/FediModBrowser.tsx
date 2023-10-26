@@ -110,6 +110,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 throw new Error('No available lightning gateways')
             return gateways.find(g => g.active) || gateways[0]
         })
+        return getActiveGatewayPromiseRef.current
     }
 
     // Handle all messages coming from a WebLN-enabled site
