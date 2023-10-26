@@ -71,6 +71,10 @@ build-nightly-ipa:
 deploy-to-testflight:
   nix develop .#xcode --command ./scripts/ui/deploy-to-testflight.sh
 
+# generates a signed xcode release archive and uploads to testflight (Fedi Nightly)
+deploy-to-testflight-nightly:
+  FLAVOR=nightly ./scripts/ui/deploy-to-testflight.sh
+
 # bumps the npm + react-native versions for @fedi/native
 bump-version-native-ui:
   ./scripts/ui/bump-version-native.sh

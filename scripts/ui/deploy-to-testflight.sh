@@ -40,9 +40,30 @@ fi
 
 pushd $REPO_ROOT/ui/native/ios
 
-echo "Building Xcode release archive with fastlane (see $REPO_ROOT/ui/native/ios/Fastfile for lane configurations)..."
+# Build numbers are timestamp based to ensure they are always
+# increasing. Must be lower than 2,100,000,000 so the scheme is:
+# Get the last two digits of the year
+YY=$(date +"%y")
+# Get the day of the year, zero-padded
+DDD=$(date +"%j")
+# Get the current time in HHMM format
+HHMM=$(date +"%H%M")
+# Combine to form the build number
+BUILD_NUMBER="${YY}${DDD}${HHMM}"
 
-nix develop .#xcode --command fastlane beta_ci --verbose
+# if we are building a nightly APK from the master branch in CI...
+# modify the build numbers so the app stores will accept
+# the upload. We do not commit this since build numbers are timestamp based
+if [[ (-z $GITHUB_REF || (-n $GITHUB_REF && $GITHUB_REF == refs/heads/master)) && -n $FLAVOR && $FLAVOR == "nightly" ]]; then
+  npx react-native-version --increment-build --never-amend --set-build $BUILD_NUMBER
+fi
+
+echo "Building Xcode release archive with fastlane (see $REPO_ROOT/ui/native/ios/Fastfile for lane configurations)..."
+if [ -z "${FLAVOR:-}" ]; then
+  nix develop .#xcode --command fastlane beta_ci --verbose
+else
+  nix develop .#xcode --command fastlane beta_ci_$FLAVOR --verbose
+fi
 
 echo "Build complete!"
 
