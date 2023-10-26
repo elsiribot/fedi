@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{mpsc, oneshot, Mutex};
 use tokio_util::codec::{Framed, LinesCodec};
-use tracing::error;
+use tracing::{error, info};
 
 use crate::event::IEventSink;
 use crate::ffi::PathBasedStorage;
@@ -35,7 +35,7 @@ pub struct Client {
 
 impl Client {
     pub async fn new(event_sink: Box<dyn IEventSink>) -> Result<Self> {
-        let connection = TcpStream::connect("127.0.0.1:8080").await?;
+        let connection = TcpStream::connect("127.0.0.1:13127").await?;
         let mut connection = Framed::new(connection, LinesCodec::new());
         let event_sink = Arc::new(Mutex::new(event_sink));
         let pending_response = PendingResponses::default();
@@ -99,8 +99,8 @@ pub fn tcp_server() -> (
     let (request_tx, request_rx) = mpsc::channel::<Request>(32);
 
     (response_tx, request_rx, async move {
-        let listener = TcpListener::bind("0.0.0.0:8080").await?;
-        println!("Server listening on port 8080");
+        let listener = TcpListener::bind("0.0.0.0:13127").await?;
+        info!("Server listening on port 13127");
 
         while let Ok((socket, _)) = listener.accept().await {
             let mut framed = Framed::new(socket, LinesCodec::new());

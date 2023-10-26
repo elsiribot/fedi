@@ -55,7 +55,6 @@ url = "2.3.1"
 ring = "0.16.20"
 rolling-file = "0.2.0"
 tracing-appender = "0.2.2"
-tokio-util = { version = "0.7.9", features = [ "codec", "net" ] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.16.20", features = ["wasm32_unknown_unknown_js"] }
@@ -63,6 +62,7 @@ ring = { version = "0.16.20", features = ["wasm32_unknown_unknown_js"] }
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 fedimint-rocksdb = { workspace = true }
 fedimint-rocksdb-v0 = { workspace = true }
+tokio-util = { version = "0.7.9", features = [ "codec", "net" ] }
 tracing-subscriber = { version = "0.3.1", features = [ "env-filter", "json" ] }
 uniffi_macros = { version = "0.21.0", features = ["builtin-bindgen"] }
 uniffi = { version = "0.21.0", features = ["builtin-bindgen"] }
