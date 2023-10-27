@@ -61,7 +61,7 @@ if [[ -z $GITHUB_REF || $GITHUB_REF == refs/heads/release/* ]]; then
   # on Testflight. For the build number use react-native-version
   echo "Bumping iOS version numbers to match npm"
   pushd $REPO_ROOT/ui/native/ios
-  agvtool new-marketing-version $RELEASE_BRANCH_VERSION
+  nix develop .#xcode -c agvtool new-marketing-version $RELEASE_BRANCH_VERSION
   npx react-native-version --increment-build --never-amend --set-build $BUILD_NUMBER
   popd
   echo "Pushing version commit to git branch"
