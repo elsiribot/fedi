@@ -35,7 +35,7 @@ export const TransactionDialog: React.FC<Props> = ({
     const [notes, setNotes] = useState(txn?.notes || '')
 
     const isSent = txn?.direction === TransactionDirection.send
-    const fee = txn?.bitcoin?.fee || txn?.lightning?.fee || (0 as MSats)
+    const fee = txn?.lightning?.fee || (0 as MSats)
 
     useEffect(() => {
         setNotes(txn?.notes || '')

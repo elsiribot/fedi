@@ -771,11 +771,16 @@ async fn extract_all_output_descriptors(
             .iter()
             .zip(fedimint_data.into_iter())
             .map(|(host, local_path)| async move {
-                extract_output_descriptors_checked(args, local_path.as_path(), recovery_method)
-                    .await
-                    .with_context(|| {
-                        anyhow::anyhow!("failed to extract output descriptors from {}", host.name)
-                    })
+                extract_output_descriptors_checked(
+                    args,
+                    host.name.as_str(),
+                    local_path.as_path(),
+                    recovery_method,
+                )
+                .await
+                .with_context(|| {
+                    anyhow::anyhow!("failed to extract output descriptors from {}", host.name)
+                })
             }),
     )
     .await
@@ -903,6 +908,7 @@ impl std::fmt::Display for RecoveryMethod {
 
 async fn extract_output_descriptors_checked(
     args: &crate::FundsSummaryArgs,
+    machine_name: &str,
     path: &Path,
     recovery_method: RecoveryMethod,
 ) -> anyhow::Result<Vec<RecoveryToolResult>> {
@@ -914,7 +920,14 @@ async fn extract_output_descriptors_checked(
         .stdout(std::process::Stdio::piped())
         .stdin(std::process::Stdio::null())
         .arg("--password")
-        .arg("password") // TODO: get password from args?
+        .arg(
+            args.recovery_password
+                .iter()
+                .find(|(k, _v)| k == machine_name)
+                .with_context(|| format!("Could not find password for {machine_name}, use --recovery-password {machine_name}=somepassword"))?
+                .1
+                .as_str(),
+        )
         .arg("--cfg")
         .arg(path)
         .arg(match recovery_method {

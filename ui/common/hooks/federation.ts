@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 
-import { selectActiveFederation, selectNostrEnabled } from '../redux'
+import {
+    selectActiveFederation,
+    selectNostrEnabled,
+    selectOnchainDepositsEnabled,
+} from '../redux'
 import { SupportedFeature } from '../types'
 import dateUtils from '../utils/DateUtils'
 import {
@@ -39,10 +43,20 @@ export function useIsOfflineWalletSupported() {
     return shouldShowOfflineWallet(activeFederation.meta)
 }
 
+// Onchain deposits can be enabled via Developer Settings
+// and ignores federation metadata if enabled (v1+ feds only)
 export function useIsOnchainDepositSupported() {
     const activeFederation = useCommonSelector(selectActiveFederation)
+    const userEnabledOnchainDeposits = useCommonSelector(
+        selectOnchainDepositsEnabled,
+    )
     if (!activeFederation) return false
-    return shouldShowOnchainDeposits(activeFederation.meta)
+    if (activeFederation.version < 1) return false
+
+    return (
+        userEnabledOnchainDeposits ||
+        shouldShowOnchainDeposits(activeFederation.meta)
+    )
 }
 
 export function useIsNostrEnabled() {

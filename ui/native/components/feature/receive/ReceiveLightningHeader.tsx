@@ -21,11 +21,7 @@ const ReceiveLightningHeader: React.FC<{}> = () => {
         <Header
             backButton={shouldShowBack}
             closeButton={shouldShowClose}
-            headerCenter={
-                <Text bold>
-                    {t('feature.receive.create-lightning-request')}
-                </Text>
-            }
+            headerCenter={<Text bold>{t('feature.receive.add-amount')}</Text>}
         />
     )
 }

@@ -43,10 +43,17 @@ export interface RpcBalanceInfo {
     tiers: Record<string, number>
 }
 
+export interface RpcBitcoinDetails {
+    address: string
+    expiresAt: number
+}
+
 export interface RpcEcashInfo {
     amount: RpcAmount
     federationId: RpcFederationId | null
 }
+
+export type RpcFederationId = string
 
 export interface RpcFederation {
     balance: RpcAmount
@@ -59,8 +66,6 @@ export interface RpcFederation {
     nodes: Record<string, { url: string; name: string }>
     version: number
 }
-
-export type RpcFederationId = string
 
 export interface RpcInvoice {
     paymentHash: string
@@ -198,6 +203,8 @@ export interface RpcMethods {
             amount: RpcAmount
             direction: RpcTransactionDirection
             notes: string
+            onchainState: RpcOnchainState | null
+            bitcoin: RpcBitcoinDetails | null
             lnState: RpcLnState | null
             lightning: RpcLightningDetails | null
             oobState: RpcOOBState | null
@@ -266,6 +273,24 @@ export interface RpcMethods {
     ]
 }
 
+export type RpcOnchainDepositState =
+    | { type: 'waitingForTransaction' }
+    | ({ type: 'waitingForConfirmation' } & RpcOnchainDepositTransactionData)
+    | ({ type: 'confirmed' } & RpcOnchainDepositTransactionData)
+    | ({ type: 'claimed' } & RpcOnchainDepositTransactionData)
+    | { type: 'failed' }
+
+export interface RpcOnchainDepositTransactionData {
+    txid: string
+}
+
+export type RpcOnchainState = RpcOnchainDepositState | RpcOnchainWithdrawState
+
+export type RpcOnchainWithdrawState =
+    | { type: 'created' }
+    | { type: 'succeeded' }
+    | { type: 'failed' }
+
 export type RpcOOBSpendState =
     | { type: 'created' }
     | { type: 'userCanceledProcessing' }
@@ -291,18 +316,20 @@ export interface RpcSignedLnurlMessage {
     pubkey: RpcPublicKey
 }
 
+export type RpcTransactionDirection = 'receive' | 'send'
+
 export interface RpcTransaction {
     id: string
     createdAt: number
     amount: RpcAmount
     direction: RpcTransactionDirection
     notes: string
+    onchainState: RpcOnchainState | null
+    bitcoin: RpcBitcoinDetails | null
     lnState: RpcLnState | null
     lightning: RpcLightningDetails | null
     oobState: RpcOOBState | null
 }
-
-export type RpcTransactionDirection = 'receive' | 'send'
 
 export interface RpcXmppCredentials {
     password: string

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 pub const PAY_INVOICE_TIMEOUT: Duration = Duration::from_secs(90);
-pub const REISSUE_ECASH_TIMEOUT: Duration = Duration::from_secs(15);
+pub const REISSUE_ECASH_TIMEOUT: Duration = Duration::from_secs(60);
 pub const ONE_YEAR: Duration = Duration::from_secs(31560000);
 pub const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(10);
 pub const LNURL_CHILD_ID: u64 = 11;
@@ -19,3 +19,4 @@ pub const FEDI_FILE_PATH: &str = "./fedi_file.json";
 // Operation types in fedimint client
 pub const LIGHTNING_OPERATION_TYPE: &str = "ln";
 pub const MINT_OPERATION_TYPE: &str = "mint";
+pub const WALLET_OPERATION_TYPE: &str = "wallet";

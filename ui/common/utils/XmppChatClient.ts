@@ -35,6 +35,7 @@ import xmlUtils, {
     GetRoomConfigQuery,
     GetRosterQuery,
     GroupChatMessage,
+    LeaveMucRoomPresence,
     PublishNotificationTokenQuery,
     PublishPublicKeyQuery,
     SetMemberAffiliationQuery,
@@ -448,6 +449,47 @@ export class XmppChatClient {
         }
     }
 
+    async leaveGroup(groupId: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            try {
+                const { jid } = this.getQueryProperties()
+                const leaveRoomPresence = xmlUtils.buildQuery(
+                    new LeaveMucRoomPresence({
+                        from: jid.toString(),
+                        toGroup: `${groupId}@muc.${jid.getDomain()}`,
+                    }),
+                )
+
+                const onStanzaReceived = async (stanza: Element) => {
+                    if (
+                        !stanza.is('presence') ||
+                        stanza.getAttr('id') !== leaveRoomPresence.getAttr('id')
+                    )
+                        return
+
+                    // Receive a registration response from the server
+                    const result = stanza.getChild('x')
+                    const statusResults = result?.getChildren('status')
+                    const didLeave = statusResults?.find(
+                        s => s.getAttr('code') === '110',
+                    )
+                    if (!didLeave) {
+                        reject(new Error('No status 110 from presence stanza'))
+                    } else {
+                        resolve()
+                    }
+                    this.xmpp.removeListener('stanza', onStanzaReceived)
+                }
+                this.xmpp.on('stanza', onStanzaReceived)
+
+                this.xmpp.send(leaveRoomPresence).catch(reject)
+            } catch (err) {
+                console.error('leaveGroup', err)
+                throw new Error('errors.unknown-error')
+            }
+        })
+    }
+
     async fetchGroupConfig(
         groupId: string,
     ): Promise<Pick<ChatGroup, 'name' | 'broadcastOnly'>> {
@@ -786,7 +828,7 @@ export class XmppChatClient {
     }
 
     private handleIncomingPresence(stanza: Element) {
-        console.info('handleIncomingPresence', stanza)
+        console.info('handleIncomingPresence', stanza.toString())
         const groupId = stanza.getAttr('from')?.split('@')[0]
         if (!groupId) return
 

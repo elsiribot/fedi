@@ -3,6 +3,8 @@
 set -e
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
+ENABLE_IOS_LOGGING=${ENABLE_IOS_LOGGING:-0}
+
 if [[ "$SKIP_IOS_BUILD" == "1" ]]; then
     echo "iOS build skipped"
     exit 0
@@ -69,6 +71,6 @@ nix develop .#xcode --command npx react-native run-ios --destination arch=x86_64
 }
 
 # Start logging only if the previous command was successful
-if [ $run_ios_result -eq 0 ]; then
+if [[ "$ENABLE_IOS_LOGGING" == "1" && $run_ios_result -eq 0 ]]; then
     nix develop .#xcode --command npx react-native log-ios
 fi

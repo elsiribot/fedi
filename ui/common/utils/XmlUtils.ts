@@ -245,6 +245,31 @@ export class EnterMucRoomPresence extends XmppPresence {
     }
 }
 
+export interface LeaveMucRoomArgs extends CommonXmppAttributes {
+    toGroup: string
+}
+export class LeaveMucRoomPresence extends XmppPresence {
+    static id = 'leaveMucRoom'
+    args: LeaveMucRoomArgs
+    constructor(args: LeaveMucRoomArgs) {
+        super()
+        this.args = args
+    }
+    build = (): Element => {
+        const { from, toGroup } = this.args
+        const fromJid: JID = jid(from as string)
+        const memberNickname = fromJid.local
+        const attributes = {
+            from,
+            to: `${toGroup}/${memberNickname}`,
+            id: `${LeaveMucRoomPresence.id}-${uuidv4()}`,
+            type: 'unavailable',
+        }
+
+        return xml(this.tag, attributes)
+    }
+}
+
 /*
     XMPP Query stanzas
     XML with a top-level <iq> tag

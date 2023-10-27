@@ -44,7 +44,7 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     // If they're not a part of the group, encode a join link and attempt a join
     const isGroupFound = !!group
     useEffect(() => {
-        if (isGroupFound || failedToJoin) return
+        if (isGroupFound || failedToJoin || !isFocused) return
         dispatch(
             joinChatGroup({
                 federationId,
@@ -59,7 +59,7 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
                 )
                 setFailedToJoin(true)
             })
-    }, [isGroupFound, groupId, failedToJoin, federationId, dispatch])
+    }, [isGroupFound, groupId, failedToJoin, federationId, isFocused, dispatch])
 
     const messageCollections = useMemo(
         () => makeMessageGroups(messages, 'desc'),
