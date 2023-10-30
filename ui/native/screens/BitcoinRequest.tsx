@@ -118,28 +118,6 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
         }
     }, [generateAddress, onchainAddress, requestType])
 
-    const transactionEventHandler = useCallback(
-        (event: TransactionEvent) => {
-            if (
-                event.transaction.lightning?.invoice === invoice.invoice ||
-                event.transaction.bitcoin?.address === onchainAddress
-            )
-                navigation.navigate('ReceiveSuccess', {
-                    tx: event.transaction,
-                })
-        },
-        [invoice, navigation, onchainAddress],
-    )
-
-    // Registers an event handler listening for the invoice to be paid
-    useEffect(() => {
-        const unsubscribe = fedimint.addListener(
-            'transaction',
-            transactionEventHandler,
-        )
-        return unsubscribe
-    }, [transactionEventHandler])
-
     const showOnchainDeposits = isOnchainSupported
 
     if (!decodedUri.body) {

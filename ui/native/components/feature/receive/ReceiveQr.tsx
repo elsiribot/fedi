@@ -1,6 +1,7 @@
 import Clipboard from '@react-native-clipboard/clipboard'
+import { useNavigation } from '@react-navigation/native'
 import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, Share, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
@@ -8,8 +9,9 @@ import QRCode from 'react-native-qrcode-svg'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { Images } from '../../../assets/images'
+import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
-import { BitcoinOrLightning, BtcLnUri } from '../../../types'
+import { BitcoinOrLightning, BtcLnUri, TransactionEvent } from '../../../types'
 
 export type ReceiveQrProps = {
     uri: BtcLnUri
@@ -21,6 +23,7 @@ const QR_CODE_SIZE = Dimensions.get('window').width * 0.8
 const ReceiveQr: React.FC<ReceiveQrProps> = ({ uri, type }: ReceiveQrProps) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const navigation = useNavigation()
     const { toast } = useEnvironmentContext().state
 
     const copyToClipboard = () => {
@@ -51,6 +54,28 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({ uri, type }: ReceiveQrProps) => {
             console.error(error)
         }
     }
+
+    const transactionEventHandler = useCallback(
+        (event: TransactionEvent) => {
+            if (
+                event.transaction.lightning?.invoice === uri.body ||
+                event.transaction.bitcoin?.address === uri.body
+            )
+                navigation.navigate('ReceiveSuccess', {
+                    tx: event.transaction,
+                })
+        },
+        [navigation, uri.body],
+    )
+
+    // Registers an event handler listening for the invoice to be paid
+    useEffect(() => {
+        const unsubscribe = fedimint.addListener(
+            'transaction',
+            transactionEventHandler,
+        )
+        return unsubscribe
+    }, [transactionEventHandler])
 
     return (
         <View style={styles(theme).container}>
