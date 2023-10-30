@@ -42,9 +42,7 @@ use fedimint_wallet_client::{
 use futures::{Future, StreamExt};
 use lightning_invoice::Invoice;
 use stability_pool_client::common::AccountInfo;
-use stability_pool_client::{
-    StabilityPoolClientExt, StabilityPoolClientGen, StabilityPoolDepositState, StabilityPoolMeta,
-};
+use stability_pool_client::{StabilityPoolClientExt, StabilityPoolClientGen, StabilityPoolMeta};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
 use v1_rocksdb::{
@@ -65,7 +63,7 @@ use super::constants::{
     STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED,
     XMPP_PASSWORD,
 };
-use super::event::{Event, EventSink, StabilityPoolOperationState, TypedEventExt};
+use super::event::{Event, EventSink, TypedEventExt};
 use super::storage::Storage;
 use super::types::{
     federation_v1_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
@@ -1721,7 +1719,9 @@ impl FederationV1 {
         unlocked_amount: Amount,
         locked_bps: u32,
     ) -> Result<OperationId> {
-        let (operation_id, _) = self.client.withdraw(unlocked_amount, locked_bps).await?;
+        let (operation_id, _) =
+            StabilityPoolClientExt::withdraw(self.client.as_ref(), unlocked_amount, locked_bps)
+                .await?;
         let fed = self.clone();
         self.task_group
             .clone()
