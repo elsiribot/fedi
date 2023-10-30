@@ -123,11 +123,11 @@ const styles = (theme: Theme) =>
             width: '100%',
             flexDirection: 'row',
             justifyContent: 'space-between',
-            marginVertical: theme.spacing.xl,
+            marginTop: theme.spacing.xl,
         },
         button: {
             width: '48%',
-            marginVertical: theme.spacing.md,
+            marginTop: theme.spacing.md,
         },
         uriInfoContainer: {
             flexDirection: 'row',
