@@ -59,11 +59,16 @@ if [[ -z $GITHUB_REF || $GITHUB_REF == refs/heads/release/* ]]; then
   # iOS: Navigate to xcode project and update version using agvtool
   # using only the major.minor version to avoid excessive review times
   # on Testflight. For the build number use react-native-version
-  echo "Bumping iOS version numbers to match npm"
-  pushd $REPO_ROOT/ui/native/ios
-  agvtool new-marketing-version $RELEASE_BRANCH_VERSION
-  npx react-native-version --increment-build --never-amend --set-build $BUILD_NUMBER
-  popd
+  # Check if agvtool is available
+  if command -v agvtool >/dev/null 2>&1; then
+    echo "Bumping iOS version numbers to match npm"
+    pushd $REPO_ROOT/ui/native/ios
+    agvtool new-marketing-version $RELEASE_BRANCH_VERSION
+    npx react-native-version --increment-build --never-amend --set-build $BUILD_NUMBER
+    popd
+  else
+    echo "Error: agvtool is not installed. Could not bump iOS version"
+  fi
   echo "Pushing version commit to git branch"
   NEW_VERSION="$(npm pkg get version  --ws false | sed 's/"//g')"
   echo "NEW_VERSION $NEW_VERSION"
