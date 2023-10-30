@@ -30,7 +30,7 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                 case 'claimed':
                     return t('words.received')
                 case 'canceled':
-                    return t('words.canceled')
+                    return t('words.expired')
                 default:
                     return t('phrases.receive-pending')
             }

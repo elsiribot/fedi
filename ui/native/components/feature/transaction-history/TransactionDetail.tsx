@@ -62,7 +62,7 @@ const TransactionDetail = ({
                 case 'claimed':
                     return t('feature.receive.you-received')
                 case 'canceled':
-                    return t('words.canceled')
+                    return t('words.expired')
                 default:
                     return t('phrases.receive-pending')
             }
@@ -99,7 +99,7 @@ const TransactionDetail = ({
                     case 'claimed':
                         return t('words.complete')
                     case 'canceled':
-                        return t('words.canceled')
+                        return t('words.expired')
                     default:
                         return txn.lnState?.type!
                 }
@@ -223,12 +223,20 @@ const TransactionDetail = ({
             <View style={styles(theme).detailItemsContainer}>
                 <Divider />
                 <View style={styles(theme).detailItem}>
+                    <Text>{`${t('words.memo')}`}</Text>
+                    {/* TODO: Refactor notes to be distinct from memo */}
+                    <Text>{txn.notes}</Text>
+                </View>
+                <Divider />
+                <View style={styles(theme).detailItem}>
                     <Text>{`${t('words.time')}`}</Text>
                     <Text>{`${dateUtils.formatTimestamp(
                         txn.createdAt,
                         'MMM dd yyyy, h:mmaaa',
                     )}`}</Text>
                 </View>
+                <Divider />
+                {renderTxnDetails()}
                 <Divider />
                 {txnFee !== null && (
                     <View style={styles(theme).detailItem}>
@@ -243,14 +251,6 @@ const TransactionDetail = ({
                         <Text>{`${t('words.status')}`}</Text>
                         <Text>{renderStatus()}</Text>
                     </View>
-                    <Divider />
-                </View>
-                {renderTxnDetails()}
-                <Divider />
-                <View style={styles(theme).detailItem}>
-                    <Text>{`${t('words.memo')}`}</Text>
-                    {/* TODO: Refactor notes to be distinct from memo */}
-                    <Text>{txn.notes}</Text>
                 </View>
                 <Divider />
                 <Pressable

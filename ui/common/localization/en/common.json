@@ -19,6 +19,7 @@
         "currency": "Currency",
         "done": "Done",
         "error": "Error",
+        "expired": "Expired",
         "federation": "Federation",
         "federations": "Federations",
         "fedimint": "Fedimint",
@@ -369,6 +370,7 @@
         },
         "receive": {
             "add-amount": "Add an amount",
+            "awaiting-deposit": "Awaiting deposit",
             "awaiting-withdrawal-from": "Awaiting withdrawal from {{domain}}...",
             "balance-not-spendable-offline": "This balance will not be able to be spent until you come back online",
             "bitcoin-request": "Bitcoin request",
