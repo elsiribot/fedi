@@ -5,7 +5,11 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { configureChatGroup, selectChatGroup } from '@fedi/common/redux'
+import {
+    configureChatGroup,
+    selectActiveFederationId,
+    selectChatGroup,
+} from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
@@ -23,9 +27,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(
-        s => s.federation.activeFederationId,
-    )
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const { groupId } = route.params
     const group = useAppSelector(s => selectChatGroup(s, groupId))
     const [groupName, setGroupName] = useState<string>(

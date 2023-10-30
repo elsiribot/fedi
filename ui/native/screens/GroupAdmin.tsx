@@ -12,7 +12,7 @@ import {
 
 import {
     leaveChatGroup,
-    selectActiveFederation,
+    selectActiveFederationId,
     selectChatDefaultGroupIds,
     selectChatGroup,
     selectChatGroupAffiliation,
@@ -36,7 +36,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const { toast } = useEnvironmentContext().state
     const { groupId } = route.params
     const group = useAppSelector(s => selectChatGroup(s, groupId))
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const myAffiliation = useAppSelector(s =>
         selectChatGroupAffiliation(s, groupId),
     )

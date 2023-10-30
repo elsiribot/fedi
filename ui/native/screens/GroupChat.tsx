@@ -8,6 +8,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useUpdateLastMessageRead } from '@fedi/common/hooks/chat'
 import {
     joinChatGroup,
+    selectActiveFederationId,
     selectChatGroup,
     selectChatGroupAffiliation,
     selectChatMessages,
@@ -31,9 +32,7 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { groupId } = route.params
     const isFocused = useIsFocused()
-    const federationId = useAppSelector(
-        s => s.federation.activeFederationId,
-    ) as string
+    const federationId = useAppSelector(selectActiveFederationId)
     const group = useAppSelector(s => selectChatGroup(s, groupId))
     const myAffiliation = useAppSelector(s =>
         selectChatGroupAffiliation(s, groupId),

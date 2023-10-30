@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import {
     fetchChatMember,
-    selectActiveFederation,
+    selectActiveFederationId,
     selectChatClientStatus,
     selectChatMember,
     selectChatMessages,
@@ -32,7 +32,7 @@ export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
     const { t } = useTranslation()
     const { back } = useRouter()
     const dispatch = useAppDispatch()
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const member = useAppSelector(s => selectChatMember(s, memberId))
     const messages = useAppSelector(s => selectChatMessages(s, memberId))
     const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'

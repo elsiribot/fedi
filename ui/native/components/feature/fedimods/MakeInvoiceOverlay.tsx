@@ -6,7 +6,7 @@ import { RejectionError, RequestInvoiceArgs } from 'webln'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import { selectActiveFederation } from '@fedi/common/redux'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
@@ -37,7 +37,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const { generateInvoice } = useBridge()
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const onRejectRef = useUpdatingRef(onReject)
     const onAcceptRef = useUpdatingRef(onAccept)
     const [submitAttempts, setSubmitAttempts] = useState(0)

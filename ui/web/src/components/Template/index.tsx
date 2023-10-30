@@ -110,6 +110,12 @@ const Content = styled('div', {
     '@xs': {
         '--template-padding': '16px',
     },
+
+    // Allows print screen to split across multiple pages
+    '@media print': {
+        display: 'block',
+        overflow: 'visible',
+    },
 })
 
 const Main = styled('main', {

@@ -13,7 +13,7 @@ import { StyleSheet, View } from 'react-native'
 import { useDispatch } from 'react-redux'
 
 import { useDebouncedEffect } from '@fedi/common/hooks/util'
-import { addCustomFediMod, selectActiveFederation } from '@fedi/common/redux'
+import { addCustomFediMod, selectActiveFederationId } from '@fedi/common/redux'
 import { fetchMetadataFromUrl } from '@fedi/common/utils/fedimods'
 
 import { FediModImages } from '../../../assets/images'
@@ -33,7 +33,7 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const [title, setTitle] = useState('')
     const [url, setUrl] = useState('')
     const [imageUrl, setImageUrl] = useState('')

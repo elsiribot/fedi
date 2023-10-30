@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
     fetchChatMember,
-    selectActiveFederation,
+    selectActiveFederationId,
     selectChatClientStatus,
     selectChatConnectionOptions,
     selectChatMember,
@@ -49,7 +49,7 @@ export const OmniMemberSearchList: React.FC<Props> = ({
     const insets = useSafeAreaInsets()
     const hasBottomTabs = useHasBottomTabsNavigation()
     const dispatch = useAppDispatch()
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const chatDomain = useAppSelector(selectChatConnectionOptions)?.domain
     const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'
     const [isFetchingUnknownMember, setIsFetchingUnknownMember] =

@@ -6,7 +6,7 @@ import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
 import FederationIcon from '@fedi/common/assets/svgs/federation.svg'
 import GlobeIcon from '@fedi/common/assets/svgs/globe.svg'
 import ScanSadIcon from '@fedi/common/assets/svgs/scan-sad.svg'
-import { selectActiveFederation } from '@fedi/common/redux'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import { AnyParsedData, ParserDataType } from '@fedi/common/types'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
 
@@ -34,7 +34,7 @@ export const OmniConfirmation: React.FC<Props> = ({
     const toast = useToast()
     const { pushWithState } = useRouteStateContext()
     const [isLoading, setIsLoading] = useState(false)
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const activeFederationId = useAppSelector(selectActiveFederationId)
 
     const handleAuth = async () => {
         if (!activeFederationId || parsedData.type !== ParserDataType.LnurlAuth)

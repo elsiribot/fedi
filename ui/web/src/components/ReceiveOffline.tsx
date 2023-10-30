@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import { selectActiveFederation } from '@fedi/common/redux'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import { MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -19,7 +19,7 @@ interface Props {
 
 export const ReceiveOffline: React.FC<Props> = ({ onReceive }) => {
     const { t } = useTranslation()
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const [value, setValue] = useState('')
     const [isRedeeming, setIsRedeeming] = useState(false)
     const [redeemError, setRedeemError] = useState<string | null>(null)

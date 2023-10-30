@@ -1,7 +1,7 @@
 import Link, { LinkProps } from 'next/link'
 import React from 'react'
 
-import { styled, theme } from '../styles'
+import { CSSProp, styled, theme } from '../styles'
 import { CircularLoader } from './CircularLoader'
 import { Icon, IconProps } from './Icon'
 
@@ -12,6 +12,7 @@ interface BaseProps {
     width?: 'auto' | 'full'
     loading?: boolean
     disabled?: boolean
+    css?: CSSProp
 }
 type ButtonProps = BaseProps &
     Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, keyof BaseProps>
