@@ -11,8 +11,6 @@ jobs:
     release-ios:
         name: Build iOS app and upload to TestFlight
         runs-on: [self-hosted, macos, arm64]
-        # TODO: Remove/change this workflow is fixed
-        timeout-minutes: 1
         steps:
             - name: Checkout repo
               uses: actions/checkout@v3
