@@ -266,7 +266,7 @@ impl MultiFederation {
     pub async fn list_transactions(
         &self,
         start_time: Option<u32>,
-        limit: Option<u8>,
+        limit: Option<u32>,
     ) -> Result<Vec<RpcTransaction>> {
         let time = start_time.map(|n| UNIX_EPOCH + std::time::Duration::from_secs(n.into()));
         let operation_id = OperationId::new_random();
@@ -276,7 +276,7 @@ impl MultiFederation {
             operation_id,
         });
 
-        let usize_limit = limit.map_or(usize::MAX as u8, |l| l) as usize;
+        let usize_limit = limit.map_or(usize::MAX as u32, |l| l) as usize;
 
         Ok(match self {
             Self::V0(v0) => v0.list_transactions(usize_limit).await,
@@ -816,7 +816,7 @@ impl Bridge {
         &self,
         federation_id: RpcFederationId,
         start_time: Option<u32>,
-        limit: Option<u8>,
+        limit: Option<u32>,
     ) -> Result<Vec<RpcTransaction>> {
         let multi = self.get_multi(&federation_id.0).await?;
         multi.list_transactions(start_time, limit).await

@@ -215,7 +215,7 @@ async fn listTransactions(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
     start_time: Option<u32>,
-    limit: Option<u8>,
+    limit: Option<u32>,
 ) -> anyhow::Result<Vec<RpcTransaction>> {
     bridge
         .list_transactions(federation_id, start_time, limit)
