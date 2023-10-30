@@ -1448,8 +1448,11 @@ impl FederationV1 {
                                 amount: RpcAmount(Amount { msats: 0 }),
                                 direction: RpcTransactionDirection::Send,
                                 notes: "stability pool".to_string(),
+                                onchain_state: None,
+                                bitcoin: None,
                                 ln_state: None,
                                 lightning: None,
+                                oob_state: None,
                             }),
                             StabilityPoolMeta::Input { .. } => Some(RpcTransaction {
                                 id: op.0.operation_id.to_string(),
@@ -1458,8 +1461,11 @@ impl FederationV1 {
                                 amount: RpcAmount(Amount { msats: 0 }),
                                 direction: RpcTransactionDirection::Send,
                                 notes: "stability pool".to_string(),
+                                onchain_state: None,
+                                bitcoin: None,
                                 ln_state: None,
                                 lightning: None,
+                                oob_state: None,
                             }),
                         },
                         MINT_OPERATION_TYPE => {
