@@ -36,9 +36,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
 
     const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(
-        s => s.federation.activeFederationId,
-    )
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const authenticatedGuardian = useAppSelector(
@@ -46,15 +43,17 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     )
     const developerMode = useAppSelector(selectDeveloperMode)
 
+    const federationId = activeFederation?.id
+
     const resetChatState = useCallback(() => {
-        if (activeFederationId) {
+        if (federationId) {
             dispatch(
                 resetFederationChatState({
-                    federationId: activeFederationId,
+                    federationId,
                 }),
             )
         }
-    }, [activeFederationId, dispatch])
+    }, [federationId, dispatch])
 
     const resetGuardiansState = useCallback(() => {
         dispatch(changeAuthenticatedGuardian(null))
@@ -64,7 +63,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     // TODO: this should be an thunkified action creator
     const handleLeaveFederation = useCallback(async () => {
         try {
-            if (activeFederationId) {
+            if (federationId) {
                 // FIXME: currently this specific order of operations fixes a
                 // bug where the username would get stuck in storage and when
                 // rejoining the federation, the user cannot create an new
@@ -79,7 +78,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                 await dispatch(
                     leaveFederation({
                         fedimint,
-                        federationId: activeFederationId,
+                        federationId,
                     }),
                 ).unwrap()
             }
@@ -87,13 +86,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
             toast?.show('Failed to leave federation', 3000)
             return
         }
-    }, [
-        activeFederationId,
-        dispatch,
-        resetChatState,
-        resetGuardiansState,
-        toast,
-    ])
+    }, [federationId, dispatch, resetChatState, resetGuardiansState, toast])
 
     const confirmLeaveFederation = () => {
         // Only allow leaving if they have less than 100 sats

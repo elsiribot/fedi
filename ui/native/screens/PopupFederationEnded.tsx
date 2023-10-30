@@ -29,12 +29,10 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
     const { toast } = useEnvironmentContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
     const popupInfo = usePopupFederationInfo()
-    const activeFederationId = useAppSelector(
-        s => s.federation.activeFederationId,
-    )
 
     const dispatch = useAppDispatch()
     const style = styles(theme)
+    const activeFederationId = activeFederation?.id
 
     const resetChatState = useCallback(() => {
         if (activeFederationId) {

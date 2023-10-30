@@ -7,7 +7,7 @@ import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import { useChatMemberSearch } from '@fedi/common/hooks/chat'
 import {
     fetchChatMembers,
-    selectActiveFederation,
+    selectActiveFederationId,
     selectAllChatMembers,
     selectChatConnectionOptions,
 } from '@fedi/common/redux'
@@ -26,7 +26,7 @@ interface Props {
 export const ChatMemberSearch: React.FC<Props> = ({ onClickNewGroup }) => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const members = useAppSelector(selectAllChatMembers)
     const connectionOptions = useAppSelector(selectChatConnectionOptions)
     const { query, setQuery, searchedMembers, isExactMatch } =

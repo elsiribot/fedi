@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import BitcoinIcon from '@fedi/common/assets/svgs/bitcoin.svg'
 import EditIcon from '@fedi/common/assets/svgs/edit.svg'
 import PlusIcon from '@fedi/common/assets/svgs/plus.svg'
-import { selectActiveFederation } from '@fedi/common/redux'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import { MSats, Transaction, TransactionDirection } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
@@ -31,7 +31,7 @@ export const TransactionDialog: React.FC<Props> = ({
 }) => {
     const { t } = useTranslation()
     const toast = useToast()
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const [notes, setNotes] = useState(txn?.notes || '')
 
     const isSent = txn?.direction === TransactionDirection.send

@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking } from 'react-native'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
 
@@ -31,7 +31,7 @@ export const OmniConfirmation: React.FC<Props> = ({
     const { toast } = useEnvironmentContext().state
     const navigation = useNavigation()
     const [isLoading, setIsLoading] = useState(false)
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const activeFederationId = useAppSelector(selectActiveFederationId)
 
     // OmniConfirmation can be rendered ourside of StackNavigator, so `replace`
     // is not always available, so fall back to navigate. Cast as NavigationHook

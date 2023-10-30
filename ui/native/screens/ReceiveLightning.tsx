@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Keyboard } from 'react-native'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
-import { selectActiveFederation } from '@fedi/common/redux'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
@@ -36,7 +36,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
         lnurlWithdrawal,
     })
     const { toast } = useEnvironmentContext().state
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const [invoice, setInvoice] = useState<string>('')
     const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false)
     const [submitAttempts, setSubmitAttempts] = useState(0)

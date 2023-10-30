@@ -9,7 +9,7 @@ import {
     useIsOnchainDepositSupported,
 } from '@fedi/common/hooks/federation'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import { selectActiveFederation } from '@fedi/common/redux'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import { Sats, Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
@@ -39,7 +39,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
 }) => {
     const { t } = useTranslation()
     const toast = useToast()
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const lnurlw = useRouteState('/request')
     const {
         inputAmount: amount,

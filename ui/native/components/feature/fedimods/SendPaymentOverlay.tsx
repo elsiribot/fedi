@@ -6,7 +6,7 @@ import { RejectionError } from 'webln'
 
 import { useSendForm } from '@fedi/common/hooks/amount'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import { selectActiveFederation } from '@fedi/common/redux'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlPay } from '@fedi/common/utils/lnurl'
@@ -37,7 +37,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
     const { payInvoice } = useBridge()
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const [amountInputKey, setAmountInputKey] = useState(0)
     const [isLoading, setIsLoading] = useState(false)

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import { SeedWords } from '@fedi/common/types'
 
 import { Button } from '../../../components/Button'
@@ -17,7 +17,7 @@ import { styled } from '../../../styles'
 function PersonalBackupPage() {
     const { t } = useTranslation()
     const { showToast, showErrorToast } = useToast()
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const [words, setWords] = useState<SeedWords>([])
     const [isShowingWords, setIsShowingWords] = useState(false)
     const [hasCheckedGuidance1, setHasCheckedGuidance1] = useState(false)

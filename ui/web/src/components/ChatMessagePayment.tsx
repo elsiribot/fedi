@@ -6,7 +6,7 @@ import CloseIcon from '@fedi/common/assets/svgs/close.svg'
 import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
 import {
     updateChatPayment,
-    selectActiveFederation,
+    selectActiveFederationId,
     selectAuthenticatedMember,
     selectChatClientStatus,
     selectCurrency,
@@ -36,7 +36,7 @@ export const ChatMessagePayment: React.FC<Props> = ({ message, payment }) => {
     const dispatch = useAppDispatch()
     const toast = useToast()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'
     const currency = useAppSelector(selectCurrency)
     const exchangeRate = useAppSelector(selectBtcExchangeRate)

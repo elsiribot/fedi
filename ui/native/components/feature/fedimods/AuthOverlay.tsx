@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RejectionError } from 'webln'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
 
 import { fedimint } from '../../../bridge'
@@ -26,7 +26,7 @@ export const AuthOverlay: React.FC<Props> = ({
 }) => {
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
-    const federationId = useAppSelector(selectActiveFederation)?.id
+    const federationId = useAppSelector(selectActiveFederationId)
     const [isLoading, setIsLoading] = useState(false)
 
     // Overlay components for LNURL-Auth UX

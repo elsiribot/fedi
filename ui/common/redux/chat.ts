@@ -1706,7 +1706,7 @@ export const selectChatDefaultGroupIds = createSelector(
  * XMPP messages, otherwise return null.
  */
 export const selectChatXmppClient = (s: CommonState) => {
-    const activeFederationId = s.federation.activeFederationId
+    const activeFederationId = selectActiveFederation(s)?.id
     const status = selectChatClientStatus(s)
     if (!activeFederationId || status !== 'online') return null
     return xmppChatClientManager.getClient(activeFederationId)

@@ -293,9 +293,14 @@ export const selectActiveFederation = createSelector(
     (s: CommonState) => s.federation.activeFederationId,
     (federations, activeFederationId) =>
         activeFederationId
-            ? federations.find(f => f.id === activeFederationId)
+            ? federations.find(f => f.id === activeFederationId) ||
+              federations[0]
             : federations[0],
 )
+
+export const selectActiveFederationId = (s: CommonState) => {
+    return selectActiveFederation(s)?.id
+}
 
 export const selectFederationMetadata = createSelector(
     selectActiveFederation,
