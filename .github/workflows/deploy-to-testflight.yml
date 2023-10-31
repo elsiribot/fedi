@@ -45,7 +45,7 @@ jobs:
             - name: Execute fastlane beta lane for CI
               env:
                   # TODO: for prod, regenerate certificates and convert these to secrets
-                  MATCH_KEYCHAIN_NAME: '/Users/runner/Library/Keychains/ci.keychain'
+                  MATCH_KEYCHAIN_NAME: 'ci-deploy.keychain'
                   MATCH_KEYCHAIN_PASSWORD: 'fedibtc'
                   MATCH_PASSWORD: 'fedibtc'
                   # Consider: should we even have separate steps above for this?
