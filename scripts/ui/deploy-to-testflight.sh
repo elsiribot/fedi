@@ -5,6 +5,9 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 
 $REPO_ROOT/scripts/enforce-nix.sh
 
+# Make sure Apple certificates are installed in the keychain
+$REPO_ROOT/scripts/ci/install-apple-certs.sh
+
 BUILD_BRIDGE=${BUILD_BRIDGE:-1}
 BUILD_UI_DEPS=${BUILD_UI_DEPS:-1}
 REINSTALL_PODS=${REINSTALL_PODS:-1}
