@@ -58,7 +58,7 @@ use self::social::{
 };
 use super::constants::{
     BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, LNURL_CHILD_ID, MINT_OPERATION_TYPE,
-    NOSTR_CHILD_ID, ONE_YEAR, PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, SHUTDOWN_TIMEOUT,
+    NOSTR_CHILD_ID, ONE_WEEK, PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, SHUTDOWN_TIMEOUT,
     WALLET_OPERATION_TYPE, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
 };
 use super::event::{Event, EventSink, TypedEventExt};
@@ -763,7 +763,7 @@ impl FederationV1 {
     /// FIXME: might be better to return a typed object here and serialize at
     /// RPC layer
     pub async fn generate_ecash(&self, amount: Amount) -> Result<String> {
-        let (_, notes) = self.client.spend_notes(amount, ONE_YEAR, ()).await?;
+        let (_, notes) = self.client.spend_notes(amount, ONE_WEEK, ()).await?;
         let notes = if amount != notes.total_amount() {
             // try to make change
             timeout(REISSUE_ECASH_TIMEOUT, async {
@@ -772,7 +772,7 @@ impl FederationV1 {
             })
             .await
             .context("Failed to select notes with correct amount")??;
-            let (_, new_notes) = self.client.spend_notes(amount, ONE_YEAR, ()).await?;
+            let (_, new_notes) = self.client.spend_notes(amount, ONE_WEEK, ()).await?;
             new_notes
         } else {
             notes

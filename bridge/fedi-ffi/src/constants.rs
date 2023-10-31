@@ -2,7 +2,7 @@ use std::time::Duration;
 
 pub const PAY_INVOICE_TIMEOUT: Duration = Duration::from_secs(90);
 pub const REISSUE_ECASH_TIMEOUT: Duration = Duration::from_secs(60);
-pub const ONE_YEAR: Duration = Duration::from_secs(31560000);
+pub const ONE_WEEK: Duration = Duration::from_secs(604800);
 pub const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(10);
 pub const LNURL_CHILD_ID: u64 = 11;
 pub const XMPP_CHILD_ID: u64 = 10;
