@@ -4,7 +4,8 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-import type { Transaction } from '@fedi/common/types'
+import { Transaction, TransactionDirection } from '@fedi/common/types'
+import { RpcTransaction } from '@fedi/common/types/bindings'
 
 import TransactionsList from '../components/feature/transaction-history/TransactionsList'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -26,7 +27,24 @@ const Transactions: React.FC<Props> = () => {
         try {
             const fetchedTransactions = await listTransactions()
             console.info('fetchedTransactions', fetchedTransactions.length)
-            setTransactionsList(fetchedTransactions)
+
+            // Filter out onchain addresses generated >1 hr ago that
+            // still haven't been seen in mempool
+            const filteredTransactions = fetchedTransactions.filter(
+                (txn: RpcTransaction) => {
+                    if (
+                        txn.bitcoin &&
+                        txn.direction === TransactionDirection.receive &&
+                        txn.onchainState?.type === 'waitingForTransaction' &&
+                        Date.now() / 1000 - txn.createdAt > 3600
+                    ) {
+                        return false
+                    }
+                    return true
+                },
+            )
+            console.info('filteredTransactions', filteredTransactions.length)
+            setTransactionsList(filteredTransactions)
         } catch (err: any) {
             console.error('Failed to fetch transactions:', err)
             toast?.show('Failed to fetch transactions')

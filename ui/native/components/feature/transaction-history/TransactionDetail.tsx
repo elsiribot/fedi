@@ -50,17 +50,26 @@ const TransactionDetail = ({
 
     const txnFee = txn.lightning?.fee || null
 
-    const renderStatus = () => {
+    const renderTitle = () => {
         if (txn.direction === TransactionDirection.send) {
             return t('feature.send.you-sent')
         }
-        // lnState types are not clean yet but make sure to at least
-        // show pending for unpaid, newly generated LN invoices
         if (txn.lightning) {
             if (!txn.lnState) return `${t('phrases.receive-pending')}`
             switch (txn.lnState.type) {
                 case 'waitingForPayment':
                     return t('phrases.receive-pending')
+                case 'claimed':
+                    return t('feature.receive.you-received')
+                case 'canceled':
+                    return t('words.expired')
+                default:
+                    return t('phrases.receive-pending')
+            }
+        } else if (txn.bitcoin) {
+            switch (txn.onchainState?.type) {
+                case 'waitingForTransaction':
+                    return t('phrases.address-created')
                 case 'claimed':
                     return t('feature.receive.you-received')
                 default:
@@ -70,35 +79,124 @@ const TransactionDetail = ({
             return t('feature.receive.you-received')
         }
     }
+    console.debug('txn', txn)
 
-    const renderTxId = () => {
-        if (!txn.onchainState || Object.keys(txn.onchainState).includes('txid'))
-            return null
-
-        let txid: string | null = null
-        if (
-            txn.onchainState?.type === 'waitingForConfirmation' ||
-            txn.onchainState?.type === 'confirmed' ||
-            txn.onchainState?.type === 'claimed'
-        ) {
-            txid = txn.onchainState.txid
+    const renderStatus = () => {
+        if (txn.direction === TransactionDirection.send) {
+            return t('words.sent')
         }
-        if (!txid) return null
+        if (txn.lightning) {
+            if (!txn.lnState) {
+                return t('words.pending')
+            } else {
+                switch (txn.lnState.type) {
+                    case 'waitingForRefund':
+                        return t('feature.send.refund-in-block', {
+                            block: txn.lnState.block_height,
+                        })
+                    case 'waitingForPayment':
+                        return t('words.pending')
+                    case 'claimed':
+                        return t('words.complete')
+                    case 'canceled':
+                        return t('words.expired')
+                    default:
+                        return txn.lnState?.type!
+                }
+            }
+        } else if (txn.bitcoin) {
+            switch (txn.onchainState?.type) {
+                case 'waitingForTransaction':
+                    return t('words.pending')
+                case 'waitingForConfirmation':
+                    return t('words.seen')
+                case 'confirmed':
+                    return t('words.seen')
+                case 'claimed':
+                    return t('words.complete')
+                default:
+                    return txn.onchainState?.type!
+            }
+        } else {
+            return t('words.unknown')
+        }
+    }
 
-        return (
-            <View style={styles(theme).detailItem}>
-                <Text>{`${t('phrases.transaction-id')}`}</Text>
-                <Pressable
-                    style={styles(theme).detailItem}
-                    onPress={() => {
-                        Clipboard.setString(txid!)
-                        toast?.show(t('phrases.copied-transaction-id'))
-                    }}>
-                    <Text>{stringUtils.truncateMiddleOfString(txid, 5)}</Text>
-                    <SvgImage name="Copy" size={SvgImageSize.sm} />
-                </Pressable>
-            </View>
-        )
+    const renderTxnDetails = () => {
+        if (txn.lightning) {
+            return (
+                <View style={styles(theme).detailItem}>
+                    <Text>{`${t('phrases.lightning-request')}`}</Text>
+                    <Pressable
+                        style={styles(theme).detailItem}
+                        onPress={() => {
+                            Clipboard.setString(txn.lightning?.invoice!)
+                            toast?.show(t('phrases.copied-lightning-request'))
+                        }}>
+                        <Text>
+                            {stringUtils.truncateMiddleOfString(
+                                txn.lightning.invoice,
+                                5,
+                            )}
+                        </Text>
+                        <SvgImage name="Copy" size={SvgImageSize.sm} />
+                    </Pressable>
+                </View>
+            )
+        } else {
+            let txidDetailItem = null
+            if (txn.onchainState && 'txid' in txn.onchainState) {
+                const txid = txn.onchainState.txid
+                txidDetailItem = (
+                    <View style={styles(theme).detailItem}>
+                        <Text>{`${t('phrases.transaction-id')}`}</Text>
+                        <Pressable
+                            style={styles(theme).detailItem}
+                            onPress={() => {
+                                Clipboard.setString(txid!)
+                                toast?.show(t('phrases.copied-transaction-id'))
+                            }}>
+                            <Text>
+                                {stringUtils.truncateMiddleOfString(txid, 5)}
+                            </Text>
+                            <SvgImage name="Copy" size={SvgImageSize.sm} />
+                        </Pressable>
+                    </View>
+                )
+            }
+
+            return (
+                <>
+                    {txn.bitcoin && (
+                        <View style={styles(theme).detailItem}>
+                            <Text>
+                                {txn.onchainState?.type ===
+                                'waitingForTransaction'
+                                    ? t('words.address')
+                                    : t('words.to')}
+                            </Text>
+                            <Pressable
+                                style={styles(theme).detailItem}
+                                onPress={() => {
+                                    Clipboard.setString(txn.bitcoin?.address!)
+                                    toast?.show(
+                                        t('phrases.copied-bitcoin-address'),
+                                    )
+                                }}>
+                                <Text>
+                                    {stringUtils.truncateMiddleOfString(
+                                        txn.bitcoin.address,
+                                        5,
+                                    )}
+                                </Text>
+                                <SvgImage name="Copy" size={SvgImageSize.sm} />
+                            </Pressable>
+                        </View>
+                    )}
+                    {txidDetailItem}
+                </>
+            )
+        }
     }
 
     return (
@@ -116,7 +214,7 @@ const TransactionDetail = ({
                 size={SvgImageSize.lg}
                 color={theme.colors.orange}
             />
-            <Text>{renderStatus()}</Text>
+            <Text style={styles(theme).detailTitle}>{renderTitle()}</Text>
             {txn.amount !== 0 && (
                 <Text h2>{`${amountUtils.formatNumber(
                     amountUtils.msatToSat(txn.amount),
@@ -124,22 +222,6 @@ const TransactionDetail = ({
             )}
             <View style={styles(theme).detailItemsContainer}>
                 <Divider />
-                {txn.bitcoin && (
-                    <View>
-                        <View style={styles(theme).detailItem}>
-                            <Text>{`${t('words.status')}`}</Text>
-                            {/* TODO: Add other pending states for seen, confirming, etc */}
-                            {txn.onchainState?.type === 'claimed' ? (
-                                <Text>{`${t('words.complete')}`}</Text>
-                            ) : (
-                                <Text>
-                                    {`${t('words.pending').toLowerCase()}`}
-                                </Text>
-                            )}
-                        </View>
-                        <Divider />
-                    </View>
-                )}
                 <View style={styles(theme).detailItem}>
                     <Text>{`${t('words.memo')}`}</Text>
                     {/* TODO: Refactor notes to be distinct from memo */}
@@ -154,6 +236,8 @@ const TransactionDetail = ({
                     )}`}</Text>
                 </View>
                 <Divider />
+                {renderTxnDetails()}
+                <Divider />
                 {txnFee !== null && (
                     <View style={styles(theme).detailItem}>
                         <Text>{`${t('words.fee')}`}</Text>
@@ -162,60 +246,12 @@ const TransactionDetail = ({
                         )}`}</Text>
                     </View>
                 )}
-                {txn.lightning && (
+                <View>
                     <View style={styles(theme).detailItem}>
-                        <Text>{`${t('phrases.lightning-request')}`}</Text>
-                        <Pressable
-                            style={styles(theme).detailItem}
-                            onPress={() => {
-                                Clipboard.setString(txn.lightning?.invoice!)
-                                toast?.show(
-                                    t('phrases.copied-lightning-request'),
-                                )
-                            }}>
-                            <Text>
-                                {stringUtils.truncateMiddleOfString(
-                                    txn.lightning.invoice,
-                                    5,
-                                )}
-                            </Text>
-                            <SvgImage name="Copy" size={SvgImageSize.sm} />
-                        </Pressable>
+                        <Text>{`${t('words.status')}`}</Text>
+                        <Text>{renderStatus()}</Text>
                     </View>
-                )}
-                {txn.lnState && (
-                    <View style={styles(theme).detailItem}>
-                        <Text>{t('words.status')}</Text>
-                        <Text>
-                            {txn.lnState.type === 'waitingForRefund' &&
-                                t('feature.send.refund-in-block', {
-                                    block: txn.lnState.block_height,
-                                })}
-                            {txn.lnState.type !== 'waitingForRefund' &&
-                                `${txn.lnState.type}`}
-                        </Text>
-                    </View>
-                )}
-                {txn.bitcoin?.address && (
-                    <View style={styles(theme).detailItem}>
-                        <Text>{`${t('words.to')}`}</Text>
-                        <Pressable
-                            style={styles(theme).detailItem}
-                            onPress={() => {
-                                Clipboard.setString(txn.bitcoin?.address!)
-                                toast?.show(t('phrases.copied-bitcoin-address'))
-                            }}>
-                            <Text>
-                                {stringUtils.truncateMiddleOfString(
-                                    txn.bitcoin.address,
-                                    5,
-                                )}
-                            </Text>
-                            <SvgImage name="Copy" size={SvgImageSize.sm} />
-                        </Pressable>
-                    </View>
-                )}
-                {txn.onchainState && renderTxId()}
+                </View>
                 <Divider />
                 <Pressable
                     style={styles(theme).detailItem}
@@ -279,6 +315,9 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'space-between',
             height: 36,
+        },
+        detailTitle: {
+            marginVertical: theme.spacing.sm,
         },
         inputOuterContainer: {
             width: '70%',

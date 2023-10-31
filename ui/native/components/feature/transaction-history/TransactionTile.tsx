@@ -22,8 +22,6 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
         if (txn.direction === TransactionDirection.send) {
             return t('words.sent')
         }
-        // lnState types are not clean yet but make sure to at least
-        // show pending for unpaid, newly generated LN invoices
         if (txn.lightning) {
             if (!txn.lnState) return `${t('phrases.receive-pending')}`
             switch (txn.lnState.type) {
@@ -31,13 +29,15 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                     return t('phrases.receive-pending')
                 case 'claimed':
                     return t('words.received')
+                case 'canceled':
+                    return t('words.expired')
                 default:
                     return t('phrases.receive-pending')
             }
         } else if (txn.bitcoin) {
             switch (txn.onchainState?.type) {
                 case 'waitingForTransaction':
-                    return t('phrases.receive-pending')
+                    return t('phrases.address-created')
                 case 'claimed':
                     return t('words.received')
                 default:
@@ -46,6 +46,14 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
         } else {
             return t('words.received')
         }
+    }
+
+    const renderAmount = () => {
+        return txn.bitcoin && txn.amount === 0
+            ? t('words.onchain').toLowerCase()
+            : `${amountUtils.formatNumber(
+                  amountUtils.msatToSat(txn.amount),
+              )} ${t('words.sats').toUpperCase()}`
     }
 
     const style = styles(theme)
@@ -75,13 +83,7 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
             </View>
 
             <View style={style.rightContainer}>
-                <Text style={style.rightAlignedText}>
-                    {txn.bitcoin && txn.amount === 0
-                        ? t('words.onchain').toLowerCase()
-                        : `${amountUtils.formatNumber(
-                              amountUtils.msatToSat(txn.amount),
-                          )} ${t('words.sats').toUpperCase()}`}
-                </Text>
+                <Text style={style.rightAlignedText}>{renderAmount()}</Text>
                 <Text small style={[style.rightAlignedText, style.subText]}>
                     {`${dateUtils.formatTimestamp(
                         txn.createdAt,

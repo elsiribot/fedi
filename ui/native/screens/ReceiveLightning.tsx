@@ -1,19 +1,30 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Keyboard } from 'react-native'
+import {
+    ActivityIndicator,
+    Insets,
+    Keyboard,
+    StyleSheet,
+    View,
+} from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
-import { selectActiveFederationId } from '@fedi/common/redux'
+import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
+import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 
 import { fedimint } from '../bridge'
+import ReceiveQr from '../components/feature/receive/ReceiveQr'
+import RequestTypeSwitcher from '../components/feature/receive/RequestTypeSwitcher'
 import { AmountScreen } from '../components/ui/AmountScreen'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge } from '../state/hooks'
-import { Sats } from '../types'
+import { BitcoinOrLightning, BtcLnUri, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -23,8 +34,10 @@ export type Props = NativeStackScreenProps<
 
 const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
     const lnurlWithdrawal = route.params?.parsedData?.data
+    const { theme } = useTheme()
     const { t } = useTranslation()
-    const { generateInvoice } = useBridge()
+    const insets = useSafeAreaInsets()
+    const { generateAddress, generateInvoice } = useBridge()
     const {
         inputAmount: amount,
         setInputAmount: setAmount,
@@ -36,10 +49,17 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
         lnurlWithdrawal,
     })
     const { toast } = useEnvironmentContext().state
-    const activeFederationId = useAppSelector(selectActiveFederationId)
+    const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const [invoice, setInvoice] = useState<string>('')
     const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false)
     const [submitAttempts, setSubmitAttempts] = useState(0)
+    const isOnchainSupported = useIsOnchainDepositSupported()
+    const [onchainAddress, setOnchainAddress] = useState<string>('')
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [requestType, setRequestType] = useState<BitcoinOrLightning>(
+        BitcoinOrLightning.lightning,
+    )
+    const showOnchainDeposits = isOnchainSupported
 
     useEffect(() => {
         const createNewInvoice = async () => {
@@ -66,6 +86,25 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
             })
         }
     }, [invoice, navigation])
+
+    // Generate onchain address if needed
+    useEffect(() => {
+        if (requestType === BitcoinOrLightning.bitcoin && !onchainAddress) {
+            const generateOnchainAddress = async () => {
+                try {
+                    setIsLoading(true)
+                    const newAddress = await generateAddress()
+
+                    setOnchainAddress(newAddress)
+                } catch (error) {
+                    console.error('error generating address', error)
+                }
+                setIsLoading(false)
+            }
+
+            generateOnchainAddress()
+        }
+    }, [generateAddress, onchainAddress, requestType])
 
     const onChangeAmount = (updatedValue: Sats) => {
         setSubmitAttempts(0)
@@ -114,28 +153,78 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
         }
     }
 
+    const style = styles(theme, insets)
+
     return (
-        <AmountScreen
-            amount={amount}
-            onChangeAmount={onChangeAmount}
-            minimumAmount={minimumAmount}
-            maximumAmount={maximumAmount}
-            submitAttempts={submitAttempts}
-            isSubmitting={generatingInvoice}
-            readOnly={Boolean(exactAmount)}
-            verb={t('words.request')}
-            buttons={[
-                {
-                    title: `${t('words.request')}${
-                        amount ? ` ${amountUtils.formatSats(amount)} ` : ' '
-                    }${t('words.sats').toUpperCase()}`,
-                    onPress: handleSubmit,
-                    disabled: generatingInvoice,
-                    loading: generatingInvoice,
-                },
-            ]}
-        />
+        <View style={style.container}>
+            {showOnchainDeposits && (
+                <RequestTypeSwitcher
+                    requestType={requestType}
+                    onSwitch={() => {
+                        requestType === BitcoinOrLightning.lightning
+                            ? setRequestType(BitcoinOrLightning.bitcoin)
+                            : setRequestType(BitcoinOrLightning.lightning)
+                    }}
+                />
+            )}
+            {requestType === BitcoinOrLightning.bitcoin && onchainAddress ? (
+                <View style={style.onchainContainer}>
+                    {isLoading ? (
+                        <ActivityIndicator />
+                    ) : (
+                        <ReceiveQr
+                            uri={
+                                new BtcLnUri({
+                                    type: BitcoinOrLightning.bitcoin,
+                                    body: onchainAddress,
+                                })
+                            }
+                            type={requestType}
+                        />
+                    )}
+                </View>
+            ) : (
+                <AmountScreen
+                    amount={amount}
+                    onChangeAmount={onChangeAmount}
+                    minimumAmount={minimumAmount}
+                    maximumAmount={maximumAmount}
+                    submitAttempts={submitAttempts}
+                    isSubmitting={generatingInvoice}
+                    readOnly={Boolean(exactAmount)}
+                    verb={t('words.request')}
+                    buttons={[
+                        {
+                            title: `${t('words.request')}${
+                                amount
+                                    ? ` ${amountUtils.formatSats(amount)} `
+                                    : ' '
+                            }${t('words.sats').toUpperCase()}`,
+                            onPress: handleSubmit,
+                            disabled: generatingInvoice,
+                            loading: generatingInvoice,
+                            containerStyle: {
+                                width: '100%',
+                            },
+                        },
+                    ]}
+                />
+            )}
+        </View>
     )
 }
+
+const styles = (theme: Theme, insets: Insets) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            padding: theme.spacing.xl,
+        },
+        onchainContainer: {
+            marginTop: 'auto',
+            paddingBottom: Math.max(theme.spacing.xl, insets.bottom || 0),
+        },
+    })
 
 export default ReceiveLightning

@@ -1,6 +1,7 @@
 {
     "words": {
         "accept": "Accept",
+        "address": "Address",
         "admin": "Admin",
         "amount": "Amount",
         "authorize": "Authorize",
@@ -18,6 +19,7 @@
         "currency": "Currency",
         "done": "Done",
         "error": "Error",
+        "expired": "Expired",
         "federation": "Federation",
         "federations": "Federations",
         "fedimint": "Fedimint",
@@ -58,6 +60,7 @@
         "sats": "sats",
         "save": "Save",
         "scan": "Scan",
+        "seen": "Seen",
         "send": "Send",
         "sent": "Sent",
         "settings": "Settings",
@@ -69,11 +72,13 @@
         "transactions": "Transactions",
         "two": "two",
         "username": "Username",
+        "unknown": "Unknown",
         "wallet": "Wallet",
         "yes": "Yes"
     },
     "phrases": {
         "add-note": "Add note",
+        "address-created": "Address Created",
         "allow-camera-access": "Allow camera access",
         "app-settings-security": "App settings and security",
         "back-to-app": "Back to app",
@@ -365,6 +370,7 @@
         },
         "receive": {
             "add-amount": "Add an amount",
+            "awaiting-deposit": "Awaiting deposit",
             "awaiting-withdrawal-from": "Awaiting withdrawal from {{domain}}...",
             "balance-not-spendable-offline": "This balance will not be able to be spent until you come back online",
             "bitcoin-request": "Bitcoin request",

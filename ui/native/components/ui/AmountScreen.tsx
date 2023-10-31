@@ -71,6 +71,7 @@ const styles = (theme: Theme, insets: Insets, height: number) =>
         },
         buttonGroup: {
             width: '100%',
+            alignSelf: 'center',
             flexDirection: 'row',
             gap: 20,
         },

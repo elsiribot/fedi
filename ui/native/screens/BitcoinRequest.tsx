@@ -2,25 +2,26 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Insets, StyleSheet, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
-import type { Invoice, TransactionEvent } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
+import RequestTypeSwitcher from '../components/feature/receive/RequestTypeSwitcher'
 import FiatAmount from '../components/feature/wallet/FiatAmount'
-import SvgImage from '../components/ui/SvgImage'
 import { useBridge } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'BitcoinRequest'>
 
-const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
+const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const insets = useSafeAreaInsets()
     const { generateAddress } = useBridge()
     const { uri } = route.params
     const isOnchainSupported = useIsOnchainDepositSupported()
@@ -39,13 +40,6 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
         }),
     )
     const [onchainAddress, setOnchainAddress] = useState<string>('')
-    const [invoice, setInvoice] = useState<Invoice>({
-        paymentHash: '',
-        amount: 0 as MSats,
-        description: '',
-        invoice: '',
-        fee: 0 as MSats,
-    })
 
     const decodeUri = useCallback(() => {
         const prefixIndex = uri.indexOf(':')
@@ -86,7 +80,6 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
                         decodedUri.body,
                     )
                     console.info('decoded invoice', decoded)
-                    setInvoice(decoded)
                     setRequestAmount(decoded.amount)
                     setRequestNote(decoded.description)
                     // TODO: Integrate private notes
@@ -118,62 +111,27 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
         }
     }, [generateAddress, onchainAddress, requestType])
 
-    const transactionEventHandler = useCallback(
-        (event: TransactionEvent) => {
-            if (
-                event.transaction.lightning?.invoice === invoice.invoice ||
-                event.transaction.bitcoin?.address === onchainAddress
-            )
-                navigation.navigate('ReceiveSuccess', {
-                    tx: event.transaction,
-                })
-        },
-        [invoice, navigation, onchainAddress],
-    )
-
-    // Registers an event handler listening for the invoice to be paid
-    useEffect(() => {
-        const unsubscribe = fedimint.addListener(
-            'transaction',
-            transactionEventHandler,
-        )
-        return unsubscribe
-    }, [transactionEventHandler])
-
     const showOnchainDeposits = isOnchainSupported
 
     if (!decodedUri.body) {
         return <ActivityIndicator />
     }
 
+    const style = styles(theme, insets)
     return (
-        <View style={styles(theme).container}>
-            {/*
-                TODO: Re-enable lightning-onchain switcher
-                when onchain deposits on mainnet are fixed
-            */}
+        <View style={style.container}>
             {showOnchainDeposits && (
-                <Pressable
-                    style={styles(theme).switchContainer}
-                    onPress={() =>
+                <RequestTypeSwitcher
+                    requestType={requestType}
+                    onSwitch={() => {
                         requestType === BitcoinOrLightning.lightning
                             ? setRequestType(BitcoinOrLightning.bitcoin)
                             : setRequestType(BitcoinOrLightning.lightning)
-                    }>
-                    <Text caption>
-                        {requestType === BitcoinOrLightning.lightning
-                            ? t('words.lightning')
-                            : t('words.onchain')}
-                    </Text>
-                    {requestType === BitcoinOrLightning.lightning ? (
-                        <SvgImage name="SwitchLeft" />
-                    ) : (
-                        <SvgImage name="SwitchRight" />
-                    )}
-                </Pressable>
+                    }}
+                />
             )}
 
-            <View style={styles(theme).detailsContainer}>
+            <View style={style.detailsContainer}>
                 {requestAmount && (
                     <>
                         <Text h2>{`${amountUtils.formatNumber(
@@ -212,26 +170,18 @@ const BitcoinRequest: React.FC<Props> = ({ route, navigation }: Props) => {
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: Insets) =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: theme.spacing.xl,
+            paddingTop: theme.spacing.xl,
+            paddingHorizontal: theme.spacing.xl,
+            paddingBottom: Math.max(theme.spacing.xl, insets.bottom || 0),
         },
         detailsContainer: {
             paddingVertical: theme.spacing.md,
-        },
-        switchContainer: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '100%',
-        },
-        switcherIconImage: {
-            height: theme.sizes.sm,
-            width: theme.sizes.sm,
         },
     })
 
