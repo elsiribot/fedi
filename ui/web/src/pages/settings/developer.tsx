@@ -15,6 +15,7 @@ import {
     makeBase64CSVUri,
     makeCSVFilename,
 } from '@fedi/common/utils/csv'
+import { exportLogs } from '@fedi/common/utils/log'
 
 import { Button } from '../../components/Button'
 import { ContentBlock } from '../../components/ContentBlock'
@@ -39,6 +40,23 @@ function DeveloperPage() {
 
     const federationId = activeFederation?.id
     const federationNodes = activeFederation?.nodes
+
+    /* Logs */
+
+    const handleDownloadLogs = useCallback(async () => {
+        try {
+            const logs = await exportLogs()
+            // To download a log file, create a fake link and click it
+            const hiddenElement = document.createElement('a')
+            hiddenElement.href = `data:text/plain;charset=itf-8,${encodeURIComponent(
+                logs,
+            )}`
+            hiddenElement.download = 'fedi.log'
+            hiddenElement.click()
+        } catch (err) {
+            showErrorToast(err, 'errors.unknown-error')
+        }
+    }, [showErrorToast])
 
     /* TX history */
 
@@ -74,7 +92,10 @@ function DeveloperPage() {
             gateways.map(gateway => ({
                 label: gateway.api,
                 // v0 federation gateways use nodePubKey, v1 use gatewayId which isn't present for v0
-                value: ('gatewayId' in gateway) ? gateway.gatewayId : gateway.nodePubKey,
+                value:
+                    'gatewayId' in gateway
+                        ? gateway.gatewayId
+                        : gateway.nodePubKey,
             })),
         [gateways],
     )
@@ -136,6 +157,8 @@ function DeveloperPage() {
     useEffect(() => {
         setGuardianPassword(authenticatedGuardian?.password || '')
     }, [authenticatedGuardian])
+
+    /* Chat storage */
 
     const deleteMessages = useCallback(async () => {
         if (!federationId) return
@@ -204,6 +227,12 @@ function DeveloperPage() {
                                     </Button>
                                 </>
                             )}
+                        </Setting>
+                        <Setting>
+                            <Text>{t('feature.developer.logs')}</Text>
+                            <Button onClick={handleDownloadLogs}>
+                                {t('feature.developer.download-logs')}
+                            </Button>
                         </Setting>
                         <Setting>
                             <Text>{t('words.wallet')}</Text>
