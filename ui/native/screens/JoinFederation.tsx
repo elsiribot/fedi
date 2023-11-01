@@ -13,6 +13,7 @@ import {
     getSupportedFeatures,
 } from '@fedi/common/utils/FederationUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import FederationPreview from '../components/feature/onboarding/FederationPreview'
@@ -25,6 +26,8 @@ import {
     SupportedFeature,
 } from '../types'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('JoinFederation')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'JoinFederation'>
 
@@ -47,7 +50,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
                 const fed = await getFederationPreview(code)
                 setFederationPreview(fed)
             } catch (err) {
-                console.error(err)
+                log.error('handleCode', err)
                 toast?.show(
                     formatErrorMessage(
                         t,
@@ -102,7 +105,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
             } catch (err) {
                 // TODO: Expect an error code from bridge that maps to
                 // a localized error message
-                console.error(err)
+                log.error('handleJoin', err)
                 const typedError = err as Error
                 // This catches specific errors caused by:
                 // 1. leaving a federation immediately before... After

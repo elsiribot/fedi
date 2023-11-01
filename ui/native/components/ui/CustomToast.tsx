@@ -31,7 +31,6 @@ const CustomToast = () => {
         const keyboardShownListener = Keyboard.addListener(
             'keyboardDidShow',
             (e: KeyboardEvent) => {
-                console.info(e.endCoordinates)
                 setKeyboardHeight(e.endCoordinates.height)
             },
         )

@@ -9,6 +9,7 @@ import {
 
 import { fedimint } from '../lib/bridge'
 import i18n, { detectLanguage } from '../localization/i18n'
+import { asyncLocalStorage } from '../utils/localstorage'
 
 const reducer = combineReducers({ ...commonReducers })
 export const store = configureStore({
@@ -18,13 +19,6 @@ export const store = configureStore({
 
 export type AppState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch
-
-const asyncLocalStorage = {
-    getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
-    setItem: (key: string, item: string) =>
-        Promise.resolve(localStorage.setItem(key, item)),
-    removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key)),
-}
 
 export function initializeWebStore() {
     // Common initialization behavior

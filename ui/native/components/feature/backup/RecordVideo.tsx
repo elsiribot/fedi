@@ -8,11 +8,15 @@ import type {
 } from 'react-native-vision-camera'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 
+import { makeLog } from '@fedi/common/utils/log'
+
 import {
     saveVideo,
     useBackupRecoveryContext,
 } from '../../../state/contexts/BackupRecoveryContext'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
+
+const log = makeLog('RecordVideo')
 
 const RecordVideo = () => {
     const { t } = useTranslation()
@@ -57,7 +61,6 @@ const RecordVideo = () => {
     }, [device?.formats])
 
     if (devices.front === undefined) return null
-    // console.info('devices', devices)
 
     const startRecording = async () => {
         setIsRecording(true)
@@ -70,7 +73,7 @@ const RecordVideo = () => {
                 }
             },
             onRecordingError: error => {
-                console.error(error)
+                log.error('onRecordingError', error)
             },
             // FIXME: will this always be available?
             fileType: 'mp4',

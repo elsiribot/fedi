@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import { authenticateChat, selectActiveFederationId } from '@fedi/common/redux'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
@@ -17,6 +18,8 @@ import {
     OnboardingContainer,
     OnboardingContent,
 } from './components'
+
+const log = makeLog('CreateUsername')
 
 export const CreateUsername: React.FC = () => {
     const dispatch = useAppDispatch()
@@ -45,7 +48,7 @@ export const CreateUsername: React.FC = () => {
             ).unwrap()
             push('/onboarding/complete')
         } catch (err) {
-            console.error(err)
+            log.error('handleSubmit', err)
             toast.showErrorToast(err, 'errors.unknown-error')
         }
         setIsSubmitting(false)

@@ -11,11 +11,15 @@ import {
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
+import { makeLog } from '@fedi/common/utils/log'
+
 import { Images } from '../assets/images'
 import HoloCard from '../components/ui/HoloCard'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('SocialRecoveryQrModal')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -35,12 +39,10 @@ const SocialRecoveryQrModal: React.FC<Props> = ({ navigation }: Props) => {
         const getRecoveryAssistCode = async () => {
             try {
                 const recoveryAssistCode = await recoveryQr()
-                console.info('recoveryAssistCode', recoveryAssistCode)
+                log.info('recoveryAssistCode', recoveryAssistCode)
                 setRecoveryQrCode(JSON.stringify(recoveryAssistCode))
             } catch (error) {
-                const typedError = error as Error
-                console.error(typedError)
-                // toast?.show(typedError?.message, 3000)
+                log.error('getRecoveryAssistCode', error)
             }
         }
 

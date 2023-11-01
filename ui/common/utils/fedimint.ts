@@ -6,6 +6,9 @@ import type {
     Transaction,
     bindings,
 } from '../types'
+import { makeLog } from './log'
+
+const log = makeLog('common/utils/fedimint')
 
 export class FedimintBridge {
     constructor(
@@ -187,7 +190,7 @@ export class FedimintBridge {
     }
 
     async validateRecoveryFile(path: string, federationId: string) {
-        console.debug('backup file path', path)
+        log.debug('backup file path', path)
         return this.rpcTyped('validateRecoveryFile', { federationId, path })
     }
 

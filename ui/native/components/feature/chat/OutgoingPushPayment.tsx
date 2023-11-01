@@ -5,12 +5,15 @@ import { StyleSheet, View } from 'react-native'
 
 import { selectActiveFederation, updateChatPayment } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { ChatMessage, ChatPaymentStatus } from '../../../types'
 import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
+
+const log = makeLog('OutgoingPushPayment')
 
 type OutgoingPushPaymentProps = {
     message: ChatMessage
@@ -52,7 +55,7 @@ const OutgoingPushPayment: React.FC<OutgoingPushPaymentProps> = ({
                         }),
                     ).unwrap()
                 } catch (error) {
-                    console.error(error)
+                    log.error('updateChatPayment', error)
                     toast?.show(
                         formatErrorMessage(t, error, 'errors.unknown-error'),
                         3000,

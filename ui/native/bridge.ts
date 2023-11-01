@@ -2,14 +2,17 @@ import { NativeEventEmitter, NativeModules } from 'react-native'
 
 import { FedimintBridgeEventMap } from '@fedi/common/types'
 import { FedimintBridge } from '@fedi/common/utils/fedimint'
+import { makeLog } from '@fedi/common/utils/log'
 
 const { BridgeNativeEventEmitter, FedimintFfi } = NativeModules
+
+const log = makeLog('native/bridge')
 
 async function fedimintRpc<Type = void>(
     method: string,
     payload: object,
 ): Promise<Type> {
-    console.info('rpc method', method)
+    log.info('rpc method', method)
     const jsonPayload = JSON.stringify(payload)
     const json: string = await new Promise(resolve => {
         setTimeout(() => resolve(FedimintFfi.rpc(method, jsonPayload)))
@@ -39,7 +42,7 @@ export async function initializeBridge(dataDir: string) {
     const result = await FedimintFfi.initialize(dataDir, logLevel)
     const resultJson = JSON.parse(result)
     if (resultJson.error !== undefined) {
-        console.error('FedimintFfi.initialize', resultJson.error)
+        log.error('FedimintFfi.initialize', resultJson.error)
         throw new Error(resultJson.error)
     }
 }

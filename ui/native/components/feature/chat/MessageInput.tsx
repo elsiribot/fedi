@@ -43,7 +43,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
         const keyboardShownListener = Keyboard.addListener(
             'keyboardWillShow',
             (e: KeyboardEvent) => {
-                console.info(e.endCoordinates)
                 setKeyboardHeight(e.endCoordinates.height)
             },
         )

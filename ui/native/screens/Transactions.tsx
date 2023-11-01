@@ -6,11 +6,14 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { Transaction, TransactionDirection } from '@fedi/common/types'
 import { RpcTransaction } from '@fedi/common/types/bindings'
+import { makeLog } from '@fedi/common/utils/log'
 
 import TransactionsList from '../components/feature/transaction-history/TransactionsList'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('Transactions')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Transactions'>
 
@@ -26,7 +29,7 @@ const Transactions: React.FC<Props> = () => {
     const getTransactionsList = useCallback(async () => {
         try {
             const fetchedTransactions = await listTransactions()
-            console.info('fetchedTransactions', fetchedTransactions.length)
+            log.info('fetchedTransactions', fetchedTransactions.length)
 
             // Filter out onchain addresses generated >1 hr ago that
             // still haven't been seen in mempool
@@ -43,10 +46,10 @@ const Transactions: React.FC<Props> = () => {
                     return true
                 },
             )
-            console.info('filteredTransactions', filteredTransactions.length)
+            log.info('filteredTransactions', filteredTransactions.length)
             setTransactionsList(filteredTransactions)
         } catch (err: any) {
-            console.error('Failed to fetch transactions:', err)
+            log.error('Failed to fetch transactions:', err)
             toast?.show('Failed to fetch transactions')
         }
     }, [listTransactions, toast])

@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { Button } from '../../components/Button'
 import { ContentBlock } from '../../components/ContentBlock'
@@ -12,6 +13,8 @@ import { Text } from '../../components/Text'
 import { useAppSelector, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
+
+const log = makeLog('PaperEcash')
 
 export interface EcashPaper {
     frames: string[]
@@ -87,7 +90,7 @@ const PaperEcash: React.FC = () => {
         try {
             if (!activeFederation) throw new Error('No active federation')
             for (const paper of ecashPapers) {
-                console.info('Canceling paper ecash', paper.ecash)
+                log.info('Canceling paper ecash', paper.ecash)
                 await fedimint.cancelEcash(paper.ecash, activeFederation.id)
                 setEcashPapers(prev =>
                     prev.filter(p => p.ecash !== paper.ecash),
@@ -97,7 +100,7 @@ const PaperEcash: React.FC = () => {
             }
             setEcashPapers([])
         } catch (err) {
-            console.error('Failed to cancel', err)
+            log.error('Failed to cancel', err)
             showErrorToast(err, 'Failed to cancel, check logs')
         }
         setIsCanceling(false)

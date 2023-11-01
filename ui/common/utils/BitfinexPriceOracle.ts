@@ -1,4 +1,7 @@
 import { SupportedCurrency } from '../types'
+import { makeLog } from './log'
+
+const log = makeLog('common/utils/BitfinexPriceOracle')
 
 interface PriceUpdate {
     currency: SupportedCurrency
@@ -18,7 +21,7 @@ class BitfinexPriceOracle {
         this.stopped = false
 
         if (this.socket) {
-            console.info('Bitfinex socket already started')
+            log.info('Bitfinex socket already started')
             return
         }
 

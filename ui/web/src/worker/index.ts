@@ -3,5 +3,6 @@
 ;(self as any).__WB_DISABLE_DEV_LOGS = true
 
 self.addEventListener('message', ev => {
+    // eslint-disable-next-line no-console
     console.info('I got a message', ev)
 })

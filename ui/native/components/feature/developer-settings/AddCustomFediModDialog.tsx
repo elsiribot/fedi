@@ -15,10 +15,13 @@ import { useDispatch } from 'react-redux'
 import { useDebouncedEffect } from '@fedi/common/hooks/util'
 import { addCustomFediMod, selectActiveFederationId } from '@fedi/common/redux'
 import { fetchMetadataFromUrl } from '@fedi/common/utils/fedimods'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { FediModImages } from '../../../assets/images'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
+
+const log = makeLog('AddCustomFediModDialog')
 
 interface Props {
     isVisible: boolean
@@ -95,7 +98,7 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
                 throw new Error('Invalid protocol')
             }
         } catch (e) {
-            console.error(e)
+            log.error('handleSubmit', e)
             toast?.show(t('feature.fedimods.enter-valid-url'), 3000)
         }
     }

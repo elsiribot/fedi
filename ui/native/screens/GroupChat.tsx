@@ -16,6 +16,7 @@ import {
 } from '@fedi/common/redux'
 import { ChatAffiliation } from '@fedi/common/types'
 import { makeMessageGroups } from '@fedi/common/utils/chat'
+import { makeLog } from '@fedi/common/utils/log'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
 import MessageInput from '../components/feature/chat/MessageInput'
@@ -23,6 +24,8 @@ import MessagesList from '../components/feature/chat/MessagesList'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('GroupChat')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
 
@@ -52,7 +55,7 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
         )
             .unwrap()
             .catch(err => {
-                console.warn(
+                log.warn(
                     `Attempted to join missing group ${groupId} but failed`,
                     err,
                 )

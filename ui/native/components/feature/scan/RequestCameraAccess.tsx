@@ -5,7 +5,11 @@ import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, View } from 'react-native'
 import { Camera } from 'react-native-vision-camera'
 
+import { makeLog } from '@fedi/common/utils/log'
+
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+
+const log = makeLog('RequestCameraAccess')
 
 export type RequestCameraAccessProps = {
     alternativeActionButton: React.ReactNode | null
@@ -47,13 +51,13 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
 
     const requestCameraPermission = async () => {
         const requestResult = await Camera.requestCameraPermission()
-        console.info('cameraRequestResult: ', requestResult)
+        log.info('cameraRequestResult: ', requestResult)
         if (requestResult === 'authorized') {
             setCameraPermissionGranted(true)
         }
 
         const status = await Camera.getCameraPermissionStatus()
-        console.info('cameraRequestResult:', status)
+        log.info('cameraRequestResult:', status)
         // User explicitly denied... link to Settings instead
         if (status === 'denied') {
             Linking.openSettings()
@@ -62,13 +66,13 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
 
     const requestMicrophonePermission = async () => {
         const requestResult = await Camera.requestMicrophonePermission()
-        console.info('microphoneRequestResult: ', requestResult)
+        log.info('microphoneRequestResult: ', requestResult)
         if (requestResult === 'authorized') {
             setMicrophonePermissionGranted(true)
         }
 
         const status = await Camera.getMicrophonePermissionStatus()
-        console.info('microphoneRequestResult:', status)
+        log.info('microphoneRequestResult:', status)
         // User explicitly denied... link to Settings instead
         if (status === 'denied') {
             Linking.openSettings()

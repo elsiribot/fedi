@@ -1,4 +1,7 @@
 import { FedimintBridge } from '@fedi/common/utils/fedimint'
+import { makeLog } from '@fedi/common/utils/log'
+
+const log = makeLog('web/lib/bridge')
 
 let worker: Worker
 let callbackId = 0
@@ -44,7 +47,7 @@ export async function initializeBridge() {
         worker = new Worker(new URL('./wasm.worker.ts', import.meta.url))
         worker.onmessage = e => {
             if (e.data.error) {
-                console.error('bridge error', e.data.error)
+                log.error('bridge error', e.data.error)
                 return reject(new Error(e.data.error))
             }
             if (e.data.event) {
@@ -57,7 +60,7 @@ export async function initializeBridge() {
             if (e.data.token) {
                 const cb = callbacks.get(e.data.token)
                 if (cb === undefined) {
-                    console.warn(
+                    log.warn(
                         `Received token ${e.data.token} with no associated callback, ignoring`,
                     )
                     return

@@ -2,6 +2,12 @@ import type { AppProps } from 'next/app'
 import { useEffect } from 'react'
 import { Provider as ReduxProvider } from 'react-redux'
 
+import {
+    configureLogging,
+    makeLog,
+    saveLogsToStorage,
+} from '@fedi/common/utils/log'
+
 import { FediBridgeInitializer } from '../components/FediBridgeInitializer'
 import { PWAMetaTags } from '../components/PWAMetaTags'
 import { Template } from '../components/Template'
@@ -10,6 +16,7 @@ import { RouteStateProvider } from '../context/RouteStateContext'
 import { fedimint } from '../lib/bridge'
 import { store, initializeWebStore } from '../state/store'
 import { globalStyles } from '../styles'
+import { asyncLocalStorage } from '../utils/localstorage'
 
 const MyApp: React.FC<AppProps> = ({ Component, pageProps }) => {
     globalStyles()
@@ -22,11 +29,19 @@ const MyApp: React.FC<AppProps> = ({ Component, pageProps }) => {
 
     // Initialize bridge logger
     useEffect(() => {
-        console.info('setting up logging')
+        const log = makeLog('fedimint')
         const unsubscribe = fedimint.addListener('log', event => {
-            console.info('log', event)
+            log.info('log', event)
         })
         return () => unsubscribe()
+    }, [])
+
+    // Initialize logging library, force logs to save before closing the tab.
+    useEffect(() => {
+        configureLogging(asyncLocalStorage)
+        window.addEventListener('beforeunload', saveLogsToStorage)
+        return () =>
+            window.removeEventListener('beforeunload', saveLogsToStorage)
     }, [])
 
     return (

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, no-console */
 import { Translate as GoogleTranslate } from '@google-cloud/translate/build/src/v2'
 import fs from 'fs'
 import { decode, encode } from 'html-entities'

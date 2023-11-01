@@ -1,3 +1,7 @@
+import { makeLog } from './log'
+
+const log = makeLog('common/utils/fedimods')
+
 const parseHtmlForIcon = async (
     html: string,
     urlOrigin: string,
@@ -166,7 +170,7 @@ export async function fetchMetadataFromUrl(
             }
         }
     } catch (error) {
-        console.error('fetchMetadataFromUrl', error)
+        log.error('fetchMetadataFromUrl', error)
     }
 
     return {

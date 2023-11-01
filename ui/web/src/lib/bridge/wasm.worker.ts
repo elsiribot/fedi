@@ -1,11 +1,14 @@
 // worker to run bridge in a different thread
 // request: {token: int, method: string, data: string}
 // response: {event: string, data: string} | {token: int, result: string} | {error: string}
+import { makeLog } from '@fedi/common/utils/log'
 import init, {
     fedimint_initialize,
     fedimint_rpc,
     get_logs,
 } from '@fedi/common/wasm/'
+
+const log = makeLog('web/lib/bridge/wasm.worker')
 
 async function workerInit() {
     await init(new URL('@fedi/common/wasm/fedi_wasm_bg.wasm', import.meta.url))
@@ -18,11 +21,11 @@ async function workerInit() {
     try {
         const parsedJson = JSON.parse(result)
         if (parsedJson.error !== undefined) {
-            console.error('fedimint_initialize ', parsedJson)
+            log.error('fedimint_initialize ', parsedJson)
             throw new Error('Failed to initialize bridge')
         }
     } catch (err) {
-        console.error('Invalid json from fedimint initialize', err)
+        log.error('Invalid json from fedimint initialize', err)
     }
 
     postMessage({ event: 'initialized' })

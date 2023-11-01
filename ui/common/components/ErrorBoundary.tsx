@@ -1,5 +1,9 @@
 import React from 'react'
 
+import { makeLog } from '../utils/log'
+
+const log = makeLog('ErrorBoundary')
+
 interface ErrorBoundaryState {
     didCatch: boolean
     error: unknown
@@ -63,7 +67,7 @@ export class ErrorBoundary extends React.Component<
     // Must be a class component to implement `componentDidCatch`.
     componentDidCatch(error: Error, info: React.ErrorInfo) {
         this.props.onError?.(error, info)
-        console.error(`[ErrorBoundary]`, error, info)
+        log.error(error.message, { error, info })
     }
 
     render() {

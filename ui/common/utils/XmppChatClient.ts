@@ -46,6 +46,9 @@ import xmlUtils, {
     XmppMemberRole,
 } from './XmlUtils'
 import { jidToId } from './chat'
+import { makeLog } from './log'
+
+const log = makeLog('common/utils/XmppChatClient')
 
 interface XmppChatClientEventMap {
     status: XmppStatus
@@ -91,7 +94,7 @@ export class XmppChatClient {
         try {
             await this.xmpp.stop()
         } catch (err) {
-            console.warn(`Encountered error when stopping xmpp client`, err)
+            log.warn(`Encountered error when stopping xmpp client`, err)
         }
     }
 
@@ -109,7 +112,7 @@ export class XmppChatClient {
                 }),
             )
             const result = await iqCaller.request(membersListQueryXml)
-            console.debug('fetchGroupMembersList', result)
+            log.debug('fetchGroupMembersList', result)
             let members: ChatMember[] = []
             if (result.getChild('query')) {
                 const memberItems = result
@@ -136,7 +139,7 @@ export class XmppChatClient {
                     })
                 }
             }
-            console.debug('members', members)
+            log.debug('members', members)
             return members
         } catch (error) {
             throw new Error('errors.unknown-error')
@@ -162,14 +165,14 @@ export class XmppChatClient {
             // This result gives us the total message count and
             // handles pagination for queries to the message archive
             const result = await iqCaller.request(getMessagesQueryXml)
-            console.debug('fetchMessagesFromArchive', result.toString())
+            log.debug('fetchMessagesFromArchive', result.toString())
             const results = result.getChild('fin')?.getChild('set')
             if (!results) return null
 
             const lastMessageId = results.getChild('last')?.getText()
             if (lastMessageId) return lastMessageId
         } catch (err) {
-            console.error('fetchMessageHistory', err)
+            log.error('fetchMessageHistory', err)
             throw new Error('errors.unknown-error')
         }
         return null
@@ -188,14 +191,14 @@ export class XmppChatClient {
                 }),
             )
             const result = await iqCaller.request(roomConfigQueryXml)
-            console.debug('fetchMembers', result)
+            log.debug('fetchMembers', result)
             let membersSeen: ChatMember[] = []
             if (result.getChild('query')) {
-                console.debug('query', result.getChild('query'))
+                log.debug('query', result.getChild('query'))
                 const rosterMembers = result
                     .getChild('query')
                     ?.getChildren('item')
-                console.debug('rosterMembers', rosterMembers)
+                log.debug('rosterMembers', rosterMembers)
 
                 if (rosterMembers) {
                     membersSeen = rosterMembers.map(memberEl => {
@@ -203,7 +206,7 @@ export class XmppChatClient {
                     })
                 }
             }
-            console.debug('membersSeen', membersSeen)
+            log.debug('membersSeen', membersSeen)
             return membersSeen
         } catch (error) {
             throw new Error('errors.unknown-error')
@@ -246,7 +249,7 @@ export class XmppChatClient {
                 )
                 iqCaller.request(getPubkeyQueryXml).catch(reject)
             } catch (error) {
-                console.error('fetchMemberPublicKey', error)
+                log.error('fetchMemberPublicKey', error)
                 reject(new Error('errors.unknown-error'))
             }
         })
@@ -262,7 +265,7 @@ export class XmppChatClient {
                 }),
             )
             const result = await iqCaller.request(publishPubkeyQueryXml)
-            console.info('publishPublicKey', result)
+            log.info('publishPublicKey', result)
             const setPubsubNodeConfigQueryXml = xmlUtils.buildQuery(
                 new SetPubsubNodeConfigQuery({
                     from: jid.toString(),
@@ -270,7 +273,7 @@ export class XmppChatClient {
             )
             await iqCaller.request(setPubsubNodeConfigQueryXml)
         } catch (error) {
-            console.error('publishPublicKey', error)
+            log.error('publishPublicKey', error)
             throw new Error('errors.unknown-error')
         }
     }
@@ -287,9 +290,9 @@ export class XmppChatClient {
             const result = await iqCaller.request(
                 publishNotificationTokenQueryXml,
             )
-            console.info('publishNotificationToken result', result)
+            log.info('publishNotificationToken result', result)
         } catch (error) {
-            console.error('publishNotificationToken', error)
+            log.error('publishNotificationToken', error)
             throw new Error('errors.unknown-error')
         }
     }
@@ -311,7 +314,7 @@ export class XmppChatClient {
             await iqCaller.request(grantVoiceQueryXml)
             return member
         } catch (error) {
-            console.error('addAdminToGroup', error)
+            log.error('addAdminToGroup', error)
             throw new Error('errors.unknown-error')
         }
     }
@@ -329,7 +332,7 @@ export class XmppChatClient {
             if (!groupId) throw new Error('Missing group ID from response')
             return groupId
         } catch (err) {
-            console.error('generateUniqueGroupId', err)
+            log.error('generateUniqueGroupId', err)
             throw new Error('errors.unknown-error')
         }
     }
@@ -372,7 +375,7 @@ export class XmppChatClient {
 
                 this.xmpp.send(enterMucRoomPresence).catch(reject)
             } catch (err) {
-                console.error('enterGroup', err)
+                log.error('enterGroup', err)
                 reject(new Error('errors.unknown-error'))
             }
         })
@@ -395,7 +398,7 @@ export class XmppChatClient {
             )
             await iqCaller.request(roomConfigQueryXml)
         } catch (error) {
-            console.error('changeMucRoomName', error)
+            log.error('changeMucRoomName', error)
             if (
                 (error as StanzaError) &&
                 (error as StanzaError).name === 'StanzaError' &&
@@ -421,7 +424,7 @@ export class XmppChatClient {
                 throw new Error('Failed to join group')
             }
         } catch (err) {
-            console.error('joinGroup', err)
+            log.error('joinGroup', err)
             throw new Error('errors.invalid-group-code')
         }
     }
@@ -444,7 +447,7 @@ export class XmppChatClient {
                 throw new Error('Group already exists')
             }
         } catch (err) {
-            console.error('joinGroup', err)
+            log.error('joinGroup', err)
             throw new Error('errors.unknown-error')
         }
     }
@@ -484,7 +487,7 @@ export class XmppChatClient {
 
                 this.xmpp.send(leaveRoomPresence).catch(reject)
             } catch (err) {
-                console.error('leaveGroup', err)
+                log.error('leaveGroup', err)
                 throw new Error('errors.unknown-error')
             }
         })
@@ -502,7 +505,7 @@ export class XmppChatClient {
                 }),
             )
             const result = await iqCaller.request(roomConfigQueryXml)
-            console.info('fetchMucRoomConfig', result)
+            log.info('fetchMucRoomConfig', result)
 
             const fields = result.getChild('query')?.getChild('x')
             const features = result.getChild('query')?.getChildren('feature')
@@ -515,7 +518,7 @@ export class XmppChatClient {
             )
             return { name, broadcastOnly: !!moderated }
         } catch (error) {
-            console.error('fetchMucRoomConfig', error)
+            log.error('fetchMucRoomConfig', error)
             throw new Error('errors.unknown-error')
         }
     }
@@ -537,7 +540,7 @@ export class XmppChatClient {
             await iqCaller.request(revokeVoiceQueryXml)
             return member
         } catch (error) {
-            console.error('removeAdminFromGroup', error)
+            log.error('removeAdminFromGroup', error)
             throw new Error('errors.unknown-error')
         }
     }
@@ -566,7 +569,7 @@ export class XmppChatClient {
 
             await this.xmpp.send(encrypedDirectChatMessageXml)
         } catch (error) {
-            console.error('sendDirectMessage', error)
+            log.error('sendDirectMessage', error)
             throw new Error('errors.unknown-error')
         }
     }
@@ -611,7 +614,7 @@ export class XmppChatClient {
 
                 this.xmpp.send(groupChatMessageXml).catch(reject)
             } catch (error) {
-                console.error('sendGroupMessage', error)
+                log.error('sendGroupMessage', error)
                 reject(new Error('errors.unknown-error'))
             }
         })
@@ -669,7 +672,7 @@ export class XmppChatClient {
                 }, 10)
             }
         } catch (err) {
-            console.error('Error parsing XMPP element', element, err)
+            log.error('Error parsing XMPP element', element, err)
         }
     }
 
@@ -716,7 +719,7 @@ export class XmppChatClient {
                 }
             }
         } catch (err) {
-            console.error('Error parsing XMPP stanza', stanza, err)
+            log.error('Error parsing XMPP stanza', stanza, err)
         }
     }
 
@@ -769,7 +772,7 @@ export class XmppChatClient {
         const publisherJid: string | undefined =
             publishedItem?.getAttr('publisher')
         if (!publisherJid) {
-            console.warn('subscription event did not have jid', stanza)
+            log.warn('subscription event did not have jid', stanza)
             return
         }
 
@@ -779,16 +782,13 @@ export class XmppChatClient {
         // TODO: implement signature validation for authentication?
         const member = this.memberFromJid(publisherJid)
         if (!nodeId.includes(member.username)) {
-            console.warn(
-                'node ID does not match the publisher username',
-                stanza,
-            )
+            log.warn('node ID does not match the publisher username', stanza)
             return
         }
 
         const publicKeyHex = publishedItem?.getChildText('entry')
         if (!publicKeyHex) {
-            console.warn('subscription event did not have pubkey', stanza)
+            log.warn('subscription event did not have pubkey', stanza)
             return
         }
 
@@ -828,7 +828,7 @@ export class XmppChatClient {
     }
 
     private handleIncomingPresence(stanza: Element) {
-        console.info('handleIncomingPresence', stanza.toString())
+        log.debug('handleIncomingPresence', stanza.toString())
         const groupId = stanza.getAttr('from')?.split('@')[0]
         if (!groupId) return
 
@@ -854,7 +854,7 @@ export class XmppChatClient {
     }
 
     private handleError = (error: Error) => {
-        console.error('xmpp error', error)
+        log.error('xmpp error', error)
         this.emit('error', error)
     }
 

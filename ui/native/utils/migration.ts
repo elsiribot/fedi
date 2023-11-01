@@ -14,6 +14,7 @@ import {
     getLatestMessage,
     getLatestMessageIdsForChats,
 } from '@fedi/common/utils/chat'
+import { makeLog } from '@fedi/common/utils/log'
 
 import {
     CHAT_GROUPS_PERSISTENCE_KEY,
@@ -21,6 +22,8 @@ import {
     CHAT_MESSAGES_PERSISTENCE_KEY,
 } from '../constants'
 import { AppStore } from '../state/store'
+
+const log = makeLog('native/utils/migration')
 
 /*
     Legacy Chat Data Migration
@@ -32,7 +35,7 @@ import { AppStore } from '../state/store'
     some old chat types that were already removed
 */
 const convertMessages = (legacyMessages: any, myId: any) => {
-    console.info('preparing', legacyMessages.length, 'messages for migration')
+    log.info('preparing', legacyMessages.length, 'messages for migration')
     const migratedMessages = legacyMessages.map((lm: any) => {
         let m: ChatMessage = {
             id: lm.id,
@@ -66,7 +69,7 @@ const convertMessages = (legacyMessages: any, myId: any) => {
     }
 }
 const convertGroups = (legacyGroups: any) => {
-    console.info('preparing', legacyGroups.length, 'groups for migration')
+    log.info('preparing', legacyGroups.length, 'groups for migration')
     return {
         groups: legacyGroups.map((lg: any) => {
             return {
@@ -86,7 +89,7 @@ const convertGroups = (legacyGroups: any) => {
     }
 }
 const convertMembers = (legacyMembers: any) => {
-    console.info('preparing', legacyMembers.length, 'members for migration')
+    log.info('preparing', legacyMembers.length, 'members for migration')
     return legacyMembers.map((lm: any) => {
         return {
             id: `${lm.jid._local}@${lm.jid._domain}`,
@@ -110,19 +113,19 @@ const checkForAlreadyMigratedData = async (federationId: string) => {
         `MIGRATED:${CHAT_GROUPS_PERSISTENCE_KEY}:${federationId}`,
     )
     if (alreadyMigratedMessages) {
-        console.warn(
+        log.info(
             `already migrated ${CHAT_MESSAGES_PERSISTENCE_KEY}`,
             `for fed ${federationId.slice(0, 10)}`,
         )
     }
     if (alreadyMigratedMembers) {
-        console.warn(
+        log.info(
             `already migrated ${CHAT_MEMBERS_PERSISTENCE_KEY}`,
             `for fed ${federationId.slice(0, 10)}`,
         )
     }
     if (alreadyMigratedGroups) {
-        console.warn(
+        log.info(
             `already migrated ${CHAT_GROUPS_PERSISTENCE_KEY}`,
             `for fed ${federationId.slice(0, 10)}`,
         )
@@ -135,7 +138,7 @@ export function checkForLegacyChatMigrations(store: AppStore) {
     federations.map(async (f: Federation) => {
         const chatState = state.chat[f.id]
         const migrateLegacyChatData = async () => {
-            console.info(
+            log.info(
                 'checking AsyncStorage for legacy chat state from federation',
                 f.id.slice(0, 10),
             )
@@ -159,7 +162,7 @@ export function checkForLegacyChatMigrations(store: AppStore) {
             let migratedChatMessages, migratedChatGroups, migratedChatMembers
             if (legacyChatMessages) {
                 const { messages } = JSON.parse(legacyChatMessages)
-                console.info(
+                log.info(
                     'legacyChatMessages detected',
                     `for fed ${f.id.slice(0, 10)}`,
                 )
@@ -168,7 +171,7 @@ export function checkForLegacyChatMigrations(store: AppStore) {
                     messages,
                     chatState?.authenticatedMember?.id,
                 )
-                console.info(
+                log.info(
                     migratedChatMessages.messages.length,
                     'messages to be migrated',
                     `for fed ${f.id.slice(0, 10)}`,
@@ -182,7 +185,7 @@ export function checkForLegacyChatMigrations(store: AppStore) {
                     }),
                 )
                 if (migratedChatMessages.lastSeenMessageId) {
-                    console.info(
+                    log.info(
                         'dispatch: lastSeenMessageId',
                         migratedChatMessages.lastSeenMessageId,
                         `for fed ${f.id.slice(0, 10)}`,
@@ -202,7 +205,7 @@ export function checkForLegacyChatMigrations(store: AppStore) {
                         string | undefined
                     >,
                 )) {
-                    console.info(
+                    log.info(
                         'dispatch: setLastReadMessageId',
                         chatId,
                         messageId,
@@ -225,20 +228,20 @@ export function checkForLegacyChatMigrations(store: AppStore) {
                     `${CHAT_MESSAGES_PERSISTENCE_KEY}:${f.id}`,
                 )
             } else {
-                console.info(
+                log.info(
                     'No legacyChatMessages found',
                     `for fed ${f.id.slice(0, 10)}`,
                 )
             }
             if (legacyChatMembers) {
                 const { members } = JSON.parse(legacyChatMembers)
-                console.info(
+                log.info(
                     'legacyChatMembers detected',
                     `for fed ${f.id.slice(0, 10)}`,
                 )
                 // Converts legacy Members to redux ChatMembers
                 migratedChatMembers = convertMembers(members)
-                console.info(
+                log.info(
                     migratedChatMembers.length,
                     'members to be migrated',
                     `for fed ${f.id.slice(0, 10)}`,
@@ -260,20 +263,20 @@ export function checkForLegacyChatMigrations(store: AppStore) {
                     `${CHAT_MEMBERS_PERSISTENCE_KEY}:${f.id}`,
                 )
             } else {
-                console.info(
+                log.info(
                     'No legacyChatMembers found',
                     `for fed ${f.id.slice(0, 10)}`,
                 )
             }
             if (legacyChatGroups) {
                 const { groups } = JSON.parse(legacyChatGroups)
-                console.info(
+                log.info(
                     'legacyChatGroups detected',
                     `for fed ${f.id.slice(0, 10)}`,
                 )
                 // Converts legacy Groups to redux ChatGroups
                 migratedChatGroups = convertGroups(groups)
-                console.info(
+                log.info(
                     migratedChatGroups.groups.length,
                     'groups to be migrated',
                     `for fed ${f.id.slice(0, 10)}`,
@@ -325,7 +328,7 @@ export function checkForLegacyChatMigrations(store: AppStore) {
                     `${CHAT_GROUPS_PERSISTENCE_KEY}:${f.id}`,
                 )
             } else {
-                console.info(
+                log.info(
                     'No legacyChatGroups found',
                     `for fed ${f.id.slice(0, 10)}`,
                 )

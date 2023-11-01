@@ -4,12 +4,15 @@ import { RejectionError } from 'webln'
 
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
 import { FediMod, ParsedLnurlAuth } from '../../../types'
 import CustomOverlay from '../../ui/CustomOverlay'
+
+const log = makeLog('AuthOverlay')
 
 interface Props {
     fediMod: FediMod
@@ -43,7 +46,7 @@ export const AuthOverlay: React.FC<Props> = ({
     }
 
     const handleReject = () => {
-        console.error('Login denied')
+        log.error('Login denied')
         onReject(new RejectionError('words.rejected'))
     }
 

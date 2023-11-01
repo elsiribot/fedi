@@ -5,10 +5,13 @@ import { StyleSheet, View } from 'react-native'
 
 import { selectActiveFederationId, updateChatPayment } from '@fedi/common/redux'
 import { ChatMessage, ChatPayment, ChatPaymentStatus } from '@fedi/common/types'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+
+const log = makeLog('IncomingPushPayment')
 
 type IncomingPushPaymentProps = {
     message: ChatMessage
@@ -44,7 +47,7 @@ const IncomingPushPayment: React.FC<IncomingPushPaymentProps> = ({
                     }),
                 ).unwrap()
             } catch (error) {
-                console.error('dispatchPaymentUpdate', error)
+                log.error('dispatchPaymentUpdate', error)
             }
             setProcessingRedemption(false)
         }

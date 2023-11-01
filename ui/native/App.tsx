@@ -12,6 +12,7 @@ import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectFederations } from '@fedi/common/redux'
 import { TransactionDirection } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { makeLog } from '@fedi/common/utils/log'
 
 import Router from './Router'
 import { fedimint, initializeBridge } from './bridge'
@@ -23,6 +24,8 @@ import { OmniLinkContextProvider } from './state/contexts/OmniLinkContext'
 import ProviderComposer from './state/contexts/ProviderComposer'
 import { initializeNativeStore, store } from './state/store'
 import theme from './styles/theme'
+
+const log = makeLog('App')
 
 const App = () => {
     const { t } = useTranslation()
@@ -36,7 +39,7 @@ const App = () => {
     // Initialize bridge
     useEffect(() => {
         async function onInitializeBridge() {
-            console.info(
+            log.info(
                 'initializing connection to federation',
                 RNFS.DocumentDirectoryPath,
             )
@@ -49,7 +52,7 @@ const App = () => {
             }
             setBridgeIsReady(true)
             const stop = Date.now()
-            console.info('initialized:', stop - start, 'ms OS:', Platform.OS)
+            log.info('initialized:', stop - start, 'ms OS:', Platform.OS)
         }
         onInitializeBridge()
     }, [])
@@ -65,7 +68,7 @@ const App = () => {
         const unsubscribeLog = fedimint.addListener('log', event => {
             // Strip escape characters
             const stripped = event.log.replace('\\', '')
-            console.info('OS:', Platform.OS, `": log" -> "${stripped}"`)
+            log.info('OS:', Platform.OS, `": log" -> "${stripped}"`)
         })
 
         // Initialize push notification sender
@@ -109,7 +112,7 @@ const App = () => {
 
         // Initialize panic listener
         const unsubscribePanic = fedimint.addListener('panic', event => {
-            console.error('bridge panic', event)
+            log.error('bridge panic', event)
             setBridgeError(event)
         })
 
@@ -124,7 +127,7 @@ const App = () => {
 
     useEffect(() => {
         const unsubscribe = messaging().onMessage(async remoteMessage => {
-            console.info('push notification received', remoteMessage)
+            log.info('push notification received', remoteMessage)
         })
 
         return unsubscribe

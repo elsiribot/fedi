@@ -8,11 +8,14 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { useBalanceDisplay } from '@fedi/common/hooks/amount'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
+import { makeLog } from '@fedi/common/utils/log'
 
 import FiatAmount from '../components/feature/wallet/FiatAmount'
 import { useBridge } from '../state/hooks'
 import { Btc, Sats, SatsString } from '../types'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('ConfirmSendOnChain')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -41,7 +44,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
 
     const onSendBtc = async () => {
         try {
-            console.info('paying address', bitcoinUri.body, amount)
+            log.info('paying address', bitcoinUri.body, amount)
             setIsLoading(true)
             await payAddress(bitcoinUri.body, Number(amount) as Sats)
             setIsLoading(false)
@@ -50,7 +53,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                 unit,
             })
         } catch (error) {
-            console.error(error)
+            log.error('onSendBtc', error)
             setIsLoading(false)
         }
     }

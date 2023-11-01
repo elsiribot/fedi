@@ -25,7 +25,10 @@ import {
     fetchFederationsExternalMetadata,
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
+import { makeLog } from '../utils/log'
 import { loadFromStorage } from './storage'
+
+const log = makeLog('redux/federation')
 
 /*** Initial State ***/
 
@@ -172,7 +175,7 @@ export const refreshFederations = createAsyncThunk<
     { state: CommonState }
 >('federation/refreshFederations', async (fedimint, { dispatch, getState }) => {
     const federations = await fedimint.listFederations()
-    console.info('refreshFederations', 'federations', federations)
+    log.info('refreshFederations', 'federations', federations)
     const externalMeta = await fetchFederationsExternalMetadata(
         federations,
         (federationId, meta) => {

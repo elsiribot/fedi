@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { Camera } from 'react-native-vision-camera'
 
+import { makeLog } from '@fedi/common/utils/log'
+
 import RequestCameraAccess, {
     RequestCameraAccessProps,
 } from './RequestCameraAccess'
+
+const log = makeLog('CameraPermissionsRequired')
 
 interface Props extends RequestCameraAccessProps {
     children: React.ReactNode
@@ -25,8 +29,8 @@ const CameraPermissionsRequired: React.FC<Props> = ({
             const cameraStatus = await Camera.getCameraPermissionStatus()
             const microphoneStatus =
                 await Camera.getMicrophonePermissionStatus()
-            console.info('cameraStatus: ', cameraStatus)
-            console.info('microphoneStatus: ', microphoneStatus)
+            log.info('cameraStatus:', cameraStatus)
+            log.info('microphoneStatus:', microphoneStatus)
 
             if (cameraStatus === 'authorized') {
                 if (
