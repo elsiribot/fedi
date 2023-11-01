@@ -77,6 +77,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const [gateways, setGateways] = useState<LightningGateway[]>([])
     const [isAddingCustomFediMod, setIsAddingCustomFediMod] =
         useState<boolean>(false)
+    const [isSharingLogs, setIsSharingLogs] = useState(false)
     const selectedFiatCurrency = useAppSelector(selectCurrency)
     const customFediMods = useAppSelector(selectFederationCustomFediMods)
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
@@ -122,7 +123,13 @@ const DeveloperSettings: React.FC<Props> = () => {
     }
 
     const handleShareLogs = async () => {
-        await shareLogs()
+        setIsSharingLogs(true)
+        try {
+            await shareLogs()
+        } catch (e) {
+            toast?.show(formatErrorMessage(t, e, 'errors.unknown-error'))
+        }
+        setIsSharingLogs(false)
     }
 
     const shareTxCsv = async () => {
@@ -167,6 +174,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     title={t('feature.developer.share-logs')}
                     containerStyle={styles(theme).buttonContainer}
                     onPress={handleShareLogs}
+                    loading={isSharingLogs}
                 />
             </SettingsSection>
             <SettingsSection title={t('feature.fedimods.custom-fedimods')}>
