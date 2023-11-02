@@ -759,7 +759,15 @@ mod tests {
         let event_sink = Arc::new(FakeEventSink::new());
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
-        let bridge = fedimint_initialize_async(storage, event_sink).await?;
+        let bridge = match fedimint_initialize_async(storage, event_sink).await {
+            Ok(bridge) => bridge,
+            Err(e) => {
+                let context_error = e.context("Failed to initialize Bridge");
+                error!("{}", context_error);
+                return Err(context_error);
+            }
+        };
+
         let invite_code = std::env::var("FM_INVITE_CODE").unwrap();
         let fedimint_federation = joinFederation(bridge.clone(), invite_code).await?;
         let federation = bridge.get_multi(&fedimint_federation.id.0).await?;
