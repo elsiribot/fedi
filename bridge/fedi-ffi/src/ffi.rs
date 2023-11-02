@@ -9,7 +9,7 @@ use fedimint_core_v0::db::Database as DatabaseV0;
 use fedimint_core_v0::module::registry::ModuleDecoderRegistry as ModuleDecoderRegistryV0;
 use lazy_static::lazy_static;
 use tokio::sync::Mutex;
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 
 use super::bridge::Bridge;
 /// This file contains the bindings to used by React Native app via Uniffi
@@ -72,9 +72,14 @@ pub async fn fedimint_initialize_inner(
     let storage = PathBasedStorage::new(data_dir)
         .await
         .context("Failed to initialize storage")?;
-    let bridge = fedimint_initialize_async(Arc::new(storage), event_sink)
-        .await
-        .context("Failed to initialize bridge")?;
+    let bridge = match fedimint_initialize_async(Arc::new(storage), event_sink).await {
+        Ok(bridge) => bridge,
+        Err(e) => {
+            let context_error = e.context("Failed to initialize Bridge");
+            error!("{}", context_error);
+            return Err(context_error);
+        }
+    };
     *BRIDGE.lock().await = Some(bridge);
     info!("bridge initialized");
     Ok(())
