@@ -5,8 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, View } from 'react-native'
 import { Camera } from 'react-native-vision-camera'
 
+import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 const log = makeLog('RequestCameraAccess')
@@ -25,11 +27,13 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
     requireMicrophone = false,
 }: RequestCameraAccessProps) => {
     const { t } = useTranslation()
+    const { toast } = useEnvironmentContext().state
     const { theme } = useTheme()
     const [cameraPermissionGranted, setCameraPermissionGranted] =
         useState<Boolean>(false)
     const [microphonePermissionGranted, setMicrophonePermissionGranted] =
         useState<Boolean>(false)
+    const [isRequestingPermission, setIsRequestingPermission] = useState(false)
 
     useEffect(() => {
         if (
@@ -80,10 +84,16 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
     }
 
     const requestPermissions = async () => {
-        await requestCameraPermission()
-        if (requireMicrophone === true) {
-            await requestMicrophonePermission()
+        setIsRequestingPermission(true)
+        try {
+            await requestCameraPermission()
+            if (requireMicrophone === true) {
+                await requestMicrophonePermission()
+            }
+        } catch (err) {
+            toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
         }
+        setIsRequestingPermission(false)
     }
 
     return (
@@ -100,6 +110,7 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
                 <Button
                     title={t('phrases.allow-camera-access')}
                     onPress={requestPermissions}
+                    loading={isRequestingPermission}
                 />
             </View>
         </View>

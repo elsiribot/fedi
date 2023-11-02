@@ -10,17 +10,20 @@ import { FederationLogo } from '../../ui/FederationLogo'
 import HoloGradient from '../../ui/HoloGradient'
 import AcceptTermsOfService from './AcceptTermsOfService'
 
+type JoinAs = 'returningMember' | 'newMember'
+
 type Props = {
     federation: FederationPreviewType
-    onJoin: (joinAs: 'returningMember' | 'newMember') => void
+    onJoin: (joinAs: JoinAs) => void | Promise<void>
 }
 
 const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const [joinAs, setJoinAs] = useState<'returningMember' | 'newMember'>()
+    const [joinAs, setJoinAs] = useState<JoinAs>()
     const [showTerms, setShowTerms] = useState<boolean>(false)
     const showJoinFederation = shouldShowJoinFederation(federation.meta)
+    const [isJoining, setIsJoining] = useState(false)
 
     if (showTerms) {
         return (
@@ -30,6 +33,21 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
                 federation={federation}
             />
         )
+    }
+
+    const handleJoin = async (joinType: JoinAs) => {
+        setIsJoining(true)
+        setJoinAs(joinType)
+        if (federation?.meta?.tos_url) {
+            setShowTerms(true)
+        } else {
+            try {
+                await onJoin(joinType)
+            } catch {
+                /* no-op, onJoin should handle */
+            }
+        }
+        setIsJoining(false)
     }
 
     return (
@@ -82,28 +100,18 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
                             title={t(
                                 'feature.onboarding.join-returning-member',
                             )}
-                            onPress={() => {
-                                if (federation.meta?.tos_url) {
-                                    setJoinAs('returningMember')
-                                    setShowTerms(true)
-                                } else {
-                                    onJoin('returningMember')
-                                }
-                            }}
+                            onPress={() => handleJoin('returningMember')}
                             containerStyle={styles(theme).button}
+                            disabled={isJoining && joinAs !== 'returningMember'}
+                            loading={isJoining && joinAs === 'returningMember'}
                         />
                         <Button
                             fullWidth
                             title={t('feature.onboarding.join-new-member')}
-                            onPress={() => {
-                                if (federation.meta?.tos_url) {
-                                    setJoinAs('newMember')
-                                    setShowTerms(true)
-                                } else {
-                                    onJoin('newMember')
-                                }
-                            }}
+                            onPress={() => handleJoin('newMember')}
                             containerStyle={styles(theme).button}
+                            disabled={isJoining && joinAs !== 'newMember'}
+                            loading={isJoining && joinAs === 'newMember'}
                         />
                     </>
                 ) : (
