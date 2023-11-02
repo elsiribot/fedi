@@ -74,7 +74,7 @@ export const registerXmppUser = async (
             }
         })
 
-        xmpp.start().catch(log.error)
+        xmpp.start().catch(err => log.error('xmpp.start', err))
     })
 }
 
@@ -120,7 +120,7 @@ export const checkXmppUser = async (
             resolve(true)
         })
 
-        xmpp.start().catch(log.error)
+        xmpp.start().catch(err => log.error('xmpp.start', err))
     })
 }
 
