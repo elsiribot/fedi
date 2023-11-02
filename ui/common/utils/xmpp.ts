@@ -3,6 +3,9 @@ import debug from '@xmpp/debug'
 import XMPPError from '@xmpp/error'
 
 import { XmppConnectionOptions } from '../types'
+import { makeLog } from './log'
+
+const log = makeLog('common/utils/xmpp')
 
 /**
  * Creates an ephemeral XMPP client used solely for registration
@@ -13,7 +16,7 @@ export const registerXmppUser = async (
     password: string,
     xmppOptions: XmppConnectionOptions,
 ): Promise<boolean> => {
-    console.debug('register xmpp user', username)
+    log.debug('register xmpp user', username)
     return new Promise((resolve, reject) => {
         // Connect to XMPP server without credentials to establish
         // a session for registration
@@ -21,7 +24,7 @@ export const registerXmppUser = async (
             service: xmppOptions.service,
             resource: xmppOptions.resource,
         }
-        console.info(
+        log.info(
             'registerXmppUser: xmppConnectionOptions',
             xmppConnectionOptions,
         )
@@ -71,7 +74,7 @@ export const registerXmppUser = async (
             }
         })
 
-        xmpp.start().catch(console.error)
+        xmpp.start().catch(log.error)
     })
 }
 
@@ -93,17 +96,14 @@ export const checkXmppUser = async (
             username,
             password,
         }
-        console.info(
-            'checkXmppUser: xmppConnectionOptions',
-            xmppConnectionOptions,
-        )
+        log.info('checkXmppUser: xmppConnectionOptions', xmppConnectionOptions)
 
         const xmpp = client(xmppConnectionOptions)
         debug(xmpp, true)
 
         // Listen for not-authorized error meaning the credentials are not valid
         xmpp.on('error', async (error: XMPPError) => {
-            console.info('error', error)
+            log.info('error', error)
             if (error.condition === 'not-authorized') {
                 await xmpp.stop()
                 xmpp.removeAllListeners()
@@ -120,7 +120,7 @@ export const checkXmppUser = async (
             resolve(true)
         })
 
-        xmpp.start().catch(console.error)
+        xmpp.start().catch(log.error)
     })
 }
 

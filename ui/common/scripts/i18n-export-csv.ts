@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import fs from 'fs'
 import get from 'lodash/get'
 import path from 'path'

@@ -79,7 +79,6 @@ const TransactionDetail = ({
             return t('feature.receive.you-received')
         }
     }
-    console.debug('txn', txn)
 
     const renderStatus = () => {
         if (txn.direction === TransactionDirection.send) {

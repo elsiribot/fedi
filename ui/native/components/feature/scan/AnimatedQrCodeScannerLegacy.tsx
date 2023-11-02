@@ -10,6 +10,10 @@ import { StyleSheet } from 'react-native'
 import { Camera, CameraDevice } from 'react-native-vision-camera'
 import { BarcodeFormat, useScanBarcodes } from 'vision-camera-code-scanner'
 
+import { makeLog } from '@fedi/common/utils/log'
+
+const log = makeLog('AnimatedQrCodeScannerLegacy')
+
 /*
     This is the QR scanner that was used when react-native-vision-camera v2
     was compatible with the latest React Native. After upgrading to RN v0.72,
@@ -70,7 +74,7 @@ const QrCodeScanner = ({
                         setSendingResult(false)
                     }, 50)
                 } else {
-                    console.info('Progress:', progressOfFrames(updatedFrames))
+                    log.info('Progress:', progressOfFrames(updatedFrames))
                 }
             }
         })

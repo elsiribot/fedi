@@ -11,11 +11,14 @@ import {
     MSats,
 } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+
+const log = makeLog('IncomingPullPayment')
 
 type OutgoingPaymentActionsProps = {
     message: ChatMessage
@@ -150,7 +153,7 @@ const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
                 }),
             ).unwrap()
         } catch (error) {
-            console.error(error)
+            log.error('rejectPaymentRequest', error)
             toast?.show('errors.chat-payment-failed')
         }
     }

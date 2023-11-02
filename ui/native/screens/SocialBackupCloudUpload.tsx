@@ -5,10 +5,14 @@ import { useTranslation } from 'react-i18next'
 import { Dimensions, StyleSheet, View } from 'react-native'
 import Share from 'react-native-share'
 
+import { makeLog } from '@fedi/common/utils/log'
+
 import HoloGuidance from '../components/ui/HoloGuidance'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('SocialBackupCloudUpload')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -26,7 +30,7 @@ const SocialBackupCloudUpload: React.FC<Props> = ({ navigation }: Props) => {
             await Share.open({ url: recoveryFilePath })
             navigation.navigate('CompleteSocialBackup')
         } catch (error) {
-            console.error(error)
+            log.error('shareVideo', error)
         }
     }
 

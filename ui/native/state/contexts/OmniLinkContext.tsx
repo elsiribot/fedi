@@ -11,10 +11,13 @@ import { useTranslation } from 'react-i18next'
 import { Linking } from 'react-native'
 
 import { useUpdatingRef } from '@fedi/common/hooks/util'
+import { makeLog } from '@fedi/common/utils/log'
 import { parseUserInput } from '@fedi/common/utils/parser'
 
 import { fedimint } from '../../bridge'
 import { AnyParsedData, ParserDataType } from '../../types'
+
+const log = makeLog('OmniLinkContext')
 
 /**
  * Function that is given a parsed link, and returns a boolean of whether or
@@ -52,7 +55,7 @@ export const OmniLinkContextProvider: React.FC<{
     useEffect(() => {
         const parseUrl = async (url: string | null) => {
             if (!url) return
-            console.info('OmniLinkContext: parsing link', url)
+            log.info('parsing link', url)
             setIsParsingLink(true)
             try {
                 const parsed = await parseUserInput(url, fedimint, tRef.current)
@@ -60,12 +63,12 @@ export const OmniLinkContextProvider: React.FC<{
                     interceptor => interceptor(parsed),
                 )
                 if (wasIntercepted) {
-                    console.info('OmniLinkContext: link was intercepted')
+                    log.info('link was intercepted')
                 } else {
                     setParsedLink(parsed)
                 }
             } catch (err) {
-                console.warn('OmniLinkContext: failed to parse url', err)
+                log.warn('failed to parse url', err)
                 setParsedLink({ type: ParserDataType.Unknown, data: {} })
             }
             setIsParsingLink(false)

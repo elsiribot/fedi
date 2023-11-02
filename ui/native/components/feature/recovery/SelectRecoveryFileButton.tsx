@@ -9,8 +9,12 @@ import DocumentPicker, {
 } from 'react-native-document-picker'
 import RNFS from 'react-native-fs'
 
+import { makeLog } from '@fedi/common/utils/log'
+
 import { useBridge } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
+
+const log = makeLog('SelectRecoveryFileButton')
 
 const SelectRecoveryFileButton: React.FC<{}> = () => {
     const { t } = useTranslation()
@@ -27,13 +31,12 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
             const response = await DocumentPicker.pickSingle({
                 type: types.allFiles,
             })
-            console.info(response)
 
             setValidationInProgress(true)
             setResult(response)
         } catch (error) {
             const typedError = error as Error
-            console.error('DocumentPicker Error: ', typedError)
+            log.error('DocumentPicker Error: ', typedError)
             // Hiding this because it shows the toast when user closes the dialogue ...
             // toast?.show(typedError?.message, 3000)
         }
@@ -47,7 +50,7 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
             try {
                 await RNFS.unlink(dest)
             } catch (e) {
-                console.error('no existing file to remove')
+                log.error('no existing file to remove')
             }
             // copy file to docs dir
             await RNFS.copyFile(result!.uri, dest)

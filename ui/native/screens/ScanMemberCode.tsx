@@ -10,6 +10,7 @@ import {
     selectActiveFederationId,
     selectChatConnectionOptions,
 } from '@fedi/common/redux'
+import { makeLog } from '@fedi/common/utils/log'
 import { decodeDirectChatLink } from '@fedi/common/utils/xmpp'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
@@ -17,6 +18,8 @@ import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('ScanMemberCode')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ScanMemberCode'>
 
@@ -33,7 +36,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
         async (input: string) => {
             if (!activeFederationId) return
             if (input.startsWith('fedi:member:')) {
-                console.info('fedi chat member detected', input)
+                log.info('fedi chat member detected', input)
                 // TODO: show chat unavailable
                 if (!connectionOptions) {
                     return toast?.show(t('errors.chat-unavailable'), 3000)
@@ -45,7 +48,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
                     memberId: `${memberUsername}@${domain}`,
                 })
             } else if (input.startsWith('fedi:group:')) {
-                console.info('fedi chat group detected', input)
+                log.info('fedi chat group detected', input)
                 try {
                     const res = await dispatch(
                         joinChatGroup({

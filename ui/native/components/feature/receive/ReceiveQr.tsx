@@ -7,11 +7,14 @@ import { Dimensions, Share, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
 import stringUtils from '@fedi/common/utils/StringUtils'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { Images } from '../../../assets/images'
 import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { BitcoinOrLightning, BtcLnUri, TransactionEvent } from '../../../types'
+
+const log = makeLog('ReceiveQr')
 
 export type ReceiveQrProps = {
     uri: BtcLnUri
@@ -37,21 +40,9 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({ uri, type }: ReceiveQrProps) => {
             const result = await Share.share({
                 message: uri.fullString!,
             })
-            console.info(result)
-            if (result.action === Share.sharedAction) {
-                if (result.activityType) {
-                    // shared with activity type of result.activityType
-                    console.info(result.activityType)
-                } else {
-                    // shared
-                    console.info(result)
-                }
-            } else if (result.action === Share.dismissedAction) {
-                // dismissed
-                console.info('share dialog dismissed')
-            }
+            log.info('openShareDialog result', result)
         } catch (error) {
-            console.error(error)
+            log.error('openShareDialog', error)
         }
     }
 

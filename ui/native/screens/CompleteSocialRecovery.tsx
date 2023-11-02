@@ -16,6 +16,7 @@ import {
     selectActiveFederationId,
 } from '@fedi/common/redux'
 import type { GuardianApproval, SocialRecoveryEvent } from '@fedi/common/types'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { Images } from '../assets/images'
 import { fedimint } from '../bridge'
@@ -27,6 +28,8 @@ import {
     resetAfterSocialRecovery,
 } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('CompleteSocialRecovery')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -54,7 +57,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
         const getRecoveryAssistCode = async () => {
             try {
                 const recoveryAssistCode = await recoveryQr()
-                console.info('recoveryAssistCode', recoveryAssistCode)
+                log.info('recoveryAssistCode', recoveryAssistCode)
                 setRecoveryQrCode(JSON.stringify(recoveryAssistCode))
             } catch (error) {
                 const typedError = error as Error
@@ -76,7 +79,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 }
             } catch (e) {
                 toast?.show('Failed to fetch guardian approval', 3000)
-                console.error('failed to get approvals', e)
+                log.error('failed to get approvals', e)
             }
         }, 1000)
 
@@ -103,7 +106,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                     navigation.dispatch(resetAfterSocialRecovery())
                 }
             } catch (error) {
-                console.error(error)
+                log.error('completeRecovery', error)
                 toast?.show(t('errors.recovery-failed'), 3000)
             }
         }

@@ -5,12 +5,16 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import Video from 'react-native-video'
 
+import { makeLog } from '@fedi/common/utils/log'
+
 import CheckBox from '../components/ui/CheckBox'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('CompleteRecoveryAssist')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -55,7 +59,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                 }
             } catch (error) {
                 const typedError = error as Error
-                console.error(typedError)
+                log.error('handleGuardianApproval', typedError)
                 toast?.show(typedError?.message, 3000)
             }
             setApprovalInProgress(false)
@@ -86,7 +90,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                     resizeMode={'contain'}
                     ignoreSilentSwitch={'ignore'}
                     onError={error => {
-                        console.error(error)
+                        log.error('Video onError', error)
                     }}
                     onEnd={() => setIsPaused(true)}
                 />

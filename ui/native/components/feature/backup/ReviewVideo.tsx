@@ -6,12 +6,16 @@ import { Pressable, StyleSheet, View } from 'react-native'
 import RNFS from 'react-native-fs'
 import Video from 'react-native-video'
 
+import { makeLog } from '@fedi/common/utils/log'
+
 import {
     resetVideo,
     useBackupRecoveryContext,
 } from '../../../state/contexts/BackupRecoveryContext'
 import CheckBox from '../../ui/CheckBox'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+
+const log = makeLog('ReviewVideo')
 
 const ReviewVideo = () => {
     const { t } = useTranslation()
@@ -36,7 +40,7 @@ const ReviewVideo = () => {
                     videoFilePath: dest,
                 })
             } catch (e) {
-                console.error('copy failed', e)
+                log.error('copy failed', e)
                 return
             }
         }
@@ -58,7 +62,7 @@ const ReviewVideo = () => {
                     ignoreSilentSwitch={'ignore'}
                     resizeMode={'contain'}
                     onError={error => {
-                        console.error(error)
+                        log.error('Video onError', error)
                     }}
                     onEnd={() => setIsPaused(true)}
                 />

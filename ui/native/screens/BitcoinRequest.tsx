@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
@@ -15,6 +16,8 @@ import FiatAmount from '../components/feature/wallet/FiatAmount'
 import { useBridge } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('BitcoinRequest')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'BitcoinRequest'>
 
@@ -79,13 +82,13 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
                     const decoded = await fedimint.decodeInvoice(
                         decodedUri.body,
                     )
-                    console.info('decoded invoice', decoded)
+                    log.info('decoded invoice', decoded)
                     setRequestAmount(decoded.amount)
                     setRequestNote(decoded.description)
                     // TODO: Integrate private notes
                     // setRequestNote(decoded.note)
                 } catch (error) {
-                    console.error('error decoding invoice', error)
+                    log.error('error decoding invoice', error)
                 }
             }
             getDecodedInvoice()
@@ -102,7 +105,7 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
 
                     setOnchainAddress(newAddress)
                 } catch (error) {
-                    console.error('error generating address', error)
+                    log.error('error generating address', error)
                 }
                 setIsLoading(false)
             }

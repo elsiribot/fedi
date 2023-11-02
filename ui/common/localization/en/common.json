@@ -267,7 +267,9 @@
             "developer-mode-deactivated": "You are no longer a developer...",
             "export-transactions-csv": "Export transactions CSV",
             "nightly": "nightly",
-            "share-logs": "Share logs"
+            "logs": "Logs",
+            "share-logs": "Share logs",
+            "download-logs": "Download logs"
         },
         "federations": {
             "add-federation": "Add a Federation",

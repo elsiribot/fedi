@@ -9,6 +9,7 @@ import {
     getSupportedFeatures,
     getFederationPreview,
 } from '@fedi/common/utils/FederationUtils'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { useRouteState } from '../../context/RouteStateContext'
 import { useAppDispatch, useToast } from '../../hooks'
@@ -24,6 +25,8 @@ import {
     OnboardingContainer,
     OnboardingContent,
 } from './components'
+
+const log = makeLog('JoinFederation')
 
 export const JoinFederation: React.FC = () => {
     const dispatch = useAppDispatch()
@@ -44,7 +47,7 @@ export const JoinFederation: React.FC = () => {
                 const fed = await getFederationPreview(code)
                 setFederationPreview(fed)
             } catch (err) {
-                console.error(err)
+                log.error('handleCode', err)
                 showErrorToast(err, 'errors.invalid-federation-code')
             }
             setIsFetchingPreview(false)
@@ -86,7 +89,7 @@ export const JoinFederation: React.FC = () => {
                 ).unwrap()
                 push(nextHref)
             } catch (err) {
-                console.error(err)
+                log.error('handleJoin', err)
                 showErrorToast(err, 'errors.invalid-federation-code')
                 setIsJoining(false)
             }

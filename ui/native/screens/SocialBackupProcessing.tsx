@@ -4,12 +4,17 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { formatErrorMessage } from '@fedi/common/utils/format'
+import { makeLog } from '@fedi/common/utils/log'
+
 import HoloCard from '../components/ui/HoloCard'
 import HoloProgressCircle from '../components/ui/HoloProgressCircle'
 import LineBreak from '../components/ui/LineBreak'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('SocialBackupProcessing')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -35,9 +40,11 @@ const SocialBackupProcessing: React.FC<Props> = ({
             try {
                 await uploadBackupFile(videoFilePath)
             } catch (error) {
-                const typedError = error as Error
-                console.error(typedError)
-                toast?.show(typedError?.message, 3000)
+                log.error('startBackupFileUpload', error)
+                toast?.show(
+                    formatErrorMessage(t, error, 'errors.unknown-error'),
+                    3000,
+                )
             }
         }
 
@@ -52,6 +59,7 @@ const SocialBackupProcessing: React.FC<Props> = ({
         videoFilePath,
         uploadStarted,
         setUploadStarted,
+        t,
     ])
 
     // TODO: Remove this simulation when bridge is emitting events

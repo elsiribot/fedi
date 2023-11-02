@@ -13,11 +13,14 @@ import {
 
 import { authenticateChat, selectActiveFederationId } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('CreateUsername')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'CreateUsername'>
 
@@ -97,10 +100,10 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                 if ((error as Error).message) {
                     setXmppAuthInProgress(false)
                     const errorMessage = formatErrorMessage(t, error)
-                    console.info(errorMessage)
+                    log.info(errorMessage)
                     toast?.show(errorMessage, 3000)
                 } else {
-                    console.error((error as Error).toString())
+                    log.error((error as Error).toString())
                 }
             }
         }

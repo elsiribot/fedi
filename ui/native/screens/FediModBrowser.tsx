@@ -30,6 +30,7 @@ import {
     RpcLightningGatewayV1,
 } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { makeLog } from '@fedi/common/utils/log'
 import {
     InjectionMessageType,
     generateInjectionJs,
@@ -46,6 +47,8 @@ import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useOmniLinkInterceptor } from '../state/contexts/OmniLinkContext'
 import { useAppSelector, useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('FediModBrowser')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'FediModBrowser'>
 
@@ -117,7 +120,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const onMessage = makeWebViewMessageHandler(webview, {
         [InjectionMessageType.webln_enable]: async () => {
             /* no-op */
-            console.info('webln enabled')
+            log.info('webln enabled')
         },
         [InjectionMessageType.webln_getInfo]: () => {
             return new Promise(async (resolve, reject) => {
@@ -131,10 +134,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                     }
                     resolve({ node: { alias, pubkey } })
                 } catch (err) {
-                    console.warn(
-                        'Failed to list gateways for webln getInfo',
-                        err,
-                    )
+                    log.warn('Failed to list gateways for webln getInfo', err)
                     reject(t('errors.no-lightning-gateways'))
                 }
             })
@@ -165,12 +165,12 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             // Check for an active gateway or throw error
             await getActiveGatewayOrThrow()
 
-            console.info('webln:sendPayment', data)
+            log.info('webln:sendPayment', data)
             let invoice: Invoice
             try {
                 invoice = await fedimint.decodeInvoice(data)
             } catch (error) {
-                console.error('sendPayment', 'error', error)
+                log.error('sendPayment', 'error', error)
                 toast?.show(t('phrases.failed-to-decode-invoice'), 3000)
                 throw Error(t('phrases.failed-to-decode-invoice'))
             }
@@ -221,13 +221,13 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                     const pub_key = await getNostrPubKey()
                     resolve(pub_key)
                 } catch (err) {
-                    console.warn(err)
+                    log.warn('nostr.getPublicKey', err)
                     reject(t('errors.get-nostr-pubkey-failed'))
                 }
             })
         },
         [InjectionMessageType.nostr_signEvent]: async evt => {
-            console.info('nostr_signEvent data:', evt)
+            log.info('nostr_signEvent data:', evt)
             return new Promise(async (resolve, reject) => {
                 try {
                     const pub_key = await getNostrPubKey()
@@ -243,7 +243,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                         sig: result,
                     })
                 } catch (err) {
-                    console.warn(err)
+                    log.warn('nostr.signEvent', err)
                     reject(t('errors.sign-nostr-event-failed'))
                 }
             })

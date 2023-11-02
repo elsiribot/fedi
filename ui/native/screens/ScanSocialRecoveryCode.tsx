@@ -6,12 +6,15 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import type { SocialRecoveryQrCode } from '@fedi/common/types'
+import { makeLog } from '@fedi/common/utils/log'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('ScanSocialRecoveryCode')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -48,14 +51,14 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                         })
                     }
                 } catch (e) {
-                    console.error("couldn't download video", e)
+                    log.error("couldn't download video", e)
                     toast?.show(t('feature.recovery.download-failed'), 3000)
                 }
             } catch (e) {
                 // FIXME: this isn't quite right error message. It's more like "valid JSON, perhaps not valid recovery QR"
                 toast?.show(t('feature.recovery.invalid-qr-code'), 3000)
             }
-            console.debug(input)
+            log.debug(input)
             setDownloading(false)
         },
         [

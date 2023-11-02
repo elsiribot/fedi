@@ -12,11 +12,14 @@ import {
 } from '@fedi/common/redux'
 import { ChatMember } from '@fedi/common/types'
 import { XmppMemberRole } from '@fedi/common/utils/XmlUtils'
+import { makeLog } from '@fedi/common/utils/log'
 
 import MemberItem from '../components/feature/chat/MemberItem'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('BroadcastAdminsList')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -72,7 +75,7 @@ const BroadcastAdminsList: React.FC<Props> = ({ navigation, route }: Props) => {
                 )
             }
         } catch (error) {
-            console.error(error)
+            log.error('confirmRemoveAdmin', error)
             toast?.show(t('errors.unknown-error'), 3000)
         }
     }

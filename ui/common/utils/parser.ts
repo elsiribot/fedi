@@ -22,8 +22,11 @@ import {
     ParsedWebsite,
 } from '../types/parser'
 import { FedimintBridge } from './fedimint'
+import { makeLog } from './log'
 import { isValidInternetIdentifier } from './validation'
 import { decodeGroupInvitationLink, decodeDirectChatLink } from './xmpp'
+
+const log = makeLog('common/utils/parser')
 
 /**
  * Parses any data that would the user would input via QR code, copy / paste etc.
@@ -60,7 +63,7 @@ export function parseUserInput<T extends TFunction>(
                     }
                 })
                 .catch(err => {
-                    console.warn(
+                    log.warn(
                         'Encountered an error running a QR parser, ignoring',
                         err,
                     )
@@ -214,7 +217,7 @@ async function parseLnurl(
                 },
             }
         } else {
-            console.warn('parseLnurl unsupported LNURL params', params)
+            log.warn('parseLnurl unsupported LNURL params', params)
             return {
                 type: ParserDataType.Unknown,
                 data: {
@@ -225,7 +228,7 @@ async function parseLnurl(
             }
         }
     } catch (err) {
-        console.warn('parseLnurl error', err)
+        log.warn('parseLnurl error', err)
         /* no-op, other parsers will be attempted */
     }
 }
@@ -272,7 +275,7 @@ async function parseBolt11(
             }
         }
         // Otherwise, return nothing and let other parsers try
-        console.warn('parseBolt11 error', err)
+        log.warn('parseBolt11 error', err)
     }
 }
 

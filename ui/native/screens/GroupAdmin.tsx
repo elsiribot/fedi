@@ -18,6 +18,7 @@ import {
     selectChatGroupAffiliation,
 } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { Images } from '../assets/images'
 import SettingsItem from '../components/feature/admin/SettingsItem'
@@ -26,6 +27,8 @@ import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { ChatAffiliation } from '../types'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('GroupAdmin')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupAdmin'>
 
@@ -98,7 +101,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     disabled
                     image={<SvgImage name="SocialPeople" />}
                     label={t('words.members')}
-                    onPress={() => console.info('not implemented')}
+                    onPress={() => log.info('not implemented')}
                 />
                 <SettingsItem
                     image={<SvgImage name="Room" />}

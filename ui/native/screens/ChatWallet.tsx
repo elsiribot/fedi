@@ -18,12 +18,15 @@ import {
 import { ChatPayment, ChatPaymentStatus, MSats, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import { AmountScreen } from '../components/ui/AmountScreen'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('ChatWallet')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
 
@@ -81,7 +84,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 // go back to DirectChat to show sent payment
                 backToChat()
             } catch (error) {
-                console.error('generateAndSendEcash', error)
+                log.error('generateAndSendEcash', error)
                 toast?.show(
                     formatErrorMessage(t, error, 'errors.unknown-error'),
                     3000,
@@ -133,7 +136,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
             ).unwrap()
             backToChat()
         } catch (error) {
-            console.error('requestEcash', error)
+            log.error('requestEcash', error)
             toast?.show(
                 formatErrorMessage(t, error, 'errors.unknown-error'),
                 3000,
@@ -143,7 +146,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     const handleConfirmSend = async () => {
-        console.info('sendEcash', amount, 'sats')
+        log.info('sendEcash', amount, 'sats')
         setSendingEcash(true)
     }
 

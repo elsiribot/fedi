@@ -10,9 +10,12 @@ import {
 } from 'react-native'
 import Hyperlink from 'react-native-hyperlink'
 
+import { makeLog } from '@fedi/common/utils/log'
 import { decodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
 import EmbeddedJoinGroupButton from './EmbeddedJoinGroupButton'
+
+const log = makeLog('MessageContents')
 
 type MessageContentsProps = {
     content: string
@@ -126,7 +129,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                     : styles(theme).incomingLinkedText
             }
             onPress={url => {
-                console.debug('url', url)
+                log.debug('url', url)
                 Linking.openURL(url)
             }}>
             {text}

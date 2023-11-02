@@ -6,11 +6,14 @@ import { Alert, Keyboard } from 'react-native'
 
 import { useMinMaxSendAmount } from '@fedi/common/hooks/amount'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { AmountScreen } from '../components/ui/AmountScreen'
 import { useBridge } from '../state/hooks'
 import { Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('SendOfflineAmount')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -33,7 +36,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
             const ecash = await generateEcash(millis)
             navigation.navigate('SendOfflineQr', { ecash, amount: millis })
         } catch (error) {
-            console.error(error)
+            log.error('onGenerateEcash', error)
         }
         setIsLoading(false)
     }

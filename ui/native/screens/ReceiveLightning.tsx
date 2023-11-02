@@ -17,6 +17,7 @@ import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
@@ -26,6 +27,8 @@ import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('ReceiveLightning')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -97,7 +100,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
 
                     setOnchainAddress(newAddress)
                 } catch (error) {
-                    console.error('error generating address', error)
+                    log.error('error generating address', error)
                 }
                 setIsLoading(false)
             }

@@ -16,6 +16,7 @@ import {
 import { recoverFromMnemonic, selectActiveFederation } from '@fedi/common/redux'
 import type { SeedWords } from '@fedi/common/types'
 import stringUtils from '@fedi/common/utils/StringUtils'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import { BIP39_WORD_LIST } from '../constants'
@@ -23,6 +24,8 @@ import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { resetAfterPersonalRecovery } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('SeedWordInput')
 
 const isValidSeedWord = (word: string) => {
     return word.length > 0 && BIP39_WORD_LIST.indexOf(word.toLowerCase()) >= 0
@@ -102,7 +105,6 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
         const keyboardShownListener = Keyboard.addListener(
             'keyboardDidShow',
             (e: KeyboardEvent) => {
-                console.info(e.endCoordinates)
                 setKeyboardHeight(e.endCoordinates.height)
             },
         )
@@ -134,7 +136,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                     navigation.dispatch(resetAfterPersonalRecovery())
                 }
             } catch (error) {
-                console.error(error)
+                log.error('recoverFromSeed', error)
                 toast?.show(t('errors.recovery-failed'), 3000)
             }
         }

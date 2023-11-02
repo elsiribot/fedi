@@ -6,7 +6,7 @@ module.exports = {
         'semi': 'off',
         'react/react-in-jsx-scope': 'off',
         'react-native/no-inline-styles': 'off',
-        'no-console': ['error', { allow: ['debug', 'info', 'warn', 'error'] }],
+        'no-console': ['error'],
         '@typescript-eslint/no-unused-vars': [
             'error',
             { argsIgnorePattern: '^_' },

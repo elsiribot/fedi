@@ -17,8 +17,11 @@ import {
     setPushNotificationToken,
 } from '../redux'
 import { FedimintBridge } from '../utils/fedimint'
+import { makeLog } from '../utils/log'
 import { useIsChatSupported } from './federation'
 import { useCommonDispatch, useCommonSelector } from './redux'
+
+const log = makeLog('common/hooks/chat')
 
 export function useChatMemberSearch(members: ChatMember[]) {
     const [query, setQuery] = useState('')
@@ -132,7 +135,7 @@ export function usePublishNotificationToken(
                 )
             })
             .catch(error => {
-                console.error('Failed to get device token', error)
+                log.error('Failed to get device token', error)
             })
     }, [activeFederationId, dispatch, getDeviceToken, pushNotificationToken])
 }

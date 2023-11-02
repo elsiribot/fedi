@@ -11,12 +11,15 @@ import {
     selectAuthenticatedMember,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { Images } from '../assets/images'
 import { fedimint } from '../bridge'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 import { ErrorScreen } from './ErrorScreen'
+
+const log = makeLog('Initializing')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
 
@@ -43,7 +46,7 @@ const Initializing: React.FC<Props> = () => {
                 await dispatch(refreshFederations(fedimint)).unwrap()
                 setHasRefreshedFederations(true)
             } catch (err) {
-                console.error('initializeFederations', err)
+                log.error('initializeFederations', err)
                 setBridgeError(err)
             }
         }

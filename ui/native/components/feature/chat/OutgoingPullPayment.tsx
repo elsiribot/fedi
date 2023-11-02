@@ -6,11 +6,14 @@ import { StyleSheet, View } from 'react-native'
 import { selectActiveFederationId, updateChatPayment } from '@fedi/common/redux'
 import { ChatMessage, ChatPayment, ChatPaymentStatus } from '@fedi/common/types'
 import { formatErrorMessage } from '@fedi/common/utils/format'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+
+const log = makeLog('IncomingPaymentActions')
 
 type IncomingPaymentActionsProps = {
     message: ChatMessage
@@ -43,7 +46,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
                     }),
                 ).unwrap()
             } catch (error) {
-                console.error('dispatchPaymentUpdate', error)
+                log.error('dispatchPaymentUpdate', error)
             }
             setProcessingRedemption(false)
         }
@@ -161,7 +164,7 @@ const OutgoingPullPayment: React.FC<OutgoingPullPaymentProps> = ({
                 }),
             ).unwrap()
         } catch (error) {
-            console.error(error)
+            log.error('cancelPayment', error)
             toast?.show(
                 formatErrorMessage(t, error, 'errors.unknown-error'),
                 3000,

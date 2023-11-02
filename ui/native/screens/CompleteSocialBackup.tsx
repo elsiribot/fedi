@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import Share from 'react-native-share'
 
+import { makeLog } from '@fedi/common/utils/log'
+
 import HoloGuidance from '../components/ui/HoloGuidance'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import {
@@ -13,6 +15,8 @@ import {
 } from '../state/contexts/BackupRecoveryContext'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('CompleteSocialBackup')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -40,7 +44,7 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                 Math.min(BACKUPS_REQUIRED, backupsCompleted + 1),
             )
         } catch (error) {
-            console.error(error)
+            log.error('createBackup', error)
         }
     }
 

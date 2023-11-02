@@ -50,6 +50,7 @@ import {
     makePaymentUpdatedAt,
 } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
+import { makeLog } from '../utils/log'
 import {
     checkXmppUser,
     decodeGroupInvitationLink,
@@ -62,6 +63,7 @@ type FederationPayloadAction<T = object> = PayloadAction<
     { federationId: string } & T
 >
 
+const log = makeLog('redux/chat')
 const xmppChatClientManager = new XmppChatClientManager()
 
 /*** Initial State ***/
@@ -561,7 +563,7 @@ export const authenticateChat = createAsyncThunk<
 
         const connectionOptions = selectChatConnectionOptions(getState())
         if (connectionOptions === null) {
-            console.error('No chat connectionOptions for this federation')
+            log.error('No chat connectionOptions for this federation')
             throw new Error('errors.chat-unavailable')
         }
 
@@ -598,7 +600,7 @@ export const connectChat = createAsyncThunk<
 >(
     'chat/connectChat',
     async ({ fedimint, federationId }, { getState, dispatch }) => {
-        console.info(`connecting chat for federation ${federationId}...`)
+        log.info(`connecting chat for federation ${federationId}...`)
         // Assemble all necessary state for starting chat, throw if we are missing anything.
         const state = getState()
         const chatState = state.chat[federationId]
@@ -607,7 +609,7 @@ export const connectChat = createAsyncThunk<
         )
 
         if (!federation) {
-            console.error(
+            log.error(
                 `No federation found with id ${federationId}, cannot start chat`,
             )
             throw new Error('errors.chat-unavailable')
@@ -615,13 +617,13 @@ export const connectChat = createAsyncThunk<
 
         const chatDomain = getFederationChatServerDomain(federation.meta)
         if (!chatDomain) {
-            console.info(`No chat domain configured for ${federationId}`)
+            log.info(`No chat domain configured for ${federationId}`)
             throw new Error('errors.chat-unavailable')
         }
 
         const authenticatedMember = chatState?.authenticatedMember
         if (!authenticatedMember) {
-            console.warn(
+            log.warn(
                 `No chat member informations was found for ${federationId}, cannot start chat`,
             )
             throw new Error('errors.chat-unavailable')
@@ -657,21 +659,19 @@ export const connectChat = createAsyncThunk<
                 message.payment.recipient === authenticatedMember.id &&
                 message.payment.status === ChatPaymentStatus.accepted
             ) {
-                console.info(
-                    'Got a payment message, will attempt redeem in 250ms',
-                )
+                log.info('Got a payment message, will attempt redeem in 250ms')
                 setTimeout(() => {
                     const updatedPayment = getState().chat[
                         federationId
                     ]?.messages.find(m => m.id === message.id)?.payment
                     if (!updatedPayment) return
                     if (updatedPayment.status !== ChatPaymentStatus.accepted) {
-                        console.info(
+                        log.info(
                             `Payment message status changed to ${updatedPayment.status}, cancelling redemption`,
                         )
                         return
                     }
-                    console.info('Attempting to redeem message payment')
+                    log.info('Attempting to redeem message payment')
                     updateChatPayment({
                         fedimint,
                         federationId,
@@ -702,7 +702,7 @@ export const connectChat = createAsyncThunk<
 
         // On connection, update various states
         client.on('online', async () => {
-            console.debug('xmpp client online')
+            log.debug('xmpp client online')
             // Establish healthy websocket state
             dispatch(
                 setWebsocketIsHealthy({
@@ -713,13 +713,13 @@ export const connectChat = createAsyncThunk<
             // Publish public key
             client
                 .publishPublicKey(encryptionKeys.publicKey)
-                .catch(() => console.error('Failed to publish public key'))
+                .catch(() => log.error('Failed to publish public key'))
 
             // Publish a push notification token if set by the application
             if (chatState.pushNotificationToken) {
                 client
                     .publishNotificationToken(chatState.pushNotificationToken)
-                    .catch(() => console.error('Failed to publish public key'))
+                    .catch(() => log.error('Failed to publish public key'))
             }
 
             // Fetch chat history
@@ -766,7 +766,7 @@ export const connectChat = createAsyncThunk<
         // Start the client
         const connectionOptions = makeChatServerOptions(chatDomain)
         if (client?.xmpp && client?.xmpp?.status !== 'offline') {
-            console.warn(
+            log.warn(
                 `Chat connection attempt already in progress for ${federationId}...`,
                 { status: client.xmpp.status },
             )
@@ -818,7 +818,7 @@ export const ensureHealthyXmppStream = createAsyncThunk<
         // be resumed so we need to reconnect the chat client
         const client = xmppChatClientManager.getClient(federationId)
         const reconnectTimer = setTimeout(async () => {
-            console.info(
+            log.info(
                 'no response from XMPP server after 3s, rebuilding XMPP client',
             )
             await dispatch(
@@ -844,13 +844,11 @@ export const ensureHealthyXmppStream = createAsyncThunk<
                 }),
             )
             client?.xmpp.removeListener('stanza', onStanzaReceived)
-            console.info('XMPP server responded, do not rebuild XMPP client')
+            log.info('XMPP server responded, do not rebuild XMPP client')
             clearTimeout(reconnectTimer)
         }
         client?.xmpp.on('stanza', onStanzaReceived)
-        console.info(
-            'sending presence to XMPP server to test for stable stream',
-        )
+        log.info('sending presence to XMPP server to test for stable stream')
         client?.xmpp.send(xml('presence'))
     },
 )
@@ -1099,7 +1097,7 @@ export const sendDirectMessage = createAsyncThunk<
         // TODO: Determine recoverable error that should mark the message as queued
         // versus an unrecoverable message that should be ChatMessageStatus.failed
         status = ChatMessageStatus.queued
-        console.warn('Failed to send message, queueing it to retry later')
+        log.warn('Failed to send message, queueing it to retry later')
     }
     return { ...message, status }
 })
@@ -1143,7 +1141,7 @@ export const sendGroupMessage = createAsyncThunk<
             // TODO: Determine recoverable error that should mark the message as queued
             // versus an unrecoverable message that should be ChatMessageStatus.failed
             status = ChatMessageStatus.queued
-            console.warn('Failed to send message, queueing it to retry later')
+            log.warn('Failed to send message, queueing it to retry later')
         }
         return { ...message, status }
     },
@@ -1295,9 +1293,7 @@ export const sendQueuedMessages = createAsyncThunk<
             m => m.status === ChatMessageStatus.queued,
         )
         if (!queuedMessages?.length) return
-        console.info(
-            `Attempting to send ${queuedMessages.length} queued messages`,
-        )
+        log.info(`Attempting to send ${queuedMessages.length} queued messages`)
 
         // Get or fetch credentials for encryption
         const { encryptionKeys } = await getOrFetchCredentials(
@@ -1363,7 +1359,7 @@ export const sendQueuedMessages = createAsyncThunk<
                 // TODO: Determine recoverable error that should leave the message as queued
                 // for a future attempt, versus an unrecoverable message that should
                 // update the message to ChatMessageStatus.failed
-                console.warn('Failed to send queued message', err)
+                log.warn('Failed to send queued message', err)
             }
         }
     },

@@ -9,6 +9,7 @@ import {
 } from '@fedi/common/redux'
 import { MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { Button } from '../../components/Button'
 import { Checkbox } from '../../components/Checkbox'
@@ -18,6 +19,8 @@ import { useAppSelector, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { EcashPaper } from '../../pages/internal/paper-ecash'
 import { styled, theme } from '../../styles'
+
+const log = makeLog('PaperEcashForm')
 
 interface Props {
     onChangeEcashPapers(ecashPapers: EcashPaper[]): void
@@ -81,7 +84,7 @@ export const PaperEcashForm: React.FC<Props> = ({ onChangeEcashPapers }) => {
                 ecashPapers.push({ ecash, frames, amount })
             }
         } catch (err) {
-            console.error('Failed to generate', err)
+            log.error('Failed to generate', err)
             showErrorToast(err, 'Failed to generate, check logs')
         }
         onChangeEcashPapers(ecashPapers)

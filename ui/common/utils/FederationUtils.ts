@@ -13,6 +13,9 @@ import {
     XmppConnectionOptions,
     FederationPreview,
 } from '../types'
+import { makeLog } from './log'
+
+const log = makeLog('common/utils/FederationUtils')
 
 type ExternalMetaJson = Record<string, Federation['meta'] | undefined>
 
@@ -33,17 +36,17 @@ const fetchExternalMetadata = async (
         if (timeout) {
             controller = new AbortController()
             timeoutId = setTimeout(() => {
-                console.info(`Metadata fetch timed out after ${timeout}ms`)
+                log.info(`Metadata fetch timed out after ${timeout}ms`)
                 controller?.abort()
             }, timeout)
         }
-        console.info('Fetching metadata from', externalUrl)
+        log.info('Fetching metadata from', externalUrl)
         const response = await fetch(externalUrl, {
             cache: 'no-cache',
             signal: controller?.signal,
         })
         const metaJson = await response.json()
-        console.info(`Found metadata at ${externalUrl}`, Object.keys(metaJson))
+        log.info(`Found metadata at ${externalUrl}`, Object.keys(metaJson))
         if (timeoutId) {
             clearTimeout(timeoutId)
         }
@@ -65,12 +68,9 @@ const fetchExternalMetadata = async (
                 const meta = await attemptFetch()
                 onBackgroundSuccess(meta)
             } catch (error) {
-                console.error(
-                    'Failed to fetch metadata from external url',
-                    error,
-                )
+                log.error('Failed to fetch metadata from external url', error)
                 retryDelay += 3000
-                console.info(
+                log.info(
                     `Retrying fetch metadata in ${
                         retryDelay / 1000
                     } seconds...`,
@@ -323,7 +323,7 @@ export const getFederationGroupChats = (
         try {
             return JSON.parse(metadata.default_group_chats)
         } catch (err) {
-            console.warn(
+            log.warn(
                 'Failed to parse default groupchats',
                 metadata.default_group_chats,
             )
@@ -340,7 +340,7 @@ export const getFederationFediMods = (
             // TODO: validate type matches FediMod[]
             return JSON.parse(metadata.sites)
         } catch (err) {
-            console.warn(
+            log.warn(
                 'Failed to parse federation fedimods, falling back to defaults',
                 metadata.sites,
             )
@@ -437,7 +437,7 @@ export async function getFederationPreview(
                             : data.result.core.consensus
                     if (typeof consensusVersion !== 'number') {
                         // No clue what this response is, make it some future version
-                        console.warn(
+                        log.warn(
                             'getFederationPreview: got unexpected consensusVersion, setting to 999',
                             { consensusVersion },
                         )
@@ -451,7 +451,7 @@ export async function getFederationPreview(
                         typeof apiVersion.minor !== 'number'
                     ) {
                         // No clue what this response is, make it some future version
-                        console.warn(
+                        log.warn(
                             'getFederationPreview: got unexpected apiVersion, setting to 999',
                             { apiVersion },
                         )
