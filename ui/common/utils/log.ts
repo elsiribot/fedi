@@ -100,7 +100,7 @@ function innerLog(
         timestamp: Date.now(),
         level,
         context,
-        message,
+        message: formatArgForStorage(message) as string,
         extra: extra.length ? extra.map(formatArgForStorage) : undefined,
     }
     cachedLogs.push(logItem)
