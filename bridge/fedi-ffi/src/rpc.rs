@@ -488,14 +488,12 @@ rpc_methods!(RpcMethods {
     )
 )]
 pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: String) -> String {
-    info!(?payload, "rpc_payload");
-
     let result = RpcMethods::handle(bridge, &method, payload).await;
     let response = result.unwrap_or_else(|error| {
         error!(%error, "rpc_error");
         rpc_error(&error)
     });
-    info!(?response, "rpc_response");
+
     response
 }
 
