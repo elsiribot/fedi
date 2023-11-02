@@ -5,7 +5,7 @@ use serde::Serialize;
 use ts_rs::TS;
 
 use super::types::{RpcFederation, RpcFederationId, SocialRecoveryApproval};
-use crate::types::RpcTransaction;
+use crate::types::{RpcAmount, RpcTransaction};
 
 #[derive(Serialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
@@ -38,6 +38,14 @@ pub struct PanicEvent {
     pub message: String,
 }
 
+#[derive(Serialize, Clone, Debug, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct BalanceEvent {
+    pub federation_id: RpcFederationId,
+    pub balance: RpcAmount,
+}
+
 #[derive(Debug, TS)]
 #[ts(export, export_to = "target/bindings/")]
 #[ts(rename_all = "camelCase")]
@@ -45,6 +53,7 @@ pub enum Event {
     Transaction(TransactionEvent),
     Log(LogEvent),
     Federation(RpcFederation),
+    Balance(BalanceEvent),
     Panic(PanicEvent),
 }
 
@@ -61,8 +70,18 @@ impl Event {
     pub fn log(log: String) -> Self {
         Self::Log(LogEvent { log })
     }
-    pub async fn federation(federation: RpcFederation) -> Self {
+    pub fn federation(federation: RpcFederation) -> Self {
         Self::Federation(federation)
+    }
+
+    pub fn balance(
+        federation_id: fedimint_core::config::FederationId,
+        balance: fedimint_core::Amount,
+    ) -> Self {
+        Self::Balance(BalanceEvent {
+            federation_id: RpcFederationId(federation_id),
+            balance: RpcAmount(balance),
+        })
     }
 }
 
@@ -94,6 +113,10 @@ pub trait TypedEventExt: IEventSink {
             Event::Federation(event) => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 IEventSink::event(self, "federation".into(), body);
+            }
+            Event::Balance(event) => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                IEventSink::event(self, "balance".into(), body);
             }
             Event::Panic(event) => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");

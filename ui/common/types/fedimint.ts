@@ -1,4 +1,5 @@
 import {
+    BalanceEvent,
     LogEvent,
     RpcFederation,
     RpcInvoice,
@@ -158,5 +159,6 @@ export type FedimintBridgeEventMap = {
     federation: FederationEvent
     transaction: TransactionEvent
     socialRecovery: SocialRecoveryEvent
+    balance: BalanceEvent
     panic: PanicEvent
 }
