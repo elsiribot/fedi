@@ -1,9 +1,19 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { Image, Pressable, StyleSheet, View } from 'react-native'
+import {
+    Image,
+    Pressable,
+    StyleSheet,
+    View,
+    useWindowDimensions,
+} from 'react-native'
 
 import { FediMod, Shortcut } from '../../../types'
-import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
+import SvgImage, {
+    SvgImageName,
+    SvgImageSize,
+    getIconSizeMultiplier,
+} from '../../ui/SvgImage'
 
 type ShortcutTileProps = {
     shortcut: Shortcut
@@ -12,12 +22,15 @@ type ShortcutTileProps = {
 
 const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
     const { theme } = useTheme()
+    const { fontScale } = useWindowDimensions()
+
+    const style = styles(theme, fontScale)
 
     const renderIcon = () => {
         if ((shortcut as FediMod).imageUrl) {
             return (
                 <Image
-                    style={styles(theme).iconImage}
+                    style={style.iconImage}
                     source={{ uri: (shortcut as FediMod).imageUrl }}
                     resizeMode="contain"
                 />
@@ -25,7 +38,7 @@ const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
         } else if (shortcut.icon.image) {
             return (
                 <Image
-                    style={styles(theme).iconImage}
+                    style={style.iconImage}
                     source={shortcut.icon.image}
                     resizeMode="contain"
                 />
@@ -33,7 +46,7 @@ const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
         } else if (shortcut.icon.svg) {
             return (
                 <SvgImage
-                    containerStyle={styles(theme).iconSvg}
+                    containerStyle={style.iconSvg}
                     name={shortcut.icon.svg as SvgImageName}
                     size={SvgImageSize.md}
                     color={theme.colors.secondary}
@@ -43,12 +56,10 @@ const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
     }
 
     return (
-        <Pressable
-            style={styles(theme).container}
-            onPress={() => onSelect(shortcut)}>
+        <Pressable style={style.container} onPress={() => onSelect(shortcut)}>
             <View>{renderIcon()}</View>
-            <View style={styles(theme).title}>
-                <Text caption medium style={styles(theme).titleText}>
+            <View style={style.title}>
+                <Text caption medium numberOfLines={2} style={style.titleText}>
                     {shortcut.title}
                 </Text>
             </View>
@@ -56,23 +67,24 @@ const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
     )
 }
 
-const styles = (theme: Theme) =>
-    StyleSheet.create({
+const styles = (theme: Theme, fontScale: number) => {
+    const iconSize = theme.sizes.lg * getIconSizeMultiplier(fontScale)
+    return StyleSheet.create({
         container: {
             alignItems: 'center',
-            width: theme.percentages.shortcutTileWidth,
+            width: '100%',
             marginVertical: theme.spacing.md,
         },
         iconImage: {
-            width: theme.sizes.lg,
-            height: theme.sizes.lg,
+            width: iconSize,
+            height: iconSize,
             overflow: 'hidden',
             borderRadius: theme.borders.fediModTileRadius,
             marginBottom: theme.spacing.xs,
         },
         iconSvg: {
-            width: theme.sizes.lg,
-            height: theme.sizes.lg,
+            width: iconSize,
+            height: iconSize,
             borderRadius: theme.borders.fediModTileRadius,
             backgroundColor: theme.colors.primary,
             marginBottom: theme.spacing.xs,
@@ -91,5 +103,6 @@ const styles = (theme: Theme) =>
             lineHeight: 20,
         },
     })
+}
 
 export default ShortcutTile
