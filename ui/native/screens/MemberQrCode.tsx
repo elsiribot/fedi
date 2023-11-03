@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Dimensions, StyleSheet, View } from 'react-native'
+import { StyleSheet, View, useWindowDimensions } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
@@ -15,12 +15,11 @@ import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'MemberQrCode'>
 
-const QR_CODE_SIZE = Dimensions.get('window').width * 0.7
-
 const MemberQrCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const member = useAppSelector(selectAuthenticatedMember)
+    const { width } = useWindowDimensions()
 
     if (!member) return null
 
@@ -43,7 +42,7 @@ const MemberQrCode: React.FC<Props> = ({ navigation }: Props) => {
             <View style={styles(theme).qrCodeContainer}>
                 <QRCode
                     value={directChatLink}
-                    size={QR_CODE_SIZE}
+                    size={width * 0.7}
                     logo={Images.FediQrLogo}
                 />
             </View>
@@ -67,12 +66,10 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'space-between',
             padding: theme.spacing.xl,
         },
         textContainer: {
-            flexBasis: 10,
-            flexGrow: 1,
             flexShrink: 0,
             alignItems: 'center',
             justifyContent: 'flex-end',
@@ -81,7 +78,7 @@ const styles = (theme: Theme) =>
             borderRadius: theme.borders.defaultRadius,
             borderColor: theme.colors.primaryLight,
             borderWidth: 1,
-            padding: QR_CODE_SIZE * 0.05,
+            padding: theme.spacing.md,
             flexDirection: 'row',
             justifyContent: 'center',
         },
@@ -93,8 +90,6 @@ const styles = (theme: Theme) =>
         },
         bottomContainer: {
             width: '100%',
-            flexBasis: 100,
-            flexGrow: 1,
             flexShrink: 0,
         },
         buttonContainer: {
