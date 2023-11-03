@@ -31,8 +31,10 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
     const { locateRecoveryFile } = useBridge()
     const [backupsCompleted, setBackupsCompleted] = useState<number>(0)
     const { dispatch } = useBackupRecoveryContext()
+    const [isCreatingBackup, setIsCreatingBackup] = useState(false)
 
     const createBackup = async () => {
+        setIsCreatingBackup(true)
         try {
             const recoveryFilePath = await locateRecoveryFile()
             await Share.open({
@@ -46,6 +48,7 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
         } catch (error) {
             log.error('createBackup', error)
         }
+        setIsCreatingBackup(false)
     }
 
     return (
@@ -65,6 +68,7 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                             'feature.backup.save-your-wallet-backup-file-again',
                         )}
                         onPress={createBackup}
+                        loading={isCreatingBackup}
                     />
                 )}
                 <Button
@@ -83,6 +87,7 @@ const CompleteSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                             navigation.navigate('SocialBackupSuccess')
                         }
                     }}
+                    loading={isCreatingBackup}
                 />
             </View>
         </ScrollView>

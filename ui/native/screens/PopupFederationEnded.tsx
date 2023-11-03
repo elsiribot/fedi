@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Alert, Linking, StyleSheet, View } from 'react-native'
 
@@ -29,6 +29,7 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
     const { toast } = useEnvironmentContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
     const popupInfo = usePopupFederationInfo()
+    const [isLeavingFederation, setIsLeavingFederation] = useState(false)
 
     const dispatch = useAppDispatch()
     const style = styles(theme)
@@ -48,9 +49,9 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
         dispatch(changeAuthenticatedGuardian(null))
     }, [dispatch])
 
-    // FIXME: this needs some kind of loading state
     // TODO: this should be an thunkified action creator
     const handleLeaveFederation = useCallback(async () => {
+        setIsLeavingFederation(true)
         try {
             if (activeFederationId) {
                 // FIXME: currently this specific order of operations fixes a
@@ -74,8 +75,8 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
             }
         } catch (e) {
             toast?.show('Failed to leave federation', 3000)
-            return
         }
+        setIsLeavingFederation(false)
     }, [
         activeFederationId,
         dispatch,
@@ -144,6 +145,7 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
                     title={t('feature.federations.leave-federation')}
                     onPress={confirmLeaveFederation}
                     containerStyle={styles(theme).button}
+                    loading={isLeavingFederation}
                 />
             </View>
         </View>

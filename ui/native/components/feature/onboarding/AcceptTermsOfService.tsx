@@ -1,5 +1,5 @@
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, View } from 'react-native'
 import Hyperlink from 'react-native-hyperlink'
@@ -8,8 +8,8 @@ import { FederationPreview } from '../../../types'
 
 export type Props = {
     federation: FederationPreview
-    onAccept: () => void
-    onReject: () => void
+    onAccept: () => void | Promise<void>
+    onReject: () => void | Promise<void>
 }
 
 const AcceptTermsOfService: React.FC<Props> = ({
@@ -19,6 +19,8 @@ const AcceptTermsOfService: React.FC<Props> = ({
 }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const [isAccepting, setIsAccepting] = useState(false)
+    const [isRejecting, setIsRejecting] = useState(false)
 
     return (
         <View style={styles(theme).container}>
@@ -42,15 +44,27 @@ const AcceptTermsOfService: React.FC<Props> = ({
                 <Button
                     fullWidth
                     title={t('feature.onboarding.i-accept')}
-                    onPress={onAccept}
+                    onPress={async () => {
+                        setIsAccepting(true)
+                        await onAccept()
+                        setIsAccepting(false)
+                    }}
                     containerStyle={styles(theme).button}
+                    loading={isAccepting}
+                    disabled={isRejecting}
                 />
                 <Button
                     fullWidth
                     type="clear"
                     title={t('feature.onboarding.i-do-not-accept')}
-                    onPress={onReject}
+                    onPress={async () => {
+                        setIsRejecting(true)
+                        await onReject()
+                        setIsRejecting(false)
+                    }}
                     containerStyle={styles(theme).button}
+                    loading={isRejecting}
+                    disabled={isAccepting}
                 />
             </View>
         </View>

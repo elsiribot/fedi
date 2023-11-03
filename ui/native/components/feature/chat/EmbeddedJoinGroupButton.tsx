@@ -32,6 +32,7 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
     const { theme } = useTheme()
     const [groupConfig, setGroupConfig] =
         useState<Pick<ChatGroup, 'name' | 'broadcastOnly'>>()
+    const [isJoiningGroup, setIsJoiningGroup] = useState(false)
 
     const copyToClipboard = () => {
         const invitationLink = encodeGroupInvitationLink(groupId)
@@ -41,6 +42,7 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
 
     const handleJoinGroup = useCallback(async () => {
         if (!federationId) return
+        setIsJoiningGroup(true)
         try {
             const res = await dispatch(
                 joinChatGroup({
@@ -54,6 +56,7 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
         } catch (error) {
             toast?.show(t('errors.chat-unavailable'), 3000)
         }
+        setIsJoiningGroup(false)
     }, [dispatch, federationId, groupId, navigation, t, toast])
 
     useEffect(() => {
@@ -74,6 +77,7 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
             containerStyle={styles(theme).container}
             onPress={handleJoinGroup}
             onLongPress={copyToClipboard}
+            loading={isJoiningGroup}
             title={
                 <View style={styles(theme).contents}>
                     <SvgImage
