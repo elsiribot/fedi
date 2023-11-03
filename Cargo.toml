@@ -54,24 +54,24 @@ threshold_crypto = { git = "https://github.com/fedimint/threshold_crypto" }
 
 # NOTE: You want to update the `fedimint` input git hash in `flake.nix` as well, to keep gateway-pkgs in sync
 # NOTE: To use local fedimint depenencies, comment out the "paths" section in .cargo/config.toml
-fedimintd = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-fedimint-cli = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-fedimint-build = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-fedimint-server = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-fedimint-client = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-fedimint-derive-secret = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-fedimint-mint-client = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-fedimint-ln-client = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-fedimint-client-legacy = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-fedimint-aead = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-fedimint-rocksdb = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-fedimint-bip39 = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-tbs = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-fedimint-logging = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-devimint = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
-ln-gateway = { git = "https://github.com/fedimint/fedimint", rev = "06aa03372a86e8c5356775c943a68b361057aa8c" }
+fedimintd = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+fedimint-cli = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+fedimint-build = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+fedimint-server = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+fedimint-client = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+fedimint-derive-secret = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+fedimint-mint-client = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+fedimint-ln-client = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+fedimint-client-legacy = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+fedimint-aead = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+fedimint-rocksdb = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+fedimint-bip39 = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+tbs = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+fedimint-logging = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+devimint = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+ln-gateway = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
 
 # Uncomment these to use local fedimint v1
 # fedimintd = { path = "../fedimint/fedimintd"}
