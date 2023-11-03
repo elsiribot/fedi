@@ -56,9 +56,9 @@ const AmountInput: React.FC<Props> = ({
         handleNumpadPress,
     } = useAmountInput(amount, onChangeAmount, minimumAmount, maximumAmount)
     const inputRef = useRef<TextInput>(null)
-    const { height } = useWindowDimensions()
+    const { height, width } = useWindowDimensions()
 
-    const style = styles(theme)
+    const style = styles(theme, width)
 
     // For some reason the TextInput inside InvisibleInput does not
     // automatically blur the input when the keyboard is dismissed
@@ -174,7 +174,7 @@ const AmountInput: React.FC<Props> = ({
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, width: number) =>
     StyleSheet.create({
         container: {
             flex: 1,
@@ -222,7 +222,7 @@ const styles = (theme: Theme) =>
         },
         numpad: {
             width: '100%',
-            maxWidth: 400,
+            maxWidth: Math.min(400, width),
             paddingHorizontal: theme.spacing.lg,
             flexDirection: 'row',
             flexWrap: 'wrap',
