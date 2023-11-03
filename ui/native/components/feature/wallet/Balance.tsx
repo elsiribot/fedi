@@ -43,7 +43,7 @@ const Balance: React.FC<Props> = ({ balance }: Props) => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            height: 60,
+            minHeight: 60,
         },
         balanceText: {
             textAlign: 'center',

@@ -16,9 +16,11 @@ import {
     Pressable,
     StyleSheet,
     View,
+    useWindowDimensions,
 } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { theme as fediTheme } from '@fedi/common/constants/theme'
 import {
     useIsChatSupported,
     usePopupFederationInfo,
@@ -35,7 +37,10 @@ import { fedimint } from '../bridge'
 import ChatHeader from '../components/feature/chat/ChatHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
-import SvgImage from '../components/ui/SvgImage'
+import SvgImage, {
+    SvgImageSize,
+    getIconSizeMultiplier,
+} from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import {
@@ -46,6 +51,8 @@ import {
 import ChatScreen from './ChatScreen'
 import Home from './Home'
 import OmniScanner from './OmniScanner'
+
+const MAX_TABS_FONT_SCALE = 1.8
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'TabsNavigator'>
 
@@ -67,6 +74,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     const appStateRef = useRef<AppStateStatus>(
         AppState.currentState,
     ) as MutableRefObject<AppStateStatus>
+    const { fontScale } = useWindowDimensions()
 
     // If the popup federation has ended, redirect user to end screen.
     useEffect(() => {
@@ -108,6 +116,11 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
         return <View />
     }
 
+    const style = styles(
+        theme,
+        insets,
+        Math.min(fontScale, MAX_TABS_FONT_SCALE),
+    )
     return (
         <>
             <SelectedFederationHeader />
@@ -128,8 +141,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                                             {...props}
                                             style={[
                                                 props.style,
-                                                styles(theme, insets)
-                                                    .disabledIcon,
+                                                style.disabledIcon,
                                             ]}
                                             onPress={() => {
                                                 toast?.show(
@@ -149,50 +161,33 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                         }
                     },
                     tabBarIcon: ({ focused }) => {
+                        const svgImageProps = {
+                            maxFontSizeMultiplier: MAX_TABS_FONT_SCALE,
+                            containerStyle: style.tabBarIconContainer,
+                            color: focused
+                                ? theme.colors.primary
+                                : theme.colors.primaryLight,
+                        }
                         switch (route.name) {
                             case 'Home':
                                 return (
                                     <SvgImage
                                         name={focused ? 'HomeFilled' : 'Home'}
-                                        containerStyle={
-                                            styles(theme, insets)
-                                                .tabBarIconContainer
-                                        }
-                                        color={
-                                            focused
-                                                ? theme.colors.primary
-                                                : theme.colors.primaryLight
-                                        }
+                                        {...svgImageProps}
                                     />
                                 )
                             case 'Chat':
                                 return (
                                     <SvgImage
                                         name={focused ? 'ChatFilled' : 'Chat'}
-                                        containerStyle={
-                                            styles(theme, insets)
-                                                .tabBarIconContainer
-                                        }
-                                        color={
-                                            focused
-                                                ? theme.colors.primary
-                                                : theme.colors.primaryLight
-                                        }
+                                        {...svgImageProps}
                                     />
                                 )
                             case 'OmniScanner':
                                 return (
                                     <SvgImage
                                         name={'Scan'}
-                                        containerStyle={
-                                            styles(theme, insets)
-                                                .tabBarIconContainer
-                                        }
-                                        color={
-                                            focused
-                                                ? theme.colors.primary
-                                                : theme.colors.primaryLight
-                                        }
+                                        {...svgImageProps}
                                     />
                                 )
                             default:
@@ -204,6 +199,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                             caption
                             bold={focused}
                             medium={!focused}
+                            maxFontSizeMultiplier={MAX_TABS_FONT_SCALE}
                             style={{
                                 color: focused
                                     ? theme.colors.primary
@@ -214,10 +210,10 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                     ),
                     tabBarActiveTintColor: theme.colors.primary,
                     tabBarInactiveTintColor: theme.colors.primaryLight,
-                    tabBarStyle: styles(theme, insets).tabBar,
-                    tabBarItemStyle: styles(theme, insets).tabBarItem,
+                    tabBarStyle: style.tabBar,
+                    tabBarItemStyle: style.tabBarItem,
                     headerTitleStyle: theme.components.Text.style,
-                    tabBarBadgeStyle: styles(theme, insets).tabBarBadge,
+                    tabBarBadgeStyle: style.tabBarBadge,
                 })}>
                 <Tab.Screen
                     name="Home"
@@ -250,16 +246,25 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     )
 }
 
-const styles = (theme: Theme, insets: EdgeInsets) =>
-    StyleSheet.create({
+const styles = (theme: Theme, insets: EdgeInsets, fontScale: number) => {
+    // Tab bar height must be a fixed value due to its internal logic, but the height
+    // is affected by fontScale, so we need to calculate it manually.
+    const itemPadding = theme.spacing.lg
+    const iconSize =
+        theme.sizes[SvgImageSize.sm] * getIconSizeMultiplier(fontScale)
+    const iconPadding = theme.spacing.xs
+    const fontSize = fediTheme.fontSizes.caption * fontScale
+    const tabBarHeight = itemPadding * 2 + iconPadding + iconSize + fontSize
+
+    return StyleSheet.create({
         tabBar: {
             backgroundColor: theme.colors.secondary,
-            height: theme.sizes.tabBarHeight + insets.bottom,
+            height: tabBarHeight + insets.bottom,
             borderTopWidth: 1,
             borderTopColor: theme.colors.extraLightGrey,
         },
         tabBarIconContainer: {
-            paddingBottom: theme.spacing.xs,
+            paddingBottom: iconPadding,
             marginTop: 'auto',
         },
         tabBarBadge: {
@@ -274,7 +279,7 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             borderRadius: 6,
         },
         tabBarItem: {
-            paddingBottom: theme.spacing.lg,
+            paddingBottom: itemPadding,
         },
         disabledIcon: {
             opacity: 0.2,
@@ -284,5 +289,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             flexDirection: 'row',
         },
     })
+}
 
 export default TabsNavigator
