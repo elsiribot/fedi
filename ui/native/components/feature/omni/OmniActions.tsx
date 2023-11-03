@@ -17,7 +17,9 @@ export const OmniActions: React.FC<Props> = ({ actions }) => {
             {actions.map(({ label, icon, onPress }, idx) => (
                 <Pressable key={idx} onPress={onPress} style={style.action}>
                     <SvgImage name={icon} />
-                    <Text bold>{label}</Text>
+                    <Text bold numberOfLines={2}>
+                        {label}
+                    </Text>
                 </Pressable>
             ))}
         </View>

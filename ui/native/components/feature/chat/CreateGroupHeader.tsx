@@ -10,7 +10,11 @@ const CreateGroupHeader: React.FC<{}> = () => {
     return (
         <Header
             backButton
-            headerCenter={<Text bold>{t('feature.chat.create-a-group')}</Text>}
+            headerCenter={
+                <Text bold numberOfLines={1} adjustsFontSizeToFit>
+                    {t('feature.chat.create-a-group')}
+                </Text>
+            }
         />
     )
 }

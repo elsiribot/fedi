@@ -79,7 +79,11 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
             style={styles(theme).imageBackground}
             source={Images.HoloBackground}>
             <DrawerContentScrollView {...props} style={styles(theme).container}>
-                <Text h2 style={styles(theme).headerTitle}>
+                <Text
+                    h2
+                    style={styles(theme).headerTitle}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit>
                     {t('words.federations')}
                 </Text>
                 {federations.map((f, i) => (
@@ -116,8 +120,15 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                             invite: undefined,
                         })
                     }}>
-                    <SvgImage name="Plus" color={theme.colors.darkGrey} />
-                    <Text style={styles(theme).addFederationText} caption>
+                    <SvgImage
+                        name="Plus"
+                        color={theme.colors.darkGrey}
+                        maxFontSizeMultiplier={1.8}
+                    />
+                    <Text
+                        style={styles(theme).addFederationText}
+                        caption
+                        maxFontSizeMultiplier={1.8}>
                         {t('feature.federations.add-federation')}
                     </Text>
                 </Pressable>
@@ -135,6 +146,7 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'flex-start',
+            overflow: 'hidden',
             gap: theme.spacing.xs,
             paddingHorizontal: theme.spacing.lg,
             paddingVertical: theme.spacing.sm,

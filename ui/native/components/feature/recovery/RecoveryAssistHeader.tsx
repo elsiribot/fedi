@@ -19,7 +19,9 @@ const RecoveryAssistHeader: React.FC<RecoveryAssistHeaderProps> = ({
         <Header
             backButton={backButton}
             headerCenter={
-                <Text bold>{t('feature.recovery.recovery-assist')}</Text>
+                <Text bold numberOfLines={1} adjustsFontSizeToFit>
+                    {t('feature.recovery.recovery-assist')}
+                </Text>
             }
             closeButton={closeButton}
         />

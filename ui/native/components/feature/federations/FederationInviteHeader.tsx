@@ -17,7 +17,11 @@ const FederationInviteHeader: React.FC<{}> = () => {
         <Header
             dark
             headerCenter={
-                <Text bold style={{ color: theme.colors.secondary }}>
+                <Text
+                    bold
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    style={{ color: theme.colors.secondary }}>
                     {t('feature.federations.federation-invite')}
                 </Text>
             }

@@ -19,7 +19,9 @@ const SocialRecoveryHeader: React.FC<SocialRecoveryHeaderProps> = ({
         <Header
             backButton={backButton}
             headerCenter={
-                <Text bold>{t('feature.recovery.social-recovery')}</Text>
+                <Text bold numberOfLines={1} adjustsFontSizeToFit>
+                    {t('feature.recovery.social-recovery')}
+                </Text>
             }
             closeButton={closeButton}
         />

@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import type { Theme } from '@rneui/themed'
-import { Button, Card, Text, useTheme } from '@rneui/themed'
+import { Button, Card, Text, TextProps, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
@@ -27,6 +27,14 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
     const { toast } = useEnvironmentContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
     const receivesDisabled = useAppSelector(selectReceivesDisabled)
+
+    const buttonTitleProps: Partial<TextProps> = {
+        caption: true,
+        medium: true,
+        style: styles(theme).buttonTitle,
+        maxFontSizeMultiplier: 1.8,
+        numberOfLines: 1,
+    }
 
     return (
         <Card
@@ -58,10 +66,7 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
                         }}>
                         <Button
                             title={
-                                <Text
-                                    caption
-                                    medium
-                                    style={styles(theme).buttonTitle}>
+                                <Text {...buttonTitleProps}>
                                     {t('words.request')}
                                 </Text>
                             }
@@ -72,10 +77,7 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
                 ) : (
                     <Button
                         title={
-                            <Text
-                                caption
-                                medium
-                                style={styles(theme).buttonTitle}>
+                            <Text {...buttonTitleProps}>
                                 {t('words.request')}
                             </Text>
                         }
@@ -86,11 +88,7 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
                 )}
 
                 <Button
-                    title={
-                        <Text caption medium style={styles(theme).buttonTitle}>
-                            {t('words.send')}
-                        </Text>
-                    }
+                    title={<Text {...buttonTitleProps}>{t('words.send')}</Text>}
                     onPress={() =>
                         navigation.navigate(
                             offline ? 'SendOfflineAmount' : 'Send',

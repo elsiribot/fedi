@@ -11,7 +11,9 @@ const ChooseRecoveryMethodHeader: React.FC<{}> = () => {
         <Header
             backButton
             headerCenter={
-                <Text bold>{t('feature.recovery.choose-method')}</Text>
+                <Text bold numberOfLines={1} adjustsFontSizeToFit>
+                    {t('feature.recovery.choose-method')}
+                </Text>
             }
         />
     )

@@ -25,7 +25,11 @@ const GroupInviteHeader: React.FC<{}> = () => {
                     <SvgImage name="ChevronLeft" />
                 </Pressable>
             }
-            headerCenter={<Text bold>{t('feature.chat.group-invite')}</Text>}
+            headerCenter={
+                <Text bold numberOfLines={1} adjustsFontSizeToFit>
+                    {t('feature.chat.group-invite')}
+                </Text>
+            }
         />
     )
 }

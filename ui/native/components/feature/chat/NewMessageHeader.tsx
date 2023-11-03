@@ -10,7 +10,11 @@ const NewMessageHeader: React.FC<{}> = () => {
     return (
         <Header
             backButton
-            headerCenter={<Text bold>{t('feature.chat.new-message')}</Text>}
+            headerCenter={
+                <Text bold numberOfLines={1} adjustsFontSizeToFit>
+                    {t('feature.chat.new-message')}
+                </Text>
+            }
         />
     )
 }
