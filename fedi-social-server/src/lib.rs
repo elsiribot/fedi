@@ -11,8 +11,7 @@ use common::db::{
     UsedDoubleEncryptedData, UsedDoubleEncryptedDataPrefix,
 };
 use common::{
-    FediSocialCommonGen, FediSocialConsensusItem, FediSocialInput, FediSocialModuleTypes,
-    FediSocialOutputOutcome,
+    FediSocialCommonGen, FediSocialConsensusItem, FediSocialModuleTypes, FediSocialOutputOutcome,
 };
 pub use fedi_social_common as common;
 use fedimint_core::config::{
@@ -23,10 +22,9 @@ use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::db::{DatabaseVersion, ModuleDatabaseTransaction};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
-    api_endpoint, ApiEndpoint, ApiError, ConsensusProposal, CoreConsensusVersion,
-    ExtendsCommonModuleInit, InputMeta, ModuleCommon, ModuleConsensusVersion, ModuleError,
-    PeerHandle, ServerModuleInit, ServerModuleInitArgs, SupportedModuleApiVersions,
-    TransactionItemAmount,
+    api_endpoint, ApiEndpoint, ApiError, CoreConsensusVersion, ExtendsCommonModuleInit, InputMeta,
+    ModuleCommon, ModuleConsensusVersion, ModuleError, PeerHandle, ServerModuleInit,
+    ServerModuleInitArgs, SupportedModuleApiVersions, TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
 use fedimint_core::{push_db_pair_items, NumPeers, OutPoint, PeerId, ServerModule};
@@ -45,8 +43,67 @@ use crate::common::{
 #[derive(Clone, Debug)]
 pub struct FediSocialGen;
 
+#[async_trait]
 impl ExtendsCommonModuleInit for FediSocialGen {
     type Common = FediSocialCommonGen;
+
+    async fn dump_database(
+        &self,
+        dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
+        prefix_names: Vec<String>,
+    ) -> Box<dyn Iterator<Item = (String, Box<dyn erased_serde::Serialize + Send>)> + '_> {
+        let mut social: BTreeMap<String, Box<dyn erased_serde::Serialize + Send>> = BTreeMap::new();
+        let filtered_prefixes = DbKeyPrefix::iter().filter(|f| {
+            prefix_names.is_empty() || prefix_names.contains(&f.to_string().to_lowercase())
+        });
+
+        for table in filtered_prefixes {
+            match table {
+                DbKeyPrefix::Backup => {
+                    push_db_pair_items!(
+                        dbtx,
+                        BackupKeyPrefix,
+                        BackupId,
+                        BackupRequest,
+                        social,
+                        "Social Backup"
+                    );
+                }
+                DbKeyPrefix::Recovery => {
+                    push_db_pair_items!(
+                        dbtx,
+                        RecoveryPrefix,
+                        RecoveryId,
+                        RecoveryRequest,
+                        social,
+                        "Social Recovery Request"
+                    );
+                }
+                DbKeyPrefix::UsedBackupCiphertext => {
+                    push_db_pair_items!(
+                        dbtx,
+                        UsedDoubleEncryptedDataPrefix,
+                        UsedDoubleEncryptedData,
+                        BackupId,
+                        social,
+                        "Used Backup Ciphertext"
+                    );
+                }
+                DbKeyPrefix::DecryptionShare => {
+                    push_db_pair_items!(
+                        dbtx,
+                        DecryptionSharePrefix,
+                        DecryptionShareId,
+                        EncryptedRecoveryShare,
+                        social,
+                        "Encrypted recovery share"
+                    );
+                }
+            }
+        }
+
+        Box::new(social.into_iter())
+    }
 }
 
 #[async_trait]
@@ -142,64 +199,6 @@ impl ServerModuleInit for FediSocialGen {
         // TODO: validate anything?
         Ok(())
     }
-
-    async fn dump_database(
-        &self,
-        dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
-        prefix_names: Vec<String>,
-    ) -> Box<dyn Iterator<Item = (String, Box<dyn erased_serde::Serialize + Send>)> + '_> {
-        let mut social: BTreeMap<String, Box<dyn erased_serde::Serialize + Send>> = BTreeMap::new();
-        let filtered_prefixes = DbKeyPrefix::iter().filter(|f| {
-            prefix_names.is_empty() || prefix_names.contains(&f.to_string().to_lowercase())
-        });
-
-        for table in filtered_prefixes {
-            match table {
-                DbKeyPrefix::Backup => {
-                    push_db_pair_items!(
-                        dbtx,
-                        BackupKeyPrefix,
-                        BackupId,
-                        BackupRequest,
-                        social,
-                        "Social Backup"
-                    );
-                }
-                DbKeyPrefix::Recovery => {
-                    push_db_pair_items!(
-                        dbtx,
-                        RecoveryPrefix,
-                        RecoveryId,
-                        RecoveryRequest,
-                        social,
-                        "Social Recovery Request"
-                    );
-                }
-                DbKeyPrefix::UsedBackupCiphertext => {
-                    push_db_pair_items!(
-                        dbtx,
-                        UsedDoubleEncryptedDataPrefix,
-                        UsedDoubleEncryptedData,
-                        BackupId,
-                        social,
-                        "Used Backup Ciphertext"
-                    );
-                }
-                DbKeyPrefix::DecryptionShare => {
-                    push_db_pair_items!(
-                        dbtx,
-                        DecryptionSharePrefix,
-                        DecryptionShareId,
-                        EncryptedRecoveryShare,
-                        social,
-                        "Encrypted recovery share"
-                    );
-                }
-            }
-        }
-
-        Box::new(social.into_iter())
-    }
 }
 
 /// Federated mint member mint
@@ -212,22 +211,12 @@ pub struct FediSocial {
 impl ServerModule for FediSocial {
     type Common = FediSocialModuleTypes;
     type Gen = FediSocialGen;
-    type VerificationCache = FediSocialVerificationCache;
-
-    async fn await_consensus_proposal<'a>(
-        &'a self,
-        dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
-    ) {
-        if !self.consensus_proposal(dbtx).await.forces_new_epoch() {
-            std::future::pending().await
-        }
-    }
 
     async fn consensus_proposal<'a>(
         &'a self,
         _dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
-    ) -> ConsensusProposal<FediSocialConsensusItem> {
-        ConsensusProposal::new_auto_trigger(vec![])
+    ) -> Vec<FediSocialConsensusItem> {
+        vec![]
     }
 
     async fn process_consensus_item<'a, 'b>(
@@ -239,18 +228,10 @@ impl ServerModule for FediSocial {
         unimplemented!();
     }
 
-    fn build_verification_cache<'a>(
-        &'a self,
-        _inputs: impl Iterator<Item = &'a FediSocialInput> + Send,
-    ) -> Self::VerificationCache {
-        FediSocialVerificationCache
-    }
-
     async fn process_input<'a, 'b, 'c>(
         &'a self,
         _dbtx: &mut ModuleDatabaseTransaction<'c>,
         _input: &'b <Self::Common as ModuleCommon>::Input,
-        _verification_cache: &Self::VerificationCache,
     ) -> Result<InputMeta, ModuleError> {
         unimplemented!();
     }
@@ -276,6 +257,7 @@ impl ServerModule for FediSocial {
         &self,
         _dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
         _audit: &mut Audit,
+        _module_instance_id: ModuleInstanceId,
     ) {
     }
 
@@ -508,8 +490,3 @@ impl FediSocial {
         Ok(dbtx.get_value(&DecryptionShareId(request.0)).await)
     }
 }
-
-#[derive(Debug, Clone)]
-pub struct FediSocialVerificationCache;
-
-impl fedimint_core::server::VerificationCache for FediSocialVerificationCache {}

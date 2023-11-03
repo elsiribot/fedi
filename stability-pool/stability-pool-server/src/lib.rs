@@ -32,12 +32,11 @@ use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::db::{DatabaseVersion, ModuleDatabaseTransaction};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
-    ApiEndpoint, ConsensusProposal, CoreConsensusVersion, ExtendsCommonModuleInit, InputMeta,
-    IntoModuleError, ModuleConsensusVersion, ModuleError, PeerHandle, ServerModuleInit,
-    ServerModuleInitArgs, SupportedModuleApiVersions, TransactionItemAmount,
+    ApiEndpoint, CoreConsensusVersion, ExtendsCommonModuleInit, InputMeta, IntoModuleError,
+    ModuleConsensusVersion, ModuleError, PeerHandle, ServerModuleInit, ServerModuleInitArgs,
+    SupportedModuleApiVersions, TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
-use fedimint_core::task::MaybeSend;
 use fedimint_core::{Amount, NumPeers, OutPoint, PeerId, ServerModule};
 use futures::{stream, StreamExt};
 use itertools::Itertools;
@@ -55,8 +54,18 @@ const BPS_UNIT: u128 = 10_000;
 #[derive(Debug, Clone)]
 pub struct StabilityPoolGen;
 
+#[async_trait]
 impl ExtendsCommonModuleInit for StabilityPoolGen {
     type Common = StabilityPoolCommonGen;
+
+    // TODO shaurya handle stability pool DB dump
+    async fn dump_database(
+        &self,
+        _dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
+        _prefix_names: Vec<String>,
+    ) -> Box<dyn Iterator<Item = (String, Box<dyn erased_serde::Serialize + Send>)> + '_> {
+        Box::new(BTreeMap::new().into_iter())
+    }
 }
 
 #[async_trait]
@@ -161,14 +170,6 @@ impl ServerModuleInit for StabilityPoolGen {
             min_allowed_cancellation_bps: config.min_allowed_cancellation_bps,
         })
     }
-
-    async fn dump_database(
-        &self,
-        _dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
-        _prefix_names: Vec<String>,
-    ) -> Box<dyn Iterator<Item = (String, Box<dyn erased_serde::Serialize + Send>)> + '_> {
-        Box::new(BTreeMap::new().into_iter())
-    }
 }
 
 #[derive(Debug)]
@@ -187,38 +188,15 @@ impl StabilityPool {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct StabilityPoolVerificationCache;
-
-impl fedimint_core::server::VerificationCache for StabilityPoolVerificationCache {}
-
 #[async_trait]
 impl ServerModule for StabilityPool {
     type Gen = StabilityPoolGen;
     type Common = StabilityPoolModuleTypes;
-    type VerificationCache = StabilityPoolVerificationCache;
-
-    async fn await_consensus_proposal(&self, dbtx: &mut ModuleDatabaseTransaction<'_>) {
-        // Consensus item can be proposed if either:
-        // - first cycle hasn't been started (current cycle is None) OR
-        // - "cycle duration" time has passed since start of current cycle
-        if let Some(current_cycle) = dbtx.get_value(&CurrentCycleKey).await {
-            let time_passed = current_cycle
-                .start_time
-                .elapsed()
-                .expect("System clock may have gone backwards");
-
-            if time_passed < self.cfg.consensus.cycle_duration {
-                let time_left = self.cfg.consensus.cycle_duration - time_passed;
-                fedimint_core::task::sleep(time_left).await;
-            }
-        }
-    }
 
     async fn consensus_proposal(
         &self,
         dbtx: &mut ModuleDatabaseTransaction<'_>,
-    ) -> ConsensusProposal<StabilityPoolConsensusItem> {
+    ) -> Vec<StabilityPoolConsensusItem> {
         // TODO shaurya backoff incase of oracle failure
 
         // Once the first cycle is started, `CurrentCycleKey` will always have
@@ -238,19 +216,19 @@ impl ServerModule for StabilityPool {
 
         if should_propose_new_cycle {
             match self.oracle.get_price().await {
-                Err(_) => ConsensusProposal::empty(),
+                Err(_) => vec![],
                 Ok(price) => {
-                    ConsensusProposal::new_auto_trigger(vec![StabilityPoolConsensusItem {
+                    vec![StabilityPoolConsensusItem {
                         next_cycle_index: current_cycle
                             .map(|Cycle { index, .. }| index + 1)
                             .unwrap_or_default(),
                         time: SystemTime::now(),
                         price,
-                    }])
+                    }]
                 }
             }
         } else {
-            ConsensusProposal::empty()
+            vec![]
         }
     }
 
@@ -346,18 +324,10 @@ impl ServerModule for StabilityPool {
         Ok(())
     }
 
-    fn build_verification_cache<'a>(
-        &'a self,
-        _inputs: impl Iterator<Item = &'a StabilityPoolInput> + MaybeSend,
-    ) -> Self::VerificationCache {
-        StabilityPoolVerificationCache
-    }
-
     async fn process_input<'a, 'b, 'c>(
         &'a self,
         dbtx: &mut ModuleDatabaseTransaction<'c>,
         input: &'b StabilityPoolInput,
-        _verification_cache: &Self::VerificationCache,
     ) -> Result<InputMeta, ModuleError> {
         // TODO shaurya ensure amount is greater than fee
         if input.amount == Amount::ZERO {
@@ -655,7 +625,13 @@ impl ServerModule for StabilityPool {
     ///
     /// Summing over all modules, if liabilities > assets then an error has
     /// occurred in the database and consensus should halt.
-    async fn audit(&self, _dbtx: &mut ModuleDatabaseTransaction<'_>, _audit: &mut Audit) {}
+    async fn audit(
+        &self,
+        _dbtx: &mut ModuleDatabaseTransaction<'_>,
+        _audit: &mut Audit,
+        _module_instance_id: ModuleInstanceId,
+    ) {
+    }
 
     fn api_endpoints(&self) -> Vec<ApiEndpoint<Self>> {
         api::endpoints()

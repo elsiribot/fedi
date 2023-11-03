@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::ffi;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -13,13 +14,12 @@ use common::{
 use fedimint_client::module::init::{ClientModuleInit, ClientModuleInitArgs};
 use fedimint_client::module::ClientModule;
 use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
-use fedimint_client::sm::{DynState, OperationId, State, StateTransition};
-use fedimint_client::transaction::{
-    ClientInput, ClientOutput, TransactionBuilder, TxSubmissionError,
-};
+use fedimint_client::sm::{DynState, State, StateTransition};
+use fedimint_client::transaction::{ClientInput, ClientOutput, TransactionBuilder};
 use fedimint_client::{Client, DynGlobalClientContext};
 use fedimint_core::api::{FederationApiExt, FederationError};
-use fedimint_core::core::{IntoDynInstance, ModuleInstanceId};
+use fedimint_core::core::{IntoDynInstance, ModuleInstanceId, OperationId};
+use fedimint_core::db::ModuleDatabaseTransaction;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::{
     ApiRequestErased, ApiVersion, CommonModuleInit, ExtendsCommonModuleInit, ModuleCommon,
@@ -35,8 +35,18 @@ use tracing::info;
 #[derive(Debug, Clone)]
 pub struct StabilityPoolClientGen;
 
+#[apply(async_trait_maybe_send!)]
 impl ExtendsCommonModuleInit for StabilityPoolClientGen {
     type Common = StabilityPoolCommonGen;
+
+    // No client-side database for stability pool
+    async fn dump_database(
+        &self,
+        _dbtx: &mut ModuleDatabaseTransaction<'_>,
+        _prefix_names: Vec<String>,
+    ) -> Box<dyn Iterator<Item = (String, Box<dyn erased_serde::Serialize + Send>)> + '_> {
+        Box::new(BTreeMap::new().into_iter())
+    }
 }
 
 #[apply(async_trait_maybe_send!)]
@@ -237,20 +247,21 @@ pub struct StabilityPoolStateMachine;
 pub enum StabilityPoolMeta {
     // Deposit given amount for seeking or providing
     Deposit {
-        outpoint: OutPoint,
-        change_outpoint: Option<OutPoint>,
+        txid: TransactionId,
+        change_outpoints: Vec<OutPoint>,
         amount: Amount,
     },
     // Cancel auto-renew of given BPS of locked funds
     CancelRenewal {
-        outpoint: OutPoint,
+        txid: TransactionId,
         bps: u32,
     },
     // Withdraw given amount from unlocked balance (idle + staged)
     // followed by auto-renewal cancellation of given BPS
     // of locked funds (could be 0 BPS)
     Withdrawal {
-        outpoint: OutPoint,
+        txid: TransactionId,
+        outpoints: Vec<OutPoint>,
         unlocked_amount: Amount,
         locked_bps: u32,
     },
@@ -316,7 +327,7 @@ pub trait StabilityPoolClientExt {
 pub enum StabilityPoolWithdrawalState {
     InvalidOperationType,
     WithdrawUnlockedInitiated,
-    TxRejected(TxSubmissionError),
+    TxRejected(String),
     WithdrawUnlockedAccepted,
     PrimaryOutputError(String),
     Success,
@@ -333,7 +344,7 @@ pub enum StabilityPoolWithdrawalState {
 pub enum StabilityPoolDepositState {
     Initiated,
     TxAccepted,
-    TxRejected(TxSubmissionError),
+    TxRejected(String),
     PrimaryOutputError(String),
     Success,
 }
@@ -390,13 +401,13 @@ impl StabilityPoolClientExt for Client {
         operation_id: OperationId,
     ) -> anyhow::Result<UpdateStreamOrOutcome<StabilityPoolDepositState>> {
         let operation = stability_pool_operation(self, operation_id).await?;
-        let (outpoint, change_outpoint) = match operation.meta::<StabilityPoolMeta>() {
+        let (txid, change_outpoints) = match operation.meta::<StabilityPoolMeta>() {
             StabilityPoolMeta::Deposit {
-                outpoint,
-                change_outpoint,
+                txid,
+                change_outpoints,
                 ..
-            } => (outpoint, change_outpoint),
-            _ => bail!("Operation is not of type deposit"),
+            } => (txid, change_outpoints),
+            _ => bail!("Operation is not of type deposit/cancel-auto-renewal/undo-cancellation"),
         };
 
         let client = self.clone();
@@ -406,10 +417,10 @@ impl StabilityPoolClientExt for Client {
                     yield StabilityPoolDepositState::Initiated;
 
                     let tx_updates_stream = client.transaction_updates(operation_id);
-                    match tx_updates_stream.await.await_tx_accepted(outpoint.txid).await {
+                    match tx_updates_stream.await.await_tx_accepted(txid).await {
                         Ok(_) => {
                             yield StabilityPoolDepositState::TxAccepted;
-                            if change_outpoint.is_none() {
+                            if change_outpoints.is_empty() {
                                 yield StabilityPoolDepositState::Success;
                                 return
                             }
@@ -419,11 +430,9 @@ impl StabilityPoolClientExt for Client {
                         },
                     }
 
-                    if let Some(change_outpoint) = change_outpoint {
-                        match client.await_primary_module_output(operation_id, change_outpoint).await {
-                            Ok(_) => yield StabilityPoolDepositState::Success,
-                            Err(e) => yield StabilityPoolDepositState::PrimaryOutputError(e.to_string()),
-                        }
+                    match client.await_primary_module_outputs(operation_id, change_outpoints).await {
+                        Ok(_) => yield StabilityPoolDepositState::Success,
+                        Err(e) => yield StabilityPoolDepositState::PrimaryOutputError(e.to_string()),
                     }
                 }
             }),
@@ -453,12 +462,13 @@ impl StabilityPoolClientExt for Client {
                 state_machines: Arc::new(move |_, _| Vec::<StabilityPoolStateMachine>::new()),
             };
             let tx = TransactionBuilder::new().with_input(input.into_dyn(instance.id));
-            let withdrawal_meta_gen = |txid, _| StabilityPoolMeta::Withdrawal {
-                outpoint: OutPoint { txid, out_idx: 0 },
+            let withdrawal_meta_gen = |txid, outpoints| StabilityPoolMeta::Withdrawal {
+                txid,
+                outpoints,
                 unlocked_amount,
                 locked_bps,
             };
-            let transaction_id = self
+            let (transaction_id, _) = self
                 .finalize_and_submit_transaction(
                     operation_id,
                     StabilityPoolCommonGen::KIND.as_str(),
@@ -488,11 +498,11 @@ impl StabilityPoolClientExt for Client {
             operation.outcome_or_updates(self.db(), operation_id, move || {
                 stream! {
                     let (cancellation_op_id, cancellation_tx_id) = match operation_meta {
-                        StabilityPoolMeta::Withdrawal { outpoint, locked_bps, .. } => {
+                        StabilityPoolMeta::Withdrawal { txid, outpoints, locked_bps, .. } => {
                             yield StabilityPoolWithdrawalState::WithdrawUnlockedInitiated;
 
                             let tx_updates_stream = client.transaction_updates(operation_id);
-                            match tx_updates_stream.await.await_tx_accepted(outpoint.txid).await {
+                            match tx_updates_stream.await.await_tx_accepted(txid).await {
                                 Ok(_) => yield StabilityPoolWithdrawalState::WithdrawUnlockedAccepted,
                                 Err(e) => {
                                     yield StabilityPoolWithdrawalState::TxRejected(e);
@@ -500,7 +510,7 @@ impl StabilityPoolClientExt for Client {
                                 },
                             }
 
-                            match client.await_primary_module_output(operation_id, outpoint).await {
+                            match client.await_primary_module_outputs(operation_id, outpoints).await {
                                 Ok(_) => {
                                     if locked_bps == 0 {
                                         yield StabilityPoolWithdrawalState::Success;
@@ -527,9 +537,9 @@ impl StabilityPoolClientExt for Client {
                                 }
                             }
                         },
-                        StabilityPoolMeta::CancelRenewal { outpoint, .. } => {
+                        StabilityPoolMeta::CancelRenewal { txid, .. } => {
                             yield StabilityPoolWithdrawalState::CancellationInitiated;
-                            (operation_id, outpoint.txid)
+                            (operation_id, txid)
                         },
                         StabilityPoolMeta::Deposit { .. } => {
                             yield StabilityPoolWithdrawalState::InvalidOperationType;
@@ -616,7 +626,7 @@ async fn stability_pool_operation(
         .await
         .ok_or(anyhow!("Operation not found"))?;
 
-    if operation.operation_type() != StabilityPoolCommonGen::KIND.as_str() {
+    if operation.operation_module_kind() != StabilityPoolCommonGen::KIND.as_str() {
         bail!("Operation is not a stability pool operation");
     }
 
@@ -638,11 +648,11 @@ async fn submit_tx_with_intended_action(
         state_machines: Arc::new(move |_, _| Vec::<StabilityPoolStateMachine>::new()),
     };
     let tx = TransactionBuilder::new().with_output(output.into_dyn(instance.id));
-    let transaction_id = match intended_action {
+    let (transaction_id, _) = match intended_action {
         IntendedAction::Seek(Seek(amount)) | IntendedAction::Provide(Provide { amount, .. }) => {
-            let deposit_meta_gen = |txid, change_outpoint| StabilityPoolMeta::Deposit {
-                outpoint: OutPoint { txid, out_idx: 0 },
-                change_outpoint,
+            let deposit_meta_gen = |txid, change_outpoints| StabilityPoolMeta::Deposit {
+                txid,
+                change_outpoints,
                 amount,
             };
             client
@@ -656,7 +666,7 @@ async fn submit_tx_with_intended_action(
         }
         IntendedAction::CancelRenewal(CancelRenewal { bps }) => {
             let cancellation_meta_gen = |txid, _| StabilityPoolMeta::CancelRenewal {
-                outpoint: OutPoint { txid, out_idx: 0 },
+                txid,
                 bps,
             };
             client

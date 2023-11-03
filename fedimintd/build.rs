@@ -1,3 +1,3 @@
 fn main() {
-    fedimint_build::set_code_version();
+    fedimint_build_v2::set_code_version();
 }
