@@ -149,16 +149,6 @@ const styles = (theme: Theme, insets: Insets) =>
         sendButton: {
             marginBottom: theme.spacing.sm,
         },
-        sendIcon: {
-            height: theme.sizes.md,
-            width: theme.sizes.md,
-        },
-        icon: {
-            height: theme.sizes.md,
-            width: theme.sizes.md,
-            marginRight: theme.spacing.md,
-            marginBottom: theme.spacing.sm,
-        },
         textInputInner: {
             borderBottomWidth: 0,
             marginTop: theme.spacing.xs,

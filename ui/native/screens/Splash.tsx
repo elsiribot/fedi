@@ -2,7 +2,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImageBackground, StyleSheet, View } from 'react-native'
+import {
+    ImageBackground,
+    StyleSheet,
+    View,
+    useWindowDimensions,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { Images } from '../assets/images'
@@ -14,52 +19,54 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const { fontScale } = useWindowDimensions()
 
     const handleJoinFederation = async () => {
         navigation.navigate('JoinFederation', { invite: undefined })
     }
 
+    const style = styles(theme, fontScale)
     return (
-        <SafeAreaView style={styles(theme).container}>
-            <View style={styles(theme).illustrationContainer}>
+        <SafeAreaView style={style.container}>
+            <View style={style.illustrationContainer}>
                 <ImageBackground
                     resizeMode="contain"
-                    style={styles(theme).illustrationImageBlurred}
+                    style={style.illustrationImageBlurred}
                     source={Images.IllustrationWorld}
                     blurRadius={20}
                 />
                 <ImageBackground
                     resizeMode="contain"
-                    style={styles(theme).illustrationImage}
+                    style={style.illustrationImage}
                     source={Images.IllustrationWorld}
                 />
             </View>
-            <View style={styles(theme).welcomeContainer}>
+            <View style={style.welcomeContainer}>
                 <SvgImage
-                    containerStyle={styles(theme).welcomeIcon}
+                    containerStyle={style.welcomeIcon}
                     size={SvgImageSize.md}
                     name="FediLogoIcon"
                 />
-                <Text h2 medium>
+                <Text h2 medium style={style.welcomeText}>
                     {t('feature.onboarding.welcome-to-fedi')}
                 </Text>
-                <Text style={styles(theme).welcomeText}>
+                <Text style={style.welcomeText}>
                     {t('feature.onboarding.guidance-1')}
                 </Text>
             </View>
 
-            <View style={styles(theme).buttonsContainer}>
+            <View style={style.buttonsContainer}>
                 <Button
                     fullWidth
                     testID="JoinFederationButton"
                     title={t('feature.federations.join-federation')}
                     onPress={handleJoinFederation}
                 />
-                <Text style={styles(theme).agreementText} small>
+                <Text style={style.agreementText} small>
                     {t('feature.onboarding.by-clicking-you-agree')}
                     <Text
                         small
-                        style={styles(theme).agreementLink}
+                        style={style.agreementLink}
                         onPress={() => {
                             navigation.navigate('Eula')
                         }}>
@@ -71,7 +78,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, fontScale: number) =>
     StyleSheet.create({
         container: {
             flex: 1,
@@ -118,7 +125,7 @@ const styles = (theme: Theme) =>
         },
         welcomeContainer: {
             width: '100%',
-            maxWidth: 320,
+            maxWidth: 320 * Math.max(fontScale, 1),
             alignItems: 'center',
             justifyContent: 'space-evenly',
             gap: theme.spacing.sm,

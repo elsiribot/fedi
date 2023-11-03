@@ -32,7 +32,6 @@ const theme = createTheme({
         Button: props => ({
             size: 'lg',
             containerStyle: {
-                borderRadius: 50,
                 ...(props.fullWidth ? { width: '100%' } : {}),
             },
             titleStyle: {
@@ -53,6 +52,7 @@ const theme = createTheme({
                 color: theme.colors?.primary,
             },
             buttonStyle: {
+                borderRadius: 50,
                 ...(props.loading
                     ? {
                           backgroundColor: 'transparent',
@@ -72,6 +72,8 @@ const theme = createTheme({
                 : {}),
         }),
         Text: props => ({
+            // Don't allow titles to get insane font size multipliers
+            maxFontSizeMultiplier: props.h1 ? 1.4 : props.h2 ? 1.8 : undefined,
             style: {
                 color: colors.primary,
                 fontSize: fediTheme.fontSizes.body,
@@ -190,7 +192,6 @@ const theme = createTheme({
         splashImageSize: 360,
         splashLogoHeight: 32,
         splashLogoWidth: 120,
-        tabBarHeight: 72,
         unreadIndicatorSize: 10,
     },
     spacing: {

@@ -148,6 +148,7 @@ const styles = (theme: Theme) =>
         titleText: {
             fontWeight: '600',
             margin: theme.spacing.md,
+            textAlign: 'center',
         },
         subtitleText: {
             textAlign: 'center',
