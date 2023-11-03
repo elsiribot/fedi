@@ -8,8 +8,8 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.66"
 async-trait = "0.1"
-fedimint-core = { workspace = true }
-fedimint-client = { workspace = true }
+fedimint-core-v2 = { workspace = true }
+fedimint-client-v2 = { workspace = true }
 futures = "0.3.24"
 serde = { version = "1.0.149", features = [ "derive" ] }
 strum = "0.24"

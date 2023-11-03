@@ -11,12 +11,12 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.66"
-fedimintd = { workspace = true }
+fedimintd-v2 = { workspace = true }
 tokio = { version = "1.25.0", features = ["full", "tracing"] }
 fedi-social-server = { path = "../fedi-social-server" }
 fedi-social-common = { path = "../fedi-social-common" }
-fedimint-core = { workspace = true }
+fedimint-core-v2 = { workspace = true }
 stability-pool-server = { path = "../stability-pool/stability-pool-server" }
 
 [build-dependencies]
-fedimint-build = { workspace = true }
+fedimint-build-v2 = { workspace = true }
