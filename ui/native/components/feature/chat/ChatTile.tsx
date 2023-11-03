@@ -56,13 +56,11 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                 />
                 <View style={styles(theme).chatTypeIconContainer}>
                     {chat.type === ChatType.direct ? (
-                        <View style={styles(theme).directIconContainer}>
-                            <Avatar
-                                id={chat.id || ''}
-                                name={chat.name || '?'}
-                                size={AvatarSize.md}
-                            />
-                        </View>
+                        <Avatar
+                            id={chat.id || ''}
+                            name={chat.name || '?'}
+                            size={AvatarSize.md}
+                        />
                     ) : (
                         <GroupIcon chat={chat} />
                     )}
@@ -127,11 +125,7 @@ const styles = (theme: Theme) =>
         container: {
             flexDirection: 'row',
             alignItems: 'center',
-            height: 72,
-        },
-        directIconContainer: {
-            height: theme.sizes.lg,
-            width: theme.sizes.lg,
+            paddingVertical: theme.spacing.md,
         },
         iconContainer: {
             flexDirection: 'row',
