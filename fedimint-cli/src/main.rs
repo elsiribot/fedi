@@ -1,5 +1,5 @@
 use fedi_social_client::FediSocialClientInit;
-use fedimint_cli::FedimintCli;
+use fedimint_cli_v2::FedimintCli;
 use stability_pool_client::StabilityPoolClientGen;
 
 #[tokio::main]

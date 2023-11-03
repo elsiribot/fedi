@@ -24,20 +24,20 @@ use db::{
     StagedCancellationKeyPrefix, StagedProvideSequenceKey, StagedProvidesKey,
     StagedProvidesKeyPrefix, StagedSeekSequenceKey, StagedSeeksKey, StagedSeeksKeyPrefix,
 };
-use fedimint_core::config::{
+use fedimint_core_v2::config::{
     ConfigGenModuleParams, DkgResult, ServerModuleConfig, ServerModuleConsensusConfig,
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
-use fedimint_core::core::ModuleInstanceId;
-use fedimint_core::db::{DatabaseVersion, ModuleDatabaseTransaction};
-use fedimint_core::module::audit::Audit;
-use fedimint_core::module::{
+use fedimint_core_v2::core::ModuleInstanceId;
+use fedimint_core_v2::db::{DatabaseVersion, ModuleDatabaseTransaction};
+use fedimint_core_v2::module::audit::Audit;
+use fedimint_core_v2::module::{
     ApiEndpoint, CoreConsensusVersion, ExtendsCommonModuleInit, InputMeta, IntoModuleError,
     ModuleConsensusVersion, ModuleError, PeerHandle, ServerModuleInit, ServerModuleInitArgs,
     SupportedModuleApiVersions, TransactionItemAmount,
 };
-use fedimint_core::server::DynServerModule;
-use fedimint_core::{Amount, NumPeers, OutPoint, PeerId, ServerModule};
+use fedimint_core_v2::server::DynServerModule;
+use fedimint_core_v2::{Amount, NumPeers, OutPoint, PeerId, ServerModule};
 use futures::{stream, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};

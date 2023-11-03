@@ -1,10 +1,10 @@
 use std::time::UNIX_EPOCH;
 
 use bitcoin::XOnlyPublicKey;
-use fedimint_core::core::ModuleInstanceId;
-use fedimint_core::db::ModuleDatabaseTransaction;
-use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiError};
-use fedimint_core::Amount;
+use fedimint_core_v2::core::ModuleInstanceId;
+use fedimint_core_v2::db::ModuleDatabaseTransaction;
+use fedimint_core_v2::module::{api_endpoint, ApiEndpoint, ApiError};
+use fedimint_core_v2::Amount;
 use stability_pool_common::{AccountInfo, LockedSeekWithMetadata};
 
 use crate::db::{

@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 use std::time::SystemTime;
 
 use bitcoin::XOnlyPublicKey;
-use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId};
+use fedimint_core_v2::encoding::{Decodable, Encodable};
+use fedimint_core_v2::{impl_db_lookup, impl_db_record, Amount, PeerId};
 use stability_pool_common::{
     CancelRenewal, LockedProvide, LockedSeek, SeekMetadata, StabilityPoolConsensusItem,
     StagedProvide, StagedSeek,

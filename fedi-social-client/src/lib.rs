@@ -1,15 +1,15 @@
 use std::collections::BTreeMap;
 
 pub use fedi_social_common::*;
-use fedimint_client::module::init::{ClientModuleInit, ClientModuleInitArgs};
-use fedimint_client::module::ClientModule;
-use fedimint_client::sm::{DynState, State, StateTransition};
-use fedimint_client::DynGlobalClientContext;
-use fedimint_core::core::{IntoDynInstance, ModuleInstanceId, OperationId};
-use fedimint_core::db::ModuleDatabaseTransaction;
-use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::module::{ApiVersion, ExtendsCommonModuleInit, MultiApiVersion};
-use fedimint_core::{apply, async_trait_maybe_send};
+use fedimint_client_v2::module::init::{ClientModuleInit, ClientModuleInitArgs};
+use fedimint_client_v2::module::ClientModule;
+use fedimint_client_v2::sm::{DynState, State, StateTransition};
+use fedimint_client_v2::DynGlobalClientContext;
+use fedimint_core_v2::core::{IntoDynInstance, ModuleInstanceId, OperationId};
+use fedimint_core_v2::db::ModuleDatabaseTransaction;
+use fedimint_core_v2::encoding::{Decodable, Encodable};
+use fedimint_core_v2::module::{ApiVersion, ExtendsCommonModuleInit, MultiApiVersion};
+use fedimint_core_v2::{apply, async_trait_maybe_send};
 
 #[derive(Debug, Clone)]
 pub struct FediSocialClientInit;

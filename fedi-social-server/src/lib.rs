@@ -14,21 +14,21 @@ use common::{
     FediSocialCommonGen, FediSocialConsensusItem, FediSocialModuleTypes, FediSocialOutputOutcome,
 };
 pub use fedi_social_common as common;
-use fedimint_core::config::{
+use fedimint_core_v2::config::{
     ConfigGenModuleParams, DkgResult, ServerModuleConfig, ServerModuleConsensusConfig,
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
-use fedimint_core::core::ModuleInstanceId;
-use fedimint_core::db::{DatabaseVersion, ModuleDatabaseTransaction};
-use fedimint_core::module::audit::Audit;
-use fedimint_core::module::{
+use fedimint_core_v2::core::ModuleInstanceId;
+use fedimint_core_v2::db::{DatabaseVersion, ModuleDatabaseTransaction};
+use fedimint_core_v2::module::audit::Audit;
+use fedimint_core_v2::module::{
     api_endpoint, ApiEndpoint, ApiError, CoreConsensusVersion, ExtendsCommonModuleInit, InputMeta,
     ModuleCommon, ModuleConsensusVersion, ModuleError, PeerHandle, ServerModuleInit,
     ServerModuleInitArgs, SupportedModuleApiVersions, TransactionItemAmount,
 };
-use fedimint_core::server::DynServerModule;
-use fedimint_core::{push_db_pair_items, NumPeers, OutPoint, PeerId, ServerModule};
-use fedimint_server::config::distributedgen::{PeerHandleOps, ThresholdKeys};
+use fedimint_core_v2::server::DynServerModule;
+use fedimint_core_v2::{push_db_pair_items, NumPeers, OutPoint, PeerId, ServerModule};
+use fedimint_server_v2::config::distributedgen::{PeerHandleOps, ThresholdKeys};
 use futures::stream::StreamExt;
 use rand::rngs::OsRng;
 use secp256k1::SECP256K1;

@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use fedi_social_common::config::FediSocialGenParams;
 use fedi_social_server::FediSocialGen;
-use fedimint_core::Amount;
-use fedimintd::fedimintd::Fedimintd;
+use fedimint_core_v2::Amount;
+use fedimintd_v2::fedimintd::Fedimintd;
 use stability_pool_server::common::config::{
     CollateralRatio, OracleConfig, StabilityPoolGenParams, StabilityPoolGenParamsConsensus,
 };
