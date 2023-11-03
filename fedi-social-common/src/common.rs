@@ -3,9 +3,9 @@ use std::io;
 use std::time::SystemTime;
 
 use bitcoin_hashes::{sha256, Hash};
-use fedimint_core_v2::encoding::{Decodable, DecodeError, Encodable};
-use fedimint_core_v2::module::registry::ModuleDecoderRegistry;
-use fedimint_core_v2::PeerId;
+use fedimint_core::encoding::{Decodable, DecodeError, Encodable};
+use fedimint_core::module::registry::ModuleDecoderRegistry;
+use fedimint_core::PeerId;
 use impl_tools::autoimpl;
 use secp256k1::{Secp256k1, Signing, Verification};
 use secp256k1_zkp::Message;

@@ -2,11 +2,11 @@ use std::fmt::{self, Display};
 use std::time::SystemTime;
 
 use bitcoin::XOnlyPublicKey;
-use fedimint_core_v2::core::{Decoder, ModuleKind};
-use fedimint_core_v2::encoding::{Decodable, Encodable};
-use fedimint_core_v2::module::registry::ModuleInstanceId;
-use fedimint_core_v2::module::{CommonModuleInit, ModuleCommon, ModuleConsensusVersion};
-use fedimint_core_v2::{plugin_types_trait_impl_common, Amount};
+use fedimint_core::core::{Decoder, ModuleKind};
+use fedimint_core::encoding::{Decodable, Encodable};
+use fedimint_core::module::registry::ModuleInstanceId;
+use fedimint_core::module::{CommonModuleInit, ModuleCommon, ModuleConsensusVersion};
+use fedimint_core::{plugin_types_trait_impl_common, Amount};
 use serde::{Deserialize, Serialize};
 
 pub mod config;

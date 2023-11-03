@@ -1,9 +1,9 @@
 use std::time::Duration;
 
-use fedimint_core_v2::config::EmptyGenParams;
-use fedimint_core_v2::core::ModuleKind;
-use fedimint_core_v2::encoding::{Decodable, Encodable};
-use fedimint_core_v2::{plugin_types_trait_impl_config, Amount};
+use fedimint_core::config::EmptyGenParams;
+use fedimint_core::core::ModuleKind;
+use fedimint_core::encoding::{Decodable, Encodable};
+use fedimint_core::{plugin_types_trait_impl_config, Amount};
 use serde::{Deserialize, Serialize};
 
 use super::StabilityPoolCommonGen;
