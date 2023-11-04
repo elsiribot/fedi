@@ -32,6 +32,7 @@ fedimint-bip39-v0 = { workspace = true }
 fedimint-aead-v0 = { workspace = true }
 v0-rocksdb = { path = "../v0-rocksdb" }
 v1-rocksdb = { path = "../v1-rocksdb" }
+v1-social = { path = "../v1-social" }
 
 anyhow = "1"
 bip39 = { version = "2.0.0", features = ["rand"] }

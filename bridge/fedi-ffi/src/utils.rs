@@ -18,7 +18,7 @@ pub fn required_threashold_of(n: usize) -> usize {
 }
 
 pub fn unix_now() -> anyhow::Result<u64> {
-    Ok(fedimint_core::time::now()
+    Ok(fedimint_core_v1::time::now()
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_secs())?)
 }

@@ -1,0 +1,15 @@
+[package]
+name = "v1-social"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1"
+bitcoin = "0.29.2"
+fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
+serde = { version = "1.0.142", features = [ "derive" ] }
+fedi-social-client-v1 = { workspace = true }
+threshold_crypto = { workspace = true }
+v1-rocksdb = { path = "../v1-rocksdb" }

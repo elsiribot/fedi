@@ -8,22 +8,22 @@ use std::usize;
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey};
 use bitcoin::{Address, XOnlyPublicKey};
-use fedi_social_client::RecoveryId;
-use fedimint_client::db::ChronologicalOperationLogKey;
-use fedimint_client::sm::OperationId;
-use fedimint_core::api::InviteCode;
-use fedimint_core::config::FederationId;
-use fedimint_core::task::TaskGroup;
-use fedimint_core::{Amount, PeerId};
+use fedi_social_client_v1::RecoveryId;
+use fedimint_client_v1::db::ChronologicalOperationLogKey;
+use fedimint_client_v1::sm::OperationId;
 use fedimint_core_v0::api::WsClientConnectInfo as InviteCodeV0;
 use fedimint_core_v0::task::TaskGroup as TaskGroupV0;
-use fedimint_mint_client::MintClientExt;
+use fedimint_core_v1::api::InviteCode;
+use fedimint_core_v1::config::FederationId;
+use fedimint_core_v1::task::TaskGroup;
+use fedimint_core_v1::{Amount, PeerId};
 use fedimint_mint_client_v0::{parse_ecash, MintClientExt as MintClientExtV0};
+use fedimint_mint_client_v1::MintClientExt;
 use futures::future::join_all;
 use futures::StreamExt;
 use lightning_invoice::Invoice;
 use rand::distributions::{Alphanumeric, DistString};
-use stability_pool_client::common::AccountInfo;
+use stability_pool_client_v1::common::AccountInfo;
 use tokio::sync::Mutex;
 use tracing::{error, info};
 use v0_rocksdb::{
@@ -363,7 +363,7 @@ impl MultiFederation {
     pub async fn stability_pool_deposit_to_seek(
         &self,
         amount: Amount,
-    ) -> Result<fedimint_client::sm::OperationId> {
+    ) -> Result<fedimint_client_v1::sm::OperationId> {
         match self {
             MultiFederation::V0(_) => bail!(ErrorCode::StabilityPoolNotSupported),
             MultiFederation::V1(v1) => v1.stability_pool_deposit_to_seek(amount).await,
@@ -374,7 +374,7 @@ impl MultiFederation {
         &self,
         unlocked_amount: Amount,
         locked_bps: u32,
-    ) -> Result<fedimint_client::sm::OperationId> {
+    ) -> Result<fedimint_client_v1::sm::OperationId> {
         match self {
             MultiFederation::V0(_) => bail!(ErrorCode::StabilityPoolNotSupported),
             MultiFederation::V1(v1) => {
@@ -497,7 +497,7 @@ impl Bridge {
             invite_code_string,
             &self.storage,
             self.event_sink.clone(),
-            fedimint_core::task::TaskGroup::new(),
+            fedimint_core_v1::task::TaskGroup::new(),
             &db_name,
         )
         .await?;
@@ -705,7 +705,7 @@ impl Bridge {
     ) -> Result<Option<String>> {
         // Check if we can recover this federation
         let old_multi = self.get_multi(&federation_id.0).await?;
-        if old_multi.get_balance().await > fedimint_core::Amount::from_sats(100) {
+        if old_multi.get_balance().await > fedimint_core_v1::Amount::from_sats(100) {
             bail!("Cannot restore from backup if current balance exceeds 100 sats")
         }
 

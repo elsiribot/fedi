@@ -560,10 +560,10 @@ mod tests {
 
     use anyhow::bail;
     use bitcoin::secp256k1::PublicKey;
-    use devimint::cmd;
-    use fedi_social_client::common::VerificationDocument;
-    use fedimint_core::Amount;
-    use fedimint_logging::TracingSetup;
+    use devimint_v1::cmd;
+    use fedi_social_client_v1::common::VerificationDocument;
+    use fedimint_core_v1::Amount;
+    use fedimint_logging_v1::TracingSetup;
 
     use super::*;
     use crate::bridge::MultiFederation;
@@ -643,7 +643,7 @@ mod tests {
     }
 
     async fn cli_generate_ecash(
-        amount: fedimint_core::Amount,
+        amount: fedimint_core_v1::Amount,
         federation: &MultiFederation,
     ) -> anyhow::Result<String> {
         let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
@@ -882,7 +882,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_lightning_send_and_receive() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
-        let receive_amount = fedimint_core::Amount::from_sats(100);
+        let receive_amount = fedimint_core_v1::Amount::from_sats(100);
         let rpc_receive_amount = RpcAmount(receive_amount);
         let description = "test".to_string();
         let invoice_string = generateInvoice(
@@ -896,7 +896,7 @@ mod tests {
         cln_pay_invoice(&invoice_string).await?;
 
         // TODO: generateInvoice needs to spawn a task that reacts to updates
-        fedimint_core::task::sleep(Duration::from_secs(4)).await;
+        fedimint_core_v1::task::sleep(Duration::from_secs(4)).await;
 
         assert_eq!(receive_amount, federation.get_balance().await);
 
@@ -930,7 +930,7 @@ mod tests {
         let (bridge, federation) = setup().await?;
 
         // receive ecash
-        let ecash_receive_amount = fedimint_core::Amount::from_msats(10000);
+        let ecash_receive_amount = fedimint_core_v1::Amount::from_msats(10000);
         let ecash = cli_generate_ecash(ecash_receive_amount, &federation).await?;
         receiveEcash(
             bridge.clone(),
@@ -942,7 +942,7 @@ mod tests {
         // check balance
         assert_eq!(
             federation.get_balance().await,
-            fedimint_core::Amount::from_msats(10000)
+            fedimint_core_v1::Amount::from_msats(10000)
         );
 
         // spend ecash
@@ -965,7 +965,7 @@ mod tests {
         let (bridge, federation) = setup().await?;
 
         // receive ecash
-        let ecash_receive_amount = fedimint_core::Amount::from_msats(10000);
+        let ecash_receive_amount = fedimint_core_v1::Amount::from_msats(10000);
         let ecash = cli_generate_ecash(ecash_receive_amount, &federation).await?;
         receiveEcash(
             bridge.clone(),
@@ -977,7 +977,7 @@ mod tests {
         // check balance
         assert_eq!(
             federation.get_balance().await,
-            fedimint_core::Amount::from_msats(10000)
+            fedimint_core_v1::Amount::from_msats(10000)
         );
 
         let count = 100;
@@ -985,7 +985,7 @@ mod tests {
             generateEcash(
                 bridge.clone(),
                 RpcFederationId(federation.federation_id()),
-                RpcAmount(fedimint_core::Amount::from_msats(
+                RpcAmount(fedimint_core_v1::Amount::from_msats(
                     ecash_receive_amount.msats / count,
                 )),
             )
@@ -995,7 +995,7 @@ mod tests {
         // check balance
         assert_eq!(
             federation.get_balance().await,
-            fedimint_core::Amount::from_msats(0)
+            fedimint_core_v1::Amount::from_msats(0)
         );
 
         Ok(())
@@ -1010,11 +1010,11 @@ mod tests {
         bitcoin_cli_send_to_address(&address, "0.1").await?;
 
         // TODO: do something smarter than sleep
-        fedimint_core::task::sleep(Duration::from_secs(10)).await;
+        fedimint_core_v1::task::sleep(Duration::from_secs(10)).await;
 
         assert_eq!(
             federation.get_balance().await,
-            fedimint_core::Amount::from_sats(10_000_000)
+            fedimint_core_v1::Amount::from_sats(10_000_000)
         );
 
         Ok(())
@@ -1025,7 +1025,7 @@ mod tests {
         let (bridge, federation) = setup().await?;
 
         // receive ecash
-        let ecash_receive_amount = fedimint_core::Amount::from_msats(100);
+        let ecash_receive_amount = fedimint_core_v1::Amount::from_msats(100);
         let ecash = cli_generate_ecash(ecash_receive_amount, &federation).await?;
         receiveEcash(
             bridge.clone(),
@@ -1037,7 +1037,7 @@ mod tests {
         // check balance
         assert_eq!(
             federation.get_balance().await,
-            fedimint_core::Amount::from_msats(100)
+            fedimint_core_v1::Amount::from_msats(100)
         );
 
         // spend ecash
@@ -1066,7 +1066,7 @@ mod tests {
         let (bridge, federation) = setup().await?;
 
         // receive ecash
-        let initial_balance = fedimint_core::Amount::from_msats(10_000);
+        let initial_balance = fedimint_core_v1::Amount::from_msats(10_000);
         let ecash = cli_generate_ecash(initial_balance, &federation).await?;
         federation.receive_ecash(ecash).await?;
         assert_eq!(initial_balance, federation.get_balance().await);
@@ -1147,7 +1147,7 @@ mod tests {
                 bridge.clone(),
                 federation_id,
                 recovery_id,
-                RpcPeerId(fedimint_core::PeerId::from(i)),
+                RpcPeerId(fedimint_core_v1::PeerId::from(i)),
                 password.into(),
             )
             .await?;

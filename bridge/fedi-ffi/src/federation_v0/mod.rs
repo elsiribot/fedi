@@ -376,7 +376,7 @@ impl FederationV0 {
     ///
     /// This currently doesn't have a way to filter out in-active operations ...
     pub async fn subscribe_to_all_operations(&self) {
-        let start = fedimint_core::time::now();
+        let start = fedimint_core_v0::time::now();
         let operations = self.client.get_active_operations().await;
         for operation_id in operations.iter() {
             if let Err(e) = self.subscribe_to_operation(*operation_id).await {
@@ -388,7 +388,7 @@ impl FederationV0 {
         }
         info!(
             "subscribe_to_all_operations took {:?}",
-            fedimint_core::time::now().duration_since(start)
+            fedimint_core_v0::time::now().duration_since(start)
         );
     }
 
@@ -621,7 +621,7 @@ impl FederationV0 {
     /// FIXME: might be better to return a typed object here and serialize at
     /// RPC layer
     pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
-        let cancel_time = fedimint_core::time::now() + ONE_WEEK;
+        let cancel_time = fedimint_core_v1::time::now() + ONE_WEEK;
         let (_, notes) = self.client.spend_notes(amount, ONE_WEEK, ()).await?;
         let notes = if amount != notes.total_amount() {
             // try to make change
@@ -797,7 +797,7 @@ impl FederationV0 {
 
     /// Execute a backup if one is due and username is present (according to db)
     pub async fn scheduled_backup(&self) -> Result<()> {
-        let now = fedimint_core::time::now();
+        let now = fedimint_core_v0::time::now();
 
         // Backup is due
         if let Some(last_backup) = self.get_last_backup_timestamp().await {
@@ -836,7 +836,7 @@ impl FederationV0 {
                             }
                         }
                         // We check if a backup is due every 10 seconds
-                        fedimint_core::task::sleep(Duration::from_secs(10)).await;
+                        fedimint_core_v0::task::sleep(Duration::from_secs(10)).await;
                     }
                 },
             )
@@ -861,7 +861,7 @@ impl FederationV0 {
                             return;
                         }
                         federation.send_federation_event().await;
-                        fedimint_core::task::sleep(Duration::from_secs(5)).await;
+                        fedimint_core_v0::task::sleep(Duration::from_secs(5)).await;
                     }
                 },
             )

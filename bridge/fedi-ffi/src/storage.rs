@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use fedimint_core::db::IDatabase;
-use fedimint_core::task::{MaybeSend, MaybeSync};
-use fedimint_core::{apply, async_trait_maybe_send};
+use fedimint_core_v1::db::IDatabase;
+use fedimint_core_v1::task::{MaybeSend, MaybeSync};
+use fedimint_core_v1::{apply, async_trait_maybe_send};
 
 #[apply(async_trait_maybe_send!)]
 pub trait IStorage: 'static + MaybeSend + MaybeSync {

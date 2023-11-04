@@ -1585,6 +1585,7 @@ dependencies = [
  "url",
  "v0-rocksdb",
  "v1-rocksdb",
+ "v1-social",
 ]
 
 [[package]]
@@ -7733,6 +7734,19 @@ version = "0.1.2"
 dependencies = [
  "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?rev=0aa0ecb62ccc26ec78c6348368c58d503e556fa0)",
  "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=0aa0ecb62ccc26ec78c6348368c58d503e556fa0)",
+]
+
+[[package]]
+name = "v1-social"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bitcoin 0.29.2",
+ "fedi-social-client 0.1.0 (git+https://x-access-token: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@github.com/fedibtc/fedi?rev=bf10ba5f5985d024f5d6b38f17aff4ddf8fa6940)",
+ "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?rev=0aa0ecb62ccc26ec78c6348368c58d503e556fa0)",
+ "serde",
+ "threshold_crypto",
+ "v1-rocksdb",
 ]
 
 [[package]]
