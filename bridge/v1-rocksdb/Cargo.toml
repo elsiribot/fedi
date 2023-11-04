@@ -4,5 +4,5 @@ version = "0.1.2"
 edition = "2021"
 
 [dependencies]
-fedimint-core-v1 = { workspace = true }
+fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "0aa0ecb62ccc26ec78c6348368c58d503e556fa0" }
 fedimint-client-v1 = { workspace = true }

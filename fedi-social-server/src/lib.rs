@@ -130,7 +130,7 @@ impl ServerModuleInit for FediSocialGen {
         peers: &[PeerId],
         _params: &ConfigGenModuleParams,
     ) -> BTreeMap<PeerId, ServerModuleConfig> {
-        let sks = threshold_crypto::SecretKeySet::random(peers.degree(), &mut OsRng);
+        let sks = fedimint_threshold_crypto::SecretKeySet::random(peers.degree(), &mut OsRng);
         let pks = sks.public_keys();
 
         let server_cfg = peers.iter().map(|&peer| {
@@ -140,7 +140,7 @@ impl ServerModuleInit for FediSocialGen {
                 peer,
                 FediSocialConfig {
                     private: FediSocialPrivateConfig {
-                        sk_share: threshold_crypto::serde_impl::SerdeSecret(sk),
+                        sk_share: fedimint_threshold_crypto::serde_impl::SerdeSecret(sk),
                     },
                     consensus: FediSocialConsensusConfig {
                         threshold: u32::try_from(peers.threshold()).expect("must not fail"),
