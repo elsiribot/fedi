@@ -11,8 +11,8 @@ path = "tests/tests.rs"
 
 [dependencies]
 anyhow = "1.0.66"
-devimint-v2 = { workspace = true }
-fedimint-core-v2 = { workspace = true }
-fedimint-logging-v2 = { workspace = true }
+devimint = { workspace = true }
+fedimint-core = { workspace = true }
+fedimint-logging = { workspace = true }
 tokio = { version = "1.25.0", features = ["full", "tracing"] }
 tracing = "0.1.37"
