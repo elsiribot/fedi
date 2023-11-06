@@ -74,7 +74,7 @@ export const PaperEcashForm: React.FC<Props> = ({ onChangeEcashPapers }) => {
             const count = parseInt(countValue, 10)
             const amount = parseInt(msatsValue) as MSats
             for (let i = 0; i < count; i++) {
-                const ecash = await fedimint.generateEcash(
+                const { ecash } = await fedimint.generateEcash(
                     amount,
                     activeFederation.id,
                 )

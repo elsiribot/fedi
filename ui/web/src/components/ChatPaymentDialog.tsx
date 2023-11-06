@@ -109,7 +109,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
                 amountUtils.satToMsat(amount),
                 federationId,
             )
-            await sendPaymentMessage(token)
+            await sendPaymentMessage(token.ecash)
         } catch (err) {
             toast.showErrorToast(err, 'errors.unknown-error')
         }

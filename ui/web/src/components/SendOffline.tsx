@@ -51,7 +51,7 @@ export const SendOffline: React.FC<Props> = ({
 
         setIsGeneratingEcash(true)
         try {
-            const ecash = await fedimint.generateEcash(
+            const { ecash } = await fedimint.generateEcash(
                 amountUtils.satToMsat(amount),
                 federationId,
             )

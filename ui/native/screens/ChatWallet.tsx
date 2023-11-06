@@ -66,7 +66,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         const generateAndSendEcash = async () => {
             try {
                 const millis = amountUtils.satToMsat(Number(amount) as Sats)
-                const ecash = await generateEcash(millis as MSats)
+                const { ecash } = await generateEcash(millis as MSats)
                 const payment: ChatPayment = {
                     amount: millis,
                     recipient: recipientId,
