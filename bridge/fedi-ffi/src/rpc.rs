@@ -26,7 +26,7 @@ use super::types::{
 };
 use crate::error::get_error_code;
 use crate::event::{Event, IEventSink, PanicEvent, TypedEventExt};
-use crate::types::{RpcBalanceInfo, RpcEcashInfo};
+use crate::types::{RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse};
 
 #[derive(Debug, thiserror::Error)]
 pub enum FedimintError {
@@ -191,7 +191,7 @@ async fn generateEcash(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
     amount: RpcAmount,
-) -> anyhow::Result<String> {
+) -> anyhow::Result<RpcGenerateEcashResponse> {
     bridge.generate_ecash(federation_id, amount).await
 }
 
@@ -898,7 +898,8 @@ mod tests {
             RpcFederationId(federation.federation_id()),
             RpcAmount(ecash_receive_amount),
         )
-        .await?;
+        .await?
+        .ecash;
 
         // receive with fedimint-cli
         cli_receive_ecash(send_ecash, federation).await?;
@@ -992,7 +993,8 @@ mod tests {
             RpcFederationId(federation.federation_id()),
             RpcAmount(ecash_receive_amount),
         )
-        .await?;
+        .await?
+        .ecash;
 
         // cancel too fast doesn't work: https://github.com/fedimint/fedimint/pull/3435
         tokio::time::sleep(Duration::from_secs(1)).await;

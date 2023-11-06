@@ -66,8 +66,8 @@ use crate::constants::{
 };
 use crate::error::ErrorCode;
 use crate::types::{
-    EcashReceiveMetadata, RpcBalanceInfo, RpcEcashInfo, RpcLightningDetails, RpcLnState,
-    RpcOOBState, RpcTransaction, RpcTransactionDirection,
+    EcashReceiveMetadata, RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse,
+    RpcLightningDetails, RpcLnState, RpcOOBState, RpcTransaction, RpcTransactionDirection,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
@@ -619,7 +619,8 @@ impl FederationV0 {
     /// Generate ecash
     /// FIXME: might be better to return a typed object here and serialize at
     /// RPC layer
-    pub async fn generate_ecash(&self, amount: Amount) -> Result<String> {
+    pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
+        let cancel_time = fedimint_core::time::now() + ONE_WEEK;
         let (_, notes) = self.client.spend_notes(amount, ONE_WEEK, ()).await?;
         let notes = if amount != notes.total_amount() {
             // try to make change
@@ -634,7 +635,10 @@ impl FederationV0 {
         } else {
             notes
         };
-        Ok(serialize_ecash(&notes))
+        Ok(RpcGenerateEcashResponse {
+            ecash: serialize_ecash(&notes),
+            cancel_at: to_unix_time(cancel_time)?,
+        })
     }
 
     pub async fn cancel_ecash(
