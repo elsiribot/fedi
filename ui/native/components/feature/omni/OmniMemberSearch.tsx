@@ -8,6 +8,7 @@ import {
     Pressable,
     StyleSheet,
     View,
+    useWindowDimensions,
 } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -46,14 +47,19 @@ export const OmniMemberSearch: React.FC<Props> = ({
     const insets = useSafeAreaInsets()
     const hasTabs = useHasBottomTabsNavigation()
     const membersWithHistory = useAppSelector(selectChatMembersWithHistory)
-    const recentMembers = useAppSelector(selectRecentChatMembers)
     const canChat = useIsChatSupported()
     const [isFocused, setIsFocused] = useState(false)
     const { query, setQuery, searchedMembers, isExactMatch } =
         useChatMemberSearch(membersWithHistory)
+    const { width, fontScale } = useWindowDimensions()
+
+    const memberCount = Math.max(Math.floor(width / fontScale / 80), 2)
+    const recentMembers = useAppSelector(s =>
+        selectRecentChatMembers(s, memberCount),
+    )
 
     const isShowingSearch = isFocused || query.length > 0
-    const style = styles(theme)
+    const style = styles(theme, memberCount)
 
     let content: React.ReactNode
     if (isShowingSearch) {
@@ -165,7 +171,7 @@ export const OmniMemberSearch: React.FC<Props> = ({
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, memberCount: number) =>
     StyleSheet.create({
         container: {
             flex: 1,
@@ -175,7 +181,7 @@ const styles = (theme: Theme) =>
             width: '100%',
             flexDirection: 'row',
             alignItems: 'center',
-            height: 56,
+            minHeight: 56,
             marginTop: theme.spacing.sm,
             paddingHorizontal: theme.spacing.lg,
             paddingVertical: theme.spacing.sm,
@@ -191,6 +197,7 @@ const styles = (theme: Theme) =>
             borderBottomWidth: 0,
         },
         input: {
+            height: '100%',
             fontSize: fediTheme.fontSizes.body,
         },
         content: {
@@ -213,7 +220,7 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
         },
         recentMember: {
-            width: '25%',
+            width: `${100 / memberCount}%`,
             alignItems: 'center',
             gap: theme.spacing.sm,
         },

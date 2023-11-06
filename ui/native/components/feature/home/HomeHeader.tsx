@@ -45,7 +45,7 @@ const HomeHeader: React.FC = () => {
             }
             rightContainerStyle={style.rightContainer}
             // Needed to make more room for Wallet title in headerLeft
-            centerContainerStyle={{ flex: 1 }}
+            centerContainerStyle={{ flex: 0 }}
         />
     )
 }

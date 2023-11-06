@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import type { Theme } from '@rneui/themed'
 import { useTheme } from '@rneui/themed'
 import React from 'react'
-import { Linking, StyleSheet, View } from 'react-native'
+import { Linking, StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import { selectFederationFediMods } from '@fedi/common/redux'
 
@@ -18,6 +18,10 @@ const ShortcutsList: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const fediMods = useAppSelector(selectFederationFediMods)
+    const { width, fontScale } = useWindowDimensions()
+
+    const columns = width / fontScale < 300 ? 2 : 3
+    const style = styles(theme, columns)
 
     const onSelectFediMod = (shortcut: Shortcut) => {
         const fediMod = shortcut as FediMod
@@ -38,11 +42,9 @@ const ShortcutsList: React.FC<{}> = () => {
         const fediModShortcuts = fediMods.map(s => new FediMod(s))
         return fediModShortcuts.map((s: FediMod, i: number) => {
             return (
-                <ShortcutTile
-                    key={`fediMod-s-${i}`}
-                    shortcut={s}
-                    onSelect={onSelectFediMod}
-                />
+                <View key={`fediMod-s-${i}`} style={style.shortcut}>
+                    <ShortcutTile shortcut={s} onSelect={onSelectFediMod} />
+                </View>
             )
         })
     }
@@ -50,11 +52,9 @@ const ShortcutsList: React.FC<{}> = () => {
     const renderScreenShortcuts = () => {
         return SCREEN_SHORTCUTS.map((s: Screen, i: number) => {
             return (
-                <ShortcutTile
-                    key={`screen-s-${i}`}
-                    shortcut={s}
-                    onSelect={onSelectScreen}
-                />
+                <View key={`screen-s-${i}`} style={style.shortcut}>
+                    <ShortcutTile shortcut={s} onSelect={onSelectScreen} />
+                </View>
             )
         })
     }
@@ -64,16 +64,21 @@ const ShortcutsList: React.FC<{}> = () => {
     // make sure to fill the remaining space with invisible elements
     const renderBuffers = () => {
         const totalShortcuts = fediMods.length + SCREEN_SHORTCUTS.length
-        const bufferCount = 3 - (totalShortcuts % 3)
+        const bufferCount = columns - (totalShortcuts % columns)
 
         return new Array(bufferCount).fill('').map((b, i) => {
-            return <View key={`buffer-s-${i}`} style={styles(theme).buffer} />
+            return (
+                <View
+                    key={`buffer-s-${i}`}
+                    style={[style.shortcut, style.buffer]}
+                />
+            )
         })
     }
 
     return (
-        <View style={styles(theme).container}>
-            <View style={styles(theme).listContainer}>
+        <View style={style.container}>
+            <View style={style.listContainer}>
                 {renderScreenShortcuts()}
                 {renderFediModShortcuts()}
                 {renderBuffers()}
@@ -82,15 +87,17 @@ const ShortcutsList: React.FC<{}> = () => {
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, columns: number) =>
     StyleSheet.create({
         container: {
             flex: 1,
             width: '100%',
             marginVertical: theme.spacing.xl,
         },
+        shortcut: {
+            width: `${100 / columns}%`,
+        },
         buffer: {
-            width: theme.percentages.shortcutTileWidth,
             height: theme.sizes.lg,
         },
         listContainer: {

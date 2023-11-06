@@ -28,7 +28,6 @@ const SettingsItem = ({
             {action || (
                 <SvgImage
                     name="ChevronRight"
-                    containerStyle={styles(theme).icon}
                     color={theme.colors.primaryLight}
                 />
             )}
@@ -50,11 +49,9 @@ const styles = (theme: Theme) =>
         },
         label: {
             flexGrow: 1,
+            flexShrink: 1,
             color: theme.colors.primary,
             paddingHorizontal: theme.spacing.md,
-        },
-        icon: {
-            alignSelf: 'flex-end',
         },
     })
 

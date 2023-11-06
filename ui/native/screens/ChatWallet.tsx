@@ -224,12 +224,20 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                     : [
                           {
                               title: t('words.request'),
+                              titleProps: {
+                                  maxFontSizeMultiplier: 1.4,
+                                  numberOfLines: 1,
+                              },
                               onPress: requestEcash,
                               disabled: isLoading,
                               loading: isLoading && submitType === 'request',
                           },
                           {
                               title: t('words.send'),
+                              titleProps: {
+                                  maxFontSizeMultiplier: 1.4,
+                                  numberOfLines: 1,
+                              },
                               onPress: handleSend,
                               disabled: isLoading,
                               loading: isLoading && submitType === 'send',

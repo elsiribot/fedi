@@ -11,7 +11,9 @@ const PersonalBackupHeader: React.FC<{}> = () => {
         <Header
             backButton
             headerCenter={
-                <Text bold>{t('feature.backup.personal-backup')}</Text>
+                <Text bold numberOfLines={1} adjustsFontSizeToFit>
+                    {t('feature.backup.personal-backup')}
+                </Text>
             }
         />
     )

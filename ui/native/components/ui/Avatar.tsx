@@ -1,11 +1,15 @@
 import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import stringUtils from '@fedi/common/utils/StringUtils'
 import { getIdentityColors } from '@fedi/common/utils/color'
 
-import SvgImage, { SvgImageName, SvgImageSize } from './SvgImage'
+import SvgImage, {
+    SvgImageName,
+    SvgImageSize,
+    getIconSizeMultiplier,
+} from './SvgImage'
 
 export enum AvatarSize {
     sm = 'sm',
@@ -34,6 +38,7 @@ const Avatar: React.FC<HoloAvatarProps> = ({
 }: HoloAvatarProps) => {
     const { theme } = useTheme()
     const [bgColor, textColor] = getIdentityColors(id)
+    const { fontScale } = useWindowDimensions()
 
     const customSize =
         size === AvatarSize.sm
@@ -41,14 +46,13 @@ const Avatar: React.FC<HoloAvatarProps> = ({
             : size === AvatarSize.md
             ? theme.sizes.mediumAvatar
             : theme.sizes.largeAvatar
-    const height = customSize
-    const width = customSize
+    const pxSize = getIconSizeMultiplier(fontScale) * customSize
     const mergedContainerStyle = [
         styles.container,
         {
-            height,
-            width,
-            borderRadius: customSize * 0.5,
+            height: pxSize,
+            width: pxSize,
+            borderRadius: pxSize * 0.5,
         },
         { backgroundColor: bgColor },
     ]

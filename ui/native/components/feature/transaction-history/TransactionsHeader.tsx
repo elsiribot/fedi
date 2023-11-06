@@ -14,7 +14,11 @@ const TransactionsHeader: React.FC<{}> = () => {
 
     return (
         <Header
-            headerCenter={<Text bold>{t('words.transactions')}</Text>}
+            headerCenter={
+                <Text bold numberOfLines={1} adjustsFontSizeToFit>
+                    {t('words.transactions')}
+                </Text>
+            }
             headerRight={
                 <Pressable
                     onPress={() => navigation.goBack()}

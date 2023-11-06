@@ -1,9 +1,14 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native'
+import {
+    StyleSheet,
+    TouchableOpacity,
+    View,
+    useWindowDimensions,
+} from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
 import {
@@ -21,9 +26,7 @@ import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupInvite'>
 
-const QR_CODE_SIZE = Dimensions.get('window').width * 0.7
-
-const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
+const GroupInvite: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { groupId } = route.params
@@ -32,6 +35,7 @@ const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
     const { toast } = useEnvironmentContext().state
     const group = useAppSelector(s => selectChatGroup(s, groupId))
     const groupInvitationLink = encodeGroupInvitationLink(groupId)
+    const { width } = useWindowDimensions()
 
     useEffect(() => {
         const handleJoinGroup = async () => {
@@ -52,66 +56,60 @@ const GroupInvite: React.FC<Props> = ({ navigation, route }: Props) => {
         toast?.show(t('feature.chat.copied-group-invite-code'))
     }
 
-    const viewGroup = () => {
-        navigation.navigate('GroupChat', { groupId })
-    }
-
+    const style = styles(theme, width)
     return (
-        <View style={styles(theme).container}>
-            <View style={styles(theme).textContainer}>
+        <View style={style.container}>
+            <View style={style.textContainer}>
                 <Text h2 medium>
                     {group?.name}
                 </Text>
             </View>
-            <View style={styles(theme).qrCodeContainer}>
-                <QRCode
-                    value={groupInvitationLink}
-                    size={QR_CODE_SIZE}
-                    logo={Images.FediQrLogo}
-                />
-            </View>
-            <View style={styles(theme).copyInviteLinkContainer}>
-                <Text style={styles(theme).inviteLinkText} numberOfLines={1}>
-                    {groupInvitationLink}
-                </Text>
-                <TouchableOpacity
-                    style={styles(theme).copyButtonContainer}
-                    onPress={copyToClipboard}>
-                    <SvgImage
-                        name="Copy"
-                        color={theme.colors.primary}
-                        size={SvgImageSize.xs}
+            <View>
+                <View style={style.qrCodeContainer}>
+                    <QRCode
+                        value={groupInvitationLink}
+                        size={width * 0.7}
+                        logo={Images.FediQrLogo}
                     />
-                    <Text style={styles(theme).copyText} numberOfLines={1}>
-                        {t('words.copy')}
+                </View>
+                <View style={style.copyInviteLinkContainer}>
+                    <Text style={style.inviteLinkText} numberOfLines={1}>
+                        {groupInvitationLink}
                     </Text>
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        style={style.copyButtonContainer}
+                        onPress={copyToClipboard}>
+                        <SvgImage
+                            name="Copy"
+                            color={theme.colors.primary}
+                            size={SvgImageSize.xs}
+                        />
+                        <Text style={style.copyText} numberOfLines={1}>
+                            {t('words.copy')}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </View>
-            <Text style={styles(theme).inviteLinkNotice} numberOfLines={3}>
+            <Text
+                style={style.inviteLinkNotice}
+                numberOfLines={3}
+                maxFontSizeMultiplier={1.4}>
                 {t('feature.chat.invite-link-notice')}
             </Text>
-            <Button
-                fullWidth
-                containerStyle={styles(theme).buttonContainer}
-                titleStyle={styles(theme).buttonTitle}
-                buttonStyle={styles(theme).button}
-                title={t('feature.chat.view-group')}
-                onPress={viewGroup}
-            />
         </View>
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, width: number) =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'space-between',
             padding: theme.spacing.xl,
         },
         textContainer: {
-            marginTop: 'auto',
+            marginTop: 0,
             alignItems: 'center',
             justifyContent: 'flex-end',
         },
@@ -119,7 +117,7 @@ const styles = (theme: Theme) =>
             borderRadius: theme.borders.defaultRadius,
             borderColor: theme.colors.primaryLight,
             borderWidth: 1,
-            padding: QR_CODE_SIZE * 0.05,
+            padding: theme.spacing.md,
             flexDirection: 'row',
             justifyContent: 'center',
             marginVertical: theme.spacing.xl,
@@ -127,23 +125,24 @@ const styles = (theme: Theme) =>
         copyInviteLinkContainer: {
             flexDirection: 'row',
             alignItems: 'center',
-            width: QR_CODE_SIZE * 1.1,
+            width: width * 0.7 + theme.spacing.md * 2,
             borderRadius: theme.borders.defaultRadius,
             borderColor: theme.colors.primaryLight,
             borderWidth: 1,
             paddingHorizontal: theme.spacing.sm,
             paddingVertical: theme.spacing.md,
         },
-        copyButtonContainer: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            width: '20%',
-        },
         inviteLinkText: {
-            width: '80%',
+            flex: 1,
             color: theme.colors.primaryLight,
             fontSize: theme.sizes.xxs,
+            textAlign: 'center',
+        },
+        copyButtonContainer: {
+            flexShrink: 0,
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingLeft: theme.spacing.sm,
         },
         copyText: {
             color: theme.colors.primary,

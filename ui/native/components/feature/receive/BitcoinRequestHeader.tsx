@@ -11,7 +11,9 @@ const BitcoinRequestHeader: React.FC<{}> = () => {
         <Header
             backButton
             headerCenter={
-                <Text bold>{t('feature.receive.bitcoin-request')}</Text>
+                <Text bold numberOfLines={1} adjustsFontSizeToFit>
+                    {t('feature.receive.bitcoin-request')}
+                </Text>
             }
             closeButton
         />

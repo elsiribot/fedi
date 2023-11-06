@@ -14,7 +14,11 @@ const NewMemberHeader: React.FC<{}> = () => {
             <Header
                 inline
                 backButton
-                headerCenter={<Text bold>{t('phrases.new-member')}</Text>}
+                headerCenter={
+                    <Text bold numberOfLines={1} adjustsFontSizeToFit>
+                        {t('phrases.new-member')}
+                    </Text>
+                }
                 centerContainerStyle={{
                     flex: 3,
                 }}

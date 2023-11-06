@@ -635,7 +635,10 @@ const MainNavigator = () => {
                                         <Header
                                             backButton
                                             headerCenter={
-                                                <Text bold>
+                                                <Text
+                                                    bold
+                                                    numberOfLines={1}
+                                                    adjustsFontSizeToFit>
                                                     {'Developer Settings'}
                                                 </Text>
                                             }

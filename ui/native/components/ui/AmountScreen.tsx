@@ -33,7 +33,11 @@ export const AmountScreen: React.FC<Props> = ({
         <KeyboardAwareWrapper>
             <View style={style.container}>
                 {showBalance && (
-                    <Text caption style={style.balance}>
+                    <Text
+                        caption
+                        style={style.balance}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit>
                         {balanceDisplay}
                     </Text>
                 )}

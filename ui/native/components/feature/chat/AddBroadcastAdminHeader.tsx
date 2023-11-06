@@ -10,7 +10,11 @@ const AddBroadcastAdminHeader: React.FC<{}> = () => {
     return (
         <Header
             backButton
-            headerCenter={<Text bold>{t('feature.chat.add-admin')}</Text>}
+            headerCenter={
+                <Text bold numberOfLines={1} adjustsFontSizeToFit>
+                    {t('feature.chat.add-admin')}
+                </Text>
+            }
         />
     )
 }

@@ -11,7 +11,9 @@ const SendBitcoinOfflineHeader: React.FC<{}> = () => {
         <Header
             backButton
             headerCenter={
-                <Text bold>{t('feature.send.send-bitcoin-offline')}</Text>
+                <Text bold numberOfLines={1} adjustsFontSizeToFit>
+                    {t('feature.send.send-bitcoin-offline')}
+                </Text>
             }
             closeButton
         />
