@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex as StdMutex;
 
 use fediffi::storage::IStorage;
-use fedimint_core::db::IDatabase;
-use fedimint_core::{apply, async_trait_maybe_send};
+use fedimint_core_v1::db::IDatabase;
+use fedimint_core_v1::{apply, async_trait_maybe_send};
 
 use crate::db::MemAndIndexedDb;
 
