@@ -11,11 +11,7 @@ import {
     View,
 } from 'react-native'
 
-import {
-    IncomingBitcoinTransactionStatus,
-    Transaction,
-    TransactionDirection,
-} from '@fedi/common/types'
+import { Transaction, TransactionDirection } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
@@ -52,7 +48,7 @@ const StabilityTransactionDetail = ({
         refreshTransactions()
     }
 
-    const txnFee = txn.bitcoin?.fee || txn.lightning?.fee || null
+    const txnFee = txn.lightning?.fee || null
 
     return (
         <Pressable style={styles(theme).container} onPress={Keyboard.dismiss}>
@@ -81,7 +77,7 @@ const StabilityTransactionDetail = ({
             )} ${t('words.sats')}`}</Text>
             <View style={styles(theme).detailItemsContainer}>
                 <Divider />
-                {txn.bitcoin?.incomingStatus && (
+                {/* {txn.bitcoin?.incomingStatus && (
                     <View>
                         <View style={styles(theme).detailItem}>
                             <Text>{`${t('words.status')}`}</Text>
@@ -96,7 +92,7 @@ const StabilityTransactionDetail = ({
                         </View>
                         <Divider />
                     </View>
-                )}
+                )} */}
                 <View style={styles(theme).detailItem}>
                     <Text>{`${t('words.memo')}`}</Text>
                     {/* TODO: Refactor notes to be distinct from memo */}
@@ -154,7 +150,7 @@ const StabilityTransactionDetail = ({
                         </Text>
                     </View>
                 )}
-                {txn.bitcoin && (
+                {/* {txn.bitcoin && (
                     <View style={styles(theme).detailItem}>
                         <Text>{`${t('phrases.transaction-id')}`}</Text>
                         <Text>
@@ -165,7 +161,7 @@ const StabilityTransactionDetail = ({
                         </Text>
                         lightning:
                     </View>
-                )}
+                )} */}
                 <Divider />
                 <Pressable
                     style={styles(theme).detailItem}
