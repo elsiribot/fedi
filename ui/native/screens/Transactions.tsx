@@ -29,6 +29,23 @@ const Transactions: React.FC<Props> = () => {
 
     const isV1Federation = useAppSelector(selectActiveFederation).version === 1
     const lastTimestampRef = useRef<number | undefined>()
+    const lastTimestamp = transactionsList.length
+        ? transactionsList[transactionsList.length - 1].createdAt
+        : undefined
+
+    const checkFederationVersion = useCallback(async () => {
+        try {
+            const version = (await listFederations()).find(
+                n => n.id === activeFederationId,
+            )?.version
+
+            if (version === 0) {
+                setIsV1Federation(false)
+            }
+        } catch (err: any) {
+            console.error('Failed to list federations', err)
+        }
+    }, [activeFederationId, listFederations])
 
     const getTransactionsList = useCallback(async () => {
         try {
