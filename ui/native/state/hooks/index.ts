@@ -72,6 +72,9 @@ export const useBridge = () => {
         recoveryQr: useCallback(() => {
             return fedimint.recoveryQr(activeFederationId!)
         }, [activeFederationId]),
+        listFederations: useCallback(() => {
+            return fedimint.listFederations()
+        }, []),
         leaveFederation: useCallback(() => {
             return fedimint.leaveFederation(activeFederationId!)
         }, [activeFederationId]),

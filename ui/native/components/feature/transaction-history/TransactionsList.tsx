@@ -20,6 +20,7 @@ import { TransactionTileError } from './TransactionTileError'
 
 type TransactionsListProps = {
     transactions: Transaction[]
+    isV1Federation: boolean
     loadMoreTransactions: () => void
     updateTransactionInState: (
         transactionId: string,
@@ -31,6 +32,7 @@ const WINDOW_WIDTH = Dimensions.get('window').width
 
 const TransactionsList = ({
     transactions,
+    isV1Federation,
     loadMoreTransactions,
     updateTransactionInState,
 }: TransactionsListProps) => {
@@ -67,7 +69,7 @@ const TransactionsList = ({
                     offset: 48 * index,
                     index,
                 })}
-                onEndReached={loadMoreTransactions}
+                onEndReached={isV1Federation ? loadMoreTransactions : undefined}
                 onEndReachedThreshold={0.9}
             />
             <Overlay
