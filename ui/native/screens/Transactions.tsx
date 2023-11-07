@@ -83,11 +83,14 @@ const Transactions: React.FC<Props> = () => {
     useEffect(() => {
         setIsLoading(true)
         const loadTransactions = async () => {
+            await checkFederationVersion()
+            await getV0TransactionsList()
             await getTransactionsList()
             setIsLoading(false)
         }
         loadTransactions()
-    }, [getTransactionsList])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     useEffect(() => {
         lastTimestampRef.current = transactionsList.length
