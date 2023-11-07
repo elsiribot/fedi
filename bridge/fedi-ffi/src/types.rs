@@ -184,6 +184,15 @@ pub struct RpcPayInvoiceResponse {
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
+pub struct RpcGenerateEcashResponse {
+    pub ecash: String,
+    #[ts(type = "number")]
+    pub cancel_at: u64,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct RpcLightningGatewayV1 {
     pub node_pub_key: RpcPublicKey,
     pub gateway_id: RpcPublicKey,

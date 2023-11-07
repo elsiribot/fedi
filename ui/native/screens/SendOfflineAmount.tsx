@@ -33,7 +33,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
         setIsLoading(true)
         try {
             const millis = amountUtils.satToMsat(Number(amount) as Sats)
-            const ecash = await generateEcash(millis)
+            const { ecash } = await generateEcash(millis)
             navigation.navigate('SendOfflineQr', { ecash, amount: millis })
         } catch (error) {
             log.error('onGenerateEcash', error)

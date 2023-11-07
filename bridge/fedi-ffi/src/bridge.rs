@@ -38,7 +38,7 @@ use super::types::{
     SocialRecoveryQr,
 };
 use crate::error::ErrorCode;
-use crate::types::{RpcBalanceInfo, RpcEcashInfo};
+use crate::types::{RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse};
 
 // FIXME: federation-specific filename
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
@@ -134,9 +134,9 @@ impl MultiFederation {
         }
     }
 
-    pub async fn generate_ecash(&self, amount: Amount) -> Result<String> {
+    pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
         match self {
-            Self::V0(v0) => v0.generate_ecash(amount.translate()).await.translate(),
+            Self::V0(v0) => v0.generate_ecash(amount.translate()).await,
             Self::V1(v1) => v1.generate_ecash(amount).await,
         }
     }
@@ -591,7 +591,7 @@ impl Bridge {
         &self,
         federation_id: RpcFederationId,
         amount: RpcAmount,
-    ) -> Result<String> {
+    ) -> Result<RpcGenerateEcashResponse> {
         let multi = self.get_multi(&federation_id.0).await?;
         multi.generate_ecash(amount.0).await
     }

@@ -73,6 +73,11 @@ export interface RpcFederation {
     version: number
 }
 
+export interface RpcGenerateEcashResponse {
+    ecash: string
+    cancelAt: number
+}
+
 export interface RpcInvoice {
     paymentHash: string
     amount: RpcAmount
@@ -193,7 +198,7 @@ export interface RpcMethods {
     ]
     generateEcash: [
         { federationId: RpcFederationId; amount: RpcAmount },
-        string,
+        { ecash: string; cancelAt: number },
     ]
     receiveEcash: [{ federationId: RpcFederationId; ecash: string }, MSats]
     validateEcash: [

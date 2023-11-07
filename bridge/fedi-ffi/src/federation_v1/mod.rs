@@ -72,8 +72,8 @@ use crate::error::ErrorCode;
 use crate::federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
     EcashReceiveMetadata, RpcBalanceInfo, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId,
-    RpcLightningDetails, RpcLnState, RpcOnchainState, RpcTransaction, RpcTransactionDirection,
-    SocialRecoveryQr,
+    RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState, RpcTransaction,
+    RpcTransactionDirection, SocialRecoveryQr,
 };
 use crate::utils::{display_currency, required_threashold_of, to_unix_time, unix_now};
 
@@ -770,7 +770,8 @@ impl FederationV1 {
     /// Generate ecash
     /// FIXME: might be better to return a typed object here and serialize at
     /// RPC layer
-    pub async fn generate_ecash(&self, amount: Amount) -> Result<String> {
+    pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
+        let cancel_time = fedimint_core::time::now() + ONE_WEEK;
         let (_, notes) = self.client.spend_notes(amount, ONE_WEEK, ()).await?;
         let notes = if amount != notes.total_amount() {
             // try to make change
@@ -785,7 +786,10 @@ impl FederationV1 {
         } else {
             notes
         };
-        Ok(notes.to_string())
+        Ok(RpcGenerateEcashResponse {
+            ecash: notes.to_string(),
+            cancel_at: to_unix_time(cancel_time)?,
+        })
     }
 
     pub async fn cancel_ecash(&self, ecash: OOBNotes) -> Result<()> {
