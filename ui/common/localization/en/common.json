@@ -89,6 +89,8 @@
         "copied-bitcoin-address": "Copied bitcoin address",
         "copied-lightning-request": "Copied lightning request",
         "copied-transaction-id": "Copied transaction ID",
+        "copied-ecash-token": "Copied ecash token",
+        "copied-member-code": "Copied Fedi member code",
         "edit-note": "Edit note",
         "expires-in": "Expires in",
         "failed-to-decode-invoice": "Failed to decode invoice",

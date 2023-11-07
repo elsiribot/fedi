@@ -1,15 +1,8 @@
-import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    StyleSheet,
-    TouchableOpacity,
-    View,
-    useWindowDimensions,
-} from 'react-native'
-import QRCode from 'react-native-qrcode-svg'
+import { StyleSheet, useWindowDimensions } from 'react-native'
 
 import {
     joinChatGroup,
@@ -18,9 +11,7 @@ import {
 } from '@fedi/common/redux'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
-import { Images } from '../assets/images'
-import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import QRScreen from '../components/ui/QRScreen'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -32,7 +23,6 @@ const GroupInvite: React.FC<Props> = ({ route }: Props) => {
     const { groupId } = route.params
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const dispatch = useAppDispatch()
-    const { toast } = useEnvironmentContext().state
     const group = useAppSelector(s => selectChatGroup(s, groupId))
     const groupInvitationLink = encodeGroupInvitationLink(groupId)
     const { width } = useWindowDimensions()
@@ -51,52 +41,21 @@ const GroupInvite: React.FC<Props> = ({ route }: Props) => {
         handleJoinGroup()
     }, [activeFederationId, dispatch, groupId])
 
-    const copyToClipboard = () => {
-        Clipboard.setString(groupInvitationLink as string)
-        toast?.show(t('feature.chat.copied-group-invite-code'))
-    }
-
     const style = styles(theme, width)
     return (
-        <View style={style.container}>
-            <View style={style.textContainer}>
-                <Text h2 medium>
-                    {group?.name}
+        <QRScreen
+            title={group?.name}
+            qrValue={groupInvitationLink}
+            copyMessage={t('feature.chat.copied-group-invite-code')}
+            bottom={
+                <Text
+                    style={style.inviteLinkNotice}
+                    numberOfLines={3}
+                    maxFontSizeMultiplier={1.4}>
+                    {t('feature.chat.invite-link-notice')}
                 </Text>
-            </View>
-            <View>
-                <View style={style.qrCodeContainer}>
-                    <QRCode
-                        value={groupInvitationLink}
-                        size={width * 0.7}
-                        logo={Images.FediQrLogo}
-                    />
-                </View>
-                <View style={style.copyInviteLinkContainer}>
-                    <Text style={style.inviteLinkText} numberOfLines={1}>
-                        {groupInvitationLink}
-                    </Text>
-                    <TouchableOpacity
-                        style={style.copyButtonContainer}
-                        onPress={copyToClipboard}>
-                        <SvgImage
-                            name="Copy"
-                            color={theme.colors.primary}
-                            size={SvgImageSize.xs}
-                        />
-                        <Text style={style.copyText} numberOfLines={1}>
-                            {t('words.copy')}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-            <Text
-                style={style.inviteLinkNotice}
-                numberOfLines={3}
-                maxFontSizeMultiplier={1.4}>
-                {t('feature.chat.invite-link-notice')}
-            </Text>
-        </View>
+            }
+        />
     )
 }
 

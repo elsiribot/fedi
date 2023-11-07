@@ -1,14 +1,13 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View, useWindowDimensions } from 'react-native'
-import QRCode from 'react-native-qrcode-svg'
+import { StyleSheet } from 'react-native'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
 import { encodeDirectChatLink } from '@fedi/common/utils/xmpp'
 
-import { Images } from '../assets/images'
+import QRScreen from '../components/ui/QRScreen'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -19,7 +18,6 @@ const MemberQrCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const member = useAppSelector(selectAuthenticatedMember)
-    const { width } = useWindowDimensions()
 
     if (!member) return null
 
@@ -30,23 +28,13 @@ const MemberQrCode: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={styles(theme).container}>
-            <View style={styles(theme).textContainer}>
-                <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
-                    {member.username}
-                </Text>
-                <Text caption style={styles(theme).noticeText}>
-                    {t('feature.chat.scan-member-code-notice')}
-                </Text>
-            </View>
-            <View style={styles(theme).qrCodeContainer}>
-                <QRCode
-                    value={directChatLink}
-                    size={width * 0.7}
-                    logo={Images.FediQrLogo}
-                />
-            </View>
-            <View style={styles(theme).bottomContainer}>
+        <QRScreen
+            title={member.username}
+            subtitle={t('feature.chat.scan-member-code-notice')}
+            qrValue={directChatLink}
+            copyValue={directChatLink}
+            copyMessage={t('phrases.copied-member-code')}
+            bottom={
                 <Button
                     fullWidth
                     buttonStyle={styles(theme).button}
@@ -56,42 +44,13 @@ const MemberQrCode: React.FC<Props> = ({ navigation }: Props) => {
                     icon={<SvgImage name="Scan" color={theme.colors.primary} />}
                     onPress={goToScanMemberCode}
                 />
-            </View>
-        </View>
+            }
+        />
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        container: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: theme.spacing.xl,
-        },
-        textContainer: {
-            flexShrink: 0,
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-        },
-        qrCodeContainer: {
-            borderRadius: theme.borders.defaultRadius,
-            borderColor: theme.colors.primaryLight,
-            borderWidth: 1,
-            padding: theme.spacing.md,
-            flexDirection: 'row',
-            justifyContent: 'center',
-        },
-        noticeText: {
-            color: theme.colors.grey,
-            marginTop: theme.spacing.md,
-            marginBottom: theme.spacing.lg,
-            textAlign: 'center',
-        },
-        bottomContainer: {
-            width: '100%',
-            flexShrink: 0,
-        },
         buttonContainer: {
             marginTop: 'auto',
         },
