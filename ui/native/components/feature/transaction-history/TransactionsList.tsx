@@ -68,8 +68,7 @@ const TransactionsList = ({
                     index,
                 })}
                 onEndReached={loadMoreTransactions}
-                onEndReachedThreshold={0.5}
-                initialNumToRender={10}
+                onEndReachedThreshold={0.9}
             />
             <Overlay
                 isVisible={selectedTransaction !== null}

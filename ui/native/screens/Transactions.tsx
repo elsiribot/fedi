@@ -51,6 +51,18 @@ const Transactions: React.FC<Props> = () => {
         },
         [listTransactions, toast],
     )
+    const getTransactionsList = useCallback(async () => {
+        try {
+            const fetchedTransactions = await listTransactions(
+                lastTimestamp,
+                12,
+            )
+            setTransactionsList(prev => [...prev, ...fetchedTransactions])
+        } catch (err: any) {
+            console.error('Failed to fetch transactions:', err)
+            toast?.show('Failed to fetch transactions')
+        }
+    }, [listTransactions, lastTimestamp, toast])
 
     // Instead of refreshing the whole transaction list
     // Just update the state of the transaction locally
