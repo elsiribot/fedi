@@ -16,7 +16,7 @@ exit_script() {
 trap exit_script SIGINT SIGTERM
 
 # download and unzip 'xcodes' utility
-XCODE_VERSION_TO_INSTALL=14.3.1
+XCODE_VERSION_TO_INSTALL=15.0.1
 XCODES_RELEASE_URL="https://github.com/XcodesOrg/xcodes/releases/download/1.4.1/xcodes.zip"
 echo -e "\nDownloading xcodes... a tool to install and switch between multiple versions of Xcode"
 echo -e "Download URL: $XCODES_RELEASE_URL"

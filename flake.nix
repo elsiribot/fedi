@@ -184,7 +184,7 @@
         # this symlinks binaries needed to run xcode-specific commands assuming
         # xcode is already installed on the machine (can't be nixified normally)
         xcode-wrapper = stdenv.mkDerivation {
-          name = "xcode-wrapper-14.3.1";
+          name = "xcode-wrapper-15.0.1";
           buildCommand = ''
             mkdir -p $out/bin
 
@@ -194,9 +194,9 @@
             ln -s /usr/bin/xcrun $out/bin/xcrun
 
             # Check if we have the xcodebuild version that we want
-            if [ -z "$($out/bin/xcodebuild -version | grep 14.3.1)" ]
+            if [ -z "$($out/bin/xcodebuild -version | grep 15.0.1)" ]
             then
-                echo "xcodebuild version: 14.3.1 is required"
+                echo "xcodebuild version: 15.0.1 is required"
                 echo "run: \`just install-xcode\` to install Xcode.app from the CLI"
                 exit 1
             fi
