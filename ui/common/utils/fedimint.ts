@@ -53,7 +53,6 @@ export class FedimintBridge {
         >('stabilityPoolAccountInfo', { federationId })
     }
 
-    async listTransactions(federationId: string) {
     async listTransactions(
         federationId: string,
         startTime?: number,

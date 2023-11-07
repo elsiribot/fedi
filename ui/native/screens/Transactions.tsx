@@ -29,23 +29,6 @@ const Transactions: React.FC<Props> = () => {
 
     const isV1Federation = useAppSelector(selectActiveFederation).version === 1
     const lastTimestampRef = useRef<number | undefined>()
-    const lastTimestamp = transactionsList.length
-        ? transactionsList[transactionsList.length - 1].createdAt
-        : undefined
-
-    const checkFederationVersion = useCallback(async () => {
-        try {
-            const version = (await listFederations()).find(
-                n => n.id === activeFederationId,
-            )?.version
-
-            if (version === 0) {
-                setIsV1Federation(false)
-            }
-        } catch (err: any) {
-            console.error('Failed to list federations', err)
-        }
-    }, [activeFederationId, listFederations])
 
     const getTransactionsList = useCallback(async () => {
         try {
@@ -100,14 +83,11 @@ const Transactions: React.FC<Props> = () => {
     useEffect(() => {
         setIsLoading(true)
         const loadTransactions = async () => {
-            await checkFederationVersion()
-            await getV0TransactionsList()
             await getTransactionsList()
             setIsLoading(false)
         }
         loadTransactions()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [getTransactionsList])
 
     useEffect(() => {
         lastTimestampRef.current = transactionsList.length
@@ -128,6 +108,7 @@ const Transactions: React.FC<Props> = () => {
                         isV1Federation ? getTransactionsList : undefined
                     }
                     updateTransactionInState={updateTransactionInState}
+                    isV1Federation={false}
                 />
             )}
         </View>
@@ -145,4 +126,3 @@ const styles = StyleSheet.create({
 })
 
 export default Transactions
-

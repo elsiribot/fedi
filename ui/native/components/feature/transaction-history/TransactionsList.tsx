@@ -21,7 +21,7 @@ import { TransactionTileError } from './TransactionTileError'
 type TransactionsListProps = {
     transactions: Transaction[]
     isV1Federation: boolean
-    loadMoreTransactions: () => void
+    loadMoreTransactions?: () => void
     updateTransactionInState: (
         transactionId: string,
         updatedNotes: string,
