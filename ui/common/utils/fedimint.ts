@@ -54,9 +54,14 @@ export class FedimintBridge {
     }
 
     async listTransactions(federationId: string) {
+    async listTransactions(
+        federationId: string,
+        startTime?: number,
+        limit?: number,
+    ) {
         return this.rpcTyped<'listTransactions', Transaction[]>(
             'listTransactions',
-            { federationId },
+            { federationId, startTime, limit },
         )
     }
 

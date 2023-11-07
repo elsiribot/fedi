@@ -20,15 +20,21 @@ import { TransactionTileError } from './TransactionTileError'
 
 type TransactionsListProps = {
     transactions: Transaction[]
-    refreshTransactions: () => void
+    loadMoreTransactions: () => void
+    updateTransactionInState: (
+        transactionId: string,
+        updatedNotes: string,
+    ) => void
 }
 
 const WINDOW_WIDTH = Dimensions.get('window').width
 
 const TransactionsList = ({
     transactions,
-    refreshTransactions,
+    loadMoreTransactions,
+    updateTransactionInState,
 }: TransactionsListProps) => {
+    console.info(transactions)
     const { t } = useTranslation()
     const { theme } = useTheme()
     const [selectedTransaction, setSelectedTransaction] =
@@ -62,6 +68,8 @@ const TransactionsList = ({
                     offset: 48 * index,
                     index,
                 })}
+                onEndReached={loadMoreTransactions}
+                onEndReachedThreshold={0.1}
             />
             <Overlay
                 isVisible={selectedTransaction !== null}
@@ -86,7 +94,7 @@ const TransactionsList = ({
                             handleCloseModal={() =>
                                 setSelectedTransaction(null)
                             }
-                            refreshTransactions={refreshTransactions}
+                            updateTransactionInState={updateTransactionInState}
                         />
                     </ErrorBoundary>
                 )}

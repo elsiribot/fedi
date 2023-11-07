@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, ScrollView } from 'react-native'
 
 import { Transaction, TransactionDirection } from '@fedi/common/types'
 import { RpcTransaction } from '@fedi/common/types/bindings'
@@ -25,6 +25,9 @@ const Transactions: React.FC<Props> = () => {
     // TODO: Hoist this into context so we can easily update individual
     // transactions and not have to refreshTransactions on every notes update
     const [transactionsList, setTransactionsList] = useState<Transaction[]>([])
+    const [lastTimestamp, setLastTimestamp] = useState<number | undefined>(
+        undefined,
+    )
 
     const getTransactionsList = useCallback(async () => {
         try {
@@ -53,6 +56,43 @@ const Transactions: React.FC<Props> = () => {
             toast?.show('Failed to fetch transactions')
         }
     }, [listTransactions, toast])
+    const getTransactionsList = useCallback(
+        async (timestamp?: number) => {
+            try {
+                const fetchedTransactions = await listTransactions(
+                    timestamp,
+                    15,
+                )
+                if (fetchedTransactions.length > 0) {
+                    const oldestTransactionTimestamp =
+                        fetchedTransactions[fetchedTransactions.length - 1]
+                            .createdAt
+                    setLastTimestamp(oldestTransactionTimestamp)
+                }
+                setTransactionsList(prev => [...prev, ...fetchedTransactions])
+            } catch (err: any) {
+                console.error('Failed to fetch transactions:', err)
+                toast?.show('Failed to fetch transactions')
+            }
+        },
+        [listTransactions, toast],
+    )
+
+    // Instead of refreshing the whole transaction list
+    // Just update the state of the transaction locally
+    // So that the user sees the update
+    const updateTransactionInState = (
+        transactionId: string,
+        updatedNotes: string,
+    ) => {
+        setTransactionsList(prevList =>
+            prevList.map(transaction =>
+                transaction.id === transactionId
+                    ? { ...transaction, notes: updatedNotes }
+                    : transaction,
+            ),
+        )
+    }
 
     useEffect(() => {
         setIsLoading(true)
@@ -66,21 +106,29 @@ const Transactions: React.FC<Props> = () => {
     if (isLoading) return <ActivityIndicator />
 
     return (
-        <View style={styles.container}>
+        <ScrollView
+            style={styles.container}
+            contentContainerStyle={styles.contentContainer}>
             {transactionsList.length === 0 ? (
                 <Text>{t('phrases.no-transactions')}</Text>
             ) : (
                 <TransactionsList
                     transactions={transactionsList}
-                    refreshTransactions={getTransactionsList}
+                    loadMoreTransactions={() =>
+                        getTransactionsList(lastTimestamp)
+                    }
+                    updateTransactionInState={updateTransactionInState}
                 />
             )}
-        </View>
+        </ScrollView>
     )
 }
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    contentContainer: {
         alignItems: 'center',
         justifyContent: 'space-evenly',
     },

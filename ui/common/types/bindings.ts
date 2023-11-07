@@ -227,7 +227,7 @@ export interface RpcMethods {
     ]
     cancelEcash: [{ federationId: RpcFederationId; ecash: string }, null]
     listTransactions: [
-        { federationId: RpcFederationId },
+        { federationId: RpcFederationId; startTime?: number; limit?: number },
         Array<{
             id: string
             createdAt: number

@@ -23,13 +23,16 @@ import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 type TransactionDetailProps = {
     txn: Transaction
     handleCloseModal: () => void
-    refreshTransactions: () => void
+    updateTransactionInState: (
+        transactionId: string,
+        updatedNotes: string,
+    ) => void
 }
 
 const TransactionDetail = ({
     txn,
     handleCloseModal,
-    refreshTransactions,
+    updateTransactionInState,
 }: TransactionDetailProps) => {
     const inputRef = useRef<TextInput | null>(null)
     const { updateTransactionNotes } = useBridge()
@@ -45,7 +48,7 @@ const TransactionDetail = ({
 
     const submitUpdatedNote = async () => {
         await updateTransactionNotes(txn.id, notes)
-        refreshTransactions()
+        updateTransactionInState(txn.id, notes)
     }
 
     const txnFee = txn.lightning?.fee || null

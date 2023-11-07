@@ -100,9 +100,16 @@ export const useBridge = () => {
         getMnemonic: useCallback(() => {
             return fedimint.getMnemonic(activeFederationId!)
         }, [activeFederationId]),
-        listTransactions: useCallback(() => {
-            return fedimint.listTransactions(activeFederationId!)
-        }, [activeFederationId]),
+        listTransactions: useCallback(
+            (startTime?: number, limit?: number) => {
+                return fedimint.listTransactions(
+                    activeFederationId!,
+                    startTime,
+                    limit,
+                )
+            },
+            [activeFederationId],
+        ),
         updateTransactionNotes: useCallback(
             (transactionId: string, notes: string) => {
                 return fedimint.updateTransactionNotes(
