@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex as StdMutex};
 use fediffi::event::IEventSink;
 use tracing_subscriber::fmt::MakeWriter;
 use tracing_subscriber::prelude::*;
+use tracing_subscriber::EnvFilter;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 thread_local! {
@@ -51,7 +52,8 @@ pub fn init(event_sink: Arc<dyn IEventSink>) {
         .without_time();
     tracing_subscriber::registry()
         .with(log_buffer_layer)
-        .with(tracing_wasm::WASMLayer::new(Default::default()))
+        .with(EnvFilter::new("info,fedimint_client=debug,fediffi=trace"))
+        .with(tracing_wasm::WASMLayer::default())
         .init();
 }
 
