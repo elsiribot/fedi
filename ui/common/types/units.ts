@@ -10,4 +10,5 @@ export type BtcString = BitcoinUnit<string, 'BtcString'>
 export type SatsString = BitcoinUnit<string, 'SatsString'>
 export type MsatsString = BitcoinUnit<string, 'MsatsString'>
 export type Usd = FiatUnit<number, 'Usd'>
+export type UsdCents = FiatUnit<number, 'UsdCents'>
 export type UsdString = FiatUnit<string, 'UsdString'>

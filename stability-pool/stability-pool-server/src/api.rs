@@ -1,7 +1,9 @@
+use std::time::UNIX_EPOCH;
+
 use bitcoin::XOnlyPublicKey;
 use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::db::ModuleDatabaseTransaction;
-use fedimint_core::module::{api_endpoint, ApiEndpoint};
+use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiError};
 use fedimint_core::Amount;
 use stability_pool_common::{AccountInfo, LockedSeekWithMetadata};
 
@@ -12,12 +14,20 @@ use crate::db::{
 use crate::StabilityPool;
 
 pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
-    vec![api_endpoint! {
-        "account_info",
-        async |_module: &StabilityPool, context, request: XOnlyPublicKey| -> AccountInfo {
-            Ok(account_info(&mut context.dbtx(), request).await)
-        }
-    }]
+    vec![
+        api_endpoint! {
+            "account_info",
+            async |_module: &StabilityPool, context, request: XOnlyPublicKey| -> AccountInfo {
+                Ok(account_info(&mut context.dbtx(), request).await)
+            }
+        },
+        api_endpoint! {
+            "next_cycle_start_time",
+            async |module: &StabilityPool, context, _request: ()| -> u64 {
+                Ok(next_cycle_start_time(&mut context.dbtx(), module).await?)
+            }
+        },
+    ]
 }
 
 pub async fn account_info(
@@ -71,4 +81,24 @@ pub async fn account_info(
         locked_seeks,
         locked_provides,
     }
+}
+
+pub async fn next_cycle_start_time(
+    dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
+    stability_pool: &StabilityPool,
+) -> anyhow::Result<u64, ApiError> {
+    let current_cycle_start_time = dbtx
+        .get_value(&CurrentCycleKey)
+        .await
+        .ok_or(ApiError::server_error(
+            "First cycle not yet started".to_owned(),
+        ))?
+        .start_time;
+
+    let cycle_duration = stability_pool.cfg.consensus.cycle_duration;
+    let next_cycle_start_time = current_cycle_start_time + cycle_duration;
+    Ok(next_cycle_start_time
+        .duration_since(UNIX_EPOCH)
+        .map_err(|_| ApiError::server_error("Server system clock error".to_owned()))?
+        .as_secs())
 }

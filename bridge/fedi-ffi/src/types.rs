@@ -4,18 +4,20 @@ use std::time::Duration;
 use anyhow::anyhow;
 use bitcoin::secp256k1::ecdsa::Signature;
 use bitcoin::Network;
-use fedimint_core::config::PeerUrl;
+use fedimint_core::config::{GlobalClientConfig, JsonWithKind, PeerUrl};
 use fedimint_ln_client::pay::GatewayPayError;
 use fedimint_ln_client::receive::LightningReceiveError;
 use fedimint_ln_client::{LnPayState, LnReceiveState};
 use fedimint_wallet_client::{BitcoinTransactionData, DepositState, WithdrawState};
 use serde::{Deserialize, Serialize};
+use stability_pool_client::common::AccountInfo;
 use ts_rs::TS;
 
 use super::bridge::MultiFederation;
 use super::federation_v0::FederationV0;
 use super::federation_v1::FederationV1;
 use super::translate::Translate;
+use super::utils::to_unix_time;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
@@ -36,11 +38,32 @@ pub struct RpcFederation {
     #[ts(type = "Record<string, {url: string, name: string}>")]
     pub nodes: BTreeMap<RpcPeerId, PeerUrl>,
     pub version: u32,
+    pub client_config: Option<RpcJsonClientConfig>,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcJsonClientConfig {
+    #[ts(type = "unknown")]
+    global: GlobalClientConfig,
+    #[ts(type = "Record<string, unknown>")]
+    modules: BTreeMap<u16, JsonWithKind>,
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Clone, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcFederationId(#[ts(type = "string")] pub fedimint_core::config::FederationId);
+
+#[derive(Debug, TS, Serialize)]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcOperationId(#[ts(type = "string")] pub fedimint_client::sm::OperationId);
+
+impl From<fedimint_client::sm::OperationId> for RpcOperationId {
+    fn from(value: fedimint_client::sm::OperationId) -> Self {
+        Self(value)
+    }
+}
 
 pub async fn federation_v0_to_rpc_federation(federation: &FederationV0) -> RpcFederation {
     let balance = RpcAmount(federation.get_balance().await.translate());
@@ -68,6 +91,7 @@ pub async fn federation_v0_to_rpc_federation(federation: &FederationV0) -> RpcFe
         nodes,
         social_recovery_active,
         version: 0,
+        client_config: None,
     }
 }
 
@@ -87,6 +111,7 @@ pub async fn federation_v1_to_rpc_federation(federation: &FederationV1) -> RpcFe
         .map(|(peer_id, peer_url)| (RpcPeerId(*peer_id), peer_url.clone()))
         .collect();
     let social_recovery_active = federation.social_recovery_continue().await.is_ok();
+    let client_config_json = federation.client.get_config_json();
     RpcFederation {
         balance,
         id,
@@ -97,6 +122,10 @@ pub async fn federation_v1_to_rpc_federation(federation: &FederationV1) -> RpcFe
         nodes,
         social_recovery_active,
         version: 1,
+        client_config: Some(RpcJsonClientConfig {
+            global: client_config_json.global,
+            modules: client_config_json.modules,
+        }),
     }
 }
 
@@ -562,4 +591,56 @@ pub struct RpcXmppCredentials {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EcashReceiveMetadata {
     pub internal: bool,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcStabilityPoolAccountInfo {
+    pub idle_balance: RpcAmount,
+    pub staged_seeks: Vec<RpcAmount>,
+    pub staged_cancellation: Option<u32>,
+    pub locked_seeks: Vec<RpcLockedSeek>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcLockedSeek {
+    pub initial_amount: RpcAmount,
+    #[ts(type = "number")]
+    pub initial_amount_cents: u64,
+    pub withdrawn_amount: RpcAmount,
+    #[ts(type = "number")]
+    pub withdrawn_amount_cents: u64,
+    pub fees_paid_so_far: RpcAmount,
+    #[ts(type = "number")]
+    pub first_lock_start_time: u64,
+}
+
+impl From<AccountInfo> for RpcStabilityPoolAccountInfo {
+    fn from(value: AccountInfo) -> Self {
+        RpcStabilityPoolAccountInfo {
+            idle_balance: RpcAmount(value.idle_balance),
+            staged_seeks: value
+                .staged_seeks
+                .into_iter()
+                .map(|s| RpcAmount(s.seek.0))
+                .collect(),
+            staged_cancellation: value.staged_cancellation.map(|c| c.bps),
+            locked_seeks: value
+                .locked_seeks
+                .into_iter()
+                .map(|l| RpcLockedSeek {
+                    initial_amount: RpcAmount(l.metadata.initial_amount),
+                    initial_amount_cents: l.metadata.initial_amount_cents,
+                    withdrawn_amount: RpcAmount(l.metadata.withdrawn_amount),
+                    withdrawn_amount_cents: l.metadata.withdrawn_amount_cents,
+                    fees_paid_so_far: RpcAmount(l.metadata.fees_paid_so_far),
+                    first_lock_start_time: to_unix_time(l.metadata.first_lock_start_time)
+                        .expect("Lock start time must be valid"),
+                })
+                .collect(),
+        }
+    }
 }

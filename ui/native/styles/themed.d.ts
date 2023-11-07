@@ -1,5 +1,5 @@
 import '@rneui/themed'
-import { DimensionValue, ViewStyle } from 'react-native'
+import { DimensionValue, TextStyle, ViewStyle } from 'react-native'
 
 // This declaration is required to combine the Theme type
 // from @react-naviation/native with the @rneui/themed Theme type
@@ -25,6 +25,7 @@ declare module '@rneui/themed' {
             keyboardGrey: string
             red: string
             white: string
+            offWhite: string
             black: string
             blue: string
             // @react-navigation requires these properties
@@ -41,7 +42,7 @@ declare module '@rneui/themed' {
             [key: string]: number
         }
         styles: {
-            [key: string]: ViewStyle
+            [key: string]: ViewStyle | TextStyle
         }
         borders: {
             defaultRadius: number
@@ -71,6 +72,7 @@ declare module '@rneui/themed' {
         caption?: boolean
         small?: boolean
         tiny?: boolean
+        color?: string
     }
     export interface ButtonProps {
         fullWidth?: boolean

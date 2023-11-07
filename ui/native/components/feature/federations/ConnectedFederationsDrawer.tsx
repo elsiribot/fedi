@@ -10,13 +10,14 @@ import { useTranslation } from 'react-i18next'
 import { ImageBackground, Pressable, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
 import { selectActiveFederationId, selectFederations } from '@fedi/common/redux'
 import { Federation } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
 
 import { Images } from '../../../assets/images'
-import { useAppSelector, useBtcFiatPrice } from '../../../state/hooks'
+import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import { FederationLogo } from '../../ui/FederationLogo'
 import SvgImage from '../../ui/SvgImage'
@@ -26,9 +27,9 @@ type Props = {
 }
 
 const FederationDrawerItemLabel = ({ federation }: Props) => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation()
-    const { t } = useTranslation()
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
 
     const amountInSats = amountUtils.msatToSat(federation.balance)

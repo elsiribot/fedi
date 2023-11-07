@@ -5,10 +5,14 @@ import React, { useState } from 'react'
 import { ScrollView, StyleSheet } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
+import { useIsStabilityPoolSupported } from '@fedi/common/hooks/federation'
+import { selectFederationBalance } from '@fedi/common/redux'
 
 import ShortcutsList from '../components/feature/home/ShortcutsList'
 import SocialRecoveryProcessing from '../components/feature/recovery/SocialRecoveryProcessing'
+import StabilityWallet from '../components/feature/stabilitypool/StabilityWallet'
 import BitcoinWallet from '../components/feature/wallet/BitcoinWallet'
+import { useAppSelector } from '../state/hooks'
 import type {
     RootStackParamList,
     TabsNavigatorParamList,
@@ -26,6 +30,9 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
     const { theme } = useTheme()
     // TODO: Hoist state and listen to bridge for updates
     const [recoveryInProgress] = useState(false)
+    const isStabilityPoolSupported = useIsStabilityPoolSupported()
+    const balance = useAppSelector(selectFederationBalance)
+    const showStabilityWallet = isStabilityPoolSupported && balance > 0
 
     return (
         <ScrollView
@@ -36,6 +43,7 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
             ) : (
                 <>
                     <BitcoinWallet offline={offline} />
+                    {showStabilityWallet && <StabilityWallet />}
                     <ErrorBoundary fallback={null}>
                         <ShortcutsList />
                     </ErrorBoundary>

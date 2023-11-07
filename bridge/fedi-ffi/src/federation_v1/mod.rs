@@ -17,7 +17,7 @@ use fedi_social_client::{FediSocialClientInit, RecoveryId};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::backup::Metadata;
 use fedimint_client::db::ChronologicalOperationLogKey;
-use fedimint_client::oplog::OperationLogEntry;
+use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
 use fedimint_client::sm::OperationId;
 use fedimint_client::{Client, ClientBuilder, ClientSecret};
 use fedimint_core::api::{
@@ -25,7 +25,7 @@ use fedimint_core::api::{
 };
 use fedimint_core::config::{ClientConfig, FederationId};
 use fedimint_core::db::{DatabaseTransaction, IDatabase};
-use fedimint_core::task::{timeout, TaskGroup};
+use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
 use fedimint_core::{Amount, PeerId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
@@ -39,9 +39,10 @@ use fedimint_mint_client::{
 use fedimint_wallet_client::{
     DepositState, WalletClientExt, WalletClientGen, WalletClientModule, WalletOperationMeta,
 };
-use futures::StreamExt;
+use futures::{Future, StreamExt};
 use lightning_invoice::Invoice;
-use stability_pool_client::StabilityPoolClientGen;
+use stability_pool_client::common::AccountInfo;
+use stability_pool_client::{StabilityPoolClientExt, StabilityPoolClientGen, StabilityPoolMeta};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
 use v1_rocksdb::{
@@ -59,7 +60,8 @@ use self::social::{
 use super::constants::{
     BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, LNURL_CHILD_ID, MINT_OPERATION_TYPE,
     NOSTR_CHILD_ID, ONE_WEEK, PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, SHUTDOWN_TIMEOUT,
-    WALLET_OPERATION_TYPE, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
+    STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED,
+    XMPP_PASSWORD,
 };
 use super::event::{Event, EventSink, TypedEventExt};
 use super::storage::Storage;
@@ -559,6 +561,55 @@ impl FederationV1 {
                             "Can't subscribe to operation id: {}",
                             operation.operation_type()
                         );
+                    }
+                }
+            }
+            STABILITY_POOL_OPERATION_TYPE => {
+                let fed = self.clone();
+                match operation.meta::<StabilityPoolMeta>() {
+                    StabilityPoolMeta::Output {
+                        is_cancellation_operation: false,
+                        ..
+                    } => {
+                        self.task_group
+                            .clone()
+                            .spawn("subscribe_stability_pool_deposit", move |_| async move {
+                                fed.subscribe_client_operation(
+                                    fed.client
+                                        .subscribe_deposit_or_renewal_operation(operation_id),
+                                    |state| {
+                                        Event::stability_pool_deposit(
+                                            fed.federation_id(),
+                                            operation_id,
+                                            state,
+                                        )
+                                    },
+                                )
+                                .await
+                            })
+                            .await;
+                    }
+                    StabilityPoolMeta::Output {
+                        is_cancellation_operation: true,
+                        ..
+                    }
+                    | StabilityPoolMeta::Input { .. } => {
+                        self.task_group
+                            .clone()
+                            .spawn("subscribe_stability_pool_withdraw", move |_| async move {
+                                fed.subscribe_client_operation(
+                                    fed.client.subscribe_withdraw(operation_id),
+                                    |state| {
+                                        Event::stability_pool_withdrawal(
+                                            fed.federation_id(),
+                                            operation_id,
+                                            state,
+                                        )
+                                    },
+                                )
+                                .await
+                            })
+                            .await;
                     }
                 }
             }
@@ -1387,6 +1438,34 @@ impl FederationV1 {
                                 })
                             }
                         },
+                        STABILITY_POOL_OPERATION_TYPE => match op.1.meta() {
+                            StabilityPoolMeta::Output { .. } => Some(RpcTransaction {
+                                id: op.0.operation_id.to_string(),
+                                created_at: to_unix_time(op.0.creation_time)
+                                    .expect("unix time should exist"),
+                                amount: RpcAmount(Amount { msats: 0 }),
+                                direction: RpcTransactionDirection::Send,
+                                notes: "stability pool".to_string(),
+                                onchain_state: None,
+                                bitcoin: None,
+                                ln_state: None,
+                                lightning: None,
+                                oob_state: None,
+                            }),
+                            StabilityPoolMeta::Input { .. } => Some(RpcTransaction {
+                                id: op.0.operation_id.to_string(),
+                                created_at: to_unix_time(op.0.creation_time)
+                                    .expect("unix time should exist"),
+                                amount: RpcAmount(Amount { msats: 0 }),
+                                direction: RpcTransactionDirection::Send,
+                                notes: "stability pool".to_string(),
+                                onchain_state: None,
+                                bitcoin: None,
+                                ln_state: None,
+                                lightning: None,
+                                oob_state: None,
+                            }),
+                        },
                         MINT_OPERATION_TYPE => {
                             let mint_meta: MintMeta = op.1.meta();
                             match mint_meta.variant {
@@ -1593,5 +1672,83 @@ impl FederationV1 {
                 .expect("incorrect type to get_operation_state")
                 .clone(),
         )
+    }
+
+    /// Stability Pool
+
+    /// Get user's stability pool account info
+    pub async fn stability_pool_account_info(&self) -> Result<AccountInfo> {
+        self.client
+            .account_info()
+            .await
+            .context("Error when fetching account info")
+    }
+
+    /// Deposit the given amount of msats into the stability pool
+    /// with the intention of seeking. Once the fedimint transaction
+    /// is accepted, the deposit is staged (pending). When the next
+    /// cycle turnover occurs, staged seeks are processed in order
+    /// to produce locks.
+    pub async fn stability_pool_deposit_to_seek(&self, amount: Amount) -> Result<OperationId> {
+        let operation_id = self.client.deposit_to_seek(amount).await?;
+        let fed = self.clone();
+        self.task_group
+            .clone()
+            .spawn("subscribe_stability_pool_deposit", move |_| async move {
+                fed.subscribe_client_operation(
+                    fed.client
+                        .subscribe_deposit_or_renewal_operation(operation_id),
+                    |state| Event::stability_pool_deposit(fed.federation_id(), operation_id, state),
+                )
+                .await
+            })
+            .await;
+        Ok(operation_id)
+    }
+
+    /// Withdraw both unlocked and locked balances, by implicitly waiting for
+    /// cycle turnover for the locked balances to be freed up.
+    /// `unlocked_amount` is extracted from staged seeks (pending deposits).
+    /// `locked_bps` is extracted from locked seeks (completed deposits). The
+    /// overall operation only completes when both parts have completed.
+    /// Note that we can't delay withdrawing staged balance under the hood
+    /// as it may otherwise become locked. Instead we focus on the overall
+    /// operation lifecycle as far as UX is concerned.
+    pub async fn stability_pool_withdraw(
+        &self,
+        unlocked_amount: Amount,
+        locked_bps: u32,
+    ) -> Result<OperationId> {
+        let (operation_id, _) =
+            StabilityPoolClientExt::withdraw(self.client.as_ref(), unlocked_amount, locked_bps)
+                .await?;
+        let fed = self.clone();
+        self.task_group
+            .clone()
+            .spawn("subscribe_stability_pool_withdraw", move |_| async move {
+                fed.subscribe_client_operation(
+                    fed.client.subscribe_withdraw(operation_id),
+                    |state| {
+                        Event::stability_pool_withdrawal(fed.federation_id(), operation_id, state)
+                    },
+                )
+                .await
+            })
+            .await;
+        Ok(operation_id)
+    }
+
+    async fn subscribe_client_operation<S, E, U>(&self, stream_gen: S, event_gen: E)
+    where
+        S: Future<Output = Result<UpdateStreamOrOutcome<U>>>,
+        E: Fn(U) -> Event,
+        U: MaybeSend + MaybeSync + 'static,
+    {
+        if let Ok(update_stream) = stream_gen.await {
+            let mut updates = update_stream.into_stream();
+            while let Some(state) = updates.next().await {
+                self.event_sink.typed_event(&event_gen(state))
+            }
+        }
     }
 }

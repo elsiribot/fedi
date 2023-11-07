@@ -22,6 +22,8 @@ import SvgImage from './SvgImage'
 
 export type Props = {
     amount: Sats
+    switcherEnabled?: boolean
+    lockToFiat?: boolean
     readOnly?: boolean
     minimumAmount?: Sats | null
     maximumAmount?: Sats | null
@@ -34,6 +36,8 @@ export type Props = {
 const AmountInput: React.FC<Props> = ({
     amount,
     readOnly,
+    switcherEnabled = true,
+    lockToFiat = false,
     minimumAmount,
     maximumAmount,
     submitAttempts,
@@ -59,6 +63,10 @@ const AmountInput: React.FC<Props> = ({
     const { height, width } = useWindowDimensions()
 
     const style = styles(theme, width)
+
+    useEffect(() => {
+        if (lockToFiat) setIsFiat(true)
+    }, [lockToFiat, setIsFiat])
 
     // For some reason the TextInput inside InvisibleInput does not
     // automatically blur the input when the keyboard is dismissed
@@ -99,9 +107,14 @@ const AmountInput: React.FC<Props> = ({
                             verb:
                                 verb?.toLowerCase() ||
                                 t('words.send').toLowerCase(),
-                            amount: `${amountUtils.formatSats(
-                                validation.amount,
-                            )} ${t('words.sats')}`,
+                            amount: lockToFiat
+                                ? amountUtils.formatFiat(
+                                      validation.fiatValue,
+                                      currency,
+                                  )
+                                : `${amountUtils.formatSats(
+                                      validation.amount,
+                                  )} ${t('words.sats')}`,
                         }}
                         components={{
                             suggestion: (
@@ -138,24 +151,26 @@ const AmountInput: React.FC<Props> = ({
                         readOnly={readOnly || hasNumpad || isSubmitting}
                     />
                 </Pressable>
-                <Pressable
-                    style={style.symbolSwitcher}
-                    disabled={readOnly || isSubmitting}
-                    onPress={() => setIsFiat(!isFiat)}>
-                    <Text
-                        style={style.secondaryAmountText}
-                        medium
-                        numberOfLines={1}>
-                        {secondaryAmountText}
-                    </Text>
-                    {!readOnly && (
-                        <SvgImage
-                            name="Switch"
-                            color={theme.colors.grey}
-                            size={20}
-                        />
-                    )}
-                </Pressable>
+                {switcherEnabled && (
+                    <Pressable
+                        style={style.symbolSwitcher}
+                        disabled={readOnly || isSubmitting}
+                        onPress={() => setIsFiat(!isFiat)}>
+                        <Text
+                            style={style.secondaryAmountText}
+                            medium
+                            numberOfLines={1}>
+                            {secondaryAmountText}
+                        </Text>
+                        {!readOnly && (
+                            <SvgImage
+                                name="Switch"
+                                color={theme.colors.grey}
+                                size={20}
+                            />
+                        )}
+                    </Pressable>
+                )}
                 {error}
             </View>
             {hasNumpad && (

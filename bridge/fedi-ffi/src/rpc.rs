@@ -20,9 +20,9 @@ use super::error::ErrorCode;
 use super::event::{EventSink, SocialRecoveryEvent};
 use super::storage::Storage;
 use super::types::{
-    RpcAmount, RpcFederation, RpcFederationId, RpcInvoice, RpcLightningGateway,
+    RpcAmount, RpcFederation, RpcFederationId, RpcInvoice, RpcLightningGateway, RpcOperationId,
     RpcPayInvoiceResponse, RpcPeerId, RpcPublicKey, RpcRecoveryId, RpcSignedLnurlMessage,
-    RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
+    RpcStabilityPoolAccountInfo, RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
 };
 use crate::error::get_error_code;
 use crate::event::{Event, IEventSink, PanicEvent, TypedEventExt};
@@ -382,6 +382,37 @@ async fn signNostrEvent(
     bridge.sign_nostr_event(federation_id, event_hash).await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn stabilityPoolAccountInfo(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+) -> anyhow::Result<RpcStabilityPoolAccountInfo> {
+    bridge.stability_pool_account_info(federation_id).await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn stabilityPoolDepositToSeek(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+    amount: RpcAmount,
+) -> anyhow::Result<RpcOperationId> {
+    bridge
+        .stability_pool_deposit_to_seek(federation_id, amount)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn stabilityPoolWithdraw(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+    unlocked_amount: RpcAmount,
+    locked_bps: u32,
+) -> anyhow::Result<RpcOperationId> {
+    bridge
+        .stability_pool_withdraw(federation_id, unlocked_amount, locked_bps)
+        .await
+}
+
 // converts from a typed handler into untyped handler
 async fn handle_wrapper<Args, F, Fut, R>(
     f: F,
@@ -475,6 +506,10 @@ rpc_methods!(RpcMethods {
     // Nostr
     getNostrPubKey,
     signNostrEvent,
+    // Stability Pool
+    stabilityPoolAccountInfo,
+    stabilityPoolDepositToSeek,
+    stabilityPoolWithdraw
 });
 
 #[instrument(
@@ -1121,6 +1156,94 @@ mod tests {
         let final_words: Vec<String> = getMnemonic(bridge.clone(), federation_id).await?;
         assert_eq!(initial_words, final_words);
 
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_stability_pool() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
+
+        // Stability pool not supported for v0 federations.
+        if let MultiFederation::V0(_) = *federation {
+            return Ok(());
+        }
+
+        // Test default account info state
+        let account_info = bridge
+            .stability_pool_account_info(RpcFederationId(federation.federation_id()))
+            .await?;
+        assert_eq!(account_info.idle_balance.0, Amount::ZERO);
+        assert!(account_info.staged_seeks.is_empty());
+        assert!(account_info.staged_cancellation.is_none());
+        assert!(account_info.locked_seeks.is_empty());
+
+        // Receive some ecash first
+        let initial_balance = Amount::from_msats(500_000);
+        let ecash = cli_generate_ecash(initial_balance, &federation).await?;
+        federation.receive_ecash(ecash).await?;
+
+        // Deposit to seek and verify account info
+        let amount_to_deposit = Amount::from_msats(initial_balance.msats / 2);
+        bridge
+            .stability_pool_deposit_to_seek(
+                RpcFederationId(federation.federation_id()),
+                RpcAmount(amount_to_deposit),
+            )
+            .await?;
+        loop {
+            // Wait until deposit operation succeeds
+            // Initiated -> TxAccepted -> Success
+            if bridge
+                .event_sink
+                .num_events_of_type("stabilityPoolDeposit".into())
+                == 3
+            {
+                break;
+            }
+
+            fedimint_core::task::sleep(Duration::from_secs(2)).await;
+        }
+        let account_info = bridge
+            .stability_pool_account_info(RpcFederationId(federation.federation_id()))
+            .await?;
+        assert_eq!(account_info.idle_balance.0, Amount::ZERO);
+        assert_eq!(account_info.staged_seeks[0].0, amount_to_deposit);
+        assert!(account_info.staged_cancellation.is_none());
+        assert!(account_info.locked_seeks.is_empty());
+
+        // Withdraw and verify account info
+        let amount_to_withdraw = Amount::from_msats(amount_to_deposit.msats / 2);
+        bridge
+            .stability_pool_withdraw(
+                RpcFederationId(federation.federation_id()),
+                RpcAmount(amount_to_withdraw),
+                0, // nothing locked that can be withdrawn
+            )
+            .await?;
+        loop {
+            // Wait until withdrawal operation succeeds
+            // WithdrawUnlockedInitiated -> WithdrawUnlockedAccepted ->
+            // Success
+            if bridge
+                .event_sink
+                .num_events_of_type("stabilityPoolWithdrawal".into())
+                == 3
+            {
+                break;
+            }
+
+            fedimint_core::task::sleep(Duration::from_secs(2)).await;
+        }
+        let account_info = bridge
+            .stability_pool_account_info(RpcFederationId(federation.federation_id()))
+            .await?;
+        assert_eq!(account_info.idle_balance.0, Amount::ZERO);
+        assert_eq!(
+            account_info.staged_seeks[0].0.msats,
+            amount_to_deposit.msats / 2
+        );
+        assert!(account_info.staged_cancellation.is_none());
+        assert!(account_info.locked_seeks.is_empty());
         Ok(())
     }
 }

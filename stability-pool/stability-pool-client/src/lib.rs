@@ -1,6 +1,6 @@
-use core::time::Duration;
 use std::ffi;
 use std::sync::Arc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, bail};
 use async_stream::stream;
@@ -29,7 +29,7 @@ use fedimint_core::{apply, async_trait_maybe_send, Amount, OutPoint, Transaction
 use futures::StreamExt;
 use secp256k1_zkp::Secp256k1;
 use serde::{Deserialize, Serialize};
-use stability_pool_common as common;
+pub use stability_pool_common as common;
 use tracing::info;
 
 #[derive(Debug, Clone)]
@@ -238,6 +238,7 @@ pub enum StabilityPoolMeta {
     Output {
         outpoint: OutPoint,
         change_outpoint: Option<OutPoint>,
+        is_cancellation_operation: bool,
     },
     Input {
         outpoint: OutPoint,
@@ -273,6 +274,8 @@ impl State for StabilityPoolStateMachine {
 #[apply(async_trait_maybe_send!)]
 pub trait StabilityPoolClientExt {
     async fn account_info(&self) -> anyhow::Result<AccountInfo, FederationError>;
+
+    async fn next_cycle_start_time(&self) -> anyhow::Result<u64, FederationError>;
 
     async fn deposit_to_seek(&self, amount: Amount) -> anyhow::Result<OperationId>;
 
@@ -338,6 +341,17 @@ impl StabilityPoolClientExt for Client {
             .await
     }
 
+    async fn next_cycle_start_time(&self) -> anyhow::Result<u64, FederationError> {
+        let (_, instance) = self.get_first_module::<StabilityPoolClientModule>(&common::KIND);
+        instance
+            .api
+            .request_current_consensus(
+                "next_cycle_start_time".to_string(),
+                ApiRequestErased::default(),
+            )
+            .await
+    }
+
     async fn deposit_to_seek(&self, amount: Amount) -> anyhow::Result<OperationId> {
         let (operation_id, _) =
             submit_tx_with_intended_action(self, IntendedAction::Seek(Seek(amount))).await?;
@@ -369,6 +383,7 @@ impl StabilityPoolClientExt for Client {
             StabilityPoolMeta::Output {
                 outpoint,
                 change_outpoint,
+                ..
             } => (outpoint, change_outpoint),
             _ => bail!("Operation is not of type deposit/cancel-auto-renewal/undo-cancellation"),
         };
@@ -515,16 +530,27 @@ impl StabilityPoolClientExt for Client {
                         },
                     }
 
-                    let idle_balance = loop {
-                        fedimint_core::task::sleep(Duration::from_secs(10)).await;
+                    let next_cycle_start_time = loop {
+                        match client.next_cycle_start_time().await {
+                            Ok(start_time_secs) => break start_time_secs,
+                            Err(_) => fedimint_core::task::sleep(Duration::from_secs(60)).await,
+                        }
+                    };
 
+                    match SystemTime::now().duration_since(UNIX_EPOCH) {
+                        Ok(curr_time) => fedimint_core::task::sleep(
+                            Duration::from_secs(next_cycle_start_time - curr_time.as_secs())
+                        ).await,
+                        Err(e) => {
+                            yield StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e.to_string());
+                            return
+                        },
+                    }
+
+                    let idle_balance = loop {
                         match client.account_info().await {
                             Ok(AccountInfo { idle_balance, .. }) if idle_balance > Amount::ZERO => break idle_balance,
-                            Err(e) => {
-                                yield StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e.to_string());
-                                return
-                            }
-                            _ => ()
+                            _ => fedimint_core::task::sleep(Duration::from_secs(60)).await
                         }
                     };
 
@@ -591,7 +617,7 @@ async fn submit_tx_with_intended_action(
     let output = ClientOutput {
         output: StabilityPoolOutput {
             account: stability_pool.key.x_only_public_key().0,
-            intended_action,
+            intended_action: intended_action.clone(),
         },
         state_machines: Arc::new(move |_, _| Vec::<StabilityPoolStateMachine>::new()),
     };
@@ -599,6 +625,10 @@ async fn submit_tx_with_intended_action(
     let output_meta_gen = |txid, change_outpoint| StabilityPoolMeta::Output {
         outpoint: OutPoint { txid, out_idx: 0 },
         change_outpoint,
+        is_cancellation_operation: match intended_action {
+            IntendedAction::CancelRenewal(_) => true,
+            _ => false,
+        },
     };
     let transaction_id = client
         .finalize_and_submit_transaction(

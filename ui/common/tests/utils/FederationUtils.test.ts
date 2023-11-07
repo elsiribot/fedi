@@ -18,6 +18,7 @@ const baseFed = {
     socialRecoveryActive: false,
     network: Network.regtest,
     version: 0,
+    clientConfig: null,
 }
 
 const fedWithNoMetadata: Federation = {

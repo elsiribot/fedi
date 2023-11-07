@@ -1,4 +1,5 @@
 import messaging from '@react-native-firebase/messaging'
+import { useNavigation } from '@react-navigation/native'
 import {
     MutableRefObject,
     useCallback,
@@ -13,15 +14,17 @@ import { usePublishNotificationToken } from '@fedi/common/hooks/chat'
 import {
     ensureHealthyXmppStream,
     selectActiveFederationId,
-    selectBtcExchangeRate,
+    refreshActiveStabilityPool,
     selectChatXmppClient,
     selectCurrency,
+    selectStableBalance,
+    selectStableBalancePending,
 } from '@fedi/common/redux'
-import { SupportedCurrency } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../../bridge'
 import { MSats, Sats } from '../../types'
+import { NavigationHook } from '../../types/navigation'
 import type { AppDispatch, AppState } from '../store'
 
 /**
@@ -40,45 +43,6 @@ export const usePrevious = <T extends unknown>(value: T): T | undefined => {
         ref.current = value
     })
     return ref.current
-}
-
-export const useBtcFiatPrice = () => {
-    const selectedFiatCurrency = useAppSelector(selectCurrency)
-    const exchangeRate: number = useAppSelector(selectBtcExchangeRate)
-
-    return {
-        convertSatsToFiat: useCallback(
-            (sats: Sats) => {
-                return amountUtils.satToFiat(sats, exchangeRate)
-            },
-            [exchangeRate],
-        ),
-        convertSatsToFiatString: useCallback(
-            (sats: Sats) => {
-                return amountUtils.satToFiatString(sats, exchangeRate)
-            },
-            [exchangeRate],
-        ),
-        convertSatsToFormattedFiat: useCallback(
-            (sats: Sats) => {
-                const amount = amountUtils.satToFiatString(sats, exchangeRate)
-
-                let currencySymbol
-                switch (selectedFiatCurrency) {
-                    case SupportedCurrency.USD:
-                        currencySymbol = `$`
-                        break
-                    case SupportedCurrency.EUR:
-                        currencySymbol = `€`
-                        break
-                    default:
-                        currencySymbol = `${selectedFiatCurrency} `
-                }
-                return `${currencySymbol}${amount}`
-            },
-            [exchangeRate, selectedFiatCurrency],
-        ),
-    }
 }
 
 export const useBridge = () => {
@@ -293,4 +257,49 @@ export const useXmppPushNotifications = async () => {
         return () => messaging().getToken()
     }, [])
     usePublishNotificationToken(getDeviceToken)
+}
+
+// This hook provides a stability pool function
+// to makes sure to regularly refresh the account balance
+export const useStabilityPool = () => {
+    const dispatch = useAppDispatch()
+    const navigation = useNavigation<NavigationHook>()
+    const stableBalance = useAppSelector(selectStableBalance)
+    const stableBalancePending = useAppSelector(selectStableBalancePending)
+    const selectedCurrency = useAppSelector(selectCurrency)
+
+    const refreshBalance = useCallback(() => {
+        dispatch(
+            refreshActiveStabilityPool({
+                fedimint,
+            }),
+        )
+    }, [dispatch])
+
+    // Refreshes the active stability pool when the navigator
+    // finishes transitioning onto the current screen
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('transitionEnd', e => {
+            if (!e.data.closing) {
+                refreshBalance()
+            }
+        })
+
+        return unsubscribe
+    }, [refreshBalance, navigation])
+
+    const formattedStableBalance = amountUtils.formatFiat(
+        stableBalance,
+        selectedCurrency,
+    )
+    const formattedStableBalancePending = amountUtils.formatFiat(
+        stableBalancePending,
+        selectedCurrency,
+    )
+
+    return {
+        refreshBalance,
+        formattedStableBalance,
+        formattedStableBalancePending,
+    }
 }

@@ -1,0 +1,96 @@
+import { useNavigation } from '@react-navigation/native'
+import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Text, Theme } from '@rneui/themed'
+import { useTheme } from '@rneui/themed'
+import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Keyboard, StyleSheet } from 'react-native'
+
+import { useSendForm } from '@fedi/common/hooks/amount'
+import { selectCurrency } from '@fedi/common/redux'
+import { selectWithdrawableStableBalance } from '@fedi/common/redux/wallet'
+import amountUtils from '@fedi/common/utils/AmountUtils'
+import { hexToRgba } from '@fedi/common/utils/color'
+
+import { AmountScreen } from '../components/ui/AmountScreen'
+import { useAppSelector } from '../state/hooks'
+import { Sats } from '../types'
+import type { RootStackParamList } from '../types/navigation'
+
+export type Props = NativeStackScreenProps<
+    RootStackParamList,
+    'StabilityWithdraw'
+>
+
+const StabilityWithdraw: React.FC<Props> = () => {
+    const navigation = useNavigation()
+    const { theme } = useTheme()
+    const { t } = useTranslation()
+    const {
+        inputAmount: amount,
+        setInputAmount: setAmount,
+        minimumAmount,
+        maximumAmount,
+    } = useSendForm({})
+    const withdrawableBalance = useAppSelector(selectWithdrawableStableBalance)
+    const selectedFiatCurrency = useAppSelector(selectCurrency)
+    const [submitAttempts, setSubmitAttempts] = useState(0)
+
+    const formattedBalance = amountUtils.formatFiat(
+        withdrawableBalance,
+        selectedFiatCurrency,
+    )
+
+    const onChangeAmount = (updatedValue: Sats) => {
+        setSubmitAttempts(0)
+        setAmount(updatedValue)
+    }
+    const handleSubmit = () => {
+        setSubmitAttempts(attempts => attempts + 1)
+        if (amount > maximumAmount || amount < minimumAmount) {
+            return
+        }
+        navigation.navigate('StabilityConfirmWithdraw', {
+            amount,
+        })
+        Keyboard.dismiss()
+    }
+
+    const style = styles(theme)
+
+    return (
+        <AmountScreen
+            amount={amount}
+            onChangeAmount={onChangeAmount}
+            minimumAmount={minimumAmount}
+            maximumAmount={maximumAmount}
+            submitAttempts={submitAttempts}
+            switcherEnabled={false}
+            lockToFiat={true}
+            verb={t('words.withdraw')}
+            subHeader={
+                <Text caption style={style.balance}>
+                    {`${t('feature.stabilitypool.available-to-withdraw')}: `}
+                    {`${formattedBalance} `}
+                </Text>
+            }
+            buttons={[
+                {
+                    title: `${t('words.continue')}`,
+                    onPress: handleSubmit,
+                    disabled: amount === 0,
+                },
+            ]}
+        />
+    )
+}
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        balance: {
+            color: hexToRgba(theme.colors.primary, 0.6),
+            textAlign: 'center',
+        },
+    })
+
+export default StabilityWithdraw

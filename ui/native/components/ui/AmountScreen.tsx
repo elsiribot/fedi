@@ -4,20 +4,24 @@ import { useTranslation } from 'react-i18next'
 import { Insets, StyleSheet, View, useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useBalanceDisplay } from '@fedi/common/hooks/amount'
+import { useBalance } from '@fedi/common/hooks/amount'
+import { selectActiveFederation } from '@fedi/common/redux'
 import { hexToRgba } from '@fedi/common/utils/color'
 
+import { useAppSelector } from '../../state/hooks'
 import AmountInput, { Props as AmountInputProps } from './AmountInput'
 import KeyboardAwareWrapper from './KeyboardAwareWrapper'
 
 interface Props extends AmountInputProps {
     showBalance?: boolean
+    subHeader?: React.ReactNode | null
     description?: string
     buttons: ButtonProps[]
 }
 
 export const AmountScreen: React.FC<Props> = ({
     showBalance,
+    subHeader = null,
     buttons,
     ...amountInputProps
 }) => {
@@ -25,22 +29,27 @@ export const AmountScreen: React.FC<Props> = ({
     const { theme } = useTheme()
     const { height } = useWindowDimensions()
     const insets = useSafeAreaInsets()
-    const balanceDisplay = useBalanceDisplay(t)
+    const balance = useAppSelector(selectActiveFederation)?.balance
+    const { satsBalanceWithSymbol } = useBalance()
 
     const style = styles(theme, insets, height)
 
     return (
         <KeyboardAwareWrapper>
             <View style={style.container}>
-                {showBalance && (
-                    <Text
-                        caption
-                        style={style.balance}
-                        numberOfLines={1}
-                        adjustsFontSizeToFit>
-                        {balanceDisplay}
-                    </Text>
-                )}
+                <View style={style.subHeader}>
+                    {subHeader}
+                    {showBalance && typeof balance === 'number' && (
+                        <Text
+                            caption
+                            style={style.balance}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit>
+                            {`${t('words.balance')}: `}
+                            {`${satsBalanceWithSymbol} `}
+                        </Text>
+                    )}
+                </View>
                 <AmountInput {...amountInputProps} />
                 <View style={style.buttonGroup}>
                     {buttons.map((button, index) => (
@@ -68,8 +77,10 @@ const styles = (theme: Theme, insets: Insets, height: number) =>
             width: '100%',
             gap: theme.spacing.xl,
         },
-        balance: {
+        subHeader: {
             paddingTop: height >= 500 ? theme.spacing.xl : theme.spacing.sm,
+        },
+        balance: {
             color: hexToRgba(theme.colors.primary, 0.6),
             textAlign: 'center',
         },

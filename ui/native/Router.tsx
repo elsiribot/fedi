@@ -47,6 +47,14 @@ import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
 import SendBitcoinOfflineHeader from './components/feature/send/SendBitcoinOfflineHeader'
 import SendBitcoinOfflineQrHeader from './components/feature/send/SendBitcoinOfflineQrHeader'
 import SendHeader from './components/feature/send/SendHeader'
+import ConfirmDepositHeader from './components/feature/stabilitypool/ConfirmDepositHeader'
+import ConfirmWithdrawHeader from './components/feature/stabilitypool/ConfirmWithdrawHeader'
+import DepositInitiatedHeader from './components/feature/stabilitypool/DepositInitiatedHeader'
+import StabilityDepositHeader from './components/feature/stabilitypool/StabilityDepositHeader'
+import StabilityHistoryHeader from './components/feature/stabilitypool/StabilityHistoryHeader'
+import StabilityHomeHeader from './components/feature/stabilitypool/StabilityHomeHeader'
+import StabilityWithdrawHeader from './components/feature/stabilitypool/StabilityWithdrawHeader'
+import WithdrawInitiatedHeader from './components/feature/stabilitypool/WithdrawInitiatedHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 import Header from './components/ui/Header'
 import AddBroadcastAdmin from './screens/AddBroadcastAdmin'
@@ -107,6 +115,14 @@ import SocialRecoveryFailure from './screens/SocialRecoveryFailure'
 import SocialRecoveryQrModal from './screens/SocialRecoveryQrModal'
 import SocialRecoverySuccess from './screens/SocialRecoverySuccess'
 import Splash from './screens/Splash'
+import StabilityConfirmDeposit from './screens/StabilityConfirmDeposit'
+import StabilityConfirmWithdraw from './screens/StabilityConfirmWithdraw'
+import StabilityDeposit from './screens/StabilityDeposit'
+import StabilityDepositInitiated from './screens/StabilityDepositInitiated'
+import StabilityHistory from './screens/StabilityHistory'
+import StabilityHome from './screens/StabilityHome'
+import StabilityWithdraw from './screens/StabilityWithdraw'
+import StabilityWithdrawInitiated from './screens/StabilityWithdrawInitiated'
 import StartPersonalBackup from './screens/StartPersonalBackup'
 import StartRecoveryAssist from './screens/StartRecoveryAssist'
 import StartSocialBackup from './screens/StartSocialBackup'
@@ -624,6 +640,63 @@ const MainNavigator = () => {
                                 component={Settings}
                                 options={() => ({
                                     header: () => <SettingsHeader />,
+                                })}
+                            />
+                            {/* Stability Pools */}
+                            <Stack.Screen
+                                name="StabilityHome"
+                                component={StabilityHome}
+                                options={() => ({
+                                    header: () => <StabilityHomeHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityHistory"
+                                component={StabilityHistory}
+                                options={() => ({
+                                    header: () => <StabilityHistoryHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityDeposit"
+                                component={StabilityDeposit}
+                                options={() => ({
+                                    header: () => <StabilityDepositHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityWithdraw"
+                                component={StabilityWithdraw}
+                                options={() => ({
+                                    header: () => <StabilityWithdrawHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityConfirmDeposit"
+                                component={StabilityConfirmDeposit}
+                                options={() => ({
+                                    header: () => <ConfirmDepositHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityConfirmWithdraw"
+                                component={StabilityConfirmWithdraw}
+                                options={() => ({
+                                    header: () => <ConfirmWithdrawHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityDepositInitiated"
+                                component={StabilityDepositInitiated}
+                                options={() => ({
+                                    header: () => <DepositInitiatedHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityWithdrawInitiated"
+                                component={StabilityWithdrawInitiated}
+                                options={() => ({
+                                    header: () => <WithdrawInitiatedHeader />,
                                 })}
                             />
                             {/* Developer-only */}

@@ -20,3 +20,4 @@ pub const FEDI_FILE_PATH: &str = "./fedi_file.json";
 pub const LIGHTNING_OPERATION_TYPE: &str = "ln";
 pub const MINT_OPERATION_TYPE: &str = "mint";
 pub const WALLET_OPERATION_TYPE: &str = "wallet";
+pub const STABILITY_POOL_OPERATION_TYPE: &str = "stability_pool";

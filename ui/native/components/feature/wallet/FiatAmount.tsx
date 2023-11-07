@@ -2,8 +2,8 @@ import { Text, TextProps, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet } from 'react-native'
 
-import { useBtcFiatPrice } from '../../../state/hooks'
-import { Sats } from '../../../types'
+import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
+import { Sats } from '@fedi/common/types'
 
 type FiatAmountProps = {
     amountSats?: Sats

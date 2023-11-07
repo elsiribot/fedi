@@ -8,14 +8,7 @@ import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
 
 import { authenticateChat, CommonState } from '.'
-import type {
-    Federation,
-    Guardian,
-    MSats,
-    Sats,
-    SeedWords,
-    FediMod,
-} from '../types'
+import { Federation, Guardian, MSats, Sats, SeedWords, FediMod } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import {
     getFederationGroupChats,

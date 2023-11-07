@@ -3,6 +3,7 @@ use std::fmt::Debug;
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use futures::future::join_all;
+use itertools::Itertools;
 use reqwest::{Client, Url};
 use tracing::warn;
 
@@ -248,7 +249,8 @@ impl Oracle for AggregateOracle {
                 None
             }
         })
-        .collect::<Vec<_>>();
+        .sorted()
+        .collect_vec();
 
         // Succeed as long as at least one source worked
         if source_prices.is_empty() {

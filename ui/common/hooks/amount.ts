@@ -10,13 +10,16 @@ import {
     selectFederationBalance,
     selectAmountInputType,
     setAmountInputType,
+    selectUsdExchangeRate,
 } from '../redux'
 import {
     Btc,
     Invoice,
+    MSats,
     ParsedLnurlPay,
     ParsedLnurlWithdraw,
     Sats,
+    SupportedCurrency,
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'
@@ -42,6 +45,77 @@ const numpadButtons = [
 ] as const
 
 export type NumpadButtonValue = (typeof numpadButtons)[number]
+
+/**
+ * Provides state for rendering a balance amount in fiat and sats.
+ */
+export function useBalance() {
+    const btcToFiatRate = useCommonSelector(selectBtcExchangeRate)
+    const currency = useCommonSelector(selectCurrency)
+    const balance = useCommonSelector(selectFederationBalance) as MSats
+
+    const satsBalance = amountUtils.formatSats(amountUtils.msatToSat(balance))
+    const fiatBalance = amountUtils.formatFiat(
+        amountUtils.msatToFiat(balance, btcToFiatRate),
+        currency,
+        { noSymbol: true },
+    )
+    const fiatBalanceWithSymbol = amountUtils.formatFiat(
+        amountUtils.msatToFiat(balance, btcToFiatRate),
+        currency,
+    )
+
+    const currencySymbol = useMemo(
+        () => amountUtils.getCurrencySymbol(currency),
+        [currency],
+    )
+
+    return {
+        satsBalance,
+        satsBalanceWithSymbol: `${satsBalance} SATS`,
+        fiatBalance,
+        fiatBalanceWithSymbol,
+        currency,
+        currencySymbol,
+    }
+}
+
+export const useBtcFiatPrice = () => {
+    const selectedFiatCurrency = useCommonSelector(selectCurrency)
+    const exchangeRate: number = useCommonSelector(selectBtcExchangeRate)
+    const usdExchangeRate: number = useCommonSelector(selectUsdExchangeRate)
+
+    return {
+        convertSatsToFiat: useCallback(
+            (sats: Sats) => {
+                return amountUtils.satToFiat(sats, exchangeRate)
+            },
+            [exchangeRate],
+        ),
+        convertSatsToFiatString: useCallback(
+            (sats: Sats) => {
+                return amountUtils.satToFiatString(sats, exchangeRate)
+            },
+            [exchangeRate],
+        ),
+        convertSatsToFormattedFiat: useCallback(
+            (sats: Sats) => {
+                const amount = amountUtils.satToFiat(sats, exchangeRate)
+
+                return amountUtils.formatFiat(amount, selectedFiatCurrency)
+            },
+            [exchangeRate, selectedFiatCurrency],
+        ),
+        convertSatsToFormattedUsd: useCallback(
+            (sats: Sats) => {
+                const amount = amountUtils.satToFiat(sats, usdExchangeRate)
+
+                return amountUtils.formatFiat(amount, SupportedCurrency.USD)
+            },
+            [usdExchangeRate],
+        ),
+    }
+}
 
 /**
  * Provides state, callbacks, and misc information for rendering an amount
@@ -167,6 +241,10 @@ export function useAmountInput(
             return {
                 i18nKey: 'errors.invalid-amount-max',
                 amount: maximumAmount,
+                fiatValue: amountUtils.satToFiat(
+                    maximumAmount,
+                    btcToFiatRateRef.current,
+                ),
                 onlyShowOnSubmit: false,
             } as const
         }
@@ -174,10 +252,14 @@ export function useAmountInput(
             return {
                 i18nKey: 'errors.invalid-amount-min',
                 amount: minimumAmount,
+                fiatValue: amountUtils.satToFiat(
+                    minimumAmount,
+                    btcToFiatRateRef.current,
+                ),
                 onlyShowOnSubmit: true,
             } as const
         }
-    }, [amount, minimumAmount, maximumAmount])
+    }, [amount, btcToFiatRateRef, minimumAmount, maximumAmount])
 
     return {
         isFiat,

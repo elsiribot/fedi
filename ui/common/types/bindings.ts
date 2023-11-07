@@ -27,6 +27,7 @@ export type ErrorCode =
     | 'nostrNotSupported'
     | 'panic'
     | 'notSupportedInVersion'
+    | 'stabilityPoolNotSupported'
 
 export type Event =
     | { transaction: TransactionEvent }
@@ -34,6 +35,8 @@ export type Event =
     | { federation: RpcFederation }
     | { balance: BalanceEvent }
     | { panic: PanicEvent }
+    | { stabilityPoolDeposit: StabilityPoolDepositEvent }
+    | { stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent }
 
 export interface LogEvent {
     log: string
@@ -59,8 +62,6 @@ export interface RpcEcashInfo {
     federationId: RpcFederationId | null
 }
 
-export type RpcFederationId = string
-
 export interface RpcFederation {
     balance: RpcAmount
     id: RpcFederationId
@@ -71,6 +72,7 @@ export interface RpcFederation {
     socialRecoveryActive: boolean
     nodes: Record<string, { url: string; name: string }>
     version: number
+    clientConfig: RpcJsonClientConfig | null
 }
 
 export interface RpcGenerateEcashResponse {
@@ -78,12 +80,19 @@ export interface RpcGenerateEcashResponse {
     cancelAt: number
 }
 
+export type RpcFederationId = string
+
 export interface RpcInvoice {
     paymentHash: string
     amount: RpcAmount
     fee: RpcAmount
     description: string
     invoice: string
+}
+
+export interface RpcJsonClientConfig {
+    global: unknown
+    modules: Record<string, unknown>
 }
 
 export interface RpcLightningDetails {
@@ -127,6 +136,15 @@ export type RpcLnReceiveState =
 
 export type RpcLnState = RpcLnPayState | RpcLnReceiveState
 
+export interface RpcLockedSeek {
+    initialAmount: RpcAmount
+    initialAmountCents: number
+    withdrawnAmount: RpcAmount
+    withdrawnAmountCents: number
+    feesPaidSoFar: RpcAmount
+    firstLockStartTime: number
+}
+
 export interface RpcMethods {
     joinFederation: [
         { inviteCode: string },
@@ -140,6 +158,7 @@ export interface RpcMethods {
             socialRecoveryActive: boolean
             nodes: Record<string, { url: string; name: string }>
             version: number
+            clientConfig: RpcJsonClientConfig | null
         },
     ]
     leaveFederation: [{ federationId: RpcFederationId }, null]
@@ -155,6 +174,7 @@ export interface RpcMethods {
             socialRecoveryActive: boolean
             nodes: Record<string, { url: string; name: string }>
             version: number
+            clientConfig: RpcJsonClientConfig | null
         }>,
     ]
     generateInvoice: [
@@ -282,6 +302,27 @@ export interface RpcMethods {
         { eventHash: string; federationId: RpcFederationId },
         string,
     ]
+    stabilityPoolAccountInfo: [
+        { federationId: RpcFederationId },
+        {
+            idleBalance: RpcAmount
+            stagedSeeks: Array<RpcAmount>
+            stagedCancellation: number | null
+            lockedSeeks: Array<RpcLockedSeek>
+        },
+    ]
+    stabilityPoolDepositToSeek: [
+        { federationId: RpcFederationId; amount: RpcAmount },
+        string,
+    ]
+    stabilityPoolWithdraw: [
+        {
+            federationId: RpcFederationId
+            unlockedAmount: RpcAmount
+            lockedBps: number
+        },
+        string,
+    ]
 }
 
 export type RpcOnchainDepositState =
@@ -311,6 +352,7 @@ export type RpcOOBSpendState =
     | { type: 'success' }
 
 export type RpcOOBState = { type: 'spend' } & RpcOOBSpendState
+export type RpcOperationId = string
 
 export interface RpcPayInvoiceResponse {
     preimage: string
@@ -327,7 +369,12 @@ export interface RpcSignedLnurlMessage {
     pubkey: RpcPublicKey
 }
 
-export type RpcTransactionDirection = 'receive' | 'send'
+export interface RpcStabilityPoolAccountInfo {
+    idleBalance: RpcAmount
+    stagedSeeks: Array<RpcAmount>
+    stagedCancellation: number | null
+    lockedSeeks: Array<RpcLockedSeek>
+}
 
 export interface RpcTransaction {
     id: string
@@ -341,6 +388,8 @@ export interface RpcTransaction {
     lightning: RpcLightningDetails | null
     oobState: RpcOOBState | null
 }
+
+export type RpcTransactionDirection = 'receive' | 'send'
 
 export interface RpcXmppCredentials {
     password: string
@@ -358,6 +407,37 @@ export interface SocialRecoveryEvent {
     approvals: Array<SocialRecoveryApproval>
     remaining: number
 }
+
+export interface StabilityPoolDepositEvent {
+    federationId: RpcFederationId
+    state: StabilityPoolDepositState
+}
+
+export type StabilityPoolDepositState =
+    | 'initiated'
+    | 'txAccepted'
+    | { txRejected: string }
+    | { primaryOutputError: string }
+    | 'success'
+
+export interface StabilityPoolWithdrawalEvent {
+    federationId: RpcFederationId
+    state: StabilityPoolWithdrawalState
+}
+
+export type StabilityPoolWithdrawalState =
+    | 'withdrawUnlockedInitiated'
+    | { txRejected: string }
+    | 'withdrawUnlockedAccepted'
+    | { primaryOutputError: string }
+    | 'success'
+    | { cancellationSubmissionFailure: string }
+    | 'cancellationInitiated'
+    | 'cancellationAccepted'
+    | { awaitCycleTurnoverError: string }
+    | { withdrawIdleSubmissionFailure: string }
+    | 'withdrawIdleInitiated'
+    | 'withdrawIdleAccepted'
 
 export interface TransactionEvent {
     federationId: RpcFederationId
