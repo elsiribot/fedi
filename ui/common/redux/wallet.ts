@@ -225,8 +225,8 @@ export const selectStabilityPoolAccountInfo = (s: CommonState) =>
 
 export const selectTotalLockedSeeksFiat = createSelector(
     selectStabilityPoolAccountInfo,
-    selectBtcExchangeRate,
-    selectUsdExchangeRate,
+    (s: CommonState) => selectBtcExchangeRate(s),
+    (s: CommonState) => selectUsdExchangeRate(s),
     (stabilityPoolAccountInfo, btcExchangeRate, usdExchangeRate) => {
         if (!stabilityPoolAccountInfo) return 0
 
@@ -293,7 +293,7 @@ export const selectStableBalance = createSelector(
 
 export const selectStableBalancePending = createSelector(
     selectStabilityPoolAccountInfo,
-    selectBtcExchangeRate,
+    (s: CommonState) => selectBtcExchangeRate(s),
     selectTotalLockedSeeksFiat,
     (stabilityPoolAccountInfo, btcExchangeRate, totalLockedSeeksFiat) => {
         if (!stabilityPoolAccountInfo) return 0
