@@ -1,17 +1,13 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text } from '@rneui/themed'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, ScrollView } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-<<<<<<< HEAD
+import { selectActiveFederation } from '@fedi/common/redux'
 import { Transaction, TransactionDirection } from '@fedi/common/types'
 import { RpcTransaction } from '@fedi/common/types/bindings'
 import { makeLog } from '@fedi/common/utils/log'
-=======
-import { selectActiveFederationId } from '@fedi/common/redux'
-import type { Transaction } from '@fedi/common/types'
->>>>>>> f319b4c8 (add: check for vederation version)
 
 import TransactionsList from '../components/feature/transaction-history/TransactionsList'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
@@ -24,70 +20,49 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Transactions'>
 
 const Transactions: React.FC<Props> = () => {
     const { t } = useTranslation()
-    const activeFederationId = useAppSelector(selectActiveFederationId)
-
-    const { listTransactions, listFederations } = useBridge()
+    const { listTransactions } = useBridge()
     const { toast } = useEnvironmentContext().state
     const [isLoading, setIsLoading] = useState(false)
-    const [isV1Federation, setIsV1Federation] = useState(true)
     // TODO: Hoist this into context so we can easily update individual
     // transactions and not have to refreshTransactions on every notes update
     const [transactionsList, setTransactionsList] = useState<Transaction[]>([])
 
-    const lastTimestamp = transactionsList.length
-        ? transactionsList[transactionsList.length - 1].createdAt
-        : undefined
-
-    const getTransactionsList = useCallback(
-        async (timestamp?: number) => {
-            try {
-                const fetchedTransactions = await listTransactions(
-                    timestamp,
-                    15,
-                )
-                if (fetchedTransactions.length > 0) {
-                    const oldestTransactionTimestamp =
-                        fetchedTransactions[fetchedTransactions.length - 1]
-                            .createdAt
-                    setLastTimestamp(oldestTransactionTimestamp)
-                }
-                setTransactionsList(prev => [...prev, ...fetchedTransactions])
-            } catch (err: any) {
-                console.error('Failed to fetch transactions:', err)
-                toast?.show('Failed to fetch transactions')
-            }
-        },
-        [listTransactions, toast],
-    )
-    const checkFederationVersion = useCallback(async () => {
-        const version = (await listFederations()).find(
-            n => n.id === activeFederationId,
-        )?.version
-
-        if (version === 0) {
-            setIsV1Federation(false)
-        }
-    }, [activeFederationId, listFederations])
+    const isV1Federation = useAppSelector(selectActiveFederation).version === 1
+    const lastTimestampRef = useRef<number | undefined>()
 
     const getTransactionsList = useCallback(async () => {
         try {
-            if (!isV1Federation) {
-                const fetchedTransactions = await listTransactions()
-                setTransactionsList(prev => [...prev, ...fetchedTransactions])
-
-                return
+            let fetchedTransactions: RpcTransaction[]
+            if (isV1Federation) {
+                fetchedTransactions = await listTransactions(
+                    lastTimestampRef.current,
+                    100,
+                )
+            } else {
+                fetchedTransactions = await listTransactions()
             }
 
-            const fetchedTransactions = await listTransactions(
-                lastTimestamp,
-                12,
+            const filteredTransactions = fetchedTransactions.filter(
+                (txn: RpcTransaction) => {
+                    if (
+                        txn.bitcoin &&
+                        txn.direction === TransactionDirection.receive &&
+                        txn.onchainState?.type === 'waitingForTransaction' &&
+                        Date.now() / 1000 - txn.createdAt > 3600
+                    ) {
+                        return false
+                    }
+                    return true
+                },
             )
-            setTransactionsList(prev => [...prev, ...fetchedTransactions])
+            setTransactionsList(prev => [...prev, ...filteredTransactions])
+
+            return
         } catch (err: any) {
-            console.error('Failed to fetch transactions:', err)
+            log.error('Failed to fetch transactions:', err)
             toast?.show('Failed to fetch transactions')
         }
-    }, [isV1Federation, listTransactions, lastTimestamp, toast])
+    }, [isV1Federation, listTransactions, toast])
 
     // Instead of refreshing the whole transaction list
     // Just update the state of the transaction locally
@@ -106,13 +81,6 @@ const Transactions: React.FC<Props> = () => {
     }
 
     useEffect(() => {
-        const checkVersion = async () => {
-            await checkFederationVersion()
-        }
-        checkVersion()
-    }, [checkFederationVersion])
-
-    useEffect(() => {
         setIsLoading(true)
         const loadTransactions = async () => {
             await getTransactionsList()
@@ -121,23 +89,28 @@ const Transactions: React.FC<Props> = () => {
         loadTransactions()
     }, [getTransactionsList])
 
+    useEffect(() => {
+        lastTimestampRef.current = transactionsList.length
+            ? transactionsList[transactionsList.length - 1].createdAt
+            : undefined
+    }, [transactionsList])
+
     if (isLoading) return <ActivityIndicator />
 
     return (
-        <ScrollView
-            style={styles.container}
-            contentContainerStyle={styles.contentContainer}>
+        <View style={styles.container}>
             {transactionsList.length === 0 ? (
                 <Text>{t('phrases.no-transactions')}</Text>
             ) : (
                 <TransactionsList
                     transactions={transactionsList}
-                    loadMoreTransactions={getTransactionsList}
+                    loadMoreTransactions={
+                        isV1Federation ? getTransactionsList : undefined
+                    }
                     updateTransactionInState={updateTransactionInState}
-                    isV1Federation={isV1Federation}
                 />
             )}
-        </ScrollView>
+        </View>
     )
 }
 
@@ -152,3 +125,4 @@ const styles = StyleSheet.create({
 })
 
 export default Transactions
+
