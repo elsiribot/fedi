@@ -25,37 +25,11 @@ const Transactions: React.FC<Props> = () => {
     // TODO: Hoist this into context so we can easily update individual
     // transactions and not have to refreshTransactions on every notes update
     const [transactionsList, setTransactionsList] = useState<Transaction[]>([])
-    const [lastTimestamp, setLastTimestamp] = useState<number | undefined>(
-        undefined,
-    )
 
-    const getTransactionsList = useCallback(async () => {
-        try {
-            const fetchedTransactions = await listTransactions()
-            log.info('fetchedTransactions', fetchedTransactions.length)
+    const lastTimestamp = transactionsList.length
+        ? transactionsList[transactionsList.length - 1].createdAt
+        : undefined
 
-            // Filter out onchain addresses generated >1 hr ago that
-            // still haven't been seen in mempool
-            const filteredTransactions = fetchedTransactions.filter(
-                (txn: RpcTransaction) => {
-                    if (
-                        txn.bitcoin &&
-                        txn.direction === TransactionDirection.receive &&
-                        txn.onchainState?.type === 'waitingForTransaction' &&
-                        Date.now() / 1000 - txn.createdAt > 3600
-                    ) {
-                        return false
-                    }
-                    return true
-                },
-            )
-            log.info('filteredTransactions', filteredTransactions.length)
-            setTransactionsList(filteredTransactions)
-        } catch (err: any) {
-            log.error('Failed to fetch transactions:', err)
-            toast?.show('Failed to fetch transactions')
-        }
-    }, [listTransactions, toast])
     const getTransactionsList = useCallback(
         async (timestamp?: number) => {
             try {
@@ -114,9 +88,7 @@ const Transactions: React.FC<Props> = () => {
             ) : (
                 <TransactionsList
                     transactions={transactionsList}
-                    loadMoreTransactions={() =>
-                        getTransactionsList(lastTimestamp)
-                    }
+                    loadMoreTransactions={getTransactionsList}
                     updateTransactionInState={updateTransactionInState}
                 />
             )}

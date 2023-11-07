@@ -279,7 +279,7 @@ impl MultiFederation {
         let usize_limit = limit.map_or(usize::MAX as u32, |l| l) as usize;
 
         Ok(match self {
-            Self::V0(v0) => v0.list_transactions(usize_limit).await,
+            Self::V0(v0) => v0.list_transactions(usize::MAX).await,
             Self::V1(v1) => v1.list_transactions(usize_limit, start_after).await,
         })
     }

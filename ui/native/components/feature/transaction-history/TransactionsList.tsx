@@ -34,7 +34,6 @@ const TransactionsList = ({
     loadMoreTransactions,
     updateTransactionInState,
 }: TransactionsListProps) => {
-    console.info(transactions)
     const { t } = useTranslation()
     const { theme } = useTheme()
     const [selectedTransaction, setSelectedTransaction] =
@@ -69,7 +68,8 @@ const TransactionsList = ({
                     index,
                 })}
                 onEndReached={loadMoreTransactions}
-                onEndReachedThreshold={0.1}
+                onEndReachedThreshold={0.5}
+                initialNumToRender={10}
             />
             <Overlay
                 isVisible={selectedTransaction !== null}
