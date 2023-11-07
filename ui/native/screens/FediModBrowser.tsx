@@ -109,8 +109,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         if (getActiveGatewayPromiseRef.current)
             return getActiveGatewayPromiseRef.current
         getActiveGatewayPromiseRef.current = listGateways().then(gateways => {
-            if (!gateways.length)
+            if (!gateways.length) {
+                log.info('No available lightning gateways')
                 throw new Error('No available lightning gateways')
+            }
             return gateways.find(g => g.active) || gateways[0]
         })
         return getActiveGatewayPromiseRef.current
@@ -120,9 +122,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const onMessage = makeWebViewMessageHandler(webview, {
         [InjectionMessageType.webln_enable]: async () => {
             /* no-op */
-            log.info('webln enabled')
+            log.info('webln.enable')
         },
         [InjectionMessageType.webln_getInfo]: () => {
+            log.info('webln.getInfo')
             return new Promise(async (resolve, reject) => {
                 const alias = authenticatedMember?.username || ''
                 let pubkey = ''
@@ -140,6 +143,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             })
         },
         [InjectionMessageType.webln_makeInvoice]: async data => {
+            log.info('webln.makeInvoice', data)
             // Check for an active gateway or throw error
             await getActiveGatewayOrThrow()
 
@@ -162,10 +166,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             })
         },
         [InjectionMessageType.webln_sendPayment]: async data => {
+            log.info('webln.sendPayment', data)
             // Check for an active gateway or throw error
             await getActiveGatewayOrThrow()
 
-            log.info('webln:sendPayment', data)
             let invoice: Invoice
             try {
                 invoice = await fedimint.decodeInvoice(data)
@@ -195,6 +199,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             })
         },
         [InjectionMessageType.webln_signMessage]: async () => {
+            log.info('webln.signMessage')
             throw new UnsupportedMethodError(
                 t('errors.webln-method-not-supported', {
                     method: 'signMessage',
@@ -202,6 +207,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             )
         },
         [InjectionMessageType.webln_verifyMessage]: async () => {
+            log.info('webln.verifyMessage')
             throw new UnsupportedMethodError(
                 t('errors.webln-method-not-supported', {
                     method: 'verifyMessage',
@@ -209,6 +215,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             )
         },
         [InjectionMessageType.webln_keysend]: async () => {
+            log.info('webln.keysend')
             throw new UnsupportedMethodError(
                 t('errors.webln-method-not-supported', {
                     method: 'keysend',
@@ -216,6 +223,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             )
         },
         [InjectionMessageType.nostr_getPublicKey]: async () => {
+            log.info('nostr.getPublicKey')
             return new Promise(async (resolve, reject) => {
                 try {
                     const pub_key = await getNostrPubKey()
@@ -227,7 +235,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             })
         },
         [InjectionMessageType.nostr_signEvent]: async evt => {
-            log.info('nostr_signEvent data:', evt)
+            log.info('nostr.signEvent', evt)
             return new Promise(async (resolve, reject) => {
                 try {
                     const pub_key = await getNostrPubKey()
@@ -289,7 +297,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 ref={webview}
                 webviewDebuggingEnabled={fediModDebugMode} // required for IOS debugging
                 source={{ uri }}
-                injectedJavaScript={generateInjectionJs({
+                injectedJavaScriptBeforeContentLoaded={generateInjectionJs({
                     webln: true,
                     eruda: fediModDebugMode,
                     nostr: nostrEnabled,
