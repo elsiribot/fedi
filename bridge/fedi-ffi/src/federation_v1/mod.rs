@@ -77,6 +77,7 @@ use crate::types::{
     EcashReceiveMetadata, RpcBalanceInfo, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId,
     RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
     RpcPayAddressResponse, RpcTransaction, RpcTransactionDirection, SocialRecoveryQr,
+    WithdrawalDetails,
 };
 use crate::utils::{display_currency, required_threashold_of, to_unix_time, unix_now};
 
@@ -343,6 +344,7 @@ impl FederationV1 {
                                 ln_state: None,
                                 lightning: None,
                                 oob_state: None,
+                                onchain_withdrawal_details: None,
                             };
                             info!("send_transaction_event: {:?}", transaction);
                             fed.send_transaction_event(transaction);
@@ -396,6 +398,7 @@ impl FederationV1 {
                                     fee: None, // TODO: to be implemented on the fedimint side
                                 }),
                                 oob_state: None,
+                                onchain_withdrawal_details: None,
                             };
                             fed.send_transaction_event(transaction);
                         }
@@ -497,7 +500,7 @@ impl FederationV1 {
     pub async fn get_withdrawl_outcome(
         &self,
         operation_id: OperationId,
-    ) -> Option<(WithdrawState, String)> {
+    ) -> Option<(WithdrawState, Option<bitcoin::Txid>)> {
         let mut updates = match self.client.subscribe_withdraw_updates(operation_id).await {
             Err(_) => return None,
             Ok(stream) => stream.into_stream(),
@@ -506,10 +509,10 @@ impl FederationV1 {
         while let Some(update) = updates.next().await {
             match update {
                 WithdrawState::Succeeded(txid) => {
-                    return Some((update, txid.to_string()));
+                    return Some((update, Some(txid)));
                 }
                 WithdrawState::Failed(_) => {
-                    return Some((update, "".to_string()));
+                    return Some((update, None));
                 }
                 _ => {}
             }
@@ -1475,6 +1478,7 @@ impl FederationV1 {
                                     fee: None, // TODO: to be implemented on the fedimint side
                                 }),
                                 oob_state: None,
+                                onchain_withdrawal_details: None,
                             }),
                             LightningMeta::Receive { invoice, .. } => {
                                 let ln_state = RpcLnState::from_ln_recv_state(
@@ -1498,6 +1502,7 @@ impl FederationV1 {
                                                     * side */
                                     }),
                                     oob_state: None,
+                                    onchain_withdrawal_details: None,
                                 })
                             }
                         },
@@ -1514,6 +1519,7 @@ impl FederationV1 {
                                 ln_state: None,
                                 lightning: None,
                                 oob_state: None,
+                                onchain_withdrawal_details: None,
                             }),
                             StabilityPoolMeta::Input { .. } => Some(RpcTransaction {
                                 id: op.0.operation_id.to_string(),
@@ -1527,6 +1533,7 @@ impl FederationV1 {
                                 ln_state: None,
                                 lightning: None,
                                 oob_state: None,
+                                onchain_withdrawal_details: None,
                             }),
                         },
                         MINT_OPERATION_TYPE => {
@@ -1550,6 +1557,7 @@ impl FederationV1 {
                                             amount: RpcAmount(mint_meta.amount),
                                             lightning: None,
                                             oob_state: None,
+                                            onchain_withdrawal_details: None,
                                         })
                                     } else {
                                         None
@@ -1572,6 +1580,7 @@ impl FederationV1 {
                                         .get_oob_spend_outcome(op.0.operation_id, op.1)
                                         .await
                                         .map(crate::types::RpcOOBState::from_spend_v1),
+                                    onchain_withdrawal_details: None,
                                 }),
                             }
                         }
@@ -1611,12 +1620,13 @@ impl FederationV1 {
                                     },
                                     lightning: None,
                                     oob_state: None,
+                                    onchain_withdrawal_details: None,
                                 })
                             }
                             WalletOperationMeta::Withdraw {
                                 address: _,
                                 amount,
-                                fee: _,
+                                fee,
                                 change: _,
                             } => {
                                 let core_amount = fedimint_core::Amount {
@@ -1625,13 +1635,18 @@ impl FederationV1 {
                                 let rpc_amount = RpcAmount(core_amount);
 
                                 // Todo: Figure out a where to pass back txid to client
-                                let (outcome, _txid) = self
+                                let (outcome, txid) = self
                                     .get_withdrawl_outcome(op.0.operation_id)
                                     .await
                                     .expect("Expected a withdrawal outcome but got None");
 
                                 let onchain_state =
                                     RpcOnchainState::from_withdraw_state(Some(outcome));
+
+                                let txid_str = match txid {
+                                    Some(n) => n.to_string(),
+                                    None => "".to_string(),
+                                };
 
                                 Some(RpcTransaction {
                                     id: op.0.operation_id.to_string(),
@@ -1645,6 +1660,11 @@ impl FederationV1 {
                                     ln_state: None,
                                     lightning: None,
                                     oob_state: None,
+                                    onchain_withdrawal_details: Some(WithdrawalDetails {
+                                        txid: txid_str,
+                                        fee: fee.amount().to_sat(),
+                                        fee_rate: fee.fee_rate.sats_per_kvb,
+                                    }),
                                 })
                             }
 

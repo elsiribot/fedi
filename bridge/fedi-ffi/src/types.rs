@@ -318,6 +318,15 @@ pub enum RpcTransactionDirection {
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
+pub struct WithdrawalDetails {
+    pub txid: String,
+    pub fee: u64,
+    pub fee_rate: u64,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct RpcTransaction {
     pub id: String,
     #[ts(type = "number")]
@@ -330,6 +339,7 @@ pub struct RpcTransaction {
     pub ln_state: Option<RpcLnState>,
     pub lightning: Option<RpcLightningDetails>,
     pub oob_state: Option<RpcOOBState>,
+    pub onchain_withdrawal_details: Option<WithdrawalDetails>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
