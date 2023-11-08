@@ -296,12 +296,10 @@ const styles = (theme: Theme) =>
         versionContainer: {
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#e6f7ff',
+            backgroundColor: theme.colors.offWhite,
             padding: theme.spacing.md,
             borderRadius: theme.borders.defaultRadius,
             marginTop: theme.spacing.md,
-            width: '90%',
-            alignSelf: 'center',
         },
         logo: {
             marginBottom: theme.spacing.sm,
