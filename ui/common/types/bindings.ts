@@ -75,12 +75,12 @@ export interface RpcFederation {
     clientConfig: RpcJsonClientConfig | null
 }
 
+export type RpcFederationId = string
+
 export interface RpcGenerateEcashResponse {
     ecash: string
     cancelAt: number
 }
-
-export type RpcFederationId = string
 
 export interface RpcInvoice {
     paymentHash: string
@@ -210,7 +210,7 @@ export interface RpcMethods {
     generateAddress: [{ federationId: RpcFederationId }, string]
     payAddress: [
         { federationId: RpcFederationId; address: string; sats: bigint },
-        string,
+        { txid: string },
     ]
     balanceInfo: [
         { federationId: RpcFederationId },
@@ -239,6 +239,7 @@ export interface RpcMethods {
             lnState: RpcLnState | null
             lightning: RpcLightningDetails | null
             oobState: RpcOOBState | null
+            onchainWithdrawalDetails: WithdrawalDetails | null
         }>,
     ]
     updateTransactionNotes: [
@@ -325,6 +326,16 @@ export interface RpcMethods {
     ]
 }
 
+export type RpcOOBSpendState =
+    | { type: 'created' }
+    | { type: 'userCanceledProcessing' }
+    | { type: 'userCanceledSuccess' }
+    | { type: 'userCanceledFailure' }
+    | { type: 'refunded' }
+    | { type: 'success' }
+
+export type RpcOOBState = { type: 'spend' } & RpcOOBSpendState
+
 export type RpcOnchainDepositState =
     | { type: 'waitingForTransaction' }
     | ({ type: 'waitingForConfirmation' } & RpcOnchainDepositTransactionData)
@@ -343,16 +354,11 @@ export type RpcOnchainWithdrawState =
     | { type: 'succeeded' }
     | { type: 'failed' }
 
-export type RpcOOBSpendState =
-    | { type: 'created' }
-    | { type: 'userCanceledProcessing' }
-    | { type: 'userCanceledSuccess' }
-    | { type: 'userCanceledFailure' }
-    | { type: 'refunded' }
-    | { type: 'success' }
-
-export type RpcOOBState = { type: 'spend' } & RpcOOBSpendState
 export type RpcOperationId = string
+
+export interface RpcPayAddressResponse {
+    txid: string
+}
 
 export interface RpcPayInvoiceResponse {
     preimage: string
@@ -387,6 +393,7 @@ export interface RpcTransaction {
     lnState: RpcLnState | null
     lightning: RpcLightningDetails | null
     oobState: RpcOOBState | null
+    onchainWithdrawalDetails: WithdrawalDetails | null
 }
 
 export type RpcTransactionDirection = 'receive' | 'send'
@@ -410,6 +417,7 @@ export interface SocialRecoveryEvent {
 
 export interface StabilityPoolDepositEvent {
     federationId: RpcFederationId
+    operationId: RpcOperationId
     state: StabilityPoolDepositState
 }
 
@@ -422,6 +430,7 @@ export type StabilityPoolDepositState =
 
 export interface StabilityPoolWithdrawalEvent {
     federationId: RpcFederationId
+    operationId: RpcOperationId
     state: StabilityPoolWithdrawalState
 }
 
@@ -442,4 +451,10 @@ export type StabilityPoolWithdrawalState =
 export interface TransactionEvent {
     federationId: RpcFederationId
     transaction: RpcTransaction
+}
+
+export interface WithdrawalDetails {
+    txid: string
+    fee: bigint
+    feeRate: bigint
 }
