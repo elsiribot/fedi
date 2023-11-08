@@ -75,8 +75,8 @@ use crate::error::ErrorCode;
 use crate::federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
     EcashReceiveMetadata, RpcBalanceInfo, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId,
-    RpcLightningDetails, RpcLnState, RpcOnchainState, RpcPayAddressResponse, RpcTransaction,
-    RpcTransactionDirection, SocialRecoveryQr,RpcGenerateEcashResponse
+    RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
+    RpcPayAddressResponse, RpcTransaction, RpcTransactionDirection, SocialRecoveryQr,
 };
 use crate::utils::{display_currency, required_threashold_of, to_unix_time, unix_now};
 
@@ -467,7 +467,9 @@ impl FederationV1 {
             .get_withdraw_fee(address.clone(), amount)
             .await?;
 
-        let operation_id = fedimint_wallet_client::WalletClientExt::withdraw(&*self.client, address, amount, fees).await?;
+        let operation_id =
+            fedimint_wallet_client::WalletClientExt::withdraw(&*self.client, address, amount, fees)
+                .await?;
         let mut updates = self
             .client
             .subscribe_withdraw_updates(operation_id)
