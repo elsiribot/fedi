@@ -13,6 +13,8 @@ fi
 target_dir=""
 args=()
 
+# iterate over all arguments, collect them into 'args' and set some env vars
+# for arguments that we care about
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --target)
@@ -42,7 +44,11 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-# Check if the target value is empty (not provided)
+# Check if the target value is set and use it to set certain global env variables
+# to values of per-target env variables.
+# Some things in Rust and Rust build scripts support target-specific env vars (e.g. 'CC_aarch64_linux_android'
+# which make it possible to set different things for different targets). Some things (like librocksdb-sys crate)
+# don't. This is a workaround for things that don't.
 if [ -n "$target" ]; then
   rocksdb_lib_dir="ROCKSDB_${target}_LIB_DIR"
   snappy_lib_dir="SNAPPY_${target}_LIB_DIR"
@@ -71,6 +77,9 @@ if [ -n "$target" ]; then
   fi
 fi
 
+# If building with '--package <pkg>' use a custom '--target-dir'
+# to avoid invalidating all the existing build artifacts, just because
+# package set changed.
 if [ -n "$package" ] && [ -z "$target_dir" ]; then
   # if 'target-dir' was not specificaly set, and '--package <pkgs>' is used
   # compile everything to a target's subdir to avoid causing rebuilds
