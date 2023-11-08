@@ -12,7 +12,7 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import FiatAmount from '../components/feature/wallet/FiatAmount'
 import { useBridge } from '../state/hooks'
-import { Btc, Sats, SatsString } from '../types'
+import { Btc, ParserDataType, Sats, SatsString } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('ConfirmSendOnChain')
@@ -34,9 +34,12 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
     const [unit] = useState('sats')
 
     useEffect(() => {
-        if (bitcoinUri.queryParams?.amount) {
+        if (
+            bitcoinUri.type === ParserDataType.Bip21 &&
+            bitcoinUri.data.amount
+        ) {
             const amountInSats = amountUtils.btcToSat(
-                Number(bitcoinUri.queryParams?.amount) as Btc,
+                Number(bitcoinUri.data?.amount) as Btc,
             )
             setAmount(String(amountInSats) as SatsString)
         }
@@ -44,9 +47,10 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
 
     const onSendBtc = async () => {
         try {
-            log.info('paying address', bitcoinUri.body, amount)
+            log.info('paying address', bitcoinUri.data.address, amount)
             setIsLoading(true)
-            await payAddress(bitcoinUri.body, Number(amount) as Sats)
+            await payAddress(bitcoinUri.data.address, Number(amount) as Sats)
+
             setIsLoading(false)
             navigation.navigate('SendSuccess', {
                 amount: amountUtils.satToMsat(Number(amount) as Sats),
@@ -62,7 +66,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
         setAmount(updatedValue)
     }
 
-    if (!bitcoinUri.body) return <ActivityIndicator />
+    if (!bitcoinUri.data) return <ActivityIndicator />
 
     return (
         <View style={styles(theme).container}>
@@ -79,7 +83,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                 <FiatAmount amountSats={Number(amount) as Sats} />
                 <Text>
                     {`${stringUtils.truncateMiddleOfString(
-                        bitcoinUri.body,
+                        bitcoinUri.data.address,
                         14,
                     )}`}
                 </Text>

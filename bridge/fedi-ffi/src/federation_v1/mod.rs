@@ -11,7 +11,7 @@ use std::time::{Duration, SystemTime};
 use ::serde::{Deserialize, Serialize};
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey, Secp256k1, XOnlyPublicKey};
-use bitcoin::Network;
+use bitcoin::{Address, Network};
 use fedi_social_client::common::VerificationDocument;
 use fedi_social_client::{FediSocialClientInit, RecoveryId};
 use fedimint_bip39::Bip39RootSecretStrategy;
@@ -38,6 +38,7 @@ use fedimint_mint_client::{
 };
 use fedimint_wallet_client::{
     DepositState, WalletClientExt, WalletClientGen, WalletClientModule, WalletOperationMeta,
+    WithdrawState,
 };
 use futures::{Future, StreamExt};
 use lightning_invoice::Invoice;
@@ -74,8 +75,9 @@ use crate::error::ErrorCode;
 use crate::federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
     EcashReceiveMetadata, RpcBalanceInfo, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId,
-    RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState, RpcTransaction,
-    RpcTransactionDirection, SocialRecoveryQr,
+    RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
+    RpcPayAddressResponse, RpcTransaction, RpcTransactionDirection, SocialRecoveryQr,
+    WithdrawalDetails,
 };
 use crate::utils::{display_currency, required_threashold_of, to_unix_time, unix_now};
 
@@ -342,6 +344,7 @@ impl FederationV1 {
                                 ln_state: None,
                                 lightning: None,
                                 oob_state: None,
+                                onchain_withdrawal_details: None,
                             };
                             info!("send_transaction_event: {:?}", transaction);
                             fed.send_transaction_event(transaction);
@@ -395,6 +398,7 @@ impl FederationV1 {
                                     fee: None, // TODO: to be implemented on the fedimint side
                                 }),
                                 oob_state: None,
+                                onchain_withdrawal_details: None,
                             };
                             fed.send_transaction_event(transaction);
                         }
@@ -453,6 +457,68 @@ impl FederationV1 {
         let response = self.subscibe_to_ln_pay(pay_type, invoice.clone()).await?;
 
         Ok(response)
+    }
+
+    // Pay an onchain address
+    pub async fn pay_address(
+        &self,
+        address: Address,
+        amount: bitcoin::Amount,
+    ) -> Result<RpcPayAddressResponse> {
+        let fees = self
+            .client
+            .get_withdraw_fee(address.clone(), amount)
+            .await?;
+
+        let operation_id =
+            fedimint_wallet_client::WalletClientExt::withdraw(&*self.client, address, amount, fees)
+                .await?;
+        let mut updates = self
+            .client
+            .subscribe_withdraw_updates(operation_id)
+            .await?
+            .into_stream();
+
+        while let Some(update) = updates.next().await {
+            match update {
+                WithdrawState::Succeeded(txid) => {
+                    return Ok(RpcPayAddressResponse {
+                        txid: txid.to_string(),
+                    })
+                }
+                WithdrawState::Failed(e) => {
+                    return Err(anyhow!("Withdraw failed: {e}"));
+                }
+                _ => {}
+            }
+        }
+
+        unreachable!("Update stream ended without outcome");
+    }
+
+    // Get withdrawal outcome
+    pub async fn get_withdrawal_outcome(
+        &self,
+        operation_id: OperationId,
+    ) -> Option<(WithdrawState, Option<bitcoin::Txid>)> {
+        let mut updates = match self.client.subscribe_withdraw_updates(operation_id).await {
+            Err(_) => return None,
+            Ok(stream) => stream.into_stream(),
+        };
+
+        while let Some(update) = updates.next().await {
+            match update {
+                WithdrawState::Succeeded(txid) => {
+                    return Some((update, Some(txid)));
+                }
+                WithdrawState::Failed(_) => {
+                    return Some((update, None));
+                }
+                _ => {}
+            }
+        }
+
+        unreachable!("Update stream ended without outcome");
     }
 
     /// Subscribe to updates on all active operations
@@ -1412,6 +1478,7 @@ impl FederationV1 {
                                     fee: None, // TODO: to be implemented on the fedimint side
                                 }),
                                 oob_state: None,
+                                onchain_withdrawal_details: None,
                             }),
                             LightningMeta::Receive { invoice, .. } => {
                                 let ln_state = RpcLnState::from_ln_recv_state(
@@ -1435,6 +1502,7 @@ impl FederationV1 {
                                                     * side */
                                     }),
                                     oob_state: None,
+                                    onchain_withdrawal_details: None,
                                 })
                             }
                         },
@@ -1451,6 +1519,7 @@ impl FederationV1 {
                                 ln_state: None,
                                 lightning: None,
                                 oob_state: None,
+                                onchain_withdrawal_details: None,
                             }),
                             StabilityPoolMeta::Input { .. } => Some(RpcTransaction {
                                 id: op.0.operation_id.to_string(),
@@ -1464,6 +1533,7 @@ impl FederationV1 {
                                 ln_state: None,
                                 lightning: None,
                                 oob_state: None,
+                                onchain_withdrawal_details: None,
                             }),
                         },
                         MINT_OPERATION_TYPE => {
@@ -1487,6 +1557,7 @@ impl FederationV1 {
                                             amount: RpcAmount(mint_meta.amount),
                                             lightning: None,
                                             oob_state: None,
+                                            onchain_withdrawal_details: None,
                                         })
                                     } else {
                                         None
@@ -1509,6 +1580,7 @@ impl FederationV1 {
                                         .get_oob_spend_outcome(op.0.operation_id, op.1)
                                         .await
                                         .map(crate::types::RpcOOBState::from_spend_v1),
+                                    onchain_withdrawal_details: None,
                                 }),
                             }
                         }
@@ -1548,15 +1620,55 @@ impl FederationV1 {
                                     },
                                     lightning: None,
                                     oob_state: None,
+                                    onchain_withdrawal_details: None,
                                 })
                             }
                             WalletOperationMeta::Withdraw {
                                 address: _,
-                                amount: _,
-                                fee: _,
+                                amount,
+                                fee,
                                 change: _,
+                            } => {
+                                let core_amount = fedimint_core::Amount {
+                                    msats: amount.to_sat() * 1000,
+                                };
+                                let rpc_amount = RpcAmount(core_amount);
+
+                                // Todo: Figure out a where to pass back txid to client
+                                let (outcome, txid) = self
+                                    .get_withdrawal_outcome(op.0.operation_id)
+                                    .await
+                                    .expect("Expected a withdrawal outcome but got None");
+
+                                let onchain_state =
+                                    RpcOnchainState::from_withdraw_state(Some(outcome));
+
+                                let txid_str = match txid {
+                                    Some(n) => n.to_string(),
+                                    None => "".to_string(),
+                                };
+
+                                Some(RpcTransaction {
+                                    id: op.0.operation_id.to_string(),
+                                    created_at: to_unix_time(op.0.creation_time)
+                                        .expect("unix time should exist"),
+                                    amount: rpc_amount,
+                                    direction: RpcTransactionDirection::Send,
+                                    notes,
+                                    onchain_state,
+                                    bitcoin: None,
+                                    ln_state: None,
+                                    lightning: None,
+                                    oob_state: None,
+                                    onchain_withdrawal_details: Some(WithdrawalDetails {
+                                        txid: txid_str,
+                                        fee: fee.amount().to_sat(),
+                                        fee_rate: fee.fee_rate.sats_per_kvb,
+                                    }),
+                                })
                             }
-                            | WalletOperationMeta::RbfWithdraw { rbf: _, change: _ } => None,
+
+                            WalletOperationMeta::RbfWithdraw { rbf: _, change: _ } => None,
                         },
                         _ => {
                             panic!(

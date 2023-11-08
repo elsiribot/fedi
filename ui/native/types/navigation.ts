@@ -4,7 +4,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import {
     FederationPreview,
-    MSats,
+    ParsedBip21,
+    ParsedBitcoinAddress,
     ParsedBolt11,
     ParsedLnurlPay,
     ParsedLnurlWithdraw,
@@ -12,7 +13,7 @@ import {
     Transaction,
 } from '@fedi/common/types'
 
-import { BtcLnUri, FediMod } from '.'
+import { MSats, FediMod } from '.'
 
 // This type declaration allows all instances of useNavigation
 // to be aware of type-safety from RootStackParamsList
@@ -55,7 +56,7 @@ export type RootStackParamList = {
     ConfirmRecoveryAssist: undefined
     ConfirmReceiveOffline: { ecash: string }
     ConfirmSendLightning: { parsedData: ParsedBolt11 | ParsedLnurlPay }
-    ConfirmSendOnChain: { bitcoinUri: BtcLnUri }
+    ConfirmSendOnChain: { bitcoinUri: ParsedBip21 | ParsedBitcoinAddress }
     ConnectedFederationsDrawer: undefined
     CreateGroup: undefined
     CreateUsername: undefined

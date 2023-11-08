@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey};
-use bitcoin::XOnlyPublicKey;
+use bitcoin::{Address, XOnlyPublicKey};
 use fedi_social_client::RecoveryId;
 use fedimint_core::api::InviteCode;
 use fedimint_core::config::FederationId;
@@ -39,7 +39,7 @@ use super::types::{
     RpcXmppCredentials, SocialRecoveryApproval, SocialRecoveryQr,
 };
 use crate::error::ErrorCode;
-use crate::types::{RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse};
+use crate::types::{RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse, RpcPayAddressResponse};
 
 // FIXME: federation-specific filename
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
@@ -91,6 +91,18 @@ impl MultiFederation {
         match self {
             Self::V0(v0) => v0.pay_invoice(invoice).await,
             Self::V1(v1) => v1.pay_invoice(invoice).await,
+        }
+    }
+
+    pub async fn pay_address(
+        &self,
+        address: Address,
+        amount: bitcoin::Amount,
+    ) -> Result<RpcPayAddressResponse> {
+        info!("pay address amount is {}", amount);
+        match self {
+            Self::V0(_) => bail!("Unsupported for this version"),
+            Self::V1(v1) => v1.pay_address(address, amount).await,
         }
     }
 
@@ -582,6 +594,16 @@ impl Bridge {
     ) -> Result<RpcPayInvoiceResponse> {
         let multi = self.get_multi(&federation_id.0).await?;
         multi.pay_invoice(invoice).await
+    }
+
+    pub async fn pay_address(
+        &self,
+        federation_id: RpcFederationId,
+        address: Address,
+        amount: bitcoin::Amount,
+    ) -> Result<RpcPayAddressResponse> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi.pay_address(address, amount).await
     }
 
     pub async fn list_gateways(

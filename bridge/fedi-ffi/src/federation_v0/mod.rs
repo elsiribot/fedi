@@ -306,6 +306,7 @@ impl FederationV0 {
                                     fee: None, // TODO: to be implemented on the fedimint side
                                 }),
                                 oob_state: None,
+                                onchain_withdrawal_details: None,
                             };
                             fed.send_transaction_event(transaction);
                         }
@@ -942,6 +943,7 @@ impl FederationV0 {
                                 fee: None, // TODO: to be implemented on the fedimint side
                             }),
                             oob_state: None,
+                            onchain_withdrawal_details: None,
                         }),
                         LightningMeta::Receive { invoice, .. } => Some(RpcTransaction {
                             id: op.0.operation_id.to_string(),
@@ -965,6 +967,7 @@ impl FederationV0 {
                                 fee: None, // TODO: to be implemented on the fedimint side
                             }),
                             oob_state: None,
+                            onchain_withdrawal_details: None,
                         }),
                     },
                     MINT_OPERATION_TYPE => {
@@ -988,6 +991,7 @@ impl FederationV0 {
                                         amount: RpcAmount(mint_meta.amount.translate()),
                                         lightning: None,
                                         oob_state: None,
+                                        onchain_withdrawal_details: None,
                                     })
                                 } else {
                                     None
@@ -1010,6 +1014,7 @@ impl FederationV0 {
                                     .get_oob_spend_outcome(op.0.operation_id, op.1)
                                     .await
                                     .map(RpcOOBState::from_spend_v0),
+                                onchain_withdrawal_details: None,
                             }),
                         }
                     }
