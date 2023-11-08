@@ -8,7 +8,9 @@ use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
 use anyhow::Context;
+use rolling_file::{BasicRollingFileAppender, RollingConditionBasic};
 use tracing::metadata::LevelFilter;
+use tracing_appender::non_blocking::NonBlocking;
 use tracing_serde::AsSerde;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::prelude::*;
@@ -45,15 +47,18 @@ pub fn init_logging(
 
     // react native
     let log_file = data_dir.join("fedi.log");
-    let file = std::fs::File::options()
-        .create(true)
-        .append(true)
-        .open(log_file)
-        .context("could not open log file")?;
+    const MB: u64 = 1024 * 1024;
+    const MAX_FILE_COUNT: usize = 2;
+    let log_file_writer = BasicRollingFileAppender::new(
+        log_file,
+        RollingConditionBasic::new().max_size(5 * MB),
+        MAX_FILE_COUNT,
+    )
+    .context("failed to open log file")?;
 
     let log_file_layer = tracing_subscriber::fmt::layer()
         .json()
-        .with_writer(Mutex::new(file));
+        .with_writer(Mutex::new(log_file_writer));
 
     let reg = tracing_subscriber::registry();
 
