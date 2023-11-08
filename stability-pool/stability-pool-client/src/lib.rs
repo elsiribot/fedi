@@ -16,7 +16,7 @@ use fedimint_client::module::ClientModule;
 use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
 use fedimint_client::sm::{DynState, State, StateTransition};
 use fedimint_client::transaction::{ClientInput, ClientOutput, TransactionBuilder};
-use fedimint_client::{Client, DynGlobalClientContext};
+use fedimint_client::{Client, ClientArc, DynGlobalClientContext};
 use fedimint_core::api::{FederationApiExt, FederationError};
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId, OperationId};
 use fedimint_core::db::ModuleDatabaseTransaction;
@@ -109,7 +109,7 @@ impl ClientModule for StabilityPoolClientModule {
 
     async fn handle_cli_command(
         &self,
-        client: &Client,
+        client: &ClientArc,
         args: &[ffi::OsString],
     ) -> anyhow::Result<serde_json::Value> {
         if args.is_empty() {
@@ -350,7 +350,7 @@ pub enum StabilityPoolDepositState {
 }
 
 #[apply(async_trait_maybe_send!)]
-impl StabilityPoolClientExt for Client {
+impl StabilityPoolClientExt for ClientArc {
     async fn account_info(&self) -> anyhow::Result<AccountInfo, FederationError> {
         let (stability_pool, instance) =
             self.get_first_module::<StabilityPoolClientModule>(&common::KIND);
