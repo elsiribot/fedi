@@ -27,7 +27,9 @@ use super::types::{
 };
 use crate::error::get_error_code;
 use crate::event::{Event, IEventSink, PanicEvent, TypedEventExt};
-use crate::types::{RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse, RpcPayAddressResponse};
+use crate::types::{
+    GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse, RpcPayAddressResponse,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum FedimintError {
@@ -88,6 +90,14 @@ macro_rules! rpc_method {
         }
 
     };
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn guardianStatus(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+) -> anyhow::Result<Vec<GuardianStatus>> {
+    bridge.guardian_status(federation_id).await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -475,6 +485,7 @@ rpc_methods!(RpcMethods {
     joinFederation,
     leaveFederation,
     listFederations,
+    guardianStatus,
     // Lightning
     generateInvoice,
     decodeInvoice,
@@ -1251,6 +1262,18 @@ mod tests {
         );
         assert!(account_info.staged_cancellation.is_none());
         assert!(account_info.locked_seeks.is_empty());
+        Ok(())
+    }
+
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_guardian_status() -> anyhow::Result<()> {
+        let (_bridge, federation) = setup().await?;
+        let guardians_status = federation.guardian_status().await?;
+        assert!(guardians_status.len() > 0);
+        for status in guardians_status {
+            assert!(matches!(status, GuardianStatus::Online { .. }));
+        }
         Ok(())
     }
 }

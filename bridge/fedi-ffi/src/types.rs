@@ -44,6 +44,15 @@ pub struct RpcFederation {
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
+pub enum GuardianStatus {
+    Online { guardian: String, status: String },
+    Error { guardian: String, error: String },
+    Timeout { guardian: String, elapsed: String },
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct RpcJsonClientConfig {
     #[ts(type = "unknown")]
     global: GlobalClientConfig,
