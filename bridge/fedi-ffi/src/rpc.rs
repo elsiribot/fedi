@@ -1265,7 +1265,6 @@ mod tests {
         Ok(())
     }
 
-
     #[tokio::test(flavor = "multi_thread")]
     async fn test_guardian_status() -> anyhow::Result<()> {
         let (_bridge, federation) = setup().await?;
