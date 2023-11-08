@@ -72,6 +72,7 @@ export function OmniInput<
 
             const expectedTypes = propsRef.current
                 .expectedInputTypes as readonly string[]
+
             if (expectedTypes.includes(parsedData.type)) {
                 propsRef.current.onExpectedInput(parsedData as ExpectedData)
             } else if (parsedData.type === ParserDataType.Unknown) {

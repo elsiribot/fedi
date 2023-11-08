@@ -222,6 +222,13 @@ pub struct RpcGenerateEcashResponse {
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
+pub struct RpcPayAddressResponse {
+    pub txid: String,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct RpcLightningGatewayV1 {
     pub node_pub_key: RpcPublicKey,
     pub gateway_id: RpcPublicKey,

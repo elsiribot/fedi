@@ -4,8 +4,9 @@ use std::path::PathBuf;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 
-use anyhow::{bail, Context};
+use anyhow::Context;
 use bitcoin::secp256k1::Message;
+use bitcoin::{Address, Amount};
 use futures::Future;
 use lightning_invoice::Invoice;
 use macro_rules_attribute::macro_rules_derive;
@@ -26,7 +27,7 @@ use super::types::{
 };
 use crate::error::get_error_code;
 use crate::event::{Event, IEventSink, PanicEvent, TypedEventExt};
-use crate::types::{RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse};
+use crate::types::{RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse, RpcPayAddressResponse};
 
 #[derive(Debug, thiserror::Error)]
 pub enum FedimintError {
@@ -177,13 +178,15 @@ async fn generateAddress(
 
 #[macro_rules_derive(rpc_method!)]
 async fn payAddress(
-    _bridge: Arc<Bridge>,
-    _federation_id: RpcFederationId,
-    _address: String,
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+    address: String,
     // TODO: parse this as bitcoin::Amount
-    _sats: u64,
-) -> anyhow::Result<String> {
-    bail!("not implemented")
+    sats: u64,
+) -> anyhow::Result<RpcPayAddressResponse> {
+    let address: Address = address.trim().parse().context("Invalid Bitcoin Address")?;
+    let amount: Amount = Amount::from_sat(sats);
+    bridge.pay_address(federation_id, address, amount).await
 }
 
 #[macro_rules_derive(rpc_method!)]

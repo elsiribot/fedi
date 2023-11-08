@@ -38,11 +38,20 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                     ParserDataType.Bolt11,
                     ParserDataType.LnurlPay,
                     ParserDataType.FediChatMember,
+                    ParserDataType.Bip21,
+                    ParserDataType.BitcoinAddress,
                 ]}
                 onExpectedInput={parsedData => {
                     if (parsedData.type === ParserDataType.FediChatMember) {
                         navigate('ChatWallet', {
                             recipientId: parsedData.data.id,
+                        })
+                    } else if (
+                        parsedData.type === ParserDataType.Bip21 ||
+                        parsedData.type === ParserDataType.BitcoinAddress
+                    ) {
+                        navigate('ConfirmSendOnChain', {
+                            bitcoinUri: parsedData,
                         })
                     } else {
                         navigate('ConfirmSendLightning', { parsedData })
