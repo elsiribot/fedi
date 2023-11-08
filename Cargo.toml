@@ -120,6 +120,7 @@ fedimint-bip39-v0 = { package = "fedimint-bip39", git = "https://x-access-token:
 uniffi_bindgen = "0.21.1"
 
 [profile.dev]
+debug = "line-tables-only"
 
 # in dev mode optimize crates that are perf-critical (usually just crypto crates)
 [profile.dev.package]
@@ -141,7 +142,7 @@ threshold_crypto = { opt-level = 3 }
 
 [profile.ci]
 inherits = "dev"
-debug = 1
+debug = "line-tables-only"
 incremental = false
 
 # Workaround: https://github.com/rust-lang/cargo/issues/12457 which causes
