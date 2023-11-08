@@ -10,12 +10,25 @@ if [ -z "$CARGO_ORIG_BIN" ]; then
   exit 1
 fi
 
+target_dir=""
 args=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --target)
       target="${2//-/_}"
+      args+=("$1")
+      args+=("$2")
+      shift
+      ;;
+    --package)
+      package="${2}"
+      args+=("$1")
+      args+=("$2")
+      shift
+      ;;
+    --target-dir)
+      target_dir="${2}"
       args+=("$1")
       args+=("$2")
       shift
@@ -56,6 +69,12 @@ if [ -n "$target" ]; then
   else
     unset SNAPPY_STATIC
   fi
+fi
+
+if [ -n "$package" ] && [ -z "$target_dir" ]; then
+  # if 'target-dir' was not specificaly set, and '--package <pkgs>' is used
+  # compile everything to a target's subdir to avoid causing rebuilds
+  args+=("--target-dir" "target/pkg/$package")
 fi
 
 exec "$CARGO_ORIG_BIN" "${args[@]}"
