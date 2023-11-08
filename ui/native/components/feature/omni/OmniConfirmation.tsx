@@ -14,6 +14,13 @@ import { AnyParsedData, ParserDataType } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import CustomOverlay, { CustomOverlayContents } from '../../ui/CustomOverlay'
 
+// Only certain codes can be used without active federation membership
+const ALLOWED_BEFORE_FEDERATION = [
+    ParserDataType.FedimintInvite,
+    ParserDataType.Website,
+    ParserDataType.Unknown,
+]
+
 interface Props {
     parsedData: AnyParsedData
     goBackText?: string
@@ -58,112 +65,138 @@ export const OmniConfirmation: React.FC<Props> = ({
         setIsLoading(false)
     }
 
-    let contents: CustomOverlayContents = {
-        title: '',
-    }
-    let continueText = t('words.continue')
-    let continueOnPress: undefined | (() => void)
-
-    switch (parsedData.type) {
-        case ParserDataType.Bolt11:
-        case ParserDataType.LnurlPay:
-            contents = {
-                icon: 'Bolt',
-                title: t('feature.omni.confirm-lightning-pay'),
+    const {
+        contents,
+        continueText = t('words.continue'),
+        continueOnPress,
+    } = ((): {
+        contents: CustomOverlayContents
+        continueText?: string
+        continueOnPress?: () => void
+    } => {
+        // If they're not yet a member of a federation, they can only scan certain codes.
+        if (
+            !activeFederationId &&
+            !ALLOWED_BEFORE_FEDERATION.includes(parsedData.type)
+        ) {
+            return {
+                contents: {
+                    icon: 'ScanSad',
+                    title: t('feature.omni.unsupported-no-federation'),
+                },
             }
-            continueOnPress = () =>
-                handleNavigate('ConfirmSendLightning', { parsedData })
-            break
-        case ParserDataType.LnurlWithdraw:
-            contents = {
-                icon: 'Bolt',
-                title: t('feature.omni.confirm-lightning-withdraw'),
-            }
-            continueOnPress = () =>
-                handleNavigate('ReceiveLightning', { parsedData })
-            break
-        case ParserDataType.FedimintInvite:
-            contents = {
-                icon: 'Federation',
-                title: t('feature.omni.confirm-federation-invite'),
-            }
-            continueOnPress = () =>
-                handleNavigate('JoinFederation', {
-                    invite: parsedData.data.invite,
-                })
-            break
-        case ParserDataType.FedimintEcash:
-            contents = {
-                icon: 'Bolt',
-                title: t('feature.omni.confirm-ecash-token'),
-            }
-            continueOnPress = () =>
-                handleNavigate('ConfirmReceiveOffline', {
-                    ecash: parsedData.data.token,
-                })
-            break
-        case ParserDataType.LnurlAuth:
-            contents = {
-                icon: 'Bolt',
-                title: t('feature.omni.confirm-lnurl-auth', {
-                    domain: parsedData.data.domain,
-                }),
-            }
-            continueText = t('words.authorize')
-            continueOnPress = handleAuth
-            break
-        case ParserDataType.FediChatGroup:
-        case ParserDataType.FediChatMember: {
-            contents = {
-                icon: 'Chat',
-                title: t('feature.omni.confirm-fedi-chat'),
-            }
-            if (parsedData.type === ParserDataType.FediChatGroup) {
-                continueOnPress = () =>
-                    handleNavigate('GroupChat', {
-                        groupId: parsedData.data.id,
-                    })
-            } else {
-                continueOnPress = () =>
-                    handleNavigate('DirectChat', {
-                        memberId: parsedData.data.id,
-                    })
-            }
-            break
         }
-        case ParserDataType.Website:
-            contents = {
-                icon: 'Globe',
-                url: parsedData.data.url,
-                title: t('feature.omni.confirm-website-url'),
-            }
-            continueOnPress = () => {
-                Linking.openURL(parsedData.data.url)
-                onSuccess(parsedData)
-            }
-            break
-        case ParserDataType.Bolt12:
-            contents = {
-                icon: 'ScanSad',
-                title: t('feature.omni.unsupported-bolt12'),
-            }
-            break
-        case ParserDataType.Bip21:
-        case ParserDataType.BitcoinAddress:
-            contents = {
-                icon: 'ScanSad',
-                title: t('feature.omni.unsupported-on-chain'),
-            }
-            break
-        case ParserDataType.Unknown:
-            contents = {
+
+        switch (parsedData.type) {
+            case ParserDataType.Bolt11:
+            case ParserDataType.LnurlPay:
+                return {
+                    contents: {
+                        icon: 'Bolt',
+                        title: t('feature.omni.confirm-lightning-pay'),
+                    },
+                    continueOnPress: () =>
+                        handleNavigate('ConfirmSendLightning', { parsedData }),
+                }
+            case ParserDataType.LnurlWithdraw:
+                return {
+                    contents: {
+                        icon: 'Bolt',
+                        title: t('feature.omni.confirm-lightning-withdraw'),
+                    },
+                    continueOnPress: () =>
+                        handleNavigate('ReceiveLightning', { parsedData }),
+                }
+            case ParserDataType.FedimintInvite:
+                return {
+                    contents: {
+                        icon: 'Federation',
+                        title: t('feature.omni.confirm-federation-invite'),
+                    },
+                    continueOnPress: () =>
+                        handleNavigate('JoinFederation', {
+                            invite: parsedData.data.invite,
+                        }),
+                }
+            case ParserDataType.FedimintEcash:
+                return {
+                    contents: {
+                        icon: 'Bolt',
+                        title: t('feature.omni.confirm-ecash-token'),
+                    },
+                    continueOnPress: () =>
+                        handleNavigate('ConfirmReceiveOffline', {
+                            ecash: parsedData.data.token,
+                        }),
+                }
+            case ParserDataType.LnurlAuth:
+                return {
+                    contents: {
+                        icon: 'Bolt',
+                        title: t('feature.omni.confirm-lnurl-auth', {
+                            domain: parsedData.data.domain,
+                        }),
+                    },
+                    continueText: t('words.authorize'),
+                    continueOnPress: handleAuth,
+                }
+            case ParserDataType.FediChatGroup:
+            case ParserDataType.FediChatMember:
+                return {
+                    contents: {
+                        icon: 'Chat',
+                        title: t('feature.omni.confirm-fedi-chat'),
+                    },
+                    continueOnPress: () => {
+                        if (parsedData.type === ParserDataType.FediChatGroup) {
+                            handleNavigate('GroupChat', {
+                                groupId: parsedData.data.id,
+                            })
+                        } else {
+                            handleNavigate('DirectChat', {
+                                memberId: parsedData.data.id,
+                            })
+                        }
+                    },
+                }
+            case ParserDataType.Website:
+                return {
+                    contents: {
+                        icon: 'Globe',
+                        url: parsedData.data.url,
+                        title: t('feature.omni.confirm-website-url'),
+                    },
+                    continueOnPress: () => {
+                        Linking.openURL(parsedData.data.url)
+                        onSuccess(parsedData)
+                        onGoBack()
+                    },
+                }
+            case ParserDataType.Bolt12:
+                return {
+                    contents: {
+                        icon: 'ScanSad',
+                        title: t('feature.omni.unsupported-bolt12'),
+                    },
+                }
+            case ParserDataType.Bip21:
+            case ParserDataType.BitcoinAddress:
+                return {
+                    contents: {
+                        icon: 'ScanSad',
+                        title: t('feature.omni.unsupported-on-chain'),
+                    },
+                }
+        }
+        return {
+            contents: {
                 icon: 'ScanSad',
                 title:
                     parsedData.data.message ||
                     t('feature.omni.unsupported-unknown'),
-            }
-            break
-    }
+            },
+        }
+    })()
 
     const goBackText = propsGoBackText || t('phrases.go-back')
     const buttons = useMemo(() => {
