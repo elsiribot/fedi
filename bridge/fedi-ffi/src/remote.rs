@@ -35,7 +35,10 @@ pub struct Client {
 
 impl Client {
     pub async fn new(event_sink: Box<dyn IEventSink>) -> Result<Self> {
-        let connection = TcpStream::connect("127.0.0.1:13127").await?;
+        #[cfg(not(target_os = "android"))]
+        let connection = TcpStream::connect("localhost:13127").await?;
+        #[cfg(target_os = "android")]
+        let connection = TcpStream::connect("10.0.2.2:13127").await?;
         let mut connection = Framed::new(connection, LinesCodec::new());
         let event_sink = Arc::new(Mutex::new(event_sink));
         let pending_response = PendingResponses::default();
