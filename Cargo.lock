@@ -1420,6 +1420,7 @@ dependencies = [
  "macro_rules_attribute",
  "rand",
  "ring",
+ "rolling-file",
  "serde",
  "serde_json",
  "stability-pool-client",
@@ -1428,6 +1429,7 @@ dependencies = [
  "threshold_crypto",
  "tokio",
  "tracing",
+ "tracing-appender",
  "tracing-serde",
  "tracing-subscriber",
  "ts-rs",
@@ -4935,6 +4937,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "rolling-file"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8395b4f860856b740f20a296ea2cd4d823e81a2658cf05ef61be22916026a906"
+dependencies = [
+ "chrono",
+]
+
+[[package]]
 name = "rpassword"
 version = "7.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6154,6 +6165,17 @@ dependencies = [
  "pin-project-lite",
  "tracing-attributes",
  "tracing-core",
+]
+
+[[package]]
+name = "tracing-appender"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09d48f71a791638519505cefafe162606f706c25592e4bde4d97600c0195312e"
+dependencies = [
+ "crossbeam-channel",
+ "time 0.3.27",
+ "tracing-subscriber",
 ]
 
 [[package]]
