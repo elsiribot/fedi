@@ -11,6 +11,7 @@ if [ -z "$CARGO_ORIG_BIN" ]; then
 fi
 
 target_dir=""
+package=""
 args=()
 
 # iterate over all arguments, collect them into 'args' and set some env vars
@@ -24,7 +25,11 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --package)
-      package="${2}"
+      if [ -z "$package" ]; then
+        package="${2}"
+      else
+        package="${package}-${2}"
+      fi
       args+=("$1")
       args+=("$2")
       shift
