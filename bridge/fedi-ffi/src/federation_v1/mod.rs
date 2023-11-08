@@ -459,7 +459,7 @@ impl FederationV1 {
         Ok(response)
     }
 
-    // Pay an onchain addres
+    // Pay an onchain address
     pub async fn pay_address(
         &self,
         address: Address,
@@ -496,7 +496,7 @@ impl FederationV1 {
         unreachable!("Update stream ended without outcome");
     }
 
-    // Get withdrawl outcome
+    // Get withdrawal outcome
     pub async fn get_withdrawal_outcome(
         &self,
         operation_id: OperationId,
