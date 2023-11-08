@@ -39,52 +39,54 @@ pub fn init_logging(
     event_sink: EventSink,
     log_filter: &str,
 ) -> anyhow::Result<()> {
+    // running tests on a mac
+    #[cfg(test)]
+    return init_logging_test();
+
     // react native
-    #[cfg(not(test))]
-    {
-        let log_file = data_dir.join("fedi.log");
-        let file = std::fs::File::options()
-            .create(true)
-            .append(true)
-            .open(log_file)
-            .context("could not open log file")?;
+    let log_file = data_dir.join("fedi.log");
+    let file = std::fs::File::options()
+        .create(true)
+        .append(true)
+        .open(log_file)
+        .context("could not open log file")?;
 
-        let log_file_layer = tracing_subscriber::fmt::layer()
-            .json()
-            .with_writer(Mutex::new(file));
+    let log_file_layer = tracing_subscriber::fmt::layer()
+        .json()
+        .with_writer(Mutex::new(file));
 
-        let reg = tracing_subscriber::registry();
+    let reg = tracing_subscriber::registry();
 
-        #[cfg(debug_assertions)]
-        let reg = reg.with(
-            ReactNativeLayer(event_sink)
+    #[cfg(debug_assertions)]
+    let reg = reg.with(
+        ReactNativeLayer(event_sink)
+            .with_filter(EnvFilter::from_str(log_filter).unwrap_or_default()),
+    );
+
+    let reg = reg.with(
+        log_file_layer.with_filter(EnvFilter::new("info,fedimint_client=debug,fediffi=trace")),
+    );
+
+    let res = if cfg!(target_os = "android") && option_env!("FEDI_DEV_LOGS").is_some() {
+        let time = fedimint_core::time::now()
+            .duration_since(SystemTime::UNIX_EPOCH)?
+            .as_secs();
+        reg.with(
+            tracing_subscriber::fmt::layer()
+                .with_ansi(true)
+                .pretty()
+                // using time because we can't overwrite existing files in Download
+                .with_writer(Mutex::new(std::fs::File::create(format!(
+                    "/storage/emulated/0/Download/fedi-{time}.log",
+                ))?))
                 .with_filter(EnvFilter::from_str(log_filter).unwrap_or_default()),
-        );
+        )
+        .try_init()
+    } else {
+        reg.try_init()
+    };
+    res.unwrap_or_else(|error| tracing::info!("Error installing logger: {}", error));
 
-        let reg = reg.with(
-            log_file_layer.with_filter(EnvFilter::new("info,fedimint_client=debug,fediffi=trace")),
-        );
-
-        let res = if cfg!(target_os = "android") && option_env!("FEDI_DEV_LOGS").is_some() {
-            let time = fedimint_core::time::now()
-                .duration_since(SystemTime::UNIX_EPOCH)?
-                .as_secs();
-            reg.with(
-                tracing_subscriber::fmt::layer()
-                    .with_ansi(true)
-                    .pretty()
-                    // using time because we can't overwrite existing files in Download
-                    .with_writer(Mutex::new(std::fs::File::create(format!(
-                        "/storage/emulated/0/Download/fedi-{time}.log",
-                    ))?))
-                    .with_filter(EnvFilter::from_str(log_filter).unwrap_or_default()),
-            )
-            .try_init()
-        } else {
-            reg.try_init()
-        };
-        res.unwrap_or_else(|error| tracing::info!("Error installing logger: {}", error));
-    }
     // #[cfg(target_os = "ios")]
     // use tracing_subscriber::{layer::SubscriberExt, prelude::*, Layer};
     // #[cfg(target_os = "ios")]
@@ -100,8 +102,10 @@ pub fn init_logging(
     //     .unwrap_or_else(|error| tracing::info!("Error installing logger: {}",
     // error));
 
-    // running tests on a mac
-    #[cfg(test)]
+    Ok(())
+}
+
+fn init_logging_test() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .try_init()
