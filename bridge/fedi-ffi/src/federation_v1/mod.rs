@@ -497,7 +497,7 @@ impl FederationV1 {
     }
 
     // Get withdrawl outcome
-    pub async fn get_withdrawl_outcome(
+    pub async fn get_withdrawal_outcome(
         &self,
         operation_id: OperationId,
     ) -> Option<(WithdrawState, Option<bitcoin::Txid>)> {
@@ -1636,7 +1636,7 @@ impl FederationV1 {
 
                                 // Todo: Figure out a where to pass back txid to client
                                 let (outcome, txid) = self
-                                    .get_withdrawl_outcome(op.0.operation_id)
+                                    .get_withdrawal_outcome(op.0.operation_id)
                                     .await
                                     .expect("Expected a withdrawal outcome but got None");
 
