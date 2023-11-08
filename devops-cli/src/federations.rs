@@ -15,7 +15,7 @@ use tracing::{debug, info};
 use crate::remote::{recursive_rsync_from_remote_dir_checked, run_ssh_checked, run_ssh_unchecked};
 use crate::{
     new_piped_command, run_parallel, run_sequentially, BitcoinCliArgs, FederationArgs,
-    RecoverFundsSubCommand, RecoveryMethodArgs, SshArgs,
+    RecoverFederationFundsSubCommand, RecoveryMethodArgs, SshArgs,
 };
 
 const FEDERATION_MACHINE_NAMES: [&str; 4] = ["alpha", "bravo", "charlie", "delta"];
@@ -38,7 +38,9 @@ pub(super) async fn federation_command(args: FederationArgs) -> anyhow::Result<(
     let federation = discover_federation(&args).await?;
     match args.command {
         crate::FederationSubCommand::FundsSummary(args) => funds_summary(args, federation).await,
-        crate::FederationSubCommand::RecoverFunds(args) => recover_funds(args, federation).await,
+        crate::FederationSubCommand::RecoverFederationFunds(args) => {
+            recover_federation_funds(args, federation).await
+        }
         crate::FederationSubCommand::RestartFedimints(args) => {
             command_restart_fedimints(args, federation).await
         }
@@ -202,9 +204,21 @@ async fn funds_summary(
     args: crate::FundsSummaryArgs,
     federation: Federation,
 ) -> anyhow::Result<()> {
-    let temp_directory = tempfile::tempdir()?;
-    let temp_federation_path = temp_directory.path().join(&federation.name);
-    let wallet_base_id = Utc::now().timestamp().to_string();
+    create_dir_all(&args.local_backup_directory)
+        .await
+        .with_context(|| {
+            format!(
+                "Failed to create local backup directory: {}",
+                args.local_backup_directory.display()
+            )
+        })?;
+    let wallet_base_id = args
+        .wallet_base_id
+        .clone()
+        .unwrap_or_else(|| Utc::now().timestamp().to_string());
+    let temp_federation_path = args
+        .local_backup_directory
+        .join(&format!("{}-{wallet_base_id}", federation.name));
 
     stop_fedimints(&federation).await?;
 
@@ -221,8 +235,6 @@ async fn funds_summary(
         start_fedimints(&federation).await?;
     }
 
-    let args = &args;
-
     let (balance_on_descriptors, output_descriptors_utxos, output_descriptors_epochs) =
         match args.recovery_method {
             RecoveryMethodArgs::All => {
@@ -232,7 +244,7 @@ async fn funds_summary(
                 let output_descriptors_utxos = extract_all_output_descriptors(
                     &federation,
                     fedimint_data.clone(),
-                    args,
+                    &args,
                     RecoveryMethod::Utxos,
                 )
                 .await?;
@@ -240,7 +252,7 @@ async fn funds_summary(
                 let output_descriptors_epochs = extract_all_output_descriptors(
                     &federation,
                     fedimint_data,
-                    args,
+                    &args,
                     RecoveryMethod::Epochs,
                 )
                 .await?;
@@ -258,7 +270,7 @@ async fn funds_summary(
                 let output_descriptors_utxos = extract_all_output_descriptors(
                     &federation,
                     fedimint_data,
-                    args,
+                    &args,
                     RecoveryMethod::Utxos,
                 )
                 .await?;
@@ -272,7 +284,7 @@ async fn funds_summary(
                 let output_descriptors_epochs = extract_all_output_descriptors(
                     &federation,
                     fedimint_data,
-                    args,
+                    &args,
                     RecoveryMethod::Epochs,
                 )
                 .await?;
@@ -424,11 +436,12 @@ async fn funds_summary(
     Ok(())
 }
 
-async fn recover_funds(
+async fn recover_federation_funds(
     args: crate::RecoverFundsArgs,
     federation: Federation,
 ) -> anyhow::Result<()> {
-    let RecoverFundsSubCommand::UsingRemoteBitcoin(subargs) = args.command;
+    info!("Starting recovery of the federations funds. NOTE: Gateway funds are NOT included!");
+    let RecoverFederationFundsSubCommand::UsingRemoteBitcoin(subargs) = args.command;
     let remote_wallets = run_remote_wallet_command(&subargs, "", "listwallets").await?;
     let remote_wallets = serde_json::from_str::<HashSet<String>>(&remote_wallets)?;
     let mut found_wallets = Vec::with_capacity(FEDERATION_MACHINE_NAMES.len());
@@ -563,7 +576,7 @@ async fn remote_send_raw_transaction(
     let txid = response["hex"]
         .as_str()
         .context("failed to get field as string")?;
-    let txid = Txid::from_str(&txid)?;
+    let txid = Txid::from_str(txid)?;
     Ok(txid)
 }
 

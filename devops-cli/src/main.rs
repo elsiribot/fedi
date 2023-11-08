@@ -257,7 +257,7 @@ enum FederationSubCommand {
     #[command(about = "Shows a summary of the federation funds balance")]
     FundsSummary(FundsSummaryArgs),
     #[command(about = "Recover funds from a federation after running `funds-summary`")]
-    RecoverFunds(RecoverFundsArgs),
+    RecoverFederationFunds(RecoverFundsArgs),
     #[command(about = "Restart fedimints")]
     RestartFedimints(RestartFedimintsArgs),
     #[command(about = "Start fedimints")]
@@ -287,6 +287,15 @@ struct FundsSummaryArgs {
     #[arg(long, default_value = "/var/lib/fedimint")]
     fedimint_remote_dir: PathBuf,
 
+    #[arg(long, help = "Will save a backup of the federation files here")]
+    local_backup_directory: PathBuf,
+
+    #[arg(
+        long,
+        help = "This will be used to prefix/suffix some names. If not provided it will default to the current UNIX timestamp"
+    )]
+    wallet_base_id: Option<String>,
+
     #[arg(long)]
     local_recovery_tool: PathBuf,
 
@@ -309,21 +318,31 @@ struct FundsSummaryArgs {
 
 #[derive(Clone, Args)]
 struct RecoverFundsArgs {
-    #[arg(long)]
+    #[arg(
+        long,
+        help = "This command should run after funds-summary was run and use the same wallet_base_id so the remote wallet can be found"
+    )]
     wallet_base_id: String,
 
-    #[arg(long)]
+    #[arg(
+        long,
+        help = "The bitcoin address destination of all the funds recovered"
+    )]
     destination_address: Address,
 
-    #[arg(long, action)]
+    #[arg(
+        long,
+        action,
+        help = "If enabled will broadcast the created transaction using the remote bitcoin node"
+    )]
     broadcast_transaction: bool,
 
     #[clap(subcommand)]
-    command: RecoverFundsSubCommand,
+    command: RecoverFederationFundsSubCommand,
 }
 
 #[derive(Subcommand, Clone, Debug)]
-enum RecoverFundsSubCommand {
+enum RecoverFederationFundsSubCommand {
     UsingRemoteBitcoin(UsingRemoteBitcoinArgs),
 }
 
