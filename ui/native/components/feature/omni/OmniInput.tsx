@@ -34,7 +34,10 @@ interface Props<T extends ParserDataType, ExpectedData> {
     onExpectedInput(data: ExpectedData): void
     /** Callback for when an unexpected input is successfully handled in-place, e.g. LNURL auth or ecash token redeem. */
     onUnexpectedSuccess(data: AnyParsedData): void
+    /** Custom actions to add in addition to default ones */
     customActions?: OmniInputAction[]
+    /** Custom label for the "Paste" action */
+    pasteLabel?: string
 }
 
 export function OmniInput<
@@ -52,7 +55,12 @@ export function OmniInput<
     const [invalidData, setInvalidData] = useState<ParsedUnknownData>()
     const isParsingRef = useUpdatingRef(isParsing)
 
-    const { expectedInputTypes, customActions, onUnexpectedSuccess } = props
+    const {
+        expectedInputTypes,
+        customActions,
+        onUnexpectedSuccess,
+        pasteLabel,
+    } = props
     const canLnurlPay = expectedInputTypes.includes(
         ParserDataType.LnurlPay as T,
     )
@@ -119,7 +127,7 @@ export function OmniInput<
         return [
             ...contextualActions,
             {
-                label: t('feature.omni.action-paste'),
+                label: pasteLabel || t('feature.omni.action-paste'),
                 icon: 'Clipboard',
                 onPress: handlePaste,
             },
@@ -131,6 +139,7 @@ export function OmniInput<
         canMemberSearch,
         canChat,
         canLnurlPay,
+        pasteLabel,
         handlePaste,
         t,
     ])

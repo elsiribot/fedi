@@ -144,6 +144,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
                     expectedInputTypes={[ParserDataType.FedimintInvite]}
                     onExpectedInput={input => handleCode(input.data.invite)}
                     onUnexpectedSuccess={() => null}
+                    pasteLabel={t('feature.federations.paste-federation-code')}
                 />
             )
         }
