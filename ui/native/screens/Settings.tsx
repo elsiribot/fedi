@@ -23,6 +23,7 @@ import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import SvgImage from '../components/ui/SvgImage'
+import { version } from '../package.json'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -251,6 +252,13 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={() => {}}
                 />
             </View>
+            <View style={styles(theme).versionContainer}>
+                <SvgImage
+                    name="FediLogoIcon"
+                    containerStyle={styles(theme).logo}
+                />
+                <Text>{t('phrases.app-version', { version })}</Text>
+            </View>
         </ScrollView>
     )
 }
@@ -284,6 +292,17 @@ const styles = (theme: Theme) =>
         sectionTitle: {
             color: theme.colors.primaryLight,
             paddingVertical: theme.spacing.sm,
+        },
+        versionContainer: {
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: theme.colors.offWhite,
+            padding: theme.spacing.md,
+            borderRadius: theme.borders.defaultRadius,
+            marginTop: theme.spacing.md,
+        },
+        logo: {
+            marginBottom: theme.spacing.sm,
         },
     })
 
