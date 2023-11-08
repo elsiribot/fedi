@@ -257,7 +257,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     name="FediLogoIcon"
                     containerStyle={styles(theme).logo}
                 />
-                <Text>{`Fedi Bravo Version: ${version}`}</Text>
+                <Text>{t('phrases.app-version', { version })}</Text>
             </View>
         </ScrollView>
     )

@@ -86,6 +86,7 @@
         "address-created": "Address Created",
         "allow-camera-access": "Allow camera access",
         "app-settings-security": "App settings and security",
+        "app-version": "Fedi Alpha Version: {{version}}",
         "back-to-app": "Back to app",
         "backup-your-wallet": "Bitcoin address",
         "bitcoin-address": "Bitcoin address",
