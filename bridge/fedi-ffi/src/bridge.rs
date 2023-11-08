@@ -2,11 +2,15 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::UNIX_EPOCH;
+use std::usize;
 
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey};
 use bitcoin::{Address, XOnlyPublicKey};
 use fedi_social_client::RecoveryId;
+use fedimint_client::db::ChronologicalOperationLogKey;
+use fedimint_client::sm::OperationId;
 use fedimint_core::api::InviteCode;
 use fedimint_core::config::FederationId;
 use fedimint_core::task::TaskGroup;
@@ -271,10 +275,24 @@ impl MultiFederation {
         }
     }
 
-    pub async fn list_transactions(&self) -> Result<Vec<RpcTransaction>> {
+    pub async fn list_transactions(
+        &self,
+        start_time: Option<u32>,
+        limit: Option<u32>,
+    ) -> Result<Vec<RpcTransaction>> {
+        let time = start_time.map(|n| UNIX_EPOCH + std::time::Duration::from_secs(n.into()));
+        let operation_id = OperationId::new_random();
+
+        let start_after = time.map(|t| ChronologicalOperationLogKey {
+            creation_time: t,
+            operation_id,
+        });
+
+        let usize_limit = limit.map_or(usize::MAX as u32, |l| l) as usize;
+
         Ok(match self {
             Self::V0(v0) => v0.list_transactions(usize::MAX).await,
-            Self::V1(v1) => v1.list_transactions(usize::MAX, None).await,
+            Self::V1(v1) => v1.list_transactions(usize_limit, start_after).await,
         })
     }
 
@@ -819,9 +837,11 @@ impl Bridge {
     pub async fn list_transactions(
         &self,
         federation_id: RpcFederationId,
+        start_time: Option<u32>,
+        limit: Option<u32>,
     ) -> Result<Vec<RpcTransaction>> {
         let multi = self.get_multi(&federation_id.0).await?;
-        multi.list_transactions().await
+        multi.list_transactions(start_time, limit).await
     }
 
     pub async fn update_transaction_notes(

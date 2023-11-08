@@ -217,8 +217,12 @@ async fn validateEcash(bridge: Arc<Bridge>, ecash: String) -> anyhow::Result<Rpc
 async fn listTransactions(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
+    start_time: Option<u32>,
+    limit: Option<u32>,
 ) -> anyhow::Result<Vec<RpcTransaction>> {
-    bridge.list_transactions(federation_id).await
+    bridge
+        .list_transactions(federation_id, start_time, limit)
+        .await
 }
 
 #[macro_rules_derive(rpc_method!)]

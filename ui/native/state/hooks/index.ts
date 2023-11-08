@@ -72,6 +72,9 @@ export const useBridge = () => {
         recoveryQr: useCallback(() => {
             return fedimint.recoveryQr(activeFederationId!)
         }, [activeFederationId]),
+        listFederations: useCallback(() => {
+            return fedimint.listFederations()
+        }, []),
         leaveFederation: useCallback(() => {
             return fedimint.leaveFederation(activeFederationId!)
         }, [activeFederationId]),
@@ -100,9 +103,16 @@ export const useBridge = () => {
         getMnemonic: useCallback(() => {
             return fedimint.getMnemonic(activeFederationId!)
         }, [activeFederationId]),
-        listTransactions: useCallback(() => {
-            return fedimint.listTransactions(activeFederationId!)
-        }, [activeFederationId]),
+        listTransactions: useCallback(
+            (startTime?: number, limit?: number) => {
+                return fedimint.listTransactions(
+                    activeFederationId!,
+                    startTime,
+                    limit,
+                )
+            },
+            [activeFederationId],
+        ),
         updateTransactionNotes: useCallback(
             (transactionId: string, notes: string) => {
                 return fedimint.updateTransactionNotes(
