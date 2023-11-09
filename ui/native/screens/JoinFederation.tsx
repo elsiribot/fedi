@@ -1,10 +1,9 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Theme, useTheme } from '@rneui/themed'
+import { Button } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
-import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 // import { useCameraDevices } from 'react-native-vision-camera'
 import { joinFederation } from '@fedi/common/redux'
@@ -16,13 +15,14 @@ import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
+import { OmniInput } from '../components/feature/omni/OmniInput'
 import FederationPreview from '../components/feature/onboarding/FederationPreview'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
-import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch } from '../state/hooks'
 import {
     FederationPreview as FederationPreviewType,
+    ParserDataType,
     SupportedFeature,
 } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -32,8 +32,6 @@ const log = makeLog('JoinFederation')
 export type Props = NativeStackScreenProps<RootStackParamList, 'JoinFederation'>
 
 const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
-    const insets = useSafeAreaInsets()
-    const { theme } = useTheme()
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
     const dispatch = useAppDispatch()
@@ -137,20 +135,16 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
         handleCode(text.trim())
     }, [handleCode])
 
-    // const devices = useCameraDevices()
-    // const device = devices.back
-
     const renderQrCodeScanner = () => {
-        // if (device == null) {
-        //     return <ActivityIndicator />
-        // } else if (isJoining) {
         if (isJoining || isFetchingPreview) {
             return <ActivityIndicator />
         } else {
             return (
-                <QrCodeScanner
-                    // device={device}
-                    onQrCodeDetected={handleCode}
+                <OmniInput
+                    expectedInputTypes={[ParserDataType.FedimintInvite]}
+                    onExpectedInput={input => handleCode(input.data.invite)}
+                    onUnexpectedSuccess={() => null}
+                    pasteLabel={t('feature.federations.paste-federation-code')}
                 />
             )
         }
@@ -180,41 +174,17 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
                 />
             }
             message={t('feature.federations.camera-access-information')}>
-            <View style={styles(theme, insets).container}>
-                <View style={styles(theme, insets).cameraScannerContainer}>
-                    {renderQrCodeScanner()}
-                </View>
-                <View style={styles(theme, insets).buttonContainer}>
-                    <Button
-                        disabled={isJoining || isFetchingPreview}
-                        loading={isJoining || isFetchingPreview}
-                        title={t('feature.federations.paste-federation-code')}
-                        onPress={checkClipboard}
-                        fullWidth
-                    />
-                </View>
-            </View>
+            <View style={styles().container}>{renderQrCodeScanner()}</View>
         </CameraPermissionsRequired>
     )
 }
 
-const styles = (theme: Theme, insets: EdgeInsets) =>
+const styles = () =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
-            justifyContent: 'flex-start',
-        },
-        cameraScannerContainer: {
-            height: '80%',
-            width: '100%',
-            margin: theme.spacing.lg,
-        },
-        buttonContainer: {
-            width: '100%',
-            paddingHorizontal: theme.spacing.xl,
-            marginTop: 'auto',
-            marginBottom: theme.spacing.xl + insets.bottom,
+            justifyContent: 'center',
         },
     })
 

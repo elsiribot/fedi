@@ -334,6 +334,7 @@
             "search-placeholder-username": "Enter a username",
             "search-placeholder-username-or-ln": "Enter a username or lightning address",
             "unsupported-bolt12": "BOLT 12 offers aren’t supported yet. Sorry!",
+            "unsupported-no-federation": "You can’t use that before joining a federation. Try scanning a federation invite instead.",
             "unsupported-on-chain": "On-chain bitcoin addresses aren’t supported yet. Sorry!",
             "unsupported-unknown": "Hmm, that's not a format we recognize. Sorry!"
         },

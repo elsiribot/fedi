@@ -105,6 +105,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                         backgroundColor: button.primary
                             ? theme.colors.primary
                             : theme.colors.secondary,
+                        borderWidth: 1,
                     }}
                     loadingProps={{
                         color: button.primary
@@ -228,7 +229,6 @@ const styles = (theme: Theme, insets: Insets) =>
         buttonContainer: {
             marginHorizontal: theme.spacing.sm,
             flex: 1,
-            borderWidth: 1,
         },
     })
 
