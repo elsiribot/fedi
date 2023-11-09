@@ -49,8 +49,8 @@ pub struct BalanceEvent {
 }
 
 #[derive(Serialize, Debug, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
-#[ts(rename_all = "camelCase")]
 pub struct StabilityPoolDepositEvent {
     pub federation_id: RpcFederationId,
     pub operation_id: RpcOperationId,
@@ -58,8 +58,8 @@ pub struct StabilityPoolDepositEvent {
 }
 
 #[derive(Serialize, Debug, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
-#[ts(rename_all = "camelCase")]
 pub enum StabilityPoolDepositState {
     Initiated,
     TxAccepted,
@@ -69,8 +69,8 @@ pub enum StabilityPoolDepositState {
 }
 
 #[derive(Serialize, Debug, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
-#[ts(rename_all = "camelCase")]
 pub struct StabilityPoolWithdrawalEvent {
     pub federation_id: RpcFederationId,
     pub operation_id: RpcOperationId,
@@ -78,8 +78,8 @@ pub struct StabilityPoolWithdrawalEvent {
 }
 
 #[derive(Serialize, Debug, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
-#[ts(rename_all = "camelCase")]
 pub enum StabilityPoolWithdrawalState {
     WithdrawUnlockedInitiated,
     TxRejected(String),
