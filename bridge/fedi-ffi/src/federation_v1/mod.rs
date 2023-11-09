@@ -22,7 +22,7 @@ use fedimint_client::sm::OperationId;
 use fedimint_client::{Client, ClientBuilder, ClientSecret};
 use fedimint_core::api::{
     DynModuleApi, FederationApiExt, GlobalFederationApi, IGlobalFederationApi, InviteCode,
-    WsFederationApi,
+    StatusResponse, WsFederationApi,
 };
 use fedimint_core::config::{ClientConfig, FederationId};
 use fedimint_core::db::{DatabaseTransaction, IDatabase};
@@ -276,22 +276,34 @@ impl FederationV1 {
             .map(|(guardian, client)| async move {
                 match timeout(
                     GUARDIAN_STATUS_TIMEOUT,
-                    client.request_current_consensus("status".into(), ApiRequestErased::default()),
+                    client.request_current_consensus::<StatusResponse>(
+                        "status".into(),
+                        ApiRequestErased::default(),
+                    ),
                 )
                 .await
                 {
-                    Ok(Ok(status)) => GuardianStatus::Online {
-                        guardian: guardian.to_string(),
-                        status,
-                    },
-                    Ok(Err(error)) => GuardianStatus::Error {
-                        guardian: guardian.to_string(),
-                        error: error.to_string(),
-                    },
-                    Err(elapsed) => GuardianStatus::Timeout {
-                        guardian: guardian.to_string(),
-                        elapsed: elapsed.to_string(),
-                    },
+                    Ok(Ok(status_response)) => {
+                        // Ensure you log before the match, to capture even partial responses
+                        info!("Raw status response: {:?}", status_response);
+                        GuardianStatus::Online {
+                            guardian: guardian.to_string(),
+                        }
+                    }
+                    Ok(Err(error)) => {
+                        info!("Error response: {:?}", error);
+                        GuardianStatus::Error {
+                            guardian: guardian.to_string(),
+                            error: error.to_string(),
+                        }
+                    }
+                    Err(elapsed) => {
+                        info!("Timeout elapsed: {:?}", elapsed);
+                        GuardianStatus::Timeout {
+                            guardian: guardian.to_string(),
+                            elapsed: elapsed.to_string(),
+                        }
+                    }
                 }
             });
         let guardians_status = futures::future::join_all(futures).await;

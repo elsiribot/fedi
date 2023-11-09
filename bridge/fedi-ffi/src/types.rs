@@ -45,7 +45,7 @@ pub struct RpcFederation {
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub enum GuardianStatus {
-    Online { guardian: String, status: String },
+    Online { guardian: String },
     Error { guardian: String, error: String },
     Timeout { guardian: String, elapsed: String },
 }

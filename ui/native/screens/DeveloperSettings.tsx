@@ -38,6 +38,7 @@ import {
     LightningGateway,
     SupportedCurrency,
 } from '@fedi/common/types'
+import { GuardianStatus } from '@fedi/common/types/bindings'
 import {
     makeBase64CSVUri,
     makeCSVFilename,
@@ -68,7 +69,7 @@ export type Props = NativeStackScreenProps<
 const DeveloperSettings: React.FC<Props> = () => {
     const { theme } = useTheme()
     const { t, i18n } = useTranslation()
-    const { listGateways, switchGateway } = useBridge()
+    const { listGateways, switchGateway, guardianStatus } = useBridge()
     const { toast } = useEnvironmentContext().state
     const [isLoadingGateways, setIsLoadingGateways] = useState<boolean>(false)
     const [selectedLanguage, setSelectedLanguage] = useState<string>(
@@ -78,6 +79,9 @@ const DeveloperSettings: React.FC<Props> = () => {
     const [isAddingCustomFediMod, setIsAddingCustomFediMod] =
         useState<boolean>(false)
     const [isSharingLogs, setIsSharingLogs] = useState(false)
+    const [guardianOnlineStatus, setGuardianOnlineStatus] = useState<
+        GuardianStatus[]
+    >([])
     const selectedFiatCurrency = useAppSelector(selectCurrency)
     const customFediMods = useAppSelector(selectFederationCustomFediMods)
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
@@ -90,6 +94,15 @@ const DeveloperSettings: React.FC<Props> = () => {
     const authenticatedGuardian = useAppSelector(
         s => s.federation.authenticatedGuardian,
     )
+
+    useEffect(() => {
+        const loadGuardianStatus = async () => {
+            const status = await guardianStatus()
+            setGuardianOnlineStatus(status)
+        }
+
+        loadGuardianStatus()
+    }, [guardianStatus])
 
     useEffect(() => {
         const getGatewaysList = async () => {
@@ -399,6 +412,32 @@ const DeveloperSettings: React.FC<Props> = () => {
                     </View>
                 )}
             </SettingsSection>
+
+            <SettingsSection title="Guardian Status">
+                {guardianOnlineStatus.map((n, index) => {
+                    let statusText
+                    let statusStyle
+
+                    if ('online' in n) {
+                        statusText = `Guardian ${n.online.guardian}: Online`
+                        statusStyle = styles(theme).onlineStatus
+                    }
+                    if ('error' in n) {
+                        statusText = `Guardian  ${n.error.guardian} Error: ${n.error.error}`
+                        statusStyle = styles(theme).errorStatus
+                    }
+                    if ('timeout' in n) {
+                        statusText = `Guardian  ${n.timeout.guardian} Timeout: ${n.timeout.elapsed}`
+                        statusStyle = styles(theme).timeoutStatus
+                    }
+
+                    return (
+                        <Text key={index} style={statusStyle}>
+                            {statusText}
+                        </Text>
+                    )
+                })}
+            </SettingsSection>
             <SettingsSection title="Danger zone">
                 <Button
                     title={'Delete all groups, messages, & members seen'}
@@ -563,6 +602,15 @@ const styles = (theme: Theme) =>
         switchLabel: {
             textAlign: 'left',
             marginBottom: theme.spacing.xs,
+        },
+        onlineStatus: {
+            color: 'green',
+        },
+        errorStatus: {
+            color: 'red',
+        },
+        timeoutStatus: {
+            color: 'orange',
         },
     })
 

@@ -38,6 +38,11 @@ export type Event =
     | { stabilityPoolDeposit: StabilityPoolDepositEvent }
     | { stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent }
 
+export type GuardianStatus =
+    | { online: { guardian: string } }
+    | { error: { guardian: string; error: string } }
+    | { timeout: { guardian: string; elapsed: string } }
+
 export interface LogEvent {
     log: string
 }
@@ -177,6 +182,14 @@ export interface RpcMethods {
             clientConfig: RpcJsonClientConfig | null
         }>,
     ]
+    guardianStatus: [
+        { federationId: RpcFederationId },
+        Array<
+            | { online: { guardian: string } }
+            | { error: { guardian: string; error: string } }
+            | { timeout: { guardian: string; elapsed: string } }
+        >,
+    ]
     generateInvoice: [
         {
             federationId: RpcFederationId
@@ -227,7 +240,11 @@ export interface RpcMethods {
     ]
     cancelEcash: [{ federationId: RpcFederationId; ecash: string }, null]
     listTransactions: [
-        { federationId: RpcFederationId; startTime?: number; limit?: number },
+        {
+            federationId: RpcFederationId
+            startTime: number | null
+            limit: number | null
+        },
         Array<{
             id: string
             createdAt: number

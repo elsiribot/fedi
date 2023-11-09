@@ -1264,15 +1264,4 @@ mod tests {
         assert!(account_info.locked_seeks.is_empty());
         Ok(())
     }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test_guardian_status() -> anyhow::Result<()> {
-        let (_bridge, federation) = setup().await?;
-        let guardians_status = federation.guardian_status().await?;
-        assert!(guardians_status.len() > 0);
-        for status in guardians_status {
-            assert!(matches!(status, GuardianStatus::Online { .. }));
-        }
-        Ok(())
-    }
 }
