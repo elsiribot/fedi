@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import type { Transaction } from '@fedi/common/types'
+import type { StabilityPoolTxn } from '@fedi/common/types'
 
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import StabilityTransactionDetail from './StabilityTransactionDetail'
@@ -19,7 +19,7 @@ import StabilityTransactionTile from './StabilityTransactionTile'
 import { StabilityTransactionTileError } from './StabilityTransactionTileError'
 
 type StabilityTransactionsListProps = {
-    transactions: Transaction[]
+    transactions: StabilityPoolTxn[]
     refreshTransactions: () => void
 }
 
@@ -32,14 +32,14 @@ const StabilityTransactionsList = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const [selectedTransaction, setSelectedTransaction] =
-        useState<Transaction | null>(null)
+        useState<StabilityPoolTxn | null>(null)
 
-    const renderTransaction: ListRenderItem<Transaction> = ({ item }) => {
+    const renderTransaction: ListRenderItem<StabilityPoolTxn> = ({ item }) => {
         return (
             <ErrorBoundary fallback={() => <StabilityTransactionTileError />}>
                 <StabilityTransactionTile
                     txn={item}
-                    selectTransaction={(txn: Transaction) =>
+                    selectTransaction={(txn: StabilityPoolTxn) =>
                         setSelectedTransaction(txn)
                     }
                 />
@@ -54,7 +54,7 @@ const StabilityTransactionsList = ({
             <FlatList
                 data={transactions}
                 renderItem={renderTransaction}
-                keyExtractor={(item: Transaction) => `${item.id}`}
+                keyExtractor={(item: StabilityPoolTxn) => `${item.id}`}
                 // optimization that allows skipping the measurement of dynamic content
                 // for fixed-size list items
                 getItemLayout={(data, index) => ({

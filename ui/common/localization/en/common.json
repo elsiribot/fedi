@@ -18,6 +18,7 @@
         "continue": "Continue",
         "copy": "Copy",
         "currency": "Currency",
+        "details": "Details",
         "deposit": "Deposit",
         "done": "Done",
         "error": "Error",
@@ -79,6 +80,7 @@
         "unknown": "Unknown",
         "wallet": "Wallet",
         "withdraw": "Withdraw",
+        "withdrawal": "Withdrawal",
         "yes": "Yes"
     },
     "phrases": {
