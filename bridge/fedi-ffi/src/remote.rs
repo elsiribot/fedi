@@ -32,21 +32,22 @@ pub type PendingResponses = Arc<Mutex<Option<oneshot::Sender<String>>>>;
 pub struct Client {
     pending_response: PendingResponses,
     tx: mpsc::Sender<Request>,
+    event_sink: Arc<Mutex<Box<dyn IEventSink>>>,
 }
 
 impl Client {
-    pub async fn new(event_sink: Box<dyn IEventSink>) -> Result<Self> {
+    pub async fn new(event_sink: Arc<Mutex<Box<dyn IEventSink>>>) -> Result<Self> {
         #[cfg(not(target_os = "android"))]
         let connection = TcpStream::connect("localhost:13127").await?;
         #[cfg(target_os = "android")]
         let connection = TcpStream::connect("10.0.2.2:13127").await?;
         let mut connection = Framed::new(connection, LinesCodec::new());
-        let event_sink = Arc::new(Mutex::new(event_sink));
         let pending_response = PendingResponses::default();
         let (tx, mut rx) = mpsc::channel::<Request>(32);
 
         let pending_response_cloned = Arc::clone(&pending_response);
 
+        let event_sink2 = event_sink.clone();
         tokio::spawn(async move {
             loop {
                 tokio::select! {
@@ -81,7 +82,12 @@ impl Client {
         Ok(Self {
             pending_response,
             tx,
+            event_sink: event_sink2,
         })
+    }
+
+    pub fn is_disconnected(&self) -> bool {
+        self.tx.is_closed()
     }
 
     pub async fn request(&self, method: String, body: String) -> Result<String> {
@@ -172,19 +178,25 @@ pub async fn init(data_dir: PathBuf) -> anyhow::Result<()> {
     Ok(())
 }
 
-static CLIENT: OnceLock<Client> = OnceLock::new();
+static CLIENT: OnceLock<Mutex<Client>> = OnceLock::new();
 pub async fn fedimint_remote_initialize(event_sink: Box<dyn IEventSink>) -> anyhow::Result<()> {
-    let client = Client::new(event_sink).await?;
-    let _ = CLIENT.set(client);
+    let client = Client::new(Arc::new(Mutex::new(event_sink))).await?;
+    let _ = CLIENT.set(Mutex::new(client));
     Ok(())
 }
 
 pub async fn fedimint_remote_rpc(method: String, payload: String) -> anyhow::Result<String> {
-    let reply = CLIENT
-        .get()
-        .expect("client not initialized")
+    let client = CLIENT.get().expect("client not initialized");
+    let mut client = client.lock().await;
+    if client.is_disconnected() {
+        *client = Client::new(client.event_sink.clone())
+            .await
+            .context("failed to connect to remote bridge")?;
+    }
+
+    let reply = client
         .request(method, payload)
         .await
-        .context("rpc failed")?;
+        .context("failed to communicate with remote bridge")?;
     Ok(reply)
 }
