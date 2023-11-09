@@ -18,3 +18,5 @@ procs:
     bridge:
         shell: bash scripts/bridge/rebuild.sh
         stop: SIGKILL
+    remote-bridge:
+        shell: bash scripts/bridge/run-remote.sh

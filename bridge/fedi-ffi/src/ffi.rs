@@ -18,6 +18,7 @@ use super::logging;
 use super::rpc::{fedimint_initialize_async, fedimint_rpc_async, FedimintError};
 use super::storage::IStorage;
 use crate::error::ErrorCode;
+use crate::remote::{fedimint_remote_initialize, fedimint_remote_rpc};
 use crate::rpc::{self, rpc_error};
 
 lazy_static! {
@@ -54,6 +55,9 @@ pub async fn fedimint_initialize_inner(
     log_level: String,
     event_sink: Box<dyn EventSink>,
 ) -> anyhow::Result<()> {
+    if option_env!("FEDI_BRIDGE_REMOTE").is_some() {
+        return fedimint_remote_initialize(event_sink).await;
+    }
     // return if bridge already is initialized
     if BRIDGE.lock().await.is_some() {
         warn!("bridge is already initialized");
@@ -89,6 +93,11 @@ pub async fn fedimint_initialize_inner(
 pub fn fedimint_rpc(method: String, payload: String) -> String {
     let value = std::panic::catch_unwind(AssertUnwindSafe(|| {
         RUNTIME.block_on(async move {
+            if option_env!("FEDI_BRIDGE_REMOTE").is_some() {
+                return fedimint_remote_rpc(method, payload)
+                    .await
+                    .expect("rpc failed");
+            }
             let Some(bridge) = BRIDGE.lock().await.as_ref().cloned() else {
                 return r#"{"error": "Bridge not initialized"}"#.to_owned();
             };

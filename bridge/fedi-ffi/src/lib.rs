@@ -9,6 +9,8 @@ pub mod event;
 mod ffi;
 #[cfg(not(target_family = "wasm"))]
 pub mod logging;
+#[cfg(not(target_family = "wasm"))]
+pub mod remote;
 pub mod rpc;
 pub mod storage;
 pub mod translate;
