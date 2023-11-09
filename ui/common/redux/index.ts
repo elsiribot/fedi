@@ -4,17 +4,19 @@ import type { AnyAction } from 'redux'
 import type { ThunkDispatch } from 'redux-thunk'
 
 import { Federation, StorageApi } from '../types'
-import { bitfinexPriceOracle } from '../utils/BitfinexPriceOracle'
 import { FedimintBridge } from '../utils/fedimint'
+import { makeLog } from '../utils/log'
 import { hasStorageStateChanged } from '../utils/storage'
 import { chatSlice } from './chat'
-import { currencySlice, updateBtcFiatPrice } from './currency'
+import { currencySlice, fetchCurrencyPrices } from './currency'
 import { environmentSlice } from './environment'
 import { federationSlice } from './federation'
 import { updateFederation } from './federation'
 import { loadFromStorage, saveToStorage, storageSlice } from './storage'
 import { toastSlice } from './toast'
 import { walletSlice } from './wallet'
+
+const log = makeLog('common/redux/index')
 
 export * from './chat'
 export * from './currency'
@@ -52,10 +54,9 @@ export function initializeCommonStore(
     fedimint: FedimintBridge,
     storage: StorageApi,
 ) {
-    // Start watching BTC prices for supported currencies
-    bitfinexPriceOracle.start()
-    const unsubscribePrices = bitfinexPriceOracle.subscribe(update => {
-        dispatch(updateBtcFiatPrice(update))
+    // Fetch the latest prices immediately.
+    dispatch(fetchCurrencyPrices()).catch(err => {
+        log.warn('Failed initial currency price fetch', err)
     })
 
     // Update federation on bridge events
@@ -91,7 +92,6 @@ export function initializeCommonStore(
     })
 
     return () => {
-        unsubscribePrices()
         unsubscribeFederation()
         unsubscribeStorage()
     }
