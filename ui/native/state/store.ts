@@ -1,14 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { configureStore } from '@reduxjs/toolkit'
+import { AppState as RNAppState } from 'react-native'
 
 import {
     commonMiddleware,
     commonReducers,
+    fetchCurrencyPrices,
     initializeCommonStore,
 } from '@fedi/common/redux'
+import { makeLog } from '@fedi/common/utils/log'
 import { checkForLegacyChatMigrations } from '@fedi/native/utils/migration'
 
 import { fedimint } from '../bridge'
+
+const log = makeLog('native/state/store')
 
 export const store = configureStore({
     middleware: commonMiddleware,
@@ -29,6 +34,14 @@ export function initializeNativeStore() {
         AsyncStorage,
     )
 
+    // Whenever the app is brought back into the foreground, refresh prices.
+    const changeSubscription = RNAppState.addEventListener('change', state => {
+        if (state === 'active') {
+            log.debug('App returned to foreground, refreshing prices...')
+            store.dispatch(fetchCurrencyPrices())
+        }
+    })
+
     // DELETEME: This logic is only needed to check for legacy chat data and
     // migrate it to the reduxified chat data structure. We can remove this
     // after a long enough time has passed since v1.11 where legacy chat data
@@ -46,6 +59,7 @@ export function initializeNativeStore() {
 
     return () => {
         unsubscribe()
+        changeSubscription.remove()
         clearInterval(storageMonitor)
     }
 }
