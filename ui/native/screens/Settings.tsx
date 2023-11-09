@@ -105,12 +105,9 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     },
                 ],
             )
-
-            return
         }
-
         // Don't allow leaving if stable pending balance exists
-        if (pendingStableBalance > 0) {
+        else if (pendingStableBalance > 0) {
             Alert.alert(
                 t('feature.federations.leave-federation'),
                 t(
@@ -122,12 +119,9 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     },
                 ],
             )
-
-            return
         }
-
         // Don't allow leaving sats balance is greater than 100
-        if (amountUtils.msatToSat(activeFederation!.balance) > 100) {
+        else if (amountUtils.msatToSat(activeFederation!.balance) > 100) {
             Alert.alert(
                 t('feature.federations.leave-federation'),
                 t('feature.federations.leave-federation-withdraw-first'),
@@ -137,23 +131,21 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     },
                 ],
             )
-
-            return
+        } else {
+            Alert.alert(
+                t('feature.federations.leave-federation'),
+                t('feature.federations.leave-federation-confirmation'),
+                [
+                    {
+                        text: t('words.no'),
+                    },
+                    {
+                        text: t('words.yes'),
+                        onPress: handleLeaveFederation,
+                    },
+                ],
+            )
         }
-
-        Alert.alert(
-            t('feature.federations.leave-federation'),
-            t('feature.federations.leave-federation-confirmation'),
-            [
-                {
-                    text: t('words.no'),
-                },
-                {
-                    text: t('words.yes'),
-                    onPress: handleLeaveFederation,
-                },
-            ],
-        )
     }
 
     const onChooseRecovery = () => {
