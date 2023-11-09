@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 use std::thread;
 
@@ -138,7 +139,7 @@ pub fn tcp_server() -> (
     })
 }
 
-pub async fn init() -> anyhow::Result<()> {
+pub async fn init(data_dir: PathBuf) -> anyhow::Result<()> {
     TracingSetup::default().init()?;
     let (response_tx, mut request_rx, server_task) = tcp_server();
     thread::spawn(move || {
@@ -148,7 +149,7 @@ pub async fn init() -> anyhow::Result<()> {
             .expect("failed to build tokio runtime");
         rt.block_on(server_task);
     });
-    let storage = PathBasedStorage::new("data-dir".into()).await?;
+    let storage = PathBasedStorage::new(data_dir).await?;
     impl IEventSink for mpsc::Sender<Response> {
         fn event(&self, event_type: String, body: String) {
             tokio::task::block_in_place(|| {
