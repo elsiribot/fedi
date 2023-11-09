@@ -49,8 +49,8 @@ pub struct BalanceEvent {
 }
 
 #[derive(Serialize, Debug, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
-#[ts(rename_all = "camelCase")]
 pub struct StabilityPoolDepositEvent {
     pub federation_id: RpcFederationId,
     pub operation_id: RpcOperationId,
@@ -58,8 +58,8 @@ pub struct StabilityPoolDepositEvent {
 }
 
 #[derive(Serialize, Debug, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
-#[ts(rename_all = "camelCase")]
 pub enum StabilityPoolDepositState {
     Initiated,
     TxAccepted,
@@ -69,8 +69,8 @@ pub enum StabilityPoolDepositState {
 }
 
 #[derive(Serialize, Debug, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
-#[ts(rename_all = "camelCase")]
 pub struct StabilityPoolWithdrawalEvent {
     pub federation_id: RpcFederationId,
     pub operation_id: RpcOperationId,
@@ -78,9 +78,10 @@ pub struct StabilityPoolWithdrawalEvent {
 }
 
 #[derive(Serialize, Debug, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
-#[ts(rename_all = "camelCase")]
 pub enum StabilityPoolWithdrawalState {
+    InvalidOperationType,
     WithdrawUnlockedInitiated,
     TxRejected(String),
     WithdrawUnlockedAccepted,
@@ -170,6 +171,7 @@ impl Event {
             federation_id: RpcFederationId(federation_id),
             operation_id: RpcOperationId(operation_id),
             state: match state {
+                stability_pool_client::StabilityPoolWithdrawalState::InvalidOperationType => StabilityPoolWithdrawalState::InvalidOperationType,
                 stability_pool_client::StabilityPoolWithdrawalState::WithdrawUnlockedInitiated => StabilityPoolWithdrawalState::WithdrawUnlockedInitiated,
                 stability_pool_client::StabilityPoolWithdrawalState::TxRejected(e) => StabilityPoolWithdrawalState::TxRejected(e.to_string()),
                 stability_pool_client::StabilityPoolWithdrawalState::WithdrawUnlockedAccepted => StabilityPoolWithdrawalState::WithdrawUnlockedAccepted,

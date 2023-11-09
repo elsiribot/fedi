@@ -122,7 +122,7 @@ impl ClientModule for StabilityPoolClientModule {
                 let seek_amount = args[1].to_string_lossy().parse::<Amount>()?;
                 let operation_id = client.deposit_to_seek(seek_amount).await?;
                 let mut updates = client
-                    .subscribe_deposit_or_renewal_operation(operation_id)
+                    .subscribe_deposit_operation(operation_id)
                     .await?
                     .into_stream();
 
@@ -155,7 +155,7 @@ impl ClientModule for StabilityPoolClientModule {
                     .deposit_to_provide(provide_amount, provide_fee_rate)
                     .await?;
                 let mut updates = client
-                    .subscribe_deposit_or_renewal_operation(operation_id)
+                    .subscribe_deposit_operation(operation_id)
                     .await?
                     .into_stream();
 
@@ -235,13 +235,23 @@ pub struct StabilityPoolStateMachine;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StabilityPoolMeta {
-    Output {
+    // Deposit given amount for seeking or providing
+    Deposit {
         outpoint: OutPoint,
         change_outpoint: Option<OutPoint>,
-        is_cancellation_operation: bool,
+        amount: Amount,
     },
-    Input {
+    // Cancel auto-renew of given BPS of locked funds
+    CancelRenewal {
         outpoint: OutPoint,
+        bps: u32,
+    },
+    // Withdraw given amount from unlocked balance (idle + staged)
+    // followed by auto-renewal cancellation of given BPS
+    // of locked funds (could be 0 BPS)
+    Withdrawal {
+        outpoint: OutPoint,
+        unlocked_amount: Amount,
         locked_bps: u32,
     },
 }
@@ -285,7 +295,7 @@ pub trait StabilityPoolClientExt {
         fee_rate: u64,
     ) -> anyhow::Result<OperationId>;
 
-    async fn subscribe_deposit_or_renewal_operation(
+    async fn subscribe_deposit_operation(
         &self,
         operation_id: OperationId,
     ) -> anyhow::Result<UpdateStreamOrOutcome<StabilityPoolDepositState>>;
@@ -304,6 +314,7 @@ pub trait StabilityPoolClientExt {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StabilityPoolWithdrawalState {
+    InvalidOperationType,
     WithdrawUnlockedInitiated,
     TxRejected(TxSubmissionError),
     WithdrawUnlockedAccepted,
@@ -374,18 +385,18 @@ impl StabilityPoolClientExt for Client {
         Ok(operation_id)
     }
 
-    async fn subscribe_deposit_or_renewal_operation(
+    async fn subscribe_deposit_operation(
         &self,
         operation_id: OperationId,
     ) -> anyhow::Result<UpdateStreamOrOutcome<StabilityPoolDepositState>> {
         let operation = stability_pool_operation(self, operation_id).await?;
         let (outpoint, change_outpoint) = match operation.meta::<StabilityPoolMeta>() {
-            StabilityPoolMeta::Output {
+            StabilityPoolMeta::Deposit {
                 outpoint,
                 change_outpoint,
                 ..
             } => (outpoint, change_outpoint),
-            _ => bail!("Operation is not of type deposit/cancel-auto-renewal/undo-cancellation"),
+            _ => bail!("Operation is not of type deposit"),
         };
 
         let client = self.clone();
@@ -442,15 +453,16 @@ impl StabilityPoolClientExt for Client {
                 state_machines: Arc::new(move |_, _| Vec::<StabilityPoolStateMachine>::new()),
             };
             let tx = TransactionBuilder::new().with_input(input.into_dyn(instance.id));
-            let input_meta_gen = |txid, _| StabilityPoolMeta::Input {
+            let withdrawal_meta_gen = |txid, _| StabilityPoolMeta::Withdrawal {
                 outpoint: OutPoint { txid, out_idx: 0 },
+                unlocked_amount,
                 locked_bps,
             };
             let transaction_id = self
                 .finalize_and_submit_transaction(
                     operation_id,
                     StabilityPoolCommonGen::KIND.as_str(),
-                    input_meta_gen,
+                    withdrawal_meta_gen,
                     tx,
                 )
                 .await?;
@@ -476,7 +488,7 @@ impl StabilityPoolClientExt for Client {
             operation.outcome_or_updates(self.db(), operation_id, move || {
                 stream! {
                     let (cancellation_op_id, cancellation_tx_id) = match operation_meta {
-                        StabilityPoolMeta::Input { outpoint, locked_bps } => {
+                        StabilityPoolMeta::Withdrawal { outpoint, locked_bps, .. } => {
                             yield StabilityPoolWithdrawalState::WithdrawUnlockedInitiated;
 
                             let tx_updates_stream = client.transaction_updates(operation_id);
@@ -515,9 +527,13 @@ impl StabilityPoolClientExt for Client {
                                 }
                             }
                         },
-                        StabilityPoolMeta::Output { outpoint, .. } => {
+                        StabilityPoolMeta::CancelRenewal { outpoint, .. } => {
                             yield StabilityPoolWithdrawalState::CancellationInitiated;
                             (operation_id, outpoint.txid)
+                        },
+                        StabilityPoolMeta::Deposit { .. } => {
+                            yield StabilityPoolWithdrawalState::InvalidOperationType;
+                            return
                         }
                     };
 
@@ -622,21 +638,37 @@ async fn submit_tx_with_intended_action(
         state_machines: Arc::new(move |_, _| Vec::<StabilityPoolStateMachine>::new()),
     };
     let tx = TransactionBuilder::new().with_output(output.into_dyn(instance.id));
-    let output_meta_gen = |txid, change_outpoint| StabilityPoolMeta::Output {
-        outpoint: OutPoint { txid, out_idx: 0 },
-        change_outpoint,
-        is_cancellation_operation: match intended_action {
-            IntendedAction::CancelRenewal(_) => true,
-            _ => false,
-        },
+    let transaction_id = match intended_action {
+        IntendedAction::Seek(Seek(amount)) | IntendedAction::Provide(Provide { amount, .. }) => {
+            let deposit_meta_gen = |txid, change_outpoint| StabilityPoolMeta::Deposit {
+                outpoint: OutPoint { txid, out_idx: 0 },
+                change_outpoint,
+                amount,
+            };
+            client
+                .finalize_and_submit_transaction(
+                    operation_id,
+                    StabilityPoolCommonGen::KIND.as_str(),
+                    deposit_meta_gen,
+                    tx,
+                )
+                .await?
+        }
+        IntendedAction::CancelRenewal(CancelRenewal { bps }) => {
+            let cancellation_meta_gen = |txid, _| StabilityPoolMeta::CancelRenewal {
+                outpoint: OutPoint { txid, out_idx: 0 },
+                bps,
+            };
+            client
+                .finalize_and_submit_transaction(
+                    operation_id,
+                    StabilityPoolCommonGen::KIND.as_str(),
+                    cancellation_meta_gen,
+                    tx,
+                )
+                .await?
+        }
+        IntendedAction::UndoCancelRenewal => bail!("Not yet supported"),
     };
-    let transaction_id = client
-        .finalize_and_submit_transaction(
-            operation_id,
-            StabilityPoolCommonGen::KIND.as_str(),
-            output_meta_gen,
-            tx,
-        )
-        .await?;
     Ok((operation_id, transaction_id))
 }
