@@ -633,16 +633,12 @@ impl FederationV1 {
             STABILITY_POOL_OPERATION_TYPE => {
                 let fed = self.clone();
                 match operation.meta::<StabilityPoolMeta>() {
-                    StabilityPoolMeta::Output {
-                        is_cancellation_operation: false,
-                        ..
-                    } => {
+                    StabilityPoolMeta::Deposit { .. } => {
                         self.task_group
                             .clone()
                             .spawn("subscribe_stability_pool_deposit", move |_| async move {
                                 fed.subscribe_client_operation(
-                                    fed.client
-                                        .subscribe_deposit_or_renewal_operation(operation_id),
+                                    fed.client.subscribe_deposit_operation(operation_id),
                                     |state| {
                                         Event::stability_pool_deposit(
                                             fed.federation_id(),
@@ -655,11 +651,8 @@ impl FederationV1 {
                             })
                             .await;
                     }
-                    StabilityPoolMeta::Output {
-                        is_cancellation_operation: true,
-                        ..
-                    }
-                    | StabilityPoolMeta::Input { .. } => {
+                    StabilityPoolMeta::CancelRenewal { .. }
+                    | StabilityPoolMeta::Withdrawal { .. } => {
                         self.task_group
                             .clone()
                             .spawn("subscribe_stability_pool_withdraw", move |_| async move {
@@ -1507,11 +1500,11 @@ impl FederationV1 {
                             }
                         },
                         STABILITY_POOL_OPERATION_TYPE => match op.1.meta() {
-                            StabilityPoolMeta::Output { .. } => Some(RpcTransaction {
+                            StabilityPoolMeta::Deposit { amount, .. } => Some(RpcTransaction {
                                 id: op.0.operation_id.to_string(),
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
-                                amount: RpcAmount(Amount { msats: 0 }),
+                                amount: RpcAmount(amount),
                                 direction: RpcTransactionDirection::Send,
                                 notes: "stability pool".to_string(),
                                 onchain_state: None,
@@ -1521,11 +1514,13 @@ impl FederationV1 {
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
                             }),
-                            StabilityPoolMeta::Input { .. } => Some(RpcTransaction {
+                            StabilityPoolMeta::Withdrawal {
+                                unlocked_amount, ..
+                            } => Some(RpcTransaction {
                                 id: op.0.operation_id.to_string(),
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
-                                amount: RpcAmount(Amount { msats: 0 }),
+                                amount: RpcAmount(unlocked_amount),
                                 direction: RpcTransactionDirection::Send,
                                 notes: "stability pool".to_string(),
                                 onchain_state: None,
@@ -1535,6 +1530,7 @@ impl FederationV1 {
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
                             }),
+                            StabilityPoolMeta::CancelRenewal { .. } => None,
                         },
                         MINT_OPERATION_TYPE => {
                             let mint_meta: MintMeta = op.1.meta();
@@ -1808,8 +1804,7 @@ impl FederationV1 {
             .clone()
             .spawn("subscribe_stability_pool_deposit", move |_| async move {
                 fed.subscribe_client_operation(
-                    fed.client
-                        .subscribe_deposit_or_renewal_operation(operation_id),
+                    fed.client.subscribe_deposit_operation(operation_id),
                     |state| Event::stability_pool_deposit(fed.federation_id(), operation_id, state),
                 )
                 .await
