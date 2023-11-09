@@ -42,6 +42,8 @@ const Transactions: React.FC<Props> = () => {
                 fetchedTransactions = await listTransactions()
             }
 
+            // Filter out onchain addresses older than 1 hour
+            // that are still waiting for a txn
             const filteredTransactions = fetchedTransactions.filter(
                 (txn: RpcTransaction) => {
                     if (
