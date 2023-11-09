@@ -9,6 +9,8 @@ import {
     RpcTransaction,
     SocialRecoveryApproval,
     PanicEvent,
+    StabilityPoolWithdrawalEvent,
+    StabilityPoolDepositEvent,
 } from './bindings'
 import { MsatsString } from './units'
 
@@ -161,4 +163,6 @@ export type FedimintBridgeEventMap = {
     socialRecovery: SocialRecoveryEvent
     balance: BalanceEvent
     panic: PanicEvent
+    stabilityPoolDeposit: StabilityPoolDepositEvent
+    stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent
 }
