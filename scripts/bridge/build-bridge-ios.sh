@@ -12,7 +12,7 @@ CARGO_PROFILE=${CARGO_PROFILE:-release}
 # build Swift bindings
 cd $BRIDGE_ROOT/fedi-ffi
 # note: using '--target-dir' or otherwise this build will completely invalidate previous ones already in the ./target
-cargo run --target-dir "${TARGET_DIR}/ffi-bindgen-run" --package ffi-bindgen -- --language swift --out-dir $BRIDGE_ROOT/fedi-swift/Sources/Fedi
+cargo run --target-dir "${TARGET_DIR}/pkg/ffi-bindgen/ffi-bindgen-run" --package ffi-bindgen -- --language swift --out-dir $BRIDGE_ROOT/fedi-swift/Sources/Fedi
 
 cd $BRIDGE_ROOT
 
@@ -25,11 +25,11 @@ echo "Building iOS bridge for targets: ${TARGETS[*]}"
 
 # clean any old binaries
 # shellcheck disable=SC2046
-rm -f $(find $TARGET_DIR/ -name libfediffi.a | grep -v '/deps/')
+rm -f $(find $TARGET_DIR/pkg/ffi-bindgen -name libfediffi.a | grep -v '/deps/')
 
 # build binaries for each supported target
 for target in "${TARGETS[@]}"; do
-  cargo build --target-dir "${TARGET_DIR}" --package fedi-ffi ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} --target $target $CARGO_FLAGS
+  cargo build --target-dir "${TARGET_DIR}/pkg/fedi-ffi" --package fedi-ffi ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} --target $target $CARGO_FLAGS
 done
 
 # make sure build artifacts are available to the fedi-swift Xcode package
@@ -50,8 +50,8 @@ cp Sources/Fedi/fediFFI.h fediFFI.xcframework/ios-arm64_x86_64-simulator/fediFFI
 echo "Copying binary files..."
 # for development, we combine both x86 and aarch64 binaries into one
 # x86_64-apple-ios-sim is not supported as a rustc target so we just use x86_64-apple-ios
-AARCH64_SIM_BINARY_PATH=$TARGET_DIR/aarch64-apple-ios-sim/${CARGO_PROFILE:-debug}/libfediffi.a
-X86_BINARY_PATH=$TARGET_DIR/x86_64-apple-ios/${CARGO_PROFILE:-debug}/libfediffi.a
+AARCH64_SIM_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/aarch64-apple-ios-sim/${CARGO_PROFILE:-debug}/libfediffi.a
+X86_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/x86_64-apple-ios/${CARGO_PROFILE:-debug}/libfediffi.a
 if [ -e "$AARCH64_SIM_BINARY_PATH" ] && [ -e "$X86_BINARY_PATH" ]; then
   echo "Combining binaries for development..."
   mkdir -p $TARGET_DIR/lipo-ios-arm64_x86_64-simulator/${CARGO_PROFILE:-debug}
@@ -68,7 +68,7 @@ fi
 
 # 2. ios-arm64
 # copy the aarch64 binary if it was built
-AARCH64_BINARY_PATH=$TARGET_DIR/aarch64-apple-ios/${CARGO_PROFILE:-debug}/libfediffi.a
+AARCH64_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/aarch64-apple-ios/${CARGO_PROFILE:-debug}/libfediffi.a
 if [ -e "$AARCH64_BINARY_PATH" ]; then
   cp $AARCH64_BINARY_PATH fediFFI.xcframework/ios-arm64/fediFFI.framework/fediFFI
 else
