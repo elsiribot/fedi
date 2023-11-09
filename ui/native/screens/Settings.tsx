@@ -11,6 +11,8 @@ import {
     selectActiveFederation,
     selectAuthenticatedMember,
     selectDeveloperMode,
+    selectStableBalance,
+    selectStableBalancePending,
     setDeveloperMode,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -43,6 +45,8 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         s => s.federation.authenticatedGuardian,
     )
     const developerMode = useAppSelector(selectDeveloperMode)
+    const stableBalance = useAppSelector(selectStableBalance)
+    const pendingStableBalance = useAppSelector(selectStableBalancePending)
 
     const federationId = activeFederation?.id
 
@@ -90,7 +94,39 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     }, [federationId, dispatch, resetChatState, resetGuardiansState, toast])
 
     const confirmLeaveFederation = () => {
-        // Only allow leaving if they have less than 100 sats
+        // Don't allow leaving if stable balance exists
+        if (stableBalance > 0) {
+            Alert.alert(
+                t('feature.federations.leave-federation'),
+                t('feature.federations.leave-federation-withdraw-stable-first'),
+                [
+                    {
+                        text: t('words.okay'),
+                    },
+                ],
+            )
+
+            return
+        }
+
+        // Don't allow leaving if stable pending balance exists
+        if (pendingStableBalance > 0) {
+            Alert.alert(
+                t('feature.federations.leave-federation'),
+                t(
+                    'feature.federations.leave-federation-withdraw-pending-stable-first',
+                ),
+                [
+                    {
+                        text: t('words.okay'),
+                    },
+                ],
+            )
+
+            return
+        }
+
+        // Don't allow leaving sats balance is greater than 100
         if (amountUtils.msatToSat(activeFederation!.balance) > 100) {
             Alert.alert(
                 t('feature.federations.leave-federation'),
@@ -101,21 +137,23 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     },
                 ],
             )
-        } else {
-            Alert.alert(
-                t('feature.federations.leave-federation'),
-                t('feature.federations.leave-federation-confirmation'),
-                [
-                    {
-                        text: t('words.no'),
-                    },
-                    {
-                        text: t('words.yes'),
-                        onPress: handleLeaveFederation,
-                    },
-                ],
-            )
+
+            return
         }
+
+        Alert.alert(
+            t('feature.federations.leave-federation'),
+            t('feature.federations.leave-federation-confirmation'),
+            [
+                {
+                    text: t('words.no'),
+                },
+                {
+                    text: t('words.yes'),
+                    onPress: handleLeaveFederation,
+                },
+            ],
+        )
     }
 
     const onChooseRecovery = () => {
