@@ -16,7 +16,6 @@ const log = makeLog('redux/currency')
 const initialState = {
     btcUsdRate: 0 as number,
     fiatUsdRates: {} as Record<string, number | undefined>,
-    prices: {} as Partial<Record<SupportedCurrency, number>>,
     selectedFiatCurrency: null as SupportedCurrency | null,
 }
 
@@ -28,16 +27,6 @@ export const currencySlice = createSlice({
     name: 'currency',
     initialState,
     reducers: {
-        updateBtcFiatPrice(
-            state,
-            action: PayloadAction<{
-                price: number
-                currency: SupportedCurrency
-            }>,
-        ) {
-            const { price, currency } = action.payload
-            state.prices[currency] = price
-        },
         changeSelectedFiatCurrency(
             state,
             action: PayloadAction<SupportedCurrency>,
@@ -60,18 +49,16 @@ export const currencySlice = createSlice({
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
             state.selectedFiatCurrency = action.payload.currency
-            state.prices = action.payload.btcExchangeRates
+            state.btcUsdRate = action.payload.btcUsdRate
+            state.fiatUsdRates = action.payload.fiatUsdRates
         })
     },
 })
 
 /*** Basic actions ***/
 
-export const {
-    updateBtcFiatPrice,
-    changeSelectedFiatCurrency,
-    resetCurrencyState,
-} = currencySlice.actions
+export const { changeSelectedFiatCurrency, resetCurrencyState } =
+    currencySlice.actions
 
 /*** Async thunk actions ***/
 
