@@ -17,6 +17,8 @@ import {
     RpcAmount,
     RpcLockedSeek,
     RpcStabilityPoolAccountInfo,
+    StabilityPoolDepositEvent,
+    StabilityPoolWithdrawalEvent,
 } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import { FedimintBridge } from '../utils/fedimint'
@@ -143,14 +145,36 @@ export const increaseStableBalance = createAsyncThunk<
     { state: CommonState }
 >(
     'wallet/increaseStableBalance',
-    async ({ fedimint, amount }, { getState }) => {
+    async ({ fedimint, amount }, { dispatch, getState }) => {
         try {
             const state = getState()
             const activeFederationId = selectActiveFederation(state)?.id
             if (!activeFederationId) throw new Error('No active federation')
-            await fedimint.stabilityPoolDepositToSeek(
+            const operationId = await fedimint.stabilityPoolDepositToSeek(
                 amount,
                 activeFederationId,
+            )
+
+            // Refresh stability pool account info when the deposit completes
+
+            const unsubscribeOperation = fedimint.addListener(
+                'stabilityPoolDeposit',
+                (event: StabilityPoolDepositEvent) => {
+                    if (
+                        event.federationId === activeFederationId &&
+                        event.operationId === operationId
+                    ) {
+                        dispatch(refreshActiveStabilityPool({ fedimint }))
+                        if (event.state === 'success') {
+                            unsubscribeOperation()
+                        } else if (
+                            typeof event.state === 'object' &&
+                            'txRejected' in event.state
+                        ) {
+                            unsubscribeOperation()
+                        }
+                    }
+                },
             )
             return true
         } catch (error) {
@@ -165,7 +189,7 @@ export const decreaseStableBalance = createAsyncThunk<
     { state: CommonState }
 >(
     'wallet/decreaseStableBalance',
-    async ({ fedimint, amount }, { getState }) => {
+    async ({ fedimint, amount }, { dispatch, getState }) => {
         try {
             const state = getState()
             const activeFederationId = selectActiveFederation(state)?.id
@@ -203,12 +227,32 @@ export const decreaseStableBalance = createAsyncThunk<
                     ).toFixed(0),
                 )
             }
-
-            await fedimint.stabilityPoolWithdraw(
+            const operationId = await fedimint.stabilityPoolWithdraw(
                 lockedBps,
                 unlockedAmount,
                 activeFederationId,
             )
+            // Refresh stability pool account info when the withdrawal completes
+            const unsubscribeOperation = fedimint.addListener(
+                'stabilityPoolWithdrawal',
+                (event: StabilityPoolWithdrawalEvent) => {
+                    if (
+                        event.federationId === activeFederationId &&
+                        event.operationId === operationId
+                    ) {
+                        dispatch(refreshActiveStabilityPool({ fedimint }))
+                        if (event.state === 'success') {
+                            unsubscribeOperation()
+                        } else if (
+                            typeof event.state === 'object' &&
+                            'txRejected' in event.state
+                        ) {
+                            unsubscribeOperation()
+                        }
+                    }
+                },
+            )
+
             return true
         } catch (error) {
             return false
