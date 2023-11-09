@@ -1,6 +1,6 @@
 [package]
 name = "fedi-ffi"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2021"
 
 [lib]
@@ -8,6 +8,19 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 name = "fediffi"
 
 [dependencies]
+fedimint-core = { workspace = true }
+fedimint-client = { workspace = true }
+fedimint-mint-client = { workspace = true }
+fedimint-ln-client = { workspace = true }
+fedimint-wallet-client = { workspace = true }
+fedi-social-client = { path = "../../fedi-social-client" }
+stability-pool-client = { path = "../../stability-pool/stability-pool-client" }
+fedimint-derive-secret = { workspace = true }
+fedimint-logging = { workspace = true }
+fedimint-bip39 = { workspace = true }
+fedimint_threshold_crypto = { workspace = true }
+fedimint-aead = { workspace = true }
+
 fedimint-core-v1 = { workspace = true }
 fedimint-client-v1 = { workspace = true }
 fedimint-mint-client-v1 = { workspace = true }
@@ -61,6 +74,7 @@ tracing-appender = "0.2.2"
 ring = { version = "0.16.20", features = ["wasm32_unknown_unknown_js"] }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
+fedimint-rocksdb = { workspace = true }
 fedimint-rocksdb-v1 = { workspace = true }
 fedimint-rocksdb-v0 = { workspace = true }
 tokio-util = { version = "0.7.9", features = [ "codec", "net" ] }
@@ -76,9 +90,13 @@ tempfile = "3.3.0"
 
 # FIXME: just put these above? or dev-dependencies
 [target.'cfg(target_os = "macos")'.dependencies]
+fedimint-logging = { workspace = true }
+devimint = { workspace = true }
 fedimint-logging-v1 = { workspace = true }
 devimint-v1 = { workspace = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
+fedimint-logging = { workspace = true }
+devimint = { workspace = true }
 fedimint-logging-v1 = { workspace = true }
 devimint-v1 = { workspace = true }
