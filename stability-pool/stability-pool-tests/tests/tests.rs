@@ -30,7 +30,6 @@ async fn starter_test() -> anyhow::Result<()> {
         gw_lnd,
         electrs,
         esplora,
-        faucet,
     } = dev_fed(&process_mgr).await?;
 
     // Get clients for seeker and provider
@@ -45,7 +44,7 @@ async fn starter_test() -> anyhow::Result<()> {
     )?;
 
     // Peg in for seeker and provider and verify balances
-    fed.await_minimum_blocks().await?;
+    fed.await_block_sync().await?;
     let (seeker_peg_in_op_id, provider_peg_in_op_id) = tokio::try_join!(
         seeker.initiate_peg_in(&bitcoind, seeker_peg_in_sats),
         provider.initiate_peg_in(&bitcoind, provider_peg_in_sats)
