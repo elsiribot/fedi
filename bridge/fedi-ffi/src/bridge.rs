@@ -43,7 +43,9 @@ use super::types::{
     RpcXmppCredentials, SocialRecoveryApproval, SocialRecoveryQr,
 };
 use crate::error::ErrorCode;
-use crate::types::{RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse, RpcPayAddressResponse};
+use crate::types::{
+    GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse, RpcPayAddressResponse,
+};
 
 // FIXME: federation-specific filename
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
@@ -141,6 +143,15 @@ impl MultiFederation {
         match self {
             Self::V0(v0) => v0.balance_info().await,
             Self::V1(v1) => v1.balance_info().await,
+        }
+    }
+
+    pub async fn guardian_status(&self) -> anyhow::Result<Vec<GuardianStatus>> {
+        match self {
+            Self::V0(_) => {
+                bail!("Not supported for this version")
+            }
+            Self::V1(v1) => v1.guardian_status().await,
         }
     }
 
@@ -577,6 +588,15 @@ impl Bridge {
 
         dbtx.commit_tx().await;
         Ok(())
+    }
+
+    pub async fn guardian_status(
+        &self,
+        federation_id: RpcFederationId,
+    ) -> anyhow::Result<Vec<GuardianStatus>> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        let status = multi.guardian_status().await?;
+        Ok(status)
     }
 
     pub async fn balance_info(

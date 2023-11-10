@@ -6,7 +6,11 @@ import type {
     Transaction,
     bindings,
 } from '../types'
-import { RpcAmount, RpcStabilityPoolAccountInfo } from '../types/bindings'
+import {
+    GuardianStatus,
+    RpcAmount,
+    RpcStabilityPoolAccountInfo,
+} from '../types/bindings'
 import { makeLog } from './log'
 
 const log = makeLog('common/utils/fedimint')
@@ -60,7 +64,18 @@ export class FedimintBridge {
     ) {
         return this.rpcTyped<'listTransactions', Transaction[]>(
             'listTransactions',
-            { federationId, startTime, limit },
+            {
+                federationId,
+                startTime: startTime || null,
+                limit: limit || null,
+            },
+        )
+    }
+
+    async guardianStatus(federationId: string) {
+        return this.rpcTyped<'guardianStatus', GuardianStatus[]>(
+            'guardianStatus',
+            { federationId },
         )
     }
 

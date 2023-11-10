@@ -21,10 +21,12 @@ use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
 use fedimint_client::sm::OperationId;
 use fedimint_client::{Client, ClientBuilder, ClientSecret};
 use fedimint_core::api::{
-    DynModuleApi, GlobalFederationApi, IGlobalFederationApi, InviteCode, WsFederationApi,
+    DynModuleApi, FederationApiExt, GlobalFederationApi, IGlobalFederationApi, InviteCode,
+    StatusResponse, WsFederationApi,
 };
 use fedimint_core::config::{ClientConfig, FederationId};
 use fedimint_core::db::{DatabaseTransaction, IDatabase};
+use fedimint_core::module::ApiRequestErased;
 use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
 use fedimint_core::{Amount, PeerId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
@@ -74,12 +76,13 @@ use super::types::{
 use crate::error::ErrorCode;
 use crate::federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
-    EcashReceiveMetadata, RpcBalanceInfo, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId,
-    RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
+    EcashReceiveMetadata, GuardianStatus, RpcBalanceInfo, RpcBitcoinDetails, RpcEcashInfo,
+    RpcFederationId, RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
     RpcPayAddressResponse, RpcTransaction, RpcTransactionDirection, SocialRecoveryQr,
     WithdrawalDetails,
 };
 use crate::utils::{display_currency, required_threashold_of, to_unix_time, unix_now};
+pub const GUARDIAN_STATUS_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FediConfig {
@@ -251,6 +254,60 @@ impl FederationV1 {
                 .map(|(tier, count)| (tier.msats, count))
                 .collect(),
         }
+    }
+
+    pub async fn guardian_status(&self) -> anyhow::Result<Vec<GuardianStatus>> {
+        let peer_clients: Vec<_> = self
+            .client
+            .get_config()
+            .global
+            .api_endpoints
+            .iter() // use iter() instead of into_iter()
+            .map(|(&peer_id, endpoint)| {
+                (
+                    peer_id,
+                    WsFederationApi::new(vec![(peer_id, endpoint.url.clone())]),
+                )
+            })
+            .collect();
+
+        let futures = peer_clients
+            .into_iter()
+            .map(|(guardian, client)| async move {
+                match timeout(
+                    GUARDIAN_STATUS_TIMEOUT,
+                    client.request_current_consensus::<StatusResponse>(
+                        "status".into(),
+                        ApiRequestErased::default(),
+                    ),
+                )
+                .await
+                {
+                    Ok(Ok(status_response)) => {
+                        // Ensure you log before the match, to capture even partial responses
+                        info!("Raw status response: {:?}", status_response);
+                        GuardianStatus::Online {
+                            guardian: guardian.to_string(),
+                        }
+                    }
+                    Ok(Err(error)) => {
+                        info!("Error response: {:?}", error);
+                        GuardianStatus::Error {
+                            guardian: guardian.to_string(),
+                            error: error.to_string(),
+                        }
+                    }
+                    Err(elapsed) => {
+                        info!("Timeout elapsed: {:?}", elapsed);
+                        GuardianStatus::Timeout {
+                            guardian: guardian.to_string(),
+                            elapsed: elapsed.to_string(),
+                        }
+                    }
+                }
+            });
+        let guardians_status = futures::future::join_all(futures).await;
+        Ok(guardians_status)
     }
 
     async fn wallet_summary(&self) -> fedimint_core::TieredSummary {
