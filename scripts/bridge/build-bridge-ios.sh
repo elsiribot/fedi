@@ -19,10 +19,10 @@ cargo run --target-dir "${TARGET_DIR}/pkg/ffi-bindgen/ffi-bindgen-run" --package
 
 cd $BRIDGE_ROOT
 
-TARGETS=("aarch64-apple-ios-sim" "aarch64-apple-ios" "x86_64-apple-ios")
-if [ "${CARGO_PROFILE:-}" == "ci" ]; then
-  TARGETS=("aarch64-apple-ios-sim")
-  >&2 echo "Skipping x86_64-apple-ios and aarch64-apple-ios builds"
+# only build simulator target by default
+TARGETS=("aarch64-apple-ios-sim")
+if [ "${BUILD_ALL_BRIDGE_TARGETS:-}" == "1" ]; then
+  TARGETS=("aarch64-apple-ios-sim" "aarch64-apple-ios" "x86_64-apple-ios")
 fi
 echo "Building iOS bridge for targets: ${TARGETS[*]} with profile: ${CARGO_PROFILE}"
 
