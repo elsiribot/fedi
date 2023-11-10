@@ -14,7 +14,6 @@ BUILD_IOS=${BUILD_IOS:-1}
 REINSTALL_PODS=${REINSTALL_PODS:-1}
 
 SELECT_IOS_DEVICE=${SELECT_IOS_DEVICE:-0}
-FEDI_BRIDGE_REMOTE=${FEDI_BRIDGE_REMOTE:-0}
 BUILD_ALL_BRIDGE_TARGETS=${BUILD_ALL_BRIDGE_TARGETS:-0}
 
 if [[ "$MODE" == "interactive" ]]; then
@@ -29,9 +28,7 @@ if [[ "$MODE" == "interactive" ]]; then
     echo
   done
   if [[ $REPLY =~ ^[Yy]$ ]]; then
-    FEDI_BRIDGE_REMOTE=1
-  else
-    FEDI_BRIDGE_REMOTE=0
+    export FEDI_BRIDGE_REMOTE=1
   fi
 
   unset REPLY
@@ -122,7 +119,6 @@ export BUILD_ANDROID
 export BUILD_IOS
 export REINSTALL_PODS
 export BUILD_ALL_BRIDGE_TARGETS
-export FEDI_BRIDGE_REMOTE
 export SELECT_IOS_DEVICE
 cd $REPO_ROOT
 mprocs -c $REPO_ROOT/misc/mprocs-dev-ui.yaml
