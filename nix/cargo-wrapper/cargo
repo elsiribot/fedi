@@ -56,6 +56,12 @@ while [[ $# -gt 0 ]]; do
       args+=("$2")
       shift
       ;;
+    # arguments taking no values here
+    --release|-q|--quiet|--frozen|--locked|--offline|--list|--version|-V)
+      args+=("$1")
+      ;;
+    # for anything starting with -, that wasn't listed above, assume it takes an argument
+    # BUG: we actually can't be sure if an option takes an argument or not, so we might
     -*)
       args+=("$1")
       args+=("$2")
