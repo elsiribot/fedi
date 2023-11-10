@@ -62,10 +62,7 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
             <View style={style.rightContainer}>
                 <Text style={style.rightAlignedText}>{renderAmount()}</Text>
                 <Text small style={[style.rightAlignedText, style.subText]}>
-                    {`${dateUtils.formatTimestamp(
-                        txn.createdAt,
-                        'MMM dd, h:mmaaa',
-                    )}`}
+                    {`${dateUtils.formatTxnTileTimestamp(txn.createdAt)}`}
                 </Text>
             </View>
         </TouchableOpacity>
