@@ -57,15 +57,17 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     # arguments taking no values here
-    --release|-q|--quiet|--frozen|--locked|--offline|--list|--version|-V)
+    --release|-q|--quiet|--frozen|--locked|--offline|--list|--version|-V|--fix)
       args+=("$1")
       ;;
     # for anything starting with -, that wasn't listed above, assume it takes an argument
     # BUG: we actually can't be sure if an option takes an argument or not, so we might
     -*)
       args+=("$1")
-      args+=("$2")
-      shift
+      if [ -n "$2" ]; then
+        args+=("$2")
+        shift
+      fi
       ;;
     *)
       if [ -z "${cmd}" ]; then
