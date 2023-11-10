@@ -10,7 +10,10 @@ import {
     resetFederationChatState,
     selectActiveFederation,
     selectAuthenticatedMember,
+    selectCurrency,
     selectDeveloperMode,
+    selectStableBalance,
+    selectStableBalancePending,
     setDeveloperMode,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -43,6 +46,9 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         s => s.federation.authenticatedGuardian,
     )
     const developerMode = useAppSelector(selectDeveloperMode)
+    const stableBalance = useAppSelector(selectStableBalance)
+    const pendingStableBalance = useAppSelector(selectStableBalancePending)
+    const currency = useAppSelector(selectCurrency)
 
     const federationId = activeFederation?.id
 
@@ -90,8 +96,38 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     }, [federationId, dispatch, resetChatState, resetGuardiansState, toast])
 
     const confirmLeaveFederation = () => {
-        // Only allow leaving if they have less than 100 sats
-        if (amountUtils.msatToSat(activeFederation!.balance) > 100) {
+        // Don't allow leaving if stable balance exists
+        if (stableBalance > 0) {
+            Alert.alert(
+                t('feature.federations.leave-federation'),
+                t(
+                    'feature.federations.leave-federation-withdraw-stable-first',
+                    { currency },
+                ),
+                [
+                    {
+                        text: t('words.okay'),
+                    },
+                ],
+            )
+        }
+        // Don't allow leaving if stable pending balance exists
+        else if (pendingStableBalance > 0) {
+            Alert.alert(
+                t('feature.federations.leave-federation'),
+                t(
+                    'feature.federations.leave-federation-withdraw-pending-stable-first',
+                    { currency },
+                ),
+                [
+                    {
+                        text: t('words.okay'),
+                    },
+                ],
+            )
+        }
+        // Don't allow leaving sats balance is greater than 100
+        else if (amountUtils.msatToSat(activeFederation!.balance) > 100) {
             Alert.alert(
                 t('feature.federations.leave-federation'),
                 t('feature.federations.leave-federation-withdraw-first'),

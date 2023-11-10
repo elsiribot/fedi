@@ -290,6 +290,8 @@
             "leave-federation": "Leave Federation",
             "leave-federation-confirmation": "Are you sure you want to leave this federation?",
             "leave-federation-withdraw-first": "You must withdraw your funds before leaving",
+            "leave-federation-withdraw-stable-first": "You must withdraw your entire {{currency}} balance before leaving.",
+            "leave-federation-withdraw-pending-stable-first": "Your {{currency}} withdrawal is still processing. Please try again in 10 minutes.",
             "paste-federation-code": "Paste federation code",
             "paste-federation-code-instead": "Paste federation code instead",
             "scan-federation-invite": "Scan a Federation Invite"
