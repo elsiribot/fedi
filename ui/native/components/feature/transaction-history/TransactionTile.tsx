@@ -49,11 +49,15 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
     }
 
     const renderAmount = () => {
-        return txn.bitcoin && txn.amount === 0
-            ? t('words.onchain').toLowerCase()
-            : `${amountUtils.formatNumber(
-                  amountUtils.msatToSat(txn.amount),
-              )} ${t('words.sats').toUpperCase()}`
+        if (txn.bitcoin && txn.amount === 0)
+            return t('words.onchain').toLowerCase()
+
+        const formattedAmount = amountUtils.formatNumber(
+            amountUtils.msatToSat(txn.amount),
+        )
+        const sign = txn.direction === TransactionDirection.send ? `-` : `+`
+
+        return `${sign}${formattedAmount} ${t('words.sats').toUpperCase()}`
     }
 
     const style = styles(theme)
