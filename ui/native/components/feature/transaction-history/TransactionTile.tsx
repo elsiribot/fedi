@@ -8,12 +8,13 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import { makeTxnStatusText } from '@fedi/common/utils/wallet'
 
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
 
 type TransactionTileProps = {
     txn: Transaction
     selectTransaction: (txn: Transaction) => void
 }
+type TxnSubIconProps = { svgName: string; color: string }
 
 const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
     const { t } = useTranslation()
@@ -33,6 +34,40 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
 
     const style = styles(theme)
 
+    const renderSubIcon = () => {
+        let subIconProps: TxnSubIconProps
+
+        if (txn.direction === TransactionDirection.send) {
+            subIconProps = {
+                svgName: 'ArrowUpBadge',
+                color: theme.colors.black,
+            }
+        } else if (
+            txn.lnState?.type === 'waitingForPayment' ||
+            (txn.bitcoin && txn.onchainState?.type !== 'claimed') ||
+            (txn.lightning && !txn.lnState)
+        ) {
+            subIconProps = {
+                svgName: 'PendingBadge',
+                color: theme.colors.fuschia,
+            }
+        } else {
+            subIconProps = {
+                svgName: 'ArrowDownBadge',
+                color: theme.colors.green,
+            }
+        }
+
+        return (
+            <SvgImage
+                name={subIconProps.svgName as SvgImageName}
+                color={subIconProps.color}
+                size={SvgImageSize.xs}
+                containerStyle={style.txnBadge}
+            />
+        )
+    }
+
     return (
         <TouchableOpacity
             onPress={() => selectTransaction(txn)}
@@ -49,6 +84,7 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                     color={theme.colors.orange}
                     size={SvgImageSize.md}
                 />
+                {renderSubIcon()}
             </View>
             <View style={style.centerContainer}>
                 <Text>{makeTxnStatusText(t, txn)}</Text>
@@ -102,6 +138,11 @@ const styles = (theme: Theme) =>
         },
         pending: {
             opacity: 0.6,
+        },
+        txnBadge: {
+            position: 'absolute',
+            left: -4,
+            top: -4,
         },
     })
 
