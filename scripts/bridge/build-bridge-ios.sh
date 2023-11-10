@@ -7,7 +7,7 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 BRIDGE_ROOT=$REPO_ROOT/bridge
 TARGET_DIR="${TARGET_DIR:-${REPO_ROOT}/target}"
 
-CARGO_PROFILE=${CARGO_PROFILE:-release}
+CARGO_PROFILE=${CARGO_PROFILE:-debug}
 
 # build Swift bindings
 cd $BRIDGE_ROOT/fedi-ffi
