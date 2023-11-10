@@ -52,9 +52,11 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
             </View>
             <View style={style.centerContainer}>
                 <Text>{makeTxnStatusText(t, txn)}</Text>
-                <Text small numberOfLines={1}>
-                    {txn.notes}
-                </Text>
+                {txn.notes && (
+                    <Text small numberOfLines={1}>
+                        {txn.notes}
+                    </Text>
+                )}
             </View>
 
             <View style={style.rightContainer}>
