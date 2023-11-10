@@ -11,6 +11,7 @@ BUILD_BRIDGE=${BUILD_BRIDGE:-1}
 BUILD_PWA=${BUILD_PWA:-1}
 BUILD_ANDROID=${BUILD_ANDROID:-1}
 BUILD_IOS=${BUILD_IOS:-1}
+REINSTALL_UI_DEPS=${REINSTALL_UI_DEPS:-1}
 REINSTALL_PODS=${REINSTALL_PODS:-1}
 
 SELECT_IOS_DEVICE=${SELECT_IOS_DEVICE:-0}
@@ -53,6 +54,18 @@ if [[ "$MODE" == "interactive" ]]; then
     fi
   else
     BUILD_BRIDGE=0
+  fi
+
+  unset REPLY
+  while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
+  do
+    read -p "Reinstall UI dependencies? (y/n) " -n 1 -r
+    echo
+  done
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    REINSTALL_UI_DEPS=1
+  else
+    REINSTALL_UI_DEPS=0
   fi
 
   unset REPLY
@@ -110,15 +123,17 @@ else
   echo "Running development UI (native + PWA)"
 fi
 
-source $REPO_ROOT/scripts/ui/dev-setup.sh
-
-# export these so mprocs scripts can see them
+# export these so other scripts can see them
 export BUILD_BRIDGE
 export BUILD_PWA
 export BUILD_ANDROID
 export BUILD_IOS
+export REINSTALL_UI_DEPS
 export REINSTALL_PODS
 export BUILD_ALL_BRIDGE_TARGETS
 export SELECT_IOS_DEVICE
+
+source $REPO_ROOT/scripts/ui/dev-setup.sh
+
 cd $REPO_ROOT
 mprocs -c $REPO_ROOT/misc/mprocs-dev-ui.yaml

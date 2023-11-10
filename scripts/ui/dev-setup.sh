@@ -7,14 +7,12 @@ $REPO_ROOT/scripts/enforce-nix.sh
 
 echo "Starting dev-ui setup"
 
-cd $REPO_ROOT/ui
+pushd $REPO_ROOT/ui
 
 # install node modules and build ui dependencies
-echo "Installing node modules"
-yarn install
-
-echo "Building dependencies"
-yarn build:deps
+if [[ "$REINSTALL_UI_DEPS" == "1" ]]; then
+    $REPO_ROOT/scripts/ui/build-deps.sh
+fi
 
 if [[ "$BUILD_BRIDGE" == "1" ]]; then
     echo "Building fedi bridge"
@@ -31,3 +29,5 @@ if [[ "$REINSTALL_PODS" == "1" ]]; then
 fi
 
 echo "Finished dev-ui setup"
+
+popd
