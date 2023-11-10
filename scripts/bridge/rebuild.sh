@@ -3,10 +3,11 @@
 set -e
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
+# remind the user if the bridge was built before mprocs started
 if [[ "$BUILD_BRIDGE" == "1" ]]; then
-    echo "Latest bridge was built... would you like to rebuild?"
+    echo "Latest bridge has been built..."
 else
-    echo "Bridge build was skipped... would you like to build it now?"
+    echo "Bridge build was skipped..."
 fi
 
 while true; do
@@ -17,6 +18,8 @@ while true; do
     echo "I - rebuild bridge & reinstall app (ios only)"
     echo "b - rebuild bridge (both android + ios)"
     echo "B - rebuild bridge & reinstall apps (both android + ios)"
+    echo "w - rebuild wasm"
+    echo "t - rebuild Typescript bindings"
     echo "q - quit"
     
     read -rsn1 input
@@ -52,13 +55,20 @@ while true; do
             echo -e "\x1B[32;1mRebuilt android + ios bridge artifacts successfully\x1B[0m"
             ;;
         B)
-            echo "Building android bridge artifacts & reinstalling apps"
+            echo "Building android + ios bridge artifacts & reinstalling apps"
             $REPO_ROOT/scripts/bridge/build-bridge-android.sh
-            echo "Building ios bridge artifacts"
             $REPO_ROOT/scripts/bridge/build-bridge-ios.sh
             echo -e "\x1B[32;1mRebuilt android + ios bridge artifacts successfully\x1B[0m"
             $REPO_ROOT/scripts/ui/start-android.sh
             $REPO_ROOT/scripts/ui/start-ios.sh
+            ;;
+        w)
+            echo "Building wasm bundle"
+            $REPO_ROOT/scripts/build-wasm.sh
+            ;;
+        t)
+            echo "Building Rust-Typescript bindings"
+            $REPO_ROOT/scripts/bridge/ts-bindgen.sh
             ;;
         q)
             echo "Exiting."

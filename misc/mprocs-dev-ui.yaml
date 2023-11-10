@@ -1,5 +1,8 @@
 server: 127.0.0.1:4051
 procs:
+    rebuild:
+        shell: bash scripts/bridge/rebuild.sh
+        stop: SIGKILL
     metro:
         shell: bash scripts/ui/start-metro.sh
         stop: SIGKILL
@@ -14,9 +17,6 @@ procs:
         stop: SIGKILL
     ios:
         shell: bash scripts/ui/start-ios.sh
-        stop: SIGKILL
-    bridge:
-        shell: bash scripts/bridge/rebuild.sh
         stop: SIGKILL
     remote-bridge:
         shell: bash scripts/bridge/run-remote.sh
