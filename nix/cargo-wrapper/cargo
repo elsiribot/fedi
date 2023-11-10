@@ -10,8 +10,12 @@ if [ -z "$CARGO_ORIG_BIN" ]; then
   exit 1
 fi
 
+# value of '--target-dir'
 target_dir=""
+# combined strings of packages selected via '-p'/'--package'
 package=""
+# cargo command (e.g. 'run' in 'cargo run')
+cmd=""
 args=()
 
 # iterate over all arguments, collect them into 'args' and set some env vars
@@ -40,7 +44,15 @@ while [[ $# -gt 0 ]]; do
       args+=("$2")
       shift
       ;;
+    -*)
+      args+=("$1")
+      args+=("$2")
+      shift
+      ;;
     *)
+      if [ -z "${cmd}" ]; then
+        cmd="$1"
+      fi
       args+=("$1")
       ;;
   esac
@@ -82,10 +94,19 @@ if [ -n "$target" ]; then
   fi
 fi
 
+cmd_accepts_target_dir=""
+case "${cmd}" in
+  build|run|nextest|test)
+    cmd_accepts_target_dir="true"
+    ;;
+  *)
+    ;;
+esac
+
 # If building with '--package <pkg>' use a custom '--target-dir'
 # to avoid invalidating all the existing build artifacts, just because
 # package set changed.
-if [ -n "$package" ] && [ -z "$target_dir" ]; then
+if [ -n "$cmd_accepts_target_dir" ] && [ -n "$package" ] && [ -z "$target_dir" ]; then
   # if 'target-dir' was not specificaly set, and '--package <pkgs>' is used
   # compile everything to a target's subdir to avoid causing rebuilds
   args+=("--target-dir" "target/pkg/$package")
