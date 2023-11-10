@@ -17,7 +17,7 @@ cargo run --target-dir "${TARGET_DIR}/pkg/ffi-bindgen/ffi-bindgen-run" --package
 cd $BRIDGE_ROOT
 
 TARGETS=("aarch64-apple-ios-sim" "aarch64-apple-ios" "x86_64-apple-ios")
-if [ "${CARGO_PROFILE:-}" == "ci" ]; then
+if [ "${CARGO_PROFILE:-}" == "ci" ] || [ "$FEDI_EMULATOR" == "1" ]; then
   TARGETS=("aarch64-apple-ios-sim")
   >&2 echo "Skipping x86_64-apple-ios and aarch64-apple-ios builds"
 fi
