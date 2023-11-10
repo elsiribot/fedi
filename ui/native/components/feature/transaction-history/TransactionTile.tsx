@@ -6,6 +6,7 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Transaction, TransactionDirection } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
+import { makeTxnStatusText } from '@fedi/common/utils/wallet'
 
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
@@ -17,36 +18,6 @@ type TransactionTileProps = {
 const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-
-    const renderStatus = () => {
-        if (txn.direction === TransactionDirection.send) {
-            return t('words.sent')
-        }
-        if (txn.lightning) {
-            if (!txn.lnState) return `${t('phrases.receive-pending')}`
-            switch (txn.lnState.type) {
-                case 'waitingForPayment':
-                    return t('phrases.receive-pending')
-                case 'claimed':
-                    return t('words.received')
-                case 'canceled':
-                    return t('words.expired')
-                default:
-                    return t('phrases.receive-pending')
-            }
-        } else if (txn.bitcoin) {
-            switch (txn.onchainState?.type) {
-                case 'waitingForTransaction':
-                    return t('phrases.address-created')
-                case 'claimed':
-                    return t('words.received')
-                default:
-                    return t('phrases.receive-pending')
-            }
-        } else {
-            return t('words.received')
-        }
-    }
 
     const renderAmount = () => {
         if (txn.bitcoin && txn.amount === 0)
@@ -80,7 +51,7 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                 />
             </View>
             <View style={style.centerContainer}>
-                <Text>{renderStatus()}</Text>
+                <Text>{makeTxnStatusText(t, txn)}</Text>
                 <Text small numberOfLines={1}>
                     {txn.notes}
                 </Text>
