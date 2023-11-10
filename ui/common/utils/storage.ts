@@ -19,13 +19,14 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
-        version: 7,
+        version: 8,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         language: state.environment.language,
         amountInputType: state.environment.amountInputType,
         currency: state.currency.selectedFiatCurrency,
-        btcExchangeRates: state.currency.prices,
+        btcUsdRate: state.currency.btcUsdRate,
+        fiatUsdRates: state.currency.fiatUsdRates,
         activeFederationId: state.federation.activeFederationId,
         authenticatedGuardian: state.federation.authenticatedGuardian,
         externalMeta: state.federation.externalMeta,
@@ -250,6 +251,18 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
             version: 7,
             onchainDepositsEnabled: false,
             developerMode: false,
+        }
+    }
+
+    // Version 7 -> 8
+    if (migrationState.version === 7) {
+        const { btcExchangeRates, ...rest } = migrationState
+        const btcUsdRate = btcExchangeRates['USD'] || 0
+        migrationState = {
+            ...rest,
+            version: 8,
+            btcUsdRate,
+            fiatUsdRates: {},
         }
     }
 

@@ -88,6 +88,13 @@ export interface StoredStateV7 extends Omit<StoredStateV6, 'version'> {
     developerMode: boolean
 }
 
+export interface StoredStateV8
+    extends Omit<StoredStateV7, 'version' | 'btcExchangeRates'> {
+    version: 8
+    btcUsdRate: number
+    fiatUsdRates: Record<string, number | undefined>
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -98,9 +105,10 @@ export type AnyStoredState =
     | StoredStateV5
     | StoredStateV6
     | StoredStateV7
+    | StoredStateV8
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV7
+export type LatestStoredState = StoredStateV8
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

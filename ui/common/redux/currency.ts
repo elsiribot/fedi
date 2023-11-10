@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import { CommonState, selectFederationMetadata } from '.'
 import { SupportedCurrency } from '../types'
@@ -6,14 +6,17 @@ import {
     getFederationDefaultCurrency,
     getFederationFixedExchangeRate,
 } from '../utils/FederationUtils'
+import { makeLog } from '../utils/log'
 import { loadFromStorage } from './storage'
+
+const log = makeLog('redux/currency')
 
 /*** Initial State ***/
 
 const initialState = {
-    prices: {} as Partial<Record<SupportedCurrency, number>>,
+    btcUsdRate: 0 as number,
+    fiatUsdRates: {} as Record<string, number | undefined>,
     selectedFiatCurrency: null as SupportedCurrency | null,
-    socketErrors: 0,
 }
 
 export type CurrencyState = typeof initialState
@@ -24,19 +27,6 @@ export const currencySlice = createSlice({
     name: 'currency',
     initialState,
     reducers: {
-        updateBtcFiatPrice(
-            state,
-            action: PayloadAction<{
-                price: number
-                currency: SupportedCurrency
-            }>,
-        ) {
-            const { price, currency } = action.payload
-            state.prices[currency] = price
-        },
-        incrementSocketErrors(state) {
-            state.socketErrors = state.socketErrors + 1
-        },
         changeSelectedFiatCurrency(
             state,
             action: PayloadAction<SupportedCurrency>,
@@ -48,21 +38,59 @@ export const currencySlice = createSlice({
         },
     },
     extraReducers: builder => {
+        builder.addCase(fetchCurrencyPrices.fulfilled, (state, action) => {
+            state.btcUsdRate = action.payload.btcUsdRate
+            state.fiatUsdRates = {
+                ...state.fiatUsdRates,
+                ...action.payload.fiatUsdRates,
+            }
+        })
+
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
             state.selectedFiatCurrency = action.payload.currency
-            state.prices = action.payload.btcExchangeRates
+            state.btcUsdRate = action.payload.btcUsdRate
+            state.fiatUsdRates = action.payload.fiatUsdRates
         })
     },
 })
 
 /*** Basic actions ***/
 
-export const {
-    updateBtcFiatPrice,
-    changeSelectedFiatCurrency,
-    resetCurrencyState,
-} = currencySlice.actions
+export const { changeSelectedFiatCurrency, resetCurrencyState } =
+    currencySlice.actions
+
+/*** Async thunk actions ***/
+
+export const fetchCurrencyPrices = createAsyncThunk<
+    Pick<CurrencyState, 'btcUsdRate' | 'fiatUsdRates'>,
+    void
+>('currency/fetchCurrencyPrices', async () => {
+    const response = await fetch('https://price-feed.dev.fedibtc.com/latest')
+    const json: {
+        prices: Record<string, { rate: number; timestamp: string }>
+    } = await response.json()
+
+    // Ensure we have BTC/USD, if we're missing that then something is very wrong.
+    const btcUsdRate = json?.prices['BTC/USD']?.rate
+    if (typeof btcUsdRate !== 'number') {
+        log.warn(
+            'No BTC/USD rate found in price feed, rejecting response',
+            json,
+        )
+        throw new Error('Missing required BTC/USD rate from price feed')
+    }
+
+    // Map all other fiats automatically into their own object.
+    const fiatUsdRates: CurrencyState['fiatUsdRates'] = {}
+    Object.entries(json.prices).forEach(([currency, { rate }]) => {
+        const [fiat, usd] = currency.split('/')
+        if (usd !== 'USD' || fiat === 'BTC') return
+        fiatUsdRates[fiat] = rate
+    })
+
+    return { btcUsdRate, fiatUsdRates }
+})
 
 /*** Selectors ***/
 
@@ -78,19 +106,21 @@ export const selectCurrency = (s: CommonState) => {
     return SupportedCurrency.USD
 }
 
-export const selectUsdExchangeRate = (s: CommonState) => {
-    return s.currency.prices[SupportedCurrency.USD] || 0
+export const selectBtcUsdExchangeRate = (s: CommonState) => {
+    return s.currency.btcUsdRate || 0
 }
 
 export const selectBtcExchangeRate = (s: CommonState) => {
     const selectedFiatCurrency = selectCurrency(s)
     const metadata = selectFederationMetadata(s)
+    const btcUsdRate = selectBtcUsdExchangeRate(s)
 
-    let exchangeRate = s.currency.prices[selectedFiatCurrency] || 0
+    let fiatUsdRate = s.currency.fiatUsdRates[selectedFiatCurrency] || 0
 
     // Special case for Togo farmers using CFA, where a metadata override
     // provides the exchange rate directly if the default_currency
     // is selected
+    // TODO: Remove me? Do we want to keep supporting this feature?
     if (
         metadata &&
         metadata.default_currency &&
@@ -99,30 +129,17 @@ export const selectBtcExchangeRate = (s: CommonState) => {
         const federationFixedExchangeRate =
             getFederationFixedExchangeRate(metadata)
         if (federationFixedExchangeRate) {
-            exchangeRate = federationFixedExchangeRate
-            return exchangeRate
+            return federationFixedExchangeRate
         }
     }
 
-    const usdPrice = s.currency.prices[SupportedCurrency.USD] || 0
-    const eurPrice = s.currency.prices[SupportedCurrency.EUR] || 0
-
-    // Special case for the CFA franc which is a fixed 660x the EUR price
-    if (selectedFiatCurrency === SupportedCurrency.CFA) {
-        exchangeRate = eurPrice * 660
-    }
-    // Special case for CZK which is a fixed 24.5x the EUR price
-    if (selectedFiatCurrency === SupportedCurrency.CZK) {
-        exchangeRate = eurPrice * 24.5
-    }
-    // Special case for INR which is a fixed 83x the USD price
-    if (selectedFiatCurrency === SupportedCurrency.INR) {
-        exchangeRate = usdPrice * 83
-    }
-    // Special case for IDR which is a fixed 15700x the USD price
-    if (selectedFiatCurrency === SupportedCurrency.IDR) {
-        exchangeRate = usdPrice * 15700
+    // Special case for the CFA franc which is a fixed rate to the dollar
+    // TODO: Remove me when CFA is added to price oracle.
+    if (selectedFiatCurrency === SupportedCurrency.CFA && !fiatUsdRate) {
+        fiatUsdRate = 0.0016
     }
 
-    return exchangeRate
+    return selectedFiatCurrency === SupportedCurrency.USD
+        ? btcUsdRate
+        : btcUsdRate / fiatUsdRate
 }

@@ -9,7 +9,7 @@ import {
     CommonState,
     selectActiveFederation,
     selectBtcExchangeRate,
-    selectUsdExchangeRate,
+    selectBtcUsdExchangeRate,
 } from '.'
 import { Federation, MSats, UsdCents } from '../types'
 import {
@@ -226,7 +226,7 @@ export const selectStabilityPoolAccountInfo = (s: CommonState) =>
 export const selectTotalLockedSeeksFiat = createSelector(
     selectStabilityPoolAccountInfo,
     (s: CommonState) => selectBtcExchangeRate(s),
-    (s: CommonState) => selectUsdExchangeRate(s),
+    (s: CommonState) => selectBtcUsdExchangeRate(s),
     (stabilityPoolAccountInfo, btcExchangeRate, usdExchangeRate) => {
         if (!stabilityPoolAccountInfo) return 0
 

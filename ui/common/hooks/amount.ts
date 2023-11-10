@@ -10,7 +10,7 @@ import {
     selectFederationBalance,
     selectAmountInputType,
     setAmountInputType,
-    selectUsdExchangeRate,
+    selectBtcUsdExchangeRate,
 } from '../redux'
 import {
     Btc,
@@ -83,7 +83,9 @@ export function useBalance() {
 export const useBtcFiatPrice = () => {
     const selectedFiatCurrency = useCommonSelector(selectCurrency)
     const exchangeRate: number = useCommonSelector(selectBtcExchangeRate)
-    const usdExchangeRate: number = useCommonSelector(selectUsdExchangeRate)
+    const btcUsdExchangeRate: number = useCommonSelector(
+        selectBtcUsdExchangeRate,
+    )
 
     return {
         convertSatsToFiat: useCallback(
@@ -108,11 +110,11 @@ export const useBtcFiatPrice = () => {
         ),
         convertSatsToFormattedUsd: useCallback(
             (sats: Sats) => {
-                const amount = amountUtils.satToFiat(sats, usdExchangeRate)
+                const amount = amountUtils.satToFiat(sats, btcUsdExchangeRate)
 
                 return amountUtils.formatFiat(amount, SupportedCurrency.USD)
             },
-            [usdExchangeRate],
+            [btcUsdExchangeRate],
         ),
     }
 }
