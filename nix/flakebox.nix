@@ -134,9 +134,67 @@ rec {
   workspaceDeps = craneLib.buildWorkspaceDepsOnly {
     buildPhaseCargoCommand = "cargoWithProfile doc --locked ; cargoWithProfile check --all-targets --locked ; cargoWithProfile build --locked --all-targets";
   };
+
   workspaceBuild = craneLib.buildWorkspace {
     cargoArtifacts = workspaceDeps;
     buildPhaseCargoCommand = "cargoWithProfile doc --locked ; cargoWithProfile check --all-targets --locked ; cargoWithProfile build --locked --all-targets";
+  };
+
+  workspaceWasmDeps = craneLib.buildWorkspaceDepsOnly {
+    cargoArtifacts = workspaceDeps;
+    buildPhaseCargoCommand = "cargoWithProfile build --locked --lib --package fedi-wasm";
+  };
+
+  workspaceWasmBuild = craneLib.buildWorkspace {
+    cargoArtifacts = workspaceWasmDeps;
+    buildPhaseCargoCommand = "cargoWithProfile build --locked --lib --package fedi-wasm";
+  };
+
+  fedi-wasm-pack = craneLib.buildCommand {
+    pname = "fedi-wasm-pack";
+    cargoArtifacts = workspaceWasmBuild;
+    doInstallCargoArtifacts = false;
+    # need './scripts'
+    src = rustTestSrc;
+
+    nativeBuildInputs = [ pkgs.wasm-pack pkgs.wasm-bindgen-cli pkgs.binaryen ];
+
+    # nativeBuildInputs = craneLib.args.nativeBuildInputs ++ [];
+    cmd = ''
+      patchShebangs ./scripts
+      args=()
+
+      case $CARGO_PROFILE in
+        release)
+          args+=("--release")
+          ;;
+        dev)
+          args+=("--dev")
+          ;;
+        *)
+          >&2 "Cargo profile: $CARGO_PROFILE not supported"
+          exit 1
+      esac
+
+      # wasm-pack/cargo doesn't like being homeless
+      export HOME=/tmp
+
+      # note: --out-dir is relative, so this doesn't control anything
+      pack_out="bridge/fedi-wasm/out"
+
+      wasm-pack build --target web --out-dir out bridge/fedi-wasm "''${args[@]}"
+
+      # replace broken import
+      sed 's:import \*:// import \*:g' -i  $pack_out/fedi_wasm.js
+      sed "s|imports\['env'\] \= \_\_wbg_star0;|imports['env'] = { GFp_poly1305_init: () => { throw Error('Ring library not available') }, GFp_poly1305_update: () => { throw Error('Ring library not available') }, GFp_poly1305_finish: () => { throw Error('Ring library not available') }, GFp_memcmp: () => { throw Error('Ring library not available') } };|g" -i $pack_out/fedi_wasm.js
+
+      mkdir -p $out/public
+      mkdir -p $out/src/wasm
+      mkdir -p $out/ui/common/wasm
+      cp "$pack_out/fedi_wasm_bg.wasm" $out/public/fedi.wasm
+      cp $pack_out/*.{ts,js} $out/src/wasm
+      cp $pack_out/*.{ts,js,wasm} $out/ui/common/wasm
+    '';
   };
 
   fedi-fedimint-pkgs = fediBuildPackageGroup {
