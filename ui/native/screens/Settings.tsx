@@ -10,6 +10,7 @@ import {
     resetFederationChatState,
     selectActiveFederation,
     selectAuthenticatedMember,
+    selectCurrency,
     selectDeveloperMode,
     selectStableBalance,
     selectStableBalancePending,
@@ -47,6 +48,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const developerMode = useAppSelector(selectDeveloperMode)
     const stableBalance = useAppSelector(selectStableBalance)
     const pendingStableBalance = useAppSelector(selectStableBalancePending)
+    const currency = useAppSelector(selectCurrency)
 
     const federationId = activeFederation?.id
 
@@ -98,7 +100,10 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         if (stableBalance > 0) {
             Alert.alert(
                 t('feature.federations.leave-federation'),
-                t('feature.federations.leave-federation-withdraw-stable-first'),
+                t(
+                    'feature.federations.leave-federation-withdraw-stable-first',
+                    { currency },
+                ),
                 [
                     {
                         text: t('words.okay'),
@@ -112,6 +117,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                 t('feature.federations.leave-federation'),
                 t(
                     'feature.federations.leave-federation-withdraw-pending-stable-first',
+                    { currency },
                 ),
                 [
                     {
