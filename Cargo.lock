@@ -1474,6 +1474,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "fedi-rpc-server"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fedi-ffi",
+ "tokio",
+]
+
+[[package]]
 name = "fedi-social-client"
 version = "0.1.0"
 dependencies = [
