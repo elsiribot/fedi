@@ -114,7 +114,7 @@ fi
 
 cmd_accepts_target_dir=""
 case "${cmd}" in
-  build|run|nextest|test)
+  build|b|run|r|nextest|test|t)
     cmd_accepts_target_dir="true"
     ;;
   *)
