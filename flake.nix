@@ -307,8 +307,11 @@
             ]
             ++ prev.nativeBuildInputs;
           });
-          v0 = fedi-v0.devShells.${system}.default.overrideAttrs (prev: {
+          v0 = fedimint-v1.devShells.${system}.default.overrideAttrs (prev: {
             nativeBuildInputs = [
+              fedi-v0.inputs.fedimint-build.packages.${system}.devimint
+              fedi-v0.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
+              fedi-v0.inputs.fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
               fedi-v0.packages.${system}.fedi-fedimint-pkgs
             ]
             ++ prev.nativeBuildInputs;

@@ -132,12 +132,12 @@ let
 in
 rec {
   workspaceDeps = craneLib.buildWorkspaceDepsOnly {
-    buildPhaseCargoCommand = "cargoWithProfile doc --locked ; cargoWithProfile check --all-targets --locked ; cargoWithProfile build --locked --all-targets";
+    buildPhaseCargoCommand = "cargoWithProfile check --all-targets --locked ; cargoWithProfile build --locked --all-targets";
   };
 
   workspaceBuild = craneLib.buildWorkspace {
     cargoArtifacts = workspaceDeps;
-    buildPhaseCargoCommand = "cargoWithProfile doc --locked ; cargoWithProfile check --all-targets --locked ; cargoWithProfile build --locked --all-targets";
+    buildPhaseCargoCommand = "cargoWithProfile check --all-targets --locked ; cargoWithProfile build --locked --all-targets";
   };
 
   workspaceWasmDeps = craneLib.buildWorkspaceDepsOnly {
