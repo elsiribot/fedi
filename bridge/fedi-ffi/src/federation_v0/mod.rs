@@ -161,6 +161,15 @@ impl FederationV0 {
         .await)
     }
 
+    pub async fn download_client_config(
+        invite_code_string: &String,
+    ) -> anyhow::Result<ClientConfig> {
+        let mut invite_code: InviteCode = InviteCode::from_str(invite_code_string)?;
+        override_localhost_invite_code(&mut invite_code);
+        let api = WsFederationApi::from_connect_info(&[invite_code.clone()]);
+        Ok(api.download_client_config(&invite_code).await?)
+    }
+
     /// Download federation configs using an invite code. Save client config to
     /// correct database with Storage.
     pub async fn join(
@@ -169,11 +178,7 @@ impl FederationV0 {
         event_sink: EventSink,
         task_group: TaskGroup,
     ) -> Result<Self> {
-        // Download federation config
-        let mut invite_code: InviteCode = InviteCode::from_str(&invite_code_string)?;
-        override_localhost_invite_code(&mut invite_code);
-        let api = WsFederationApi::from_connect_info(&[invite_code.clone()]);
-        let mut client_config: ClientConfig = api.download_client_config(&invite_code).await?;
+        let mut client_config = Self::download_client_config(&invite_code_string).await?;
         override_localhost_client_config(&mut client_config);
 
         // Save client config and invite code

@@ -28,7 +28,8 @@ use super::types::{
 use crate::error::get_error_code;
 use crate::event::{Event, IEventSink, PanicEvent, TypedEventExt};
 use crate::types::{
-    GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse, RpcPayAddressResponse,
+    GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
+    RpcPayAddressResponse,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -104,6 +105,14 @@ async fn guardianStatus(
 async fn joinFederation(bridge: Arc<Bridge>, invite_code: String) -> anyhow::Result<RpcFederation> {
     info!("joining federation {:?}", invite_code);
     bridge.join_federation(invite_code).await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn federationPreview(
+    bridge: Arc<Bridge>,
+    invite_code: String,
+) -> anyhow::Result<RpcFederationPreview> {
+    bridge.federation_preview(&invite_code).await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -483,6 +492,7 @@ macro_rules! rpc_methods {
 rpc_methods!(RpcMethods {
     // Federations
     joinFederation,
+    federationPreview,
     leaveFederation,
     listFederations,
     guardianStatus,
