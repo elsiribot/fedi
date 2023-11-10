@@ -10,6 +10,7 @@ members = [
     "bridge/fedi-ffi",
     "bridge/ffi-bindgen",
     "bridge/fedi-wasm",
+    "bridge/fedi-rpc-server",
     "bridge/v0-rocksdb",
     "stability-pool/stability-pool-client",
     "stability-pool/stability-pool-common",
