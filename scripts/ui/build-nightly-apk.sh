@@ -5,17 +5,17 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 
 $REPO_ROOT/scripts/enforce-nix.sh
 
-SKIP_BRIDGE_BUILD=${SKIP_BRIDGE_BUILD:-0}
-SKIP_UI_DEPS_BUILD=${SKIP_UI_DEPS_BUILD:-0}
+BUILD_BRIDGE=${BUILD_BRIDGE:-1}
+BUILD_UI_DEPS=${BUILD_UI_DEPS:-1}
 
-if [[ "$SKIP_BRIDGE_BUILD" == "1" ]]; then
+if [[ "$BUILD_BRIDGE" == "0" ]]; then
   echo "Skipping bridge build..."
 else
   echo "Rebuilding Android bridge with release profile"
   CARGO_PROFILE=release $REPO_ROOT/scripts/bridge/build-bridge-android.sh
 fi
 
-if [[ "$SKIP_UI_DEPS_BUILD" == "1" ]]; then
+if [[ "$BUILD_UI_DEPS" == "0" ]]; then
   echo "Skipping UI dependencies build..."
 else
   echo "Building UI dependencies..."

@@ -7,12 +7,15 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 
 $REPO_ROOT/scripts/enforce-nix.sh
 
-SKIP_BRIDGE_BUILD=${SKIP_BRIDGE_BUILD:-0}
-SKIP_PWA_BUILD=${SKIP_PWA_BUILD:-0}
-SKIP_ANDROID_BUILD=${SKIP_ANDROID_BUILD:-0}
-SKIP_IOS_BUILD=${SKIP_IOS_BUILD:-0}
-SKIP_INSTALL_PODS=${SKIP_INSTALL_PODS:-0}
+BUILD_BRIDGE=${BUILD_BRIDGE:-1}
+BUILD_PWA=${BUILD_PWA:-1}
+BUILD_ANDROID=${BUILD_ANDROID:-1}
+BUILD_IOS=${BUILD_IOS:-1}
+REINSTALL_PODS=${REINSTALL_PODS:-1}
+
 SELECT_IOS_DEVICE=${SELECT_IOS_DEVICE:-0}
+FEDI_BRIDGE_REMOTE=${FEDI_BRIDGE_REMOTE:-0}
+BUILD_ALL_BRIDGE_TARGETS=${BUILD_ALL_BRIDGE_TARGETS:-0}
 
 if [[ "$MODE" == "interactive" ]]; then
   echo "Running development UI (native + PWA) in interactive mode"
@@ -22,74 +25,89 @@ if [[ "$MODE" == "interactive" ]]; then
   unset REPLY
   while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
   do
-    read -p "Remote bridge? (y/n) " -n 1 -r
+    read -p "Use remote bridge? (y/n) " -n 1 -r
     echo
   done
   if [[ $REPLY =~ ^[Yy]$ ]]; then
-    export FEDI_BRIDGE_REMOTE=1
+    FEDI_BRIDGE_REMOTE=1
+  else
+    FEDI_BRIDGE_REMOTE=0
   fi
 
   unset REPLY
   while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
   do
-    read -p "Skip bridge rebuild? (y/n) " -n 1 -r
+    read -p "Rebuild the bridge? (y/n) " -n 1 -r
     echo
   done
   if [[ $REPLY =~ ^[Yy]$ ]]; then
-    SKIP_BRIDGE_BUILD=1
-  else
-    SKIP_BRIDGE_BUILD=0
-  fi
+    BUILD_BRIDGE=1
 
-  unset REPLY
-  while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
-  do
-    read -p "Skip PWA build? (y/n) " -n 1 -r
-    echo
-  done
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    SKIP_PWA_BUILD=1
-  else
-    SKIP_PWA_BUILD=0
-  fi
-
-  unset REPLY
-  while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
-  do
-    read -p "Skip Android build? (y/n) " -n 1 -r
-    echo
-  done
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    SKIP_ANDROID_BUILD=1
-  else
-    SKIP_ANDROID_BUILD=0
-  fi
-
-  unset REPLY
-  while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
-  do
-    read -p "Skip iOS build? (y/n) " -n 1 -r
-    echo
-  done
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    SKIP_IOS_BUILD=1
-    SKIP_INSTALL_PODS=1
-    # disable this since we are skipping ios build
-    SELECT_IOS_DEVICE=0
-  else
-    SELECT_IOS_DEVICE=1
-    SKIP_IOS_BUILD=0
     unset REPLY
     while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
     do
-      read -p "Skip pods installation? (y/n) " -n 1 -r
+      read -p "Build all bridge targets? (y/n) " -n 1 -r
       echo
     done
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-      SKIP_INSTALL_PODS=1
+      BUILD_ALL_BRIDGE_TARGETS=1
     else
-      SKIP_INSTALL_PODS=0
+      BUILD_ALL_BRIDGE_TARGETS=0
     fi
+  else
+    BUILD_BRIDGE=0
+  fi
+
+  unset REPLY
+  while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
+  do
+    read -p "Build PWA? (y/n) " -n 1 -r
+    echo
+  done
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    BUILD_PWA=1
+  else
+    BUILD_PWA=0
+  fi
+
+  unset REPLY
+  while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
+  do
+    read -p "Build for Android? (y/n) " -n 1 -r
+    echo
+  done
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    BUILD_ANDROID=1
+  else
+    BUILD_ANDROID=0
+  fi
+
+  unset REPLY
+  while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
+  do
+    read -p "Build for iOS? (y/n) " -n 1 -r
+    echo
+  done
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    BUILD_IOS=1
+    REINSTALL_PODS=1
+    SELECT_IOS_DEVICE=1
+    unset REPLY
+    while [[ -z "${REPLY:-}" ]] || ! [[ "${REPLY:-}" =~ ^[YyNn]$ ]]
+    do
+      read -p "Reinstall pods? (y/n) " -n 1 -r
+      echo
+    done
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      REINSTALL_PODS=1
+    else
+      REINSTALL_PODS=0
+    fi
+  else
+    BUILD_IOS=0
+    REINSTALL_PODS=0
+    # disable this since we are skipping ios build
+    SELECT_IOS_DEVICE=0
   fi
 else
   echo "Running development UI (native + PWA)"
@@ -98,10 +116,13 @@ fi
 source $REPO_ROOT/scripts/ui/dev-setup.sh
 
 # export these so mprocs scripts can see them
-export SKIP_BRIDGE_BUILD
-export SKIP_PWA_BUILD
-export SKIP_ANDROID_BUILD
-export SKIP_IOS_BUILD
+export BUILD_BRIDGE
+export BUILD_PWA
+export BUILD_ANDROID
+export BUILD_IOS
+export REINSTALL_PODS
+export BUILD_ALL_BRIDGE_TARGETS
+export FEDI_BRIDGE_REMOTE
 export SELECT_IOS_DEVICE
 cd $REPO_ROOT
 mprocs -c $REPO_ROOT/misc/mprocs-dev-ui.yaml

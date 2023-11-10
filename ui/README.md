@@ -57,13 +57,11 @@ In interactive mode, the script will ask whether to skip reinstalling node modul
 
 #### Passing options directly
 
-You can also choose to skip rebuilding the bridge without using interactive mode by setting the `SKIP_BRIDGE_BUILD` environment variable:
+You can also choose to skip rebuilding the bridge without using interactive mode by setting the `BUILD_BRIDGE` environment variable:
 
 ```bash
-SKIP_BRIDGE_BUILD=1 just run-dev-ui
+BUILD_BRIDGE=0 just run-dev-ui
 ```
-
-Note: The script treats any value other than `1` as `0` for these variables. So, if they are not set or set to any value other than `1`, the respective steps will not be skipped.
 
 ## Workspace Details
 

@@ -5,7 +5,7 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 
 ENABLE_ANDROID_LOGGING=${ENABLE_ANDROID_LOGGING:-0}
 
-if [[ "$SKIP_ANDROID_BUILD" == "1" ]]; then
+if [[ "$BUILD_ANDROID" == "0" ]]; then
     echo "Android build skipped"
     exit 0
 fi

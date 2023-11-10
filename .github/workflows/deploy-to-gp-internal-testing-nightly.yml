@@ -41,6 +41,6 @@ jobs:
               env:
                   FLAVOR: 'nightly'
                   # Consider: should we even have separate steps above for this?
-                  SKIP_BRIDGE_BUILD: 1
-                  SKIP_UI_DEPS_BUILD: 1
+                  BUILD_BRIDGE: 0
+                  BUILD_UI_DEPS: 0
               run: nix develop --command ./scripts/ui/deploy-to-google-play.sh

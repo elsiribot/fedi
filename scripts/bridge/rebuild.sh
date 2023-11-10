@@ -3,10 +3,10 @@
 set -e
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
-if [[ "$SKIP_BRIDGE_BUILD" == "1" ]]; then
-    echo "Bridge build was skipped... would you like to build it now?"
-else
+if [[ "$BUILD_BRIDGE" == "1" ]]; then
     echo "Latest bridge was built... would you like to rebuild?"
+else
+    echo "Bridge build was skipped... would you like to build it now?"
 fi
 
 while true; do

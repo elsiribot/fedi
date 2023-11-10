@@ -5,7 +5,7 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 
 ENABLE_IOS_LOGGING=${ENABLE_IOS_LOGGING:-0}
 
-if [[ "$SKIP_IOS_BUILD" == "1" ]]; then
+if [[ "$BUILD_IOS" == "0" ]]; then
     echo "iOS build skipped"
     exit 0
 fi

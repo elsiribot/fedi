@@ -16,17 +16,17 @@ yarn install
 echo "Building dependencies"
 yarn build:deps
 
-if [[ "$SKIP_BRIDGE_BUILD" == "0" ]]; then
+if [[ "$BUILD_BRIDGE" == "1" ]]; then
     echo "Building fedi bridge"
-    if [[ "$SKIP_ANDROID_BUILD" == "0" ]]; then
+    if [[ "$BUILD_ANDROID" == "1" ]]; then
         $REPO_ROOT/scripts/bridge/build-bridge-android.sh
     fi
-    if [[ "$SKIP_IOS_BUILD" == "0" ]]; then
+    if [[ "$BUILD_IOS" == "1" ]]; then
         $REPO_ROOT/scripts/bridge/build-bridge-ios.sh
     fi
 fi
 
-if [[ "$SKIP_INSTALL_PODS" == "0" ]]; then
+if [[ "$REINSTALL_PODS" == "1" ]]; then
     $REPO_ROOT/scripts/ui/install-ios-deps.sh
 fi
 
