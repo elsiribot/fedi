@@ -14,6 +14,8 @@ fi
 target_dir=""
 # combined strings of packages selected via '-p'/'--package'
 package=""
+# combined strings of bins/examples selected via '--bin/'--example'
+bin=""
 # cargo command (e.g. 'run' in 'cargo run')
 cmd=""
 args=()
@@ -33,6 +35,16 @@ while [[ $# -gt 0 ]]; do
         package="${2}"
       else
         package="${package}-${2}"
+      fi
+      args+=("$1")
+      args+=("$2")
+      shift
+      ;;
+    --bin|--example)
+      if [ -z "$bin" ]; then
+        bin="${2}"
+      else
+        bin="${bin}-${2}"
       fi
       args+=("$1")
       args+=("$2")
@@ -103,13 +115,22 @@ case "${cmd}" in
     ;;
 esac
 
+# if `--package` is empty, but `--bin` was used
+custom_target=""
+if [ -n "$package" ]; then
+  custom_target="target/pkg/$package"
+elif [ -n "$bin" ]; then
+  custom_target="target/bin/$bin"
+fi
+
 # If building with '--package <pkg>' use a custom '--target-dir'
 # to avoid invalidating all the existing build artifacts, just because
 # package set changed.
-if [ -n "$cmd_accepts_target_dir" ] && [ -n "$package" ] && [ -z "$target_dir" ]; then
+if [ -n "$cmd_accepts_target_dir" ] && [ -n "$custom_target" ] && [ -z "$target_dir" ]; then
+  >&2 echo "cargo-wrapper: Using custom target dir: $custom_target"
   # if 'target-dir' was not specificaly set, and '--package <pkgs>' is used
   # compile everything to a target's subdir to avoid causing rebuilds
-  args+=("--target-dir" "target/pkg/$package")
+  args+=("--target-dir" "$custom_target")
 fi
 
 exec "$CARGO_ORIG_BIN" "${args[@]}"
