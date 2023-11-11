@@ -1,9 +1,12 @@
+use std::collections::BTreeMap;
+
 pub use fedi_social_common::*;
 use fedimint_client::module::init::{ClientModuleInit, ClientModuleInitArgs};
 use fedimint_client::module::ClientModule;
-use fedimint_client::sm::{DynState, OperationId, State, StateTransition};
+use fedimint_client::sm::{DynState, State, StateTransition};
 use fedimint_client::DynGlobalClientContext;
-use fedimint_core::core::{IntoDynInstance, ModuleInstanceId};
+use fedimint_core::core::{IntoDynInstance, ModuleInstanceId, OperationId};
+use fedimint_core::db::ModuleDatabaseTransaction;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::{ApiVersion, ExtendsCommonModuleInit, MultiApiVersion};
 use fedimint_core::{apply, async_trait_maybe_send};
@@ -11,8 +14,18 @@ use fedimint_core::{apply, async_trait_maybe_send};
 #[derive(Debug, Clone)]
 pub struct FediSocialClientInit;
 
+#[apply(async_trait_maybe_send!)]
 impl ExtendsCommonModuleInit for FediSocialClientInit {
     type Common = FediSocialCommonGen;
+
+    // No client-side database for social recovery
+    async fn dump_database(
+        &self,
+        _dbtx: &mut ModuleDatabaseTransaction<'_>,
+        _prefix_names: Vec<String>,
+    ) -> Box<dyn Iterator<Item = (String, Box<dyn erased_serde::Serialize + Send>)> + '_> {
+        Box::new(BTreeMap::new().into_iter())
+    }
 }
 
 #[apply(async_trait_maybe_send!)]

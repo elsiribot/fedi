@@ -1,4 +1,4 @@
-{ pkgs, pkgs-unstable, flakeboxLib, fedi-v0, fedimint-build, fedimint-pkgs, toolchains, replaceGitHash }:
+{ pkgs, pkgs-unstable, flakeboxLib, fedi-v1, fedi-v0, fedimint-build, fedimint-pkgs, toolchains, replaceGitHash }:
 let
   system = pkgs.system;
   lib = pkgs.lib;
@@ -14,7 +14,6 @@ let
     "fedi-social-client"
     "fedi-social-common"
     "fedi-social-server"
-    "fedi-monitoring"
     "devops-cli"
     "stability-pool/stability-pool-client"
     "stability-pool/stability-pool-common"
@@ -132,12 +131,12 @@ let
 in
 rec {
   workspaceDeps = craneLib.buildWorkspaceDepsOnly {
-    buildPhaseCargoCommand = "cargoWithProfile doc --locked ; cargoWithProfile check --all-targets --locked ; cargoWithProfile build --locked --all-targets";
+    buildPhaseCargoCommand = "cargoWithProfile check --all-targets --locked ; cargoWithProfile build --locked --all-targets";
   };
 
   workspaceBuild = craneLib.buildWorkspace {
     cargoArtifacts = workspaceDeps;
-    buildPhaseCargoCommand = "cargoWithProfile doc --locked ; cargoWithProfile check --all-targets --locked ; cargoWithProfile build --locked --all-targets";
+    buildPhaseCargoCommand = "cargoWithProfile check --all-targets --locked ; cargoWithProfile build --locked --all-targets";
   };
 
   workspaceWasmDeps = craneLib.buildWorkspaceDepsOnly {
@@ -212,13 +211,6 @@ rec {
     ];
   };
 
-  fedi-monitoring = fediBuildPackageGroup {
-    pname = "fedi-monitoring";
-    packages = [
-      "fedi-monitoring"
-    ];
-  };
-
   devops-cli = fediBuildPackageGroup {
     pname = "devops-cli";
     packages = [
@@ -233,8 +225,11 @@ rec {
     src = rustTestSrc;
 
     nativeBuildInputs = craneLib.args.nativeBuildInputs ++ [
-      fedimint-build.packages.${system}.devimint
-      fedimint-pkgs.packages.${system}.gateway-pkgs
+      fedi-v1.inputs.fedimint-build.packages.${system}.devimint
+      fedi-v1.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
+      fedi-v1.packages.${system}.fedi-fedimint-pkgs
+      pkgs.jq
+      pkgs.bc
     ];
     cmd = ''
       patchShebangs ./scripts
@@ -244,7 +239,7 @@ rec {
       for i in lnd lightningd gatewayd devimint esplora electrs bitcoind faucet ; do
          which $i
       done
-      ./scripts/test-bridge-v1.sh
+      ./scripts/test-bridge-v1.inner.sh
     '';
   };
 

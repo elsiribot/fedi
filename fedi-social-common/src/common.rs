@@ -166,13 +166,13 @@ impl fmt::Display for RecoveryId {
 /// threshold public key
 #[autoimpl(Deref using self.0)]
 #[derive(Debug, Clone, Serialize, Deserialize, Encodable, Decodable, PartialEq, Eq)]
-pub struct DoubleEncryptedData(SerdeEncodable<threshold_crypto::Ciphertext>);
+pub struct DoubleEncryptedData(SerdeEncodable<fedimint_threshold_crypto::Ciphertext>);
 
 impl DoubleEncryptedData {
     pub fn encrypt<T>(
         plain: T,
         personal_key: fedimint_aead::LessSafeKey,
-        federation_pk: threshold_crypto::PublicKey,
+        federation_pk: fedimint_threshold_crypto::PublicKey,
     ) -> Self
     where
         T: Encodable,
@@ -189,9 +189,9 @@ impl DoubleEncryptedData {
 
     pub fn decrypt<'a, T>(
         &self,
-        federation_pk_set: &threshold_crypto::PublicKeySet,
+        federation_pk_set: &fedimint_threshold_crypto::PublicKeySet,
         personal_sk: &fedimint_aead::LessSafeKey,
-        shares: impl IntoIterator<Item = (PeerId, &'a threshold_crypto::DecryptionShare)>,
+        shares: impl IntoIterator<Item = (PeerId, &'a fedimint_threshold_crypto::DecryptionShare)>,
     ) -> anyhow::Result<T>
     where
         T: Decodable,
@@ -272,7 +272,7 @@ impl SignedBackupRequest {
 pub struct RecoveryRequest {
     pub id: RecoveryId,
     pub timestamp: SystemTime,
-    pub recovery_session_encryption_key: SerdeEncodable<threshold_crypto::PublicKey>,
+    pub recovery_session_encryption_key: SerdeEncodable<fedimint_threshold_crypto::PublicKey>,
     pub verification_doc: VerificationDocument,
 }
 
@@ -328,12 +328,12 @@ impl SignedRecoveryRequest {
 /// Encrypted (Ciphertext) to ephemeral public key provided with
 /// the recovery request.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encodable, Decodable)]
-pub struct EncryptedRecoveryShare(SerdeEncodable<threshold_crypto::Ciphertext>);
+pub struct EncryptedRecoveryShare(SerdeEncodable<fedimint_threshold_crypto::Ciphertext>);
 
 impl EncryptedRecoveryShare {
     pub fn encrypt_to_ephmeral(
-        decryption_share: threshold_crypto::DecryptionShare,
-        ephemeral_encryption_key: &threshold_crypto::PublicKey,
+        decryption_share: fedimint_threshold_crypto::DecryptionShare,
+        ephemeral_encryption_key: &fedimint_threshold_crypto::PublicKey,
     ) -> Self {
         Self(SerdeEncodable(ephemeral_encryption_key.encrypt(
             bincode::serialize(&decryption_share).expect("serialization can't fail here"),
@@ -342,14 +342,14 @@ impl EncryptedRecoveryShare {
 
     pub fn decrypt_with(
         &self,
-        ephemeral_decryption_key: &threshold_crypto::SecretKey,
-    ) -> anyhow::Result<threshold_crypto::DecryptionShare> {
+        ephemeral_decryption_key: &fedimint_threshold_crypto::SecretKey,
+    ) -> anyhow::Result<fedimint_threshold_crypto::DecryptionShare> {
         let encoded_share = ephemeral_decryption_key
             .decrypt(&self.0 .0)
             .ok_or_else(|| anyhow::format_err!("Could not decrypt"))?;
 
-        Ok(bincode::deserialize::<threshold_crypto::DecryptionShare>(
-            &encoded_share,
-        )?)
+        Ok(bincode::deserialize::<
+            fedimint_threshold_crypto::DecryptionShare,
+        >(&encoded_share)?)
     }
 }

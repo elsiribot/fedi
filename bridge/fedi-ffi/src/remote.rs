@@ -3,7 +3,7 @@ use std::sync::{Arc, OnceLock};
 use std::thread;
 
 use anyhow::{Context, Result};
-use fedimint_logging::TracingSetup;
+use fedimint_logging_v1::TracingSetup;
 use futures::{Future, SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use tokio::net::{TcpListener, TcpStream};

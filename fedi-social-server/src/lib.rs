@@ -11,8 +11,7 @@ use common::db::{
     UsedDoubleEncryptedData, UsedDoubleEncryptedDataPrefix,
 };
 use common::{
-    FediSocialCommonGen, FediSocialConsensusItem, FediSocialInput, FediSocialModuleTypes,
-    FediSocialOutputOutcome,
+    FediSocialCommonGen, FediSocialConsensusItem, FediSocialModuleTypes, FediSocialOutputOutcome,
 };
 pub use fedi_social_common as common;
 use fedimint_core::config::{
@@ -23,10 +22,9 @@ use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::db::{DatabaseVersion, ModuleDatabaseTransaction};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
-    api_endpoint, ApiEndpoint, ApiError, ConsensusProposal, CoreConsensusVersion,
-    ExtendsCommonModuleInit, InputMeta, ModuleCommon, ModuleConsensusVersion, ModuleError,
-    PeerHandle, ServerModuleInit, ServerModuleInitArgs, SupportedModuleApiVersions,
-    TransactionItemAmount,
+    api_endpoint, ApiEndpoint, ApiError, CoreConsensusVersion, ExtendsCommonModuleInit, InputMeta,
+    ModuleCommon, ModuleConsensusVersion, ModuleError, PeerHandle, ServerModuleInit,
+    ServerModuleInitArgs, SupportedModuleApiVersions, TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
 use fedimint_core::{push_db_pair_items, NumPeers, OutPoint, PeerId, ServerModule};
@@ -45,103 +43,9 @@ use crate::common::{
 #[derive(Clone, Debug)]
 pub struct FediSocialGen;
 
+#[async_trait]
 impl ExtendsCommonModuleInit for FediSocialGen {
     type Common = FediSocialCommonGen;
-}
-
-#[async_trait]
-impl ServerModuleInit for FediSocialGen {
-    type Params = FediSocialGenParams;
-    const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(0);
-
-    fn versions(&self, _core: CoreConsensusVersion) -> &[ModuleConsensusVersion] {
-        &[ModuleConsensusVersion(0)]
-    }
-
-    fn supported_api_versions(&self) -> SupportedModuleApiVersions {
-        SupportedModuleApiVersions::from_raw(1, 0, &[(0, 0)])
-    }
-
-    async fn init(&self, args: &ServerModuleInitArgs<Self>) -> anyhow::Result<DynServerModule> {
-        Ok(FediSocial {
-            cfg: args.cfg().to_typed()?,
-        }
-        .into())
-    }
-    fn trusted_dealer_gen(
-        &self,
-        peers: &[PeerId],
-        _params: &ConfigGenModuleParams,
-    ) -> BTreeMap<PeerId, ServerModuleConfig> {
-        let sks = threshold_crypto::SecretKeySet::random(peers.degree(), &mut OsRng);
-        let pks = sks.public_keys();
-
-        let server_cfg = peers.iter().map(|&peer| {
-            let sk = sks.secret_key_share(peer.to_usize());
-
-            (
-                peer,
-                FediSocialConfig {
-                    private: FediSocialPrivateConfig {
-                        sk_share: threshold_crypto::serde_impl::SerdeSecret(sk),
-                    },
-                    consensus: FediSocialConsensusConfig {
-                        threshold: u32::try_from(peers.threshold()).expect("must not fail"),
-                        pk_set: pks.clone(),
-                    },
-                    local: FediSocialConfigLocal {},
-                }
-                .to_erased(),
-            )
-        });
-
-        server_cfg.into_iter().map(|(k, v)| (k, v)).collect()
-    }
-
-    async fn distributed_gen(
-        &self,
-        peers: &PeerHandle,
-        _params: &ConfigGenModuleParams,
-    ) -> DkgResult<ServerModuleConfig> {
-        let g1 = peers.run_dkg_g1(()).await?;
-
-        let ThresholdKeys {
-            public_key_set,
-            secret_key_share,
-        } = g1[&()].threshold_crypto();
-
-        let server = FediSocialConfig {
-            private: FediSocialPrivateConfig {
-                sk_share: secret_key_share,
-            },
-            consensus: FediSocialConsensusConfig {
-                pk_set: public_key_set,
-                threshold: u32::try_from(peers.peer_ids().threshold()).expect("must not fail"),
-            },
-            local: FediSocialConfigLocal {},
-        };
-
-        Ok(server.to_erased())
-    }
-
-    fn get_client_config(
-        &self,
-        config: &ServerModuleConsensusConfig,
-    ) -> anyhow::Result<FediSocialClientConfig> {
-        let config = FediSocialConsensusConfig::from_erased(config)?;
-        Ok(FediSocialClientConfig {
-            federation_pk_set: config.pk_set,
-        })
-    }
-
-    fn validate_config(
-        &self,
-        _identity: &PeerId,
-        _config: ServerModuleConfig,
-    ) -> anyhow::Result<()> {
-        // TODO: validate anything?
-        Ok(())
-    }
 
     async fn dump_database(
         &self,
@@ -202,6 +106,101 @@ impl ServerModuleInit for FediSocialGen {
     }
 }
 
+#[async_trait]
+impl ServerModuleInit for FediSocialGen {
+    type Params = FediSocialGenParams;
+    const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(0);
+
+    fn versions(&self, _core: CoreConsensusVersion) -> &[ModuleConsensusVersion] {
+        &[ModuleConsensusVersion(0)]
+    }
+
+    fn supported_api_versions(&self) -> SupportedModuleApiVersions {
+        SupportedModuleApiVersions::from_raw(2, 0, &[(0, 0)])
+    }
+
+    async fn init(&self, args: &ServerModuleInitArgs<Self>) -> anyhow::Result<DynServerModule> {
+        Ok(FediSocial {
+            cfg: args.cfg().to_typed()?,
+        }
+        .into())
+    }
+    fn trusted_dealer_gen(
+        &self,
+        peers: &[PeerId],
+        _params: &ConfigGenModuleParams,
+    ) -> BTreeMap<PeerId, ServerModuleConfig> {
+        let sks = fedimint_threshold_crypto::SecretKeySet::random(peers.degree(), &mut OsRng);
+        let pks = sks.public_keys();
+
+        let server_cfg = peers.iter().map(|&peer| {
+            let sk = sks.secret_key_share(peer.to_usize());
+
+            (
+                peer,
+                FediSocialConfig {
+                    private: FediSocialPrivateConfig {
+                        sk_share: fedimint_threshold_crypto::serde_impl::SerdeSecret(sk),
+                    },
+                    consensus: FediSocialConsensusConfig {
+                        threshold: u32::try_from(peers.threshold()).expect("must not fail"),
+                        pk_set: pks.clone(),
+                    },
+                    local: FediSocialConfigLocal {},
+                }
+                .to_erased(),
+            )
+        });
+
+        server_cfg.into_iter().map(|(k, v)| (k, v)).collect()
+    }
+
+    async fn distributed_gen(
+        &self,
+        peers: &PeerHandle,
+        _params: &ConfigGenModuleParams,
+    ) -> DkgResult<ServerModuleConfig> {
+        let g1 = peers.run_dkg_g1(()).await?;
+
+        let ThresholdKeys {
+            public_key_set,
+            secret_key_share,
+        } = g1[&()].threshold_crypto();
+
+        let server = FediSocialConfig {
+            private: FediSocialPrivateConfig {
+                sk_share: secret_key_share,
+            },
+            consensus: FediSocialConsensusConfig {
+                pk_set: public_key_set,
+                threshold: u32::try_from(peers.peer_ids().threshold()).expect("must not fail"),
+            },
+            local: FediSocialConfigLocal {},
+        };
+
+        Ok(server.to_erased())
+    }
+
+    fn get_client_config(
+        &self,
+        config: &ServerModuleConsensusConfig,
+    ) -> anyhow::Result<FediSocialClientConfig> {
+        let config = FediSocialConsensusConfig::from_erased(config)?;
+        Ok(FediSocialClientConfig {
+            federation_pk_set: config.pk_set,
+        })
+    }
+
+    fn validate_config(
+        &self,
+        _identity: &PeerId,
+        _config: ServerModuleConfig,
+    ) -> anyhow::Result<()> {
+        // TODO: validate anything?
+        Ok(())
+    }
+}
+
 /// Federated mint member mint
 #[derive(Debug)]
 pub struct FediSocial {
@@ -212,22 +211,12 @@ pub struct FediSocial {
 impl ServerModule for FediSocial {
     type Common = FediSocialModuleTypes;
     type Gen = FediSocialGen;
-    type VerificationCache = FediSocialVerificationCache;
-
-    async fn await_consensus_proposal<'a>(
-        &'a self,
-        dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
-    ) {
-        if !self.consensus_proposal(dbtx).await.forces_new_epoch() {
-            std::future::pending().await
-        }
-    }
 
     async fn consensus_proposal<'a>(
         &'a self,
         _dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
-    ) -> ConsensusProposal<FediSocialConsensusItem> {
-        ConsensusProposal::new_auto_trigger(vec![])
+    ) -> Vec<FediSocialConsensusItem> {
+        vec![]
     }
 
     async fn process_consensus_item<'a, 'b>(
@@ -239,18 +228,10 @@ impl ServerModule for FediSocial {
         unimplemented!();
     }
 
-    fn build_verification_cache<'a>(
-        &'a self,
-        _inputs: impl Iterator<Item = &'a FediSocialInput> + Send,
-    ) -> Self::VerificationCache {
-        FediSocialVerificationCache
-    }
-
     async fn process_input<'a, 'b, 'c>(
         &'a self,
         _dbtx: &mut ModuleDatabaseTransaction<'c>,
         _input: &'b <Self::Common as ModuleCommon>::Input,
-        _verification_cache: &Self::VerificationCache,
     ) -> Result<InputMeta, ModuleError> {
         unimplemented!();
     }
@@ -276,6 +257,7 @@ impl ServerModule for FediSocial {
         &self,
         _dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
         _audit: &mut Audit,
+        _module_instance_id: ModuleInstanceId,
     ) {
     }
 
@@ -508,8 +490,3 @@ impl FediSocial {
         Ok(dbtx.get_value(&DecryptionShareId(request.0)).await)
     }
 }
-
-#[derive(Debug, Clone)]
-pub struct FediSocialVerificationCache;
-
-impl fedimint_core::server::VerificationCache for FediSocialVerificationCache {}

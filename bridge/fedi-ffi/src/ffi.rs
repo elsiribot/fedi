@@ -4,9 +4,9 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use async_trait::async_trait;
-use fedimint_core::db::IDatabase;
 use fedimint_core_v0::db::Database as DatabaseV0;
 use fedimint_core_v0::module::registry::ModuleDecoderRegistry as ModuleDecoderRegistryV0;
+use fedimint_core_v1::db::IDatabase;
 use lazy_static::lazy_static;
 use tokio::sync::Mutex;
 use tracing::{error, info, warn};
@@ -151,7 +151,7 @@ impl IStorage for PathBasedStorage {
 
     async fn federation_idb(&self, db_name: &str) -> anyhow::Result<Box<dyn IDatabase>> {
         let db_name = self.data_dir.join(format!("{db_name}.db"));
-        let db = fedimint_rocksdb::RocksDb::open(db_name)?;
+        let db = fedimint_rocksdb_v1::RocksDb::open(db_name)?;
         Ok(Box::new(db))
     }
 

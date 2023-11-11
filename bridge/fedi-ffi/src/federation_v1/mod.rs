@@ -12,40 +12,40 @@ use ::serde::{Deserialize, Serialize};
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey, Secp256k1, XOnlyPublicKey};
 use bitcoin::{Address, Network};
-use fedi_social_client::common::VerificationDocument;
-use fedi_social_client::{FediSocialClientInit, RecoveryId};
-use fedimint_bip39::Bip39RootSecretStrategy;
-use fedimint_client::backup::Metadata;
-use fedimint_client::db::ChronologicalOperationLogKey;
-use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
-use fedimint_client::sm::OperationId;
-use fedimint_client::{Client, ClientBuilder, ClientSecret};
-use fedimint_core::api::{
+use fedi_social_client_v1::common::VerificationDocument;
+use fedi_social_client_v1::{FediSocialClientInit, RecoveryId};
+use fedimint_bip39_v1::Bip39RootSecretStrategy;
+use fedimint_client_v1::backup::Metadata;
+use fedimint_client_v1::db::ChronologicalOperationLogKey;
+use fedimint_client_v1::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
+use fedimint_client_v1::sm::OperationId;
+use fedimint_client_v1::{Client, ClientBuilder, ClientSecret};
+use fedimint_core_v1::api::{
     DynModuleApi, FederationApiExt, GlobalFederationApi, IGlobalFederationApi, InviteCode,
     StatusResponse, WsFederationApi,
 };
-use fedimint_core::config::{ClientConfig, FederationId};
-use fedimint_core::db::{DatabaseTransaction, IDatabase};
-use fedimint_core::module::ApiRequestErased;
-use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
-use fedimint_core::{Amount, PeerId};
-use fedimint_derive_secret::{ChildId, DerivableSecret};
-use fedimint_ln_client::{
+use fedimint_core_v1::config::{ClientConfig, FederationId};
+use fedimint_core_v1::db::{DatabaseTransaction, IDatabase};
+use fedimint_core_v1::module::ApiRequestErased;
+use fedimint_core_v1::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
+use fedimint_core_v1::{Amount, PeerId};
+use fedimint_derive_secret_v1::{ChildId, DerivableSecret};
+use fedimint_ln_client_v1::{
     network_to_currency, InternalPayState, LightningClientExt, LightningClientGen,
     LightningClientModule, LightningMeta, LnPayState, LnReceiveState, PayType,
 };
-use fedimint_mint_client::{
+use fedimint_mint_client_v1::{
     spendable_notes_to_operation_id, MintClientExt, MintClientGen, MintClientModule, MintMeta,
     MintMetaVariants, OOBNotes, ReissueExternalNotesState, SpendOOBState,
 };
-use fedimint_wallet_client::{
+use fedimint_wallet_client_v1::{
     DepositState, WalletClientExt, WalletClientGen, WalletClientModule, WalletOperationMeta,
     WithdrawState,
 };
 use futures::{Future, StreamExt};
 use lightning_invoice::Invoice;
-use stability_pool_client::common::AccountInfo;
-use stability_pool_client::{StabilityPoolClientExt, StabilityPoolClientGen, StabilityPoolMeta};
+use stability_pool_client_v1::common::AccountInfo;
+use stability_pool_client_v1::{StabilityPoolClientExt, StabilityPoolClientGen, StabilityPoolMeta};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
 use v1_rocksdb::{
@@ -224,7 +224,7 @@ impl FederationV1 {
         // FIXME: client.get_helper isn't currently exposed by the client, but is on v0
         let (wallet, _instance) = self
             .client
-            .get_first_module::<WalletClientModule>(&fedimint_wallet_client::KIND);
+            .get_first_module::<WalletClientModule>(&fedimint_wallet_client_v1::KIND);
         wallet.get_network()
     }
 
@@ -310,10 +310,10 @@ impl FederationV1 {
         Ok(guardians_status)
     }
 
-    async fn wallet_summary(&self) -> fedimint_core::TieredSummary {
+    async fn wallet_summary(&self) -> fedimint_core_v1::TieredSummary {
         let (mint_client, _) = self
             .client
-            .get_first_module::<MintClientModule>(&fedimint_mint_client::KIND);
+            .get_first_module::<MintClientModule>(&fedimint_mint_client_v1::KIND);
         mint_client
             .get_wallet_summary(
                 &mut self
@@ -328,7 +328,7 @@ impl FederationV1 {
 
     /// Generate bitcoin address
     pub async fn generate_address(&self) -> Result<String> {
-        let expires_at = fedimint_core::time::now() + Duration::from_secs(86400 * 365);
+        let expires_at = fedimint_core_v1::time::now() + Duration::from_secs(86400 * 365);
         let (operation_id, address) = self.client.get_deposit_address(expires_at).await?;
 
         self.subscribe_deposit(operation_id, address.to_string(), expires_at)
@@ -474,7 +474,7 @@ impl FederationV1 {
     async fn override_active_gateway(&self) -> Result<()> {
         let (_lightning, instance) = self
             .client
-            .get_first_module::<LightningClientModule>(&fedimint_ln_client::KIND);
+            .get_first_module::<LightningClientModule>(&fedimint_ln_client_v1::KIND);
         let dbtx = instance.db.begin_transaction().await;
         let mut gateway = self.client.select_active_gateway().await?;
         override_localhost_gateway(&mut gateway, dbtx).await;
@@ -527,9 +527,13 @@ impl FederationV1 {
             .get_withdraw_fee(address.clone(), amount)
             .await?;
 
-        let operation_id =
-            fedimint_wallet_client::WalletClientExt::withdraw(&*self.client, address, amount, fees)
-                .await?;
+        let operation_id = fedimint_wallet_client_v1::WalletClientExt::withdraw(
+            &*self.client,
+            address,
+            amount,
+            fees,
+        )
+        .await?;
         let mut updates = self
             .client
             .subscribe_withdraw_updates(operation_id)
@@ -582,7 +586,7 @@ impl FederationV1 {
     ///
     /// This currently doesn't have a way to filter out in-active operations ...
     pub async fn subscribe_to_all_operations(&self) {
-        let start = fedimint_core::time::now();
+        let start = fedimint_core_v1::time::now();
         let operations = self.client.get_active_operations().await;
         for operation_id in operations.iter() {
             if let Err(e) = self.subscribe_to_operation(*operation_id).await {
@@ -594,7 +598,7 @@ impl FederationV1 {
         }
         info!(
             "subscribe_to_all_operations took {:?}",
-            fedimint_core::time::now().duration_since(start)
+            fedimint_core_v1::time::now().duration_since(start)
         );
     }
 
@@ -938,7 +942,7 @@ impl FederationV1 {
     /// FIXME: might be better to return a typed object here and serialize at
     /// RPC layer
     pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
-        let cancel_time = fedimint_core::time::now() + ONE_WEEK;
+        let cancel_time = fedimint_core_v1::time::now() + ONE_WEEK;
         let (_, notes) = self.client.spend_notes(amount, ONE_WEEK, ()).await?;
         let notes = if amount != notes.total_amount() {
             // try to make change
@@ -979,12 +983,12 @@ impl FederationV1 {
             self.update_operation_state(op_id, update.clone()).await;
             match update {
                 // TODO: intermediate states
-                fedimint_mint_client::SpendOOBState::Created => {}
-                fedimint_mint_client::SpendOOBState::UserCanceledProcessing => {}
-                fedimint_mint_client::SpendOOBState::UserCanceledSuccess => {}
-                fedimint_mint_client::SpendOOBState::Success => {}
-                fedimint_mint_client::SpendOOBState::Refunded => {}
-                fedimint_mint_client::SpendOOBState::UserCanceledFailure => {
+                fedimint_mint_client_v1::SpendOOBState::Created => {}
+                fedimint_mint_client_v1::SpendOOBState::UserCanceledProcessing => {}
+                fedimint_mint_client_v1::SpendOOBState::UserCanceledSuccess => {}
+                fedimint_mint_client_v1::SpendOOBState::Success => {}
+                fedimint_mint_client_v1::SpendOOBState::Refunded => {}
+                fedimint_mint_client_v1::SpendOOBState::UserCanceledFailure => {
                     err = Some(anyhow!(ErrorCode::EcashCancelFailed));
                 }
             }
@@ -1089,8 +1093,8 @@ impl FederationV1 {
     fn social_api(&self) -> DynModuleApi {
         let (_, instance) = self
             .client
-            .get_first_module::<fedi_social_client::FediSocialClientModule>(
-                &fedi_social_client::KIND,
+            .get_first_module::<fedi_social_client_v1::FediSocialClientModule>(
+                &fedi_social_client_v1::KIND,
             );
         self.client.api().with_module(instance.id)
     }
@@ -1104,7 +1108,7 @@ impl FederationV1 {
     pub async fn social_backup(&self) -> Result<SocialBackup> {
         let client_config = self.decoded_config().await?;
         let (module_id, cfg) = client_config
-            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
+            .get_first_module_by_kind::<fedi_social_client_v1::config::FediSocialClientConfig>(
                 "fedi-social",
             )
             .expect("needs social recovery module client config");
@@ -1123,7 +1127,7 @@ impl FederationV1 {
     ) -> anyhow::Result<SocialRecovery> {
         let client_config = self.decoded_config().await?;
         let (module_id, cfg) = client_config
-            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
+            .get_first_module_by_kind::<fedi_social_client_v1::config::FediSocialClientConfig>(
                 "fedi-social",
             )
             .expect("needs social recovery module client config");
@@ -1137,7 +1141,7 @@ impl FederationV1 {
     ) -> Result<SocialRecovery> {
         let client_config = self.decoded_config().await?;
         let (module_id, cfg) = client_config
-            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
+            .get_first_module_by_kind::<fedi_social_client_v1::config::FediSocialClientConfig>(
                 "fedi-social",
             )
             .expect("needs social recovery module client config");
@@ -1367,7 +1371,7 @@ impl FederationV1 {
 
     /// Execute a backup if one is due and username is present (according to db)
     pub async fn scheduled_backup(&self) -> Result<()> {
-        let now = fedimint_core::time::now();
+        let now = fedimint_core_v1::time::now();
 
         // Backup is due
         if let Some(last_backup) = self.get_last_backup_timestamp().await {
@@ -1406,7 +1410,7 @@ impl FederationV1 {
                             }
                         }
                         // We check if a backup is due every 10 seconds
-                        fedimint_core::task::sleep(Duration::from_secs(10)).await;
+                        fedimint_core_v1::task::sleep(Duration::from_secs(10)).await;
                     }
                 },
             )
@@ -1682,7 +1686,7 @@ impl FederationV1 {
                                 fee,
                                 change: _,
                             } => {
-                                let core_amount = fedimint_core::Amount {
+                                let core_amount = fedimint_core_v1::Amount {
                                     msats: amount.to_sat() * 1000,
                                 };
                                 let rpc_amount = RpcAmount(core_amount);

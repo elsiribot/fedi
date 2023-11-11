@@ -3,11 +3,11 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 use anyhow::Result;
-use fedimint_core::db::{
+use fedimint_core_v1::db::{
     IDatabase, IDatabaseTransaction, IDatabaseTransactionOps, ISingleUseDatabaseTransaction,
     PrefixStream, SingleUseDatabaseTransaction,
 };
-use fedimint_core::{apply, async_trait_maybe_send};
+use fedimint_core_v1::{apply, async_trait_maybe_send};
 use futures::stream;
 use imbl::OrdMap;
 use rexie::{Rexie, TransactionMode};
@@ -144,7 +144,7 @@ impl fedimint_core_v0::db::IDatabase for MemAndIndexedDb {
 #[apply(async_trait_maybe_send!)]
 impl<'a> IDatabaseTransactionOps<'a> for MemTransaction<'a> {
     async fn raw_insert_bytes(&mut self, key: &[u8], value: &[u8]) -> Result<Option<Vec<u8>>> {
-        let val = fedimint_core::db::IDatabaseTransactionOps::raw_get_bytes(self, key).await;
+        let val = fedimint_core_v1::db::IDatabaseTransactionOps::raw_get_bytes(self, key).await;
         // Insert data from copy so we can read our own writes
         self.tx_data.insert(key.to_vec(), value.to_vec());
         self.operations
@@ -387,7 +387,7 @@ impl<'a> fedimint_core_v0::db::IDatabaseTransaction<'a> for MemTransaction<'a> {
 
 #[cfg(test)]
 mod tests {
-    use fedimint_core::module::registry::ModuleDecoderRegistry;
+    use fedimint_core_v1::module::registry::ModuleDecoderRegistry;
     use wasm_bindgen_test::wasm_bindgen_test;
 
     use super::*;
@@ -397,8 +397,8 @@ mod tests {
             #[wasm_bindgen_test]
             pub async fn $name() {
                 let db = MemDatabase::new(stringify!($name)).await.unwrap();
-                let db = fedimint_core::db::Database::new(db, ModuleDecoderRegistry::default());
-                fedimint_core::db::$name(db).await
+                let db = fedimint_core_v1::db::Database::new(db, ModuleDecoderRegistry::default());
+                fedimint_core_v1::db::$name(db).await
             }
         };
     }

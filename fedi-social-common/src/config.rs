@@ -17,18 +17,20 @@ pub struct FediSocialConfig {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FediSocialPrivateConfig {
     /// Our share of decryption key
-    pub sk_share: threshold_crypto::serde_impl::SerdeSecret<threshold_crypto::SecretKeyShare>,
+    pub sk_share: fedimint_threshold_crypto::serde_impl::SerdeSecret<
+        fedimint_threshold_crypto::SecretKeyShare,
+    >,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Encodable, Decodable)]
 pub struct FediSocialConsensusConfig {
-    pub pk_set: threshold_crypto::PublicKeySet,
+    pub pk_set: fedimint_threshold_crypto::PublicKeySet,
     pub threshold: u32,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Encodable, Decodable)]
 pub struct FediSocialClientConfig {
-    pub federation_pk_set: threshold_crypto::PublicKeySet,
+    pub federation_pk_set: fedimint_threshold_crypto::PublicKeySet,
 }
 
 impl std::fmt::Display for FediSocialClientConfig {
@@ -46,7 +48,7 @@ pub struct FediSocialConfigLocal;
 
 impl FediSocialClientConfig {
     /// Get the combined public key
-    pub fn pk(&self) -> threshold_crypto::PublicKey {
+    pub fn pk(&self) -> fedimint_threshold_crypto::PublicKey {
         self.federation_pk_set.public_key()
     }
 }

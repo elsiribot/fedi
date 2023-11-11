@@ -3,11 +3,11 @@
 /// emulator
 use std::str::FromStr;
 
-use fedimint_core::api::InviteCode;
-use fedimint_core::config::ClientConfig;
-use fedimint_core::db::DatabaseTransaction;
-use fedimint_ln_client::db::LightningGatewayKey;
-use fedimint_ln_client::LightningGateway;
+use fedimint_core_v1::api::InviteCode;
+use fedimint_core_v1::config::ClientConfig;
+use fedimint_core_v1::db::DatabaseTransaction;
+use fedimint_ln_client_v1::db::LightningGatewayKey;
+use fedimint_ln_client_v1::LightningGateway;
 use tracing::info;
 use url::Url;
 
