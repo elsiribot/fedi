@@ -302,7 +302,7 @@
           });
           v1 = fedimint-v1.devShells.${system}.default.overrideAttrs (prev: {
             nativeBuildInputs = [
-              fedimint-v1.packages.${system}.fedi-fedimint-pkgs
+              fedimint-v1.packages.${system}.fedimint-pkgs
             ]
             ++ prev.nativeBuildInputs;
           });
