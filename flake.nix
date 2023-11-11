@@ -14,7 +14,7 @@
     # TODO shaurya can probably remove once bridge is updated for 0.2
     # Fedimint at consensus version 1. This is used to test bridge against old federations
     fedimint-v1 = {
-      url = "git+https://github.com/fedimint/fedimint.git?ref=releases/v0.1&rev=06aa03372a86e8c5356775c943a68b361057aa8c";
+      url = "git+https://github.com/fedimint/fedimint.git?ref=releases/v0.1&rev=0aa0ecb62ccc26ec78c6348368c58d503e556fa0";
     };
     # TODO shaurya can probably remove once bridge is updated for 0.2
     # Fedi at consensus version 0. This is used to test bridge against old federations

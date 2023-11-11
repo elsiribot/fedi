@@ -785,17 +785,17 @@
         "nixpkgs-unstable": "nixpkgs-unstable_8"
       },
       "locked": {
-        "lastModified": 1697835593,
-        "narHash": "sha256-9ZDP++XtxhKHnr/Cwj5VHNw1sHY41bBJbh2VsHt7j08=",
+        "lastModified": 1698942944,
+        "narHash": "sha256-Zwk7RNZn5bCdbVF6UCGRGr5n2nPe3J0lFcyeolcJ2Ug=",
         "ref": "releases/v0.1",
-        "rev": "06aa03372a86e8c5356775c943a68b361057aa8c",
-        "revCount": 5057,
+        "rev": "0aa0ecb62ccc26ec78c6348368c58d503e556fa0",
+        "revCount": 5064,
         "type": "git",
         "url": "https://github.com/fedimint/fedimint.git"
       },
       "original": {
         "ref": "releases/v0.1",
-        "rev": "06aa03372a86e8c5356775c943a68b361057aa8c",
+        "rev": "0aa0ecb62ccc26ec78c6348368c58d503e556fa0",
         "type": "git",
         "url": "https://github.com/fedimint/fedimint.git"
       }

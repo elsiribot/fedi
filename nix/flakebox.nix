@@ -233,9 +233,9 @@ rec {
     src = rustTestSrc;
 
     nativeBuildInputs = craneLib.args.nativeBuildInputs ++ [
-      fedimint-v1.inputs.fedimint-build.packages.${system}.devimint
-      fedimint-v1.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
-      fedimint-v1.packages.${system}.fedi-fedimint-pkgs
+      fedimint-v1.packages.${system}.devimint
+      fedimint-v1.packages.${system}.gateway-pkgs
+      fedimint-v1.packages.${system}.fedimint-pkgs
       pkgs.jq
       pkgs.bc
     ];
