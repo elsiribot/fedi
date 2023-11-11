@@ -1,4 +1,4 @@
-{ pkgs, pkgs-unstable, flakeboxLib, fedimint-v1, fedi-v0, fedimint-build, fedimint-pkgs, toolchains, replaceGitHash }:
+{ pkgs, pkgs-unstable, flakeboxLib, fedi-v1, fedi-v0, fedimint-build, fedimint-pkgs, toolchains, replaceGitHash }:
 let
   system = pkgs.system;
   lib = pkgs.lib;
@@ -225,9 +225,9 @@ rec {
     src = rustTestSrc;
 
     nativeBuildInputs = craneLib.args.nativeBuildInputs ++ [
-      fedimint-v1.packages.${system}.devimint
-      fedimint-v1.packages.${system}.gateway-pkgs
-      fedimint-v1.packages.${system}.fedimint-pkgs
+      fedi-v1.inputs.fedimint-build.packages.${system}.devimint
+      fedi-v1.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
+      fedi-v1.packages.${system}.fedi-fedimint-pkgs
       pkgs.jq
       pkgs.bc
     ];

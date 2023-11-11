@@ -13,8 +13,8 @@
     };
     # TODO shaurya can probably remove once bridge is updated for 0.2
     # Fedimint at consensus version 1. This is used to test bridge against old federations
-    fedimint-v1 = {
-      url = "git+https://github.com/fedimint/fedimint.git?ref=releases/v0.1&rev=0aa0ecb62ccc26ec78c6348368c58d503e556fa0";
+    fedi-v1 = {
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedi.git?ref=pre-0.2&rev=9abeacbd2d257c6fce66e450eedd24ff8a3eb36a";
     };
     # TODO shaurya can probably remove once bridge is updated for 0.2
     # Fedi at consensus version 0. This is used to test bridge against old federations
@@ -36,7 +36,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, fedimint-pkgs, fedimint-build, fs-dir-cache, android-nixpkgs, fedimint-v1, fedi-v0, flakebox }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, fedimint-pkgs, fedimint-build, fs-dir-cache, android-nixpkgs, fedi-v1, fedi-v0, flakebox }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs-unstable = import nixpkgs-unstable {
@@ -181,7 +181,7 @@
         };
 
         craneMultiBuild = import nix/flakebox.nix {
-          inherit pkgs pkgs-unstable flakeboxLib fedimint-v1 fedi-v0 fedimint-build fedimint-pkgs toolchains replaceGitHash;
+          inherit pkgs pkgs-unstable flakeboxLib fedi-v1 fedi-v0 fedimint-build fedimint-pkgs toolchains replaceGitHash;
         };
 
         lib = pkgs.lib;
@@ -300,13 +300,13 @@
               export LD_FOR_TARGET=/usr/bin/clang
             '';
           });
-          v1 = fedimint-v1.devShells.${system}.default.overrideAttrs (prev: {
+          v1 = fedi-v1.devShells.${system}.default.overrideAttrs (prev: {
             nativeBuildInputs = [
-              fedimint-v1.packages.${system}.fedimint-pkgs
+              fedi-v1.packages.${system}.fedi-fedimint-pkgs
             ]
             ++ prev.nativeBuildInputs;
           });
-          v0 = fedimint-v1.devShells.${system}.default.overrideAttrs (prev: {
+          v0 = fedi-v1.devShells.${system}.default.overrideAttrs (prev: {
             nativeBuildInputs = [
               fedi-v0.inputs.fedimint-build.packages.${system}.devimint
               fedi-v0.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
