@@ -14,7 +14,6 @@ let
     "fedi-social-client"
     "fedi-social-common"
     "fedi-social-server"
-    "fedi-monitoring"
     "devops-cli"
     "stability-pool/stability-pool-client"
     "stability-pool/stability-pool-common"
@@ -209,13 +208,6 @@ rec {
     pname = "fedi-wasm";
     packages = [
       "fedi-wasm"
-    ];
-  };
-
-  fedi-monitoring = fediBuildPackageGroup {
-    pname = "fedi-monitoring";
-    packages = [
-      "fedi-monitoring"
     ];
   };
 

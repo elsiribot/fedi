@@ -265,9 +265,8 @@
           gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
 
           fedi-fedimint-pkgs = craneMultiBuild.fedi-fedimint-pkgs;
-          fedi-monitoring = craneMultiBuild.fedi-monitoring;
           fedi-wasm = craneMultiBuild.wasm32-unknown.release.fedi-wasm;
-          devops-cli = craneMultiBuild.fedi-monitoring;
+          devops-cli = craneMultiBuild.devops-cli;
         };
 
         legacyPackages = craneMultiBuild;
