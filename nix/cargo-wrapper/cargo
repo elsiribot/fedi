@@ -64,7 +64,7 @@ while [[ $# -gt 0 ]]; do
     # BUG: we actually can't be sure if an option takes an argument or not, so we might
     -*)
       args+=("$1")
-      if [ -n "$2" ]; then
+      if [ -v 2 ]; then
         args+=("$2")
         shift
       fi
