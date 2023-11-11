@@ -313,6 +313,7 @@
               fedi-v0.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
               fedi-v0.inputs.fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
               fedi-v0.packages.${system}.fedi-fedimint-pkgs
+              pkgs-unstable.cargo-nextest
             ]
             ++ prev.nativeBuildInputs;
           });
