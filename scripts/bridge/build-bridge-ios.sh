@@ -7,6 +7,9 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 BRIDGE_ROOT=$REPO_ROOT/bridge
 TARGET_DIR="${TARGET_DIR:-${REPO_ROOT}/target}"
 
+# TODO: the release profile is needed as a default
+# until this issue is resolved:
+# https://github.com/fedibtc/fedi/issues/2210
 CARGO_PROFILE=${CARGO_PROFILE:-release}
 
 # build Swift bindings
@@ -21,7 +24,7 @@ if [ "${CARGO_PROFILE:-}" == "ci" ]; then
   TARGETS=("aarch64-apple-ios-sim")
   >&2 echo "Skipping x86_64-apple-ios and aarch64-apple-ios builds"
 fi
-echo "Building iOS bridge for targets: ${TARGETS[*]}"
+echo "Building iOS bridge for targets: ${TARGETS[*]} with profile: ${CARGO_PROFILE}"
 
 # clean any old binaries
 # shellcheck disable=SC2046
