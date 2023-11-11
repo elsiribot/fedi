@@ -527,9 +527,13 @@ impl FederationV1 {
             .get_withdraw_fee(address.clone(), amount)
             .await?;
 
-        let operation_id =
-            fedimint_wallet_client_v1::WalletClientExt::withdraw(&*self.client, address, amount, fees)
-                .await?;
+        let operation_id = fedimint_wallet_client_v1::WalletClientExt::withdraw(
+            &*self.client,
+            address,
+            amount,
+            fees,
+        )
+        .await?;
         let mut updates = self
             .client
             .subscribe_withdraw_updates(operation_id)

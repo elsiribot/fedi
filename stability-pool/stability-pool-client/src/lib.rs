@@ -665,10 +665,7 @@ async fn submit_tx_with_intended_action(
                 .await?
         }
         IntendedAction::CancelRenewal(CancelRenewal { bps }) => {
-            let cancellation_meta_gen = |txid, _| StabilityPoolMeta::CancelRenewal {
-                txid,
-                bps,
-            };
+            let cancellation_meta_gen = |txid, _| StabilityPoolMeta::CancelRenewal { txid, bps };
             client
                 .finalize_and_submit_transaction(
                     operation_id,
