@@ -44,7 +44,7 @@ impl<'a, T: 'a + Write> MakeWriter<'a> for MemMakeWriter<T> {
     }
 }
 
-pub fn init(event_sink: Arc<dyn IEventSink>) {
+pub fn init(_event_sink: Arc<dyn IEventSink>) {
     set_panic_hook();
     let log_buffer_layer = tracing_subscriber::fmt::layer()
         .json()

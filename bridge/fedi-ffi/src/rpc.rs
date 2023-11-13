@@ -542,12 +542,11 @@ rpc_methods!(RpcMethods {
 )]
 pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: String) -> String {
     let result = RpcMethods::handle(bridge, &method, payload).await;
-    let response = result.unwrap_or_else(|error| {
+
+    result.unwrap_or_else(|error| {
         error!(%error, "rpc_error");
         rpc_error(&error)
-    });
-
-    response
+    })
 }
 
 #[cfg(test)]
@@ -1052,7 +1051,7 @@ mod tests {
         // cancel too fast doesn't work: https://github.com/fedimint/fedimint/pull/3435
         tokio::time::sleep(Duration::from_secs(1)).await;
 
-        let _ = cancelEcash(
+        cancelEcash(
             bridge.clone(),
             RpcFederationId(federation.federation_id()),
             send_ecash,

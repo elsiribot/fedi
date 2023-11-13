@@ -30,7 +30,7 @@ impl IStorage for WasmStorage {
         Ok(db)
     }
     async fn federation_idb(&self, db_name: &str) -> anyhow::Result<Box<dyn IDatabase>> {
-        let db = MemAndIndexedDb::new(&format!("{db_name}")).await?;
+        let db = MemAndIndexedDb::new(db_name).await?;
         let mut fed = self.federation.lock().unwrap();
         fed.insert(db_name.to_owned(), db.clone());
         Ok(Box::new(db))

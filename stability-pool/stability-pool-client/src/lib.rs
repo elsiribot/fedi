@@ -228,7 +228,7 @@ impl ClientModule for StabilityPoolClientModule {
             }
             command => Err(anyhow::format_err!(
                 "Unknown command: {command}, supported commands: {}",
-                vec![
+                [
                     "account-info",
                     "deposit-to-seek",
                     "deposit-to-provide",

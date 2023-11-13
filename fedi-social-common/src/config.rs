@@ -53,7 +53,7 @@ impl FediSocialClientConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct FediSocialGenParams {
     consensus: EmptyGenParams,
     local: EmptyGenParams,

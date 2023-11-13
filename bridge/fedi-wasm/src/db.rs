@@ -1,4 +1,4 @@
-///! Uses immutable data structures and backups to indexeddb on save
+//! Uses immutable data structures and backups to indexeddb on save
 use std::fmt::Debug;
 use std::sync::Arc;
 
@@ -387,16 +387,15 @@ impl<'a> fedimint_core_v0::db::IDatabaseTransaction<'a> for MemTransaction<'a> {
 
 #[cfg(test)]
 mod tests {
+    use fedimint_core_v1::db::mem_impl::MemDatabase;
     use fedimint_core_v1::module::registry::ModuleDecoderRegistry;
     use wasm_bindgen_test::wasm_bindgen_test;
-
-    use super::*;
 
     macro_rules! db_test {
         ($name:ident) => {
             #[wasm_bindgen_test]
             pub async fn $name() {
-                let db = MemDatabase::new(stringify!($name)).await.unwrap();
+                let db = MemDatabase::new();
                 let db = fedimint_core_v1::db::Database::new(db, ModuleDecoderRegistry::default());
                 fedimint_core_v1::db::$name(db).await
             }
