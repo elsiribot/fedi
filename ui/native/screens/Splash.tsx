@@ -22,8 +22,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const { fontScale } = useWindowDimensions()
 
     const handleJoinFederation = async () => {
-        navigation.navigate('CameraPermission')
-        // navigation.navigate('JoinFederation', { invite: undefined })
+        navigation.navigate('JoinFederation', { invite: undefined })
     }
 
     const style = styles(theme, fontScale)

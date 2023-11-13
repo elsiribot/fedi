@@ -2,10 +2,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { Insets, StyleSheet, View } from 'react-native'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { selectAuthenticatedMember } from '@fedi/common/redux'
 
+import { NotificationsPermissionGate } from '../components/feature/permissions/NotificationsPermissionGate'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -18,46 +20,51 @@ export type Props = NativeStackScreenProps<
 const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const insets = useSafeAreaInsets()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
 
+    const style = styles(theme, insets)
     return (
-        <View style={styles(theme).container}>
-            <View style={styles(theme).contentContainer}>
-                <View style={styles(theme).avatarContainer}>
-                    <Avatar
-                        id={authenticatedMember?.id || ''}
-                        size={AvatarSize.lg}
-                        name={authenticatedMember?.username || ''}
-                    />
+        <NotificationsPermissionGate>
+            <SafeAreaView edges={['left', 'right']} style={style.container}>
+                <View style={style.contentContainer}>
+                    <View style={style.avatarContainer}>
+                        <Avatar
+                            id={authenticatedMember?.id || ''}
+                            size={AvatarSize.lg}
+                            name={authenticatedMember?.username || ''}
+                        />
+                    </View>
+                    <Text h2 medium style={style.welcomeTitle}>
+                        {`${t('feature.onboarding.nice-to-meet-you', {
+                            username: authenticatedMember?.username,
+                        })}!`}
+                    </Text>
+                    <Text style={style.welcomeText}>
+                        {t('feature.onboarding.greeting-instructions')}
+                    </Text>
                 </View>
-                <Text h2 medium style={styles(theme).welcomeTitle}>
-                    {`${t('feature.onboarding.nice-to-meet-you', {
-                        username: authenticatedMember?.username,
-                    })}!`}
-                </Text>
-                <Text style={styles(theme).welcomeText}>
-                    {t('feature.onboarding.greeting-instructions')}
-                </Text>
-            </View>
-            <Button
-                fullWidth
-                title={t('feature.onboarding.continue-to-fedi')}
-                onPress={() => {
-                    navigation.replace('TabsNavigator')
-                }}
-                containerStyle={styles(theme).button}
-            />
-        </View>
+                <Button
+                    fullWidth
+                    title={t('feature.onboarding.continue-to-fedi')}
+                    onPress={() => {
+                        navigation.replace('TabsNavigator')
+                    }}
+                    containerStyle={style.button}
+                />
+            </SafeAreaView>
+        </NotificationsPermissionGate>
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: Insets) =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
             padding: theme.spacing.xl,
+            paddingBottom: Math.max(theme.spacing.xl, insets.bottom || 0),
         },
         button: {
             marginTop: 'auto',

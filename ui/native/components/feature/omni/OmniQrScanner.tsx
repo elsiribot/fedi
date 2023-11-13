@@ -43,13 +43,13 @@ export const OmniQrScanner: React.FC<Props> = ({
               buttonText: string
               buttonOnPress: () => void
           }
-    if (cameraPermission === 'denied') {
+    if (cameraPermission === 'blocked') {
         permissionView = {
             title: t('feature.omni.camera-permission-denied'),
             buttonText: t('phrases.camera-settings'),
             buttonOnPress: () => Linking.openSettings(),
         }
-    } else if (cameraPermission === 'not-determined') {
+    } else if (cameraPermission === 'denied') {
         permissionView = {
             title: t('feature.omni.camera-permission-request'),
             buttonText: t('words.continue'),
@@ -60,7 +60,7 @@ export const OmniQrScanner: React.FC<Props> = ({
     return (
         <View style={style.container}>
             <View style={style.scanner}>
-                {cameraPermission === 'authorized' && (
+                {cameraPermission === 'granted' && (
                     <QrCodeScanner
                         processing={isProcessing}
                         onQrCodeDetected={onInput}

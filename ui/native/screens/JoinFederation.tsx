@@ -1,6 +1,4 @@
-import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
@@ -17,7 +15,7 @@ import { makeLog } from '@fedi/common/utils/log'
 import { fedimint } from '../bridge'
 import { OmniInput } from '../components/feature/omni/OmniInput'
 import FederationPreview from '../components/feature/onboarding/FederationPreview'
-import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
+import { CameraPermissionGate } from '../components/feature/permissions/CameraPermissionGate'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch } from '../state/hooks'
 import {
@@ -130,22 +128,21 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
         [dispatch, federationPreview, goToNextScreen, t, toast],
     )
 
-    const checkClipboard = useCallback(async () => {
-        const text = await Clipboard.getString()
-        handleCode(text.trim())
-    }, [handleCode])
-
     const renderQrCodeScanner = () => {
         if (isJoining || isFetchingPreview) {
             return <ActivityIndicator />
         } else {
             return (
-                <OmniInput
-                    expectedInputTypes={[ParserDataType.FedimintInvite]}
-                    onExpectedInput={input => handleCode(input.data.invite)}
-                    onUnexpectedSuccess={() => null}
-                    pasteLabel={t('feature.federations.paste-federation-code')}
-                />
+                <CameraPermissionGate>
+                    <OmniInput
+                        expectedInputTypes={[ParserDataType.FedimintInvite]}
+                        onExpectedInput={input => handleCode(input.data.invite)}
+                        onUnexpectedSuccess={() => null}
+                        pasteLabel={t(
+                            'feature.federations.paste-federation-code',
+                        )}
+                    />
+                </CameraPermissionGate>
             )
         }
     }
@@ -159,24 +156,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
         )
     }
 
-    return (
-        <CameraPermissionsRequired
-            alternativeActionButton={
-                <Button
-                    testID="PasteWithoutCamPermissionButton"
-                    title={t(
-                        'feature.federations.paste-federation-code-instead',
-                    )}
-                    onPress={checkClipboard}
-                    disabled={isJoining || isFetchingPreview}
-                    loading={isJoining || isFetchingPreview}
-                    type="clear"
-                />
-            }
-            message={t('feature.federations.camera-access-information')}>
-            <View style={styles().container}>{renderQrCodeScanner()}</View>
-        </CameraPermissionsRequired>
-    )
+    return <View style={styles().container}>{renderQrCodeScanner()}</View>
 }
 
 const styles = () =>
