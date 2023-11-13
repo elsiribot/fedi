@@ -77,6 +77,7 @@ declare module '@rneui/themed' {
     }
     export interface ButtonProps {
         fullWidth?: boolean
+        day?: boolean
     }
 
     // Other RNE components can be extended similarly by defining them here
