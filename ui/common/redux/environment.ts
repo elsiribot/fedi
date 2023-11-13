@@ -11,6 +11,7 @@ const initialState = {
     fedimodDebugMode: false,
     nostrEnabled: false,
     onchainDepositsEnabled: false,
+    stableBalanceEnabled: false,
     language: null as string | null,
     amountInputType: undefined as 'sats' | 'fiat' | undefined,
 }
@@ -40,6 +41,9 @@ export const environmentSlice = createSlice({
         },
         setOnchainDepositsEnabled(state, action: PayloadAction<boolean>) {
             state.onchainDepositsEnabled = action.payload
+        },
+        setStableBalanceEnabled(state, action: PayloadAction<boolean>) {
+            state.stableBalanceEnabled = action.payload
         },
     },
     extraReducers: builder => {
@@ -72,6 +76,7 @@ export const {
     setNostrEnabled,
     setAmountInputType,
     setOnchainDepositsEnabled,
+    setStableBalanceEnabled,
 } = environmentSlice.actions
 
 /*** Async thunk actions ***/
@@ -100,3 +105,6 @@ export const selectLanguage = (s: CommonState) => s.environment.language
 
 export const selectAmountInputType = (s: CommonState) =>
     s.environment.amountInputType
+
+export const selectStableBalanceEnabled = (s: CommonState) =>
+    s.environment.stableBalanceEnabled
