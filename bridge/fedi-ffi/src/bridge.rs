@@ -44,7 +44,8 @@ use super::types::{
 };
 use crate::error::ErrorCode;
 use crate::types::{
-    GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse, RpcPayAddressResponse,
+    GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
+    RpcPayAddressResponse,
 };
 
 // FIXME: federation-specific filename
@@ -541,6 +542,26 @@ impl Bridge {
             .entry(federation_id.translate())
             .or_insert_with(|| multi.clone());
         Ok(multi)
+    }
+
+    pub async fn federation_preview(&self, invite_code: &String) -> Result<RpcFederationPreview> {
+        let (v0, v1) = futures::join!(
+            FederationV0::download_client_config(invite_code),
+            FederationV1::download_client_config(invite_code)
+        );
+        match (v0, v1) {
+            (Ok(config), _) => Ok(RpcFederationPreview {
+                id: RpcFederationId(config.federation_id.translate()),
+                name: config.federation_name().map(|x| x.to_owned()),
+                meta: config.meta,
+            }),
+            (_, Ok(config)) => Ok(RpcFederationPreview {
+                id: RpcFederationId(config.global.federation_id),
+                name: config.federation_name().map(ToOwned::to_owned),
+                meta: config.global.meta,
+            }),
+            (Err(_), Err(_)) => anyhow::bail!("failed to connect"),
+        }
     }
 
     /// Look up federation by id from in-memory hashmap

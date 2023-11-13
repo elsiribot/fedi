@@ -44,6 +44,15 @@ pub struct RpcFederation {
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
+pub struct RpcFederationPreview {
+    pub id: RpcFederationId,
+    pub name: Option<String>,
+    pub meta: BTreeMap<String, String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub enum GuardianStatus {
     Online { guardian: String },
     Error { guardian: String, error: String },

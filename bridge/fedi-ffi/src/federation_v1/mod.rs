@@ -181,6 +181,17 @@ impl FederationV1 {
         .await)
     }
 
+    pub async fn download_client_config(
+        invite_code_string: &String,
+    ) -> anyhow::Result<ClientConfig> {
+        let mut invite_code: InviteCode = InviteCode::from_str(invite_code_string)?;
+        override_localhost_invite_code(&mut invite_code);
+        let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]))
+            as Arc<dyn IGlobalFederationApi + Send + Sync + 'static>;
+        let client_config: ClientConfig = api.as_ref().download_client_config(&invite_code).await?;
+        Ok(client_config)
+    }
+
     /// Download federation configs using an invite code. Save client config to
     /// correct database with Storage.
     pub async fn join(
@@ -190,13 +201,7 @@ impl FederationV1 {
         task_group: TaskGroup,
         db_name: &str,
     ) -> Result<Self> {
-        // Download federation config
-        let mut invite_code: InviteCode = InviteCode::from_str(&invite_code_string)?;
-        override_localhost_invite_code(&mut invite_code);
-        let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]))
-            as Arc<dyn IGlobalFederationApi + Send + Sync + 'static>;
-        let mut client_config: ClientConfig =
-            api.as_ref().download_client_config(&invite_code).await?;
+        let mut client_config = Self::download_client_config(&invite_code_string).await?;
         override_localhost_client_config(&mut client_config);
 
         // Save client config and invite code
