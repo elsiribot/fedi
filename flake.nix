@@ -154,6 +154,17 @@
             just.includePaths = [
               "justfile.fedi"
             ];
+            just.rules.clippy.content = lib.mkForce ''
+              # run `cargo clippy` on everything
+              clippy *ARGS="--locked --offline --all-targets":
+                cargo clippy --package fedi-ffi {{ARGS}}
+                cargo clippy --package fedi-wasm {{ARGS}} --target wasm32-unknown-unknown
+
+              # run `cargo clippy --fix` on everything
+              clippy-fix *ARGS="--locked --offline --all-targets":
+                cargo clippy --package fedi-ffi {{ARGS}} --fix
+                cargo clippy --package fedi-wasm {{ARGS}} --fix --target wasm32-unknown-unknown
+            '';
             typos.pre-commit.enable = false;
             git.pre-commit.trailing_newline = false;
           };
