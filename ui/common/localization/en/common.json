@@ -516,6 +516,9 @@
             "withdrawal-intiated": "Withdrawal initiated",
             "withdrawal-pending": "{{amount}} withdrawal pending...",
             "withdrawal-time": "Withdrawal time"
+        },
+        "wallet": {
+            "network-notice": "This federation uses {{network}} SATS"
         }
     }
 }
