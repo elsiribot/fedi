@@ -215,7 +215,6 @@
             [
               fedimint-build.packages.${system}.devimint
               fedimint-pkgs.packages.${system}.gateway-pkgs
-              fedimint-pkgs.packages.${system}.fedimint-pkgs
               pkgs.fs-dir-cache
               pkgs.cargo-nextest
               pkgs.curl # wasm build needs it for some reason
