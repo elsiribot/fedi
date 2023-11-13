@@ -19,10 +19,10 @@ cargo run --target-dir "${TARGET_DIR}/pkg/ffi-bindgen/ffi-bindgen-run" --package
 
 cd $BRIDGE_ROOT
 
-TARGETS=("aarch64-apple-ios-sim" "aarch64-apple-ios" "x86_64-apple-ios")
-if [ "${CARGO_PROFILE:-}" == "ci" ]; then
-  TARGETS=("aarch64-apple-ios-sim")
-  >&2 echo "Skipping x86_64-apple-ios and aarch64-apple-ios builds"
+# only build simulator target by default
+TARGETS=("aarch64-apple-ios-sim")
+if [ "${BUILD_ALL_BRIDGE_TARGETS:-}" == "1" ]; then
+  TARGETS=("aarch64-apple-ios-sim" "aarch64-apple-ios" "x86_64-apple-ios")
 fi
 echo "Building iOS bridge for targets: ${TARGETS[*]} with profile: ${CARGO_PROFILE}"
 
@@ -51,11 +51,11 @@ cp Sources/Fedi/fediFFI.h fediFFI.xcframework/ios-arm64_x86_64-simulator/fediFFI
 
 # copy binary files to their respective framework directories
 echo "Copying binary files..."
-# for development, we combine both x86 and aarch64 binaries into one
-# x86_64-apple-ios-sim is not supported as a rustc target so we just use x86_64-apple-ios
+# for development, we combine both x86 and aarch64 binaries into 1
+# since x86_64-apple-ios-sim is not supported as a rustc target we just use x86_64-apple-ios
 AARCH64_SIM_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/aarch64-apple-ios-sim/${CARGO_PROFILE:-debug}/libfediffi.a
 X86_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/x86_64-apple-ios/${CARGO_PROFILE:-debug}/libfediffi.a
-if [ -e "$AARCH64_SIM_BINARY_PATH" ] && [ -e "$X86_BINARY_PATH" ]; then
+if [ "${BUILD_ALL_BRIDGE_TARGETS:-}" == "1" ]; then
   echo "Combining binaries for development..."
   mkdir -p $TARGET_DIR/lipo-ios-arm64_x86_64-simulator/${CARGO_PROFILE:-debug}
   lipo $AARCH64_SIM_BINARY_PATH $X86_BINARY_PATH \

@@ -7,9 +7,14 @@ $REPO_ROOT/scripts/enforce-nix.sh
 
 pushd $REPO_ROOT/ui
 
-echo "Reinstalling node modules from lockfile (yarn.lock)"
-rm -rf $REPO_ROOT/ui/node_modules
-yarn install --frozen-lockfile
+if [[ -n "$CI" ]]; then
+  echo "Reinstalling node modules from lockfile (yarn.lock)"
+  rm -rf $REPO_ROOT/ui/node_modules
+  yarn install --frozen-lockfile
+else
+  echo "Installing node modules"
+  yarn install
+fi
 echo "Finished installing node modules"
 
 echo "Building UI modules: @fedi/common and @fedi/injections"

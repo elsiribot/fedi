@@ -3,7 +3,7 @@
 set -e
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
-if [[ "$SKIP_PWA_BUILD" == "1" ]]; then
+if [[ "$BUILD_PWA" == "0" ]]; then
     echo "PWA build skipped"
     exit 0
 fi
