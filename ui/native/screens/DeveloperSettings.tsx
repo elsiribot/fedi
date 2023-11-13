@@ -28,6 +28,8 @@ import {
     setFediModDebugMode,
     setNostrEnabled,
     setOnchainDepositsEnabled,
+    selectStableBalanceEnabled,
+    setStableBalanceEnabled,
 } from '@fedi/common/redux'
 import {
     changeSelectedFiatCurrency,
@@ -87,6 +89,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
     const nostrEnabled = useAppSelector(selectNostrEnabled)
     const onchainDepositsEnabled = useAppSelector(selectOnchainDepositsEnabled)
+    const stableBalanceEnabled = useAppSelector(selectStableBalanceEnabled)
 
     // This is a partial refactor of state management from context to redux
     const reduxDispatch = useAppDispatch()
@@ -340,6 +343,22 @@ const DeveloperSettings: React.FC<Props> = () => {
                         value={onchainDepositsEnabled}
                         onValueChange={value => {
                             reduxDispatch(setOnchainDepositsEnabled(value))
+                        }}
+                    />
+                </View>
+                <View style={styles(theme).switchWrapper}>
+                    <View style={styles(theme).switchLabelContainer}>
+                        <Text caption style={styles(theme).switchLabel}>
+                            {t('feature.fedimods.stable-balance-enabled')}
+                        </Text>
+                        <Text small style={styles(theme).switchLabel}>
+                            {t('feature.fedimods.stable-balance-enabled-info')}
+                        </Text>
+                    </View>
+                    <Switch
+                        value={stableBalanceEnabled}
+                        onValueChange={value => {
+                            reduxDispatch(setStableBalanceEnabled(value))
                         }}
                     />
                 </View>
