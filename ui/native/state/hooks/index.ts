@@ -114,7 +114,7 @@ export const useBridge = () => {
             [activeFederationId],
         ),
         guardianStatus: useCallback(() => {
-            return fedimint.guardianStatus(activeFederationId)
+            return fedimint.guardianStatus(activeFederationId!)
         }, [activeFederationId]),
         updateTransactionNotes: useCallback(
             (transactionId: string, notes: string) => {

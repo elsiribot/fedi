@@ -287,7 +287,7 @@ export const selectFederations = createSelector(
 export const selectActiveFederation = createSelector(
     selectFederations,
     (s: CommonState) => s.federation.activeFederationId,
-    (federations, activeFederationId) =>
+    (federations, activeFederationId): Federation | undefined =>
         activeFederationId
             ? federations.find(f => f.id === activeFederationId) ||
               federations[0]

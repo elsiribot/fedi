@@ -27,7 +27,7 @@ const Transactions: React.FC<Props> = () => {
     // transactions and not have to refreshTransactions on every notes update
     const [transactionsList, setTransactionsList] = useState<Transaction[]>([])
 
-    const isV1Federation = useAppSelector(selectActiveFederation).version === 1
+    const isV1Federation = useAppSelector(selectActiveFederation)?.version === 1
     const lastTimestampRef = useRef<number | undefined>()
 
     const getTransactionsList = useCallback(async () => {
