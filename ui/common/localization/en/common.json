@@ -91,6 +91,7 @@
         "backup-your-wallet": "Bitcoin address",
         "bitcoin-address": "Bitcoin address",
         "click-for-more-details": "Click for more details",
+        "camera-settings": "Camera settings",
         "connect-to-federation": "Connect to test federation",
         "copied-bitcoin-address": "Copied bitcoin address",
         "copied-lightning-request": "Copied lightning request",
@@ -327,6 +328,8 @@
             "action-paste": "Paste",
             "action-scan": "Scan QR",
             "action-upload": "Upload QR image",
+            "camera-permission-request": "Allow camera access to scan.",
+            "camera-permission-denied": "Go to settings to change Camera permissions.",
             "confirm-ecash-token": "This is an eCash token, do you want to redeem it?",
             "confirm-federation-invite": "This is a federation invitation, do you want to join?",
             "confirm-fedi-chat": "This is a chat link, do you want to go there?",
@@ -377,6 +380,13 @@
             "unrecognized": "Unrecognized data format",
             "unsupported-bolt11-zero-amount": "Zero amount Lightning invoices are not supported. Generate a new invoice with an amount and try again.",
             "unsupported-lnurl": "Unsupported LNURL type '{{type}}'"
+        },
+        "permissions": {
+            "allow-camera-title": "Allow camera access to",
+            "allow-camera-description": "Scan QR codes, chat usernames, send money, and more",
+            "allow-notifications-title": "Allow notifications to see",
+            "allow-notifications-description": "New chat messages, payments, and announcements",
+            "update-later-disclaimer": "This can be updated later"
         },
         "popup": {
             "ended": "Ended",
