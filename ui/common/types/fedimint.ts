@@ -112,7 +112,7 @@ export enum Network {
     regtest = 'regtest',
 }
 
-export type Federation = RpcFederation & {
+export type Federation = Omit<RpcFederation, 'network'> & {
     meta: ClientConfigMetadata
     network: Network
 }
