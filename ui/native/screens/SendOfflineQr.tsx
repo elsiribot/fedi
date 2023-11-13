@@ -5,10 +5,10 @@ import { dataToFrames } from 'qrloop'
 import React, { useEffect, useMemo, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 
+import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import QRScreen from '../components/ui/QRScreen'
-import { useBtcFiatPrice } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'SendOfflineQr'>
