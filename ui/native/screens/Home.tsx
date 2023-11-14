@@ -36,6 +36,7 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
     const isStabilityPoolSupported = useIsStabilityPoolSupported()
     const balance = useAppSelector(selectFederationBalance)
     const enableStableBalance = useAppSelector(selectStableBalanceEnabled)
+
     const showStabilityWallet =
         isStabilityPoolSupported && enableStableBalance && balance > 0
 
@@ -65,48 +66,6 @@ const styles = (theme: Theme) =>
             justifyContent: 'flex-start',
             paddingTop: theme.spacing.sm,
             paddingHorizontal: theme.spacing.lg,
-        },
-        cardContainer: {
-            backgroundColor: theme.colors.orange,
-            borderRadius: theme.borders.defaultRadius,
-            paddingVertical: theme.spacing.sm,
-            paddingHorizontal: theme.spacing.md,
-            minHeight: theme.sizes.walletCardHeight,
-        },
-        cardWrapper: {
-            flex: 1,
-            justifyContent: 'space-between',
-        },
-        titleContainer: {
-            textAlign: 'left',
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: theme.spacing.md,
-        },
-        titleText: {
-            color: theme.colors.secondary,
-            paddingHorizontal: theme.spacing.sm,
-            flex: 1,
-        },
-        balanceText: {
-            textAlign: 'center',
-            color: theme.colors.secondary,
-            marginBottom: theme.spacing.xs,
-        },
-        buttonsGroupContainer: {
-            margin: theme.spacing.sm,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-        },
-        button: {
-            backgroundColor: theme.colors.secondary,
-        },
-        buttonContainer: {
-            margin: theme.spacing.sm,
-            flex: 1,
-        },
-        buttonTitle: {
-            color: theme.colors.primary,
         },
     })
 

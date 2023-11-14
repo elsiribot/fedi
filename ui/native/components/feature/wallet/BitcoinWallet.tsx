@@ -1,6 +1,7 @@
 import { useNavigation } from '@react-navigation/native'
 import type { Theme } from '@rneui/themed'
 import { Button, Card, Text, TextProps, useTheme } from '@rneui/themed'
+import capitalize from 'lodash/capitalize'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
@@ -12,6 +13,7 @@ import {
 
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
+import { Network } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import Balance from './Balance'
@@ -28,6 +30,7 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
     const activeFederation = useAppSelector(selectActiveFederation)
     const receivesDisabled = useAppSelector(selectReceivesDisabled)
 
+    const network = activeFederation?.network
     const buttonTitleProps: Partial<TextProps> = {
         caption: true,
         medium: true,
@@ -46,9 +49,16 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
                     size={SvgImageSize.md}
                     color={theme.colors.white}
                 />
-                <Text bold style={styles(theme).titleText}>
-                    {t('words.bitcoin')}
-                </Text>
+                <View style={styles(theme).titleTextContainer}>
+                    <Text bold style={styles(theme).titleText}>
+                        {t('words.bitcoin')}
+                    </Text>
+                    {network && network !== Network.bitcoin && (
+                        <Text small medium style={styles(theme).titleText}>
+                            {capitalize(network)}
+                        </Text>
+                    )}
+                </View>
                 <Pressable onPress={() => navigation.navigate('Transactions')}>
                     <SvgImage name="List" color={theme.colors.secondary} />
                 </Pressable>
@@ -125,10 +135,12 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
         },
+        titleTextContainer: {
+            flex: 1,
+            paddingHorizontal: theme.spacing.sm,
+        },
         titleText: {
             color: theme.colors.secondary,
-            paddingHorizontal: theme.spacing.sm,
-            flex: 1,
         },
         iconsContainer: {
             flexDirection: 'row',

@@ -11,6 +11,7 @@ import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
+import { NetworkBanner } from '../wallet/NetworkBanner'
 
 const HomeHeader: React.FC = () => {
     const { theme } = useTheme()
@@ -25,28 +26,31 @@ const HomeHeader: React.FC = () => {
     const style = styles(theme)
 
     return (
-        <Header
-            inline
-            containerStyle={style.container}
-            headerLeft={
-                <Text h2 medium>
-                    {t('words.home')}
-                </Text>
-            }
-            headerRight={
-                showOfflineWallet && (
-                    <Pressable
-                        onPress={() => navigation.navigate('Settings')}
-                        hitSlop={5}
-                        style={style.iconContainer}>
-                        <SvgImage name="Cog" />
-                    </Pressable>
-                )
-            }
-            rightContainerStyle={style.rightContainer}
-            // Needed to make more room for Wallet title in headerLeft
-            centerContainerStyle={{ flex: 0 }}
-        />
+        <>
+            <NetworkBanner />
+            <Header
+                inline
+                containerStyle={style.container}
+                headerLeft={
+                    <Text h2 medium>
+                        {t('words.home')}
+                    </Text>
+                }
+                headerRight={
+                    showOfflineWallet && (
+                        <Pressable
+                            onPress={() => navigation.navigate('Settings')}
+                            hitSlop={5}
+                            style={style.iconContainer}>
+                            <SvgImage name="Cog" />
+                        </Pressable>
+                    )
+                }
+                rightContainerStyle={style.rightContainer}
+                // Needed to make more room for Wallet title in headerLeft
+                centerContainerStyle={{ flex: 0 }}
+            />
+        </>
     )
 }
 
