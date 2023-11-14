@@ -17,6 +17,7 @@ const HEX_COLORS = {
     black: '#000000',
     night: '#0B1013',
     blue: '#0277F2',
+    fuschia: '#EF5DA8',
 }
 
 export const theme = {

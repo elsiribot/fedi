@@ -9,8 +9,10 @@ import {
     RpcTransaction,
     SocialRecoveryApproval,
     PanicEvent,
+    StabilityPoolWithdrawalEvent,
+    StabilityPoolDepositEvent,
 } from './bindings'
-import { MsatsString } from './units'
+import { MsatsString, Usd, UsdCents } from './units'
 
 export type {
     SocialRecoveryEvent,
@@ -161,4 +163,15 @@ export type FedimintBridgeEventMap = {
     socialRecovery: SocialRecoveryEvent
     balance: BalanceEvent
     panic: PanicEvent
+    stabilityPoolDeposit: StabilityPoolDepositEvent
+    stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent
+}
+
+export type StabilityPoolTxn = {
+    id: string
+    timestamp: number | null
+    amountCents: UsdCents
+    amountUsd: Usd
+    direction: 'deposit' | 'withdraw'
+    status: 'pending' | 'complete'
 }

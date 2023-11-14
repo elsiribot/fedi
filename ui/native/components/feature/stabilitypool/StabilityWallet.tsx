@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Avatar, Theme } from '@rneui/themed'
 import { Card, Text, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { selectCurrency } from '@fedi/common/redux'
@@ -11,6 +12,7 @@ import { NavigationHook } from '../../../types/navigation'
 import SvgImage from '../../ui/SvgImage'
 
 const StabilityWallet: React.FC<{}> = () => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const selectedCurrency = useAppSelector(selectCurrency)
@@ -38,7 +40,7 @@ const StabilityWallet: React.FC<{}> = () => {
                         containerStyle={style.currencyAvatar}
                     />
                     <Text bold style={style.titleText}>
-                        {`${selectedCurrency}`}
+                        {`${selectedCurrency} ${t('words.balance')}`}
                     </Text>
                     <Text medium style={style.balanceText}>
                         {`${formattedStableBalance}`}

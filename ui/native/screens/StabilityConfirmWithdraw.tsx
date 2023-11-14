@@ -119,7 +119,7 @@ const StabilityConfirmWithdraw: React.FC<Props> = ({ route, navigation }) => {
                         <Text medium caption>
                             {showDetails
                                 ? t('phrases.hide-details')
-                                : t('feature.stabilitypool.details-and-fee')}
+                                : t('words.details')}
                         </Text>
                     }
                 />
@@ -156,7 +156,7 @@ const styles = (theme: Theme) =>
             flexDirection: 'column',
         },
         button: {
-            marginTop: theme.spacing.sm,
+            marginTop: theme.spacing.lg,
         },
         buttonText: {
             color: theme.colors.secondary,

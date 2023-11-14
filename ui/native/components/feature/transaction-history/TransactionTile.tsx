@@ -6,57 +6,67 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Transaction, TransactionDirection } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
+import { makeTxnStatusText } from '@fedi/common/utils/wallet'
 
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
 
 type TransactionTileProps = {
     txn: Transaction
     selectTransaction: (txn: Transaction) => void
 }
+type TxnSubIconProps = { svgName: string; color: string }
 
 const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 
-    const renderStatus = () => {
-        if (txn.direction === TransactionDirection.send) {
-            return t('words.sent')
-        }
-        if (txn.lightning) {
-            if (!txn.lnState) return `${t('phrases.receive-pending')}`
-            switch (txn.lnState.type) {
-                case 'waitingForPayment':
-                    return t('phrases.receive-pending')
-                case 'claimed':
-                    return t('words.received')
-                case 'canceled':
-                    return t('words.expired')
-                default:
-                    return t('phrases.receive-pending')
-            }
-        } else if (txn.bitcoin) {
-            switch (txn.onchainState?.type) {
-                case 'waitingForTransaction':
-                    return t('phrases.address-created')
-                case 'claimed':
-                    return t('words.received')
-                default:
-                    return t('phrases.receive-pending')
-            }
-        } else {
-            return t('words.received')
-        }
-    }
-
     const renderAmount = () => {
-        return txn.bitcoin && txn.amount === 0
-            ? t('words.onchain').toLowerCase()
-            : `${amountUtils.formatNumber(
-                  amountUtils.msatToSat(txn.amount),
-              )} ${t('words.sats').toUpperCase()}`
+        if (txn.bitcoin && txn.amount === 0)
+            return t('words.onchain').toLowerCase()
+
+        const formattedAmount = amountUtils.formatNumber(
+            amountUtils.msatToSat(txn.amount),
+        )
+        const sign = txn.direction === TransactionDirection.send ? `-` : `+`
+
+        return `${sign}${formattedAmount} ${t('words.sats').toUpperCase()}`
     }
 
     const style = styles(theme)
+
+    const renderSubIcon = () => {
+        let subIconProps: TxnSubIconProps
+
+        if (txn.direction === TransactionDirection.send) {
+            subIconProps = {
+                svgName: 'ArrowUpBadge',
+                color: theme.colors.black,
+            }
+        } else if (
+            txn.lnState?.type === 'waitingForPayment' ||
+            (txn.bitcoin && txn.onchainState?.type !== 'claimed') ||
+            (txn.lightning && !txn.lnState)
+        ) {
+            subIconProps = {
+                svgName: 'PendingBadge',
+                color: theme.colors.fuschia,
+            }
+        } else {
+            subIconProps = {
+                svgName: 'ArrowDownBadge',
+                color: theme.colors.green,
+            }
+        }
+
+        return (
+            <SvgImage
+                name={subIconProps.svgName as SvgImageName}
+                color={subIconProps.color}
+                size={SvgImageSize.xs}
+                containerStyle={style.txnBadge}
+            />
+        )
+    }
 
     return (
         <TouchableOpacity
@@ -74,21 +84,21 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                     color={theme.colors.orange}
                     size={SvgImageSize.md}
                 />
+                {renderSubIcon()}
             </View>
             <View style={style.centerContainer}>
-                <Text>{renderStatus()}</Text>
-                <Text small numberOfLines={1}>
-                    {txn.notes}
-                </Text>
+                <Text>{makeTxnStatusText(t, txn)}</Text>
+                {txn.notes && (
+                    <Text small numberOfLines={1}>
+                        {txn.notes}
+                    </Text>
+                )}
             </View>
 
             <View style={style.rightContainer}>
                 <Text style={style.rightAlignedText}>{renderAmount()}</Text>
                 <Text small style={[style.rightAlignedText, style.subText]}>
-                    {`${dateUtils.formatTimestamp(
-                        txn.createdAt,
-                        'MMM dd, h:mmaaa',
-                    )}`}
+                    {`${dateUtils.formatTxnTileTimestamp(txn.createdAt)}`}
                 </Text>
             </View>
         </TouchableOpacity>
@@ -128,6 +138,11 @@ const styles = (theme: Theme) =>
         },
         pending: {
             opacity: 0.6,
+        },
+        txnBadge: {
+            position: 'absolute',
+            left: -4,
+            top: -4,
         },
     })
 
