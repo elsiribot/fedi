@@ -64,6 +64,24 @@ export const federationSlice = createSlice({
                 state.federations = updatedFederations
             }
         },
+        updateFederationBalance(
+            state,
+            action: PayloadAction<{
+                federationId: Federation['id']
+                balance: Federation['balance']
+            }>,
+        ) {
+            const { federationId, balance } = action.payload
+            const federation = state.federations.find(
+                f => f.id === federationId,
+            )
+            // No-op if we don't have that federation, or balance has not changed
+            if (!federation || federation.balance === balance) return
+            state.federations = state.federations.map(f => {
+                if (f.id !== federationId) return f
+                return { ...f, balance }
+            })
+        },
         setActiveFederationId(state, action: PayloadAction<string | null>) {
             state.activeFederationId = action.payload
         },
@@ -152,6 +170,7 @@ export const federationSlice = createSlice({
 export const {
     setFederations,
     updateFederation,
+    updateFederationBalance,
     setActiveFederationId,
     updateExternalMeta,
     setFederationExternalMeta,
