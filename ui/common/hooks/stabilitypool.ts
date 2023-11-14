@@ -35,7 +35,9 @@ export async function useMonitorStabilityPool(fedimint: FedimintBridge) {
         if (!isStabilityPoolSupported) return
 
         log.info('Monitoring stabilitypool account info...')
-        // Refresh account info every 60 seconds
+        // Refresh account info initally,
+        dispatch(refreshActiveStabilityPool({ fedimint }))
+        // then every 60 seconds after that
         const stabilityPoolMonitor = setInterval(() => {
             dispatch(refreshActiveStabilityPool({ fedimint }))
         }, 60000)
