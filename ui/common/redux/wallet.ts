@@ -471,7 +471,7 @@ export const selectStabilityTransactionHistory = createSelector(
         }
 
         // orders by timestamp with null timestamps at the top
-        return orderBy(history, 'timestamp', 'desc')
+        return orderBy(history, ['timestamp', 'status'], ['desc', 'desc'])
     },
 )
 
