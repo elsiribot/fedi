@@ -7,12 +7,14 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import * as Progress from 'react-native-progress'
 
+import { useMonitorStabilityPool } from '@fedi/common/hooks/stabilitypool'
 import {
     selectStableBalance,
     selectStableBalancePending,
 } from '@fedi/common/redux'
 import { makePendingBalanceText } from '@fedi/common/utils/wallet'
 
+import { fedimint } from '../bridge'
 import { useAppSelector, useStabilityPool } from '../state/hooks'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
 
@@ -29,6 +31,8 @@ const StabilityHome: React.FC<Props> = () => {
         useStabilityPool()
 
     const style = styles(theme)
+
+    useMonitorStabilityPool(fedimint)
 
     return (
         <View style={style.container}>
