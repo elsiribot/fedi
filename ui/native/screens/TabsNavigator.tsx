@@ -23,6 +23,7 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 import {
     useIsChatSupported,
+    useIsStabilityPoolSupported,
     usePopupFederationInfo,
 } from '@fedi/common/hooks/federation'
 import {
@@ -70,6 +71,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     const lastSeenMessageId = useAppSelector(selectChatLastSeenMessageId)
     const messages = useAppSelector(selectAllChatMessages)
     const activeFederation = useAppSelector(selectActiveFederation)
+    const isStabilityPoolSupported = useIsStabilityPoolSupported()
     const popupInfo = usePopupFederationInfo()
     const dispatch = useAppDispatch()
     const appStateRef = useRef<AppStateStatus>(
@@ -96,13 +98,16 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                     nextAppState === 'active'
                 ) {
                     dispatch(refreshFederations(fedimint))
-                    dispatch(refreshActiveStabilityPool({ fedimint }))
+                    // Refresh stabilitypool balance if supported
+                    if (isStabilityPoolSupported) {
+                        dispatch(refreshActiveStabilityPool({ fedimint }))
+                    }
                 }
                 appStateRef.current = nextAppState
             },
         )
         return () => subscription.remove()
-    }, [dispatch])
+    }, [dispatch, isStabilityPoolSupported])
 
     // Check if our last seen message doesn't line up with the last message
     const hasUnseenMessages = useMemo(() => {
