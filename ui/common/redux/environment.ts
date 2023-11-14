@@ -61,6 +61,9 @@ export const environmentSlice = createSlice({
                 state.onchainDepositsEnabled =
                     action.payload.onchainDepositsEnabled
             }
+            if (action.payload.stableBalanceEnabled) {
+                state.stableBalanceEnabled = action.payload.stableBalanceEnabled
+            }
             if (action.payload.developerMode) {
                 state.developerMode = action.payload.developerMode
             }
