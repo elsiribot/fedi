@@ -12,7 +12,7 @@ yarn build-bridge-ios
 
 # make sure we've installed pods
 pushd ios
-pod install
+pod install --repo-update
 popd
 
 # Launch ios. If FEDI_UDID env var is set, then run it on that device.
