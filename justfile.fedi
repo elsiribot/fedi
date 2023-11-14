@@ -90,3 +90,6 @@ run-dev-ui mode="default":
 # installs the xcodes tool and installs a version of Xcode.app
 install-xcode:
   ./scripts/install-xcode.sh
+
+pod-install:
+  ./scripts/ui/install-ios-deps.sh
