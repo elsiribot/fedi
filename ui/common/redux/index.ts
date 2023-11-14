@@ -10,8 +10,11 @@ import { hasStorageStateChanged } from '../utils/storage'
 import { chatSlice } from './chat'
 import { currencySlice, fetchCurrencyPrices } from './currency'
 import { environmentSlice } from './environment'
-import { federationSlice } from './federation'
-import { updateFederation } from './federation'
+import {
+    federationSlice,
+    updateFederation,
+    updateFederationBalance,
+} from './federation'
 import { loadFromStorage, saveToStorage, storageSlice } from './storage'
 import { toastSlice } from './toast'
 import { walletSlice } from './wallet'
@@ -70,6 +73,11 @@ export function initializeCommonStore(
         dispatch(updateFederation(federation))
     })
 
+    const unsubscribeBalance = fedimint.addListener('balance', event => {
+        log.debug('Balance update', event)
+        dispatch(updateFederationBalance(event))
+    })
+
     // Load state from local storage, then start listener that syncs to storage
     // on changes to stored state after it's been loaded.
     let unsubscribeStorage: UnsubscribeListener = () => null
@@ -93,6 +101,7 @@ export function initializeCommonStore(
 
     return () => {
         unsubscribeFederation()
+        unsubscribeBalance()
         unsubscribeStorage()
     }
 }
