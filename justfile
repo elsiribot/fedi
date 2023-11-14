@@ -50,13 +50,13 @@ watch:
 
 # run `cargo clippy` on everything
 clippy *ARGS="--locked --offline --all-targets":
+  cargo clippy --package fedi-fedimintd --package fedi-fedimint-cli {{ARGS}}
   cargo clippy --package fedi-ffi {{ARGS}}
-  cargo clippy --package fedi-wasm {{ARGS}} --target wasm32-unknown-unknown
+  cargo clippy --package fedi-wasm --target wasm32-unknown-unknown {{ARGS}}
 
 # run `cargo clippy --fix` on everything
 clippy-fix *ARGS="--locked --offline --all-targets":
-  cargo clippy --package fedi-ffi {{ARGS}} --fix
-  cargo clippy --package fedi-wasm {{ARGS}} --fix --target wasm32-unknown-unknown
+  just clippy {{ARGS}} --fix
 
 
 # run `semgrep`
