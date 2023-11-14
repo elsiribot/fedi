@@ -46,7 +46,7 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     // If they're not a part of the group, encode a join link and attempt a join
     const isGroupFound = !!group
     useEffect(() => {
-        if (isGroupFound || failedToJoin || !isFocused) return
+        if (isGroupFound || failedToJoin || !isFocused || !federationId) return
         dispatch(
             joinChatGroup({
                 federationId,
@@ -76,6 +76,7 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     )
 
     const handleSend = async (messageText: string) => {
+        if (!federationId) return
         await dispatch(
             sendGroupMessage({
                 federationId,
