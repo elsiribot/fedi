@@ -72,39 +72,138 @@ export enum SupportedFeature {
     nostr_enabled = 'nostr_enabled',
 }
 
-export interface ClientConfigMetadata {
+/**
+ * Native [Fedimint Meta Fields](https://github.com/fedimint/fedimint/tree/master/docs/meta_fields#meta-fields)
+ */
+interface FedimintMetaFields {
+    federation_expiry_timestamp?: string
     federation_name?: string
-    // If this exists, we use it to download a JSON file that overrides
-    // te use of any other fields below
-    meta_external_url?: string
-    // these are support config fields that change app behavior per-federation
-    chat_server_domain?: string
-    default_currency?: SupportedCurrency
+    meta_override_url?: string
     welcome_message?: string
+    vetted_gateways?: Array<string>
+}
+
+/**
+ * Old custom Fedimint metadata fields.
+ * @deprecated Migration to `fedi:`-prefixed additional federation medata fields.
+ */
+interface DeprecatedClientConfigMetadata {
+    /**
+     * If this exists, we use it to download a JSON file that overrides
+     * the use of any other fields below
+     * @deprecated Use `fedi:meta_external_url` instead
+     */
+    meta_external_url?: string
+    /**
+     * @deprecated Use `fedi:chat_server_domain` instead
+     */
+    chat_server_domain?: string
+    /**
+     * @deprecated Use `fedi:default_currency` instead
+     */
+    default_currency?: SupportedCurrency
+    /**
+     * @deprecated Use `fedi:tos_url` instead
+     */
     tos_url?: string
+    /**
+     * @deprecated Use `fedi:federation_icon_url` instead
+     */
     federation_icon_url?: string
+    /**
+     * @deprecated Use `fedi:popup_countdown_message` instead
+     */
     popup_countdown_message?: string
+    /**
+     * @deprecated Use `fedi:popup_ended_message` instead
+     */
     popup_ended_message?: string
-    // TODO: client config meta only supports strings currently so
-    // will need to refactor these:
-    // 1. switch to boolean true/false
+    // TODO: client config meta only supports strings currently so will need to refactor these:
+    // TODO: 1. switch to boolean true/false
+    /**
+     * @deprecated Use `fedi:invite_codes_disabled` instead
+     */
     invite_codes_disabled?: string
+    /**
+     * @deprecated Use `fedi:new_members_disabled` instead
+     */
     new_members_disabled?: string
+    /**
+     * @deprecated Use `fedi:social_recovery_disabled` instead
+     */
     social_recovery_disabled?: string
+    /**
+     * @deprecated Use `fedi:offline_wallet_disabled` instead
+     */
     offline_wallet_disabled?: string
+    /**
+     * @deprecated Use `fedi:onchain_deposits_disabled` instead
+     */
     onchain_deposits_disabled?: string
-    // 2. switch to MSats (number)
+    // TODO: 2. switch to MSats (number)
+    /**
+     * @deprecated Use `fedi:max_invoice_msats` instead
+     */
     max_invoice_msats?: MsatsString
+    /**
+     * @deprecated Use `fedi:max_balance_msats` instead
+     */
     max_balance_msats?: MsatsString
-    // 3. FediMod[]
+    // TODO: 3. FediMod[]
+    /**
+     * @deprecated Use `fedi:sites` instead
+     */
     sites?: string
-    // 4. Switch to number (unix epoch timestamp)
-    /** Timestamp that popup federations will be completely disabled at */
+    // TODO: 4. Switch to number (unix epoch timestamp)
+    /**
+     * Timestamp that popup federations will be completely disabled at
+     * @deprecated Use `fedi:popup_end_timestamp` instead
+     */
     popup_end_timestamp?: string
-    // 5. string[] - array of group IDs
+    // TODO: 5. string[] - array of group IDs
+    /**
+     * @deprecated Use `fedi:default_group_chats` instead
+     */
     default_group_chats?: string
-    // 6. Switch to number
+    // TODO: 6. Switch to number
+    /**
+     * @deprecated Use `fedi:fixed_exchange_rate` instead
+     */
     fixed_exchange_rate?: string
+}
+
+/**
+ * Client config metadata fields.
+ */
+export interface ClientConfigMetadata
+    extends FedimintMetaFields,
+        DeprecatedClientConfigMetadata {
+    'fedi:meta_external_url'?: string
+    'fedi:chat_server_domain'?: string
+    'fedi:default_currency'?: SupportedCurrency
+    'fedi:tos_url'?: string
+    'fedi:federation_icon_url'?: string
+    'fedi:popup_countdown_message'?: string
+    'fedi:popup_ended_message'?: string
+    // TODO: client config meta only supports strings currently so will need to refactor these:
+    // TODO: 1. switch to boolean true/false
+    'fedi:invite_codes_disabled'?: string
+    'fedi:new_members_disabled'?: string
+    'fedi:social_recovery_disabled'?: string
+    'fedi:offline_wallet_disabled'?: string
+    'fedi:onchain_deposits_disabled'?: string
+    // TODO: 2. switch to MSats (number)
+    'fedi:max_invoice_msats'?: MsatsString
+    'fedi:max_balance_msats'?: MsatsString
+    // TODO: 3. FediMod[]
+    'fedi:sites'?: string
+    // TODO: 4. Switch to number (unix epoch timestamp)
+    /** Timestamp that popup federations will be completely disabled at */
+    'fedi:popup_end_timestamp'?: string
+    // TODO: 5. string[] - array of group IDs
+    'fedi:default_group_chats'?: string
+    // TODO: 6. Switch to number
+    'fedi:fixed_exchange_rate'?: string
 }
 
 export enum Network {
