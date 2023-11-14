@@ -9,8 +9,9 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tokio::fs::create_dir_all;
+use tokio::io::AsyncWriteExt;
 use tokio::join;
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 
 use crate::remote::{recursive_rsync_from_remote_dir_checked, run_ssh_checked, run_ssh_unchecked};
 use crate::{
@@ -402,37 +403,46 @@ async fn funds_summary(
     info!("The total ecash balance on gateway is: {gateway_ecash_balance}");
     info!("The total ln wallet balance is: {ln_wallet_balance}");
     info!("The total balance on local channels is: {ln_channels_local_balance}");
-    let total_from_gateway = gateway_ecash_balance + ln_wallet_balance + ln_channels_local_balance;
-    info!("The total from gateway is: {total_from_gateway}");
-    if let Some(federation_balance) = federation_balance {
+    let lightning_total = ln_wallet_balance + ln_channels_local_balance;
+    info!("The total from lightning is: {lightning_total}");
+    let total = if let Some(federation_balance) = federation_balance {
         if gateway_ecash_balance > federation_balance {
-            anyhow::bail!(
+            warn!(
                 "gateway ecash balance: {gateway_ecash_balance} is greater than federation balance {federation_balance}"
-        )
+            )
         }
-        // FIXME: double check if this is correct/makes sense, it seems we need to also
-        // the account what liquidity went to remote balance?
-        let unaccounted_balanced = federation_balance - gateway_ecash_balance;
+        // FIXME: how to calculate this? It seems we need to know either how much was
+        // the initial gateway peg-in or what went to opening channels
+        // let unaccounted_balanced = federation_balance - gateway_ecash_balance;
 
-        info!("The unaccounted balance on federation (non-gateway peg-ins) is: {unaccounted_balanced}");
-        let total_from_federation_and_gateway = federation_balance + total_from_gateway;
-        info!("The total that can be extracted from federation and gateway is: {total_from_federation_and_gateway}");
+        // info!("The unaccounted balance on federation (non-gateway peg-ins) is:
+        // {unaccounted_balanced}");
+        let total = federation_balance + lightning_total;
+        info!("The total that can be extracted from federation and lightning gateway is: {total}");
+        Some(total)
     } else {
         info!("No balance from descriptors and no balance from remote bitcoin, so we calculate the total");
-    }
+        None
+    };
     // restart_fedimints(&federation).await?;
     let mut output = json!({
         "federation_balance": federation_balance.as_ref().map(ToString::to_string),
         "gateway_ecash_balance": gateway_ecash_balance.to_string(),
         "ln_wallet_balance": ln_wallet_balance.to_string(),
         "ln_channels_local_balance": ln_channels_local_balance.to_string(),
-        "total_from_gateway": total_from_gateway.to_string(),
+        "total_from_lightnig_gateway": lightning_total.to_string(),
+        "total": total.map(|t| Value::String(t.to_string())).unwrap_or(Value::Null),
     });
     if imported_descriptors {
         info!("Imported descriptors into remote bitcoin wallet, so we can reuse it later with the same wallet base id: {wallet_base_id} and remote bitcoin args: {:?}", args.command);
         output["wallet_base_id"] = wallet_base_id.into();
     }
-    print!("{}", serde_json::to_string_pretty(&output)?);
+    let json_string = serde_json::to_string_pretty(&output)?;
+    print!("{json_string}");
+    tokio::fs::File::create(temp_federation_path.join("output.json"))
+        .await?
+        .write_all(json_string.as_bytes())
+        .await?;
     Ok(())
 }
 

@@ -31,6 +31,7 @@ enum CliCommand {
     EditMetaJson(EditMetaJsonArgs),
     #[command(about = "Show information about a meta.json file")]
     ShowMetaJson(ShowMetaJsonArgs),
+    #[command(about = "Provides utilities to interact with federations")]
     Federation(FederationArgs),
 }
 
