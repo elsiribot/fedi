@@ -516,6 +516,7 @@
             "enter-deposit-amount": "Enter deposit amount",
             "enter-withdrawal-amount": "Enter withdrawal amount",
             "fees-paid": "Fees paid",
+            "pending-withdrawal-blocking-deposit": "Please wait for pending withdrawals to process before depositing",
             "will-be-withdrawn": "{{amount}} will be withdrawn in {{expectedWait}}",
             "will-be-deposited": "{{amount}} will be deposited in {{expectedWait}}",
             "withdraw-to": "Withdraw to",
