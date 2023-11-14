@@ -128,6 +128,7 @@ const StabilityConfirmWithdraw: React.FC<Props> = ({ route, navigation }) => {
                     containerStyle={[style.button]}
                     onPress={handleSubmit}
                     disabled={processingDeposit}
+                    loading={processingDeposit}
                     title={
                         <Text medium caption style={style.buttonText}>
                             {t('words.withdraw')}
