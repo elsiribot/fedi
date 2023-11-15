@@ -29,15 +29,15 @@ let
   # filter (roughly) only files&directories that Rust build needs to make
   # caching easier for Nix/crane
   rustSrc =
-    flakeboxLib.filter.filterSubdirs {
+    flakeboxLib.filter.filterSubPaths {
       inherit root;
-      dirs = rustSrcDirs;
+      paths = rustSrcDirs;
     };
 
   rustTestSrc =
-    flakeboxLib.filter.filterSubdirs {
+    flakeboxLib.filter.filterSubPaths {
       inherit root;
-      dirs = rustSrcDirs ++ [
+      paths = rustSrcDirs ++ [
         # bridge test script
         "scripts"
         "misc"
