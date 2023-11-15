@@ -312,6 +312,8 @@
           });
           v1 = fedi-v1.devShells.${system}.default.overrideAttrs (prev: {
             nativeBuildInputs = [
+              fedi-v1.inputs.fedimint-build.packages.${system}.devimint
+              fedi-v1.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
               fedi-v1.packages.${system}.fedi-fedimint-pkgs
             ]
             ++ prev.nativeBuildInputs;
