@@ -1014,6 +1014,11 @@ mod tests {
     async fn test_on_chain() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
 
+        // On-chain payments not supported for v0 federations.
+        if let MultiFederation::V0(_) = *federation {
+            return Ok(());
+        }
+
         let address =
             generateAddress(bridge.clone(), RpcFederationId(federation.federation_id())).await?;
         bitcoin_cli_send_to_address(&address, "0.1").await?;
