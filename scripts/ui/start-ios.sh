@@ -62,7 +62,7 @@ nix develop .#xcode --command npx react-native run-ios --destination arch=x86_64
     echo "Something went wrong..."
     echo "Try deleting DerivedData for a clean build directory and try again..."
     echo -e "\x1B[32;1m"
-    echo "sudo rm -Rf ~/Library/Developer/Xcode/DerivedData"
+    echo "sudo rm -rf ~/Library/Developer/Xcode/DerivedData"
     echo -e "\x1B[31;1m"
     echo "   if that still doesn't work. Be sure to follow the React Native docs for environment setup and try again..."
     echo "   https://reactnative.dev/docs/environment-setup"
