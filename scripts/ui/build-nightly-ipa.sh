@@ -16,7 +16,7 @@ if [[ "$BUILD_BRIDGE" == "0" ]]; then
   echo "Skipping bridge build..."
 else
   echo "Rebuilding iOS bridge with release profile"
-  CARGO_PROFILE=release $REPO_ROOT/scripts/bridge/build-bridge-ios.sh
+  BUILD_ALL_BRIDGE_TARGETS=1 CARGO_PROFILE=release $REPO_ROOT/scripts/bridge/build-bridge-ios.sh
 fi
 
 if [[ "$BUILD_UI_DEPS" == "0" ]]; then
