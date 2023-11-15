@@ -192,7 +192,7 @@
         };
 
         craneMultiBuild = import nix/flakebox.nix {
-          inherit pkgs pkgs-unstable flakeboxLib fedi-v1 fedi-v0 fedimint-build fedimint-pkgs toolchains replaceGitHash;
+          inherit pkgs pkgs-unstable flakeboxLib fedi-v1 fedi-v0 fedimint-build fedimint-pkgs toolchains replaceGitHash pkgs-kitman;
         };
 
         lib = pkgs.lib;
@@ -320,6 +320,7 @@
           });
           v0 = fedi-v1.devShells.${system}.default.overrideAttrs (prev: {
             nativeBuildInputs = [
+              # Get compatible lightningd from fedi-v0
               (
                 (import fedi-v0.inputs.nixpkgs { inherit system; }).clightning.overrideAttrs
                   (oldAttrs: {

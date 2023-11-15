@@ -617,6 +617,10 @@ mod tests {
         tempfile::tempdir().unwrap().into_path()
     }
 
+    fn get_fixture_dir() -> PathBuf {
+        std::env::current_dir().unwrap().join("../fixtures")
+    }
+
     /// Get LND pubkey using lncli, then have `federation` switch to using
     /// whatever gateway is using that node pubkey
     async fn use_lnd_gateway(multi: &MultiFederation) -> anyhow::Result<()> {
@@ -847,7 +851,7 @@ mod tests {
         // This fixture contains a "datadir" with 1 global database and one federations
         // database (fedi alpha mutinynet)
         let data_dir = create_data_dir();
-        let fixture_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../fixtures/v0_db");
+        let fixture_dir = get_fixture_dir().join("v0_db");
         copy_recursively(fixture_dir, &data_dir)?;
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
         let bridge = fedimint_initialize_async(storage, event_sink).await?;
@@ -1129,8 +1133,7 @@ mod tests {
         info!("initial mnemnoic {:?}", &initial_words);
 
         // Upload backup
-        let video_file_path =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../fixtures/backup.fedi");
+        let video_file_path = get_fixture_dir().join("backup.fedi");
         let video_file_contents = tokio::fs::read(&video_file_path).await?;
         let recovery_file_path =
             uploadBackupFile(bridge.clone(), federation_id, video_file_path).await?;
