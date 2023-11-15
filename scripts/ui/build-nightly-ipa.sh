@@ -6,7 +6,7 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 $REPO_ROOT/scripts/enforce-nix.sh
 
 echo "Deleting DerivedData for a clean build directory..."
-rm -Rf ~/Library/Developer/Xcode/DerivedData
+rm -rf ~/Library/Developer/Xcode/DerivedData
 
 BUILD_BRIDGE=${BUILD_BRIDGE:-1}
 BUILD_UI_DEPS=${BUILD_UI_DEPS:-1}
