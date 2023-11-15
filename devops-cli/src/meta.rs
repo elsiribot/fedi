@@ -6,11 +6,11 @@ use tracing::info;
 
 use crate::remote::{remote_cp, remote_mv, scp_from_local_to_remote, scp_from_remote_to_local};
 use crate::{
-    AddDefaultGroupChatArgs, AddSiteArgs, DuplicateExistingArgs, DuplicateExistingSubCommand,
-    EditMetaJsonArgs, EditMetaJsonCommand, FederationReferenceOptional, ListFederationsArgs,
-    RemoteFileArgs, RemoveDefaultGroupChatArgs, RemoveSiteArgs, SetKeyValueArgs,
-    SetSpecialKeyValueArgs, SetSpecialKeyValueSubCommand, ShowMetaJsonArgs, ShowMetaJsonCommand,
-    Site, UpdateSiteArgs,
+    AddDefaultGroupChatArgs, AddKeysPrefixArgs, AddSiteArgs, DuplicateExistingArgs,
+    DuplicateExistingSubCommand, EditMetaJsonArgs, EditMetaJsonCommand,
+    FederationReferenceOptional, ListFederationsArgs, RemoteFileArgs, RemoveDefaultGroupChatArgs,
+    RemoveSiteArgs, SetKeyValueArgs, SetSpecialKeyValueArgs, SetSpecialKeyValueSubCommand,
+    ShowMetaJsonArgs, ShowMetaJsonCommand, Site, UpdateSiteArgs,
 };
 
 const SITES_KEY: &str = "sites";
@@ -67,6 +67,7 @@ pub(super) async fn edit_meta_json(args: EditMetaJsonArgs) -> anyhow::Result<()>
         EditMetaJsonCommand::SetKeyValue(args) => set_key_value(&mut config, args)?,
         EditMetaJsonCommand::SetSpecialKeyValue(args) => set_special_key_value(&mut config, args)?,
         EditMetaJsonCommand::DuplicateExisting(args) => duplicate_existing(&mut config, args)?,
+        EditMetaJsonCommand::AddKeysPrefix(args) => add_keys_prefix(&mut config, args)?,
     };
 
     let backup_remote_path = format!(
@@ -350,7 +351,8 @@ fn set_special_key_value(
 ) -> anyhow::Result<()> {
     use chrono::TimeZone;
     use chrono_tz::Tz;
-    let federation_config = get_federation_config(config, &args.federation_reference)?;
+    let federation_config: &mut serde_json::Map<String, serde_json::Value> =
+        get_federation_config(config, &args.federation_reference)?;
 
     match args.command {
         SetSpecialKeyValueSubCommand::PopupEndTimestamp(a) => {
@@ -404,6 +406,24 @@ fn duplicate_existing(
             "Federation with id {} already exists: {conflict:?}",
             as_command_args.new_reference.federation_id
         );
+    }
+    Ok(())
+}
+
+fn add_keys_prefix(
+    config: &mut serde_json::Map<String, serde_json::Value>,
+    args: AddKeysPrefixArgs,
+) -> anyhow::Result<()> {
+    let federation_config: &mut serde_json::Map<String, serde_json::Value> =
+        get_federation_config(config, &args.federation_reference)?;
+    for key in federation_config.clone().keys() {
+        if !key.starts_with(&args.prefix) {
+            let new_key = format!("{}{key}", args.prefix);
+            let value = federation_config
+                .remove(key)
+                .context("value should exist")?;
+            federation_config.insert(new_key, value);
+        }
     }
     Ok(())
 }
