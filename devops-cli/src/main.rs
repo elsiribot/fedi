@@ -86,6 +86,7 @@ enum EditMetaJsonCommand {
     #[command(about = "Create a new federation from an existing one")]
     DuplicateExisting(DuplicateExistingArgs),
     AddKeysPrefix(AddKeysPrefixArgs),
+    RemoveKeysPrefix(RemoveKeysPrefixArgs),
 }
 
 #[derive(Subcommand, Clone)]
@@ -117,6 +118,14 @@ struct AddKeysPrefixArgs {
     #[command(flatten)]
     federation_reference: FederationReferenceOptional,
     #[arg(long, help = "Change the keys to have a prefix (e.g `fedi:`)")]
+    prefix: String,
+}
+
+#[derive(Clone, Args)]
+struct RemoveKeysPrefixArgs {
+    #[command(flatten)]
+    federation_reference: FederationReferenceOptional,
+    #[arg(long, help = "Change the keys to remove a prefix (e.g `fedi:`)")]
     prefix: String,
 }
 

@@ -9,8 +9,8 @@ use crate::{
     AddDefaultGroupChatArgs, AddKeysPrefixArgs, AddSiteArgs, DuplicateExistingArgs,
     DuplicateExistingSubCommand, EditMetaJsonArgs, EditMetaJsonCommand,
     FederationReferenceOptional, ListFederationsArgs, RemoteFileArgs, RemoveDefaultGroupChatArgs,
-    RemoveSiteArgs, SetKeyValueArgs, SetSpecialKeyValueArgs, SetSpecialKeyValueSubCommand,
-    ShowMetaJsonArgs, ShowMetaJsonCommand, Site, UpdateSiteArgs,
+    RemoveKeysPrefixArgs, RemoveSiteArgs, SetKeyValueArgs, SetSpecialKeyValueArgs,
+    SetSpecialKeyValueSubCommand, ShowMetaJsonArgs, ShowMetaJsonCommand, Site, UpdateSiteArgs,
 };
 
 const SITES_KEY: &str = "sites";
@@ -68,6 +68,7 @@ pub(super) async fn edit_meta_json(args: EditMetaJsonArgs) -> anyhow::Result<()>
         EditMetaJsonCommand::SetSpecialKeyValue(args) => set_special_key_value(&mut config, args)?,
         EditMetaJsonCommand::DuplicateExisting(args) => duplicate_existing(&mut config, args)?,
         EditMetaJsonCommand::AddKeysPrefix(args) => add_keys_prefix(&mut config, args)?,
+        EditMetaJsonCommand::RemoveKeysPrefix(args) => remove_keys_prefix(&mut config, args)?,
     };
 
     let backup_remote_path = format!(
@@ -428,6 +429,26 @@ fn add_keys_prefix(
     Ok(())
 }
 
+fn remove_keys_prefix(
+    config: &mut serde_json::Map<String, serde_json::Value>,
+    args: RemoveKeysPrefixArgs,
+) -> anyhow::Result<()> {
+    let federation_config: &mut serde_json::Map<String, serde_json::Value> =
+        get_federation_config(config, &args.federation_reference)?;
+    for key in federation_config.clone().keys() {
+        if key.starts_with(&args.prefix) {
+            let new_key = key
+                .strip_prefix(&args.prefix)
+                .context("prefix should exist")?;
+            let value = federation_config
+                .remove(key)
+                .context("value should exist")?;
+            federation_config.insert(new_key.to_owned(), value);
+        }
+    }
+    Ok(())
+}
+
 fn get_federation_config<'a>(
     config: &'a mut serde_json::Map<String, serde_json::Value>,
     federation_reference: &FederationReferenceOptional,
@@ -481,12 +502,18 @@ fn federation_ids_for_name<'a>(
         .iter()
         .filter_map(|(federation_id, federation_config)| {
             if let serde_json::Value::Object(federation_config) = federation_config {
-                match federation_config.get(FEDERATION_NAME_KEY) {
-                    Some(serde_json::Value::String(name)) if name == federation_name => {
-                        Some(federation_id)
-                    }
-                    _ => None,
+                for name in [
+                    FEDERATION_NAME_KEY.to_string(),
+                    format!("fedi:{FEDERATION_NAME_KEY}"),
+                ] {
+                    match federation_config.get(&name) {
+                        Some(serde_json::Value::String(name)) if name == federation_name => {
+                            return Some(federation_id);
+                        }
+                        _ => {}
+                    };
                 }
+                None
             } else {
                 None
             }
