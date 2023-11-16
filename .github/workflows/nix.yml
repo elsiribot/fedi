@@ -124,8 +124,7 @@ jobs:
             - name: Test bridge
               run: |
                   nix build -L .#ci.testBridgeV1
-                  # broken ATM
-                  # nix build -L .#ci.testBridgeV0
+                  nix build -L .#ci.testBridgeV0
 
     build-android:
         name: 'Build - android'

@@ -192,7 +192,7 @@
         };
 
         craneMultiBuild = import nix/flakebox.nix {
-          inherit pkgs pkgs-unstable flakeboxLib fedi-v1 fedi-v0 fedimint-build fedimint-pkgs toolchains replaceGitHash;
+          inherit pkgs pkgs-unstable flakeboxLib fedi-v1 fedi-v0 fedimint-build fedimint-pkgs toolchains replaceGitHash pkgs-kitman;
         };
 
         lib = pkgs.lib;
@@ -320,6 +320,15 @@
           });
           v0 = fedi-v1.devShells.${system}.default.overrideAttrs (prev: {
             nativeBuildInputs = [
+              # Get compatible lightningd from fedi-v0
+              (
+                (import fedi-v0.inputs.nixpkgs { inherit system; }).clightning.overrideAttrs
+                  (oldAttrs: {
+                    configureFlags = [ "--enable-developer" "--disable-valgrind" ];
+                  } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
+                    NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
+                  })
+              )
               fedi-v0.inputs.fedimint-build.packages.${system}.devimint
               fedi-v0.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
               fedi-v0.inputs.fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
