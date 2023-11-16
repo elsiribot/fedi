@@ -219,9 +219,45 @@ rec {
   };
 
   testBridgeAll = pkgs.linkFarmFromDrvs "fedi-test-bridge-all" [
+    testBridgeCurrent
     testBridgeV1
     testBridgeV0
   ];
+
+  testBridgeCurrent = craneLib.buildCommand {
+    pname = "fedi-test-bridge-current";
+    cargoArtifacts = workspaceBuild;
+    doInstallCargoArtifacts = false;
+    src = rustTestSrc;
+
+    nativeBuildInputs =
+      craneLib.args.nativeBuildInputs ++ [
+        pkgs.clightning
+        pkgs.lnd
+        pkgs.bitcoind
+        pkgs.electrs
+        # Get esplora from pkgs-kitman
+        pkgs-kitman.esplora
+        # Get fedimint deps from fedi-v1
+        fedimint-build.packages.${system}.devimint
+        fedimint-pkgs.packages.${system}.gateway-pkgs
+        # helpers
+        pkgs.jq
+        pkgs.bc
+        pkgs.which
+      ];
+    cmd = ''
+      patchShebangs ./scripts
+      export FM_CARGO_DENY_COMPILATION=1
+
+      # check that all expected binaries are available
+      for i in lnd lightningd gatewayd devimint esplora electrs bitcoind faucet ; do
+         which $i
+      done
+
+      ./scripts/test-bridge-current.sh
+    '';
+  };
 
   testBridgeV1 = craneLib.buildCommand {
     pname = "fedi-test-bridge-v1";
