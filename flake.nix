@@ -14,7 +14,7 @@
     # TODO shaurya can probably remove once bridge is updated for 0.2
     # Fedimint at consensus version 1. This is used to test bridge against old federations
     fedi-v1 = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedi.git?ref=pre-0.2&rev=9abeacbd2d257c6fce66e450eedd24ff8a3eb36a";
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedi.git?ref=pre-0.2&rev=77eab0a8943e4af814e23831fc34cb197a3d5523";
     };
     # TODO shaurya can probably remove once bridge is updated for 0.2
     # Fedi at consensus version 0. This is used to test bridge against old federations
