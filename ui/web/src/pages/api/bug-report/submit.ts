@@ -24,20 +24,28 @@ export default async function handler(
     }
 
     try {
-        const jwt = new google.auth.GoogleAuth({
+        const clientId = process.env.GOOGLE_SHEETS_CLIENT_ID
+        const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL
+        const privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY
+        const spreadsheetId = process.env.GOOGLE_SHEETS_SHEET_ID
+        if (!clientId || !clientEmail || !privateKey || !spreadsheetId) {
+            throw new Error(
+                'Server incorrectly configured for bug report submission',
+            )
+        }
+
+        const auth = new google.auth.GoogleAuth({
             credentials: {
-                client_id: process.env.GOOGLE_SHEETS_CLIENT_ID,
-                client_email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
-                private_key: (
-                    process.env.GOOGLE_SHEETS_PRIVATE_KEY || ''
-                ).replace(/\\n/g, '\n'),
+                client_id: clientId,
+                client_email: clientEmail,
+                private_key: privateKey.replace(/\\n/g, '\n'),
             },
             scopes: ['https://www.googleapis.com/auth/spreadsheets'],
         })
         const sheets = google.sheets('v4')
         const sheetsRes = await sheets.spreadsheets.values.append({
-            auth: jwt,
-            spreadsheetId: process.env.GOOGLE_SHEETS_SHEET_ID,
+            auth,
+            spreadsheetId,
             valueInputOption: 'USER_ENTERED',
             insertDataOption: 'INSERT_ROWS',
             range: 'Sheet1!A:A',
