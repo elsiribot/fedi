@@ -3,11 +3,6 @@
 
 set -euo pipefail
 
-# easier to work with everything from root
-git_root="$(git rev-parse --show-toplevel)"
-cd "$git_root"
-
-set -euo pipefail
 export RUST_LOG="${RUST_LOG:-info}"
 export RUST_BACKTRACE=1
 export INCLUDE_STABILITY_POOL=1
