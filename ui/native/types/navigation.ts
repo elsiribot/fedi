@@ -47,6 +47,8 @@ export type RootStackParamList = {
     AddBroadcastAdmin: { groupId: string }
     BroadcastAdminsList: { groupId: string }
     BitcoinRequest: { uri: string }
+    BugReport: undefined
+    BugReportSuccess: undefined
     CameraPermission: { nextScreen: keyof RootStackParamList } | undefined
     ChatWallet: { recipientId: string }
     ChooseBackupMethod: undefined
