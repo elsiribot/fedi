@@ -52,34 +52,6 @@ pub trait RemotePriceSource: Debug + Send + Sync {
 }
 
 #[derive(Debug)]
-struct BlockchainComAPI;
-
-impl RemotePriceSource for BlockchainComAPI {
-    fn get_url(&self) -> Url {
-        "https://blockchain.info/ticker"
-            .parse()
-            .expect("blockchain.com API url must be valid")
-    }
-
-    fn extract_price_from_json_value(&self, json_value: serde_json::Value) -> anyhow::Result<u64> {
-        let float_price = json_value
-            .as_object()
-            .ok_or(anyhow!("Couldn't transform json value into object"))?
-            .get("USD")
-            .ok_or(anyhow!("Couldn't find key: USD at root level"))?
-            .as_object()
-            .ok_or(anyhow!("Couldn't transform USD key's value into object"))?
-            .get("last")
-            .ok_or(anyhow!("Couldn't find key: last inside USD object"))?
-            .as_f64()
-            .ok_or(anyhow!("Couldn't convert last USD value into float"))?;
-
-        // Convert to whole number of cents
-        Ok((float_price * 100.0) as u64)
-    }
-}
-
-#[derive(Debug)]
 struct CexIoAPI;
 
 impl RemotePriceSource for CexIoAPI {
@@ -105,60 +77,23 @@ impl RemotePriceSource for CexIoAPI {
 }
 
 #[derive(Debug)]
-struct CoinGeckoComAPI;
+struct YadioIoAPI;
 
-impl RemotePriceSource for CoinGeckoComAPI {
+impl RemotePriceSource for YadioIoAPI {
     fn get_url(&self) -> Url {
-        "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&precision=2"
+        "https://api.yadio.io/convert/1/BTC/USD"
             .parse()
-            .expect("coingecko.com API url must be valid")
+            .expect("yadio.io API url must be valid")
     }
 
     fn extract_price_from_json_value(&self, json_value: serde_json::Value) -> anyhow::Result<u64> {
         let float_price = json_value
             .as_object()
             .ok_or(anyhow!("Couldn't transform json value into object"))?
-            .get("bitcoin")
-            .ok_or(anyhow!("Couldn't find key: bitcoin at root level"))?
-            .as_object()
-            .ok_or(anyhow!(
-                "Couldn't transform value with key: bitcoin into object"
-            ))?
-            .get("usd")
-            .ok_or(anyhow!("Couldn't find key: usd inside bitcoin object"))?
+            .get("rate")
+            .ok_or(anyhow!("Couldn't find key: rate at root level"))?
             .as_f64()
-            .ok_or(anyhow!("Couldn't read key: usd as float"))?;
-
-        // Convert to whole number of cents
-        Ok((float_price * 100.0) as u64)
-    }
-}
-
-#[derive(Debug)]
-struct CoinbaseComAPI;
-
-impl RemotePriceSource for CoinbaseComAPI {
-    fn get_url(&self) -> Url {
-        "https://api.coinbase.com/v2/prices/BTC-USD/spot"
-            .parse()
-            .expect("coinbase.com API url must be valid")
-    }
-
-    fn extract_price_from_json_value(&self, json_value: serde_json::Value) -> anyhow::Result<u64> {
-        let float_price = json_value
-            .as_object()
-            .ok_or(anyhow!("Couldn't transform json value into object"))?
-            .get("data")
-            .ok_or(anyhow!("Couldn't find key: data at root level"))?
-            .as_object()
-            .ok_or(anyhow!(
-                "Couldn't transform value with key: data into object"
-            ))?
-            .get("amount")
-            .ok_or(anyhow!("Couldn't find key: amount inside data object"))?
-            .as_str()
-            .ok_or(anyhow!("Couldn't read value for key: amount as string"))?
-            .parse::<f64>()?;
+            .ok_or(anyhow!("Couldn't read value for key: rate as f64"))?;
 
         // Convert to whole number of cents
         Ok((float_price * 100.0) as u64)
@@ -199,10 +134,8 @@ pub struct AggregateOracle {
 impl AggregateOracle {
     pub fn new_with_default_sources() -> AggregateOracle {
         let sources: Vec<Box<dyn RemotePriceSource>> = vec![
-            Box::new(BlockchainComAPI),
             Box::new(CexIoAPI),
-            Box::new(CoinGeckoComAPI),
-            Box::new(CoinbaseComAPI),
+            Box::new(YadioIoAPI),
             Box::new(BitstampNetAPI),
         ];
         AggregateOracle {
