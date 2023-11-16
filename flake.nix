@@ -326,7 +326,7 @@
                   (oldAttrs: {
                     configureFlags = [ "--enable-developer" "--disable-valgrind" ];
                   } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-                    NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation";
+                    NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
                   })
               )
               fedi-v0.inputs.fedimint-build.packages.${system}.devimint

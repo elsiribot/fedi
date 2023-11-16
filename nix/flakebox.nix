@@ -235,7 +235,7 @@ rec {
             (oldAttrs: {
               configureFlags = [ "--enable-developer" "--disable-valgrind" ];
             } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-              NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation";
+              NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
             })
         )
         pkgs-v1.lnd
@@ -281,7 +281,7 @@ rec {
             (oldAttrs: {
               configureFlags = [ "--enable-developer" "--disable-valgrind" ];
             } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-              NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation";
+              NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
             })
         )
         pkgs-v0.lnd
