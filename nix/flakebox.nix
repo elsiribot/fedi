@@ -218,6 +218,11 @@ rec {
     ];
   };
 
+  testBridgeAll = pkgs.linkFarmFromDrvs "fedi-test-bridge-all" [
+    testBridgeV1
+    testBridgeV0
+  ];
+
   testBridgeV1 = craneLib.buildCommand {
     pname = "fedi-test-bridge-v1";
     cargoArtifacts = workspaceBuild;

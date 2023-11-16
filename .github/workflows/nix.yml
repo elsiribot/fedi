@@ -123,8 +123,7 @@ jobs:
 
             - name: Test bridge
               run: |
-                  nix build -L .#ci.testBridgeV1
-                  nix build -L .#ci.testBridgeV0
+                  nix build -L .#ci.testBridgeAll
 
     build-android:
         name: 'Build - android'
