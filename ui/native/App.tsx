@@ -32,10 +32,6 @@ const App = () => {
     const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(true)
     const [bridgeError, setBridgeError] = useState<unknown>()
 
-    async function requestPushNotificationPermissions() {
-        await notifee.requestPermission()
-    }
-
     // Initialize bridge
     useEffect(() => {
         async function onInitializeBridge() {
@@ -115,8 +111,6 @@ const App = () => {
             log.error('bridge panic', event)
             setBridgeError(event)
         })
-
-        requestPushNotificationPermissions()
 
         return () => {
             unsubscribeLog()

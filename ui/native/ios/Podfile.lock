@@ -650,6 +650,8 @@ PODS:
     - RNNotifee/NotifeeCore (= 7.8.0)
   - RNNotifee/NotifeeCore (7.8.0):
     - React-Core
+  - RNPermissions (3.10.1):
+    - React-Core
   - RNReanimated (3.3.0):
     - DoubleConversion
     - FBLazyVector
@@ -786,6 +788,7 @@ DEPENDENCIES:
   - RNGestureHandler (from `../../node_modules/react-native-gesture-handler`)
   - RNLocalize (from `../../node_modules/react-native-localize`)
   - "RNNotifee (from `../../node_modules/@notifee/react-native`)"
+  - RNPermissions (from `../../node_modules/react-native-permissions`)
   - RNReanimated (from `../../node_modules/react-native-reanimated`)
   - RNScreens (from `../../node_modules/react-native-screens`)
   - RNShare (from `../../node_modules/react-native-share`)
@@ -946,6 +949,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native-localize"
   RNNotifee:
     :path: "../../node_modules/@notifee/react-native"
+  RNPermissions:
+    :path: "../../node_modules/react-native-permissions"
   RNReanimated:
     :path: "../../node_modules/react-native-reanimated"
   RNScreens:
@@ -1051,6 +1056,7 @@ SPEC CHECKSUMS:
   RNGestureHandler: dec4645026e7401a0899f2846d864403478ff6a5
   RNLocalize: 5944c97d2fe8150913a51ddd5eab4e23a82bd80d
   RNNotifee: f3c01b391dd8e98e67f539f9a35a9cbcd3bae744
+  RNPermissions: 707a9f78fb822230222842bef232ec4d1515be18
   RNReanimated: f9fb828550a280ff692695ef08cf68ae6d5898d6
   RNScreens: 68fd1060f57dd1023880bf4c05d74784b5392789
   RNShare: ff0c1bddfff6fa0d2653312110384dc3109e7988
@@ -1062,6 +1068,6 @@ SPEC CHECKSUMS:
   Yoga: b76f1acfda8212aa16b7e26bcce3983230c82603
   YogaKit: f782866e155069a2cca2517aafea43200b01fd5a
 
-PODFILE CHECKSUM: 73c42f2fca9beab916f97d2a860781462d59ae68
+PODFILE CHECKSUM: 342a6926cb8923183d3d9524d9c2e6c7a7e37dc3
 
 COCOAPODS: 1.12.0

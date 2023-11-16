@@ -26,6 +26,9 @@ const shouldShowDefaultButtonBackground = (props: ButtonProps) => {
     ) {
         defaultBackground = false
     }
+    if (props.day) {
+        defaultBackground = false
+    }
     return defaultBackground
 }
 
@@ -102,6 +105,7 @@ const theme = createTheme({
                 paddingLeft: 10,
                 paddingRight: 10,
                 fontFamily: 'AlbertSans-Regular',
+                ...(props.day ? { color: theme.colors?.primary } : {}),
             },
             disabledStyle: {
                 opacity: 0.7,
@@ -131,6 +135,16 @@ const theme = createTheme({
                           colors: fediTheme.nightHoloAmbientGradient,
                           start: { x: 0, y: 0.75 },
                           end: { x: 1, y: 0.95 },
+                      },
+                  }
+                : {}),
+            ...(props.day
+                ? {
+                      ViewComponent: LinearGradient,
+                      linearGradientProps: {
+                          colors: fediTheme.dayLinearGradient,
+                          start: { x: 0, y: 0 },
+                          end: { x: 0, y: 1 },
                       },
                   }
                 : {}),

@@ -47,6 +47,7 @@ export type RootStackParamList = {
     AddBroadcastAdmin: { groupId: string }
     BroadcastAdminsList: { groupId: string }
     BitcoinRequest: { uri: string }
+    CameraPermission: { nextScreen: keyof RootStackParamList } | undefined
     ChatWallet: { recipientId: string }
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined
@@ -70,6 +71,9 @@ export type RootStackParamList = {
     JoinFederation: { invite?: string }
     MemberQrCode: undefined
     NewMessage: undefined
+    NotificationsPermission:
+        | { nextScreen: keyof RootStackParamList }
+        | undefined
     PersonalBackupGuidance: undefined
     PersonalBackupSuccess: undefined
     PersonalRecovery: undefined
