@@ -22,6 +22,9 @@ test-bridge-v0 testcase="":
 test-bridge-v1 testcase="":
    nix develop .#v1 --command ./scripts/test-bridge-v1.sh "{{testcase}}"
 
+test-bridge-current testcase="":
+   ./scripts/test-bridge-current.sh "{{testcase}}"
+
 test-bridge-all testcase="":
   ./scripts/test-bridge-all.sh "{{testcase}}"
 
