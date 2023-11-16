@@ -33,7 +33,7 @@ const ShortcutsList: React.FC<{}> = () => {
                 title: t('feature.bug.report-a-bug'),
                 screenName: 'BugReport',
                 icon: {
-                    image: FediModImages.default,
+                    image: FediModImages['bug-report'],
                 },
             }),
         ],
