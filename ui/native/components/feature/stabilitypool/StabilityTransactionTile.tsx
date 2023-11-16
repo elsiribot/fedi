@@ -1,17 +1,18 @@
-import { Text, Theme, useTheme } from '@rneui/themed'
+import { Avatar, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
-import { Transaction, TransactionDirection } from '@fedi/common/types'
+import { selectCurrency } from '@fedi/common/redux'
+import { StabilityPoolTxn } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
 
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import { useAppSelector } from '../../../state/hooks'
 
 type StabilityTransactionTileProps = {
-    txn: Transaction
-    selectTransaction: (txn: Transaction) => void
+    txn: StabilityPoolTxn
+    selectTransaction: (txn: StabilityPoolTxn) => void
 }
 
 const StabilityTransactionTile = ({
@@ -20,48 +21,49 @@ const StabilityTransactionTile = ({
 }: StabilityTransactionTileProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const selectedCurrency = useAppSelector(selectCurrency)
 
+    const style = styles(theme)
     return (
         <TouchableOpacity
             onPress={() => selectTransaction(txn)}
-            style={[styles(theme).container]}>
-            <View style={styles(theme).leftContainer}>
-                <SvgImage
-                    name="BitcoinCircle"
-                    color={theme.colors.green}
-                    size={SvgImageSize.md}
+            style={[style.container]}>
+            <View style={style.leftContainer}>
+                <Avatar
+                    size={theme.sizes.md}
+                    rounded
+                    title={selectedCurrency}
+                    titleStyle={style.currencyAvatarTitle}
+                    containerStyle={style.currencyAvatar}
                 />
             </View>
-            <View style={styles(theme).centerContainer}>
+            <View style={style.centerContainer}>
                 <Text>
                     {`${
-                        txn.direction === TransactionDirection.send
-                            ? t('words.sent')
-                            : t('words.received')
+                        txn.direction === 'deposit'
+                            ? t('words.deposit')
+                            : t('words.withdrawal')
                     }`}
                 </Text>
-                <Text small numberOfLines={1}>
-                    {txn.notes}
+                <Text small style={[style.subText]}>
+                    {txn.status === 'complete'
+                        ? t('words.complete')
+                        : `${t('words.pending')}...`}
                 </Text>
             </View>
 
-            <View style={styles(theme).rightContainer}>
-                <Text style={styles(theme).rightAlignedText}>
-                    {`${amountUtils.formatNumber(
-                        amountUtils.msatToSat(txn.amount),
-                    )} ${t('words.sats').toUpperCase()}`}
+            <View style={style.rightContainer}>
+                <Text style={style.rightAlignedText}>
+                    {`${amountUtils.formatFiat(
+                        txn.amountCents / 100,
+                        selectedCurrency,
+                    )} `}
                 </Text>
-                <Text
-                    small
-                    style={[
-                        styles(theme).rightAlignedText,
-                        styles(theme).subText,
-                    ]}>
-                    {`${dateUtils.formatTimestamp(
-                        txn.createdAt,
-                        'MMM dd, h:mmaaa',
-                    )}`}
-                </Text>
+                {txn.timestamp && (
+                    <Text small style={[style.rightAlignedText, style.subText]}>
+                        {`${dateUtils.formatTxnTileTimestamp(txn.timestamp)}`}
+                    </Text>
+                )}
             </View>
         </TouchableOpacity>
     )
@@ -81,6 +83,12 @@ const styles = (theme: Theme) =>
         },
         leftContainer: {
             flexShrink: 0,
+        },
+        currencyAvatar: {
+            backgroundColor: theme.colors.green,
+        },
+        currencyAvatarTitle: {
+            ...theme.styles.avatarText,
         },
         centerContainer: {
             flex: 1,

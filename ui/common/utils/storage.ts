@@ -19,9 +19,10 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
-        version: 8,
+        version: 9,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
+        stableBalanceEnabled: state.environment.stableBalanceEnabled,
         language: state.environment.language,
         amountInputType: state.environment.amountInputType,
         currency: state.currency.selectedFiatCurrency,
@@ -83,6 +84,7 @@ export function hasStorageStateChanged(
         ['environment', 'amountInputType'],
         ['environment', 'onchainDepositsEnabled'],
         ['environment', 'developerMode'],
+        ['environment', 'stableBalanceEnabled'],
         ['currency', 'selectedFiatCurrency'],
         ['currency', 'prices'],
         ['federation', 'activeFederationId'],
@@ -263,6 +265,15 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
             version: 8,
             btcUsdRate,
             fiatUsdRates: {},
+        }
+    }
+
+    // Version 8 -> 9
+    if (migrationState.version === 8) {
+        migrationState = {
+            ...migrationState,
+            version: 9,
+            stableBalanceEnabled: false,
         }
     }
 

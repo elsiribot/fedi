@@ -18,6 +18,17 @@ class DateUtils {
         const timestamp = fromUnixTime(unixSeconds)
         return format(timestamp, dateFormat)
     }
+    formatTxnTileTimestamp = (unixSeconds: number): string => {
+        const today = new Date()
+        const date = new Date(unixSeconds * 1000)
+
+        if (isSameDay(today, date)) {
+            // Show hour + minute if the timestamp is today
+            return this.formatTimestamp(unixSeconds, 'h:mmaaa')
+        }
+        // Otherwise show the full day + time
+        return this.formatTimestamp(unixSeconds, 'MMM dd, h:mmaaa')
+    }
     formatChatTileTimestamp = (unixSeconds: number): string => {
         const today = new Date()
         const date = new Date(unixSeconds * 1000)

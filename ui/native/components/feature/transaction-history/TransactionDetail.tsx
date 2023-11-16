@@ -11,10 +11,14 @@ import {
     View,
 } from 'react-native'
 
-import { Transaction, TransactionDirection } from '@fedi/common/types'
+import { Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
+import {
+    makeTxnDetailStatusText,
+    makeTxnDetailTitleText,
+} from '@fedi/common/utils/wallet'
 
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useBridge } from '../../../state/hooks'
@@ -52,77 +56,6 @@ const TransactionDetail = ({
     }
 
     const txnFee = txn.lightning?.fee || null
-
-    const renderTitle = () => {
-        if (txn.direction === TransactionDirection.send) {
-            return t('feature.send.you-sent')
-        }
-        if (txn.lightning) {
-            if (!txn.lnState) return `${t('phrases.receive-pending')}`
-            switch (txn.lnState.type) {
-                case 'waitingForPayment':
-                    return t('phrases.receive-pending')
-                case 'claimed':
-                    return t('feature.receive.you-received')
-                case 'canceled':
-                    return t('words.expired')
-                default:
-                    return t('phrases.receive-pending')
-            }
-        } else if (txn.bitcoin) {
-            switch (txn.onchainState?.type) {
-                case 'waitingForTransaction':
-                    return t('phrases.address-created')
-                case 'claimed':
-                    return t('feature.receive.you-received')
-                default:
-                    return t('phrases.receive-pending')
-            }
-        } else {
-            return t('feature.receive.you-received')
-        }
-    }
-
-    const renderStatus = () => {
-        if (txn.direction === TransactionDirection.send) {
-            return t('words.sent')
-        }
-        if (txn.lightning) {
-            if (!txn.lnState) {
-                return t('words.pending')
-            } else {
-                switch (txn.lnState.type) {
-                    case 'waitingForRefund':
-                        return t('feature.send.refund-in-block', {
-                            block: txn.lnState.block_height,
-                        })
-                    case 'waitingForPayment':
-                        return t('words.pending')
-                    case 'claimed':
-                        return t('words.complete')
-                    case 'canceled':
-                        return t('words.expired')
-                    default:
-                        return txn.lnState?.type!
-                }
-            }
-        } else if (txn.bitcoin) {
-            switch (txn.onchainState?.type) {
-                case 'waitingForTransaction':
-                    return t('words.pending')
-                case 'waitingForConfirmation':
-                    return t('words.seen')
-                case 'confirmed':
-                    return t('words.seen')
-                case 'claimed':
-                    return t('words.complete')
-                default:
-                    return txn.onchainState?.type!
-            }
-        } else {
-            return t('words.unknown')
-        }
-    }
 
     const renderTxnDetails = () => {
         if (txn.lightning) {
@@ -216,7 +149,9 @@ const TransactionDetail = ({
                 size={SvgImageSize.lg}
                 color={theme.colors.orange}
             />
-            <Text style={styles(theme).detailTitle}>{renderTitle()}</Text>
+            <Text style={styles(theme).detailTitle}>
+                {makeTxnDetailTitleText(t, txn)}
+            </Text>
             {txn.amount !== 0 && (
                 <Text h2>{`${amountUtils.formatNumber(
                     amountUtils.msatToSat(txn.amount),
@@ -251,7 +186,7 @@ const TransactionDetail = ({
                 <View>
                     <View style={styles(theme).detailItem}>
                         <Text>{`${t('words.status')}`}</Text>
-                        <Text>{renderStatus()}</Text>
+                        <Text>{makeTxnDetailStatusText(t, txn)}</Text>
                     </View>
                 </View>
                 <Divider />

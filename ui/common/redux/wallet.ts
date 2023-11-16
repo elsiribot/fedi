@@ -4,6 +4,7 @@ import {
     createAsyncThunk,
     createSelector,
 } from '@reduxjs/toolkit'
+import orderBy from 'lodash/orderBy'
 
 import {
     CommonState,
@@ -11,11 +12,13 @@ import {
     selectBtcExchangeRate,
     selectBtcUsdExchangeRate,
 } from '.'
-import { Federation, MSats, UsdCents } from '../types'
+import { Federation, MSats, StabilityPoolTxn, Usd, UsdCents } from '../types'
 import {
     RpcAmount,
     RpcLockedSeek,
     RpcStabilityPoolAccountInfo,
+    StabilityPoolDepositEvent,
+    StabilityPoolWithdrawalEvent,
 } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import { FedimintBridge } from '../utils/fedimint'
@@ -142,14 +145,36 @@ export const increaseStableBalance = createAsyncThunk<
     { state: CommonState }
 >(
     'wallet/increaseStableBalance',
-    async ({ fedimint, amount }, { getState }) => {
+    async ({ fedimint, amount }, { dispatch, getState }) => {
         try {
             const state = getState()
             const activeFederationId = selectActiveFederation(state)?.id
             if (!activeFederationId) throw new Error('No active federation')
-            await fedimint.stabilityPoolDepositToSeek(
+            const operationId = await fedimint.stabilityPoolDepositToSeek(
                 amount,
                 activeFederationId,
+            )
+
+            // Refresh stability pool account info when the deposit completes
+
+            const unsubscribeOperation = fedimint.addListener(
+                'stabilityPoolDeposit',
+                (event: StabilityPoolDepositEvent) => {
+                    if (
+                        event.federationId === activeFederationId &&
+                        event.operationId === operationId
+                    ) {
+                        dispatch(refreshActiveStabilityPool({ fedimint }))
+                        if (event.state === 'success') {
+                            unsubscribeOperation()
+                        } else if (
+                            typeof event.state === 'object' &&
+                            'txRejected' in event.state
+                        ) {
+                            unsubscribeOperation()
+                        }
+                    }
+                },
             )
             return true
         } catch (error) {
@@ -164,7 +189,7 @@ export const decreaseStableBalance = createAsyncThunk<
     { state: CommonState }
 >(
     'wallet/decreaseStableBalance',
-    async ({ fedimint, amount }, { getState }) => {
+    async ({ fedimint, amount }, { dispatch, getState }) => {
         try {
             const state = getState()
             const activeFederationId = selectActiveFederation(state)?.id
@@ -202,12 +227,32 @@ export const decreaseStableBalance = createAsyncThunk<
                     ).toFixed(0),
                 )
             }
-
-            await fedimint.stabilityPoolWithdraw(
+            const operationId = await fedimint.stabilityPoolWithdraw(
                 lockedBps,
                 unlockedAmount,
                 activeFederationId,
             )
+            // Refresh stability pool account info when the withdrawal completes
+            const unsubscribeOperation = fedimint.addListener(
+                'stabilityPoolWithdrawal',
+                (event: StabilityPoolWithdrawalEvent) => {
+                    if (
+                        event.federationId === activeFederationId &&
+                        event.operationId === operationId
+                    ) {
+                        dispatch(refreshActiveStabilityPool({ fedimint }))
+                        if (event.state === 'success') {
+                            unsubscribeOperation()
+                        } else if (
+                            typeof event.state === 'object' &&
+                            'txRejected' in event.state
+                        ) {
+                            unsubscribeOperation()
+                        }
+                    }
+                },
+            )
+
             return true
         } catch (error) {
             return false
@@ -329,10 +374,92 @@ export const selectStableBalancePending = createSelector(
 
 export const selectStabilityTransactionHistory = createSelector(
     selectStabilityPoolAccountInfo,
-    stabilityPoolAccountInfo => {
+    (s: CommonState) => selectBtcExchangeRate(s),
+    (s: CommonState) => selectBtcUsdExchangeRate(s),
+    selectTotalLockedSeeksFiat,
+    (
+        stabilityPoolAccountInfo,
+        btcExchangeRate,
+        _usdExchangeRate,
+        totalLockedSeeksFiat,
+    ) => {
         if (!stabilityPoolAccountInfo) return []
+        const history: StabilityPoolTxn[] = []
+        const { lockedSeeks, stagedSeeks, stagedCancellation } =
+            stabilityPoolAccountInfo
 
-        return []
+        let completedWithdrawalsCents = 0 as UsdCents
+        // Check stagedSeeks for pending deposits
+        stagedSeeks.map((ss: MSats, i: number) => {
+            const usdAmount = amountUtils.msatToFiat(ss, btcExchangeRate)
+            const usdAmountCents = Number((usdAmount * 100).toFixed(2))
+
+            history.push({
+                id: `ss-${i}`,
+                timestamp: null,
+                amountCents: usdAmountCents as UsdCents,
+                amountUsd: usdAmount as Usd,
+                direction: 'deposit',
+                status: 'pending',
+            })
+        })
+        // All lockedSeeks are completed deposits. When a lockedSeek has been fully withdrawn will no longer be returned in stabilityPoolAccountInfo
+        lockedSeeks.map((ls: RpcLockedSeek, i: number) => {
+            history.push({
+                id: `lsd-${i}`,
+                timestamp: ls.firstLockStartTime,
+                amountCents: ls.initialAmountCents as UsdCents,
+                amountUsd: Number(
+                    (ls.initialAmountCents / 100).toFixed(2),
+                ) as Usd,
+                direction: 'deposit',
+                status: 'complete',
+            })
+            // Tally up the withdrawn amounts from each seek
+            if (ls.withdrawnAmountCents > 0) {
+                completedWithdrawalsCents = (completedWithdrawalsCents +
+                    ls.withdrawnAmountCents) as UsdCents
+            }
+        })
+
+        // TODO: Figure out how to display individual withdrawals by reconciling this data with listTransactions RPC... for now we aggregate:
+        //  Display 1 aggregate transaction representing all withdrawals
+        if (completedWithdrawalsCents > 0) {
+            const withdrawnUsd = Number(
+                (completedWithdrawalsCents / 100).toFixed(2),
+            )
+            history.push({
+                id: `completed-withdrawal`,
+                timestamp: null,
+                amountCents: completedWithdrawalsCents as UsdCents,
+                amountUsd: withdrawnUsd as Usd,
+                direction: 'withdraw',
+                status: 'complete',
+            })
+        }
+        //  Display 1 aggregate transaction representing all pending withdrawals
+        if (stagedCancellation) {
+            const cancelledFraction = Number(
+                (stagedCancellation / 10000).toFixed(4),
+            )
+            const pendingWithdrawalUsd = Number(
+                (totalLockedSeeksFiat * cancelledFraction).toFixed(2),
+            )
+            const pendingWithdrawalCents = Number(
+                (pendingWithdrawalUsd * 100).toFixed(0),
+            )
+            history.push({
+                id: `pending-withdrawal`,
+                timestamp: null,
+                amountCents: pendingWithdrawalCents as UsdCents,
+                amountUsd: pendingWithdrawalUsd as Usd,
+                direction: 'withdraw',
+                status: 'pending',
+            })
+        }
+
+        // orders by timestamp with null timestamps at the top
+        return orderBy(history, 'timestamp', 'desc')
     },
 )
 

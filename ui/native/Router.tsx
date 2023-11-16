@@ -147,12 +147,14 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator<MainNavigatorDrawerParamList>()
 
 const MainNavigator = () => {
+    const { theme } = useTheme()
     const activeFederation = useAppSelector(selectActiveFederation)
 
     return (
         <Stack.Navigator
             screenOptions={{
                 orientation: 'portrait',
+                navigationBarColor: theme.colors.white,
             }}
             initialRouteName={'Initializing'}
             id={MAIN_NAVIGATOR_ID}>
@@ -420,6 +422,7 @@ const MainNavigator = () => {
                                 name="FederationInvite"
                                 component={FederationInvite}
                                 options={() => ({
+                                    navigationBarColor: theme.colors.night,
                                     header: () => <FederationInviteHeader />,
                                 })}
                             />

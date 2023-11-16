@@ -181,7 +181,7 @@ const styles = (theme: Theme) =>
             flexDirection: 'column',
         },
         button: {
-            marginTop: theme.spacing.sm,
+            marginTop: theme.spacing.lg,
         },
         buttonText: {
             color: theme.colors.secondary,

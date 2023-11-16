@@ -12,7 +12,7 @@ if [[ "$BUILD_BRIDGE" == "0" ]]; then
   echo "Skipping bridge build..."
 else
   echo "Rebuilding Android bridge with release profile"
-  CARGO_PROFILE=release $REPO_ROOT/scripts/bridge/build-bridge-android.sh
+  BUILD_ALL_BRIDGE_TARGETS=1 CARGO_PROFILE=release $REPO_ROOT/scripts/bridge/build-bridge-android.sh
 fi
 
 if [[ "$BUILD_UI_DEPS" == "0" ]]; then

@@ -95,6 +95,11 @@ export interface StoredStateV8
     fiatUsdRates: Record<string, number | undefined>
 }
 
+export interface StoredStateV9 extends Omit<StoredStateV8, 'version'> {
+    version: 9
+    stableBalanceEnabled: boolean
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -106,9 +111,10 @@ export type AnyStoredState =
     | StoredStateV6
     | StoredStateV7
     | StoredStateV8
+    | StoredStateV9
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV8
+export type LatestStoredState = StoredStateV9
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

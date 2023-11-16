@@ -157,13 +157,13 @@
             just.rules.clippy.content = lib.mkForce ''
               # run `cargo clippy` on everything
               clippy *ARGS="--locked --offline --all-targets":
+                cargo clippy --package fedi-fedimintd --package fedi-fedimint-cli {{ARGS}}
                 cargo clippy --package fedi-ffi {{ARGS}}
-                cargo clippy --package fedi-wasm {{ARGS}} --target wasm32-unknown-unknown
+                cargo clippy --package fedi-wasm --target wasm32-unknown-unknown {{ARGS}}
 
               # run `cargo clippy --fix` on everything
               clippy-fix *ARGS="--locked --offline --all-targets":
-                cargo clippy --package fedi-ffi {{ARGS}} --fix
-                cargo clippy --package fedi-wasm {{ARGS}} --fix --target wasm32-unknown-unknown
+                just clippy {{ARGS}} --fix
             '';
             typos.pre-commit.enable = false;
             git.pre-commit.trailing_newline = false;
@@ -192,7 +192,7 @@
         };
 
         craneMultiBuild = import nix/flakebox.nix {
-          inherit pkgs pkgs-unstable flakeboxLib fedi-v1 fedi-v0 fedimint-build fedimint-pkgs toolchains replaceGitHash;
+          inherit pkgs pkgs-unstable flakeboxLib fedi-v1 fedi-v0 fedimint-build fedimint-pkgs toolchains replaceGitHash pkgs-kitman;
         };
 
         lib = pkgs.lib;
@@ -312,12 +312,23 @@
           });
           v1 = fedi-v1.devShells.${system}.default.overrideAttrs (prev: {
             nativeBuildInputs = [
+              fedi-v1.inputs.fedimint-build.packages.${system}.devimint
+              fedi-v1.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
               fedi-v1.packages.${system}.fedi-fedimint-pkgs
             ]
             ++ prev.nativeBuildInputs;
           });
           v0 = fedi-v1.devShells.${system}.default.overrideAttrs (prev: {
             nativeBuildInputs = [
+              # Get compatible lightningd from fedi-v0
+              (
+                (import fedi-v0.inputs.nixpkgs { inherit system; }).clightning.overrideAttrs
+                  (oldAttrs: {
+                    configureFlags = [ "--enable-developer" "--disable-valgrind" ];
+                  } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
+                    NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
+                  })
+              )
               fedi-v0.inputs.fedimint-build.packages.${system}.devimint
               fedi-v0.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
               fedi-v0.inputs.fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs

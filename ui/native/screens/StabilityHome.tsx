@@ -11,7 +11,7 @@ import {
     selectStableBalance,
     selectStableBalancePending,
 } from '@fedi/common/redux'
-import { makePendingBalanceText } from '@fedi/common/utils/stabilitypool'
+import { makePendingBalanceText } from '@fedi/common/utils/wallet'
 
 import { useAppSelector, useStabilityPool } from '../state/hooks'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'

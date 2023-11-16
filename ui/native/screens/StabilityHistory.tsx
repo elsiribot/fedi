@@ -1,10 +1,16 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
 
+import {
+    refreshActiveStabilityPool,
+    selectStabilityTransactionHistory,
+} from '@fedi/common/redux'
+
+import { fedimint } from '../bridge'
 import StabilityTransactionsList from '../components/feature/stabilitypool/StabilityTransactionsList'
-import { Transaction } from '../types'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -14,25 +20,18 @@ export type Props = NativeStackScreenProps<
 
 const StabilityHistory: React.FC<Props> = () => {
     const { t } = useTranslation()
-    // const { listTransactions } = useBridge()
-    const [isLoading] = useState(false)
-    // const [isLoading, setIsLoading] = useState(false)
-    // TODO: Hoist this into context so we can easily update individual
-    // transactions and not have to refreshTransactions on every notes update
-    const [transactionsList] = useState<Transaction[]>([])
-    // const [transactionsList, setTransactionsList] = useState<Transaction[]>([])
+    const [isLoading, setIsLoading] = useState(false)
+    const transactionsList = useAppSelector(selectStabilityTransactionHistory)
+    const dispatch = useAppDispatch()
 
-    // const getTransactionsList = useCallback(async () => {
-    //     const fetchedTransactions = await listTransactions()
-    //     console.info('fetchedTransactions', fetchedTransactions.length)
-    //     setTransactionsList(fetchedTransactions)
-    // }, [listTransactions])
+    const refreshStabilityPoolHistory = useCallback(async () => {
+        dispatch(refreshActiveStabilityPool({ fedimint }))
+    }, [dispatch])
 
-    // useEffect(() => {
-    //     setIsLoading(true)
-    //     getTransactionsList()
-    //     setIsLoading(false)
-    // }, [getTransactionsList])
+    useEffect(() => {
+        refreshStabilityPoolHistory()
+        setIsLoading(false)
+    }, [dispatch, refreshStabilityPoolHistory])
 
     if (isLoading) return <ActivityIndicator />
 
@@ -43,8 +42,7 @@ const StabilityHistory: React.FC<Props> = () => {
             ) : (
                 <StabilityTransactionsList
                     transactions={transactionsList}
-                    refreshTransactions={() => {}}
-                    // refreshTransactions={getTransactionsList}
+                    refreshTransactions={refreshStabilityPoolHistory}
                 />
             )}
         </View>

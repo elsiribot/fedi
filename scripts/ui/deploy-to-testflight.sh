@@ -13,7 +13,7 @@ if [[ "$BUILD_BRIDGE" == "0" ]]; then
   echo "Skipping bridge build..."
 else
   echo "Rebuilding iOS bridge with release profile"
-  CARGO_PROFILE=release $REPO_ROOT/scripts/bridge/build-bridge-ios.sh
+  BUILD_ALL_BRIDGE_TARGETS=1 CARGO_PROFILE=release $REPO_ROOT/scripts/bridge/build-bridge-ios.sh
 fi
 
 if [[ "$BUILD_UI_DEPS" == "0" ]]; then
@@ -33,9 +33,9 @@ fi
 # First, delete DerivedData to remove outdated build artifacts
 echo "Deleting DerivedData for a clean build directory..."
 if [[ -n "$CI" ]]; then
-  rm -Rf /Users/runner/Library/Developer/Xcode/DerivedData
+  rm -rf /Users/runner/Library/Developer/Xcode/DerivedData
 else
-  rm -Rf ~/Library/Developer/Xcode/DerivedData
+  rm -rf ~/Library/Developer/Xcode/DerivedData
 fi
 
 pushd $REPO_ROOT/ui/native/ios
