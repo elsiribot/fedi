@@ -13692,6 +13692,11 @@ react-native-hyperlink@0.0.22:
     linkify-it "^4.0.1"
     mdurl "^1.0.1"
 
+react-native-image-picker@^7.0.2:
+  version "7.0.2"
+  resolved "https://registry.yarnpkg.com/react-native-image-picker/-/react-native-image-picker-7.0.2.tgz#41eb49e7d808752ef448e26d256036470252936d"
+  integrity sha512-2Y+TMzv2l32IikqYpj4WOqkYvv42SXkSvL9zAo0XdhA3Rbe3lc0Oz12KlR6M2bGh8RxXz5lUrs+9mxy/GpcLIg==
+
 react-native-linear-gradient@2.7.3:
   version "2.7.3"
   resolved "https://registry.yarnpkg.com/react-native-linear-gradient/-/react-native-linear-gradient-2.7.3.tgz#f77b71ed7c955e033f9cba5fc8478df57953eb27"
