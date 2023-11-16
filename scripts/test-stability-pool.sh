@@ -3,6 +3,7 @@
 
 set -euo pipefail
 
+export HOME="/tmp"
 export RUST_LOG="${RUST_LOG:-info}"
 export RUST_BACKTRACE=1
 export INCLUDE_STABILITY_POOL=1
@@ -19,4 +20,4 @@ ln -s "$FM_LOGS_DIR" target/logs || true
 rm target/test || true
 ln -s "$FM_TEST_DIR" target/test || true
 
-cargo nextest run --no-capture -E 'package(stability-pool-tests)'
+cargo nextest run  ${CARGO_PROFILE:+--cargo-profile ${CARGO_PROFILE}} ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -E 'package(stability-pool-tests)'
