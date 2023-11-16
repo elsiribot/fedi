@@ -556,27 +556,27 @@ impl StabilityPoolClientExt for ClientArc {
                         },
                     }
 
-                    let next_cycle_start_time = loop {
-                        match client.next_cycle_start_time().await {
-                            Ok(start_time_secs) => break start_time_secs,
-                            Err(_) => fedimint_core::task::sleep(Duration::from_secs(60)).await,
-                        }
-                    };
-
-                    match SystemTime::now().duration_since(UNIX_EPOCH) {
-                        Ok(curr_time) => fedimint_core::task::sleep(
-                            Duration::from_secs(next_cycle_start_time - curr_time.as_secs())
-                        ).await,
-                        Err(e) => {
-                            yield StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e.to_string());
-                            return
-                        },
-                    }
-
                     let idle_balance = loop {
                         match client.account_info().await {
                             Ok(AccountInfo { idle_balance, .. }) if idle_balance > Amount::ZERO => break idle_balance,
-                            _ => fedimint_core::task::sleep(Duration::from_secs(60)).await
+                            _ => {
+                                let next_cycle_start_time = loop {
+                                    match client.next_cycle_start_time().await {
+                                        Ok(start_time_secs) => break start_time_secs + 10, // 10s buffer
+                                        Err(_) => fedimint_core::task::sleep(Duration::from_secs(60)).await,
+                                    }
+                                };
+
+                                match SystemTime::now().duration_since(UNIX_EPOCH) {
+                                    Ok(curr_time) => fedimint_core::task::sleep(
+                                        Duration::from_secs(next_cycle_start_time - curr_time.as_secs())
+                                    ).await,
+                                    Err(e) => {
+                                        yield StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e.to_string());
+                                        return
+                                    },
+                                }
+                            }
                         }
                     };
 
