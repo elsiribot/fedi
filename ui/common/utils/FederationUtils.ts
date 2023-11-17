@@ -171,7 +171,7 @@ export const getSupportedFeatures = (
 
 export const getFederationDefaultCurrency = (
     metadata: ClientConfigMetadata,
-): SupportedCurrency | null | undefined => {
+): SupportedCurrency | null => {
     const supportedFeatures = getSupportedFeatures(
         metadata as ClientConfigMetadata,
     )
