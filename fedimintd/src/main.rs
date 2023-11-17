@@ -19,6 +19,7 @@ async fn main() -> anyhow::Result<()> {
         .with_extra_module_inits_params(3, fedi_social_common::KIND, FediSocialGenParams::new());
 
     if include_stability_pool {
+        let use_test_params = std::env::var("USE_STABILITY_POOL_TEST_PARAMS").is_ok();
         fedimintd = fedimintd
             .with_module(StabilityPoolGen)
             .with_extra_module_inits_params(
@@ -27,9 +28,12 @@ async fn main() -> anyhow::Result<()> {
                 StabilityPoolGenParams {
                     local: Default::default(),
                     consensus: StabilityPoolGenParamsConsensus {
-                        // oracle_config: OracleConfig::Aggregate, // switch oracle when not testing
-                        oracle_config: OracleConfig::Mock,
-                        cycle_duration: Duration::from_secs(15),
+                        oracle_config: if use_test_params {
+                            OracleConfig::Mock
+                        } else {
+                            OracleConfig::Aggregate
+                        },
+                        cycle_duration: Duration::from_secs(if use_test_params { 15 } else { 600 }),
                         collateral_ratio: CollateralRatio {
                             provider: 1,
                             seeker: 1,

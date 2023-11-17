@@ -2,7 +2,7 @@ pub mod api;
 pub mod db;
 pub mod oracle;
 use std::collections::{BTreeMap, VecDeque};
-use std::time::SystemTime;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::bail;
 use async_trait::async_trait;
@@ -41,8 +41,6 @@ use fedimint_core::{Amount, NumPeers, OutPoint, PeerId, ServerModule};
 use futures::{stream, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
-use rand::{Rng, SeedableRng};
-use rand_chacha::ChaCha20Rng;
 pub use stability_pool_common as common;
 use tracing::info;
 
@@ -280,9 +278,14 @@ impl ServerModule for StabilityPool {
         cycle_change_votes.sort_unstable_by_key(|vote| vote.price);
         let new_price = cycle_change_votes[cycle_change_votes.len() / 2].price;
 
-        // Seed PRNG from next_cycle_index to ensure every guardian can generate
-        // randomness deterministically
-        let mut rng = ChaCha20Rng::seed_from_u64(next_cycle_index);
+        // Use value derived from cycle start time as randomness.
+        // This will be the same for all the guardians.
+        // We avoid using a seedable PRNG as its behavior could implicitly
+        // change depending on rust compiler / stdlib version.
+        let randomness = new_time
+            .duration_since(UNIX_EPOCH)
+            .expect("Consensus cycle time must be after EPOCH")
+            .subsec_nanos() as usize;
 
         // When threshold reached:
         //  If current_cycle exists
@@ -298,7 +301,7 @@ impl ServerModule for StabilityPool {
                 &mut current_cycle.locked_provides,
                 current_cycle.start_price.into(),
                 new_price.into(),
-                &mut rng,
+                randomness,
             );
             apply_staged_cancellations(
                 dbtx,
@@ -324,7 +327,7 @@ impl ServerModule for StabilityPool {
             next_cycle_index,
             new_time,
             new_price,
-            &mut rng,
+            randomness,
         )
         .await;
         dbtx.remove_by_prefix(&vote_cycle_index_prefix).await;
@@ -676,7 +679,7 @@ fn settle_locks(
     locked_provides: &mut BTreeMap<XOnlyPublicKey, Vec<LockedProvide>>,
     start_price: u128,
     new_price: u128,
-    rng: &mut impl Rng,
+    randomness: usize,
 ) {
     let total_seek_msats = locked_seeks
         .values()
@@ -717,7 +720,7 @@ fn settle_locks(
     // we allot them to an arbitrary seek.
     if draining_seeks_msat_pool != 0 {
         let mut seeks_vec = locked_seeks.values_mut().flatten().collect_vec();
-        let rand_index = rng.gen::<usize>() % seeks_vec.len();
+        let rand_index = randomness % seeks_vec.len();
         if let Some(LockedSeek { amount, .. }) = seeks_vec.get_mut(rand_index) {
             amount.msats += draining_seeks_msat_pool as u64; // Guaranteed to
                                                              // fit in u64
@@ -740,7 +743,7 @@ fn settle_locks(
     // we allot them to an arbitrary provide.
     if draining_provides_msat_pool != 0 {
         let mut provides_vec = locked_provides.values_mut().flatten().collect_vec();
-        let rand_index = rng.gen::<usize>() % provides_vec.len();
+        let rand_index = randomness % provides_vec.len();
         if let Some(LockedProvide { amount, .. }) = provides_vec.get_mut(rand_index) {
             amount.msats += draining_provides_msat_pool as u64; // Guaranteed to
                                                                 // fit in u64
@@ -938,7 +941,7 @@ async fn calculate_locks_and_write_cycle(
     index: u64,
     time: SystemTime,
     price: u64,
-    rng: &mut impl Rng,
+    randomness: usize,
 ) {
     let (mut staged_seeks, mut staged_provides) =
         extract_sorted_staged_seeks_and_provides(dbtx).await;
@@ -973,7 +976,7 @@ async fn calculate_locks_and_write_cycle(
         index,
         time,
         price,
-        rng,
+        randomness,
     )
     .await;
 }
@@ -1176,7 +1179,7 @@ async fn distribute_fees_and_write_cycle(
     cycle_index: u64,
     cycle_time: SystemTime,
     cycle_price: u64,
-    rng: &mut impl Rng,
+    randomness: usize,
 ) {
     struct AmountAndFee {
         amount: Amount,
@@ -1260,7 +1263,7 @@ async fn distribute_fees_and_write_cycle(
     // If there's any fee left due to rounding errors, give it to arbitrary provider
     if draining_fee_pool != 0 {
         let mut fee_owed_vec = provider_fee_owed_map.values_mut().collect_vec();
-        let rand_index = rng.gen::<usize>() % fee_owed_vec.len();
+        let rand_index = randomness % fee_owed_vec.len();
         if let Some(amount) = fee_owed_vec.get_mut(rand_index) {
             **amount += draining_fee_pool;
         }

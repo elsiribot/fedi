@@ -7,6 +7,7 @@ export HOME="/tmp"
 export RUST_LOG="${RUST_LOG:-info}"
 export RUST_BACKTRACE=1
 export INCLUDE_STABILITY_POOL=1
+export USE_STABILITY_POOL_TEST_PARAMS=1
 source ./scripts/build.sh ""
 
 # needs the compiled binaries in the PATH
