@@ -15,6 +15,7 @@ import {
     updateFederation,
     updateFederationBalance,
 } from './federation'
+import { nuxSlice } from './nux'
 import { loadFromStorage, saveToStorage, storageSlice } from './storage'
 import { toastSlice } from './toast'
 import { walletSlice } from './wallet'
@@ -25,6 +26,7 @@ export * from './chat'
 export * from './currency'
 export * from './environment'
 export * from './federation'
+export * from './nux'
 export * from './toast'
 export * from './wallet'
 
@@ -33,6 +35,7 @@ export const commonReducers = {
     currency: currencySlice.reducer,
     environment: environmentSlice.reducer,
     federation: federationSlice.reducer,
+    nux: nuxSlice.reducer,
     storage: storageSlice.reducer,
     toast: toastSlice.reducer,
     wallet: walletSlice.reducer,
