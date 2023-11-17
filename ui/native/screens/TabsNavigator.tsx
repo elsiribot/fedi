@@ -2,13 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { useIsFocused } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, {
-    MutableRefObject,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react'
+import React, { MutableRefObject, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     AppState,
@@ -30,10 +24,8 @@ import {
     refreshActiveStabilityPool,
     refreshFederations,
     selectActiveFederation,
-    selectAllChatMessages,
-    selectChatLastSeenMessageId,
+    selectHasUnseenMessages,
 } from '@fedi/common/redux'
-import { getLatestMessage } from '@fedi/common/utils/chat'
 
 import { fedimint } from '../bridge'
 import ChatHeader from '../components/feature/chat/ChatHeader'
@@ -68,8 +60,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     const [offline] = useState(false)
     const { toast } = useEnvironmentContext().state
     const canChat = useIsChatSupported()
-    const lastSeenMessageId = useAppSelector(selectChatLastSeenMessageId)
-    const messages = useAppSelector(selectAllChatMessages)
+    const hasUnseenMessages = useAppSelector(selectHasUnseenMessages)
     const activeFederation = useAppSelector(selectActiveFederation)
     const isStabilityPoolSupported = useIsStabilityPoolSupported()
     const popupInfo = usePopupFederationInfo()
@@ -108,13 +99,6 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
         )
         return () => subscription.remove()
     }, [dispatch, isStabilityPoolSupported])
-
-    // Check if our last seen message doesn't line up with the last message
-    const hasUnseenMessages = useMemo(() => {
-        if (!messages.length) return false
-        const lastMessage = getLatestMessage(messages)
-        return !!lastMessage && lastMessage.id !== lastSeenMessageId
-    }, [messages, lastSeenMessageId])
 
     // If we don't have a selected federation, there's nothing to display here
     // Redirect user to splash screen and render nothing.
