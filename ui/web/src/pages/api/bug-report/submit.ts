@@ -4,8 +4,10 @@ import { z } from 'zod'
 
 const schema = z.object({
     id: z.string(),
-    email: z.string().optional(),
     description: z.string(),
+    email: z.string().optional(),
+    federationName: z.string().optional(),
+    username: z.string().optional(),
 })
 
 export default async function handler(
@@ -55,6 +57,8 @@ export default async function handler(
                     [
                         body.data.id,
                         new Date().toUTCString(),
+                        body.data.federationName,
+                        body.data.username,
                         body.data.email,
                         body.data.description,
                     ],
