@@ -54,13 +54,19 @@ impl NeedTranslation for anyhow::Error {}
 
 impl Translate<fedimint_core_v1::config::FederationId> for fedimint_core_v0::config::FederationId {
     fn translate(self) -> fedimint_core_v1::config::FederationId {
-        fedimint_core_v1::config::FederationId(self.0)
+        fedimint_core_v1::config::FederationId(
+            fedimint_threshold_crypto::PublicKey::from_bytes(self.0.to_bytes())
+                .expect("threshold_crypto::PublicKey bytes must be stable"),
+        )
     }
 }
 
 impl Translate<fedimint_core_v0::config::FederationId> for fedimint_core_v1::config::FederationId {
     fn translate(self) -> fedimint_core_v0::config::FederationId {
-        fedimint_core_v0::config::FederationId(self.0)
+        fedimint_core_v0::config::FederationId(
+            threshold_crypto::PublicKey::from_bytes(self.0.to_bytes())
+                .expect("threshold_crypto::PublicKey bytes must be stable"),
+        )
     }
 }
 

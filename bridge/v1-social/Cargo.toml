@@ -8,8 +8,8 @@ edition = "2021"
 [dependencies]
 anyhow = "1"
 bitcoin = "0.29.2"
-fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "d3c3c91c8b54f289c09f80f38c6139136b9d8bdf" }
+fedimint-core = { git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
 serde = { version = "1.0.142", features = [ "derive" ] }
 fedi-social-client-v1 = { workspace = true }
-threshold_crypto = { workspace = true }
+fedimint_threshold_crypto = { workspace = true }
 v1-rocksdb = { path = "../v1-rocksdb" }
