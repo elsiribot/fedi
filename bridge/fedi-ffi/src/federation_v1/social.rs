@@ -210,7 +210,7 @@ impl SocialRecovery {
     async fn download_decryption_share_from(
         &self,
         peer_id: PeerId,
-    ) -> anyhow::Result<Option<threshold_crypto::DecryptionShare>> {
+    ) -> anyhow::Result<Option<fedimint_threshold_crypto::DecryptionShare>> {
         let encrypted_share = self
             .api
             .request_raw(

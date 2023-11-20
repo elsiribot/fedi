@@ -82,16 +82,19 @@ pub struct SocialRecoveryState {
     pub signing_sk: SerdeEncodable<secp256k1::SecretKey>,
     pub encryption_key: [u8; 32],
     pub double_encrypted_seed: DoubleEncryptedData,
-    pub recovery_session_decryption_key:
-        SerdeEncodable<threshold_crypto::serde_impl::SerdeSecret<threshold_crypto::SecretKey>>,
-    pub shares: BTreeMap<PeerId, SerdeEncodable<threshold_crypto::DecryptionShare>>,
+    pub recovery_session_decryption_key: SerdeEncodable<
+        fedimint_threshold_crypto::serde_impl::SerdeSecret<fedimint_threshold_crypto::SecretKey>,
+    >,
+    pub shares: BTreeMap<PeerId, SerdeEncodable<fedimint_threshold_crypto::DecryptionShare>>,
 }
 
 impl SocialRecoveryState {
     pub fn new(recovery_file: RecoveryFile) -> Self {
         Self {
             recovery_session_decryption_key: SerdeEncodable(
-                threshold_crypto::serde_impl::SerdeSecret(threshold_crypto::SecretKey::random()),
+                fedimint_threshold_crypto::serde_impl::SerdeSecret(
+                    fedimint_threshold_crypto::SecretKey::random(),
+                ),
             ),
             signing_sk: recovery_file.signing_sk,
             encryption_key: recovery_file.encryption_key,
