@@ -336,7 +336,7 @@ rec {
       for i in lnd lightningd gatewayd devimint esplora electrs bitcoind faucet ; do
          which $i
       done
-      ./scripts/test-bridge-v1.inner.sh
+      ./scripts/test-bridge-v1.sh
     '';
   };
 
