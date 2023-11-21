@@ -344,15 +344,17 @@ export const chatSlice = createSlice({
             action: FederationPayloadAction<{
                 chatId: string
                 messageId: string
+                updatedAt: number | undefined
             }>,
         ) {
-            const { federationId, chatId, messageId } = action.payload
+            const { federationId, chatId, messageId, updatedAt } =
+                action.payload
             const federation = getFederationChatState(state, federationId)
             state[federationId] = {
                 ...federation,
                 lastReadPaymentUpdateIds: {
                     ...federation.lastReadPaymentUpdateIds,
-                    [chatId]: messageId,
+                    [chatId]: `${messageId}_${updatedAt || 0}`,
                 },
             }
         },
@@ -369,13 +371,16 @@ export const chatSlice = createSlice({
         },
         setLastSeenPaymentUpdateId(
             state,
-            action: FederationPayloadAction<{ messageId: string }>,
+            action: FederationPayloadAction<{
+                messageId: string
+                updatedAt: number | undefined
+            }>,
         ) {
-            const { federationId, messageId } = action.payload
+            const { federationId, messageId, updatedAt } = action.payload
             const federation = getFederationChatState(state, federationId)
             state[federationId] = {
                 ...federation,
-                lastSeenPaymentUpdateId: messageId,
+                lastSeenPaymentUpdateId: `${messageId}_${updatedAt || 0}`,
             }
         },
         setWebsocketIsHealthy(
@@ -1616,7 +1621,8 @@ export const selectOrderedChatList = createSelector(
                         ...chatMap[id],
                         latestPaymentUpdate: m,
                         hasNewPaymentUpdates:
-                            lastReadPaymentUpdateIds[id] !== m.id,
+                            lastReadPaymentUpdateIds[id] !==
+                            `${m.id}_${m.payment.updatedAt}`,
                     }
                 }
             } else {
@@ -1637,7 +1643,8 @@ export const selectOrderedChatList = createSelector(
                             ...chatMap[id],
                             latestPaymentUpdate: latest,
                             hasNewPaymentUpdates:
-                                lastReadPaymentUpdateIds[id] !== latest.id,
+                                lastReadPaymentUpdateIds[id] !==
+                                `${latest.id}_${latest.payment?.updatedAt}`,
                         }
                     }
                 }
@@ -1769,7 +1776,9 @@ export const selectHasUnseenPaymentUpdates = createSelector(
     selectChatLastSeenPaymentUpdateId,
     (latestPaymentUpdate, lastSeenPaymentUpdateId) =>
         !!latestPaymentUpdate &&
-        latestPaymentUpdate.id !== lastSeenPaymentUpdateId,
+        `${latestPaymentUpdate.id}_${
+            latestPaymentUpdate.payment?.updatedAt || 0
+        }` !== lastSeenPaymentUpdateId,
 )
 
 export const selectChatGroupRole = createSelector(

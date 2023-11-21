@@ -305,8 +305,14 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
 
                 const lastReadPaymentUpdateIds =
                     getLatestPaymentUpdateIdsForChats(chatState.messages, myId)
-                const lastSeenPaymentUpdateId =
-                    getLatestPaymentUpdate(chatState.messages)?.id || null
+                const lastSeenPaymentUpdate = getLatestPaymentUpdate(
+                    chatState.messages,
+                )
+                const lastSeenPaymentUpdateId = lastSeenPaymentUpdate?.id
+                    ? `${lastSeenPaymentUpdate?.id}_${
+                          lastSeenPaymentUpdate?.payment?.updatedAt || 0
+                      }`
+                    : null
                 return {
                     ...prevChat,
                     [federationId]: {

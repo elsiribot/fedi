@@ -95,6 +95,7 @@ export function useUpdateLastMessageSeen(pauseUpdates?: boolean) {
             setLastSeenPaymentUpdateId({
                 federationId,
                 messageId: latestPaymentUpdate.id,
+                updatedAt: latestPaymentUpdate.payment?.updatedAt,
             }),
         )
     }, [dispatch, federationId, latestPaymentUpdate, pauseUpdates])
@@ -140,10 +141,16 @@ export function useUpdateLastPaymentUpdateRead(
     const federationId = useCommonSelector(selectActiveFederation)?.id
 
     const messageId = latestPaymentUpdate?.id
+    const updatedAt = latestPaymentUpdate?.payment?.updatedAt
     useEffect(() => {
         if (!federationId || !messageId || pauseUpdates) return
         dispatch(
-            setLastReadPaymentUpdateId({ federationId, chatId, messageId }),
+            setLastReadPaymentUpdateId({
+                federationId,
+                chatId,
+                messageId,
+                updatedAt,
+            }),
         )
     }, [
         dispatch,
@@ -151,6 +158,7 @@ export function useUpdateLastPaymentUpdateRead(
         federationId,
         latestPaymentUpdate,
         messageId,
+        updatedAt,
         pauseUpdates,
     ])
 }

@@ -207,7 +207,7 @@ export const getLatestPaymentUpdateIdsForChats = (
         (readMsgIds, msg) => {
             const chatId = getChatInfoFromMessage(msg, myId).id
             if (!readMsgIds[chatId]) {
-                readMsgIds[chatId] = msg.id
+                readMsgIds[chatId] = `${msg.id}_${msg.payment?.updatedAt || 0}`
             }
             return readMsgIds
         },
