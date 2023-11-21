@@ -1,7 +1,6 @@
 use std::time::SystemTime;
 
 use fedimint_client_v0::sm::OperationId;
-use fedimint_core::config::FederationId;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record};
 

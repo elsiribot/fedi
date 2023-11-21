@@ -10,7 +10,6 @@ use bitcoin::secp256k1::{Message, PublicKey};
 use bitcoin::{Address, XOnlyPublicKey};
 use fedi_social_client::RecoveryId;
 use fedimint_core::api::InviteCode as InviteCodeV2;
-use fedimint_core::config::FederationId;
 use fedimint_core::core::OperationId;
 use fedimint_core::task::TaskGroup;
 use fedimint_core::{Amount, PeerId};
