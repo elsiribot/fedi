@@ -1,7 +1,7 @@
 use std::time::UNIX_EPOCH;
 
 use bitcoin::XOnlyPublicKey;
-use fedimint_core::db::{Committable, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
+use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiError};
 use fedimint_core::Amount;
 use stability_pool_common::{AccountInfo, LockedSeekWithMetadata};
@@ -17,20 +17,20 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
         api_endpoint! {
             "account_info",
             async |_module: &StabilityPool, context, request: XOnlyPublicKey| -> AccountInfo {
-                Ok(account_info(&mut context.dbtx(), request).await)
+                Ok(account_info(&mut context.dbtx().into_nc(), request).await)
             }
         },
         api_endpoint! {
             "next_cycle_start_time",
             async |module: &StabilityPool, context, _request: ()| -> u64 {
-                Ok(next_cycle_start_time(&mut context.dbtx(), module).await?)
+                Ok(next_cycle_start_time(&mut context.dbtx().into_nc(), module).await?)
             }
         },
     ]
 }
 
 pub async fn account_info(
-    dbtx: &mut DatabaseTransaction<'_, Committable>,
+    dbtx: &mut DatabaseTransaction<'_>,
     account: XOnlyPublicKey,
 ) -> AccountInfo {
     let (locked_seeks, locked_provides) = match dbtx.get_value(&CurrentCycleKey).await {
@@ -83,7 +83,7 @@ pub async fn account_info(
 }
 
 pub async fn next_cycle_start_time(
-    dbtx: &mut DatabaseTransaction<'_, Committable>,
+    dbtx: &mut DatabaseTransaction<'_>,
     stability_pool: &StabilityPool,
 ) -> anyhow::Result<u64, ApiError> {
     let current_cycle_start_time = dbtx
