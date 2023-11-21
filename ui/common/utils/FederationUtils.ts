@@ -13,8 +13,8 @@ import {
     XmppConnectionOptions,
     FederationPreview,
 } from '../types'
-import { makeLog } from './log'
 import { FedimintBridge } from './fedimint'
+import { makeLog } from './log'
 
 const log = makeLog('common/utils/FederationUtils')
 
@@ -72,7 +72,8 @@ const fetchExternalMetadata = async (
                 log.error('Failed to fetch metadata from external url', error)
                 retryDelay += 3000
                 log.info(
-                    `Retrying fetch metadata in ${retryDelay / 1000
+                    `Retrying fetch metadata in ${
+                        retryDelay / 1000
                     } seconds...`,
                 )
                 retryInBackground() // Recursive call
@@ -116,9 +117,9 @@ export const fetchFederationsExternalMetadata = (
     // When results come in in the background, hit the callback for relevant federations
     const handleBackgroundSuccess = onBackgroundSuccess
         ? (externalMeta: ExternalMetaJson) => {
-            const entries = getFederationMetaEntries(externalMeta)
-            entries.forEach(([id, meta]) => onBackgroundSuccess(id, meta))
-        }
+              const entries = getFederationMetaEntries(externalMeta)
+              entries.forEach(([id, meta]) => onBackgroundSuccess(id, meta))
+          }
         : undefined
 
     // Assemble all the promises and return the first pass of results. If they
@@ -161,7 +162,8 @@ const getMetaField = (
         return (
             metadata[`fedi:fedimods`] ??
             metadata[`fedi:sites`] ??
-            metadata[field] ??
+            metadata.fedimods ??
+            metadata.sites ??
             null
         )
     }
@@ -336,8 +338,7 @@ export const getFederationFediMods = (
 
     if (sites) {
         try {
-            // TODO: validate type matches FediMod[]
-            const res = fediModSchema.safeParse(JSON.stringify(sites))
+            const res = fediModSchema.safeParse(JSON.parse(sites))
 
             if (!res.success) {
                 throw res.error
