@@ -94,7 +94,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
                 await dispatch(
                     joinFederation({
                         fedimint,
-                        code: federationPreview.connectionCode,
+                        code: federationPreview.inviteCode,
                     }),
                 ).unwrap()
                 goToNextScreen(joinAs)

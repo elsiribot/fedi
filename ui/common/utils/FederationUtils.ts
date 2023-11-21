@@ -72,8 +72,7 @@ const fetchExternalMetadata = async (
                 log.error('Failed to fetch metadata from external url', error)
                 retryDelay += 3000
                 log.info(
-                    `Retrying fetch metadata in ${
-                        retryDelay / 1000
+                    `Retrying fetch metadata in ${retryDelay / 1000
                     } seconds...`,
                 )
                 retryInBackground() // Recursive call
@@ -117,9 +116,9 @@ export const fetchFederationsExternalMetadata = (
     // When results come in in the background, hit the callback for relevant federations
     const handleBackgroundSuccess = onBackgroundSuccess
         ? (externalMeta: ExternalMetaJson) => {
-              const entries = getFederationMetaEntries(externalMeta)
-              entries.forEach(([id, meta]) => onBackgroundSuccess(id, meta))
-          }
+            const entries = getFederationMetaEntries(externalMeta)
+            entries.forEach(([id, meta]) => onBackgroundSuccess(id, meta))
+        }
         : undefined
 
     // Assemble all the promises and return the first pass of results. If they
@@ -370,14 +369,5 @@ export async function getFederationPreview(
     inviteCode: string,
     fedimint: FedimintBridge,
 ): Promise<FederationPreview> {
-    // FIXME: don't hardcode these
-    // FIXME: don't hardcode these
-    // FIXME: don't hardcode these
-    return fedimint.federationPreview(inviteCode).then(preview => ({
-        ...preview,
-        apiVersion: { major: 2, minor: 0 },
-        connectionCode: inviteCode,
-        consensusVersion: 2,
-        name: preview.name || "no name federation"
-    }))
+    return fedimint.federationPreview(inviteCode)
 }

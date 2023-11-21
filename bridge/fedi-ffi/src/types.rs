@@ -50,8 +50,9 @@ pub struct RpcFederation {
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcFederationPreview {
     pub id: RpcFederationId,
-    pub name: Option<String>,
+    pub name: String,
     pub meta: BTreeMap<String, String>,
+    pub invite_code: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]

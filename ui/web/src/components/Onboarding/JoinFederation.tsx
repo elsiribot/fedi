@@ -84,7 +84,7 @@ export const JoinFederation: React.FC = () => {
                 await dispatch(
                     joinFederation({
                         fedimint,
-                        code: federationPreview.connectionCode,
+                        code: federationPreview.inviteCode,
                     }),
                 ).unwrap()
                 push(nextHref)

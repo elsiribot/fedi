@@ -715,18 +715,30 @@ impl Bridge {
         match (v0, v1, v2) {
             (Ok(config), _, _) => Ok(RpcFederationPreview {
                 id: RpcFederationId(config.federation_id.to_string()),
-                name: config.federation_name().map(|x| x.to_owned()),
+                name: config
+                    .federation_name()
+                    .map(|x| x.to_owned())
+                    .unwrap_or(config.federation_id.to_string()[0..8].to_string()),
                 meta: config.meta,
+                invite_code: invite_code.to_string(),
             }),
             (_, Ok(config), _) => Ok(RpcFederationPreview {
                 id: RpcFederationId(config.global.federation_id.to_string()),
-                name: config.federation_name().map(ToOwned::to_owned),
+                name: config
+                    .federation_name()
+                    .map(|x| x.to_owned())
+                    .unwrap_or(config.global.federation_id.to_string()[0..8].to_string()),
                 meta: config.global.meta,
+                invite_code: invite_code.to_string(),
             }),
             (_, _, Ok(config)) => Ok(RpcFederationPreview {
                 id: RpcFederationId(config.global.federation_id().to_string()),
-                name: config.federation_name().map(ToOwned::to_owned),
+                name: config
+                    .federation_name()
+                    .map(|x| x.to_owned())
+                    .unwrap_or(config.global.federation_id().to_string()[0..8].to_string()),
                 meta: config.global.meta,
+                invite_code: invite_code.to_string(),
             }),
             (Err(_), Err(_), Err(_)) => anyhow::bail!("failed to connect"),
         }
