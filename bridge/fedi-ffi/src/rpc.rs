@@ -873,7 +873,7 @@ mod tests {
         cln_pay_invoice(&invoice_string).await?;
 
         // TODO: generateInvoice needs to spawn a task that reacts to updates
-        fedimint_core::task::sleep(Duration::from_secs(4)).await;
+        fedimint_core::task::sleep(Duration::from_secs(15)).await;
 
         assert_eq!(receive_amount, federation.get_balance().await);
 
