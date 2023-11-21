@@ -822,7 +822,7 @@ mod tests {
         let federations = listFederations(bridge.clone()).await?;
         assert_eq!(federations.len(), 1);
         let federation = &federations[0];
-        let xmpp_credentials = xmppCredentials(bridge, federation.id).await?;
+        let xmpp_credentials = xmppCredentials(bridge, federation.id.clone()).await?;
         assert_eq!(Some("hotrod77".to_string()), xmpp_credentials.username);
         Ok(())
     }
@@ -1035,17 +1035,18 @@ mod tests {
         // set username and do a backup
         let federation_id = federation.federation_id();
         let username = "satoshi".to_string();
-        backupXmppUsername(bridge.clone(), federation_id, username.clone()).await?;
+        backupXmppUsername(bridge.clone(), federation_id.clone(), username.clone()).await?;
 
         // recover using fresh bridge instance
-        let mnemonic = getMnemonic(bridge.clone(), federation_id).await?;
+        let mnemonic = getMnemonic(bridge.clone(), federation_id.clone()).await?;
         drop(federation);
         drop(bridge);
         let (bridge, _) = setup().await?;
-        let _response = recoverFromMnemonic(bridge.clone(), federation_id, mnemonic).await?;
+        let _response =
+            recoverFromMnemonic(bridge.clone(), federation_id.clone(), mnemonic).await?;
 
         // assert that balance is updated
-        let federation = bridge.get_multi(&federation_id.0).await?;
+        let federation = bridge.get_multi(&federation_id.clone().0).await?;
         assert_eq!(initial_balance, federation.get_balance().await);
         assert_eq!(Some(username), federation.get_xmpp_username().await);
         Ok(())
@@ -1080,23 +1081,27 @@ mod tests {
         let video_file_path = get_fixture_dir().join("backup.fedi");
         let video_file_contents = tokio::fs::read(&video_file_path).await?;
         let recovery_file_path =
-            uploadBackupFile(bridge.clone(), federation_id, video_file_path).await?;
+            uploadBackupFile(bridge.clone(), federation_id.clone(), video_file_path).await?;
         let locate_recovery_file_path = locateRecoveryFile(bridge.clone()).await?;
         assert_eq!(recovery_file_path, locate_recovery_file_path);
 
         // Validate recovery file
-        let valid = validateRecoveryFile(bridge.clone(), federation_id, recovery_file_path).await?;
+        let valid =
+            validateRecoveryFile(bridge.clone(), federation_id.clone(), recovery_file_path).await?;
         assert!(valid);
 
         // Generate recovery QR
-        let qr = recoveryQr(bridge.clone(), federation_id).await?;
+        let qr = recoveryQr(bridge.clone(), federation_id.clone()).await?;
         let recovery_id = qr.recovery_id;
 
         // Download verification document
-        let verification_doc_path =
-            socialRecoveryDownloadVerificationDoc(bridge.clone(), federation_id, recovery_id)
-                .await?
-                .unwrap();
+        let verification_doc_path = socialRecoveryDownloadVerificationDoc(
+            bridge.clone(),
+            federation_id.clone(),
+            recovery_id,
+        )
+        .await?
+        .unwrap();
         let contents = tokio::fs::read(verification_doc_path).await?;
         let _ = VerificationDocument::from_raw(&contents);
         assert_eq!(contents, video_file_contents);
@@ -1106,7 +1111,7 @@ mod tests {
             let password = "p";
             approveSocialRecoveryRequest(
                 bridge.clone(),
-                federation_id,
+                federation_id.clone(),
                 recovery_id,
                 RpcPeerId(fedimint_core::PeerId::from(i)),
                 password.into(),
@@ -1115,7 +1120,8 @@ mod tests {
         }
 
         // Member checks approval status
-        let social_recovery_event = socialRecoveryApprovals(bridge.clone(), federation_id).await?;
+        let social_recovery_event =
+            socialRecoveryApprovals(bridge.clone(), federation_id.clone()).await?;
         assert_eq!(0, social_recovery_event.remaining);
         assert_eq!(
             3,
@@ -1128,11 +1134,11 @@ mod tests {
 
         // Member combines decryption shares, loading recovered mnemonic back into their
         // db
-        completeSocialRecovery(bridge.clone(), federation_id).await?;
+        completeSocialRecovery(bridge.clone(), federation_id.clone()).await?;
 
         // Check backups match (TODO: how can I make sure that they're equal b/c nothing
         // happened?)
-        let final_words: Vec<String> = getMnemonic(bridge.clone(), federation_id).await?;
+        let final_words: Vec<String> = getMnemonic(bridge.clone(), federation_id.clone()).await?;
         assert_eq!(initial_words, final_words);
 
         Ok(())
