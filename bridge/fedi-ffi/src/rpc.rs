@@ -8,7 +8,7 @@ use anyhow::Context;
 use bitcoin::secp256k1::Message;
 use bitcoin::{Address, Amount};
 use futures::Future;
-use lightning_invoice::Invoice;
+use lightning_invoice::Bolt11Invoice;
 use macro_rules_attribute::macro_rules_derive;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -21,15 +21,15 @@ use super::error::ErrorCode;
 use super::event::{EventSink, SocialRecoveryEvent};
 use super::storage::Storage;
 use super::types::{
-    RpcAmount, RpcFederation, RpcFederationId, RpcInvoice, RpcLightningGateway, RpcOperationId,
-    RpcPayInvoiceResponse, RpcPeerId, RpcPublicKey, RpcRecoveryId, RpcSignedLnurlMessage,
-    RpcStabilityPoolAccountInfo, RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
+    RpcAmount, RpcFederation, RpcFederationId, RpcInvoice, RpcOperationId, RpcPayInvoiceResponse,
+    RpcPeerId, RpcPublicKey, RpcRecoveryId, RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo,
+    RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
 };
 use crate::error::get_error_code;
 use crate::event::{Event, IEventSink, PanicEvent, TypedEventExt};
 use crate::types::{
     GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
-    RpcPayAddressResponse,
+    RpcLightningGateway, RpcPayAddressResponse,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -154,7 +154,7 @@ async fn generateInvoice(
 // FIXME: make this argument RpcInvoice?
 async fn decodeInvoice(_bridge: Arc<Bridge>, invoice: String) -> anyhow::Result<RpcInvoice> {
     // TODO: validate the invoice (same network, haven't already paid, etc)
-    let invoice: Invoice = invoice.trim().parse().context(ErrorCode::InvalidInvoice)?;
+    let invoice: Bolt11Invoice = invoice.trim().parse().context(ErrorCode::InvalidInvoice)?;
     let bridge_invoice = RpcInvoice::try_from(invoice)?;
     Ok(bridge_invoice)
 }
@@ -165,7 +165,7 @@ async fn payInvoice(
     federation_id: RpcFederationId,
     invoice: String,
 ) -> anyhow::Result<RpcPayInvoiceResponse> {
-    let invoice: Invoice = invoice.trim().parse().context(ErrorCode::InvalidInvoice)?;
+    let invoice: Bolt11Invoice = invoice.trim().parse().context(ErrorCode::InvalidInvoice)?;
     bridge.pay_invoice(federation_id, &invoice).await
 }
 
@@ -569,10 +569,11 @@ mod tests {
 
     use anyhow::bail;
     use bitcoin::secp256k1::PublicKey;
-    use devimint_v1::cmd;
-    use fedi_social_client_v1::common::VerificationDocument;
-    use fedimint_core_v1::Amount;
-    use fedimint_logging_v1::TracingSetup;
+    use devimint::cmd;
+    use devimint::util::{ClnLightningCli, FedimintCli, LnCli};
+    use fedi_social_client::common::VerificationDocument;
+    use fedimint_core::Amount;
+    use fedimint_logging::TracingSetup;
 
     use super::*;
     use crate::bridge::MultiFederation;
@@ -624,17 +625,8 @@ mod tests {
     /// Get LND pubkey using lncli, then have `federation` switch to using
     /// whatever gateway is using that node pubkey
     async fn use_lnd_gateway(multi: &MultiFederation) -> anyhow::Result<()> {
-        let lnd_dir = std::env::var("FM_LND_DIR").unwrap();
-        let lnd_node_pubkey: PublicKey = cmd!(
-            "lncli",
-            "-n",
-            "regtest",
-            "--lnddir={lnd_dir}",
-            "--rpcserver=localhost:11009",
-            "getinfo"
-        )
-        .out_json()
-        .await?["identity_pubkey"]
+        let lnd_node_pubkey: PublicKey = cmd!(LnCli, "getinfo").out_json().await?
+            ["identity_pubkey"]
             .as_str()
             .map(|s| s.to_owned())
             .unwrap()
@@ -652,86 +644,62 @@ mod tests {
                 }
                 bail!("No gateway is using LND's node pubkey")
             }
+            MultiFederation::V2(v2) => {
+                let gateways = v2.list_gateways().await?;
+                for gateway in gateways {
+                    if gateway.node_pub_key.0 == lnd_node_pubkey {
+                        v2.switch_gateway(&gateway.gateway_id.0).await?;
+                        return Ok(());
+                    }
+                }
+                bail!("No gateway is using LND's node pubkey")
+            }
         }
     }
 
     async fn cli_generate_ecash(
-        amount: fedimint_core_v1::Amount,
+        amount: fedimint_core::Amount,
         federation: &MultiFederation,
     ) -> anyhow::Result<String> {
-        let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
-        // FIXME; make a fedimint_cli helper ... just need to figure out how to pass the
-        // args
         let ecash_string = match federation {
-            MultiFederation::V0(_) => cmd!(
-                "fedimint-cli",
-                "--data-dir={cfg_dir}",
-                "ng",
-                "spend",
-                amount.msats.to_string()
-            )
-            .out_json()
-            .await?["notes"]
+            MultiFederation::V0(_) => cmd!(FedimintCli, "ng", "spend", amount.msats.to_string())
+                .out_json()
+                .await?["notes"]
                 .as_str()
                 .map(|s| s.to_owned())
                 .expect("'note' key not found generating ecash with fedimint-cli"),
-            MultiFederation::V1(_) => cmd!(
-                "fedimint-cli",
-                "--data-dir={cfg_dir}",
-                "spend",
-                amount.msats.to_string()
-            )
-            .out_json()
-            .await?["notes"]
-                .as_str()
-                .map(|s| s.to_owned())
-                .expect("'note' key not found generating ecash with fedimint-cli"),
+            MultiFederation::V1(_) | MultiFederation::V2(_) => {
+                cmd!(FedimintCli, "spend", amount.msats.to_string())
+                    .out_json()
+                    .await?["notes"]
+                    .as_str()
+                    .map(|s| s.to_owned())
+                    .expect("'note' key not found generating ecash with fedimint-cli")
+            }
         };
         Ok(ecash_string)
     }
 
-    async fn cli_generate_invoice(label: &str, amount: &Amount) -> anyhow::Result<Invoice> {
-        let cln_dir = std::env::var("FM_CLN_DIR").unwrap();
-        let invoice_string = cmd!(
-            "lightning-cli",
-            "--network=regtest",
-            "--lightning-dir={cln_dir}",
-            "invoice",
-            amount.msats,
-            label,
-            label
-        )
-        .out_json()
-        .await?["bolt11"]
+    async fn cli_generate_invoice(label: &str, amount: &Amount) -> anyhow::Result<Bolt11Invoice> {
+        let invoice_string = cmd!(ClnLightningCli, "invoice", amount.msats, label, label)
+            .out_json()
+            .await?["bolt11"]
             .as_str()
             .map(|s| s.to_owned())
             .unwrap();
-        Ok(Invoice::from_str(&invoice_string)?)
+        Ok(Bolt11Invoice::from_str(&invoice_string)?)
     }
 
     async fn cli_receive_ecash(
         ecash: String,
         federation: Arc<MultiFederation>,
     ) -> anyhow::Result<()> {
-        let cfg_dir = std::env::var("FM_DATA_DIR").unwrap();
-        // FIXME; make a fedimint_cli helper ... just need to figure out how to pass the
-        // args
         match *federation {
             MultiFederation::V0(_) => {
-                cmd!(
-                    "fedimint-cli",
-                    "--data-dir={cfg_dir}",
-                    "ng",
-                    "reissue",
-                    ecash
-                )
-                .run()
-                .await?;
+                cmd!(FedimintCli, "ng", "reissue", ecash).run().await?;
             }
-            MultiFederation::V1(_) => {
-                cmd!("fedimint-cli", "--data-dir={cfg_dir}", "reissue", ecash)
-                    .run()
-                    .await?;
+            MultiFederation::V1(_) | MultiFederation::V2(_) => {
+                cmd!(FedimintCli, "reissue", ecash).run().await?;
             }
         }
         Ok(())
@@ -755,16 +723,9 @@ mod tests {
     }
 
     async fn cln_wait_invoice(label: &str) -> anyhow::Result<()> {
-        let cln_dir = std::env::var("FM_CLN_DIR").unwrap();
-        let status = cmd!(
-            "lightning-cli",
-            "--network=regtest",
-            "--lightning-dir={cln_dir}",
-            "waitinvoice",
-            label
-        )
-        .out_json()
-        .await?["status"]
+        let status = cmd!(ClnLightningCli, "waitinvoice", label)
+            .out_json()
+            .await?["status"]
             .as_str()
             .map(|s| s.to_owned())
             .unwrap();
@@ -772,44 +733,47 @@ mod tests {
         Ok(())
     }
 
+    fn get_command_for_alias(alias: &str, default: &str) -> devimint::util::Command {
+        // try to use alias if set
+        let cli = std::env::var(alias)
+            .map(|s| s.split_whitespace().map(ToOwned::to_owned).collect())
+            .unwrap_or_else(|_| vec![default.into()]);
+        let mut cmd = tokio::process::Command::new(&cli[0]);
+        cmd.args(&cli[1..]);
+        devimint::util::Command {
+            cmd,
+            args_debug: cli,
+        }
+    }
+
+    pub struct BitcoinCli;
+    impl BitcoinCli {
+        pub async fn cmd(self) -> devimint::util::Command {
+            get_command_for_alias("FM_BTC_CLIENT", "bitcoin-cli")
+        }
+    }
+
     async fn bitcoin_cli_send_to_address(address: &str, amount: &str) -> anyhow::Result<()> {
+        let btc_port = std::env::var("FM_PORT_BTC_RPC").unwrap_or(String::from("18443"));
         cmd!(
-            "bitcoin-cli",
-            "-regtest",
-            "-rpcuser=bitcoin",
-            "-rpcpassword=bitcoin",
+            BitcoinCli,
+            "-rpcport={btc_port}",
             "sendtoaddress",
             address,
-            amount,
+            amount
         )
         .run()
         .await?;
 
-        cmd!(
-            "bitcoin-cli",
-            "-regtest",
-            "-rpcuser=bitcoin",
-            "-rpcpassword=bitcoin",
-            "-generate",
-            "11"
-        )
-        .run()
-        .await?;
+        cmd!(BitcoinCli, "-rpcport={btc_port}", "-generate", "11")
+            .run()
+            .await?;
 
         Ok(())
     }
 
     async fn cln_pay_invoice(invoice_string: &str) -> anyhow::Result<()> {
-        let cln_dir = std::env::var("FM_CLN_DIR").unwrap();
-        cmd!(
-            "lightning-cli",
-            "--network=regtest",
-            "--lightning-dir={cln_dir}",
-            "pay",
-            invoice_string
-        )
-        .run()
-        .await?;
+        cmd!(ClnLightningCli, "pay", invoice_string).run().await?;
         Ok(())
     }
 
@@ -858,7 +822,7 @@ mod tests {
         let federations = listFederations(bridge.clone()).await?;
         assert_eq!(federations.len(), 1);
         let federation = &federations[0];
-        let xmpp_credentials = xmppCredentials(bridge, federation.id).await?;
+        let xmpp_credentials = xmppCredentials(bridge, federation.id.clone()).await?;
         assert_eq!(Some("hotrod77".to_string()), xmpp_credentials.username);
         Ok(())
     }
@@ -874,7 +838,7 @@ mod tests {
             .is_err());
 
         // listTransactions works
-        let rpc_federation_id = RpcFederationId(federation.federation_id());
+        let rpc_federation_id = federation.federation_id();
         let federations = listFederations(bridge.clone()).await?;
         assert_eq!(federations.len(), 1);
         assert_eq!(env_invite_code.clone(), federations[0].invite_code);
@@ -884,7 +848,7 @@ mod tests {
         assert_eq!(listFederations(bridge.clone()).await?.len(), 0);
 
         // Newer federations can rejoin without any rocksdb locking problems
-        if let MultiFederation::V1(_) = *federation {
+        if let MultiFederation::V1(_) | MultiFederation::V2(_) = *federation {
             joinFederation(bridge.clone(), env_invite_code).await?;
             assert_eq!(listFederations(bridge).await?.len(), 1);
         }
@@ -895,12 +859,12 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_lightning_send_and_receive() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
-        let receive_amount = fedimint_core_v1::Amount::from_sats(100);
+        let receive_amount = fedimint_core::Amount::from_sats(100);
         let rpc_receive_amount = RpcAmount(receive_amount);
         let description = "test".to_string();
         let invoice_string = generateInvoice(
             bridge.clone(),
-            RpcFederationId(federation.federation_id()),
+            federation.federation_id(),
             rpc_receive_amount,
             description,
         )
@@ -909,7 +873,7 @@ mod tests {
         cln_pay_invoice(&invoice_string).await?;
 
         // TODO: generateInvoice needs to spawn a task that reacts to updates
-        fedimint_core_v1::task::sleep(Duration::from_secs(4)).await;
+        fedimint_core::task::sleep(Duration::from_secs(15)).await;
 
         assert_eq!(receive_amount, federation.get_balance().await);
 
@@ -926,12 +890,7 @@ mod tests {
         let invoice_string = invoice.to_string();
 
         // check balance
-        payInvoice(
-            bridge.clone(),
-            RpcFederationId(federation.federation_id()),
-            invoice_string,
-        )
-        .await?;
+        payInvoice(bridge.clone(), federation.federation_id(), invoice_string).await?;
 
         // check that core-lightning got paid
         cln_wait_invoice(&label).await?;
@@ -943,25 +902,20 @@ mod tests {
         let (bridge, federation) = setup().await?;
 
         // receive ecash
-        let ecash_receive_amount = fedimint_core_v1::Amount::from_msats(10000);
+        let ecash_receive_amount = fedimint_core::Amount::from_msats(10000);
         let ecash = cli_generate_ecash(ecash_receive_amount, &federation).await?;
-        receiveEcash(
-            bridge.clone(),
-            RpcFederationId(federation.federation_id()),
-            ecash,
-        )
-        .await?;
+        receiveEcash(bridge.clone(), federation.federation_id(), ecash).await?;
 
         // check balance
         assert_eq!(
             federation.get_balance().await,
-            fedimint_core_v1::Amount::from_msats(10000)
+            fedimint_core::Amount::from_msats(10000)
         );
 
         // spend ecash
         let send_ecash = generateEcash(
             bridge.clone(),
-            RpcFederationId(federation.federation_id()),
+            federation.federation_id(),
             RpcAmount(ecash_receive_amount),
         )
         .await?
@@ -978,27 +932,22 @@ mod tests {
         let (bridge, federation) = setup().await?;
 
         // receive ecash
-        let ecash_receive_amount = fedimint_core_v1::Amount::from_msats(10000);
+        let ecash_receive_amount = fedimint_core::Amount::from_msats(10000);
         let ecash = cli_generate_ecash(ecash_receive_amount, &federation).await?;
-        receiveEcash(
-            bridge.clone(),
-            RpcFederationId(federation.federation_id()),
-            ecash,
-        )
-        .await?;
+        receiveEcash(bridge.clone(), federation.federation_id(), ecash).await?;
 
         // check balance
         assert_eq!(
             federation.get_balance().await,
-            fedimint_core_v1::Amount::from_msats(10000)
+            fedimint_core::Amount::from_msats(10000)
         );
 
         let count = 100;
         for _ in 0..count {
             generateEcash(
                 bridge.clone(),
-                RpcFederationId(federation.federation_id()),
-                RpcAmount(fedimint_core_v1::Amount::from_msats(
+                federation.federation_id(),
+                RpcAmount(fedimint_core::Amount::from_msats(
                     ecash_receive_amount.msats / count,
                 )),
             )
@@ -1008,7 +957,7 @@ mod tests {
         // check balance
         assert_eq!(
             federation.get_balance().await,
-            fedimint_core_v1::Amount::from_msats(0)
+            fedimint_core::Amount::from_msats(0)
         );
 
         Ok(())
@@ -1023,16 +972,15 @@ mod tests {
             return Ok(());
         }
 
-        let address =
-            generateAddress(bridge.clone(), RpcFederationId(federation.federation_id())).await?;
+        let address = generateAddress(bridge.clone(), federation.federation_id()).await?;
         bitcoin_cli_send_to_address(&address, "0.1").await?;
 
         // TODO: do something smarter than sleep
-        fedimint_core_v1::task::sleep(Duration::from_secs(10)).await;
+        fedimint_core::task::sleep(Duration::from_secs(10)).await;
 
         assert_eq!(
             federation.get_balance().await,
-            fedimint_core_v1::Amount::from_sats(10_000_000)
+            fedimint_core::Amount::from_sats(10_000_000)
         );
 
         Ok(())
@@ -1043,25 +991,20 @@ mod tests {
         let (bridge, federation) = setup().await?;
 
         // receive ecash
-        let ecash_receive_amount = fedimint_core_v1::Amount::from_msats(100);
+        let ecash_receive_amount = fedimint_core::Amount::from_msats(100);
         let ecash = cli_generate_ecash(ecash_receive_amount, &federation).await?;
-        receiveEcash(
-            bridge.clone(),
-            RpcFederationId(federation.federation_id()),
-            ecash,
-        )
-        .await?;
+        receiveEcash(bridge.clone(), federation.federation_id(), ecash).await?;
 
         // check balance
         assert_eq!(
             federation.get_balance().await,
-            fedimint_core_v1::Amount::from_msats(100)
+            fedimint_core::Amount::from_msats(100)
         );
 
         // spend ecash
         let send_ecash = generateEcash(
             bridge.clone(),
-            RpcFederationId(federation.federation_id()),
+            federation.federation_id(),
             RpcAmount(ecash_receive_amount),
         )
         .await?
@@ -1070,12 +1013,7 @@ mod tests {
         // cancel too fast doesn't work: https://github.com/fedimint/fedimint/pull/3435
         tokio::time::sleep(Duration::from_secs(1)).await;
 
-        cancelEcash(
-            bridge.clone(),
-            RpcFederationId(federation.federation_id()),
-            send_ecash,
-        )
-        .await?;
+        cancelEcash(bridge.clone(), federation.federation_id(), send_ecash).await?;
         Ok(())
     }
 
@@ -1083,26 +1021,32 @@ mod tests {
     async fn test_backup_and_recovery() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
 
+        // Backup and recovery not yet supported for v2 federations.
+        if let MultiFederation::V2(_) = *federation {
+            return Ok(());
+        }
+
         // receive ecash
-        let initial_balance = fedimint_core_v1::Amount::from_msats(10_000);
+        let initial_balance = fedimint_core::Amount::from_msats(10_000);
         let ecash = cli_generate_ecash(initial_balance, &federation).await?;
         federation.receive_ecash(ecash).await?;
         assert_eq!(initial_balance, federation.get_balance().await);
 
         // set username and do a backup
-        let federation_id = RpcFederationId(federation.federation_id());
+        let federation_id = federation.federation_id();
         let username = "satoshi".to_string();
-        backupXmppUsername(bridge.clone(), federation_id, username.clone()).await?;
+        backupXmppUsername(bridge.clone(), federation_id.clone(), username.clone()).await?;
 
         // recover using fresh bridge instance
-        let mnemonic = getMnemonic(bridge.clone(), federation_id).await?;
+        let mnemonic = getMnemonic(bridge.clone(), federation_id.clone()).await?;
         drop(federation);
         drop(bridge);
         let (bridge, _) = setup().await?;
-        let _response = recoverFromMnemonic(bridge.clone(), federation_id, mnemonic).await?;
+        let _response =
+            recoverFromMnemonic(bridge.clone(), federation_id.clone(), mnemonic).await?;
 
         // assert that balance is updated
-        let federation = bridge.get_multi(&federation_id.0).await?;
+        let federation = bridge.get_multi(&federation_id.clone().0).await?;
         assert_eq!(initial_balance, federation.get_balance().await);
         assert_eq!(Some(username), federation.get_xmpp_username().await);
         Ok(())
@@ -1122,37 +1066,42 @@ mod tests {
     async fn test_social_recovery() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
 
-        // Social recovery not supported for v0 federations.
-        if let MultiFederation::V0(_) = *federation {
+        // Social recovery not supported for v0 federations, and not yet supported for
+        // v2
+        if let MultiFederation::V0(_) | MultiFederation::V2(_) = *federation {
             return Ok(());
         }
 
         // Get original mnemonic (for comparison later)
-        let federation_id = RpcFederationId(federation.federation_id());
-        let initial_words = getMnemonic(bridge.clone(), federation_id).await?;
+        let federation_id = federation.federation_id();
+        let initial_words = getMnemonic(bridge.clone(), federation_id.clone()).await?;
         info!("initial mnemnoic {:?}", &initial_words);
 
         // Upload backup
         let video_file_path = get_fixture_dir().join("backup.fedi");
         let video_file_contents = tokio::fs::read(&video_file_path).await?;
         let recovery_file_path =
-            uploadBackupFile(bridge.clone(), federation_id, video_file_path).await?;
+            uploadBackupFile(bridge.clone(), federation_id.clone(), video_file_path).await?;
         let locate_recovery_file_path = locateRecoveryFile(bridge.clone()).await?;
         assert_eq!(recovery_file_path, locate_recovery_file_path);
 
         // Validate recovery file
-        let valid = validateRecoveryFile(bridge.clone(), federation_id, recovery_file_path).await?;
+        let valid =
+            validateRecoveryFile(bridge.clone(), federation_id.clone(), recovery_file_path).await?;
         assert!(valid);
 
         // Generate recovery QR
-        let qr = recoveryQr(bridge.clone(), federation_id).await?;
+        let qr = recoveryQr(bridge.clone(), federation_id.clone()).await?;
         let recovery_id = qr.recovery_id;
 
         // Download verification document
-        let verification_doc_path =
-            socialRecoveryDownloadVerificationDoc(bridge.clone(), federation_id, recovery_id)
-                .await?
-                .unwrap();
+        let verification_doc_path = socialRecoveryDownloadVerificationDoc(
+            bridge.clone(),
+            federation_id.clone(),
+            recovery_id,
+        )
+        .await?
+        .unwrap();
         let contents = tokio::fs::read(verification_doc_path).await?;
         let _ = VerificationDocument::from_raw(&contents);
         assert_eq!(contents, video_file_contents);
@@ -1162,16 +1111,17 @@ mod tests {
             let password = "p";
             approveSocialRecoveryRequest(
                 bridge.clone(),
-                federation_id,
+                federation_id.clone(),
                 recovery_id,
-                RpcPeerId(fedimint_core_v1::PeerId::from(i)),
+                RpcPeerId(fedimint_core::PeerId::from(i)),
                 password.into(),
             )
             .await?;
         }
 
         // Member checks approval status
-        let social_recovery_event = socialRecoveryApprovals(bridge.clone(), federation_id).await?;
+        let social_recovery_event =
+            socialRecoveryApprovals(bridge.clone(), federation_id.clone()).await?;
         assert_eq!(0, social_recovery_event.remaining);
         assert_eq!(
             3,
@@ -1184,11 +1134,11 @@ mod tests {
 
         // Member combines decryption shares, loading recovered mnemonic back into their
         // db
-        completeSocialRecovery(bridge.clone(), federation_id).await?;
+        completeSocialRecovery(bridge.clone(), federation_id.clone()).await?;
 
         // Check backups match (TODO: how can I make sure that they're equal b/c nothing
         // happened?)
-        let final_words: Vec<String> = getMnemonic(bridge.clone(), federation_id).await?;
+        let final_words: Vec<String> = getMnemonic(bridge.clone(), federation_id.clone()).await?;
         assert_eq!(initial_words, final_words);
 
         Ok(())
@@ -1205,7 +1155,7 @@ mod tests {
 
         // Test default account info state
         let account_info = bridge
-            .stability_pool_account_info(RpcFederationId(federation.federation_id()))
+            .stability_pool_account_info(federation.federation_id())
             .await?;
         assert_eq!(account_info.idle_balance.0, Amount::ZERO);
         assert!(account_info.staged_seeks.is_empty());
@@ -1221,7 +1171,7 @@ mod tests {
         let amount_to_deposit = Amount::from_msats(initial_balance.msats / 2);
         bridge
             .stability_pool_deposit_to_seek(
-                RpcFederationId(federation.federation_id()),
+                federation.federation_id(),
                 RpcAmount(amount_to_deposit),
             )
             .await?;
@@ -1239,7 +1189,7 @@ mod tests {
             fedimint_core::task::sleep(Duration::from_secs(2)).await;
         }
         let account_info = bridge
-            .stability_pool_account_info(RpcFederationId(federation.federation_id()))
+            .stability_pool_account_info(federation.federation_id())
             .await?;
         assert_eq!(account_info.idle_balance.0, Amount::ZERO);
         assert_eq!(account_info.staged_seeks[0].0, amount_to_deposit);
@@ -1250,7 +1200,7 @@ mod tests {
         let amount_to_withdraw = Amount::from_msats(amount_to_deposit.msats / 2);
         bridge
             .stability_pool_withdraw(
-                RpcFederationId(federation.federation_id()),
+                federation.federation_id(),
                 RpcAmount(amount_to_withdraw),
                 0, // nothing locked that can be withdrawn
             )
@@ -1270,7 +1220,7 @@ mod tests {
             fedimint_core::task::sleep(Duration::from_secs(2)).await;
         }
         let account_info = bridge
-            .stability_pool_account_info(RpcFederationId(federation.federation_id()))
+            .stability_pool_account_info(federation.federation_id())
             .await?;
         assert_eq!(account_info.idle_balance.0, Amount::ZERO);
         assert_eq!(

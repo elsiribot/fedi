@@ -11,6 +11,7 @@ import {
     PanicEvent,
     StabilityPoolWithdrawalEvent,
     StabilityPoolDepositEvent,
+    RpcFederationPreview,
 } from './bindings'
 import { Usd, UsdCents } from './units'
 
@@ -102,14 +103,7 @@ export interface FederationApiVersion {
     minor: number
 }
 
-export interface FederationPreview {
-    id: Federation['id']
-    name: Federation['name']
-    meta: Federation['meta']
-    connectionCode: string
-    consensusVersion: number
-    apiVersion: FederationApiVersion
-}
+export type FederationPreview = RpcFederationPreview
 
 /*
  * Mocked-out social backup and recovery events

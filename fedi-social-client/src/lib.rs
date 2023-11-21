@@ -6,22 +6,22 @@ use fedimint_client::module::ClientModule;
 use fedimint_client::sm::{DynState, State, StateTransition};
 use fedimint_client::DynGlobalClientContext;
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId, OperationId};
-use fedimint_core::db::ModuleDatabaseTransaction;
+use fedimint_core::db::DatabaseTransaction;
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::module::{ApiVersion, ExtendsCommonModuleInit, MultiApiVersion};
+use fedimint_core::module::{ApiVersion, ModuleInit, MultiApiVersion};
 use fedimint_core::{apply, async_trait_maybe_send};
 
 #[derive(Debug, Clone)]
 pub struct FediSocialClientInit;
 
 #[apply(async_trait_maybe_send!)]
-impl ExtendsCommonModuleInit for FediSocialClientInit {
+impl ModuleInit for FediSocialClientInit {
     type Common = FediSocialCommonGen;
 
     // No client-side database for social recovery
     async fn dump_database(
         &self,
-        _dbtx: &mut ModuleDatabaseTransaction<'_>,
+        _dbtx: &mut DatabaseTransaction<'_>,
         _prefix_names: Vec<String>,
     ) -> Box<dyn Iterator<Item = (String, Box<dyn erased_serde::Serialize + Send>)> + '_> {
         Box::new(BTreeMap::new().into_iter())
@@ -49,20 +49,21 @@ impl ClientModule for FediSocialClientModule {
     type Common = FediSocialModuleTypes;
     type ModuleStateMachineContext = ();
     type States = FediSocialClientStates;
+    type Init = FediSocialClientInit;
 
     fn context(&self) -> Self::ModuleStateMachineContext {}
 
     fn input_amount(
         &self,
         _input: &<Self::Common as fedimint_core::module::ModuleCommon>::Input,
-    ) -> fedimint_core::module::TransactionItemAmount {
+    ) -> Option<fedimint_core::module::TransactionItemAmount> {
         unimplemented!()
     }
 
     fn output_amount(
         &self,
         _output: &<Self::Common as fedimint_core::module::ModuleCommon>::Output,
-    ) -> fedimint_core::module::TransactionItemAmount {
+    ) -> Option<fedimint_core::module::TransactionItemAmount> {
         unimplemented!()
     }
 }

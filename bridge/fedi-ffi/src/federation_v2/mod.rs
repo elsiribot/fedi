@@ -1,3 +1,4 @@
+mod db;
 mod dev;
 pub mod social;
 
@@ -12,53 +13,55 @@ use ::serde::{Deserialize, Serialize};
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey, Secp256k1, XOnlyPublicKey};
 use bitcoin::{Address, Network};
-use fedi_social_client_v1::common::VerificationDocument;
-use fedi_social_client_v1::{FediSocialClientInit, RecoveryId};
-use fedimint_bip39_v1::Bip39RootSecretStrategy;
-use fedimint_client_v1::backup::Metadata;
-use fedimint_client_v1::db::ChronologicalOperationLogKey;
-use fedimint_client_v1::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
-use fedimint_client_v1::sm::OperationId;
-use fedimint_client_v1::{Client, ClientBuilder, ClientSecret};
-use fedimint_core_v1::api::{
-    DynModuleApi, FederationApiExt, GlobalFederationApi, IGlobalFederationApi, InviteCode,
-    StatusResponse, WsFederationApi,
-};
-use fedimint_core_v1::config::{ClientConfig, FederationId};
-use fedimint_core_v1::db::{DatabaseTransaction, IDatabase};
-use fedimint_core_v1::module::ApiRequestErased;
-use fedimint_core_v1::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
-use fedimint_core_v1::{Amount, PeerId};
-use fedimint_derive_secret_v1::{ChildId, DerivableSecret};
-use fedimint_ln_client_v1::{
-    network_to_currency, InternalPayState, LightningClientExt, LightningClientGen,
-    LightningClientModule, LightningMeta, LnPayState, LnReceiveState, PayType,
-};
-use fedimint_mint_client_v1::{
-    spendable_notes_to_operation_id, MintClientExt, MintClientGen, MintClientModule, MintMeta,
-    MintMetaVariants, OOBNotes, ReissueExternalNotesState, SpendOOBState,
-};
-use fedimint_wallet_client_v1::{
-    DepositState, WalletClientExt, WalletClientGen, WalletClientModule, WalletOperationMeta,
-    WithdrawState,
-};
-use futures::{Future, StreamExt};
-use lightning_invoice_v1::Invoice;
-use stability_pool_client_v1::common::AccountInfo;
-use stability_pool_client_v1::{StabilityPoolClientExt, StabilityPoolClientGen, StabilityPoolMeta};
-use tokio::sync::Mutex;
-use tracing::{debug, error, info, warn};
-use v1_rocksdb::{
+use db::{
     FediClientConfigKey, InviteCodeKey, LastBackupTimestampKey, TransactionNotesKey,
     XmppUsernameKey,
 };
+use fedi_social_client::{FediSocialClientInit, RecoveryId};
+use fedimint_client::backup::Metadata;
+use fedimint_client::db::ChronologicalOperationLogKey;
+use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
+use fedimint_client::{ClientArc, ClientBuilder, FederationInfo};
+use fedimint_core::api::{
+    DynModuleApi, FederationApiExt, GlobalFederationApi, IGlobalFederationApi, InviteCode,
+    StatusResponse, WsFederationApi,
+};
+use fedimint_core::config::{ClientConfig, FederationId};
+use fedimint_core::core::OperationId;
+use fedimint_core::db::{
+    Committable, Database, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped,
+};
+use fedimint_core::module::ApiRequestErased;
+use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
+use fedimint_core::{Amount, PeerId};
+use fedimint_derive_secret::{ChildId, DerivableSecret};
+use fedimint_ln_client::{
+    InternalPayState, LightningClientInit, LightningClientModule, LightningOperationMeta,
+    LnPayState, LnReceiveState, OutgoingLightningPayment, PayType,
+};
+use fedimint_mint_client::{
+    spendable_notes_to_operation_id, MintClientInit, MintClientModule, MintOperationMeta,
+    MintOperationMetaVariants, OOBNotes, ReissueExternalNotesState, SpendOOBState,
+};
+use fedimint_wallet_client::{
+    DepositState, WalletClientInit, WalletClientModule, WalletOperationMeta, WithdrawState,
+};
+use futures::{Future, StreamExt};
+use lightning_invoice::Bolt11Invoice;
+use social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
+use stability_pool_client::common::AccountInfo;
+use stability_pool_client::{
+    StabilityPoolClientInit, StabilityPoolClientModule, StabilityPoolMeta,
+};
+use tokio::sync::Mutex;
+use tracing::{debug, error, info, warn};
 
 use self::dev::{
     override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
 };
 use self::social::{
     RecoveryFile, SocialBackup, SocialRecovery, SocialRecoveryIdKey, SocialRecoveryState,
-    SocialRecoveryStateKey, SocialVerification, UserSeedPhrase,
+    SocialRecoveryStateKey, SocialVerification,
 };
 use super::constants::{
     BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, LNURL_CHILD_ID, MINT_OPERATION_TYPE,
@@ -69,20 +72,18 @@ use super::constants::{
 use super::event::{Event, EventSink, TypedEventExt};
 use super::storage::Storage;
 use super::types::{
-    federation_v1_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
+    federation_v2_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
     RpcLightningGatewayV1, RpcPayInvoiceResponse, RpcPublicKey, RpcRecoveryId,
     RpcSignedLnurlMessage, RpcXmppCredentials, SocialRecoveryApproval,
 };
 use crate::error::ErrorCode;
-use crate::federation_v1::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
-use crate::translate::Translate;
 use crate::types::{
     EcashReceiveMetadata, GuardianStatus, RpcBalanceInfo, RpcBitcoinDetails, RpcEcashInfo,
-    RpcFederationId, RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
+    RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
     RpcPayAddressResponse, RpcTransaction, RpcTransactionDirection, SocialRecoveryQr,
     WithdrawalDetails,
 };
-use crate::utils::{display_currency_v1, required_threashold_of, to_unix_time, unix_now};
+use crate::utils::{display_currency, required_threashold_of, to_unix_time, unix_now};
 pub const GUARDIAN_STATUS_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -92,8 +93,8 @@ pub struct FediConfig {
 
 /// Federation is a wrapper of "client ng" to assist with handling RPC commands
 #[derive(Clone)]
-pub struct FederationV1 {
-    pub client: Arc<Client>,
+pub struct FederationV2 {
+    pub client: ClientArc,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
     pub operation_states: Arc<Mutex<HashMap<OperationId, Box<dyn Any + Send + Sync + 'static>>>>,
@@ -106,41 +107,48 @@ enum PayState {
     Internal(InternalPayState),
 }
 
-impl FederationV1 {
+impl FederationV2 {
     /// Instantiate Federation from FediConfig
-    fn build_client_builder(client_config: ClientConfig, db: Box<dyn IDatabase>) -> ClientBuilder {
+    async fn build_client_builder(
+        client_config: Option<ClientConfig>,
+        db: Database,
+    ) -> anyhow::Result<ClientBuilder> {
         let mut client_builder = ClientBuilder::default();
-        client_builder.with_module(MintClientGen);
-        client_builder.with_module(LightningClientGen);
-        client_builder.with_module(WalletClientGen(None));
+        client_builder.with_module(MintClientInit);
+        client_builder.with_module(LightningClientInit);
+        client_builder.with_module(WalletClientInit(None));
         client_builder.with_module(FediSocialClientInit);
-        client_builder.with_module(StabilityPoolClientGen);
+        client_builder.with_module(StabilityPoolClientInit);
         client_builder.with_primary_module(1);
-        client_builder.with_config(client_config);
-        client_builder.with_dyn_database(db);
-        client_builder
+        if let Some(client_config) = client_config {
+            client_builder.with_federation_info(FederationInfo::from_config(client_config).await?);
+        }
+        client_builder.with_database(db);
+        Ok(client_builder)
     }
 
     /// Instantiate Federation from another client
     ///
     /// This is a hack used during recovery to get a handle to the old database
-    fn build_client_builder_from_client(old_client: Client) -> ClientBuilder {
+    async fn build_client_builder_from_client(
+        old_client: ClientArc,
+    ) -> anyhow::Result<ClientBuilder> {
         let client_config = old_client.get_config().clone();
         let mut client_builder = ClientBuilder::default();
-        client_builder.with_module(MintClientGen);
-        client_builder.with_module(LightningClientGen);
-        client_builder.with_module(WalletClientGen(None));
+        client_builder.with_module(MintClientInit);
+        client_builder.with_module(LightningClientInit);
+        client_builder.with_module(WalletClientInit(None));
         client_builder.with_module(FediSocialClientInit);
-        client_builder.with_module(StabilityPoolClientGen);
+        client_builder.with_module(StabilityPoolClientInit);
         client_builder.with_primary_module(1);
-        client_builder.with_config(client_config);
+        client_builder.with_federation_info(FederationInfo::from_config(client_config).await?);
         client_builder.with_old_client_database(old_client);
-        client_builder
+        Ok(client_builder)
     }
 
     /// Constructor which starts a bunch of async tasks and ensures username is
     /// saved to db (e.g. after recovery)
-    pub async fn new(ng: Arc<Client>, event_sink: EventSink, task_group: TaskGroup) -> Self {
+    pub async fn new(ng: ClientArc, event_sink: EventSink, task_group: TaskGroup) -> Self {
         let mut federation = Self {
             client: ng,
             event_sink,
@@ -155,14 +163,14 @@ impl FederationV1 {
 
     /// Instantiate Federation from FediConfig
     pub async fn from_db(
-        db: Box<dyn IDatabase>,
+        db: Database,
         event_sink: EventSink,
         task_group: TaskGroup,
+        root_mnemonic: bip39::Mnemonic,
+        client_config: Option<ClientConfig>,
     ) -> anyhow::Result<Self> {
         let fedi_config = {
-            let dbtx = db.begin_transaction().await;
-            let notifications = Default::default();
-            let mut dbtx = DatabaseTransaction::new(dbtx, Default::default(), &notifications);
+            let mut dbtx = db.begin_transaction().await;
             let config_string = dbtx
                 .get_value(&FediClientConfigKey)
                 .await
@@ -172,14 +180,14 @@ impl FederationV1 {
                 serde_json::from_str(&config_string).context("invalid config")?;
             fedi_config
         };
-        let client_builder = Self::build_client_builder(fedi_config.client_config, db);
-        let client = client_builder.build::<Bip39RootSecretStrategy>().await?;
-        Ok(Self::new(
-            Arc::new(client),
-            event_sink,
-            task_group.make_subgroup().await,
-        )
-        .await)
+        let client_root_secret = DerivableSecret::new_root(
+            &root_mnemonic
+                .to_seed_normalized(&fedi_config.client_config.global.federation_id().to_string()),
+            b"Fedi Salt",
+        );
+        let client_builder = Self::build_client_builder(client_config, db).await?;
+        let client = client_builder.build(client_root_secret).await?;
+        Ok(Self::new(client, event_sink, task_group.make_subgroup().await).await)
     }
 
     pub async fn download_client_config(
@@ -201,21 +209,34 @@ impl FederationV1 {
         event_sink: EventSink,
         task_group: TaskGroup,
         db_name: &str,
+        root_mnemonic: bip39::Mnemonic,
     ) -> Result<Self> {
-        let mut client_config = Self::download_client_config(&invite_code_string).await?;
+        // Download federation config
+        let invite_code: InviteCode = InviteCode::from_str(&invite_code_string)?;
+        let invite_code = override_localhost_invite_code(&invite_code);
+        let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]))
+            as Arc<dyn IGlobalFederationApi + Send + Sync + 'static>;
+        let mut client_config: ClientConfig =
+            api.as_ref().download_client_config(&invite_code).await?;
         override_localhost_client_config(&mut client_config);
 
         // Save client config and invite code
-        let dyn_db = storage.federation_idb(db_name).await?;
-        let dbtx = dyn_db.begin_transaction().await;
-        let notifications = Default::default();
-        let mut dbtx = DatabaseTransaction::new(dbtx, Default::default(), &notifications);
+        let db = storage.federation_database_v2(db_name).await?;
+        // fedimint-client will add decoders
+        let mut dbtx = db.begin_transaction().await;
         let fedi_config = FediConfig { client_config };
         dbtx.insert_entry(&FediClientConfigKey, &serde_json::to_string(&fedi_config)?)
             .await;
         dbtx.insert_entry(&InviteCodeKey, &invite_code_string).await;
         dbtx.commit_tx().await;
-        let federation = Self::from_db(dyn_db, event_sink, task_group).await?;
+        let federation = Self::from_db(
+            db,
+            event_sink,
+            task_group,
+            root_mnemonic,
+            Some(fedi_config.client_config),
+        )
+        .await?;
 
         Ok(federation)
     }
@@ -227,11 +248,9 @@ impl FederationV1 {
 
     // Fetch which network we're using
     pub fn get_network(&self) -> Network {
-        // FIXME: client.get_helper isn't currently exposed by the client, but is on v0
-        let (wallet, _instance) = self
-            .client
-            .get_first_module::<WalletClientModule>(&fedimint_wallet_client_v1::KIND);
-        wallet.get_network()
+        self.client
+            .get_first_module::<WalletClientModule>()
+            .get_network()
     }
 
     /// Return federation name from meta, or take first 8 characters of
@@ -243,7 +262,7 @@ impl FederationV1 {
     }
 
     /// Create database transaction
-    pub async fn dbtx(&self) -> DatabaseTransaction<'_> {
+    pub async fn dbtx(&self) -> DatabaseTransaction<'_, Committable> {
         self.client.db().begin_transaction().await
     }
 
@@ -316,26 +335,20 @@ impl FederationV1 {
         Ok(guardians_status)
     }
 
-    async fn wallet_summary(&self) -> fedimint_core_v1::TieredSummary {
-        let (mint_client, _) = self
-            .client
-            .get_first_module::<MintClientModule>(&fedimint_mint_client_v1::KIND);
-        mint_client
-            .get_wallet_summary(
-                &mut self
-                    .client
-                    .db()
-                    .begin_transaction()
-                    .await
-                    .with_module_prefix(1),
-            )
-            .await
+    async fn wallet_summary(&self) -> fedimint_core::TieredSummary {
+        let mint_client = self.client.get_first_module::<MintClientModule>();
+        let mut dbtx = mint_client.db.begin_transaction_nc().await;
+        mint_client.get_wallet_summary(&mut dbtx).await
     }
 
     /// Generate bitcoin address
     pub async fn generate_address(&self) -> Result<String> {
-        let expires_at = fedimint_core_v1::time::now() + Duration::from_secs(86400 * 365);
-        let (operation_id, address) = self.client.get_deposit_address(expires_at).await?;
+        let expires_at = fedimint_core::time::now() + Duration::from_secs(86400 * 365);
+        let (operation_id, address) = self
+            .client
+            .get_first_module::<WalletClientModule>()
+            .get_deposit_address(expires_at)
+            .await?;
 
         self.subscribe_deposit(operation_id, address.to_string(), expires_at)
             .await?;
@@ -352,13 +365,14 @@ impl FederationV1 {
     ) -> Result<RpcInvoice> {
         let (operation_id, invoice) = self
             .client
-            .create_bolt11_invoice(amount.0.translate(), description, expiry_time)
+            .get_first_module::<LightningClientModule>()
+            .create_bolt11_invoice(amount.0, description, expiry_time, ())
             .await?;
 
         self.subscribe_invoice(operation_id, invoice.clone())
             .await?;
 
-        RpcInvoice::try_from(invoice.translate())
+        invoice.try_into()
     }
 
     async fn subscribe_deposit(
@@ -374,6 +388,7 @@ impl FederationV1 {
             .spawn("subscribe deposit", move |_| async move {
                 let mut updates = fed
                     .client
+                    .get_first_module::<WalletClientModule>()
                     .subscribe_deposit_updates(operation_id)
                     .await
                     .unwrap() // FIXME
@@ -395,15 +410,12 @@ impl FederationV1 {
                             let transaction = RpcTransaction {
                                 id: operation_id.to_string(),
                                 created_at: unix_now().expect("unix time should exist"),
-                                amount: RpcAmount(
-                                    Amount::from_sats(
-                                        data.btc_transaction.output[data.out_idx as usize].value,
-                                    )
-                                    .translate(),
-                                ),
+                                amount: RpcAmount(Amount::from_sats(
+                                    data.btc_transaction.output[data.out_idx as usize].value,
+                                )),
                                 direction: RpcTransactionDirection::Receive,
                                 notes: "".into(),
-                                onchain_state: RpcOnchainState::from_deposit_state_v1(Some(
+                                onchain_state: RpcOnchainState::from_deposit_state(Some(
                                     deposit_outcome,
                                 )),
                                 bitcoin: onchain_details,
@@ -431,7 +443,7 @@ impl FederationV1 {
     pub async fn subscribe_invoice(
         &self,
         operation_id: OperationId,
-        invoice: Invoice, // TODO: fetch the invoice from the db
+        invoice: Bolt11Invoice, // TODO: fetch the invoice from the db
     ) -> Result<()> {
         let fed = self.clone();
         let _ = self
@@ -440,6 +452,7 @@ impl FederationV1 {
             .spawn("subscribe invoice", move |_| async move {
                 let mut updates = fed
                     .client
+                    .get_first_module::<LightningClientModule>()
                     .subscribe_ln_receive(operation_id)
                     .await
                     .unwrap() // FIXME
@@ -451,17 +464,14 @@ impl FederationV1 {
                             let transaction = RpcTransaction {
                                 id: operation_id.to_string(),
                                 created_at: unix_now().expect("unix time should exist"),
-                                amount: RpcAmount(
-                                    Amount {
-                                        msats: invoice.amount_milli_satoshis().unwrap(),
-                                    }
-                                    .translate(),
-                                ),
+                                amount: RpcAmount(Amount {
+                                    msats: invoice.amount_milli_satoshis().unwrap(),
+                                }),
                                 direction: RpcTransactionDirection::Receive,
                                 notes: "".into(),
                                 bitcoin: None,
                                 onchain_state: None,
-                                ln_state: RpcLnState::from_ln_recv_state(Some(update.translate())),
+                                ln_state: RpcLnState::from_ln_recv_state(Some(update)),
                                 lightning: Some(RpcLightningDetails {
                                     invoice: invoice.to_string(),
                                     fee: None, // TODO: to be implemented on the fedimint side
@@ -484,11 +494,13 @@ impl FederationV1 {
     }
 
     async fn override_active_gateway(&self) -> Result<()> {
-        let (_lightning, instance) = self
+        let ln_module = self.client.get_first_module::<LightningClientModule>();
+        let dbtx = ln_module.db.begin_transaction().await;
+        let mut gateway = self
             .client
-            .get_first_module::<LightningClientModule>(&fedimint_ln_client_v1::KIND);
-        let dbtx = instance.db.begin_transaction().await;
-        let mut gateway = self.client.select_active_gateway().await?;
+            .get_first_module::<LightningClientModule>()
+            .select_active_gateway()
+            .await?;
         override_localhost_gateway(&mut gateway, dbtx).await;
         Ok(())
     }
@@ -496,18 +508,18 @@ impl FederationV1 {
     /// Check whether lightning invoice is safe to pay
     ///
     /// TODO: should we check if our balance exceeds it?
-    pub async fn can_pay_invoice(&self, invoice: &Invoice) -> Result<()> {
+    pub async fn can_pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<()> {
         // Has an amount
         if invoice.amount_milli_satoshis().is_none() {
             bail!("Invoice is missing amount")
         }
 
         // Same network
-        if network_to_currency(self.get_network()) != invoice.currency() {
+        if self.get_network() != invoice.network() {
             bail!(format!(
                 "Invoice is for wrong network. Expected {}, got {}",
                 self.get_network(),
-                display_currency_v1(invoice.currency())
+                display_currency(invoice.currency())
             ))
         }
 
@@ -515,15 +527,21 @@ impl FederationV1 {
     }
 
     /// Pay lightning invoice
-    pub async fn pay_invoice(&self, invoice: &Invoice) -> Result<RpcPayInvoiceResponse> {
+    pub async fn pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<RpcPayInvoiceResponse> {
         self.override_active_gateway().await?;
 
         self.can_pay_invoice(invoice).await?;
 
         let _federation_id = self.federation_id();
-        let (pay_type, _contract_id) = self.client.pay_bolt11_invoice(invoice.to_owned()).await?;
+        let OutgoingLightningPayment { payment_type, .. } = self
+            .client
+            .get_first_module::<LightningClientModule>()
+            .pay_bolt11_invoice(invoice.to_owned())
+            .await?;
 
-        let response = self.subscibe_to_ln_pay(pay_type, invoice.clone()).await?;
+        let response = self
+            .subscibe_to_ln_pay(payment_type, invoice.clone())
+            .await?;
 
         Ok(response)
     }
@@ -536,18 +554,18 @@ impl FederationV1 {
     ) -> Result<RpcPayAddressResponse> {
         let fees = self
             .client
-            .get_withdraw_fee(address.clone(), amount)
+            .get_first_module::<WalletClientModule>()
+            .get_withdraw_fees(address.clone(), amount)
             .await?;
 
-        let operation_id = fedimint_wallet_client_v1::WalletClientExt::withdraw(
-            &*self.client,
-            address,
-            amount,
-            fees,
-        )
-        .await?;
+        let operation_id = self
+            .client
+            .get_first_module::<WalletClientModule>()
+            .withdraw(address, amount, fees)
+            .await?;
         let mut updates = self
             .client
+            .get_first_module::<WalletClientModule>()
             .subscribe_withdraw_updates(operation_id)
             .await?
             .into_stream();
@@ -574,7 +592,12 @@ impl FederationV1 {
         &self,
         operation_id: OperationId,
     ) -> Option<(WithdrawState, Option<bitcoin::Txid>)> {
-        let mut updates = match self.client.subscribe_withdraw_updates(operation_id).await {
+        let mut updates = match self
+            .client
+            .get_first_module::<WalletClientModule>()
+            .subscribe_withdraw_updates(operation_id)
+            .await
+        {
             Err(_) => return None,
             Ok(stream) => stream.into_stream(),
         };
@@ -598,7 +621,7 @@ impl FederationV1 {
     ///
     /// This currently doesn't have a way to filter out in-active operations ...
     pub async fn subscribe_to_all_operations(&self) {
-        let start = fedimint_core_v1::time::now();
+        let start = fedimint_core::time::now();
         let operations = self.client.get_active_operations().await;
         for operation_id in operations.iter() {
             if let Err(e) = self.subscribe_to_operation(*operation_id).await {
@@ -610,7 +633,7 @@ impl FederationV1 {
         }
         info!(
             "subscribe_to_all_operations took {:?}",
-            fedimint_core_v1::time::now().duration_since(start)
+            fedimint_core::time::now().duration_since(start)
         );
     }
 
@@ -625,9 +648,9 @@ impl FederationV1 {
             .get_operation(operation_id)
             .await
             .ok_or(anyhow::anyhow!("Operation not found"))?;
-        match operation.operation_type() {
+        match operation.operation_module_kind() {
             LIGHTNING_OPERATION_TYPE => match operation.meta() {
-                LightningMeta::Pay { invoice, .. } => {
+                LightningOperationMeta::Pay(pay_meta) => {
                     let fed = self.clone();
                     let _ = self
                         .task_group
@@ -635,7 +658,10 @@ impl FederationV1 {
                         .spawn("subscribe_to_ln_pay", move |_| async move {
                             // FIXME: what happens if it fails?
                             if let Err(e) = fed
-                                .subscibe_to_ln_pay(PayType::Lightning(operation_id), invoice)
+                                .subscibe_to_ln_pay(
+                                    PayType::Lightning(operation_id),
+                                    pay_meta.invoice,
+                                )
                                 .await
                             {
                                 warn!("subscribe_to_ln_pay error: {e:?}")
@@ -643,7 +669,7 @@ impl FederationV1 {
                         })
                         .await;
                 }
-                LightningMeta::Receive { invoice, .. } => {
+                LightningOperationMeta::Receive { invoice, .. } => {
                     let fed = self.clone();
                     let _ = self
                         .task_group
@@ -658,9 +684,9 @@ impl FederationV1 {
                 }
             },
             MINT_OPERATION_TYPE => {
-                let meta = operation.meta::<MintMeta>();
+                let meta = operation.meta::<MintOperationMeta>();
                 match meta.variant {
-                    MintMetaVariants::SpendOOB { .. } => {
+                    MintOperationMetaVariants::SpendOOB { .. } => {
                         let fed = self.clone();
                         let _ = self
                             .task_group
@@ -671,7 +697,7 @@ impl FederationV1 {
                             })
                             .await;
                     }
-                    MintMetaVariants::Reissuance { .. } => {
+                    MintOperationMetaVariants::Reissuance { .. } => {
                         let fed = self.clone();
                         let _ = self
                             .task_group
@@ -698,7 +724,7 @@ impl FederationV1 {
                     | WalletOperationMeta::RbfWithdraw { .. } => {
                         tracing::debug!(
                             "Can't subscribe to operation id: {}",
-                            operation.operation_type()
+                            operation.operation_module_kind()
                         );
                     }
                 }
@@ -711,11 +737,13 @@ impl FederationV1 {
                             .clone()
                             .spawn("subscribe_stability_pool_deposit", move |_| async move {
                                 fed.subscribe_client_operation(
-                                    fed.client.subscribe_deposit_operation(operation_id),
+                                    fed.client
+                                        .get_first_module::<StabilityPoolClientModule>()
+                                        .subscribe_deposit_operation(operation_id),
                                     |state| {
-                                        Event::stability_pool_deposit_v1(
+                                        Event::stability_pool_deposit(
                                             fed.federation_id().to_string(),
-                                            operation_id.translate(),
+                                            operation_id,
                                             state,
                                         )
                                     },
@@ -730,11 +758,13 @@ impl FederationV1 {
                             .clone()
                             .spawn("subscribe_stability_pool_withdraw", move |_| async move {
                                 fed.subscribe_client_operation(
-                                    fed.client.subscribe_withdraw(operation_id),
+                                    fed.client
+                                        .get_first_module::<StabilityPoolClientModule>()
+                                        .subscribe_withdraw(operation_id),
                                     |state| {
-                                        Event::stability_pool_withdrawal_v1(
+                                        Event::stability_pool_withdrawal(
                                             fed.federation_id().to_string(),
-                                            operation_id.translate(),
+                                            operation_id,
                                             state,
                                         )
                                     },
@@ -749,7 +779,7 @@ impl FederationV1 {
             _ => {
                 tracing::debug!(
                     "Can't subscribe to operation id: {}",
-                    operation.operation_type()
+                    operation.operation_module_kind()
                 );
             }
         }
@@ -760,13 +790,14 @@ impl FederationV1 {
     pub async fn subscibe_to_ln_pay(
         &self,
         pay_type: PayType,
-        _invoice: Invoice,
+        _invoice: Bolt11Invoice,
     ) -> Result<RpcPayInvoiceResponse> {
         timeout(PAY_INVOICE_TIMEOUT, async {
             match pay_type {
                 PayType::Internal(operation_id) => {
                     let mut updates = self
                         .client
+                        .get_first_module::<LightningClientModule>()
                         .subscribe_internal_pay(operation_id)
                         .await?
                         .into_stream();
@@ -805,6 +836,7 @@ impl FederationV1 {
                 PayType::Lightning(operation_id) => {
                     let mut updates = self
                         .client
+                        .get_first_module::<LightningClientModule>()
                         .subscribe_ln_pay(operation_id)
                         .await?
                         .into_stream();
@@ -870,28 +902,37 @@ impl FederationV1 {
     pub async fn send_balance_event(&self) {
         self.event_sink.typed_event(&Event::balance(
             self.federation_id().to_string(),
-            self.get_balance().await.translate(),
+            self.get_balance().await,
         ));
     }
 
     /// Send whenever social recovery state changes
     pub async fn send_federation_event(&self) {
-        let rpc_federation = federation_v1_to_rpc_federation(&Arc::new(self.clone())).await;
+        let rpc_federation = federation_v2_to_rpc_federation(&Arc::new(self.clone())).await;
         let event = Event::federation(rpc_federation);
         self.event_sink.typed_event(&event);
     }
 
     /// List all lightning gateways registered with the federation
     pub async fn list_gateways(&self) -> anyhow::Result<Vec<RpcLightningGatewayV1>> {
-        let gateways = self.client.fetch_registered_gateways().await?;
-        let active_gateway = self.client.select_active_gateway().await.ok();
+        let gateways = self
+            .client
+            .get_first_module::<LightningClientModule>()
+            .fetch_registered_gateways()
+            .await?;
+        let active_gateway = self
+            .client
+            .get_first_module::<LightningClientModule>()
+            .select_active_gateway()
+            .await
+            .ok();
         let bridge_gateways: Vec<RpcLightningGatewayV1> = gateways
             .into_iter()
             .map(|gw| RpcLightningGatewayV1 {
-                api: gw.api.to_string(),
-                node_pub_key: RpcPublicKey(gw.node_pub_key),
-                gateway_id: RpcPublicKey(gw.gateway_id),
-                active: active_gateway == Some(gw),
+                api: gw.info.api.to_string(),
+                node_pub_key: RpcPublicKey(gw.info.node_pub_key),
+                gateway_id: RpcPublicKey(gw.info.gateway_id),
+                active: active_gateway == Some(gw.info),
             })
             .collect();
         Ok(bridge_gateways)
@@ -899,7 +940,10 @@ impl FederationV1 {
 
     /// Switch active lightning gateway
     pub async fn switch_gateway(&self, gateway_id: &PublicKey) -> Result<()> {
-        self.client.set_active_gateway(gateway_id).await?;
+        self.client
+            .get_first_module::<LightningClientModule>()
+            .set_active_gateway(gateway_id)
+            .await?;
         Ok(())
     }
 
@@ -910,7 +954,11 @@ impl FederationV1 {
     ) -> Result<Amount> {
         let amount = ecash.total_amount();
         // TODO: include metadata as 2nd argument
-        let operation_id = self.client.reissue_external_notes(ecash, meta).await?;
+        let operation_id = self
+            .client
+            .get_first_module::<MintClientModule>()
+            .reissue_external_notes(ecash, meta)
+            .await?;
         self.subscribe_to_ecash_reissue(operation_id).await?;
         Ok(amount)
     }
@@ -928,14 +976,17 @@ impl FederationV1 {
     pub fn validate_ecash(ecash: String) -> Result<RpcEcashInfo> {
         let oob = OOBNotes::from_str(&ecash)?;
         Ok(RpcEcashInfo {
-            amount: RpcAmount(oob.total_amount().translate()),
-            federation_id: Some(RpcFederationId(oob.federation_id.to_string())),
+            amount: RpcAmount(oob.total_amount()),
+            // FIXME: change this type? Make `federation_id` optional? Add optional
+            // `federation_id_prefix`? Or enum
+            federation_id: None,
         })
     }
 
     pub async fn subscribe_to_ecash_reissue(&self, operation_id: OperationId) -> Result<()> {
         let mut updates = self
             .client
+            .get_first_module::<MintClientModule>()
             .subscribe_reissue_external_notes(operation_id)
             .await
             .unwrap()
@@ -954,8 +1005,12 @@ impl FederationV1 {
     /// FIXME: might be better to return a typed object here and serialize at
     /// RPC layer
     pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
-        let cancel_time = fedimint_core_v1::time::now() + ONE_WEEK;
-        let (_, notes) = self.client.spend_notes(amount, ONE_WEEK, ()).await?;
+        let cancel_time = fedimint_core::time::now() + ONE_WEEK;
+        let (_, notes) = self
+            .client
+            .get_first_module::<MintClientModule>()
+            .spend_notes(amount, ONE_WEEK, ())
+            .await?;
         let notes = if amount != notes.total_amount() {
             // try to make change
             timeout(REISSUE_ECASH_TIMEOUT, async {
@@ -964,7 +1019,11 @@ impl FederationV1 {
             })
             .await
             .context("Failed to select notes with correct amount")??;
-            let (_, new_notes) = self.client.spend_notes(amount, ONE_WEEK, ()).await?;
+            let (_, new_notes) = self
+                .client
+                .get_first_module::<MintClientModule>()
+                .spend_notes(amount, ONE_WEEK, ())
+                .await?;
             new_notes
         } else {
             notes
@@ -976,10 +1035,13 @@ impl FederationV1 {
     }
 
     pub async fn cancel_ecash(&self, ecash: OOBNotes) -> Result<()> {
-        let op_id = spendable_notes_to_operation_id(&ecash.notes);
+        let op_id = spendable_notes_to_operation_id(&ecash.notes());
         // NOTE: try_cancel_spend_notes itself is not presisted across restarts.
         // it uses inmemory channel.
-        self.client.try_cancel_spend_notes(op_id).await;
+        self.client
+            .get_first_module::<MintClientModule>()
+            .try_cancel_spend_notes(op_id)
+            .await;
         self.subscribe_oob_spend(op_id).await?;
         Ok(())
     }
@@ -987,6 +1049,7 @@ impl FederationV1 {
     async fn subscribe_oob_spend(&self, op_id: OperationId) -> Result<(), anyhow::Error> {
         let mut updates = self
             .client
+            .get_first_module::<MintClientModule>()
             .subscribe_spend_notes(op_id)
             .await?
             .into_stream();
@@ -995,12 +1058,12 @@ impl FederationV1 {
             self.update_operation_state(op_id, update.clone()).await;
             match update {
                 // TODO: intermediate states
-                fedimint_mint_client_v1::SpendOOBState::Created => {}
-                fedimint_mint_client_v1::SpendOOBState::UserCanceledProcessing => {}
-                fedimint_mint_client_v1::SpendOOBState::UserCanceledSuccess => {}
-                fedimint_mint_client_v1::SpendOOBState::Success => {}
-                fedimint_mint_client_v1::SpendOOBState::Refunded => {}
-                fedimint_mint_client_v1::SpendOOBState::UserCanceledFailure => {
+                fedimint_mint_client::SpendOOBState::Created => {}
+                fedimint_mint_client::SpendOOBState::UserCanceledProcessing => {}
+                fedimint_mint_client::SpendOOBState::UserCanceledSuccess => {}
+                fedimint_mint_client::SpendOOBState::Success => {}
+                fedimint_mint_client::SpendOOBState::Refunded => {}
+                fedimint_mint_client::SpendOOBState::UserCanceledFailure => {
                     err = Some(anyhow!(ErrorCode::EcashCancelFailed));
                 }
             }
@@ -1017,21 +1080,21 @@ impl FederationV1 {
         self.client.external_secret()
     }
 
-    /// Fetch mnemonic from database
-    pub async fn get_mnemonic(&self) -> bip39::Mnemonic {
-        self.client
-            .root_secret_encoding::<Bip39RootSecretStrategy>()
-            .await
-    }
+    // /// Fetch mnemonic from database
+    // pub async fn get_mnemonic(&self) -> bip39::Mnemonic {
+    //     self.client
+    //         .root_secret_encoding::<Bip39RootSecretStrategy>()
+    //         .await
+    // }
 
-    /// Fetch mnemonic from database as vec of strings
-    pub async fn get_mnemonic_words(&self) -> Vec<String> {
-        self.get_mnemonic()
-            .await
-            .word_iter()
-            .map(|s| s.to_string())
-            .collect()
-    }
+    // /// Fetch mnemonic from database as vec of strings
+    // pub async fn get_mnemonic_words(&self) -> Vec<String> {
+    //     self.get_mnemonic()
+    //         .await
+    //         .word_iter()
+    //         .map(|s| s.to_string())
+    //         .collect()
+    // }
 
     /// Backup all ecash and username with the federation
     pub async fn backup(&self) -> Result<()> {
@@ -1054,40 +1117,38 @@ impl FederationV1 {
         Ok(())
     }
 
+    // TODO shaurya update this function
     /// Recover federation from mnemonic
-    pub async fn from_mnemonic(
-        mnemonic: bip39::Mnemonic,
-        old_client: Client,
-        event_sink: EventSink,
-        task_group: TaskGroup,
-    ) -> Result<Self> {
-        let client_builder = Self::build_client_builder_from_client(old_client);
-        let secret = ClientSecret::<Bip39RootSecretStrategy>::new(mnemonic);
-        let (client, metadata) = client_builder
-            .build_restoring_from_backup::<Bip39RootSecretStrategy>(secret)
-            .await?;
+    // pub async fn from_mnemonic(
+    //     mnemonic: bip39::Mnemonic,
+    //     old_client: Client,
+    //     event_sink: EventSink,
+    //     task_group: TaskGroup,
+    // ) -> Result<Self> { let client_builder = Self::build_client_builder_from_client(old_client);
+    //   let secret = ClientSecret::<Bip39RootSecretStrategy>::new(mnemonic); let (client, metadata)
+    //   = client_builder .build_restoring_from_backup::<Bip39RootSecretStrategy>(secret) .await?;
 
-        let federation = Self::new(
-            Arc::new(client),
-            event_sink,
-            task_group.make_subgroup().await,
-        )
-        .await;
+    //     let federation = Self::new(
+    //         Arc::new(client),
+    //         event_sink,
+    //         task_group.make_subgroup().await,
+    //     )
+    //     .await;
 
-        federation.save_restored_metadata(metadata).await?;
+    //     federation.save_restored_metadata(metadata).await?;
 
-        Ok(federation)
-    }
+    //     Ok(federation)
+    // }
 
     /// Wipe state and shutdown tasks
     /// FIXME: maybe we should split this into 2 methods?
-    pub async fn prepare_for_recovery(&self) -> Result<Client> {
+    pub async fn prepare_for_recovery(&self) -> Result<ClientArc> {
         self.task_group
             .clone() // FIXME: remove this clone
             .shutdown_join_all(Some(SHUTDOWN_TIMEOUT))
             .await?;
         self.client.wipe_state().await?;
-        let client: Client = self.client.as_ref().clone();
+        let client: ClientArc = self.client.clone();
         Ok(client)
     }
 
@@ -1103,12 +1164,10 @@ impl FederationV1 {
     }
 
     fn social_api(&self) -> DynModuleApi {
-        let (_, instance) = self
+        let social_module = self
             .client
-            .get_first_module::<fedi_social_client_v1::FediSocialClientModule>(
-                &fedi_social_client_v1::KIND,
-            );
-        self.client.api().with_module(instance.id)
+            .get_first_module::<fedi_social_client::FediSocialClientModule>();
+        social_module.api
     }
 
     pub async fn decoded_config(&self) -> Result<ClientConfig> {
@@ -1120,7 +1179,7 @@ impl FederationV1 {
     pub async fn social_backup(&self) -> Result<SocialBackup> {
         let client_config = self.decoded_config().await?;
         let (module_id, cfg) = client_config
-            .get_first_module_by_kind::<fedi_social_client_v1::config::FediSocialClientConfig>(
+            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
                 "fedi-social",
             )
             .expect("needs social recovery module client config");
@@ -1139,7 +1198,7 @@ impl FederationV1 {
     ) -> anyhow::Result<SocialRecovery> {
         let client_config = self.decoded_config().await?;
         let (module_id, cfg) = client_config
-            .get_first_module_by_kind::<fedi_social_client_v1::config::FediSocialClientConfig>(
+            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
                 "fedi-social",
             )
             .expect("needs social recovery module client config");
@@ -1153,7 +1212,7 @@ impl FederationV1 {
     ) -> Result<SocialRecovery> {
         let client_config = self.decoded_config().await?;
         let (module_id, cfg) = client_config
-            .get_first_module_by_kind::<fedi_social_client_v1::config::FediSocialClientConfig>(
+            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
                 "fedi-social",
             )
             .expect("needs social recovery module client config");
@@ -1183,20 +1242,8 @@ impl FederationV1 {
 
     /// Upload social recovery recovery file to federation given a recovery
     /// video
-    pub async fn upload_backup_file(&self, video_file: Vec<u8>) -> Result<Vec<u8>> {
-        let verification_doc = VerificationDocument::from_raw(&video_file);
-
-        let seed_words = self.get_mnemonic_words().await;
-        let seed_string = seed_words.join(" ");
-        let seed_phrase = UserSeedPhrase::from(seed_string);
-
-        let backup_client = self.social_backup().await?;
-        let recovery_file =
-            backup_client.prepare_recovery_file(verification_doc.clone(), seed_phrase.clone());
-        backup_client
-            .upload_backup_to_federation(&recovery_file)
-            .await?;
-        Ok(recovery_file.to_bytes())
+    pub async fn upload_backup_file(&self, _: Vec<u8>) -> Result<Vec<u8>> {
+        bail!("Social recovery not implemented for v2 federations, yet")
     }
 
     /// Start a new social recovery session if one doesn't exist already
@@ -1236,7 +1283,6 @@ impl FederationV1 {
         let recovery_id = self
             .get_social_recovery_id()
             .await
-            .map(Translate::translate)
             .map(RpcRecoveryId)
             .ok_or(anyhow!("No recovery ID found"))?;
         Ok(SocialRecoveryQr { recovery_id })
@@ -1384,7 +1430,7 @@ impl FederationV1 {
 
     /// Execute a backup if one is due and username is present (according to db)
     pub async fn scheduled_backup(&self) -> Result<()> {
-        let now = fedimint_core_v1::time::now();
+        let now = fedimint_core::time::now();
 
         // Backup is due
         if let Some(last_backup) = self.get_last_backup_timestamp().await {
@@ -1423,7 +1469,7 @@ impl FederationV1 {
                             }
                         }
                         // We check if a backup is due every 10 seconds
-                        fedimint_core_v1::task::sleep(Duration::from_secs(10)).await;
+                        fedimint_core::task::sleep(Duration::from_secs(10)).await;
                     }
                 },
             )
@@ -1490,7 +1536,12 @@ impl FederationV1 {
         // If no cached outcomes, consume the stream to get the outcome and populate
         // client's cache in future This is only useful for outgoing lightning
         // payments which fail due to timeout and nothing is subscribed to them
-        let mut updates = match self.client.subscribe_deposit_updates(operation_id).await {
+        let mut updates = match self
+            .client
+            .get_first_module::<WalletClientModule>()
+            .subscribe_deposit_updates(operation_id)
+            .await
+        {
             Err(_) => return None,
             Ok(stream) => stream.into_stream(),
         };
@@ -1524,48 +1575,40 @@ impl FederationV1 {
                         .await
                         .unwrap_or_default();
 
-                    match op.1.operation_type() {
+                    match op.1.operation_module_kind() {
                         LIGHTNING_OPERATION_TYPE => match op.1.meta() {
-                            LightningMeta::Pay { invoice, .. } => Some(RpcTransaction {
+                            LightningOperationMeta::Pay(pay_meta) => Some(RpcTransaction {
                                 id: op.0.operation_id.to_string(),
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
-                                amount: RpcAmount(
-                                    Amount {
-                                        msats: invoice.amount_milli_satoshis().unwrap(),
-                                    }
-                                    .translate(),
-                                ),
+                                amount: RpcAmount(Amount {
+                                    msats: pay_meta.invoice.amount_milli_satoshis().unwrap(),
+                                }),
                                 direction: RpcTransactionDirection::Send,
                                 notes,
                                 onchain_state: None,
                                 bitcoin: None,
                                 ln_state: RpcLnState::from_ln_pay_state(
-                                    self.get_ln_pay_outcome(op.0.operation_id, op.1)
-                                        .await
-                                        .translate(),
+                                    self.get_ln_pay_outcome(op.0.operation_id, op.1).await,
                                 ),
                                 lightning: Some(RpcLightningDetails {
-                                    invoice: invoice.to_string(),
+                                    invoice: pay_meta.invoice.to_string(),
                                     fee: None, // TODO: to be implemented on the fedimint side
                                 }),
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
                             }),
-                            LightningMeta::Receive { invoice, .. } => {
+                            LightningOperationMeta::Receive { invoice, .. } => {
                                 let ln_state = RpcLnState::from_ln_recv_state(
-                                    op.1.outcome::<LnReceiveState>().translate(),
+                                    op.1.outcome::<LnReceiveState>(),
                                 );
                                 Some(RpcTransaction {
                                     id: op.0.operation_id.to_string(),
                                     created_at: to_unix_time(op.0.creation_time)
                                         .expect("unix time should exist"),
-                                    amount: RpcAmount(
-                                        Amount {
-                                            msats: invoice.amount_milli_satoshis().unwrap(),
-                                        }
-                                        .translate(),
-                                    ),
+                                    amount: RpcAmount(Amount {
+                                        msats: invoice.amount_milli_satoshis().unwrap(),
+                                    }),
                                     direction: RpcTransactionDirection::Receive,
                                     notes,
                                     onchain_state: None,
@@ -1586,9 +1629,9 @@ impl FederationV1 {
                                 id: op.0.operation_id.to_string(),
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
-                                amount: RpcAmount(amount.translate()),
+                                amount: RpcAmount(amount),
                                 direction: RpcTransactionDirection::Send,
-                                notes: "Deposit to stable balance".to_string(),
+                                notes: "stability pool".to_string(),
                                 onchain_state: None,
                                 bitcoin: None,
                                 ln_state: None,
@@ -1602,9 +1645,9 @@ impl FederationV1 {
                                 id: op.0.operation_id.to_string(),
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
-                                amount: RpcAmount(unlocked_amount.translate()),
-                                direction: RpcTransactionDirection::Receive,
-                                notes: "Withdrawal from stable balance".to_string(),
+                                amount: RpcAmount(unlocked_amount),
+                                direction: RpcTransactionDirection::Send,
+                                notes: "stability pool".to_string(),
                                 onchain_state: None,
                                 bitcoin: None,
                                 ln_state: None,
@@ -1615,9 +1658,9 @@ impl FederationV1 {
                             StabilityPoolMeta::CancelRenewal { .. } => None,
                         },
                         MINT_OPERATION_TYPE => {
-                            let mint_meta: MintMeta = op.1.meta();
+                            let mint_meta: MintOperationMeta = op.1.meta();
                             match mint_meta.variant {
-                                MintMetaVariants::Reissuance { .. } => {
+                                MintOperationMetaVariants::Reissuance { .. } => {
                                     let internal = serde_json::from_value::<EcashReceiveMetadata>(
                                         mint_meta.extra_meta,
                                     )
@@ -1632,7 +1675,7 @@ impl FederationV1 {
                                             onchain_state: None,
                                             bitcoin: None,
                                             ln_state: None,
-                                            amount: RpcAmount(mint_meta.amount.translate()),
+                                            amount: RpcAmount(mint_meta.amount),
                                             lightning: None,
                                             oob_state: None,
                                             onchain_withdrawal_details: None,
@@ -1641,7 +1684,7 @@ impl FederationV1 {
                                         None
                                     }
                                 }
-                                MintMetaVariants::SpendOOB {
+                                MintOperationMetaVariants::SpendOOB {
                                     requested_amount, ..
                                 } => Some(RpcTransaction {
                                     id: op.0.operation_id.to_string(),
@@ -1652,12 +1695,12 @@ impl FederationV1 {
                                     onchain_state: None,
                                     bitcoin: None,
                                     ln_state: None,
-                                    amount: RpcAmount(requested_amount.translate()),
+                                    amount: RpcAmount(requested_amount),
                                     lightning: None,
                                     oob_state: self
                                         .get_oob_spend_outcome(op.0.operation_id, op.1)
                                         .await
-                                        .map(crate::types::RpcOOBState::from_spend_v1),
+                                        .map(crate::types::RpcOOBState::from_spend_v2),
                                     onchain_withdrawal_details: None,
                                 }),
                             }
@@ -1670,7 +1713,7 @@ impl FederationV1 {
                                 let outcome =
                                     self.get_deposit_outcome(op.0.operation_id, op.1).await;
                                 let onchain_state =
-                                    RpcOnchainState::from_deposit_state_v1(outcome.clone());
+                                    RpcOnchainState::from_deposit_state(outcome.clone());
 
                                 Some(RpcTransaction {
                                     id: op.0.operation_id.to_string(),
@@ -1690,14 +1733,11 @@ impl FederationV1 {
                                             DepositState::WaitingForConfirmation(data)
                                             | DepositState::Confirmed(data)
                                             | DepositState::Claimed(data),
-                                        ) => RpcAmount(
-                                            Amount::from_sats(
-                                                data.btc_transaction.output[data.out_idx as usize]
-                                                    .value,
-                                            )
-                                            .translate(),
-                                        ),
-                                        _ => RpcAmount(Amount::ZERO.translate()),
+                                        ) => RpcAmount(Amount::from_sats(
+                                            data.btc_transaction.output[data.out_idx as usize]
+                                                .value,
+                                        )),
+                                        _ => RpcAmount(Amount::ZERO),
                                     },
                                     lightning: None,
                                     oob_state: None,
@@ -1710,10 +1750,10 @@ impl FederationV1 {
                                 fee,
                                 change: _,
                             } => {
-                                let core_amount = fedimint_core_v1::Amount {
+                                let core_amount = fedimint_core::Amount {
                                     msats: amount.to_sat() * 1000,
                                 };
-                                let rpc_amount = RpcAmount(core_amount.translate());
+                                let rpc_amount = RpcAmount(core_amount);
 
                                 // Todo: Figure out a where to pass back txid to client
                                 let (outcome, txid) = self
@@ -1722,7 +1762,7 @@ impl FederationV1 {
                                     .expect("Expected a withdrawal outcome but got None");
 
                                 let onchain_state =
-                                    RpcOnchainState::from_withdraw_state_v1(Some(outcome));
+                                    RpcOnchainState::from_withdraw_state(Some(outcome));
 
                                 let txid_str = match txid {
                                     Some(n) => n.to_string(),
@@ -1754,7 +1794,7 @@ impl FederationV1 {
                         _ => {
                             panic!(
                                 "Found unimplemented for module with operation type = {}",
-                                op.1.operation_type()
+                                op.1.operation_module_kind()
                             );
                         }
                     }
@@ -1872,6 +1912,7 @@ impl FederationV1 {
     /// Get user's stability pool account info
     pub async fn stability_pool_account_info(&self) -> Result<AccountInfo> {
         self.client
+            .get_first_module::<StabilityPoolClientModule>()
             .account_info()
             .await
             .context("Error when fetching account info")
@@ -1883,17 +1924,23 @@ impl FederationV1 {
     /// cycle turnover occurs, staged seeks are processed in order
     /// to produce locks.
     pub async fn stability_pool_deposit_to_seek(&self, amount: Amount) -> Result<OperationId> {
-        let operation_id = self.client.deposit_to_seek(amount).await?;
+        let operation_id = self
+            .client
+            .get_first_module::<StabilityPoolClientModule>()
+            .deposit_to_seek(amount)
+            .await?;
         let fed = self.clone();
         self.task_group
             .clone()
             .spawn("subscribe_stability_pool_deposit", move |_| async move {
                 fed.subscribe_client_operation(
-                    fed.client.subscribe_deposit_operation(operation_id),
+                    fed.client
+                        .get_first_module::<StabilityPoolClientModule>()
+                        .subscribe_deposit_operation(operation_id),
                     |state| {
-                        Event::stability_pool_deposit_v1(
+                        Event::stability_pool_deposit(
                             fed.federation_id().to_string(),
-                            operation_id.translate(),
+                            operation_id,
                             state,
                         )
                     },
@@ -1917,19 +1964,23 @@ impl FederationV1 {
         unlocked_amount: Amount,
         locked_bps: u32,
     ) -> Result<OperationId> {
-        let (operation_id, _) =
-            StabilityPoolClientExt::withdraw(self.client.as_ref(), unlocked_amount, locked_bps)
-                .await?;
+        let (operation_id, _) = self
+            .client
+            .get_first_module::<StabilityPoolClientModule>()
+            .withdraw(unlocked_amount, locked_bps)
+            .await?;
         let fed = self.clone();
         self.task_group
             .clone()
             .spawn("subscribe_stability_pool_withdraw", move |_| async move {
                 fed.subscribe_client_operation(
-                    fed.client.subscribe_withdraw(operation_id),
+                    fed.client
+                        .get_first_module::<StabilityPoolClientModule>()
+                        .subscribe_withdraw(operation_id),
                     |state| {
-                        Event::stability_pool_withdrawal_v1(
+                        Event::stability_pool_withdrawal(
                             fed.federation_id().to_string(),
-                            operation_id.translate(),
+                            operation_id,
                             state,
                         )
                     },

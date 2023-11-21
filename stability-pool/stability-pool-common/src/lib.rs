@@ -1,12 +1,12 @@
 use std::fmt::{self, Display};
 use std::time::SystemTime;
 
+use anyhow::bail;
 use bitcoin::XOnlyPublicKey;
-use fedimint_core::core::{Decoder, ModuleKind};
+use fedimint_core::core::{Decoder, ModuleInstanceId, ModuleKind};
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::module::registry::ModuleInstanceId;
 use fedimint_core::module::{CommonModuleInit, ModuleCommon, ModuleConsensusVersion};
-use fedimint_core::{plugin_types_trait_impl_common, Amount};
+use fedimint_core::{extensible_associated_module_type, plugin_types_trait_impl_common, Amount};
 use serde::{Deserialize, Serialize};
 
 pub mod config;
@@ -35,20 +35,85 @@ pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion(0);
 /// The `amount` specified in the `StabilityPoolInput` must be less than or
 /// equal to the user's total unlocked balance, which is defined as the sum of
 /// idle balance and staged balance.
-#[derive(Clone, Debug, Hash, PartialEq, Encodable, Decodable)]
-pub struct StabilityPoolInput {
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
+pub struct StabilityPoolInputV0 {
     pub account: XOnlyPublicKey,
     pub amount: Amount,
+}
+
+extensible_associated_module_type!(
+    StabilityPoolInput,
+    StabilityPoolInputV0,
+    UnknownStabilityPoolInputVariantError
+);
+
+impl StabilityPoolInput {
+    pub fn new_v0(account: XOnlyPublicKey, amount: Amount) -> StabilityPoolInput {
+        StabilityPoolInput::V0(StabilityPoolInputV0 { account, amount })
+    }
+
+    pub fn account(&self) -> anyhow::Result<XOnlyPublicKey> {
+        match self {
+            StabilityPoolInput::V0(StabilityPoolInputV0 { account, .. }) => Ok(*account),
+            StabilityPoolInput::Default { variant, .. } => {
+                bail!("Unsupported variant {variant}")
+            }
+        }
+    }
+
+    pub fn amount(&self) -> anyhow::Result<Amount> {
+        match self {
+            StabilityPoolInput::V0(StabilityPoolInputV0 { amount, .. }) => Ok(*amount),
+            StabilityPoolInput::Default { variant, .. } => {
+                bail!("Unsupported variant {variant}")
+            }
+        }
+    }
 }
 
 /// Depositing funds into the stability pool is technically just a fedimint
 /// transaction where the input comes from the e-cash module and the outputs
 /// come from the stability pool module and the e-cash module (in case of any
 /// change).
-#[derive(Clone, Debug, Hash, PartialEq, Encodable, Decodable)]
-pub struct StabilityPoolOutput {
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
+pub struct StabilityPoolOutputV0 {
     pub account: XOnlyPublicKey,
     pub intended_action: IntendedAction,
+}
+
+extensible_associated_module_type!(
+    StabilityPoolOutput,
+    StabilityPoolOutputV0,
+    UnknownStabilityPoolOutputVariantError
+);
+
+impl StabilityPoolOutput {
+    pub fn new_v0(account: XOnlyPublicKey, intended_action: IntendedAction) -> StabilityPoolOutput {
+        StabilityPoolOutput::V0(StabilityPoolOutputV0 {
+            account,
+            intended_action,
+        })
+    }
+
+    pub fn account(&self) -> anyhow::Result<XOnlyPublicKey> {
+        match self {
+            StabilityPoolOutput::V0(StabilityPoolOutputV0 { account, .. }) => Ok(*account),
+            StabilityPoolOutput::Default { variant, .. } => {
+                bail!("Unsupported variant {variant}")
+            }
+        }
+    }
+
+    pub fn intended_action(&self) -> anyhow::Result<IntendedAction> {
+        match self {
+            StabilityPoolOutput::V0(StabilityPoolOutputV0 {
+                intended_action, ..
+            }) => Ok(intended_action.clone()),
+            StabilityPoolOutput::Default { variant, .. } => {
+                bail!("Unsupported variant {variant}")
+            }
+        }
+    }
 }
 
 /// The user's intention behind the deposit must be specified using the
@@ -75,7 +140,7 @@ pub struct StabilityPoolOutput {
 /// 4. `UndoCancelRenewal`: means cancel any staged cancellation because the
 ///    user changed their mind. Naturally the user must have a staged
 ///    cancellation.
-#[derive(Clone, Debug, Hash, PartialEq, Encodable, Decodable)]
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
 pub enum IntendedAction {
     Seek(Seek),
     Provide(Provide),
@@ -109,8 +174,14 @@ pub struct StagedProvide {
     pub provide: Provide,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Encodable, Decodable)]
-pub struct StabilityPoolOutputOutcome;
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
+pub struct StabilityPoolOutputOutcomeV0;
+
+extensible_associated_module_type!(
+    StabilityPoolOutputOutcome,
+    StabilityPoolOutputOutcomeV0,
+    UnknownStabilityPoolOutputOutcomeVariantError
+);
 
 /// The stability pool's contribution to consensus is minimal and contains only
 /// the data needed to progress from one cycle to the next. The philosophy here
@@ -127,11 +198,101 @@ pub struct StabilityPoolOutputOutcome;
 /// to see a threshold number of votes before actually processing the cycle
 /// turnover. Both the start time and the start price for the
 /// turnover are obtained from median values among the votes.
-#[derive(Clone, Debug, Hash, PartialEq, Encodable, Decodable)]
-pub struct StabilityPoolConsensusItem {
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
+pub struct StabilityPoolConsensusItemV0 {
     pub next_cycle_index: u64,
     pub time: SystemTime,
     pub price: u64,
+}
+
+extensible_associated_module_type!(
+    StabilityPoolConsensusItem,
+    StabilityPoolConsensusItemV0,
+    UnknownStabilityPoolConsensusItemVariantError
+);
+
+impl StabilityPoolConsensusItem {
+    pub fn new_v0(
+        next_cycle_index: u64,
+        time: SystemTime,
+        price: u64,
+    ) -> StabilityPoolConsensusItem {
+        StabilityPoolConsensusItem::V0(StabilityPoolConsensusItemV0 {
+            next_cycle_index,
+            time,
+            price,
+        })
+    }
+
+    pub fn next_cycle_index(&self) -> anyhow::Result<u64> {
+        match self {
+            StabilityPoolConsensusItem::V0(StabilityPoolConsensusItemV0 {
+                next_cycle_index,
+                ..
+            }) => Ok(*next_cycle_index),
+            StabilityPoolConsensusItem::Default { variant, .. } => {
+                bail!("Unsupported variant {variant}")
+            }
+        }
+    }
+
+    pub fn time(&self) -> anyhow::Result<SystemTime> {
+        match self {
+            StabilityPoolConsensusItem::V0(StabilityPoolConsensusItemV0 { time, .. }) => Ok(*time),
+            StabilityPoolConsensusItem::Default { variant, .. } => {
+                bail!("Unsupported variant {variant}")
+            }
+        }
+    }
+
+    pub fn price(&self) -> anyhow::Result<u64> {
+        match self {
+            StabilityPoolConsensusItem::V0(StabilityPoolConsensusItemV0 { price, .. }) => {
+                Ok(*price)
+            }
+            StabilityPoolConsensusItem::Default { variant, .. } => {
+                bail!("Unsupported variant {variant}")
+            }
+        }
+    }
+}
+
+/// Errors that might be returned by the server when using an input from the
+/// stability pool module.
+#[derive(thiserror::Error, Debug, Clone, Eq, PartialEq, Hash, Encodable, Decodable)]
+pub enum StabilityPoolInputError {
+    #[error("Withdrawal amount is either 0 or not enough to cover fees.")]
+    InvalidWithdrawalAmount,
+    #[error("Sum of idle and staged balance is not enough to satisfy withdrawal request.")]
+    InsufficientBalance,
+    #[error("{0}")]
+    UnknownInputVariant(String),
+}
+
+/// Errors that might be returned by the server when using an output from the
+/// stability pool module.
+#[derive(thiserror::Error, Debug, Clone, Eq, PartialEq, Hash, Encodable, Decodable)]
+pub enum StabilityPoolOutputError {
+    #[error("Previous action must be fully processed before accepting new action.")]
+    PreviousIntentionNotFullyProcessed,
+    #[error("Cannot seek while staged/locked provides or cancellation are active.")]
+    CannotSeek,
+    #[error("Cannot provide while staged/locked seeks or cancellation are active.")]
+    CannotProvide,
+    #[error("Cannot seek or provide when auto-renewal cancellation is already staged.")]
+    AutoRenewalCancellationAlreadyStaged,
+    #[error("Seek or provide amount is below minimum required amount.")]
+    AmountTooLow,
+    #[error("Provide fee rate is higher than maximum allowed by federation.")]
+    FeeRateTooHigh,
+    #[error("No active locks, or other staged actions present that must first be removed.")]
+    CannotCancelAutoRenewal,
+    #[error("Basis point value must be between 100 and 10,000.")]
+    InvalidBPSForCancelAutoRenewal,
+    #[error("No active request to cancel auto renewal.")]
+    CannotUndoAutoRenewalCancellation,
+    #[error("{0}")]
+    UnknownOutputVariant(String),
 }
 
 pub struct StabilityPoolModuleTypes;
@@ -157,7 +318,9 @@ plugin_types_trait_impl_common!(
     StabilityPoolInput,
     StabilityPoolOutput,
     StabilityPoolOutputOutcome,
-    StabilityPoolConsensusItem
+    StabilityPoolConsensusItem,
+    StabilityPoolInputError,
+    StabilityPoolOutputError
 );
 
 #[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
@@ -173,7 +336,7 @@ pub struct LockedProvide {
     pub amount: Amount,
 }
 
-impl Display for StabilityPoolInput {
+impl Display for StabilityPoolInputV0 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -183,7 +346,7 @@ impl Display for StabilityPoolInput {
     }
 }
 
-impl Display for StabilityPoolOutput {
+impl Display for StabilityPoolOutputV0 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -212,13 +375,13 @@ impl Display for IntendedAction {
     }
 }
 
-impl Display for StabilityPoolOutputOutcome {
+impl Display for StabilityPoolOutputOutcomeV0 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Output outcome is a unit struct",)
     }
 }
 
-impl Display for StabilityPoolConsensusItem {
+impl Display for StabilityPoolConsensusItemV0 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,

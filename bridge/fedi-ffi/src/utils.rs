@@ -2,6 +2,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use bitcoin::Network;
 use lightning_invoice::Currency;
+use lightning_invoice_v1::Currency as CurrencyV1;
 
 pub fn display_currency(currency: Currency) -> String {
     match currency {
@@ -10,6 +11,16 @@ pub fn display_currency(currency: Currency) -> String {
         Currency::BitcoinTestnet => Network::Testnet.to_string(),
         Currency::Signet => Network::Signet.to_string(),
         Currency::Simnet => "Simnet".to_string(),
+    }
+}
+
+pub fn display_currency_v1(currency: CurrencyV1) -> String {
+    match currency {
+        CurrencyV1::Bitcoin => Network::Bitcoin.to_string(),
+        CurrencyV1::Regtest => Network::Regtest.to_string(),
+        CurrencyV1::BitcoinTestnet => Network::Testnet.to_string(),
+        CurrencyV1::Signet => Network::Signet.to_string(),
+        CurrencyV1::Simnet => "Simnet".to_string(),
     }
 }
 

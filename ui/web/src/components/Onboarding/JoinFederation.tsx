@@ -44,7 +44,7 @@ export const JoinFederation: React.FC = () => {
         async (code: string) => {
             setIsFetchingPreview(true)
             try {
-                const fed = await getFederationPreview(code)
+                const fed = await getFederationPreview(code, fedimint)
                 setFederationPreview(fed)
             } catch (err) {
                 log.error('handleCode', err)
@@ -84,7 +84,7 @@ export const JoinFederation: React.FC = () => {
                 await dispatch(
                     joinFederation({
                         fedimint,
-                        code: federationPreview.connectionCode,
+                        code: federationPreview.inviteCode,
                     }),
                 ).unwrap()
                 push(nextHref)
