@@ -11,6 +11,9 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse,
 ) {
+    // CORS header
+    res.setHeader('Access-Control-Allow-Origin', '*')
+
     const accessKeyId = process.env.AWS_ACCESS_KEY_ID
     const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
     if (!accessKeyId || !secretAccessKey) {
