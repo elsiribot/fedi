@@ -29,8 +29,9 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
     const currency = useAppSelector(selectCurrency)
     const exchangeRate = useAppSelector(selectBtcExchangeRate)
 
-    const { latestMessage, hasNewMessages } = chat
-    const previewTextWeight = hasNewMessages ? { medium: true } : {}
+    const { latestMessage, hasNewMessages, hasNewPaymentUpdates } = chat
+    const previewTextWeight =
+        hasNewMessages || hasNewPaymentUpdates ? { medium: true } : {}
 
     let previewMessage = latestMessage?.content
     if (latestMessage?.payment) {
@@ -51,7 +52,9 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                 <View
                     style={[
                         styles(theme).unreadIndicator,
-                        hasNewMessages ? { opacity: 1 } : { opacity: 0 },
+                        hasNewMessages || hasNewPaymentUpdates
+                            ? { opacity: 1 }
+                            : { opacity: 0 },
                     ]}
                 />
                 <View style={styles(theme).chatTypeIconContainer}>

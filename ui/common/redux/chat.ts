@@ -1606,15 +1606,39 @@ export const selectOrderedChatList = createSelector(
                     members,
                     type,
                     latestMessage: m,
-                    hasNewMessages:
-                        lastReadMessageIds[id] !== m.id ||
-                        lastReadPaymentUpdateIds[id] !== m.id,
+                    hasNewMessages: lastReadMessageIds[id] !== m.id,
+                    hasNewPaymentUpdates: false,
                     broadcastOnly,
+                }
+                if (m.payment) {
+                    chatMap[id] = {
+                        ...chatMap[id],
+                        latestPaymentUpdate: m,
+                        hasNewPaymentUpdates:
+                            lastReadPaymentUpdateIds[id] !== m.id,
+                    }
                 }
             } else {
                 chatMap[id] = {
                     ...chatMap[id],
                     members: [...chatMap[id].members, ...members],
+                }
+                if (m.payment) {
+                    const { latestPaymentUpdate } = chatMap[id]
+                    const latest =
+                        (m.payment?.updatedAt || 0) >
+                        (latestPaymentUpdate?.payment?.updatedAt || 0)
+                            ? m
+                            : latestPaymentUpdate
+
+                    if (latest) {
+                        chatMap[id] = {
+                            ...chatMap[id],
+                            latestPaymentUpdate: latest,
+                            hasNewPaymentUpdates:
+                                lastReadPaymentUpdateIds[id] !== latest.id,
+                        }
+                    }
                 }
             }
         })
@@ -1629,6 +1653,7 @@ export const selectOrderedChatList = createSelector(
                 type: ChatType.group,
                 members: [],
                 hasNewMessages: false,
+                hasNewPaymentUpdates: false,
                 broadcastOnly: !!group.broadcastOnly,
             }
         })

@@ -25,6 +25,7 @@ import {
     refreshFederations,
     selectActiveFederation,
     selectHasUnseenMessages,
+    selectHasUnseenPaymentUpdates,
 } from '@fedi/common/redux'
 
 import { fedimint } from '../bridge'
@@ -61,6 +62,9 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     const { toast } = useEnvironmentContext().state
     const canChat = useIsChatSupported()
     const hasUnseenMessages = useAppSelector(selectHasUnseenMessages)
+    const hasUnseenPaymentUpdates = useAppSelector(
+        selectHasUnseenPaymentUpdates,
+    )
     const activeFederation = useAppSelector(selectActiveFederation)
     const isStabilityPoolSupported = useIsStabilityPoolSupported()
     const popupInfo = usePopupFederationInfo()
@@ -221,7 +225,10 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                     options={() => ({
                         title: t('words.chat'),
                         header: () => <ChatHeader />,
-                        tabBarBadge: hasUnseenMessages ? '' : undefined,
+                        tabBarBadge:
+                            hasUnseenMessages || hasUnseenPaymentUpdates
+                                ? ''
+                                : undefined,
                     })}
                 />
                 <Tab.Screen
