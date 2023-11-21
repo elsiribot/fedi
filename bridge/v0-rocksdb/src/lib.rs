@@ -1,6 +1,7 @@
 use std::time::SystemTime;
 
 use fedimint_client_v0::sm::OperationId;
+use fedimint_core::config::FederationId;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record};
 
@@ -18,7 +19,7 @@ enum BridgeDbPrefix {
 }
 
 #[derive(Debug, Decodable, Encodable)]
-pub struct JoinedFederationV0(pub String);
+pub struct JoinedFederationV0(pub FederationId);
 
 #[derive(Clone, Debug, Decodable, Encodable)]
 pub struct JoinedFederationsV0Prefix;
@@ -35,7 +36,7 @@ impl_db_lookup!(
 );
 
 #[derive(Debug, Decodable, Encodable)]
-pub struct JoinedFederationV1(pub String);
+pub struct JoinedFederationV1(pub FederationId);
 
 #[derive(Clone, Debug, Decodable, Encodable)]
 pub struct JoinedFederationsV1Prefix;

@@ -501,7 +501,9 @@ impl Bridge {
                 federation_id.0.to_string(),
                 Arc::new(MultiFederation::V0(
                     FederationV0::from_db(
-                        storage.federation_idb_v0(&federation_id.0).await?,
+                        storage
+                            .federation_idb_v0(&federation_id.0.to_string())
+                            .await?,
                         event_sink.clone(),
                         task_group_v0.make_subgroup().await,
                     )
@@ -668,7 +670,7 @@ impl Bridge {
         let mut federations = self.federations.lock().await;
         let global_db = self.storage.global_database_v0().await?;
         let mut dbtx = global_db.begin_transaction().await;
-        dbtx.insert_entry(&JoinedFederationV1(federation_id.to_string()), &db_name)
+        dbtx.insert_entry(&JoinedFederationV1(federation_id.translate()), &db_name)
             .await;
         dbtx.commit_tx().await;
         let multi = Arc::new(MultiFederation::V1(federation));
@@ -696,7 +698,7 @@ impl Bridge {
         let mut federations = self.federations.lock().await;
         let global_db = self.storage.global_database_v0().await?;
         let mut dbtx = global_db.begin_transaction().await;
-        dbtx.insert_entry(&JoinedFederationV0(federation_id.to_string()), &())
+        dbtx.insert_entry(&JoinedFederationV0(federation_id), &())
             .await;
         dbtx.commit_tx().await;
         let multi = Arc::new(MultiFederation::V0(federation));
@@ -766,14 +768,19 @@ impl Bridge {
         // delete federation from global db
         let global_db = self.storage.global_database_v0().await?;
         let mut dbtx = global_db.begin_transaction().await;
-        dbtx.remove_entry(&JoinedFederationV0(federation_id.to_owned()))
-            .await;
-        let db_name_v1 = dbtx
-            .remove_entry(&JoinedFederationV1(federation_id.to_owned()))
-            .await;
-        let db_name_v2 = dbtx
-            .remove_entry(&JoinedFederationV2(federation_id.to_owned()))
-            .await;
+        if let Ok(federation_id) = fedimint_core_v0::config::FederationId::from_str(federation_id) {
+            dbtx.remove_entry(&JoinedFederationV0(federation_id)).await;
+        }
+
+        let db_name = if let Ok(federation_id) =
+            fedimint_core_v1::config::FederationId::from_str(federation_id)
+        {
+            dbtx.remove_entry(&JoinedFederationV1(federation_id.translate()))
+                .await
+        } else {
+            dbtx.remove_entry(&JoinedFederationV2(federation_id.to_owned()))
+                .await
+        };
 
         // Remove from bridge state
         {
@@ -782,7 +789,7 @@ impl Bridge {
         }
 
         // delete federation db
-        if let Some(db_name) = db_name_v2.or(db_name_v1) {
+        if let Some(db_name) = db_name {
             self.storage.delete_federation_db(&db_name).await?;
         } else {
             self.storage
