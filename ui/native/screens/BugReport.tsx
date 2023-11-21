@@ -1,14 +1,23 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Input, Switch, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native'
-import RNFS from 'react-native-fs'
+import {
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    View,
+    useWindowDimensions,
+} from 'react-native'
 import { Asset } from 'react-native-image-picker'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { v4 as uuidv4 } from 'uuid'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
+import {
+    selectActiveFederation,
+    selectAuthenticatedMember,
+} from '@fedi/common/redux'
 import {
     submitBugReport,
     uploadBugReportLogs,
@@ -18,6 +27,7 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { Attachments } from '../components/ui/Attachments'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useAppSelector } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 import {
     attachmentsToFiles,
@@ -40,7 +50,10 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
     const insets = useSafeAreaInsets()
     const { toast } = useEnvironmentContext().state
     const { fontScale } = useWindowDimensions()
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const [description, setDescription] = useState('')
+    const [isSendingUserInfo, setIsSendingUserInfo] = useState(true)
     const [email, setEmail] = useState('')
     const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false)
     const [status, setStatus] = useState<Status>('idle')
@@ -55,6 +68,9 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
             : status === 'submitting-report'
             ? t('feature.bug.submit-submitting-report')
             : t('words.submit')
+    const submitTextColor = isSubmitDisabled
+        ? theme.colors.primary
+        : theme.colors.white
 
     const style = styles(theme, insets, fontScale)
     const inputProps = {
@@ -66,6 +82,7 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
     }
 
     const isValid = !!description
+
     const handleSubmit = async () => {
         setHasAttemptedSubmit(true)
         if (!isValid) return
@@ -78,9 +95,19 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
             // Upload the logs export gzip to storage
             setStatus('uploading-data')
             await uploadBugReportLogs(id, gzip)
-            // Submit report, including URL to logs
+            // Submit bug report
             setStatus('submitting-report')
-            await submitBugReport({ id, description, email })
+            await submitBugReport({
+                id,
+                description,
+                email,
+                federationName: isSendingUserInfo
+                    ? activeFederation?.name || activeFederation?.id
+                    : undefined,
+                username: isSendingUserInfo
+                    ? authenticatedMember?.username
+                    : undefined,
+            })
             // Success!
             navigation.push('BugReportSuccess')
         } catch (err) {
@@ -119,13 +146,25 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
                     inputContainerStyle={[
                         inputProps.inputContainerStyle,
                         style.textareaContainerStyle,
+                        hasAttemptedSubmit && !description
+                            ? style.fieldInputContainerError
+                            : undefined,
                     ]}
                 />
+                <View style={style.switchWrapper}>
+                    <Text caption medium style={style.switchLabel}>
+                        {t('feature.bug.info-label')}
+                    </Text>
+                    <Switch
+                        value={isSendingUserInfo}
+                        onValueChange={setIsSendingUserInfo}
+                    />
+                </View>
                 <Input
                     {...inputProps}
                     label={
                         <Text caption medium style={style.fieldLabelStyle}>
-                            {t('words.email')}
+                            {t('feature.bug.email-label')}
                         </Text>
                     }
                     placeholder={t('phrases.email-address')}
@@ -162,7 +201,19 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
                 <Button
                     fullWidth
                     disabled={isSubmitDisabled}
-                    title={submitText}
+                    title={
+                        <View style={style.submitTitle}>
+                            {isSubmitDisabled && (
+                                <ActivityIndicator
+                                    size={18}
+                                    color={submitTextColor}
+                                />
+                            )}
+                            <Text medium caption color={submitTextColor}>
+                                {submitText}
+                            </Text>
+                        </View>
+                    }
                     onPress={handleSubmit}
                 />
             </View>
@@ -206,6 +257,9 @@ const styles = (theme: Theme, insets: EdgeInsets, fontScale: number) =>
             borderColor: theme.colors.lightGrey,
             borderRadius: 8,
         },
+        fieldInputContainerError: {
+            borderColor: theme.colors.red,
+        },
         fieldInputStyle: {
             paddingTop: theme.spacing.md,
             padding: theme.spacing.md,
@@ -219,6 +273,20 @@ const styles = (theme: Theme, insets: EdgeInsets, fontScale: number) =>
         },
         fieldErrorStyle: {
             marginLeft: 0,
+        },
+        switchWrapper: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: theme.spacing.md,
+            gap: theme.spacing.xl,
+            backgroundColor: theme.colors.offWhite,
+            borderRadius: 8,
+        },
+        switchLabel: {
+            flex: 1,
+            minWidth: 0,
+            lineHeight: 20,
         },
         attachmentsContainer: {
             paddingTop: theme.spacing.xs,
@@ -236,6 +304,13 @@ const styles = (theme: Theme, insets: EdgeInsets, fontScale: number) =>
             alignItems: 'center',
             gap: theme.spacing.lg,
         },
+        submitTitle: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: theme.spacing.sm,
+        },
+        submitTitleText: {},
         disclaimer: {
             textAlign: 'center',
             maxWidth: 320,

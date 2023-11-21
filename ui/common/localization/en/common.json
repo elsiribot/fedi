@@ -226,9 +226,11 @@
         "bug": {
             "description-label": "Describe the issue in detail",
             "description-placeholder": "What did you expect and what happened instead?",
+            "email-label": "Email (optional)",
             "log-disclaimer": "Application logs will be included with your report to help Fedi developers diagnose the issue",
             "screenshot-label": "Upload screenshots or recordings",
             "report-a-bug": "Report a Bug",
+            "info-label": "Send Federation and Username with bug report",
             "submit-generating-data": "Generating report data...",
             "submit-uploading-data": "Uploading report data...",
             "submit-submitting-report": "Submitting report...",
