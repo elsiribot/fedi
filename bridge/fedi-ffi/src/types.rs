@@ -229,33 +229,6 @@ pub fn hacky_lightning_invoice_fee(
         .ok_or(anyhow!("Invoice missing amount"))
 }
 
-impl TryFrom<lightning_invoice_v1::Invoice> for RpcInvoice {
-    type Error = anyhow::Error;
-
-    fn try_from(invoice: lightning_invoice_v1::Invoice) -> anyhow::Result<Self> {
-        let amount_msat = invoice
-            .amount_milli_satoshis()
-            .ok_or(anyhow!("Invoice missing amount"))?;
-        let amount = fedimint_core::Amount::from_msats(amount_msat);
-
-        // We might get no description
-        let description = match invoice.description() {
-            lightning_invoice_v1::InvoiceDescription::Direct(desc) => desc.to_string(),
-            lightning_invoice_v1::InvoiceDescription::Hash(_) => String::new(),
-        };
-
-        let fee = hacky_lightning_invoice_fee(&invoice.clone().translate())?;
-
-        Ok(RpcInvoice {
-            amount: RpcAmount(amount),
-            fee: RpcAmount(fee),
-            description,
-            invoice: invoice.to_string(),
-            payment_hash: invoice.payment_hash().to_string(),
-        })
-    }
-}
-
 impl TryFrom<lightning_invoice::Bolt11Invoice> for RpcInvoice {
     type Error = anyhow::Error;
 

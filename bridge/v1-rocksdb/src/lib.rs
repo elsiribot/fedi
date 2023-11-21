@@ -1,13 +1,11 @@
 use std::time::SystemTime;
 
 use fedimint_client_v1::sm::OperationId;
-use fedimint_core::config::FederationId;
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::{impl_db_lookup, impl_db_record};
+use fedimint_core::impl_db_record;
 
 #[repr(u8)]
 pub enum BridgeDbPrefix {
-    JoinedFederations = 0xb0,
     ClientConfig = 0xb1,
     XmppUsername = 0xb2,
     InviteCode = 0xb3,
@@ -16,23 +14,6 @@ pub enum BridgeDbPrefix {
     SocialRecoveryId = 0xb6,
     TransactionNote = 0xb7,
 }
-
-#[derive(Debug, Decodable, Encodable)]
-pub struct JoinedFederation(pub FederationId);
-
-#[derive(Clone, Debug, Decodable, Encodable)]
-pub struct JoinedFederationsPrefix;
-
-impl_db_record!(
-    key = JoinedFederation,
-    value = (),
-    db_prefix = BridgeDbPrefix::JoinedFederations,
-);
-
-impl_db_lookup!(
-    key = JoinedFederation,
-    query_prefix = JoinedFederationsPrefix
-);
 
 #[derive(Debug, Decodable, Encodable)]
 pub struct FediClientConfigKey;

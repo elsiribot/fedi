@@ -268,7 +268,7 @@ impl FederationV0 {
         self.subscribe_invoice(operation_id, invoice.clone())
             .await?;
 
-        invoice.try_into()
+        invoice.translate().try_into()
     }
 
     /// Subscribe to state updates for a given lightning invoice
