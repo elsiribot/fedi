@@ -5,6 +5,7 @@ pkill -9 fedimintd lnd lightningd gatewayd devimint esplora electrs bitcoind fau
 
 export INCLUDE_STABILITY_POOL=1
 export RUST_BACKTRACE=full
+export HOME="$TMP"
 
 # kill everything on exit
 function kill_devimint() {
@@ -32,6 +33,9 @@ devimint wait
 # FM_INVITE_CODE=$(cat $FM_DATA_DIR/invite-code)
 # export FM_INVITE_CODE
 
-echo "## Running v1 bridge tests"
-echo "NO TESTS YET"
+FM_INVITE_CODE=$(cat $FM_DATA_DIR/invite-code)
+export FM_INVITE_CODE
+
+echo "## Running v2 bridge tests"
+cargo nextest run -v --locked ${CARGO_PROFILE:+--cargo-profile ${CARGO_PROFILE}} ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -E 'package(fedi-ffi)' --test-threads=1 -- "$@"
 echo "## Tests Passed"

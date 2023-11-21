@@ -46,6 +46,16 @@ impl IStorage for WasmStorage {
         Ok(Box::new(db))
     }
 
+    async fn federation_database_v2(
+        &self,
+        db_name: &str,
+    ) -> anyhow::Result<fedimint_core::db::Database> {
+        let db = MemAndIndexedDb::new(&format!("{db_name}")).await?;
+        let mut fed = self.federation.lock().unwrap();
+        fed.insert(db_name.to_string(), db.clone());
+        Ok(fedimint_core::db::Database::new(db, Default::default()))
+    }
+
     async fn federation_database_v0(
         &self,
         id: &fedimint_core_v0::config::FederationId,
@@ -64,12 +74,12 @@ impl IStorage for WasmStorage {
         Ok(())
     }
     async fn read_file(&self, _path: &Path) -> anyhow::Result<Vec<u8>> {
-        todo!()
+        unimplemented!()
     }
     async fn write_file(&self, _path: &Path, _data: Vec<u8>) -> anyhow::Result<()> {
-        todo!()
+        unimplemented!()
     }
     fn platform_path(&self, _path: &Path) -> PathBuf {
-        todo!()
+        unimplemented!()
     }
 }
