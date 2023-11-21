@@ -583,12 +583,17 @@ export const authenticateChat = createAsyncThunk<
         }
 
         // Backup the username to the fedimint bridge
-        // TODO: dont block UI here and retry loop to ensure backup succeeds
-        await fedimint.backupXmppUsername(normalizedUsername, federationId)
-
-        return {
-            id: `${normalizedUsername}@${connectionOptions.domain}`,
-            username: normalizedUsername,
+        try {
+            // TODO: dont block UI here and retry loop to ensure backup succeeds
+            await fedimint.backupXmppUsername(normalizedUsername, federationId)
+            log.info('backupXmppUsername success')
+            return {
+                id: `${normalizedUsername}@${connectionOptions.domain}`,
+                username: normalizedUsername,
+            }
+        } catch (error) {
+            log.error('backupXmppUsername error', error)
+            throw new Error('errors.bad-connection')
         }
     },
 )

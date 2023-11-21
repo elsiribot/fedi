@@ -133,6 +133,7 @@
         "you-are-offline": "You are currently in offline mode"
     },
     "errors": {
+        "bad-connection": "Your network connection may be unstable. Please try again later or connect to another network.",
         "chat-connection-restoring": "Chat connection is unstable or offline. Attempting to restore...",
         "chat-connection-unhealthy": "Chat connection is unstable or offline. Please try again later or restart the app.",
         "chat-list-render-error": "Encountered an error rendering your chats",
