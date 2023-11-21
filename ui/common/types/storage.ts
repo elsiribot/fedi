@@ -100,6 +100,27 @@ export interface StoredStateV9 extends Omit<StoredStateV8, 'version'> {
     stableBalanceEnabled: boolean
 }
 
+export interface StoredStateV10 extends Omit<StoredStateV9, 'version'> {
+    version: 10
+    chat: Record<
+        Federation['id'],
+        | {
+              authenticatedMember: ChatMember | null
+              messages: ChatMessage[]
+              groups: ChatGroup[]
+              groupRoles?: Record<ChatGroup['id'], string | undefined>
+              groupAffiliations: Record<ChatGroup['id'], string | undefined>
+              members: ChatMember[]
+              lastFetchedMessageId: string | null
+              lastReadMessageIds: Record<Chat['id'], string | undefined>
+              lastReadPaymentUpdateIds: Record<Chat['id'], string | undefined>
+              lastSeenMessageId: string | null
+              lastSeenPaymentUpdateId: string | null
+          }
+        | undefined
+    >
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -112,9 +133,10 @@ export type AnyStoredState =
     | StoredStateV7
     | StoredStateV8
     | StoredStateV9
+    | StoredStateV10
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV9
+export type LatestStoredState = StoredStateV10
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>
