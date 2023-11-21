@@ -22,6 +22,9 @@ import {
 } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import { FedimintBridge } from '../utils/fedimint'
+import { makeLog } from '../utils/log'
+
+const log = makeLog('native/redux/wallet')
 
 type FederationPayloadAction<T = object> = PayloadAction<
     { federationId: string } & T
@@ -140,23 +143,25 @@ export const refreshActiveStabilityPool = createAsyncThunk<
 )
 
 export const increaseStableBalance = createAsyncThunk<
-    Promise<boolean>,
-    { fedimint: FedimintBridge; amount: RpcAmount },
+    Promise<StabilityPoolDepositEvent>,
+    {
+        fedimint: FedimintBridge
+        amount: RpcAmount
+    },
     { state: CommonState }
 >(
     'wallet/increaseStableBalance',
-    async ({ fedimint, amount }, { dispatch, getState }) => {
-        try {
-            const state = getState()
-            const activeFederationId = selectActiveFederation(state)?.id
-            if (!activeFederationId) throw new Error('No active federation')
-            const operationId = await fedimint.stabilityPoolDepositToSeek(
-                amount,
-                activeFederationId,
-            )
+    async ({ fedimint, amount }, { getState }) => {
+        const state = getState()
+        const activeFederationId = selectActiveFederation(state)?.id
+        if (!activeFederationId) throw new Error('No active federation')
 
-            // Refresh stability pool account info when the deposit completes
+        const operationId = await fedimint.stabilityPoolDepositToSeek(
+            amount,
+            activeFederationId,
+        )
 
+        return new Promise<StabilityPoolDepositEvent>((resolve, reject) => {
             const unsubscribeOperation = fedimint.addListener(
                 'stabilityPoolDeposit',
                 (event: StabilityPoolDepositEvent) => {
@@ -164,75 +169,75 @@ export const increaseStableBalance = createAsyncThunk<
                         event.federationId === activeFederationId &&
                         event.operationId === operationId
                     ) {
-                        dispatch(refreshActiveStabilityPool({ fedimint }))
-                        if (event.state === 'success') {
+                        if (event.state === 'txAccepted') {
                             unsubscribeOperation()
+                            resolve(event)
                         } else if (
                             typeof event.state === 'object' &&
                             'txRejected' in event.state
                         ) {
                             unsubscribeOperation()
+                            reject('Transaction rejected')
                         }
                     }
                 },
             )
-            return true
-        } catch (error) {
-            return false
-        }
+        })
     },
 )
 
 export const decreaseStableBalance = createAsyncThunk<
-    Promise<boolean>,
-    { fedimint: FedimintBridge; amount: RpcAmount },
+    Promise<StabilityPoolWithdrawalEvent>,
+    {
+        fedimint: FedimintBridge
+        amount: RpcAmount
+    },
     { state: CommonState }
 >(
     'wallet/decreaseStableBalance',
-    async ({ fedimint, amount }, { dispatch, getState }) => {
-        try {
-            const state = getState()
-            const activeFederationId = selectActiveFederation(state)?.id
-            if (!activeFederationId) throw new Error('No active federation')
-            const btcExchangeRate = selectBtcExchangeRate(state)
-            const stableBalance = selectStableBalance(state)
-            const stableBalancePending = selectStableBalancePending(state)
-            const stableBalanceMsats = amountUtils.fiatToMsat(
-                stableBalance,
-                btcExchangeRate,
-            )
-            const stableBalancePendingMsats = amountUtils.fiatToMsat(
-                stableBalancePending,
-                btcExchangeRate,
-            )
-            let lockedBps = 0
-            let unlockedAmount = 0 as MSats
+    async ({ fedimint, amount }, { getState }) => {
+        const state = getState()
+        const activeFederationId = selectActiveFederation(state)?.id
+        if (!activeFederationId) throw new Error('No active federation')
+        const btcExchangeRate = selectBtcExchangeRate(state)
+        const stableBalance = selectStableBalance(state)
+        const stableBalancePending = selectStableBalancePending(state)
+        const stableBalanceMsats = amountUtils.fiatToMsat(
+            stableBalance,
+            btcExchangeRate,
+        )
+        const stableBalancePendingMsats = amountUtils.fiatToMsat(
+            stableBalancePending,
+            btcExchangeRate,
+        )
+        let lockedBps = 0
+        let unlockedAmount = 0 as MSats
 
-            // if we have enough pending balance to cover the withdrawal
-            // no need to calculate basis points on stable balance
-            if (amount < stableBalancePendingMsats) {
-                unlockedAmount = amount
-            } else {
-                // otherwise withdraw the full pending balance
-                // and calculate what portion of the stable balance
-                // is needed to fulfill the withdrawal amount
-                unlockedAmount = stableBalancePendingMsats
-                const remainingWithdrawal = Number(
-                    (amount - stableBalancePendingMsats).toFixed(2),
-                )
-                lockedBps = Number(
-                    (
-                        Number((remainingWithdrawal * 10000).toFixed(0)) /
-                        stableBalanceMsats
-                    ).toFixed(0),
-                )
-            }
-            const operationId = await fedimint.stabilityPoolWithdraw(
-                lockedBps,
-                unlockedAmount,
-                activeFederationId,
+        // if we have enough pending balance to cover the withdrawal
+        // no need to calculate basis points on stable balance
+        if (amount < stableBalancePendingMsats) {
+            unlockedAmount = amount
+        } else {
+            // otherwise withdraw the full pending balance
+            // and calculate what portion of the stable balance
+            // is needed to fulfill the withdrawal amount
+            unlockedAmount = stableBalancePendingMsats
+            const remainingWithdrawal = Number(
+                (amount - stableBalancePendingMsats).toFixed(2),
             )
-            // Refresh stability pool account info when the withdrawal completes
+            lockedBps = Number(
+                (
+                    Number((remainingWithdrawal * 10000).toFixed(0)) /
+                    stableBalanceMsats
+                ).toFixed(0),
+            )
+        }
+        const operationId = await fedimint.stabilityPoolWithdraw(
+            lockedBps,
+            unlockedAmount,
+            activeFederationId,
+        )
+        return new Promise<StabilityPoolWithdrawalEvent>((resolve, reject) => {
             const unsubscribeOperation = fedimint.addListener(
                 'stabilityPoolWithdrawal',
                 (event: StabilityPoolWithdrawalEvent) => {
@@ -240,23 +245,30 @@ export const decreaseStableBalance = createAsyncThunk<
                         event.federationId === activeFederationId &&
                         event.operationId === operationId
                     ) {
-                        dispatch(refreshActiveStabilityPool({ fedimint }))
-                        if (event.state === 'success') {
+                        log.info(
+                            'StabilityPoolWithdrawalEvent.state',
+                            event.operationId,
+                            event.state,
+                        )
+                        // Withdrawals may return the success state quickly if 100% of it was covered from stagedSeeks
+                        // Otherwise, cancellationAccepted is the appropriate state to resolve
+                        if (
+                            event.state === 'success' ||
+                            event.state === 'cancellationAccepted'
+                        ) {
                             unsubscribeOperation()
+                            resolve(event)
                         } else if (
                             typeof event.state === 'object' &&
                             'txRejected' in event.state
                         ) {
                             unsubscribeOperation()
+                            reject('Transaction rejected')
                         }
                     }
                 },
             )
-
-            return true
-        } catch (error) {
-            return false
-        }
+        })
     },
 )
 
@@ -459,7 +471,7 @@ export const selectStabilityTransactionHistory = createSelector(
         }
 
         // orders by timestamp with null timestamps at the top
-        return orderBy(history, 'timestamp', 'desc')
+        return orderBy(history, ['timestamp', 'status'], ['desc', 'desc'])
     },
 )
 

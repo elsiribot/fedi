@@ -73,6 +73,9 @@ const StabilityConfirmWithdraw: React.FC<Props> = ({ route, navigation }) => {
                 <Text h1 numberOfLines={1}>
                     {formattedFiat}
                 </Text>
+                <Text medium style={[style.darkGrey]}>
+                    {t('feature.stabilitypool.amount-may-vary-during-withdraw')}
+                </Text>
             </View>
             <View style={style.buttonsGroup}>
                 <View
@@ -128,6 +131,7 @@ const StabilityConfirmWithdraw: React.FC<Props> = ({ route, navigation }) => {
                     containerStyle={[style.button]}
                     onPress={handleSubmit}
                     disabled={processingDeposit}
+                    loading={processingDeposit}
                     title={
                         <Text medium caption style={style.buttonText}>
                             {t('words.withdraw')}
@@ -149,6 +153,7 @@ const styles = (theme: Theme) =>
         },
         amountText: {
             marginTop: 'auto',
+            alignItems: 'center',
         },
         buttonsGroup: {
             width: '100%',

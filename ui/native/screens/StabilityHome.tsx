@@ -7,12 +7,15 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import * as Progress from 'react-native-progress'
 
+import { useMonitorStabilityPool } from '@fedi/common/hooks/stabilitypool'
 import {
     selectStableBalance,
     selectStableBalancePending,
 } from '@fedi/common/redux'
 import { makePendingBalanceText } from '@fedi/common/utils/wallet'
 
+import { fedimint } from '../bridge'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useStabilityPool } from '../state/hooks'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
 
@@ -21,6 +24,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'StabilityHome'>
 const StabilityHome: React.FC<Props> = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const { toast } = useEnvironmentContext().state
     const navigation = useNavigation<NavigationHook>()
     const stableBalance = useAppSelector(selectStableBalance)
     const stableBalancePending = useAppSelector(selectStableBalancePending)
@@ -29,6 +33,8 @@ const StabilityHome: React.FC<Props> = () => {
         useStabilityPool()
 
     const style = styles(theme)
+
+    useMonitorStabilityPool(fedimint)
 
     return (
         <View style={style.container}>
@@ -62,7 +68,19 @@ const StabilityHome: React.FC<Props> = () => {
             <View style={style.buttonContainer}>
                 <Button
                     containerStyle={[style.button]}
-                    onPress={() => navigation.navigate('StabilityDeposit')}
+                    onPress={() => {
+                        // Block deposits if pending balance is negative because we have to wait until pending withdrawals have processed
+                        if (stableBalancePending < 0) {
+                            toast?.show(
+                                t(
+                                    'feature.stabilitypool.pending-withdrawal-blocking-deposit',
+                                ),
+                                5000,
+                            )
+                        } else {
+                            navigation.navigate('StabilityDeposit')
+                        }
+                    }}
                     title={
                         <Text medium caption style={style.buttonText}>
                             {t('words.deposit')}
