@@ -12,7 +12,7 @@ import {
     StabilityPoolWithdrawalEvent,
     StabilityPoolDepositEvent,
 } from './bindings'
-import { MsatsString, Usd, UsdCents } from './units'
+import { Usd, UsdCents } from './units'
 
 export type {
     SocialRecoveryEvent,
@@ -72,40 +72,7 @@ export enum SupportedFeature {
     nostr_enabled = 'nostr_enabled',
 }
 
-export interface ClientConfigMetadata {
-    federation_name?: string
-    // If this exists, we use it to download a JSON file that overrides
-    // te use of any other fields below
-    meta_external_url?: string
-    // these are support config fields that change app behavior per-federation
-    chat_server_domain?: string
-    default_currency?: SupportedCurrency
-    welcome_message?: string
-    tos_url?: string
-    federation_icon_url?: string
-    popup_countdown_message?: string
-    popup_ended_message?: string
-    // TODO: client config meta only supports strings currently so
-    // will need to refactor these:
-    // 1. switch to boolean true/false
-    invite_codes_disabled?: string
-    new_members_disabled?: string
-    social_recovery_disabled?: string
-    offline_wallet_disabled?: string
-    onchain_deposits_disabled?: string
-    // 2. switch to MSats (number)
-    max_invoice_msats?: MsatsString
-    max_balance_msats?: MsatsString
-    // 3. FediMod[]
-    sites?: string
-    // 4. Switch to number (unix epoch timestamp)
-    /** Timestamp that popup federations will be completely disabled at */
-    popup_end_timestamp?: string
-    // 5. string[] - array of group IDs
-    default_group_chats?: string
-    // 6. Switch to number
-    fixed_exchange_rate?: string
-}
+export type ClientConfigMetadata = Record<string, string | undefined>
 
 export enum Network {
     bitcoin = 'bitcoin',

@@ -1,4 +1,5 @@
 import { bech32m } from 'bech32'
+import { z } from 'zod'
 
 import { DEFAULT_FEDIMODS } from '@fedi/common/constants/fedimods'
 
@@ -153,42 +154,56 @@ export const getSupportedFeatures = (
     return features
 }
 
-export const getFederationDefaultCurrency = (
+const getMetaField = (
+    field: SupportedFeature | 'sites' | 'fedimods' | 'default_group_chats',
     metadata: ClientConfigMetadata,
-): SupportedCurrency | null => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
-    )
-    if (supportedFeatures.includes(SupportedFeature.default_currency)) {
-        return metadata?.default_currency as SupportedCurrency
+): string | null => {
+    if (field === 'sites' || field === 'fedimods') {
+        return (
+            metadata[`fedi:fedimods`] ??
+            metadata[`fedi:sites`] ??
+            metadata[field] ??
+            null
+        )
+    }
+
+    if (field === 'default_group_chats') {
+        return metadata[`fedi:default_group_chats`] ?? metadata[field] ?? null
+    }
+
+    if (Object.values(SupportedFeature).some(x => x === field)) {
+        return metadata[`fedi:${field}`] ?? metadata[field] ?? null
     }
 
     return null
+}
+
+export const getFederationDefaultCurrency = (
+    metadata: ClientConfigMetadata,
+) => {
+    return getMetaField(
+        SupportedFeature.default_currency,
+        metadata,
+    ) as SupportedCurrency | null
 }
 
 export const getFederationFixedExchangeRate = (
     metadata: ClientConfigMetadata,
-): number | null => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
+) => {
+    const exchangeRate = getMetaField(
+        SupportedFeature.fixed_exchange_rate,
+        metadata,
     )
-    if (supportedFeatures.includes(SupportedFeature.fixed_exchange_rate)) {
-        return Number(metadata?.fixed_exchange_rate)
-    }
 
-    return null
+    if (typeof exchangeRate !== 'string') return null
+
+    return Number(exchangeRate)
 }
 
 export const getFederationChatServerDomain = (
     metadata: ClientConfigMetadata,
-): string | null => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
-    )
-    if (supportedFeatures.includes(SupportedFeature.chat_server_domain)) {
-        return metadata?.chat_server_domain as string
-    }
-    return null
+) => {
+    return getMetaField(SupportedFeature.chat_server_domain, metadata)
 }
 
 export const makeChatServerOptions = (
@@ -204,108 +219,79 @@ export const makeChatServerOptions = (
 
 export const getFederationMaxBalanceMsats = (
     metadata: ClientConfigMetadata,
-): MSats | null => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
+) => {
+    const maxBalanceSats = getMetaField(
+        SupportedFeature.max_balance_msats,
+        metadata,
     )
-    if (supportedFeatures.includes(SupportedFeature.max_balance_msats)) {
-        // This should just be a number but client config meta only
-        // supports strings currently so will need to refactor
-        return Number(metadata?.max_balance_msats) as MSats
-    }
-    return null
+
+    // This should just be a number but client config meta only
+    // supports strings currently so will need to refactor
+    return typeof maxBalanceSats !== 'string'
+        ? undefined
+        : (Number(maxBalanceSats) as MSats)
 }
 
 export const getFederationMaxInvoiceMsats = (
     metadata: ClientConfigMetadata,
-): MSats | null => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
+) => {
+    const maxInvoiceMsats = getMetaField(
+        SupportedFeature.max_invoice_msats,
+        metadata,
     )
-    if (supportedFeatures.includes(SupportedFeature.max_invoice_msats)) {
-        // This should just be a number but client config meta only
-        // supports strings currently so will need to refactor
-        return Number(metadata?.max_invoice_msats) as MSats
-    }
-    return null
+    // This should just be a number but client config meta only
+    // supports strings currently so will need to refactor
+    return typeof maxInvoiceMsats !== 'string'
+        ? undefined
+        : (Number(maxInvoiceMsats) as MSats)
 }
 
 // The utils below all involve the same inverse default logic where they
 // should return true unless explicitly disabled via feature flag
-export const shouldShowInviteCode = (
-    metadata: ClientConfigMetadata,
-): boolean => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
+export const shouldShowInviteCode = (metadata: ClientConfigMetadata) => {
+    // This is a boolean true/false but client config meta only
+    // supports strings currently so will need to refactor
+    return (
+        getMetaField(SupportedFeature.invite_codes_disabled, metadata) !==
+        'true'
     )
-    if (supportedFeatures.includes(SupportedFeature.invite_codes_disabled)) {
-        // This is a boolean true/false but client config meta only
-        // supports strings currently so will need to refactor
-        return metadata.invite_codes_disabled === 'true' ? false : true
-    }
-    return true
 }
 
-export const shouldShowJoinFederation = (
-    metadata: ClientConfigMetadata,
-): boolean => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
+export const shouldShowJoinFederation = (metadata: ClientConfigMetadata) => {
+    return (
+        getMetaField(SupportedFeature.new_members_disabled, metadata) !==
+        'false'
     )
-    if (supportedFeatures.includes(SupportedFeature.new_members_disabled)) {
-        // This is a boolean true/false but client config meta only
-        // supports strings currently so will need to refactor
-        return metadata.new_members_disabled === 'true' ? false : true
-    }
-    return true
 }
 
-export const shouldShowSocialRecovery = (federation: Federation): boolean => {
+export const shouldShowSocialRecovery = (federation: Federation) => {
     // Social recovery not supported on v0 federations
     if (federation.version === 0) {
         return false
     }
-    const supportedFeatures = getSupportedFeatures(
-        federation.meta as ClientConfigMetadata,
+
+    return (
+        getMetaField(
+            SupportedFeature.social_recovery_disabled,
+            federation.meta,
+        ) !== 'true'
     )
-    if (supportedFeatures.includes(SupportedFeature.social_recovery_disabled)) {
-        // This is a boolean true/false but client config meta only
-        // supports strings currently so will need to refactor
-        return federation.meta.social_recovery_disabled === 'true'
-            ? false
-            : true
-    }
-    return true
 }
 
 export const shouldShowOfflineWallet = (
     metadata: ClientConfigMetadata,
 ): boolean => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
+    return (
+        getMetaField(SupportedFeature.offline_wallet_disabled, metadata) !==
+        'true'
     )
-    if (supportedFeatures.includes(SupportedFeature.offline_wallet_disabled)) {
-        // This is a boolean true/false but client config meta only
-        // supports strings currently so will need to refactor
-        return metadata.offline_wallet_disabled === 'true' ? false : true
-    }
-    return true
 }
 
-export const shouldShowOnchainDeposits = (
-    metadata: ClientConfigMetadata,
-): boolean => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
+export const shouldShowOnchainDeposits = (metadata: ClientConfigMetadata) => {
+    return (
+        getMetaField(SupportedFeature.onchain_deposits_disabled, metadata) !==
+        'true'
     )
-    if (
-        supportedFeatures.includes(SupportedFeature.onchain_deposits_disabled)
-    ) {
-        // This is a boolean true/false but client config meta only
-        // supports strings currently so will need to refactor
-        return metadata.onchain_deposits_disabled === 'true' ? false : true
-    }
-    return false
 }
 
 export const shouldEnableNostr = (federation: Federation) => {
@@ -313,20 +299,22 @@ export const shouldEnableNostr = (federation: Federation) => {
     if (federation.version === 0) {
         return false
     }
-    return federation.meta?.[SupportedFeature.nostr_enabled] === 'true'
+
+    return (
+        getMetaField(SupportedFeature.nostr_enabled, federation.meta) === 'true'
+    )
 }
 
 export const getFederationGroupChats = (
     metadata: ClientConfigMetadata,
 ): string[] => {
-    if (metadata.default_group_chats) {
+    const defaultGroupChats = getMetaField('default_group_chats', metadata)
+
+    if (defaultGroupChats) {
         try {
-            return JSON.parse(metadata.default_group_chats)
+            return JSON.parse(defaultGroupChats)
         } catch (err) {
-            log.warn(
-                'Failed to parse default groupchats',
-                metadata.default_group_chats,
-            )
+            log.warn('Failed to parse default groupchats', defaultGroupChats)
         }
     }
     return []
@@ -335,14 +323,33 @@ export const getFederationGroupChats = (
 export const getFederationFediMods = (
     metadata: ClientConfigMetadata,
 ): FediMod[] => {
-    if (metadata.sites) {
+    const sites = getMetaField('sites', metadata)
+    const fediModSchema: z.ZodSchema<FediMod[]> = z.array(
+        z.object({
+            id: z.string(),
+            title: z.string(),
+            url: z.string().url(),
+            imageUrl: z.string().url().optional(),
+            description: z.string().optional(),
+            color: z.string().optional(),
+        }),
+    )
+
+    if (sites) {
         try {
             // TODO: validate type matches FediMod[]
-            return JSON.parse(metadata.sites)
+            const res = fediModSchema.safeParse(JSON.stringify(sites))
+
+            if (!res.success) {
+                throw res.error
+            }
+
+            return res.data
         } catch (err) {
+            log.error((err as Error | z.ZodError).message)
             log.warn(
                 'Failed to parse federation fedimods, falling back to defaults',
-                metadata.sites,
+                sites,
             )
         }
     }
