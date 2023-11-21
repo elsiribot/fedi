@@ -485,7 +485,7 @@ impl Bridge {
             }
             None => {
                 let secret =
-                    bip39::Mnemonic::generate(24).context("unable to generate root secret")?;
+                    bip39::Mnemonic::generate(12).context("unable to generate root secret")?;
                 dbtx.insert_new_entry(&RootSecretKey, &secret.to_entropy())
                     .await;
                 secret
