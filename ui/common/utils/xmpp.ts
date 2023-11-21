@@ -7,6 +7,8 @@ import { makeLog } from './log'
 
 const log = makeLog('common/utils/xmpp')
 
+type CustomError = XMPPError & { code: string }
+
 /**
  * Creates an ephemeral XMPP client used solely for registration
  * opens the stream and terminates on success or failure.
@@ -31,6 +33,18 @@ export const registerXmppUser = async (
 
         const xmpp = client(xmppConnectionOptions)
         debug(xmpp, true)
+
+        // Listen for errors...
+        xmpp.on('error', async (error: CustomError) => {
+            log.error('error', error)
+            // code=ECONNERROR means the network connection was not successful
+            if (error.code === 'ECONNERROR') {
+                await xmpp.stop()
+                xmpp.removeAllListeners()
+                // return the i18n string for connection error
+                reject('errors.chat-connection-unhealthy')
+            }
+        })
 
         // Send the registration request when the stream is opened
         xmpp.on('open', () => {
@@ -87,7 +101,7 @@ export const checkXmppUser = async (
     password: string,
     xmppOptions: XmppConnectionOptions,
 ): Promise<boolean> => {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
         // Connect to XMPP server with provided credentials to check
         // if the user exists
         const xmppConnectionOptions = {
@@ -101,13 +115,21 @@ export const checkXmppUser = async (
         const xmpp = client(xmppConnectionOptions)
         debug(xmpp, true)
 
-        // Listen for not-authorized error meaning the credentials are not valid
-        xmpp.on('error', async (error: XMPPError) => {
+        // Listen for errors...
+        xmpp.on('error', async (error: CustomError) => {
             log.info('error', error)
+            // condition=not-authorized error means user exists but the credentials are not valid
             if (error.condition === 'not-authorized') {
                 await xmpp.stop()
                 xmpp.removeAllListeners()
                 resolve(false)
+            }
+            // code=ECONNERROR means the network connection was not successful
+            if (error.code === 'ECONNERROR') {
+                await xmpp.stop()
+                xmpp.removeAllListeners()
+                // return the i18n string for connection error
+                reject('errors.chat-connection-unhealthy')
             }
         })
 
