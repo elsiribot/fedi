@@ -1,7 +1,14 @@
-import { Federation, MSats, Network, SupportedCurrency } from '../../types'
+import {
+    Federation,
+    FediMod,
+    MSats,
+    Network,
+    SupportedCurrency,
+} from '../../types'
 import {
     getFederationChatServerDomain,
     getFederationDefaultCurrency,
+    getFederationFediMods,
     getSupportedFeatures,
     makeChatServerOptions,
     shouldShowInviteCode,
@@ -49,6 +56,20 @@ const fedInvitesEnabled: Federation = {
         default_currency: SupportedCurrency.EUR,
         chat_server_domain: SAMPLE_CHAT_SERVER_DOMAIN,
         invite_codes_disabled: 'false',
+    },
+}
+
+const testMod: FediMod = {
+    id: 'test-mod',
+    title: 'Test Mod',
+    url: 'https://test-mod-url.com',
+    imageUrl: 'https://test-mod-url.com/image.png',
+}
+
+const fedWithMods: Federation = {
+    ...baseFed,
+    meta: {
+        fedimods: JSON.stringify([testMod]),
     },
 }
 
@@ -109,6 +130,28 @@ describe('FederationUtils', () => {
             )
 
             expect(chatServerDomain).toBeNull()
+        })
+    })
+    describe('getFederationFediMods', () => {
+        it('returns fedimods from metadata', () => {
+            const fediMods = getFederationFediMods(fedWithMods.meta)
+            expect(fediMods[0]).toEqual(testMod)
+        })
+        it('returns fedimods from metadata when using legacy sites key', () => {
+            const fediMods = getFederationFediMods({
+                sites: JSON.stringify([testMod]),
+            })
+            expect(fediMods[0]).toEqual(testMod)
+        })
+        it('returns an empty array if not provided', () => {
+            const fediMods = getFederationFediMods(fedWithNoMetadata.meta)
+            expect(fediMods).toHaveLength(0)
+        })
+        it('returns an empty array if type is invalid', () => {
+            const fediMods = getFederationFediMods({
+                fedimods: 'invalid type here',
+            })
+            expect(fediMods).toHaveLength(0)
         })
     })
     describe('makeChatServerOptions', () => {
