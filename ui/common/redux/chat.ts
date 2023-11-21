@@ -8,6 +8,7 @@ import {
     isAnyOf,
 } from '@reduxjs/toolkit'
 import { xml } from '@xmpp/client'
+import { uniq } from 'lodash'
 import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
 import orderBy from 'lodash/orderBy'
@@ -1621,7 +1622,7 @@ export const selectOrderedChatList = createSelector(
             } else {
                 chatMap[id] = {
                     ...chatMap[id],
-                    members: [...chatMap[id].members, ...members],
+                    members: uniq([...chatMap[id].members, ...members]),
                 }
                 if (m.payment) {
                     const { latestPaymentUpdate } = chatMap[id]
