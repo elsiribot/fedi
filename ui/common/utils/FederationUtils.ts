@@ -324,12 +324,14 @@ export const getFederationFediMods = (
     metadata: ClientConfigMetadata,
 ): FediMod[] => {
     const sites = getMetaField('sites', metadata)
-    const fediModSchema = z.array(
+    const fediModSchema: z.ZodSchema<FediMod[]> = z.array(
         z.object({
             id: z.string(),
-            imageUrl: z.string().url(),
             title: z.string(),
             url: z.string().url(),
+            imageUrl: z.string().url().optional(),
+            description: z.string().optional(),
+            color: z.string().optional(),
         }),
     )
 
