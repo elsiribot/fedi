@@ -43,7 +43,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
         async (code: string) => {
             setIsFetchingPreview(true)
             try {
-                const fed = await getFederationPreview(code)
+                const fed = await getFederationPreview(code, fedimint)
                 setFederationPreview(fed)
             } catch (err) {
                 log.error('handleCode', err)
