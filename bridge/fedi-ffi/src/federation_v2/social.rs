@@ -1,26 +1,97 @@
+use std::collections::BTreeMap;
+use std::fmt;
 use std::time::SystemTime;
 
 use anyhow::format_err;
 use async_trait::async_trait;
 use bitcoin::secp256k1;
-use fedi_social_client_v1::common::{
+use fedi_social_client::common::{
     BackupId, BackupRequest, DoubleEncryptedData, EncryptedRecoveryShare, RecoveryId,
     RecoveryRequest, SerdeEncodable, SignedBackupRequest, SignedRecoveryRequest,
     VerificationDocument,
 };
-use fedi_social_client_v1::config::FediSocialClientConfig;
-use fedimint_core_v1::api::{DynModuleApi, FederationApiExt, FederationResult, IFederationApi};
-use fedimint_core_v1::core::ModuleInstanceId;
-use fedimint_core_v1::module::ApiRequestErased;
-use fedimint_core_v1::task::{MaybeSend, MaybeSync};
-use fedimint_core_v1::PeerId;
-use fedimint_derive_secret_v1::{ChildId, DerivableSecret};
+use fedi_social_client::config::FediSocialClientConfig;
+use fedimint_core::api::{DynModuleApi, FederationApiExt, FederationResult, IFederationApi};
+use fedimint_core::config::FederationId;
+use fedimint_core::core::ModuleInstanceId;
+use fedimint_core::encoding::{Decodable, Encodable};
+use fedimint_core::module::registry::ModuleDecoderRegistry;
+use fedimint_core::module::ApiRequestErased;
+use fedimint_core::task::{MaybeSend, MaybeSync};
+use fedimint_core::PeerId;
+use fedimint_derive_secret::{ChildId, DerivableSecret};
 use secp256k1::Secp256k1;
-pub use v1_social::*;
+use serde::{Deserialize, Serialize};
+
+use super::db::BridgeDbPrefix;
+
+// TODO: Actually implement. Use some bip39 crate instead?
+#[derive(Serialize, Deserialize, Encodable, Decodable, PartialEq, Eq, Clone)]
+pub struct UserSeedPhrase(pub String);
+
+impl fmt::Debug for UserSeedPhrase {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "UserSeedPhrase([redacted])")
+    }
+}
+
+impl From<String> for UserSeedPhrase {
+    fn from(s: String) -> Self {
+        Self(s)
+    }
+}
+
+impl From<&str> for UserSeedPhrase {
+    fn from(s: &str) -> Self {
+        Self(s.into())
+    }
+}
 
 // TODO: pick an id, document it, make sure they don't collide
 pub const SOCIAL_RECOVERY_SECRET_CHILD_ID: ChildId = ChildId(16);
 const SOCIAL_RECOVERY_BACKUP_SNAPSHOT_TYPE_CHILD_ID: ChildId = ChildId(1);
+
+/// Data needed to recover from the backup after Federation decrypts it.
+///
+/// This needs to be stored by the user in some reasonably safe place (like
+/// Dropbox, email) etc. ideally in multiple copies. It is neccessary for the
+/// recovery, but whoever has access to it still needs to pass in-person
+/// verification by federation members to decrypt the seed phrase.
+#[derive(Clone, Encodable, Decodable)]
+pub struct RecoveryFile {
+    /// Add some contant bytes to the beginning of the recovery file.
+    /// This format allows potentially quick scanning looking for
+    /// any recovery file on the file system.
+    magic: [u8; 8],
+    pub signing_sk: SerdeEncodable<secp256k1::SecretKey>,
+    /// This is a copy of the backup encryption key, so the user can
+    /// decrypt it's own backup, while even if the Federation colludes (is
+    /// coorced to), they won't be able to access the backup (privacy
+    /// protection).
+    ///
+    /// Raw bytes as `ring` which we use for symetric encryption doesn't seem to
+    /// support anything better.
+    pub encryption_key: [u8; 32],
+    pub double_encrypted_seed: DoubleEncryptedData,
+    pub verification_document: VerificationDocument,
+}
+
+impl RecoveryFile {
+    pub const MAGIC_PREFIX: &[u8; 8] = b"\xFE\xD1RECOVE";
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        Encodable::consensus_encode(self, &mut bytes).expect("encodes correctly");
+        bytes
+    }
+
+    pub fn from_bytes(raw: &[u8]) -> anyhow::Result<Self> {
+        Ok(Decodable::consensus_decode(
+            &mut &raw[..],
+            &ModuleDecoderRegistry::default(),
+        )?)
+    }
+}
 
 pub struct SocialBackup {
     /// Secret derived from the `root_secret` for this module / functionality
@@ -29,7 +100,7 @@ pub struct SocialBackup {
 
     pub module_id: ModuleInstanceId,
 
-    pub config: fedi_social_client_v1::config::FediSocialClientConfig,
+    pub config: fedi_social_client::config::FediSocialClientConfig,
 
     pub api: DynModuleApi,
 }
@@ -87,8 +158,8 @@ impl SocialBackup {
         Ok(())
     }
 
-    fn get_backup_encryption_key_static(secret: &DerivableSecret) -> fedimint_aead_v1::LessSafeKey {
-        fedimint_aead_v1::LessSafeKey::new(
+    fn get_backup_encryption_key_static(secret: &DerivableSecret) -> fedimint_aead::LessSafeKey {
+        fedimint_aead::LessSafeKey::new(
             Self::get_backup_secret_static(secret).to_chacha20_poly1305_key(),
         )
     }
@@ -109,12 +180,40 @@ impl SocialBackup {
         module_secret.child_key(SOCIAL_RECOVERY_BACKUP_SNAPSHOT_TYPE_CHILD_ID)
     }
 
-    fn get_backup_encryption_key(&self) -> fedimint_aead_v1::LessSafeKey {
+    fn get_backup_encryption_key(&self) -> fedimint_aead::LessSafeKey {
         Self::get_backup_encryption_key_static(&self.module_secret)
     }
 
     fn get_backup_signing_key(&self) -> secp256k1::KeyPair {
         Self::get_backup_signing_key_static(&self.module_secret)
+    }
+}
+
+/// The state of recovery, that can be serialized and stored
+#[derive(Encodable, Decodable, Clone, Debug, Serialize, Deserialize)]
+pub struct SocialRecoveryState {
+    signing_sk: SerdeEncodable<secp256k1::SecretKey>,
+    encryption_key: [u8; 32],
+    double_encrypted_seed: DoubleEncryptedData,
+    recovery_session_decryption_key: SerdeEncodable<
+        fedimint_threshold_crypto::serde_impl::SerdeSecret<fedimint_threshold_crypto::SecretKey>,
+    >,
+    shares: BTreeMap<PeerId, SerdeEncodable<fedimint_threshold_crypto::DecryptionShare>>,
+}
+
+impl SocialRecoveryState {
+    fn new(recovery_file: RecoveryFile) -> Self {
+        Self {
+            recovery_session_decryption_key: SerdeEncodable(
+                fedimint_threshold_crypto::serde_impl::SerdeSecret(
+                    fedimint_threshold_crypto::SecretKey::random(),
+                ),
+            ),
+            signing_sk: recovery_file.signing_sk,
+            encryption_key: recovery_file.encryption_key,
+            double_encrypted_seed: recovery_file.double_encrypted_seed,
+            shares: Default::default(),
+        }
     }
 }
 
@@ -265,9 +364,9 @@ impl SocialRecovery {
     }
 
     pub fn combine_recovered_user_phrase(&self) -> anyhow::Result<UserSeedPhrase> {
-        let decryption_key = fedimint_aead_v1::LessSafeKey::new(
-            fedimint_aead_v1::UnboundKey::new(
-                &ring_v1::aead::CHACHA20_POLY1305,
+        let decryption_key = fedimint_aead::LessSafeKey::new(
+            fedimint_aead::UnboundKey::new(
+                &ring::aead::CHACHA20_POLY1305,
                 &self.state.encryption_key,
             )
             .expect("Decryption key stored in recovery file must be valid"),
@@ -373,4 +472,25 @@ where
         self.request_current_consensus("recover".into(), ApiRequestErased::new(request))
             .await
     }
+}
+
+// These two keys are defined in this crate using prefixes defined in v1-rocksdb
+// because they use values from this crate which v1-rocksdb cannot import
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct SocialRecoveryStateKey(pub FederationId);
+
+impl fedimint_core::db::DatabaseRecord for SocialRecoveryStateKey {
+    const DB_PREFIX: u8 = BridgeDbPrefix::SocialRecoveryState as u8;
+    type Key = Self;
+    type Value = SocialRecoveryState;
+}
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct SocialRecoveryIdKey(pub FederationId);
+
+impl fedimint_core::db::DatabaseRecord for SocialRecoveryIdKey {
+    const DB_PREFIX: u8 = BridgeDbPrefix::SocialRecoveryId as u8;
+    type Key = Self;
+    type Value = RecoveryId;
 }

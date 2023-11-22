@@ -67,14 +67,6 @@ export interface RpcEcashInfo {
     federationId: RpcFederationId | null
 }
 
-export type RpcFederationId = string
-
-export interface RpcFederationPreview {
-    id: RpcFederationId
-    name: string | null
-    meta: Record<string, string>
-}
-
 export interface RpcFederation {
     balance: RpcAmount
     id: RpcFederationId
@@ -86,6 +78,15 @@ export interface RpcFederation {
     nodes: Record<string, { url: string; name: string }>
     version: number
     clientConfig: RpcJsonClientConfig | null
+}
+
+export type RpcFederationId = string
+
+export interface RpcFederationPreview {
+    id: RpcFederationId
+    name: string
+    meta: Record<string, string>
+    inviteCode: string
 }
 
 export interface RpcGenerateEcashResponse {
@@ -176,8 +177,9 @@ export interface RpcMethods {
         { inviteCode: string },
         {
             id: RpcFederationId
-            name: string | null
+            name: string
             meta: Record<string, string>
+            inviteCode: string
         },
     ]
     leaveFederation: [{ federationId: RpcFederationId }, null]
@@ -357,6 +359,16 @@ export interface RpcMethods {
     ]
 }
 
+export type RpcOOBSpendState =
+    | { type: 'created' }
+    | { type: 'userCanceledProcessing' }
+    | { type: 'userCanceledSuccess' }
+    | { type: 'userCanceledFailure' }
+    | { type: 'refunded' }
+    | { type: 'success' }
+
+export type RpcOOBState = { type: 'spend' } & RpcOOBSpendState
+
 export type RpcOnchainDepositState =
     | { type: 'waitingForTransaction' }
     | ({ type: 'waitingForConfirmation' } & RpcOnchainDepositTransactionData)
@@ -374,16 +386,6 @@ export type RpcOnchainWithdrawState =
     | { type: 'created' }
     | { type: 'succeeded' }
     | { type: 'failed' }
-
-export type RpcOOBSpendState =
-    | { type: 'created' }
-    | { type: 'userCanceledProcessing' }
-    | { type: 'userCanceledSuccess' }
-    | { type: 'userCanceledFailure' }
-    | { type: 'refunded' }
-    | { type: 'success' }
-
-export type RpcOOBState = { type: 'spend' } & RpcOOBSpendState
 
 export type RpcOperationId = string
 
@@ -413,8 +415,6 @@ export interface RpcStabilityPoolAccountInfo {
     lockedSeeks: Array<RpcLockedSeek>
 }
 
-export type RpcTransactionDirection = 'receive' | 'send'
-
 export interface RpcTransaction {
     id: string
     createdAt: number
@@ -428,6 +428,8 @@ export interface RpcTransaction {
     oobState: RpcOOBState | null
     onchainWithdrawalDetails: WithdrawalDetails | null
 }
+
+export type RpcTransactionDirection = 'receive' | 'send'
 
 export interface RpcXmppCredentials {
     password: string

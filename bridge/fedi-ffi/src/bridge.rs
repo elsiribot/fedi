@@ -8,26 +8,27 @@ use std::usize;
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey};
 use bitcoin::{Address, XOnlyPublicKey};
-use fedi_social_client_v1::RecoveryId;
-use fedimint_client_v1::db::ChronologicalOperationLogKey;
-use fedimint_client_v1::sm::OperationId;
+use fedi_social_client::RecoveryId;
+use fedimint_core::api::InviteCode as InviteCodeV2;
+use fedimint_core::core::OperationId;
+use fedimint_core::task::TaskGroup;
+use fedimint_core::{Amount, PeerId};
 use fedimint_core_v0::api::WsClientConnectInfo as InviteCodeV0;
 use fedimint_core_v0::task::TaskGroup as TaskGroupV0;
-use fedimint_core_v1::api::InviteCode;
-use fedimint_core_v1::config::FederationId;
-use fedimint_core_v1::task::TaskGroup;
-use fedimint_core_v1::{Amount, PeerId};
+use fedimint_core_v1::api::InviteCode as InviteCodeV1;
+use fedimint_core_v1::task::TaskGroup as TaskGroupV1;
 use fedimint_mint_client_v0::{parse_ecash, MintClientExt as MintClientExtV0};
-use fedimint_mint_client_v1::MintClientExt;
+use fedimint_mint_client_v1::MintClientExt as MintClientExtV1;
 use futures::future::join_all;
 use futures::StreamExt;
-use lightning_invoice::Invoice;
+use lightning_invoice::Bolt11Invoice;
 use rand::distributions::{Alphanumeric, DistString};
-use stability_pool_client_v1::common::AccountInfo;
+use stability_pool_client::common::AccountInfo;
 use tokio::sync::Mutex;
 use tracing::{error, info};
 use v0_rocksdb::{
-    JoinedFederationV0, JoinedFederationV1, JoinedFederationsV0Prefix, JoinedFederationsV1Prefix,
+    JoinedFederationV0, JoinedFederationV1, JoinedFederationV2, JoinedFederationsV0Prefix,
+    JoinedFederationsV1Prefix, JoinedFederationsV2Prefix, RootSecretKey,
 };
 
 use super::event::{EventSink, SocialRecoveryEvent};
@@ -38,14 +39,15 @@ use super::storage::Storage;
 use super::translate::Translate;
 use super::types::{
     multi_federation_to_rpc_federation, RpcAmount, RpcFederation, RpcFederationId, RpcInvoice,
-    RpcLightningGateway, RpcOperationId, RpcPayInvoiceResponse, RpcPeerId, RpcPublicKey,
-    RpcRecoveryId, RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo, RpcTransaction,
-    RpcXmppCredentials, SocialRecoveryApproval, SocialRecoveryQr,
+    RpcOperationId, RpcPayInvoiceResponse, RpcPeerId, RpcPublicKey, RpcRecoveryId,
+    RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo, RpcTransaction, RpcXmppCredentials,
+    SocialRecoveryApproval, SocialRecoveryQr,
 };
 use crate::error::ErrorCode;
+use crate::federation_v2::FederationV2;
 use crate::types::{
     GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
-    RpcPayAddressResponse,
+    RpcLightningGateway, RpcPayAddressResponse,
 };
 
 // FIXME: federation-specific filename
@@ -55,13 +57,15 @@ pub const VERIFICATION_FILENAME: &str = "verification.mp4";
 pub enum MultiFederation {
     V0(FederationV0),
     V1(FederationV1),
+    V2(FederationV2),
 }
 
 impl MultiFederation {
-    pub fn federation_id(&self) -> FederationId {
+    pub fn federation_id(&self) -> RpcFederationId {
         match self {
-            Self::V0(multi) => multi.federation_id().translate(),
-            Self::V1(multi) => multi.federation_id(),
+            Self::V0(multi) => RpcFederationId(multi.federation_id().to_string()),
+            Self::V1(multi) => RpcFederationId(multi.federation_id().to_string()),
+            Self::V2(multi) => RpcFederationId(multi.federation_id().to_string()),
         }
     }
 
@@ -71,6 +75,7 @@ impl MultiFederation {
                 bail!("Not supported for this version")
             }
             Self::V1(multi) => multi.generate_address().await,
+            Self::V2(multi) => multi.generate_address().await,
         }
     }
 
@@ -91,13 +96,19 @@ impl MultiFederation {
                     .generate_invoice(amount, description, expiry_time)
                     .await
             }
+            Self::V2(multi) => {
+                multi
+                    .generate_invoice(amount, description, expiry_time)
+                    .await
+            }
         }
     }
 
-    pub async fn pay_invoice(&self, invoice: &Invoice) -> Result<RpcPayInvoiceResponse> {
+    pub async fn pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<RpcPayInvoiceResponse> {
         match self {
-            Self::V0(v0) => v0.pay_invoice(invoice).await,
-            Self::V1(v1) => v1.pay_invoice(invoice).await,
+            Self::V0(v0) => v0.pay_invoice(&invoice.clone().translate()).await,
+            Self::V1(v1) => v1.pay_invoice(&invoice.clone().translate()).await,
+            Self::V2(v2) => v2.pay_invoice(&invoice.clone()).await,
         }
     }
 
@@ -110,6 +121,7 @@ impl MultiFederation {
         match self {
             Self::V0(_) => bail!("Unsupported for this version"),
             Self::V1(v1) => v1.pay_address(address, amount).await,
+            Self::V2(v2) => v2.pay_address(address, amount).await,
         }
     }
 
@@ -123,6 +135,10 @@ impl MultiFederation {
                 .list_gateways()
                 .await
                 .map(|gws| gws.into_iter().map(RpcLightningGateway::V1).collect()),
+            Self::V2(v2) => v2
+                .list_gateways()
+                .await
+                .map(|gws| gws.into_iter().map(RpcLightningGateway::V1).collect()),
         }
     }
 
@@ -130,13 +146,15 @@ impl MultiFederation {
         match self {
             Self::V0(v0) => v0.switch_gateway(gateway_id).await,
             Self::V1(v1) => v1.switch_gateway(gateway_id).await,
+            Self::V2(v2) => v2.switch_gateway(gateway_id).await,
         }
     }
 
     pub async fn get_balance(&self) -> Amount {
         match self {
             Self::V0(v0) => v0.get_balance().await.translate(),
-            Self::V1(v1) => v1.get_balance().await,
+            Self::V1(v1) => v1.get_balance().await.translate(),
+            Self::V2(v2) => v2.get_balance().await,
         }
     }
 
@@ -144,6 +162,7 @@ impl MultiFederation {
         match self {
             Self::V0(v0) => v0.balance_info().await,
             Self::V1(v1) => v1.balance_info().await,
+            Self::V2(v2) => v2.balance_info().await,
         }
     }
 
@@ -153,20 +172,23 @@ impl MultiFederation {
                 bail!("Not supported for this version")
             }
             Self::V1(v1) => v1.guardian_status().await,
+            Self::V2(v2) => v2.guardian_status().await,
         }
     }
 
     pub async fn receive_ecash(&self, ecash: String) -> Result<Amount> {
         match self {
             Self::V0(v0) => v0.receive_ecash(ecash).await.translate(),
-            Self::V1(v1) => v1.receive_ecash(ecash).await,
+            Self::V1(v1) => v1.receive_ecash(ecash).await.translate(),
+            Self::V2(v2) => v2.receive_ecash(ecash).await,
         }
     }
 
     pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
         match self {
             Self::V0(v0) => v0.generate_ecash(amount.translate()).await,
-            Self::V1(v1) => v1.generate_ecash(amount).await,
+            Self::V1(v1) => v1.generate_ecash(amount.translate()).await,
+            Self::V2(v2) => v2.generate_ecash(amount).await,
         }
     }
 
@@ -180,12 +202,17 @@ impl MultiFederation {
                 v1.cancel_ecash(ecash.parse().context(ErrorCode::BadRequest)?)
                     .await
             }
+            Self::V2(v2) => {
+                v2.cancel_ecash(ecash.parse().context(ErrorCode::BadRequest)?)
+                    .await
+            }
         }
     }
-    pub async fn get_mnemonic_words(&self) -> Vec<String> {
+    pub async fn get_mnemonic_words(&self) -> Result<Vec<String>> {
         match self {
-            Self::V0(v0) => v0.get_mnemonic_words().await,
-            Self::V1(v1) => v1.get_mnemonic_words().await,
+            Self::V0(v0) => Ok(v0.get_mnemonic_words().await),
+            Self::V1(v1) => Ok(v1.get_mnemonic_words().await),
+            Self::V2(_v2) => bail!("Social recovery not implemented for v2 federations, yet"),
         }
     }
 
@@ -193,6 +220,7 @@ impl MultiFederation {
         match self {
             Self::V0(v0) => v0.backup().await,
             Self::V1(v1) => v1.backup().await,
+            Self::V2(v2) => v2.backup().await,
         }
     }
 
@@ -200,6 +228,7 @@ impl MultiFederation {
         match self {
             Self::V0(v0) => v0.get_xmpp_username().await,
             Self::V1(v1) => v1.get_xmpp_username().await,
+            Self::V2(v2) => v2.get_xmpp_username().await,
         }
     }
 
@@ -207,6 +236,7 @@ impl MultiFederation {
         match self {
             Self::V0(v0) => v0.save_xmpp_username(username).await,
             Self::V1(v1) => v1.save_xmpp_username(username).await,
+            Self::V2(v2) => v2.save_xmpp_username(username).await,
         }
     }
 
@@ -214,6 +244,7 @@ impl MultiFederation {
         match self {
             Self::V0(v0) => v0.client.await_restore_finished().await,
             Self::V1(v1) => v1.client.await_restore_finished().await,
+            Self::V2(_v2) => bail!("Social recovery not implemented for v2 federations, yet"),
         }
     }
 
@@ -221,6 +252,7 @@ impl MultiFederation {
         match self {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
             Self::V1(v1) => v1.upload_backup_file(video_file).await,
+            Self::V2(v2) => v2.upload_backup_file(video_file).await,
         }
     }
 
@@ -228,6 +260,7 @@ impl MultiFederation {
         match self {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
             Self::V1(v1) => v1.start_social_recovery(recovery_file).await,
+            Self::V2(_v2) => bail!("Social recovery not implemented for v2 federations, yet"),
         }
     }
 
@@ -235,6 +268,7 @@ impl MultiFederation {
         match self {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
             Self::V1(v1) => v1.social_recovery_qr().await,
+            Self::V2(v2) => v2.social_recovery_qr().await,
         }
     }
 
@@ -244,7 +278,8 @@ impl MultiFederation {
     ) -> Result<Option<Vec<u8>>> {
         match self {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
-            Self::V1(v1) => v1.download_verification_doc(&recovery_id).await,
+            Self::V1(v1) => v1.download_verification_doc(&recovery_id.translate()).await,
+            Self::V2(v2) => v2.download_verification_doc(&recovery_id).await,
         }
     }
 
@@ -257,7 +292,15 @@ impl MultiFederation {
         match self {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
             Self::V1(v1) => {
-                v1.approve_social_recovery_request(recovery_id, peer_id, password)
+                v1.approve_social_recovery_request(
+                    &recovery_id.translate(),
+                    peer_id.translate(),
+                    password,
+                )
+                .await
+            }
+            Self::V2(v2) => {
+                v2.approve_social_recovery_request(&recovery_id, peer_id, password)
                     .await
             }
         }
@@ -267,6 +310,7 @@ impl MultiFederation {
         match self {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
             Self::V1(v1) => v1.social_recovery_approvals().await,
+            Self::V2(v2) => v2.social_recovery_approvals().await,
         }
     }
 
@@ -274,6 +318,7 @@ impl MultiFederation {
         match self {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
             Self::V1(v1) => v1.social_recovery_combine_shares().await,
+            Self::V2(v2) => v2.social_recovery_combine_shares().await,
         }
     }
 
@@ -282,6 +327,10 @@ impl MultiFederation {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
             Self::V1(v1) => {
                 v1.delete_social_recovery_state_and_id().await;
+                Ok(())
+            }
+            Self::V2(v2) => {
+                v2.delete_social_recovery_state_and_id().await;
                 Ok(())
             }
         }
@@ -295,16 +344,25 @@ impl MultiFederation {
         let time = start_time.map(|n| UNIX_EPOCH + std::time::Duration::from_secs(n.into()));
         let operation_id = OperationId::new_random();
 
-        let start_after = time.map(|t| ChronologicalOperationLogKey {
-            creation_time: t,
-            operation_id,
-        });
-
         let usize_limit = limit.map_or(usize::MAX as u32, |l| l) as usize;
 
         Ok(match self {
             Self::V0(v0) => v0.list_transactions(usize::MAX).await,
-            Self::V1(v1) => v1.list_transactions(usize_limit, start_after).await,
+            Self::V1(v1) => {
+                let start_after =
+                    time.map(|t| fedimint_client_v1::db::ChronologicalOperationLogKey {
+                        creation_time: t,
+                        operation_id: operation_id.translate(),
+                    });
+                v1.list_transactions(usize_limit, start_after).await
+            }
+            Self::V2(v2) => {
+                let start_after = time.map(|t| fedimint_client::db::ChronologicalOperationLogKey {
+                    creation_time: t,
+                    operation_id,
+                });
+                v2.list_transactions(usize_limit, start_after).await
+            }
         })
     }
 
@@ -322,6 +380,10 @@ impl MultiFederation {
                 v1.update_transaction_notes(transaction_id.parse()?, notes)
                     .await
             }
+            Self::V2(v2) => {
+                v2.update_transaction_notes(transaction_id.parse()?, notes)
+                    .await
+            }
         };
         Ok(())
     }
@@ -330,6 +392,7 @@ impl MultiFederation {
         match self {
             Self::V0(v0) => v0.sign_lnurl_message(message).await,
             Self::V1(v1) => v1.sign_lnurl_message(message).await,
+            Self::V2(v2) => v2.sign_lnurl_message(message).await,
         }
     }
 
@@ -337,6 +400,7 @@ impl MultiFederation {
         match self {
             Self::V0(v0) => v0.get_xmpp_credentials().await,
             Self::V1(v1) => v1.get_xmpp_credentials().await,
+            Self::V2(v2) => v2.get_xmpp_credentials().await,
         }
     }
 
@@ -344,6 +408,7 @@ impl MultiFederation {
         match self {
             Self::V0(_) => bail!(ErrorCode::NostrNotSupported),
             Self::V1(v1) => Ok(v1.get_nostr_pub_key().await),
+            Self::V2(v2) => Ok(v2.get_nostr_pub_key().await),
         }
     }
 
@@ -351,23 +416,26 @@ impl MultiFederation {
         match self {
             Self::V0(_) => bail!(ErrorCode::NostrNotSupported),
             Self::V1(v1) => v1.sign_nostr_event(event_hash).await,
+            Self::V2(v2) => v2.sign_nostr_event(event_hash).await,
         }
     }
 
     pub async fn stability_pool_account_info(&self) -> Result<AccountInfo> {
         match self {
             Self::V0(_) => bail!(ErrorCode::StabilityPoolNotSupported),
-            Self::V1(v1) => v1.stability_pool_account_info().await,
+            Self::V1(v1) => v1.stability_pool_account_info().await.translate(),
+            Self::V2(v2) => v2.stability_pool_account_info().await,
         }
     }
 
-    pub async fn stability_pool_deposit_to_seek(
-        &self,
-        amount: Amount,
-    ) -> Result<fedimint_client_v1::sm::OperationId> {
+    pub async fn stability_pool_deposit_to_seek(&self, amount: Amount) -> Result<OperationId> {
         match self {
             MultiFederation::V0(_) => bail!(ErrorCode::StabilityPoolNotSupported),
-            MultiFederation::V1(v1) => v1.stability_pool_deposit_to_seek(amount).await,
+            MultiFederation::V1(v1) => v1
+                .stability_pool_deposit_to_seek(amount.translate())
+                .await
+                .translate(),
+            MultiFederation::V2(v2) => v2.stability_pool_deposit_to_seek(amount).await,
         }
     }
 
@@ -375,11 +443,15 @@ impl MultiFederation {
         &self,
         unlocked_amount: Amount,
         locked_bps: u32,
-    ) -> Result<fedimint_client_v1::sm::OperationId> {
+    ) -> Result<OperationId> {
         match self {
             MultiFederation::V0(_) => bail!(ErrorCode::StabilityPoolNotSupported),
-            MultiFederation::V1(v1) => {
-                v1.stability_pool_withdraw(unlocked_amount, locked_bps)
+            MultiFederation::V1(v1) => v1
+                .stability_pool_withdraw(unlocked_amount.translate(), locked_bps)
+                .await
+                .translate(),
+            MultiFederation::V2(v2) => {
+                v2.stability_pool_withdraw(unlocked_amount, locked_bps)
                     .await
             }
         }
@@ -391,30 +463,47 @@ impl MultiFederation {
 /// command using it.
 pub struct Bridge {
     pub storage: Storage,
-    pub federations: Arc<Mutex<HashMap<FederationId, Arc<MultiFederation>>>>,
+    pub federations: Arc<Mutex<HashMap<String, Arc<MultiFederation>>>>,
     pub event_sink: EventSink,
     pub task_group_v0: TaskGroupV0,
+    pub task_group_v1: TaskGroupV1,
     pub task_group: TaskGroup,
+    root_secret: bip39::Mnemonic,
 }
 
 impl Bridge {
     pub async fn new(storage: Storage, event_sink: EventSink) -> Result<Self> {
         let task_group = TaskGroup::new();
         let task_group_v0 = TaskGroupV0::new();
+        let task_group_v1 = TaskGroupV1::new();
         // load v0 federations
         let db = storage.global_database_v0().await?;
         let mut dbtx = db.begin_transaction().await;
+        let root_secret = match dbtx.get_value(&RootSecretKey).await {
+            Some(secret) => {
+                bip39::Mnemonic::from_entropy(&secret).context("invalid root secret in database")?
+            }
+            None => {
+                let secret =
+                    bip39::Mnemonic::generate(12).context("unable to generate root secret")?;
+                dbtx.insert_new_entry(&RootSecretKey, &secret.to_entropy())
+                    .await;
+                secret
+            }
+        };
         let v0_joined = dbtx
             .find_by_prefix(&JoinedFederationsV0Prefix)
             .await
             .collect::<Vec<_>>()
             .await;
         let v0_iter = v0_joined.iter().map(|(federation_id, _)| async {
-            Ok::<(FederationId, Arc<MultiFederation>), anyhow::Error>((
-                federation_id.0.translate(),
+            Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
+                federation_id.0.to_string(),
                 Arc::new(MultiFederation::V0(
                     FederationV0::from_db(
-                        storage.federation_idb_v0(&federation_id.0).await?,
+                        storage
+                            .federation_idb_v0(&federation_id.0.to_string())
+                            .await?,
                         event_sink.clone(),
                         task_group_v0.make_subgroup().await,
                     )
@@ -432,29 +521,59 @@ impl Bridge {
             .collect::<Vec<_>>()
             .await;
         let v1_iter = v1_joined.iter().map(|(federation_id, db_name)| async {
-            Ok::<(FederationId, Arc<MultiFederation>), anyhow::Error>((
-                federation_id.0.translate(),
+            Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
+                federation_id.0.to_string(),
                 Arc::new(MultiFederation::V1(
                     FederationV1::from_db(
                         storage.federation_idb(&db_name.clone()).await?,
                         event_sink.clone(),
-                        task_group.make_subgroup().await,
+                        task_group_v1.make_subgroup().await,
                     )
                     .await?,
                 )),
             ))
         });
         let v1_pairs = futures::future::try_join_all(v1_iter).await?;
-        let v1_map: HashMap<FederationId, Arc<MultiFederation>> = HashMap::from_iter(v1_pairs);
+        let v1_map: HashMap<String, Arc<MultiFederation>> = HashMap::from_iter(v1_pairs);
 
-        // combine v0 and v1 hashmaps
+        // load v2 federations
+        let v2_joined = dbtx
+            .find_by_prefix(&JoinedFederationsV2Prefix)
+            .await
+            .collect::<Vec<_>>()
+            .await;
+        let v2_iter = v2_joined.iter().map(|(federation_id, db_name)| async {
+            Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
+                federation_id.0.to_string(),
+                Arc::new(MultiFederation::V2(
+                    FederationV2::from_db(
+                        storage.federation_database_v2(&db_name.clone()).await?,
+                        event_sink.clone(),
+                        task_group.make_subgroup().await,
+                        root_secret.clone(),
+                        None,
+                    )
+                    .await?,
+                )),
+            ))
+        });
+        let v2_pairs = futures::future::try_join_all(v2_iter).await?;
+        let v2_map: HashMap<String, Arc<MultiFederation>> = HashMap::from_iter(v2_pairs);
+
+        // commit database transaction
+        dbtx.commit_tx().await;
+
+        // combine v0, v1 and v2 hashmaps
         v0_map.extend(v1_map);
+        v0_map.extend(v2_map);
         Ok(Self {
             storage,
             federations: Arc::new(Mutex::new(v0_map)),
             event_sink,
             task_group_v0,
+            task_group_v1,
             task_group,
+            root_secret,
         })
     }
 
@@ -464,6 +583,15 @@ impl Bridge {
     /// it, and it is saved to local hashmap by ID
     pub async fn join_federation(&self, invite_code: String) -> Result<RpcFederation> {
         // FIXME: this is kinda unreliable
+        match self.join_federation_v2(invite_code.clone()).await {
+            Ok(multi) => {
+                info!("Joined v2 federation");
+                return Ok(multi_federation_to_rpc_federation(&multi).await);
+            }
+            Err(e) => {
+                error!("failed to join v2 federation {e:?}");
+            }
+        }
         match self.join_federation_v1(invite_code.clone()).await {
             Ok(multi) => {
                 info!("Joined v1 federation");
@@ -485,10 +613,46 @@ impl Bridge {
         bail!("failed to join")
     }
 
+    async fn join_federation_v2(&self, invite_code_string: String) -> Result<Arc<MultiFederation>> {
+        // Check if we've already joined this federation
+        let invite_code: InviteCodeV2 = InviteCodeV2::from_str(&invite_code_string)?;
+        if self
+            .get_multi(&invite_code.federation_id().to_string())
+            .await
+            .is_ok()
+        {
+            bail!("Already joined this federation")
+        }
+
+        // we generate a random string for the rocksdb directory name
+        let db_name = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
+        let federation = FederationV2::join(
+            invite_code_string,
+            &self.storage,
+            self.event_sink.clone(),
+            TaskGroup::new(),
+            &db_name,
+            self.root_secret.clone(),
+        )
+        .await?;
+        let federation_id = federation.federation_id();
+        let mut federations = self.federations.lock().await;
+        let global_db = self.storage.global_database_v0().await?;
+        let mut dbtx = global_db.begin_transaction().await;
+        dbtx.insert_entry(&JoinedFederationV2(federation_id.to_string()), &db_name)
+            .await;
+        dbtx.commit_tx().await;
+        let multi = Arc::new(MultiFederation::V2(federation));
+        federations
+            .entry(federation_id.to_string())
+            .or_insert_with(|| multi.clone());
+        Ok(multi)
+    }
+
     async fn join_federation_v1(&self, invite_code_string: String) -> Result<Arc<MultiFederation>> {
         // Check if we've already joined this federation
-        let invite_code: InviteCode = InviteCode::from_str(&invite_code_string)?;
-        if self.get_multi(&invite_code.id).await.is_ok() {
+        let invite_code: InviteCodeV1 = InviteCodeV1::from_str(&invite_code_string)?;
+        if self.get_multi(&invite_code.id.to_string()).await.is_ok() {
             bail!("Already joined this federation")
         }
 
@@ -498,7 +662,7 @@ impl Bridge {
             invite_code_string,
             &self.storage,
             self.event_sink.clone(),
-            fedimint_core_v1::task::TaskGroup::new(),
+            TaskGroupV1::new(),
             &db_name,
         )
         .await?;
@@ -511,7 +675,7 @@ impl Bridge {
         dbtx.commit_tx().await;
         let multi = Arc::new(MultiFederation::V1(federation));
         federations
-            .entry(federation_id)
+            .entry(federation_id.to_string())
             .or_insert_with(|| multi.clone());
         Ok(multi)
     }
@@ -519,7 +683,7 @@ impl Bridge {
     async fn join_federation_v0(&self, invite_code_string: String) -> Result<Arc<MultiFederation>> {
         // Check if we've already joined this federation
         let invite_code: InviteCodeV0 = InviteCodeV0::from_str(&invite_code_string)?;
-        if self.get_multi(&invite_code.id.translate()).await.is_ok() {
+        if self.get_multi(&invite_code.id.to_string()).await.is_ok() {
             bail!("Already joined this federation")
         }
 
@@ -539,33 +703,51 @@ impl Bridge {
         dbtx.commit_tx().await;
         let multi = Arc::new(MultiFederation::V0(federation));
         federations
-            .entry(federation_id.translate())
+            .entry(federation_id.to_string())
             .or_insert_with(|| multi.clone());
         Ok(multi)
     }
 
     pub async fn federation_preview(&self, invite_code: &String) -> Result<RpcFederationPreview> {
-        let (v0, v1) = futures::join!(
+        let (v0, v1, v2) = futures::join!(
             FederationV0::download_client_config(invite_code),
-            FederationV1::download_client_config(invite_code)
+            FederationV1::download_client_config(invite_code),
+            FederationV2::download_client_config(invite_code)
         );
-        match (v0, v1) {
-            (Ok(config), _) => Ok(RpcFederationPreview {
-                id: RpcFederationId(config.federation_id.translate()),
-                name: config.federation_name().map(|x| x.to_owned()),
+        match (v0, v1, v2) {
+            (Ok(config), _, _) => Ok(RpcFederationPreview {
+                id: RpcFederationId(config.federation_id.to_string()),
+                name: config
+                    .federation_name()
+                    .map(|x| x.to_owned())
+                    .unwrap_or(config.federation_id.to_string()[0..8].to_string()),
                 meta: config.meta,
+                invite_code: invite_code.to_string(),
             }),
-            (_, Ok(config)) => Ok(RpcFederationPreview {
-                id: RpcFederationId(config.global.federation_id),
-                name: config.federation_name().map(ToOwned::to_owned),
+            (_, Ok(config), _) => Ok(RpcFederationPreview {
+                id: RpcFederationId(config.global.federation_id.to_string()),
+                name: config
+                    .federation_name()
+                    .map(|x| x.to_owned())
+                    .unwrap_or(config.global.federation_id.to_string()[0..8].to_string()),
                 meta: config.global.meta,
+                invite_code: invite_code.to_string(),
             }),
-            (Err(_), Err(_)) => anyhow::bail!("failed to connect"),
+            (_, _, Ok(config)) => Ok(RpcFederationPreview {
+                id: RpcFederationId(config.global.federation_id().to_string()),
+                name: config
+                    .federation_name()
+                    .map(|x| x.to_owned())
+                    .unwrap_or(config.global.federation_id().to_string()[0..8].to_string()),
+                meta: config.global.meta,
+                invite_code: invite_code.to_string(),
+            }),
+            (Err(_), Err(_), Err(_)) => anyhow::bail!("failed to connect"),
         }
     }
 
     /// Look up federation by id from in-memory hashmap
-    pub async fn get_multi(&self, federation_id: &FederationId) -> Result<Arc<MultiFederation>> {
+    pub async fn get_multi(&self, federation_id: &str) -> Result<Arc<MultiFederation>> {
         let lock = self.federations.lock().await;
         lock.get(federation_id)
             .cloned()
@@ -582,20 +764,28 @@ impl Bridge {
         .await
     }
 
-    pub async fn leave_federation(&self, federation_id: &FederationId) -> Result<()> {
+    pub async fn leave_federation(&self, federation_id: &str) -> Result<()> {
         // delete federation from global db
         let global_db = self.storage.global_database_v0().await?;
         let mut dbtx = global_db.begin_transaction().await;
-        dbtx.remove_entry(&JoinedFederationV0(federation_id.translate()))
-            .await;
-        let db_name = dbtx
-            .remove_entry(&JoinedFederationV1(federation_id.translate()))
-            .await;
+        if let Ok(federation_id) = fedimint_core_v0::config::FederationId::from_str(federation_id) {
+            dbtx.remove_entry(&JoinedFederationV0(federation_id)).await;
+        }
+
+        let db_name = if let Ok(federation_id) =
+            fedimint_core_v1::config::FederationId::from_str(federation_id)
+        {
+            dbtx.remove_entry(&JoinedFederationV1(federation_id.translate()))
+                .await
+        } else {
+            dbtx.remove_entry(&JoinedFederationV2(federation_id.to_owned()))
+                .await
+        };
 
         // Remove from bridge state
         {
             let mut lock = self.federations.lock().await;
-            lock.remove(federation_id);
+            lock.remove(&federation_id.to_string());
         }
 
         // delete federation db
@@ -649,7 +839,7 @@ impl Bridge {
     pub async fn pay_invoice(
         &self,
         federation_id: RpcFederationId,
-        invoice: &Invoice,
+        invoice: &Bolt11Invoice,
     ) -> Result<RpcPayInvoiceResponse> {
         let multi = self.get_multi(&federation_id.0).await?;
         multi.pay_invoice(invoice).await
@@ -692,6 +882,10 @@ impl Bridge {
     }
 
     pub async fn validate_ecash(&self, ecash: String) -> Result<RpcEcashInfo> {
+        // Attempt v2 deserialization
+        if let Ok(info) = FederationV2::validate_ecash(ecash.clone()) {
+            return Ok(info);
+        }
         // Attempt v1 deserialization
         if let Ok(info) = FederationV1::validate_ecash(ecash.clone()) {
             return Ok(info);
@@ -716,7 +910,7 @@ impl Bridge {
 
     pub async fn get_mnemonic_words(&self, federation_id: RpcFederationId) -> Result<Vec<String>> {
         let multi = self.get_multi(&federation_id.0).await?;
-        Ok(multi.get_mnemonic_words().await)
+        multi.get_mnemonic_words().await
     }
 
     pub async fn recover_from_mnemonic(
@@ -726,7 +920,7 @@ impl Bridge {
     ) -> Result<Option<String>> {
         // Check if we can recover this federation
         let old_multi = self.get_multi(&federation_id.0).await?;
-        if old_multi.get_balance().await > fedimint_core_v1::Amount::from_sats(100) {
+        if old_multi.get_balance().await > fedimint_core::Amount::from_sats(100) {
             bail!("Cannot restore from backup if current balance exceeds 100 sats")
         }
 
@@ -754,10 +948,13 @@ impl Bridge {
                         mnemonic,
                         old_client,
                         self.event_sink.clone(),
-                        self.task_group.make_subgroup().await,
+                        self.task_group_v1.make_subgroup().await,
                     )
                     .await?,
                 )
+            }
+            MultiFederation::V2(_) => {
+                bail!("Social recovery not implemented for v2 federations, yet")
             }
         };
         let new_multi = Arc::new(new_multi);

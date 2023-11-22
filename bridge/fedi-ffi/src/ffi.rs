@@ -158,16 +158,25 @@ impl IStorage for PathBasedStorage {
     async fn federation_idb_v0(
         &self,
         // FIXME: we don't really need the v0 type here ...
-        id: &fedimint_core_v0::config::FederationId,
+        id: &str,
     ) -> anyhow::Result<Box<dyn fedimint_core_v0::db::IDatabase>> {
         let db_name = self.data_dir.join(format!("{id}.db"));
         let db = fedimint_rocksdb_v0::RocksDb::open(db_name)?;
         Ok(Box::new(db))
     }
 
+    async fn federation_database_v2(
+        &self,
+        db_name: &str,
+    ) -> anyhow::Result<fedimint_core::db::Database> {
+        let db_name = self.data_dir.join(format!("{db_name}.db"));
+        let db = fedimint_rocksdb::RocksDb::open(db_name)?;
+        Ok(db.into())
+    }
+
     async fn federation_database_v0(
         &self,
-        id: &fedimint_core_v0::config::FederationId,
+        id: &str,
     ) -> anyhow::Result<fedimint_core_v0::db::Database> {
         let db_name = self.data_dir.join(format!("{id}.db"));
         let db = fedimint_rocksdb_v0::RocksDb::open(db_name)?;

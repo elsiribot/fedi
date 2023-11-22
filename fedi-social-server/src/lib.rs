@@ -12,6 +12,7 @@ use common::db::{
 };
 use common::{
     FediSocialCommonGen, FediSocialConsensusItem, FediSocialModuleTypes, FediSocialOutputOutcome,
+    NoInputError, NoOutputError,
 };
 pub use fedi_social_common as common;
 use fedimint_core::config::{
@@ -19,12 +20,12 @@ use fedimint_core::config::{
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleInstanceId;
-use fedimint_core::db::{DatabaseVersion, ModuleDatabaseTransaction};
+use fedimint_core::db::{DatabaseTransaction, DatabaseVersion, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
-    api_endpoint, ApiEndpoint, ApiError, CoreConsensusVersion, ExtendsCommonModuleInit, InputMeta,
-    ModuleCommon, ModuleConsensusVersion, ModuleError, PeerHandle, ServerModuleInit,
-    ServerModuleInitArgs, SupportedModuleApiVersions, TransactionItemAmount,
+    api_endpoint, ApiEndpoint, ApiError, CoreConsensusVersion, InputMeta, ModuleCommon,
+    ModuleConsensusVersion, ModuleInit, PeerHandle, ServerModuleInit, ServerModuleInitArgs,
+    SupportedModuleApiVersions, TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
 use fedimint_core::{push_db_pair_items, NumPeers, OutPoint, PeerId, ServerModule};
@@ -41,15 +42,15 @@ use crate::common::{
 };
 
 #[derive(Clone, Debug)]
-pub struct FediSocialGen;
+pub struct FediSocialInit;
 
 #[async_trait]
-impl ExtendsCommonModuleInit for FediSocialGen {
+impl ModuleInit for FediSocialInit {
     type Common = FediSocialCommonGen;
 
     async fn dump_database(
         &self,
-        dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
+        dbtx: &mut DatabaseTransaction<'_>,
         prefix_names: Vec<String>,
     ) -> Box<dyn Iterator<Item = (String, Box<dyn erased_serde::Serialize + Send>)> + '_> {
         let mut social: BTreeMap<String, Box<dyn erased_serde::Serialize + Send>> = BTreeMap::new();
@@ -107,7 +108,7 @@ impl ExtendsCommonModuleInit for FediSocialGen {
 }
 
 #[async_trait]
-impl ServerModuleInit for FediSocialGen {
+impl ServerModuleInit for FediSocialInit {
     type Params = FediSocialGenParams;
     const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(0);
 
@@ -210,18 +211,18 @@ pub struct FediSocial {
 #[async_trait]
 impl ServerModule for FediSocial {
     type Common = FediSocialModuleTypes;
-    type Gen = FediSocialGen;
+    type Init = FediSocialInit;
 
     async fn consensus_proposal<'a>(
         &'a self,
-        _dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
+        _dbtx: &mut DatabaseTransaction<'_>,
     ) -> Vec<FediSocialConsensusItem> {
         vec![]
     }
 
     async fn process_consensus_item<'a, 'b>(
         &'a self,
-        _dbtx: &mut ModuleDatabaseTransaction<'b>,
+        _dbtx: &mut DatabaseTransaction<'b>,
         _consensus_item: <Self::Common as ModuleCommon>::ConsensusItem,
         _peer_id: PeerId,
     ) -> anyhow::Result<()> {
@@ -230,24 +231,24 @@ impl ServerModule for FediSocial {
 
     async fn process_input<'a, 'b, 'c>(
         &'a self,
-        _dbtx: &mut ModuleDatabaseTransaction<'c>,
+        _dbtx: &mut DatabaseTransaction<'c>,
         _input: &'b <Self::Common as ModuleCommon>::Input,
-    ) -> Result<InputMeta, ModuleError> {
+    ) -> Result<InputMeta, NoInputError> {
         unimplemented!();
     }
 
     async fn process_output<'a, 'b>(
         &'a self,
-        _dbtx: &mut ModuleDatabaseTransaction<'b>,
+        _dbtx: &mut DatabaseTransaction<'b>,
         _output: &'a <Self::Common as ModuleCommon>::Output,
         _out_point: OutPoint,
-    ) -> Result<TransactionItemAmount, ModuleError> {
+    ) -> Result<TransactionItemAmount, NoOutputError> {
         unimplemented!()
     }
 
     async fn output_status(
         &self,
-        _dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
+        _dbtx: &mut DatabaseTransaction<'_>,
         _out_point: OutPoint,
     ) -> Option<FediSocialOutputOutcome> {
         None
@@ -255,7 +256,7 @@ impl ServerModule for FediSocial {
 
     async fn audit(
         &self,
-        _dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
+        _dbtx: &mut DatabaseTransaction<'_>,
         _audit: &mut Audit,
         _module_instance_id: ModuleInstanceId,
     ) {
@@ -268,7 +269,7 @@ impl ServerModule for FediSocial {
                 "backup",
                 async |module: &FediSocial, context, request: SignedBackupRequest| -> () {
                         module
-                            .handle_backup(&mut context.dbtx(), request).await?;
+                            .handle_backup(&mut context.dbtx().to_ref_nc(), request).await?;
                         Ok(())
                 }
             },
@@ -277,7 +278,7 @@ impl ServerModule for FediSocial {
                 "recover",
                 async |module: &FediSocial, context, request: SignedRecoveryRequest| -> () {
                         module
-                            .handle_recover(&mut context.dbtx(), request).await?;
+                            .handle_recover(&mut context.dbtx().to_ref_nc(), request).await?;
                         Ok(())
                 }
             },
@@ -286,7 +287,7 @@ impl ServerModule for FediSocial {
                 "get_verification",
                 async |module: &FediSocial, context, request: RecoveryId| -> Option<VerificationDocument> {
                         module
-                            .handle_get_verification(&mut context.dbtx(), request).await
+                            .handle_get_verification(&mut context.dbtx().to_ref_nc(), request).await
                 }
             },
             // guardian's call to approve the recovery and produce decryption share
@@ -294,7 +295,7 @@ impl ServerModule for FediSocial {
                 "approve_recovery",
                 async |module: &FediSocial, context, req: (RecoveryId, String)| -> () {
                         module
-                            .handle_approve_recovery(&mut context.dbtx(), req.0, req.1).await?;
+                            .handle_approve_recovery(&mut context.dbtx().to_ref_nc(), req.0, req.1).await?;
                         Ok(())
                 }
             },
@@ -302,7 +303,7 @@ impl ServerModule for FediSocial {
                 "decryption_share",
                 async |module: &FediSocial, context, request: RecoveryId| -> Option<EncryptedRecoveryShare> {
                         module
-                            .handle_get_decryption_share(&mut context.dbtx(), request).await
+                            .handle_get_decryption_share(&mut context.dbtx().to_ref_nc(), request).await
                 }
             },
         ]
@@ -323,7 +324,7 @@ impl FediSocial {
 
     pub async fn handle_backup(
         &self,
-        dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
+        dbtx: &mut DatabaseTransaction<'_>,
         request: SignedBackupRequest,
     ) -> Result<(), ApiError> {
         let request = request
@@ -368,7 +369,7 @@ impl FediSocial {
 
     pub async fn handle_recover(
         &self,
-        dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
+        dbtx: &mut DatabaseTransaction<'_>,
         request: SignedRecoveryRequest,
     ) -> Result<(), ApiError> {
         let request = request
@@ -410,7 +411,7 @@ impl FediSocial {
 
     pub async fn handle_get_verification(
         &self,
-        dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
+        dbtx: &mut DatabaseTransaction<'_>,
         request: RecoveryId,
     ) -> Result<Option<VerificationDocument>, ApiError> {
         debug!(id = %request.0, "Received social recovery verification document request");
@@ -426,7 +427,7 @@ impl FediSocial {
 
     pub async fn handle_approve_recovery(
         &self,
-        dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
+        dbtx: &mut DatabaseTransaction<'_>,
         request: RecoveryId,
         req_admin_pass: String,
     ) -> Result<VerificationDocument, ApiError> {
@@ -482,7 +483,7 @@ impl FediSocial {
 
     pub async fn handle_get_decryption_share(
         &self,
-        dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
+        dbtx: &mut DatabaseTransaction<'_>,
         request: RecoveryId,
     ) -> Result<Option<EncryptedRecoveryShare>, ApiError> {
         info!(id = %request.0, "Requested encrypted decryption share");

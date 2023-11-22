@@ -78,11 +78,20 @@ impl CommonModuleInit for FediSocialCommonGen {
     }
 }
 
+#[derive(thiserror::Error, Debug, Clone, Encodable, Decodable, PartialEq, Eq, Hash)]
+pub enum NoInputError {}
+
+#[derive(thiserror::Error, Debug, Clone, Encodable, Decodable, PartialEq, Eq, Hash)]
+#[error(transparent)]
+pub enum NoOutputError {}
+
 plugin_types_trait_impl_common!(
     FediSocialModuleTypes,
     FediSocialClientConfig,
     FediSocialInput,
     FediSocialOutput,
     FediSocialOutputOutcome,
-    FediSocialConsensusItem
+    FediSocialConsensusItem,
+    NoInputError,
+    NoOutputError
 );

@@ -7,6 +7,7 @@ use fedimint_core::{impl_db_lookup, impl_db_record};
 
 #[repr(u8)]
 enum BridgeDbPrefix {
+    RootSecret = 0x00,
     JoinedFederationsV0 = 0xb0,
     ClientConfig = 0xb1,
     XmppUsername = 0xb2,
@@ -14,6 +15,7 @@ enum BridgeDbPrefix {
     LastBackupTimestamp = 0xb4,
     TransactionNotes = 0xb7,
     JoinedFederationsV1 = 0xbf,
+    JoinedFederationsV2 = 0xbe,
 }
 
 #[derive(Debug, Decodable, Encodable)]
@@ -48,6 +50,23 @@ impl_db_record!(
 impl_db_lookup!(
     key = JoinedFederationV1,
     query_prefix = JoinedFederationsV1Prefix
+);
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct JoinedFederationV2(pub String);
+
+#[derive(Clone, Debug, Decodable, Encodable)]
+pub struct JoinedFederationsV2Prefix;
+
+impl_db_record!(
+    key = JoinedFederationV2,
+    value = String, // database name
+    db_prefix = BridgeDbPrefix::JoinedFederationsV2,
+);
+
+impl_db_lookup!(
+    key = JoinedFederationV2,
+    query_prefix = JoinedFederationsV2Prefix
 );
 
 #[derive(Debug, Decodable, Encodable)]
@@ -93,4 +112,13 @@ impl_db_record!(
     key = TransactionNotesKey,
     value = String,
     db_prefix = BridgeDbPrefix::TransactionNotes,
+);
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct RootSecretKey;
+
+impl_db_record!(
+    key = RootSecretKey,
+    value = Vec<u8>,
+    db_prefix = BridgeDbPrefix::RootSecret,
 );

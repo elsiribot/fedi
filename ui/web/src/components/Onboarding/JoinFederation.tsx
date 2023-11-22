@@ -3,12 +3,10 @@ import React, { useCallback, useState, useEffect } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
 import ScanIcon from '@fedi/common/assets/svgs/scan.svg'
+import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import { joinFederation } from '@fedi/common/redux'
-import { FederationPreview, SupportedFeature } from '@fedi/common/types'
-import {
-    getSupportedFeatures,
-    getFederationPreview,
-} from '@fedi/common/utils/FederationUtils'
+import { FederationPreview } from '@fedi/common/types'
+import { getFederationPreview } from '@fedi/common/utils/FederationUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { useRouteState } from '../../context/RouteStateContext'
@@ -39,12 +37,13 @@ export const JoinFederation: React.FC = () => {
     const [isJoining, setIsJoining] = useState(false)
     const [federationPreview, setFederationPreview] =
         useState<FederationPreview>()
+    const isChatSupported = useIsChatSupported()
 
     const handleCode = useCallback(
         async (code: string) => {
             setIsFetchingPreview(true)
             try {
-                const fed = await getFederationPreview(code)
+                const fed = await getFederationPreview(code, fedimint)
                 setFederationPreview(fed)
             } catch (err) {
                 log.error('handleCode', err)
@@ -84,7 +83,7 @@ export const JoinFederation: React.FC = () => {
                 await dispatch(
                     joinFederation({
                         fedimint,
-                        code: federationPreview.connectionCode,
+                        code: federationPreview.inviteCode,
                     }),
                 ).unwrap()
                 push(nextHref)
@@ -180,9 +179,6 @@ export const JoinFederation: React.FC = () => {
             </FederationPreviewOuter>
         )
 
-        const isChatSupported = getSupportedFeatures(
-            federationPreview.meta,
-        ).includes(SupportedFeature.chat_server_domain)
         let joinNewMemberHref = '/'
         if (federationPreview.meta?.tos_url) {
             joinNewMemberHref = '/onboarding/terms'

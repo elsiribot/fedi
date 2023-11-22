@@ -28,6 +28,9 @@ test-bridge-current testcase="":
 test-bridge-all testcase="":
   ./scripts/test-bridge-all.sh "{{testcase}}"
 
+test-stability-pool:
+  ./scripts/test-stability-pool.sh
+
 # start mprocs with a dev federation setup
 mprocs:
   ./scripts/mprocs.sh

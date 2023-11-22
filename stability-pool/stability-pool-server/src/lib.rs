@@ -15,8 +15,9 @@ use common::config::{
 use common::{
     CancelRenewal, IntendedAction, LockedProvide, LockedSeek, Provide, Seek, SeekMetadata,
     StabilityPoolCommonGen, StabilityPoolConsensusItem, StabilityPoolInput,
-    StabilityPoolModuleTypes, StabilityPoolOutput, StabilityPoolOutputOutcome, StagedProvide,
-    StagedSeek,
+    StabilityPoolInputError, StabilityPoolModuleTypes, StabilityPoolOutput,
+    StabilityPoolOutputError, StabilityPoolOutputOutcome, StabilityPoolOutputOutcomeV0,
+    StagedProvide, StagedSeek,
 };
 use db::{
     CurrentCycleKey, Cycle, CycleChangeVoteIndexPrefix, CycleChangeVoteKey, IdleBalance,
@@ -29,12 +30,11 @@ use fedimint_core::config::{
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleInstanceId;
-use fedimint_core::db::{DatabaseVersion, ModuleDatabaseTransaction};
+use fedimint_core::db::{DatabaseTransaction, DatabaseVersion, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
-    ApiEndpoint, CoreConsensusVersion, ExtendsCommonModuleInit, InputMeta, IntoModuleError,
-    ModuleConsensusVersion, ModuleError, PeerHandle, ServerModuleInit, ServerModuleInitArgs,
-    SupportedModuleApiVersions, TransactionItemAmount,
+    ApiEndpoint, CoreConsensusVersion, InputMeta, ModuleConsensusVersion, ModuleInit, PeerHandle,
+    ServerModuleInit, ServerModuleInitArgs, SupportedModuleApiVersions, TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
 use fedimint_core::{Amount, NumPeers, OutPoint, PeerId, ServerModule};
@@ -51,16 +51,16 @@ const B: u128 = 1_000_000_000;
 const BPS_UNIT: u128 = 10_000;
 
 #[derive(Debug, Clone)]
-pub struct StabilityPoolGen;
+pub struct StabilityPoolInit;
 
 #[async_trait]
-impl ExtendsCommonModuleInit for StabilityPoolGen {
+impl ModuleInit for StabilityPoolInit {
     type Common = StabilityPoolCommonGen;
 
     // TODO shaurya handle stability pool DB dump
     async fn dump_database(
         &self,
-        _dbtx: &mut ModuleDatabaseTransaction<'_, ModuleInstanceId>,
+        _dbtx: &mut DatabaseTransaction<'_>,
         _prefix_names: Vec<String>,
     ) -> Box<dyn Iterator<Item = (String, Box<dyn erased_serde::Serialize + Send>)> + '_> {
         Box::new(BTreeMap::new().into_iter())
@@ -68,7 +68,7 @@ impl ExtendsCommonModuleInit for StabilityPoolGen {
 }
 
 #[async_trait]
-impl ServerModuleInit for StabilityPoolGen {
+impl ServerModuleInit for StabilityPoolInit {
     type Params = StabilityPoolGenParams;
     const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(1);
 
@@ -189,12 +189,12 @@ impl StabilityPool {
 
 #[async_trait]
 impl ServerModule for StabilityPool {
-    type Gen = StabilityPoolGen;
+    type Init = StabilityPoolInit;
     type Common = StabilityPoolModuleTypes;
 
     async fn consensus_proposal(
         &self,
-        dbtx: &mut ModuleDatabaseTransaction<'_>,
+        dbtx: &mut DatabaseTransaction<'_>,
     ) -> Vec<StabilityPoolConsensusItem> {
         // TODO shaurya backoff incase of oracle failure
 
@@ -217,13 +217,13 @@ impl ServerModule for StabilityPool {
             match self.oracle.get_price().await {
                 Err(_) => vec![],
                 Ok(price) => {
-                    vec![StabilityPoolConsensusItem {
-                        next_cycle_index: current_cycle
+                    vec![StabilityPoolConsensusItem::new_v0(
+                        current_cycle
                             .map(|Cycle { index, .. }| index + 1)
                             .unwrap_or_default(),
-                        time: SystemTime::now(),
+                        SystemTime::now(),
                         price,
-                    }]
+                    )]
                 }
             }
         } else {
@@ -233,13 +233,11 @@ impl ServerModule for StabilityPool {
 
     async fn process_consensus_item<'a, 'b>(
         &'a self,
-        dbtx: &mut ModuleDatabaseTransaction<'b>,
+        dbtx: &mut DatabaseTransaction<'b>,
         consensus_item: StabilityPoolConsensusItem,
         peer_id: PeerId,
     ) -> anyhow::Result<()> {
-        let StabilityPoolConsensusItem {
-            next_cycle_index, ..
-        } = consensus_item;
+        let next_cycle_index = consensus_item.next_cycle_index()?;
 
         // Bail if vote is not for next cycle
         let current_cycle = dbtx.get_value(&CurrentCycleKey).await;
@@ -273,10 +271,10 @@ impl ServerModule for StabilityPool {
         info!("new cycle");
 
         // Take time from vote with median time, and price from vote with median price
-        cycle_change_votes.sort_unstable_by_key(|vote| vote.time);
-        let new_time = cycle_change_votes[cycle_change_votes.len() / 2].time;
-        cycle_change_votes.sort_unstable_by_key(|vote| vote.price);
-        let new_price = cycle_change_votes[cycle_change_votes.len() / 2].price;
+        cycle_change_votes.sort_unstable_by_key(|vote| vote.time().map_err(|e| e.to_string()));
+        let new_time = cycle_change_votes[cycle_change_votes.len() / 2].time()?;
+        cycle_change_votes.sort_unstable_by_key(|vote| vote.price().map_err(|e| e.to_string()));
+        let new_price = cycle_change_votes[cycle_change_votes.len() / 2].price()?;
 
         // Use value derived from cycle start time as randomness.
         // This will be the same for all the guardians.
@@ -336,23 +334,32 @@ impl ServerModule for StabilityPool {
 
     async fn process_input<'a, 'b, 'c>(
         &'a self,
-        dbtx: &mut ModuleDatabaseTransaction<'c>,
+        dbtx: &mut DatabaseTransaction<'c>,
         input: &'b StabilityPoolInput,
-    ) -> Result<InputMeta, ModuleError> {
+    ) -> Result<InputMeta, StabilityPoolInputError> {
+        let (account, amount) = (
+            input
+                .account()
+                .map_err(|e| StabilityPoolInputError::UnknownInputVariant(e.to_string()))?,
+            input
+                .amount()
+                .map_err(|e| StabilityPoolInputError::UnknownInputVariant(e.to_string()))?,
+        );
+
         // TODO shaurya ensure amount is greater than fee
-        if input.amount == Amount::ZERO {
-            return Err(StabilityPoolError::InvalidWithdrawalAmount).into_module_error_other();
+        if amount == Amount::ZERO {
+            return Err(StabilityPoolInputError::InvalidWithdrawalAmount);
         }
 
         let (mut user_idle_balance, user_staged_seeks, user_staged_provides) = (
-            dbtx.get_value(&IdleBalanceKey(input.account))
+            dbtx.get_value(&IdleBalanceKey(account))
                 .await
                 .unwrap_or(IdleBalance(Amount::ZERO))
                 .0,
-            dbtx.get_value(&StagedSeeksKey(input.account))
+            dbtx.get_value(&StagedSeeksKey(account))
                 .await
                 .unwrap_or_default(),
-            dbtx.get_value(&StagedProvidesKey(input.account))
+            dbtx.get_value(&StagedProvidesKey(account))
                 .await
                 .unwrap_or_default(),
         );
@@ -360,24 +367,21 @@ impl ServerModule for StabilityPool {
         let total_user_balance = user_idle_balance
             + user_staged_seeks.iter().map(|s| s.seek.0).sum()
             + user_staged_provides.iter().map(|p| p.provide.amount).sum();
-        if input.amount > total_user_balance {
-            return Err(StabilityPoolError::InsufficientBalance).into_module_error_other();
+        if amount > total_user_balance {
+            return Err(StabilityPoolInputError::InsufficientBalance);
         }
 
         // First drain idle balance, then staged seeks from newest to oldest,
         // then staged provides from newest to oldest
-        let mut amount_to_satisfy = input.amount;
+        let mut amount_to_satisfy = amount;
 
         if user_idle_balance != Amount::ZERO {
             let min_extractable =
                 Amount::from_msats(user_idle_balance.msats.min(amount_to_satisfy.msats));
             user_idle_balance -= min_extractable;
             amount_to_satisfy -= min_extractable;
-            dbtx.insert_entry(
-                &IdleBalanceKey(input.account),
-                &IdleBalance(user_idle_balance),
-            )
-            .await;
+            dbtx.insert_entry(&IdleBalanceKey(account), &IdleBalance(user_idle_balance))
+                .await;
         }
 
         if amount_to_satisfy != Amount::ZERO && !user_staged_seeks.is_empty() {
@@ -406,7 +410,7 @@ impl ServerModule for StabilityPool {
                 .into_iter()
                 .rev()
                 .collect();
-            dbtx.insert_entry(&StagedSeeksKey(input.account), &user_staged_seeks)
+            dbtx.insert_entry(&StagedSeeksKey(account), &user_staged_seeks)
                 .await;
         }
 
@@ -439,35 +443,44 @@ impl ServerModule for StabilityPool {
                 .into_iter()
                 .rev()
                 .collect();
-            dbtx.insert_entry(&StagedProvidesKey(input.account), &user_staged_provides)
+            dbtx.insert_entry(&StagedProvidesKey(account), &user_staged_provides)
                 .await;
         }
 
         if amount_to_satisfy != Amount::ZERO {
-            return Err(StabilityPoolError::InsufficientBalance).into_module_error_other();
+            return Err(StabilityPoolInputError::InsufficientBalance);
         }
 
         // TODO shaurya decide on TX fee for withdrawals
         let fee = Amount::ZERO;
         return Ok(InputMeta {
             amount: TransactionItemAmount {
-                amount: input.amount,
+                amount: amount,
                 fee,
             },
-            pub_keys: [input.account].into(),
+            pub_key: account,
         });
     }
 
     async fn process_output<'a, 'b>(
         &'a self,
-        dbtx: &mut ModuleDatabaseTransaction<'b>,
+        dbtx: &mut DatabaseTransaction<'b>,
         output: &'a StabilityPoolOutput,
         _outpoint: OutPoint,
-    ) -> Result<TransactionItemAmount, ModuleError> {
-        let fee = match &output.intended_action {
+    ) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
+        let (account, intended_action) = (
+            output
+                .account()
+                .map_err(|e| StabilityPoolOutputError::UnknownOutputVariant(e.to_string()))?,
+            output
+                .intended_action()
+                .map_err(|e| StabilityPoolOutputError::UnknownOutputVariant(e.to_string()))?,
+        );
+
+        let fee = match intended_action {
             IntendedAction::Seek(Seek(amount)) => {
-                if *amount < self.cfg.consensus.min_allowed_seek {
-                    return Err(StabilityPoolError::AmountTooLow).into_module_error_other();
+                if amount < self.cfg.consensus.min_allowed_seek {
+                    return Err(StabilityPoolOutputError::AmountTooLow);
                 }
 
                 // TODO shaurya decide on TX fee for seeks
@@ -477,21 +490,20 @@ impl ServerModule for StabilityPool {
                 amount,
                 min_fee_rate,
             }) => {
-                if *amount < self.cfg.consensus.min_allowed_provide {
-                    return Err(StabilityPoolError::AmountTooLow).into_module_error_other();
+                if amount < self.cfg.consensus.min_allowed_provide {
+                    return Err(StabilityPoolOutputError::AmountTooLow);
                 }
 
-                if *min_fee_rate > self.cfg.consensus.max_allowed_provide_fee_rate_ppb {
-                    return Err(StabilityPoolError::FeeRateTooHigh).into_module_error_other();
+                if min_fee_rate > self.cfg.consensus.max_allowed_provide_fee_rate_ppb {
+                    return Err(StabilityPoolOutputError::FeeRateTooHigh);
                 }
 
                 // TODO shaurya decide on TX fee for provides
                 Amount::ZERO
             }
             IntendedAction::CancelRenewal(CancelRenewal { bps }) => {
-                if *bps < self.cfg.consensus.min_allowed_cancellation_bps || *bps > 10_000 {
-                    return Err(StabilityPoolError::InvalidBPSForCancelAutoRenewal)
-                        .into_module_error_other();
+                if bps < self.cfg.consensus.min_allowed_cancellation_bps || bps > 10_000 {
+                    return Err(StabilityPoolOutputError::InvalidBPSForCancelAutoRenewal);
                 }
 
                 // TODO shaurya decide on TX fee for auto-renew cancellations
@@ -504,13 +516,13 @@ impl ServerModule for StabilityPool {
         };
 
         let (mut user_staged_seeks, mut user_staged_provides, user_staged_cancellation) = (
-            dbtx.get_value(&StagedSeeksKey(output.account))
+            dbtx.get_value(&StagedSeeksKey(account))
                 .await
                 .unwrap_or_default(),
-            dbtx.get_value(&StagedProvidesKey(output.account))
+            dbtx.get_value(&StagedProvidesKey(account))
                 .await
                 .unwrap_or_default(),
-            dbtx.get_value(&StagedCancellationKey(output.account)).await,
+            dbtx.get_value(&StagedCancellationKey(account)).await,
         );
 
         let current_cycle = dbtx.get_value(&CurrentCycleKey).await;
@@ -521,18 +533,18 @@ impl ServerModule for StabilityPool {
                 ..
             }) => (
                 locked_seeks
-                    .get(&output.account)
+                    .get(&account)
                     .map(|vec| vec.as_slice())
                     .unwrap_or_default(),
                 locked_provides
-                    .get(&output.account)
+                    .get(&account)
                     .map(|vec| vec.as_slice())
                     .unwrap_or_default(),
             ),
             None => (&[] as &[LockedSeek], &[] as &[LockedProvide]),
         };
 
-        match &output.intended_action {
+        match intended_action {
             IntendedAction::Seek(seek) => {
                 // Must NOT have staged provides, locked provides, or staged cancellation
                 if user_staged_provides.is_empty()
@@ -550,14 +562,14 @@ impl ServerModule for StabilityPool {
 
                     dbtx.insert_entry(&StagedSeekSequenceKey, &(sequence + 1))
                         .await;
-                    dbtx.insert_entry(&StagedSeeksKey(output.account), &user_staged_seeks)
+                    dbtx.insert_entry(&StagedSeeksKey(account), &user_staged_seeks)
                         .await;
                     Ok(TransactionItemAmount {
                         amount: seek.0,
                         fee,
                     })
                 } else {
-                    Err(StabilityPoolError::CannotSeek).into_module_error_other()
+                    Err(StabilityPoolOutputError::CannotSeek)
                 }
             }
             IntendedAction::Provide(provide) => {
@@ -577,14 +589,14 @@ impl ServerModule for StabilityPool {
 
                     dbtx.insert_entry(&StagedProvideSequenceKey, &(sequence + 1))
                         .await;
-                    dbtx.insert_entry(&StagedProvidesKey(output.account), &user_staged_provides)
+                    dbtx.insert_entry(&StagedProvidesKey(account), &user_staged_provides)
                         .await;
                     Ok(TransactionItemAmount {
                         amount: provide.amount,
                         fee,
                     })
                 } else {
-                    Err(StabilityPoolError::CannotProvide).into_module_error_other()
+                    Err(StabilityPoolOutputError::CannotProvide)
                 }
             }
             IntendedAction::CancelRenewal(cancel) => {
@@ -595,28 +607,26 @@ impl ServerModule for StabilityPool {
                     && user_staged_cancellation.is_none()
                     && (!user_locked_seeks.is_empty() ^ !user_locked_provides.is_empty())
                 {
-                    dbtx.insert_entry(&StagedCancellationKey(output.account), cancel)
+                    dbtx.insert_entry(&StagedCancellationKey(account), &cancel)
                         .await;
                     Ok(TransactionItemAmount {
                         amount: Amount::ZERO,
                         fee,
                     })
                 } else {
-                    Err(StabilityPoolError::CannotCancelAutoRenewal).into_module_error_other()
+                    Err(StabilityPoolOutputError::CannotCancelAutoRenewal)
                 }
             }
             IntendedAction::UndoCancelRenewal => {
                 // Must have a staged cancellation
                 if user_staged_cancellation.is_some() {
-                    dbtx.remove_entry(&StagedCancellationKey(output.account))
-                        .await;
+                    dbtx.remove_entry(&StagedCancellationKey(account)).await;
                     Ok(TransactionItemAmount {
                         amount: Amount::ZERO,
                         fee,
                     })
                 } else {
-                    Err(StabilityPoolError::CannotUndoAutoRenewalCancellation)
-                        .into_module_error_other()
+                    Err(StabilityPoolOutputError::CannotUndoAutoRenewalCancellation)
                 }
             }
         }
@@ -624,10 +634,10 @@ impl ServerModule for StabilityPool {
 
     async fn output_status(
         &self,
-        _dbtx: &mut ModuleDatabaseTransaction<'_>,
+        _dbtx: &mut DatabaseTransaction<'_>,
         _out_point: OutPoint,
     ) -> Option<StabilityPoolOutputOutcome> {
-        Some(StabilityPoolOutputOutcome)
+        Some(StabilityPoolOutputOutcome::V0(StabilityPoolOutputOutcomeV0))
     }
 
     /// Queries the database and returns all assets and liabilities of the
@@ -637,7 +647,7 @@ impl ServerModule for StabilityPool {
     /// occurred in the database and consensus should halt.
     async fn audit(
         &self,
-        _dbtx: &mut ModuleDatabaseTransaction<'_>,
+        _dbtx: &mut DatabaseTransaction<'_>,
         _audit: &mut Audit,
         _module_instance_id: ModuleInstanceId,
     ) {
@@ -646,32 +656,6 @@ impl ServerModule for StabilityPool {
     fn api_endpoints(&self) -> Vec<ApiEndpoint<Self>> {
         api::endpoints()
     }
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum StabilityPoolError {
-    #[error("Previous action must be fully processed before accepting new action.")]
-    PreviousIntentionNotFullyProcessed,
-    #[error("Cannot seek while staged/locked provides or cancellation are active.")]
-    CannotSeek,
-    #[error("Cannot provide while staged/locked seeks or cancellation are active.")]
-    CannotProvide,
-    #[error("Cannot seek or provide when auto-renewal cancellation is already staged.")]
-    AutoRenewalCancellationAlreadyStaged,
-    #[error("Seek or provide amount is below minimum required amount.")]
-    AmountTooLow,
-    #[error("Provide fee rate is higher than maximum allowed by federation.")]
-    FeeRateTooHigh,
-    #[error("No active locks, or other staged actions present that must first be removed.")]
-    CannotCancelAutoRenewal,
-    #[error("Basis point value must be between 100 and 10,000.")]
-    InvalidBPSForCancelAutoRenewal,
-    #[error("No active request to cancel auto renewal.")]
-    CannotUndoAutoRenewalCancellation,
-    #[error("Withdrawal amount is either 0 or not enough to cover fees.")]
-    InvalidWithdrawalAmount,
-    #[error("Sum of idle and staged balance is not enough to satisfy withdrawal request.")]
-    InsufficientBalance,
 }
 
 fn settle_locks(
@@ -752,7 +736,7 @@ fn settle_locks(
 }
 
 async fn apply_staged_cancellations(
-    dbtx: &mut ModuleDatabaseTransaction<'_>,
+    dbtx: &mut DatabaseTransaction<'_>,
     locked_seeks: &mut BTreeMap<XOnlyPublicKey, Vec<LockedSeek>>,
     locked_provides: &mut BTreeMap<XOnlyPublicKey, Vec<LockedProvide>>,
     new_price: u128,
@@ -858,7 +842,7 @@ async fn apply_staged_cancellations(
 }
 
 async fn restage_remaining_locks(
-    dbtx: &mut ModuleDatabaseTransaction<'_>,
+    dbtx: &mut DatabaseTransaction<'_>,
     locked_seeks: BTreeMap<XOnlyPublicKey, Vec<LockedSeek>>,
     locked_provides: BTreeMap<XOnlyPublicKey, Vec<LockedProvide>>,
 ) {
@@ -936,7 +920,7 @@ async fn restage_remaining_locks(
 }
 
 async fn calculate_locks_and_write_cycle(
-    dbtx: &mut ModuleDatabaseTransaction<'_>,
+    dbtx: &mut DatabaseTransaction<'_>,
     collateral_ratio: &CollateralRatio,
     index: u64,
     time: SystemTime,
@@ -982,7 +966,7 @@ async fn calculate_locks_and_write_cycle(
 }
 
 async fn extract_sorted_staged_seeks_and_provides(
-    dbtx: &mut ModuleDatabaseTransaction<'_>,
+    dbtx: &mut DatabaseTransaction<'_>,
 ) -> (
     VecDeque<(XOnlyPublicKey, StagedSeek)>,
     VecDeque<(XOnlyPublicKey, StagedProvide)>,
@@ -1021,7 +1005,7 @@ async fn extract_sorted_staged_seeks_and_provides(
                     provide: b,
                     sequence: seq_b,
                 },
-            )| a.min_fee_rate.cmp(&b.min_fee_rate).then(seq_a.cmp(seq_b)),
+            )| a.min_fee_rate.cmp(&b.min_fee_rate).then(seq_a.cmp(&seq_b)),
         )
         .collect::<VecDeque<_>>();
     dbtx.remove_by_prefix(&StagedProvidesKeyPrefix).await;
@@ -1156,7 +1140,7 @@ fn calculate_locked_seeks(
 }
 
 async fn write_remaining_staged_seeks_and_provides(
-    dbtx: &mut ModuleDatabaseTransaction<'_>,
+    dbtx: &mut DatabaseTransaction<'_>,
     staged_seeks: VecDeque<(XOnlyPublicKey, StagedSeek)>,
     staged_provides: VecDeque<(XOnlyPublicKey, StagedProvide)>,
 ) {
@@ -1171,7 +1155,7 @@ async fn write_remaining_staged_seeks_and_provides(
 }
 
 async fn distribute_fees_and_write_cycle(
-    dbtx: &mut ModuleDatabaseTransaction<'_>,
+    dbtx: &mut DatabaseTransaction<'_>,
     mut locked_seeks: Vec<(XOnlyPublicKey, LockedSeek)>,
     locked_provides: Vec<(XOnlyPublicKey, LockedProvide)>,
     fee_rate: u128,

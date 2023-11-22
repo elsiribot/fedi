@@ -1,6 +1,6 @@
 use std::time::SystemTime;
 
-use fedimint_client_v1::sm::OperationId;
+use fedimint_core::core::OperationId;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::impl_db_record;
 

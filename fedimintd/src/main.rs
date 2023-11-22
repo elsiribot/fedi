@@ -1,13 +1,13 @@
 use std::time::Duration;
 
 use fedi_social_common::config::FediSocialGenParams;
-use fedi_social_server::FediSocialGen;
+use fedi_social_server::FediSocialInit;
 use fedimint_core::Amount;
 use fedimintd::fedimintd::Fedimintd;
 use stability_pool_server::common::config::{
     CollateralRatio, OracleConfig, StabilityPoolGenParams, StabilityPoolGenParamsConsensus,
 };
-use stability_pool_server::StabilityPoolGen;
+use stability_pool_server::StabilityPoolInit;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -15,13 +15,13 @@ async fn main() -> anyhow::Result<()> {
 
     let mut fedimintd = Fedimintd::new()?
         .with_default_modules()
-        .with_module(FediSocialGen)
+        .with_module(FediSocialInit)
         .with_extra_module_inits_params(3, fedi_social_common::KIND, FediSocialGenParams::new());
 
     if include_stability_pool {
         let use_test_params = std::env::var("USE_STABILITY_POOL_TEST_PARAMS").is_ok();
         fedimintd = fedimintd
-            .with_module(StabilityPoolGen)
+            .with_module(StabilityPoolInit)
             .with_extra_module_inits_params(
                 4,
                 stability_pool_server::common::KIND,
