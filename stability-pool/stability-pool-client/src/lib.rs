@@ -347,6 +347,16 @@ impl StabilityPoolClientModule {
             )
             .await
     }
+
+    pub async fn wait_cancellation_processed(&self) -> anyhow::Result<Amount, FederationError> {
+        self.module_api
+            .request_current_consensus(
+                "wait_cancellation_processed".to_string(),
+                ApiRequestErased::new(self.client_key_pair.x_only_public_key().0),
+            )
+            .await
+    }
+
     pub async fn deposit_to_seek(&self, amount: Amount) -> anyhow::Result<OperationId> {
         let (operation_id, _) = submit_tx_with_intended_action(
             &self.client_ctx,
@@ -537,25 +547,12 @@ impl StabilityPoolClientModule {
                     }
 
                     let idle_balance = loop {
-                        match module.account_info().await {
-                            Ok(AccountInfo { idle_balance, .. }) if idle_balance > Amount::ZERO => break idle_balance,
-                            _ => {
-                                let next_cycle_start_time = loop {
-                                    match module.next_cycle_start_time().await {
-                                        Ok(start_time_secs) => break start_time_secs + 10, // 10s buffer
-                                        Err(_) => fedimint_core::task::sleep(Duration::from_secs(60)).await,
-                                    }
-                                };
-
-                                match SystemTime::now().duration_since(UNIX_EPOCH) {
-                                    Ok(curr_time) => fedimint_core::task::sleep(
-                                        Duration::from_secs(next_cycle_start_time - curr_time.as_secs())
-                                    ).await,
-                                    Err(e) => {
-                                        yield StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e.to_string());
-                                        return
-                                    },
-                                }
+                        match module.wait_cancellation_processed().await {
+                            Ok(amount) => break amount,
+                            Err(e) if e.is_retryable() => fedimint_core::task::sleep(Duration::from_secs(10)).await,
+                            Err(e) => {
+                                yield StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e.to_string());
+                                return
                             }
                         }
                     };
