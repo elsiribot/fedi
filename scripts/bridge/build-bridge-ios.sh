@@ -19,8 +19,9 @@ cargo run --target-dir "${TARGET_DIR}/pkg/ffi-bindgen/ffi-bindgen-run" --package
 
 cd $BRIDGE_ROOT
 
-# only build simulator target by default
-TARGETS=("aarch64-apple-ios-sim")
+# TODO: both of these targets are needed by default until this issue is resolved:
+# https://github.com/fedibtc/fedi/issues/2497
+TARGETS=("aarch64-apple-ios-sim" "x86_64-apple-ios")
 if [ "${BUILD_ALL_BRIDGE_TARGETS:-}" == "1" ]; then
   TARGETS=("aarch64-apple-ios-sim" "aarch64-apple-ios" "x86_64-apple-ios")
 fi
@@ -55,21 +56,22 @@ echo "Copying binary files..."
 # since x86_64-apple-ios-sim is not supported as a rustc target we just use x86_64-apple-ios
 AARCH64_SIM_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/aarch64-apple-ios-sim/${CARGO_PROFILE:-debug}/libfediffi.a
 X86_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/x86_64-apple-ios/${CARGO_PROFILE:-debug}/libfediffi.a
-if [ "${BUILD_ALL_BRIDGE_TARGETS:-}" == "1" ]; then
+COMBINED_BINARY_PATH=$TARGET_DIR/lipo-ios-arm64_x86_64-simulator/${CARGO_PROFILE:-debug}
+if [[ -e "$AARCH64_SIM_BINARY_PATH" && -e "$X86_BINARY_PATH" ]]; then
   echo "Combining binaries for development..."
-  mkdir -p $TARGET_DIR/lipo-ios-arm64_x86_64-simulator/${CARGO_PROFILE:-debug}
+  mkdir -p $COMBINED_BINARY_PATH
   lipo $AARCH64_SIM_BINARY_PATH $X86_BINARY_PATH \
-    -create -output $TARGET_DIR/lipo-ios-arm64_x86_64-simulator/${CARGO_PROFILE:-debug}/libfediffi.a
+    -create -output $COMBINED_BINARY_PATH/libfediffi.a
 
   cp \
-    $TARGET_DIR/lipo-ios-arm64_x86_64-simulator/${CARGO_PROFILE:-debug}/libfediffi.a \
+    $COMBINED_BINARY_PATH/libfediffi.a \
     fediFFI.xcframework/ios-arm64_x86_64-simulator/fediFFI.framework/fediFFI
 else
   # otherwise just use the aarch64 simulator binary
   cp $AARCH64_SIM_BINARY_PATH fediFFI.xcframework/ios-arm64_x86_64-simulator/fediFFI.framework/fediFFI
 fi
 
-# 2. ios-arm64
+# ios-arm64
 # copy the aarch64 binary if it was built
 AARCH64_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/aarch64-apple-ios/${CARGO_PROFILE:-debug}/libfediffi.a
 if [ -e "$AARCH64_BINARY_PATH" ]; then
