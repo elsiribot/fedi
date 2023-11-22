@@ -79,6 +79,7 @@ impl_db_record!(
     key = IdleBalanceKey,
     value = IdleBalance,
     db_prefix = DbKeyPrefix::IdleBalance,
+    notify_on_modify = true,
 );
 impl_db_lookup!(key = IdleBalanceKey, query_prefix = IdleBalanceKeyPrefix);
 
