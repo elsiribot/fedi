@@ -116,6 +116,16 @@ describe('buildQuery: EncryptedDirectChatMessage', () => {
             recipientPublicKey: testRecipientPublicKey,
             updatePayment,
         })
+        const encryptedDmWithoutPushNotification =
+            new EncryptedDirectChatMessage({
+                from: 'test_sender@domain.com',
+                to: 'test_recipient@domain.com',
+                message: testMessage,
+                senderKeys: testKeypair,
+                recipientPublicKey: testRecipientPublicKey,
+                updatePayment,
+                sendPushNotification: false,
+            })
 
         it('response contains correct id, type, from, and to attributes', () => {
             const result = xmlUtils.buildQuery(encryptedDirectChatMessage)
@@ -134,7 +144,14 @@ describe('buildQuery: EncryptedDirectChatMessage', () => {
             const result = xmlUtils.buildQuery(encryptedDirectChatMessage)
             const body = result.getChild('body')
             expect(body).toBeTruthy()
-            expect(body?.getText()).toBe('encrypted')
+            expect(body?.getText()).toBe('true')
+
+            const resultWithoutPush = xmlUtils.buildQuery(
+                encryptedDmWithoutPushNotification,
+            )
+            const bodyWithoutPush = resultWithoutPush.getChild('body')
+            expect(bodyWithoutPush).toBeTruthy()
+            expect(bodyWithoutPush?.getText()).toBe('false')
         })
 
         it('response contains encrypted OMEMO element', () => {
