@@ -3,12 +3,10 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
+import { useIsChatSupported } from '@fedi/common/hooks/federation'
 // import { useCameraDevices } from 'react-native-vision-camera'
 import { joinFederation } from '@fedi/common/redux'
-import {
-    getFederationPreview,
-    getSupportedFeatures,
-} from '@fedi/common/utils/FederationUtils'
+import { getFederationPreview } from '@fedi/common/utils/FederationUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -21,7 +19,6 @@ import { useAppDispatch } from '../state/hooks'
 import {
     FederationPreview as FederationPreviewType,
     ParserDataType,
-    SupportedFeature,
 } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -38,6 +35,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     const [isJoining, setIsJoining] = useState<boolean>(false)
     const [federationPreview, setFederationPreview] =
         useState<FederationPreviewType>()
+    const isChatSupported = useIsChatSupported()
 
     const handleCode = useCallback(
         async (code: string) => {
@@ -71,9 +69,6 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
         (joinAs: 'returningMember' | 'newMember') => {
             if (!federationPreview) return
             let nextScreen: keyof RootStackParamList = 'TabsNavigator'
-            const isChatSupported = getSupportedFeatures(
-                federationPreview.meta,
-            ).includes(SupportedFeature.chat_server_domain)
 
             if (joinAs === 'returningMember') {
                 nextScreen = 'ChooseRecoveryMethod'
@@ -82,7 +77,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
             }
             navigation.replace(nextScreen)
         },
-        [federationPreview, navigation],
+        [federationPreview, isChatSupported, navigation],
     )
 
     const handleJoin = useCallback(
