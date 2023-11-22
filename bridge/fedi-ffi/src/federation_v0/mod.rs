@@ -36,7 +36,7 @@ use fedimint_mint_client_v0::{
 };
 use fedimint_wallet_client_v0::{WalletClientExt, WalletClientGen};
 use futures::StreamExt;
-use lightning_invoice::Invoice;
+use lightning_invoice_v1::Invoice;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 use tracing::{error, info, warn};
@@ -69,7 +69,7 @@ use crate::types::{
     EcashReceiveMetadata, RpcBalanceInfo, RpcEcashInfo, RpcGenerateEcashResponse,
     RpcLightningDetails, RpcLnState, RpcOOBState, RpcTransaction, RpcTransactionDirection,
 };
-use crate::utils::{display_currency, to_unix_time, unix_now};
+use crate::utils::{display_currency_v1, to_unix_time, unix_now};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FediConfig {
@@ -183,7 +183,9 @@ impl FederationV0 {
 
         // Save client config and invite code
         let federation_id: FederationId = client_config.federation_id;
-        let dyn_db = storage.federation_idb_v0(&federation_id).await?;
+        let dyn_db = storage
+            .federation_idb_v0(&federation_id.to_string())
+            .await?;
         let dbtx = dyn_db.begin_transaction().await;
         let notifications = Default::default();
         let mut dbtx = DatabaseTransaction::new(dbtx, Default::default(), &notifications);
@@ -266,7 +268,7 @@ impl FederationV0 {
         self.subscribe_invoice(operation_id, invoice.clone())
             .await?;
 
-        invoice.try_into()
+        invoice.translate().try_into()
     }
 
     /// Subscribe to state updates for a given lightning invoice
@@ -351,7 +353,7 @@ impl FederationV0 {
             bail!(format!(
                 "Invoice is for wrong network. Expected {}, got {}",
                 self.get_network(),
-                display_currency(invoice.currency())
+                display_currency_v1(invoice.currency())
             ))
         }
 
@@ -534,14 +536,14 @@ impl FederationV0 {
     }
 
     fn send_transaction_event(&self, transaction: RpcTransaction) {
-        let event = Event::transaction(self.federation_id().translate(), transaction);
+        let event = Event::transaction(self.federation_id().to_string(), transaction);
         self.event_sink.typed_event(&event);
     }
 
     /// Send whenever balance changes
     pub async fn send_balance_event(&self) {
         self.event_sink.typed_event(&Event::balance(
-            self.federation_id().translate(),
+            self.federation_id().to_string(),
             self.get_balance().await.translate(),
         ));
     }
@@ -623,8 +625,6 @@ impl FederationV0 {
     }
 
     /// Generate ecash
-    /// FIXME: might be better to return a typed object here and serialize at
-    /// RPC layer
     pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
         let cancel_time = fedimint_core_v1::time::now() + ONE_WEEK;
         let (_, notes) = self.client.spend_notes(amount, ONE_WEEK, ()).await?;

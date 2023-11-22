@@ -21,7 +21,7 @@ export class FedimintBridge {
             method: string,
             payload: object,
         ) => Promise<T>,
-    ) {}
+    ) { }
 
     async rpcTyped<
         M extends bindings.RpcMethodNames,
@@ -31,6 +31,15 @@ export class FedimintBridge {
     }
 
     /*** RPC METHODS ***/
+
+    async federationPreview(
+        inviteCode: string,
+    ) {
+        return this.rpcTyped(
+            'federationPreview',
+            { inviteCode },
+        )
+    }
 
     async stabilityPoolWithdraw(
         lockedBps: number,

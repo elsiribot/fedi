@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use fedimint_core_v1::task::{MaybeSend, MaybeSync};
+use fedimint_core::task::{MaybeSend, MaybeSync};
 use serde::Serialize;
 use ts_rs::TS;
 
@@ -110,10 +110,7 @@ pub enum Event {
 }
 
 impl Event {
-    pub fn transaction(
-        federation_id: fedimint_core_v1::config::FederationId,
-        transaction: RpcTransaction,
-    ) -> Self {
+    pub fn transaction(federation_id: String, transaction: RpcTransaction) -> Self {
         Self::Transaction(TransactionEvent {
             federation_id: RpcFederationId(federation_id),
             transaction,
@@ -125,18 +122,43 @@ impl Event {
     pub fn federation(federation: RpcFederation) -> Self {
         Self::Federation(federation)
     }
-    pub fn balance(
-        federation_id: fedimint_core_v1::config::FederationId,
-        balance: fedimint_core_v1::Amount,
-    ) -> Self {
+    pub fn balance(federation_id: String, balance: fedimint_core::Amount) -> Self {
         Self::Balance(BalanceEvent {
             federation_id: RpcFederationId(federation_id),
             balance: RpcAmount(balance),
         })
     }
     pub fn stability_pool_deposit(
-        federation_id: fedimint_core_v1::config::FederationId,
-        operation_id: fedimint_client_v1::sm::OperationId,
+        federation_id: String,
+        operation_id: fedimint_core::core::OperationId,
+        state: stability_pool_client::StabilityPoolDepositState,
+    ) -> Self {
+        Self::StabilityPoolDeposit(StabilityPoolDepositEvent {
+            federation_id: RpcFederationId(federation_id),
+            operation_id: RpcOperationId(operation_id),
+            state: match state {
+                stability_pool_client::StabilityPoolDepositState::Initiated => {
+                    StabilityPoolDepositState::Initiated
+                }
+                stability_pool_client::StabilityPoolDepositState::TxAccepted => {
+                    StabilityPoolDepositState::TxAccepted
+                }
+                stability_pool_client::StabilityPoolDepositState::TxRejected(e) => {
+                    StabilityPoolDepositState::TxRejected(e.to_string())
+                }
+                stability_pool_client::StabilityPoolDepositState::PrimaryOutputError(e) => {
+                    StabilityPoolDepositState::PrimaryOutputError(e.to_string())
+                }
+                stability_pool_client::StabilityPoolDepositState::Success => {
+                    StabilityPoolDepositState::Success
+                }
+            },
+        })
+    }
+
+    pub fn stability_pool_deposit_v1(
+        federation_id: String,
+        operation_id: fedimint_core::core::OperationId,
         state: stability_pool_client_v1::StabilityPoolDepositState,
     ) -> Self {
         Self::StabilityPoolDeposit(StabilityPoolDepositEvent {
@@ -163,8 +185,34 @@ impl Event {
     }
 
     pub fn stability_pool_withdrawal(
-        federation_id: fedimint_core_v1::config::FederationId,
-        operation_id: fedimint_client_v1::sm::OperationId,
+        federation_id: String,
+        operation_id: fedimint_core::core::OperationId,
+        state: stability_pool_client::StabilityPoolWithdrawalState,
+    ) -> Self {
+        Self::StabilityPoolWithdrawal(StabilityPoolWithdrawalEvent {
+            federation_id: RpcFederationId(federation_id),
+            operation_id: RpcOperationId(operation_id),
+            state: match state {
+                stability_pool_client::StabilityPoolWithdrawalState::InvalidOperationType => StabilityPoolWithdrawalState::InvalidOperationType,
+                stability_pool_client::StabilityPoolWithdrawalState::WithdrawUnlockedInitiated => StabilityPoolWithdrawalState::WithdrawUnlockedInitiated,
+                stability_pool_client::StabilityPoolWithdrawalState::TxRejected(e) => StabilityPoolWithdrawalState::TxRejected(e.to_string()),
+                stability_pool_client::StabilityPoolWithdrawalState::WithdrawUnlockedAccepted => StabilityPoolWithdrawalState::WithdrawUnlockedAccepted,
+                stability_pool_client::StabilityPoolWithdrawalState::PrimaryOutputError(e) => StabilityPoolWithdrawalState::PrimaryOutputError(e),
+                stability_pool_client::StabilityPoolWithdrawalState::Success => StabilityPoolWithdrawalState::Success,
+                stability_pool_client::StabilityPoolWithdrawalState::CancellationSubmissionFailure(e) => StabilityPoolWithdrawalState::CancellationSubmissionFailure(e),
+                stability_pool_client::StabilityPoolWithdrawalState::CancellationInitiated => StabilityPoolWithdrawalState::CancellationInitiated,
+                stability_pool_client::StabilityPoolWithdrawalState::CancellationAccepted => StabilityPoolWithdrawalState::CancellationAccepted,
+                stability_pool_client::StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e) => StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e),
+                stability_pool_client::StabilityPoolWithdrawalState::WithdrawIdleSubmissionFailure(e) => StabilityPoolWithdrawalState::WithdrawIdleSubmissionFailure(e),
+                stability_pool_client::StabilityPoolWithdrawalState::WithdrawIdleInitiated => StabilityPoolWithdrawalState::WithdrawIdleInitiated,
+                stability_pool_client::StabilityPoolWithdrawalState::WithdrawIdleAccepted => StabilityPoolWithdrawalState::WithdrawIdleAccepted,
+            },
+        })
+    }
+
+    pub fn stability_pool_withdrawal_v1(
+        federation_id: String,
+        operation_id: fedimint_core::core::OperationId,
         state: stability_pool_client_v1::StabilityPoolWithdrawalState,
     ) -> Self {
         Self::StabilityPoolWithdrawal(StabilityPoolWithdrawalEvent {

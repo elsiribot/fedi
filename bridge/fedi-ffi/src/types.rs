@@ -4,24 +4,28 @@ use std::time::Duration;
 use anyhow::anyhow;
 use bitcoin::secp256k1::ecdsa::Signature;
 use bitcoin::Network;
-use fedimint_core_v1::config::{GlobalClientConfig, JsonWithKind, PeerUrl};
-use fedimint_ln_client_v1::pay::GatewayPayError;
-use fedimint_ln_client_v1::receive::LightningReceiveError;
-use fedimint_ln_client_v1::{LnPayState, LnReceiveState};
-use fedimint_wallet_client_v1::{BitcoinTransactionData, DepositState, WithdrawState};
+use fedimint_core::config::{GlobalClientConfig, JsonWithKind, PeerUrl};
+use fedimint_ln_client::pay::GatewayPayError;
+use fedimint_ln_client::{LnPayState, LnReceiveState};
+use fedimint_wallet_client::{BitcoinTransactionData, DepositState, WithdrawState};
+use fedimint_wallet_client_v1::{
+    BitcoinTransactionData as BitcoinTransactionDataV1, DepositState as DepositStateV1,
+    WithdrawState as WithdrawStateV1,
+};
 use serde::{Deserialize, Serialize};
-use stability_pool_client_v1::common::AccountInfo;
+use stability_pool_client::common::AccountInfo;
 use ts_rs::TS;
 
 use super::bridge::MultiFederation;
 use super::federation_v0::FederationV0;
 use super::federation_v1::FederationV1;
+use super::federation_v2::FederationV2;
 use super::translate::Translate;
 use super::utils::to_unix_time;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RpcAmount(#[ts(type = "MSats")] pub fedimint_core_v1::Amount);
+pub struct RpcAmount(#[ts(type = "MSats")] pub fedimint_core::Amount);
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -46,8 +50,9 @@ pub struct RpcFederation {
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcFederationPreview {
     pub id: RpcFederationId,
-    pub name: Option<String>,
+    pub name: String,
     pub meta: BTreeMap<String, String>,
+    pub invite_code: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]
@@ -69,23 +74,23 @@ pub struct RpcJsonClientConfig {
     modules: BTreeMap<u16, JsonWithKind>,
 }
 
-#[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Clone, Copy, TS)]
+#[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Clone, TS)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RpcFederationId(#[ts(type = "string")] pub fedimint_core_v1::config::FederationId);
+pub struct RpcFederationId(pub String);
 
 #[derive(Debug, TS, Serialize)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RpcOperationId(#[ts(type = "string")] pub fedimint_client_v1::sm::OperationId);
+pub struct RpcOperationId(#[ts(type = "string")] pub fedimint_core::core::OperationId);
 
-impl From<fedimint_client_v1::sm::OperationId> for RpcOperationId {
-    fn from(value: fedimint_client_v1::sm::OperationId) -> Self {
-        Self(value)
+impl From<fedimint_core::core::OperationId> for RpcOperationId {
+    fn from(value: fedimint_core::core::OperationId) -> Self {
+        Self(fedimint_core::core::OperationId(value.0))
     }
 }
 
 pub async fn federation_v0_to_rpc_federation(federation: &FederationV0) -> RpcFederation {
     let balance = RpcAmount(federation.get_balance().await.translate());
-    let id = RpcFederationId(federation.federation_id().translate());
+    let id = RpcFederationId(federation.federation_id().to_string());
     let name = federation.federation_name();
     let network = federation.get_network();
     let invite_code = federation.get_invite_code().await;
@@ -114,8 +119,46 @@ pub async fn federation_v0_to_rpc_federation(federation: &FederationV0) -> RpcFe
 }
 
 pub async fn federation_v1_to_rpc_federation(federation: &FederationV1) -> RpcFederation {
+    let balance = RpcAmount(federation.get_balance().await.translate());
+    let id = RpcFederationId(federation.federation_id().to_string());
+    let name = federation.federation_name();
+    let network = federation.get_network();
+    let invite_code = federation.get_invite_code().await;
+    let client_config = federation.client.get_config();
+    let meta = federation.client.get_config().global.meta.clone();
+    let nodes = client_config
+        .global
+        .api_endpoints
+        .clone()
+        .iter()
+        .map(|(peer_id, peer_url)| (RpcPeerId(peer_id.translate()), peer_url.clone().translate()))
+        .collect();
+    let social_recovery_active = federation.social_recovery_continue().await.is_ok();
+    let client_config_json = federation.client.get_config_json();
+    RpcFederation {
+        balance,
+        id,
+        network,
+        name,
+        invite_code,
+        meta,
+        nodes,
+        social_recovery_active,
+        version: 1,
+        client_config: Some(RpcJsonClientConfig {
+            global: client_config_json.global.translate(),
+            modules: client_config_json
+                .modules
+                .into_iter()
+                .map(|(id, config)| (id, config.translate()))
+                .collect(),
+        }),
+    }
+}
+
+pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFederation {
     let balance = RpcAmount(federation.get_balance().await);
-    let id = RpcFederationId(federation.federation_id());
+    let id = RpcFederationId(federation.federation_id().to_string());
     let name = federation.federation_name();
     let network = federation.get_network();
     let invite_code = federation.get_invite_code().await;
@@ -139,7 +182,7 @@ pub async fn federation_v1_to_rpc_federation(federation: &FederationV1) -> RpcFe
         meta,
         nodes,
         social_recovery_active,
-        version: 1,
+        version: 2,
         client_config: Some(RpcJsonClientConfig {
             global: client_config_json.global,
             modules: client_config_json.modules,
@@ -151,6 +194,7 @@ pub async fn multi_federation_to_rpc_federation(multi: &MultiFederation) -> RpcF
     match multi {
         MultiFederation::V0(federation) => federation_v0_to_rpc_federation(federation).await,
         MultiFederation::V1(federation) => federation_v1_to_rpc_federation(federation).await,
+        MultiFederation::V2(federation) => federation_v2_to_rpc_federation(federation).await,
     }
 }
 
@@ -175,30 +219,30 @@ pub struct RpcInvoice {
 
 /// FIXME: probably shouldn't return option
 pub fn hacky_lightning_invoice_fee(
-    invoice: &lightning_invoice::Invoice,
-) -> anyhow::Result<fedimint_core_v1::Amount> {
+    invoice: &lightning_invoice::Bolt11Invoice,
+) -> anyhow::Result<fedimint_core::Amount> {
     invoice
         .amount_milli_satoshis()
         .map(|msat| {
-            fedimint_core_v1::Amount::from_msats(msat / 100) // FIXME: hard-coded
-                                                             // 1% fee
+            fedimint_core::Amount::from_msats(msat / 100) // FIXME: hard-coded
+                                                          // 1% fee
         })
         .ok_or(anyhow!("Invoice missing amount"))
 }
 
-impl TryFrom<lightning_invoice::Invoice> for RpcInvoice {
+impl TryFrom<lightning_invoice::Bolt11Invoice> for RpcInvoice {
     type Error = anyhow::Error;
 
-    fn try_from(invoice: lightning_invoice::Invoice) -> anyhow::Result<Self> {
+    fn try_from(invoice: lightning_invoice::Bolt11Invoice) -> anyhow::Result<Self> {
         let amount_msat = invoice
             .amount_milli_satoshis()
             .ok_or(anyhow!("Invoice missing amount"))?;
-        let amount = fedimint_core_v1::Amount::from_msats(amount_msat);
+        let amount = fedimint_core::Amount::from_msats(amount_msat);
 
         // We might get no description
         let description = match invoice.description() {
-            lightning_invoice::InvoiceDescription::Direct(desc) => desc.to_string(),
-            lightning_invoice::InvoiceDescription::Hash(_) => "".to_string(),
+            lightning_invoice::Bolt11InvoiceDescription::Direct(desc) => desc.to_string(),
+            lightning_invoice::Bolt11InvoiceDescription::Hash(_) => "".to_string(),
         };
 
         let fee = hacky_lightning_invoice_fee(&invoice)?;
@@ -291,7 +335,7 @@ impl FediBackupMetadata {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RpcRecoveryId(#[ts(type = "string")] pub fedi_social_client_v1::common::RecoveryId);
+pub struct RpcRecoveryId(#[ts(type = "string")] pub fedi_social_client::common::RecoveryId);
 
 #[derive(Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -310,7 +354,7 @@ pub struct SocialRecoveryApproval {
 
 #[derive(Debug, Eq, Ord, PartialOrd, PartialEq, Serialize, Deserialize, Clone, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RpcPeerId(#[ts(type = "number")] pub fedimint_core_v1::PeerId);
+pub struct RpcPeerId(#[ts(type = "number")] pub fedimint_core::PeerId);
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
@@ -384,9 +428,27 @@ impl RpcOnchainState {
             DepositState::Claimed(data) => {
                 RpcOnchainDepositState::Claimed(RpcOnchainDepositTransactionData::new(&data))
             }
-            // Ignore old state
-            DepositState::ClaimedOld => return None,
             DepositState::Failed(_) => RpcOnchainDepositState::Failed,
+        };
+        Some(Self::DepositState(state))
+    }
+
+    pub fn from_deposit_state_v1(opt: Option<DepositStateV1>) -> Option<RpcOnchainState> {
+        let state = match opt? {
+            DepositStateV1::WaitingForTransaction => RpcOnchainDepositState::WaitingForTransaction,
+            DepositStateV1::WaitingForConfirmation(data) => {
+                RpcOnchainDepositState::WaitingForConfirmation(
+                    RpcOnchainDepositTransactionData::new_v1(&data),
+                )
+            }
+            DepositStateV1::Confirmed(data) => {
+                RpcOnchainDepositState::Confirmed(RpcOnchainDepositTransactionData::new_v1(&data))
+            }
+            DepositStateV1::Claimed(data) => {
+                RpcOnchainDepositState::Claimed(RpcOnchainDepositTransactionData::new_v1(&data))
+            }
+            DepositStateV1::Failed(_) => RpcOnchainDepositState::Failed,
+            DepositStateV1::ClaimedOld => return None,
         };
         Some(Self::DepositState(state))
     }
@@ -400,6 +462,20 @@ impl RpcOnchainState {
                 RpcOnchainState::WithdrawState(RpcOnchainWithdrawState::Succeeded)
             }
             WithdrawState::Failed(_) => {
+                RpcOnchainState::WithdrawState(RpcOnchainWithdrawState::Failed)
+            }
+        })
+    }
+
+    pub fn from_withdraw_state_v1(opt: Option<WithdrawStateV1>) -> Option<RpcOnchainState> {
+        opt.map(|state| match state {
+            WithdrawStateV1::Created => {
+                RpcOnchainState::WithdrawState(RpcOnchainWithdrawState::Created)
+            }
+            WithdrawStateV1::Succeeded(_) => {
+                RpcOnchainState::WithdrawState(RpcOnchainWithdrawState::Succeeded)
+            }
+            WithdrawStateV1::Failed(_) => {
                 RpcOnchainState::WithdrawState(RpcOnchainWithdrawState::Failed)
             }
         })
@@ -427,6 +503,11 @@ pub struct RpcOnchainDepositTransactionData {
 
 impl RpcOnchainDepositTransactionData {
     pub fn new(data: &BitcoinTransactionData) -> Self {
+        Self {
+            txid: data.btc_transaction.txid().to_string(),
+        }
+    }
+    pub fn new_v1(data: &BitcoinTransactionDataV1) -> Self {
         Self {
             txid: data.btc_transaction.txid().to_string(),
         }
@@ -469,7 +550,9 @@ impl RpcLnState {
                 RpcLnState::RecvState(RpcLnReceiveState::WaitingForPayment { invoice, timeout })
             }
             LnReceiveState::Canceled { reason } => {
-                RpcLnState::RecvState(RpcLnReceiveState::Canceled { reason })
+                RpcLnState::RecvState(RpcLnReceiveState::Canceled {
+                    reason: reason.to_string(),
+                })
             }
             LnReceiveState::Funded => RpcLnState::RecvState(RpcLnReceiveState::Funded),
             LnReceiveState::AwaitingFunds => {
@@ -538,8 +621,7 @@ pub enum RpcLnReceiveState {
         timeout: Duration,
     },
     Canceled {
-        #[ts(type = "string")]
-        reason: LightningReceiveError,
+        reason: String,
     },
     Funded,
     AwaitingFunds,
@@ -567,6 +649,23 @@ pub enum RpcOOBSpendState {
 }
 
 impl RpcOOBState {
+    pub fn from_spend_v2(state: fedimint_mint_client::SpendOOBState) -> Self {
+        let state = match state {
+            fedimint_mint_client::SpendOOBState::Created => RpcOOBSpendState::Created,
+            fedimint_mint_client::SpendOOBState::UserCanceledProcessing => {
+                RpcOOBSpendState::UserCanceledProcessing
+            }
+            fedimint_mint_client::SpendOOBState::UserCanceledSuccess => {
+                RpcOOBSpendState::UserCanceledSuccess
+            }
+            fedimint_mint_client::SpendOOBState::UserCanceledFailure => {
+                RpcOOBSpendState::UserCanceledFailure
+            }
+            fedimint_mint_client::SpendOOBState::Success => RpcOOBSpendState::UserCanceledSuccess,
+            fedimint_mint_client::SpendOOBState::Refunded => RpcOOBSpendState::Refunded,
+        };
+        Self::Spend(state)
+    }
     pub fn from_spend_v1(state: fedimint_mint_client_v1::SpendOOBState) -> Self {
         let state = match state {
             fedimint_mint_client_v1::SpendOOBState::Created => RpcOOBSpendState::Created,

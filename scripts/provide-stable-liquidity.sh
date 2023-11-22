@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 echo "Run with './scripts/provide-stable-liquidity.sh [amount_sats]"
 
+# wait for devimint to start
+echo "Waiting for fedimint start"
+STATUS="$(devimint wait)"
+if [ "$STATUS" = "ERROR" ]
+then
+    echo "fedimint didn't start correctly"
+    echo "See other panes for errors"
+    exit 1
+fi
+
 set -euo pipefail
 
 function sat_to_btc() {
@@ -14,6 +24,10 @@ function sat_to_msat() {
 AMOUNT=${AMOUNT:-$1}
 
 echo "Pegging in $AMOUNT to deposit-to-provide in stability_pool"
+
+# HACK: fix bitcoin-cli invocation (fixed upstream)
+eval "$(devimint env)"
+FM_BTC_CLIENT="$FM_BTC_CLIENT -rpcport=$FM_PORT_BTC_RPC"
 
 # get a deposit address and save the operation ID
 json_output="$($FM_MINT_CLIENT deposit-address)"

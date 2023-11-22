@@ -1,4 +1,4 @@
-import { bech32m } from 'bech32'
+import { z } from 'zod'
 
 import { DEFAULT_FEDIMODS } from '@fedi/common/constants/fedimods'
 
@@ -13,6 +13,7 @@ import {
     XmppConnectionOptions,
     FederationPreview,
 } from '../types'
+import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
 
 const log = makeLog('common/utils/FederationUtils')
@@ -153,42 +154,57 @@ export const getSupportedFeatures = (
     return features
 }
 
-export const getFederationDefaultCurrency = (
+const getMetaField = (
+    field: SupportedFeature | 'sites' | 'fedimods' | 'default_group_chats',
     metadata: ClientConfigMetadata,
-): SupportedCurrency | null => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
-    )
-    if (supportedFeatures.includes(SupportedFeature.default_currency)) {
-        return metadata?.default_currency as SupportedCurrency
+): string | null => {
+    if (field === 'sites' || field === 'fedimods') {
+        return (
+            metadata[`fedi:fedimods`] ??
+            metadata[`fedi:sites`] ??
+            metadata.fedimods ??
+            metadata.sites ??
+            null
+        )
+    }
+
+    if (field === 'default_group_chats') {
+        return metadata[`fedi:default_group_chats`] ?? metadata[field] ?? null
+    }
+
+    if (Object.values(SupportedFeature).some(x => x === field)) {
+        return metadata[`fedi:${field}`] ?? metadata[field] ?? null
     }
 
     return null
+}
+
+export const getFederationDefaultCurrency = (
+    metadata: ClientConfigMetadata,
+) => {
+    return getMetaField(
+        SupportedFeature.default_currency,
+        metadata,
+    ) as SupportedCurrency | null
 }
 
 export const getFederationFixedExchangeRate = (
     metadata: ClientConfigMetadata,
-): number | null => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
+) => {
+    const exchangeRate = getMetaField(
+        SupportedFeature.fixed_exchange_rate,
+        metadata,
     )
-    if (supportedFeatures.includes(SupportedFeature.fixed_exchange_rate)) {
-        return Number(metadata?.fixed_exchange_rate)
-    }
 
-    return null
+    if (typeof exchangeRate !== 'string') return null
+
+    return Number(exchangeRate)
 }
 
 export const getFederationChatServerDomain = (
     metadata: ClientConfigMetadata,
-): string | null => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
-    )
-    if (supportedFeatures.includes(SupportedFeature.chat_server_domain)) {
-        return metadata?.chat_server_domain as string
-    }
-    return null
+) => {
+    return getMetaField(SupportedFeature.chat_server_domain, metadata)
 }
 
 export const makeChatServerOptions = (
@@ -204,108 +220,79 @@ export const makeChatServerOptions = (
 
 export const getFederationMaxBalanceMsats = (
     metadata: ClientConfigMetadata,
-): MSats | null => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
+) => {
+    const maxBalanceSats = getMetaField(
+        SupportedFeature.max_balance_msats,
+        metadata,
     )
-    if (supportedFeatures.includes(SupportedFeature.max_balance_msats)) {
-        // This should just be a number but client config meta only
-        // supports strings currently so will need to refactor
-        return Number(metadata?.max_balance_msats) as MSats
-    }
-    return null
+
+    // This should just be a number but client config meta only
+    // supports strings currently so will need to refactor
+    return typeof maxBalanceSats !== 'string'
+        ? undefined
+        : (Number(maxBalanceSats) as MSats)
 }
 
 export const getFederationMaxInvoiceMsats = (
     metadata: ClientConfigMetadata,
-): MSats | null => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
+) => {
+    const maxInvoiceMsats = getMetaField(
+        SupportedFeature.max_invoice_msats,
+        metadata,
     )
-    if (supportedFeatures.includes(SupportedFeature.max_invoice_msats)) {
-        // This should just be a number but client config meta only
-        // supports strings currently so will need to refactor
-        return Number(metadata?.max_invoice_msats) as MSats
-    }
-    return null
+    // This should just be a number but client config meta only
+    // supports strings currently so will need to refactor
+    return typeof maxInvoiceMsats !== 'string'
+        ? undefined
+        : (Number(maxInvoiceMsats) as MSats)
 }
 
 // The utils below all involve the same inverse default logic where they
 // should return true unless explicitly disabled via feature flag
-export const shouldShowInviteCode = (
-    metadata: ClientConfigMetadata,
-): boolean => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
+export const shouldShowInviteCode = (metadata: ClientConfigMetadata) => {
+    // This is a boolean true/false but client config meta only
+    // supports strings currently so will need to refactor
+    return (
+        getMetaField(SupportedFeature.invite_codes_disabled, metadata) !==
+        'true'
     )
-    if (supportedFeatures.includes(SupportedFeature.invite_codes_disabled)) {
-        // This is a boolean true/false but client config meta only
-        // supports strings currently so will need to refactor
-        return metadata.invite_codes_disabled === 'true' ? false : true
-    }
-    return true
 }
 
-export const shouldShowJoinFederation = (
-    metadata: ClientConfigMetadata,
-): boolean => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
+export const shouldShowJoinFederation = (metadata: ClientConfigMetadata) => {
+    return (
+        getMetaField(SupportedFeature.new_members_disabled, metadata) !==
+        'false'
     )
-    if (supportedFeatures.includes(SupportedFeature.new_members_disabled)) {
-        // This is a boolean true/false but client config meta only
-        // supports strings currently so will need to refactor
-        return metadata.new_members_disabled === 'true' ? false : true
-    }
-    return true
 }
 
-export const shouldShowSocialRecovery = (federation: Federation): boolean => {
+export const shouldShowSocialRecovery = (federation: Federation) => {
     // Social recovery not supported on v0 federations
     if (federation.version === 0) {
         return false
     }
-    const supportedFeatures = getSupportedFeatures(
-        federation.meta as ClientConfigMetadata,
+
+    return (
+        getMetaField(
+            SupportedFeature.social_recovery_disabled,
+            federation.meta,
+        ) !== 'true'
     )
-    if (supportedFeatures.includes(SupportedFeature.social_recovery_disabled)) {
-        // This is a boolean true/false but client config meta only
-        // supports strings currently so will need to refactor
-        return federation.meta.social_recovery_disabled === 'true'
-            ? false
-            : true
-    }
-    return true
 }
 
 export const shouldShowOfflineWallet = (
     metadata: ClientConfigMetadata,
 ): boolean => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
+    return (
+        getMetaField(SupportedFeature.offline_wallet_disabled, metadata) !==
+        'true'
     )
-    if (supportedFeatures.includes(SupportedFeature.offline_wallet_disabled)) {
-        // This is a boolean true/false but client config meta only
-        // supports strings currently so will need to refactor
-        return metadata.offline_wallet_disabled === 'true' ? false : true
-    }
-    return true
 }
 
-export const shouldShowOnchainDeposits = (
-    metadata: ClientConfigMetadata,
-): boolean => {
-    const supportedFeatures = getSupportedFeatures(
-        metadata as ClientConfigMetadata,
+export const shouldShowOnchainDeposits = (metadata: ClientConfigMetadata) => {
+    return (
+        getMetaField(SupportedFeature.onchain_deposits_disabled, metadata) !==
+        'true'
     )
-    if (
-        supportedFeatures.includes(SupportedFeature.onchain_deposits_disabled)
-    ) {
-        // This is a boolean true/false but client config meta only
-        // supports strings currently so will need to refactor
-        return metadata.onchain_deposits_disabled === 'true' ? false : true
-    }
-    return false
 }
 
 export const shouldEnableNostr = (federation: Federation) => {
@@ -313,20 +300,22 @@ export const shouldEnableNostr = (federation: Federation) => {
     if (federation.version === 0) {
         return false
     }
-    return federation.meta?.[SupportedFeature.nostr_enabled] === 'true'
+
+    return (
+        getMetaField(SupportedFeature.nostr_enabled, federation.meta) === 'true'
+    )
 }
 
 export const getFederationGroupChats = (
     metadata: ClientConfigMetadata,
 ): string[] => {
-    if (metadata.default_group_chats) {
+    const defaultGroupChats = getMetaField('default_group_chats', metadata)
+
+    if (defaultGroupChats) {
         try {
-            return JSON.parse(metadata.default_group_chats)
+            return JSON.parse(defaultGroupChats)
         } catch (err) {
-            log.warn(
-                'Failed to parse default groupchats',
-                metadata.default_group_chats,
-            )
+            log.warn('Failed to parse default groupchats', defaultGroupChats)
         }
     }
     return []
@@ -335,14 +324,32 @@ export const getFederationGroupChats = (
 export const getFederationFediMods = (
     metadata: ClientConfigMetadata,
 ): FediMod[] => {
-    if (metadata.sites) {
+    const sites = getMetaField('sites', metadata)
+    const fediModSchema: z.ZodSchema<FediMod[]> = z.array(
+        z.object({
+            id: z.string(),
+            title: z.string(),
+            url: z.string().url(),
+            imageUrl: z.string().url().optional(),
+            description: z.string().optional(),
+            color: z.string().optional(),
+        }),
+    )
+
+    if (sites) {
         try {
-            // TODO: validate type matches FediMod[]
-            return JSON.parse(metadata.sites)
+            const res = fediModSchema.safeParse(JSON.parse(sites))
+
+            if (!res.success) {
+                throw res.error
+            }
+
+            return res.data
         } catch (err) {
+            log.error((err as Error | z.ZodError).message)
             log.warn(
                 'Failed to parse federation fedimods, falling back to defaults',
-                metadata.sites,
+                sites,
             )
         }
     }
@@ -360,117 +367,8 @@ export const getFederationFediMods = (
  * allows us to fetch federation info before the bridge is loaded.
  */
 export async function getFederationPreview(
-    connectionCode: string,
+    inviteCode: string,
+    fedimint: FedimintBridge,
 ): Promise<FederationPreview> {
-    // See https://github.com/fedimint/fedimint/blob/e477569968b525a903aaae9aac0c87c914cd0cc2/fedimint-core/src/api.rs#L700-L730
-    // for Rust-side implementation of connection codes.
-    const { words } = bech32m.decode(connectionCode, Number.MAX_SAFE_INTEGER)
-    const bytes = bech32m.fromWords(words)
-    // First 48 bytes are the 32-bit encoded pubkey, which we don't need
-    // const pubkeyBytes = bytes.slice(0, 48)
-    // The next 2 bytes are the length of the URL
-    const urlLenBytes = bytes.slice(48, 50)
-    const urlLen = new DataView(new Uint8Array(urlLenBytes).buffer).getUint16(0)
-    // The next `urlLen` bytes are the URL, UTF-16 encoded
-    const url = String.fromCharCode(...bytes.slice(50, 50 + urlLen))
-    // The remaining bytes are the download token, which we do not need to decode.
-    // const downloadTokenBytes = bytes.slice(50 + urlLen)
-
-    // Open a websocket to the URL we just pulled out. The Fedimint API is a
-    // JSON RPC websocket. Rather than pull in a whole library for this, we'll
-    // just do it manually since this is the only communication we do with the
-    // federation outside of WASM.
-    return new Promise((resolve, reject) => {
-        try {
-            const ws = new WebSocket(url)
-            let id: FederationPreview['id']
-            let name: FederationPreview['name']
-            let meta: FederationPreview['meta']
-            let consensusVersion: FederationPreview['consensusVersion']
-            let apiVersion: FederationPreview['apiVersion']
-            ws.addEventListener('error', err => {
-                reject(err)
-            })
-            // Immediately send messages on open, responses come in message listener
-            ws.addEventListener('open', () => {
-                ws.send(
-                    JSON.stringify({
-                        id: 0,
-                        jsonrpc: '2.0',
-                        method: 'config',
-                        params: [{ auth: null, params: connectionCode }],
-                    }),
-                )
-                ws.send(
-                    JSON.stringify({
-                        id: 1,
-                        jsonrpc: '2.0',
-                        method: 'version',
-                        params: [{ auth: null, params: null }],
-                    }),
-                )
-            })
-            // Listen for responses on open. Once we get all messages back,
-            // resolve with data.If any of them fail, reject the promise.
-            ws.addEventListener('message', async ev => {
-                const data = JSON.parse(ev.data)
-                if (data.error) {
-                    return reject(new Error(data.error.message))
-                }
-                if (data.id === 0) {
-                    id = data.result.client_config.federation_id
-                    const extMeta = await fetchFederationsExternalMetadata([
-                        { id, meta: data.result.client_config.meta },
-                    ])
-                    meta = extMeta[id] || data.result.client_config.meta
-                    name =
-                        meta.federation_name ||
-                        data.result.client_config.meta.federation_name ||
-                        'Unnamed federation'
-                }
-                if (data.id === 1) {
-                    // Breaking API change in newer versions of fedimint
-                    // TODO: Remove this ternary far in the future.
-                    consensusVersion =
-                        'core_consensus' in data.result.core
-                            ? data.result.core.core_consensus
-                            : data.result.core.consensus
-                    if (typeof consensusVersion !== 'number') {
-                        // No clue what this response is, make it some future version
-                        log.warn(
-                            'getFederationPreview: got unexpected consensusVersion, setting to 999',
-                            { consensusVersion },
-                        )
-                        consensusVersion = 999
-                    }
-
-                    apiVersion = data.result.core.api[0]
-                    if (
-                        !apiVersion ||
-                        typeof apiVersion.major !== 'number' ||
-                        typeof apiVersion.minor !== 'number'
-                    ) {
-                        // No clue what this response is, make it some future version
-                        log.warn(
-                            'getFederationPreview: got unexpected apiVersion, setting to 999',
-                            { apiVersion },
-                        )
-                        apiVersion = { major: 999, minor: 999 }
-                    }
-                }
-                if (consensusVersion !== undefined && apiVersion && meta) {
-                    resolve({
-                        id,
-                        name,
-                        meta,
-                        connectionCode,
-                        consensusVersion,
-                        apiVersion,
-                    })
-                }
-            })
-        } catch (err) {
-            reject(err)
-        }
-    })
+    return fedimint.federationPreview(inviteCode)
 }

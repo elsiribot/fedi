@@ -34,6 +34,10 @@ fi
 # social recovery module needs this
 export FM_ADMIN_PASSWORD=p
 
+# enable stability pool
+export INCLUDE_STABILITY_POOL=1
+export USE_STABILITY_POOL_TEST_PARAMS=1
+
 devimint dev-fed &> $FM_LOGS_DIR/devimint-outer.log &
 echo $! >> $FM_PID_FILE
 

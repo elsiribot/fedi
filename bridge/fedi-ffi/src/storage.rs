@@ -12,14 +12,18 @@ pub trait IStorage: 'static + MaybeSend + MaybeSync {
     // Dpc proposed alternative: open_federation_db(federation_id) which just tries
     // each version in descending order
     async fn federation_idb(&self, db_name: &str) -> anyhow::Result<Box<dyn IDatabase>>;
+    async fn federation_database_v2(
+        &self,
+        db_name: &str,
+    ) -> anyhow::Result<fedimint_core::db::Database>;
     /// FIXME: can I get rid of this?
     async fn federation_database_v0(
         &self,
-        id: &fedimint_core_v0::config::FederationId,
+        id: &str,
     ) -> anyhow::Result<fedimint_core_v0::db::Database>;
     async fn federation_idb_v0(
         &self,
-        id: &fedimint_core_v0::config::FederationId,
+        id: &str,
     ) -> anyhow::Result<Box<dyn fedimint_core_v0::db::IDatabase>>;
     async fn delete_federation_db(&self, db_name: &str) -> anyhow::Result<()>;
     async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>>;

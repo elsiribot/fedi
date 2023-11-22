@@ -5,24 +5,21 @@ import {
     selectNostrEnabled,
     selectOnchainDepositsEnabled,
 } from '../redux'
-import { SupportedFeature } from '../types'
 import dateUtils from '../utils/DateUtils'
 import {
     shouldShowOfflineWallet,
     shouldShowSocialRecovery,
     shouldShowInviteCode,
-    getSupportedFeatures,
     shouldShowOnchainDeposits,
     shouldEnableNostr,
+    getFederationChatServerDomain,
 } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
 
 export function useIsChatSupported() {
     const activeFederation = useCommonSelector(selectActiveFederation)
     if (!activeFederation) return false
-    return getSupportedFeatures(activeFederation.meta).includes(
-        SupportedFeature.chat_server_domain,
-    )
+    return !!getFederationChatServerDomain(activeFederation.meta)
 }
 
 export function useIsInviteSupported() {
