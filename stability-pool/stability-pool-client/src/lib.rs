@@ -683,30 +683,28 @@ impl StabilityPoolClientModule {
                             // with a cancellation TX followed by a TX to withdraw unlocked
                             // amount.
                             match next_cancel_locked_state(&mut operation_stream).await {
-                                Some(StabilityPoolCancelLockedState::Created) => {
+                                StabilityPoolCancelLockedState::Created => {
                                     yield StabilityPoolWithdrawalOperationState::CancellationInitiated;
                                 },
-                                Some(s) => panic!("Unexpected state {s:?}"),
-                                None => return,
+                                s => panic!("Unexpected state {s:?}"),
                             }
 
                             match next_cancel_locked_state(&mut operation_stream).await {
-                                Some(StabilityPoolCancelLockedState::Accepted) => {
+                                StabilityPoolCancelLockedState::Accepted => {
                                     yield StabilityPoolWithdrawalOperationState::CancellationAccepted;
                                 },
-                                Some(StabilityPoolCancelLockedState::Rejected(reason)) => {
+                                StabilityPoolCancelLockedState::Rejected(reason) => {
                                     yield StabilityPoolWithdrawalOperationState::CancellationSubmissionFailure(reason);
                                     return
                                 },
-                                Some(s) => panic!("Unexpected state {s:?}"),
-                                None => return,
+                                s => panic!("Unexpected state {s:?}"),
                             }
 
                             match next_cancel_locked_state(&mut operation_stream).await {
-                                Some(StabilityPoolCancelLockedState::Processed {
+                                StabilityPoolCancelLockedState::Processed {
                                     withdraw_unlocked_tx_id,
                                     withdraw_unlocked_outpoints,
-                                }) => {
+                                } => {
                                     yield StabilityPoolWithdrawalOperationState::WithdrawIdleInitiated;
 
                                     let tx_updates_stream = module.client_ctx.transaction_updates(operation_id);
@@ -726,11 +724,10 @@ impl StabilityPoolClientModule {
                                         Err(e) => yield StabilityPoolWithdrawalOperationState::PrimaryOutputError(e.to_string()),
                                     }
                                 },
-                                Some(StabilityPoolCancelLockedState::ProcessingError(reason)) => {
+                                StabilityPoolCancelLockedState::ProcessingError(reason) => {
                                     yield StabilityPoolWithdrawalOperationState::AwaitCycleTurnoverError(reason);
                                 },
-                                Some(s) => panic!("Unexpected state {s:?}"),
-                                None => return,
+                                s => panic!("Unexpected state {s:?}"),
                             }
                         },
                         StabilityPoolMeta::Withdrawal { outpoints, .. } => {
@@ -740,11 +737,10 @@ impl StabilityPoolClientModule {
                             // withdraw unlocked balance).
 
                             match next_withdraw_unlocked_state(&mut operation_stream).await {
-                                Some(StabilityPoolWithdrawUnlockedState::Created) => {
+                                StabilityPoolWithdrawUnlockedState::Created => {
                                     yield StabilityPoolWithdrawalOperationState::WithdrawUnlockedInitiated;
                                 },
-                                Some(s) => panic!("Unexpected state {s:?}"),
-                                None => return,
+                                s => panic!("Unexpected state {s:?}"),
                             }
 
                             // When locked_bps != 0, StabilityPoolCancelLockedState::Created is emitted
@@ -762,7 +758,7 @@ impl StabilityPoolClientModule {
                             };
 
                             match next_withdraw_unlocked_state(&mut operation_stream).await {
-                                Some(StabilityPoolWithdrawUnlockedState::Accepted { maybe_cancellation_tx_id: Some(_) }) => {
+                                StabilityPoolWithdrawUnlockedState::Accepted { maybe_cancellation_tx_id: Some(_) } => {
                                     yield StabilityPoolWithdrawalOperationState::WithdrawUnlockedAccepted;
 
                                     if let Err(e) = module.client_ctx.await_primary_module_outputs(
@@ -775,31 +771,29 @@ impl StabilityPoolClientModule {
 
                                     if !premature_cancel_locked_update {
                                         match next_cancel_locked_state(&mut operation_stream).await {
-                                            Some(StabilityPoolCancelLockedState::Created) => {
+                                            StabilityPoolCancelLockedState::Created => {
                                                 yield StabilityPoolWithdrawalOperationState::CancellationInitiated;
                                             },
-                                            Some(s) => panic!("Unexpected state {s:?}"),
-                                            None => return,
+                                            s => panic!("Unexpected state {s:?}"),
                                         }
                                     }
 
                                     match next_cancel_locked_state(&mut operation_stream).await {
-                                        Some(StabilityPoolCancelLockedState::Accepted) => {
+                                        StabilityPoolCancelLockedState::Accepted => {
                                             yield StabilityPoolWithdrawalOperationState::CancellationAccepted;
                                         },
-                                        Some(StabilityPoolCancelLockedState::Rejected(reason)) => {
+                                        StabilityPoolCancelLockedState::Rejected(reason) => {
                                             yield StabilityPoolWithdrawalOperationState::CancellationSubmissionFailure(reason);
                                             return
                                         },
-                                        Some(s) => panic!("Unexpected state {s:?}"),
-                                        None => return,
+                                        s => panic!("Unexpected state {s:?}"),
                                     }
 
                                     match next_cancel_locked_state(&mut operation_stream).await {
-                                        Some(StabilityPoolCancelLockedState::Processed {
+                                        StabilityPoolCancelLockedState::Processed {
                                             withdraw_unlocked_tx_id,
                                             withdraw_unlocked_outpoints,
-                                        }) => {
+                                        } => {
                                             yield StabilityPoolWithdrawalOperationState::WithdrawIdleInitiated;
 
                                             let tx_updates_stream = module.client_ctx.transaction_updates(operation_id);
@@ -819,14 +813,13 @@ impl StabilityPoolClientModule {
                                                 Err(e) => yield StabilityPoolWithdrawalOperationState::PrimaryOutputError(e.to_string()),
                                             }
                                         },
-                                        Some(StabilityPoolCancelLockedState::ProcessingError(reason)) => {
+                                        StabilityPoolCancelLockedState::ProcessingError(reason) => {
                                             yield StabilityPoolWithdrawalOperationState::AwaitCycleTurnoverError(reason);
                                         },
-                                        Some(s) => panic!("Unexpected state {s:?}"),
-                                        None => return,
+                                        s => panic!("Unexpected state {s:?}"),
                                     }
                                 },
-                                Some(StabilityPoolWithdrawUnlockedState::Accepted { maybe_cancellation_tx_id: None }) => {
+                                StabilityPoolWithdrawUnlockedState::Accepted { maybe_cancellation_tx_id: None } => {
                                     yield StabilityPoolWithdrawalOperationState::WithdrawUnlockedAccepted;
 
                                     match module.client_ctx.await_primary_module_outputs(
@@ -837,11 +830,10 @@ impl StabilityPoolClientModule {
                                         Err(e) => yield StabilityPoolWithdrawalOperationState::PrimaryOutputError(e.to_string()),
                                     }
                                 },
-                                Some(StabilityPoolWithdrawUnlockedState::Rejected(reason)) => {
+                                StabilityPoolWithdrawUnlockedState::Rejected(reason) => {
                                     yield StabilityPoolWithdrawalOperationState::TxRejected(reason)
                                 },
-                                Some(s) => panic!("Unexpected state {s:?}"),
-                                None => return,
+                                s => panic!("Unexpected state {s:?}"),
                             }
                         },
                     };
@@ -1017,27 +1009,29 @@ async fn maybe_fund_cancellation_output(
     }
 }
 
-async fn next_withdraw_unlocked_state<S>(
-    stream: &mut S,
-) -> Option<StabilityPoolWithdrawUnlockedState>
+async fn next_withdraw_unlocked_state<S>(stream: &mut S) -> StabilityPoolWithdrawUnlockedState
 where
     S: Stream<Item = StabilityPoolStateMachines> + Unpin,
 {
     loop {
-        if let StabilityPoolStateMachines::WithdrawUnlocked(sm) = stream.next().await? {
-            return Some(sm.state);
+        if let StabilityPoolStateMachines::WithdrawUnlocked(sm) =
+            stream.next().await.expect("Stream must have next")
+        {
+            return sm.state;
         }
         tokio::task::yield_now().await;
     }
 }
 
-async fn next_cancel_locked_state<S>(stream: &mut S) -> Option<StabilityPoolCancelLockedState>
+async fn next_cancel_locked_state<S>(stream: &mut S) -> StabilityPoolCancelLockedState
 where
     S: Stream<Item = StabilityPoolStateMachines> + Unpin,
 {
     loop {
-        if let StabilityPoolStateMachines::CancelLocked(sm) = stream.next().await? {
-            return Some(sm.state);
+        if let StabilityPoolStateMachines::CancelLocked(sm) =
+            stream.next().await.expect("Stream must have next")
+        {
+            return sm.state;
         }
         tokio::task::yield_now().await;
     }
