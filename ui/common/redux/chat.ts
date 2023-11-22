@@ -1206,6 +1206,9 @@ export const updateChatPayment = createAsyncThunk<
         const paymentUpdates: Partial<ChatPayment> = {
             updatedAt: makePaymentUpdatedAt(payment),
         }
+        // Always send a push notification except for a few
+        // specific payment update cases
+        let sendPushNotification = true
         switch (action) {
             case 'receive': {
                 const { token } = payment
@@ -1228,6 +1231,8 @@ export const updateChatPayment = createAsyncThunk<
                 }
                 paymentUpdates.token = null
                 paymentUpdates.status = ChatPaymentStatus.paid
+                // don't send a push notification for redeemed ecash
+                sendPushNotification = false
                 break
             }
             case 'reject': {
@@ -1252,6 +1257,8 @@ export const updateChatPayment = createAsyncThunk<
                 }
                 paymentUpdates.token = null
                 paymentUpdates.status = ChatPaymentStatus.canceled
+                // don't send a push notification for canceled payments
+                sendPushNotification = false
                 break
             }
             default:
@@ -1272,6 +1279,7 @@ export const updateChatPayment = createAsyncThunk<
             updatedMessage,
             encryptionKeys,
             true,
+            sendPushNotification,
         )
 
         return updatedMessage

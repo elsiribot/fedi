@@ -65,6 +65,7 @@ interface EncryptedDirectChatArgs extends CommonXmppAttributes {
     senderKeys: Keypair
     recipientPublicKey: Key
     updatePayment?: boolean
+    sendPushNotification?: boolean
 }
 interface GroupChatArgs extends CommonXmppAttributes {
     message: Message
@@ -84,6 +85,7 @@ export class EncryptedDirectChatMessage extends XmppMessage {
             senderKeys,
             recipientPublicKey,
             updatePayment,
+            sendPushNotification = true,
         } = this.args
 
         const attributes = {
@@ -169,10 +171,16 @@ export class EncryptedDirectChatMessage extends XmppMessage {
         )
 
         // Add placeholder body so server recognizes it for mam archives
+        // and so it can used to specify whether a push notification should
+        // be sent or not so it can be filtered out by the fpush service
         const placeholderBodyXml = xml(
             'body',
-            { xmlns: 'jabber:client' },
-            'encrypted',
+            {
+                xmlns: 'jabber:client',
+                // this field is not XMPP-specific, just our own descriptor
+                purpose: 'sendPushNotification',
+            },
+            sendPushNotification ? 'true' : 'false',
         )
 
         return xml(this.tag, attributes, placeholderBodyXml, encryptedXml)
