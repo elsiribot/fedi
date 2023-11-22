@@ -625,8 +625,6 @@ impl FederationV0 {
     }
 
     /// Generate ecash
-    /// FIXME: might be better to return a typed object here and serialize at
-    /// RPC layer
     pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
         let cancel_time = fedimint_core_v1::time::now() + ONE_WEEK;
         let (_, notes) = self.client.spend_notes(amount, ONE_WEEK, ()).await?;
