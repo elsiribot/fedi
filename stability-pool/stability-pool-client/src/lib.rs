@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::ffi;
 use std::pin::Pin;
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::bail;
 use async_stream::stream;
@@ -937,11 +938,13 @@ async fn await_tx_accepted(
 async fn await_cancellation_processed(
     context: StabilityPoolClientContext,
 ) -> Result<Amount, String> {
-    context
-        .module
-        .wait_cancellation_processed()
-        .await
-        .map_err(|e| e.to_string())
+    loop {
+        match context.module.wait_cancellation_processed().await {
+            Ok(amount) => break Ok(amount),
+            Err(e) if e.is_retryable() => fedimint_core::task::sleep(Duration::from_secs(10)).await,
+            Err(e) => break Err(e.to_string()),
+        }
+    }
 }
 
 async fn claim_idle_balance_input(
