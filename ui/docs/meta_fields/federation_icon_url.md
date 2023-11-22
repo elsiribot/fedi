@@ -1,6 +1,8 @@
 # `federation_icon_url`
 
-A URL to a JPG or PNG file used as the federation icon
+A URL to a JPG or PNG file used as the federation icon.
+
+Recommended size: 500px, 1:1 aspect ratio
 
 Use this field to display a custom icon next to the federation name throughout the app.
 
