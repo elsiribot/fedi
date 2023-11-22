@@ -16,6 +16,7 @@ import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMe
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
+import BugReportHeader from './components/feature/bug/BugReportHeader'
 import AddBroadcastAdminHeader from './components/feature/chat/AddBroadcastAdminHeader'
 import BroadcastAdminsListHeader from './components/feature/chat/BroadcastAdminsListHeader'
 import ChatWalletHeader from './components/feature/chat/ChatWalletHeader'
@@ -60,6 +61,8 @@ import Header from './components/ui/Header'
 import AddBroadcastAdmin from './screens/AddBroadcastAdmin'
 import BitcoinRequest from './screens/BitcoinRequest'
 import BroadcastAdminsList from './screens/BroadcastAdminsList'
+import BugReport from './screens/BugReport'
+import BugReportSuccess from './screens/BugReportSuccess'
 import ChatWallet from './screens/ChatWallet'
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
 import ChooseRecoveryMethod from './screens/ChooseRecoveryMethod'
@@ -701,6 +704,19 @@ const MainNavigator = () => {
                                 options={() => ({
                                     header: () => <WithdrawInitiatedHeader />,
                                 })}
+                            />
+                            {/* Bug report */}
+                            <Stack.Screen
+                                name="BugReport"
+                                component={BugReport}
+                                options={() => ({
+                                    header: () => <BugReportHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="BugReportSuccess"
+                                component={BugReportSuccess}
+                                options={{ headerShown: false }}
                             />
                             {/* Developer-only */}
                             <Stack.Screen

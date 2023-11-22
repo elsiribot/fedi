@@ -61,7 +61,7 @@ import { version } from '../package.json'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
-import { shareLogs } from '../utils/share'
+import { shareLogsExport } from '../utils/logs-export'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -141,7 +141,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const handleShareLogs = async () => {
         setIsSharingLogs(true)
         try {
-            await shareLogs()
+            await shareLogsExport()
         } catch (e) {
             toast?.show(formatErrorMessage(t, e, 'errors.unknown-error'))
         }

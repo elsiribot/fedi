@@ -21,6 +21,7 @@ export const FediModImages: ImagesMap = {
     'btcprague-useful': require('@fedi/common/assets/images/fedimods/btcprague-useful.png'),
     'btcprague-speakers': require('@fedi/common/assets/images/fedimods/btcprague-speakers.png'),
     'btcprague-side-events': require('@fedi/common/assets/images/fedimods/btcprague-side-events.png'),
+    'bug-report': require('@fedi/common/assets/images/fedimods/bug-report.png'),
     'default': require('@fedi/common/assets/images/fedimods/default.png'),
     'fedi-community': require('@fedi/common/assets/images/fedimods/fedi-community.png'),
     'fedifeedback': require('@fedi/common/assets/images/fedimods/fedifeedback.png'),
