@@ -24,15 +24,18 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
     const activeFederation = useAppSelector(selectActiveFederation)
 
     const onChooseSocialRecovery = () => {
-        if (activeFederation!.socialRecoveryActive) {
-            navigation.navigate('CompleteSocialRecovery')
-        } else {
-            navigation.navigate('LocateSocialRecovery')
-        }
+        // TODO: bridge.socialRecoveryActive so we can tell if they're in the middle of a social recovery
+        // and navigate accordingly
+        // if (activeFederation!.socialRecoveryActive) {
+        //     navigation.navigate('CompleteSocialRecovery')
+        // } else {
+        //     navigation.navigate('LocateSocialRecovery')
+        // }
+        navigation.navigate('LocateSocialRecovery')
     }
 
     const showSocialRecovery =
-        activeFederation && shouldShowSocialRecovery(activeFederation)
+        !activeFederation || shouldShowSocialRecovery(activeFederation)
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>

@@ -13,6 +13,7 @@ pub mod logging;
 #[cfg(not(target_family = "wasm"))]
 pub mod remote;
 pub mod rpc;
+pub mod social;
 pub mod storage;
 pub mod translate;
 pub mod types;

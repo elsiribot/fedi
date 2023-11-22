@@ -3,10 +3,7 @@ import React, { useCallback, useState, useEffect } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
 import ScanIcon from '@fedi/common/assets/svgs/scan.svg'
-import {
-    useFederationRecoverySupported,
-    useIsChatSupported,
-} from '@fedi/common/hooks/federation'
+import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import { joinFederation } from '@fedi/common/redux'
 import { FederationPreview } from '@fedi/common/types'
 import {
@@ -45,8 +42,6 @@ export const JoinFederation: React.FC = () => {
     const [federationPreview, setFederationPreview] =
         useState<FederationPreview>()
     const isChatSupported = useIsChatSupported(federationPreview)
-    const federationRecoverySupported =
-        useFederationRecoverySupported(federationPreview)
 
     const handleCode = useCallback(
         async (code: string) => {
@@ -200,16 +195,6 @@ export const JoinFederation: React.FC = () => {
         }
         actions = (
             <>
-                {federationRecoverySupported && (
-                    <Button
-                        width="full"
-                        variant="tertiary"
-                        href="/onboarding/recover"
-                        onClick={() => handleJoin('/onboarding/recover')}
-                        loading={isJoining}>
-                        {t('feature.onboarding.join-returning-member')}
-                    </Button>
-                )}
                 <Button
                     width="full"
                     onClick={() => handleJoin(joinNewMemberHref)}

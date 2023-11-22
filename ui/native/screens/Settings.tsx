@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 
-import { useFederationRecoverySupported } from '@fedi/common/hooks/federation'
+import { useFederationSupportsSingleSeed } from '@fedi/common/hooks/federation'
 import {
     changeAuthenticatedGuardian,
     leaveFederation,
@@ -50,7 +50,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const stableBalance = useAppSelector(selectStableBalance)
     const pendingStableBalance = useAppSelector(selectStableBalancePending)
     const currency = useAppSelector(selectCurrency)
-    const federationRecoverySupported = useFederationRecoverySupported()
+    const supportsSingleSeed = useFederationSupportsSingleSeed()
 
     const federationId = activeFederation?.id
 
@@ -90,6 +90,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         federationId,
                     }),
                 ).unwrap()
+                // FIXME: navigation broken here
             }
         } catch (e) {
             toast?.show('Failed to leave federation', 3000)
@@ -156,24 +157,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         }
     }
 
-    const onChooseRecovery = () => {
-        // Only allow recovery for wallets with less than 100 sats
-        // FIXME: a bit of a race condition here if a user starts a recovery with 0 sats, then receives and tries this again
-        if (activeFederation!.balance > 100000) {
-            Alert.alert(
-                t('feature.recovery.recover-wallet'),
-                t('feature.recovery.recover-wallet-with-balance'),
-                [
-                    {
-                        text: t('words.okay'),
-                    },
-                ],
-            )
-        } else {
-            navigation.navigate('ChooseRecoveryMethod')
-        }
-    }
-
     const showInviteCode =
         activeFederation && shouldShowInviteCode(activeFederation.meta)
 
@@ -226,24 +209,20 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={confirmLeaveFederation}
                 />
             </View>
-            <View>
-                <Text style={styles(theme).sectionTitle}>
-                    {t('words.wallet')}
-                </Text>
-                <SettingsItem
-                    image={<SvgImage name="Wallet" />}
-                    label={t('feature.backup.backup-wallet')}
-                    onPress={() => navigation.navigate('ChooseBackupMethod')}
-                />
-
-                {federationRecoverySupported && (
+            {supportsSingleSeed && (
+                <View>
+                    <Text style={styles(theme).sectionTitle}>
+                        {t('words.wallet')}
+                    </Text>
                     <SettingsItem
-                        image={<SvgImage name="Recovery" />}
-                        label={t('feature.recovery.recover-a-wallet')}
-                        onPress={onChooseRecovery}
+                        image={<SvgImage name="Wallet" />}
+                        label={t('feature.backup.backup-wallet')}
+                        onPress={() =>
+                            navigation.navigate('ChooseBackupMethod')
+                        }
                     />
-                )}
-            </View>
+                </View>
+            )}
             <View>
                 <Pressable
                     onPress={() => {

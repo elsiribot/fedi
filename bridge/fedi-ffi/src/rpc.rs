@@ -18,7 +18,6 @@ use tracing::{error, info, instrument};
 
 use super::bridge::Bridge;
 use super::error::ErrorCode;
-use super::event::{EventSink, SocialRecoveryEvent};
 use super::storage::Storage;
 use super::types::{
     RpcAmount, RpcFederation, RpcFederationId, RpcInvoice, RpcOperationId, RpcPayInvoiceResponse,
@@ -26,7 +25,7 @@ use super::types::{
     RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
 };
 use crate::error::get_error_code;
-use crate::event::{Event, IEventSink, PanicEvent, TypedEventExt};
+use crate::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use crate::types::{
     GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
     RpcLightningGateway, RpcPayAddressResponse,
@@ -268,20 +267,16 @@ async fn updateTransactionNotes(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn getMnemonic(
-    bridge: Arc<Bridge>,
-    federation_id: RpcFederationId,
-) -> anyhow::Result<Vec<String>> {
-    bridge.get_mnemonic_words(federation_id).await
+async fn getMnemonic(bridge: Arc<Bridge>) -> anyhow::Result<Vec<String>> {
+    bridge.get_mnemonic_words().await
 }
 
+// TODO: maybe call this "loadMnemonic" or something?
 #[macro_rules_derive(rpc_method!)]
-async fn recoverFromMnemonic(
-    bridge: Arc<Bridge>,
-    federation_id: RpcFederationId,
-    mnemonic: Vec<String>,
-) -> anyhow::Result<Option<String>> {
-    bridge.recover_from_mnemonic(federation_id, mnemonic).await
+async fn recoverFromMnemonic(bridge: Arc<Bridge>, mnemonic: Vec<String>) -> anyhow::Result<()> {
+    bridge
+        .recover_from_mnemonic(mnemonic.join(" ").parse()?)
+        .await
 }
 
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
@@ -306,29 +301,24 @@ async fn locateRecoveryFile(bridge: Arc<Bridge>) -> anyhow::Result<PathBuf> {
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn validateRecoveryFile(
-    bridge: Arc<Bridge>,
-    federation_id: RpcFederationId,
-    path: PathBuf,
-) -> anyhow::Result<bool> {
-    bridge.validate_recovery_file(federation_id, path).await
+async fn validateRecoveryFile(bridge: Arc<Bridge>, path: PathBuf) -> anyhow::Result<()> {
+    bridge.validate_recovery_file(path).await
 }
 
 // FIXME: maybe this would better be called "begin_social_recovery"
 #[macro_rules_derive(rpc_method!)]
-async fn recoveryQr(
-    bridge: Arc<Bridge>,
-    federation_id: RpcFederationId,
-) -> anyhow::Result<SocialRecoveryQr> {
-    bridge.recovery_qr(federation_id).await
+async fn recoveryQr(bridge: Arc<Bridge>) -> anyhow::Result<Option<SocialRecoveryQr>> {
+    bridge.recovery_qr().await
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn socialRecoveryApprovals(
-    bridge: Arc<Bridge>,
-    federation_id: RpcFederationId,
-) -> anyhow::Result<SocialRecoveryEvent> {
-    bridge.social_recovery_approvals(federation_id).await
+async fn cancelSocialRecovery(bridge: Arc<Bridge>) -> anyhow::Result<()> {
+    bridge.cancel_social_recovery().await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn socialRecoveryApprovals(bridge: Arc<Bridge>) -> anyhow::Result<SocialRecoveryEvent> {
+    bridge.social_recovery_approvals().await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -356,11 +346,8 @@ async fn approveSocialRecoveryRequest(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn completeSocialRecovery(
-    bridge: Arc<Bridge>,
-    federation_id: RpcFederationId,
-) -> anyhow::Result<Option<String>> {
-    bridge.complete_social_recovery(federation_id).await
+async fn completeSocialRecovery(bridge: Arc<Bridge>) -> anyhow::Result<RpcFederation> {
+    bridge.complete_social_recovery().await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -522,6 +509,7 @@ rpc_methods!(RpcMethods {
     locateRecoveryFile,
     validateRecoveryFile,
     recoveryQr,
+    cancelSocialRecovery,
     socialRecoveryApprovals,
     completeSocialRecovery,
     socialRecoveryDownloadVerificationDoc,
@@ -574,11 +562,13 @@ mod tests {
     use fedi_social_client::common::VerificationDocument;
     use fedimint_core::Amount;
     use fedimint_logging::TracingSetup;
+    use fedimint_mint_client::OOBNotes;
 
     use super::*;
     use crate::bridge::MultiFederation;
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
+    use crate::translate::Translate;
 
     struct FakeEventSink {
         pub events: Arc<RwLock<Vec<(String, String)>>>,
@@ -654,6 +644,18 @@ mod tests {
                 }
                 bail!("No gateway is using LND's node pubkey")
             }
+        }
+    }
+
+    async fn amount_from_ecash(ecash_string: String) -> anyhow::Result<fedimint_core::Amount> {
+        if let Ok(ecash) = fedimint_mint_client::OOBNotes::from_str(&ecash_string) {
+            Ok(ecash.total_amount())
+        } else if let Ok(ecash) = fedimint_mint_client_v1::OOBNotes::from_str(&ecash_string) {
+            Ok(ecash.total_amount().translate())
+        } else if let Ok(ecash) = fedimint_mint_client_v0::parse_ecash(&ecash_string) {
+            Ok(ecash.total_amount().translate())
+        } else {
+            bail!("failed to parse ecash")
         }
     }
 
@@ -778,12 +780,18 @@ mod tests {
     }
 
     async fn setup() -> anyhow::Result<(Arc<Bridge>, Arc<MultiFederation>)> {
+        let bridge = setup_bridge().await?;
+
+        let federation = join_test_fed(&bridge).await?;
+        Ok((bridge, federation))
+    }
+
+    async fn setup_bridge() -> anyhow::Result<Arc<Bridge>> {
         INIT_TRACING.call_once(|| {
             TracingSetup::default()
                 .init()
                 .expect("Failed to initialize tracing");
         });
-
         let event_sink = Arc::new(FakeEventSink::new());
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
@@ -795,12 +803,15 @@ mod tests {
                 return Err(context_error);
             }
         };
+        Ok(bridge)
+    }
 
+    async fn join_test_fed(bridge: &Arc<Bridge>) -> Result<Arc<MultiFederation>, anyhow::Error> {
         let invite_code = std::env::var("FM_INVITE_CODE").unwrap();
         let fedimint_federation = joinFederation(bridge.clone(), invite_code).await?;
         let federation = bridge.get_multi(&fedimint_federation.id.0).await?;
         use_lnd_gateway(&federation).await?;
-        Ok((bridge, federation))
+        Ok(federation)
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -904,13 +915,11 @@ mod tests {
         // receive ecash
         let ecash_receive_amount = fedimint_core::Amount::from_msats(10000);
         let ecash = cli_generate_ecash(ecash_receive_amount, &federation).await?;
+        let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
         receiveEcash(bridge.clone(), federation.federation_id(), ecash).await?;
 
-        // check balance
-        assert_eq!(
-            federation.get_balance().await,
-            fedimint_core::Amount::from_msats(10000)
-        );
+        // check balance (sometimes fedimint-cli gives more than we ask for)
+        assert_eq!(ecash_receive_amount, federation.get_balance().await,);
 
         // spend ecash
         let send_ecash = generateEcash(
@@ -934,13 +943,11 @@ mod tests {
         // receive ecash
         let ecash_receive_amount = fedimint_core::Amount::from_msats(10000);
         let ecash = cli_generate_ecash(ecash_receive_amount, &federation).await?;
+        let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
         receiveEcash(bridge.clone(), federation.federation_id(), ecash).await?;
 
         // check balance
-        assert_eq!(
-            federation.get_balance().await,
-            fedimint_core::Amount::from_msats(10000)
-        );
+        assert_eq!(ecash_receive_amount, federation.get_balance().await,);
 
         let count = 100;
         for _ in 0..count {
@@ -956,8 +963,8 @@ mod tests {
         }
         // check balance
         assert_eq!(
+            fedimint_core::Amount::from_msats(0),
             federation.get_balance().await,
-            fedimint_core::Amount::from_msats(0)
         );
 
         Ok(())
@@ -979,8 +986,8 @@ mod tests {
         fedimint_core::task::sleep(Duration::from_secs(10)).await;
 
         assert_eq!(
+            fedimint_core::Amount::from_sats(10_000_000),
             federation.get_balance().await,
-            fedimint_core::Amount::from_sats(10_000_000)
         );
 
         Ok(())
@@ -993,13 +1000,11 @@ mod tests {
         // receive ecash
         let ecash_receive_amount = fedimint_core::Amount::from_msats(100);
         let ecash = cli_generate_ecash(ecash_receive_amount, &federation).await?;
+        let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
         receiveEcash(bridge.clone(), federation.federation_id(), ecash).await?;
 
         // check balance
-        assert_eq!(
-            federation.get_balance().await,
-            fedimint_core::Amount::from_msats(100)
-        );
+        assert_eq!(ecash_receive_amount, federation.get_balance().await);
 
         // spend ecash
         let send_ecash = generateEcash(
@@ -1019,36 +1024,50 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_backup_and_recovery() -> anyhow::Result<()> {
-        let (bridge, federation) = setup().await?;
+        let (backup_bridge, federation) = setup().await?;
 
-        // Backup and recovery not yet supported for v2 federations.
-        if let MultiFederation::V2(_) = *federation {
+        // backup and recovery support has been removed from v0 and v1 federations
+        if let MultiFederation::V0(_) | MultiFederation::V1(_) = *federation {
             return Ok(());
         }
 
         // receive ecash
         let initial_balance = fedimint_core::Amount::from_msats(10_000);
         let ecash = cli_generate_ecash(initial_balance, &federation).await?;
+        let ecash_receive_amount = OOBNotes::from_str(&ecash)?.total_amount();
+        let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
         federation.receive_ecash(ecash).await?;
-        assert_eq!(initial_balance, federation.get_balance().await);
+        assert_eq!(ecash_receive_amount, federation.get_balance().await);
 
         // set username and do a backup
         let federation_id = federation.federation_id();
         let username = "satoshi".to_string();
-        backupXmppUsername(bridge.clone(), federation_id.clone(), username.clone()).await?;
+        backupXmppUsername(
+            backup_bridge.clone(),
+            federation_id.clone(),
+            username.clone(),
+        )
+        .await?;
 
-        // recover using fresh bridge instance
-        let mnemonic = getMnemonic(bridge.clone(), federation_id.clone()).await?;
+        // get mnemonic and drop old federation / bridge so no background stuff runs
+        let mnemonic = getMnemonic(backup_bridge.clone()).await?;
         drop(federation);
-        drop(bridge);
-        let (bridge, _) = setup().await?;
-        let _response =
-            recoverFromMnemonic(bridge.clone(), federation_id.clone(), mnemonic).await?;
+        drop(backup_bridge);
 
-        // assert that balance is updated
-        let federation = bridge.get_multi(&federation_id.clone().0).await?;
-        assert_eq!(initial_balance, federation.get_balance().await);
-        assert_eq!(Some(username), federation.get_xmpp_username().await);
+        // create new bridge which hasn't joined federation yet and recover mnemnonic
+        let recovery_bridge = setup_bridge().await?;
+        recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
+
+        // Rejoin federation and assert that balances are correct
+        let recovery_federation = join_test_fed(&recovery_bridge).await?;
+        assert_eq!(
+            ecash_receive_amount,
+            recovery_federation.get_balance().await
+        );
+        assert_eq!(
+            Some(username),
+            recovery_federation.get_xmpp_username().await
+        );
         Ok(())
     }
 
@@ -1063,40 +1082,48 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_social_recovery() -> anyhow::Result<()> {
-        let (bridge, federation) = setup().await?;
+    async fn test_social_backup_and_recovery() -> anyhow::Result<()> {
+        let (original_bridge, federation) = setup().await?;
+        let recovery_bridge = setup_bridge().await?;
+        let (guardian_bridge, _) = setup().await?;
 
-        // Social recovery not supported for v0 federations, and not yet supported for
-        // v2
-        if let MultiFederation::V0(_) | MultiFederation::V2(_) = *federation {
+        // social backup and recovery support has been removed from v0 and v1
+        // federations
+        if let MultiFederation::V0(_) | MultiFederation::V1(_) = *federation {
             return Ok(());
         }
 
         // Get original mnemonic (for comparison later)
         let federation_id = federation.federation_id();
-        let initial_words = getMnemonic(bridge.clone(), federation_id.clone()).await?;
+        let initial_words = getMnemonic(original_bridge.clone()).await?;
         info!("initial mnemnoic {:?}", &initial_words);
 
         // Upload backup
         let video_file_path = get_fixture_dir().join("backup.fedi");
         let video_file_contents = tokio::fs::read(&video_file_path).await?;
-        let recovery_file_path =
-            uploadBackupFile(bridge.clone(), federation_id.clone(), video_file_path).await?;
-        let locate_recovery_file_path = locateRecoveryFile(bridge.clone()).await?;
+        let recovery_file_path = uploadBackupFile(
+            original_bridge.clone(),
+            federation_id.clone(),
+            video_file_path,
+        )
+        .await?;
+        let locate_recovery_file_path = locateRecoveryFile(original_bridge.clone()).await?;
         assert_eq!(recovery_file_path, locate_recovery_file_path);
 
+        // use new bridge from here (simulating a new app install)
+
         // Validate recovery file
-        let valid =
-            validateRecoveryFile(bridge.clone(), federation_id.clone(), recovery_file_path).await?;
-        assert!(valid);
+        validateRecoveryFile(recovery_bridge.clone(), recovery_file_path).await?;
 
         // Generate recovery QR
-        let qr = recoveryQr(bridge.clone(), federation_id.clone()).await?;
+        let qr = recoveryQr(recovery_bridge.clone())
+            .await?
+            .expect("recovery must be started started");
         let recovery_id = qr.recovery_id;
 
-        // Download verification document
+        // Guardian downloads verification document
         let verification_doc_path = socialRecoveryDownloadVerificationDoc(
-            bridge.clone(),
+            guardian_bridge.clone(),
             federation_id.clone(),
             recovery_id,
         )
@@ -1110,7 +1137,7 @@ mod tests {
         for i in 0..3 {
             let password = "p";
             approveSocialRecoveryRequest(
-                bridge.clone(),
+                guardian_bridge.clone(),
                 federation_id.clone(),
                 recovery_id,
                 RpcPeerId(fedimint_core::PeerId::from(i)),
@@ -1120,8 +1147,7 @@ mod tests {
         }
 
         // Member checks approval status
-        let social_recovery_event =
-            socialRecoveryApprovals(bridge.clone(), federation_id.clone()).await?;
+        let social_recovery_event = socialRecoveryApprovals(recovery_bridge.clone()).await?;
         assert_eq!(0, social_recovery_event.remaining);
         assert_eq!(
             3,
@@ -1134,11 +1160,11 @@ mod tests {
 
         // Member combines decryption shares, loading recovered mnemonic back into their
         // db
-        completeSocialRecovery(bridge.clone(), federation_id.clone()).await?;
+        completeSocialRecovery(recovery_bridge.clone()).await?;
 
         // Check backups match (TODO: how can I make sure that they're equal b/c nothing
         // happened?)
-        let final_words: Vec<String> = getMnemonic(bridge.clone(), federation_id.clone()).await?;
+        let final_words: Vec<String> = getMnemonic(recovery_bridge.clone()).await?;
         assert_eq!(initial_words, final_words);
 
         Ok(())

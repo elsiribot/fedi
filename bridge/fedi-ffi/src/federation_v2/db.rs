@@ -10,16 +10,14 @@ pub enum BridgeDbPrefix {
     XmppUsername = 0xb2,
     InviteCode = 0xb3,
     LastBackupTimestamp = 0xb4,
-    SocialRecoveryState = 0xb5,
-    SocialRecoveryId = 0xb6,
     TransactionNote = 0xb7,
 }
 
 #[derive(Debug, Decodable, Encodable)]
-pub struct FediClientConfigKey;
+pub struct FediRawClientConfigKey;
 
 impl_db_record!(
-    key = FediClientConfigKey,
+    key = FediRawClientConfigKey,
     value = String,
     db_prefix = BridgeDbPrefix::ClientConfig,
 );

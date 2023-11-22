@@ -19,6 +19,7 @@ import {
     selectCurrency,
     selectStableBalance,
     selectStableBalancePending,
+    selectActiveFederation,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
@@ -46,7 +47,8 @@ export const usePrevious = <T extends unknown>(value: T): T | undefined => {
 }
 
 export const useBridge = () => {
-    const activeFederationId = useAppSelector(selectActiveFederationId)
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const activeFederationId = activeFederation?.id
 
     return {
         approveSocialRecoveryRequest: useCallback(
@@ -60,18 +62,6 @@ export const useBridge = () => {
             },
             [activeFederationId],
         ),
-        authenticateGuardian: useCallback(
-            (secret: string) => {
-                return fedimint.authenticateGuardian(
-                    secret,
-                    activeFederationId!,
-                )
-            },
-            [activeFederationId],
-        ),
-        recoveryQr: useCallback(() => {
-            return fedimint.recoveryQr(activeFederationId!)
-        }, [activeFederationId]),
         listFederations: useCallback(() => {
             return fedimint.listFederations()
         }, []),
@@ -80,9 +70,6 @@ export const useBridge = () => {
         }, [activeFederationId]),
         generateAddress: useCallback(() => {
             return fedimint.generateAddress(activeFederationId!)
-        }, [activeFederationId]),
-        socialRecoveryApprovals: useCallback(() => {
-            return fedimint.socialRecoveryApprovals(activeFederationId!)
         }, [activeFederationId]),
         generateEcash: useCallback(
             (amount: MSats) => {
@@ -100,9 +87,6 @@ export const useBridge = () => {
             },
             [activeFederationId],
         ),
-        getMnemonic: useCallback(() => {
-            return fedimint.getMnemonic(activeFederationId!)
-        }, [activeFederationId]),
         listTransactions: useCallback(
             (startTime?: number, limit?: number) => {
                 return fedimint.listTransactions(
@@ -147,9 +131,6 @@ export const useBridge = () => {
         locateRecoveryFile: useCallback(() => {
             return fedimint.locateRecoveryFile(activeFederationId!)
         }, [activeFederationId]),
-        completeSocialRecovery: useCallback(() => {
-            return fedimint.completeSocialRecovery(activeFederationId!)
-        }, [activeFederationId]),
         payInvoice: useCallback(
             (invoice: string) => {
                 return fedimint.payInvoice(invoice, activeFederationId!)
@@ -168,36 +149,12 @@ export const useBridge = () => {
             },
             [activeFederationId],
         ),
-        recoverFromMnemonic: useCallback(
-            (mnemonic: string[]) => {
-                return fedimint.recoverFromMnemonic(
-                    mnemonic,
-                    activeFederationId!,
-                )
-            },
-            [activeFederationId],
-        ),
-        denySocialRecoveryRequest: useCallback(
-            (userPublicKey: string) => {
-                return fedimint.denySocialRecoveryRequest(
-                    userPublicKey,
-                    activeFederationId!,
-                )
-            },
-            [activeFederationId],
-        ),
         socialRecoveryDownloadVerificationDoc: useCallback(
             (recoveryId: string) => {
                 return fedimint.socialRecoveryDownloadVerificationDoc(
                     recoveryId,
                     activeFederationId!,
                 )
-            },
-            [activeFederationId],
-        ),
-        validateRecoveryFile: useCallback(
-            (file: string) => {
-                return fedimint.validateRecoveryFile(file, activeFederationId!)
             },
             [activeFederationId],
         ),

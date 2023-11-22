@@ -134,7 +134,8 @@ pub async fn federation_v1_to_rpc_federation(federation: &FederationV1) -> RpcFe
         .iter()
         .map(|(peer_id, peer_url)| (RpcPeerId(peer_id.translate()), peer_url.clone().translate()))
         .collect();
-    let social_recovery_active = federation.social_recovery_continue().await.is_ok();
+    // Social recovery is disabled for v1 federations
+    let social_recovery_active = false;
     let client_config_json = federation.client.get_config_json();
     RpcFederation {
         balance,
@@ -172,7 +173,6 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
         .iter()
         .map(|(peer_id, peer_url)| (RpcPeerId(*peer_id), peer_url.clone()))
         .collect();
-    let social_recovery_active = federation.social_recovery_continue().await.is_ok();
     let client_config_json = federation.client.get_config_json();
     RpcFederation {
         balance,
@@ -182,7 +182,7 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
         invite_code,
         meta,
         nodes,
-        social_recovery_active,
+        social_recovery_active: false,
         version: 2,
         client_config: Some(RpcJsonClientConfig {
             global: client_config_json.global,

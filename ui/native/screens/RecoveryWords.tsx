@@ -6,7 +6,7 @@ import { ScrollView, StyleSheet, View } from 'react-native'
 
 import type { SeedWords } from '@fedi/common/types'
 
-import { useBridge } from '../state/hooks'
+import { fedimint } from '../bridge'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'RecoveryWords'>
@@ -34,17 +34,16 @@ const SeedWord = ({ number, word }: SeedWordProps) => {
 const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { getMnemonic } = useBridge()
     const [seedWords, setSeedWords] = useState<SeedWords>([])
 
     useEffect(() => {
         const getMnemonicWrapper = async () => {
-            const seed = await getMnemonic()
+            const seed = await fedimint.getMnemonic()
             setSeedWords(seed)
         }
 
         getMnemonicWrapper()
-    }, [getMnemonic])
+    }, [])
 
     const renderFirstSixSeedWords = () => {
         return seedWords

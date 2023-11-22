@@ -65,6 +65,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     }, [invite, handleCode])
 
     const goToNextScreen = useCallback(
+        // TODO: remove these joinAs things
         (joinAs: 'returningMember' | 'newMember') => {
             if (!federationPreview) return
             let nextScreen: keyof RootStackParamList = 'TabsNavigator'
@@ -85,6 +86,9 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
             try {
                 if (!federationPreview) throw new Error()
 
+                // Note: in v2 this could block for much longer because it will do
+                // a recovery if it notices that you were previously in this federation
+                // TODO: handle loading here
                 await dispatch(
                     joinFederation({
                         fedimint,

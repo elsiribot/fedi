@@ -25,6 +25,8 @@ pub enum ErrorCode {
     NotSupportedInVersion,
     #[error("Stability pool module not supported for this version of federation")]
     StabilityPoolNotSupported,
+    #[error("Invalid social recovery file")]
+    InvalidSocialRecoveryFile,
 }
 
 pub fn get_error_code(err: &anyhow::Error) -> Option<ErrorCode> {

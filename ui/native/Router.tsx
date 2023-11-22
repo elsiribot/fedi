@@ -528,7 +528,7 @@ const MainNavigator = () => {
                                 component={CompleteSocialRecovery}
                                 options={() => ({
                                     header: () => (
-                                        <SocialRecoveryHeader closeButton />
+                                        <SocialRecoveryHeader cancelButton />
                                     ),
                                 })}
                             />

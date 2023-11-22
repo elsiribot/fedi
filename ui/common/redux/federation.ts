@@ -7,7 +7,7 @@ import {
 import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
 
-import { authenticateChat, CommonState } from '.'
+import { CommonState } from '.'
 import { Federation, Guardian, MSats, Sats, SeedWords, FediMod } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import {
@@ -230,53 +230,21 @@ export const leaveFederation = createAsyncThunk<
 
 export const completeSocialRecovery = createAsyncThunk<
     void,
-    { fedimint: FedimintBridge; federationId: string },
+    { fedimint: FedimintBridge; federationId?: string },
     { state: CommonState }
->(
-    'federation/completeSocialRecovery',
-    async ({ fedimint, federationId }, { dispatch }) => {
-        const username = await fedimint.completeSocialRecovery(federationId)
-        // Kick off chat authentication and refresh, but don't reject
-        // if either fail. The new mnemonic has been written to bridge
-        // so it's fulfilled either way.
-        if (username !== null) {
-            await dispatch(
-                authenticateChat({
-                    fedimint,
-                    federationId,
-                    username,
-                    forceCredentialRefresh: true,
-                }),
-            )
-        }
-        await dispatch(refreshFederations(fedimint))
-    },
-)
+>('federation/completeSocialRecovery', async ({ fedimint }, { dispatch }) => {
+    await fedimint.completeSocialRecovery()
+    await dispatch(refreshFederations(fedimint))
+})
 
 export const recoverFromMnemonic = createAsyncThunk<
     void,
-    { fedimint: FedimintBridge; federationId: string; mnemonic: SeedWords },
+    { fedimint: FedimintBridge; mnemonic: SeedWords },
     { state: CommonState }
 >(
     'federation/recoverFromMnemonic',
-    async ({ fedimint, federationId, mnemonic }, { dispatch }) => {
-        const username = await fedimint.recoverFromMnemonic(
-            mnemonic,
-            federationId,
-        )
-        // Kick off chat authentication and refresh, but don't reject
-        // if either fail. The new mnemonic has been written to bridge
-        // so it's fulfilled either way.
-        if (username !== null) {
-            await dispatch(
-                authenticateChat({
-                    fedimint,
-                    federationId,
-                    username,
-                    forceCredentialRefresh: true,
-                }),
-            )
-        }
+    async ({ fedimint, mnemonic }, { dispatch }) => {
+        await fedimint.recoverFromMnemonic(mnemonic)
         await dispatch(refreshFederations(fedimint))
     },
 )

@@ -33,26 +33,30 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
             if (downloading) return
             try {
                 let qr: SocialRecoveryQrCode = JSON.parse(input)
-                try {
-                    setDownloading(true)
-                    // FIXME: this is getting called over-and-over
-                    let videoPath = await socialRecoveryDownloadVerificationDoc(
-                        qr.recoveryId,
-                    )
-                    if (videoPath == null) {
-                        toast?.show(
-                            t('feature.recovery.nothing-to-download'),
-                            3000,
-                        )
-                    } else {
-                        navigation.navigate('CompleteRecoveryAssist', {
-                            videoPath: videoPath as string,
-                            recoveryId: qr.recoveryId,
-                        })
+                // FIXME: this RPC response changed to possibly be null, but this check shouldn't need to consider null
+                if (qr) {
+                    try {
+                        setDownloading(true)
+                        // FIXME: this is getting called over-and-over
+                        let videoPath =
+                            await socialRecoveryDownloadVerificationDoc(
+                                qr.recoveryId,
+                            )
+                        if (videoPath == null) {
+                            toast?.show(
+                                t('feature.recovery.nothing-to-download'),
+                                3000,
+                            )
+                        } else {
+                            navigation.navigate('CompleteRecoveryAssist', {
+                                videoPath: videoPath as string,
+                                recoveryId: qr.recoveryId,
+                            })
+                        }
+                    } catch (e) {
+                        log.error("couldn't download video", e)
+                        toast?.show(t('feature.recovery.download-failed'), 3000)
                     }
-                } catch (e) {
-                    log.error("couldn't download video", e)
-                    toast?.show(t('feature.recovery.download-failed'), 3000)
                 }
             } catch (e) {
                 // FIXME: this isn't quite right error message. It's more like "valid JSON, perhaps not valid recovery QR"

@@ -21,6 +21,9 @@ type Props = {
     onJoin: (joinAs: JoinAs) => void | Promise<void>
 }
 
+// TODO: for v2 we could tell the user "hey, we can see you used to be in this federation.
+// we're going to recover your money now"
+// just for returning users
 const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
@@ -28,7 +31,6 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
     const [showTerms, setShowTerms] = useState<boolean>(false)
     const showJoinFederation = shouldShowJoinFederation(federation.meta)
     const [isJoining, setIsJoining] = useState(false)
-    const federationRecoverySupported = federation.version < 2
     const tosUrl = getFederationTosUrl(federation.meta)
     const welcomeMessage = getFederationWelcomeMessage(federation.meta)
 
@@ -101,26 +103,10 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
             <View style={styles(theme).buttonsContainer}>
                 {showJoinFederation ? (
                     <>
-                        {federationRecoverySupported && (
-                            <Button
-                                fullWidth
-                                type="clear"
-                                title={t(
-                                    'feature.onboarding.join-returning-member',
-                                )}
-                                onPress={() => handleJoin('returningMember')}
-                                containerStyle={styles(theme).button}
-                                disabled={
-                                    isJoining && joinAs !== 'returningMember'
-                                }
-                                loading={
-                                    isJoining && joinAs === 'returningMember'
-                                }
-                            />
-                        )}
                         <Button
                             fullWidth
-                            title={t('feature.onboarding.join-new-member')}
+                            // title={t('feature.onboarding.join-new-member')}
+                            title={t('words.continue')}
                             onPress={() => handleJoin('newMember')}
                             containerStyle={styles(theme).button}
                             disabled={isJoining && joinAs !== 'newMember'}

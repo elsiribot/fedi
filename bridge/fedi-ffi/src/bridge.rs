@@ -8,29 +8,31 @@ use std::usize;
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey};
 use bitcoin::{Address, XOnlyPublicKey};
-use fedi_social_client::RecoveryId;
+use fedi_social_client::{FediSocialCommonGen, RecoveryId};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
-use fedimint_core::api::InviteCode as InviteCodeV2;
+use fedimint_core::api::{DynGlobalApi, InviteCode as InviteCodeV2, WsFederationApi};
+use fedimint_core::config::ClientConfig;
 use fedimint_core::core::OperationId;
+use fedimint_core::encoding::Decodable;
+use fedimint_core::module::registry::ModuleDecoderRegistry;
+use fedimint_core::module::CommonModuleInit;
 use fedimint_core::task::TaskGroup;
 use fedimint_core::{Amount, PeerId};
 use fedimint_core_v0::api::WsClientConnectInfo as InviteCodeV0;
 use fedimint_core_v0::task::TaskGroup as TaskGroupV0;
 use fedimint_core_v1::api::InviteCode as InviteCodeV1;
 use fedimint_core_v1::task::TaskGroup as TaskGroupV1;
-use fedimint_mint_client_v0::{parse_ecash, MintClientExt as MintClientExtV0};
-use fedimint_mint_client_v1::MintClientExt as MintClientExtV1;
+use fedimint_mint_client_v0::parse_ecash;
 use futures::future::join_all;
 use lightning_invoice::Bolt11Invoice;
 use rand::distributions::{Alphanumeric, DistString};
 use stability_pool_client::common::AccountInfo;
 use tokio::sync::Mutex;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
-use super::event::{EventSink, SocialRecoveryEvent};
+use super::event::EventSink;
 use super::federation_v0::FederationV0;
-use super::federation_v1::social::RecoveryFile;
 use super::federation_v1::FederationV1;
 use super::storage::Storage;
 use super::translate::Translate;
@@ -41,12 +43,15 @@ use super::types::{
     SocialRecoveryApproval, SocialRecoveryQr,
 };
 use crate::error::ErrorCode;
-use crate::federation_v2::FederationV2;
+use crate::event::SocialRecoveryEvent;
+use crate::federation_v2::{self, FederationV2};
+use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
 use crate::storage::{AppState, FederationInfo};
 use crate::types::{
     GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
     RpcLightningGateway, RpcPayAddressResponse,
 };
+use crate::utils::required_threashold_of;
 
 // FIXME: federation-specific filename
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
@@ -206,13 +211,6 @@ impl MultiFederation {
             }
         }
     }
-    pub async fn get_mnemonic_words(&self) -> Result<Vec<String>> {
-        match self {
-            Self::V0(v0) => Ok(v0.get_mnemonic_words().await),
-            Self::V1(v1) => Ok(v1.get_mnemonic_words().await),
-            Self::V2(_v2) => bail!("Social recovery not implemented for v2 federations, yet"),
-        }
-    }
 
     pub async fn backup(&self) -> Result<()> {
         match self {
@@ -238,35 +236,15 @@ impl MultiFederation {
         }
     }
 
-    pub async fn await_restore_finished(&self) -> Result<()> {
-        match self {
-            Self::V0(v0) => v0.client.await_restore_finished().await,
-            Self::V1(v1) => v1.client.await_restore_finished().await,
-            Self::V2(_v2) => bail!("Social recovery not implemented for v2 federations, yet"),
-        }
-    }
-
-    pub async fn upload_backup_file(&self, video_file: Vec<u8>) -> Result<Vec<u8>> {
+    pub async fn upload_backup_file(
+        &self,
+        video_file: Vec<u8>,
+        root_secret: bip39::Mnemonic,
+    ) -> Result<Vec<u8>> {
         match self {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
-            Self::V1(v1) => v1.upload_backup_file(video_file).await,
-            Self::V2(v2) => v2.upload_backup_file(video_file).await,
-        }
-    }
-
-    pub async fn start_social_recovery(&self, recovery_file: &RecoveryFile) -> Result<()> {
-        match self {
-            Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
-            Self::V1(v1) => v1.start_social_recovery(recovery_file).await,
-            Self::V2(_v2) => bail!("Social recovery not implemented for v2 federations, yet"),
-        }
-    }
-
-    pub async fn social_recovery_qr(&self) -> Result<SocialRecoveryQr> {
-        match self {
-            Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
-            Self::V1(v1) => v1.social_recovery_qr().await,
-            Self::V2(v2) => v2.social_recovery_qr().await,
+            Self::V1(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
+            Self::V2(v2) => v2.upload_backup_file(video_file, root_secret).await,
         }
     }
 
@@ -276,7 +254,7 @@ impl MultiFederation {
     ) -> Result<Option<Vec<u8>>> {
         match self {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
-            Self::V1(v1) => v1.download_verification_doc(&recovery_id.translate()).await,
+            Self::V1(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
             Self::V2(v2) => v2.download_verification_doc(&recovery_id).await,
         }
     }
@@ -289,47 +267,10 @@ impl MultiFederation {
     ) -> Result<()> {
         match self {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
-            Self::V1(v1) => {
-                v1.approve_social_recovery_request(
-                    &recovery_id.translate(),
-                    peer_id.translate(),
-                    password,
-                )
-                .await
-            }
+            Self::V1(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
             Self::V2(v2) => {
                 v2.approve_social_recovery_request(&recovery_id, peer_id, password)
                     .await
-            }
-        }
-    }
-
-    pub async fn social_recovery_approvals(&self) -> Result<(Vec<SocialRecoveryApproval>, usize)> {
-        match self {
-            Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
-            Self::V1(v1) => v1.social_recovery_approvals().await,
-            Self::V2(v2) => v2.social_recovery_approvals().await,
-        }
-    }
-
-    pub async fn social_recovery_combine_shares(&self) -> Result<bip39::Mnemonic> {
-        match self {
-            Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
-            Self::V1(v1) => v1.social_recovery_combine_shares().await,
-            Self::V2(v2) => v2.social_recovery_combine_shares().await,
-        }
-    }
-
-    pub async fn delete_social_recovery_state_and_id(&self) -> Result<()> {
-        match self {
-            Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
-            Self::V1(v1) => {
-                v1.delete_social_recovery_state_and_id().await;
-                Ok(())
-            }
-            Self::V2(v2) => {
-                v2.delete_social_recovery_state_and_id().await;
-                Ok(())
             }
         }
     }
@@ -476,21 +417,25 @@ impl Bridge {
         let task_group_v1 = TaskGroupV1::new();
         let app_state = AppState::load(storage.clone()).await?;
 
+        // let root_mnemonic = app_state
+        //     .with_write_lock(move |state| {
+        //         Box::pin(async move {
+        //             Ok(match &state.root_mnemonic {
+        //                 Some(mnemonic) => mnemonic.clone(),
+        //                 None => {
+        //                     // FIXME: initialize mnemonic later
+        //                     let mnemonic =
+        //                         Bip39RootSecretStrategy::<12>::random(&mut
+        // rand::thread_rng());                     state.root_mnemonic =
+        // Some(mnemonic.clone());                     mnemonic
+        //                 }
+        //             })
+        //         })
+        //     })
+        //     .await?;
         let root_mnemonic = app_state
-            .with_write_lock(move |state| {
-                Box::pin(async move {
-                    Ok(match &state.root_mnemonic {
-                        Some(mnemonic) => mnemonic.clone(),
-                        None => {
-                            let mnemonic =
-                                Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
-                            state.root_mnemonic = Some(mnemonic.clone());
-                            mnemonic
-                        }
-                    })
-                })
-            })
-            .await?;
+            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
+            .await;
 
         // load joined federations
         let joined_federations = app_state
@@ -533,7 +478,10 @@ impl Bridge {
                                         .await?,
                                     event_sink.clone(),
                                     task_group.make_subgroup().await,
-                                    &root_mnemonic,
+                                    &root_mnemonic
+                                        .as_ref()
+                                        .context("root mnemonic not found")?
+                                        .clone(),
                                     None,
                                 )
                                 .await?,
@@ -603,7 +551,25 @@ impl Bridge {
             bail!("Already joined this federation")
         }
 
-        // we generate a random string for the rocksdb directory name
+        // generate mnemnoic if we don't have one already
+        // this would only happen for new users
+        let root_mnemonic = self
+            .app_state
+            .with_write_lock(move |state| {
+                Box::pin(async move {
+                    Ok(match &state.root_mnemonic {
+                        Some(mnemonic) => mnemonic.clone(),
+                        None => {
+                            let root_mnemonic =
+                                Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
+                            state.root_mnemonic = Some(root_mnemonic.clone());
+                            root_mnemonic
+                        }
+                    })
+                })
+            })
+            .await?;
+
         let db_name = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
         let federation = FederationV2::join(
             invite_code_string,
@@ -611,11 +577,7 @@ impl Bridge {
             self.event_sink.clone(),
             TaskGroup::new(),
             &db_name,
-            &self
-                .app_state
-                .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
-                .await
-                .expect("Root mnemonic should exist in app_state"),
+            &root_mnemonic,
         )
         .await?;
         let federation_id = federation.federation_id();
@@ -760,7 +722,7 @@ impl Bridge {
                 invite_code: invite_code.to_string(),
                 version: 2,
             }),
-            (Err(_), Err(_), Err(_)) => anyhow::bail!("failed to connect"),
+            (Err(_), Err(_), Err(e)) => anyhow::bail!("failed to connect {e:?}"),
         }
     }
 
@@ -917,66 +879,77 @@ impl Bridge {
         multi.cancel_ecash(ecash).await
     }
 
-    pub async fn get_mnemonic_words(&self, federation_id: RpcFederationId) -> Result<Vec<String>> {
-        let multi = self.get_multi(&federation_id.0).await?;
-        multi.get_mnemonic_words().await
+    async fn get_root_secret(&self) -> anyhow::Result<bip39::Mnemonic> {
+        Ok(self
+            .try_get_root_secret(&self.storage)
+            .await?
+            .context("root secret not found in database")?)
     }
 
-    pub async fn recover_from_mnemonic(
+    async fn try_get_root_secret(
         &self,
-        federation_id: RpcFederationId,
-        mnemonic: Vec<String>,
-    ) -> Result<Option<String>> {
-        // Check if we can recover this federation
-        let old_multi = self.get_multi(&federation_id.0).await?;
-        if old_multi.get_balance().await > fedimint_core::Amount::from_sats(100) {
-            bail!("Cannot restore from backup if current balance exceeds 100 sats")
+        // FIXME: unused variable
+        _storage: &Storage,
+    ) -> anyhow::Result<Option<bip39::Mnemonic>> {
+        // FIXME: doesn't need to return a result
+        Ok(self
+            .app_state
+            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
+            .await)
+    }
+
+    // FIXME: doesn't need result
+    async fn get_social_recovery_state(&self) -> anyhow::Result<Option<SocialRecoveryState>> {
+        Ok(self
+            .app_state
+            .with_read_lock(move |state| {
+                Box::pin(async move { state.social_recovery_state.clone() })
+            })
+            .await)
+    }
+
+    async fn set_social_recovery_state(
+        &self,
+        social_recovery_state: Option<SocialRecoveryState>,
+    ) -> anyhow::Result<()> {
+        self.app_state
+            .with_write_lock(move |state| {
+                Box::pin(async move {
+                    state.social_recovery_state = social_recovery_state;
+                    Ok(())
+                })
+            })
+            .await
+    }
+
+    pub async fn get_mnemonic_words(&self) -> anyhow::Result<Vec<String>> {
+        Ok(self
+            .get_root_secret()
+            .await?
+            .word_iter()
+            .map(|x| x.to_owned())
+            .collect())
+    }
+
+    // FIXME: this function has weird name now that it doesn't do any recovery
+    pub async fn recover_from_mnemonic(&self, mnemonic: bip39::Mnemonic) -> Result<()> {
+        if self.try_get_root_secret(&self.storage).await?.is_some() {
+            bail!("Cannot restore when seed is already set");
         }
 
-        // Recover the federation
-        let mnemonic: bip39::Mnemonic = mnemonic.join(" ").parse()?;
-        let new_multi = match &*old_multi {
-            MultiFederation::V0(v0) => {
-                let old_client = v0.prepare_for_recovery().await?;
-                drop(old_multi); // Release rocksdb
-                MultiFederation::V0(
-                    FederationV0::from_mnemonic(
-                        mnemonic,
-                        old_client,
-                        self.event_sink.clone(),
-                        self.task_group_v0.make_subgroup().await,
-                    )
-                    .await?,
-                )
-            }
-            MultiFederation::V1(v1) => {
-                let old_client = v1.prepare_for_recovery().await?;
-                drop(old_multi); // Release rocksdb
-                MultiFederation::V1(
-                    FederationV1::from_mnemonic(
-                        mnemonic,
-                        old_client,
-                        self.event_sink.clone(),
-                        self.task_group_v1.make_subgroup().await,
-                    )
-                    .await?,
-                )
-            }
-            MultiFederation::V2(_) => {
-                bail!("Social recovery not implemented for v2 federations, yet")
-            }
-        };
-        let new_multi = Arc::new(new_multi);
-        let mut federations = self.federations.lock().await;
-        federations.insert(federation_id.0, new_multi.clone());
-
-        // Wait for recovery to finish
-        new_multi.await_restore_finished().await?;
-
-        // Return recovered username
-        // TODO: should probably return FediBackupMetadata instead
-        let username = new_multi.get_xmpp_username().await;
-        Ok(username)
+        self.app_state
+            .with_write_lock(move |state| {
+                Box::pin(async move {
+                    Ok(match &state.root_mnemonic {
+                        Some(_) => bail!("Cannot restore when seed is already set"),
+                        None => {
+                            state.root_mnemonic = Some(mnemonic.clone());
+                        }
+                    })
+                })
+            })
+            .await?;
+        Ok(())
     }
 
     pub async fn upload_backup_file(
@@ -986,57 +959,211 @@ impl Bridge {
     ) -> Result<PathBuf> {
         let multi = self.get_multi(&federation_id.0).await?;
         let storage = self.storage.clone();
+        // if remote bridge, copy with adb? maybe storage trait could do this?
         let video_file = storage
             .read_file(&video_file_path)
             .await?
             .ok_or(anyhow!("video file not found"))?;
-        let recovery_file = multi.upload_backup_file(video_file).await?;
+        let root_mnemonic = &self
+            .app_state
+            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
+            .await
+            .expect("Root mnemonic should exist in app_state");
+        // FIXME: why is root_mnemonic a reference?
+        let recovery_file = multi
+            .upload_backup_file(video_file, root_mnemonic.clone())
+            .await?;
         storage
             .write_file(RECOVERY_FILENAME.as_ref(), recovery_file)
             .await?;
         Ok(storage.platform_path(RECOVERY_FILENAME.as_ref()))
     }
 
-    pub async fn validate_recovery_file(
+    //         federation_id: RpcFederationId,
+    //     recovery_file_path: PathBuf,
+    // ) -> Result<bool> { let multi = self.get_multi(&federation_id.0).await?; let
+    //   recovery_file_bytes = self .storage .read_file(&recovery_file_path) .await?
+    //   .ok_or(anyhow!("recovery file not found"))?; let recovery_file =
+    //   RecoveryFile::from_bytes(&recovery_file_bytes)?;
+    //   multi.start_social_recovery(&recovery_file).await?; let valid =
+    //   RecoveryFile::from_bytes(&recovery_file_bytes).is_ok(); Ok(valid)
+    // }
+
+    // pub async fn recovery_qr(&self, federation_id: RpcFederationId) ->
+    // Result<SocialRecoveryQr> {     let multi =
+    // self.get_multi(&federation_id.0).await?;     // Get the recovery file
+    // from disk (React Native and handle_upload_backup_file     // put it
+    // there)     let recovery_file_bytes = self
+    //         .storage
+    //         .read_file(RECOVERY_FILENAME.as_ref())
+    //         .await?
+    //         .ok_or(anyhow!("recovery file not found"))?;
+    //     let recovery_file = RecoveryFile::from_bytes(&recovery_file_bytes)?;
+    //     // Upload verification document if none exists.
+    //     multi.start_social_recovery(&recovery_file).await?;
+    //     multi.social_recovery_qr().await
+
+    pub async fn start_social_recovery_v2(
         &self,
-        federation_id: RpcFederationId,
-        recovery_file_path: PathBuf,
-    ) -> Result<bool> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        recovery_file: social::RecoveryFile,
+    ) -> anyhow::Result<()> {
+        // FIXME: hacks!!!
+        let decoders = ModuleDecoderRegistry::from_iter(vec![(
+            3,
+            fedi_social_client::KIND,
+            FediSocialCommonGen::decoder(),
+        )]);
+        let config = recovery_file
+            .client_config
+            .clone()
+            .redecode_raw(&decoders)?;
+        let (social_module_id, social_cfg) = config
+            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
+                "fedi-social",
+            )
+            .expect("needs social recovery module client config");
+
+        let social_api =
+            DynGlobalApi::from(WsFederationApi::from_config(&config)).with_module(social_module_id);
+        let client = SocialRecoveryClient::new_start(
+            social_module_id,
+            social_cfg.clone(),
+            social_api,
+            recovery_file.clone(),
+        )?;
+
+        // request social recovery verification with the federation
+        let verification_request =
+            client.create_verification_request(recovery_file.verification_document.clone())?;
+        client
+            .upload_verification_request(&verification_request)
+            .await
+            .context("upload verification request")?;
+
+        self.set_social_recovery_state(Some(client.state().clone()))
+            .await?;
+        Ok(())
+    }
+
+    pub async fn recovery_qr(&self) -> anyhow::Result<Option<SocialRecoveryQr>> {
+        if let Some(state) = self.get_social_recovery_state().await? {
+            Ok(Some(SocialRecoveryQr {
+                recovery_id: RpcRecoveryId(state.recovery_id()),
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub async fn cancel_social_recovery(&self) -> anyhow::Result<()> {
+        self.set_social_recovery_state(None).await?;
+        Ok(())
+    }
+
+    // TODO: rename this to start_social_recovery
+    pub async fn validate_recovery_file(&self, recovery_file_path: PathBuf) -> Result<()> {
+        // These 2 lines validate
         let recovery_file_bytes = self
             .storage
             .read_file(&recovery_file_path)
             .await?
             .ok_or(anyhow!("recovery file not found"))?;
-        let recovery_file = RecoveryFile::from_bytes(&recovery_file_bytes)?;
-        multi.start_social_recovery(&recovery_file).await?;
-        let valid = RecoveryFile::from_bytes(&recovery_file_bytes).is_ok();
-        Ok(valid)
+        let recovery_file = social::RecoveryFile::from_bytes(&recovery_file_bytes)
+            .context(ErrorCode::InvalidSocialRecoveryFile)?;
+
+        // this starts a social recovery "session" ... what this means is kinda
+        // handwavvy
+        self.start_social_recovery_v2(recovery_file).await?;
+        Ok(())
     }
 
-    pub async fn recovery_qr(&self, federation_id: RpcFederationId) -> Result<SocialRecoveryQr> {
-        let multi = self.get_multi(&federation_id.0).await?;
-        // Get the recovery file from disk (React Native and handle_upload_backup_file
-        // put it there)
-        let recovery_file_bytes = self
-            .storage
-            .read_file(RECOVERY_FILENAME.as_ref())
+    pub async fn complete_social_recovery(&self) -> Result<RpcFederation> {
+        let recovery_client = self.social_recovery_client_continue().await?;
+        let seed_phrase = recovery_client.combine_recovered_user_phrase()?;
+        let root_mnemonic = bip39::Mnemonic::parse(seed_phrase.0)?;
+        self.recover_from_mnemonic(root_mnemonic).await?;
+        self.set_social_recovery_state(None).await?;
+        tracing::info!("social recovery complete");
+        tracing::info!("auto joining federation");
+        let decoders = ModuleDecoderRegistry::from_iter(vec![(
+            3,
+            fedi_social_client::KIND,
+            FediSocialCommonGen::decoder(),
+        )]);
+        self.join_federation(
+            federation_v2::invite_code_from_client_confing(&ClientConfig::consensus_decode_hex(
+                &recovery_client.state().client_config,
+                &decoders,
+            )?)
+            .to_string(),
+        )
+        .await
+    }
+
+    async fn social_recovery_client_continue(&self) -> anyhow::Result<SocialRecoveryClient> {
+        let social_state = self
+            .get_social_recovery_state()
             .await?
-            .ok_or(anyhow!("recovery file not found"))?;
-        let recovery_file = RecoveryFile::from_bytes(&recovery_file_bytes)?;
-        // Upload verification document if none exists.
-        multi.start_social_recovery(&recovery_file).await?;
-        multi.social_recovery_qr().await
+            .context(ErrorCode::BadRequest)?;
+        let decoders = ModuleDecoderRegistry::from_iter(vec![(
+            3,
+            fedi_social_client::KIND,
+            FediSocialCommonGen::decoder(),
+        )]);
+        let config = ClientConfig::consensus_decode_hex(&social_state.client_config, &decoders)?;
+        let (social_module_id, social_cfg) = config
+            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
+                "fedi-social",
+            )
+            .expect("needs social recovery module client config");
+        let social_api =
+            DynGlobalApi::from(WsFederationApi::from_config(&config)).with_module(social_module_id);
+        let recovery_client = SocialRecoveryClient::new_continue(
+            social_module_id,
+            social_cfg.clone(),
+            social_api,
+            social_state.clone(),
+        );
+        Ok(recovery_client)
     }
 
-    pub async fn social_recovery_approvals(
-        &self,
-        federation_id: RpcFederationId,
-    ) -> Result<SocialRecoveryEvent> {
-        let multi = self.get_multi(&federation_id.0).await?;
-        let (approvals, remaining) = multi.social_recovery_approvals().await?;
+    pub async fn social_recovery_approvals(&self) -> Result<SocialRecoveryEvent> {
+        let mut recovery_client = self.social_recovery_client_continue().await?;
+
+        let client_config = ClientConfig::consensus_decode_hex(
+            &recovery_client.state().client_config,
+            &ModuleDecoderRegistry::from_iter(vec![]),
+        )?;
+        let guardian_peer_ids: Vec<(String, PeerId)> = client_config
+            .global
+            .api_endpoints
+            .into_iter()
+            .map(|(peer_id, endpoint)| (endpoint.name, peer_id))
+            .collect();
+        let mut approvals = vec![];
+        for (guardian_name, peer_id) in guardian_peer_ids {
+            let approved = recovery_client
+                .get_decryption_share_from(peer_id)
+                .await
+                .unwrap_or_else(|_| {
+                    debug!("failed to get decryption share from peer {}", peer_id);
+                    false
+                });
+            approvals.push(SocialRecoveryApproval {
+                guardian_name,
+                approved,
+            });
+        }
+
+        // calculate approvals remaining
+        let approvals_required = required_threashold_of(approvals.len());
+        let num_approvals = approvals.iter().filter(|a| a.approved).count();
+        let remaining = approvals_required.saturating_sub(num_approvals);
+
+        // Save progress to DB
+        self.set_social_recovery_state(Some(recovery_client.state().clone()))
+            .await?;
         let result = SocialRecoveryEvent {
-            federation_id,
             approvals,
             remaining,
         };
@@ -1074,22 +1201,6 @@ impl Bridge {
         multi
             .approve_social_recovery_request(&recovery_id.0, peer_id.0, &password)
             .await
-    }
-
-    pub async fn complete_social_recovery(
-        &self,
-        federation_id: RpcFederationId,
-    ) -> Result<Option<String>> {
-        let multi = self.get_multi(&federation_id.0).await?;
-        let mnemonic = multi
-            .social_recovery_combine_shares()
-            .await?
-            .word_iter()
-            .map(|s| s.to_string())
-            .collect();
-        let username = self.recover_from_mnemonic(federation_id, mnemonic).await?;
-        multi.delete_social_recovery_state_and_id().await?;
-        Ok(username)
     }
 
     pub async fn list_transactions(
