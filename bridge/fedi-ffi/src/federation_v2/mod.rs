@@ -33,7 +33,7 @@ use fedimint_core::db::{
 };
 use fedimint_core::module::ApiRequestErased;
 use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
-use fedimint_core::{Amount, PeerId};
+use fedimint_core::{maybe_add_send_sync, Amount, PeerId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
     InternalPayState, LightningClientInit, LightningClientModule, LightningOperationMeta,
@@ -99,7 +99,8 @@ pub struct FederationV2 {
     pub client: ClientArc,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
-    pub operation_states: Arc<Mutex<HashMap<OperationId, Box<dyn Any + Send + Sync + 'static>>>>,
+    pub operation_states:
+        Arc<Mutex<HashMap<OperationId, Box<maybe_add_send_sync!(dyn Any + 'static)>>>>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -1901,7 +1902,7 @@ impl FederationV2 {
 
     async fn update_operation_state<T>(&self, operation_id: OperationId, state: T)
     where
-        T: Send + Sync + 'static,
+        T: MaybeSend + MaybeSync + 'static,
     {
         self.operation_states
             .lock()
