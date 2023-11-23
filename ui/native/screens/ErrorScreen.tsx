@@ -10,7 +10,7 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { version } from '../package.json'
-import { shareLogs } from '../utils/share'
+import { shareLogsExport } from '../utils/logs-export'
 
 const log = makeLog('ErrorScreen')
 
@@ -25,7 +25,7 @@ export const ErrorScreen: React.FC<Props> = ({ error }) => {
     const handleShareLogs = async () => {
         setIsSharingLogs(true)
         try {
-            await shareLogs()
+            await shareLogsExport()
         } catch (err) {
             log.error('handleShareLogs', err)
         }

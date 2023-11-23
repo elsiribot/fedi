@@ -282,6 +282,11 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     />
                 )}
                 <SettingsItem
+                    image={<SvgImage name="Bug" />}
+                    label={t('feature.bug.report-a-bug')}
+                    onPress={() => navigation.navigate('BugReport')}
+                />
+                <SettingsItem
                     disabled
                     image={<SvgImage name="FediLogoIcon" />}
                     label={t('phrases.app-settings-security')}

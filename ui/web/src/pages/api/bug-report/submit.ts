@@ -23,9 +23,11 @@ export default async function handler(
 
     const body = schema.safeParse(req.body)
     if (!body.success) {
-        return res
-            .status(400)
-            .send({ error: body.error.flatten().formErrors.join(', ') })
+        return res.status(400).send({
+            error: body.error.issues
+                .map(issue => `${issue.path[0]}: ${issue.message}`)
+                .join(', '),
+        })
     }
 
     try {

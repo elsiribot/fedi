@@ -1,7 +1,7 @@
 import pako from 'pako'
 import tar from 'tar-stream'
 
-interface File {
+export interface File {
     name: string
     content: string | Buffer
 }

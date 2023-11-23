@@ -993,6 +993,8 @@ impl FederationV2 {
             .into_stream();
 
         while let Some(update) = updates.next().await {
+            self.update_operation_state(operation_id, update.clone())
+                .await;
             if let ReissueExternalNotesState::Failed(e) = update {
                 updates.next().await;
                 bail!(format!("Reissue failed: {e}"));
@@ -1002,15 +1004,14 @@ impl FederationV2 {
     }
 
     /// Generate ecash
-    /// FIXME: might be better to return a typed object here and serialize at
-    /// RPC layer
     pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
         let cancel_time = fedimint_core::time::now() + ONE_WEEK;
-        let (_, notes) = self
+        let (operation_id, notes) = self
             .client
             .get_first_module::<MintClientModule>()
             .spend_notes(amount, ONE_WEEK, ())
             .await?;
+        self.subscribe_to_operation(operation_id).await?;
         let notes = if amount != notes.total_amount() {
             // try to make change
             timeout(REISSUE_ECASH_TIMEOUT, async {
@@ -1019,11 +1020,12 @@ impl FederationV2 {
             })
             .await
             .context("Failed to select notes with correct amount")??;
-            let (_, new_notes) = self
+            let (operation_id, new_notes) = self
                 .client
                 .get_first_module::<MintClientModule>()
                 .spend_notes(amount, ONE_WEEK, ())
                 .await?;
+            self.subscribe_to_operation(operation_id).await?;
             new_notes
         } else {
             notes
