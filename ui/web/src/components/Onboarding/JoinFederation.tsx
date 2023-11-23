@@ -3,14 +3,17 @@ import React, { useCallback, useState, useEffect } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
 import ScanIcon from '@fedi/common/assets/svgs/scan.svg'
-import { useIsChatSupported } from '@fedi/common/hooks/federation'
+import {
+    useFederationRecoverySupported,
+    useIsChatSupported,
+} from '@fedi/common/hooks/federation'
 import { joinFederation } from '@fedi/common/redux'
 import { FederationPreview } from '@fedi/common/types'
 import { getFederationPreview } from '@fedi/common/utils/FederationUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { useRouteState } from '../../context/RouteStateContext'
-import { useAppDispatch, useToast } from '../../hooks'
+import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled, theme } from '../../styles'
 import { Button } from '../Button'
@@ -38,6 +41,7 @@ export const JoinFederation: React.FC = () => {
     const [federationPreview, setFederationPreview] =
         useState<FederationPreview>()
     const isChatSupported = useIsChatSupported()
+    const federationRecoverySupported = useFederationRecoverySupported()
 
     const handleCode = useCallback(
         async (code: string) => {
@@ -187,14 +191,16 @@ export const JoinFederation: React.FC = () => {
         }
         actions = (
             <>
-                <Button
-                    width="full"
-                    variant="tertiary"
-                    href="/onboarding/recover"
-                    onClick={() => handleJoin('/onboarding/recover')}
-                    loading={isJoining}>
-                    {t('feature.onboarding.join-returning-member')}
-                </Button>
+                {federationRecoverySupported && (
+                    <Button
+                        width="full"
+                        variant="tertiary"
+                        href="/onboarding/recover"
+                        onClick={() => handleJoin('/onboarding/recover')}
+                        loading={isJoining}>
+                        {t('feature.onboarding.join-returning-member')}
+                    </Button>
+                )}
                 <Button
                     width="full"
                     onClick={() => handleJoin(joinNewMemberHref)}

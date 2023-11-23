@@ -87,6 +87,7 @@ export interface RpcFederationPreview {
     name: string
     meta: Record<string, string>
     inviteCode: string
+    version: number
 }
 
 export interface RpcGenerateEcashResponse {
@@ -180,6 +181,7 @@ export interface RpcMethods {
             name: string
             meta: Record<string, string>
             inviteCode: string
+            version: number
         },
     ]
     leaveFederation: [{ federationId: RpcFederationId }, null]

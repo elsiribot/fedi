@@ -4,6 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 
+import { useFederationRecoverySupported } from '@fedi/common/hooks/federation'
 import {
     changeAuthenticatedGuardian,
     leaveFederation,
@@ -49,6 +50,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const stableBalance = useAppSelector(selectStableBalance)
     const pendingStableBalance = useAppSelector(selectStableBalancePending)
     const currency = useAppSelector(selectCurrency)
+    const federationRecoverySupported = useFederationRecoverySupported()
 
     const federationId = activeFederation?.id
 
@@ -240,11 +242,14 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     label={t('feature.backup.backup-wallet')}
                     onPress={() => navigation.navigate('ChooseBackupMethod')}
                 />
-                <SettingsItem
-                    image={<SvgImage name="Recovery" />}
-                    label={t('feature.recovery.recover-a-wallet')}
-                    onPress={onChooseRecovery}
-                />
+
+                {federationRecoverySupported && (
+                    <SettingsItem
+                        image={<SvgImage name="Recovery" />}
+                        label={t('feature.recovery.recover-a-wallet')}
+                        onPress={onChooseRecovery}
+                    />
+                )}
             </View>
             <View>
                 <Pressable

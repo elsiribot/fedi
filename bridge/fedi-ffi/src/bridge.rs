@@ -723,6 +723,7 @@ impl Bridge {
                     .unwrap_or(config.federation_id.to_string()[0..8].to_string()),
                 meta: config.meta,
                 invite_code: invite_code.to_string(),
+                version: 0,
             }),
             (_, Ok(config), _) => Ok(RpcFederationPreview {
                 id: RpcFederationId(config.global.federation_id.to_string()),
@@ -732,6 +733,7 @@ impl Bridge {
                     .unwrap_or(config.global.federation_id.to_string()[0..8].to_string()),
                 meta: config.global.meta,
                 invite_code: invite_code.to_string(),
+                version: 1,
             }),
             (_, _, Ok(config)) => Ok(RpcFederationPreview {
                 id: RpcFederationId(config.global.federation_id().to_string()),
@@ -741,6 +743,7 @@ impl Bridge {
                     .unwrap_or(config.global.federation_id().to_string()[0..8].to_string()),
                 meta: config.global.meta,
                 invite_code: invite_code.to_string(),
+                version: 2,
             }),
             (Err(_), Err(_), Err(_)) => anyhow::bail!("failed to connect"),
         }
