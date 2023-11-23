@@ -41,17 +41,19 @@ use fedimint_ln_client::{
 };
 use fedimint_mint_client::{
     spendable_notes_to_operation_id, MintClientInit, MintClientModule, MintOperationMeta,
-    MintOperationMetaVariants, OOBNotes, ReissueExternalNotesState, SpendOOBState,
+    MintOperationMetaVariants, OOBNotes, ReissueExternalNotesState,
 };
 use fedimint_wallet_client::{
     DepositState, WalletClientInit, WalletClientModule, WalletOperationMeta, WithdrawState,
 };
 use futures::{Future, StreamExt};
 use lightning_invoice::Bolt11Invoice;
+use serde::de::DeserializeOwned;
 use social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use stability_pool_client::common::AccountInfo;
 use stability_pool_client::{
     StabilityPoolClientInit, StabilityPoolClientModule, StabilityPoolMeta,
+    StabilityPoolWithdrawalOperationState,
 };
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
@@ -737,6 +739,7 @@ impl FederationV2 {
                             .clone()
                             .spawn("subscribe_stability_pool_deposit", move |_| async move {
                                 fed.subscribe_client_operation(
+                                    operation_id,
                                     fed.client
                                         .get_first_module::<StabilityPoolClientModule>()
                                         .subscribe_deposit_operation(operation_id),
@@ -758,6 +761,7 @@ impl FederationV2 {
                             .clone()
                             .spawn("subscribe_stability_pool_withdraw", move |_| async move {
                                 fed.subscribe_client_operation(
+                                    operation_id,
                                     fed.client
                                         .get_first_module::<StabilityPoolClientModule>()
                                         .subscribe_withdraw(operation_id),
@@ -1500,25 +1504,6 @@ impl FederationV2 {
         None
     }
 
-    pub async fn get_oob_spend_outcome(
-        &self,
-        operation_id: OperationId,
-        log_entry: OperationLogEntry,
-    ) -> Option<SpendOOBState> {
-        let outcome = log_entry.outcome::<SpendOOBState>();
-
-        // Return client's cached outcome if we find it
-        if let Some(outcome) = outcome {
-            return Some(outcome);
-        }
-        // Return our cached outcome if we find it
-        if let Some(outcome) = self.get_operation_state(&operation_id).await {
-            return Some(outcome);
-        }
-
-        None
-    }
-
     pub async fn get_deposit_outcome(
         &self,
         operation_id: OperationId,
@@ -1554,6 +1539,25 @@ impl FederationV2 {
             last_state = Some(update);
         }
         last_state
+    }
+
+    pub async fn get_client_operation_outcome<O: Clone + DeserializeOwned + 'static>(
+        &self,
+        operation_id: OperationId,
+        log_entry: OperationLogEntry,
+    ) -> Option<O> {
+        let outcome = log_entry.outcome::<O>();
+
+        // Return client's cached outcome if we find it
+        if let Some(outcome) = outcome {
+            return Some(outcome);
+        }
+        // Return our cached outcome if we find it
+        if let Some(outcome) = self.get_operation_state::<O>(&operation_id).await {
+            return Some(outcome);
+        }
+
+        None
     }
 
     /// Return all transactions via operation log
@@ -1641,23 +1645,34 @@ impl FederationV2 {
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
                             }),
-                            StabilityPoolMeta::Withdrawal {
-                                unlocked_amount, ..
-                            } => Some(RpcTransaction {
-                                id: op.0.operation_id.to_string(),
-                                created_at: to_unix_time(op.0.creation_time)
-                                    .expect("unix time should exist"),
-                                amount: RpcAmount(unlocked_amount),
-                                direction: RpcTransactionDirection::Send,
-                                notes: "stability pool".to_string(),
-                                onchain_state: None,
-                                bitcoin: None,
-                                ln_state: None,
-                                lightning: None,
-                                oob_state: None,
-                                onchain_withdrawal_details: None,
-                            }),
-                            StabilityPoolMeta::CancelRenewal { .. } => None,
+                            _ => {
+                                let outcome = self
+                                    .get_client_operation_outcome(op.0.operation_id, op.1)
+                                    .await;
+                                Some(RpcTransaction {
+                                    id: op.0.operation_id.to_string(),
+                                    created_at: to_unix_time(op.0.creation_time)
+                                        .expect("unix time should exist"),
+                                    amount: match outcome {
+                                        Some(StabilityPoolWithdrawalOperationState::WithdrawUnlockedInitiated(amount) |
+                                            StabilityPoolWithdrawalOperationState::WithdrawUnlockedAccepted(amount) |
+                                            StabilityPoolWithdrawalOperationState::Success(amount) |
+                                            StabilityPoolWithdrawalOperationState::CancellationInitiated(Some(amount)) |
+                                            StabilityPoolWithdrawalOperationState::CancellationAccepted(Some(amount)) |
+                                            StabilityPoolWithdrawalOperationState::WithdrawIdleInitiated(amount) |
+                                            StabilityPoolWithdrawalOperationState::WithdrawIdleAccepted(amount)) => RpcAmount(amount),
+                                        _ => RpcAmount(Amount::ZERO),
+                                    },
+                                    direction: RpcTransactionDirection::Receive,
+                                    notes: "stability pool".to_string(),
+                                    onchain_state: None,
+                                    bitcoin: None,
+                                    ln_state: None,
+                                    lightning: None,
+                                    oob_state: None,
+                                    onchain_withdrawal_details: None,
+                                })
+                            }
                         },
                         MINT_OPERATION_TYPE => {
                             let mint_meta: MintOperationMeta = op.1.meta();
@@ -1700,7 +1715,7 @@ impl FederationV2 {
                                     amount: RpcAmount(requested_amount),
                                     lightning: None,
                                     oob_state: self
-                                        .get_oob_spend_outcome(op.0.operation_id, op.1)
+                                        .get_client_operation_outcome(op.0.operation_id, op.1)
                                         .await
                                         .map(crate::types::RpcOOBState::from_spend_v2),
                                     onchain_withdrawal_details: None,
@@ -1936,6 +1951,7 @@ impl FederationV2 {
             .clone()
             .spawn("subscribe_stability_pool_deposit", move |_| async move {
                 fed.subscribe_client_operation(
+                    operation_id,
                     fed.client
                         .get_first_module::<StabilityPoolClientModule>()
                         .subscribe_deposit_operation(operation_id),
@@ -1976,6 +1992,7 @@ impl FederationV2 {
             .clone()
             .spawn("subscribe_stability_pool_withdraw", move |_| async move {
                 fed.subscribe_client_operation(
+                    operation_id,
                     fed.client
                         .get_first_module::<StabilityPoolClientModule>()
                         .subscribe_withdraw(operation_id),
@@ -1993,15 +2010,21 @@ impl FederationV2 {
         Ok(operation_id)
     }
 
-    async fn subscribe_client_operation<S, E, U>(&self, stream_gen: S, event_gen: E)
-    where
+    async fn subscribe_client_operation<S, E, U>(
+        &self,
+        operation_id: OperationId,
+        stream_gen: S,
+        event_gen: E,
+    ) where
         S: Future<Output = Result<UpdateStreamOrOutcome<U>>>,
         E: Fn(U) -> Event,
-        U: MaybeSend + MaybeSync + 'static,
+        U: Clone + MaybeSend + MaybeSync + 'static,
     {
         if let Ok(update_stream) = stream_gen.await {
             let mut updates = update_stream.into_stream();
             while let Some(state) = updates.next().await {
+                self.update_operation_state(operation_id, state.clone())
+                    .await;
                 self.event_sink.typed_event(&event_gen(state))
             }
         }
