@@ -157,3 +157,11 @@ export function usePopupFederationInfo() {
         ended: secondsLeft < 0,
     }
 }
+
+// v2 federation's can't be directly recovered.
+// you need to recover root seed and then re-join federations.
+export function useFederationRecoverySupported() {
+    const activeFederation = useCommonSelector(selectActiveFederation)
+    if (!activeFederation) return false
+    return activeFederation.version < 2
+}
