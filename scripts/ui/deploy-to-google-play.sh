@@ -35,12 +35,9 @@ HHMM=$(date +"%H%M")
 # Combine to form the build number
 BUILD_NUMBER="${YY}${DDD}${HHMM}"
 
-# if we are building a nightly APK from the master branch in CI...
-# modify the build numbers so the app stores will accept
-# the upload. We do not commit this since build numbers are timestamp based
-if [[ -n $GITHUB_REF && $GITHUB_REF == refs/heads/master && -n $FLAVOR && $FLAVOR == "nightly" ]]; then
-  npx react-native-version --increment-build --never-amend --set-build $BUILD_NUMBER
-fi
+# modify the build numbers so app stores will accept the upload
+# We do not commit this since build numbers are timestamp based
+npx react-native-version --target android --increment-build --never-amend --set-build $BUILD_NUMBER
 
 echo "Building Android release AAB with fastlane (see $REPO_ROOT/ui/native/ios/Fastfile for lane configurations)..."
 if [ -z "${FLAVOR:-}" ]; then
