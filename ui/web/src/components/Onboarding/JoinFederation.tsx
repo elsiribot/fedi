@@ -13,7 +13,7 @@ import { getFederationPreview } from '@fedi/common/utils/FederationUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { useRouteState } from '../../context/RouteStateContext'
-import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
+import { useAppDispatch, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled, theme } from '../../styles'
 import { Button } from '../Button'
