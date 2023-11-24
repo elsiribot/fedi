@@ -4,7 +4,6 @@ import type { ChatMember, ChatMessage } from '@fedi/common/types'
 
 import {
     connectChat,
-    disconnectChat,
     fetchChatMember,
     selectActiveFederation,
     selectAuthenticatedMember,
@@ -263,9 +262,8 @@ export async function useMonitorChatConnection(fedimint: FedimintBridge) {
         // Attempt initial chat connection on mount
         attemptChatConnection()
 
-        // Disconnect whenever dependencies change
+        // Reset timeout if dependencies change
         return () => {
-            dispatch(disconnectChat({ federationId: activeFederationId }))
             if (reconnectTimeout) clearTimeout(reconnectTimeout)
         }
         // Dependencies are non-exhaustive here intentionally to prevent
