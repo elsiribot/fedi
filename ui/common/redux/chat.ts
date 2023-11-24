@@ -17,6 +17,7 @@ import { v4 as uuidv4 } from 'uuid'
 import {
     CommonState,
     selectActiveFederation,
+    selectActiveFederationId,
     selectFederationMetadata,
     selectFederations,
 } from '.'
@@ -1795,6 +1796,23 @@ export const selectHasUnseenPaymentUpdates = createSelector(
         `${latestPaymentUpdate.id}_${
             latestPaymentUpdate.payment?.updatedAt || 0
         }` !== lastSeenPaymentUpdateId,
+)
+
+export const selectHasNewChatActivityInOtherFeds = createSelector(
+    (s: CommonState) => s,
+    (s: CommonState) => selectFederations(s),
+    (s: CommonState) => selectActiveFederationId(s),
+    (s: CommonState, federations, activeFederationId) => {
+        const otherFederations = federations.filter(
+            f => f.id !== activeFederationId,
+        )
+        return otherFederations.some(of => {
+            return (
+                selectHasUnseenMessages(s, of.id) ||
+                selectHasUnseenPaymentUpdates(s, of.id)
+            )
+        })
+    },
 )
 
 export const selectChatGroupRole = createSelector(
