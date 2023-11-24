@@ -7,7 +7,10 @@ import DeviceInfo from 'react-native-device-info'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    selectActiveFederation,
+    selectHasNewChatActivityInOtherFeds,
+} from '@fedi/common/redux'
 
 import { useAppSelector, usePrevious } from '../../../state/hooks'
 import {
@@ -30,6 +33,10 @@ const SelectedFederationHeader: React.FC<{}> = () => {
         DRAWER_NAVIGATION_ID,
     ) as DrawerNavigationHook
 
+    const hasNewChatActivityInOtherFeds = useAppSelector(
+        selectHasNewChatActivityInOtherFeds,
+    )
+
     const openFederationsDrawer = () => {
         drawerNavigator.openDrawer()
     }
@@ -41,19 +48,26 @@ const SelectedFederationHeader: React.FC<{}> = () => {
         }
     }, [drawerNavigator, activeFederation, previousActiveFederation?.id])
 
+    const style = styles(theme)
     return (
         <SafeAreaView
             edges={['top', 'left', 'right']}
             style={styles(theme).container}>
-            <Pressable
-                style={styles(theme).federation}
-                onPress={openFederationsDrawer}>
+            <Pressable style={style.federation} onPress={openFederationsDrawer}>
+                <View
+                    style={[
+                        style.unreadIndicator,
+                        hasNewChatActivityInOtherFeds
+                            ? { opacity: 1 }
+                            : { opacity: 0 },
+                    ]}
+                />
                 <FederationLogo federation={activeFederation} size={24} />
                 <Text
                     bold
                     caption
                     numberOfLines={1}
-                    style={styles(theme).federationName}>
+                    style={style.federationName}>
                     {activeFederation?.name}
                 </Text>
                 <SvgImage name="ChevronRight" size={20} />
@@ -61,8 +75,8 @@ const SelectedFederationHeader: React.FC<{}> = () => {
             {popupInfo && <PopupFederationCountdown />}
             {/* Display a small UI indicator for Fedi Nightly builds */}
             {DeviceInfo.getBundleId().includes('nightly') && (
-                <View style={styles(theme).nightly}>
-                    <Text small style={styles(theme).nightlyText}>
+                <View style={style.nightly}>
+                    <Text small style={style.nightlyText}>
                         {t('feature.developer.nightly')}
                     </Text>
                 </View>
@@ -109,6 +123,13 @@ const styles = (theme: Theme) =>
             paddingBottom: theme.spacing.sm,
             borderBottomColor: theme.colors.extraLightGrey,
             borderBottomWidth: 1,
+        },
+        unreadIndicator: {
+            backgroundColor: theme.colors.red,
+            height: theme.sizes.unreadIndicatorSize,
+            width: theme.sizes.unreadIndicatorSize,
+            marginHorizontal: theme.spacing.sm,
+            borderRadius: theme.sizes.unreadIndicatorSize * 0.5,
         },
     })
 

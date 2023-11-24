@@ -11,7 +11,12 @@ import { ImageBackground, Pressable, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
-import { selectActiveFederationId, selectFederations } from '@fedi/common/redux'
+import {
+    selectActiveFederationId,
+    selectFederations,
+    selectHasUnseenMessages,
+    selectHasUnseenPaymentUpdates,
+} from '@fedi/common/redux'
 import { Federation } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
@@ -31,19 +36,34 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
     const { theme } = useTheme()
     const navigation = useNavigation()
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
+    const hasNewMessages = useAppSelector(s =>
+        selectHasUnseenMessages(s, federation.id),
+    )
+    const hasNewPaymentUpdates = useAppSelector(s =>
+        selectHasUnseenPaymentUpdates(s, federation.id),
+    )
 
     const amountInSats = amountUtils.msatToSat(federation.balance)
 
     const showInviteCode = shouldShowInviteCode(federation.meta)
 
+    const style = styles(theme)
     return (
-        <View style={styles(theme).drawerItemLabel}>
+        <View style={style.drawerItemLabel}>
+            <View
+                style={[
+                    style.unreadIndicator,
+                    hasNewMessages || hasNewPaymentUpdates
+                        ? { opacity: 1 }
+                        : { opacity: 0 },
+                ]}
+            />
             <FederationLogo federation={federation} size={48} />
-            <View style={styles(theme).labelsContainer}>
+            <View style={style.labelsContainer}>
                 <Text bold numberOfLines={1}>
                     {federation.name}
                 </Text>
-                <Text style={styles(theme).subText}>
+                <Text style={style.subText}>
                     {`${amountUtils.formatNumber(amountInSats)} ${t(
                         'words.sats',
                     )} (${convertSatsToFormattedFiat(amountInSats)})`}
@@ -52,7 +72,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
 
             {showInviteCode && (
                 <Pressable
-                    style={styles(theme).iconImage}
+                    style={style.iconImage}
                     onPress={() => {
                         navigation.navigate('FederationInvite', {
                             inviteLink: federation.inviteCode,
@@ -75,14 +95,15 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const federations = useAppSelector(selectFederations)
 
+    const style = styles(theme)
     return (
         <ImageBackground
-            style={styles(theme).imageBackground}
+            style={style.imageBackground}
             source={Images.HoloBackground}>
-            <DrawerContentScrollView {...props} style={styles(theme).container}>
+            <DrawerContentScrollView {...props} style={style.container}>
                 <Text
                     h2
-                    style={styles(theme).headerTitle}
+                    style={style.headerTitle}
                     numberOfLines={1}
                     adjustsFontSizeToFit>
                     {t('words.federations')}
@@ -93,7 +114,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                         label={() => (
                             <FederationDrawerItemLabel federation={f} />
                         )}
-                        style={styles(theme).drawerItem}
+                        style={style.drawerItem}
                         focused={f.id === activeFederationId}
                         onPress={() => {
                             // Dismiss drawer if active federation is clicked
@@ -115,7 +136,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
             </DrawerContentScrollView>
             <SafeAreaView edges={['bottom', 'left']}>
                 <Pressable
-                    style={styles(theme).addFederationButton}
+                    style={style.addFederationButton}
                     onPress={() => {
                         mainNavigation.navigate('JoinFederation', {
                             invite: undefined,
@@ -127,7 +148,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                         maxFontSizeMultiplier={1.8}
                     />
                     <Text
-                        style={styles(theme).addFederationText}
+                        style={style.addFederationText}
                         caption
                         maxFontSizeMultiplier={1.8}>
                         {t('feature.federations.add-federation')}
@@ -166,6 +187,7 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             width: '110%',
             paddingHorizontal: theme.spacing.xxs,
+            // backgroundColor: 'lightblue',
         },
         labelsContainer: {
             // Makes sure very long federation names do not overflow
@@ -196,6 +218,13 @@ const styles = (theme: Theme) =>
         headerTitle: {
             paddingHorizontal: theme.spacing.xl,
             paddingVertical: theme.spacing.md,
+        },
+        unreadIndicator: {
+            backgroundColor: theme.colors.red,
+            height: theme.sizes.unreadIndicatorSize,
+            width: theme.sizes.unreadIndicatorSize,
+            marginHorizontal: theme.spacing.xxs,
+            borderRadius: theme.sizes.unreadIndicatorSize * 0.5,
         },
     })
 
