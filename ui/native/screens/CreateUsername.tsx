@@ -10,6 +10,7 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
+import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context'
 
 import { authenticateChat, selectActiveFederationId } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -25,6 +26,7 @@ const log = makeLog('CreateUsername')
 export type Props = NativeStackScreenProps<RootStackParamList, 'CreateUsername'>
 
 const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
+    const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { t } = useTranslation()
     const activeFederationId = useAppSelector(selectActiveFederationId)
@@ -129,31 +131,33 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
         }
     }
 
+    const style = styles(theme, insets)
+
     return (
         <ScrollView
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={[
-                styles(theme).container,
+                style.container,
                 keyboardHeight > 0 && Platform.OS === 'ios'
                     ? { paddingBottom: keyboardHeight + theme.spacing.xl }
                     : {},
                 buttonIsOverlapping ? { flex: 0 } : {},
             ]}>
-            <Text h2 medium style={styles(theme).titleText}>
+            <Text h2 medium style={style.titleText}>
                 {t('feature.onboarding.create-your-username')}
             </Text>
-            <Text caption style={styles(theme).instructionsText}>
+            <Text caption style={style.instructionsText}>
                 {t('feature.onboarding.username-instructions')}
             </Text>
             <View
-                style={styles(theme).inputWrapper}
+                style={style.inputWrapper}
                 onLayout={event => {
                     setOverlapThreshold(
                         event.nativeEvent.layout.height +
                             event.nativeEvent.layout.y,
                     )
                 }}>
-                <Text caption style={styles(theme).inputLabel}>
+                <Text caption style={style.inputLabel}>
                     {t('words.username')}
                 </Text>
                 <Input
@@ -163,19 +167,19 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     value={username}
                     placeholder={`${t('feature.onboarding.enter-username')}...`}
                     returnKeyType="done"
-                    containerStyle={styles(theme).textInputOuter}
-                    inputContainerStyle={styles(theme).textInputInner}
+                    containerStyle={style.textInputOuter}
+                    inputContainerStyle={style.textInputInner}
                     autoCapitalize={'none'}
                     autoCorrect={false}
                     disabled={xmppAuthInProgress}
                 />
-                <Text caption style={styles(theme).inputGuidance}>
+                <Text caption style={style.inputGuidance}>
                     {t('feature.onboarding.username-guidance')}
                 </Text>
             </View>
             <View
                 style={[
-                    styles(theme).buttonContainer,
+                    style.buttonContainer,
                     buttonIsOverlapping ? { marginTop: theme.sizes.md } : {},
                 ]}
                 onLayout={event => {
@@ -193,13 +197,14 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'flex-start',
             padding: theme.spacing.xl,
+            paddingBottom: Math.max(theme.spacing.xl, insets.bottom || 0),
         },
         buttonContainer: {
             marginTop: 'auto',
