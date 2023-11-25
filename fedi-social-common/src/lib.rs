@@ -16,7 +16,7 @@ pub mod common;
 pub mod db;
 
 pub const KIND: ModuleKind = ModuleKind::from_static_str("fedi-social");
-const VERSION: ModuleConsensusVersion = ModuleConsensusVersion(0);
+pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::new(1, 0);
 
 #[derive(
     Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize, Encodable, Decodable, Default,
@@ -68,7 +68,7 @@ pub struct FediSocialModuleTypes;
 pub struct FediSocialCommonGen;
 
 impl CommonModuleInit for FediSocialCommonGen {
-    const CONSENSUS_VERSION: ModuleConsensusVersion = VERSION;
+    const CONSENSUS_VERSION: ModuleConsensusVersion = CONSENSUS_VERSION;
     const KIND: ModuleKind = KIND;
 
     type ClientConfig = FediSocialClientConfig;

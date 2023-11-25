@@ -72,7 +72,7 @@ impl_db_record!(
 impl_db_lookup!(key = RecoveryId, query_prefix = RecoveryPrefix);
 
 #[derive(Debug, Encodable, Decodable, Serialize, Deserialize)]
-pub struct DecryptionShareId(pub secp256k1::XOnlyPublicKey);
+pub struct DecryptionShareId(pub secp256k1::PublicKey);
 
 #[derive(Debug, Encodable, Decodable)]
 pub struct DecryptionSharePrefix;

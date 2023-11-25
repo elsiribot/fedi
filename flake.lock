@@ -1285,17 +1285,17 @@
         "nixpkgs-unstable": "nixpkgs-unstable_12"
       },
       "locked": {
-        "lastModified": 1700504465,
-        "narHash": "sha256-aJ4Xs9MncYFMMb3Pbe3hteeRwV+r7mg5HE0aRdzhAL8=",
-        "ref": "shaurya/0.2-fedimint-nov-20-integration",
-        "rev": "2023f6e007012a8dd31a35099eb7d8277c66ef93",
-        "revCount": 5842,
+        "lastModified": 1700865212,
+        "narHash": "sha256-7H9/pYF81kGgMobQorbEYS0E7w2QPAOBQQ5XGhvJThQ=",
+        "ref": "shaurya/releases/v0.2/2023-11-24",
+        "rev": "1bf3dace5b978eb1f829a571a65c5b4200c2be0e",
+        "revCount": 5940,
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       },
       "original": {
-        "ref": "shaurya/0.2-fedimint-nov-20-integration",
-        "rev": "2023f6e007012a8dd31a35099eb7d8277c66ef93",
+        "ref": "shaurya/releases/v0.2/2023-11-24",
+        "rev": "1bf3dace5b978eb1f829a571a65c5b4200c2be0e",
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       }
@@ -1394,17 +1394,17 @@
         "nixpkgs-unstable": "nixpkgs-unstable_14"
       },
       "locked": {
-        "lastModified": 1700504465,
-        "narHash": "sha256-aJ4Xs9MncYFMMb3Pbe3hteeRwV+r7mg5HE0aRdzhAL8=",
-        "ref": "shaurya/0.2-fedimint-nov-20-integration",
-        "rev": "2023f6e007012a8dd31a35099eb7d8277c66ef93",
-        "revCount": 5842,
+        "lastModified": 1700865212,
+        "narHash": "sha256-7H9/pYF81kGgMobQorbEYS0E7w2QPAOBQQ5XGhvJThQ=",
+        "ref": "shaurya/releases/v0.2/2023-11-24",
+        "rev": "1bf3dace5b978eb1f829a571a65c5b4200c2be0e",
+        "revCount": 5940,
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       },
       "original": {
-        "ref": "shaurya/0.2-fedimint-nov-20-integration",
-        "rev": "2023f6e007012a8dd31a35099eb7d8277c66ef93",
+        "ref": "shaurya/releases/v0.2/2023-11-24",
+        "rev": "1bf3dace5b978eb1f829a571a65c5b4200c2be0e",
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       }

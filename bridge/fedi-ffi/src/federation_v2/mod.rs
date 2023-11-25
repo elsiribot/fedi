@@ -37,14 +37,15 @@ use fedimint_core::{maybe_add_send_sync, Amount, PeerId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
     InternalPayState, LightningClientInit, LightningClientModule, LightningOperationMeta,
-    LnPayState, LnReceiveState, OutgoingLightningPayment, PayType,
+    LightningOperationMetaVariant, LnPayState, LnReceiveState, OutgoingLightningPayment, PayType,
 };
 use fedimint_mint_client::{
     spendable_notes_to_operation_id, MintClientInit, MintClientModule, MintOperationMeta,
     MintOperationMetaVariants, OOBNotes, ReissueExternalNotesState,
 };
 use fedimint_wallet_client::{
-    DepositState, WalletClientInit, WalletClientModule, WalletOperationMeta, WithdrawState,
+    DepositState, WalletClientInit, WalletClientModule, WalletOperationMeta,
+    WalletOperationMetaVariant, WithdrawState,
 };
 use futures::{Future, StreamExt};
 use lightning_invoice::Bolt11Invoice;
@@ -350,7 +351,7 @@ impl FederationV2 {
         let (operation_id, address) = self
             .client
             .get_first_module::<WalletClientModule>()
-            .get_deposit_address(expires_at)
+            .get_deposit_address(expires_at, ())
             .await?;
 
         self.subscribe_deposit(operation_id, address.to_string(), expires_at)
@@ -539,7 +540,7 @@ impl FederationV2 {
         let OutgoingLightningPayment { payment_type, .. } = self
             .client
             .get_first_module::<LightningClientModule>()
-            .pay_bolt11_invoice(invoice.to_owned())
+            .pay_bolt11_invoice(invoice.to_owned(), ())
             .await?;
 
         let response = self
@@ -564,7 +565,7 @@ impl FederationV2 {
         let operation_id = self
             .client
             .get_first_module::<WalletClientModule>()
-            .withdraw(address, amount, fees)
+            .withdraw(address, amount, fees, ())
             .await?;
         let mut updates = self
             .client
@@ -653,7 +654,10 @@ impl FederationV2 {
             .ok_or(anyhow::anyhow!("Operation not found"))?;
         match operation.operation_module_kind() {
             LIGHTNING_OPERATION_TYPE => match operation.meta() {
-                LightningOperationMeta::Pay(pay_meta) => {
+                LightningOperationMeta {
+                    variant: LightningOperationMetaVariant::Pay(pay_meta),
+                    ..
+                } => {
                     let fed = self.clone();
                     let _ = self
                         .task_group
@@ -672,7 +676,10 @@ impl FederationV2 {
                         })
                         .await;
                 }
-                LightningOperationMeta::Receive { invoice, .. } => {
+                LightningOperationMeta {
+                    variant: LightningOperationMetaVariant::Receive { invoice, .. },
+                    ..
+                } => {
                     let fed = self.clone();
                     let _ = self
                         .task_group
@@ -716,15 +723,18 @@ impl FederationV2 {
             WALLET_OPERATION_TYPE => {
                 let meta = operation.meta::<WalletOperationMeta>();
                 match meta {
-                    WalletOperationMeta::Deposit {
-                        address,
-                        expires_at,
+                    WalletOperationMeta {
+                        variant:
+                            WalletOperationMetaVariant::Deposit {
+                                address,
+                                expires_at,
+                            },
+                        ..
                     } => {
                         self.subscribe_deposit(operation_id, address.to_string(), expires_at)
                             .await?;
                     }
-                    WalletOperationMeta::Withdraw { .. }
-                    | WalletOperationMeta::RbfWithdraw { .. } => {
+                    _ => {
                         tracing::debug!(
                             "Can't subscribe to operation id: {}",
                             operation.operation_module_kind()

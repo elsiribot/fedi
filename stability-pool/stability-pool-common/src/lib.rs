@@ -2,18 +2,18 @@ use std::fmt::{self, Display};
 use std::time::SystemTime;
 
 use anyhow::bail;
-use bitcoin::XOnlyPublicKey;
 use fedimint_core::core::{Decoder, ModuleInstanceId, ModuleKind};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::{CommonModuleInit, ModuleCommon, ModuleConsensusVersion};
 use fedimint_core::{extensible_associated_module_type, plugin_types_trait_impl_common, Amount};
+use secp256k1_zkp::PublicKey;
 use serde::{Deserialize, Serialize};
 
 pub mod config;
 use config::StabilityPoolClientConfig;
 
 pub const KIND: ModuleKind = ModuleKind::from_static_str("stability_pool");
-pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion(0);
+pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::new(1, 0);
 
 /// Withdrawing unlocked funds from the stability pool is technically just a
 /// fedimint transaction where the input comes from the stability pool module
@@ -37,7 +37,7 @@ pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion(0);
 /// idle balance and staged balance.
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
 pub struct StabilityPoolInputV0 {
-    pub account: XOnlyPublicKey,
+    pub account: PublicKey,
     pub amount: Amount,
 }
 
@@ -48,11 +48,11 @@ extensible_associated_module_type!(
 );
 
 impl StabilityPoolInput {
-    pub fn new_v0(account: XOnlyPublicKey, amount: Amount) -> StabilityPoolInput {
+    pub fn new_v0(account: PublicKey, amount: Amount) -> StabilityPoolInput {
         StabilityPoolInput::V0(StabilityPoolInputV0 { account, amount })
     }
 
-    pub fn account(&self) -> anyhow::Result<XOnlyPublicKey> {
+    pub fn account(&self) -> anyhow::Result<PublicKey> {
         match self {
             StabilityPoolInput::V0(StabilityPoolInputV0 { account, .. }) => Ok(*account),
             StabilityPoolInput::Default { variant, .. } => {
@@ -77,7 +77,7 @@ impl StabilityPoolInput {
 /// change).
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
 pub struct StabilityPoolOutputV0 {
-    pub account: XOnlyPublicKey,
+    pub account: PublicKey,
     pub intended_action: IntendedAction,
 }
 
@@ -88,14 +88,14 @@ extensible_associated_module_type!(
 );
 
 impl StabilityPoolOutput {
-    pub fn new_v0(account: XOnlyPublicKey, intended_action: IntendedAction) -> StabilityPoolOutput {
+    pub fn new_v0(account: PublicKey, intended_action: IntendedAction) -> StabilityPoolOutput {
         StabilityPoolOutput::V0(StabilityPoolOutputV0 {
             account,
             intended_action,
         })
     }
 
-    pub fn account(&self) -> anyhow::Result<XOnlyPublicKey> {
+    pub fn account(&self) -> anyhow::Result<PublicKey> {
         match self {
             StabilityPoolOutput::V0(StabilityPoolOutputV0 { account, .. }) => Ok(*account),
             StabilityPoolOutput::Default { variant, .. } => {

@@ -6,7 +6,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::bail;
 use async_trait::async_trait;
-use bitcoin::XOnlyPublicKey;
 use common::config::{
     CollateralRatio, OracleConfig, StabilityPoolClientConfig, StabilityPoolConfig,
     StabilityPoolConfigConsensus, StabilityPoolConfigLocal, StabilityPoolConfigPrivate,
@@ -17,7 +16,7 @@ use common::{
     StabilityPoolCommonGen, StabilityPoolConsensusItem, StabilityPoolInput,
     StabilityPoolInputError, StabilityPoolModuleTypes, StabilityPoolOutput,
     StabilityPoolOutputError, StabilityPoolOutputOutcome, StabilityPoolOutputOutcomeV0,
-    StagedProvide, StagedSeek,
+    StagedProvide, StagedSeek, CONSENSUS_VERSION,
 };
 use db::{
     CurrentCycleKey, Cycle, CycleChangeVoteIndexPrefix, CycleChangeVoteKey, IdleBalance,
@@ -41,6 +40,7 @@ use fedimint_core::{Amount, NumPeers, OutPoint, PeerId, ServerModule};
 use futures::{stream, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
+use secp256k1_zkp::PublicKey;
 pub use stability_pool_common as common;
 use tracing::info;
 
@@ -73,11 +73,11 @@ impl ServerModuleInit for StabilityPoolInit {
     const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(1);
 
     fn versions(&self, _core: CoreConsensusVersion) -> &[ModuleConsensusVersion] {
-        &[ModuleConsensusVersion(0)]
+        &[CONSENSUS_VERSION]
     }
 
     fn supported_api_versions(&self) -> SupportedModuleApiVersions {
-        SupportedModuleApiVersions::from_raw(2, 0, &[(0, 0)])
+        SupportedModuleApiVersions::from_raw((1, 0), (1, 0), &[(0, 0)])
     }
 
     async fn init(&self, args: &ServerModuleInitArgs<Self>) -> anyhow::Result<DynServerModule> {
@@ -659,8 +659,8 @@ impl ServerModule for StabilityPool {
 }
 
 fn settle_locks(
-    locked_seeks: &mut BTreeMap<XOnlyPublicKey, Vec<LockedSeek>>,
-    locked_provides: &mut BTreeMap<XOnlyPublicKey, Vec<LockedProvide>>,
+    locked_seeks: &mut BTreeMap<PublicKey, Vec<LockedSeek>>,
+    locked_provides: &mut BTreeMap<PublicKey, Vec<LockedProvide>>,
     start_price: u128,
     new_price: u128,
     randomness: usize,
@@ -737,8 +737,8 @@ fn settle_locks(
 
 async fn apply_staged_cancellations(
     dbtx: &mut DatabaseTransaction<'_>,
-    locked_seeks: &mut BTreeMap<XOnlyPublicKey, Vec<LockedSeek>>,
-    locked_provides: &mut BTreeMap<XOnlyPublicKey, Vec<LockedProvide>>,
+    locked_seeks: &mut BTreeMap<PublicKey, Vec<LockedSeek>>,
+    locked_provides: &mut BTreeMap<PublicKey, Vec<LockedProvide>>,
     new_price: u128,
 ) {
     let staged_cancellations = dbtx
@@ -843,8 +843,8 @@ async fn apply_staged_cancellations(
 
 async fn restage_remaining_locks(
     dbtx: &mut DatabaseTransaction<'_>,
-    locked_seeks: BTreeMap<XOnlyPublicKey, Vec<LockedSeek>>,
-    locked_provides: BTreeMap<XOnlyPublicKey, Vec<LockedProvide>>,
+    locked_seeks: BTreeMap<PublicKey, Vec<LockedSeek>>,
+    locked_provides: BTreeMap<PublicKey, Vec<LockedProvide>>,
 ) {
     for (account, account_locked_seeks) in locked_seeks {
         // If a staged seek with the same sequence exists, we just
@@ -968,8 +968,8 @@ async fn calculate_locks_and_write_cycle(
 async fn extract_sorted_staged_seeks_and_provides(
     dbtx: &mut DatabaseTransaction<'_>,
 ) -> (
-    VecDeque<(XOnlyPublicKey, StagedSeek)>,
-    VecDeque<(XOnlyPublicKey, StagedProvide)>,
+    VecDeque<(PublicKey, StagedSeek)>,
+    VecDeque<(PublicKey, StagedProvide)>,
 ) {
     // Sort all staged seeks by sequence
     let staged_seeks = dbtx
@@ -1014,14 +1014,14 @@ async fn extract_sorted_staged_seeks_and_provides(
 }
 
 struct LockedProvidesAndFeeRateResult {
-    locked_provides: Vec<(XOnlyPublicKey, LockedProvide)>,
+    locked_provides: Vec<(PublicKey, LockedProvide)>,
     included_provides_sum: u128,
     fee_rate: u64,
 }
 
 fn calculate_locked_provides_and_fee_rate(
-    staged_seeks: &VecDeque<(XOnlyPublicKey, StagedSeek)>,
-    staged_provides: &mut VecDeque<(XOnlyPublicKey, StagedProvide)>,
+    staged_seeks: &VecDeque<(PublicKey, StagedSeek)>,
+    staged_provides: &mut VecDeque<(PublicKey, StagedProvide)>,
     collateral_ratio_provider: u128,
     collateral_ratio_seeker: u128,
 ) -> LockedProvidesAndFeeRateResult {
@@ -1099,12 +1099,12 @@ fn calculate_locked_provides_and_fee_rate(
 }
 
 fn calculate_locked_seeks(
-    staged_seeks: &mut VecDeque<(XOnlyPublicKey, StagedSeek)>,
+    staged_seeks: &mut VecDeque<(PublicKey, StagedSeek)>,
     fee_rate: u128,
     collateral_ratio_provider: u128,
     collateral_ratio_seeker: u128,
     included_provides_sum: u128,
-) -> Vec<(XOnlyPublicKey, LockedSeek)> {
+) -> Vec<(PublicKey, LockedSeek)> {
     let mut included_seeks_sum_before_fees = included_seeks_sum_before_fees(
         fee_rate,
         collateral_ratio_provider,
@@ -1141,8 +1141,8 @@ fn calculate_locked_seeks(
 
 async fn write_remaining_staged_seeks_and_provides(
     dbtx: &mut DatabaseTransaction<'_>,
-    staged_seeks: VecDeque<(XOnlyPublicKey, StagedSeek)>,
-    staged_provides: VecDeque<(XOnlyPublicKey, StagedProvide)>,
+    staged_seeks: VecDeque<(PublicKey, StagedSeek)>,
+    staged_provides: VecDeque<(PublicKey, StagedProvide)>,
 ) {
     for (account, seeks) in staged_seeks.into_iter().into_group_map() {
         dbtx.insert_entry(&StagedSeeksKey(account), &seeks).await;
@@ -1156,8 +1156,8 @@ async fn write_remaining_staged_seeks_and_provides(
 
 async fn distribute_fees_and_write_cycle(
     dbtx: &mut DatabaseTransaction<'_>,
-    mut locked_seeks: Vec<(XOnlyPublicKey, LockedSeek)>,
-    locked_provides: Vec<(XOnlyPublicKey, LockedProvide)>,
+    mut locked_seeks: Vec<(PublicKey, LockedSeek)>,
+    locked_provides: Vec<(PublicKey, LockedProvide)>,
     fee_rate: u128,
     included_provides_sum: u128,
     cycle_index: u64,

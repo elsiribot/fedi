@@ -1279,7 +1279,7 @@ dependencies = [
 [[package]]
 name = "devimint"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "axum",
@@ -1822,7 +1822,7 @@ dependencies = [
 [[package]]
 name = "fedimint-aead"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "argon2",
@@ -1856,7 +1856,7 @@ dependencies = [
 [[package]]
 name = "fedimint-bip39"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "bip39",
  "fedimint-client 0.2.0-alpha",
@@ -1888,7 +1888,7 @@ dependencies = [
 [[package]]
 name = "fedimint-bitcoind"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1914,7 +1914,7 @@ source = "git+https://github.com/fedimint/fedimint?branch=releases/v0.1#c2b500a4
 [[package]]
 name = "fedimint-build"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 
 [[package]]
 name = "fedimint-cli"
@@ -1954,7 +1954,7 @@ dependencies = [
 [[package]]
 name = "fedimint-cli"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2050,7 +2050,7 @@ dependencies = [
 [[package]]
 name = "fedimint-client"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -2240,7 +2240,7 @@ dependencies = [
 [[package]]
 name = "fedimint-core"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "async-lock",
@@ -2313,7 +2313,7 @@ dependencies = [
 [[package]]
 name = "fedimint-derive"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "itertools 0.11.0",
  "proc-macro2",
@@ -2350,7 +2350,7 @@ dependencies = [
 [[package]]
 name = "fedimint-derive-secret"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "fedimint-core 0.2.0-alpha",
@@ -2382,7 +2382,7 @@ dependencies = [
 [[package]]
 name = "fedimint-dummy-client"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2425,7 +2425,7 @@ dependencies = [
 [[package]]
 name = "fedimint-dummy-common"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2539,7 +2539,7 @@ dependencies = [
 [[package]]
 name = "fedimint-ln-client"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -2630,12 +2630,11 @@ dependencies = [
 [[package]]
 name = "fedimint-ln-common"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "aquamarine",
  "async-trait",
- "bincode",
  "bitcoin 0.29.2",
  "bitcoin_hashes 0.11.0",
  "erased-serde",
@@ -2648,6 +2647,7 @@ dependencies = [
  "rand",
  "secp256k1 0.24.3",
  "serde",
+ "serde-big-array",
  "serde_json",
  "strum",
  "strum_macros",
@@ -2691,7 +2691,7 @@ dependencies = [
 [[package]]
 name = "fedimint-ln-server"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2746,7 +2746,7 @@ dependencies = [
 [[package]]
 name = "fedimint-logging"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "console-subscriber",
@@ -2773,7 +2773,7 @@ dependencies = [
 [[package]]
 name = "fedimint-metrics"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "axum",
@@ -2857,7 +2857,7 @@ dependencies = [
 [[package]]
 name = "fedimint-mint-client"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -2942,7 +2942,7 @@ dependencies = [
 [[package]]
 name = "fedimint-mint-common"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2996,7 +2996,7 @@ dependencies = [
 [[package]]
 name = "fedimint-mint-server"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "assert_matches",
@@ -3040,7 +3040,7 @@ dependencies = [
 [[package]]
 name = "fedimint-portalloc"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "dirs",
@@ -3083,7 +3083,7 @@ dependencies = [
 [[package]]
 name = "fedimint-rocksdb"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3136,7 +3136,7 @@ dependencies = [
 [[package]]
 name = "fedimint-server"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "aleph-bft",
  "aleph-bft-types",
@@ -3219,7 +3219,7 @@ dependencies = [
 [[package]]
 name = "fedimint-testing"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -3355,7 +3355,7 @@ dependencies = [
 [[package]]
 name = "fedimint-wallet-client"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -3373,6 +3373,7 @@ dependencies = [
  "rand",
  "secp256k1 0.24.3",
  "serde",
+ "serde_json",
  "strum",
  "strum_macros",
  "thiserror",
@@ -3433,7 +3434,7 @@ dependencies = [
 [[package]]
 name = "fedimint-wallet-common"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3484,7 +3485,7 @@ dependencies = [
 [[package]]
 name = "fedimint-wallet-server"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3561,7 +3562,7 @@ dependencies = [
 [[package]]
 name = "fedimintd"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4104,7 +4105,7 @@ dependencies = [
 [[package]]
 name = "hkdf"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "bitcoin_hashes 0.11.0",
 ]
@@ -4983,7 +4984,7 @@ dependencies = [
 [[package]]
 name = "ln-gateway"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -6507,9 +6508,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.105"
+version = "1.0.108"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "693151e1ac27563d6dbcec9dee9fbd5da8539b20fa14ad3752b2e6d363ace360"
+checksum = "3d1c7e3eac408d115102c4c24ad393e0821bb3a5df4d506a80f85f7a742a526b"
 dependencies = [
  "indexmap 2.0.0",
  "itoa",
@@ -6920,7 +6921,7 @@ dependencies = [
 [[package]]
 name = "tbs"
 version = "0.2.0-alpha"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/0.2-fedimint-nov-20-integration#2023f6e007012a8dd31a35099eb7d8277c66ef93"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi?branch=shaurya/releases/v0.2/2023-11-24#1bf3dace5b978eb1f829a571a65c5b4200c2be0e"
 dependencies = [
  "bitcoin_hashes 0.11.0",
  "bls12_381",

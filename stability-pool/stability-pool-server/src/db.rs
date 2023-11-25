@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 use std::time::SystemTime;
 
-use bitcoin::XOnlyPublicKey;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId};
+use secp256k1_zkp::PublicKey;
 use stability_pool_common::{
     CancelRenewal, LockedProvide, LockedSeek, SeekMetadata, StabilityPoolConsensusItem,
     StagedProvide, StagedSeek,
@@ -67,7 +67,7 @@ pub enum DbKeyPrefix {
 }
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct IdleBalanceKey(pub XOnlyPublicKey);
+pub struct IdleBalanceKey(pub PublicKey);
 
 #[derive(Debug, Encodable, Decodable)]
 pub struct IdleBalanceKeyPrefix;
@@ -84,7 +84,7 @@ impl_db_record!(
 impl_db_lookup!(key = IdleBalanceKey, query_prefix = IdleBalanceKeyPrefix);
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct StagedSeeksKey(pub XOnlyPublicKey);
+pub struct StagedSeeksKey(pub PublicKey);
 
 #[derive(Debug, Encodable, Decodable)]
 pub struct StagedSeeksKeyPrefix;
@@ -93,7 +93,7 @@ impl_db_record!(key = StagedSeeksKey, value = Vec<StagedSeek>, db_prefix = DbKey
 impl_db_lookup!(key = StagedSeeksKey, query_prefix = StagedSeeksKeyPrefix);
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct StagedProvidesKey(pub XOnlyPublicKey);
+pub struct StagedProvidesKey(pub PublicKey);
 
 #[derive(Debug, Encodable, Decodable)]
 pub struct StagedProvidesKeyPrefix;
@@ -105,7 +105,7 @@ impl_db_lookup!(
 );
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct StagedCancellationKey(pub XOnlyPublicKey);
+pub struct StagedCancellationKey(pub PublicKey);
 
 #[derive(Debug, Encodable, Decodable)]
 pub struct StagedCancellationKeyPrefix;
@@ -125,8 +125,8 @@ pub struct Cycle {
     pub index: u64,
     pub start_time: SystemTime,
     pub start_price: u64,
-    pub locked_seeks: BTreeMap<XOnlyPublicKey, Vec<LockedSeek>>,
-    pub locked_provides: BTreeMap<XOnlyPublicKey, Vec<LockedProvide>>,
+    pub locked_seeks: BTreeMap<PublicKey, Vec<LockedSeek>>,
+    pub locked_provides: BTreeMap<PublicKey, Vec<LockedProvide>>,
 }
 
 #[derive(Debug, Encodable, Decodable)]
