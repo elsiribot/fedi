@@ -7,7 +7,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 
-import { useMonitorChatConnection } from '@fedi/common/hooks/chat'
+import { useMonitorChatConnections } from '@fedi/common/hooks/chat'
 import { selectActiveFederation } from '@fedi/common/redux'
 
 import { fedimint } from './bridge'
@@ -829,14 +829,14 @@ const Router = () => {
     const { theme } = useTheme()
     const navigation = useNavigationContainerRef()
 
-    // Makes sure we always have a healthy XMPP websocket for chat
+    // Makes sure to check XMPP socket health when app is foregrounded
     useXmppHealthCheck()
 
     // Publishes an FCM push notification token if chat is available
     useXmppPushNotifications()
 
-    // Make sure the chat connection is always online if available
-    useMonitorChatConnection(fedimint)
+    // Make sure any available chat connections are always online
+    useMonitorChatConnections(fedimint)
 
     return (
         <NavigationContainer ref={navigation} theme={theme} linking={linking}>
