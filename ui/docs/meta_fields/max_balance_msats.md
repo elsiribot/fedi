@@ -1,6 +1,6 @@
 # `fedi:max_balance_msats`
 
-When set, users will be prevented from generating payment requests that, if paid, would result in their current balance being greater than the specified amount.
+When set, users will be prevented from generating payment requests if their current balance is greater than the specified amount.
 
 ## Structure
 
