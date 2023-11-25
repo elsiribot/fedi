@@ -1,4 +1,4 @@
-# `onchain_deposits_disabled`
+# `fedi:onchain_deposits_disabled`
 
 Boolean value that disables the onchain deposit features by default
 
@@ -13,5 +13,5 @@ This may be deprecated in the future
 (stringified) boolean
 
 ```json
-"onchain_deposits_disabled": "true" // defaults to "true"
+"fedi:onchain_deposits_disabled": "true" // defaults to "true"
 ```

@@ -1,4 +1,4 @@
-# `default_currency`
+# `fedi:default_currency`
 
 3-letter ISO 4217 currency code
 
@@ -11,5 +11,5 @@ Be sure to test that the string provided matches one of the currencies listed in
 3-letter string
 
 ```json
-"default_currency": "USD"
+"fedi:default_currency": "USD"
 ```

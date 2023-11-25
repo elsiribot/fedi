@@ -1,4 +1,4 @@
-# `invite_codes_disabled`
+# `fedi:invite_codes_disabled`
 
 Boolean value that blocks access to the federation invite code
 
@@ -13,5 +13,5 @@ Be aware that users can still save the invite code before joining and share it w
 (stringified) boolean
 
 ```json
-"invite_codes_disabled": "true" // defaults to "false"
+"fedi:invite_codes_disabled": "true" // defaults to "false"
 ```

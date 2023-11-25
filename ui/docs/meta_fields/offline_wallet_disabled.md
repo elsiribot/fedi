@@ -1,4 +1,4 @@
-# `offline_wallet_disabled`
+# `fedi:offline_wallet_disabled`
 
 Boolean value that disables offline ecash generation features
 
@@ -11,5 +11,5 @@ Note that chat payments will still use ecash generation to send payments. This f
 (stringified) boolean
 
 ```json
-"offline_wallet_disabled": "true" // defaults to "false"
+"fedi:offline_wallet_disabled": "true" // defaults to "false"
 ```

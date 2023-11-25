@@ -1,4 +1,4 @@
-# `tos_url`
+# `fedi:tos_url`
 
 A URL presented to the user before joining the federation
 
@@ -13,5 +13,5 @@ Only after accepting the terms will the user proceed to join the federation
 Standard HTTP/S URL
 
 ```json
-"tos_url": "https://www.fedi.xyz/ts-demo"
+"fedi:tos_url": "https://www.fedi.xyz/ts-demo"
 ```

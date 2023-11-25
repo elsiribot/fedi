@@ -1,4 +1,4 @@
-# `max_invoice_msats`
+# `fedi:max_invoice_msats`
 
 When set, users will be prevented from generating payment requests that are greater than the specified amount.
 
@@ -7,5 +7,5 @@ When set, users will be prevented from generating payment requests that are grea
 Base 10 encoded (stringified) integer
 
 ```json
-"max_invoice_msats": "1000" // 1 sat max
+"fedi:max_invoice_msats": "1000" // 1 sat max
 ```

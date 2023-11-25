@@ -1,4 +1,4 @@
-# `default_group_chats`
+# `fedi:default_group_chats`
 
 Stringified JSON array of strings representing the IDs of any chat groups that all users will join automatically upon creating their username
 
@@ -16,5 +16,5 @@ Be careful not to provide duplicate IDs in this array or the app misbehave
 (stringified) Array of strings
 
 ```json
-"default_group_chats": "[\"m9rpczfb7jsmu-9oi7g7zp1y\",\"vdvydmteqmn_pby9uulhdrzd\"]"
+"fedi:default_group_chats": "[\"m9rpczfb7jsmu-9oi7g7zp1y\",\"vdvydmteqmn_pby9uulhdrzd\"]"
 ```

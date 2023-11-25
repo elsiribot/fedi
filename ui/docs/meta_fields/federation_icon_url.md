@@ -1,4 +1,4 @@
-# `federation_icon_url`
+# `fedi:federation_icon_url`
 
 A URL to a JPG or PNG file used as the federation icon.
 
@@ -15,5 +15,5 @@ SVG files may not be supported on all platforms.
 Standard HTTP/S URL
 
 ```json
-"federation_icon_url": "https://www.fedi.xyz/icon.png"
+"fedi:federation_icon_url": "https://www.fedi.xyz/icon.png"
 ```

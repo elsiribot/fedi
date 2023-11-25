@@ -1,4 +1,4 @@
-# `fedimods`
+# `fedi:fedimods`
 
 (formerly `sites`)
 
@@ -22,5 +22,5 @@ Be careful to make sure this value is perfectly stringified or the app may misbe
 (stringified) Array of FediMod objects
 
 ```json
-"fedimods": "[{\"id\":\"mutinynet-faucet\",\"title\":\"Get test sats\",\"url\":\"https://faucet.mutinynet.dev.fedibtc.com/\"},{\"id\":\"product-feedback\",\"title\":\"Feedback\",\"url\":\"https://docs.google.com/forms/d/e/1FAIpQLSfP8WgwSOhzcYSlbzaoH7-SAzlE8Swyu9t8rWEkPzJuG9AR2w/viewform\"},{\"id\":\"fedi-community\",\"title\":\"Fedi Telegram\",\"url\":\"https://t.me/fedibtc\"},{\"id\":\"btcmap\",\"title\":\"BTCMAP\",\"url\":\"https://btcmap.org/map\"}]"
+"fedi:fedimods": "[{\"id\":\"mutinynet-faucet\",\"title\":\"Get test sats\",\"url\":\"https://faucet.mutinynet.dev.fedibtc.com/\"},{\"id\":\"product-feedback\",\"title\":\"Feedback\",\"url\":\"https://docs.google.com/forms/d/e/1FAIpQLSfP8WgwSOhzcYSlbzaoH7-SAzlE8Swyu9t8rWEkPzJuG9AR2w/viewform\"},{\"id\":\"fedi-community\",\"title\":\"Fedi Telegram\",\"url\":\"https://t.me/fedibtc\"},{\"id\":\"btcmap\",\"title\":\"BTCMAP\",\"url\":\"https://btcmap.org/map\"}]"
 ```
