@@ -677,12 +677,21 @@ export const connectChat = createAsyncThunk<
                         return
                     }
                     log.info('Attempting to redeem message payment')
-                    updateChatPayment({
-                        fedimint,
-                        federationId,
-                        messageId: message.id,
-                        action: 'receive',
-                    })
+                    dispatch(
+                        updateChatPayment({
+                            fedimint,
+                            federationId,
+                            messageId: message.id,
+                            action: 'receive',
+                        }),
+                    )
+                        .unwrap()
+                        .then(() =>
+                            log.info('Redeemed and updated payment message'),
+                        )
+                        .catch(err =>
+                            log.warn('Failed to redeem payment message', err),
+                        )
                 }, 250)
             }
         })
