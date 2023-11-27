@@ -362,6 +362,48 @@ export const getFederationFediMods = (
     return DEFAULT_FEDIMODS
 }
 
+type PopupInfo = {
+    endTimestamp: string
+    countdownMessage: string | null
+    endedMessage: string | null
+}
+
+export const getFederationPopupInfo = (
+    metadata: ClientConfigMetadata,
+): PopupInfo | null => {
+    const endTimestamp = getMetaField(
+        SupportedFeature.popup_end_timestamp,
+        metadata,
+    )
+    if (!endTimestamp) return null
+
+    const countdownMessage = getMetaField(
+        SupportedFeature.popup_countdown_message,
+        metadata,
+    )
+    const endedMessage = getMetaField(
+        SupportedFeature.popup_ended_message,
+        metadata,
+    )
+    return {
+        endTimestamp,
+        countdownMessage,
+        endedMessage,
+    }
+}
+
+export const getFederationTosUrl = (metadata: ClientConfigMetadata) => {
+    return getMetaField(SupportedFeature.tos_url, metadata)
+}
+
+export const getFederationWelcomeMessage = (metadata: ClientConfigMetadata) => {
+    return getMetaField(SupportedFeature.welcome_message, metadata)
+}
+
+export const getFederationIconUrl = (metadata: ClientConfigMetadata) => {
+    return getMetaField(SupportedFeature.federation_icon_url, metadata)
+}
+
 /**
  * Fetch information about a federation without using the bridge wasm. This
  * allows us to fetch federation info before the bridge is loaded.

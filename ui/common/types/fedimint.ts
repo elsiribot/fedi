@@ -71,6 +71,12 @@ export enum SupportedFeature {
     max_balance_msats = 'max_balance_msats',
     max_invoice_msats = 'max_invoice_msats',
     nostr_enabled = 'nostr_enabled',
+    popup_end_timestamp = 'popup_end_timestamp',
+    popup_countdown_message = 'popup_countdown_message',
+    popup_ended_message = 'popup_ended_message',
+    tos_url = 'tos_url',
+    welcome_message = 'welcome_message',
+    federation_icon_url = 'federation_icon_url',
 }
 
 export type ClientConfigMetadata = Record<string, string | undefined>
