@@ -18,9 +18,11 @@ use db::{
     XmppUsernameKey,
 };
 use fedi_social_client::{FediSocialClientInit, RecoveryId};
+use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::backup::Metadata;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
+use fedimint_client::secret::{get_default_client_secret, RootSecretStrategy};
 use fedimint_client::{ClientArc, ClientBuilder, FederationInfo};
 use fedimint_core::api::{
     DynModuleApi, FederationApiExt, GlobalFederationApi, IGlobalFederationApi, InviteCode,
@@ -179,7 +181,7 @@ impl FederationV2 {
         db: Database,
         event_sink: EventSink,
         task_group: TaskGroup,
-        root_mnemonic: bip39::Mnemonic,
+        root_mnemonic: &bip39::Mnemonic,
         client_config: Option<ClientConfig>,
     ) -> anyhow::Result<Self> {
         let fedi_config = {
@@ -193,17 +195,11 @@ impl FederationV2 {
                 serde_json::from_str(&config_string).context("invalid config")?;
             fedi_config
         };
-        // FIXME: should we just pass in the root mnemonic somehow?
-        let client_root_secret = DerivableSecret::new_root(
-            &root_mnemonic
-                .to_seed_normalized(&fedi_config.client_config.global.federation_id().to_string()),
-            b"Fedi Salt",
-        );
-        let bridge_root_secret = DerivableSecret::new_root(
-            &root_mnemonic
-                .to_seed_normalized(&fedi_config.client_config.global.federation_id().to_string()),
-            b"Fedi Bridge Salt",
-        );
+
+        let federation_id = fedi_config.client_config.global.federation_id();
+        let global_root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(root_mnemonic);
+        let client_root_secret = get_default_client_secret(&global_root_secret, &federation_id);
+        let bridge_root_secret = get_default_auxiliary_secret(&global_root_secret, &federation_id);
         let client_builder = Self::build_client_builder(client_config, db).await?;
         let client = client_builder.build(client_root_secret).await?;
         Ok(Self::new(
@@ -234,7 +230,7 @@ impl FederationV2 {
         event_sink: EventSink,
         task_group: TaskGroup,
         db_name: &str,
-        root_mnemonic: bip39::Mnemonic,
+        root_mnemonic: &bip39::Mnemonic,
     ) -> Result<Self> {
         // Download federation config
         let invite_code: InviteCode = InviteCode::from_str(&invite_code_string)?;
@@ -2063,4 +2059,26 @@ impl FederationV2 {
             }
         }
     }
+}
+
+// root/<key-type=per-federation=0>/<federation-id>/<wallet-number=0>/
+// <key-type=aux=1>
+fn get_default_auxiliary_secret(
+    global_root_secret: &DerivableSecret,
+    federation_id: &FederationId,
+) -> DerivableSecret {
+    get_per_federation_secret(global_root_secret, federation_id, 0, 1)
+}
+
+// Based on derivation scheme used by fedimint-client
+fn get_per_federation_secret(
+    global_root_secret: &DerivableSecret,
+    federation_id: &FederationId,
+    wallet_number: u64,
+    key_type: u64,
+) -> DerivableSecret {
+    let multi_federation_root_secret = global_root_secret.child_key(ChildId(0));
+    let federation_root_secret = multi_federation_root_secret.federation_key(federation_id);
+    let federation_wallet_root_secret = federation_root_secret.child_key(ChildId(wallet_number));
+    federation_wallet_root_secret.child_key(ChildId(key_type))
 }
