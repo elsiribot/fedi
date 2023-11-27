@@ -511,7 +511,7 @@ impl StabilityPoolClientModule {
         self.module_api
             .request_current_consensus(
                 "account_info".to_string(),
-                ApiRequestErased::new(self.client_key_pair.x_only_public_key().0),
+                ApiRequestErased::new(self.client_key_pair.public_key()),
             )
             .await
     }
@@ -529,7 +529,7 @@ impl StabilityPoolClientModule {
         self.module_api
             .request_current_consensus(
                 "wait_cancellation_processed".to_string(),
-                ApiRequestErased::new(self.client_key_pair.x_only_public_key().0),
+                ApiRequestErased::new(self.client_key_pair.public_key()),
             )
             .await
     }

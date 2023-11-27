@@ -73,24 +73,25 @@ devimint = { git = "https://x-access-token:github_pat_11ABBCQBI0xWGdvtpcftZj_6wS
 ln-gateway = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "shaurya/releases/v0.2/2023-11-24" }
 
 # Uncomment these to use local fedimint v2
-# fedimintd = { path = "../fedimint/fedimintd"}
-# fedimint-cli = { path = "../fedimint/fedimint-cli"}
-# fedimint-build = { path = "../fedimint/fedimint-build"}
-# fedimint-core = { path = "../fedimint/fedimint-core"}
-# fedimint-server = { path = "../fedimint/fedimint-server"}
-# fedimint-client = { path = "../fedimint/fedimint-client"}
-# fedimint-derive-secret = { path = "../fedimint/crypto/derive-secret"}
-# fedimint-mint-client = { path = "../fedimint/modules/fedimint-mint-client"}
-# fedimint-wallet-client = { path = "../fedimint/modules/fedimint-wallet-client"}
-# fedimint-ln-client = { path = "../fedimint/modules/fedimint-ln-client"}
-# fedimint-client-legacy = { path = "../fedimint/fedimint-client-legacy"}
-# fedimint-aead = { path = "../fedimint/crypto/aead"}
-# fedimint-rocksdb = { path = "../fedimint/fedimint-rocksdb"}
-# fedimint-bip39 = { path = "../fedimint/fedimint-bip39"}
-# tbs = { path = "../fedimint/crypto/tbs"}
-# fedimint-logging = { path = "../fedimint/fedimint-logging"}
-# devimint = { path = "../fedimint/devimint"}
-# ln-gateway = { path = "../fedimint/gateway/ln-gateway"}
+# fedimintd = { path = "../fedimint/fedimintd" }
+# fedimint-cli = { path = "../fedimint/fedimint-cli" }
+# fedimint-build = { path = "../fedimint/fedimint-build" }
+# fedimint-core = { path = "../fedimint/fedimint-core" }
+# fedimint-server = { path = "../fedimint/fedimint-server" }
+# fedimint-client = { path = "../fedimint/fedimint-client" }
+# fedimint-derive-secret = { path = "../fedimint/crypto/derive-secret" }
+# fedimint-mint-client = { path = "../fedimint/modules/fedimint-mint-client" }
+# fedimint-wallet-client = { path = "../fedimint/modules/fedimint-wallet-client" }
+# fedimint-ln-client = { path = "../fedimint/modules/fedimint-ln-client" }
+# fedimint-ln-common = { path = "../fedimint/modules/fedimint-ln-common" }
+# fedimint-client-legacy = { path = "../fedimint/fedimint-client-legacy" }
+# fedimint-aead = { path = "../fedimint/crypto/aead" }
+# fedimint-rocksdb = { path = "../fedimint/fedimint-rocksdb" }
+# fedimint-bip39 = { path = "../fedimint/fedimint-bip39" }
+# tbs = { path = "../fedimint/crypto/tbs" }
+# fedimint-logging = { path = "../fedimint/fedimint-logging" }
+# devimint = { path = "../fedimint/devimint" }
+# ln-gateway = { path = "../fedimint/gateway/ln-gateway" }
 
 # NOTE: You want to update the `fedimint` input git hash in `flake.nix` as well, to keep gateway-pkgs in sync
 # NOTE: To use local fedimint depenencies, comment out the "paths" section in .cargo/config.toml
