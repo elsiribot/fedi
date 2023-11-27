@@ -82,6 +82,8 @@
 	<string />
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Fedi needs access to your microphone to record a social backup video</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Fedi needs access to your photo library to select media for attachments</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>FontAwesome.ttf</string>
