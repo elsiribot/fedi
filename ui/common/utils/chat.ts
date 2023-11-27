@@ -190,7 +190,7 @@ export const getLatestMessageIdsForChats = (
 
 /**
  * Given a list of messages, return a map keyed by the chat ID and with a value
- * of the latest message ID in that chat.
+ * of the latest payment update message ID in that chat.
  */
 export const getLatestPaymentUpdateIdsForChats = (
     messages: ChatMessage[],
