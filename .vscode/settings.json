@@ -6,5 +6,9 @@
       "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
     "typescript.tsdk": "./ui/node_modules/typescript/lib",
-    "editor.tabSize": 4
+    "editor.tabSize": 4,
+    "[rust]": {
+      "editor.defaultFormatter": "rust-lang.rust-analyzer"
+    },
+    "editor.formatOnSave": true
 }
