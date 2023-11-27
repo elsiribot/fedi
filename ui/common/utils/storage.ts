@@ -123,6 +123,11 @@ export function hasStorageStateChanged(
             activeFederationId,
             'lastSeenPaymentUpdateId',
         ])
+        keysetsToCheck.push([
+            'chat',
+            activeFederationId,
+            'lastReadPaymentUpdateIds',
+        ])
     }
 
     for (const keysToCheck of keysetsToCheck) {
