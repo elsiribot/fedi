@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import {
     selectActiveFederation,
+    selectFederationMetadata,
     selectNostrEnabled,
     selectOnchainDepositsEnabled,
 } from '../redux'
@@ -13,6 +14,7 @@ import {
     shouldShowOnchainDeposits,
     shouldEnableNostr,
     getFederationChatServerDomain,
+    getFederationPopupInfo,
 } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
 
@@ -82,17 +84,19 @@ export function useIsNostrEnabled() {
 }
 
 export function usePopupFederationInfo() {
-    const activeFederation = useCommonSelector(selectActiveFederation)
+    const activeFederationMetadata = useCommonSelector(selectFederationMetadata)
     const [secondsLeft, setTimeLeft] = useState(0)
     const [endsInText, setShutdownTime] = useState('')
 
-    const countdownMessage = activeFederation?.meta?.popup_countdown_message
-    const endedMessage = activeFederation?.meta?.popup_ended_message
+    const popupInfo = getFederationPopupInfo(activeFederationMetadata)
+
+    const countdownMessage = popupInfo?.countdownMessage
+    const endedMessage = popupInfo?.endedMessage
 
     // Uncomment me to test popup federations
     // const [rawTimestamp] = useState((1686584896.205).toString())
 
-    const rawTimestamp = activeFederation?.meta?.popup_end_timestamp
+    const rawTimestamp = popupInfo?.endTimestamp
     const endTimestamp = rawTimestamp ? parseInt(rawTimestamp, 10) : null
 
     // Generate and re-generate formatted time for when the federation ends at.

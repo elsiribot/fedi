@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, View } from 'react-native'
 import Hyperlink from 'react-native-hyperlink'
 
+import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
+
 import { FederationPreview } from '../../../types'
 
 export type Props = {
@@ -21,6 +23,7 @@ const AcceptTermsOfService: React.FC<Props> = ({
     const { t } = useTranslation()
     const [isAccepting, setIsAccepting] = useState(false)
     const [isRejecting, setIsRejecting] = useState(false)
+    const tosUrl = getFederationTosUrl(federation.meta)
 
     return (
         <View style={styles(theme).container}>
@@ -34,7 +37,7 @@ const AcceptTermsOfService: React.FC<Props> = ({
                     linkStyle={styles(theme).linkText}>
                     <Text>
                         {t('feature.onboarding.by-clicking-i-accept', {
-                            tos_url: federation.meta?.tos_url,
+                            tos_url: tosUrl,
                         })}
                     </Text>
                 </Hyperlink>

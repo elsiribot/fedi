@@ -3,6 +3,7 @@ import { Trans, useTranslation } from 'react-i18next'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { selectActiveFederation } from '@fedi/common/redux'
+import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
 import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
@@ -18,6 +19,8 @@ export const PopupFederationOver: React.FC = () => {
     const popupInfo = usePopupFederationInfo()
 
     if (!activeFederation || !popupInfo) return null
+
+    const tosUrl = getFederationTosUrl(activeFederation?.meta)
 
     return (
         <ContentBlock>
@@ -42,12 +45,9 @@ export const PopupFederationOver: React.FC = () => {
                         </Text>
                     </Container>
                 </Layout.Content>
-                {activeFederation.meta?.tos_url && (
+                {tosUrl && (
                     <Layout.Actions>
-                        <Button
-                            width="full"
-                            variant="secondary"
-                            href={activeFederation.meta.tos_url}>
+                        <Button width="full" variant="secondary" href={tosUrl}>
                             {t('phrases.terms-and-conditions')}
                         </Button>
                     </Layout.Actions>

@@ -11,7 +11,11 @@ import {
 } from 'react-native'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    selectActiveFederation,
+    selectFederationMetadata,
+} from '@fedi/common/redux'
+import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
 import { FALLBACK_TERMS_URL } from '../../../constants'
 import { useAppSelector } from '../../../state/hooks'
@@ -22,6 +26,8 @@ export const PopupFederationCountdown: React.FC = () => {
     const { theme } = useTheme()
     const style = styles(theme)
     const activeFederation = useAppSelector(selectActiveFederation)
+    const activeFederationMetadata = useAppSelector(selectFederationMetadata)
+    const tosUrl = getFederationTosUrl(activeFederationMetadata)
     const popupInfo = usePopupFederationInfo()
     const [isOverlayVisible, setIsOverlayVisible] = useState(false)
 
@@ -89,23 +95,18 @@ export const PopupFederationCountdown: React.FC = () => {
                         )}
                     </Text>
                     <Button
-                        // containerStyle={style.buttonContainer}
-                        // buttonStyle={style.button}
                         fullWidth
                         onPress={() => setIsOverlayVisible(false)}>
                         {t('phrases.i-understand')}
                     </Button>
-                    {activeFederation.meta?.tos_url && (
+                    {tosUrl && (
                         <Button
                             type="clear"
                             fullWidth
                             containerStyle={style.buttonContainer}
                             buttonStyle={style.button}
                             onPress={() =>
-                                Linking.openURL(
-                                    activeFederation.meta?.tos_url ||
-                                        FALLBACK_TERMS_URL,
-                                )
+                                Linking.openURL(tosUrl || FALLBACK_TERMS_URL)
                             }>
                             {t('feature.onboarding.terms-and-conditions')}
                         </Button>
