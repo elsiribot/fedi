@@ -1,9 +1,9 @@
 use std::time::UNIX_EPOCH;
 
-use bitcoin::XOnlyPublicKey;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiError};
 use fedimint_core::Amount;
+use secp256k1_zkp::PublicKey;
 use stability_pool_common::{AccountInfo, LockedSeekWithMetadata};
 
 use crate::db::{
@@ -16,7 +16,7 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
     vec![
         api_endpoint! {
             "account_info",
-            async |_module: &StabilityPool, context, request: XOnlyPublicKey| -> AccountInfo {
+            async |_module: &StabilityPool, context, request: PublicKey| -> AccountInfo {
                 Ok(account_info(&mut context.dbtx().into_nc(), request).await)
             }
         },
@@ -28,17 +28,14 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
         },
         api_endpoint! {
             "wait_cancellation_processed",
-            async |_module: &StabilityPool, context, request: XOnlyPublicKey| -> Amount {
+            async |_module: &StabilityPool, context, request: PublicKey| -> Amount {
                 Ok(wait_cancellation_processed(context, request).await?)
             }
         },
     ]
 }
 
-pub async fn account_info(
-    dbtx: &mut DatabaseTransaction<'_>,
-    account: XOnlyPublicKey,
-) -> AccountInfo {
+pub async fn account_info(dbtx: &mut DatabaseTransaction<'_>, account: PublicKey) -> AccountInfo {
     let (locked_seeks, locked_provides) = match dbtx.get_value(&CurrentCycleKey).await {
         Some(Cycle {
             locked_seeks: seeker_locks,
@@ -112,7 +109,7 @@ pub async fn next_cycle_start_time(
 /// and return the amount of idle balance that can be withdrawn.
 pub async fn wait_cancellation_processed(
     context: &mut ApiEndpointContext<'_>,
-    account: XOnlyPublicKey,
+    account: PublicKey,
 ) -> anyhow::Result<Amount, ApiError> {
     let mut dbtx = context.dbtx().into_nc();
     let starting_idle_balance = match dbtx.get_value(&IdleBalanceKey(account)).await {

@@ -6,13 +6,14 @@ use std::time::Duration;
 
 use anyhow::bail;
 use async_stream::stream;
-use bitcoin::{KeyPair, XOnlyPublicKey};
+use bitcoin::KeyPair;
 use common::config::StabilityPoolClientConfig;
 use common::{
     AccountInfo, CancelRenewal, IntendedAction, Provide, Seek, StabilityPoolCommonGen,
     StabilityPoolInput, StabilityPoolModuleTypes, StabilityPoolOutput,
 };
 use fedimint_client::module::init::{ClientModuleInit, ClientModuleInitArgs};
+use fedimint_client::module::recovery::NoModuleBackup;
 use fedimint_client::module::{ClientContext, ClientModule};
 use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
 use fedimint_client::sm::util::MapStateTransitions;
@@ -31,7 +32,7 @@ use fedimint_core::module::{
 };
 use fedimint_core::{apply, async_trait_maybe_send, Amount, OutPoint, TransactionId};
 use futures::{Stream, StreamExt};
-use secp256k1_zkp::Secp256k1;
+use secp256k1_zkp::{PublicKey, Secp256k1};
 use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
 use tracing::info;
@@ -98,6 +99,7 @@ impl ClientModule for StabilityPoolClientModule {
     type Common = StabilityPoolModuleTypes;
     type ModuleStateMachineContext = StabilityPoolClientContext;
     type States = StabilityPoolStateMachines;
+    type Backup = NoModuleBackup;
 
     fn context(&self) -> StabilityPoolClientContext {
         StabilityPoolClientContext {
@@ -509,7 +511,7 @@ impl StabilityPoolClientModule {
         self.module_api
             .request_current_consensus(
                 "account_info".to_string(),
-                ApiRequestErased::new(self.client_key_pair.x_only_public_key().0),
+                ApiRequestErased::new(self.client_key_pair.public_key()),
             )
             .await
     }
@@ -527,7 +529,7 @@ impl StabilityPoolClientModule {
         self.module_api
             .request_current_consensus(
                 "wait_cancellation_processed".to_string(),
-                ApiRequestErased::new(self.client_key_pair.x_only_public_key().0),
+                ApiRequestErased::new(self.client_key_pair.public_key()),
             )
             .await
     }
@@ -535,7 +537,7 @@ impl StabilityPoolClientModule {
     pub async fn deposit_to_seek(&self, amount: Amount) -> anyhow::Result<OperationId> {
         let (operation_id, _) = submit_tx_with_intended_action(
             &self.client_ctx,
-            self.client_key_pair.x_only_public_key().0,
+            self.client_key_pair.public_key(),
             IntendedAction::Seek(Seek(amount)),
         )
         .await?;
@@ -549,7 +551,7 @@ impl StabilityPoolClientModule {
     ) -> anyhow::Result<OperationId> {
         let (operation_id, _) = submit_tx_with_intended_action(
             &self.client_ctx,
-            self.client_key_pair.x_only_public_key().0,
+            self.client_key_pair.public_key(),
             IntendedAction::Provide(Provide {
                 amount,
                 min_fee_rate: fee_rate,
@@ -616,7 +618,7 @@ impl StabilityPoolClientModule {
         if unlocked_amount != Amount::ZERO {
             let input = ClientInput {
                 input: StabilityPoolInput::new_v0(
-                    self.client_key_pair.x_only_public_key().0,
+                    self.client_key_pair.public_key(),
                     unlocked_amount,
                 ),
                 keys: vec![self.client_key_pair],
@@ -634,8 +636,7 @@ impl StabilityPoolClientModule {
                     )]
                 }),
             };
-            let tx = TransactionBuilder::new()
-                .with_input(input.into_dyn(self.client_ctx.module_instance_id()));
+            let tx = TransactionBuilder::new().with_input(self.client_ctx.make_client_input(input));
             let withdrawal_meta_gen = |txid, outpoints| StabilityPoolMeta::Withdrawal {
                 txid,
                 outpoints,
@@ -655,7 +656,7 @@ impl StabilityPoolClientModule {
         } else {
             submit_tx_with_intended_action(
                 &self.client_ctx,
-                self.client_key_pair.x_only_public_key().0,
+                self.client_key_pair.public_key(),
                 IntendedAction::CancelRenewal(CancelRenewal { bps: locked_bps }),
             )
             .await
@@ -861,7 +862,7 @@ async fn stability_pool_operation(
 
 async fn submit_tx_with_intended_action(
     client_ctx: &ClientContext<StabilityPoolClientModule>,
-    client_pub_key: XOnlyPublicKey,
+    client_pub_key: PublicKey,
     intended_action: IntendedAction,
 ) -> anyhow::Result<(OperationId, TransactionId)> {
     let operation_id = OperationId::new_random();
@@ -874,8 +875,7 @@ async fn submit_tx_with_intended_action(
                 output: stability_pool_output,
                 state_machines: Arc::new(move |_, _| Vec::<StabilityPoolStateMachines>::new()),
             };
-            let tx = TransactionBuilder::new()
-                .with_output(output.into_dyn(client_ctx.module_instance_id()));
+            let tx = TransactionBuilder::new().with_output(client_ctx.make_client_output(output));
             let deposit_meta_gen = |txid, change_outpoints| StabilityPoolMeta::Deposit {
                 txid,
                 change_outpoints,
@@ -903,8 +903,7 @@ async fn submit_tx_with_intended_action(
                     )]
                 }),
             };
-            let tx = TransactionBuilder::new()
-                .with_output(output.into_dyn(client_ctx.module_instance_id()));
+            let tx = TransactionBuilder::new().with_output(client_ctx.make_client_output(output));
             let cancellation_meta_gen = |txid, _| StabilityPoolMeta::CancelRenewal { txid, bps };
             client_ctx
                 .finalize_and_submit_transaction(
@@ -951,7 +950,7 @@ async fn claim_idle_balance_input(
 ) -> StabilityPoolCancelLockedStateMachine {
     let input = ClientInput {
         input: StabilityPoolInput::new_v0(
-            context.module.client_key_pair.x_only_public_key().0,
+            context.module.client_key_pair.public_key(),
             idle_balance,
         ),
         keys: vec![context.module.client_key_pair],
@@ -984,7 +983,7 @@ async fn maybe_fund_cancellation_output(
             Some(bps) => {
                 let output = ClientOutput {
                     output: StabilityPoolOutput::new_v0(
-                        context.module.client_key_pair.x_only_public_key().0,
+                        context.module.client_key_pair.public_key(),
                         IntendedAction::CancelRenewal(CancelRenewal { bps }),
                     ),
                     state_machines: Arc::new(move |transaction_id, _| {

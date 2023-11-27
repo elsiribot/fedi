@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 pub use fedi_social_common::*;
 use fedimint_client::module::init::{ClientModuleInit, ClientModuleInitArgs};
+use fedimint_client::module::recovery::NoModuleBackup;
 use fedimint_client::module::ClientModule;
 use fedimint_client::sm::{DynState, State, StateTransition};
 use fedimint_client::DynGlobalClientContext;
@@ -50,6 +51,7 @@ impl ClientModule for FediSocialClientModule {
     type ModuleStateMachineContext = ();
     type States = FediSocialClientStates;
     type Init = FediSocialClientInit;
+    type Backup = NoModuleBackup;
 
     fn context(&self) -> Self::ModuleStateMachineContext {}
 

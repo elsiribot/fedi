@@ -80,9 +80,11 @@ impl Translate<fedimint_core::config::GlobalClientConfig>
                 .into_iter()
                 .map(|(peer_id, peer_url)| (peer_id.translate(), peer_url.translate()))
                 .collect(),
-            consensus_version: fedimint_core::module::CoreConsensusVersion::from(
-                self.consensus_version.0,
-            ),
+            consensus_version: fedimint_core::module::CoreConsensusVersion {
+                major: self.consensus_version.0,
+                // FIXME: is hard-coding this ok?
+                minor: 0,
+            },
             meta: self.meta,
         }
     }
@@ -401,13 +403,17 @@ impl Translate<fedimint_client::db::ChronologicalOperationLogKey>
 
 impl Translate<fedi_social_client::RecoveryId> for fedi_social_client_v1::RecoveryId {
     fn translate(self) -> fedi_social_client::RecoveryId {
-        fedi_social_client::RecoveryId(self.0)
+        // FIXME: is this ok? we will remove all old social recovery code ASAP so
+        // won't need to do this much longer
+        fedi_social_client::RecoveryId(self.0.public_key(bitcoin::secp256k1::Parity::Even))
     }
 }
 
 impl Translate<fedi_social_client_v1::RecoveryId> for fedi_social_client::RecoveryId {
     fn translate(self) -> fedi_social_client_v1::RecoveryId {
-        fedi_social_client_v1::RecoveryId(self.0)
+        // FIXME: seems like this could blow up if parity got switched. need to delete
+        // v1 social recovery code ASAP
+        fedi_social_client_v1::RecoveryId(self.0.x_only_public_key().0)
     }
 }
 

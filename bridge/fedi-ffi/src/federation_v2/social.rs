@@ -137,7 +137,7 @@ impl SocialBackup {
         let signing_key = self.get_backup_signing_key();
 
         let backup_request = BackupRequest {
-            id: BackupId(signing_key.x_only_public_key().0),
+            id: BackupId(signing_key.public_key()),
             timestamp: SystemTime::now(),
             verification_doc_hash: recovery_file.verification_document.id(),
             double_encrypted_seed: recovery_file.double_encrypted_seed.clone(),
@@ -261,14 +261,9 @@ impl SocialRecovery {
         &self.state
     }
 
-    pub fn get_backup_id(&self) -> anyhow::Result<secp256k1::XOnlyPublicKey> {
-        Ok(self
-            .state
-            .signing_sk
-            .0
-            .public_key(secp256k1::SECP256K1)
-            .x_only_public_key()
-            .0)
+    // FIXME: doesn't seem like this is used anywhere
+    pub fn get_backup_id(&self) -> anyhow::Result<secp256k1::PublicKey> {
+        Ok(self.state.signing_sk.0.public_key(secp256k1::SECP256K1))
     }
 
     /// Create a verification request and corresponding decryption key
@@ -277,10 +272,9 @@ impl SocialRecovery {
         verification_doc: VerificationDocument,
     ) -> anyhow::Result<SignedRecoveryRequest> {
         let signing_keypair = self.state.signing_sk.0.keypair(secp256k1::SECP256K1);
-        let signing_pk = signing_keypair.public_key();
 
         let request = RecoveryRequest {
-            id: RecoveryId(signing_pk.x_only_public_key().0),
+            id: RecoveryId(signing_keypair.public_key()),
             timestamp: SystemTime::now(),
             verification_doc,
             recovery_session_encryption_key: SerdeEncodable(

@@ -738,6 +738,7 @@ impl Bridge {
             (_, _, Ok(config)) => Ok(RpcFederationPreview {
                 id: RpcFederationId(config.global.federation_id().to_string()),
                 name: config
+                    .global
                     .federation_name()
                     .map(|x| x.to_owned())
                     .unwrap_or(config.global.federation_id().to_string()[0..8].to_string()),

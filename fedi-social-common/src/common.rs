@@ -145,7 +145,7 @@ impl VerificationDocument {
 pub struct VerificationDocumentHash(sha256::Hash);
 
 #[derive(Copy, Clone, Debug, Encodable, Decodable, Serialize, Deserialize, PartialEq, Eq)]
-pub struct BackupId(pub secp256k1::XOnlyPublicKey);
+pub struct BackupId(pub secp256k1::PublicKey);
 
 impl fmt::Display for BackupId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -154,7 +154,7 @@ impl fmt::Display for BackupId {
 }
 
 #[derive(Copy, Clone, Debug, Encodable, Decodable, Serialize, Deserialize, PartialEq, Eq)]
-pub struct RecoveryId(pub secp256k1::XOnlyPublicKey);
+pub struct RecoveryId(pub secp256k1::PublicKey);
 
 impl fmt::Display for RecoveryId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -259,7 +259,7 @@ impl SignedBackupRequest {
         ctx.verify_schnorr(
             &self.signature,
             &Message::from_slice(&self.request.hash()).expect("Can't fail"),
-            &self.request.id.0,
+            &self.request.id.0.x_only_public_key().0,
         )?;
 
         Ok(&self.request)
@@ -316,7 +316,7 @@ impl SignedRecoveryRequest {
         ctx.verify_schnorr(
             &self.signature,
             &Message::from_slice(&self.request.hash()).expect("Can't fail"),
-            &self.request.id.0,
+            &self.request.id.0.x_only_public_key().0,
         )?;
 
         Ok(&self.request)

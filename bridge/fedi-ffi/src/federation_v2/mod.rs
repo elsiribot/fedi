@@ -37,14 +37,16 @@ use fedimint_core::{maybe_add_send_sync, Amount, PeerId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
     InternalPayState, LightningClientInit, LightningClientModule, LightningOperationMeta,
-    LnPayState, LnReceiveState, OutgoingLightningPayment, PayType,
+    LightningOperationMetaPay, LightningOperationMetaVariant, LnPayState, LnReceiveState,
+    OutgoingLightningPayment, PayType,
 };
 use fedimint_mint_client::{
     spendable_notes_to_operation_id, MintClientInit, MintClientModule, MintOperationMeta,
     MintOperationMetaVariants, OOBNotes, ReissueExternalNotesState,
 };
 use fedimint_wallet_client::{
-    DepositState, WalletClientInit, WalletClientModule, WalletOperationMeta, WithdrawState,
+    DepositState, WalletClientInit, WalletClientModule, WalletOperationMeta,
+    WalletOperationMetaVariant, WithdrawState,
 };
 use futures::{Future, StreamExt};
 use lightning_invoice::Bolt11Invoice;
@@ -101,6 +103,8 @@ pub struct FederationV2 {
     pub task_group: TaskGroup,
     pub operation_states:
         Arc<Mutex<HashMap<OperationId, Box<maybe_add_send_sync!(dyn Any + 'static)>>>>,
+    // DerivableSecret used for non-client usecases like LNURL and Nostr etc
+    pub secret: DerivableSecret,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -151,12 +155,18 @@ impl FederationV2 {
 
     /// Constructor which starts a bunch of async tasks and ensures username is
     /// saved to db (e.g. after recovery)
-    pub async fn new(ng: ClientArc, event_sink: EventSink, task_group: TaskGroup) -> Self {
+    pub async fn new(
+        ng: ClientArc,
+        event_sink: EventSink,
+        task_group: TaskGroup,
+        secret: DerivableSecret,
+    ) -> Self {
         let mut federation = Self {
             client: ng,
             event_sink,
             task_group,
             operation_states: Default::default(),
+            secret,
         };
         federation.subscribe_balance_updates().await;
         federation.poll_scheduled_backups().await;
@@ -183,14 +193,26 @@ impl FederationV2 {
                 serde_json::from_str(&config_string).context("invalid config")?;
             fedi_config
         };
+        // FIXME: should we just pass in the root mnemonic somehow?
         let client_root_secret = DerivableSecret::new_root(
             &root_mnemonic
                 .to_seed_normalized(&fedi_config.client_config.global.federation_id().to_string()),
             b"Fedi Salt",
         );
+        let bridge_root_secret = DerivableSecret::new_root(
+            &root_mnemonic
+                .to_seed_normalized(&fedi_config.client_config.global.federation_id().to_string()),
+            b"Fedi Bridge Salt",
+        );
         let client_builder = Self::build_client_builder(client_config, db).await?;
         let client = client_builder.build(client_root_secret).await?;
-        Ok(Self::new(client, event_sink, task_group.make_subgroup().await).await)
+        Ok(Self::new(
+            client,
+            event_sink,
+            task_group.make_subgroup().await,
+            bridge_root_secret,
+        )
+        .await)
     }
 
     pub async fn download_client_config(
@@ -350,7 +372,7 @@ impl FederationV2 {
         let (operation_id, address) = self
             .client
             .get_first_module::<WalletClientModule>()
-            .get_deposit_address(expires_at)
+            .get_deposit_address(expires_at, ())
             .await?;
 
         self.subscribe_deposit(operation_id, address.to_string(), expires_at)
@@ -539,11 +561,11 @@ impl FederationV2 {
         let OutgoingLightningPayment { payment_type, .. } = self
             .client
             .get_first_module::<LightningClientModule>()
-            .pay_bolt11_invoice(invoice.to_owned())
+            .pay_bolt11_invoice(invoice.to_owned(), ())
             .await?;
 
         let response = self
-            .subscibe_to_ln_pay(payment_type, invoice.clone())
+            .subscribe_to_ln_pay(payment_type, invoice.clone())
             .await?;
 
         Ok(response)
@@ -564,7 +586,7 @@ impl FederationV2 {
         let operation_id = self
             .client
             .get_first_module::<WalletClientModule>()
-            .withdraw(address, amount, fees)
+            .withdraw(address, amount, fees, ())
             .await?;
         let mut updates = self
             .client
@@ -653,7 +675,10 @@ impl FederationV2 {
             .ok_or(anyhow::anyhow!("Operation not found"))?;
         match operation.operation_module_kind() {
             LIGHTNING_OPERATION_TYPE => match operation.meta() {
-                LightningOperationMeta::Pay(pay_meta) => {
+                LightningOperationMeta {
+                    variant: LightningOperationMetaVariant::Pay(pay_meta),
+                    ..
+                } => {
                     let fed = self.clone();
                     let _ = self
                         .task_group
@@ -661,7 +686,7 @@ impl FederationV2 {
                         .spawn("subscribe_to_ln_pay", move |_| async move {
                             // FIXME: what happens if it fails?
                             if let Err(e) = fed
-                                .subscibe_to_ln_pay(
+                                .subscribe_to_ln_pay(
                                     PayType::Lightning(operation_id),
                                     pay_meta.invoice,
                                 )
@@ -672,7 +697,10 @@ impl FederationV2 {
                         })
                         .await;
                 }
-                LightningOperationMeta::Receive { invoice, .. } => {
+                LightningOperationMeta {
+                    variant: LightningOperationMetaVariant::Receive { invoice, .. },
+                    ..
+                } => {
                     let fed = self.clone();
                     let _ = self
                         .task_group
@@ -716,15 +744,18 @@ impl FederationV2 {
             WALLET_OPERATION_TYPE => {
                 let meta = operation.meta::<WalletOperationMeta>();
                 match meta {
-                    WalletOperationMeta::Deposit {
-                        address,
-                        expires_at,
+                    WalletOperationMeta {
+                        variant:
+                            WalletOperationMetaVariant::Deposit {
+                                address,
+                                expires_at,
+                            },
+                        ..
                     } => {
                         self.subscribe_deposit(operation_id, address.to_string(), expires_at)
                             .await?;
                     }
-                    WalletOperationMeta::Withdraw { .. }
-                    | WalletOperationMeta::RbfWithdraw { .. } => {
+                    _ => {
                         tracing::debug!(
                             "Can't subscribe to operation id: {}",
                             operation.operation_module_kind()
@@ -792,7 +823,7 @@ impl FederationV2 {
         Ok(())
     }
 
-    pub async fn subscibe_to_ln_pay(
+    pub async fn subscribe_to_ln_pay(
         &self,
         pay_type: PayType,
         _invoice: Bolt11Invoice,
@@ -812,7 +843,8 @@ impl FederationV2 {
                             InternalPayState::Preimage(preimage) => {
                                 updates.next().await;
                                 return Ok(RpcPayInvoiceResponse {
-                                    preimage: preimage.to_public_key()?.to_string(),
+                                    // FIXME: is this correct serialization?
+                                    preimage: hex::encode(&preimage.0),
                                 });
                             }
                             InternalPayState::RefundSuccess { .. } => {
@@ -1082,9 +1114,10 @@ impl FederationV2 {
         Ok(())
     }
 
+    // FIXME: get rid of this method and just access self.secret directly
     /// Get client root secret
     fn root_secret(&self) -> DerivableSecret {
-        self.client.external_secret()
+        self.secret.clone()
     }
 
     // /// Fetch mnemonic from database
@@ -1584,12 +1617,12 @@ impl FederationV2 {
 
                     match op.1.operation_module_kind() {
                         LIGHTNING_OPERATION_TYPE => match op.1.meta() {
-                            LightningOperationMeta::Pay(pay_meta) => Some(RpcTransaction {
+                            LightningOperationMetaVariant::Pay(LightningOperationMetaPay{ invoice, .. }) => Some(RpcTransaction {
                                 id: op.0.operation_id.to_string(),
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
                                 amount: RpcAmount(Amount {
-                                    msats: pay_meta.invoice.amount_milli_satoshis().unwrap(),
+                                    msats: invoice.amount_milli_satoshis().unwrap(),
                                 }),
                                 direction: RpcTransactionDirection::Send,
                                 notes,
@@ -1599,13 +1632,13 @@ impl FederationV2 {
                                     self.get_ln_pay_outcome(op.0.operation_id, op.1).await,
                                 ),
                                 lightning: Some(RpcLightningDetails {
-                                    invoice: pay_meta.invoice.to_string(),
+                                    invoice: invoice.to_string(),
                                     fee: None, // TODO: to be implemented on the fedimint side
                                 }),
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
                             }),
-                            LightningOperationMeta::Receive { invoice, .. } => {
+                            LightningOperationMetaVariant::Receive{ invoice, .. } => {
                                 let ln_state = RpcLnState::from_ln_recv_state(
                                     op.1.outcome::<LnReceiveState>(),
                                 );
@@ -1724,7 +1757,7 @@ impl FederationV2 {
                             }
                         }
                         WALLET_OPERATION_TYPE => match op.1.meta() {
-                            WalletOperationMeta::Deposit {
+                            WalletOperationMetaVariant::Deposit {
                                 address,
                                 expires_at,
                             } => {
@@ -1762,7 +1795,7 @@ impl FederationV2 {
                                     onchain_withdrawal_details: None,
                                 })
                             }
-                            WalletOperationMeta::Withdraw {
+                            WalletOperationMetaVariant::Withdraw {
                                 address: _,
                                 amount,
                                 fee,
@@ -1807,7 +1840,7 @@ impl FederationV2 {
                                 })
                             }
 
-                            WalletOperationMeta::RbfWithdraw { rbf: _, change: _ } => None,
+                            WalletOperationMetaVariant::RbfWithdraw { rbf: _, change: _ } => None,
                         },
                         _ => {
                             panic!(
