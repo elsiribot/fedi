@@ -73,6 +73,7 @@ const xmppChatClientManager = new XmppChatClientManager()
 
 const initialFederationChatState = {
     clientStatus: 'offline' as XmppClientStatus,
+    clientLastOnlineAt: 0,
     clientError: null as string | null,
     authenticatedMember: null as ChatMember | null,
     credentials: null as XmppCredentials | null,
@@ -164,11 +165,17 @@ export const chatSlice = createSlice({
         ) {
             const { federationId, status } = action.payload
             const chatState = getFederationChatState(state, federationId)
+            const oldStatus = chatState.clientStatus
             state[federationId] = {
                 ...chatState,
                 clientStatus: status,
                 // Reset error on successful connection
                 clientError: status === 'online' ? null : chatState.clientError,
+                // Update the last online time if we're transitioning out of online
+                clientLastOnlineAt:
+                    status !== 'online' && oldStatus === 'online'
+                        ? Date.now()
+                        : chatState.clientLastOnlineAt,
             }
         },
         setChatClientError(
@@ -1507,6 +1514,9 @@ export const selectAllChatGroupAffiliations = (s: CommonState) =>
 
 export const selectChatClientStatus = (s: CommonState) =>
     selectFederationChatState(s).clientStatus
+
+export const selectChatClientLastOnlineAt = (s: CommonState) =>
+    selectFederationChatState(s).clientLastOnlineAt
 
 export const selectChatLastReadMessageIds = (
     s: CommonState,
