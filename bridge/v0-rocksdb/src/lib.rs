@@ -7,7 +7,7 @@ use fedimint_core::{impl_db_lookup, impl_db_record};
 
 #[repr(u8)]
 enum BridgeDbPrefix {
-    RootSecret = 0x00,
+    RootMnemonicEntropy = 0x00,
     JoinedFederationsV0 = 0xb0,
     ClientConfig = 0xb1,
     XmppUsername = 0xb2,
@@ -115,10 +115,10 @@ impl_db_record!(
 );
 
 #[derive(Debug, Decodable, Encodable)]
-pub struct RootSecretKey;
+pub struct RootMnemonicEntropyKey;
 
 impl_db_record!(
-    key = RootSecretKey,
+    key = RootMnemonicEntropyKey,
     value = Vec<u8>,
-    db_prefix = BridgeDbPrefix::RootSecret,
+    db_prefix = BridgeDbPrefix::RootMnemonicEntropy,
 );

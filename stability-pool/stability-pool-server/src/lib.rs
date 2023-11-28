@@ -77,7 +77,7 @@ impl ServerModuleInit for StabilityPoolInit {
     }
 
     fn supported_api_versions(&self) -> SupportedModuleApiVersions {
-        SupportedModuleApiVersions::from_raw((1, 0), (1, 0), &[(0, 0)])
+        SupportedModuleApiVersions::from_raw((2, 0), (2, 0), &[(0, 0)])
     }
 
     async fn init(&self, args: &ServerModuleInitArgs<Self>) -> anyhow::Result<DynServerModule> {

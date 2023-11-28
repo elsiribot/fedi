@@ -1285,17 +1285,17 @@
         "nixpkgs-unstable": "nixpkgs-unstable_12"
       },
       "locked": {
-        "lastModified": 1700865212,
-        "narHash": "sha256-7H9/pYF81kGgMobQorbEYS0E7w2QPAOBQQ5XGhvJThQ=",
-        "ref": "shaurya/releases/v0.2/2023-11-24",
-        "rev": "1bf3dace5b978eb1f829a571a65c5b4200c2be0e",
-        "revCount": 5940,
+        "lastModified": 1701199370,
+        "narHash": "sha256-6QLGweqyOZa1V+Irlkd1TO1HFwm2aJU7JFS1eMxvSCI=",
+        "ref": "shaurya/releases/v0.2/2023-11-28",
+        "rev": "eaea3ab272bd39c36153203d643cb0ae3c129e7f",
+        "revCount": 5969,
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       },
       "original": {
-        "ref": "shaurya/releases/v0.2/2023-11-24",
-        "rev": "1bf3dace5b978eb1f829a571a65c5b4200c2be0e",
+        "ref": "shaurya/releases/v0.2/2023-11-28",
+        "rev": "eaea3ab272bd39c36153203d643cb0ae3c129e7f",
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       }
@@ -1394,17 +1394,17 @@
         "nixpkgs-unstable": "nixpkgs-unstable_14"
       },
       "locked": {
-        "lastModified": 1700865212,
-        "narHash": "sha256-7H9/pYF81kGgMobQorbEYS0E7w2QPAOBQQ5XGhvJThQ=",
-        "ref": "shaurya/releases/v0.2/2023-11-24",
-        "rev": "1bf3dace5b978eb1f829a571a65c5b4200c2be0e",
-        "revCount": 5940,
+        "lastModified": 1701199370,
+        "narHash": "sha256-6QLGweqyOZa1V+Irlkd1TO1HFwm2aJU7JFS1eMxvSCI=",
+        "ref": "shaurya/releases/v0.2/2023-11-28",
+        "rev": "eaea3ab272bd39c36153203d643cb0ae3c129e7f",
+        "revCount": 5969,
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       },
       "original": {
-        "ref": "shaurya/releases/v0.2/2023-11-24",
-        "rev": "1bf3dace5b978eb1f829a571a65c5b4200c2be0e",
+        "ref": "shaurya/releases/v0.2/2023-11-28",
+        "rev": "eaea3ab272bd39c36153203d643cb0ae3c129e7f",
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       }

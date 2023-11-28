@@ -9,6 +9,8 @@ use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey};
 use bitcoin::{Address, XOnlyPublicKey};
 use fedi_social_client::RecoveryId;
+use fedimint_bip39::Bip39RootSecretStrategy;
+use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::api::InviteCode as InviteCodeV2;
 use fedimint_core::core::OperationId;
 use fedimint_core::task::TaskGroup;
@@ -28,7 +30,7 @@ use tokio::sync::Mutex;
 use tracing::{error, info};
 use v0_rocksdb::{
     JoinedFederationV0, JoinedFederationV1, JoinedFederationV2, JoinedFederationsV0Prefix,
-    JoinedFederationsV1Prefix, JoinedFederationsV2Prefix, RootSecretKey,
+    JoinedFederationsV1Prefix, JoinedFederationsV2Prefix, RootMnemonicEntropyKey,
 };
 
 use super::event::{EventSink, SocialRecoveryEvent};
@@ -468,7 +470,7 @@ pub struct Bridge {
     pub task_group_v0: TaskGroupV0,
     pub task_group_v1: TaskGroupV1,
     pub task_group: TaskGroup,
-    root_secret: bip39::Mnemonic,
+    root_mnemonic: bip39::Mnemonic,
 }
 
 impl Bridge {
@@ -479,16 +481,14 @@ impl Bridge {
         // load v0 federations
         let db = storage.global_database_v0().await?;
         let mut dbtx = db.begin_transaction().await;
-        let root_secret = match dbtx.get_value(&RootSecretKey).await {
-            Some(secret) => {
-                bip39::Mnemonic::from_entropy(&secret).context("invalid root secret in database")?
-            }
+        let root_mnemonic = match dbtx.get_value(&RootMnemonicEntropyKey).await {
+            Some(entropy) => bip39::Mnemonic::from_entropy(&entropy)
+                .context("invalid root mnemonic entropy in database")?,
             None => {
-                let secret =
-                    bip39::Mnemonic::generate(12).context("unable to generate root secret")?;
-                dbtx.insert_new_entry(&RootSecretKey, &secret.to_entropy())
+                let mnemonic = Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
+                dbtx.insert_new_entry(&RootMnemonicEntropyKey, &mnemonic.to_entropy())
                     .await;
-                secret
+                mnemonic
             }
         };
         let v0_joined = dbtx
@@ -550,7 +550,7 @@ impl Bridge {
                         storage.federation_database_v2(&db_name.clone()).await?,
                         event_sink.clone(),
                         task_group.make_subgroup().await,
-                        root_secret.clone(),
+                        &root_mnemonic,
                         None,
                     )
                     .await?,
@@ -573,7 +573,7 @@ impl Bridge {
             task_group_v0,
             task_group_v1,
             task_group,
-            root_secret,
+            root_mnemonic,
         })
     }
 
@@ -632,7 +632,7 @@ impl Bridge {
             self.event_sink.clone(),
             TaskGroup::new(),
             &db_name,
-            self.root_secret.clone(),
+            &self.root_mnemonic,
         )
         .await?;
         let federation_id = federation.federation_id();
