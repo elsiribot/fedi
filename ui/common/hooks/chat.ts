@@ -19,6 +19,7 @@ import {
     setLastSeenPaymentUpdateId,
     setPushNotificationToken,
 } from '../redux'
+import { getLatestPaymentUpdate } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { useIsChatSupported } from './federation'
@@ -134,11 +135,12 @@ export function useUpdateLastMessageRead(
  */
 export function useUpdateLastPaymentUpdateRead(
     chatId: string,
-    latestPaymentUpdate: ChatMessage | null | undefined,
+    messages: ChatMessage[],
     pauseUpdates?: boolean,
 ) {
     const dispatch = useCommonDispatch()
     const federationId = useCommonSelector(selectActiveFederation)?.id
+    const latestPaymentUpdate = getLatestPaymentUpdate(messages)
 
     const messageId = latestPaymentUpdate?.id
     const updatedAt = latestPaymentUpdate?.payment?.updatedAt

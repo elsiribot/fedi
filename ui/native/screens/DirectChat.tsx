@@ -16,10 +16,7 @@ import {
     selectChatMessages,
     sendDirectMessage,
 } from '@fedi/common/redux'
-import {
-    getLatestPaymentUpdate,
-    makeMessageGroups,
-} from '@fedi/common/utils/chat'
+import { makeMessageGroups } from '@fedi/common/utils/chat'
 
 import { fedimint } from '../bridge'
 import MessageInput from '../components/feature/chat/MessageInput'
@@ -66,12 +63,7 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
         isFocused !== true,
     )
 
-    const lastPaymentUpdate = getLatestPaymentUpdate(messages)
-    useUpdateLastPaymentUpdateRead(
-        memberId,
-        lastPaymentUpdate,
-        isFocused !== true,
-    )
+    useUpdateLastPaymentUpdateRead(memberId, messages, isFocused !== true)
 
     const handleSend = useCallback(
         async (messageText: string) => {
