@@ -25,6 +25,7 @@ import { useAppSelector } from '../../../state/hooks'
 import { useHasBottomTabsNavigation } from '../../../utils/hooks'
 import Avatar, { AvatarSize } from '../../ui/Avatar'
 import SvgImage from '../../ui/SvgImage'
+import { ChatConnectionBadge } from '../chat/ChatConnectionBadge'
 import { OmniActions } from './OmniActions'
 import { OmniInputAction } from './OmniInput'
 import { OmniMemberSearchList } from './OmniMemberSearchList'
@@ -167,6 +168,7 @@ export const OmniMemberSearch: React.FC<Props> = ({
                 )}
             </SafeAreaView>
             <View style={style.content}>{content}</View>
+            <ChatConnectionBadge hide={!query} offset={80} noSafeArea />
         </KeyboardAvoidingView>
     )
 }

@@ -13,6 +13,7 @@ import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import { NuxTooltip } from '../../ui/NuxTooltip'
 import SvgImage from '../../ui/SvgImage'
+import { ChatConnectionBadge } from './ChatConnectionBadge'
 
 const ChatHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
@@ -25,63 +26,68 @@ const ChatHeader: React.FC<{}> = () => {
         useNuxStep('hasViewedMemberQr')
 
     return (
-        <Header
-            inline
-            containerStyle={styles(theme).container}
-            leftContainerStyle={{ flex: 2 }}
-            headerLeft={
-                <Text h2 medium>
-                    {t('words.chat')}
-                </Text>
-            }
-            centerContainerStyle={{ flex: 2 }}
-            headerRight={
-                <>
-                    <Pressable
-                        disabled={websocketIsHealthy}
-                        onPress={() => {
-                            toast?.show(
-                                t('errors.chat-connection-unhealthy'),
-                                3000,
-                            )
-                        }}
-                        hitSlop={5}>
-                        <SvgImage
-                            name="Recovery"
-                            color={theme.colors.primaryLight}
-                            containerStyle={{
-                                opacity: websocketIsHealthy ? 0 : 0.2,
+        <>
+            <Header
+                inline
+                containerStyle={styles(theme).container}
+                leftContainerStyle={{ flex: 2 }}
+                headerLeft={
+                    <Text h2 medium>
+                        {t('words.chat')}
+                    </Text>
+                }
+                centerContainerStyle={{ flex: 2 }}
+                headerRight={
+                    <>
+                        <Pressable
+                            disabled={websocketIsHealthy}
+                            onPress={() => {
+                                toast?.show(
+                                    t('errors.chat-connection-unhealthy'),
+                                    3000,
+                                )
                             }}
-                        />
-                    </Pressable>
-                    {websocketIsHealthy && (
-                        <>
-                            <Pressable
-                                onPress={() => {
-                                    navigation.navigate('MemberQrCode')
-                                    completeViewedMemberQr()
+                            hitSlop={5}>
+                            <SvgImage
+                                name="Recovery"
+                                color={theme.colors.primaryLight}
+                                containerStyle={{
+                                    opacity: websocketIsHealthy ? 0 : 0.2,
                                 }}
-                                hitSlop={5}>
-                                <SvgImage
-                                    name="Qr"
-                                    color={theme.colors.primary}
-                                />
-                            </Pressable>
-                            <NuxTooltip
-                                delay={600}
-                                shouldShow={isChatEmpty && !hasViewedMemberQr}
-                                orientation="below"
-                                side="right"
-                                text="Your username"
-                                horizontalOffset={12}
-                                verticalOffset={32}
                             />
-                        </>
-                    )}
-                </>
-            }
-            rightContainerStyle={styles(theme).rightContainer}
-        />
+                        </Pressable>
+                        {websocketIsHealthy && (
+                            <>
+                                <Pressable
+                                    onPress={() => {
+                                        navigation.navigate('MemberQrCode')
+                                        completeViewedMemberQr()
+                                    }}
+                                    hitSlop={5}>
+                                    <SvgImage
+                                        name="Qr"
+                                        color={theme.colors.primary}
+                                    />
+                                </Pressable>
+                                <NuxTooltip
+                                    delay={600}
+                                    shouldShow={
+                                        isChatEmpty && !hasViewedMemberQr
+                                    }
+                                    orientation="below"
+                                    side="right"
+                                    text="Your username"
+                                    horizontalOffset={12}
+                                    verticalOffset={32}
+                                />
+                            </>
+                        )}
+                    </>
+                }
+                rightContainerStyle={styles(theme).rightContainer}
+            />
+            <ChatConnectionBadge offset={14} noSafeArea />
+        </>
     )
 }
 
