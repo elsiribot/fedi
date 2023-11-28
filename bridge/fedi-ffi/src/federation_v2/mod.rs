@@ -42,7 +42,7 @@ use fedimint_ln_client::{
 };
 use fedimint_mint_client::{
     spendable_notes_to_operation_id, MintClientInit, MintClientModule, MintOperationMeta,
-    MintOperationMetaVariants, OOBNotes, ReissueExternalNotesState,
+    MintOperationMetaVariant, OOBNotes, ReissueExternalNotesState,
 };
 use fedimint_wallet_client::{
     DepositState, WalletClientInit, WalletClientModule, WalletOperationMeta,
@@ -717,7 +717,7 @@ impl FederationV2 {
             MINT_OPERATION_TYPE => {
                 let meta = operation.meta::<MintOperationMeta>();
                 match meta.variant {
-                    MintOperationMetaVariants::SpendOOB { .. } => {
+                    MintOperationMetaVariant::SpendOOB { .. } => {
                         let fed = self.clone();
                         let _ = self
                             .task_group
@@ -728,7 +728,7 @@ impl FederationV2 {
                             })
                             .await;
                     }
-                    MintOperationMetaVariants::Reissuance { .. } => {
+                    MintOperationMetaVariant::Reissuance { .. } => {
                         let fed = self.clone();
                         let _ = self
                             .task_group
@@ -1711,7 +1711,7 @@ impl FederationV2 {
                         MINT_OPERATION_TYPE => {
                             let mint_meta: MintOperationMeta = op.1.meta();
                             match mint_meta.variant {
-                                MintOperationMetaVariants::Reissuance { .. } => {
+                                MintOperationMetaVariant::Reissuance { .. } => {
                                     let internal = serde_json::from_value::<EcashReceiveMetadata>(
                                         mint_meta.extra_meta,
                                     )
@@ -1735,7 +1735,7 @@ impl FederationV2 {
                                         None
                                     }
                                 }
-                                MintOperationMetaVariants::SpendOOB {
+                                MintOperationMetaVariant::SpendOOB {
                                     requested_amount, ..
                                 } => Some(RpcTransaction {
                                     id: op.0.operation_id.to_string(),
