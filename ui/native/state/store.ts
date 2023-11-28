@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { configureStore } from '@reduxjs/toolkit'
 import { AppState as RNAppState } from 'react-native'
 
@@ -11,6 +10,7 @@ import {
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
+import { storage } from '../utils/storage'
 
 const log = makeLog('native/state/store')
 
@@ -27,11 +27,7 @@ export type AppDispatch = typeof store.dispatch
 
 export function initializeNativeStore() {
     // Common initialization behavior
-    const unsubscribe = initializeCommonStore(
-        store.dispatch,
-        fedimint,
-        AsyncStorage,
-    )
+    const unsubscribe = initializeCommonStore(store.dispatch, fedimint, storage)
 
     // Whenever the app is brought back into the foreground, refresh prices.
     const changeSubscription = RNAppState.addEventListener('change', state => {
