@@ -5,9 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet } from 'react-native'
 
 import { useNuxStep } from '@fedi/common/hooks/nux'
-import { selectIsChatEmpty, selectWebsocketIsHealthy } from '@fedi/common/redux'
+import { selectIsChatEmpty } from '@fedi/common/redux'
 
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
@@ -19,8 +18,6 @@ const ChatHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
-    const { toast } = useEnvironmentContext().state
-    const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
     const isChatEmpty = useAppSelector(selectIsChatEmpty)
     const [hasViewedMemberQr, completeViewedMemberQr] =
         useNuxStep('hasViewedMemberQr')
@@ -40,48 +37,23 @@ const ChatHeader: React.FC<{}> = () => {
                 headerRight={
                     <>
                         <Pressable
-                            disabled={websocketIsHealthy}
                             onPress={() => {
-                                toast?.show(
-                                    t('errors.chat-connection-unhealthy'),
-                                    3000,
-                                )
+                                navigation.navigate('MemberQrCode')
+                                completeViewedMemberQr()
                             }}
                             hitSlop={5}>
-                            <SvgImage
-                                name="Recovery"
-                                color={theme.colors.primaryLight}
-                                containerStyle={{
-                                    opacity: websocketIsHealthy ? 0 : 0.2,
-                                }}
-                            />
+                            <SvgImage name="Qr" color={theme.colors.primary} />
                         </Pressable>
-                        {websocketIsHealthy && (
-                            <>
-                                <Pressable
-                                    onPress={() => {
-                                        navigation.navigate('MemberQrCode')
-                                        completeViewedMemberQr()
-                                    }}
-                                    hitSlop={5}>
-                                    <SvgImage
-                                        name="Qr"
-                                        color={theme.colors.primary}
-                                    />
-                                </Pressable>
-                                <NuxTooltip
-                                    delay={600}
-                                    shouldShow={
-                                        isChatEmpty && !hasViewedMemberQr
-                                    }
-                                    orientation="below"
-                                    side="right"
-                                    text="Your username"
-                                    horizontalOffset={12}
-                                    verticalOffset={32}
-                                />
-                            </>
-                        )}
+
+                        <NuxTooltip
+                            delay={600}
+                            shouldShow={isChatEmpty && !hasViewedMemberQr}
+                            orientation="below"
+                            side="right"
+                            text="Your username"
+                            horizontalOffset={12}
+                            verticalOffset={32}
+                        />
                     </>
                 }
                 rightContainerStyle={styles(theme).rightContainer}
