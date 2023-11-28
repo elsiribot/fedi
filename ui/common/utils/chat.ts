@@ -151,6 +151,25 @@ export const getLatestMessage = <T extends ChatMessage>(
 }
 
 /**
+ * Given a list of messages, return the one with the latest payment update
+ */
+export const getLatestPaymentUpdate = <T extends ChatMessage>(
+    messages: T[],
+): T | null => {
+    // ignore messages without payments
+    const messagesWithPayments = messages.filter(m => m.payment)
+    return (
+        messagesWithPayments.reduce(
+            (prev, msg) =>
+                (prev.payment?.updatedAt || 0) > (msg.payment?.updatedAt || 0)
+                    ? prev
+                    : msg,
+            messagesWithPayments[0],
+        ) || null
+    )
+}
+
+/**
  * Given a list of messages, return a map keyed by the chat ID and with a value
  * of the latest message ID in that chat.
  */
@@ -167,6 +186,34 @@ export const getLatestMessageIdsForChats = (
         return readMsgIds
     }, {} as Record<Chat['id'], string | undefined>)
     return lastReadMessageIds
+}
+
+/**
+ * Given a list of messages, return a map keyed by the chat ID and with a value
+ * of the latest payment update message ID in that chat.
+ */
+export const getLatestPaymentUpdateIdsForChats = (
+    messages: ChatMessage[],
+    myId: string,
+) => {
+    const messagesWithPayments = messages.filter(m => m.payment)
+
+    const sortedMessages = orderBy(
+        messagesWithPayments,
+        [message => message.payment?.updatedAt],
+        ['desc'],
+    )
+    const lastReadPaymentUpdateIds = sortedMessages.reduce(
+        (readMsgIds, msg) => {
+            const chatId = getChatInfoFromMessage(msg, myId).id
+            if (!readMsgIds[chatId]) {
+                readMsgIds[chatId] = `${msg.id}_${msg.payment?.updatedAt || 0}`
+            }
+            return readMsgIds
+        },
+        {} as Record<Chat['id'], string | undefined>,
+    )
+    return lastReadPaymentUpdateIds
 }
 
 /**

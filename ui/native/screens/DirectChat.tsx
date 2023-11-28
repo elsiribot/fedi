@@ -8,6 +8,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import {
     useChatMember,
     useUpdateLastMessageRead,
+    useUpdateLastPaymentUpdateRead,
 } from '@fedi/common/hooks/chat'
 import {
     selectActiveFederationId,
@@ -55,12 +56,14 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
         [messages],
     )
 
-    // Use this hook only if the screen is in focus
+    // Use these hooks only if the screen is in focus, otherwise use pauseUpdates
     useUpdateLastMessageRead(
         memberId,
         messageCollections[0]?.[0]?.[0],
         isFocused !== true,
     )
+
+    useUpdateLastPaymentUpdateRead(memberId, messages, isFocused !== true)
 
     const handleSend = useCallback(
         async (messageText: string) => {

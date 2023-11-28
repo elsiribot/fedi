@@ -6,11 +6,17 @@ import {
     AnyStoredState,
     LatestStoredState,
     StorageApi,
+    StoredStateV10,
     StoredStateV2,
     StoredStateV3,
     StoredStateV4,
 } from '../types/storage'
-import { getLatestMessageIdsForChats, getLatestMessage } from './chat'
+import {
+    getLatestMessageIdsForChats,
+    getLatestMessage,
+    getLatestPaymentUpdate,
+    getLatestPaymentUpdateIdsForChats,
+} from './chat'
 
 export const STATE_STORAGE_KEY = 'fedi:state'
 
@@ -19,7 +25,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
-        version: 9,
+        version: 10,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
@@ -44,7 +50,11 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
                         members: chatState.membersSeen,
                         lastFetchedMessageId: chatState.lastFetchedMessageId,
                         lastReadMessageIds: chatState.lastReadMessageIds,
+                        lastReadPaymentUpdateIds:
+                            chatState.lastReadPaymentUpdateIds,
                         lastSeenMessageId: chatState.lastSeenMessageId,
+                        lastSeenPaymentUpdateId:
+                            chatState.lastSeenPaymentUpdateId,
                     }
                 }
                 return stored
@@ -108,6 +118,16 @@ export function hasStorageStateChanged(
         ])
         keysetsToCheck.push(['chat', activeFederationId, 'lastReadMessageIds'])
         keysetsToCheck.push(['chat', activeFederationId, 'lastSeenMessageId'])
+        keysetsToCheck.push([
+            'chat',
+            activeFederationId,
+            'lastSeenPaymentUpdateId',
+        ])
+        keysetsToCheck.push([
+            'chat',
+            activeFederationId,
+            'lastReadPaymentUpdateIds',
+        ])
     }
 
     for (const keysToCheck of keysetsToCheck) {
@@ -274,6 +294,45 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
             ...migrationState,
             version: 9,
             stableBalanceEnabled: false,
+        }
+    }
+
+    // Version 9 -> 10
+    if (migrationState.version === 9) {
+        const oldChat = migrationState.chat
+        const newChat = Object.entries(oldChat).reduce(
+            (prevChat, [federationId, chatState]) => {
+                // Add lastSeenPaymentUpdateId to chat state. Initiailize it with every payment
+                // update considered "seen" by setting the message ID of its latest payment update
+                if (!chatState) return prevChat
+                const myId = chatState.authenticatedMember?.id
+                if (!myId) return prevChat
+
+                const lastReadPaymentUpdateIds =
+                    getLatestPaymentUpdateIdsForChats(chatState.messages, myId)
+                const lastSeenPaymentUpdate = getLatestPaymentUpdate(
+                    chatState.messages,
+                )
+                const lastSeenPaymentUpdateId = lastSeenPaymentUpdate?.id
+                    ? `${lastSeenPaymentUpdate?.id}_${
+                          lastSeenPaymentUpdate?.payment?.updatedAt || 0
+                      }`
+                    : null
+                return {
+                    ...prevChat,
+                    [federationId]: {
+                        ...chatState,
+                        lastReadPaymentUpdateIds,
+                        lastSeenPaymentUpdateId,
+                    },
+                }
+            },
+            {} as StoredStateV10['chat'],
+        )
+        migrationState = {
+            ...migrationState,
+            version: 10,
+            chat: newChat,
         }
     }
 

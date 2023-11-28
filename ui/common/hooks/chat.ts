@@ -11,11 +11,15 @@ import {
     selectChatClientStatus,
     selectChatMember,
     selectLatestChatMessage,
+    selectLatestPaymentUpdate,
     selectPushNotificationToken,
     setLastReadMessageId,
+    setLastReadPaymentUpdateId,
     setLastSeenMessageId,
+    setLastSeenPaymentUpdateId,
     setPushNotificationToken,
 } from '../redux'
+import { getLatestPaymentUpdate } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { useIsChatSupported } from './federation'
@@ -63,8 +67,8 @@ export function useChatMemberSearch(members: ChatMember[]) {
 }
 
 /**
- * Automatically dispatch an update to the last message seen while a component
- * using this hook is mounted.
+ * Automatically dispatch an update to the last message seen and last payment-update
+ * seen while a component using this hook is mounted.
  *
  * the pauseUpdates param is used by the native app since components remain
  * mounted even when the screen is not in focus. the navigation library
@@ -74,6 +78,7 @@ export function useUpdateLastMessageSeen(pauseUpdates?: boolean) {
     const dispatch = useCommonDispatch()
     const federationId = useCommonSelector(selectActiveFederation)?.id
     const latestMessage = useCommonSelector(selectLatestChatMessage)
+    const latestPaymentUpdate = useCommonSelector(selectLatestPaymentUpdate)
 
     useEffect(() => {
         if (!latestMessage || !federationId || pauseUpdates) return
@@ -84,6 +89,17 @@ export function useUpdateLastMessageSeen(pauseUpdates?: boolean) {
             }),
         )
     }, [dispatch, federationId, latestMessage, pauseUpdates])
+
+    useEffect(() => {
+        if (!latestPaymentUpdate || !federationId || pauseUpdates) return
+        dispatch(
+            setLastSeenPaymentUpdateId({
+                federationId,
+                messageId: latestPaymentUpdate.id,
+                updatedAt: latestPaymentUpdate.payment?.updatedAt,
+            }),
+        )
+    }, [dispatch, federationId, latestPaymentUpdate, pauseUpdates])
 }
 
 /**
@@ -107,6 +123,46 @@ export function useUpdateLastMessageRead(
         if (!federationId || !messageId || pauseUpdates) return
         dispatch(setLastReadMessageId({ federationId, chatId, messageId }))
     }, [dispatch, chatId, federationId, latestMessage, messageId, pauseUpdates])
+}
+
+/**
+ * Automatically dispatch an update to the last payment update read in a chat
+ * while a component using this hook is mounted.
+ *
+ * the pauseUpdates param is used by the native app since components remain
+ * mounted even when the screen is not in focus. the navigation library
+ * returns isFocused = false for any screen using this hook and we can pause it
+ */
+export function useUpdateLastPaymentUpdateRead(
+    chatId: string,
+    messages: ChatMessage[],
+    pauseUpdates?: boolean,
+) {
+    const dispatch = useCommonDispatch()
+    const federationId = useCommonSelector(selectActiveFederation)?.id
+    const latestPaymentUpdate = getLatestPaymentUpdate(messages)
+
+    const messageId = latestPaymentUpdate?.id
+    const updatedAt = latestPaymentUpdate?.payment?.updatedAt
+    useEffect(() => {
+        if (!federationId || !messageId || pauseUpdates) return
+        dispatch(
+            setLastReadPaymentUpdateId({
+                federationId,
+                chatId,
+                messageId,
+                updatedAt,
+            }),
+        )
+    }, [
+        dispatch,
+        chatId,
+        federationId,
+        latestPaymentUpdate,
+        messageId,
+        updatedAt,
+        pauseUpdates,
+    ])
 }
 
 // This hook sets a given device token to be published to the XMPP server

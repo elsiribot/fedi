@@ -1,8 +1,8 @@
 import type { Status } from '@xmpp/connection'
 
+import { RpcResponse } from './bindings'
 import type { Invoice } from './fedimint'
 import type { MSats } from './units'
-import { RpcResponse } from './bindings'
 
 export enum ChatType {
     direct = 'direct',
@@ -36,6 +36,8 @@ export interface Chat {
 export interface ChatWithLatestMessage extends Chat {
     latestMessage?: ChatMessage
     hasNewMessages: boolean
+    latestPaymentUpdate?: ChatMessage
+    hasNewPaymentUpdates: boolean
 }
 
 export enum ChatMessageStatus {
@@ -120,7 +122,7 @@ export interface ChatGroupSettings {
 
 export type XmppClientStatus = Status
 
-export type XmppCredentials = RpcResponse<'xmppCredentials'>;
+export type XmppCredentials = RpcResponse<'xmppCredentials'>
 
 export interface XmppConnectionOptions {
     // The domain where the Prosody chat server is hosted

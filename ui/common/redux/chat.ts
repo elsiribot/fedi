@@ -8,6 +8,7 @@ import {
     isAnyOf,
 } from '@reduxjs/toolkit'
 import { xml } from '@xmpp/client'
+import { uniq } from 'lodash'
 import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
 import orderBy from 'lodash/orderBy'
@@ -47,6 +48,7 @@ import { XmppChatClient, XmppChatClientManager } from '../utils/XmppChatClient'
 import {
     getChatInfoFromMessage,
     getLatestMessage,
+    getLatestPaymentUpdate,
     makePaymentUpdatedAt,
 } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
@@ -80,7 +82,9 @@ const initialFederationChatState = {
     membersSeen: [] as ChatMember[],
     lastFetchedMessageId: null as string | null,
     lastReadMessageIds: {} as Record<Chat['id'], string | undefined>,
+    lastReadPaymentUpdateIds: {} as Record<Chat['id'], string | undefined>,
     lastSeenMessageId: null as string | null,
+    lastSeenPaymentUpdateId: null as string | null,
     encryptionKeys: null as Keypair | null,
     pushNotificationToken: null as string | null,
     websocketIsHealthy: false as boolean,
@@ -335,6 +339,25 @@ export const chatSlice = createSlice({
                 },
             }
         },
+        setLastReadPaymentUpdateId(
+            state,
+            action: FederationPayloadAction<{
+                chatId: string
+                messageId: string
+                updatedAt: number | undefined
+            }>,
+        ) {
+            const { federationId, chatId, messageId, updatedAt } =
+                action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                lastReadPaymentUpdateIds: {
+                    ...federation.lastReadPaymentUpdateIds,
+                    [chatId]: `${messageId}_${updatedAt || 0}`,
+                },
+            }
+        },
         setLastSeenMessageId(
             state,
             action: FederationPayloadAction<{ messageId: string }>,
@@ -344,6 +367,20 @@ export const chatSlice = createSlice({
             state[federationId] = {
                 ...federation,
                 lastSeenMessageId: messageId,
+            }
+        },
+        setLastSeenPaymentUpdateId(
+            state,
+            action: FederationPayloadAction<{
+                messageId: string
+                updatedAt: number | undefined
+            }>,
+        ) {
+            const { federationId, messageId, updatedAt } = action.payload
+            const federation = getFederationChatState(state, federationId)
+            state[federationId] = {
+                ...federation,
+                lastSeenPaymentUpdateId: `${messageId}_${updatedAt || 0}`,
             }
         },
         setWebsocketIsHealthy(
@@ -458,7 +495,11 @@ export const chatSlice = createSlice({
                         membersSeen: chatState.members,
                         lastFetchedMessageId: chatState.lastFetchedMessageId,
                         lastReadMessageIds: chatState.lastReadMessageIds,
+                        lastReadPaymentUpdateIds:
+                            chatState.lastReadPaymentUpdateIds,
                         lastSeenMessageId: chatState.lastSeenMessageId,
+                        lastSeenPaymentUpdateId:
+                            chatState.lastSeenPaymentUpdateId,
                     }
                 },
             )
@@ -515,7 +556,9 @@ export const {
     setChatEncryptionKeys,
     setLastFetchedMessageId,
     setLastReadMessageId,
+    setLastReadPaymentUpdateId,
     setLastSeenMessageId,
+    setLastSeenPaymentUpdateId,
     setPushNotificationToken,
     setWebsocketIsHealthy,
     resetAuthenticatedMember,
@@ -1451,8 +1494,14 @@ export const selectChatClientStatus = (s: CommonState) =>
 export const selectChatLastReadMessageIds = (s: CommonState) =>
     selectFederationChatState(s).lastReadMessageIds
 
+export const selectChatLastReadPaymentUpdateIds = (s: CommonState) =>
+    selectFederationChatState(s).lastReadPaymentUpdateIds
+
 export const selectChatLastSeenMessageId = (s: CommonState) =>
     selectFederationChatState(s).lastSeenMessageId
+
+export const selectChatLastSeenPaymentUpdateId = (s: CommonState) =>
+    selectFederationChatState(s).lastSeenPaymentUpdateId
 
 export const selectPushNotificationToken = (s: CommonState) =>
     selectFederationChatState(s).pushNotificationToken
@@ -1504,6 +1553,11 @@ export const selectLatestChatMessage = createSelector(
     messages => getLatestMessage(messages),
 )
 
+export const selectLatestPaymentUpdate = createSelector(
+    selectAllChatMessages,
+    messages => getLatestPaymentUpdate(messages),
+)
+
 export const selectOrderedChatMessages = createSelector(
     selectAllChatMessages,
     messages => orderBy(messages, 'sentAt', 'desc'),
@@ -1515,7 +1569,15 @@ export const selectOrderedChatList = createSelector(
     selectChatGroupMap,
     selectAuthenticatedMember,
     selectChatLastReadMessageIds,
-    (messages, memberMap, groupMap, me, lastReadMessageIds) => {
+    selectChatLastReadPaymentUpdateIds,
+    (
+        messages,
+        memberMap,
+        groupMap,
+        me,
+        lastReadMessageIds,
+        lastReadPaymentUpdateIds,
+    ) => {
         const chatMap: Record<string, ChatWithLatestMessage> = {}
 
         // First assemble chats from messages
@@ -1551,12 +1613,40 @@ export const selectOrderedChatList = createSelector(
                     type,
                     latestMessage: m,
                     hasNewMessages: lastReadMessageIds[id] !== m.id,
+                    hasNewPaymentUpdates: false,
                     broadcastOnly,
+                }
+                if (m.payment) {
+                    chatMap[id] = {
+                        ...chatMap[id],
+                        latestPaymentUpdate: m,
+                        hasNewPaymentUpdates:
+                            lastReadPaymentUpdateIds[id] !==
+                            `${m.id}_${m.payment.updatedAt}`,
+                    }
                 }
             } else {
                 chatMap[id] = {
                     ...chatMap[id],
-                    members: [...chatMap[id].members, ...members],
+                    members: uniq([...chatMap[id].members, ...members]),
+                }
+                if (m.payment) {
+                    const { latestPaymentUpdate } = chatMap[id]
+                    const latest =
+                        (m.payment?.updatedAt || 0) >
+                        (latestPaymentUpdate?.payment?.updatedAt || 0)
+                            ? m
+                            : latestPaymentUpdate
+
+                    if (latest) {
+                        chatMap[id] = {
+                            ...chatMap[id],
+                            latestPaymentUpdate: latest,
+                            hasNewPaymentUpdates:
+                                lastReadPaymentUpdateIds[id] !==
+                                `${latest.id}_${latest.payment?.updatedAt}`,
+                        }
+                    }
                 }
             }
         })
@@ -1571,6 +1661,7 @@ export const selectOrderedChatList = createSelector(
                 type: ChatType.group,
                 members: [],
                 hasNewMessages: false,
+                hasNewPaymentUpdates: false,
                 broadcastOnly: !!group.broadcastOnly,
             }
         })
@@ -1678,6 +1769,16 @@ export const selectHasUnseenMessages = createSelector(
     selectChatLastSeenMessageId,
     (latestMessage, lastSeenMessageId) =>
         !!latestMessage && latestMessage.id !== lastSeenMessageId,
+)
+
+export const selectHasUnseenPaymentUpdates = createSelector(
+    selectLatestPaymentUpdate,
+    selectChatLastSeenPaymentUpdateId,
+    (latestPaymentUpdate, lastSeenPaymentUpdateId) =>
+        !!latestPaymentUpdate &&
+        `${latestPaymentUpdate.id}_${
+            latestPaymentUpdate.payment?.updatedAt || 0
+        }` !== lastSeenPaymentUpdateId,
 )
 
 export const selectChatGroupRole = createSelector(
