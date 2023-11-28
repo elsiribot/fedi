@@ -551,6 +551,7 @@ export class XmppChatClient {
         message: ChatMessage,
         senderKeys: Keypair,
         updatePayment: boolean,
+        sendPushNotification?: boolean,
     ) {
         try {
             const { jid } = this.getQueryProperties()
@@ -564,6 +565,7 @@ export class XmppChatClient {
                     senderKeys,
                     recipientPublicKey: { hex: recipientPubkey },
                     updatePayment,
+                    sendPushNotification,
                 }),
             )
 
