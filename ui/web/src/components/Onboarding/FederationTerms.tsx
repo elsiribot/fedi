@@ -22,7 +22,9 @@ export const FederationTerms: React.FC = () => {
     const isChatSupported = useIsChatSupported()
     const [hasTermsLoaded, setHasTermsLoaded] = useState(false)
 
-    if (!activeFederation) return null
+    if (!activeFederation) {
+        return <Redirect path="/onboarding/welcome" />
+    }
 
     const tosUrl = getFederationTosUrl(activeFederation.meta)
 
