@@ -1697,7 +1697,7 @@ export const selectOrderedChatList = createSelector(
  * takes in an argument of the number to return, defaults to 4.
  */
 export const selectRecentChatMembers = createSelector(
-    selectOrderedChatMessages,
+    (s: CommonState) => selectOrderedChatMessages(s),
     selectChatMemberMap,
     selectAuthenticatedMember,
     (_: CommonState, limit?: number) => limit || 4,
