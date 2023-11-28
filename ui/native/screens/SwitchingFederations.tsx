@@ -4,7 +4,6 @@ import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 
 import {
-    disconnectChat,
     selectActiveFederation,
     setActiveFederationId,
 } from '@fedi/common/redux'
@@ -35,14 +34,6 @@ const SwitchingFederations: React.FC<Props> = ({
             previousActiveFederation &&
             federationId !== previousActiveFederation?.id
         ) {
-            // TODO: Try maintaining multiple connected chat clients across
-            // multiple federations and see if it operates smoothly
-            // For now we disconnect chat for non-active federations...
-            dispatch(
-                disconnectChat({
-                    federationId: previousActiveFederation?.id,
-                }),
-            )
             dispatch(setActiveFederationId(federationId))
             navigation.reset({
                 index: 0,

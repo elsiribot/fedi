@@ -17,6 +17,7 @@ import { v4 as uuidv4 } from 'uuid'
 import {
     CommonState,
     selectActiveFederation,
+    selectActiveFederationId,
     selectFederationMetadata,
     selectFederations,
 } from '.'
@@ -1461,8 +1462,14 @@ async function getOrFetchMemberPubkey(
 
 /*** Selectors ***/
 
-const selectFederationChatState = (s: CommonState) =>
-    getFederationChatState(s.chat, selectActiveFederation(s)?.id || '')
+const selectFederationChatState = (
+    s: CommonState,
+    federationId?: Federation['id'] | undefined,
+) =>
+    getFederationChatState(
+        s.chat,
+        federationId || selectActiveFederation(s)?.id || '',
+    )
 
 export const selectChatCredentials = (s: CommonState) =>
     selectFederationChatState(s).credentials
@@ -1473,8 +1480,10 @@ export const selectChatEncryptionKeys = (s: CommonState) =>
 export const selectAuthenticatedMember = (s: CommonState) =>
     selectFederationChatState(s).authenticatedMember
 
-export const selectAllChatMessages = (s: CommonState) =>
-    selectFederationChatState(s).messages
+export const selectAllChatMessages = (
+    s: CommonState,
+    federationId?: Federation['id'],
+) => selectFederationChatState(s, federationId).messages
 
 export const selectAllChatMembers = (s: CommonState) =>
     selectFederationChatState(s).membersSeen
@@ -1491,17 +1500,25 @@ export const selectAllChatGroupAffiliations = (s: CommonState) =>
 export const selectChatClientStatus = (s: CommonState) =>
     selectFederationChatState(s).clientStatus
 
-export const selectChatLastReadMessageIds = (s: CommonState) =>
-    selectFederationChatState(s).lastReadMessageIds
+export const selectChatLastReadMessageIds = (
+    s: CommonState,
+    federationId?: Federation['id'],
+) => selectFederationChatState(s, federationId).lastReadMessageIds
 
-export const selectChatLastReadPaymentUpdateIds = (s: CommonState) =>
-    selectFederationChatState(s).lastReadPaymentUpdateIds
+export const selectChatLastReadPaymentUpdateIds = (
+    s: CommonState,
+    federationId?: Federation['id'],
+) => selectFederationChatState(s, federationId).lastReadPaymentUpdateIds
 
-export const selectChatLastSeenMessageId = (s: CommonState) =>
-    selectFederationChatState(s).lastSeenMessageId
+export const selectChatLastSeenMessageId = (
+    s: CommonState,
+    federationId?: Federation['id'],
+) => selectFederationChatState(s, federationId).lastSeenMessageId
 
-export const selectChatLastSeenPaymentUpdateId = (s: CommonState) =>
-    selectFederationChatState(s).lastSeenPaymentUpdateId
+export const selectChatLastSeenPaymentUpdateId = (
+    s: CommonState,
+    federationId?: Federation['id'],
+) => selectFederationChatState(s, federationId).lastSeenPaymentUpdateId
 
 export const selectPushNotificationToken = (s: CommonState) =>
     selectFederationChatState(s).pushNotificationToken
@@ -1718,7 +1735,7 @@ export const selectChat = createSelector(
 
 export const selectChatMessages = createSelector(
     selectAuthenticatedMember,
-    selectAllChatMessages,
+    (s: CommonState) => selectAllChatMessages(s),
     (_: CommonState, chatId: Chat['id']) => chatId,
     (me, messages, chatId) =>
         messages.filter(
@@ -1779,6 +1796,23 @@ export const selectHasUnseenPaymentUpdates = createSelector(
         `${latestPaymentUpdate.id}_${
             latestPaymentUpdate.payment?.updatedAt || 0
         }` !== lastSeenPaymentUpdateId,
+)
+
+export const selectHasNewChatActivityInOtherFeds = createSelector(
+    (s: CommonState) => s,
+    (s: CommonState) => selectFederations(s),
+    (s: CommonState) => selectActiveFederationId(s),
+    (s: CommonState, federations, activeFederationId) => {
+        const otherFederations = federations.filter(
+            f => f.id !== activeFederationId,
+        )
+        return otherFederations.some(of => {
+            return (
+                selectHasUnseenMessages(s, of.id) ||
+                selectHasUnseenPaymentUpdates(s, of.id)
+            )
+        })
+    },
 )
 
 export const selectChatGroupRole = createSelector(

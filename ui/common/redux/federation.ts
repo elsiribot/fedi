@@ -16,6 +16,7 @@ import {
     getFederationMaxInvoiceMsats,
     getFederationFediMods,
     fetchFederationsExternalMetadata,
+    getFederationChatServerDomain,
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
@@ -404,4 +405,29 @@ export const selectFederationFediMods = createSelector(
 export const selectFederationGroupChats = createSelector(
     selectFederationMetadata,
     getFederationGroupChats,
+)
+
+/**
+ * Selects all federations that support a chat server and have
+ * initialized chat state with an authenticatedMember
+ */
+export const selectFederationsWithChatConnections = createSelector(
+    (s: CommonState) => s.chat,
+    selectFederations,
+    (chatState, federations) => {
+        return federations.reduce((result: Federation[], f) => {
+            const isChatSupported = !!getFederationChatServerDomain(f.meta)
+            // Can't connect to chat if federation doesn't support chat
+            if (!isChatSupported) return result
+
+            // Can't connect to chat if we don't have auth
+            const federationChatState = chatState[f.id]
+            if (!federationChatState) return result
+            const { authenticatedMember } = federationChatState
+            if (!authenticatedMember?.id) return result
+
+            result.push(f)
+            return result
+        }, [])
+    },
 )
