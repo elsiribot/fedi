@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import { selectActiveFederation } from '@fedi/common/redux'
+import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
 import { useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
@@ -21,7 +22,11 @@ export const FederationTerms: React.FC = () => {
     const isChatSupported = useIsChatSupported()
     const [hasTermsLoaded, setHasTermsLoaded] = useState(false)
 
-    const tosUrl = activeFederation?.meta?.tos_url
+    if (!activeFederation) {
+        return <Redirect path="/onboarding/welcome" />
+    }
+
+    const tosUrl = getFederationTosUrl(activeFederation.meta)
 
     if (!tosUrl) {
         return <Redirect path="/onboarding/welcome" />

@@ -11,6 +11,7 @@ import {
     resetFederationChatState,
     selectActiveFederation,
 } from '@fedi/common/redux'
+import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
 import { fedimint } from '../bridge'
 import { FederationLogo } from '../components/ui/FederationLogo'
@@ -30,6 +31,9 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
     const activeFederation = useAppSelector(selectActiveFederation)
     const popupInfo = usePopupFederationInfo()
     const [isLeavingFederation, setIsLeavingFederation] = useState(false)
+    const tosUrl = activeFederation?.meta
+        ? getFederationTosUrl(activeFederation.meta)
+        : null
 
     const dispatch = useAppDispatch()
     const style = styles(theme)
@@ -129,13 +133,13 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
             </View>
 
             <View style={styles(theme).buttonsContainer}>
-                {activeFederation?.meta.tos_url && (
+                {tosUrl && (
                     <Button
                         fullWidth
                         type="clear"
                         title={t('phrases.terms-and-conditions')}
                         onPress={() => {
-                            Linking.openURL(activeFederation.meta.tos_url!)
+                            Linking.openURL(tosUrl)
                         }}
                         containerStyle={styles(theme).button}
                     />

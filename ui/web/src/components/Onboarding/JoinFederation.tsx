@@ -9,7 +9,11 @@ import {
 } from '@fedi/common/hooks/federation'
 import { joinFederation } from '@fedi/common/redux'
 import { FederationPreview } from '@fedi/common/types'
-import { getFederationPreview } from '@fedi/common/utils/FederationUtils'
+import {
+    getFederationPreview,
+    getFederationTosUrl,
+    getFederationWelcomeMessage,
+} from '@fedi/common/utils/FederationUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { useRouteState } from '../../context/RouteStateContext'
@@ -151,6 +155,10 @@ export const JoinFederation: React.FC = () => {
             </>
         )
     } else {
+        const tosUrl = getFederationTosUrl(federationPreview.meta)
+        const welcomeMessage = getFederationWelcomeMessage(
+            federationPreview.meta,
+        )
         content = (
             <FederationPreviewOuter>
                 <FederationPreviewInner>
@@ -168,10 +176,10 @@ export const JoinFederation: React.FC = () => {
                         {t('feature.onboarding.welcome-to-federation')}{' '}
                         {federationPreview.name}
                     </Text>
-                    {federationPreview.meta?.welcome_message ? (
+                    {welcomeMessage ? (
                         <CustomWelcomeMessage>
                             <Trans components={{ bold: <strong /> }}>
-                                {federationPreview.meta.welcome_message}
+                                {welcomeMessage}
                             </Trans>
                         </CustomWelcomeMessage>
                     ) : (
@@ -184,7 +192,7 @@ export const JoinFederation: React.FC = () => {
         )
 
         let joinNewMemberHref = '/'
-        if (federationPreview.meta?.tos_url) {
+        if (tosUrl) {
             joinNewMemberHref = '/onboarding/terms'
         } else if (isChatSupported) {
             joinNewMemberHref = '/onboarding/username'

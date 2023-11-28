@@ -9,7 +9,6 @@ import {
     getFederationChatServerDomain,
     getFederationDefaultCurrency,
     getFederationFediMods,
-    getSupportedFeatures,
     makeChatServerOptions,
     shouldShowInviteCode,
 } from '../../utils/FederationUtils'
@@ -33,11 +32,29 @@ const fedWithNoMetadata: Federation = {
     meta: {},
 }
 
-const fedWithFeatures: Federation = {
+const fedWithDeprecatedFields: Federation = {
     ...baseFed,
     meta: {
         default_currency: SupportedCurrency.EUR,
         chat_server_domain: SAMPLE_CHAT_SERVER_DOMAIN,
+    },
+}
+
+const fedWithFediPrefixedFields: Federation = {
+    ...baseFed,
+    meta: {
+        'fedi:default_currency': SupportedCurrency.EUR,
+        'fedi:chat_server_domain': SAMPLE_CHAT_SERVER_DOMAIN,
+    },
+}
+
+const fedWithBothFields: Federation = {
+    ...baseFed,
+    meta: {
+        'default_currency': SupportedCurrency.EUR,
+        'chat_server_domain': SAMPLE_CHAT_SERVER_DOMAIN,
+        'fedi:default_currency': SupportedCurrency.EUR,
+        'fedi:chat_server_domain': SAMPLE_CHAT_SERVER_DOMAIN,
     },
 }
 
@@ -74,19 +91,14 @@ const fedWithMods: Federation = {
 }
 
 describe('FederationUtils', () => {
-    describe('getSupportedFeatures', () => {
-        it('returns an empty array with empty metadata', () => {
-            const supportedFeatures = getSupportedFeatures(
-                fedWithNoMetadata.meta,
-            )
-
-            expect(supportedFeatures).toHaveLength(0)
-        })
-    })
     describe('getFederationDefaultCurrency', () => {
-        it('returns federation currency from metadata', () => {
+        test.each([
+            fedWithDeprecatedFields,
+            fedWithFediPrefixedFields,
+            fedWithBothFields,
+        ])('returns federation currency from metadata', federation => {
             const defaultCurrency = getFederationDefaultCurrency(
-                fedWithFeatures.meta,
+                federation.meta,
             )
 
             expect(defaultCurrency).toEqual(SupportedCurrency.EUR)
@@ -117,9 +129,13 @@ describe('FederationUtils', () => {
         })
     })
     describe('getFederationChatServerDomain', () => {
-        it('returns chat server domain from metadata', () => {
+        test.each([
+            fedWithDeprecatedFields,
+            fedWithFediPrefixedFields,
+            fedWithBothFields,
+        ])('returns chat server domain from metadata', federation => {
             const chatServerDomain = getFederationChatServerDomain(
-                fedWithFeatures.meta,
+                federation.meta,
             )
 
             expect(chatServerDomain).toEqual(chatServerDomain)

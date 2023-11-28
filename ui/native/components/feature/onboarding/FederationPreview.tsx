@@ -4,7 +4,11 @@ import { Trans, useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
 import { FederationPreview as FederationPreviewType } from '@fedi/common/types'
-import { shouldShowJoinFederation } from '@fedi/common/utils/FederationUtils'
+import {
+    getFederationTosUrl,
+    getFederationWelcomeMessage,
+    shouldShowJoinFederation,
+} from '@fedi/common/utils/FederationUtils'
 
 import { FederationLogo } from '../../ui/FederationLogo'
 import HoloGradient from '../../ui/HoloGradient'
@@ -25,6 +29,8 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
     const showJoinFederation = shouldShowJoinFederation(federation.meta)
     const [isJoining, setIsJoining] = useState(false)
     const federationRecoverySupported = federation.version < 2
+    const tosUrl = getFederationTosUrl(federation.meta)
+    const welcomeMessage = getFederationWelcomeMessage(federation.meta)
 
     if (showTerms) {
         return (
@@ -39,7 +45,7 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
     const handleJoin = async (joinType: JoinAs) => {
         setIsJoining(true)
         setJoinAs(joinType)
-        if (federation?.meta?.tos_url) {
+        if (tosUrl) {
             setShowTerms(true)
         } else {
             try {
@@ -63,7 +69,7 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
                     <Text h2 medium style={styles(theme).welcomeTitle}>
                         {federation?.name}
                     </Text>
-                    {federation?.meta?.welcome_message ? (
+                    {welcomeMessage ? (
                         <HoloGradient
                             level="100"
                             style={styles(theme).customWelcomeContainer}
@@ -81,7 +87,7 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
                                             />
                                         ),
                                     }}>
-                                    {federation.meta.welcome_message}
+                                    {welcomeMessage}
                                 </Trans>
                             </Text>
                         </HoloGradient>
