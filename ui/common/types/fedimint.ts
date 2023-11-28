@@ -59,7 +59,7 @@ export enum SupportedCurrency {
     IDR = 'IDR',
 }
 
-export enum SupportedFeature {
+export enum SupportedMetaFields {
     default_currency = 'default_currency',
     fixed_exchange_rate = 'fixed_exchange_rate',
     chat_server_domain = 'chat_server_domain',

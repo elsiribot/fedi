@@ -9,7 +9,7 @@ import {
     MSats,
     FediMod,
     SupportedCurrency,
-    SupportedFeature,
+    SupportedMetaFields,
     XmppConnectionOptions,
     FederationPreview,
 } from '../types'
@@ -140,22 +140,8 @@ export const fetchFederationsExternalMetadata = (
     )
 }
 
-export const getSupportedFeatures = (
-    meta: ClientConfigMetadata,
-): SupportedFeature[] => {
-    const features: SupportedFeature[] = []
-
-    for (const feature in SupportedFeature) {
-        if (Object.keys(meta).includes(feature)) {
-            features.push(feature as SupportedFeature)
-        }
-    }
-
-    return features
-}
-
 const getMetaField = (
-    field: SupportedFeature | 'sites' | 'fedimods' | 'default_group_chats',
+    field: SupportedMetaFields | 'sites' | 'fedimods' | 'default_group_chats',
     metadata: ClientConfigMetadata,
 ): string | null => {
     if (field === 'sites' || field === 'fedimods') {
@@ -172,7 +158,7 @@ const getMetaField = (
         return metadata[`fedi:default_group_chats`] ?? metadata[field] ?? null
     }
 
-    if (Object.values(SupportedFeature).some(x => x === field)) {
+    if (Object.values(SupportedMetaFields).some(x => x === field)) {
         return metadata[`fedi:${field}`] ?? metadata[field] ?? null
     }
 
@@ -183,7 +169,7 @@ export const getFederationDefaultCurrency = (
     metadata: ClientConfigMetadata,
 ) => {
     return getMetaField(
-        SupportedFeature.default_currency,
+        SupportedMetaFields.default_currency,
         metadata,
     ) as SupportedCurrency | null
 }
@@ -192,7 +178,7 @@ export const getFederationFixedExchangeRate = (
     metadata: ClientConfigMetadata,
 ) => {
     const exchangeRate = getMetaField(
-        SupportedFeature.fixed_exchange_rate,
+        SupportedMetaFields.fixed_exchange_rate,
         metadata,
     )
 
@@ -204,7 +190,7 @@ export const getFederationFixedExchangeRate = (
 export const getFederationChatServerDomain = (
     metadata: ClientConfigMetadata,
 ) => {
-    return getMetaField(SupportedFeature.chat_server_domain, metadata)
+    return getMetaField(SupportedMetaFields.chat_server_domain, metadata)
 }
 
 export const makeChatServerOptions = (
@@ -222,7 +208,7 @@ export const getFederationMaxBalanceMsats = (
     metadata: ClientConfigMetadata,
 ) => {
     const maxBalanceSats = getMetaField(
-        SupportedFeature.max_balance_msats,
+        SupportedMetaFields.max_balance_msats,
         metadata,
     )
 
@@ -237,7 +223,7 @@ export const getFederationMaxInvoiceMsats = (
     metadata: ClientConfigMetadata,
 ) => {
     const maxInvoiceMsats = getMetaField(
-        SupportedFeature.max_invoice_msats,
+        SupportedMetaFields.max_invoice_msats,
         metadata,
     )
     // This should just be a number but client config meta only
@@ -253,14 +239,14 @@ export const shouldShowInviteCode = (metadata: ClientConfigMetadata) => {
     // This is a boolean true/false but client config meta only
     // supports strings currently so will need to refactor
     return (
-        getMetaField(SupportedFeature.invite_codes_disabled, metadata) !==
+        getMetaField(SupportedMetaFields.invite_codes_disabled, metadata) !==
         'true'
     )
 }
 
 export const shouldShowJoinFederation = (metadata: ClientConfigMetadata) => {
     return (
-        getMetaField(SupportedFeature.new_members_disabled, metadata) !==
+        getMetaField(SupportedMetaFields.new_members_disabled, metadata) !==
         'false'
     )
 }
@@ -273,7 +259,7 @@ export const shouldShowSocialRecovery = (federation: Federation) => {
 
     return (
         getMetaField(
-            SupportedFeature.social_recovery_disabled,
+            SupportedMetaFields.social_recovery_disabled,
             federation.meta,
         ) !== 'true'
     )
@@ -283,15 +269,17 @@ export const shouldShowOfflineWallet = (
     metadata: ClientConfigMetadata,
 ): boolean => {
     return (
-        getMetaField(SupportedFeature.offline_wallet_disabled, metadata) !==
+        getMetaField(SupportedMetaFields.offline_wallet_disabled, metadata) !==
         'true'
     )
 }
 
 export const shouldShowOnchainDeposits = (metadata: ClientConfigMetadata) => {
     return (
-        getMetaField(SupportedFeature.onchain_deposits_disabled, metadata) !==
-        'true'
+        getMetaField(
+            SupportedMetaFields.onchain_deposits_disabled,
+            metadata,
+        ) !== 'true'
     )
 }
 
@@ -302,7 +290,8 @@ export const shouldEnableNostr = (federation: Federation) => {
     }
 
     return (
-        getMetaField(SupportedFeature.nostr_enabled, federation.meta) === 'true'
+        getMetaField(SupportedMetaFields.nostr_enabled, federation.meta) ===
+        'true'
     )
 }
 
@@ -372,17 +361,17 @@ export const getFederationPopupInfo = (
     metadata: ClientConfigMetadata,
 ): PopupInfo | null => {
     const endTimestamp = getMetaField(
-        SupportedFeature.popup_end_timestamp,
+        SupportedMetaFields.popup_end_timestamp,
         metadata,
     )
     if (!endTimestamp) return null
 
     const countdownMessage = getMetaField(
-        SupportedFeature.popup_countdown_message,
+        SupportedMetaFields.popup_countdown_message,
         metadata,
     )
     const endedMessage = getMetaField(
-        SupportedFeature.popup_ended_message,
+        SupportedMetaFields.popup_ended_message,
         metadata,
     )
     return {
@@ -393,15 +382,15 @@ export const getFederationPopupInfo = (
 }
 
 export const getFederationTosUrl = (metadata: ClientConfigMetadata) => {
-    return getMetaField(SupportedFeature.tos_url, metadata)
+    return getMetaField(SupportedMetaFields.tos_url, metadata)
 }
 
 export const getFederationWelcomeMessage = (metadata: ClientConfigMetadata) => {
-    return getMetaField(SupportedFeature.welcome_message, metadata)
+    return getMetaField(SupportedMetaFields.welcome_message, metadata)
 }
 
 export const getFederationIconUrl = (metadata: ClientConfigMetadata) => {
-    return getMetaField(SupportedFeature.federation_icon_url, metadata)
+    return getMetaField(SupportedMetaFields.federation_icon_url, metadata)
 }
 
 /**
