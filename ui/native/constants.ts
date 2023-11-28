@@ -24,12 +24,6 @@ export const FEDERATION_SIGNET =
 
 export const TEST_FEDERATION = FEDERATION_ALPHA
 
-// Keys used for persisting state in local AsyncStorage
-export const FEDERATION_USERNAME_ID_DB_KEY = 'FEDERATION_USERNAME_ID_DB_KEY'
-export const CHAT_MEMBERS_PERSISTENCE_KEY = 'AsyncStorage-ChatContext-members'
-export const CHAT_MESSAGES_PERSISTENCE_KEY = 'AsyncStorage-ChatContext-messages'
-export const CHAT_GROUPS_PERSISTENCE_KEY = 'AsyncStorage-ChatContext-groups'
-
 // Websocket URL for checking BTCUSD exchange rate
 export const BITFINEX_BTCUSD_WEBSOCKET_URL = 'wss://api-pub.bitfinex.com/ws/2'
 
