@@ -68,6 +68,7 @@ type FederationPayloadAction<T = object> = PayloadAction<
 
 const log = makeLog('redux/chat')
 const xmppChatClientManager = new XmppChatClientManager()
+const MAX_MESSAGE_HISTORY = 1000
 
 /*** Initial State ***/
 
@@ -116,6 +117,7 @@ const upsertEntityToChatState = <
     federationId: string,
     key: K,
     newEntity: T,
+    limit?: number,
 ): ChatState => {
     let addToEnd = true
     let wasEqual = false
@@ -124,7 +126,7 @@ const upsertEntityToChatState = <
     // Make a new list of entities with the new one updating the old one. Make
     // note of if we find it (don't need to append) and if it was identical
     // (don't need to update state at all.)
-    const entities = chatState[key].map(oldEntity => {
+    let entities = chatState[key].map(oldEntity => {
         if (oldEntity.id !== newEntity.id) return oldEntity
         if (oldEntity.id === newEntity.id) {
             addToEnd = false
@@ -143,6 +145,11 @@ const upsertEntityToChatState = <
     // If we didn't find the old one in the list, add the new one to the end of the list
     if (addToEnd) {
         entities.push(newEntity)
+    }
+
+    // If there's a limit to the list length, slice it
+    if (limit && entities.length > limit) {
+        entities = entities.slice(0, limit)
     }
 
     // Return updated state
@@ -231,6 +238,7 @@ export const chatSlice = createSlice({
                 federationId,
                 'messages',
                 message,
+                MAX_MESSAGE_HISTORY,
             )
         },
         setChatGroups(
