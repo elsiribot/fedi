@@ -29,6 +29,7 @@ import {
     setOnchainDepositsEnabled,
     selectStableBalanceEnabled,
     setStableBalanceEnabled,
+    resetNuxSteps,
 } from '@fedi/common/redux'
 import {
     changeSelectedFiatCurrency,
@@ -452,6 +453,14 @@ const DeveloperSettings: React.FC<Props> = () => {
                 })}
             </SettingsSection>
             <SettingsSection title="Danger zone">
+                <Button
+                    title="Reset new user experience"
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={() => {
+                        reduxDispatch(resetNuxSteps())
+                        toast?.show('NUX reset!')
+                    }}
+                />
                 <Button
                     title={'Delete all groups, messages, & members seen'}
                     containerStyle={styles(theme).buttonContainer}
