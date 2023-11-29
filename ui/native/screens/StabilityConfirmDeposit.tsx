@@ -5,16 +5,21 @@ import { Button } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
 import { increaseStableBalance, selectCurrency } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { formatErrorMessage } from '@fedi/common/utils/format'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('StabilityConfirmDeposit')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -23,6 +28,7 @@ export type Props = NativeStackScreenProps<
 
 const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
     const { theme } = useTheme()
+    const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const { amount } = route.params
@@ -52,11 +58,16 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
                 amount,
             })
         } catch (error) {
-            toast?.show(t('errors.unknown-error'))
+            setProcessingDeposit(false)
+            log.error('increaseStableBalance error', error)
+            toast?.show(
+                formatErrorMessage(t, error, 'errors.unknown-error'),
+                3000,
+            )
         }
     }
 
-    const style = styles(theme)
+    const style = styles(theme, insets)
 
     return (
         <View style={style.container}>
@@ -165,13 +176,16 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flexDirection: 'column',
             flex: 1,
             alignItems: 'center',
-            padding: theme.spacing.lg,
+            paddingTop: theme.spacing.lg,
+            paddingLeft: theme.spacing.lg + insets.left,
+            paddingRight: theme.spacing.lg + insets.right,
+            paddingBottom: Math.max(theme.spacing.lg, insets.bottom),
         },
         amountText: {
             marginTop: 'auto',

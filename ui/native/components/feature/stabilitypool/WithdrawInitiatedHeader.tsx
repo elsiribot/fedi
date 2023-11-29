@@ -9,7 +9,7 @@ const WithdrawInitiatedHeader: React.FC<{}> = () => {
 
     return (
         <Header
-            backButton
+            centerContainerStyle={{ minHeight: 40 }}
             headerCenter={
                 <Text bold>
                     {t('feature.stabilitypool.withdrawal-intiated')}

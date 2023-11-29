@@ -4,8 +4,9 @@ import { Button, Text, Theme } from '@rneui/themed'
 import { useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, View, useWindowDimensions } from 'react-native'
 import * as Progress from 'react-native-progress'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useMonitorStabilityPool } from '@fedi/common/hooks/stabilitypool'
 import {
@@ -23,8 +24,10 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'StabilityHome'>
 
 const StabilityHome: React.FC<Props> = () => {
     const { theme } = useTheme()
+    const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
+    const { width } = useWindowDimensions()
     const navigation = useNavigation<NavigationHook>()
     const stableBalance = useAppSelector(selectStableBalance)
     const stableBalancePending = useAppSelector(selectStableBalancePending)
@@ -32,7 +35,7 @@ const StabilityHome: React.FC<Props> = () => {
     const { formattedStableBalance, formattedStableBalancePending } =
         useStabilityPool()
 
-    const style = styles(theme)
+    const style = styles(theme, insets)
 
     useMonitorStabilityPool(fedimint)
 
@@ -47,7 +50,7 @@ const StabilityHome: React.FC<Props> = () => {
                             : theme.colors.primaryVeryLight
                     }
                     thickness={theme.sizes.stabilityPoolCircleThickness}
-                    size={theme.sizes.stabilityPoolCircle}
+                    size={width - theme.spacing.lg * 2}
                     borderWidth={1}
                 />
                 <View style={style.balanceTextContainer}>
@@ -67,7 +70,7 @@ const StabilityHome: React.FC<Props> = () => {
             </View>
             <View style={style.buttonContainer}>
                 <Button
-                    containerStyle={[style.button]}
+                    containerStyle={style.button}
                     onPress={() => {
                         // Block deposits if pending balance is negative because we have to wait until pending withdrawals have processed
                         if (stableBalancePending < 0) {
@@ -88,7 +91,7 @@ const StabilityHome: React.FC<Props> = () => {
                     }
                 />
                 <Button
-                    containerStyle={[style.button]}
+                    containerStyle={style.button}
                     onPress={() => navigation.navigate('StabilityWithdraw')}
                     title={
                         <Text medium caption style={style.buttonText}>
@@ -103,19 +106,21 @@ const StabilityHome: React.FC<Props> = () => {
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: theme.spacing.md,
+            paddingLeft: theme.spacing.lg + insets.left,
+            paddingRight: theme.spacing.lg + insets.right,
+            paddingBottom: Math.max(theme.spacing.lg, insets.bottom),
         },
         balanceContainer: {
+            flex: 1,
             width: '100%',
             alignItems: 'center',
             justifyContent: 'center',
-            marginTop: 'auto',
         },
         balanceTextContainer: {
             position: 'absolute',

@@ -59,7 +59,6 @@ const themeDefaults = {
         splashLogoHeight: 32,
         splashLogoWidth: 120,
         stabilityPoolCircleThickness: 2,
-        stabilityPoolCircle: dimensions.width * 0.9,
         unreadIndicatorSize: 10,
     },
     spacing: {

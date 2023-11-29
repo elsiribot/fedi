@@ -4,6 +4,7 @@ import { useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
 import { selectCurrency } from '@fedi/common/redux'
@@ -21,12 +22,13 @@ export type Props = NativeStackScreenProps<
 const StabilityDepositInitiated: React.FC<Props> = ({ route, navigation }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const insets = useSafeAreaInsets()
     const { amount } = route.params
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const formattedFiat = convertSatsToFormattedFiat(amount)
     const selectedFiatCurrency = useAppSelector(selectCurrency)
 
-    const style = styles(theme)
+    const style = styles(theme, insets)
 
     return (
         <View style={style.container}>
@@ -82,13 +84,16 @@ const StabilityDepositInitiated: React.FC<Props> = ({ route, navigation }) => {
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flexDirection: 'column',
             flex: 1,
             alignItems: 'center',
-            padding: theme.spacing.lg,
+            paddingTop: theme.spacing.lg,
+            paddingLeft: theme.spacing.lg + insets.left,
+            paddingRight: theme.spacing.lg + insets.right,
+            paddingBottom: Math.max(theme.spacing.lg, insets.bottom),
         },
         conversionIndicator: {
             flexDirection: 'row',

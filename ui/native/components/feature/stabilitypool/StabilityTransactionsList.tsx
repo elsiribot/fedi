@@ -8,7 +8,7 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import type { StabilityPoolTxn } from '@fedi/common/types'
@@ -31,6 +31,7 @@ const StabilityTransactionsList = ({
 }: StabilityTransactionsListProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const insets = useSafeAreaInsets()
     const [selectedTransaction, setSelectedTransaction] =
         useState<StabilityPoolTxn | null>(null)
 
@@ -47,13 +48,14 @@ const StabilityTransactionsList = ({
         )
     }
 
+    const style = styles(theme, insets)
+
     return (
-        <SafeAreaView
-            edges={['left', 'right', 'bottom']}
-            style={styles(theme).container}>
+        <View style={style.container}>
             <FlatList
                 data={transactions}
                 renderItem={renderTransaction}
+                contentContainerStyle={style.listContent}
                 keyExtractor={(item: StabilityPoolTxn) => `${item.id}`}
                 // optimization that allows skipping the measurement of dynamic content
                 // for fixed-size list items
@@ -65,18 +67,18 @@ const StabilityTransactionsList = ({
             />
             <Overlay
                 isVisible={selectedTransaction !== null}
-                overlayStyle={styles(theme).overlayContainer}
+                overlayStyle={style.overlayContainer}
                 onBackdropPress={() => setSelectedTransaction(null)}>
                 {selectedTransaction && (
                     <ErrorBoundary
                         fallback={
-                            <View style={styles(theme).overlayErrorContainer}>
+                            <View style={style.overlayErrorContainer}>
                                 <SvgImage
                                     name="Error"
                                     color={theme.colors.red}
                                     size={SvgImageSize.lg}
                                 />
-                                <Text style={styles(theme).overlayErrorText}>
+                                <Text style={style.overlayErrorText}>
                                     {t('errors.transaction-render-error')}
                                 </Text>
                             </View>
@@ -91,15 +93,20 @@ const StabilityTransactionsList = ({
                     </ErrorBoundary>
                 )}
             </Overlay>
-        </SafeAreaView>
+        </View>
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flex: 1,
             width: '100%',
+        },
+        listContent: {
+            paddingLeft: insets.left,
+            paddingRight: insets.right,
+            paddingBottom: Math.max(theme.spacing.lg, insets.bottom),
         },
         overlayContainer: {
             borderRadius: theme.borders.defaultRadius,
