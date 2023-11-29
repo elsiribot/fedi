@@ -9,7 +9,6 @@ import {
     initializeCommonStore,
 } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
-import { checkForLegacyChatMigrations } from '@fedi/native/utils/migration'
 
 import { fedimint } from '../bridge'
 
@@ -42,24 +41,8 @@ export function initializeNativeStore() {
         }
     })
 
-    // DELETEME: This logic is only needed to check for legacy chat data and
-    // migrate it to the reduxified chat data structure. We can remove this
-    // after a long enough time has passed since v1.11 where legacy chat data
-    // was used. As of v1.12.1+ only redux is used for chat state management
-    const storageMonitor = setInterval(() => {
-        const state = store.getState()
-        if (
-            state.storage.hasLoaded &&
-            state.federation.federations.length > 0
-        ) {
-            clearInterval(storageMonitor)
-            checkForLegacyChatMigrations(store)
-        }
-    }, 1000)
-
     return () => {
         unsubscribe()
         changeSubscription.remove()
-        clearInterval(storageMonitor)
     }
 }

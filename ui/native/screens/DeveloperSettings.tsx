@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Switch, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
@@ -52,11 +51,6 @@ import { fedimint } from '../bridge'
 import { AddCustomFediModDialog } from '../components/feature/developer-settings/AddCustomFediModDialog'
 import CheckBox from '../components/ui/CheckBox'
 import SvgImage from '../components/ui/SvgImage'
-import {
-    CHAT_GROUPS_PERSISTENCE_KEY,
-    CHAT_MEMBERS_PERSISTENCE_KEY,
-    CHAT_MESSAGES_PERSISTENCE_KEY,
-} from '../constants'
 import { version } from '../package.json'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
@@ -468,18 +462,6 @@ const DeveloperSettings: React.FC<Props> = () => {
                                     federationId: activeFederation.id,
                                 }),
                             )
-                            AsyncStorage.setItem(
-                                `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederation.id}`,
-                                JSON.stringify({ groups: [] }),
-                            )
-                            AsyncStorage.setItem(
-                                `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederation.id}`,
-                                JSON.stringify({ members: [] }),
-                            )
-                            AsyncStorage.setItem(
-                                `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederation.id}`,
-                                JSON.stringify({ messages: [] }),
-                            )
                         }
                     }}
                 />
@@ -493,10 +475,6 @@ const DeveloperSettings: React.FC<Props> = () => {
                                     federationId: activeFederation.id,
                                     groups: [],
                                 }),
-                            )
-                            AsyncStorage.setItem(
-                                `${CHAT_GROUPS_PERSISTENCE_KEY}:${activeFederation.id}`,
-                                JSON.stringify({ groups: [] }),
                             )
                         }
                     }}
@@ -512,10 +490,6 @@ const DeveloperSettings: React.FC<Props> = () => {
                                     messages: [],
                                 }),
                             )
-                            AsyncStorage.setItem(
-                                `${CHAT_MESSAGES_PERSISTENCE_KEY}:${activeFederation.id}`,
-                                JSON.stringify({ messages: [] }),
-                            )
                         }
                     }}
                 />
@@ -529,10 +503,6 @@ const DeveloperSettings: React.FC<Props> = () => {
                                     federationId: activeFederation.id,
                                     membersSeen: [],
                                 }),
-                            )
-                            AsyncStorage.setItem(
-                                `${CHAT_MEMBERS_PERSISTENCE_KEY}:${activeFederation.id}`,
-                                JSON.stringify({ members: [] }),
                             )
                         }
                     }}
