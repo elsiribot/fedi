@@ -12,6 +12,7 @@ interface LogItem {
 
 const LOG_STORAGE_KEY = 'fedi:logs'
 const MAX_LOGS_STORED = 3000
+const MAX_MESSAGE_LENGTH = 1000
 
 let storage: StorageApi | undefined
 let cachedLogs: LogItem[] = []
@@ -81,12 +82,21 @@ async function getLogsFromStorage(): Promise<LogItem[]> {
     if (!storage) {
         throw new Error('Logging storage not initialized')
     }
-    const logs = await storage.getItem(LOG_STORAGE_KEY)
-    if (!logs) return []
     try {
+        const logs = await storage.getItem(LOG_STORAGE_KEY)
+        if (!logs) return []
         return JSON.parse(logs)
     } catch (err) {
-        return []
+        return [
+            {
+                timestamp: Date.now(),
+                level: 'error',
+                context: 'common/utils/log',
+                message:
+                    'Encountered an error during log retrieval from storage. Some logging may be missing.',
+                extra: [formatArgForStorage(err)],
+            },
+        ]
     }
 }
 
@@ -120,20 +130,35 @@ function innerLog(
 }
 
 function formatArgForStorage(arg: unknown) {
+    let formatted: string | number | boolean | null
     // Non-objects can stay as-is
-    if (typeof arg !== 'object' || arg === null) {
-        return arg
+    if (
+        typeof arg === 'string' ||
+        typeof arg === 'number' ||
+        typeof arg === 'boolean' ||
+        arg === null
+    ) {
+        formatted = arg
     }
-    // Attempt to JSON stringify objects, but fall back to toString()
-    // if they can't be due to something like circular references.
-    try {
-        // Special exception for errors, they don't JSON serialize properly
-        if (arg instanceof Error) {
-            return JSON.stringify(arg, Object.getOwnPropertyNames(arg))
-        } else {
-            return JSON.stringify(arg)
+    // Objects will be JSON serialized where possible, toString'd where not
+    else {
+        try {
+            // Special exception for errors, they don't JSON serialize properly
+            if (arg instanceof Error) {
+                formatted = JSON.stringify(arg, Object.getOwnPropertyNames(arg))
+            } else {
+                formatted = JSON.stringify(arg)
+            }
+        } catch (err) {
+            formatted = arg?.toString() || 'undefined'
         }
-    } catch (err) {
-        return arg.toString()
     }
+    // Truncate long strings
+    if (
+        typeof formatted === 'string' &&
+        formatted.length > MAX_MESSAGE_LENGTH
+    ) {
+        formatted = `${formatted.slice(0, MAX_MESSAGE_LENGTH)}...`
+    }
+    return formatted
 }
