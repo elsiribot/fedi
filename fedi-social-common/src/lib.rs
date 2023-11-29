@@ -2,7 +2,7 @@ use config::FediSocialClientConfig;
 use fedimint_core::core::{Decoder, ModuleInstanceId, ModuleKind};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::{CommonModuleInit, ModuleCommon, ModuleConsensusVersion};
-use fedimint_core::plugin_types_trait_impl_common;
+use fedimint_core::{extensible_associated_module_type, plugin_types_trait_impl_common};
 use serde::{Deserialize, Serialize};
 
 pub use crate::common::{
@@ -21,9 +21,15 @@ pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::ne
 #[derive(
     Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize, Encodable, Decodable, Default,
 )]
-pub struct FediSocialInput;
+pub struct FediSocialInputV0;
 
-impl std::fmt::Display for FediSocialInput {
+extensible_associated_module_type!(
+    FediSocialInput,
+    FediSocialInputV0,
+    UnknownFediSocialInputVariantError
+);
+
+impl std::fmt::Display for FediSocialInputV0 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Fedi Social Input")
     }
@@ -32,9 +38,15 @@ impl std::fmt::Display for FediSocialInput {
 #[derive(
     Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize, Encodable, Decodable, Default,
 )]
-pub struct FediSocialOutput;
+pub struct FediSocialOutputV0;
 
-impl std::fmt::Display for FediSocialOutput {
+extensible_associated_module_type!(
+    FediSocialOutput,
+    FediSocialOutputV0,
+    UnknownFediSocialOutputVariantError
+);
+
+impl std::fmt::Display for FediSocialOutputV0 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Fedi Social Output")
     }
@@ -43,9 +55,15 @@ impl std::fmt::Display for FediSocialOutput {
 #[derive(
     Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize, Encodable, Decodable, Default,
 )]
-pub struct FediSocialOutputOutcome;
+pub struct FediSocialOutputOutcomeV0;
 
-impl std::fmt::Display for FediSocialOutputOutcome {
+extensible_associated_module_type!(
+    FediSocialOutputOutcome,
+    FediSocialOutputOutcomeV0,
+    UnknownFediSocialOutputOutcomeVariantError
+);
+
+impl std::fmt::Display for FediSocialOutputOutcomeV0 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Fedi Social OutputOutcome")
     }
@@ -54,9 +72,15 @@ impl std::fmt::Display for FediSocialOutputOutcome {
 #[derive(
     Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize, Encodable, Decodable, Default,
 )]
-pub struct FediSocialConsensusItem;
+pub struct FediSocialConsensusItemV0;
 
-impl std::fmt::Display for FediSocialConsensusItem {
+extensible_associated_module_type!(
+    FediSocialConsensusItem,
+    FediSocialConsensusItemV0,
+    UnknownFediSocialConsensusItemVariantError
+);
+
+impl std::fmt::Display for FediSocialConsensusItemV0 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Fedi Social ConsensusItem")
     }
