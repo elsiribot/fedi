@@ -1,20 +1,33 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex as StdMutex;
+use std::sync::{Arc, Mutex as StdMutex};
 
+use anyhow::bail;
 use fediffi::storage::IStorage;
 use fedimint_core_v1::db::IDatabase;
 use fedimint_core_v1::{apply, async_trait_maybe_send};
+use rexie::{ObjectStore, Rexie, TransactionMode};
+use wasm_bindgen::{JsCast, JsValue};
 
-use crate::db::MemAndIndexedDb;
+use crate::db::{rexie_to_anyhow, MemAndIndexedDb};
 
 pub struct WasmStorage {
+    rexie_files: Arc<Rexie>,
     federation: StdMutex<HashMap<String, MemAndIndexedDb>>,
 }
 
 impl WasmStorage {
     pub async fn new() -> anyhow::Result<Self> {
+        let rexie_files = Arc::new(
+            Rexie::builder("files")
+                .version(1)
+                .add_object_store(ObjectStore::new("default"))
+                .build()
+                .await
+                .map_err(rexie_to_anyhow)?,
+        );
         Ok(Self {
+            rexie_files,
             federation: StdMutex::new(HashMap::new()),
         })
     }
@@ -29,6 +42,7 @@ impl IStorage for WasmStorage {
         let db = fedimint_core_v0::db::Database::new(db, registry);
         Ok(db)
     }
+
     async fn federation_idb(&self, db_name: &str) -> anyhow::Result<Box<dyn IDatabase>> {
         let db = MemAndIndexedDb::new(db_name).await?;
         let mut fed = self.federation.lock().unwrap();
@@ -73,12 +87,39 @@ impl IStorage for WasmStorage {
         db.delete().await?;
         Ok(())
     }
-    async fn read_file(&self, _path: &Path) -> anyhow::Result<Vec<u8>> {
-        unimplemented!()
+
+    async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>> {
+        let transaction = self
+            .rexie_files
+            .transaction(&["default"], TransactionMode::ReadOnly)
+            .map_err(rexie_to_anyhow)?;
+        let store = transaction.store("default").map_err(rexie_to_anyhow)?;
+        let key = JsValue::from_str(&path.to_str().expect("path is valid unicode"));
+        let value = store.get(&key).await;
+        match value {
+            Ok(value) => match value.dyn_into::<js_sys::Uint8Array>() {
+                Ok(v) => Ok(v.to_vec()),
+                Err(e) => bail!(format!("failed to read_file: {e:?}")),
+            },
+            Err(e) => Err(rexie_to_anyhow(e)),
+        }
     }
-    async fn write_file(&self, _path: &Path, _data: Vec<u8>) -> anyhow::Result<()> {
-        unimplemented!()
+
+    async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()> {
+        let transaction = self
+            .rexie_files
+            .transaction(&["default"], TransactionMode::ReadWrite)
+            .map_err(rexie_to_anyhow)?;
+        let store = transaction.store("default").map_err(rexie_to_anyhow)?;
+        let key = JsValue::from_str(&path.to_str().expect("path is valid unicode"));
+        let value = js_sys::Uint8Array::from(&data[..]);
+        store
+            .put(&value, Some(&key))
+            .await
+            .map_err(rexie_to_anyhow)?;
+        Ok(())
     }
+
     fn platform_path(&self, _path: &Path) -> PathBuf {
         unimplemented!()
     }
