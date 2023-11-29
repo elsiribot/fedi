@@ -12,8 +12,10 @@ export function useNuxStep(step: keyof NuxState['steps']) {
     const stepState = useCommonSelector(s => selectNuxStep(s, step))
 
     const completeStep = useCallback(() => {
-        dispatch(completeNuxStep(step))
-    }, [dispatch, step])
+        if (!stepState) {
+            dispatch(completeNuxStep(step))
+        }
+    }, [dispatch, step, stepState])
 
-    return [stepState, completeStep]
+    return [stepState, completeStep] as const
 }

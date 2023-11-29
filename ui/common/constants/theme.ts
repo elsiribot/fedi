@@ -18,6 +18,8 @@ const HEX_COLORS = {
     night: '#0B1013',
     blue: '#0277F2',
     fuschia: '#EF5DA8',
+    // TODO: Move these into maps instead of properties, e.g. blue[100] instead of blue100
+    blue100: '#BAE0FE',
 }
 
 export const theme = {

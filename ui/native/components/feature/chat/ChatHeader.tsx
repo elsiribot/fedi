@@ -4,12 +4,14 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet } from 'react-native'
 
-import { selectWebsocketIsHealthy } from '@fedi/common/redux'
+import { useNuxStep } from '@fedi/common/hooks/nux'
+import { selectIsChatEmpty, selectWebsocketIsHealthy } from '@fedi/common/redux'
 
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
+import { NuxTooltip } from '../../ui/NuxTooltip'
 import SvgImage from '../../ui/SvgImage'
 
 const ChatHeader: React.FC<{}> = () => {
@@ -18,6 +20,9 @@ const ChatHeader: React.FC<{}> = () => {
     const navigation = useNavigation<NavigationHook>()
     const { toast } = useEnvironmentContext().state
     const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
+    const isChatEmpty = useAppSelector(selectIsChatEmpty)
+    const [hasViewedMemberQr, completeViewedMemberQr] =
+        useNuxStep('hasViewedMemberQr')
 
     return (
         <Header
@@ -50,11 +55,28 @@ const ChatHeader: React.FC<{}> = () => {
                         />
                     </Pressable>
                     {websocketIsHealthy && (
-                        <Pressable
-                            onPress={() => navigation.navigate('MemberQrCode')}
-                            hitSlop={5}>
-                            <SvgImage name="Qr" color={theme.colors.primary} />
-                        </Pressable>
+                        <>
+                            <Pressable
+                                onPress={() => {
+                                    navigation.navigate('MemberQrCode')
+                                    completeViewedMemberQr()
+                                }}
+                                hitSlop={5}>
+                                <SvgImage
+                                    name="Qr"
+                                    color={theme.colors.primary}
+                                />
+                            </Pressable>
+                            <NuxTooltip
+                                delay={600}
+                                shouldShow={isChatEmpty && !hasViewedMemberQr}
+                                orientation="below"
+                                side="right"
+                                text="Your username"
+                                horizontalOffset={12}
+                                verticalOffset={32}
+                            />
+                        </>
                     )}
                 </>
             }

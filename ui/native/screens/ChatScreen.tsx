@@ -1,20 +1,24 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { useIsFocused, useNavigation } from '@react-navigation/native'
-import { FAB, Text, Theme, useTheme } from '@rneui/themed'
+import { FAB, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useUpdateLastMessageSeen } from '@fedi/common/hooks/chat'
+import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
     fetchChatMembers,
     selectActiveFederationId,
     selectChatConnectionOptions,
+    selectIsChatEmpty,
     selectWebsocketIsHealthy,
 } from '@fedi/common/redux'
 
+import { Images } from '../assets/images'
 import ChatsList from '../components/feature/chat/ChatsList'
+import { NuxTooltip } from '../components/ui/NuxTooltip'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { reset } from '../state/navigation'
@@ -40,6 +44,9 @@ const ChatScreen: React.FC<Props> = () => {
     const activeChatConnectionOptions = useAppSelector(
         selectChatConnectionOptions,
     )
+    const isChatEmpty = useAppSelector(selectIsChatEmpty)
+    const [hasOpenedNewChat, completeOpenedNewChat] =
+        useNuxStep('hasOpenedNewChat')
 
     // Navigate back to home screen if this federation doesn't support chat
     useEffect(() => {
@@ -58,27 +65,48 @@ const ChatScreen: React.FC<Props> = () => {
     // Use this hook only if the screen is in focus
     useUpdateLastMessageSeen(isFocused !== true)
 
+    const style = styles(theme)
     return (
-        <View style={styles(theme).container}>
-            <ErrorBoundary
-                fallback={() => (
-                    <View style={styles(theme).errorContainer}>
-                        <Text style={styles(theme).error}>
-                            {t('errors.chat-list-render-error')}
-                        </Text>
-                    </View>
-                )}>
-                <ChatsList />
-            </ErrorBoundary>
+        <View style={style.container}>
+            {isChatEmpty ? (
+                <>
+                    <Image
+                        resizeMode="contain"
+                        source={Images.IllustrationChat}
+                        style={style.emptyImage}
+                    />
+                    <NuxTooltip
+                        shouldShow={isChatEmpty && !hasOpenedNewChat}
+                        delay={1200}
+                        text="New chat"
+                        orientation="above"
+                        side="right"
+                        horizontalOffset={44}
+                        verticalOffset={78}
+                    />
+                </>
+            ) : (
+                <ErrorBoundary
+                    fallback={() => (
+                        <View style={style.errorContainer}>
+                            <Text style={style.error}>
+                                {t('errors.chat-list-render-error')}
+                            </Text>
+                        </View>
+                    )}>
+                    <ChatsList />
+                </ErrorBoundary>
+            )}
 
             <FAB
                 icon={<SvgImage name="Plus" color={theme.colors.secondary} />}
                 color={theme.colors.blue}
-                style={styles(theme).actionButton}
+                style={style.actionButton}
                 size="large"
                 placement="right"
                 onPress={() => {
                     navigation.navigate('NewMessage')
+                    completeOpenedNewChat()
                 }}
             />
         </View>
@@ -89,7 +117,15 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
         },
+        emptyImage: {
+            width: 200,
+            height: 200,
+            marginBottom: theme.spacing.xxl,
+        },
+        actionContainer: {},
         actionButton: {
             elevation: 4,
             shadowRadius: 4,
