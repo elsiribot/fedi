@@ -476,7 +476,11 @@ impl Bridge {
         let task_group_v1 = TaskGroupV1::new();
         let fedi_file = FediFile::existing_from_storage(storage.clone())
             .await
-            .unwrap_or(FediFile::new_with_storage(storage.clone()).await);
+            .unwrap_or(
+                FediFile::new_from_legacy_global_database(storage.clone())
+                    .await
+                    .unwrap_or(FediFile::default_with_storage(storage.clone()).await),
+            );
 
         let root_mnemonic = fedi_file.get_root_mnemonic().await;
         let root_mnemonic = match root_mnemonic {

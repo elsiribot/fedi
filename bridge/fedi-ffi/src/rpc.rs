@@ -804,7 +804,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_multi_bridge_compatibility() -> anyhow::Result<()> {
+    async fn test_multi_bridge_compatibility_and_global_db_migration() -> anyhow::Result<()> {
         INIT_TRACING.call_once(|| {
             TracingSetup::default()
                 .init()

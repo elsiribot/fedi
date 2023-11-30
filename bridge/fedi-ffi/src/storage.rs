@@ -6,8 +6,12 @@ use anyhow::bail;
 use fedimint_core_v1::db::IDatabase;
 use fedimint_core_v1::task::{MaybeSend, MaybeSync};
 use fedimint_core_v1::{apply, async_trait_maybe_send};
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
+use v0_rocksdb::{
+    JoinedFederationV0, JoinedFederationV1, JoinedFederationsV0Prefix, JoinedFederationsV1Prefix,
+};
 
 use crate::constants::FEDI_FILE_PATH;
 
@@ -69,7 +73,41 @@ impl FediFile {
         })
     }
 
-    pub async fn new_with_storage(storage: Storage) -> Self {
+    pub async fn new_from_legacy_global_database(storage: Storage) -> anyhow::Result<Self> {
+        let fedi_file = Self::default_with_storage(storage).await;
+
+        // Read v0 and v1 joined federations from legacy global DB
+        let db = fedi_file.storage.global_database_v0().await?;
+        let mut dbtx = db.begin_transaction().await;
+        let v0_joined = dbtx
+            .find_by_prefix(&JoinedFederationsV0Prefix)
+            .await
+            .collect::<Vec<_>>()
+            .await;
+        let v1_joined = dbtx
+            .find_by_prefix(&JoinedFederationsV1Prefix)
+            .await
+            .collect::<Vec<_>>()
+            .await;
+        dbtx.commit_tx().await;
+
+        // Write found v0 and v1 joined federations to fedi file
+        for (JoinedFederationV0(federation_id), _) in v0_joined {
+            fedi_file
+                .join_federation_v0(&federation_id.to_string())
+                .await?;
+        }
+        for (JoinedFederationV1(federation_id), db_name) in v1_joined {
+            fedi_file
+                .join_federation_v1(&federation_id.to_string(), &db_name)
+                .await?;
+        }
+        fedi_file.save().await?;
+
+        Ok(fedi_file)
+    }
+
+    pub async fn default_with_storage(storage: Storage) -> Self {
         Self {
             fedi_info: RwLock::new(FediInfo::default()),
             storage,
