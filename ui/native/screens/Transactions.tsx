@@ -27,19 +27,19 @@ const Transactions: React.FC<Props> = () => {
     // transactions and not have to refreshTransactions on every notes update
     const [transactionsList, setTransactionsList] = useState<Transaction[]>([])
 
-    const isV1Federation = useAppSelector(selectActiveFederation)?.version === 1
+    const isV0Federation = useAppSelector(selectActiveFederation)?.version === 0
     const lastTimestampRef = useRef<number | undefined>()
 
     const getTransactionsList = useCallback(async () => {
         try {
             let fetchedTransactions: RpcTransaction[]
-            if (isV1Federation) {
+            if (isV0Federation) {
+                fetchedTransactions = await listTransactions()
+            } else {
                 fetchedTransactions = await listTransactions(
                     lastTimestampRef.current,
                     100,
                 )
-            } else {
-                fetchedTransactions = await listTransactions()
             }
 
             // Filter out onchain addresses older than 1 hour
@@ -64,7 +64,7 @@ const Transactions: React.FC<Props> = () => {
             log.error('Failed to fetch transactions:', err)
             toast?.show('Failed to fetch transactions')
         }
-    }, [isV1Federation, listTransactions, toast])
+    }, [isV0Federation, listTransactions, toast])
 
     // Instead of refreshing the whole transaction list
     // Just update the state of the transaction locally
@@ -107,7 +107,7 @@ const Transactions: React.FC<Props> = () => {
                 <TransactionsList
                     transactions={transactionsList}
                     loadMoreTransactions={
-                        isV1Federation ? getTransactionsList : undefined
+                        isV0Federation ? undefined : getTransactionsList
                     }
                     updateTransactionInState={updateTransactionInState}
                     isV1Federation={false}

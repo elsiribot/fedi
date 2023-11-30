@@ -1612,52 +1612,55 @@ impl FederationV2 {
                         .unwrap_or_default();
 
                     match op.1.operation_module_kind() {
-                        LIGHTNING_OPERATION_TYPE => match op.1.meta() {
-                            LightningOperationMetaVariant::Pay(LightningOperationMetaPay{ invoice, .. }) => Some(RpcTransaction {
-                                id: op.0.operation_id.to_string(),
-                                created_at: to_unix_time(op.0.creation_time)
-                                    .expect("unix time should exist"),
-                                amount: RpcAmount(Amount {
-                                    msats: invoice.amount_milli_satoshis().unwrap(),
-                                }),
-                                direction: RpcTransactionDirection::Send,
-                                notes,
-                                onchain_state: None,
-                                bitcoin: None,
-                                ln_state: RpcLnState::from_ln_pay_state(
-                                    self.get_ln_pay_outcome(op.0.operation_id, op.1).await,
-                                ),
-                                lightning: Some(RpcLightningDetails {
-                                    invoice: invoice.to_string(),
-                                    fee: None, // TODO: to be implemented on the fedimint side
-                                }),
-                                oob_state: None,
-                                onchain_withdrawal_details: None,
-                            }),
-                            LightningOperationMetaVariant::Receive{ invoice, .. } => {
-                                let ln_state = RpcLnState::from_ln_recv_state(
-                                    op.1.outcome::<LnReceiveState>(),
-                                );
-                                Some(RpcTransaction {
+                        LIGHTNING_OPERATION_TYPE => {
+                            let lightning_meta: LightningOperationMeta = op.1.meta();
+                            match lightning_meta.variant {
+                                LightningOperationMetaVariant::Pay(LightningOperationMetaPay{ invoice, .. }) => Some(RpcTransaction {
                                     id: op.0.operation_id.to_string(),
                                     created_at: to_unix_time(op.0.creation_time)
                                         .expect("unix time should exist"),
                                     amount: RpcAmount(Amount {
                                         msats: invoice.amount_milli_satoshis().unwrap(),
                                     }),
-                                    direction: RpcTransactionDirection::Receive,
+                                    direction: RpcTransactionDirection::Send,
                                     notes,
                                     onchain_state: None,
                                     bitcoin: None,
-                                    ln_state,
+                                    ln_state: RpcLnState::from_ln_pay_state(
+                                        self.get_ln_pay_outcome(op.0.operation_id, op.1).await,
+                                    ),
                                     lightning: Some(RpcLightningDetails {
                                         invoice: invoice.to_string(),
-                                        fee: None, /* TODO: to be implemented on the fedimint
-                                                    * side */
+                                        fee: None, // TODO: to be implemented on the fedimint side
                                     }),
                                     oob_state: None,
                                     onchain_withdrawal_details: None,
-                                })
+                                }),
+                                LightningOperationMetaVariant::Receive{ invoice, .. } => {
+                                    let ln_state = RpcLnState::from_ln_recv_state(
+                                        op.1.outcome::<LnReceiveState>(),
+                                    );
+                                    Some(RpcTransaction {
+                                        id: op.0.operation_id.to_string(),
+                                        created_at: to_unix_time(op.0.creation_time)
+                                            .expect("unix time should exist"),
+                                        amount: RpcAmount(Amount {
+                                            msats: invoice.amount_milli_satoshis().unwrap(),
+                                        }),
+                                        direction: RpcTransactionDirection::Receive,
+                                        notes,
+                                        onchain_state: None,
+                                        bitcoin: None,
+                                        ln_state,
+                                        lightning: Some(RpcLightningDetails {
+                                            invoice: invoice.to_string(),
+                                            fee: None, /* TODO: to be implemented on the fedimint
+                                                        * side */
+                                        }),
+                                        oob_state: None,
+                                        onchain_withdrawal_details: None,
+                                    })
+                                }
                             }
                         },
                         STABILITY_POOL_OPERATION_TYPE => match op.1.meta() {
@@ -1752,91 +1755,93 @@ impl FederationV2 {
                                 }),
                             }
                         }
-                        WALLET_OPERATION_TYPE => match op.1.meta() {
-                            WalletOperationMetaVariant::Deposit {
-                                address,
-                                expires_at,
-                            } => {
-                                let outcome =
-                                    self.get_deposit_outcome(op.0.operation_id, op.1).await;
-                                let onchain_state =
-                                    RpcOnchainState::from_deposit_state(outcome.clone());
+                        WALLET_OPERATION_TYPE => {
+                            let wallet_meta: WalletOperationMeta = op.1.meta();
+                            match wallet_meta.variant {
+                                WalletOperationMetaVariant::Deposit {
+                                    address,
+                                    expires_at,
+                                } => {
+                                    let outcome =
+                                        self.get_deposit_outcome(op.0.operation_id, op.1).await;
+                                    let onchain_state =
+                                        RpcOnchainState::from_deposit_state(outcome.clone());
 
-                                Some(RpcTransaction {
-                                    id: op.0.operation_id.to_string(),
-                                    created_at: to_unix_time(op.0.creation_time)
-                                        .expect("unix time should exist"),
-                                    direction: RpcTransactionDirection::Receive,
-                                    notes,
-                                    onchain_state: onchain_state.clone(),
-                                    bitcoin: Some(RpcBitcoinDetails {
-                                        address: address.to_string(),
-                                        expires_at: to_unix_time(expires_at)
+                                    Some(RpcTransaction {
+                                        id: op.0.operation_id.to_string(),
+                                        created_at: to_unix_time(op.0.creation_time)
                                             .expect("unix time should exist"),
-                                    }),
-                                    ln_state: None,
-                                    amount: match outcome {
-                                        Some(
-                                            DepositState::WaitingForConfirmation(data)
-                                            | DepositState::Confirmed(data)
-                                            | DepositState::Claimed(data),
-                                        ) => RpcAmount(Amount::from_sats(
-                                            data.btc_transaction.output[data.out_idx as usize]
-                                                .value,
-                                        )),
-                                        _ => RpcAmount(Amount::ZERO),
-                                    },
-                                    lightning: None,
-                                    oob_state: None,
-                                    onchain_withdrawal_details: None,
-                                })
+                                        direction: RpcTransactionDirection::Receive,
+                                        notes,
+                                        onchain_state: onchain_state.clone(),
+                                        bitcoin: Some(RpcBitcoinDetails {
+                                            address: address.to_string(),
+                                            expires_at: to_unix_time(expires_at)
+                                                .expect("unix time should exist"),
+                                        }),
+                                        ln_state: None,
+                                        amount: match outcome {
+                                            Some(
+                                                DepositState::WaitingForConfirmation(data)
+                                                | DepositState::Confirmed(data)
+                                                | DepositState::Claimed(data),
+                                            ) => RpcAmount(Amount::from_sats(
+                                                data.btc_transaction.output[data.out_idx as usize]
+                                                    .value,
+                                            )),
+                                            _ => RpcAmount(Amount::ZERO),
+                                        },
+                                        lightning: None,
+                                        oob_state: None,
+                                        onchain_withdrawal_details: None,
+                                    })
+                                }
+                                WalletOperationMetaVariant::Withdraw {
+                                    address: _,
+                                    amount,
+                                    fee,
+                                    change: _,
+                                } => {
+                                    let core_amount = fedimint_core::Amount {
+                                        msats: amount.to_sat() * 1000,
+                                    };
+                                    let rpc_amount = RpcAmount(core_amount);
+
+                                    // Todo: Figure out a where to pass back txid to client
+                                    let (outcome, txid) = self
+                                        .get_withdrawal_outcome(op.0.operation_id)
+                                        .await
+                                        .expect("Expected a withdrawal outcome but got None");
+
+                                    let onchain_state =
+                                        RpcOnchainState::from_withdraw_state(Some(outcome));
+
+                                    let txid_str = match txid {
+                                        Some(n) => n.to_string(),
+                                        None => "".to_string(),
+                                    };
+
+                                    Some(RpcTransaction {
+                                        id: op.0.operation_id.to_string(),
+                                        created_at: to_unix_time(op.0.creation_time)
+                                            .expect("unix time should exist"),
+                                        amount: rpc_amount,
+                                        direction: RpcTransactionDirection::Send,
+                                        notes,
+                                        onchain_state,
+                                        bitcoin: None,
+                                        ln_state: None,
+                                        lightning: None,
+                                        oob_state: None,
+                                        onchain_withdrawal_details: Some(WithdrawalDetails {
+                                            txid: txid_str,
+                                            fee: fee.amount().to_sat(),
+                                            fee_rate: fee.fee_rate.sats_per_kvb,
+                                        }),
+                                    })
+                                }
+                                WalletOperationMetaVariant::RbfWithdraw { rbf: _, change: _ } => None,
                             }
-                            WalletOperationMetaVariant::Withdraw {
-                                address: _,
-                                amount,
-                                fee,
-                                change: _,
-                            } => {
-                                let core_amount = fedimint_core::Amount {
-                                    msats: amount.to_sat() * 1000,
-                                };
-                                let rpc_amount = RpcAmount(core_amount);
-
-                                // Todo: Figure out a where to pass back txid to client
-                                let (outcome, txid) = self
-                                    .get_withdrawal_outcome(op.0.operation_id)
-                                    .await
-                                    .expect("Expected a withdrawal outcome but got None");
-
-                                let onchain_state =
-                                    RpcOnchainState::from_withdraw_state(Some(outcome));
-
-                                let txid_str = match txid {
-                                    Some(n) => n.to_string(),
-                                    None => "".to_string(),
-                                };
-
-                                Some(RpcTransaction {
-                                    id: op.0.operation_id.to_string(),
-                                    created_at: to_unix_time(op.0.creation_time)
-                                        .expect("unix time should exist"),
-                                    amount: rpc_amount,
-                                    direction: RpcTransactionDirection::Send,
-                                    notes,
-                                    onchain_state,
-                                    bitcoin: None,
-                                    ln_state: None,
-                                    lightning: None,
-                                    oob_state: None,
-                                    onchain_withdrawal_details: Some(WithdrawalDetails {
-                                        txid: txid_str,
-                                        fee: fee.amount().to_sat(),
-                                        fee_rate: fee.fee_rate.sats_per_kvb,
-                                    }),
-                                })
-                            }
-
-                            WalletOperationMetaVariant::RbfWithdraw { rbf: _, change: _ } => None,
                         },
                         _ => {
                             panic!(
