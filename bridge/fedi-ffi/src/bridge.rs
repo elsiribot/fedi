@@ -474,28 +474,29 @@ impl Bridge {
         let task_group = TaskGroup::new();
         let task_group_v0 = TaskGroupV0::new();
         let task_group_v1 = TaskGroupV1::new();
-        let fedi_file = FediFile::existing_from_storage(storage.clone())
-            .await
-            .unwrap_or(
-                FediFile::new_from_legacy_global_database(storage.clone())
-                    .await
-                    .unwrap_or(FediFile::default_with_storage(storage.clone()).await),
-            );
+        let fedi_file = FediFile::load(storage.clone()).await;
 
-        let root_mnemonic = fedi_file.get_root_mnemonic().await;
-        let root_mnemonic = match root_mnemonic {
-            Some(mnemonic) => mnemonic,
-            None => {
-                let mnemonic = Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
-                fedi_file.set_root_mnemonic(mnemonic.clone()).await?;
-                fedi_file.save().await?;
-                mnemonic
-            }
-        };
+        let root_mnemonic = fedi_file
+            .with_write_lock(move |fedi_info| {
+                Box::pin(async move {
+                    Ok(match &fedi_info.root_mnemonic {
+                        Some(mnemonic) => mnemonic.clone(),
+                        None => {
+                            let mnemonic =
+                                Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
+                            fedi_info.root_mnemonic = Some(mnemonic.clone());
+                            mnemonic
+                        }
+                    })
+                })
+            })
+            .await?;
 
         // load v0 federations
         let v0_joined = fedi_file
-            .get_joined_federations_v0()
+            .with_read_lock(move |fedi_info| {
+                Box::pin(async move { fedi_info.joined_federations_v0.clone() })
+            })
             .await
             .into_iter()
             .collect::<Vec<_>>();
@@ -517,7 +518,9 @@ impl Bridge {
 
         // load v1 federations
         let v1_joined = fedi_file
-            .get_joined_federations_v1()
+            .with_read_lock(move |fedi_info| {
+                Box::pin(async move { fedi_info.joined_federations_v1.clone() })
+            })
             .await
             .into_iter()
             .collect::<Vec<_>>();
@@ -539,7 +542,9 @@ impl Bridge {
 
         // load v2 federations
         let v2_joined = fedi_file
-            .get_joined_federations_v2()
+            .with_read_lock(move |fedi_info| {
+                Box::pin(async move { fedi_info.joined_federations_v2.clone() })
+            })
             .await
             .into_iter()
             .collect::<Vec<_>>();
@@ -632,7 +637,9 @@ impl Bridge {
             &db_name,
             &self
                 .fedi_file
-                .get_root_mnemonic()
+                .with_read_lock(move |fedi_info| {
+                    Box::pin(async move { fedi_info.root_mnemonic.clone() })
+                })
                 .await
                 .expect("Root mnemonic should exist in fedi_file"),
         )
@@ -640,9 +647,15 @@ impl Bridge {
         let federation_id = federation.federation_id();
         let mut federations = self.federations.lock().await;
         self.fedi_file
-            .join_federation_v2(&federation_id.to_string(), &db_name)
+            .with_write_lock(move |fedi_info| {
+                Box::pin(async move {
+                    fedi_info
+                        .joined_federations_v2
+                        .insert(federation_id.to_string(), db_name);
+                    Ok(())
+                })
+            })
             .await?;
-        self.fedi_file.save().await?;
         let multi = Arc::new(MultiFederation::V2(federation));
         federations
             .entry(federation_id.to_string())
@@ -670,9 +683,15 @@ impl Bridge {
         let federation_id = federation.federation_id();
         let mut federations = self.federations.lock().await;
         self.fedi_file
-            .join_federation_v1(&federation_id.to_string(), &db_name)
+            .with_write_lock(move |fedi_info| {
+                Box::pin(async move {
+                    fedi_info
+                        .joined_federations_v1
+                        .insert(federation_id.to_string(), db_name);
+                    Ok(())
+                })
+            })
             .await?;
-        self.fedi_file.save().await?;
         let multi = Arc::new(MultiFederation::V1(federation));
         federations
             .entry(federation_id.to_string())
@@ -697,9 +716,15 @@ impl Bridge {
         let federation_id = federation.federation_id();
         let mut federations = self.federations.lock().await;
         self.fedi_file
-            .join_federation_v0(&federation_id.to_string())
+            .with_write_lock(move |fedi_info| {
+                Box::pin(async move {
+                    fedi_info
+                        .joined_federations_v0
+                        .insert(federation_id.to_string());
+                    Ok(())
+                })
+            })
             .await?;
-        self.fedi_file.save().await?;
         let multi = Arc::new(MultiFederation::V0(federation));
         federations
             .entry(federation_id.to_string())
@@ -767,24 +792,41 @@ impl Bridge {
         .await
     }
 
-    pub async fn leave_federation(&self, federation_id: &str) -> Result<()> {
+    pub async fn leave_federation(&self, federation_id_str: &str) -> Result<()> {
         // delete federation from fedi file (global DB)
-        let db_name = self.fedi_file.leave_federation(federation_id).await;
+        let federation_id = federation_id_str.to_owned();
+        let db_name = self
+            .fedi_file
+            .with_write_lock(move |fedi_info| {
+                Box::pin(async move {
+                    let mut removed_db_name = None;
+                    fedi_info.joined_federations_v0.remove(&federation_id);
+
+                    if let Some(db_name) = fedi_info.joined_federations_v1.remove(&federation_id) {
+                        removed_db_name = Some(db_name);
+                    }
+
+                    if let Some(db_name) = fedi_info.joined_federations_v2.remove(&federation_id) {
+                        removed_db_name = Some(db_name);
+                    }
+
+                    Ok(removed_db_name)
+                })
+            })
+            .await?;
 
         // Remove from bridge state
         {
             let mut lock = self.federations.lock().await;
-            lock.remove(&federation_id.to_string());
+            lock.remove(&federation_id_str.to_string());
         }
 
         // delete federation db
         if let Some(db_name) = db_name {
-            self.storage.delete_federation_db(&db_name).await?;
+            self.storage.delete_federation_db(&db_name).await
         } else {
-            self.storage.delete_federation_db(federation_id).await?;
+            self.storage.delete_federation_db(&federation_id_str).await
         }
-
-        self.fedi_file.save().await
     }
 
     pub async fn guardian_status(
