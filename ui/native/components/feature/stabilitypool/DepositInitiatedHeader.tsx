@@ -9,6 +9,7 @@ const DepositInitiatedHeader: React.FC<{}> = () => {
 
     return (
         <Header
+            centerContainerStyle={{ minHeight: 40 }}
             headerCenter={
                 <Text bold>{t('feature.stabilitypool.deposit-intiated')}</Text>
             }
