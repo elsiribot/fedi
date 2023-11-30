@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -49,11 +49,11 @@ pub struct FediInfo {
     pub root_mnemonic: Option<bip39::Mnemonic>,
 
     // federation IDs
-    pub joined_federations_v0: HashSet<String>,
+    pub joined_federations_v0: BTreeSet<String>,
 
     // federation ID => database name
-    pub joined_federations_v1: HashMap<String, String>,
-    pub joined_federations_v2: HashMap<String, String>,
+    pub joined_federations_v1: BTreeMap<String, String>,
+    pub joined_federations_v2: BTreeMap<String, String>,
 }
 
 pub struct FediFile {
