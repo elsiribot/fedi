@@ -7,7 +7,7 @@ use fedimint_core_v1::db::IDatabase;
 use fedimint_core_v1::task::{MaybeSend, MaybeSync};
 use fedimint_core_v1::{apply, async_trait_maybe_send};
 use serde::{Deserialize, Serialize};
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use crate::constants::FEDI_FILE_PATH;
 
@@ -41,20 +41,20 @@ pub trait IStorage: 'static + MaybeSend + MaybeSync {
 pub type Storage = Arc<dyn IStorage>;
 
 #[derive(Serialize, Deserialize, Default)]
-pub struct FediInfo {
-    pub root_mnemonic_entropy: Option<Vec<u8>>,
+struct FediInfo {
+    root_mnemonic: Option<bip39::Mnemonic>,
 
     // federation IDs
-    pub joined_federations_v0: HashSet<String>,
+    joined_federations_v0: HashSet<String>,
 
     // federation ID => database name
-    pub joined_federations_v1: HashMap<String, String>,
-    pub joined_federations_v2: HashMap<String, String>,
+    joined_federations_v1: HashMap<String, String>,
+    joined_federations_v2: HashMap<String, String>,
 }
 
 pub struct FediFile {
-    pub fedi_info: Arc<Mutex<FediInfo>>,
-    pub storage: Storage,
+    fedi_info: RwLock<FediInfo>,
+    storage: Storage,
 }
 
 impl FediFile {
@@ -64,20 +64,20 @@ impl FediFile {
             .await
             .map(|contents| serde_json::from_slice::<FediInfo>(&contents))??;
         Ok(Self {
-            fedi_info: Arc::new(Mutex::new(fedi_info)),
+            fedi_info: RwLock::new(fedi_info),
             storage,
         })
     }
 
     pub async fn new_with_storage(storage: Storage) -> Self {
         Self {
-            fedi_info: Arc::new(Mutex::new(FediInfo::default())),
+            fedi_info: RwLock::new(FediInfo::default()),
             storage,
         }
     }
 
     pub async fn save(&self) -> anyhow::Result<()> {
-        let fedi_info = self.fedi_info.lock().await;
+        let fedi_info = self.fedi_info.read().await;
         self.storage
             .write_file(
                 Path::new(FEDI_FILE_PATH),
@@ -86,29 +86,45 @@ impl FediFile {
             .await
     }
 
-    pub async fn set_root_mnemonic_entropy(&self, entropy: Vec<u8>) -> anyhow::Result<()> {
-        let mut fedi_info = self.fedi_info.lock().await;
+    pub async fn get_root_mnemonic(&self) -> Option<bip39::Mnemonic> {
+        self.fedi_info.read().await.root_mnemonic.clone()
+    }
 
-        if fedi_info.root_mnemonic_entropy.is_some() {
-            bail!("Cannot overwrite root mnemonic entropy");
+    pub async fn set_root_mnemonic(&self, mnemonic: bip39::Mnemonic) -> anyhow::Result<()> {
+        if self.fedi_info.read().await.root_mnemonic.is_some() {
+            bail!("Cannot overwrite root mnemonic");
         }
 
-        fedi_info.root_mnemonic_entropy = Some(entropy);
+        self.fedi_info.write().await.root_mnemonic = Some(mnemonic);
         Ok(())
+    }
+
+    pub async fn get_joined_federations_v0(&self) -> HashSet<String> {
+        self.fedi_info.read().await.joined_federations_v0.clone()
     }
 
     // TODO: remove once no longer need to support joining v0 federation
     pub async fn join_federation_v0(&self, federation_id: &str) -> anyhow::Result<()> {
-        let mut fedi_info = self.fedi_info.lock().await;
-
-        if fedi_info.joined_federations_v0.contains(federation_id) {
+        if self
+            .fedi_info
+            .read()
+            .await
+            .joined_federations_v0
+            .contains(federation_id)
+        {
             bail!("Already joined V0 federation with ID {federation_id}");
         }
 
-        fedi_info
+        self.fedi_info
+            .write()
+            .await
             .joined_federations_v0
             .insert(federation_id.to_owned());
         Ok(())
+    }
+
+    pub async fn get_joined_federations_v1(&self) -> HashMap<String, String> {
+        self.fedi_info.read().await.joined_federations_v1.clone()
     }
 
     // TODO: remove once no longer need to support joining v1 federation
@@ -117,16 +133,26 @@ impl FediFile {
         federation_id: &str,
         db_name: &str,
     ) -> anyhow::Result<()> {
-        let mut fedi_info = self.fedi_info.lock().await;
-
-        if fedi_info.joined_federations_v1.contains_key(federation_id) {
+        if self
+            .fedi_info
+            .read()
+            .await
+            .joined_federations_v1
+            .contains_key(federation_id)
+        {
             bail!("Already joined V1 federation with ID {federation_id}");
         }
 
-        fedi_info
+        self.fedi_info
+            .write()
+            .await
             .joined_federations_v1
             .insert(federation_id.to_owned(), db_name.to_owned());
         Ok(())
+    }
+
+    pub async fn get_joined_federations_v2(&self) -> HashMap<String, String> {
+        self.fedi_info.read().await.joined_federations_v2.clone()
     }
 
     pub async fn join_federation_v2(
@@ -134,23 +160,42 @@ impl FediFile {
         federation_id: &str,
         db_name: &str,
     ) -> anyhow::Result<()> {
-        let mut fedi_info = self.fedi_info.lock().await;
-
-        if fedi_info.joined_federations_v2.contains_key(federation_id) {
+        if self
+            .fedi_info
+            .read()
+            .await
+            .joined_federations_v2
+            .contains_key(federation_id)
+        {
             bail!("Already joined V2 federation with ID {federation_id}");
         }
 
-        fedi_info
+        self.fedi_info
+            .write()
+            .await
             .joined_federations_v2
             .insert(federation_id.to_owned(), db_name.to_owned());
         Ok(())
     }
 
-    pub async fn leave_federation(&self, federation_id: &str) {
-        let mut fedi_info = self.fedi_info.lock().await;
+    /// A federation, if joined, would only exist in one version.
+    /// So this function returns None for v0 federations, and
+    /// Some(database name) for v1/v2 federations. If the federation
+    /// is not joined at all, None is returned.
+    pub async fn leave_federation(&self, federation_id: &str) -> Option<String> {
+        let mut fedi_info = self.fedi_info.write().await;
 
+        let mut removed_db_name = None;
         fedi_info.joined_federations_v0.remove(federation_id);
-        fedi_info.joined_federations_v1.remove(federation_id);
-        fedi_info.joined_federations_v2.remove(federation_id);
+
+        if let Some(db_name) = fedi_info.joined_federations_v1.remove(federation_id) {
+            removed_db_name = Some(db_name);
+        }
+
+        if let Some(db_name) = fedi_info.joined_federations_v2.remove(federation_id) {
+            removed_db_name = Some(db_name);
+        }
+
+        removed_db_name
     }
 }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex as StdMutex};
+use std::sync::Mutex as StdMutex;
 
 use anyhow::bail;
 use fediffi::storage::IStorage;
@@ -12,20 +12,18 @@ use wasm_bindgen::{JsCast, JsValue};
 use crate::db::{rexie_to_anyhow, MemAndIndexedDb};
 
 pub struct WasmStorage {
-    rexie_files: Arc<Rexie>,
+    rexie_files: Rexie,
     federation: StdMutex<HashMap<String, MemAndIndexedDb>>,
 }
 
 impl WasmStorage {
     pub async fn new() -> anyhow::Result<Self> {
-        let rexie_files = Arc::new(
-            Rexie::builder("files")
-                .version(1)
-                .add_object_store(ObjectStore::new("default"))
-                .build()
-                .await
-                .map_err(rexie_to_anyhow)?,
-        );
+        let rexie_files = Rexie::builder("files")
+            .version(1)
+            .add_object_store(ObjectStore::new("default"))
+            .build()
+            .await
+            .map_err(rexie_to_anyhow)?;
         Ok(Self {
             rexie_files,
             federation: StdMutex::new(HashMap::new()),

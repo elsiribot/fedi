@@ -22,16 +22,11 @@ use fedimint_core_v1::task::TaskGroup as TaskGroupV1;
 use fedimint_mint_client_v0::{parse_ecash, MintClientExt as MintClientExtV0};
 use fedimint_mint_client_v1::MintClientExt as MintClientExtV1;
 use futures::future::join_all;
-use futures::StreamExt;
 use lightning_invoice::Bolt11Invoice;
 use rand::distributions::{Alphanumeric, DistString};
 use stability_pool_client::common::AccountInfo;
 use tokio::sync::Mutex;
 use tracing::{error, info};
-use v0_rocksdb::{
-    JoinedFederationV0, JoinedFederationV1, JoinedFederationV2, JoinedFederationsV0Prefix,
-    JoinedFederationsV1Prefix, JoinedFederationsV2Prefix, RootMnemonicEntropyKey,
-};
 
 use super::event::{EventSink, SocialRecoveryEvent};
 use super::federation_v0::FederationV0;
@@ -47,6 +42,7 @@ use super::types::{
 };
 use crate::error::ErrorCode;
 use crate::federation_v2::FederationV2;
+use crate::storage::FediFile;
 use crate::types::{
     GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
     RpcLightningGateway, RpcPayAddressResponse,
@@ -465,12 +461,12 @@ impl MultiFederation {
 /// command using it.
 pub struct Bridge {
     pub storage: Storage,
+    pub fedi_file: FediFile,
     pub federations: Arc<Mutex<HashMap<String, Arc<MultiFederation>>>>,
     pub event_sink: EventSink,
     pub task_group_v0: TaskGroupV0,
     pub task_group_v1: TaskGroupV1,
     pub task_group: TaskGroup,
-    root_mnemonic: bip39::Mnemonic,
 }
 
 impl Bridge {
@@ -478,32 +474,33 @@ impl Bridge {
         let task_group = TaskGroup::new();
         let task_group_v0 = TaskGroupV0::new();
         let task_group_v1 = TaskGroupV1::new();
-        // load v0 federations
-        let db = storage.global_database_v0().await?;
-        let mut dbtx = db.begin_transaction().await;
-        let root_mnemonic = match dbtx.get_value(&RootMnemonicEntropyKey).await {
-            Some(entropy) => bip39::Mnemonic::from_entropy(&entropy)
-                .context("invalid root mnemonic entropy in database")?,
+        let fedi_file = FediFile::existing_from_storage(storage.clone())
+            .await
+            .unwrap_or(FediFile::new_with_storage(storage.clone()).await);
+
+        let root_mnemonic = fedi_file.get_root_mnemonic().await;
+        let root_mnemonic = match root_mnemonic {
+            Some(mnemonic) => mnemonic,
             None => {
                 let mnemonic = Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
-                dbtx.insert_new_entry(&RootMnemonicEntropyKey, &mnemonic.to_entropy())
-                    .await;
+                fedi_file.set_root_mnemonic(mnemonic.clone()).await?;
+                fedi_file.save().await?;
                 mnemonic
             }
         };
-        let v0_joined = dbtx
-            .find_by_prefix(&JoinedFederationsV0Prefix)
+
+        // load v0 federations
+        let v0_joined = fedi_file
+            .get_joined_federations_v0()
             .await
-            .collect::<Vec<_>>()
-            .await;
-        let v0_iter = v0_joined.iter().map(|(federation_id, _)| async {
+            .into_iter()
+            .collect::<Vec<_>>();
+        let v0_iter = v0_joined.iter().map(|federation_id_str| async {
             Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
-                federation_id.0.to_string(),
+                federation_id_str.clone(),
                 Arc::new(MultiFederation::V0(
                     FederationV0::from_db(
-                        storage
-                            .federation_idb_v0(&federation_id.0.to_string())
-                            .await?,
+                        storage.federation_idb_v0(federation_id_str).await?,
                         event_sink.clone(),
                         task_group_v0.make_subgroup().await,
                     )
@@ -515,17 +512,17 @@ impl Bridge {
         let mut v0_map = HashMap::from_iter(v0_pairs);
 
         // load v1 federations
-        let v1_joined = dbtx
-            .find_by_prefix(&JoinedFederationsV1Prefix)
+        let v1_joined = fedi_file
+            .get_joined_federations_v1()
             .await
-            .collect::<Vec<_>>()
-            .await;
-        let v1_iter = v1_joined.iter().map(|(federation_id, db_name)| async {
+            .into_iter()
+            .collect::<Vec<_>>();
+        let v1_iter = v1_joined.iter().map(|(federation_id_str, db_name)| async {
             Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
-                federation_id.0.to_string(),
+                federation_id_str.clone(),
                 Arc::new(MultiFederation::V1(
                     FederationV1::from_db(
-                        storage.federation_idb(&db_name.clone()).await?,
+                        storage.federation_idb(db_name).await?,
                         event_sink.clone(),
                         task_group_v1.make_subgroup().await,
                     )
@@ -537,17 +534,17 @@ impl Bridge {
         let v1_map: HashMap<String, Arc<MultiFederation>> = HashMap::from_iter(v1_pairs);
 
         // load v2 federations
-        let v2_joined = dbtx
-            .find_by_prefix(&JoinedFederationsV2Prefix)
+        let v2_joined = fedi_file
+            .get_joined_federations_v2()
             .await
-            .collect::<Vec<_>>()
-            .await;
-        let v2_iter = v2_joined.iter().map(|(federation_id, db_name)| async {
+            .into_iter()
+            .collect::<Vec<_>>();
+        let v2_iter = v2_joined.iter().map(|(federation_id_str, db_name)| async {
             Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
-                federation_id.0.to_string(),
+                federation_id_str.clone(),
                 Arc::new(MultiFederation::V2(
                     FederationV2::from_db(
-                        storage.federation_database_v2(&db_name.clone()).await?,
+                        storage.federation_database_v2(db_name).await?,
                         event_sink.clone(),
                         task_group.make_subgroup().await,
                         &root_mnemonic,
@@ -560,20 +557,17 @@ impl Bridge {
         let v2_pairs = futures::future::try_join_all(v2_iter).await?;
         let v2_map: HashMap<String, Arc<MultiFederation>> = HashMap::from_iter(v2_pairs);
 
-        // commit database transaction
-        dbtx.commit_tx().await;
-
         // combine v0, v1 and v2 hashmaps
         v0_map.extend(v1_map);
         v0_map.extend(v2_map);
         Ok(Self {
             storage,
+            fedi_file,
             federations: Arc::new(Mutex::new(v0_map)),
             event_sink,
             task_group_v0,
             task_group_v1,
             task_group,
-            root_mnemonic,
         })
     }
 
@@ -632,16 +626,19 @@ impl Bridge {
             self.event_sink.clone(),
             TaskGroup::new(),
             &db_name,
-            &self.root_mnemonic,
+            &self
+                .fedi_file
+                .get_root_mnemonic()
+                .await
+                .expect("Root mnemonic should exist in fedi_file"),
         )
         .await?;
         let federation_id = federation.federation_id();
         let mut federations = self.federations.lock().await;
-        let global_db = self.storage.global_database_v0().await?;
-        let mut dbtx = global_db.begin_transaction().await;
-        dbtx.insert_entry(&JoinedFederationV2(federation_id.to_string()), &db_name)
-            .await;
-        dbtx.commit_tx().await;
+        self.fedi_file
+            .join_federation_v2(&federation_id.to_string(), &db_name)
+            .await?;
+        self.fedi_file.save().await?;
         let multi = Arc::new(MultiFederation::V2(federation));
         federations
             .entry(federation_id.to_string())
@@ -668,11 +665,10 @@ impl Bridge {
         .await?;
         let federation_id = federation.federation_id();
         let mut federations = self.federations.lock().await;
-        let global_db = self.storage.global_database_v0().await?;
-        let mut dbtx = global_db.begin_transaction().await;
-        dbtx.insert_entry(&JoinedFederationV1(federation_id.translate()), &db_name)
-            .await;
-        dbtx.commit_tx().await;
+        self.fedi_file
+            .join_federation_v1(&federation_id.to_string(), &db_name)
+            .await?;
+        self.fedi_file.save().await?;
         let multi = Arc::new(MultiFederation::V1(federation));
         federations
             .entry(federation_id.to_string())
@@ -696,11 +692,10 @@ impl Bridge {
         .await?;
         let federation_id = federation.federation_id();
         let mut federations = self.federations.lock().await;
-        let global_db = self.storage.global_database_v0().await?;
-        let mut dbtx = global_db.begin_transaction().await;
-        dbtx.insert_entry(&JoinedFederationV0(federation_id), &())
-            .await;
-        dbtx.commit_tx().await;
+        self.fedi_file
+            .join_federation_v0(&federation_id.to_string())
+            .await?;
+        self.fedi_file.save().await?;
         let multi = Arc::new(MultiFederation::V0(federation));
         federations
             .entry(federation_id.to_string())
@@ -769,22 +764,8 @@ impl Bridge {
     }
 
     pub async fn leave_federation(&self, federation_id: &str) -> Result<()> {
-        // delete federation from global db
-        let global_db = self.storage.global_database_v0().await?;
-        let mut dbtx = global_db.begin_transaction().await;
-        if let Ok(federation_id) = fedimint_core_v0::config::FederationId::from_str(federation_id) {
-            dbtx.remove_entry(&JoinedFederationV0(federation_id)).await;
-        }
-
-        let db_name = if let Ok(federation_id) =
-            fedimint_core_v1::config::FederationId::from_str(federation_id)
-        {
-            dbtx.remove_entry(&JoinedFederationV1(federation_id.translate()))
-                .await
-        } else {
-            dbtx.remove_entry(&JoinedFederationV2(federation_id.to_owned()))
-                .await
-        };
+        // delete federation from fedi file (global DB)
+        let db_name = self.fedi_file.leave_federation(federation_id).await;
 
         // Remove from bridge state
         {
@@ -796,13 +777,10 @@ impl Bridge {
         if let Some(db_name) = db_name {
             self.storage.delete_federation_db(&db_name).await?;
         } else {
-            self.storage
-                .delete_federation_db(&federation_id.to_string())
-                .await?;
+            self.storage.delete_federation_db(federation_id).await?;
         }
 
-        dbtx.commit_tx().await;
-        Ok(())
+        self.fedi_file.save().await
     }
 
     pub async fn guardian_status(
