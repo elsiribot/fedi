@@ -170,6 +170,11 @@ export const increaseStableBalance = createAsyncThunk<
                         event.federationId === activeFederationId &&
                         event.operationId === operationId
                     ) {
+                        log.info(
+                            'StabilityPoolDepositEvent.state',
+                            event.operationId,
+                            event.state,
+                        )
                         if (event.state === 'txAccepted') {
                             unsubscribeOperation()
                             resolve(event)
@@ -261,7 +266,8 @@ export const decreaseStableBalance = createAsyncThunk<
                             resolve(event)
                         } else if (
                             typeof event.state === 'object' &&
-                            'txRejected' in event.state
+                            ('txRejected' in event.state ||
+                                'cancellationSubmissionFailure' in event.state)
                         ) {
                             unsubscribeOperation()
                             reject('Transaction rejected')
