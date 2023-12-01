@@ -1,4 +1,5 @@
 import { Divider, Text, Theme, useTheme } from '@rneui/themed'
+import { Avatar } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -35,36 +36,38 @@ const StabilityTransactionDetail = ({
         return txn.status
     }
 
+    const style = styles(theme)
     return (
-        <Pressable style={styles(theme).container} onPress={Keyboard.dismiss}>
+        <Pressable style={style.container} onPress={Keyboard.dismiss}>
             <TouchableOpacity
-                style={styles(theme).closeIconContainer}
+                style={style.closeIconContainer}
                 onPress={() => {
                     handleCloseModal()
                 }}>
                 <SvgImage name="Close" size={SvgImageSize.md} />
             </TouchableOpacity>
-            <SvgImage
-                name="BitcoinCircle"
-                size={SvgImageSize.lg}
-                color={theme.colors.orange}
+            <Avatar
+                size={theme.sizes.md}
+                rounded
+                title={selectedCurrency}
+                titleStyle={style.currencyAvatarTitle}
+                containerStyle={style.currencyAvatar}
             />
-            <Text>
-                {`${
+            <Text h2 h2Style={style.titleContainer}>
+                {`${`${
                     txn.direction === 'deposit'
                         ? t('words.deposit')
                         : t('words.withdrawal')
-                }`}
+                }`} ${amountUtils.formatFiat(
+                    txn.amountCents / 100,
+                    selectedCurrency,
+                )} `}
             </Text>
-            <Text h2>{`${amountUtils.formatFiat(
-                txn.amountCents,
-                selectedCurrency,
-            )} `}</Text>
-            <View style={styles(theme).detailItemsContainer}>
+            <View style={style.detailItemsContainer}>
                 {txn.timestamp && (
                     <>
                         <Divider />
-                        <View style={styles(theme).detailItem}>
+                        <View style={style.detailItem}>
                             <Text>{`${t('words.time')}`}</Text>
                             <Text>{`${dateUtils.formatTimestamp(
                                 txn.timestamp,
@@ -74,7 +77,7 @@ const StabilityTransactionDetail = ({
                     </>
                 )}
                 <Divider />
-                <View style={styles(theme).detailItem}>
+                <View style={style.detailItem}>
                     <Text>{`${t('words.status')}`}</Text>
                     <Text>{renderStatus()}</Text>
                 </View>
@@ -96,6 +99,15 @@ const styles = (theme: Theme) =>
         },
         closeIconContainer: {
             alignSelf: 'flex-end',
+        },
+        currencyAvatar: {
+            backgroundColor: theme.colors.green,
+        },
+        currencyAvatarTitle: {
+            ...theme.styles.avatarText,
+        },
+        titleContainer: {
+            marginVertical: theme.spacing.sm,
         },
         detailItemsContainer: {
             marginTop: theme.spacing.xl,
