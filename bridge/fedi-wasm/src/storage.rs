@@ -86,7 +86,7 @@ impl IStorage for WasmStorage {
         Ok(())
     }
 
-    async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>> {
+    async fn read_file(&self, path: &Path) -> anyhow::Result<Option<Vec<u8>>> {
         let transaction = self
             .rexie_files
             .transaction(&["default"], TransactionMode::ReadOnly)
@@ -95,8 +95,9 @@ impl IStorage for WasmStorage {
         let key = JsValue::from_str(&path.to_str().expect("path is valid unicode"));
         let value = store.get(&key).await;
         match value {
+            Ok(value) if value.is_undefined() => Ok(None),
             Ok(value) => match value.dyn_into::<js_sys::Uint8Array>() {
-                Ok(v) => Ok(v.to_vec()),
+                Ok(v) => Ok(Some(v.to_vec())),
                 Err(e) => bail!(format!("failed to read_file: {e:?}")),
             },
             Err(e) => Err(rexie_to_anyhow(e)),

@@ -191,13 +191,18 @@ impl IStorage for PathBasedStorage {
         Ok(())
     }
 
-    async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>> {
-        if path.is_absolute() {
-            Ok(tokio::fs::read(path).await?)
+    async fn read_file(&self, path: &Path) -> anyhow::Result<Option<Vec<u8>>> {
+        let path = if path.is_absolute() {
+            path.to_path_buf()
         } else {
-            let path = self.data_dir.join(path);
-            Ok(tokio::fs::read(path).await?)
+            self.data_dir.join(path)
+        };
+
+        if !path.exists() {
+            return Ok(None);
         }
+
+        Ok(Some(tokio::fs::read(path).await?))
     }
 
     async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()> {

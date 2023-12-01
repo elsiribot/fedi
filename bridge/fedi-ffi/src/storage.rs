@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -36,7 +36,7 @@ pub trait IStorage: 'static + MaybeSend + MaybeSync {
         id: &str,
     ) -> anyhow::Result<Box<dyn fedimint_core_v0::db::IDatabase>>;
     async fn delete_federation_db(&self, db_name: &str) -> anyhow::Result<()>;
-    async fn read_file(&self, path: &Path) -> anyhow::Result<Vec<u8>>;
+    async fn read_file(&self, path: &Path) -> anyhow::Result<Option<Vec<u8>>>;
     async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()>;
     /// convert a relative path to a path understood by the platform.
     fn platform_path(&self, path: &Path) -> PathBuf;
@@ -45,54 +45,62 @@ pub trait IStorage: 'static + MaybeSend + MaybeSync {
 pub type Storage = Arc<dyn IStorage>;
 
 #[derive(Serialize, Deserialize, Default)]
-pub struct FediInfo {
+pub struct AppStateRaw {
+    /// Version indicator for the app state
+    pub format_version: u32,
+
+    /// Root mnemonic that's used to derive all secrets in the app
     pub root_mnemonic: Option<bip39::Mnemonic>,
 
-    // federation IDs
-    pub joined_federations_v0: BTreeSet<String>,
-
-    // federation ID => database name
-    pub joined_federations_v1: BTreeMap<String, String>,
-    pub joined_federations_v2: BTreeMap<String, String>,
+    /// Mapping of federation ID => FederationInfo
+    pub joined_federations: BTreeMap<String, FederationInfo>,
 }
 
-pub struct FediFile {
-    fedi_info: RwLock<FediInfo>,
+#[derive(Clone, Serialize, Deserialize)]
+pub struct FederationInfo {
+    /// The version of the federation, mostly characterized by consensus version
+    pub version: u32,
+
+    /// The name used for the database file for the federation's fedimint-client
+    /// instance on disk
+    pub database_name: String,
+}
+
+pub struct AppState {
+    raw: RwLock<AppStateRaw>,
     storage: Storage,
 }
 
-impl FediFile {
+impl AppState {
     /// Loads from existing file if present. If not, attempts to read from
     /// legacy global DB and writes to a new file (migration). If migration
     /// results in error, just loads a default empty file.
-    pub async fn load(storage: Storage) -> Self {
-        if let Ok(fedi_file) = FediFile::existing_from_storage(storage.clone()).await {
-            return fedi_file;
+    pub async fn load(storage: Storage) -> anyhow::Result<Self> {
+        if let Some(app_state) = AppState::existing_from_storage(storage.clone()).await? {
+            return Ok(app_state);
         }
 
-        if let Ok(fedi_file) = FediFile::new_from_legacy_global_database(storage.clone()).await {
-            return fedi_file;
-        }
-
-        FediFile::default_with_storage(storage).await
+        AppState::new_from_legacy_global_database(storage.clone()).await
     }
 
-    async fn existing_from_storage(storage: Storage) -> anyhow::Result<Self> {
-        let fedi_info = storage
-            .read_file(Path::new(FEDI_FILE_PATH))
-            .await
-            .map(|contents| serde_json::from_slice::<FediInfo>(&contents))??;
-        Ok(Self {
-            fedi_info: RwLock::new(fedi_info),
-            storage,
-        })
+    async fn existing_from_storage(storage: Storage) -> anyhow::Result<Option<Self>> {
+        let app_state_raw = storage.read_file(Path::new(FEDI_FILE_PATH)).await?;
+
+        if let Some(app_state_raw) = app_state_raw {
+            Ok(Some(Self {
+                raw: RwLock::new(serde_json::from_slice(&app_state_raw)?),
+                storage,
+            }))
+        } else {
+            Ok(None)
+        }
     }
 
     async fn new_from_legacy_global_database(storage: Storage) -> anyhow::Result<Self> {
-        let fedi_file = Self::default_with_storage(storage).await;
+        let app_state = Self::default_with_storage(storage).await;
 
         // Read v0 and v1 joined federations from legacy global DB
-        let db = fedi_file.storage.global_database_v0().await?;
+        let db = app_state.storage.global_database_v0().await?;
         let mut dbtx = db.begin_transaction().await;
         let v0_joined = dbtx
             .find_by_prefix(&JoinedFederationsV0Prefix)
@@ -107,52 +115,60 @@ impl FediFile {
         dbtx.commit_tx().await;
 
         // Write found v0 and v1 joined federations to fedi file
-        fedi_file
-            .with_write_lock(move |fedi_info| {
+        app_state
+            .with_write_lock(move |state| {
                 Box::pin(async move {
                     for (JoinedFederationV0(federation_id), _) in v0_joined {
-                        fedi_info
-                            .joined_federations_v0
-                            .insert(federation_id.to_string());
+                        state.joined_federations.insert(
+                            federation_id.to_string(),
+                            FederationInfo {
+                                version: 0,
+                                database_name: federation_id.to_string(),
+                            },
+                        );
                     }
                     for (JoinedFederationV1(federation_id), db_name) in v1_joined {
-                        fedi_info
-                            .joined_federations_v1
-                            .insert(federation_id.to_string(), db_name);
+                        state.joined_federations.insert(
+                            federation_id.to_string(),
+                            FederationInfo {
+                                version: 1,
+                                database_name: db_name,
+                            },
+                        );
                     }
                     Ok(())
                 })
             })
             .await?;
 
-        Ok(fedi_file)
+        Ok(app_state)
     }
 
     async fn default_with_storage(storage: Storage) -> Self {
         Self {
-            fedi_info: RwLock::new(FediInfo::default()),
+            raw: RwLock::new(AppStateRaw::default()),
             storage,
         }
     }
 
     pub async fn with_read_lock<T, F>(&self, closure: F) -> T
     where
-        F: FnOnce(&FediInfo) -> BoxFuture<T>,
+        F: FnOnce(&AppStateRaw) -> BoxFuture<T>,
     {
-        let fedi_info = self.fedi_info.read().await;
-        closure(&fedi_info).await
+        let app_state_raw = self.raw.read().await;
+        closure(&app_state_raw).await
     }
 
     pub async fn with_write_lock<T, F>(&self, closure: F) -> anyhow::Result<T>
     where
-        F: FnOnce(&mut FediInfo) -> BoxFuture<anyhow::Result<T>>,
+        F: FnOnce(&mut AppStateRaw) -> BoxFuture<anyhow::Result<T>>,
     {
-        let mut fedi_info = self.fedi_info.write().await;
-        let result = closure(&mut fedi_info).await?;
+        let mut app_state_raw = self.raw.write().await;
+        let result = closure(&mut app_state_raw).await?;
         self.storage
             .write_file(
                 Path::new(FEDI_FILE_PATH),
-                serde_json::to_vec::<FediInfo>(&fedi_info)?,
+                serde_json::to_vec::<AppStateRaw>(&app_state_raw)?,
             )
             .await?;
         Ok(result)
