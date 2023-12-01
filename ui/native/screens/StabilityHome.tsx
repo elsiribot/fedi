@@ -76,7 +76,7 @@ const StabilityHome: React.FC<Props> = () => {
                         if (stableBalancePending < 0) {
                             toast?.show(
                                 t(
-                                    'feature.stabilitypool.pending-withdrawal-blocking-deposit',
+                                    'feature.stabilitypool.pending-withdrawal-blocking',
                                 ),
                                 5000,
                             )
@@ -92,7 +92,19 @@ const StabilityHome: React.FC<Props> = () => {
                 />
                 <Button
                     containerStyle={style.button}
-                    onPress={() => navigation.navigate('StabilityWithdraw')}
+                    onPress={() => {
+                        // Block withdrawals if pending balance is negative because we have to wait until pending withdrawals have processed
+                        if (stableBalancePending < 0) {
+                            toast?.show(
+                                t(
+                                    'feature.stabilitypool.pending-withdrawal-blocking',
+                                ),
+                                5000,
+                            )
+                        } else {
+                            navigation.navigate('StabilityWithdraw')
+                        }
+                    }}
                     title={
                         <Text medium caption style={style.buttonText}>
                             {t('words.withdraw')}
