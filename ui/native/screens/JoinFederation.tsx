@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
-// import { useCameraDevices } from 'react-native-vision-camera'
 import { joinFederation } from '@fedi/common/redux'
 import { getFederationPreview } from '@fedi/common/utils/FederationUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -35,7 +34,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     const [isJoining, setIsJoining] = useState<boolean>(false)
     const [federationPreview, setFederationPreview] =
         useState<FederationPreviewType>()
-    const isChatSupported = useIsChatSupported()
+    const isChatSupported = useIsChatSupported(federationPreview)
 
     const handleCode = useCallback(
         async (code: string) => {

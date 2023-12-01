@@ -44,8 +44,9 @@ export const JoinFederation: React.FC = () => {
     const [isJoining, setIsJoining] = useState(false)
     const [federationPreview, setFederationPreview] =
         useState<FederationPreview>()
-    const isChatSupported = useIsChatSupported()
-    const federationRecoverySupported = useFederationRecoverySupported()
+    const isChatSupported = useIsChatSupported(federationPreview)
+    const federationRecoverySupported =
+        useFederationRecoverySupported(federationPreview)
 
     const handleCode = useCallback(
         async (code: string) => {

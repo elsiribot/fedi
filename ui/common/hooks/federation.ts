@@ -6,6 +6,7 @@ import {
     selectNostrEnabled,
     selectOnchainDepositsEnabled,
 } from '../redux'
+import { Federation } from '../types'
 import dateUtils from '../utils/DateUtils'
 import {
     shouldShowOfflineWallet,
@@ -18,10 +19,11 @@ import {
 } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
 
-export function useIsChatSupported() {
+export function useIsChatSupported(federation?: Pick<Federation, 'meta'>) {
     const activeFederation = useCommonSelector(selectActiveFederation)
-    if (!activeFederation) return false
-    return !!getFederationChatServerDomain(activeFederation.meta)
+    const meta = federation ? federation.meta : activeFederation?.meta
+    if (!meta) return false
+    return !!getFederationChatServerDomain(meta)
 }
 
 export function useIsInviteSupported() {
@@ -164,8 +166,11 @@ export function usePopupFederationInfo() {
 
 // v2 federation's can't be directly recovered.
 // you need to recover root seed and then re-join federations.
-export function useFederationRecoverySupported() {
+export function useFederationRecoverySupported(
+    federation?: Pick<Federation, 'version'>,
+) {
     const activeFederation = useCommonSelector(selectActiveFederation)
-    if (!activeFederation) return false
-    return activeFederation.version < 2
+    const version = federation ? federation.version : activeFederation?.version
+    if (!version) return false
+    return version < 2
 }
