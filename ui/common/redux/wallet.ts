@@ -11,6 +11,7 @@ import {
     selectActiveFederation,
     selectBtcExchangeRate,
     selectBtcUsdExchangeRate,
+    selectFederationStabilityPoolConfig,
 } from '.'
 import { Federation, MSats, StabilityPoolTxn, Usd, UsdCents } from '../types'
 import {
@@ -483,10 +484,34 @@ export const selectWithdrawableStableBalance = createSelector(
     },
 )
 
-export const selectAmountToWithdraw = createSelector(
+export const selectMinimumWithdrawAmount = createSelector(
+    selectFederationStabilityPoolConfig,
     selectStableBalance,
     selectStableBalancePending,
-    (stableBalance, stableBalancePending) => {
-        return stableBalance + stableBalancePending
+    (config, stableBalance, stableBalancePending) => {
+        const minimumBasisPoints = config?.min_allowed_cancellation_bps || 0
+
+        // No minimum withdraw amount if we can cancel pending deposits otherwise calculate minimum allowed cancellation from completed deposits
+        if (stableBalancePending > 0) {
+            return 0
+        } else {
+            // convert bps to decimal
+            const minimumFraction = Number(
+                (minimumBasisPoints / 10000).toFixed(4),
+            )
+            // calculate balance without cancelledFraction
+            const minimumUsdAmount = Number(
+                (stableBalance * minimumFraction).toFixed(2),
+            )
+            return minimumUsdAmount
+        }
+    },
+)
+
+export const selectMinimumDepositAmount = createSelector(
+    selectFederationStabilityPoolConfig,
+    config => {
+        const minimumMsats = config?.min_allowed_seek || 0
+        return amountUtils.msatToSat(minimumMsats)
     },
 )
