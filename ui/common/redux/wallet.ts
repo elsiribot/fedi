@@ -491,7 +491,7 @@ export const selectWithdrawableStableBalance = createSelector(
 )
 
 export const selectMinimumWithdrawAmount = createSelector(
-    selectFederationStabilityPoolConfig,
+    (s: CommonState) => selectFederationStabilityPoolConfig(s),
     selectStableBalance,
     selectStableBalancePending,
     (config, stableBalance, stableBalancePending) => {
@@ -515,7 +515,7 @@ export const selectMinimumWithdrawAmount = createSelector(
 )
 
 export const selectMinimumDepositAmount = createSelector(
-    selectFederationStabilityPoolConfig,
+    (s: CommonState) => selectFederationStabilityPoolConfig(s),
     config => {
         const minimumMsats = config?.min_allowed_seek || 0
         return amountUtils.msatToSat(minimumMsats as MSats)
@@ -529,7 +529,7 @@ export const selectMinimumDepositAmount = createSelector(
  * TODO: Use the cycle_duration to dynamically calculate APR
  */
 export const selectMaximumAPR = createSelector(
-    selectFederationStabilityPoolConfig,
+    (s: CommonState) => selectFederationStabilityPoolConfig(s),
     config => {
         const maxFeeRatePerCycle = config?.max_allowed_provide_fee_rate_ppb || 0
         // convert parts per billion to decimal
