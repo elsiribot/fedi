@@ -196,17 +196,10 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     </Text>
                 </View>
             )}
-            {/* TODO: Add offline status indicator here */}
             <View style={styles(theme).sectionContainer}>
                 <Text style={styles(theme).sectionTitle}>
                     {t('words.federation')}
                 </Text>
-                <SettingsItem
-                    disabled
-                    image={<SvgImage name="Federation" />}
-                    label={t('feature.federations.federation-details')}
-                    onPress={() => {}}
-                />
                 {showInviteCode && (
                     <SettingsItem
                         image={<SvgImage name="InviteMembers" />}
@@ -290,12 +283,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     image={<SvgImage name="Bug" />}
                     label={t('feature.bug.report-a-bug')}
                     onPress={() => navigation.navigate('BugReport')}
-                />
-                <SettingsItem
-                    disabled
-                    image={<SvgImage name="FediLogoIcon" />}
-                    label={t('phrases.app-settings-security')}
-                    onPress={() => {}}
                 />
             </View>
             <View style={styles(theme).versionContainer}>
