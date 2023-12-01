@@ -9,7 +9,7 @@ import omit from 'lodash/omit'
 
 import { authenticateChat, CommonState } from '.'
 import { Federation, Guardian, MSats, Sats, SeedWords, FediMod } from '../types'
-import { RpcJsonClientConfig } from '../types/bindings'
+import { RpcJsonClientConfig, RpcStabilityPoolConfig } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import {
     getFederationGroupChats,
@@ -333,7 +333,7 @@ export const selectFederationStabilityPoolConfig = createSelector(
                 // TODO: add better typing for this
                 const fmModule = modules[key] as Partial<{ kind: string }>
                 if (fmModule.kind === 'stability_pool') {
-                    return fmModule
+                    return fmModule as RpcStabilityPoolConfig
                 }
             }
         }
