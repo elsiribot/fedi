@@ -1,3 +1,4 @@
+use std::io::Write;
 use std::panic::AssertUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -206,7 +207,16 @@ impl IStorage for PathBasedStorage {
             self.data_dir.join(path)
         };
         // tokio::fs::write is bad, creates a second copy of data
-        Ok(tokio::task::spawn_blocking(move || std::fs::write(path, data)).await??)
+        Ok(tokio::task::spawn_blocking(move || {
+            let tmp_path = path.with_extension("tmp");
+            let mut file = std::fs::File::create(&tmp_path)?;
+            file.write_all(&data)?;
+            file.flush()?;
+            file.sync_data()?;
+            drop(file);
+            std::fs::rename(tmp_path, path)
+        })
+        .await??)
     }
 
     fn platform_path(&self, path: &Path) -> PathBuf {
