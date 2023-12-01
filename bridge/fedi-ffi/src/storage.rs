@@ -62,14 +62,19 @@ pub struct FediFile {
 }
 
 impl FediFile {
+    /// Loads from existing file if present. If not, attempts to read from
+    /// legacy global DB and writes to a new file (migration). If migration
+    /// results in error, just loads a default empty file.
     pub async fn load(storage: Storage) -> Self {
-        FediFile::existing_from_storage(storage.clone())
-            .await
-            .unwrap_or(
-                FediFile::new_from_legacy_global_database(storage.clone())
-                    .await
-                    .unwrap_or(FediFile::default_with_storage(storage.clone()).await),
-            )
+        if let Ok(fedi_file) = FediFile::existing_from_storage(storage.clone()).await {
+            return fedi_file;
+        }
+
+        if let Ok(fedi_file) = FediFile::new_from_legacy_global_database(storage.clone()).await {
+            return fedi_file;
+        }
+
+        FediFile::default_with_storage(storage).await
     }
 
     async fn existing_from_storage(storage: Storage) -> anyhow::Result<Self> {
