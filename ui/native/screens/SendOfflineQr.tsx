@@ -21,10 +21,7 @@ const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
 
     const frames = useMemo(() => {
-        // TODO: Convert to buffer from base64 to optimize QR count. Not
-        // backwards compatible, so give it some time.
-        // return dataToFrames(Buffer.from(ecash, 'base64'))
-        return dataToFrames(ecash)
+        return dataToFrames(Buffer.from(ecash, 'base64'))
     }, [ecash])
 
     // show new qr every 100ms
