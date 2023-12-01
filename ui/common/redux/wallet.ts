@@ -512,6 +512,27 @@ export const selectMinimumDepositAmount = createSelector(
     selectFederationStabilityPoolConfig,
     config => {
         const minimumMsats = config?.min_allowed_seek || 0
-        return amountUtils.msatToSat(minimumMsats)
+        return amountUtils.msatToSat(minimumMsats as MSats)
+    },
+)
+
+/**
+ * Get the max APR from the max allowed fee rate in parts per billion
+ * This calculates what % of a deposit the user can expect to pay in fees
+ * after 1 full year, deducting fees every 10 minutes compounding every cycle
+ * TODO: Use the cycle_duration to dynamically calculate APR
+ */
+export const selectMaximumAPR = createSelector(
+    selectFederationStabilityPoolConfig,
+    config => {
+        const maxFeeRatePerCycle = config?.max_allowed_provide_fee_rate_ppb || 0
+        // convert parts per billion to decimal
+        const periodicRate = maxFeeRatePerCycle / 1_000_000_000
+        // Number of 10 minute cycles in a year
+        const cyclesPerYear = 365 * 24 * 6
+        const compoundedAnnualRate =
+            1 - Math.pow(1 - periodicRate, cyclesPerYear)
+        const maxFeePercentage = (compoundedAnnualRate * 100).toFixed(3)
+        return maxFeePercentage
     },
 )
