@@ -15,18 +15,28 @@ export FS_DIR_CACHE_LOCK_ID="pid-$$-rnd-$RANDOM"     # acquire lock based on the
 export FS_DIR_CACHE_KEY_NAME="$job_name"             # the base name of our key
 export FS_DIR_CACHE_LOCK_TIMEOUT_SECS="$((60 * 30))" # unlock after timeout in case our job fails misereably
 
+log_file="$FS_DIR_CACHE_ROOT/log"
 
 fs-dir-cache gc unused --seconds "$((7 * 24 * 60 * 60))" # delete caches not used in more than a week
 
 # create/reuse cache (sub-directory) and lock it (wait if already locked)
 cache_dir=$(fs-dir-cache lock --key-file Cargo.lock --key-str "${CARGO_PROFILE-:dev}" --key-file flake.lock)
 
-# unlock it when the script finish
-# We want to expand it right away:
-# shellcheck disable=SC2064
-trap "fs-dir-cache unlock --dir ${cache_dir}" EXIT
-# TBD.
-
 export TARGET_DIR="$cache_dir/target"
+
+>&2 echo "Starting a job=$job_name in cache_dir=$cache_dir"
+
+echo "$(date --rfc-3339=seconds) RUN $cache_dir job=$job_name" >> "$log_file"
+
+on_exit() {
+    local exit_code=$?
+
+    fs-dir-cache unlock --dir "${cache_dir}"
+    echo "$(date --rfc-3339=seconds) END $cache_dir job=$job_name code=$exit_code" >> "$log_file"
+
+    exit $exit_code
+}
+trap on_exit EXIT
+
 
 "$@"
