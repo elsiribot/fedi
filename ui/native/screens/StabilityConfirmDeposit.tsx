@@ -135,9 +135,9 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
                             'words.fees',
                         )}`}</Text>
 
+                        {/* TODO: Use real APR based on current/max fee rates... for now we just show 0% */}
                         <Text caption style={style.darkGrey}>
-                            {/* TODO: Get fees from client config */}
-                            {`${maxFeeRate}% APR or less`}
+                            {`0%` || `${maxFeeRate}% APR or less`}
                         </Text>
                     </View>
                     <Divider />

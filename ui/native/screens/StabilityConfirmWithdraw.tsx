@@ -110,7 +110,7 @@ const StabilityConfirmWithdraw: React.FC<Props> = ({ route, navigation }) => {
                         )}`}</Text>
 
                         <Text caption style={style.darkGrey}>
-                            {`0 ${selectedFiatCurrency}`}
+                            {`0%`}
                         </Text>
                     </View>
                     <Divider />

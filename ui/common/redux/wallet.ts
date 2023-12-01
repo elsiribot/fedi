@@ -157,8 +157,33 @@ export const increaseStableBalance = createAsyncThunk<
         const activeFederationId = selectActiveFederation(state)?.id
         if (!activeFederationId) throw new Error('No active federation')
 
+        // Add some fee padding to resist downside price leakage while deposits confirm
+        // arbitrarily we just add the estimated fees for the first 10 cycles
+        const stabilityConfig = selectFederationStabilityPoolConfig(state)
+        if (!stabilityConfig)
+            throw new Error('No stabilitypool in this federation')
+
+        const maxAllowedFeeRate =
+            stabilityConfig?.max_allowed_provide_fee_rate_ppb || 0
+        const maxFeeRateFraction = Number(
+            (maxAllowedFeeRate / 1_000_000_000).toFixed(9),
+        )
+        const maxFirstCycleFee = Number(
+            (amount * maxFeeRateFraction).toFixed(0),
+        )
+
+        // Min leakage padding of 1 sat or first 10 cycle fees
+        const leakagePadding = Math.max(
+            1000,
+            Number((10 * maxFirstCycleFee).toFixed(0)),
+        )
+
+        const amountPlusPadding = Number(
+            (amount + leakagePadding).toFixed(0),
+        ) as MSats
+
         const operationId = await fedimint.stabilityPoolDepositToSeek(
-            amount,
+            amountPlusPadding,
             activeFederationId,
         )
 
@@ -538,7 +563,7 @@ export const selectMaximumAPR = createSelector(
         const cyclesPerYear = 365 * 24 * 6
         const compoundedAnnualRate =
             1 - Math.pow(1 - periodicRate, cyclesPerYear)
-        const maxFeePercentage = (compoundedAnnualRate * 100).toFixed(3)
-        return maxFeePercentage
+        const maxFeePercentage = (compoundedAnnualRate * 100).toFixed(4)
+        return Number(maxFeePercentage)
     },
 )
