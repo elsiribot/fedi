@@ -11,6 +11,7 @@ import {
     selectAmountInputType,
     setAmountInputType,
     selectBtcUsdExchangeRate,
+    selectWithdrawableStableBalance,
 } from '../redux'
 import {
     Btc,
@@ -372,6 +373,33 @@ export function useMinMaxSendAmount({
 }
 
 /**
+ * Get the minimum and maximum amount you can withdraw from the stable balance
+ */
+export function useMinMaxWithdrawAmount() {
+    // TODO: get minimum from config?
+    const minimumAmount = 0 as Sats
+    const withdrawableUsd = useCommonSelector(
+        selectWithdrawableStableBalance,
+    ) as Usd
+    const { convertUsdToSats } = useBtcFiatPrice()
+    const maximumAmount = convertUsdToSats(withdrawableUsd)
+
+    return { minimumAmount, maximumAmount }
+}
+
+/**
+ * Get the minimum and maximum amount you can deposit to the stable balance
+ */
+export function useMinMaxDepositAmount() {
+    // TODO: get minimum from config?
+    const minimumAmount = 0 as Sats
+    const balanceMSats = useCommonSelector(selectFederationBalance)
+    const maximumAmount = amountUtils.msatToSat(balanceMSats)
+
+    return { minimumAmount, maximumAmount }
+}
+
+/**
  * Provide all the state necessary to implement a request form that generates
  * a Lightning invoice. Optionally provide a set of WebLN requestInvoice args
  * or an LNURL withdrawal.
@@ -490,6 +518,38 @@ export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
         minimumAmount,
         maximumAmount,
         reset,
+    }
+}
+
+/**
+ * Provide all the state necessary to implement a stabilitypool withdrawal form
+ * that decreases the stable USD balance in the wallet
+ */
+export function useWithdrawForm() {
+    const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
+    const { minimumAmount, maximumAmount } = useMinMaxWithdrawAmount()
+
+    return {
+        inputAmount,
+        setInputAmount,
+        minimumAmount,
+        maximumAmount,
+    }
+}
+
+/**
+ * Provide all the state necessary to implement a stabilitypool deposit form
+ * that increases the stable USD balance in the wallet
+ */
+export function useDepositForm() {
+    const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
+    const { minimumAmount, maximumAmount } = useMinMaxDepositAmount()
+
+    return {
+        inputAmount,
+        setInputAmount,
+        minimumAmount,
+        maximumAmount,
     }
 }
 

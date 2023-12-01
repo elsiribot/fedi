@@ -6,7 +6,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Keyboard, StyleSheet } from 'react-native'
 
-import { useSendForm } from '@fedi/common/hooks/amount'
+import { useWithdrawForm } from '@fedi/common/hooks/amount'
 import { selectCurrency } from '@fedi/common/redux'
 import { selectWithdrawableStableBalance } from '@fedi/common/redux/wallet'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -31,7 +31,7 @@ const StabilityWithdraw: React.FC<Props> = () => {
         setInputAmount: setAmount,
         minimumAmount,
         maximumAmount,
-    } = useSendForm({})
+    } = useWithdrawForm()
     const withdrawableBalance = useAppSelector(selectWithdrawableStableBalance)
     const selectedFiatCurrency = useAppSelector(selectCurrency)
     const [submitAttempts, setSubmitAttempts] = useState(0)
