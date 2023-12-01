@@ -20,6 +20,7 @@ import {
     ParsedLnurlWithdraw,
     Sats,
     SupportedCurrency,
+    Usd,
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'
@@ -88,6 +89,19 @@ export const useBtcFiatPrice = () => {
     )
 
     return {
+        convertUsdToSats: useCallback(
+            (fiat: Usd) => {
+                return amountUtils.fiatToSat(fiat, btcUsdExchangeRate)
+            },
+            [btcUsdExchangeRate],
+        ),
+        convertUsdToSatsFormatted: useCallback(
+            (fiat: Usd) => {
+                const amount = amountUtils.fiatToSat(fiat, btcUsdExchangeRate)
+                return amountUtils.formatSats(amount)
+            },
+            [btcUsdExchangeRate],
+        ),
         convertSatsToFiat: useCallback(
             (sats: Sats) => {
                 return amountUtils.satToFiat(sats, exchangeRate)
@@ -103,7 +117,6 @@ export const useBtcFiatPrice = () => {
         convertSatsToFormattedFiat: useCallback(
             (sats: Sats) => {
                 const amount = amountUtils.satToFiat(sats, exchangeRate)
-
                 return amountUtils.formatFiat(amount, selectedFiatCurrency)
             },
             [exchangeRate, selectedFiatCurrency],
@@ -111,7 +124,6 @@ export const useBtcFiatPrice = () => {
         convertSatsToFormattedUsd: useCallback(
             (sats: Sats) => {
                 const amount = amountUtils.satToFiat(sats, btcUsdExchangeRate)
-
                 return amountUtils.formatFiat(amount, SupportedCurrency.USD)
             },
             [btcUsdExchangeRate],
