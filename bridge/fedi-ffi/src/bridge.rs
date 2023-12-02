@@ -22,16 +22,11 @@ use fedimint_core_v1::task::TaskGroup as TaskGroupV1;
 use fedimint_mint_client_v0::{parse_ecash, MintClientExt as MintClientExtV0};
 use fedimint_mint_client_v1::MintClientExt as MintClientExtV1;
 use futures::future::join_all;
-use futures::StreamExt;
 use lightning_invoice::Bolt11Invoice;
 use rand::distributions::{Alphanumeric, DistString};
 use stability_pool_client::common::AccountInfo;
 use tokio::sync::Mutex;
 use tracing::{error, info};
-use v0_rocksdb::{
-    JoinedFederationV0, JoinedFederationV1, JoinedFederationV2, JoinedFederationsV0Prefix,
-    JoinedFederationsV1Prefix, JoinedFederationsV2Prefix, RootMnemonicEntropyKey,
-};
 
 use super::event::{EventSink, SocialRecoveryEvent};
 use super::federation_v0::FederationV0;
@@ -47,6 +42,7 @@ use super::types::{
 };
 use crate::error::ErrorCode;
 use crate::federation_v2::FederationV2;
+use crate::storage::{AppState, FederationInfo};
 use crate::types::{
     GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
     RpcLightningGateway, RpcPayAddressResponse,
@@ -465,12 +461,12 @@ impl MultiFederation {
 /// command using it.
 pub struct Bridge {
     pub storage: Storage,
+    pub app_state: AppState,
     pub federations: Arc<Mutex<HashMap<String, Arc<MultiFederation>>>>,
     pub event_sink: EventSink,
     pub task_group_v0: TaskGroupV0,
     pub task_group_v1: TaskGroupV1,
     pub task_group: TaskGroup,
-    root_mnemonic: bip39::Mnemonic,
 }
 
 impl Bridge {
@@ -478,102 +474,85 @@ impl Bridge {
         let task_group = TaskGroup::new();
         let task_group_v0 = TaskGroupV0::new();
         let task_group_v1 = TaskGroupV1::new();
-        // load v0 federations
-        let db = storage.global_database_v0().await?;
-        let mut dbtx = db.begin_transaction().await;
-        let root_mnemonic = match dbtx.get_value(&RootMnemonicEntropyKey).await {
-            Some(entropy) => bip39::Mnemonic::from_entropy(&entropy)
-                .context("invalid root mnemonic entropy in database")?,
-            None => {
-                let mnemonic = Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
-                dbtx.insert_new_entry(&RootMnemonicEntropyKey, &mnemonic.to_entropy())
-                    .await;
-                mnemonic
-            }
-        };
-        let v0_joined = dbtx
-            .find_by_prefix(&JoinedFederationsV0Prefix)
+        let app_state = AppState::load(storage.clone()).await?;
+
+        let root_mnemonic = app_state
+            .with_write_lock(move |state| {
+                Box::pin(async move {
+                    Ok(match &state.root_mnemonic {
+                        Some(mnemonic) => mnemonic.clone(),
+                        None => {
+                            let mnemonic =
+                                Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
+                            state.root_mnemonic = Some(mnemonic.clone());
+                            mnemonic
+                        }
+                    })
+                })
+            })
+            .await?;
+
+        // load joined federations
+        let joined_federations = app_state
+            .with_read_lock(move |state| Box::pin(async move { state.joined_federations.clone() }))
             .await
-            .collect::<Vec<_>>()
-            .await;
-        let v0_iter = v0_joined.iter().map(|(federation_id, _)| async {
-            Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
-                federation_id.0.to_string(),
-                Arc::new(MultiFederation::V0(
-                    FederationV0::from_db(
-                        storage
-                            .federation_idb_v0(&federation_id.0.to_string())
-                            .await?,
-                        event_sink.clone(),
-                        task_group_v0.make_subgroup().await,
-                    )
-                    .await?,
-                )),
-            ))
-        });
-        let v0_pairs = futures::future::try_join_all(v0_iter).await?;
-        let mut v0_map = HashMap::from_iter(v0_pairs);
+            .into_iter()
+            .collect::<Vec<_>>();
 
-        // load v1 federations
-        let v1_joined = dbtx
-            .find_by_prefix(&JoinedFederationsV1Prefix)
-            .await
-            .collect::<Vec<_>>()
-            .await;
-        let v1_iter = v1_joined.iter().map(|(federation_id, db_name)| async {
-            Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
-                federation_id.0.to_string(),
-                Arc::new(MultiFederation::V1(
-                    FederationV1::from_db(
-                        storage.federation_idb(&db_name.clone()).await?,
-                        event_sink.clone(),
-                        task_group_v1.make_subgroup().await,
-                    )
-                    .await?,
-                )),
-            ))
-        });
-        let v1_pairs = futures::future::try_join_all(v1_iter).await?;
-        let v1_map: HashMap<String, Arc<MultiFederation>> = HashMap::from_iter(v1_pairs);
+        let federations =
+            joined_federations
+                .iter()
+                .map(|(federation_id_str, federation_info)| async {
+                    Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
+                        federation_id_str.clone(),
+                        match federation_info.version {
+                            0 => Arc::new(MultiFederation::V0(
+                                FederationV0::from_db(
+                                    storage
+                                        .federation_idb_v0(&federation_info.database_name)
+                                        .await?,
+                                    event_sink.clone(),
+                                    task_group_v0.make_subgroup().await,
+                                )
+                                .await?,
+                            )),
+                            1 => Arc::new(MultiFederation::V1(
+                                FederationV1::from_db(
+                                    storage
+                                        .federation_idb(&federation_info.database_name)
+                                        .await?,
+                                    event_sink.clone(),
+                                    task_group_v1.make_subgroup().await,
+                                )
+                                .await?,
+                            )),
+                            2 => Arc::new(MultiFederation::V2(
+                                FederationV2::from_db(
+                                    storage
+                                        .federation_database_v2(&federation_info.database_name)
+                                        .await?,
+                                    event_sink.clone(),
+                                    task_group.make_subgroup().await,
+                                    &root_mnemonic,
+                                    None,
+                                )
+                                .await?,
+                            )),
+                            n => bail!("Invalid federation version {n}"),
+                        },
+                    ))
+                });
 
-        // load v2 federations
-        let v2_joined = dbtx
-            .find_by_prefix(&JoinedFederationsV2Prefix)
-            .await
-            .collect::<Vec<_>>()
-            .await;
-        let v2_iter = v2_joined.iter().map(|(federation_id, db_name)| async {
-            Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
-                federation_id.0.to_string(),
-                Arc::new(MultiFederation::V2(
-                    FederationV2::from_db(
-                        storage.federation_database_v2(&db_name.clone()).await?,
-                        event_sink.clone(),
-                        task_group.make_subgroup().await,
-                        &root_mnemonic,
-                        None,
-                    )
-                    .await?,
-                )),
-            ))
-        });
-        let v2_pairs = futures::future::try_join_all(v2_iter).await?;
-        let v2_map: HashMap<String, Arc<MultiFederation>> = HashMap::from_iter(v2_pairs);
+        let federations = HashMap::from_iter(futures::future::try_join_all(federations).await?);
 
-        // commit database transaction
-        dbtx.commit_tx().await;
-
-        // combine v0, v1 and v2 hashmaps
-        v0_map.extend(v1_map);
-        v0_map.extend(v2_map);
         Ok(Self {
             storage,
-            federations: Arc::new(Mutex::new(v0_map)),
+            app_state,
+            federations: Arc::new(Mutex::new(federations)),
             event_sink,
             task_group_v0,
             task_group_v1,
             task_group,
-            root_mnemonic,
         })
     }
 
@@ -632,16 +611,33 @@ impl Bridge {
             self.event_sink.clone(),
             TaskGroup::new(),
             &db_name,
-            &self.root_mnemonic,
+            &self
+                .app_state
+                .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
+                .await
+                .expect("Root mnemonic should exist in app_state"),
         )
         .await?;
         let federation_id = federation.federation_id();
         let mut federations = self.federations.lock().await;
-        let global_db = self.storage.global_database_v0().await?;
-        let mut dbtx = global_db.begin_transaction().await;
-        dbtx.insert_entry(&JoinedFederationV2(federation_id.to_string()), &db_name)
-            .await;
-        dbtx.commit_tx().await;
+
+        // If the phone dies here, it's still ok because the federation wouldn't
+        // exist in the app_state, and we'd reattempt to join it. And the name of the
+        // DB file is random so there shouldn't be any collisions.
+        self.app_state
+            .with_write_lock(move |state| {
+                Box::pin(async move {
+                    state.joined_federations.insert(
+                        federation_id.to_string(),
+                        FederationInfo {
+                            version: 2,
+                            database_name: db_name,
+                        },
+                    );
+                    Ok(())
+                })
+            })
+            .await?;
         let multi = Arc::new(MultiFederation::V2(federation));
         federations
             .entry(federation_id.to_string())
@@ -668,11 +664,20 @@ impl Bridge {
         .await?;
         let federation_id = federation.federation_id();
         let mut federations = self.federations.lock().await;
-        let global_db = self.storage.global_database_v0().await?;
-        let mut dbtx = global_db.begin_transaction().await;
-        dbtx.insert_entry(&JoinedFederationV1(federation_id.translate()), &db_name)
-            .await;
-        dbtx.commit_tx().await;
+        self.app_state
+            .with_write_lock(move |state| {
+                Box::pin(async move {
+                    state.joined_federations.insert(
+                        federation_id.to_string(),
+                        FederationInfo {
+                            version: 1,
+                            database_name: db_name,
+                        },
+                    );
+                    Ok(())
+                })
+            })
+            .await?;
         let multi = Arc::new(MultiFederation::V1(federation));
         federations
             .entry(federation_id.to_string())
@@ -696,11 +701,20 @@ impl Bridge {
         .await?;
         let federation_id = federation.federation_id();
         let mut federations = self.federations.lock().await;
-        let global_db = self.storage.global_database_v0().await?;
-        let mut dbtx = global_db.begin_transaction().await;
-        dbtx.insert_entry(&JoinedFederationV0(federation_id), &())
-            .await;
-        dbtx.commit_tx().await;
+        self.app_state
+            .with_write_lock(move |state| {
+                Box::pin(async move {
+                    state.joined_federations.insert(
+                        federation_id.to_string(),
+                        FederationInfo {
+                            version: 0,
+                            database_name: federation_id.to_string(),
+                        },
+                    );
+                    Ok(())
+                })
+            })
+            .await?;
         let multi = Arc::new(MultiFederation::V0(federation));
         federations
             .entry(federation_id.to_string())
@@ -768,40 +782,31 @@ impl Bridge {
         .await
     }
 
-    pub async fn leave_federation(&self, federation_id: &str) -> Result<()> {
-        // delete federation from global db
-        let global_db = self.storage.global_database_v0().await?;
-        let mut dbtx = global_db.begin_transaction().await;
-        if let Ok(federation_id) = fedimint_core_v0::config::FederationId::from_str(federation_id) {
-            dbtx.remove_entry(&JoinedFederationV0(federation_id)).await;
-        }
+    pub async fn leave_federation(&self, federation_id_str: &str) -> Result<()> {
+        // delete federation from app state (global DB)
+        let federation_id = federation_id_str.to_owned();
+        let removed_federation_info = self
+            .app_state
+            .with_write_lock(move |state| {
+                Box::pin(async move { Ok(state.joined_federations.remove(&federation_id)) })
+            })
+            .await?;
 
-        let db_name = if let Ok(federation_id) =
-            fedimint_core_v1::config::FederationId::from_str(federation_id)
-        {
-            dbtx.remove_entry(&JoinedFederationV1(federation_id.translate()))
-                .await
-        } else {
-            dbtx.remove_entry(&JoinedFederationV2(federation_id.to_owned()))
-                .await
-        };
+        // If the phone dies here, it's still ok because the federation would be removed
+        // from the app_state and in the worst case we'd just be leaving behind a stale
+        // DB file.
 
         // Remove from bridge state
         {
             let mut lock = self.federations.lock().await;
-            lock.remove(&federation_id.to_string());
+            lock.remove(&federation_id_str.to_string());
         }
 
         // delete federation db
-        if let Some(db_name) = db_name {
-            self.storage.delete_federation_db(&db_name).await?;
-        } else {
-            self.storage
-                .delete_federation_db(&federation_id.to_string())
-                .await?;
+        if let Some(FederationInfo { database_name, .. }) = removed_federation_info {
+            self.storage.delete_federation_db(&database_name).await?;
         }
 
-        dbtx.commit_tx().await;
         Ok(())
     }
 
@@ -981,7 +986,10 @@ impl Bridge {
     ) -> Result<PathBuf> {
         let multi = self.get_multi(&federation_id.0).await?;
         let storage = self.storage.clone();
-        let video_file = storage.read_file(&video_file_path).await?;
+        let video_file = storage
+            .read_file(&video_file_path)
+            .await?
+            .ok_or(anyhow!("video file not found"))?;
         let recovery_file = multi.upload_backup_file(video_file).await?;
         storage
             .write_file(RECOVERY_FILENAME.as_ref(), recovery_file)
@@ -995,7 +1003,11 @@ impl Bridge {
         recovery_file_path: PathBuf,
     ) -> Result<bool> {
         let multi = self.get_multi(&federation_id.0).await?;
-        let recovery_file_bytes = self.storage.read_file(&recovery_file_path).await?;
+        let recovery_file_bytes = self
+            .storage
+            .read_file(&recovery_file_path)
+            .await?
+            .ok_or(anyhow!("recovery file not found"))?;
         let recovery_file = RecoveryFile::from_bytes(&recovery_file_bytes)?;
         multi.start_social_recovery(&recovery_file).await?;
         let valid = RecoveryFile::from_bytes(&recovery_file_bytes).is_ok();
@@ -1006,7 +1018,11 @@ impl Bridge {
         let multi = self.get_multi(&federation_id.0).await?;
         // Get the recovery file from disk (React Native and handle_upload_backup_file
         // put it there)
-        let recovery_file_bytes = self.storage.read_file(RECOVERY_FILENAME.as_ref()).await?;
+        let recovery_file_bytes = self
+            .storage
+            .read_file(RECOVERY_FILENAME.as_ref())
+            .await?
+            .ok_or(anyhow!("recovery file not found"))?;
         let recovery_file = RecoveryFile::from_bytes(&recovery_file_bytes)?;
         // Upload verification document if none exists.
         multi.start_social_recovery(&recovery_file).await?;
