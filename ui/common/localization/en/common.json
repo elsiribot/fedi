@@ -295,6 +295,7 @@
             "unknown-member": "Unknown member",
             "view-group": "View group",
             "view-shared-media": "View shared media",
+            "waiting-for-network": "Waiting for network...",
             "you-requested-payment": "You requested {{fiat}} ({{amount}} {{unit}}) {{memo}}",
             "you-sent-payment": "You sent {{fiat}} ({{amount}} {{unit}}) {{memo}}"
         },

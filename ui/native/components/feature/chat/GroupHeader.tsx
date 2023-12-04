@@ -10,6 +10,7 @@ import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'
 import { AvatarSize } from '../../ui/Avatar'
 import Header from '../../ui/Header'
+import { ChatConnectionBadge } from './ChatConnectionBadge'
 import GroupIcon from './GroupIcon'
 
 type GroupChatRouteProp = RouteProp<RootStackParamList, 'GroupChat'>
@@ -24,27 +25,32 @@ const GroupHeader: React.FC<{}> = () => {
     const headerText = group?.name || t('feature.chat.new-group')
 
     return (
-        <Header
-            backButton
-            centerContainerStyle={styles(theme).headerCenterContainer}
-            headerCenter={
-                <Pressable
-                    // if this is a DirectChat, header press is disabled
-                    disabled={group === undefined}
-                    style={styles(theme).groupNameContainer}
-                    onPress={() => {
-                        navigation.navigate('GroupAdmin', { groupId })
-                    }}>
-                    {group && <GroupIcon chat={group} size={AvatarSize.sm} />}
-                    <Text
-                        bold
-                        numberOfLines={1}
-                        style={styles(theme).groupNameText}>
-                        {headerText}
-                    </Text>
-                </Pressable>
-            }
-        />
+        <>
+            <Header
+                backButton
+                centerContainerStyle={styles(theme).headerCenterContainer}
+                headerCenter={
+                    <Pressable
+                        // if this is a DirectChat, header press is disabled
+                        disabled={group === undefined}
+                        style={styles(theme).groupNameContainer}
+                        onPress={() => {
+                            navigation.navigate('GroupAdmin', { groupId })
+                        }}>
+                        {group && (
+                            <GroupIcon chat={group} size={AvatarSize.sm} />
+                        )}
+                        <Text
+                            bold
+                            numberOfLines={1}
+                            style={styles(theme).groupNameText}>
+                            {headerText}
+                        </Text>
+                    </Pressable>
+                }
+            />
+            <ChatConnectionBadge offset={63} />
+        </>
     )
 }
 
