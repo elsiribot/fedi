@@ -72,6 +72,7 @@ pub struct StabilityPoolConfigPrivate;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Encodable, Decodable, Hash)]
 pub struct StabilityPoolClientConfig {
+    pub cycle_duration: Duration,
     pub min_allowed_seek: Amount,
     pub max_allowed_provide_fee_rate_ppb: u64,
     pub min_allowed_cancellation_bps: u32,
