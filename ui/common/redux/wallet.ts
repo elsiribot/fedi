@@ -8,6 +8,7 @@ import orderBy from 'lodash/orderBy'
 
 import {
     CommonState,
+    fetchCurrencyPrices,
     selectActiveFederation,
     selectBtcExchangeRate,
     selectBtcUsdExchangeRate,
@@ -133,6 +134,9 @@ export const refreshActiveStabilityPool = createAsyncThunk<
         const state = getState()
         const federationId = state.federation.activeFederationId
         if (!federationId) throw new Error('errors.unknown-error')
+        // Make sure we have the latest exchange rates every time we refresh stabilitypool
+        // so deposits/withdrawal amount conversions are as accurate as possible
+        dispatch(fetchCurrencyPrices())
 
         await dispatch(
             fetchStabilityPoolAccountInfo({
