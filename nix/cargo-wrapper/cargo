@@ -116,7 +116,7 @@ fi
 
 cmd_accepts_target_dir=""
 case "${cmd}" in
-  build|b|run|r|nextest|test|t|clippy)
+  build|b|run|r|nextest|test|t|clippy|check|c)
     cmd_accepts_target_dir="true"
     ;;
   *)
