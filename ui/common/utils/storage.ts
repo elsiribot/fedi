@@ -25,7 +25,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
-        version: 11,
+        version: 12,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
@@ -343,6 +343,39 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
             ...migrationState,
             version: 11,
             nuxSteps: {},
+        }
+    }
+
+    if (migrationState.version === 11) {
+        // Add new `joinedAt` field to chat groups. Use the earliest message in
+        // the chat, and if it has no messages, use the current time since it's
+        // likely a very new chat.
+        const oldChat = migrationState.chat
+        const newChat = Object.entries(oldChat).reduce(
+            (prevChat, [federationId, chatState]) => {
+                if (!chatState) return prevChat
+                const groups = chatState.groups.map(group => {
+                    let joinedAt = Date.now()
+                    chatState.messages.forEach(msg => {
+                        if (msg.sentIn !== group.id) return
+                        joinedAt = Math.min(joinedAt, msg.sentAt)
+                    })
+                    return { ...group, joinedAt }
+                })
+                return {
+                    ...prevChat,
+                    [federationId]: {
+                        ...chatState,
+                        groups,
+                    },
+                }
+            },
+            oldChat,
+        )
+        migrationState = {
+            ...migrationState,
+            version: 12,
+            chat: newChat,
         }
     }
 

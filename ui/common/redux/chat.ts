@@ -1724,10 +1724,19 @@ export const selectOrderedChatList = createSelector(
             }
         })
 
-        // Return them ordered by most recent message
+        // Return them ordered by most recent message, fall back to a group's
+        // joinedAt if it has no messages.
         return orderBy(
             Object.values(chatMap),
-            c => c.latestMessage?.sentAt,
+            c => {
+                if (c.latestMessage) {
+                    return c.latestMessage.sentAt
+                }
+                if ('joinedAt' in c) {
+                    return c.joinedAt
+                }
+                return 0
+            },
             'desc',
         )
     },

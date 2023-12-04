@@ -126,6 +126,10 @@ export interface StoredStateV11 extends Omit<StoredStateV10, 'version'> {
     nuxSteps: Record<string, boolean | undefined>
 }
 
+export interface StoredStateV12 extends Omit<StoredStateV11, 'version'> {
+    version: 12 // This version was only added to run a migration on chat data.
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -140,9 +144,10 @@ export type AnyStoredState =
     | StoredStateV9
     | StoredStateV10
     | StoredStateV11
+    | StoredStateV12
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV11
+export type LatestStoredState = StoredStateV12
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

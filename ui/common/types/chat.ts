@@ -100,6 +100,7 @@ export interface ChatMember {
 export interface ChatGroup {
     id: string
     name: string
+    joinedAt: number
     broadcastOnly?: boolean
 }
 
