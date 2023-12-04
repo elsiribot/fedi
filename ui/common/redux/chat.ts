@@ -117,7 +117,15 @@ const upsertEntityToChatState = <
     federationId: string,
     key: K,
     newEntity: T,
+    /** Max number of entities to keep in state */
     limit?: number,
+    /**
+     * A sorting function to call when a new item is added or existing item is
+     * modified. Must be in ascending order so that the newest item is at the
+     * end of the array, otherwise when combined with `limit`, new items will
+     * be removed immediately.
+     */
+    sort?: (entities: T[]) => T[],
 ): ChatState => {
     let addToEnd = true
     let wasEqual = false
@@ -147,9 +155,15 @@ const upsertEntityToChatState = <
         entities.push(newEntity)
     }
 
-    // If there's a limit to the list length, slice it
+    // If we're given a sort method, sort the list
+    if (sort) {
+        entities = sort(entities as T[])
+    }
+
+    // If there's a limit to the list length, slice off from the front since
+    // we just pushed the newest item to the end.
     if (limit && entities.length > limit) {
-        entities = entities.slice(0, limit)
+        entities = entities.slice(-limit)
     }
 
     // Return updated state
@@ -239,6 +253,7 @@ export const chatSlice = createSlice({
                 'messages',
                 message,
                 MAX_MESSAGE_HISTORY,
+                messages => orderBy(messages, 'sentAt', 'asc'),
             )
         },
         setChatGroups(
