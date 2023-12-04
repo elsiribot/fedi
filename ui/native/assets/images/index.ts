@@ -1,5 +1,6 @@
 import { ImageSourcePropType } from 'react-native'
 
+// TODO: Improve this typing, this allows people to access keys that haven't been defined.
 interface ImagesMap {
     [key: string]: ImageSourcePropType
 }
@@ -9,6 +10,7 @@ export const Images: ImagesMap = {
     FediQrLogo: require('./fedi-qr-logo.png'),
     HoloBackground: require('./holo-background.jpg'),
     HoloBackgroundStrong: require('./holo-background-strong-900.png'),
+    IllustrationChat: require('@fedi/common/assets/images/illustration-chat.png'),
     IllustrationWorld: require('@fedi/common/assets/images/illustration-world.png'),
 }
 

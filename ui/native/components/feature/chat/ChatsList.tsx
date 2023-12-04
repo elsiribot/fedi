@@ -62,6 +62,7 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,
+            width: '100%',
             paddingRight: theme.spacing.md,
         },
         content: {
