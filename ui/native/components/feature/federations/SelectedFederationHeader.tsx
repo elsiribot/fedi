@@ -54,14 +54,6 @@ const SelectedFederationHeader: React.FC<{}> = () => {
             edges={['top', 'left', 'right']}
             style={styles(theme).container}>
             <Pressable style={style.federation} onPress={openFederationsDrawer}>
-                <View
-                    style={[
-                        style.unreadIndicator,
-                        hasNewChatActivityInOtherFeds
-                            ? { opacity: 1 }
-                            : { opacity: 0 },
-                    ]}
-                />
                 <FederationLogo federation={activeFederation} size={24} />
                 <Text
                     bold
@@ -71,6 +63,14 @@ const SelectedFederationHeader: React.FC<{}> = () => {
                     {activeFederation?.name}
                 </Text>
                 <SvgImage name="ChevronRight" size={20} />
+                <View
+                    style={[
+                        style.unreadIndicator,
+                        hasNewChatActivityInOtherFeds
+                            ? { opacity: 1 }
+                            : { opacity: 0 },
+                    ]}
+                />
             </Pressable>
             {popupInfo && <PopupFederationCountdown />}
             {/* Display a small UI indicator for Fedi Nightly builds */}
@@ -128,7 +128,7 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.red,
             height: theme.sizes.unreadIndicatorSize,
             width: theme.sizes.unreadIndicatorSize,
-            marginHorizontal: theme.spacing.sm,
+            marginHorizontal: theme.spacing.xs,
             borderRadius: theme.sizes.unreadIndicatorSize * 0.5,
         },
     })
