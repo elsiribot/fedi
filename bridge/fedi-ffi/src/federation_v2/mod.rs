@@ -298,7 +298,6 @@ impl FederationV2 {
                 federation_id: RpcFederationId(client.federation_id().to_string()),
             }));
             let metadata = client.restore_from_backup(Some(backup)).await?;
-            // TODO: provide amount from here to frontend
             client
                 .get_first_module::<MintClientModule>()
                 .await_restore_finished()

@@ -240,8 +240,6 @@ export class FedimintBridge {
     async validateRecoveryFile(path: string) {
         log.debug('backup file path', path)
         await this.rpcTyped('validateRecoveryFile', { path })
-        // FIXME: change this
-        return true
     }
 
     async recoveryQr() {
