@@ -7,7 +7,6 @@ import FederationIcon from '@fedi/common/assets/svgs/federation.svg'
 import FediLogoICon from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
 import InviteMembersIcon from '@fedi/common/assets/svgs/invite-members.svg'
 import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
-import RecoveryIcon from '@fedi/common/assets/svgs/recovery.svg'
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import {
     useFederationSupportsSingleSeed,
