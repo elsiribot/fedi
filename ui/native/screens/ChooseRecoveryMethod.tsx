@@ -24,13 +24,6 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
     const activeFederation = useAppSelector(selectActiveFederation)
 
     const onChooseSocialRecovery = () => {
-        // TODO: bridge.socialRecoveryActive so we can tell if they're in the middle of a social recovery
-        // and navigate accordingly
-        // if (activeFederation!.socialRecoveryActive) {
-        //     navigation.navigate('CompleteSocialRecovery')
-        // } else {
-        //     navigation.navigate('LocateSocialRecovery')
-        // }
         navigation.navigate('LocateSocialRecovery')
     }
 
