@@ -1,9 +1,8 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-    ActivityIndicator,
     ImageBackground,
     StyleSheet,
     View,
@@ -11,14 +10,9 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { makeLog } from '@fedi/common/utils/log'
-
 import { Images } from '../assets/images'
-import { fedimint } from '../bridge'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { RootStackParamList } from '../types/navigation'
-
-const log = makeLog('native/screen/Splash')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 
@@ -27,7 +21,6 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
 
     const { fontScale } = useWindowDimensions()
-    const [isLoading, setIsLoading] = useState(true)
 
     const handleNewUser = async () => {
         navigation.navigate('JoinFederation', { invite: undefined })
@@ -35,35 +28,6 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const handleReturningUser = async () => {
         navigation.navigate('ChooseRecoveryMethod')
     }
-
-    useEffect(() => {
-        // this makes RPC calls to check if a single seed already exists
-        // or if a social recovery is active so we can advance navigation
-        const checkRecoveryStates = async () => {
-            try {
-                log.info('checkRecoveryStates')
-                // TODO: check for ongoing social recovery
-
-                // this should throw if no single seed exists
-                await fedimint.getMnemonic()
-                // navigation.reset({
-                //     index: 0,
-                //     routes: [
-                //         {
-                //             name: 'JoinFederation',
-                //             params: { invite: undefined },
-                //         },
-                //     ],
-                // })
-            } catch (error) {
-                log.error('checkRecoveryStates', error)
-            }
-            setIsLoading(false)
-        }
-        checkRecoveryStates()
-    }, [navigation])
-
-    if (isLoading) return <ActivityIndicator />
 
     const style = styles(theme, fontScale)
     return (

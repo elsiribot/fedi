@@ -23,7 +23,7 @@ const SocialRecoveryHeader: React.FC<SocialRecoveryHeaderProps> = ({
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
 
-    async function handleExitSocialRecovery() {
+    async function handleCancelSocialRecovery() {
         navigation.reset({
             index: 0,
             routes: [{ name: 'Splash' }],
@@ -32,17 +32,16 @@ const SocialRecoveryHeader: React.FC<SocialRecoveryHeaderProps> = ({
     }
 
     function onCloseButton() {
-        // FIXME: internationalize
         Alert.alert(
-            'Exit social recovery',
-            'Would you like to exit social recovery?',
+            t('feature.recovery.cancel-social-recovery'),
+            t('feature.recovery.cancel-social-recovery-detail'),
             [
                 {
                     text: t('words.no'),
                 },
                 {
                     text: t('words.yes'),
-                    onPress: handleExitSocialRecovery,
+                    onPress: handleCancelSocialRecovery,
                 },
             ],
         )

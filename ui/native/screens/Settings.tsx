@@ -90,13 +90,20 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         federationId,
                     }),
                 ).unwrap()
-                // FIXME: navigation broken here
+                navigation.replace('Initializing')
             }
         } catch (e) {
             toast?.show('Failed to leave federation', 3000)
             return
         }
-    }, [federationId, dispatch, resetChatState, resetGuardiansState, toast])
+    }, [
+        navigation,
+        federationId,
+        dispatch,
+        resetChatState,
+        resetGuardiansState,
+        toast,
+    ])
 
     const confirmLeaveFederation = () => {
         // Don't allow leaving if stable balance exists

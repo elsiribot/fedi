@@ -78,8 +78,15 @@ const Initializing: React.FC<Props> = () => {
                 if (socialRecoveryActive) {
                     return navigation.replace('CompleteSocialRecovery')
                 } else {
-                    // If they don't have a federation and aren't doing social recovery, go to the splash screen
-                    return navigation.replace('Splash')
+                    // If they have a mnemonic, go to JoinFederation, otherwise go to Splash
+                    try {
+                        await fedimint.getMnemonic()
+                        return navigation.replace('JoinFederation', {
+                            invite: undefined,
+                        })
+                    } catch {
+                        return navigation.replace('Splash')
+                    }
                 }
             }
         }

@@ -32,34 +32,34 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
         async (input: string) => {
             if (downloading) return
             try {
-                // FIXME: this `qr` value shouldn't be nullable in the bridge interface
                 let qr: SocialRecoveryQrCode = JSON.parse(input)
-                if (qr) {
-                    try {
-                        setDownloading(true)
-                        // FIXME: this is getting called over-and-over
-                        let videoPath =
-                            await socialRecoveryDownloadVerificationDoc(
-                                qr.recoveryId,
-                            )
-                        if (videoPath == null) {
-                            toast?.show(
-                                t('feature.recovery.nothing-to-download'),
-                                3000,
-                            )
-                        } else {
-                            navigation.navigate('CompleteRecoveryAssist', {
-                                videoPath: videoPath as string,
-                                recoveryId: qr.recoveryId,
-                            })
-                        }
-                    } catch (e) {
-                        log.error("couldn't download video", e)
-                        toast?.show(t('feature.recovery.download-failed'), 3000)
+                if (!qr)
+                    throw new Error(
+                        'Recovery QR should always exist in this context',
+                    )
+                try {
+                    setDownloading(true)
+                    // FIXME: this is getting called over-and-over
+                    let videoPath = await socialRecoveryDownloadVerificationDoc(
+                        qr.recoveryId,
+                    )
+                    if (videoPath == null) {
+                        toast?.show(
+                            t('feature.recovery.nothing-to-download'),
+                            3000,
+                        )
+                    } else {
+                        navigation.navigate('CompleteRecoveryAssist', {
+                            videoPath: videoPath as string,
+                            recoveryId: qr.recoveryId,
+                        })
                     }
+                } catch (e) {
+                    log.error("couldn't download video", e)
+                    toast?.show(t('feature.recovery.download-failed'), 3000)
                 }
             } catch (e) {
-                // FIXME: this isn't quite right error message. It's more like "valid JSON, perhaps not valid recovery QR"
+                log.error("couldn't generate social recovery QR code", e)
                 toast?.show(t('feature.recovery.invalid-qr-code'), 3000)
             }
             log.debug(input)

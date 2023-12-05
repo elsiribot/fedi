@@ -21,9 +21,6 @@ type Props = {
     onJoin: (joinAs: JoinAs) => void | Promise<void>
 }
 
-// TODO: for v2 we could tell the user "hey, we can see you used to be in this federation.
-// we're going to recover your money now"
-// just for returning users
 const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()

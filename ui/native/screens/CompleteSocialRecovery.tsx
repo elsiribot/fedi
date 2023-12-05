@@ -128,8 +128,9 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                             style={
                                 approval.approved ? styles(theme).completed : {}
                             }>
-                            {/* FIXME: internationalize */}
-                            {approval.approved ? 'approved' : 'pending'}
+                            {approval.approved
+                                ? t('words.approved')
+                                : t('words.pending')}
                         </Text>
                     </View>
                 )
