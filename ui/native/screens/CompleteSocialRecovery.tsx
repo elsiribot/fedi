@@ -90,7 +90,6 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 await dispatch(
                     completeSocialRecovery({
                         fedimint,
-                        federationId: activeFederationId,
                     }),
                 ).unwrap()
                 setRecovering(false)

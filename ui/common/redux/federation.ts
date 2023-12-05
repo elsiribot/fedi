@@ -230,7 +230,7 @@ export const leaveFederation = createAsyncThunk<
 
 export const completeSocialRecovery = createAsyncThunk<
     void,
-    { fedimint: FedimintBridge; federationId?: string },
+    { fedimint: FedimintBridge },
     { state: CommonState }
 >('federation/completeSocialRecovery', async ({ fedimint }, { dispatch }) => {
     await fedimint.completeSocialRecovery()
