@@ -47,7 +47,7 @@ ChatContext.ts
 - Establishes an XMPP client & stores reference in context
 - Listens for new messages & members sent from server
 - Pings the server when app returns to foreground to detect websocket health and rebuild + reconnect if necessary
-- Manages local updates to messages, groups, members seen and persists via AsyncStorage
+- Manages local updates to messages, groups, members seen and persists via MMKV
 
 CreateUsername.tsx
 
