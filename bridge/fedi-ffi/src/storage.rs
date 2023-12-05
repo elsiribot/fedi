@@ -14,6 +14,7 @@ use v0_rocksdb::{
 };
 
 use crate::constants::FEDI_FILE_PATH;
+use crate::social::SocialRecoveryState;
 
 #[apply(async_trait_maybe_send!)]
 pub trait IStorage: 'static + MaybeSend + MaybeSync {
@@ -54,6 +55,9 @@ pub struct AppStateRaw {
 
     /// Mapping of federation ID => FederationInfo
     pub joined_federations: BTreeMap<String, FederationInfo>,
+
+    // Social recovery state
+    pub social_recovery_state: Option<SocialRecoveryState>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]

@@ -99,3 +99,9 @@ install-xcode:
 
 pod-install:
   ./scripts/ui/install-ios-deps.sh
+
+clear-remote-bridge:
+  # wipe remove bridge datadir
+  rm -rf target/datadir
+  # clear android app state
+  adb shell pm clear com.fedi

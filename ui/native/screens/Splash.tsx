@@ -19,10 +19,14 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+
     const { fontScale } = useWindowDimensions()
 
-    const handleJoinFederation = async () => {
+    const handleNewUser = async () => {
         navigation.navigate('JoinFederation', { invite: undefined })
+    }
+    const handleReturningUser = async () => {
+        navigation.navigate('ChooseRecoveryMethod')
     }
 
     const style = styles(theme, fontScale)
@@ -58,9 +62,15 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
             <View style={style.buttonsContainer}>
                 <Button
                     fullWidth
+                    type="clear"
+                    title={t('feature.onboarding.join-returning-member')}
+                    onPress={handleReturningUser}
+                />
+                <Button
+                    fullWidth
                     testID="JoinFederationButton"
                     title={t('feature.federations.join-federation')}
-                    onPress={handleJoinFederation}
+                    onPress={handleNewUser}
                 />
                 <Text style={style.agreementText} small>
                     {t('feature.onboarding.by-clicking-you-agree')}

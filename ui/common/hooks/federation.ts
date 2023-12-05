@@ -164,13 +164,9 @@ export function usePopupFederationInfo() {
     }
 }
 
-// v2 federation's can't be directly recovered.
-// you need to recover root seed and then re-join federations.
-export function useFederationRecoverySupported(
-    federation?: Pick<Federation, 'version'>,
-) {
+// Only v2+ federations use secrets derived from single seed
+export function useFederationSupportsSingleSeed() {
     const activeFederation = useCommonSelector(selectActiveFederation)
-    const version = federation ? federation.version : activeFederation?.version
-    if (!version) return false
-    return version < 2
+    if (!activeFederation) return false
+    return activeFederation.version >= 2
 }

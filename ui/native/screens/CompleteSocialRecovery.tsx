@@ -22,7 +22,7 @@ import { Images } from '../assets/images'
 import { fedimint } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import {
     resetAfterFailedSocialRecovery,
     resetAfterSocialRecovery,
@@ -42,7 +42,6 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
-    const { socialRecoveryApprovals } = useBridge()
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const dispatch = useAppDispatch()
     const [recovering, setRecovering] = useState(false)
@@ -50,13 +49,12 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const [approvals, setApprovals] = useState<SocialRecoveryEvent | undefined>(
         undefined,
     )
-    const { recoveryQr } = useBridge()
     const [recoveryQrCode, setRecoveryQrCode] = useState<string>('')
 
     useEffect(() => {
         const getRecoveryAssistCode = async () => {
             try {
-                const recoveryAssistCode = await recoveryQr()
+                const recoveryAssistCode = await fedimint.recoveryQr()
                 log.info('recoveryAssistCode', recoveryAssistCode)
                 setRecoveryQrCode(JSON.stringify(recoveryAssistCode))
             } catch (error) {
@@ -67,14 +65,14 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
         }
 
         getRecoveryAssistCode()
-    }, [navigation, recoveryQr, toast])
+    }, [navigation, toast])
 
     // ask bridge for social recovery status every second
     useEffect(() => {
         const interval = setInterval(async () => {
             try {
                 if (recovering === false && recoveryQrCode) {
-                    const _approvals = await socialRecoveryApprovals()
+                    const _approvals = await fedimint.socialRecoveryApprovals()
                     setApprovals(_approvals)
                 }
             } catch (e) {
@@ -84,28 +82,20 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
         }, 1000)
 
         return () => clearInterval(interval)
-    }, [
-        toast,
-        recovering,
-        recoveryQrCode,
-        socialRecoveryApprovals,
-        setApprovals,
-    ])
+    }, [toast, recovering, recoveryQrCode, setApprovals])
 
     useEffect(() => {
         const completeRecovery = async () => {
             try {
-                if (activeFederationId) {
-                    await dispatch(
-                        completeSocialRecovery({
-                            fedimint,
-                            federationId: activeFederationId,
-                        }),
-                    ).unwrap()
-                    setRecovering(false)
-                    navigation.dispatch(resetAfterSocialRecovery())
-                }
+                await dispatch(
+                    completeSocialRecovery({
+                        fedimint,
+                    }),
+                ).unwrap()
+                setRecovering(false)
+                navigation.dispatch(resetAfterSocialRecovery())
             } catch (error) {
+                setRecovering(false)
                 log.error('completeRecovery', error)
                 toast?.show(t('errors.recovery-failed'), 3000)
             }
@@ -138,8 +128,9 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                             style={
                                 approval.approved ? styles(theme).completed : {}
                             }>
-                            {/* FIXME: internationalize */}
-                            {approval.approved ? 'approved' : 'pending'}
+                            {approval.approved
+                                ? t('words.approved')
+                                : t('words.pending')}
                         </Text>
                     </View>
                 )

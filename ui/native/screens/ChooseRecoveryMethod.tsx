@@ -24,15 +24,11 @@ const ChooseRecoveryMethod: React.FC<Props> = ({ navigation }: Props) => {
     const activeFederation = useAppSelector(selectActiveFederation)
 
     const onChooseSocialRecovery = () => {
-        if (activeFederation!.socialRecoveryActive) {
-            navigation.navigate('CompleteSocialRecovery')
-        } else {
-            navigation.navigate('LocateSocialRecovery')
-        }
+        navigation.navigate('LocateSocialRecovery')
     }
 
     const showSocialRecovery =
-        activeFederation && shouldShowSocialRecovery(activeFederation)
+        !activeFederation || shouldShowSocialRecovery(activeFederation)
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>

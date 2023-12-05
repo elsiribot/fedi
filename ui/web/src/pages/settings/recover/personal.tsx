@@ -24,18 +24,15 @@ function PersonalRecoverPage() {
     const [words, setWords] = useState<SeedWords>([])
     const [isRecovering, setIsRecovering] = useState(false)
 
-    const federationId = activeFederation?.id
     const isValid =
         words.length && words.every(word => BIP39_WORD_LIST.includes(word))
 
     const handleRecovery = useCallback(async () => {
-        if (!federationId) return
         setIsRecovering(true)
         try {
             await dispatch(
                 recoverFromMnemonic({
                     fedimint,
-                    federationId,
                     mnemonic: words,
                 }),
             ).unwrap()
@@ -48,7 +45,7 @@ function PersonalRecoverPage() {
             showErrorToast(err, 'errors.unknown-error')
         }
         setIsRecovering(false)
-    }, [federationId, words, dispatch, showToast, showErrorToast, t, push])
+    }, [words, dispatch, showToast, showErrorToast, t, push])
 
     return (
         <ContentBlock>

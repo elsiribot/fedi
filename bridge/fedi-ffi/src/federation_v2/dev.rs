@@ -12,23 +12,33 @@ use fedimint_ln_common::db::LightningGatewayKey;
 use fedimint_ln_common::{LightningGateway, LightningGatewayRegistration};
 use tracing::info;
 
+// FIXME: don't run this code in production
 fn override_localhost(url: &SafeUrl) -> SafeUrl {
-    let fedi_localhost: Option<&'static str> = option_env!("FEDI_LOCALHOST");
+    let fedi_localhost_env_var: Option<&'static str> = option_env!("FEDI_LOCALHOST");
+    let fedi_localhost = if cfg!(target_os = "android") {
+        Some("10.0.2.2")
+    } else if cfg!(target_os = "ios") {
+        Some("localhost")
+    } else {
+        None
+    };
+    let fedi_localhost = fedi_localhost_env_var.or(fedi_localhost);
     if let Some(fedi_localhost) = fedi_localhost {
         let url = SafeUrl::from_str(&url.to_string().replace("127.0.0.1", fedi_localhost)).unwrap();
         info!("Overriding 127.0.0.1->{:?}", url);
         url
     } else {
+        info!("not overrideing url, {:?}", url);
         url.clone()
     }
 }
 
-pub fn override_localhost_invite_code(invite_code: &InviteCode) -> InviteCode {
-    InviteCode::new(
+pub fn override_localhost_invite_code(invite_code: &mut InviteCode) {
+    *invite_code = InviteCode::new(
         override_localhost(&invite_code.url()),
         invite_code.peer(),
         invite_code.federation_id(),
-    )
+    );
 }
 
 pub fn override_localhost_client_config(client_config: &mut ClientConfig) {

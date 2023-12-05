@@ -124,17 +124,14 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         const recoverFromSeed = async () => {
             try {
-                if (activeFederationId) {
-                    await dispatch(
-                        recoverFromMnemonic({
-                            fedimint,
-                            federationId: activeFederationId,
-                            mnemonic: seedWords,
-                        }),
-                    ).unwrap()
-                    setRecoveryInProgress(false)
-                    navigation.dispatch(resetAfterPersonalRecovery())
-                }
+                await dispatch(
+                    recoverFromMnemonic({
+                        fedimint,
+                        mnemonic: seedWords,
+                    }),
+                ).unwrap()
+                setRecoveryInProgress(false)
+                navigation.dispatch(resetAfterPersonalRecovery())
             } catch (error) {
                 log.error('recoverFromSeed', error)
                 toast?.show(t('errors.recovery-failed'), 3000)

@@ -55,22 +55,42 @@ const Initializing: React.FC<Props> = () => {
 
     // once everything has loaded, determine where to navigate
     useEffect(() => {
-        if (!hasLoaded) return
+        const doNavigation = async () => {
+            if (!hasLoaded) return
 
-        if (hasFederation) {
-            // if chat is supported but auth is not set, recover/create username
-            // TODO: move this out of initializing, this will only send us here
-            // on first launch of app, but won't catch if you switch to a
-            // federation that's in this state!
-            if (isChatSupported && !hasAuthenticatedMember) {
-                return navigation.replace('CreateUsername')
+            if (hasFederation) {
+                // if chat is supported but auth is not set, recover/create username
+                // TODO: move this out of initializing, this will only send us here
+                // on first launch of app, but won't catch if you switch to a
+                // federation that's in this state!
+                if (isChatSupported && !hasAuthenticatedMember) {
+                    return navigation.replace('CreateUsername')
+                }
+                // Otherwise, go Home
+                return navigation.replace('TabsNavigator')
+            } else {
+                // If this RPC resolves with something truthy, then they are doing social recovery
+                let socialRecoveryActive = await fedimint
+                    .recoveryQr()
+                    .then(qr => !!qr)
+                    .catch(() => false)
+                // If they don't have a federation and are doing social recovery, go to social recovery QR screen
+                if (socialRecoveryActive) {
+                    return navigation.replace('CompleteSocialRecovery')
+                } else {
+                    // If they have a mnemonic, go to JoinFederation, otherwise go to Splash
+                    try {
+                        await fedimint.getMnemonic()
+                        return navigation.replace('JoinFederation', {
+                            invite: undefined,
+                        })
+                    } catch {
+                        return navigation.replace('Splash')
+                    }
+                }
             }
-            // Otherwise, go Home
-            return navigation.replace('TabsNavigator')
-        } else {
-            // If they don't have a federation, go to the splash screen
-            return navigation.replace('Splash')
         }
+        doNavigation()
     }, [
         hasLoaded,
         hasFederation,

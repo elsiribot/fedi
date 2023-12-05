@@ -28,6 +28,7 @@ export type ErrorCode =
     | 'panic'
     | 'notSupportedInVersion'
     | 'stabilityPoolNotSupported'
+    | 'invalidSocialRecoveryFile'
 
 export type Event =
     | { transaction: TransactionEvent }
@@ -37,6 +38,7 @@ export type Event =
     | { panic: PanicEvent }
     | { stabilityPoolDeposit: StabilityPoolDepositEvent }
     | { stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent }
+    | { recoveryStart: RecoveryStartEvent }
 
 export type GuardianStatus =
     | { online: { guardian: string } }
@@ -49,6 +51,10 @@ export interface LogEvent {
 
 export interface PanicEvent {
     message: string
+}
+
+export interface RecoveryStartEvent {
+    federationId: RpcFederationId
 }
 
 export type RpcAmount = MSats
@@ -281,33 +287,35 @@ export interface RpcMethods {
         { federationId: RpcFederationId; transactionId: string; notes: string },
         null,
     ]
-    getMnemonic: [{ federationId: RpcFederationId }, Array<string>]
-    recoverFromMnemonic: [
-        { federationId: RpcFederationId; mnemonic: Array<string> },
-        string | null,
-    ]
+    getMnemonic: [{}, Array<string>]
+    recoverFromMnemonic: [{ mnemonic: Array<string> }, null]
     uploadBackupFile: [
         { federationId: RpcFederationId; videoFilePath: string },
         string,
     ]
     locateRecoveryFile: [{}, string]
-    validateRecoveryFile: [
-        { federationId: RpcFederationId; path: string },
-        boolean,
-    ]
-    recoveryQr: [
-        { federationId: RpcFederationId },
-        { recoveryId: RpcRecoveryId },
-    ]
+    validateRecoveryFile: [{ path: string }, null]
+    recoveryQr: [{}, { recoveryId: RpcRecoveryId } | null]
+    cancelSocialRecovery: [{}, null]
     socialRecoveryApprovals: [
-        { federationId: RpcFederationId },
+        {},
+        { approvals: Array<SocialRecoveryApproval>; remaining: number },
+    ]
+    completeSocialRecovery: [
+        {},
         {
-            federationId: RpcFederationId
-            approvals: Array<SocialRecoveryApproval>
-            remaining: number
+            balance: RpcAmount
+            id: RpcFederationId
+            network: string
+            name: string
+            inviteCode: string
+            meta: Record<string, string>
+            socialRecoveryActive: boolean
+            nodes: Record<string, { url: string; name: string }>
+            version: number
+            clientConfig: RpcJsonClientConfig | null
         },
     ]
-    completeSocialRecovery: [{ federationId: RpcFederationId }, string | null]
     socialRecoveryDownloadVerificationDoc: [
         { federationId: RpcFederationId; recoveryId: RpcRecoveryId },
         string | null,
@@ -445,7 +453,6 @@ export interface SocialRecoveryApproval {
 }
 
 export interface SocialRecoveryEvent {
-    federationId: RpcFederationId
     approvals: Array<SocialRecoveryApproval>
     remaining: number
 }

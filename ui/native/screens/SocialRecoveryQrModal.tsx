@@ -14,9 +14,9 @@ import QRCode from 'react-native-qrcode-svg'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { Images } from '../assets/images'
+import { fedimint } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('SocialRecoveryQrModal')
@@ -32,13 +32,12 @@ const SocialRecoveryQrModal: React.FC<Props> = ({ navigation }: Props) => {
     const { toast } = useEnvironmentContext().state
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { recoveryQr } = useBridge()
     const [recoveryQrCode, setRecoveryQrCode] = useState<string>('')
 
     useEffect(() => {
         const getRecoveryAssistCode = async () => {
             try {
-                const recoveryAssistCode = await recoveryQr()
+                const recoveryAssistCode = await fedimint.recoveryQr()
                 log.info('recoveryAssistCode', recoveryAssistCode)
                 setRecoveryQrCode(JSON.stringify(recoveryAssistCode))
             } catch (error) {
@@ -47,7 +46,7 @@ const SocialRecoveryQrModal: React.FC<Props> = ({ navigation }: Props) => {
         }
 
         getRecoveryAssistCode()
-    }, [navigation, recoveryQr, toast])
+    }, [navigation, toast])
 
     return (
         <View style={styles(theme).container}>

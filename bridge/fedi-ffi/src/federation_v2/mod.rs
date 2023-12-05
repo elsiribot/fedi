@@ -1,6 +1,5 @@
 mod db;
 mod dev;
-pub mod social;
 
 use std::any::Any;
 use std::collections::HashMap;
@@ -14,9 +13,10 @@ use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey, Secp256k1, XOnlyPublicKey};
 use bitcoin::{Address, Network};
 use db::{
-    FediClientConfigKey, InviteCodeKey, LastBackupTimestampKey, TransactionNotesKey,
+    FediRawClientConfigKey, InviteCodeKey, LastBackupTimestampKey, TransactionNotesKey,
     XmppUsernameKey,
 };
+use fedi_social_client::common::VerificationDocument;
 use fedi_social_client::{FediSocialClientInit, RecoveryId};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::backup::Metadata;
@@ -53,48 +53,66 @@ use fedimint_wallet_client::{
 use futures::{Future, StreamExt};
 use lightning_invoice::Bolt11Invoice;
 use serde::de::DeserializeOwned;
-use social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use stability_pool_client::common::AccountInfo;
 use stability_pool_client::{
     StabilityPoolClientInit, StabilityPoolClientModule, StabilityPoolMeta,
     StabilityPoolWithdrawalOperationState,
 };
 use tokio::sync::Mutex;
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 
 use self::dev::{
     override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
 };
-use self::social::{
-    RecoveryFile, SocialBackup, SocialRecovery, SocialRecoveryIdKey, SocialRecoveryState,
-    SocialRecoveryStateKey, SocialVerification,
-};
 use super::constants::{
     BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, LNURL_CHILD_ID, MINT_OPERATION_TYPE,
-    NOSTR_CHILD_ID, ONE_WEEK, PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, SHUTDOWN_TIMEOUT,
+    NOSTR_CHILD_ID, ONE_WEEK, PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT,
     STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED,
     XMPP_PASSWORD,
 };
 use super::event::{Event, EventSink, TypedEventExt};
+use super::social::{
+    RecoveryFile, SocialBackup, SocialRecoveryClient, SocialRecoveryState, SocialVerification,
+    UserSeedPhrase,
+};
 use super::storage::Storage;
 use super::types::{
     federation_v2_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
-    RpcLightningGatewayV1, RpcPayInvoiceResponse, RpcPublicKey, RpcRecoveryId,
-    RpcSignedLnurlMessage, RpcXmppCredentials, SocialRecoveryApproval,
+    RpcLightningGatewayV1, RpcPayInvoiceResponse, RpcPublicKey, RpcSignedLnurlMessage,
+    RpcXmppCredentials,
 };
 use crate::error::ErrorCode;
+use crate::event::RecoveryStartEvent;
+use crate::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
     EcashReceiveMetadata, GuardianStatus, RpcBalanceInfo, RpcBitcoinDetails, RpcEcashInfo,
-    RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
-    RpcPayAddressResponse, RpcTransaction, RpcTransactionDirection, SocialRecoveryQr,
-    WithdrawalDetails,
+    RpcFederationId, RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
+    RpcPayAddressResponse, RpcTransaction, RpcTransactionDirection, WithdrawalDetails,
 };
-use crate::utils::{display_currency, required_threashold_of, to_unix_time, unix_now};
+use crate::utils::{display_currency, to_unix_time, unix_now};
 pub const GUARDIAN_STATUS_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FediConfig {
     pub client_config: ClientConfig,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(untagged)]
+enum PayState {
+    Pay(LnPayState),
+    Internal(InternalPayState),
+}
+
+pub fn invite_code_from_client_confing(config: &ClientConfig) -> InviteCode {
+    let (peer, endpoint) = config
+        .global
+        .api_endpoints
+        .iter()
+        .next()
+        .expect("client config must have one api endpoint");
+
+    InviteCode::new(endpoint.url.clone(), *peer, config.global.federation_id())
 }
 
 /// Federation is a wrapper of "client ng" to assist with handling RPC commands
@@ -106,14 +124,7 @@ pub struct FederationV2 {
     pub operation_states:
         Arc<Mutex<HashMap<OperationId, Box<maybe_add_send_sync!(dyn Any + 'static)>>>>,
     // DerivableSecret used for non-client usecases like LNURL and Nostr etc
-    pub secret: DerivableSecret,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(untagged)]
-enum PayState {
-    Pay(LnPayState),
-    Internal(InternalPayState),
+    pub auxiliary_secret: DerivableSecret,
 }
 
 impl FederationV2 {
@@ -136,25 +147,6 @@ impl FederationV2 {
         Ok(client_builder)
     }
 
-    /// Instantiate Federation from another client
-    ///
-    /// This is a hack used during recovery to get a handle to the old database
-    async fn build_client_builder_from_client(
-        old_client: ClientArc,
-    ) -> anyhow::Result<ClientBuilder> {
-        let client_config = old_client.get_config().clone();
-        let mut client_builder = ClientBuilder::default();
-        client_builder.with_module(MintClientInit);
-        client_builder.with_module(LightningClientInit);
-        client_builder.with_module(WalletClientInit(None));
-        client_builder.with_module(FediSocialClientInit);
-        client_builder.with_module(StabilityPoolClientInit);
-        client_builder.with_primary_module(1);
-        client_builder.with_federation_info(FederationInfo::from_config(client_config).await?);
-        client_builder.with_old_client_database(old_client);
-        Ok(client_builder)
-    }
-
     /// Constructor which starts a bunch of async tasks and ensures username is
     /// saved to db (e.g. after recovery)
     pub async fn new(
@@ -168,12 +160,50 @@ impl FederationV2 {
             event_sink,
             task_group,
             operation_states: Default::default(),
-            secret,
+            auxiliary_secret: secret,
         };
         federation.subscribe_balance_updates().await;
         federation.poll_scheduled_backups().await;
         federation.subscribe_to_all_operations().await;
         federation
+    }
+
+    async fn client_from_db(
+        db: Database,
+        root_mnemonic: &bip39::Mnemonic,
+        client_config: Option<ClientConfig>,
+    ) -> Result<ClientArc, anyhow::Error> {
+        let config = fedimint_client::get_config_from_db(&db).await;
+        let config = client_config
+            .clone()
+            .or(config)
+            .expect("config not found in db or provided");
+
+        let federation_id = config.global.federation_id();
+        let client_root_secret =
+            Self::client_root_secret_from_root_mnemonic(root_mnemonic, &federation_id);
+        let client_builder = Self::build_client_builder(client_config, db).await?;
+        let client = client_builder.build(client_root_secret).await?;
+
+        Ok(client)
+    }
+
+    pub fn client_root_secret_from_root_mnemonic(
+        root_mnemonic: &bip39::Mnemonic,
+        federation_id: &FederationId,
+    ) -> DerivableSecret {
+        let global_root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&root_mnemonic);
+        let client_root_secret = get_default_client_secret(&global_root_secret, &federation_id);
+        client_root_secret
+    }
+
+    pub fn auxiliary_secret_from_root_mnemonic(
+        root_mnemonic: &bip39::Mnemonic,
+        federation_id: &FederationId,
+    ) -> DerivableSecret {
+        let global_root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&root_mnemonic);
+        let auxiliary_secret = get_default_auxiliary_secret(&global_root_secret, &federation_id);
+        auxiliary_secret
     }
 
     /// Instantiate Federation from FediConfig
@@ -184,29 +214,16 @@ impl FederationV2 {
         root_mnemonic: &bip39::Mnemonic,
         client_config: Option<ClientConfig>,
     ) -> anyhow::Result<Self> {
-        let fedi_config = {
-            let mut dbtx = db.begin_transaction().await;
-            let config_string = dbtx
-                .get_value(&FediClientConfigKey)
-                .await
-                .context("config not present in db")?
-                .to_string();
-            let fedi_config: FediConfig =
-                serde_json::from_str(&config_string).context("invalid config")?;
-            fedi_config
-        };
-
-        let federation_id = fedi_config.client_config.global.federation_id();
-        let global_root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(root_mnemonic);
-        let client_root_secret = get_default_client_secret(&global_root_secret, &federation_id);
-        let bridge_root_secret = get_default_auxiliary_secret(&global_root_secret, &federation_id);
-        let client_builder = Self::build_client_builder(client_config, db).await?;
-        let client = client_builder.build(client_root_secret).await?;
+        let client = Self::client_from_db(db, &root_mnemonic, client_config).await?;
+        // FIXME: repetitive
+        let federation_id = client.federation_id();
+        let auxiliary_secret =
+            Self::auxiliary_secret_from_root_mnemonic(root_mnemonic, &federation_id);
         Ok(Self::new(
             client,
             event_sink,
             task_group.make_subgroup().await,
-            bridge_root_secret,
+            auxiliary_secret,
         )
         .await)
     }
@@ -215,10 +232,20 @@ impl FederationV2 {
         invite_code_string: &String,
     ) -> anyhow::Result<ClientConfig> {
         let mut invite_code: InviteCode = InviteCode::from_str(invite_code_string)?;
+        tracing::info!("invite_code: {:?}", invite_code);
         override_localhost_invite_code(&mut invite_code);
+        tracing::info!("invite_code 2: {:?}", invite_code);
+
+        let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]));
+        tracing::info!("api: {:?}", api);
+
         let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]))
             as Arc<dyn IGlobalFederationApi + Send + Sync + 'static>;
-        let client_config: ClientConfig = api.as_ref().download_client_config(&invite_code).await?;
+        let client_config: ClientConfig = api
+            .as_ref()
+            .hacky_download_client_config_single_peer(&invite_code)
+            .await?;
+        tracing::info!("downloaded client config");
         Ok(client_config)
     }
 
@@ -233,33 +260,67 @@ impl FederationV2 {
         root_mnemonic: &bip39::Mnemonic,
     ) -> Result<Self> {
         // Download federation config
-        let invite_code: InviteCode = InviteCode::from_str(&invite_code_string)?;
-        let invite_code = override_localhost_invite_code(&invite_code);
+        let mut invite_code: InviteCode = InviteCode::from_str(&invite_code_string)?;
+        override_localhost_invite_code(&mut invite_code);
         let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]))
             as Arc<dyn IGlobalFederationApi + Send + Sync + 'static>;
-        let mut client_config: ClientConfig =
-            api.as_ref().download_client_config(&invite_code).await?;
-        override_localhost_client_config(&mut client_config);
+        let mut client_config: ClientConfig = api
+            .as_ref()
+            .hacky_download_client_config_single_peer(&invite_code)
+            .await?;
 
         // Save client config and invite code
         let db = storage.federation_database_v2(db_name).await?;
         // fedimint-client will add decoders
         let mut dbtx = db.begin_transaction().await;
-        let fedi_config = FediConfig { client_config };
-        dbtx.insert_entry(&FediClientConfigKey, &serde_json::to_string(&fedi_config)?)
-            .await;
+        let fedi_config = FediConfig {
+            client_config: client_config.clone(),
+        };
+        dbtx.insert_entry(
+            &FediRawClientConfigKey,
+            &serde_json::to_string(&fedi_config)?,
+        )
+        .await;
         dbtx.insert_entry(&InviteCodeKey, &invite_code_string).await;
         dbtx.commit_tx().await;
-        let federation = Self::from_db(
-            db,
-            event_sink,
-            task_group,
-            root_mnemonic,
-            Some(fedi_config.client_config),
-        )
-        .await?;
 
-        Ok(federation)
+        override_localhost_client_config(&mut client_config);
+        let client = Self::client_from_db(db, root_mnemonic, Some(client_config)).await?;
+        let federation_id = client.federation_id();
+        let auxiliary_secret =
+            Self::auxiliary_secret_from_root_mnemonic(root_mnemonic, &federation_id);
+        // restore from scratch is not used because it takes too much time.
+        if let Some(backup) = client.download_backup_from_federation().await? {
+            // TODO: ensure that if user exists app and re-opens during the restoration,
+            // they will still see a spinner
+            info!("backup found {:?}", backup);
+            event_sink.typed_event(&Event::RecoveryStart(RecoveryStartEvent {
+                federation_id: RpcFederationId(client.federation_id().to_string()),
+            }));
+            let metadata = client.restore_from_backup(Some(backup)).await?;
+            client
+                .get_first_module::<MintClientModule>()
+                .await_restore_finished()
+                .await?;
+            let this = Self::new(
+                client,
+                event_sink,
+                task_group.make_subgroup().await,
+                auxiliary_secret,
+            )
+            .await;
+            this.save_restored_metadata(metadata).await?;
+            Ok(this)
+        } else {
+            info!("backup not found");
+            Ok(Self::new(
+                client,
+                event_sink,
+                task_group.make_subgroup().await,
+                auxiliary_secret,
+            )
+            .await)
+        }
     }
 
     /// Get federation ID
@@ -645,6 +706,11 @@ impl FederationV2 {
         let start = fedimint_core::time::now();
         let operations = self.client.get_active_operations().await;
         for operation_id in operations.iter() {
+            // FIXME: upstream bug, get_active_operation returns operation id that doesn't
+            // have an operation
+            if operation_id == &OperationId([0x01; 32]) {
+                continue;
+            }
             if let Err(e) = self.subscribe_to_operation(*operation_id).await {
                 warn!(
                     "failed to subscribe to operation: {:?} {:?}",
@@ -1113,24 +1179,8 @@ impl FederationV2 {
     // FIXME: get rid of this method and just access self.secret directly
     /// Get client root secret
     fn root_secret(&self) -> DerivableSecret {
-        self.secret.clone()
+        self.auxiliary_secret.clone()
     }
-
-    // /// Fetch mnemonic from database
-    // pub async fn get_mnemonic(&self) -> bip39::Mnemonic {
-    //     self.client
-    //         .root_secret_encoding::<Bip39RootSecretStrategy>()
-    //         .await
-    // }
-
-    // /// Fetch mnemonic from database as vec of strings
-    // pub async fn get_mnemonic_words(&self) -> Vec<String> {
-    //     self.get_mnemonic()
-    //         .await
-    //         .word_iter()
-    //         .map(|s| s.to_string())
-    //         .collect()
-    // }
 
     /// Backup all ecash and username with the federation
     pub async fn backup(&self) -> Result<()> {
@@ -1153,41 +1203,6 @@ impl FederationV2 {
         Ok(())
     }
 
-    // TODO shaurya update this function
-    /// Recover federation from mnemonic
-    // pub async fn from_mnemonic(
-    //     mnemonic: bip39::Mnemonic,
-    //     old_client: Client,
-    //     event_sink: EventSink,
-    //     task_group: TaskGroup,
-    // ) -> Result<Self> { let client_builder = Self::build_client_builder_from_client(old_client);
-    //   let secret = ClientSecret::<Bip39RootSecretStrategy>::new(mnemonic); let (client, metadata)
-    //   = client_builder .build_restoring_from_backup::<Bip39RootSecretStrategy>(secret) .await?;
-
-    //     let federation = Self::new(
-    //         Arc::new(client),
-    //         event_sink,
-    //         task_group.make_subgroup().await,
-    //     )
-    //     .await;
-
-    //     federation.save_restored_metadata(metadata).await?;
-
-    //     Ok(federation)
-    // }
-
-    /// Wipe state and shutdown tasks
-    /// FIXME: maybe we should split this into 2 methods?
-    pub async fn prepare_for_recovery(&self) -> Result<ClientArc> {
-        self.task_group
-            .clone() // FIXME: remove this clone
-            .shutdown_join_all(Some(SHUTDOWN_TIMEOUT))
-            .await?;
-        self.client.wipe_state().await?;
-        let client: ClientArc = self.client.clone();
-        Ok(client)
-    }
-
     //
     // Social Recovery
     //
@@ -1195,7 +1210,7 @@ impl FederationV2 {
     /// Generate social recovery secret from root secret
     pub fn social_recovery_secret_static(root_secret: &DerivableSecret) -> DerivableSecret {
         // It's level 1 because we're using client.external_secret()
-        assert_eq!(root_secret.level(), 1);
+        assert_eq!(root_secret.level(), 2);
         root_secret.child_key(SOCIAL_RECOVERY_SECRET_CHILD_ID)
     }
 
@@ -1209,6 +1224,16 @@ impl FederationV2 {
     pub async fn decoded_config(&self) -> Result<ClientConfig> {
         let client_config = self.client.get_config().clone();
         Ok(client_config.redecode_raw(self.client.decoders())?)
+    }
+
+    pub async fn raw_config(&self) -> Result<ClientConfig> {
+        let mut dbtx = self.dbtx().await;
+        let config = dbtx
+            .get_value(&FediRawClientConfigKey)
+            .await
+            .context("config not found in db")?;
+        let fed_config: FediConfig = serde_json::from_str(&config)?;
+        Ok(fed_config.client_config)
     }
 
     // Create social backup client
@@ -1231,44 +1256,33 @@ impl FederationV2 {
     pub async fn social_recovery_start(
         &self,
         recovery_file: RecoveryFile,
-    ) -> anyhow::Result<SocialRecovery> {
+    ) -> anyhow::Result<SocialRecoveryClient> {
         let client_config = self.decoded_config().await?;
         let (module_id, cfg) = client_config
             .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
                 "fedi-social",
             )
             .expect("needs social recovery module client config");
-        SocialRecovery::new_start(module_id, cfg.clone(), self.social_api(), recovery_file)
+        SocialRecoveryClient::new_start(module_id, cfg.clone(), self.social_api(), recovery_file)
     }
 
     /// Continue social recovery session
     pub async fn social_recovery_continue_inner(
         &self,
         prev_state: SocialRecoveryState,
-    ) -> Result<SocialRecovery> {
+    ) -> Result<SocialRecoveryClient> {
         let client_config = self.decoded_config().await?;
         let (module_id, cfg) = client_config
             .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
                 "fedi-social",
             )
             .expect("needs social recovery module client config");
-        Ok(SocialRecovery::new_continue(
+        Ok(SocialRecoveryClient::new_continue(
             module_id,
             cfg.clone(),
             self.social_api(),
             prev_state,
         ))
-    }
-
-    /// Attempt to continue a previous social recovery session by loading state
-    /// from DB
-    pub async fn social_recovery_continue(&self) -> Result<SocialRecovery> {
-        let mut dbtx = self.dbtx().await;
-        let state = dbtx
-            .get_value(&SocialRecoveryStateKey(self.federation_id()))
-            .await
-            .ok_or(anyhow!("no active recovery session"))?;
-        self.social_recovery_continue_inner(state).await
     }
 
     /// Get social verification client for a guardian
@@ -1278,50 +1292,31 @@ impl FederationV2 {
 
     /// Upload social recovery recovery file to federation given a recovery
     /// video
-    pub async fn upload_backup_file(&self, _: Vec<u8>) -> Result<Vec<u8>> {
-        bail!("Social recovery not implemented for v2 federations, yet")
-    }
+    pub async fn upload_backup_file(
+        &self,
+        video_file: Vec<u8>,
+        root_seed: bip39::Mnemonic,
+    ) -> Result<Vec<u8>> {
+        let verification_doc = VerificationDocument::from_raw(&video_file);
 
-    /// Start a new social recovery session if one doesn't exist already
-    /// FIXME: This will lead to bugs because if someone gets stuck inside a
-    /// session there will be no way to exist Also won't be able to do
-    /// simulataneous recoveries in 2 federations.
-    pub async fn start_social_recovery(&self, recovery_file: &RecoveryFile) -> Result<()> {
-        let recovery_client = match self.social_recovery_continue().await {
-            Ok(recovery_client) => recovery_client,
-            Err(_) => {
-                let recovery_client = self.social_recovery_start(recovery_file.clone()).await?;
-                self.save_social_recovery_state(recovery_client.state())
-                    .await;
-                recovery_client
-            }
-        };
-        // If we don't have a social recovery ID in the database, create one
-        if self.get_social_recovery_id().await.is_none() {
-            tracing::info!("saving social recovery id");
-            let verification_request = recovery_client
-                .create_verification_request(recovery_file.verification_document.clone())?;
-            recovery_client
-                .upload_verification_request(&verification_request)
-                .await
-                .context("upload verification request")?;
-            let recovery_id = verification_request.recovery_id();
-            self.save_social_recovery_id(&recovery_id).await;
-        }
-        self.send_federation_event().await;
-        Ok(())
-    }
+        let seed_phrase = UserSeedPhrase::from(
+            root_seed
+                .word_iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>()
+                .join(" "),
+        );
 
-    /// Produce social recovery QR
-    pub async fn social_recovery_qr(&self) -> Result<SocialRecoveryQr> {
-        // Return social recovery QR
-        tracing::info!("looking up recovery id for qr");
-        let recovery_id = self
-            .get_social_recovery_id()
-            .await
-            .map(RpcRecoveryId)
-            .ok_or(anyhow!("No recovery ID found"))?;
-        Ok(SocialRecoveryQr { recovery_id })
+        let backup_client = self.social_backup().await?;
+        let recovery_file = backup_client.prepare_recovery_file(
+            verification_doc.clone(),
+            seed_phrase.clone(),
+            self.raw_config().await?,
+        );
+        backup_client
+            .upload_backup_to_federation(&recovery_file)
+            .await?;
+        Ok(recovery_file.to_bytes())
     }
 
     /// Download social recovery video to `data_dir`
@@ -1357,54 +1352,6 @@ impl FederationV2 {
             .approve_recovery(*recovery_id, password)
             .await?;
         Ok(())
-    }
-
-    /// Get a list of the state of all social recoveries from all guardians
-    pub async fn social_recovery_approvals(&self) -> Result<(Vec<SocialRecoveryApproval>, usize)> {
-        let mut recovery_client = self.social_recovery_continue().await?;
-        let guardian_peer_ids: Vec<(String, PeerId)> = self
-            .client
-            .get_config()
-            .clone()
-            .global
-            .api_endpoints
-            .into_iter()
-            .map(|(peer_id, endpoint)| (endpoint.name, peer_id))
-            .collect();
-        let mut approvals = vec![];
-        for (guardian_name, peer_id) in guardian_peer_ids {
-            let approved = recovery_client
-                .get_decryption_share_from(peer_id)
-                .await
-                .unwrap_or_else(|_| {
-                    debug!("failed to get decryption share from peer {}", peer_id);
-                    false
-                });
-            approvals.push(SocialRecoveryApproval {
-                guardian_name,
-                approved,
-            });
-        }
-
-        // calculate approvals remaining
-        let approvals_required = required_threashold_of(approvals.len());
-        let num_approvals = approvals.iter().filter(|a| a.approved).count();
-        let remaining = approvals_required.saturating_sub(num_approvals);
-
-        // Save progress to DB
-        self.save_social_recovery_state(recovery_client.state())
-            .await;
-
-        Ok((approvals, remaining))
-    }
-
-    /// Attempt to recovery mnemonic from recovery shares available for download
-    /// from the federation
-    pub async fn social_recovery_combine_shares(&self) -> Result<bip39::Mnemonic> {
-        let recovery_client = self.social_recovery_continue().await?;
-        let seed_phrase = recovery_client.combine_recovered_user_phrase()?;
-        let mnemonic = bip39::Mnemonic::parse(seed_phrase.0)?;
-        Ok(mnemonic)
     }
 
     /// Sign LNURL message using a key derived from client secret
@@ -1477,11 +1424,14 @@ impl FederationV2 {
 
         // FIXME: this potentially prevents race conditions, but degrades recovery for
         // federations without chat Username is present
-        if self.get_xmpp_username().await.is_none() {
-            return Ok(());
-        }
+        // FIXME: what was this race condition???
+        // if self.get_xmpp_username().await.is_none() {
+        //     return Ok(());
+        // }
 
         // Do backup and save timestamp to db
+        // Hack to make sure recovery balance events have been processed
+        fedimint_core::task::sleep(Duration::from_secs(15)).await;
         self.backup().await?;
         self.save_last_backup_timestamp(now).await;
 
@@ -1888,50 +1838,13 @@ impl FederationV2 {
         dbtx.commit_tx().await;
     }
 
+    // FIXME this is busted in social recovery
     pub async fn get_invite_code(&self) -> String {
         self.dbtx()
             .await
             .get_value(&InviteCodeKey)
             .await
             .expect("invite code must exist")
-    }
-
-    pub async fn save_social_recovery_state(&self, state: &SocialRecoveryState) {
-        let mut dbtx = self.dbtx().await;
-        dbtx.insert_entry(&SocialRecoveryStateKey(self.federation_id()), state)
-            .await;
-        dbtx.commit_tx().await;
-    }
-
-    /// Get social recovery Id from the DB. This is used to generate the
-    /// recovery QR. FIXME: just put this in social recovery state
-    pub async fn get_social_recovery_id(&self) -> Option<RecoveryId> {
-        self.dbtx()
-            .await
-            .get_value(&SocialRecoveryIdKey(self.federation_id()))
-            .await
-    }
-
-    /// Save social recovery ID to the DB. This is used to generate the recovery
-    /// QR.
-    pub async fn save_social_recovery_id(&self, state: &RecoveryId) {
-        let mut dbtx = self.dbtx().await;
-        dbtx.insert_entry(&SocialRecoveryIdKey(self.federation_id()), state)
-            .await;
-        dbtx.commit_tx().await;
-    }
-
-    /// Delete all social recovery state from DB
-    pub async fn delete_social_recovery_state_and_id(&self) {
-        let mut dbtx = self.dbtx().await;
-        dbtx.remove_entry(&SocialRecoveryStateKey(self.federation_id()))
-            .await;
-        dbtx.remove_entry(&SocialRecoveryIdKey(self.federation_id()))
-            .await;
-        // TODO: delete the verification file?
-        dbtx.commit_tx().await;
-        // FIXME: a little weird to call this here
-        self.send_federation_event().await;
     }
 
     async fn update_operation_state<T>(&self, operation_id: OperationId, state: T)

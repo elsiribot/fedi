@@ -21,7 +21,7 @@ export class FedimintBridge {
             method: string,
             payload: object,
         ) => Promise<T>,
-    ) { }
+    ) {}
 
     async rpcTyped<
         M extends bindings.RpcMethodNames,
@@ -32,13 +32,8 @@ export class FedimintBridge {
 
     /*** RPC METHODS ***/
 
-    async federationPreview(
-        inviteCode: string,
-    ) {
-        return this.rpcTyped(
-            'federationPreview',
-            { inviteCode },
-        )
+    async federationPreview(inviteCode: string) {
+        return this.rpcTyped('federationPreview', { inviteCode })
     }
 
     async stabilityPoolWithdraw(
@@ -215,14 +210,13 @@ export class FedimintBridge {
         })
     }
 
-    async getMnemonic(federationId: string) {
-        return this.rpcTyped('getMnemonic', { federationId })
+    async getMnemonic() {
+        return this.rpcTyped('getMnemonic', {})
     }
 
-    async recoverFromMnemonic(mnemonic: string[], federationId: string) {
+    async recoverFromMnemonic(mnemonic: string[]) {
         return this.rpcTyped('recoverFromMnemonic', {
             mnemonic,
-            federationId,
         })
     }
 
@@ -243,39 +237,17 @@ export class FedimintBridge {
         return this.rpcTyped('locateRecoveryFile', { federationId })
     }
 
-    async validateRecoveryFile(path: string, federationId: string) {
+    async validateRecoveryFile(path: string) {
         log.debug('backup file path', path)
-        return this.rpcTyped('validateRecoveryFile', { federationId, path })
+        await this.rpcTyped('validateRecoveryFile', { path })
     }
 
-    async recoveryQr(federationId: string) {
-        return this.rpcTyped('recoveryQr', { federationId })
+    async recoveryQr() {
+        return this.rpcTyped('recoveryQr', {})
     }
 
-    async socialRecoveryApprovals(federationId: string) {
-        return this.rpcTyped('socialRecoveryApprovals', {
-            federationId,
-        })
-    }
-
-    // guardian fetches `_secret` (somehow) from federation admin web UI
-    async authenticateGuardian(
-        _secret: string,
-        _federationId: string,
-    ): Promise<null> {
-        // Simulate success/failure modes
-        return Promise.resolve(null)
-        // return Promise.reject('invalid secret')
-    }
-
-    // `_userPublicKey` is what guardian decryption shares are threshold-encrypted to
-    async denySocialRecoveryRequest(
-        _userPublicKey: string,
-        _federationId: string,
-    ): Promise<null> {
-        // Simulate success/failure modes
-        return Promise.resolve(null)
-        // return Promise.reject('social recovery denial failed')
+    async socialRecoveryApprovals() {
+        return this.rpcTyped('socialRecoveryApprovals', {})
     }
 
     // `_userPublicKey` is what guardian decryption shares are threshold-encrypted to
@@ -303,10 +275,12 @@ export class FedimintBridge {
         })
     }
 
-    async completeSocialRecovery(federationId: string) {
-        return this.rpcTyped('completeSocialRecovery', {
-            federationId,
-        })
+    async completeSocialRecovery() {
+        return this.rpcTyped('completeSocialRecovery', {})
+    }
+
+    async cancelSocialRecovery() {
+        return this.rpcTyped('cancelSocialRecovery', {})
     }
 
     /*** BRIDGE EVENTS ***/

@@ -15,9 +15,7 @@ use fedimint_bip39_v0::Bip39RootSecretStrategy;
 use fedimint_client_v0::backup::Metadata;
 use fedimint_client_v0::db::ChronologicalOperationLogKey;
 use fedimint_client_v0::sm::OperationId;
-use fedimint_client_v0::{
-    get_client_root_secret, Client, ClientBuilder, ClientSecret, OperationLogEntry,
-};
+use fedimint_client_v0::{get_client_root_secret, Client, ClientBuilder, OperationLogEntry};
 use fedimint_core_v0::api::{
     GlobalFederationApi, WsClientConnectInfo as InviteCode, WsFederationApi,
 };
@@ -50,8 +48,7 @@ use self::dev::{
 };
 use self::utils::{parse_ecash, serialize_ecash};
 use super::constants::{
-    LNURL_CHILD_ID, ONE_WEEK, PAY_INVOICE_TIMEOUT, SHUTDOWN_TIMEOUT, XMPP_CHILD_ID,
-    XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
+    LNURL_CHILD_ID, ONE_WEEK, PAY_INVOICE_TIMEOUT, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
 };
 use super::event::{Event, EventSink, TypedEventExt};
 use super::storage::Storage;
@@ -95,21 +92,6 @@ impl FederationV0 {
         client_builder.with_primary_module(1);
         client_builder.with_config(client_config);
         client_builder.with_dyn_database(db);
-        client_builder
-    }
-
-    /// Instantiate Federation from another client
-    ///
-    /// This is a hack used during recovery to get a handle to the old database
-    async fn build_client_builder_from_client(old_client: Client) -> ClientBuilder {
-        let client_config = old_client.get_config().await.clone();
-        let mut client_builder = ClientBuilder::default();
-        client_builder.with_module(MintClientGen);
-        client_builder.with_module(LightningClientGen);
-        client_builder.with_module(WalletClientGen);
-        client_builder.with_primary_module(1);
-        client_builder.with_config(client_config);
-        client_builder.with_old_client_database(old_client);
         client_builder
     }
 
@@ -692,22 +674,6 @@ impl FederationV0 {
         get_client_root_secret::<Bip39RootSecretStrategy>(self.client.db()).await
     }
 
-    /// Fetch mnemonic from database
-    pub async fn get_mnemonic(&self) -> bip39::Mnemonic {
-        self.client
-            .root_secret_encoding::<Bip39RootSecretStrategy>()
-            .await
-    }
-
-    /// Fetch mnemonic from database as vec of strings
-    pub async fn get_mnemonic_words(&self) -> Vec<String> {
-        self.get_mnemonic()
-            .await
-            .word_iter()
-            .map(|s| s.to_string())
-            .collect()
-    }
-
     /// Backup all ecash and username with the federation
     pub async fn backup(&self) -> Result<()> {
         let username = self.get_xmpp_username().await;
@@ -716,54 +682,6 @@ impl FederationV0 {
             .backup_to_federation(Metadata::from_json_serialized(backup))
             .await?;
         Ok(())
-    }
-
-    /// Extract username (and potentially more in future) from recovered
-    /// metadata and save it to database
-    pub async fn save_restored_metadata(&self, metadata: Metadata) -> Result<()> {
-        if let Ok(fedi_backup_metadata) = metadata.to_json_deserialized::<FediBackupMetadata>() {
-            if let Some(username) = fedi_backup_metadata.username {
-                self.save_xmpp_username(&username).await;
-            }
-        };
-        Ok(())
-    }
-
-    /// Recover federation from mnemonic
-    pub async fn from_mnemonic(
-        mnemonic: bip39::Mnemonic,
-        old_client: Client,
-        event_sink: EventSink,
-        mut task_group: TaskGroup,
-    ) -> Result<Self> {
-        let client_builder = Self::build_client_builder_from_client(old_client).await;
-        let secret = ClientSecret::<Bip39RootSecretStrategy>::new(mnemonic);
-        let (client, metadata) = client_builder
-            .build_restoring_from_backup::<Bip39RootSecretStrategy>(&mut task_group, secret)
-            .await?;
-
-        let federation = Self::new(
-            Arc::new(client),
-            event_sink,
-            task_group.make_subgroup().await,
-        )
-        .await;
-
-        federation.save_restored_metadata(metadata).await?;
-
-        Ok(federation)
-    }
-
-    /// Wipe state and shutdown tasks
-    /// FIXME: maybe we should split this into 2 methods?
-    pub async fn prepare_for_recovery(&self) -> Result<Client> {
-        self.task_group
-            .clone() // FIXME: remove this clone
-            .shutdown_join_all(Some(SHUTDOWN_TIMEOUT))
-            .await?;
-        self.client.wipe_state().await?;
-        let client: Client = self.client.as_ref().clone();
-        Ok(client)
     }
 
     /// Sign LNURL message using a key derived from client secret

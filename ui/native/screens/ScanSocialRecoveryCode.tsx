@@ -33,6 +33,10 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
             if (downloading) return
             try {
                 let qr: SocialRecoveryQrCode = JSON.parse(input)
+                if (!qr)
+                    throw new Error(
+                        'Recovery QR should always exist in this context',
+                    )
                 try {
                     setDownloading(true)
                     // FIXME: this is getting called over-and-over
@@ -55,7 +59,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                     toast?.show(t('feature.recovery.download-failed'), 3000)
                 }
             } catch (e) {
-                // FIXME: this isn't quite right error message. It's more like "valid JSON, perhaps not valid recovery QR"
+                log.error("couldn't generate social recovery QR code", e)
                 toast?.show(t('feature.recovery.invalid-qr-code'), 3000)
             }
             log.debug(input)

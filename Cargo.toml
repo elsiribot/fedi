@@ -135,7 +135,6 @@ stability-pool-client-v1 = { package = "stability-pool-client", git = "https://x
 # fedimint-logging-v1 = { path = "../fedimint/fedimint-logging"}
 # devimint-v1 = { path = "../fedimint/devimint"}
 # ln-gateway-v1 = { path = "../fedimint/gateway/ln-gateway"}
-# fedi-social-client-v1 = { path = "../fedi/fedi-social-client" }
 # stability-pool-client-v1 = { path = "../fedi/stability-pool/stability-pool-client" }
 
 fedimint-rocksdb-v0 = { package = "fedimint-rocksdb", git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "ma/rel-a05-backport" }

@@ -11,14 +11,13 @@ import RNFS from 'react-native-fs'
 
 import { makeLog } from '@fedi/common/utils/log'
 
-import { useBridge } from '../../../state/hooks'
+import { fedimint } from '../../../bridge'
 import { NavigationHook } from '../../../types/navigation'
 
 const log = makeLog('SelectRecoveryFileButton')
 
 const SelectRecoveryFileButton: React.FC<{}> = () => {
     const { t } = useTranslation()
-    const { validateRecoveryFile } = useBridge()
     const navigation = useNavigation<NavigationHook>()
     const [validationInProgress, setValidationInProgress] =
         useState<boolean>(false)
@@ -56,16 +55,10 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
             await RNFS.copyFile(result!.uri, dest)
             // validate file
             try {
-                const valid = await validateRecoveryFile(dest)
-                if (valid) {
-                    navigation.replace('SelectRecoveryFileSuccess', {
-                        fileName: dest,
-                    })
-                } else {
-                    navigation.replace('SelectRecoveryFileFailure', {
-                        fileName: dest,
-                    })
-                }
+                await fedimint.validateRecoveryFile(dest)
+                navigation.replace('SelectRecoveryFileSuccess', {
+                    fileName: dest,
+                })
             } catch (error) {
                 navigation.replace('SelectRecoveryFileFailure', {
                     fileName: dest,
@@ -79,7 +72,7 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
                 checkForValidFile()
             })
         }
-    }, [navigation, result, validateRecoveryFile, validationInProgress])
+    }, [navigation, result, validationInProgress])
 
     return (
         <Button

@@ -84,7 +84,6 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
             setIsJoining(true)
             try {
                 if (!federationPreview) throw new Error()
-
                 await dispatch(
                     joinFederation({
                         fedimint,

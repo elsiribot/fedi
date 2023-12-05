@@ -1602,7 +1602,6 @@ dependencies = [
  "url",
  "v0-rocksdb",
  "v1-rocksdb",
- "v1-social",
 ]
 
 [[package]]
@@ -1617,7 +1616,7 @@ dependencies = [
 [[package]]
 name = "fedi-social-client"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedi?branch=pre-0.2#ebb1a13052c772a4e76ee56a2615d3fdd13b6347"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedi?branch=pre-0.2#6e586cef756e4e9fe26f609c45820042bddc7248"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1677,7 +1676,7 @@ dependencies = [
 [[package]]
 name = "fedi-social-common"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/fedi?branch=pre-0.2#ebb1a13052c772a4e76ee56a2615d3fdd13b6347"
+source = "git+https://x-access-token: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@github.com/fedibtc/fedi?branch=pre-0.2#6e586cef756e4e9fe26f609c45820042bddc7248"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -7911,19 +7910,6 @@ version = "0.1.2"
 dependencies = [
  "fedimint-client 0.1.0 (git+https://github.com/fedimint/fedimint?branch=releases/v0.1)",
  "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?branch=releases/v0.1)",
-]
-
-[[package]]
-name = "v1-social"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bitcoin 0.29.2",
- "fedi-social-client 0.1.0",
- "fedimint-core 0.1.0 (git+https://github.com/fedimint/fedimint?branch=releases/v0.1)",
- "fedimint-threshold-crypto",
- "serde",
- "v1-rocksdb",
 ]
 
 [[package]]
