@@ -42,7 +42,6 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
     }
 
     useEffect(() => {
-        // FIXME (justin): review this
         const checkForValidFile = async () => {
             // copy file to docs directory so rust can read it
             const dest = `${RNFS.DocumentDirectoryPath}/backup.fedi`
