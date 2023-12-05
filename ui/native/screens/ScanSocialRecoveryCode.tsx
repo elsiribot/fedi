@@ -32,8 +32,8 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
         async (input: string) => {
             if (downloading) return
             try {
+                // FIXME: this `qr` value shouldn't be nullable in the bridge interface
                 let qr: SocialRecoveryQrCode = JSON.parse(input)
-                // FIXME: this RPC response changed to possibly be null, but this check shouldn't need to consider null
                 if (qr) {
                     try {
                         setDownloading(true)
