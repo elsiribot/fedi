@@ -124,8 +124,6 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     useEffect(() => {
         const recoverFromSeed = async () => {
             try {
-                // TODO: is this condition still necessary?
-                // if (activeFederationId) {
                 await dispatch(
                     recoverFromMnemonic({
                         fedimint,
@@ -134,7 +132,6 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 ).unwrap()
                 setRecoveryInProgress(false)
                 navigation.dispatch(resetAfterPersonalRecovery())
-                // }
             } catch (error) {
                 log.error('recoverFromSeed', error)
                 toast?.show(t('errors.recovery-failed'), 3000)
