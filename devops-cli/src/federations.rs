@@ -582,7 +582,8 @@ async fn remote_send_raw_transaction(
 ) -> anyhow::Result<Txid> {
     let command = format!(r#"sendrawtransaction '{hex}'"#);
     let response = run_remote_wallet_command(subargs, "", &command).await?;
-    let response = serde_json::from_str::<Value>(&response)?;
+    let response = serde_json::from_str::<Value>(&response)
+        .with_context(|| format!("The sendrawtransaction command returned {response}"))?;
     let txid = response["hex"]
         .as_str()
         .context("failed to get field as string")?;
