@@ -562,7 +562,6 @@ mod tests {
     use fedi_social_client::common::VerificationDocument;
     use fedimint_core::Amount;
     use fedimint_logging::TracingSetup;
-    use fedimint_mint_client::OOBNotes;
 
     use super::*;
     use crate::bridge::MultiFederation;
@@ -1034,7 +1033,6 @@ mod tests {
         // receive ecash
         let initial_balance = fedimint_core::Amount::from_msats(10_000);
         let ecash = cli_generate_ecash(initial_balance, &federation).await?;
-        let ecash_receive_amount = OOBNotes::from_str(&ecash)?.total_amount();
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
         federation.receive_ecash(ecash).await?;
         assert_eq!(ecash_receive_amount, federation.get_balance().await);
