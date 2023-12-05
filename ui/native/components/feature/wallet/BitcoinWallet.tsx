@@ -39,6 +39,8 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
         numberOfLines: 1,
     }
 
+    if (!activeFederation) return null
+
     return (
         <Card
             containerStyle={styles(theme).container}
@@ -63,7 +65,7 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
                     <SvgImage name="List" color={theme.colors.secondary} />
                 </Pressable>
             </View>
-            <Balance balance={activeFederation!.balance} />
+            <Balance balance={activeFederation.balance} />
             <View style={styles(theme).buttonsGroupContainer}>
                 {receivesDisabled ? (
                     <Pressable
@@ -106,7 +108,7 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
                     }
                     containerStyle={styles(theme).buttonContainer}
                     buttonStyle={styles(theme).button}
-                    disabled={!(activeFederation!.balance > 0)}
+                    disabled={!(activeFederation.balance > 0)}
                 />
             </View>
         </Card>
