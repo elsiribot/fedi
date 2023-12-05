@@ -105,7 +105,6 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
                     <>
                         <Button
                             fullWidth
-                            // title={t('feature.onboarding.join-new-member')}
                             title={t('words.continue')}
                             onPress={() => handleJoin('newMember')}
                             containerStyle={styles(theme).button}
