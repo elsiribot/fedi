@@ -30,18 +30,15 @@ export const PersonalRecovery: React.FC = () => {
     const [words, setWords] = useState<SeedWords>([])
     const [isRecovering, setIsRecovering] = useState(false)
 
-    const federationId = activeFederation?.id
     const isValid =
         words.length && words.every(word => BIP39_WORD_LIST.includes(word))
 
     const handleRecovery = useCallback(async () => {
-        if (!federationId) return
         setIsRecovering(true)
         try {
             await dispatch(
                 recoverFromMnemonic({
                     fedimint,
-                    federationId,
                     mnemonic: words,
                 }),
             ).unwrap()
@@ -50,7 +47,7 @@ export const PersonalRecovery: React.FC = () => {
             showErrorToast(err, 'errors.unknown-error')
         }
         setIsRecovering(false)
-    }, [federationId, words, isChatSupported, dispatch, showErrorToast, push])
+    }, [words, isChatSupported, dispatch, showErrorToast, push])
 
     if (!activeFederation) return <Redirect path="/onboarding" />
 

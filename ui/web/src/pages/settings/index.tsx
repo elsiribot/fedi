@@ -9,7 +9,10 @@ import InviteMembersIcon from '@fedi/common/assets/svgs/invite-members.svg'
 import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
 import RecoveryIcon from '@fedi/common/assets/svgs/recovery.svg'
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
-import { useIsInviteSupported } from '@fedi/common/hooks/federation'
+import {
+    useFederationSupportsSingleSeed,
+    useIsInviteSupported,
+} from '@fedi/common/hooks/federation'
 import {
     leaveFederation,
     selectActiveFederation,
@@ -48,6 +51,7 @@ function AdminPage() {
     const [isInvitingMember, setIsInvitingMember] = useState(false)
     const [isLeavingFederation, setIsLeavingFederation] = useState(false)
     const isInviteSupported = useIsInviteSupported()
+    const supportsSingleSeed = useFederationSupportsSingleSeed()
 
     const federationId = activeFederation?.id
     const balance = activeFederation?.balance
@@ -101,11 +105,7 @@ function AdminPage() {
                     name: 'feature.backup.backup-wallet',
                     icon: WalletIcon,
                     href: '/settings/backup',
-                },
-                {
-                    name: 'feature.recovery.recover-a-wallet',
-                    icon: RecoveryIcon,
-                    href: '/settings/recover',
+                    disabled: !supportsSingleSeed,
                 },
             ],
         },
