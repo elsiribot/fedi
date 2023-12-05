@@ -239,12 +239,12 @@ impl MultiFederation {
     pub async fn upload_backup_file(
         &self,
         video_file: Vec<u8>,
-        root_secret: bip39::Mnemonic,
+        root_mnemonic: bip39::Mnemonic,
     ) -> Result<Vec<u8>> {
         match self {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
             Self::V1(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
-            Self::V2(v2) => v2.upload_backup_file(video_file, root_secret).await,
+            Self::V2(v2) => v2.upload_backup_file(video_file, root_mnemonic).await,
         }
     }
 
@@ -417,22 +417,6 @@ impl Bridge {
         let task_group_v1 = TaskGroupV1::new();
         let app_state = AppState::load(storage.clone()).await?;
 
-        // let root_mnemonic = app_state
-        //     .with_write_lock(move |state| {
-        //         Box::pin(async move {
-        //             Ok(match &state.root_mnemonic {
-        //                 Some(mnemonic) => mnemonic.clone(),
-        //                 None => {
-        //                     // FIXME: initialize mnemonic later
-        //                     let mnemonic =
-        //                         Bip39RootSecretStrategy::<12>::random(&mut
-        // rand::thread_rng());                     state.root_mnemonic =
-        // Some(mnemonic.clone());                     mnemonic
-        //                 }
-        //             })
-        //         })
-        //     })
-        //     .await?;
         let root_mnemonic = app_state
             .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
             .await;
@@ -879,23 +863,10 @@ impl Bridge {
         multi.cancel_ecash(ecash).await
     }
 
-    async fn get_root_secret(&self) -> anyhow::Result<bip39::Mnemonic> {
-        Ok(self
-            .try_get_root_secret(&self.storage)
-            .await?
-            .context("root secret not found in database")?)
-    }
-
-    async fn try_get_root_secret(
-        &self,
-        // FIXME: unused variable
-        _storage: &Storage,
-    ) -> anyhow::Result<Option<bip39::Mnemonic>> {
-        // FIXME: doesn't need to return a result
-        Ok(self
-            .app_state
+    async fn get_root_mnemonic(&self) -> Option<bip39::Mnemonic> {
+        self.app_state
             .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
-            .await)
+            .await
     }
 
     // FIXME: doesn't need result
@@ -924,8 +895,9 @@ impl Bridge {
 
     pub async fn get_mnemonic_words(&self) -> anyhow::Result<Vec<String>> {
         Ok(self
-            .get_root_secret()
-            .await?
+            .get_root_mnemonic()
+            .await
+            .ok_or(anyhow!("Root mnemonic not found in app state"))?
             .word_iter()
             .map(|x| x.to_owned())
             .collect())
@@ -933,15 +905,11 @@ impl Bridge {
 
     // FIXME: this function has weird name now that it doesn't do any recovery
     pub async fn recover_from_mnemonic(&self, mnemonic: bip39::Mnemonic) -> Result<()> {
-        if self.try_get_root_secret(&self.storage).await?.is_some() {
-            bail!("Cannot restore when seed is already set");
-        }
-
         self.app_state
             .with_write_lock(move |state| {
                 Box::pin(async move {
                     Ok(match &state.root_mnemonic {
-                        Some(_) => bail!("Cannot restore when seed is already set"),
+                        Some(_) => bail!("Cannot restore when mnemonic is already set"),
                         None => {
                             state.root_mnemonic = Some(mnemonic.clone());
                         }
