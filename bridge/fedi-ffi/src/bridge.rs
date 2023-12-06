@@ -9,8 +9,6 @@ use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey};
 use bitcoin::{Address, XOnlyPublicKey};
 use fedi_social_client::{FediSocialCommonGen, RecoveryId};
-use fedimint_bip39::Bip39RootSecretStrategy;
-use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::api::{DynGlobalApi, InviteCode as InviteCodeV2, WsFederationApi};
 use fedimint_core::config::ClientConfig;
 use fedimint_core::core::OperationId;
@@ -462,10 +460,7 @@ impl Bridge {
                                         .await?,
                                     event_sink.clone(),
                                     task_group.make_subgroup().await,
-                                    &root_mnemonic
-                                        .as_ref()
-                                        .context("root mnemonic not found")?
-                                        .clone(),
+                                    &root_mnemonic,
                                     None,
                                 )
                                 .await?,
@@ -535,24 +530,10 @@ impl Bridge {
             bail!("Already joined this federation")
         }
 
-        // generate mnemnoic if we don't have one already
-        // this would only happen for new users
         let root_mnemonic = self
             .app_state
-            .with_write_lock(move |state| {
-                Box::pin(async move {
-                    Ok(match &state.root_mnemonic {
-                        Some(mnemonic) => mnemonic.clone(),
-                        None => {
-                            let root_mnemonic =
-                                Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
-                            state.root_mnemonic = Some(root_mnemonic.clone());
-                            root_mnemonic
-                        }
-                    })
-                })
-            })
-            .await?;
+            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
+            .await;
 
         let db_name = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
         let federation = FederationV2::join(
@@ -863,12 +844,6 @@ impl Bridge {
         multi.cancel_ecash(ecash).await
     }
 
-    async fn get_root_mnemonic(&self) -> Option<bip39::Mnemonic> {
-        self.app_state
-            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
-            .await
-    }
-
     // FIXME: doesn't need result
     async fn get_social_recovery_state(&self) -> anyhow::Result<Option<SocialRecoveryState>> {
         Ok(self
@@ -895,9 +870,9 @@ impl Bridge {
 
     pub async fn get_mnemonic_words(&self) -> anyhow::Result<Vec<String>> {
         Ok(self
-            .get_root_mnemonic()
+            .app_state
+            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
             .await
-            .ok_or(anyhow!("Root mnemonic not found in app state"))?
             .word_iter()
             .map(|x| x.to_owned())
             .collect())
@@ -908,12 +883,7 @@ impl Bridge {
         self.app_state
             .with_write_lock(move |state| {
                 Box::pin(async move {
-                    match &state.root_mnemonic {
-                        Some(_) => bail!("Cannot restore when mnemonic is already set"),
-                        None => {
-                            state.root_mnemonic = Some(mnemonic.clone());
-                        }
-                    };
+                    state.root_mnemonic = mnemonic;
                     Ok(())
                 })
             })
@@ -933,44 +903,16 @@ impl Bridge {
             .read_file(&video_file_path)
             .await?
             .ok_or(anyhow!("video file not found"))?;
-        let root_mnemonic = &self
+        let root_mnemonic = self
             .app_state
             .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
-            .await
-            .expect("Root mnemonic should exist in app_state");
-        // FIXME: why is root_mnemonic a reference?
-        let recovery_file = multi
-            .upload_backup_file(video_file, root_mnemonic.clone())
-            .await?;
+            .await;
+        let recovery_file = multi.upload_backup_file(video_file, root_mnemonic).await?;
         storage
             .write_file(RECOVERY_FILENAME.as_ref(), recovery_file)
             .await?;
         Ok(storage.platform_path(RECOVERY_FILENAME.as_ref()))
     }
-
-    //         federation_id: RpcFederationId,
-    //     recovery_file_path: PathBuf,
-    // ) -> Result<bool> { let multi = self.get_multi(&federation_id.0).await?; let
-    //   recovery_file_bytes = self .storage .read_file(&recovery_file_path) .await?
-    //   .ok_or(anyhow!("recovery file not found"))?; let recovery_file =
-    //   RecoveryFile::from_bytes(&recovery_file_bytes)?;
-    //   multi.start_social_recovery(&recovery_file).await?; let valid =
-    //   RecoveryFile::from_bytes(&recovery_file_bytes).is_ok(); Ok(valid)
-    // }
-
-    // pub async fn recovery_qr(&self, federation_id: RpcFederationId) ->
-    // Result<SocialRecoveryQr> {     let multi =
-    // self.get_multi(&federation_id.0).await?;     // Get the recovery file
-    // from disk (React Native and handle_upload_backup_file     // put it
-    // there)     let recovery_file_bytes = self
-    //         .storage
-    //         .read_file(RECOVERY_FILENAME.as_ref())
-    //         .await?
-    //         .ok_or(anyhow!("recovery file not found"))?;
-    //     let recovery_file = RecoveryFile::from_bytes(&recovery_file_bytes)?;
-    //     // Upload verification document if none exists.
-    //     multi.start_social_recovery(&recovery_file).await?;
-    //     multi.social_recovery_qr().await
 
     pub async fn start_social_recovery_v2(
         &self,
