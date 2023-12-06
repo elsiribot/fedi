@@ -182,7 +182,7 @@ impl AppState {
         let v2_federation_exists = app_state_raw
             .joined_federations
             .iter()
-            .any(|(_, FederationInfo { version, .. })| *version == 2);
+            .any(|(_, FederationInfo { version, .. })| *version >= 2);
         let root_mnemonic_snapshot = app_state_raw.root_mnemonic.clone();
         let result = closure(&mut app_state_raw).await?;
 
