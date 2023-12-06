@@ -57,7 +57,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     # arguments taking no values here
-    --release|-q|--quiet|--frozen|--locked|--offline|--list|--version|-V|--fix)
+    --release|-q|--quiet|--frozen|--locked|--offline|--list|--version|-V|--fix|--all-targets)
       args+=("$1")
       ;;
     # for anything starting with -, that wasn't listed above, assume it takes an argument
