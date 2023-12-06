@@ -1,14 +1,16 @@
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Keyboard, StyleSheet } from 'react-native'
 
-import { useBalance, useSendForm } from '@fedi/common/hooks/amount'
+import { useBalance, useDepositForm } from '@fedi/common/hooks/amount'
+import { fetchCurrencyPrices } from '@fedi/common/redux'
 import { hexToRgba } from '@fedi/common/utils/color'
 
 import { AmountScreen } from '../components/ui/AmountScreen'
+import { useAppDispatch } from '../state/hooks'
 import { Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -26,7 +28,8 @@ const StabilityDeposit: React.FC<Props> = () => {
         setInputAmount: setAmount,
         minimumAmount,
         maximumAmount,
-    } = useSendForm({})
+    } = useDepositForm()
+    const dispatch = useAppDispatch()
     const { fiatBalanceWithSymbol } = useBalance()
     const [submitAttempts, setSubmitAttempts] = useState(0)
 
@@ -44,6 +47,10 @@ const StabilityDeposit: React.FC<Props> = () => {
         })
         Keyboard.dismiss()
     }
+
+    useEffect(() => {
+        dispatch(fetchCurrencyPrices())
+    }, [dispatch])
 
     const style = styles(theme)
 

@@ -8,7 +8,11 @@ import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
-import { increaseStableBalance, selectCurrency } from '@fedi/common/redux'
+import {
+    increaseStableBalance,
+    selectCurrency,
+    selectMaximumAPR,
+} from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
@@ -37,6 +41,7 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
     const [showDetails, setShowDetails] = useState<boolean>(false)
     const { convertSatsToFormattedUsd, convertSatsToFormattedFiat } =
         useBtcFiatPrice()
+    const maxFeeRate = useAppSelector(selectMaximumAPR)
     const selectedFiatCurrency = useAppSelector(selectCurrency)
     const formattedFiat = convertSatsToFormattedFiat(amount)
     const formattedUsd = convertSatsToFormattedUsd(amount)
@@ -130,9 +135,9 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
                             'words.fees',
                         )}`}</Text>
 
+                        {/* TODO: Use real APR based on current/max fee rates... for now we just show 0% */}
                         <Text caption style={style.darkGrey}>
-                            {/* TODO: Get fees from client config */}
-                            {`5% APR or less`}
+                            {`0%` || `${maxFeeRate}% APR or less`}
                         </Text>
                     </View>
                     <Divider />

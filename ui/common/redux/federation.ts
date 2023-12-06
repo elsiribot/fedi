@@ -9,6 +9,7 @@ import omit from 'lodash/omit'
 
 import { CommonState } from '.'
 import { Federation, Guardian, MSats, Sats, SeedWords, FediMod } from '../types'
+import { RpcJsonClientConfig, RpcStabilityPoolConfig } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import {
     getFederationGroupChats,
@@ -281,6 +282,32 @@ export const selectActiveFederation = createSelector(
 export const selectActiveFederationId = (s: CommonState) => {
     return selectActiveFederation(s)?.id
 }
+
+export const selectFederationClientConfig = createSelector(
+    selectActiveFederation,
+    activeFederation => {
+        return activeFederation ? activeFederation.clientConfig : null
+    },
+)
+
+export const selectFederationStabilityPoolConfig = createSelector(
+    selectFederationClientConfig,
+    config => {
+        if (!config) return null
+
+        if ('modules' in config) {
+            const { modules } = config as RpcJsonClientConfig
+            for (const key in modules) {
+                // TODO: add better typing for this
+                const fmModule = modules[key] as Partial<{ kind: string }>
+                if (fmModule.kind === 'stability_pool') {
+                    return fmModule as RpcStabilityPoolConfig
+                }
+            }
+        }
+        return null
+    },
+)
 
 export const selectFederationMetadata = createSelector(
     selectActiveFederation,

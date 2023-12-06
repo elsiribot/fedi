@@ -2,18 +2,18 @@ import { useNavigation } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme } from '@rneui/themed'
 import { useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Keyboard, StyleSheet } from 'react-native'
 
-import { useSendForm } from '@fedi/common/hooks/amount'
-import { selectCurrency } from '@fedi/common/redux'
+import { useWithdrawForm } from '@fedi/common/hooks/amount'
+import { fetchCurrencyPrices, selectCurrency } from '@fedi/common/redux'
 import { selectWithdrawableStableBalance } from '@fedi/common/redux/wallet'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { hexToRgba } from '@fedi/common/utils/color'
 
 import { AmountScreen } from '../components/ui/AmountScreen'
-import { useAppSelector } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -31,7 +31,8 @@ const StabilityWithdraw: React.FC<Props> = () => {
         setInputAmount: setAmount,
         minimumAmount,
         maximumAmount,
-    } = useSendForm({})
+    } = useWithdrawForm()
+    const dispatch = useAppDispatch()
     const withdrawableBalance = useAppSelector(selectWithdrawableStableBalance)
     const selectedFiatCurrency = useAppSelector(selectCurrency)
     const [submitAttempts, setSubmitAttempts] = useState(0)
@@ -55,6 +56,10 @@ const StabilityWithdraw: React.FC<Props> = () => {
         })
         Keyboard.dismiss()
     }
+
+    useEffect(() => {
+        dispatch(fetchCurrencyPrices())
+    }, [dispatch])
 
     const style = styles(theme)
 

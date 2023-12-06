@@ -11,6 +11,9 @@ import {
     selectAmountInputType,
     setAmountInputType,
     selectBtcUsdExchangeRate,
+    selectWithdrawableStableBalance,
+    selectMinimumDepositAmount,
+    selectMinimumWithdrawAmount,
 } from '../redux'
 import {
     Btc,
@@ -20,6 +23,7 @@ import {
     ParsedLnurlWithdraw,
     Sats,
     SupportedCurrency,
+    Usd,
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'
@@ -88,6 +92,19 @@ export const useBtcFiatPrice = () => {
     )
 
     return {
+        convertUsdToSats: useCallback(
+            (fiat: Usd) => {
+                return amountUtils.fiatToSat(fiat, btcUsdExchangeRate)
+            },
+            [btcUsdExchangeRate],
+        ),
+        convertUsdToSatsFormatted: useCallback(
+            (fiat: Usd) => {
+                const amount = amountUtils.fiatToSat(fiat, btcUsdExchangeRate)
+                return amountUtils.formatSats(amount)
+            },
+            [btcUsdExchangeRate],
+        ),
         convertSatsToFiat: useCallback(
             (sats: Sats) => {
                 return amountUtils.satToFiat(sats, exchangeRate)
@@ -103,7 +120,6 @@ export const useBtcFiatPrice = () => {
         convertSatsToFormattedFiat: useCallback(
             (sats: Sats) => {
                 const amount = amountUtils.satToFiat(sats, exchangeRate)
-
                 return amountUtils.formatFiat(amount, selectedFiatCurrency)
             },
             [exchangeRate, selectedFiatCurrency],
@@ -111,7 +127,6 @@ export const useBtcFiatPrice = () => {
         convertSatsToFormattedUsd: useCallback(
             (sats: Sats) => {
                 const amount = amountUtils.satToFiat(sats, btcUsdExchangeRate)
-
                 return amountUtils.formatFiat(amount, SupportedCurrency.USD)
             },
             [btcUsdExchangeRate],
@@ -360,6 +375,31 @@ export function useMinMaxSendAmount({
 }
 
 /**
+ * Get the minimum and maximum amount you can withdraw from the stable balance
+ */
+export function useMinMaxWithdrawAmount() {
+    // TODO: get minimum from config?
+    const minimumUsd = useCommonSelector(selectMinimumWithdrawAmount)
+    const withdrawableUsd = useCommonSelector(selectWithdrawableStableBalance)
+    const { convertUsdToSats } = useBtcFiatPrice()
+    const minimumAmount = convertUsdToSats(minimumUsd)
+    const maximumAmount = convertUsdToSats(withdrawableUsd)
+
+    return { minimumAmount, maximumAmount }
+}
+
+/**
+ * Get the minimum and maximum amount you can deposit to the stable balance
+ */
+export function useMinMaxDepositAmount() {
+    const minimumAmount = useCommonSelector(selectMinimumDepositAmount)
+    const balanceMSats = useCommonSelector(selectFederationBalance)
+    const maximumAmount = amountUtils.msatToSat(balanceMSats)
+
+    return { minimumAmount, maximumAmount }
+}
+
+/**
  * Provide all the state necessary to implement a request form that generates
  * a Lightning invoice. Optionally provide a set of WebLN requestInvoice args
  * or an LNURL withdrawal.
@@ -478,6 +518,38 @@ export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
         minimumAmount,
         maximumAmount,
         reset,
+    }
+}
+
+/**
+ * Provide all the state necessary to implement a stabilitypool withdrawal form
+ * that decreases the stable USD balance in the wallet
+ */
+export function useWithdrawForm() {
+    const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
+    const { minimumAmount, maximumAmount } = useMinMaxWithdrawAmount()
+
+    return {
+        inputAmount,
+        setInputAmount,
+        minimumAmount,
+        maximumAmount,
+    }
+}
+
+/**
+ * Provide all the state necessary to implement a stabilitypool deposit form
+ * that increases the stable USD balance in the wallet
+ */
+export function useDepositForm() {
+    const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
+    const { minimumAmount, maximumAmount } = useMinMaxDepositAmount()
+
+    return {
+        inputAmount,
+        setInputAmount,
+        minimumAmount,
+        maximumAmount,
     }
 }
 

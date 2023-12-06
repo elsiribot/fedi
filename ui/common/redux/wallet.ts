@@ -8,9 +8,11 @@ import orderBy from 'lodash/orderBy'
 
 import {
     CommonState,
+    fetchCurrencyPrices,
     selectActiveFederation,
     selectBtcExchangeRate,
     selectBtcUsdExchangeRate,
+    selectFederationStabilityPoolConfig,
 } from '.'
 import { Federation, MSats, StabilityPoolTxn, Usd, UsdCents } from '../types'
 import {
@@ -132,6 +134,9 @@ export const refreshActiveStabilityPool = createAsyncThunk<
         const state = getState()
         const federationId = state.federation.activeFederationId
         if (!federationId) throw new Error('errors.unknown-error')
+        // Make sure we have the latest exchange rates every time we refresh stabilitypool
+        // so deposits/withdrawal amount conversions are as accurate as possible
+        dispatch(fetchCurrencyPrices())
 
         await dispatch(
             fetchStabilityPoolAccountInfo({
@@ -156,8 +161,33 @@ export const increaseStableBalance = createAsyncThunk<
         const activeFederationId = selectActiveFederation(state)?.id
         if (!activeFederationId) throw new Error('No active federation')
 
+        // Add some fee padding to resist downside price leakage while deposits confirm
+        // arbitrarily we just add the estimated fees for the first 10 cycles
+        const stabilityConfig = selectFederationStabilityPoolConfig(state)
+        if (!stabilityConfig)
+            throw new Error('No stabilitypool in this federation')
+
+        const maxAllowedFeeRate =
+            stabilityConfig?.max_allowed_provide_fee_rate_ppb || 0
+        const maxFeeRateFraction = Number(
+            (maxAllowedFeeRate / 1_000_000_000).toFixed(9),
+        )
+        const maxFirstCycleFee = Number(
+            (amount * maxFeeRateFraction).toFixed(0),
+        )
+
+        // Min leakage padding of 1 sat or first 10 cycle fees
+        const leakagePadding = Math.max(
+            1000,
+            Number((10 * maxFirstCycleFee).toFixed(0)),
+        )
+
+        const amountPlusPadding = Number(
+            (amount + leakagePadding).toFixed(0),
+        ) as MSats
+
         const operationId = await fedimint.stabilityPoolDepositToSeek(
-            amount,
+            amountPlusPadding,
             activeFederationId,
         )
 
@@ -169,6 +199,11 @@ export const increaseStableBalance = createAsyncThunk<
                         event.federationId === activeFederationId &&
                         event.operationId === operationId
                     ) {
+                        log.info(
+                            'StabilityPoolDepositEvent.state',
+                            event.operationId,
+                            event.state,
+                        )
                         if (event.state === 'txAccepted') {
                             unsubscribeOperation()
                             resolve(event)
@@ -260,7 +295,8 @@ export const decreaseStableBalance = createAsyncThunk<
                             resolve(event)
                         } else if (
                             typeof event.state === 'object' &&
-                            'txRejected' in event.state
+                            ('txRejected' in event.state ||
+                                'cancellationSubmissionFailure' in event.state)
                         ) {
                             unsubscribeOperation()
                             reject('Transaction rejected')
@@ -478,15 +514,60 @@ export const selectStabilityTransactionHistory = createSelector(
 export const selectWithdrawableStableBalance = createSelector(
     selectStableBalance,
     selectStableBalancePending,
-    (stableBalance, stableBalancePending) => {
-        return stableBalance + stableBalancePending
+    (stableBalance, stableBalancePending): Usd => {
+        return Number((stableBalance + stableBalancePending).toFixed(2)) as Usd
     },
 )
 
-export const selectAmountToWithdraw = createSelector(
+export const selectMinimumWithdrawAmount = createSelector(
+    (s: CommonState) => selectFederationStabilityPoolConfig(s),
     selectStableBalance,
     selectStableBalancePending,
-    (stableBalance, stableBalancePending) => {
-        return stableBalance + stableBalancePending
+    (config, stableBalance, stableBalancePending): Usd => {
+        const minimumBasisPoints = config?.min_allowed_cancellation_bps || 0
+
+        // No minimum withdraw amount if we can cancel pending deposits otherwise calculate minimum allowed cancellation from completed deposits
+        if (stableBalancePending > 0) {
+            return 0 as Usd
+        } else {
+            // convert bps to decimal
+            const minimumFraction = Number(
+                (minimumBasisPoints / 10000).toFixed(4),
+            )
+            // calculate balance without cancelledFraction
+            const minimumUsdAmount = Number(
+                (stableBalance * minimumFraction).toFixed(2),
+            )
+            return minimumUsdAmount as Usd
+        }
+    },
+)
+
+export const selectMinimumDepositAmount = createSelector(
+    (s: CommonState) => selectFederationStabilityPoolConfig(s),
+    config => {
+        const minimumMsats = config?.min_allowed_seek || 0
+        return amountUtils.msatToSat(minimumMsats as MSats)
+    },
+)
+
+/**
+ * Get the max APR from the max allowed fee rate in parts per billion
+ * This calculates what % of a deposit the user can expect to pay in fees
+ * after 1 full year, deducting fees every 10 minutes compounding every cycle
+ * TODO: Use the cycle_duration to dynamically calculate APR
+ */
+export const selectMaximumAPR = createSelector(
+    (s: CommonState) => selectFederationStabilityPoolConfig(s),
+    config => {
+        const maxFeeRatePerCycle = config?.max_allowed_provide_fee_rate_ppb || 0
+        // convert parts per billion to decimal
+        const periodicRate = maxFeeRatePerCycle / 1_000_000_000
+        // Number of 10 minute cycles in a year
+        const cyclesPerYear = 365 * 24 * 6
+        const compoundedAnnualRate =
+            1 - Math.pow(1 - periodicRate, cyclesPerYear)
+        const maxFeePercentage = (compoundedAnnualRate * 100).toFixed(4)
+        return Number(maxFeePercentage)
     },
 )

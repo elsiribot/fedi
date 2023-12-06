@@ -425,6 +425,13 @@ export interface RpcStabilityPoolAccountInfo {
     lockedSeeks: Array<RpcLockedSeek>
 }
 
+export interface RpcStabilityPoolConfig {
+    kind: string
+    min_allowed_seek: RpcAmount
+    max_allowed_provide_fee_rate_ppb: number | null
+    min_allowed_cancellation_bps: number | null
+}
+
 export interface RpcTransaction {
     id: string
     createdAt: number

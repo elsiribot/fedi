@@ -75,6 +75,15 @@ pub struct RpcJsonClientConfig {
     modules: BTreeMap<u16, JsonWithKind>,
 }
 
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcStabilityPoolConfig {
+    pub kind: String,
+    pub min_allowed_seek: RpcAmount,
+    pub max_allowed_provide_fee_rate_ppb: Option<u32>,
+    pub min_allowed_cancellation_bps: Option<u32>,
+}
+
 #[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Clone, TS)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcFederationId(pub String);
