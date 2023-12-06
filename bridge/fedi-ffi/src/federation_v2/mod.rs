@@ -25,8 +25,8 @@ use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
 use fedimint_client::secret::{get_default_client_secret, RootSecretStrategy};
 use fedimint_client::{ClientArc, ClientBuilder, FederationInfo};
 use fedimint_core::api::{
-    DynModuleApi, FederationApiExt, GlobalFederationApi, IGlobalFederationApi, InviteCode,
-    StatusResponse, WsFederationApi,
+    DynModuleApi, FederationApiExt, GlobalFederationApi, InviteCode, StatusResponse,
+    WsFederationApi,
 };
 use fedimint_core::config::{ClientConfig, FederationId};
 use fedimint_core::core::OperationId;
@@ -228,20 +228,9 @@ impl FederationV2 {
 
     pub async fn download_client_config(invite_code_string: &str) -> anyhow::Result<ClientConfig> {
         let mut invite_code: InviteCode = InviteCode::from_str(invite_code_string)?;
-        tracing::info!("invite_code: {:?}", invite_code);
         override_localhost_invite_code(&mut invite_code);
-        tracing::info!("invite_code 2: {:?}", invite_code);
-
         let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]));
-        tracing::info!("api: {:?}", api);
-
-        let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]))
-            as Arc<dyn IGlobalFederationApi + Send + Sync + 'static>;
-        let client_config: ClientConfig = api
-            .as_ref()
-            .hacky_download_client_config_single_peer(&invite_code)
-            .await?;
-        tracing::info!("downloaded client config");
+        let client_config: ClientConfig = api.as_ref().download_client_config(&invite_code).await?;
         Ok(client_config)
     }
 
@@ -258,12 +247,9 @@ impl FederationV2 {
         // Download federation config
         let mut invite_code: InviteCode = InviteCode::from_str(&invite_code_string)?;
         override_localhost_invite_code(&mut invite_code);
-        let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]))
-            as Arc<dyn IGlobalFederationApi + Send + Sync + 'static>;
-        let mut client_config: ClientConfig = api
-            .as_ref()
-            .hacky_download_client_config_single_peer(&invite_code)
-            .await?;
+        let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]));
+        let mut client_config: ClientConfig =
+            api.as_ref().download_client_config(&invite_code).await?;
 
         // Save client config and invite code
         let db = storage.federation_database_v2(db_name).await?;
