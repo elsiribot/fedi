@@ -94,6 +94,7 @@ export interface RpcFederationPreview {
     meta: Record<string, string>
     inviteCode: string
     version: number
+    returningMemberStatus: RpcReturningMemberStatus
 }
 
 export interface RpcGenerateEcashResponse {
@@ -188,6 +189,7 @@ export interface RpcMethods {
             meta: Record<string, string>
             inviteCode: string
             version: number
+            returningMemberStatus: RpcReturningMemberStatus
         },
     ]
     leaveFederation: [{ federationId: RpcFederationId }, null]
@@ -412,6 +414,11 @@ export type RpcPeerId = number
 export type RpcPublicKey = string
 
 export type RpcRecoveryId = string
+
+export type RpcReturningMemberStatus =
+    | { type: 'unknown' }
+    | { type: 'newMember' }
+    | { type: 'returningMember' }
 
 export interface RpcSignedLnurlMessage {
     signature: string
