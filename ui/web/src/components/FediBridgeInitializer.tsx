@@ -15,7 +15,7 @@ import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint, initializeBridge } from '../lib/bridge'
-import { keyframes, styled } from '../styles'
+import { keyframes, styled, theme } from '../styles'
 import { Redirect } from './Redirect'
 import { Text } from './Text'
 
@@ -63,6 +63,14 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         return () => clearTimeout(loadingTimeout)
     }, [dispatchRef, tRef])
 
+    // Show an error message if the bridge panics while running.
+    useEffect(() => {
+        const unsubscribe = fedimint.addListener('panic', ev => {
+            setError(ev.message)
+        })
+        return () => unsubscribe()
+    }, [])
+
     // Connect to chat of active federation after bridge initializes.
     // TODO: Move this logic into redux initiailization when PWA and app both use it.
     useEffect(() => {
@@ -73,7 +81,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         }
     }, [federationId, isInitialized, authenticatedMember?.id, dispatch])
 
-    if (isInitialized) {
+    if (isInitialized && !error) {
         if (!activeFederation && !pathname.startsWith('/onboarding')) {
             return <Redirect path="/onboarding" />
         }
@@ -91,7 +99,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         <Loader>
             <FediLogo />
             {message && (
-                <Message>
+                <Message error={!!error}>
                     <Text>{message}</Text>
                 </Message>
             )}
@@ -142,4 +150,12 @@ const Message = styled('div', {
     maxWidth: 300,
     textAlign: 'center',
     animation: `${messageFadeUp} 600ms ease 1 forwards`,
+
+    variants: {
+        error: {
+            true: {
+                color: theme.colors.red,
+            },
+        },
+    },
 })
