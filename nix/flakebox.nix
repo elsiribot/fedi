@@ -139,6 +139,13 @@ rec {
     buildPhaseCargoCommand = "cargoWithProfile check --all-targets --locked ; cargoWithProfile build --locked --all-targets";
   };
 
+  workspaceClippy = craneLib.cargoClippy {
+    cargoArtifacts = workspaceDeps;
+
+    cargoClippyExtraArgs = "--all-targets --no-deps -- --deny warnings --allow deprecated";
+    doInstallCargoArtifacts = false;
+  };
+
   workspaceWasmDeps = craneLib.buildWorkspaceDepsOnly {
     cargoArtifacts = workspaceDeps;
     buildPhaseCargoCommand = "cargoWithProfile build --locked --lib --package fedi-wasm";

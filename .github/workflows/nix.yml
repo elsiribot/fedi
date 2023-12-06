@@ -72,6 +72,46 @@ jobs:
             - name: Commit check
               run: nix develop --ignore-environment .#lint --command ./misc/git-hooks/pre-commit
 
+    # all the derivations that are based on the whole workspace
+    build-workspace:
+        strategy:
+          matrix:
+            host:
+              - linux
+              - macos
+            include:
+              - host: linux
+                runs-on: [self-hosted, linux]
+              - host: macos
+                runs-on: [self-hosted, macos, arm64]
+
+        name: "Build workspace on ${{ matrix.host }}"
+        runs-on: ${{ matrix.runs-on }}
+        timeout-minutes: 30
+        needs: precheck
+        if: >
+            needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
+            needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
+        steps:
+            - uses: actions/checkout@v3
+            - uses: cachix/install-nix-action@v20
+              with:
+                  nix_path: nixpkgs=channel:nixos-22.05
+            - uses: cachix/cachix-action@v12
+              with:
+                  name: fedibtc
+                  authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+            - name: Clippy
+              run: nix build -L .#ci.workspaceClippy
+
+            - name: Test bridge
+              run: |
+                  nix build -L .#ci.testBridgeAll
+
+            - name: Test stability pool
+              run: nix build -L .#ci.testStabilityPool
+
     build-linux:
         name: 'Build - linux'
         needs: precheck
@@ -102,31 +142,6 @@ jobs:
             - name: Build devops-cli
               run: nix build -L .#ci.devops-cli
 
-    # all the Linux Nix derivations that are based on the whole workspace
-    build-linux-workspace:
-        name: 'Build - linux workspace'
-        needs: precheck
-        if: >
-            needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
-            needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
-        runs-on: [self-hosted, linux]
-        timeout-minutes: 60
-        steps:
-            - uses: actions/checkout@v3
-            - uses: cachix/install-nix-action@v20
-              with:
-                  nix_path: nixpkgs=channel:nixos-22.05
-            - uses: cachix/cachix-action@v12
-              with:
-                  name: fedibtc
-                  authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-
-            - name: Test bridge
-              run: |
-                  nix build -L .#ci.testBridgeAll
-
-            - name: Test stability pool
-              run: nix build -L .#ci.testStabilityPool
 
     build-android:
         name: 'Build - android'

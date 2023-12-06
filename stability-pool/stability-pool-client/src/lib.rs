@@ -625,7 +625,7 @@ impl StabilityPoolClientModule {
                 state_machines: Arc::new(move |transaction_id, _| {
                     vec![StabilityPoolStateMachines::WithdrawUnlocked(
                         StabilityPoolWithdrawUnlockedStateMachine {
-                            operation_id: operation_id,
+                            operation_id,
                             transaction_id,
                             state: StabilityPoolWithdrawUnlockedState::Created,
                             maybe_cancel_locked_bps: match locked_bps {
