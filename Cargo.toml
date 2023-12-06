@@ -67,7 +67,6 @@ fedimint-client-legacy = { git = "https://x-access-token:github_pat_11ABBCQBI0xW
 fedimint-aead = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "justin/v0.2.0-rc5" }
 fedimint-rocksdb = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "justin/v0.2.0-rc5" }
 fedimint-bip39 = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "justin/v0.2.0-rc5" }
-tbs = { package = "fedimint-tbs", git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "justin/v0.2.0-rc5" }
 fedimint-logging = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "justin/v0.2.0-rc5" }
 devimint = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "justin/v0.2.0-rc5" }
 ln-gateway = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "justin/v0.2.0-rc5" }
@@ -88,7 +87,6 @@ ln-gateway = { git = "https://x-access-token:github_pat_11ABBCQBI0xWGdvtpcftZj_6
 # fedimint-aead = { path = "../fedimint/crypto/aead" }
 # fedimint-rocksdb = { path = "../fedimint/fedimint-rocksdb" }
 # fedimint-bip39 = { path = "../fedimint/fedimint-bip39" }
-# tbs = { path = "../fedimint/crypto/tbs" }
 # fedimint-logging = { path = "../fedimint/fedimint-logging" }
 # devimint = { path = "../fedimint/devimint" }
 # ln-gateway = { path = "../fedimint/gateway/ln-gateway" }
