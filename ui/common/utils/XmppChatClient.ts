@@ -419,7 +419,7 @@ export class XmppChatClient {
                 if (!config.name) {
                     throw new Error('Group does not exist')
                 }
-                return { id: groupId, ...config }
+                return { id: groupId, joinedAt: Date.now(), ...config }
             } else {
                 throw new Error('Failed to join group')
             }
@@ -441,6 +441,7 @@ export class XmppChatClient {
                 return {
                     id: groupId,
                     name: groupName,
+                    joinedAt: Date.now(),
                     broadcastOnly: !!broadcastOnly,
                 }
             } else {

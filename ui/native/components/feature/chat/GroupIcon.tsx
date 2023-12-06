@@ -6,7 +6,7 @@ import Avatar from '../../ui/Avatar'
 import { AvatarSize } from '../../ui/Avatar'
 
 type GroupIconProps = {
-    chat: ChatGroup
+    chat: Pick<ChatGroup, 'id' | 'name' | 'broadcastOnly'>
     size?: AvatarSize
 }
 
