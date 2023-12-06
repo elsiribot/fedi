@@ -109,10 +109,12 @@ jobs:
               run: nix build -L .#ci.workspaceClippy
 
             - name: Test bridge
+              timeout-minutes: 10
               run: |
                   nix build -L .#ci.${{ matrix.test-bridge }}
 
             - name: Test stability pool
+              timeout-minutes: 10
               run: nix build -L .#ci.testStabilityPool
 
     build-linux:
@@ -232,3 +234,17 @@ jobs:
             - name: Dev shell
               if: (github.ref == 'refs/heads/master' || matrix.build-in-pr)
               run: nix build -L .#devShells.${{ matrix.system }}.default
+
+    status:
+      name: Status
+      needs: [lint, build-workspace, build-linux, build-android, build-ios, shell]
+      if: ${{ always() }}
+      runs-on: ubuntu-latest
+      steps:
+        - name: Check status of all jobs
+          if: >-
+            ${{
+              contains(needs.*.result, 'failure') ||
+              contains(needs.*.result, 'cancelled')
+            }}
+          run: exit 1
