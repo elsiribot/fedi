@@ -2,9 +2,6 @@
 
 echo "Run with 'source ./scripts/build.sh [fed_size] [dir]"
 
-# make sure nothing is running
-pkill -9 fedimintd lnd lightningd gatewayd devimint esplora electrs bitcoind faucet || true
-
 # allow for overriding arguments
 export FM_FED_SIZE=${1:-4}
 

@@ -355,10 +355,13 @@ async fn signLnurlMessage(
     bridge: Arc<Bridge>,
     // hex-encoded message
     message: String,
+    domain: String,
     federation_id: RpcFederationId,
 ) -> anyhow::Result<RpcSignedLnurlMessage> {
     let message = Message::from_slice(&hex::decode(message)?)?;
-    bridge.sign_lnurl_message(federation_id, message).await
+    bridge
+        .sign_lnurl_message(federation_id, message, domain)
+        .await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1253,6 +1256,50 @@ mod tests {
         );
         assert!(account_info.staged_cancellation.is_none());
         assert!(account_info.locked_seeks.is_empty());
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_lnurl_sign_message() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
+        let k1 = String::from("cfcb7616d615252180e392f509207e1f610f8d6106588c61c3e7bbe8577e4c4c");
+        let message = Message::from_slice(&hex::decode(k1)?)?;
+        let domain1 = String::from("fedi.xyz");
+        let domain2 = String::from("fedimint.com");
+
+        // Test signing a message.
+        let sig1 = bridge
+            .sign_lnurl_message(federation.federation_id(), message, domain1.clone())
+            .await?;
+
+        // Test that signing the same message twice results in identical signatures.
+        let sig2 = bridge
+            .sign_lnurl_message(federation.federation_id(), message, domain1.clone())
+            .await?;
+        info!("Signature 2: {}", sig2.signature.to_string());
+        assert_eq!(
+            serde_json::to_string(&sig1.pubkey)?,
+            serde_json::to_string(&sig2.pubkey)?
+        );
+        assert_eq!(sig1.signature, sig2.signature);
+
+        // Only v2 produces different signatures for different domains at the moment
+        if let MultiFederation::V0(_) | MultiFederation::V1(_) = *federation {
+            return Ok(());
+        }
+
+        // Test that signing the same message on a different domain results in a
+        // different signature.
+        let sig3 = bridge
+            .sign_lnurl_message(federation.federation_id(), message, domain2.clone())
+            .await?;
+        info!("Signature 3: {}", sig3.signature.to_string());
+        assert_ne!(
+            serde_json::to_string(&sig1.pubkey)?,
+            serde_json::to_string(&sig3.pubkey)?
+        );
+        assert_ne!(sig1.signature, sig3.signature);
+
         Ok(())
     }
 }

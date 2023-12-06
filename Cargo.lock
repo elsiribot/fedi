@@ -7766,7 +7766,7 @@ dependencies = [
 [[package]]
 name = "uniffi_bindgen"
 version = "0.21.1"
-source = "git+https://github.com/fedibtc/uniffi-rs?rev=a5fbebb8c733c6d450a803f6d2f6c760ce1d2d31#a5fbebb8c733c6d450a803f6d2f6c760ce1d2d31"
+source = "git+https://github.com/fedibtc/uniffi-rs?rev=d00f5ef23553665e2175ae98c12b005d46b26f7a#d00f5ef23553665e2175ae98c12b005d46b26f7a"
 dependencies = [
  "anyhow",
  "askama",
@@ -7782,7 +7782,7 @@ dependencies = [
  "serde",
  "serde_json",
  "toml",
- "uniffi_meta 0.21.1 (git+https://github.com/fedibtc/uniffi-rs?rev=a5fbebb8c733c6d450a803f6d2f6c760ce1d2d31)",
+ "uniffi_meta 0.21.1 (git+https://github.com/fedibtc/uniffi-rs?rev=d00f5ef23553665e2175ae98c12b005d46b26f7a)",
  "weedle2",
 ]
 
@@ -7810,7 +7810,7 @@ dependencies = [
 [[package]]
 name = "uniffi_checksum_derive"
 version = "0.21.1"
-source = "git+https://github.com/fedibtc/uniffi-rs?rev=a5fbebb8c733c6d450a803f6d2f6c760ce1d2d31#a5fbebb8c733c6d450a803f6d2f6c760ce1d2d31"
+source = "git+https://github.com/fedibtc/uniffi-rs?rev=d00f5ef23553665e2175ae98c12b005d46b26f7a#d00f5ef23553665e2175ae98c12b005d46b26f7a"
 dependencies = [
  "quote 1.0.33",
  "syn 1.0.109",
@@ -7849,11 +7849,11 @@ dependencies = [
 [[package]]
 name = "uniffi_meta"
 version = "0.21.1"
-source = "git+https://github.com/fedibtc/uniffi-rs?rev=a5fbebb8c733c6d450a803f6d2f6c760ce1d2d31#a5fbebb8c733c6d450a803f6d2f6c760ce1d2d31"
+source = "git+https://github.com/fedibtc/uniffi-rs?rev=d00f5ef23553665e2175ae98c12b005d46b26f7a#d00f5ef23553665e2175ae98c12b005d46b26f7a"
 dependencies = [
  "serde",
  "siphasher",
- "uniffi_checksum_derive 0.21.1 (git+https://github.com/fedibtc/uniffi-rs?rev=a5fbebb8c733c6d450a803f6d2f6c760ce1d2d31)",
+ "uniffi_checksum_derive 0.21.1 (git+https://github.com/fedibtc/uniffi-rs?rev=d00f5ef23553665e2175ae98c12b005d46b26f7a)",
 ]
 
 [[package]]
@@ -8143,7 +8143,7 @@ checksum = "14247bb57be4f377dfb94c72830b8ce8fc6beac03cf4bf7b9732eadd414123fc"
 [[package]]
 name = "weedle2"
 version = "4.0.0"
-source = "git+https://github.com/fedibtc/uniffi-rs?rev=a5fbebb8c733c6d450a803f6d2f6c760ce1d2d31#a5fbebb8c733c6d450a803f6d2f6c760ce1d2d31"
+source = "git+https://github.com/fedibtc/uniffi-rs?rev=d00f5ef23553665e2175ae98c12b005d46b26f7a#d00f5ef23553665e2175ae98c12b005d46b26f7a"
 dependencies = [
  "nom",
 ]
