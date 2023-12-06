@@ -56,6 +56,17 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
         setIsJoining(false)
     }
 
+    const welcomeTitle =
+        federation.returningMemberStatus.type === 'returningMember'
+            ? t('feature.onboarding.welcome-back-to-federation')
+            : t('feature.onboarding.welcome-to-federation')
+    const welcomeInstructions =
+        federation.returningMemberStatus.type === 'newMember'
+            ? t('feature.onboarding.welcome-instructions-new')
+            : federation.returningMemberStatus.type === 'returningMember'
+            ? t('feature.onboarding.welcome-instructions-returning')
+            : t('feature.onboarding.welcome-instructions-unknown')
+
     return (
         <View style={styles(theme).container}>
             <Card containerStyle={styles(theme).roundedCardContainer}>
@@ -63,7 +74,7 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
                     contentContainerStyle={styles(theme).innerCardContainer}>
                     <FederationLogo federation={federation} size={96} />
                     <Text h2 medium style={styles(theme).welcome}>
-                        {t('feature.onboarding.welcome-to-federation')}
+                        {welcomeTitle}
                     </Text>
                     <Text h2 medium style={styles(theme).welcomeTitle}>
                         {federation?.name}
@@ -92,7 +103,7 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
                         </HoloGradient>
                     ) : (
                         <Text caption style={styles(theme).welcomeText}>
-                            {t('feature.onboarding.welcome-instructions')}
+                            {welcomeInstructions}
                         </Text>
                     )}
                 </ScrollView>

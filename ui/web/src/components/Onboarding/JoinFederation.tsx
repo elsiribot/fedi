@@ -180,7 +180,9 @@ export const JoinFederation: React.FC = () => {
                         </CustomWelcomeMessage>
                     ) : (
                         <Text variant="caption">
-                            {t('feature.onboarding.welcome-instructions')}
+                            {t(
+                                'feature.onboarding.welcome-instructions-unknown',
+                            )}
                         </Text>
                     )}
                 </FederationPreviewInner>
