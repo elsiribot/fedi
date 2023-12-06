@@ -880,6 +880,11 @@ impl Bridge {
 
     // FIXME: this function has weird name now that it doesn't do any recovery
     pub async fn recover_from_mnemonic(&self, mnemonic: bip39::Mnemonic) -> Result<()> {
+        // Only allow recovery when there are no joined federations
+        if !self.federations.lock().await.is_empty() {
+            bail!("Cannot recover while joined federations exist");
+        }
+
         self.app_state
             .with_write_lock(move |state| {
                 Box::pin(async move {
@@ -973,6 +978,11 @@ impl Bridge {
 
     // TODO: rename this to start_social_recovery
     pub async fn validate_recovery_file(&self, recovery_file_path: PathBuf) -> Result<()> {
+        // Only allow recovery when there are no joined federations
+        if !self.federations.lock().await.is_empty() {
+            bail!("Cannot recover while joined federations exist");
+        }
+
         // These 2 lines validate
         let recovery_file_bytes = self
             .storage
