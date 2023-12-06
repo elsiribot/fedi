@@ -65,10 +65,9 @@ use self::dev::{
     override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
 };
 use super::constants::{
-    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, LNURL_CHILD_ID, MINT_OPERATION_TYPE,
-    NOSTR_CHILD_ID, ONE_WEEK, PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT,
-    STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED,
-    XMPP_PASSWORD,
+    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, NOSTR_CHILD_ID, ONE_WEEK,
+    PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE,
+    WALLET_OPERATION_TYPE, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
 };
 use super::event::{Event, EventSink, TypedEventExt};
 use super::social::{
@@ -78,8 +77,7 @@ use super::social::{
 use super::storage::Storage;
 use super::types::{
     federation_v2_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
-    RpcLightningGatewayV1, RpcPayInvoiceResponse, RpcPublicKey, RpcSignedLnurlMessage,
-    RpcXmppCredentials,
+    RpcLightningGatewayV1, RpcPayInvoiceResponse, RpcPublicKey, RpcXmppCredentials,
 };
 use crate::error::ErrorCode;
 use crate::event::RecoveryStartEvent;
@@ -1327,20 +1325,6 @@ impl FederationV2 {
             .approve_recovery(*recovery_id, password)
             .await?;
         Ok(())
-    }
-
-    /// Sign LNURL message using a key derived from client secret
-    pub async fn sign_lnurl_message(&self, msg: &Message) -> RpcSignedLnurlMessage {
-        let secp = Secp256k1::new();
-        let root_secret = self.root_secret();
-        let lnurl_secret = root_secret.child_key(ChildId(LNURL_CHILD_ID));
-        let lnurl_keypair = lnurl_secret.to_secp_key(&secp);
-        let lnurl_pubkey = lnurl_keypair.public_key();
-        let signature = secp.sign_ecdsa(msg, &lnurl_keypair.secret_key());
-        RpcSignedLnurlMessage {
-            signature,
-            pubkey: RpcPublicKey(lnurl_pubkey),
-        }
     }
 
     /// Get Nostr public key

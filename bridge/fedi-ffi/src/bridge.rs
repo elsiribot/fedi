@@ -6,9 +6,11 @@ use std::time::UNIX_EPOCH;
 use std::usize;
 
 use anyhow::{anyhow, bail, Context, Result};
-use bitcoin::secp256k1::{Message, PublicKey};
+use bitcoin::secp256k1::{Message, PublicKey, Secp256k1};
 use bitcoin::{Address, XOnlyPublicKey};
 use fedi_social_client::{FediSocialCommonGen, RecoveryId};
+use fedimint_bip39::Bip39RootSecretStrategy;
+use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::api::{DynGlobalApi, InviteCode as InviteCodeV2, WsFederationApi};
 use fedimint_core::config::ClientConfig;
 use fedimint_core::core::OperationId;
@@ -21,6 +23,7 @@ use fedimint_core_v0::api::WsClientConnectInfo as InviteCodeV0;
 use fedimint_core_v0::task::TaskGroup as TaskGroupV0;
 use fedimint_core_v1::api::InviteCode as InviteCodeV1;
 use fedimint_core_v1::task::TaskGroup as TaskGroupV1;
+use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_mint_client_v0::parse_ecash;
 use futures::future::join_all;
 use lightning_invoice::Bolt11Invoice;
@@ -40,6 +43,7 @@ use super::types::{
     RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo, RpcTransaction, RpcXmppCredentials,
     SocialRecoveryApproval, SocialRecoveryQr,
 };
+use crate::constants::LNURL_CHILD_ID;
 use crate::error::ErrorCode;
 use crate::event::SocialRecoveryEvent;
 use crate::federation_v2::{self, FederationV2};
@@ -325,11 +329,29 @@ impl MultiFederation {
         Ok(())
     }
 
-    pub async fn sign_lnurl_message(&self, message: &Message) -> RpcSignedLnurlMessage {
+    pub async fn sign_lnurl_message(
+        &self,
+        message: &Message,
+        domain: String,
+        global_root_secret: DerivableSecret,
+    ) -> RpcSignedLnurlMessage {
         match self {
             Self::V0(v0) => v0.sign_lnurl_message(message).await,
             Self::V1(v1) => v1.sign_lnurl_message(message).await,
-            Self::V2(v2) => v2.sign_lnurl_message(message).await,
+            Self::V2(_) => {
+                let secp = Secp256k1::new();
+                let lnurl_secret = global_root_secret.child_key(ChildId(LNURL_CHILD_ID));
+                let lnurl_secret_bytes: [u8; 32] = lnurl_secret.to_random_bytes();
+                let lnurl_domain_secret =
+                    DerivableSecret::new_root(&lnurl_secret_bytes, domain.as_bytes());
+                let lnurl_domain_keypair = lnurl_domain_secret.to_secp_key(&secp);
+                let lnurl_domain_pubkey = lnurl_domain_keypair.public_key();
+                let signature = secp.sign_ecdsa(message, &lnurl_domain_keypair.secret_key());
+                RpcSignedLnurlMessage {
+                    signature,
+                    pubkey: RpcPublicKey(lnurl_domain_pubkey),
+                }
+            }
         }
     }
 
@@ -1150,9 +1172,20 @@ impl Bridge {
         &self,
         federation_id: RpcFederationId,
         message: Message,
+        domain: String,
     ) -> Result<RpcSignedLnurlMessage> {
         let multi = self.get_multi(&federation_id.0).await?;
-        Ok(multi.sign_lnurl_message(&message).await)
+        let global_root_secret = self
+            .app_state
+            .with_read_lock(move |state| {
+                Box::pin(async move {
+                    Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
+                })
+            })
+            .await;
+        Ok(multi
+            .sign_lnurl_message(&message, domain, global_root_secret)
+            .await)
     }
 
     pub async fn xmpp_credentials(

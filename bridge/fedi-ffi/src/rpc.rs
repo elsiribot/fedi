@@ -355,10 +355,13 @@ async fn signLnurlMessage(
     bridge: Arc<Bridge>,
     // hex-encoded message
     message: String,
+    domain: String,
     federation_id: RpcFederationId,
 ) -> anyhow::Result<RpcSignedLnurlMessage> {
     let message = Message::from_slice(&hex::decode(message)?)?;
-    bridge.sign_lnurl_message(federation_id, message).await
+    bridge
+        .sign_lnurl_message(federation_id, message, domain)
+        .await
 }
 
 #[macro_rules_derive(rpc_method!)]
