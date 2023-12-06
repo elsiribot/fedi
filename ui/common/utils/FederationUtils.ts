@@ -401,5 +401,36 @@ export async function getFederationPreview(
     inviteCode: string,
     fedimint: FedimintBridge,
 ): Promise<FederationPreview> {
-    return fedimint.federationPreview(inviteCode)
+    let externalMeta = {}
+    const preview = await fedimint.federationPreview(inviteCode)
+    // The federation preview may have an external URL where the meta
+    // fields need to be fetched from... otherwise we won't know about chat
+    // servers after joining which will break onboarding
+    // TODO: Refactor this to the bridge...?
+    try {
+        if (preview.meta?.meta_external_url) {
+            log.info(
+                `Found meta_external_url in preview for federation ${preview.id}, fetching...`,
+            )
+            const response = await fetch(preview.meta?.meta_external_url, {
+                cache: 'no-cache',
+            })
+            const metaJson = await response.json()
+            if (metaJson[preview.id]) {
+                externalMeta = metaJson[preview.id]
+            }
+            log.info(`Found external meta for federation ${preview.id}`)
+        }
+    } catch (error) {
+        log.error(
+            `Failed to fetch external meta for federation preview ${preview.id}`,
+        )
+    }
+    return {
+        ...preview,
+        meta: {
+            ...preview.meta,
+            ...externalMeta,
+        },
+    }
 }
