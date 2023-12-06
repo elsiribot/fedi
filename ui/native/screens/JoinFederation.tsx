@@ -129,6 +129,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
         return (
             <FederationPreview
                 onJoin={handleJoin}
+                onBack={() => setFederationPreview(undefined)}
                 federation={federationPreview}
             />
         )
