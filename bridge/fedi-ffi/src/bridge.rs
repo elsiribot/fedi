@@ -43,7 +43,7 @@ use super::types::{
     RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo, RpcTransaction, RpcXmppCredentials,
     SocialRecoveryApproval, SocialRecoveryQr,
 };
-use crate::constants::LNURL_CHILD_ID;
+use crate::constants::{LNURL_CHILD_ID, NOSTR_CHILD_ID};
 use crate::error::ErrorCode;
 use crate::event::SocialRecoveryEvent;
 use crate::federation_v2::{self, FederationV2};
@@ -363,19 +363,41 @@ impl MultiFederation {
         }
     }
 
-    pub async fn get_nostr_pub_key(&self) -> Result<XOnlyPublicKey> {
+    pub async fn get_nostr_pub_key(
+        &self,
+        global_root_secret: DerivableSecret,
+    ) -> Result<XOnlyPublicKey> {
         match self {
             Self::V0(_) => bail!(ErrorCode::NostrNotSupported),
             Self::V1(v1) => Ok(v1.get_nostr_pub_key().await),
-            Self::V2(v2) => Ok(v2.get_nostr_pub_key().await),
+            Self::V2(_) => {
+                let secp = Secp256k1::new();
+                let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+                let nostr_keypair = nostr_secret.to_secp_key(&secp);
+                let nostr_pubkey = nostr_keypair.x_only_public_key();
+                Ok(nostr_pubkey.0)
+            }
         }
     }
 
-    pub async fn sign_nostr_event(&self, event_hash: String) -> Result<String> {
+    pub async fn sign_nostr_event(
+        &self,
+        event_hash: String,
+        global_root_secret: DerivableSecret,
+    ) -> Result<String> {
         match self {
             Self::V0(_) => bail!(ErrorCode::NostrNotSupported),
             Self::V1(v1) => v1.sign_nostr_event(event_hash).await,
-            Self::V2(v2) => v2.sign_nostr_event(event_hash).await,
+            Self::V2(_) => {
+                let secp = Secp256k1::new();
+                let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+                let nostr_keypair = nostr_secret.to_secp_key(&secp);
+                let data = &hex::decode(event_hash)?;
+                let message = Message::from_slice(data)?;
+                let sig = secp.sign_schnorr(&message, &nostr_keypair);
+                // Return hex-encoded string
+                Ok(format!("{}", sig))
+            }
         }
     }
 
@@ -1208,8 +1230,16 @@ impl Bridge {
 
     pub async fn get_nostr_pub_key(&self, federation_id: RpcFederationId) -> Result<String> {
         let multi = self.get_multi(&federation_id.0).await?;
+        let global_root_secret = self
+            .app_state
+            .with_read_lock(move |state| {
+                Box::pin(async move {
+                    Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
+                })
+            })
+            .await;
         multi
-            .get_nostr_pub_key()
+            .get_nostr_pub_key(global_root_secret)
             .await
             .map(|pubkey| pubkey.to_string())
     }
@@ -1220,7 +1250,15 @@ impl Bridge {
         event_hash: String,
     ) -> Result<String> {
         let multi = self.get_multi(&federation_id.0).await?;
-        multi.sign_nostr_event(event_hash).await
+        let global_root_secret = self
+            .app_state
+            .with_read_lock(move |state| {
+                Box::pin(async move {
+                    Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
+                })
+            })
+            .await;
+        multi.sign_nostr_event(event_hash, global_root_secret).await
     }
 
     pub async fn stability_pool_account_info(

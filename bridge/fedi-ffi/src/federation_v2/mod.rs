@@ -10,7 +10,7 @@ use std::time::{Duration, SystemTime};
 
 use ::serde::{Deserialize, Serialize};
 use anyhow::{anyhow, bail, Context, Result};
-use bitcoin::secp256k1::{Message, PublicKey, Secp256k1, XOnlyPublicKey};
+use bitcoin::secp256k1::PublicKey;
 use bitcoin::{Address, Network};
 use db::{
     FediRawClientConfigKey, InviteCodeKey, LastBackupTimestampKey, TransactionNotesKey,
@@ -65,9 +65,9 @@ use self::dev::{
     override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
 };
 use super::constants::{
-    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, NOSTR_CHILD_ID, ONE_WEEK,
-    PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE,
-    WALLET_OPERATION_TYPE, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
+    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, ONE_WEEK, PAY_INVOICE_TIMEOUT,
+    REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE, XMPP_CHILD_ID,
+    XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
 };
 use super::event::{Event, EventSink, TypedEventExt};
 use super::social::{
@@ -1325,29 +1325,6 @@ impl FederationV2 {
             .approve_recovery(*recovery_id, password)
             .await?;
         Ok(())
-    }
-
-    /// Get Nostr public key
-    pub async fn get_nostr_pub_key(&self) -> XOnlyPublicKey {
-        let secp = Secp256k1::new();
-        let root_secret = self.root_secret();
-        let nostr_secret = root_secret.child_key(ChildId(NOSTR_CHILD_ID));
-        let nostr_keypair = nostr_secret.to_secp_key(&secp);
-        let nostr_pubkey = nostr_keypair.x_only_public_key();
-        nostr_pubkey.0
-    }
-
-    /// Sign Nostr event
-    pub async fn sign_nostr_event(&self, event_hash: String) -> Result<String> {
-        let secp = Secp256k1::new();
-        let root_secret = self.root_secret();
-        let nostr_secret = root_secret.child_key(ChildId(NOSTR_CHILD_ID));
-        let nostr_keypair = nostr_secret.to_secp_key(&secp);
-        let data = &hex::decode(event_hash)?;
-        let message = Message::from_slice(data)?;
-        let sig = secp.sign_schnorr(&message, &nostr_keypair);
-        // Return hex-encoded string
-        Ok(format!("{}", sig))
     }
 
     /// Returns an XMPP password derived from client secret. This enables
