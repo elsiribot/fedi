@@ -228,7 +228,7 @@ impl MultiFederation {
         }
     }
 
-    pub async fn save_xmpp_username(&self, username: &String) {
+    pub async fn save_xmpp_username(&self, username: &str) {
         match self {
             Self::V0(v0) => v0.save_xmpp_username(username).await,
             Self::V1(v1) => v1.save_xmpp_username(username).await,
@@ -269,7 +269,7 @@ impl MultiFederation {
             Self::V0(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
             Self::V1(_) => bail!(ErrorCode::SocialRecoveryNotSupported),
             Self::V2(v2) => {
-                v2.approve_social_recovery_request(&recovery_id, peer_id, password)
+                v2.approve_social_recovery_request(recovery_id, peer_id, password)
                     .await
             }
         }
@@ -908,12 +908,13 @@ impl Bridge {
         self.app_state
             .with_write_lock(move |state| {
                 Box::pin(async move {
-                    Ok(match &state.root_mnemonic {
+                    match &state.root_mnemonic {
                         Some(_) => bail!("Cannot restore when mnemonic is already set"),
                         None => {
                             state.root_mnemonic = Some(mnemonic.clone());
                         }
-                    })
+                    };
+                    Ok(())
                 })
             })
             .await?;

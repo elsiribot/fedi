@@ -26,11 +26,17 @@ impl Oracle for MockOracle {
     }
 }
 
-impl MockOracle {
-    pub fn new() -> MockOracle {
+impl Default for MockOracle {
+    fn default() -> Self {
         MockOracle {
             price_inner: Some(10_000 * 100), // 10k dollars in cents
         }
+    }
+}
+
+impl MockOracle {
+    pub fn new() -> MockOracle {
+        Default::default()
     }
 
     pub fn clear_price(&mut self) {

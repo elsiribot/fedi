@@ -455,10 +455,7 @@ impl ServerModule for StabilityPool {
         // TODO shaurya decide on TX fee for withdrawals
         let fee = Amount::ZERO;
         return Ok(InputMeta {
-            amount: TransactionItemAmount {
-                amount: amount,
-                fee,
-            },
+            amount: TransactionItemAmount { amount, fee },
             pub_key: account,
         });
     }
@@ -1006,7 +1003,7 @@ async fn extract_sorted_staged_seeks_and_provides(
                     provide: b,
                     sequence: seq_b,
                 },
-            )| a.min_fee_rate.cmp(&b.min_fee_rate).then(seq_a.cmp(&seq_b)),
+            )| a.min_fee_rate.cmp(&b.min_fee_rate).then(seq_a.cmp(seq_b)),
         )
         .collect::<VecDeque<_>>();
     dbtx.remove_by_prefix(&StagedProvidesKeyPrefix).await;
@@ -1155,6 +1152,7 @@ async fn write_remaining_staged_seeks_and_provides(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn distribute_fees_and_write_cycle(
     dbtx: &mut DatabaseTransaction<'_>,
     mut locked_seeks: Vec<(PublicKey, LockedSeek)>,
@@ -1170,7 +1168,7 @@ async fn distribute_fees_and_write_cycle(
         amount: Amount,
         fee: Amount,
     }
-    let mut seek_amount_and_fee_map = BTreeMap::new();
+    let mut seek_amount_and_fee_map: BTreeMap<u64, AmountAndFee> = BTreeMap::new();
 
     // Reduce each locked seek by fee amount and calculate total fee pool
     let mut fee_pool = 0u128;
@@ -1188,7 +1186,7 @@ async fn distribute_fees_and_write_cycle(
 
             let fee = Amount::from_msats(fee as u64); // fee guaranteed to fit in u64
             seek_amount_and_fee_map.insert(
-                staged_sequence,
+                *staged_sequence,
                 AmountAndFee {
                     amount: *amount,
                     fee,
@@ -1200,7 +1198,7 @@ async fn distribute_fees_and_write_cycle(
 
     // Update seek metadatas in database
     for (sequence, amount_and_fee) in seek_amount_and_fee_map {
-        let seek_metadata_key = SeekMetadataKey(*sequence);
+        let seek_metadata_key = SeekMetadataKey(sequence);
         let seek_metadata = match dbtx.get_value(&seek_metadata_key).await {
             Some(existing) => SeekMetadata {
                 initial_amount: existing.initial_amount,
