@@ -64,62 +64,47 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
         handleCode(invite)
     }, [invite, handleCode])
 
-    const goToNextScreen = useCallback(
-        (joinAs: 'returningMember' | 'newMember') => {
-            if (!federationPreview) return
-            let nextScreen: keyof RootStackParamList = 'TabsNavigator'
+    const goToNextScreen = useCallback(() => {
+        if (!federationPreview) return
+        navigation.replace(isChatSupported ? 'CreateUsername' : 'TabsNavigator')
+    }, [federationPreview, isChatSupported, navigation])
 
-            if (joinAs === 'returningMember') {
-                nextScreen = 'ChooseRecoveryMethod'
-            } else if (isChatSupported) {
-                nextScreen = 'CreateUsername'
+    const handleJoin = useCallback(async () => {
+        setIsJoining(true)
+        try {
+            if (!federationPreview) throw new Error()
+            await dispatch(
+                joinFederation({
+                    fedimint,
+                    code: federationPreview.inviteCode,
+                }),
+            ).unwrap()
+            goToNextScreen()
+        } catch (err) {
+            // TODO: Expect an error code from bridge that maps to
+            // a localized error message
+            log.error('handleJoin', err)
+            const typedError = err as Error
+            // This catches specific errors caused by:
+            // 1. leaving a federation immediately before... After
+            // force-quitting, joining again is successful so advise
+            // the user here
+            // 2. scanning a federation code after you already joined
+            if (typedError?.message?.includes('No record locks available')) {
+                toast?.show(t('errors.please-force-quit-the-app'), 5000)
+            } else {
+                toast?.show(
+                    formatErrorMessage(
+                        t,
+                        typedError,
+                        'errors.failed-to-join-federation',
+                    ),
+                    5000,
+                )
             }
-            navigation.replace(nextScreen)
-        },
-        [federationPreview, isChatSupported, navigation],
-    )
-
-    const handleJoin = useCallback(
-        async (joinAs: 'returningMember' | 'newMember') => {
-            setIsJoining(true)
-            try {
-                if (!federationPreview) throw new Error()
-                await dispatch(
-                    joinFederation({
-                        fedimint,
-                        code: federationPreview.inviteCode,
-                    }),
-                ).unwrap()
-                goToNextScreen(joinAs)
-            } catch (err) {
-                // TODO: Expect an error code from bridge that maps to
-                // a localized error message
-                log.error('handleJoin', err)
-                const typedError = err as Error
-                // This catches specific errors caused by:
-                // 1. leaving a federation immediately before... After
-                // force-quitting, joining again is successful so advise
-                // the user here
-                // 2. scanning a federation code after you already joined
-                if (
-                    typedError?.message?.includes('No record locks available')
-                ) {
-                    toast?.show(t('errors.please-force-quit-the-app'), 5000)
-                } else {
-                    toast?.show(
-                        formatErrorMessage(
-                            t,
-                            typedError,
-                            'errors.failed-to-join-federation',
-                        ),
-                        5000,
-                    )
-                }
-                setIsJoining(false)
-            }
-        },
-        [dispatch, federationPreview, goToNextScreen, t, toast],
-    )
+            setIsJoining(false)
+        }
+    }, [dispatch, federationPreview, goToNextScreen, t, toast])
 
     const renderQrCodeScanner = () => {
         if (isJoining || isFetchingPreview) {
