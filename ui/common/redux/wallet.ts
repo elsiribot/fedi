@@ -514,8 +514,8 @@ export const selectStabilityTransactionHistory = createSelector(
 export const selectWithdrawableStableBalance = createSelector(
     selectStableBalance,
     selectStableBalancePending,
-    (stableBalance, stableBalancePending) => {
-        return stableBalance + stableBalancePending
+    (stableBalance, stableBalancePending): Usd => {
+        return Number((stableBalance + stableBalancePending).toFixed(2)) as Usd
     },
 )
 
@@ -523,12 +523,12 @@ export const selectMinimumWithdrawAmount = createSelector(
     (s: CommonState) => selectFederationStabilityPoolConfig(s),
     selectStableBalance,
     selectStableBalancePending,
-    (config, stableBalance, stableBalancePending) => {
+    (config, stableBalance, stableBalancePending): Usd => {
         const minimumBasisPoints = config?.min_allowed_cancellation_bps || 0
 
         // No minimum withdraw amount if we can cancel pending deposits otherwise calculate minimum allowed cancellation from completed deposits
         if (stableBalancePending > 0) {
-            return 0
+            return 0 as Usd
         } else {
             // convert bps to decimal
             const minimumFraction = Number(
@@ -538,7 +538,7 @@ export const selectMinimumWithdrawAmount = createSelector(
             const minimumUsdAmount = Number(
                 (stableBalance * minimumFraction).toFixed(2),
             )
-            return minimumUsdAmount
+            return minimumUsdAmount as Usd
         }
     },
 )

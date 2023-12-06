@@ -379,10 +379,8 @@ export function useMinMaxSendAmount({
  */
 export function useMinMaxWithdrawAmount() {
     // TODO: get minimum from config?
-    const minimumUsd = useCommonSelector(selectMinimumWithdrawAmount) as Usd
-    const withdrawableUsd = useCommonSelector(
-        selectWithdrawableStableBalance,
-    ) as Usd
+    const minimumUsd = useCommonSelector(selectMinimumWithdrawAmount)
+    const withdrawableUsd = useCommonSelector(selectWithdrawableStableBalance)
     const { convertUsdToSats } = useBtcFiatPrice()
     const minimumAmount = convertUsdToSats(minimumUsd)
     const maximumAmount = convertUsdToSats(withdrawableUsd)
