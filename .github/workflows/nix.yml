@@ -109,10 +109,12 @@ jobs:
               run: nix build -L .#ci.workspaceClippy
 
             - name: Test bridge
+              timeout-minutes: 10
               run: |
                   nix build -L .#ci.${{ matrix.test-bridge }}
 
             - name: Test stability pool
+              timeout-minutes: 10
               run: nix build -L .#ci.testStabilityPool
 
     build-linux:
