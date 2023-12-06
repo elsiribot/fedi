@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import WorldIllustration from '@fedi/common/assets/images/illustration-world.png'
 import FediLogoIcon from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
 
+import { fedimint } from '../../lib/bridge'
 import { styled, theme } from '../../styles'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
@@ -17,6 +18,20 @@ import {
 
 export const OnboardingHome: React.FC = () => {
     const { t } = useTranslation()
+    const [hasSeed, setHasSeed] = useState<boolean>()
+
+    useEffect(() => {
+        fedimint
+            .getMnemonic()
+            .then(value => {
+                console.log('seed', { value })
+                setHasSeed(!!value)
+            })
+            .catch(err => {
+                console.log('seed', { err })
+                setHasSeed(false)
+            })
+    }, [])
 
     return (
         <OnboardingContainer>
@@ -41,6 +56,14 @@ export const OnboardingHome: React.FC = () => {
                 <Button width="full" href="/onboarding/join">
                     {t('feature.federations.join-federation')}
                 </Button>
+                {hasSeed === false && (
+                    <Button
+                        width="full"
+                        variant="secondary"
+                        href="/onboarding/recover">
+                        {t('feature.onboarding.join-returning-member')}
+                    </Button>
+                )}
                 <Terms>
                     <Text variant="small">
                         {t('feature.onboarding.by-clicking-you-agree')}{' '}

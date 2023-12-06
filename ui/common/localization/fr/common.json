@@ -408,7 +408,7 @@
             "paste-social-recovery-code": "Coller le code de récupération sociale",
             "paste-social-recovery-code-instead": "Coller le code de récupération sociale à la place",
             "personal-recovery": "Récupération personnelle",
-            "personal-recovery-instructions": "Entrez les 12 mots que vous avez notés lorsque vous avez sauvegardé votre portefeuille {{federation}} pour la première fois",
+            "personal-recovery-instructions": "Entrez les 12 mots que vous avez notés lors de la première sauvegarde de votre portefeuille",
             "personal-recovery-method": "Si vous avez noté 12 mots de récupération, vous pouvez les saisir à nouveau pour récupérer votre portefeuille",
             "recover-a-wallet": "Récupérer un portefeuille",
             "recover-wallet": "Récupérer le portefeuille",

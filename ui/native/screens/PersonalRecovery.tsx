@@ -197,9 +197,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                     : {},
             ]}>
             <Text style={styles(theme).instructionsText}>
-                {t('feature.recovery.personal-recovery-instructions', {
-                    federation: activeFederation?.name,
-                })}
+                {t('feature.recovery.personal-recovery-instructions')}
             </Text>
             <Card containerStyle={styles(theme).roundedCardContainer}>
                 <View style={styles(theme).twoColumnContainer}>

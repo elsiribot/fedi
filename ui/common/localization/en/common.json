@@ -478,7 +478,7 @@
             "paste-social-recovery-code": "Paste social recovery code",
             "paste-social-recovery-code-instead": "Paste social recovery code instead",
             "personal-recovery": "Personal recovery",
-            "personal-recovery-instructions": "Enter the 12 words you wrote down when you first backed up your {{federation}} wallet",
+            "personal-recovery-instructions": "Enter the 12 words you wrote down when you first backed up your wallet",
             "personal-recovery-method": "If you wrote down 12 recovery words you can enter them again to recover your wallet",
             "recover-a-wallet": "Recover a wallet",
             "recover-wallet": "Recover wallet",
