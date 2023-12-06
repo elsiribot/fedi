@@ -2,6 +2,9 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use anyhow::bail;
+use fedimint_bip39::Bip39RootSecretStrategy;
+use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core_v1::db::IDatabase;
 use fedimint_core_v1::task::{MaybeSend, MaybeSync};
 use fedimint_core_v1::{apply, async_trait_maybe_send};
@@ -45,13 +48,13 @@ pub trait IStorage: 'static + MaybeSend + MaybeSync {
 
 pub type Storage = Arc<dyn IStorage>;
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize)]
 pub struct AppStateRaw {
     /// Version indicator for the app state
     pub format_version: u32,
 
     /// Root mnemonic that's used to derive all secrets in the app
-    pub root_mnemonic: Option<bip39::Mnemonic>,
+    pub root_mnemonic: bip39::Mnemonic,
 
     /// Mapping of federation ID => FederationInfo
     pub joined_federations: BTreeMap<String, FederationInfo>,
@@ -150,7 +153,12 @@ impl AppState {
 
     async fn default_with_storage(storage: Storage) -> Self {
         Self {
-            raw: RwLock::new(AppStateRaw::default()),
+            raw: RwLock::new(AppStateRaw {
+                format_version: 0,
+                root_mnemonic: Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng()),
+                joined_federations: BTreeMap::new(),
+                social_recovery_state: None,
+            }),
             storage,
         }
     }
@@ -168,7 +176,20 @@ impl AppState {
         F: FnOnce(&mut AppStateRaw) -> BoxFuture<anyhow::Result<T>>,
     {
         let mut app_state_raw = self.raw.write().await;
+
+        // Ensure root mnemonic cannot be overwritten while a joined V2 federation
+        // exists
+        let v2_federation_exists = app_state_raw
+            .joined_federations
+            .iter()
+            .any(|(_, FederationInfo { version, .. })| *version >= 2);
+        let root_mnemonic_snapshot = app_state_raw.root_mnemonic.clone();
         let result = closure(&mut app_state_raw).await?;
+
+        if v2_federation_exists && app_state_raw.root_mnemonic != root_mnemonic_snapshot {
+            bail!("Root mnemonic cannot be overwritten while joined v2 federations are present");
+        }
+
         self.storage
             .write_file(
                 Path::new(FEDI_FILE_PATH),

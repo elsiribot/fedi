@@ -330,7 +330,7 @@ export interface RpcMethods {
         null,
     ]
     signLnurlMessage: [
-        { message: string; federationId: RpcFederationId },
+        { message: string; domain: string; federationId: RpcFederationId },
         { signature: string; pubkey: RpcPublicKey },
     ]
     xmppCredentials: [

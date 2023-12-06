@@ -170,9 +170,14 @@ export class FedimintBridge {
         })
     }
 
-    async signLnurlMessage(message: string, federationId: string) {
+    async signLnurlMessage(
+        message: string,
+        domain: string,
+        federationId: string,
+    ) {
         return this.rpcTyped('signLnurlMessage', {
             message,
+            domain,
             federationId,
         })
     }
