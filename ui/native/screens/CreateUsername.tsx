@@ -3,6 +3,7 @@ import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+    ActivityIndicator,
     Keyboard,
     KeyboardEvent,
     Platform,
@@ -33,12 +34,48 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const dispatch = useAppDispatch()
     const { toast } = useEnvironmentContext().state
     const [username, setUsername] = useState<string>('')
+    const [isRecoveringUsername, setIsRecoveringUsername] = useState(true)
     const [xmppAuthInProgress, setXmppAuthInProgress] = useState<boolean>(false)
     const [buttonIsOverlapping, setButtonIsOverlapping] =
         useState<boolean>(false)
     const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
     const [buttonYPosition, setButtonYPosition] = useState<number>(0)
     const [overlapThreshold, setOverlapThreshold] = useState<number>(0)
+
+    // Attempt to fetch username from the bridge in case they were previously
+    // a member.
+    useEffect(() => {
+        async function fetchCreds() {
+            if (!activeFederationId) return
+            const creds = await fedimint.getXmppCredentials(activeFederationId)
+            if (!creds.username) {
+                setIsRecoveringUsername(false)
+                return
+            }
+            try {
+                setUsername(creds.username)
+                await dispatch(
+                    authenticateChat({
+                        fedimint,
+                        federationId: activeFederationId as string,
+                        username: creds.username.toLowerCase(),
+                    }),
+                ).unwrap()
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'FederationGreeting' }],
+                })
+            } catch (err) {
+                log.error('failed to fetch xmpp credentials', err)
+                toast?.show(
+                    formatErrorMessage(t, err, 'errors.unknown-error'),
+                    5000,
+                )
+            }
+            setIsRecoveringUsername(false)
+        }
+        fetchCreds()
+    }, [activeFederationId, dispatch, navigation, t, toast])
 
     // when the keyboard is opened and content layouts change, this effect
     // determines whether the Create username button is overlapping with
@@ -132,6 +169,14 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     const style = styles(theme, insets)
+
+    if (isRecoveringUsername) {
+        return (
+            <View style={style.loadingContainer}>
+                <ActivityIndicator />
+            </View>
+        )
+    }
 
     return (
         <ScrollView
@@ -241,6 +286,11 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             marginLeft: theme.spacing.sm,
             marginTop: theme.spacing.xs,
             color: theme.colors.grey,
+        },
+        loadingContainer: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
         },
     })
 
