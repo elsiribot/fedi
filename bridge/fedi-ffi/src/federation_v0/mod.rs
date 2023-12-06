@@ -143,9 +143,7 @@ impl FederationV0 {
         .await)
     }
 
-    pub async fn download_client_config(
-        invite_code_string: &String,
-    ) -> anyhow::Result<ClientConfig> {
+    pub async fn download_client_config(invite_code_string: &str) -> anyhow::Result<ClientConfig> {
         let mut invite_code: InviteCode = InviteCode::from_str(invite_code_string)?;
         override_localhost_invite_code(&mut invite_code);
         let api = WsFederationApi::from_connect_info(&[invite_code.clone()]);
@@ -260,8 +258,7 @@ impl FederationV0 {
         invoice: Invoice, // TODO: fetch the invoice from the db
     ) -> Result<()> {
         let fed = self.clone();
-        let _ = self
-            .task_group
+        self.task_group
             .clone()
             .spawn("subscribe invoice", move |_| async move {
                 let mut updates = fed
@@ -399,8 +396,7 @@ impl FederationV0 {
             "ln" => match operation.meta() {
                 LightningMeta::Pay { invoice, .. } => {
                     let fed = self.clone();
-                    let _ = self
-                        .task_group
+                    self.task_group
                         .clone()
                         .spawn("subscribe_to_ln_pay", move |_| async move {
                             // FIXME: what happens if it fails?
@@ -413,8 +409,7 @@ impl FederationV0 {
                 }
                 LightningMeta::Receive { invoice, .. } => {
                     let fed = self.clone();
-                    let _ = self
-                        .task_group
+                    self.task_group
                         .clone()
                         .spawn("subscribe_to_ln_receive", move |_| async move {
                             // FIXME: what happens if it fails?
@@ -430,8 +425,7 @@ impl FederationV0 {
                 match meta.variant {
                     MintMetaVariants::SpendOOB { .. } => {
                         let fed = self.clone();
-                        let _ = self
-                            .task_group
+                        self.task_group
                             .clone()
                             .spawn("subscribe_oob_spend", move |_| async move {
                                 // FIXME: what happens if it fails?
@@ -441,8 +435,7 @@ impl FederationV0 {
                     }
                     MintMetaVariants::Reissuance { .. } => {
                         let fed = self.clone();
-                        let _ = self
-                            .task_group
+                        self.task_group
                             .clone()
                             .spawn("subscribe_to_ecash_reissue", move |_| async move {
                                 // FIXME: what happens if it fails?
@@ -503,8 +496,7 @@ impl FederationV0 {
     /// "federation" events when one is observed
     async fn subscribe_balance_updates(&mut self) {
         let federation = self.clone();
-        let _ = self
-            .task_group
+        self.task_group
             .spawn(
                 format!("{:?} balance subscription", federation.federation_name()),
                 |_| async move {
@@ -746,8 +738,7 @@ impl FederationV0 {
     /// Background task which does a backup with the federation twice per day
     async fn poll_scheduled_backups(&mut self) {
         let federation = self.clone();
-        let _ = self
-            .task_group
+        self.task_group
             .spawn(
                 format!("{:?} scheduled backups", federation.federation_name()),
                 |handle| async move {
@@ -773,8 +764,7 @@ impl FederationV0 {
     /// subscriptions should be reliable.
     async fn poll_balance(&mut self) {
         let federation = self.clone();
-        let _ = self
-            .task_group
+        self.task_group
             .spawn(
                 format!("{:?} balance poller", federation.federation_name()),
                 |task_handle| async move {
@@ -970,9 +960,10 @@ impl FederationV0 {
         self.dbtx().await.get_value(&XmppUsernameKey).await
     }
 
-    pub async fn save_xmpp_username(&self, username: &String) {
+    pub async fn save_xmpp_username(&self, username: &str) {
         let mut dbtx = self.dbtx().await;
-        dbtx.insert_entry(&XmppUsernameKey, username).await;
+        dbtx.insert_entry(&XmppUsernameKey, &username.to_owned())
+            .await;
         dbtx.commit_tx().await;
     }
 

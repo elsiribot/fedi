@@ -192,18 +192,16 @@ impl FederationV2 {
         root_mnemonic: &bip39::Mnemonic,
         federation_id: &FederationId,
     ) -> DerivableSecret {
-        let global_root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&root_mnemonic);
-        let client_root_secret = get_default_client_secret(&global_root_secret, &federation_id);
-        client_root_secret
+        let global_root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(root_mnemonic);
+        get_default_client_secret(&global_root_secret, federation_id)
     }
 
     pub fn auxiliary_secret_from_root_mnemonic(
         root_mnemonic: &bip39::Mnemonic,
         federation_id: &FederationId,
     ) -> DerivableSecret {
-        let global_root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&root_mnemonic);
-        let auxiliary_secret = get_default_auxiliary_secret(&global_root_secret, &federation_id);
-        auxiliary_secret
+        let global_root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(root_mnemonic);
+        get_default_auxiliary_secret(&global_root_secret, federation_id)
     }
 
     /// Instantiate Federation from FediConfig
@@ -214,7 +212,7 @@ impl FederationV2 {
         root_mnemonic: &bip39::Mnemonic,
         client_config: Option<ClientConfig>,
     ) -> anyhow::Result<Self> {
-        let client = Self::client_from_db(db, &root_mnemonic, client_config).await?;
+        let client = Self::client_from_db(db, root_mnemonic, client_config).await?;
         // FIXME: repetitive
         let federation_id = client.federation_id();
         let auxiliary_secret =
@@ -228,9 +226,7 @@ impl FederationV2 {
         .await)
     }
 
-    pub async fn download_client_config(
-        invite_code_string: &String,
-    ) -> anyhow::Result<ClientConfig> {
+    pub async fn download_client_config(invite_code_string: &str) -> anyhow::Result<ClientConfig> {
         let mut invite_code: InviteCode = InviteCode::from_str(invite_code_string)?;
         tracing::info!("invite_code: {:?}", invite_code);
         override_localhost_invite_code(&mut invite_code);
@@ -464,8 +460,7 @@ impl FederationV2 {
         expires_at: SystemTime,
     ) -> Result<()> {
         let fed = self.clone();
-        let _ = fed
-            .task_group
+        fed.task_group
             .clone()
             .spawn("subscribe deposit", move |_| async move {
                 let mut updates = fed
@@ -528,8 +523,7 @@ impl FederationV2 {
         invoice: Bolt11Invoice, // TODO: fetch the invoice from the db
     ) -> Result<()> {
         let fed = self.clone();
-        let _ = self
-            .task_group
+        self.task_group
             .clone()
             .spawn("subscribe invoice", move |_| async move {
                 let mut updates = fed
@@ -742,8 +736,7 @@ impl FederationV2 {
                     ..
                 } => {
                     let fed = self.clone();
-                    let _ = self
-                        .task_group
+                    self.task_group
                         .clone()
                         .spawn("subscribe_to_ln_pay", move |_| async move {
                             // FIXME: what happens if it fails?
@@ -764,8 +757,7 @@ impl FederationV2 {
                     ..
                 } => {
                     let fed = self.clone();
-                    let _ = self
-                        .task_group
+                    self.task_group
                         .clone()
                         .spawn("subscribe_to_ln_receive", move |_| async move {
                             // FIXME: what happens if it fails?
@@ -781,8 +773,7 @@ impl FederationV2 {
                 match meta.variant {
                     MintOperationMetaVariant::SpendOOB { .. } => {
                         let fed = self.clone();
-                        let _ = self
-                            .task_group
+                        self.task_group
                             .clone()
                             .spawn("subscribe_oob_spend", move |_| async move {
                                 // FIXME: what happens if it fails?
@@ -792,8 +783,7 @@ impl FederationV2 {
                     }
                     MintOperationMetaVariant::Reissuance { .. } => {
                         let fed = self.clone();
-                        let _ = self
-                            .task_group
+                        self.task_group
                             .clone()
                             .spawn("subscribe_to_ecash_reissue", move |_| async move {
                                 // FIXME: what happens if it fails?
@@ -906,7 +896,7 @@ impl FederationV2 {
                                 updates.next().await;
                                 return Ok(RpcPayInvoiceResponse {
                                     // FIXME: is this correct serialization?
-                                    preimage: hex::encode(&preimage.0),
+                                    preimage: hex::encode(preimage.0),
                                 });
                             }
                             InternalPayState::RefundSuccess { .. } => {
@@ -978,8 +968,7 @@ impl FederationV2 {
     /// "federation" events when one is observed
     async fn subscribe_balance_updates(&mut self) {
         let federation = self.clone();
-        let _ = self
-            .task_group
+        self.task_group
             .spawn(
                 format!("{:?} balance subscription", federation.federation_name()),
                 |_| async move {
@@ -1136,7 +1125,7 @@ impl FederationV2 {
     }
 
     pub async fn cancel_ecash(&self, ecash: OOBNotes) -> Result<()> {
-        let op_id = spendable_notes_to_operation_id(&ecash.notes());
+        let op_id = spendable_notes_to_operation_id(ecash.notes());
         // NOTE: try_cancel_spend_notes itself is not presisted across restarts.
         // it uses inmemory channel.
         self.client
@@ -1442,8 +1431,7 @@ impl FederationV2 {
     /// Background task which does a backup with the federation twice per day
     async fn poll_scheduled_backups(&mut self) {
         let federation = self.clone();
-        let _ = self
-            .task_group
+        self.task_group
             .spawn(
                 format!("{:?} scheduled backups", federation.federation_name()),
                 |handle| async move {
@@ -1822,9 +1810,10 @@ impl FederationV2 {
         self.dbtx().await.get_value(&XmppUsernameKey).await
     }
 
-    pub async fn save_xmpp_username(&self, username: &String) {
+    pub async fn save_xmpp_username(&self, username: &str) {
         let mut dbtx = self.dbtx().await;
-        dbtx.insert_entry(&XmppUsernameKey, username).await;
+        dbtx.insert_entry(&XmppUsernameKey, &username.to_owned())
+            .await;
         dbtx.commit_tx().await;
     }
 
