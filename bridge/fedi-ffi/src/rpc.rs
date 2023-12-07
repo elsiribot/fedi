@@ -943,8 +943,8 @@ mod tests {
         let (bridge, federation) = setup().await?;
 
         // receive ecash
-        let ecash_receive_amount = fedimint_core::Amount::from_msats(10000);
-        let ecash = cli_generate_ecash(ecash_receive_amount, &federation).await?;
+        let ecash_requested_amount = fedimint_core::Amount::from_msats(10000);
+        let ecash = cli_generate_ecash(ecash_requested_amount, &federation).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
         receiveEcash(bridge.clone(), federation.federation_id(), ecash).await?;
 
@@ -957,7 +957,7 @@ mod tests {
                 bridge.clone(),
                 federation.federation_id(),
                 RpcAmount(fedimint_core::Amount::from_msats(
-                    ecash_receive_amount.msats / count,
+                    ecash_requested_amount.msats / count,
                 )),
             )
             .await
@@ -965,7 +965,8 @@ mod tests {
         }
         // check balance
         assert_eq!(
-            fedimint_core::Amount::from_msats(0),
+            // this assertion is weird because sometimes fedimint-cli overissues ecash
+            ecash_receive_amount - ecash_requested_amount,
             federation.get_balance().await,
         );
 
