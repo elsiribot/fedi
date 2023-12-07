@@ -7,6 +7,7 @@ import { FederationPreview as FederationPreviewType } from '@fedi/common/types'
 import {
     getFederationTosUrl,
     getFederationWelcomeMessage,
+    getIsFederationSupported,
     shouldShowJoinFederation,
 } from '@fedi/common/utils/FederationUtils'
 
@@ -17,9 +18,10 @@ import AcceptTermsOfService from './AcceptTermsOfService'
 type Props = {
     federation: FederationPreviewType
     onJoin: () => void | Promise<void>
+    onBack: () => void
 }
 
-const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
+const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const [showTerms, setShowTerms] = useState<boolean>(false)
@@ -27,6 +29,38 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
     const [isJoining, setIsJoining] = useState(false)
     const tosUrl = getFederationTosUrl(federation.meta)
     const welcomeMessage = getFederationWelcomeMessage(federation.meta)
+    const isSupported = getIsFederationSupported(federation)
+
+    const style = styles(theme)
+
+    if (!isSupported) {
+        return (
+            <View style={style.container}>
+                <View style={style.unsupportedContainer}>
+                    <FederationLogo federation={federation} size={96} />
+                    <Text h2 medium style={style.welcome}>
+                        {federation?.name}
+                    </Text>
+                    <View style={style.unsupportedBadge}>
+                        <Text caption bold style={style.unsupportedBadgeLabel}>
+                            {t('words.unsupported')}
+                        </Text>
+                    </View>
+                    <Text caption style={style.welcomeText}>
+                        {t('feature.onboarding.unsupported-notice')}
+                    </Text>
+                </View>
+                <View style={style.buttonsContainer}>
+                    <Button
+                        fullWidth
+                        title={t('words.okay')}
+                        onPress={() => onBack()}
+                        containerStyle={style.button}
+                    />
+                </View>
+            </View>
+        )
+    }
 
     if (showTerms) {
         return (
@@ -64,32 +98,29 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
             : t('feature.onboarding.welcome-instructions-unknown')
 
     return (
-        <View style={styles(theme).container}>
-            <Card containerStyle={styles(theme).roundedCardContainer}>
-                <ScrollView
-                    contentContainerStyle={styles(theme).innerCardContainer}>
+        <View style={style.container}>
+            <Card containerStyle={style.roundedCardContainer}>
+                <ScrollView contentContainerStyle={style.innerCardContainer}>
                     <FederationLogo federation={federation} size={96} />
-                    <Text h2 medium style={styles(theme).welcome}>
+                    <Text h2 medium style={style.welcome}>
                         {welcomeTitle}
                     </Text>
-                    <Text h2 medium style={styles(theme).welcomeTitle}>
+                    <Text h2 medium style={style.welcomeTitle}>
                         {federation?.name}
                     </Text>
                     {welcomeMessage ? (
                         <HoloGradient
                             level="100"
-                            style={styles(theme).customWelcomeContainer}
-                            gradientStyle={styles(theme).customWelcomeInner}>
-                            <Text caption style={styles(theme).welcomeText}>
+                            style={style.customWelcomeContainer}
+                            gradientStyle={style.customWelcomeInner}>
+                            <Text caption style={style.welcomeText}>
                                 <Trans
                                     components={{
                                         bold: (
                                             <Text
                                                 caption
                                                 bold
-                                                style={
-                                                    styles(theme).welcomeText
-                                                }
+                                                style={style.welcomeText}
                                             />
                                         ),
                                     }}>
@@ -98,26 +129,26 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
                             </Text>
                         </HoloGradient>
                     ) : (
-                        <Text caption style={styles(theme).welcomeText}>
+                        <Text caption style={style.welcomeText}>
                             {welcomeInstructions}
                         </Text>
                     )}
                 </ScrollView>
             </Card>
-            <View style={styles(theme).buttonsContainer}>
+            <View style={style.buttonsContainer}>
                 {showJoinFederation ? (
                     <>
                         <Button
                             fullWidth
                             title={t('words.continue')}
                             onPress={() => handleJoin()}
-                            containerStyle={styles(theme).button}
+                            containerStyle={style.button}
                             disabled={isJoining}
                             loading={isJoining}
                         />
                     </>
                 ) : (
-                    <Text caption style={styles(theme).disabledNotice}>
+                    <Text caption style={style.disabledNotice}>
                         {t('feature.onboarding.new-users-disabled-notice')}
                     </Text>
                 )}
@@ -176,6 +207,24 @@ const styles = (theme: Theme) =>
         },
         customWelcomeInner: {
             padding: theme.spacing.md,
+        },
+        unsupportedContainer: {
+            maxWidth: 280,
+            paddingTop: theme.spacing.xl,
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
+        },
+        unsupportedBadge: {
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingHorizontal: theme.spacing.sm,
+            paddingVertical: theme.spacing.xxs,
+            borderRadius: 30,
+            backgroundColor: theme.colors.red,
+        },
+        unsupportedBadgeLabel: {
+            color: theme.colors.white,
         },
     })
 
