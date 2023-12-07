@@ -1281,17 +1281,17 @@
         "nixpkgs-unstable": "nixpkgs-unstable_12"
       },
       "locked": {
-        "lastModified": 1701803675,
-        "narHash": "sha256-zp/2LXakYn1Q4ki1DVAsnVQhPGMP/6w20SDiAfLyy+w=",
-        "ref": "shaurya/v0.2.0-rc5",
-        "rev": "bddc695f831153b5d4c1170fa3787f1c2b76f923",
-        "revCount": 6006,
+        "lastModified": 1701971332,
+        "narHash": "sha256-f+6WRSAE+xKljjypJimrtg5QAmRbd15SHzNzGPG+OnA=",
+        "ref": "shaurya/v0.2.0-rc7",
+        "rev": "5af6351ca2a45eb599e860fd39e7172e112de8a0",
+        "revCount": 6020,
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       },
       "original": {
-        "ref": "shaurya/v0.2.0-rc5",
-        "rev": "bddc695f831153b5d4c1170fa3787f1c2b76f923",
+        "ref": "shaurya/v0.2.0-rc7",
+        "rev": "5af6351ca2a45eb599e860fd39e7172e112de8a0",
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       }
