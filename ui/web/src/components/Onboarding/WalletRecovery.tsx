@@ -3,21 +3,15 @@ import { useTranslation } from 'react-i18next'
 
 import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import WordListIcon from '@fedi/common/assets/svgs/word-list.svg'
-import { selectActiveFederation } from '@fedi/common/redux'
 
 import { ActionCard } from '../../components/ActionCard'
 import { Button } from '../../components/Button'
 import { Text } from '../../components/Text'
-import { useAppSelector } from '../../hooks'
 import { styled } from '../../styles'
-import { Redirect } from '../Redirect'
 import { OnboardingContainer, OnboardingContent } from './components'
 
 export const WalletRecovery: React.FC = () => {
     const { t } = useTranslation()
-    const activeFederation = useAppSelector(selectActiveFederation)
-
-    if (!activeFederation) return <Redirect path="/onboarding" />
 
     return (
         <OnboardingContainer>
@@ -29,7 +23,6 @@ export const WalletRecovery: React.FC = () => {
                         title={t('feature.recovery.personal-recovery')}
                         description={t(
                             'feature.recovery.personal-recovery-instructions',
-                            { federation: activeFederation?.name },
                         )}
                         action={
                             <Button href="/onboarding/recover/personal">

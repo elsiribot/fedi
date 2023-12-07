@@ -408,7 +408,7 @@
             "paste-social-recovery-code": "Pegar código de recuperación social",
             "paste-social-recovery-code-instead": "En lugar de eso, pega el código de recuperación social",
             "personal-recovery": "Recuperación personal",
-            "personal-recovery-instructions": "Ingresa las 12 palabras que registraste al realizar la primera copia de seguridad de tu cartera de {{federation}}",
+            "personal-recovery-instructions": "Ingresa las 12 palabras que registraste al realizar la primera copia de seguridad de tu cartera",
             "personal-recovery-method": "Si guardaste 12 palabras de recuperación, puedes reintroducirlas para recuperar tu cartera.",
             "recover-a-wallet": "Recuperar una cartera",
             "recover-wallet": "Recuperar cartera",

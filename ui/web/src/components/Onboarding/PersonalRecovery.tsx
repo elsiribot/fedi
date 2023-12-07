@@ -3,17 +3,15 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { BIP39_WORD_LIST } from '@fedi/common/constants/bip39'
-import { useIsChatSupported } from '@fedi/common/hooks/federation'
-import { recoverFromMnemonic, selectActiveFederation } from '@fedi/common/redux'
+import { recoverFromMnemonic } from '@fedi/common/redux'
 import { SeedWords } from '@fedi/common/types'
 
 import { Button } from '../../components/Button'
 import { RecoverySeedWords } from '../../components/RecoverySeedWords'
 import { Text } from '../../components/Text'
-import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
+import { useAppDispatch, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
-import { Redirect } from '../Redirect'
 import {
     OnboardingActions,
     OnboardingContainer,
@@ -25,8 +23,6 @@ export const PersonalRecovery: React.FC = () => {
     const { showErrorToast } = useToast()
     const { push } = useRouter()
     const dispatch = useAppDispatch()
-    const activeFederation = useAppSelector(selectActiveFederation)
-    const isChatSupported = useIsChatSupported()
     const [words, setWords] = useState<SeedWords>([])
     const [isRecovering, setIsRecovering] = useState(false)
 
@@ -42,14 +38,12 @@ export const PersonalRecovery: React.FC = () => {
                     mnemonic: words,
                 }),
             ).unwrap()
-            push(isChatSupported ? '/onboarding/complete' : '/')
+            push('/onboarding/join')
         } catch (err) {
             showErrorToast(err, 'errors.unknown-error')
         }
         setIsRecovering(false)
-    }, [words, isChatSupported, dispatch, showErrorToast, push])
-
-    if (!activeFederation) return <Redirect path="/onboarding" />
+    }, [words, dispatch, showErrorToast, push])
 
     return (
         <OnboardingContainer>
@@ -59,9 +53,7 @@ export const PersonalRecovery: React.FC = () => {
                         {t('feature.recovery.personal-recovery')}
                     </Text>
                     <Text>
-                        {t('feature.recovery.personal-recovery-instructions', {
-                            federation: activeFederation?.name,
-                        })}
+                        {t('feature.recovery.personal-recovery-instructions')}
                     </Text>
                     <RecoverySeedWords words={words} onChangeWords={setWords} />
                 </Content>

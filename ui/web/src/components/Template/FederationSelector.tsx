@@ -77,7 +77,7 @@ export const FederationSelector: React.FC = () => {
                 sideOffset={10}
                 open={isSelectorOpen}
                 onOpenChange={setIsSelectorOpen}>
-                <ActiveFederation>
+                <ActiveFederation key={activeFederation?.id}>
                     <FederationAvatar
                         federation={activeFederation}
                         size={isSmall ? 'xs' : 'sm'}

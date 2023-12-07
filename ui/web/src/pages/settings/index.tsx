@@ -36,6 +36,7 @@ type Menu = Array<{
         name: string // TODO: Type as valid translation key?
         icon: IconProps['icon']
         disabled?: boolean
+        hidden?: boolean
         href?: string
         onClick?: () => void
     }>
@@ -75,7 +76,7 @@ function AdminPage() {
         setIsLeavingFederation(false)
     }, [canLeaveFederation, federationId, dispatch, showToast, showErrorToast])
 
-    const menu: Menu = [
+    let menu: Menu = [
         {
             name: 'words.federation',
             items: [
@@ -104,7 +105,7 @@ function AdminPage() {
                     name: 'feature.backup.backup-wallet',
                     icon: WalletIcon,
                     href: '/settings/backup',
-                    disabled: !supportsSingleSeed,
+                    hidden: !supportsSingleSeed,
                 },
             ],
         },
@@ -119,6 +120,13 @@ function AdminPage() {
             ],
         },
     ]
+    // Filter out hidden items, filter out groups that have no items left.
+    menu = menu
+        .map(group => ({
+            ...group,
+            items: group.items.filter(item => !item.hidden),
+        }))
+        .filter(group => group.items.length > 0)
 
     return (
         <ContentBlock>
