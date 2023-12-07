@@ -14,17 +14,14 @@ import { FederationLogo } from '../../ui/FederationLogo'
 import HoloGradient from '../../ui/HoloGradient'
 import AcceptTermsOfService from './AcceptTermsOfService'
 
-type JoinAs = 'returningMember' | 'newMember'
-
 type Props = {
     federation: FederationPreviewType
-    onJoin: (joinAs: JoinAs) => void | Promise<void>
+    onJoin: () => void | Promise<void>
 }
 
 const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const [joinAs, setJoinAs] = useState<JoinAs>()
     const [showTerms, setShowTerms] = useState<boolean>(false)
     const showJoinFederation = shouldShowJoinFederation(federation.meta)
     const [isJoining, setIsJoining] = useState(false)
@@ -34,21 +31,20 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
     if (showTerms) {
         return (
             <AcceptTermsOfService
-                onAccept={() => joinAs && onJoin(joinAs)}
+                onAccept={() => onJoin()}
                 onReject={() => setShowTerms(false)}
                 federation={federation}
             />
         )
     }
 
-    const handleJoin = async (joinType: JoinAs) => {
+    const handleJoin = async () => {
         setIsJoining(true)
-        setJoinAs(joinType)
         if (tosUrl) {
             setShowTerms(true)
         } else {
             try {
-                await onJoin(joinType)
+                await onJoin()
             } catch {
                 /* no-op, onJoin should handle */
             }
@@ -114,10 +110,10 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin }: Props) => {
                         <Button
                             fullWidth
                             title={t('words.continue')}
-                            onPress={() => handleJoin('newMember')}
+                            onPress={() => handleJoin()}
                             containerStyle={styles(theme).button}
-                            disabled={isJoining && joinAs !== 'newMember'}
-                            loading={isJoining && joinAs === 'newMember'}
+                            disabled={isJoining}
+                            loading={isJoining}
                         />
                     </>
                 ) : (
