@@ -1,4 +1,4 @@
-{ pkgs, pkgs-unstable, flakeboxLib, fedi-v1, fedi-v0, fedimint-build, fedimint-pkgs, toolchains, pkgs-kitman, replaceGitHash }:
+{ pkgs, pkgs-unstable, flakeboxLib, fedi-v1, fedi-v0, fedimint-pkgs, toolchains, pkgs-kitman, replaceGitHash }:
 let
   system = pkgs.system;
   lib = pkgs.lib;
@@ -240,7 +240,7 @@ rec {
         # Get esplora from pkgs-kitman
         pkgs-kitman.esplora
         # Get fedimint deps from fedi-v1
-        fedimint-build.packages.${system}.devimint
+        fedimint-pkgs.packages.${system}.devimint
         fedimint-pkgs.packages.${system}.gateway-pkgs
         # helpers
         pkgs.jq
@@ -281,7 +281,7 @@ rec {
         # Get esplora from pkgs-kitman
         pkgs-kitman.esplora
         # Get fedimint deps from fedi-v1
-        fedimint-build.packages.${system}.devimint
+        fedimint-pkgs.packages.${system}.devimint
         fedimint-pkgs.packages.${system}.gateway-pkgs
         # helpers
         pkgs.jq
@@ -327,7 +327,7 @@ rec {
         # Get esplora from pkgs-kitman
         pkgs-kitman.esplora
         # Get fedimint deps from fedi-v1
-        fedi-v1.inputs.fedimint-build.packages.${system}.devimint
+        fedi-v1.inputs.fedimint-pkgs.packages.${system}.devimint
         fedi-v1.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
         fedi-v1.packages.${system}.fedi-fedimint-pkgs
         # helpers
@@ -374,7 +374,7 @@ rec {
         # we don't use the specific version from pkgs-v0 because it doesn't work for some unknown reason
         pkgs.bitcoind
         # get fedimint deps from fedi-v0
-        fedi-v0.inputs.fedimint-build.packages.${system}.devimint
+        fedi-v0.inputs.fedimint-pkgs.packages.${system}.devimint
         fedi-v0.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
         fedi-v0.packages.${system}.fedi-fedimint-pkgs
         # helpers
