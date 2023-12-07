@@ -5,11 +5,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     # we pick upstream packages from here, so we want this to be compatible with our forks
     fedimint-pkgs = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=shaurya/v0.2.0-rc5&rev=bddc695f831153b5d4c1170fa3787f1c2b76f923";
-    };
-    # we only pick build system stuff here, so we can be more relaxed about updating it
-    fedimint-build = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=shaurya/v0.2.0-rc5&rev=bddc695f831153b5d4c1170fa3787f1c2b76f923";
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=shaurya/v0.2.0-rc7&rev=5af6351ca2a45eb599e860fd39e7172e112de8a0";
     };
     # TODO shaurya can probably remove once bridge is updated for 0.2
     # Fedimint at consensus version 1. This is used to test bridge against old federations
@@ -32,17 +28,17 @@
 
     android-nixpkgs = {
       url = "github:tadfisher/android-nixpkgs?rev=6370a3aafe37ed453bfdc4af578eb26339f8fee0"; # stable
-      inputs.nixpkgs.follows = "fedimint-build/nixpkgs";
+      inputs.nixpkgs.follows = "fedimint-pkgs/nixpkgs";
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, fedimint-pkgs, fedimint-build, fs-dir-cache, android-nixpkgs, fedi-v1, fedi-v0, flakebox }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, fedimint-pkgs, fs-dir-cache, android-nixpkgs, fedi-v1, fedi-v0, flakebox }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs-unstable = import nixpkgs-unstable {
           inherit system;
         };
-        pkgs-kitman = import fedimint-build.inputs.nixpkgs-kitman {
+        pkgs-kitman = import fedimint-pkgs.inputs.nixpkgs-kitman {
           inherit system;
         };
 
@@ -78,7 +74,7 @@
           ];
         };
 
-        fmLib = fedimint-build.lib.${system};
+        fmLib = fedimint-pkgs.lib.${system};
 
         # Replace placeholder git hash in a binary
         #
@@ -191,7 +187,7 @@
         };
 
         craneMultiBuild = import nix/flakebox.nix {
-          inherit pkgs pkgs-unstable flakeboxLib fedi-v1 fedi-v0 fedimint-build fedimint-pkgs toolchains replaceGitHash pkgs-kitman;
+          inherit pkgs pkgs-unstable flakeboxLib fedi-v1 fedi-v0 fedimint-pkgs toolchains replaceGitHash pkgs-kitman;
         };
 
         lib = pkgs.lib;
@@ -223,7 +219,7 @@
           inherit toolchain;
           nativeBuildInputs =
             [
-              fedimint-build.packages.${system}.devimint
+              fedimint-pkgs.packages.${system}.devimint
               fedimint-pkgs.packages.${system}.gateway-pkgs
               pkgs.fs-dir-cache
               pkgs.cargo-nextest
@@ -311,7 +307,7 @@
           });
           v1 = fedi-v1.devShells.${system}.default.overrideAttrs (prev: {
             nativeBuildInputs = [
-              fedi-v1.inputs.fedimint-build.packages.${system}.devimint
+              fedi-v1.inputs.fedimint-pkgs.packages.${system}.devimint
               fedi-v1.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
               fedi-v1.packages.${system}.fedi-fedimint-pkgs
             ]
@@ -328,7 +324,7 @@
                     NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
                   })
               )
-              fedi-v0.inputs.fedimint-build.packages.${system}.devimint
+              fedi-v0.inputs.fedimint-pkgs.packages.${system}.devimint
               fedi-v0.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
               fedi-v0.inputs.fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
               fedi-v0.packages.${system}.fedi-fedimint-pkgs

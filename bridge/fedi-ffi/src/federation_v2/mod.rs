@@ -10,7 +10,7 @@ use std::time::{Duration, SystemTime};
 
 use ::serde::{Deserialize, Serialize};
 use anyhow::{anyhow, bail, Context, Result};
-use bitcoin::secp256k1::{Message, PublicKey, Secp256k1, XOnlyPublicKey};
+use bitcoin::secp256k1::{self, PublicKey, Secp256k1};
 use bitcoin::{Address, Network};
 use db::{
     FediRawClientConfigKey, InviteCodeKey, LastBackupTimestampKey, TransactionNotesKey,
@@ -22,12 +22,15 @@ use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::backup::Metadata;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
-use fedimint_client::secret::{get_default_client_secret, RootSecretStrategy};
+use fedimint_client::secret::{
+    get_default_client_secret, DeriveableSecretClientExt, RootSecretStrategy,
+};
 use fedimint_client::{ClientArc, ClientBuilder, FederationInfo};
 use fedimint_core::api::{
-    DynModuleApi, FederationApiExt, GlobalFederationApi, IGlobalFederationApi, InviteCode,
+    DynModuleApi, FederationApiExt, FederationResult, GlobalFederationApi, InviteCode,
     StatusResponse, WsFederationApi,
 };
+use fedimint_core::backup::ClientBackupSnapshot;
 use fedimint_core::config::{ClientConfig, FederationId};
 use fedimint_core::core::OperationId;
 use fedimint_core::db::{
@@ -65,10 +68,9 @@ use self::dev::{
     override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
 };
 use super::constants::{
-    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, LNURL_CHILD_ID, MINT_OPERATION_TYPE,
-    NOSTR_CHILD_ID, ONE_WEEK, PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT,
-    STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED,
-    XMPP_PASSWORD,
+    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, ONE_WEEK, PAY_INVOICE_TIMEOUT,
+    REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE, XMPP_CHILD_ID,
+    XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
 };
 use super::event::{Event, EventSink, TypedEventExt};
 use super::social::{
@@ -78,8 +80,7 @@ use super::social::{
 use super::storage::Storage;
 use super::types::{
     federation_v2_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
-    RpcLightningGatewayV1, RpcPayInvoiceResponse, RpcPublicKey, RpcSignedLnurlMessage,
-    RpcXmppCredentials,
+    RpcLightningGatewayV1, RpcPayInvoiceResponse, RpcPublicKey, RpcXmppCredentials,
 };
 use crate::error::ErrorCode;
 use crate::event::RecoveryStartEvent;
@@ -226,23 +227,30 @@ impl FederationV2 {
         .await)
     }
 
-    pub async fn download_client_config(invite_code_string: &str) -> anyhow::Result<ClientConfig> {
+    pub async fn download_client_config(
+        invite_code_string: &str,
+        root_mnemonic: &bip39::Mnemonic,
+    ) -> anyhow::Result<(ClientConfig, FederationResult<Vec<ClientBackupSnapshot>>)> {
         let mut invite_code: InviteCode = InviteCode::from_str(invite_code_string)?;
-        tracing::info!("invite_code: {:?}", invite_code);
         override_localhost_invite_code(&mut invite_code);
-        tracing::info!("invite_code 2: {:?}", invite_code);
-
         let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]));
-        tracing::info!("api: {:?}", api);
+        let client_config: ClientConfig = api.as_ref().download_client_config(&invite_code).await?;
 
-        let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]))
-            as Arc<dyn IGlobalFederationApi + Send + Sync + 'static>;
-        let client_config: ClientConfig = api
-            .as_ref()
-            .hacky_download_client_config_single_peer(&invite_code)
-            .await?;
-        tracing::info!("downloaded client config");
-        Ok(client_config)
+        // Check if a backup exists
+        let federation_id = client_config.global.federation_id();
+        // We do an additional derivation using `DerivableSecret::federation_key` since
+        // that is what fedimint-client does internally
+        let client_root_secret =
+            Self::client_root_secret_from_root_mnemonic(root_mnemonic, &federation_id)
+                .federation_key(&federation_id);
+        let backup_id = client_root_secret
+            .derive_backup_secret()
+            .to_secp_key(&Secp256k1::<secp256k1::SignOnly>::gen_new());
+
+        Ok((
+            client_config,
+            api.download_backup(&backup_id.public_key()).await,
+        ))
     }
 
     /// Download federation configs using an invite code. Save client config to
@@ -258,12 +266,9 @@ impl FederationV2 {
         // Download federation config
         let mut invite_code: InviteCode = InviteCode::from_str(&invite_code_string)?;
         override_localhost_invite_code(&mut invite_code);
-        let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]))
-            as Arc<dyn IGlobalFederationApi + Send + Sync + 'static>;
-        let mut client_config: ClientConfig = api
-            .as_ref()
-            .hacky_download_client_config_single_peer(&invite_code)
-            .await?;
+        let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]));
+        let mut client_config: ClientConfig =
+            api.as_ref().download_client_config(&invite_code).await?;
 
         // Save client config and invite code
         let db = storage.federation_database_v2(db_name).await?;
@@ -1341,43 +1346,6 @@ impl FederationV2 {
             .approve_recovery(*recovery_id, password)
             .await?;
         Ok(())
-    }
-
-    /// Sign LNURL message using a key derived from client secret
-    pub async fn sign_lnurl_message(&self, msg: &Message) -> RpcSignedLnurlMessage {
-        let secp = Secp256k1::new();
-        let root_secret = self.root_secret();
-        let lnurl_secret = root_secret.child_key(ChildId(LNURL_CHILD_ID));
-        let lnurl_keypair = lnurl_secret.to_secp_key(&secp);
-        let lnurl_pubkey = lnurl_keypair.public_key();
-        let signature = secp.sign_ecdsa(msg, &lnurl_keypair.secret_key());
-        RpcSignedLnurlMessage {
-            signature,
-            pubkey: RpcPublicKey(lnurl_pubkey),
-        }
-    }
-
-    /// Get Nostr public key
-    pub async fn get_nostr_pub_key(&self) -> XOnlyPublicKey {
-        let secp = Secp256k1::new();
-        let root_secret = self.root_secret();
-        let nostr_secret = root_secret.child_key(ChildId(NOSTR_CHILD_ID));
-        let nostr_keypair = nostr_secret.to_secp_key(&secp);
-        let nostr_pubkey = nostr_keypair.x_only_public_key();
-        nostr_pubkey.0
-    }
-
-    /// Sign Nostr event
-    pub async fn sign_nostr_event(&self, event_hash: String) -> Result<String> {
-        let secp = Secp256k1::new();
-        let root_secret = self.root_secret();
-        let nostr_secret = root_secret.child_key(ChildId(NOSTR_CHILD_ID));
-        let nostr_keypair = nostr_secret.to_secp_key(&secp);
-        let data = &hex::decode(event_hash)?;
-        let message = Message::from_slice(data)?;
-        let sig = secp.sign_schnorr(&message, &nostr_keypair);
-        // Return hex-encoded string
-        Ok(format!("{}", sig))
     }
 
     /// Returns an XMPP password derived from client secret. This enables

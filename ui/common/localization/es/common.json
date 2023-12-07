@@ -345,7 +345,7 @@
             "terms-and-conditions": "Términos y condiciones",
             "username-guidance": "Ingrese un nombre de usuario que contenga letras minúsculas sin espacios",
             "username-instructions": "Su nombre de usuario será la forma en que otros miembros lo identificarán.",
-            "welcome-instructions": "Los nuevos miembros reciben una cartera nueva. A los miembros que regresen se les pedirá que recuperen su cartera.",
+            "welcome-instructions-unknown": "Los nuevos miembros reciben una cartera nueva. A los miembros que regresen se les pedirá que recuperen su cartera.",
             "welcome-to-federation": "Te damos la bienvenida a",
             "welcome-to-fedi": "Te damos la bienvenida a Fedi"
         },
@@ -408,7 +408,7 @@
             "paste-social-recovery-code": "Pegar código de recuperación social",
             "paste-social-recovery-code-instead": "En lugar de eso, pega el código de recuperación social",
             "personal-recovery": "Recuperación personal",
-            "personal-recovery-instructions": "Ingresa las 12 palabras que registraste al realizar la primera copia de seguridad de tu cartera de {{federation}}",
+            "personal-recovery-instructions": "Ingresa las 12 palabras que registraste al realizar la primera copia de seguridad de tu cartera",
             "personal-recovery-method": "Si guardaste 12 palabras de recuperación, puedes reintroducirlas para recuperar tu cartera.",
             "recover-a-wallet": "Recuperar una cartera",
             "recover-wallet": "Recuperar cartera",

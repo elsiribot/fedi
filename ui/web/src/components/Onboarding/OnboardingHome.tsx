@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next'
 
 import WorldIllustration from '@fedi/common/assets/images/illustration-world.png'
 import FediLogoIcon from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
+import { selectFederations } from '@fedi/common/redux'
 
+import { useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
@@ -17,6 +19,7 @@ import {
 
 export const OnboardingHome: React.FC = () => {
     const { t } = useTranslation()
+    const hasFederations = useAppSelector(selectFederations).length > 0
 
     return (
         <OnboardingContainer>
@@ -41,6 +44,14 @@ export const OnboardingHome: React.FC = () => {
                 <Button width="full" href="/onboarding/join">
                     {t('feature.federations.join-federation')}
                 </Button>
+                {!hasFederations && (
+                    <Button
+                        width="full"
+                        variant="secondary"
+                        href="/onboarding/recover">
+                        {t('feature.onboarding.join-returning-member')}
+                    </Button>
+                )}
                 <Terms>
                     <Text variant="small">
                         {t('feature.onboarding.by-clicking-you-agree')}{' '}

@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { BIP39_WORD_LIST } from '@fedi/common/constants/bip39'
-import { recoverFromMnemonic, selectActiveFederation } from '@fedi/common/redux'
+import { recoverFromMnemonic } from '@fedi/common/redux'
 import { SeedWords } from '@fedi/common/types'
 
 import { Button } from '../../../components/Button'
@@ -11,7 +11,7 @@ import { ContentBlock } from '../../../components/ContentBlock'
 import * as Layout from '../../../components/Layout'
 import { RecoverySeedWords } from '../../../components/RecoverySeedWords'
 import { Text } from '../../../components/Text'
-import { useAppDispatch, useAppSelector, useToast } from '../../../hooks'
+import { useAppDispatch, useToast } from '../../../hooks'
 import { fedimint } from '../../../lib/bridge'
 import { styled } from '../../../styles'
 
@@ -20,7 +20,6 @@ function PersonalRecoverPage() {
     const { showToast, showErrorToast } = useToast()
     const { push } = useRouter()
     const dispatch = useAppDispatch()
-    const activeFederation = useAppSelector(selectActiveFederation)
     const [words, setWords] = useState<SeedWords>([])
     const [isRecovering, setIsRecovering] = useState(false)
 
@@ -57,9 +56,7 @@ function PersonalRecoverPage() {
             <Layout.Content>
                 <Content>
                     <Text>
-                        {t('feature.recovery.personal-recovery-instructions', {
-                            federation: activeFederation?.name,
-                        })}
+                        {t('feature.recovery.personal-recovery-instructions')}
                     </Text>
                     <RecoverySeedWords words={words} onChangeWords={setWords} />
                     <Button

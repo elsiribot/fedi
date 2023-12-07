@@ -47,6 +47,16 @@ pub struct RpcFederation {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcReturningMemberStatus {
+    Unknown,
+    NewMember,
+    ReturningMember,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcFederationPreview {
     pub id: RpcFederationId,
@@ -54,6 +64,7 @@ pub struct RpcFederationPreview {
     pub meta: BTreeMap<String, String>,
     pub invite_code: String,
     pub version: u32,
+    pub returning_member_status: RpcReturningMemberStatus,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]

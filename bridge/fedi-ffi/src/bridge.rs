@@ -6,7 +6,7 @@ use std::time::UNIX_EPOCH;
 use std::usize;
 
 use anyhow::{anyhow, bail, Context, Result};
-use bitcoin::secp256k1::{Message, PublicKey};
+use bitcoin::secp256k1::{Message, PublicKey, Secp256k1};
 use bitcoin::{Address, XOnlyPublicKey};
 use fedi_social_client::{FediSocialCommonGen, RecoveryId};
 use fedimint_bip39::Bip39RootSecretStrategy;
@@ -23,6 +23,7 @@ use fedimint_core_v0::api::WsClientConnectInfo as InviteCodeV0;
 use fedimint_core_v0::task::TaskGroup as TaskGroupV0;
 use fedimint_core_v1::api::InviteCode as InviteCodeV1;
 use fedimint_core_v1::task::TaskGroup as TaskGroupV1;
+use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_mint_client_v0::parse_ecash;
 use futures::future::join_all;
 use lightning_invoice::Bolt11Invoice;
@@ -42,6 +43,7 @@ use super::types::{
     RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo, RpcTransaction, RpcXmppCredentials,
     SocialRecoveryApproval, SocialRecoveryQr,
 };
+use crate::constants::{LNURL_CHILD_ID, NOSTR_CHILD_ID};
 use crate::error::ErrorCode;
 use crate::event::SocialRecoveryEvent;
 use crate::federation_v2::{self, FederationV2};
@@ -49,7 +51,7 @@ use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
 use crate::storage::{AppState, FederationInfo};
 use crate::types::{
     GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
-    RpcLightningGateway, RpcPayAddressResponse,
+    RpcLightningGateway, RpcPayAddressResponse, RpcReturningMemberStatus,
 };
 use crate::utils::required_threashold_of;
 
@@ -327,11 +329,29 @@ impl MultiFederation {
         Ok(())
     }
 
-    pub async fn sign_lnurl_message(&self, message: &Message) -> RpcSignedLnurlMessage {
+    pub async fn sign_lnurl_message(
+        &self,
+        message: &Message,
+        domain: String,
+        global_root_secret: DerivableSecret,
+    ) -> RpcSignedLnurlMessage {
         match self {
             Self::V0(v0) => v0.sign_lnurl_message(message).await,
             Self::V1(v1) => v1.sign_lnurl_message(message).await,
-            Self::V2(v2) => v2.sign_lnurl_message(message).await,
+            Self::V2(_) => {
+                let secp = Secp256k1::new();
+                let lnurl_secret = global_root_secret.child_key(ChildId(LNURL_CHILD_ID));
+                let lnurl_secret_bytes: [u8; 32] = lnurl_secret.to_random_bytes();
+                let lnurl_domain_secret =
+                    DerivableSecret::new_root(&lnurl_secret_bytes, domain.as_bytes());
+                let lnurl_domain_keypair = lnurl_domain_secret.to_secp_key(&secp);
+                let lnurl_domain_pubkey = lnurl_domain_keypair.public_key();
+                let signature = secp.sign_ecdsa(message, &lnurl_domain_keypair.secret_key());
+                RpcSignedLnurlMessage {
+                    signature,
+                    pubkey: RpcPublicKey(lnurl_domain_pubkey),
+                }
+            }
         }
     }
 
@@ -343,19 +363,41 @@ impl MultiFederation {
         }
     }
 
-    pub async fn get_nostr_pub_key(&self) -> Result<XOnlyPublicKey> {
+    pub async fn get_nostr_pub_key(
+        &self,
+        global_root_secret: DerivableSecret,
+    ) -> Result<XOnlyPublicKey> {
         match self {
             Self::V0(_) => bail!(ErrorCode::NostrNotSupported),
             Self::V1(v1) => Ok(v1.get_nostr_pub_key().await),
-            Self::V2(v2) => Ok(v2.get_nostr_pub_key().await),
+            Self::V2(_) => {
+                let secp = Secp256k1::new();
+                let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+                let nostr_keypair = nostr_secret.to_secp_key(&secp);
+                let nostr_pubkey = nostr_keypair.x_only_public_key();
+                Ok(nostr_pubkey.0)
+            }
         }
     }
 
-    pub async fn sign_nostr_event(&self, event_hash: String) -> Result<String> {
+    pub async fn sign_nostr_event(
+        &self,
+        event_hash: String,
+        global_root_secret: DerivableSecret,
+    ) -> Result<String> {
         match self {
             Self::V0(_) => bail!(ErrorCode::NostrNotSupported),
             Self::V1(v1) => v1.sign_nostr_event(event_hash).await,
-            Self::V2(v2) => v2.sign_nostr_event(event_hash).await,
+            Self::V2(_) => {
+                let secp = Secp256k1::new();
+                let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+                let nostr_keypair = nostr_secret.to_secp_key(&secp);
+                let data = &hex::decode(event_hash)?;
+                let message = Message::from_slice(data)?;
+                let sig = secp.sign_schnorr(&message, &nostr_keypair);
+                // Return hex-encoded string
+                Ok(format!("{}", sig))
+            }
         }
     }
 
@@ -462,10 +504,7 @@ impl Bridge {
                                         .await?,
                                     event_sink.clone(),
                                     task_group.make_subgroup().await,
-                                    &root_mnemonic
-                                        .as_ref()
-                                        .context("root mnemonic not found")?
-                                        .clone(),
+                                    &root_mnemonic,
                                     None,
                                 )
                                 .await?,
@@ -535,24 +574,10 @@ impl Bridge {
             bail!("Already joined this federation")
         }
 
-        // generate mnemnoic if we don't have one already
-        // this would only happen for new users
         let root_mnemonic = self
             .app_state
-            .with_write_lock(move |state| {
-                Box::pin(async move {
-                    Ok(match &state.root_mnemonic {
-                        Some(mnemonic) => mnemonic.clone(),
-                        None => {
-                            let root_mnemonic =
-                                Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
-                            state.root_mnemonic = Some(root_mnemonic.clone());
-                            root_mnemonic
-                        }
-                    })
-                })
-            })
-            .await?;
+            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
+            .await;
 
         let db_name = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
         let federation = FederationV2::join(
@@ -669,10 +694,14 @@ impl Bridge {
     }
 
     pub async fn federation_preview(&self, invite_code: &String) -> Result<RpcFederationPreview> {
+        let root_mnemonic = self
+            .app_state
+            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
+            .await;
         let (v0, v1, v2) = futures::join!(
             FederationV0::download_client_config(invite_code),
             FederationV1::download_client_config(invite_code),
-            FederationV2::download_client_config(invite_code)
+            FederationV2::download_client_config(invite_code, &root_mnemonic)
         );
         match (v0, v1, v2) {
             (Ok(config), _, _) => Ok(RpcFederationPreview {
@@ -684,6 +713,7 @@ impl Bridge {
                 meta: config.meta,
                 invite_code: invite_code.to_string(),
                 version: 0,
+                returning_member_status: RpcReturningMemberStatus::Unknown,
             }),
             (_, Ok(config), _) => Ok(RpcFederationPreview {
                 id: RpcFederationId(config.global.federation_id.to_string()),
@@ -694,8 +724,9 @@ impl Bridge {
                 meta: config.global.meta,
                 invite_code: invite_code.to_string(),
                 version: 1,
+                returning_member_status: RpcReturningMemberStatus::Unknown,
             }),
-            (_, _, Ok(config)) => Ok(RpcFederationPreview {
+            (_, _, Ok((config, backup_snapshots_result))) => Ok(RpcFederationPreview {
                 id: RpcFederationId(config.global.federation_id().to_string()),
                 name: config
                     .global
@@ -705,6 +736,11 @@ impl Bridge {
                 meta: config.global.meta,
                 invite_code: invite_code.to_string(),
                 version: 2,
+                returning_member_status: match backup_snapshots_result.as_deref() {
+                    Ok([]) => RpcReturningMemberStatus::NewMember,
+                    Ok([_, ..]) => RpcReturningMemberStatus::ReturningMember,
+                    Err(_) => RpcReturningMemberStatus::Unknown,
+                },
             }),
             (Err(_), Err(_), Err(e)) => anyhow::bail!("failed to connect {e:?}"),
         }
@@ -863,12 +899,6 @@ impl Bridge {
         multi.cancel_ecash(ecash).await
     }
 
-    async fn get_root_mnemonic(&self) -> Option<bip39::Mnemonic> {
-        self.app_state
-            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
-            .await
-    }
-
     // FIXME: doesn't need result
     async fn get_social_recovery_state(&self) -> anyhow::Result<Option<SocialRecoveryState>> {
         Ok(self
@@ -895,9 +925,9 @@ impl Bridge {
 
     pub async fn get_mnemonic_words(&self) -> anyhow::Result<Vec<String>> {
         Ok(self
-            .get_root_mnemonic()
+            .app_state
+            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
             .await
-            .ok_or(anyhow!("Root mnemonic not found in app state"))?
             .word_iter()
             .map(|x| x.to_owned())
             .collect())
@@ -905,15 +935,15 @@ impl Bridge {
 
     // FIXME: this function has weird name now that it doesn't do any recovery
     pub async fn recover_from_mnemonic(&self, mnemonic: bip39::Mnemonic) -> Result<()> {
+        // Only allow recovery when there are no joined federations
+        if !self.federations.lock().await.is_empty() {
+            bail!("Cannot recover while joined federations exist");
+        }
+
         self.app_state
             .with_write_lock(move |state| {
                 Box::pin(async move {
-                    match &state.root_mnemonic {
-                        Some(_) => bail!("Cannot restore when mnemonic is already set"),
-                        None => {
-                            state.root_mnemonic = Some(mnemonic.clone());
-                        }
-                    };
+                    state.root_mnemonic = mnemonic;
                     Ok(())
                 })
             })
@@ -933,44 +963,16 @@ impl Bridge {
             .read_file(&video_file_path)
             .await?
             .ok_or(anyhow!("video file not found"))?;
-        let root_mnemonic = &self
+        let root_mnemonic = self
             .app_state
             .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
-            .await
-            .expect("Root mnemonic should exist in app_state");
-        // FIXME: why is root_mnemonic a reference?
-        let recovery_file = multi
-            .upload_backup_file(video_file, root_mnemonic.clone())
-            .await?;
+            .await;
+        let recovery_file = multi.upload_backup_file(video_file, root_mnemonic).await?;
         storage
             .write_file(RECOVERY_FILENAME.as_ref(), recovery_file)
             .await?;
         Ok(storage.platform_path(RECOVERY_FILENAME.as_ref()))
     }
-
-    //         federation_id: RpcFederationId,
-    //     recovery_file_path: PathBuf,
-    // ) -> Result<bool> { let multi = self.get_multi(&federation_id.0).await?; let
-    //   recovery_file_bytes = self .storage .read_file(&recovery_file_path) .await?
-    //   .ok_or(anyhow!("recovery file not found"))?; let recovery_file =
-    //   RecoveryFile::from_bytes(&recovery_file_bytes)?;
-    //   multi.start_social_recovery(&recovery_file).await?; let valid =
-    //   RecoveryFile::from_bytes(&recovery_file_bytes).is_ok(); Ok(valid)
-    // }
-
-    // pub async fn recovery_qr(&self, federation_id: RpcFederationId) ->
-    // Result<SocialRecoveryQr> {     let multi =
-    // self.get_multi(&federation_id.0).await?;     // Get the recovery file
-    // from disk (React Native and handle_upload_backup_file     // put it
-    // there)     let recovery_file_bytes = self
-    //         .storage
-    //         .read_file(RECOVERY_FILENAME.as_ref())
-    //         .await?
-    //         .ok_or(anyhow!("recovery file not found"))?;
-    //     let recovery_file = RecoveryFile::from_bytes(&recovery_file_bytes)?;
-    //     // Upload verification document if none exists.
-    //     multi.start_social_recovery(&recovery_file).await?;
-    //     multi.social_recovery_qr().await
 
     pub async fn start_social_recovery_v2(
         &self,
@@ -1031,6 +1033,11 @@ impl Bridge {
 
     // TODO: rename this to start_social_recovery
     pub async fn validate_recovery_file(&self, recovery_file_path: PathBuf) -> Result<()> {
+        // Only allow recovery when there are no joined federations
+        if !self.federations.lock().await.is_empty() {
+            bail!("Cannot recover while joined federations exist");
+        }
+
         // These 2 lines validate
         let recovery_file_bytes = self
             .storage
@@ -1198,9 +1205,20 @@ impl Bridge {
         &self,
         federation_id: RpcFederationId,
         message: Message,
+        domain: String,
     ) -> Result<RpcSignedLnurlMessage> {
         let multi = self.get_multi(&federation_id.0).await?;
-        Ok(multi.sign_lnurl_message(&message).await)
+        let global_root_secret = self
+            .app_state
+            .with_read_lock(move |state| {
+                Box::pin(async move {
+                    Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
+                })
+            })
+            .await;
+        Ok(multi
+            .sign_lnurl_message(&message, domain, global_root_secret)
+            .await)
     }
 
     pub async fn xmpp_credentials(
@@ -1223,8 +1241,16 @@ impl Bridge {
 
     pub async fn get_nostr_pub_key(&self, federation_id: RpcFederationId) -> Result<String> {
         let multi = self.get_multi(&federation_id.0).await?;
+        let global_root_secret = self
+            .app_state
+            .with_read_lock(move |state| {
+                Box::pin(async move {
+                    Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
+                })
+            })
+            .await;
         multi
-            .get_nostr_pub_key()
+            .get_nostr_pub_key(global_root_secret)
             .await
             .map(|pubkey| pubkey.to_string())
     }
@@ -1235,7 +1261,15 @@ impl Bridge {
         event_hash: String,
     ) -> Result<String> {
         let multi = self.get_multi(&federation_id.0).await?;
-        multi.sign_nostr_event(event_hash).await
+        let global_root_secret = self
+            .app_state
+            .with_read_lock(move |state| {
+                Box::pin(async move {
+                    Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
+                })
+            })
+            .await;
+        multi.sign_nostr_event(event_hash, global_root_secret).await
     }
 
     pub async fn stability_pool_account_info(

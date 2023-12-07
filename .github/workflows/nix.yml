@@ -82,8 +82,13 @@ jobs:
             include:
               - host: linux
                 runs-on: [self-hosted, linux]
+                test-bridge: testBridgeAll
+                run-tests: true
               - host: macos
                 runs-on: [self-hosted, macos, arm64]
+                # only current on macos, slow and hitting irrelevant issues
+                test-bridge: testBridgeCurrent
+                run-tests: false
 
         name: "Build workspace on ${{ matrix.host }}"
         runs-on: ${{ matrix.runs-on }}
@@ -106,10 +111,14 @@ jobs:
               run: nix build -L .#ci.workspaceClippy
 
             - name: Test bridge
+              timeout-minutes: 10
+              if: matrix.run-tests
               run: |
-                  nix build -L .#ci.testBridgeAll
+                  nix build -L .#ci.${{ matrix.test-bridge }}
 
             - name: Test stability pool
+              timeout-minutes: 10
+              if: matrix.run-tests
               run: nix build -L .#ci.testStabilityPool
 
     build-linux:
@@ -229,3 +238,17 @@ jobs:
             - name: Dev shell
               if: (github.ref == 'refs/heads/master' || matrix.build-in-pr)
               run: nix build -L .#devShells.${{ matrix.system }}.default
+
+    status:
+      name: Status
+      needs: [lint, build-workspace, build-linux, build-android, build-ios, shell]
+      if: ${{ always() }}
+      runs-on: ubuntu-latest
+      steps:
+        - name: Check status of all jobs
+          if: >-
+            ${{
+              contains(needs.*.result, 'failure') ||
+              contains(needs.*.result, 'cancelled')
+            }}
+          run: exit 1

@@ -145,6 +145,7 @@ impl ClientModule for StabilityPoolClientModule {
         let command = args[0].to_string_lossy();
 
         match command.as_ref() {
+            "pubkey" => Ok(serde_json::to_value(self.client_key_pair.public_key())?),
             "account-info" => Ok(serde_json::to_value(self.account_info().await?)?),
             "deposit-to-seek" => {
                 if args.len() != 2 {

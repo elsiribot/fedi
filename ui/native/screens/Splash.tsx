@@ -10,8 +10,11 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { selectFederations } from '@fedi/common/redux'
+
 import { Images } from '../assets/images'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
+import { useAppSelector } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
@@ -19,8 +22,8 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-
     const { fontScale } = useWindowDimensions()
+    const hasFederations = useAppSelector(selectFederations).length > 0
 
     const handleNewUser = async () => {
         navigation.navigate('JoinFederation', { invite: undefined })
@@ -60,12 +63,14 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
             </View>
 
             <View style={style.buttonsContainer}>
-                <Button
-                    fullWidth
-                    type="clear"
-                    title={t('feature.onboarding.join-returning-member')}
-                    onPress={handleReturningUser}
-                />
+                {!hasFederations && (
+                    <Button
+                        fullWidth
+                        type="clear"
+                        title={t('feature.onboarding.join-returning-member')}
+                        onPress={handleReturningUser}
+                    />
+                )}
                 <Button
                     fullWidth
                     testID="JoinFederationButton"

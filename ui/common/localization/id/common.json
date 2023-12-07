@@ -339,7 +339,7 @@
             "terms-and-conditions": "Syarat & Ketentuan",
             "username-guidance": "Masukkan nama penggunamu yang mengandung huruf kecil tanpa spasi",
             "username-instructions": "Nama penggunamu akan menjadi cara anggota lain mengidentifikasi kamu.",
-            "welcome-instructions": "Anggota baru menerima dompet baru. Anggota yang kembali akan diminta untuk memulihkan dompet mereka.",
+            "welcome-instructions-unknown": "Anggota baru menerima dompet baru. Anggota yang kembali akan diminta untuk memulihkan dompet mereka.",
             "welcome-to-federation": "Selamat Datang di",
             "welcome-to-fedi": "Selamat datang di Fedi"
         },
@@ -402,7 +402,7 @@
             "paste-social-recovery-code": "Tempelkan kode pemulihan sosial",
             "paste-social-recovery-code-instead": "Tempelkan kode pemulihan sosial sebagai gantinya",
             "personal-recovery": "Pemulihan pribadi",
-            "personal-recovery-instructions": "Masukkan 12 kata yang kamu tulis saat pertama kali mencadangkan dompet {{federation}} kamu",
+            "personal-recovery-instructions": "Masukkan 12 kata yang Anda tulis saat pertama kali mencadangkan dompet Anda",
             "personal-recovery-method": "Jika kamu menuliskan 12 kata pemulihan, kamu dapat memasukkannya lagi untuk memulihkan dompet kamu",
             "recover-a-wallet": "Pulihkan dompet",
             "recover-wallet": "Pulihkan dompet",

@@ -393,6 +393,15 @@ export const getFederationIconUrl = (metadata: ClientConfigMetadata) => {
     return getMetaField(SupportedMetaFields.federation_icon_url, metadata)
 }
 
+export const getIsFederationSupported = (
+    federation: Pick<Federation, 'version'>,
+) => {
+    if (federation.version === 0 || federation.version === 1) {
+        return false
+    }
+    return true
+}
+
 /**
  * Fetch information about a federation without using the bridge wasm. This
  * allows us to fetch federation info before the bridge is loaded.

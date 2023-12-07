@@ -155,6 +155,17 @@ export const JoinFederation: React.FC = () => {
         const welcomeMessage = getFederationWelcomeMessage(
             federationPreview.meta,
         )
+        const memberStatus = federationPreview.returningMemberStatus.type
+        const welcomeTitle =
+            memberStatus === 'returningMember'
+                ? t('feature.onboarding.welcome-back-to-federation')
+                : t('feature.onboarding.welcome-to-federation')
+        const welcomeInstructions =
+            memberStatus === 'newMember'
+                ? t('feature.onboarding.welcome-instructions-new')
+                : memberStatus === 'returningMember'
+                ? t('feature.onboarding.welcome-instructions-returning')
+                : t('feature.onboarding.welcome-instructions-unknown')
         content = (
             <FederationPreviewOuter>
                 <FederationPreviewInner>
@@ -169,8 +180,7 @@ export const JoinFederation: React.FC = () => {
                         />
                     </AvatarWrapper>
                     <Text variant="h2" weight="medium">
-                        {t('feature.onboarding.welcome-to-federation')}{' '}
-                        {federationPreview.name}
+                        {welcomeTitle} {federationPreview.name}
                     </Text>
                     {welcomeMessage ? (
                         <CustomWelcomeMessage>
@@ -179,9 +189,7 @@ export const JoinFederation: React.FC = () => {
                             </Trans>
                         </CustomWelcomeMessage>
                     ) : (
-                        <Text variant="caption">
-                            {t('feature.onboarding.welcome-instructions')}
-                        </Text>
+                        <Text variant="caption">{welcomeInstructions}</Text>
                     )}
                 </FederationPreviewInner>
             </FederationPreviewOuter>
@@ -199,7 +207,7 @@ export const JoinFederation: React.FC = () => {
                     width="full"
                     onClick={() => handleJoin(joinNewMemberHref)}
                     loading={isJoining}>
-                    {t('feature.onboarding.join-new-member')}
+                    {t('words.continue')}
                 </Button>
             </>
         )

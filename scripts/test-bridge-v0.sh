@@ -3,9 +3,6 @@ set -ex
 
 export RUST_BACKTRACE=full
 
-# make sure nothing is running
-pkill -9 fedimintd lnd lightningd gatewayd devimint esplora electrs bitcoind faucet distributedgen || true
-
 if [[ "${TMP:-}" == *"/nix-shell."* ]]; then
   FM_TEST_DIR="${2-$TMP}/fm-$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 4 || true)"
 else

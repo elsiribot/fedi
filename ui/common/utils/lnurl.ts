@@ -18,6 +18,7 @@ export async function lnurlAuth(
 ) {
     const { signature, pubkey } = await fedimint.signLnurlMessage(
         lnurlData.k1,
+        lnurlData.domain,
         federationId,
     )
     const callbackUrl = new URL(lnurlData.callback)
