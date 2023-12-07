@@ -345,7 +345,7 @@
             "terms-and-conditions": "Conditions & Conditions",
             "username-guidance": "Entrez un nom d'utilisateur contenant des lettres minuscules sans espaces",
             "username-instructions": "Votre nom d'utilisateur sera le moyen par lequel les autres membres vous identifieront.",
-            "welcome-instructions": "Les nouveaux membres reçoivent un portefeuille vierge. Les membres revenant seront invités à récupérer leur portefeuille.",
+            "welcome-instructions-unknown": "Les nouveaux membres reçoivent un portefeuille vierge. Les membres revenant seront invités à récupérer leur portefeuille.",
             "welcome-to-federation": "Bienvenue à",
             "welcome-to-fedi": "Bienvenue sur Fedi"
         },

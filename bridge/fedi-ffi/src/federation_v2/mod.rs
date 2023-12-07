@@ -10,7 +10,7 @@ use std::time::{Duration, SystemTime};
 
 use ::serde::{Deserialize, Serialize};
 use anyhow::{anyhow, bail, Context, Result};
-use bitcoin::secp256k1::PublicKey;
+use bitcoin::secp256k1::{self, PublicKey, Secp256k1};
 use bitcoin::{Address, Network};
 use db::{
     FediRawClientConfigKey, InviteCodeKey, LastBackupTimestampKey, TransactionNotesKey,
@@ -22,12 +22,15 @@ use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::backup::Metadata;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
-use fedimint_client::secret::{get_default_client_secret, RootSecretStrategy};
+use fedimint_client::secret::{
+    get_default_client_secret, DeriveableSecretClientExt, RootSecretStrategy,
+};
 use fedimint_client::{ClientArc, ClientBuilder, FederationInfo};
 use fedimint_core::api::{
-    DynModuleApi, FederationApiExt, GlobalFederationApi, InviteCode, StatusResponse,
-    WsFederationApi,
+    DynModuleApi, FederationApiExt, FederationResult, GlobalFederationApi, InviteCode,
+    StatusResponse, WsFederationApi,
 };
+use fedimint_core::backup::ClientBackupSnapshot;
 use fedimint_core::config::{ClientConfig, FederationId};
 use fedimint_core::core::OperationId;
 use fedimint_core::db::{
@@ -224,12 +227,30 @@ impl FederationV2 {
         .await)
     }
 
-    pub async fn download_client_config(invite_code_string: &str) -> anyhow::Result<ClientConfig> {
+    pub async fn download_client_config(
+        invite_code_string: &str,
+        root_mnemonic: &bip39::Mnemonic,
+    ) -> anyhow::Result<(ClientConfig, FederationResult<Vec<ClientBackupSnapshot>>)> {
         let mut invite_code: InviteCode = InviteCode::from_str(invite_code_string)?;
         override_localhost_invite_code(&mut invite_code);
         let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]));
         let client_config: ClientConfig = api.as_ref().download_client_config(&invite_code).await?;
-        Ok(client_config)
+
+        // Check if a backup exists
+        let federation_id = client_config.global.federation_id();
+        // We do an additional derivation using `DerivableSecret::federation_key` since
+        // that is what fedimint-client does internally
+        let client_root_secret =
+            Self::client_root_secret_from_root_mnemonic(root_mnemonic, &federation_id)
+                .federation_key(&federation_id);
+        let backup_id = client_root_secret
+            .derive_backup_secret()
+            .to_secp_key(&Secp256k1::<secp256k1::SignOnly>::gen_new());
+
+        Ok((
+            client_config,
+            api.download_backup(&backup_id.public_key()).await,
+        ))
     }
 
     /// Download federation configs using an invite code. Save client config to

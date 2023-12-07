@@ -339,7 +339,7 @@
             "terms-and-conditions": "Syarat & Ketentuan",
             "username-guidance": "Masukkan nama penggunamu yang mengandung huruf kecil tanpa spasi",
             "username-instructions": "Nama penggunamu akan menjadi cara anggota lain mengidentifikasi kamu.",
-            "welcome-instructions": "Anggota baru menerima dompet baru. Anggota yang kembali akan diminta untuk memulihkan dompet mereka.",
+            "welcome-instructions-unknown": "Anggota baru menerima dompet baru. Anggota yang kembali akan diminta untuk memulihkan dompet mereka.",
             "welcome-to-federation": "Selamat Datang di",
             "welcome-to-fedi": "Selamat datang di Fedi"
         },

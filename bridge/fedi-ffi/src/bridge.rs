@@ -51,7 +51,7 @@ use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
 use crate::storage::{AppState, FederationInfo};
 use crate::types::{
     GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
-    RpcLightningGateway, RpcPayAddressResponse,
+    RpcLightningGateway, RpcPayAddressResponse, RpcReturningMemberStatus,
 };
 use crate::utils::required_threashold_of;
 
@@ -694,10 +694,14 @@ impl Bridge {
     }
 
     pub async fn federation_preview(&self, invite_code: &String) -> Result<RpcFederationPreview> {
+        let root_mnemonic = self
+            .app_state
+            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
+            .await;
         let (v0, v1, v2) = futures::join!(
             FederationV0::download_client_config(invite_code),
             FederationV1::download_client_config(invite_code),
-            FederationV2::download_client_config(invite_code)
+            FederationV2::download_client_config(invite_code, &root_mnemonic)
         );
         match (v0, v1, v2) {
             (Ok(config), _, _) => Ok(RpcFederationPreview {
@@ -709,6 +713,7 @@ impl Bridge {
                 meta: config.meta,
                 invite_code: invite_code.to_string(),
                 version: 0,
+                returning_member_status: RpcReturningMemberStatus::Unknown,
             }),
             (_, Ok(config), _) => Ok(RpcFederationPreview {
                 id: RpcFederationId(config.global.federation_id.to_string()),
@@ -719,8 +724,9 @@ impl Bridge {
                 meta: config.global.meta,
                 invite_code: invite_code.to_string(),
                 version: 1,
+                returning_member_status: RpcReturningMemberStatus::Unknown,
             }),
-            (_, _, Ok(config)) => Ok(RpcFederationPreview {
+            (_, _, Ok((config, backup_snapshots_result))) => Ok(RpcFederationPreview {
                 id: RpcFederationId(config.global.federation_id().to_string()),
                 name: config
                     .global
@@ -730,6 +736,11 @@ impl Bridge {
                 meta: config.global.meta,
                 invite_code: invite_code.to_string(),
                 version: 2,
+                returning_member_status: match backup_snapshots_result.as_deref() {
+                    Ok([]) => RpcReturningMemberStatus::NewMember,
+                    Ok([_, ..]) => RpcReturningMemberStatus::ReturningMember,
+                    Err(_) => RpcReturningMemberStatus::Unknown,
+                },
             }),
             (Err(_), Err(_), Err(e)) => anyhow::bail!("failed to connect {e:?}"),
         }

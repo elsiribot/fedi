@@ -571,6 +571,7 @@ mod tests {
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
     use crate::translate::Translate;
+    use crate::types::RpcReturningMemberStatus;
 
     struct FakeEventSink {
         pub events: Arc<RwLock<Vec<(String, String)>>>,
@@ -1300,6 +1301,69 @@ mod tests {
             serde_json::to_string(&sig3.pubkey)?
         );
         assert_ne!(sig1.signature, sig3.signature);
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_federation_preview() -> anyhow::Result<()> {
+        let (bridge, federation) = setup().await?;
+        let invite_code = std::env::var("FM_INVITE_CODE").unwrap();
+
+        // returning member status is always "unknown" for v0/v1 federations
+        if let MultiFederation::V0(_) | MultiFederation::V1(_) = *federation {
+            drop(federation);
+            drop(bridge);
+
+            let bridge = setup_bridge().await?;
+            assert!(matches!(
+                federationPreview(bridge.clone(), invite_code.clone())
+                    .await?
+                    .returning_member_status,
+                RpcReturningMemberStatus::Unknown
+            ));
+        } else {
+            // for v2 and above, status is "new" initially and "returning" afterwards
+            drop(federation);
+            drop(bridge);
+
+            let bridge = setup_bridge().await?;
+            assert!(matches!(
+                federationPreview(bridge.clone(), invite_code.clone())
+                    .await?
+                    .returning_member_status,
+                RpcReturningMemberStatus::NewMember
+            ));
+
+            // join
+            let fedimint_federation = joinFederation(bridge.clone(), invite_code.clone()).await?;
+            let federation = bridge.get_multi(&fedimint_federation.id.0).await?;
+            use_lnd_gateway(&federation).await?;
+
+            // receive ecash and backup
+            let ecash =
+                cli_generate_ecash(fedimint_core::Amount::from_msats(10_000), &federation).await?;
+            federation.receive_ecash(ecash).await?;
+            let federation_id = federation.federation_id();
+            let username = "satoshi".to_string();
+            backupXmppUsername(bridge.clone(), federation_id.clone(), username.clone()).await?;
+
+            // extract mnemonic, leave federation and drop bridge
+            let mnemonic = getMnemonic(bridge.clone()).await?;
+            leaveFederation(bridge.clone(), federation_id).await?;
+            drop(bridge);
+
+            // query preview again w/ new bridge (recovered using mnemonic), it should be
+            // "returning"
+            let bridge = setup_bridge().await?;
+            recoverFromMnemonic(bridge.clone(), mnemonic).await?;
+            assert!(matches!(
+                federationPreview(bridge.clone(), invite_code.clone())
+                    .await?
+                    .returning_member_status,
+                RpcReturningMemberStatus::ReturningMember
+            ));
+        }
 
         Ok(())
     }
