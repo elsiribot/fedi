@@ -57,7 +57,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                 await dispatch(
                     authenticateChat({
                         fedimint,
-                        federationId: activeFederationId as string,
+                        federationId: activeFederationId,
                         username: creds.username.toLowerCase(),
                     }),
                 ).unwrap()
