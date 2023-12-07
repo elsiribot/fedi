@@ -83,10 +83,12 @@ jobs:
               - host: linux
                 runs-on: [self-hosted, linux]
                 test-bridge: testBridgeAll
+                run-tests: true
               - host: macos
                 runs-on: [self-hosted, macos, arm64]
                 # only current on macos, slow and hitting irrelevant issues
                 test-bridge: testBridgeCurrent
+                run-tests: false
 
         name: "Build workspace on ${{ matrix.host }}"
         runs-on: ${{ matrix.runs-on }}
@@ -110,11 +112,13 @@ jobs:
 
             - name: Test bridge
               timeout-minutes: 10
+              if: matrix.run-tests
               run: |
                   nix build -L .#ci.${{ matrix.test-bridge }}
 
             - name: Test stability pool
               timeout-minutes: 10
+              if: matrix.run-tests
               run: nix build -L .#ci.testStabilityPool
 
     build-linux:
