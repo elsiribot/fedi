@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import WorldIllustration from '@fedi/common/assets/images/illustration-world.png'
 import FediLogoIcon from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
+import { selectFederations } from '@fedi/common/redux'
 
-import { fedimint } from '../../lib/bridge'
+import { useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
@@ -18,20 +19,7 @@ import {
 
 export const OnboardingHome: React.FC = () => {
     const { t } = useTranslation()
-    const [hasSeed, setHasSeed] = useState<boolean>()
-
-    useEffect(() => {
-        fedimint
-            .getMnemonic()
-            .then(value => {
-                console.log('seed', { value })
-                setHasSeed(!!value)
-            })
-            .catch(err => {
-                console.log('seed', { err })
-                setHasSeed(false)
-            })
-    }, [])
+    const hasFederations = useAppSelector(selectFederations).length > 0
 
     return (
         <OnboardingContainer>
@@ -56,7 +44,7 @@ export const OnboardingHome: React.FC = () => {
                 <Button width="full" href="/onboarding/join">
                     {t('feature.federations.join-federation')}
                 </Button>
-                {hasSeed === false && (
+                {!hasFederations && (
                     <Button
                         width="full"
                         variant="secondary"
