@@ -24,6 +24,7 @@ echo "Building android bridge for targets: ${TARGETS[*]}"
 
 # build binaries for each supported target
 for target in "${TARGETS[@]}"; do
+  echo "Building android bridge for $target"
   cargo build --target-dir "${TARGET_DIR}/pkg/fedi-ffi" ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi --target $target
 
   if [ "${target:-}" == "aarch64-linux-android" ]; then
