@@ -236,13 +236,9 @@ export const decreaseStableBalance = createAsyncThunk<
         if (!activeFederationId) throw new Error('No active federation')
         const btcExchangeRate = selectBtcExchangeRate(state)
         const stableBalance = selectStableBalance(state)
-        const stableBalancePending = selectStableBalancePending(state)
+        const stableStagedSeeksMsats = selectStableStagedSeeksAmount(state)
         const stableBalanceMsats = amountUtils.fiatToMsat(
             stableBalance,
-            btcExchangeRate,
-        )
-        const stableBalancePendingMsats = amountUtils.fiatToMsat(
-            stableBalancePending,
             btcExchangeRate,
         )
         let lockedBps = 0
@@ -250,15 +246,15 @@ export const decreaseStableBalance = createAsyncThunk<
 
         // if we have enough pending balance to cover the withdrawal
         // no need to calculate basis points on stable balance
-        if (amount < stableBalancePendingMsats) {
+        if (amount <= stableStagedSeeksMsats) {
             unlockedAmount = amount
         } else {
             // otherwise withdraw the full pending balance
             // and calculate what portion of the stable balance
             // is needed to fulfill the withdrawal amount
-            unlockedAmount = stableBalancePendingMsats
+            unlockedAmount = stableStagedSeeksMsats
             const remainingWithdrawal = Number(
-                (amount - stableBalancePendingMsats).toFixed(2),
+                (amount - stableStagedSeeksMsats).toFixed(2),
             )
             lockedBps = Number(
                 (
@@ -267,6 +263,12 @@ export const decreaseStableBalance = createAsyncThunk<
                 ).toFixed(0),
             )
         }
+
+        log.info('decreaseStableBalance', {
+            lockedBps,
+            unlockedAmount,
+            stableStagedSeeksMsats,
+        })
         const operationId = await fedimint.stabilityPoolWithdraw(
             lockedBps,
             unlockedAmount,
@@ -384,22 +386,30 @@ export const selectStableBalance = createSelector(
     },
 )
 
+export const selectStableStagedSeeksAmount = (s: CommonState) =>
+    (selectStabilityPoolAccountInfo(s)?.stagedSeeks.reduce(
+        (result, ss) => Number((result + ss).toFixed(0)),
+        0,
+    ) as MSats) || (0 as MSats)
+
 export const selectStableBalancePending = createSelector(
     selectStabilityPoolAccountInfo,
     (s: CommonState) => selectBtcExchangeRate(s),
     selectTotalLockedSeeksFiat,
-    (stabilityPoolAccountInfo, btcExchangeRate, totalLockedSeeksFiat) => {
+    selectStableStagedSeeksAmount,
+    (
+        stabilityPoolAccountInfo,
+        btcExchangeRate,
+        totalLockedSeeksFiat,
+        pendingDepositAmountMsats,
+    ) => {
         if (!stabilityPoolAccountInfo) return 0
 
         let stableBalancePending = 0
         let pendingDepositAmount = 0
         let pendingWithdrawAmount = 0
-        const { stagedCancellation, stagedSeeks } = stabilityPoolAccountInfo
+        const { stagedCancellation } = stabilityPoolAccountInfo
 
-        const pendingDepositAmountMsats = stagedSeeks.reduce(
-            (result: number, ss: RpcAmount) => Number((result + ss).toFixed(0)),
-            0,
-        ) as MSats
         pendingDepositAmount = amountUtils.msatToFiat(
             pendingDepositAmountMsats,
             btcExchangeRate,
