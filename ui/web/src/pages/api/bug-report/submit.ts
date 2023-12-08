@@ -50,17 +50,22 @@ export default async function handler(
         }
 
         const [sheets, notion] = results
-        res.status(200).json({ sheets, notion })
-
         // Post to slack after responding, but don't throw if it fails.
         try {
             await postToSlack(
                 body.data,
-                notion.status === 'fulfilled' ? notion.value.id : '',
+                notion.status === 'fulfilled' && 'url' in notion.value
+                    ? notion.value.url
+                    : '',
             )
         } catch (err) {
             console.warn('Failed to post to Slack', err)
         }
+
+        res.status(200).json({
+            sheets: sheets.status === 'fulfilled',
+            notion: notion.status === 'fulfilled',
+        })
     } catch (err) {
         res.status(500).json({
             error: (err as Error).message || (err as object).toString(),
@@ -254,7 +259,7 @@ async function appendToNotion(data: z.infer<typeof schema>) {
     return res
 }
 
-async function postToSlack(data: z.infer<typeof schema>, notionPageId: string) {
+async function postToSlack(data: z.infer<typeof schema>, notionUrl: string) {
     const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL
     if (!slackWebhookUrl) {
         console.error(
@@ -309,10 +314,10 @@ async function postToSlack(data: z.infer<typeof schema>, notionPageId: string) {
         {
             type: 'actions',
             elements: [
-                notionPageId && {
+                notionUrl && {
                     type: 'button',
                     style: 'primary',
-                    url: `https://notion.so/${process.env.NOTION_WORKSPACE_ID}/${notionPageId}`,
+                    url: notionUrl,
                     text: {
                         type: 'plain_text',
                         emoji: true,
@@ -332,7 +337,7 @@ async function postToSlack(data: z.infer<typeof schema>, notionPageId: string) {
         },
     ]
 
-    const slackRes = await fetch(slackWebhookUrl, {
+    await fetch(slackWebhookUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -342,7 +347,6 @@ async function postToSlack(data: z.infer<typeof schema>, notionPageId: string) {
             blocks,
         }),
     })
-    console.log(slackRes)
 }
 
 function makeLogsS3Url(id: string) {
