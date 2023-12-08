@@ -977,6 +977,8 @@ export const fetchChatHistory = createAsyncThunk<
             if (!hasErrored && lastFetchedMessageId) {
                 hasErrored = true
                 lastFetchedMessageId = null
+            } else {
+                throw err
             }
         }
     }
