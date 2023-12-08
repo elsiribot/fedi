@@ -150,6 +150,10 @@
             just.includePaths = [
               "justfile.fedi"
             ];
+            typos.pre-commit.enable = false;
+            git.pre-commit.trailing_newline = false;
+
+            # we must not use --workspace anywhere
             just.rules.clippy.content = lib.mkForce ''
               # run `cargo clippy` on everything
               clippy *ARGS="--locked --offline --all-targets":
@@ -160,8 +164,16 @@
               clippy-fix *ARGS="--locked --offline --all-targets":
                 just clippy {{ARGS}} --fix
             '';
-            typos.pre-commit.enable = false;
-            git.pre-commit.trailing_newline = false;
+            just.rules.build.content = lib.mkForce ''
+              # run `cargo build` on everything
+              build:
+                cargo build --all-targets
+            '';
+            just.rules.check.content = lib.mkForce ''
+              # run `cargo check` on everything
+              check:
+                cargo check --all-targets
+            '';
           };
         };
 
