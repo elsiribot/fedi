@@ -1,6 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
-import { refreshActiveStabilityPool, selectActiveFederationId } from '../redux'
+import {
+    refreshActiveStabilityPool,
+    selectActiveFederationId,
+    selectStabilityPoolAccountInfo,
+    selectStableBalancePending,
+} from '../redux'
 import {
     StabilityPoolDepositEvent,
     StabilityPoolWithdrawalEvent,
@@ -26,6 +31,11 @@ export async function useMonitorStabilityPool(fedimint: FedimintBridge) {
     const dispatch = useCommonDispatch()
     const activeFederationId = useCommonSelector(selectActiveFederationId)
     const isStabilityPoolSupported = useIsStabilityPoolSupported()
+    const idleBalance = useCommonSelector(
+        selectStabilityPoolAccountInfo,
+    )?.idleBalance
+    const hasWithdrawPending = useCommonSelector(selectStableBalancePending) < 0
+    const isSweepingIdleBalanceRef = useRef(false)
 
     useEffect(() => {
         // Can't monitor stabilitypool if no federation is selected
@@ -84,4 +94,31 @@ export async function useMonitorStabilityPool(fedimint: FedimintBridge) {
             clearInterval(stabilityPoolMonitor)
         }
     }, [activeFederationId, dispatch, fedimint, isStabilityPoolSupported])
+
+    // If we see any idle balance, go ahead and sweep it, sometimes the bridge
+    // fails to do this for us.
+    useEffect(() => {
+        if (hasWithdrawPending) {
+            return
+        }
+        if (!idleBalance || !activeFederationId) {
+            isSweepingIdleBalanceRef.current = false
+            return
+        }
+        if (isSweepingIdleBalanceRef.current) {
+            return
+        }
+        log.info(`Idle balance of ${idleBalance} seen, sweeping...`)
+        isSweepingIdleBalanceRef.current = true
+        // Fire and forget, no need to await on this promise. It will get picked
+        // up by the event listeners above, and call refreshActiveStabilityPool
+        // for us.
+        fedimint.stabilityPoolWithdraw(0, idleBalance, activeFederationId)
+    }, [
+        idleBalance,
+        hasWithdrawPending,
+        isSweepingIdleBalanceRef,
+        activeFederationId,
+        fedimint,
+    ])
 }

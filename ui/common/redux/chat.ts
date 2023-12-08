@@ -975,8 +975,18 @@ export const fetchChatHistory = createAsyncThunk<
             // and try again. Only try again once per message history fetch to avoid
             // infinite retries.
             if (!hasErrored && lastFetchedMessageId) {
+                log.info(
+                    `fetchChatHistory failed with lastFetchedMessageId, retrying`,
+                    { lastFetchedMessageId, err },
+                )
                 hasErrored = true
                 lastFetchedMessageId = null
+            } else {
+                log.warn(
+                    'fetchChatHistory failed after retrying, giving up',
+                    err,
+                )
+                throw err
             }
         }
     }
