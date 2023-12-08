@@ -582,7 +582,7 @@ mod tests {
     use std::sync::{Once, RwLock};
     use std::time::{Duration, UNIX_EPOCH};
 
-    use anyhow::bail;
+    use anyhow::{anyhow, bail};
     use bitcoin::secp256k1::PublicKey;
     use devimint::cmd;
     use devimint::util::{ClnLightningCli, FedimintCli, LnCli};
@@ -1089,11 +1089,21 @@ mod tests {
         }
 
         // receive ecash
-        let initial_balance = fedimint_core::Amount::from_msats(10_000);
-        let ecash = cli_generate_ecash(initial_balance, &federation).await?;
+        let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
         federation.receive_ecash(ecash).await?;
         assert_eq!(ecash_receive_amount, federation.get_balance().await);
+
+        // Interact with stability pool
+        let amount_to_deposit = Amount::from_msats(110_000);
+        backup_bridge
+            .stability_pool_deposit_to_seek(
+                federation.federation_id(),
+                RpcAmount(amount_to_deposit),
+            )
+            .await?;
+
+        let ecash_balance_before = federation.get_balance().await;
 
         // set username and do a backup
         let federation_id = federation.federation_id();
@@ -1117,13 +1127,21 @@ mod tests {
         // Rejoin federation and assert that balances are correct
         let recovery_federation = join_test_fed(&recovery_bridge).await?;
         assert_eq!(
-            ecash_receive_amount,
+            ecash_balance_before,
             recovery_federation.get_balance().await
         );
         assert_eq!(
             Some(username),
             recovery_federation.get_xmpp_username().await
         );
+
+        let account_info = recovery_bridge
+            .stability_pool_account_info(recovery_federation.federation_id())
+            .await?;
+        assert_eq!(account_info.idle_balance.0, Amount::ZERO);
+        assert_eq!(account_info.staged_seeks[0].0, amount_to_deposit);
+        assert!(account_info.staged_cancellation.is_none());
+        assert!(account_info.locked_seeks.is_empty());
         Ok(())
     }
 
@@ -1149,8 +1167,34 @@ mod tests {
             return Ok(());
         }
 
-        // Get original mnemonic (for comparison later)
+        // receive ecash
+        let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
+        let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
+        federation.receive_ecash(ecash).await?;
+        assert_eq!(ecash_receive_amount, federation.get_balance().await);
+
+        // Interact with stability pool
+        let amount_to_deposit = Amount::from_msats(110_000);
+        original_bridge
+            .stability_pool_deposit_to_seek(
+                federation.federation_id(),
+                RpcAmount(amount_to_deposit),
+            )
+            .await?;
+
+        let ecash_balance_before = federation.get_balance().await;
+
+        // set username and do a backup
         let federation_id = federation.federation_id();
+        let username = "satoshi".to_string();
+        backupXmppUsername(
+            original_bridge.clone(),
+            federation_id.clone(),
+            username.clone(),
+        )
+        .await?;
+
+        // Get original mnemonic (for comparison later)
         let initial_words = getMnemonic(original_bridge.clone()).await?;
         info!("initial mnemnoic {:?}", &initial_words);
 
@@ -1222,6 +1266,28 @@ mod tests {
         // happened?)
         let final_words: Vec<String> = getMnemonic(recovery_bridge.clone()).await?;
         assert_eq!(initial_words, final_words);
+
+        // Assert that balances are correct
+        let recovery_federation = recovery_bridge
+            .federations
+            .lock()
+            .await
+            .clone()
+            .into_values()
+            .next()
+            .ok_or(anyhow!("Rejoined federation must exist"))?;
+        assert_eq!(
+            ecash_balance_before,
+            recovery_federation.get_balance().await
+        );
+
+        let account_info = recovery_bridge
+            .stability_pool_account_info(recovery_federation.federation_id())
+            .await?;
+        assert_eq!(account_info.idle_balance.0, Amount::ZERO);
+        assert_eq!(account_info.staged_seeks[0].0, amount_to_deposit);
+        assert!(account_info.staged_cancellation.is_none());
+        assert!(account_info.locked_seeks.is_empty());
 
         Ok(())
     }
