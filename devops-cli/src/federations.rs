@@ -430,7 +430,7 @@ async fn funds_summary(
         "gateway_ecash_balance": gateway_ecash_balance.to_string(),
         "ln_wallet_balance": ln_wallet_balance.to_string(),
         "ln_channels_local_balance": ln_channels_local_balance.to_string(),
-        "total_from_lightnig_gateway": lightning_total.to_string(),
+        "total_from_lightning_gateway": lightning_total.to_string(),
         "total": total.map(|t| Value::String(t.to_string())).unwrap_or(Value::Null),
     });
     if imported_descriptors {
@@ -581,13 +581,8 @@ async fn remote_send_raw_transaction(
     hex: &str,
 ) -> anyhow::Result<Txid> {
     let command = format!(r#"sendrawtransaction '{hex}'"#);
-    let response = run_remote_wallet_command(subargs, "", &command).await?;
-    let response = serde_json::from_str::<Value>(&response)
-        .with_context(|| format!("The sendrawtransaction command returned {response}"))?;
-    let txid = response["hex"]
-        .as_str()
-        .context("failed to get field as string")?;
-    let txid = Txid::from_str(txid)?;
+    let txid = run_remote_wallet_command(subargs, "", &command).await?;
+    let txid = Txid::from_str(txid.trim())?;
     Ok(txid)
 }
 
