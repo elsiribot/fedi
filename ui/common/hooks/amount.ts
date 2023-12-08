@@ -23,7 +23,6 @@ import {
     ParsedLnurlWithdraw,
     Sats,
     SupportedCurrency,
-    Usd,
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'

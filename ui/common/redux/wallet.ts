@@ -242,14 +242,18 @@ export const decreaseStableBalance = createAsyncThunk<
         // if we have enough pending balance to cover the withdrawal
         // no need to calculate basis points on stable balance
         if (amount <= stableStagedSeeksMsats) {
-            unlockedAmount = amount
+            // if there is a sub-1sat difference in staged seeks remaining, should be safe to just use the full pending balance to sweep the msats in with the withdrawal
+            unlockedAmount =
+                stableStagedSeeksMsats - amount < 1000
+                    ? stableStagedSeeksMsats
+                    : amount
         } else {
-            // otherwise withdraw the full pending balance
+            // if there is more to withdraw, unlock the full pending balance
             // and calculate what portion of the stable balance
             // is needed to fulfill the withdrawal amount
             unlockedAmount = stableStagedSeeksMsats
             const remainingWithdrawal = Number(
-                (amount - stableStagedSeeksMsats).toFixed(2),
+                (amount - unlockedAmount).toFixed(2),
             )
             lockedBps = Number(
                 (
