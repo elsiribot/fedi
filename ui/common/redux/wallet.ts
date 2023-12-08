@@ -569,24 +569,35 @@ export const selectStabilityTransactionHistory = createSelector(
     },
 )
 
-export const selectWithdrawableStableBalance = createSelector(
-    selectStableBalance,
-    selectStableBalancePending,
-    (stableBalance, stableBalancePending): Usd => {
-        return Number((stableBalance + stableBalancePending).toFixed(2)) as Usd
+export const selectWithdrawableStableBalanceMsats = createSelector(
+    selectStableBalanceMsats,
+    selectStableBalancePendingMsats,
+    (stableBalance, stableBalancePending): MSats => {
+        return (stableBalance + stableBalancePending) as MSats
     },
 )
 
-export const selectMinimumWithdrawAmount = createSelector(
+export const selectWithdrawableStableBalance = createSelector(
+    selectWithdrawableStableBalanceMsats,
+    selectBtcExchangeRate,
+    (withdrawableMsats, btcExchangeRate) => {
+        return amountUtils.msatToFiat(
+            withdrawableMsats as MSats,
+            btcExchangeRate,
+        )
+    },
+)
+
+export const selectMinimumWithdrawAmountMsats = createSelector(
     (s: CommonState) => selectFederationStabilityPoolConfig(s),
-    selectStableBalance,
-    selectStableBalancePending,
-    (config, stableBalance, stableBalancePending): Usd => {
+    selectStableBalanceMsats,
+    selectStableBalancePendingMsats,
+    (config, stableBalance, stableBalancePending): MSats => {
         const minimumBasisPoints = config?.min_allowed_cancellation_bps || 0
 
         // No minimum withdraw amount if we can cancel pending deposits otherwise calculate minimum allowed cancellation from completed deposits
         if (stableBalancePending > 0) {
-            return 0 as Usd
+            return 0 as MSats
         } else {
             // convert bps to decimal
             const minimumFraction = Number(
@@ -596,7 +607,7 @@ export const selectMinimumWithdrawAmount = createSelector(
             const minimumUsdAmount = Number(
                 (stableBalance * minimumFraction).toFixed(2),
             )
-            return minimumUsdAmount as Usd
+            return minimumUsdAmount as MSats
         }
     },
 )

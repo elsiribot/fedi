@@ -11,9 +11,9 @@ import {
     selectAmountInputType,
     setAmountInputType,
     selectBtcUsdExchangeRate,
-    selectWithdrawableStableBalance,
     selectMinimumDepositAmount,
-    selectMinimumWithdrawAmount,
+    selectWithdrawableStableBalanceMsats,
+    selectMinimumWithdrawAmountMsats,
 } from '../redux'
 import {
     Btc,
@@ -92,19 +92,6 @@ export const useBtcFiatPrice = () => {
     )
 
     return {
-        convertUsdToSats: useCallback(
-            (fiat: Usd) => {
-                return amountUtils.fiatToSat(fiat, btcUsdExchangeRate)
-            },
-            [btcUsdExchangeRate],
-        ),
-        convertUsdToSatsFormatted: useCallback(
-            (fiat: Usd) => {
-                const amount = amountUtils.fiatToSat(fiat, btcUsdExchangeRate)
-                return amountUtils.formatSats(amount)
-            },
-            [btcUsdExchangeRate],
-        ),
         convertSatsToFiat: useCallback(
             (sats: Sats) => {
                 return amountUtils.satToFiat(sats, exchangeRate)
@@ -378,12 +365,12 @@ export function useMinMaxSendAmount({
  * Get the minimum and maximum amount you can withdraw from the stable balance
  */
 export function useMinMaxWithdrawAmount() {
-    // TODO: get minimum from config?
-    const minimumUsd = useCommonSelector(selectMinimumWithdrawAmount)
-    const withdrawableUsd = useCommonSelector(selectWithdrawableStableBalance)
-    const { convertUsdToSats } = useBtcFiatPrice()
-    const minimumAmount = convertUsdToSats(minimumUsd)
-    const maximumAmount = convertUsdToSats(withdrawableUsd)
+    const minimumMsats = useCommonSelector(selectMinimumWithdrawAmountMsats)
+    const withdrawableMsats = useCommonSelector(
+        selectWithdrawableStableBalanceMsats,
+    )
+    const minimumAmount = amountUtils.msatToSat(minimumMsats)
+    const maximumAmount = amountUtils.msatToSat(withdrawableMsats)
 
     return { minimumAmount, maximumAmount }
 }
