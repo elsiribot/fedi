@@ -312,7 +312,7 @@ async function postToSlack(data: z.infer<typeof schema>, notionPageId: string) {
                 notionPageId && {
                     type: 'button',
                     style: 'primary',
-                    url: `https://notion.so/${process.env.NOTION_WORKSPACE_ID}/${data.id}`,
+                    url: `https://notion.so/${process.env.NOTION_WORKSPACE_ID}/${notionPageId}`,
                     text: {
                         type: 'plain_text',
                         emoji: true,
