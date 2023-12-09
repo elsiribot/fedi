@@ -7,12 +7,10 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 BRIDGE_ROOT=$REPO_ROOT/bridge
 TARGET_DIR="${TARGET_DIR:-${REPO_ROOT}/target}"
 
-# TODO: the release profile is needed as a default
-# until this issue is resolved:
-# https://github.com/fedibtc/fedi/issues/2210
-CARGO_PROFILE=${CARGO_PROFILE:-release}
+# default to dev-ios profile instead of dev to fix opt-level issue
+CARGO_PROFILE=${CARGO_PROFILE:-dev-ios}
 CARGO_PROFILE_DIR=${CARGO_PROFILE}
-if [ "$CARGO_PROFILE" == "dev" ]; then
+if [ "$CARGO_PROFILE" == "dev-ios" ]; then
   CARGO_PROFILE_DIR="debug"
 fi
 

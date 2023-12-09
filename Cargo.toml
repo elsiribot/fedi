@@ -182,6 +182,11 @@ subtle = { opt-level = 3 }
 ring = { opt-level = 3 }
 threshold_crypto = { opt-level = 3 }
 
+# ios gets its own profile since it crashes on opt-level 0
+[profile.dev-ios]
+inherits = "dev"
+opt-level = 1
+
 [profile.ci]
 inherits = "dev"
 debug = "line-tables-only"
