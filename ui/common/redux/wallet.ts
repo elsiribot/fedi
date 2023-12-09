@@ -583,7 +583,7 @@ export const selectWithdrawableStableBalanceMsats = createSelector(
 
 export const selectWithdrawableStableBalance = createSelector(
     selectWithdrawableStableBalanceMsats,
-    selectBtcExchangeRate,
+    (s: CommonState) => selectBtcExchangeRate(s),
     (withdrawableMsats, btcExchangeRate) => {
         return amountUtils.msatToFiat(
             withdrawableMsats as MSats,
