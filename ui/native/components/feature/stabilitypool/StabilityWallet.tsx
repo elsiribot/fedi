@@ -1,12 +1,14 @@
 import { useNavigation } from '@react-navigation/native'
 import { Avatar, Theme } from '@rneui/themed'
 import { Card, Text, useTheme } from '@rneui/themed'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
+import { useMonitorStabilityPool } from '@fedi/common/hooks/stabilitypool'
 import { selectCurrency } from '@fedi/common/redux'
 
+import { fedimint } from '../../../bridge'
 import { useAppSelector, useStabilityPool } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage from '../../ui/SvgImage'
@@ -16,12 +18,10 @@ const StabilityWallet: React.FC<{}> = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const selectedCurrency = useAppSelector(selectCurrency)
-    const { formattedStableBalance, refreshBalance } = useStabilityPool()
+    const { formattedStableBalance } = useStabilityPool()
 
-    // Make sure we have a fresh balance on initial render
-    useEffect(() => {
-        refreshBalance()
-    }, [refreshBalance])
+    // React Navigation should keep this mounted even when clicking into the StabilityHome screen so the monitor will continue to run
+    useMonitorStabilityPool(fedimint)
 
     const style = styles(theme)
     return (

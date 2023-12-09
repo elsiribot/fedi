@@ -8,14 +8,12 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native'
 import * as Progress from 'react-native-progress'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useMonitorStabilityPool } from '@fedi/common/hooks/stabilitypool'
 import {
     selectStableBalance,
     selectStableBalancePending,
 } from '@fedi/common/redux'
 import { makePendingBalanceText } from '@fedi/common/utils/wallet'
 
-import { fedimint } from '../bridge'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useStabilityPool } from '../state/hooks'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
@@ -36,8 +34,6 @@ const StabilityHome: React.FC<Props> = () => {
         useStabilityPool()
 
     const style = styles(theme, insets)
-
-    useMonitorStabilityPool(fedimint)
 
     return (
         <View style={style.container}>

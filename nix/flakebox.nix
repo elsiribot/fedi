@@ -256,6 +256,7 @@ rec {
          which $i
       done
 
+      export HOME=/tmp
       ./scripts/test-stability-pool.sh
     '';
   };
@@ -264,6 +265,11 @@ rec {
     testBridgeCurrent
     testBridgeV1
     testBridgeV0
+  ];
+
+  testBridgeAllNoV0 = pkgs.linkFarmFromDrvs "fedi-test-bridge-all" [
+    testBridgeCurrent
+    testBridgeV1
   ];
 
   testBridgeCurrent = craneLib.buildCommand {
@@ -297,6 +303,7 @@ rec {
          which $i
       done
 
+      export HOME=/tmp
       ./scripts/test-bridge-current.sh
     '';
   };
@@ -343,6 +350,8 @@ rec {
       for i in lnd lightningd gatewayd devimint esplora electrs bitcoind faucet ; do
          which $i
       done
+
+      export HOME=/tmp
       ./scripts/test-bridge-v1.sh
     '';
   };
@@ -390,6 +399,8 @@ rec {
       for i in fedimintd lnd lightningd gatewayd devimint esplora electrs bitcoind faucet distributedgen ; do
          which $i
       done
+
+      export HOME=/tmp
       ./scripts/test-bridge-v0.sh
     '';
   };

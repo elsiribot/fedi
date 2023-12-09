@@ -13,12 +13,12 @@ default:
 
 # run `cargo build` on everything
 build:
-  cargo build --workspace --all-targets
+  cargo build --all-targets
 
 
 # run `cargo check` on everything
 check:
-  cargo check --workspace --all-targets
+  cargo check --all-targets
 
 
 # run all checks recommended before opening a PR

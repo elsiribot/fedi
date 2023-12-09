@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-
 export INCLUDE_STABILITY_POOL=1
 export RUST_BACKTRACE=full
-export HOME="${TMP:-/tmp}"
 
 # kill everything on exit
 function kill_devimint() {

@@ -53,6 +53,17 @@ The easiest way to do this is to copy `ui/web/.env.development` to `ui/web/.env.
     - Select "Application running outside AWS"
     - Copy the access key and secret access key to `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` respectively
 
+### Notion Setup
+
+1. Create a test Notion Workspace, or use a Notion Workspace that you have owner permissions in
+2. Copy the workspace ID and set it as `NOTION_WORKSPACE_ID`
+    - The workspace ID is the first part of the path on notion, e.g. it's `fedi21` in `https://www.notion.so/fedi21`
+3. Create a new [Notion Integration](https://www.notion.so/my-integrations)
+4. Copy the secret key and set it as `NOTION_SECRET_KEY`
+5. Copy the database format from the Fedi workspace's ["Bug report submissions" table](https://www.notion.so/fedi21/fcee02514ee44f2d86dcda14885569b9)
+6. Copy the database ID from the URL of the page and set it as `NOTION_DATABASE_ID`
+    - The ID is the second part of the path on notion, e.g. it's `abc123` in `https://www.notion.so/fedi21/abc123`
+
 ### Google Sheets Setup
 
 1. Create a new Google Cloud project or use an existing one
@@ -63,3 +74,12 @@ The easiest way to do this is to copy `ui/web/.env.development` to `ui/web/.env.
 5. Create a new Google Sheet from your account
     - Copy the ID from the URL, `/docs.google.com/spreadsheets/d/[id-here]/edit`, and set `GOOGLE_SHEETS_SHEET_ID` with it
 6. On the "Share" menu of the google sheet, give the Service Account's email "Editor" access
+
+_Note: Google Sheets is not necessary for the API to function._
+
+### Slack Setup
+
+1. Create a [new Slack App](https://api.slack.com/apps?new_app=1)
+2. Go to "Incoming Webhooks" and create a new webhook and set it as `SLACK_WEBHOOK_URL`
+
+_Note: Slack is not necessary for the API endpoint to function_

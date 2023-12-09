@@ -3,7 +3,6 @@
 
 set -euo pipefail
 
-export HOME="/tmp"
 export RUST_LOG="${RUST_LOG:-info}"
 export RUST_BACKTRACE=1
 export INCLUDE_STABILITY_POOL=1
