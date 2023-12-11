@@ -633,6 +633,8 @@ PODS:
     - React-perflogger (= 0.72.6)
   - ReactNativeCameraKit (13.0.0):
     - React-Core
+  - rn-fetch-blob (0.12.0):
+    - React-Core
   - RNCAsyncStorage (1.18.2):
     - React-Core
   - RNCClipboard (1.11.2):
@@ -789,6 +791,7 @@ DEPENDENCIES:
   - React-utils (from `../../node_modules/react-native/ReactCommon/react/utils`)
   - ReactCommon/turbomodule/core (from `../../node_modules/react-native/ReactCommon`)
   - ReactNativeCameraKit (from `../../node_modules/react-native-camera-kit`)
+  - rn-fetch-blob (from `../../node_modules/rn-fetch-blob`)
   - "RNCAsyncStorage (from `../../node_modules/@react-native-async-storage/async-storage`)"
   - "RNCClipboard (from `../../node_modules/@react-native-clipboard/clipboard`)"
   - RNDeviceInfo (from `../../node_modules/react-native-device-info`)
@@ -947,6 +950,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native/ReactCommon"
   ReactNativeCameraKit:
     :path: "../../node_modules/react-native-camera-kit"
+  rn-fetch-blob:
+    :path: "../../node_modules/rn-fetch-blob"
   RNCAsyncStorage:
     :path: "../../node_modules/@react-native-async-storage/async-storage"
   RNCClipboard:
@@ -1067,6 +1072,7 @@ SPEC CHECKSUMS:
   React-utils: fa59c9a3375fb6f4aeb66714fd3f7f76b43a9f16
   ReactCommon: dd03c17275c200496f346af93a7b94c53f3093a4
   ReactNativeCameraKit: 9d46a5d7dd544ca64aa9c03c150d2348faf437eb
+  rn-fetch-blob: f065bb7ab7fb48dd002629f8bdcb0336602d3cba
   RNCAsyncStorage: ddc4ee162bfd41b0d2c68bf2d95acd81dd7f1f93
   RNCClipboard: 3f0451a8100393908bea5c5c5b16f96d45f30bfc
   RNDeviceInfo: bf8a32acbcb875f568217285d1793b0e8588c974

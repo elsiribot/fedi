@@ -84,6 +84,7 @@
         "react-native-webview": "13.2.2",
         "react-native-worklets": "https://github.com/chrfalch/react-native-worklets",
         "react-redux": "^8.0.5",
+        "rn-fetch-blob": "^0.12.0",
         "tweetnacl": "^1.0.3",
         "tweetnacl-util": "^0.15.1",
         "vision-camera-code-scanner": "^0.2.0",
