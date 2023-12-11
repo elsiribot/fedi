@@ -42,6 +42,9 @@ pub(super) async fn federation_command(args: FederationArgs) -> anyhow::Result<(
         crate::FederationSubCommand::RecoverFederationFunds(args) => {
             recover_federation_funds(args, federation).await
         }
+        crate::FederationSubCommand::RecoverLightningFunds(args) => {
+            recover_lightning_funds(args, federation).await
+        }
         crate::FederationSubCommand::RestartFedimints(args) => {
             command_restart_fedimints(args, federation).await
         }
@@ -191,14 +194,51 @@ struct ListChannelsResponse {
     channels: Vec<ListChannelsResponseChannel>,
 }
 
+impl ListChannelsResponse {
+    fn local_balance_sum(&self) -> anyhow::Result<Amount> {
+        let sats = self
+            .channels
+            .iter()
+            .map(|channel| {
+                u64::from_str(&channel.local_balance).context("failed to parse local_balance")
+            })
+            .collect::<anyhow::Result<Vec<_>>>()?
+            .into_iter()
+            .sum::<u64>();
+        Ok(Amount::from_sat(sats))
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct ListChannelsResponseChannel {
+    active: bool,
+    peer_alias: String,
+    channel_point: String,
     local_balance: String,
 }
 
 #[derive(Debug, Deserialize)]
 struct WalletBalanceResponse {
     total_balance: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct CloseChannelResponse {
+    closing_txid: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct SendCoinsResponse {
+    txid: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct PendingChannelsResponse {
+    total_limbo_balance: String,
+    pending_open_channels: Vec<Value>,
+    pending_closing_channels: Vec<Value>,
+    pending_force_closing_channels: Vec<Value>,
+    waiting_close_channels: Vec<Value>,
 }
 
 async fn funds_summary(
@@ -370,22 +410,14 @@ async fn funds_summary(
         Ok::<_, anyhow::Error>(total_amount)
     };
     let ln_channels_local_balance = async {
-        let gateway_ln_channels =
-            run_parallel(federation.gateways.iter().map(|gateway| async move {
-                let result = lncli_list_channels(gateway).await?;
-                let sats = result
-                    .into_iter()
-                    .map(|channel| {
-                        u64::from_str(&channel.local_balance)
-                            .context("failed to parse local_balance")
-                    })
-                    .collect::<anyhow::Result<Vec<_>>>()?;
-                Ok(Amount::from_sat(sats.into_iter().sum::<u64>()))
-            }))
-            .await
-            .into_iter()
-            .collect::<anyhow::Result<Vec<_>>>()?;
-        let total_amount = gateway_ln_channels.into_iter().sum::<Amount>();
+        let amounts = run_parallel(federation.gateways.iter().map(|gateway| async move {
+            let result = lncli_list_channels(gateway).await?;
+            result.local_balance_sum()
+        }))
+        .await
+        .into_iter()
+        .collect::<anyhow::Result<Vec<_>>>()?;
+        let total_amount = amounts.into_iter().sum::<Amount>();
         Ok::<_, anyhow::Error>(total_amount)
     };
 
@@ -447,10 +479,10 @@ async fn funds_summary(
 }
 
 async fn recover_federation_funds(
-    args: crate::RecoverFundsArgs,
+    args: crate::RecoverFederationFundsArgs,
     federation: Federation,
 ) -> anyhow::Result<()> {
-    info!("Starting recovery of the federations funds. NOTE: Gateway funds are NOT included!");
+    info!("Starting recovery of the federations funds. NOTE: Lightning funds are NOT included!");
     let RecoverFederationFundsSubCommand::UsingRemoteBitcoin(subargs) = args.command;
     let remote_wallets = run_remote_wallet_command(&subargs, "", "listwallets").await?;
     let remote_wallets = serde_json::from_str::<HashSet<String>>(&remote_wallets)?;
@@ -529,6 +561,74 @@ async fn recover_federation_funds(
         info!("Sent transaction");
         print!("{}", serde_json::to_string_pretty(&json!(txid))?);
     }
+    Ok(())
+}
+
+async fn recover_lightning_funds(
+    args: crate::RecoverLightningFundsArgs,
+    federation: Federation,
+) -> anyhow::Result<()> {
+    let keep_channels = args.keep_channels;
+    let address = &args.destination_address;
+    info!("Starting recovery of the lightning funds");
+    let results = run_parallel(federation.gateways.iter().map(|gateway| async move {
+        info!("Recovering lightning funds from gateway: {}", gateway.name);
+
+        if keep_channels {
+            info!("Keeping channels open");
+        } else {
+            let response = lncli_list_channels(gateway).await?;
+            let inactive_channels = response
+                .channels
+                .iter()
+                .filter(|channel| !channel.active)
+                .count();
+            if inactive_channels > 0 && !args.allow_force_close {
+                anyhow::bail!(
+                    "There are {inactive_channels} channels on gateway {}. Use --allow-force-close to force close them", gateway.name
+                );
+            }
+            let local_balance = response.local_balance_sum()?;
+            info!(
+                "{}: Will close {} channels, expecting {local_balance}",
+                gateway.name,
+                response.channels.len()
+            );
+
+            for channel in response.channels {
+                let response = lncli_close_channel(gateway, &channel.channel_point, args.conf_target, args.allow_force_close).await?;
+                info!("{}: Closing channel {}: txid: {}", gateway.name, channel.peer_alias, response.closing_txid);
+            }
+
+            loop {
+                let response = lncli_pending_channels(gateway).await?;
+                if response.total_limbo_balance != "0"  || !response.pending_open_channels.is_empty() || !response.pending_closing_channels.is_empty() || !response.pending_force_closing_channels.is_empty() || !response.waiting_close_channels.is_empty() {
+                    info!("{}: Waiting for channels to close: {response:?}", gateway.name);
+                    tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+                } else {
+                    break;
+                }
+            }
+        }
+        info!("{}: All channels closed", gateway.name);
+        let result = lncli_sweep_wallet(gateway, address, args.conf_target).await?;
+        info!("{}: Swept wallet: txid: {}", gateway.name, result.txid);
+        Ok::<_, anyhow::Error>(())
+    }))
+    .await;
+
+    let mut error = false;
+    for result in results {
+        if let Err(e) = result {
+            warn!("Error: {e:?}");
+            error = true;
+        }
+    }
+
+    if error {
+        anyhow::bail!("There were errors recovering lightning funds");
+    }
+
     Ok(())
 }
 
@@ -996,19 +1096,58 @@ async fn stop_fedimints(federation: &Federation) -> anyhow::Result<()> {
     .context("failed to (partially?) stop fedimints")
 }
 
-async fn lncli_list_channels(
-    remote: &RemoteHost,
-) -> anyhow::Result<Vec<ListChannelsResponseChannel>> {
+async fn lncli_pending_channels(remote: &RemoteHost) -> anyhow::Result<PendingChannelsResponse> {
+    let output = run_ssh_checked(&remote.ssh_args, r#"lncli pendingchannels"#).await?;
+    let response = serde_json::from_slice::<PendingChannelsResponse>(&output.stdout)
+        .context("failed to parse pendingchannels response")?;
+    Ok(response)
+}
+
+async fn lncli_list_channels(remote: &RemoteHost) -> anyhow::Result<ListChannelsResponse> {
     let output = run_ssh_checked(&remote.ssh_args, r#"lncli listchannels"#).await?;
     let response = serde_json::from_slice::<ListChannelsResponse>(&output.stdout)
         .context("failed to parse listchannels response")?;
-    Ok(response.channels)
+    Ok(response)
 }
 
 async fn lncli_wallet_balance(remote: &RemoteHost) -> anyhow::Result<WalletBalanceResponse> {
     let output = run_ssh_checked(&remote.ssh_args, r#"lncli walletbalance"#).await?;
     let response = serde_json::from_slice::<WalletBalanceResponse>(&output.stdout)
         .context("failed to parse walletbalance response")?;
+    Ok(response)
+}
+
+// xxx  --conf_target xxx
+
+async fn lncli_sweep_wallet(
+    remote: &RemoteHost,
+    address: &Address,
+    conf_target: u16,
+) -> anyhow::Result<SendCoinsResponse> {
+    let output = run_ssh_checked(
+        &remote.ssh_args,
+        &format!(r#"lncli sendcoins --sweepall --min_confs 0 --addr {address} --conf_target {conf_target}"#),
+    )
+    .await?;
+    let response = serde_json::from_slice::<SendCoinsResponse>(&output.stdout)
+        .context("failed to parse closechannel response")?;
+    Ok(response)
+}
+
+async fn lncli_close_channel(
+    remote: &RemoteHost,
+    channel_point: &str,
+    conf_target: u16,
+    force: bool,
+) -> anyhow::Result<CloseChannelResponse> {
+    let force_str = if force { "--force" } else { "" };
+    let output = run_ssh_checked(
+        &remote.ssh_args,
+        &format!(r#"lncli closechannel --chan_point {channel_point} --conf_target {conf_target} {force_str}"#),
+    )
+    .await?;
+    let response = serde_json::from_slice::<CloseChannelResponse>(&output.stdout)
+        .context("failed to parse closechannel response")?;
     Ok(response)
 }
 
