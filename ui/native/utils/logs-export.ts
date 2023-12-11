@@ -1,31 +1,22 @@
 import RNFS from 'react-native-fs'
 import { Asset } from 'react-native-image-picker'
 import Share from 'react-native-share'
+import RNFB from 'rn-fetch-blob'
 
-import { exportLogs } from '@fedi/common/utils/log'
+import { exportLogs as exportAppLogs } from '@fedi/common/utils/log'
 import { File, makeTarGz } from '@fedi/common/utils/targz'
 
 import { getAllDeviceInfo } from './device-info'
 
-export async function generateLogsExportGzip(extraFiles: File[] = []) {
-    // Only read up to 2mb of logs to optimize upload size & performance.
-    const LOG_FILE_PATH = `${RNFS.DocumentDirectoryPath}/fedi.log`
-    const logSize = (await RNFS.stat(LOG_FILE_PATH)).size
-    const logLength = Math.min(logSize, 0.1 * 1024 * 1024)
-    const logPosition = Math.max(logSize - logLength, 0)
+const MAX_BRIDGE_LOG_SIZE = 1024 * 1024 * 2
 
+export async function generateLogsExportGzip(extraFiles: File[] = []) {
     // Parallelize all information gathering.
-    const [jsLogs, rawBridgeLogs, infoJson] = await Promise.all([
-        exportLogs(),
-        RNFS.read(LOG_FILE_PATH, logLength, logPosition),
+    const [jsLogs, bridgeLogs, infoJson] = await Promise.all([
+        exportAppLogs(),
+        exportBridgeLogs(),
         getAllDeviceInfo(),
     ])
-
-    // If the bridge logs have a fragmented first line, remove it.
-    let bridgeLogs = rawBridgeLogs
-    if (bridgeLogs.length && bridgeLogs[0] !== '{') {
-        bridgeLogs = bridgeLogs.slice(bridgeLogs.indexOf('{'))
-    }
 
     return await makeTarGz([
         { name: 'app.log', content: jsLogs },
@@ -63,4 +54,71 @@ export async function attachmentsToFiles(
             }
         }),
     )
+}
+
+async function exportBridgeLogs() {
+    // Ensure we get as many logs as limited. Logs are split across multiple files
+    // on a rolling basis, so it's possible that `fedi.log` is nearly empty but
+    // `fedi.log.1` has a lot of logs from before.
+    const LOGS_DIR = RNFB.fs.dirs.DocumentDir
+    let files = ['fedi.log']
+    const secondLogExists = await RNFB.fs.exists(`${LOGS_DIR}/fedi.log.1`)
+    if (secondLogExists) {
+        const logStat = await RNFB.fs.stat(`${LOGS_DIR}/fedi.log`)
+        if (logStat.size < MAX_BRIDGE_LOG_SIZE) {
+            files = ['fedi.log.1', 'fedi.log']
+        }
+    }
+
+    // Iterate over files and append to string. Starting oldest first, append
+    // in ascending order.
+    let bridgeLogs = ''
+    await new Promise<void>(async resolve => {
+        for (const file of files) {
+            await new Promise<void>(async innerResolve => {
+                const fileStream = await RNFB.fs.readStream(
+                    `${LOGS_DIR}/${file}`,
+                    'utf8',
+                    102400, // 100kb at a time
+                )
+                fileStream.onData(chunk => {
+                    bridgeLogs += chunk
+                })
+                fileStream.onError(err => {
+                    bridgeLogs += JSON.stringify({
+                        error: `Error reading file stream for ${file}: ${
+                            err.message || err.toString()
+                        }`,
+                    })
+                    innerResolve()
+                })
+                fileStream.onEnd(() => {
+                    innerResolve()
+                })
+                fileStream.open()
+            })
+        }
+        resolve()
+    })
+
+    // Trim logs to 2mb reduce upload size / increase gzip performance. RNFB
+    // doesn't allow us to seek before streaming, but it's so much faster than
+    // RNFS with seeking that we still save time overall by doing this in JS.
+    bridgeLogs = bridgeLogs.slice(-MAX_BRIDGE_LOG_SIZE)
+
+    // Take the first line from the logs and try to JSON parse it. If it fails,
+    // cut off the first line since it's fragmented from the slice above. Only
+    // split on the first newline, don't split the whole string.
+    const newlineIndex = bridgeLogs.indexOf('\n')
+    try {
+        const firstLine = bridgeLogs.substring(0, newlineIndex)
+        JSON.parse(firstLine)
+    } catch (err) {
+        // Remove first line
+        if (newlineIndex !== -1) {
+            bridgeLogs = bridgeLogs.slice(newlineIndex + 1)
+        }
+    }
+
+    return bridgeLogs
 }
