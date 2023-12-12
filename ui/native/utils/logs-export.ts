@@ -1,13 +1,13 @@
-import RNFS from 'react-native-fs'
 import { Asset } from 'react-native-image-picker'
 import Share from 'react-native-share'
 import RNFB from 'rn-fetch-blob'
 
-import { exportLogs as exportAppLogs } from '@fedi/common/utils/log'
+import { exportLogs as exportAppLogs, makeLog } from '@fedi/common/utils/log'
 import { File, makeTarGz } from '@fedi/common/utils/targz'
 
 import { getAllDeviceInfo } from './device-info'
 
+const log = makeLog('native/utils/logs-export')
 const MAX_BRIDGE_LOG_SIZE = 1024 * 1024 * 2
 
 export async function generateLogsExportGzip(extraFiles: File[] = []) {
@@ -40,20 +40,25 @@ export async function shareLogsExport() {
 export async function attachmentsToFiles(
     attachments: Asset[],
 ): Promise<File[]> {
-    return Promise.all(
+    const files: File[] = []
+    await Promise.all(
         attachments.map(async (a, index) => {
-            const fileExt = a.fileName ? `.${a.fileName.split('.').pop()}` : ''
-            return {
-                name: `attachment-${index}${fileExt}`,
-                // TODO: More efficient way of getting buffer than base64 encode / decode,
-                // This is really slow.
-                content: Buffer.from(
-                    await RNFS.readFile(a.uri || '', 'base64'),
-                    'base64',
-                ),
+            try {
+                const fileExt = a.fileName
+                    ? `.${a.fileName.split('.').pop()}`
+                    : ''
+                const b64 = await asyncStreamFile(a.uri || '', 'base64')
+                const content = Buffer.from(b64, 'base64')
+                return {
+                    name: `attachment-${index}${fileExt}`,
+                    content,
+                }
+            } catch (err) {
+                log.warn('Failed to stream image attachment', err)
             }
         }),
     )
+    return files
 }
 
 async function exportBridgeLogs() {
@@ -73,33 +78,17 @@ async function exportBridgeLogs() {
     // Iterate over files and append to string. Starting oldest first, append
     // in ascending order.
     let bridgeLogs = ''
-    await new Promise<void>(async resolve => {
-        for (const file of files) {
-            await new Promise<void>(async innerResolve => {
-                const fileStream = await RNFB.fs.readStream(
-                    `${LOGS_DIR}/${file}`,
-                    'utf8',
-                    102400, // 100kb at a time
-                )
-                fileStream.onData(chunk => {
-                    bridgeLogs += chunk
-                })
-                fileStream.onError(err => {
-                    bridgeLogs += JSON.stringify({
-                        error: `Error reading file stream for ${file}: ${
-                            err.message || err.toString()
-                        }`,
-                    })
-                    innerResolve()
-                })
-                fileStream.onEnd(() => {
-                    innerResolve()
-                })
-                fileStream.open()
+    for (const file of files) {
+        try {
+            bridgeLogs += await asyncStreamFile(`${LOGS_DIR}/${file}`, 'utf8')
+        } catch (err: any) {
+            bridgeLogs += JSON.stringify({
+                error: `Error reading file stream for ${file}: ${
+                    err.stack || err.message || err.toString()
+                }`,
             })
         }
-        resolve()
-    })
+    }
 
     // Trim logs to 2mb reduce upload size / increase gzip performance. RNFB
     // doesn't allow us to seek before streaming, but it's so much faster than
@@ -109,16 +98,41 @@ async function exportBridgeLogs() {
     // Take the first line from the logs and try to JSON parse it. If it fails,
     // cut off the first line since it's fragmented from the slice above. Only
     // split on the first newline, don't split the whole string.
-    const newlineIndex = bridgeLogs.indexOf('\n')
+    const firstNewlineIndex = bridgeLogs.indexOf('\n')
     try {
-        const firstLine = bridgeLogs.substring(0, newlineIndex)
+        const firstLine = bridgeLogs.substring(0, firstNewlineIndex)
         JSON.parse(firstLine)
     } catch (err) {
         // Remove first line
-        if (newlineIndex !== -1) {
-            bridgeLogs = bridgeLogs.slice(newlineIndex + 1)
+        if (firstNewlineIndex !== -1) {
+            bridgeLogs = bridgeLogs.slice(firstNewlineIndex + 1)
         }
     }
 
     return bridgeLogs
+}
+
+function asyncStreamFile(path: string, encoding: 'utf8' | 'base64') {
+    return new Promise<string>(async (resolve, reject) => {
+        let content = ''
+        RNFB.fs
+            .readStream(
+                path.replace('file://', ''), // RNFB doesn't want uri prefix
+                encoding,
+                102400, // 100kb at a time
+            )
+            .then(fileStream => {
+                fileStream.onData(chunk => {
+                    content += chunk
+                })
+                fileStream.onError(err => {
+                    reject(err)
+                })
+                fileStream.onEnd(() => {
+                    resolve(content)
+                })
+                fileStream.open()
+            })
+            .catch(err => reject(err))
+    })
 }
