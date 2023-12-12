@@ -112,7 +112,9 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: theme.spacing.sm,
+            paddingVertical: theme.spacing.sm,
+            paddingHorizontal: theme.spacing.md,
+            marginHorizontal: theme.spacing.sm,
         },
         federationName: {
             maxWidth: '80%',
@@ -128,8 +130,9 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.red,
             height: theme.sizes.unreadIndicatorSize,
             width: theme.sizes.unreadIndicatorSize,
-            marginHorizontal: theme.spacing.xs,
             borderRadius: theme.sizes.unreadIndicatorSize * 0.5,
+            position: 'absolute',
+            right: 0,
         },
     })
 
