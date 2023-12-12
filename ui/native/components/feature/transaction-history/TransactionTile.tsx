@@ -3,11 +3,13 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
+import { selectBtcExchangeRate, selectCurrency } from '@fedi/common/redux'
 import { Transaction, TransactionDirection } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import { makeTxnStatusText } from '@fedi/common/utils/wallet'
 
+import { useAppSelector } from '../../../state/hooks'
 import SvgImage, { SvgImageName } from '../../ui/SvgImage'
 
 type TransactionTileProps = {
@@ -19,6 +21,8 @@ type TxnSubIconProps = { svgName: string; color: string }
 const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const currency = useAppSelector(selectCurrency)
+    const btcExchangeRate = useAppSelector(selectBtcExchangeRate)
 
     const style = styles(theme)
 
@@ -26,9 +30,10 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
         if (txn.bitcoin && txn.amount === 0)
             return t('words.onchain').toLowerCase()
 
-        const formattedAmount = amountUtils.formatNumber(
-            amountUtils.msatToSat(txn.amount),
-        )
+        const fiatAmount = amountUtils.msatToFiat(txn.amount, btcExchangeRate)
+        const formattedAmount = amountUtils.formatFiat(fiatAmount, currency, {
+            noSymbol: true,
+        })
         const sign = txn.direction === TransactionDirection.send ? `-` : `+`
 
         return (
@@ -38,7 +43,7 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                     {formattedAmount}
                 </Text>
                 <Text tiny medium style={style.amountSuffix}>
-                    {t('words.sats').toUpperCase()}
+                    {currency}
                 </Text>
             </View>
         )
