@@ -10,6 +10,7 @@ import {
     View,
 } from 'react-native'
 
+import { selectBtcExchangeRate, selectCurrency } from '@fedi/common/redux'
 import { Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
@@ -18,7 +19,7 @@ import {
     makeTxnDetailTitleText,
 } from '@fedi/common/utils/wallet'
 
-import { useBridge } from '../../../state/hooks'
+import { useAppSelector, useBridge } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import { TransactionDetailItem } from './TransactionDetailItem'
 import { TransactionIcon } from './TransactionIcon'
@@ -41,6 +42,8 @@ const TransactionDetail = ({
     const { updateTransactionNotes } = useBridge()
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const currency = useAppSelector(selectCurrency)
+    const btcExchangeRate = useAppSelector(selectBtcExchangeRate)
     const [notes, setNotes] = useState(txn.notes)
     const [isFocused, setIsFocused] = useState(false)
 
@@ -118,11 +121,19 @@ const TransactionDetail = ({
                 {makeTxnDetailTitleText(t, txn)}
             </Text>
             {txn.amount !== 0 && (
-                <Text h2>{`${amountUtils.formatNumber(
-                    amountUtils.msatToSat(txn.amount),
-                )} ${t('words.sats')}`}</Text>
+                <Text h2>{`${amountUtils.formatFiat(
+                    amountUtils.msatToFiat(txn.amount, btcExchangeRate),
+                    currency,
+                    { noSymbol: true },
+                )} ${currency}`}</Text>
             )}
             <View style={style.detailItemsContainer}>
+                <TransactionDetailItem
+                    label={t('phrases.bitcoin-equivalent')}
+                    value={`${amountUtils.formatNumber(
+                        amountUtils.msatToSat(txn.amount),
+                    )} ${t('words.sats')}`}
+                />
                 <TransactionDetailItem
                     label={t('words.time')}
                     value={dateUtils.formatTimestamp(
@@ -209,7 +220,8 @@ const styles = (theme: Theme) =>
             width: '100%',
         },
         detailTitle: {
-            marginVertical: theme.spacing.sm,
+            marginTop: theme.spacing.sm,
+            marginBottom: theme.spacing.xxs,
         },
         inputOuterContainer: {
             flex: 1,
