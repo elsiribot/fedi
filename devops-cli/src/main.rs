@@ -276,7 +276,9 @@ enum FederationSubCommand {
     #[command(about = "Shows a summary of the federation funds balance")]
     FundsSummary(FundsSummaryArgs),
     #[command(about = "Recover funds from a federation after running `funds-summary`")]
-    RecoverFederationFunds(RecoverFundsArgs),
+    RecoverFederationFunds(RecoverFederationFundsArgs),
+    #[command(about = "Recover funds from a gateway after running `funds-summary`")]
+    RecoverLightningFunds(RecoverLightningFundsArgs),
     #[command(about = "Restart fedimints")]
     RestartFedimints(RestartFedimintsArgs),
     #[command(about = "Start fedimints")]
@@ -336,7 +338,7 @@ struct FundsSummaryArgs {
 }
 
 #[derive(Clone, Args)]
-struct RecoverFundsArgs {
+struct RecoverFederationFundsArgs {
     #[arg(
         long,
         help = "This command should run after funds-summary was run and use the same wallet_base_id so the remote wallet can be found"
@@ -369,6 +371,28 @@ enum RecoverFederationFundsSubCommand {
 enum FundsSummarySubCommand {
     UsingRemoteBitcoin(UsingRemoteBitcoinArgs),
     NoBitcoinWallet(NoBitcoinWalletArgs),
+}
+
+#[derive(Clone, Args)]
+struct RecoverLightningFundsArgs {
+    #[arg(
+        long,
+        help = "The bitcoin address destination of all the funds recovered"
+    )]
+    destination_address: Address,
+
+    #[arg(
+        long,
+        help = "Used to calculate fees. Same as --conf_target on LND",
+        default_value_t = 1
+    )]
+    conf_target: u16,
+
+    #[arg(long, action)]
+    keep_channels: bool,
+
+    #[arg(long, action)]
+    allow_force_close: bool,
 }
 
 #[derive(Clone, Args, Debug)]

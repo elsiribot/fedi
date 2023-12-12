@@ -68,6 +68,11 @@ pub async fn fedimint_initialize_inner(
     std::panic::set_hook(Box::new({
         let event_sink = event_sink.clone();
         move |info| {
+            tracing::info!(%info, "panic");
+            // write separately in case backtrace capturing bugs out.
+            let backtrace = std::backtrace::Backtrace::force_capture();
+            tracing::info!(%backtrace, "panic");
+
             rpc::panic_hook(info, &*event_sink);
         }
     }));

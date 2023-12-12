@@ -44,7 +44,7 @@ use super::types::{
     SocialRecoveryApproval, SocialRecoveryQr,
 };
 use crate::constants::{LNURL_CHILD_ID, NOSTR_CHILD_ID};
-use crate::error::ErrorCode;
+use crate::error::{get_error_code, ErrorCode};
 use crate::event::SocialRecoveryEvent;
 use crate::federation_v2::{self, FederationV2};
 use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
@@ -532,7 +532,9 @@ impl Bridge {
     /// Federation ID saved to global database, new rocksdb database created for
     /// it, and it is saved to local hashmap by ID
     pub async fn join_federation(&self, invite_code: String) -> Result<RpcFederation> {
+        let invite_code = invite_code.to_lowercase();
         // FIXME: this is kinda unreliable
+        let mut error_code = None;
         match self.join_federation_v2(invite_code.clone()).await {
             Ok(multi) => {
                 info!("Joined v2 federation");
@@ -540,6 +542,7 @@ impl Bridge {
             }
             Err(e) => {
                 error!("failed to join v2 federation {e:?}");
+                error_code = error_code.or(get_error_code(&e));
             }
         }
         match self.join_federation_v1(invite_code.clone()).await {
@@ -549,6 +552,7 @@ impl Bridge {
             }
             Err(e) => {
                 error!("failed to join v1 federation {e:?}");
+                error_code = error_code.or(get_error_code(&e));
             }
         }
         match self.join_federation_v0(invite_code.clone()).await {
@@ -558,7 +562,11 @@ impl Bridge {
             }
             Err(e) => {
                 error!("failed to join v0 federation {e:?}");
+                error_code = error_code.or(get_error_code(&e));
             }
+        }
+        if let Some(error_code) = error_code {
+            bail!(error_code);
         }
         bail!("failed to join")
     }
@@ -693,15 +701,16 @@ impl Bridge {
         Ok(multi)
     }
 
-    pub async fn federation_preview(&self, invite_code: &String) -> Result<RpcFederationPreview> {
+    pub async fn federation_preview(&self, invite_code: &str) -> Result<RpcFederationPreview> {
+        let invite_code = invite_code.to_lowercase();
         let root_mnemonic = self
             .app_state
             .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
             .await;
         let (v0, v1, v2) = futures::join!(
-            FederationV0::download_client_config(invite_code),
-            FederationV1::download_client_config(invite_code),
-            FederationV2::download_client_config(invite_code, &root_mnemonic)
+            FederationV0::download_client_config(&invite_code),
+            FederationV1::download_client_config(&invite_code),
+            FederationV2::download_client_config(&invite_code, &root_mnemonic)
         );
         match (v0, v1, v2) {
             (Ok(config), _, _) => Ok(RpcFederationPreview {

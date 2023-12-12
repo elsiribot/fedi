@@ -11,6 +11,10 @@ TARGET_DIR="${TARGET_DIR:-${REPO_ROOT}/target}"
 # until this issue is resolved:
 # https://github.com/fedibtc/fedi/issues/2210
 CARGO_PROFILE=${CARGO_PROFILE:-release}
+CARGO_PROFILE_DIR=${CARGO_PROFILE}
+if [ "$CARGO_PROFILE" == "dev" ]; then
+  CARGO_PROFILE_DIR="debug"
+fi
 
 # build Swift bindings
 cd $BRIDGE_ROOT/fedi-ffi
@@ -54,9 +58,9 @@ cp Sources/Fedi/fediFFI.h fediFFI.xcframework/ios-arm64_x86_64-simulator/fediFFI
 echo "Copying binary files..."
 # for development, we combine both x86 and aarch64 binaries into 1
 # since x86_64-apple-ios-sim is not supported as a rustc target we just use x86_64-apple-ios
-AARCH64_SIM_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/aarch64-apple-ios-sim/${CARGO_PROFILE:-debug}/libfediffi.a
-X86_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/x86_64-apple-ios/${CARGO_PROFILE:-debug}/libfediffi.a
-COMBINED_BINARY_PATH=$TARGET_DIR/lipo-ios-arm64_x86_64-simulator/${CARGO_PROFILE:-debug}
+AARCH64_SIM_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/aarch64-apple-ios-sim/${CARGO_PROFILE_DIR}/libfediffi.a
+X86_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/x86_64-apple-ios/${CARGO_PROFILE_DIR}/libfediffi.a
+COMBINED_BINARY_PATH=$TARGET_DIR/lipo-ios-arm64_x86_64-simulator/${CARGO_PROFILE_DIR}
 if [[ -e "$AARCH64_SIM_BINARY_PATH" && -e "$X86_BINARY_PATH" ]]; then
   echo "Combining binaries for development..."
   mkdir -p $COMBINED_BINARY_PATH
@@ -73,7 +77,7 @@ fi
 
 # ios-arm64
 # copy the aarch64 binary if it was built
-AARCH64_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/aarch64-apple-ios/${CARGO_PROFILE:-debug}/libfediffi.a
+AARCH64_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/aarch64-apple-ios/${CARGO_PROFILE_DIR}/libfediffi.a
 if [ -e "$AARCH64_BINARY_PATH" ]; then
   cp $AARCH64_BINARY_PATH fediFFI.xcframework/ios-arm64/fediFFI.framework/fediFFI
 else

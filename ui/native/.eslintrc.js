@@ -1,3 +1,5 @@
+const baseConfig = require('../.eslintrc.js')
+
 module.exports = {
     root: true,
     extends: ['@react-native', 'prettier', '../.eslintrc.js'],
@@ -12,6 +14,7 @@ module.exports = {
             'error',
             {
                 paths: [
+                    ...baseConfig.rules['no-restricted-imports'][1].paths,
                     {
                         name: '@rneui/themed',
                         importNames: ['Icon'],

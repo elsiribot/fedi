@@ -8,10 +8,10 @@ import {
     isAnyOf,
 } from '@reduxjs/toolkit'
 import { xml } from '@xmpp/client'
-import { uniq } from 'lodash'
 import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
 import orderBy from 'lodash/orderBy'
+import uniq from 'lodash/uniq'
 import { v4 as uuidv4 } from 'uuid'
 
 import {

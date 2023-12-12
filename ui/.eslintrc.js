@@ -11,6 +11,18 @@ module.exports = {
             'error',
             { argsIgnorePattern: '^_' },
         ],
+        'no-restricted-imports': [
+            'error',
+            {
+                paths: [
+                    {
+                        name: 'lodash',
+                        message:
+                            'Use `lodash/[function-name]` instead to reduce bundle size',
+                    },
+                ],
+            },
+        ],
     },
     overrides: [
         {

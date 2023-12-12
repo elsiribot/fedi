@@ -13,6 +13,12 @@ TARGET_DIR="${TARGET_DIR:-${REPO_ROOT}/target}"
 BRIDGE_ROOT=$REPO_ROOT/bridge
 cd $BRIDGE_ROOT
 
+CARGO_PROFILE=${CARGO_PROFILE:-dev}
+CARGO_PROFILE_DIR=${CARGO_PROFILE}
+if [ "$CARGO_PROFILE" == "dev" ]; then
+  CARGO_PROFILE_DIR="debug"
+fi
+
 # only build emulator target by default
 TARGETS=("aarch64-linux-android")
 JNILIBS_PATH="arm64-v8a"
@@ -24,6 +30,7 @@ echo "Building android bridge for targets: ${TARGETS[*]}"
 
 # build binaries for each supported target
 for target in "${TARGETS[@]}"; do
+  echo "Building android bridge for $target"
   cargo build --target-dir "${TARGET_DIR}/pkg/fedi-ffi" ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} -p fedi-ffi --target $target
 
   if [ "${target:-}" == "aarch64-linux-android" ]; then
@@ -37,7 +44,7 @@ for target in "${TARGETS[@]}"; do
   fi
   
   mkdir -p $BRIDGE_ROOT/fedi-android/lib/src/main/jniLibs/${JNILIBS_PATH}
-  cp ${TARGET_DIR}/pkg/fedi-ffi/${target}/${CARGO_PROFILE:-debug}/libfediffi.so fedi-android/lib/src/main/jniLibs/${JNILIBS_PATH}/libfediffi.so
+  cp ${TARGET_DIR}/pkg/fedi-ffi/${target}/${CARGO_PROFILE_DIR}/libfediffi.so fedi-android/lib/src/main/jniLibs/${JNILIBS_PATH}/libfediffi.so
 done
 
 # build android lib with ffi-bindgen inside nix
