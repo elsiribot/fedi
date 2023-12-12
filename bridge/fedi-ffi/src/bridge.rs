@@ -532,6 +532,7 @@ impl Bridge {
     /// Federation ID saved to global database, new rocksdb database created for
     /// it, and it is saved to local hashmap by ID
     pub async fn join_federation(&self, invite_code: String) -> Result<RpcFederation> {
+        let invite_code = invite_code.to_lowercase();
         // FIXME: this is kinda unreliable
         match self.join_federation_v2(invite_code.clone()).await {
             Ok(multi) => {
@@ -693,15 +694,16 @@ impl Bridge {
         Ok(multi)
     }
 
-    pub async fn federation_preview(&self, invite_code: &String) -> Result<RpcFederationPreview> {
+    pub async fn federation_preview(&self, invite_code: &str) -> Result<RpcFederationPreview> {
+        let invite_code = invite_code.to_lowercase();
         let root_mnemonic = self
             .app_state
             .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
             .await;
         let (v0, v1, v2) = futures::join!(
-            FederationV0::download_client_config(invite_code),
-            FederationV1::download_client_config(invite_code),
-            FederationV2::download_client_config(invite_code, &root_mnemonic)
+            FederationV0::download_client_config(&invite_code),
+            FederationV1::download_client_config(&invite_code),
+            FederationV2::download_client_config(&invite_code, &root_mnemonic)
         );
         match (v0, v1, v2) {
             (Ok(config), _, _) => Ok(RpcFederationPreview {
