@@ -1,13 +1,7 @@
 import { Overlay, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    Dimensions,
-    FlatList,
-    ListRenderItem,
-    StyleSheet,
-    View,
-} from 'react-native'
+import { FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
@@ -27,8 +21,6 @@ type TransactionsListProps = {
         updatedNotes: string,
     ) => void
 }
-
-const WINDOW_WIDTH = Dimensions.get('window').width
 
 const TransactionsList = ({
     transactions,
@@ -61,12 +53,13 @@ const TransactionsList = ({
             <FlatList
                 data={transactions}
                 renderItem={renderTransaction}
+                contentContainerStyle={styles(theme).content}
                 keyExtractor={(item: Transaction) => `${item.id}`}
                 // optimization that allows skipping the measurement of dynamic content
                 // for fixed-size list items
-                getItemLayout={(data, index) => ({
-                    length: WINDOW_WIDTH,
-                    offset: 48 * index,
+                getItemLayout={(_, index) => ({
+                    length: 56, // 38 height + 16 margin
+                    offset: 56 * index,
                     index,
                 })}
                 onEndReached={isV1Federation ? loadMoreTransactions : undefined}
@@ -109,6 +102,9 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             width: '100%',
+        },
+        content: {
+            paddingTop: theme.spacing.md,
         },
         overlayContainer: {
             borderRadius: theme.borders.defaultRadius,

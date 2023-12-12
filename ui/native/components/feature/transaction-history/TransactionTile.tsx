@@ -8,7 +8,7 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import { makeTxnStatusText } from '@fedi/common/utils/wallet'
 
-import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
+import SvgImage, { SvgImageName } from '../../ui/SvgImage'
 
 type TransactionTileProps = {
     txn: Transaction
@@ -20,6 +20,8 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 
+    const style = styles(theme)
+
     const renderAmount = () => {
         if (txn.bitcoin && txn.amount === 0)
             return t('words.onchain').toLowerCase()
@@ -29,10 +31,18 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
         )
         const sign = txn.direction === TransactionDirection.send ? `-` : `+`
 
-        return `${sign}${formattedAmount} ${t('words.sats').toUpperCase()}`
+        return (
+            <View style={style.amountContainer}>
+                <Text caption medium>
+                    {sign}
+                    {formattedAmount}
+                </Text>
+                <Text tiny medium style={style.amountSuffix}>
+                    {t('words.sats').toUpperCase()}
+                </Text>
+            </View>
+        )
     }
-
-    const style = styles(theme)
 
     const renderSubIcon = () => {
         let subIconProps: TxnSubIconProps
@@ -62,7 +72,7 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
             <SvgImage
                 name={subIconProps.svgName as SvgImageName}
                 color={subIconProps.color}
-                size={SvgImageSize.xs}
+                size={20}
                 containerStyle={style.txnBadge}
             />
         )
@@ -77,28 +87,31 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                 txn.onchainState?.type === 'waitingForTransaction'
                     ? style.pending
                     : {},
-            ]}>
+            ]}
+            hitSlop={4}>
             <View style={style.leftContainer}>
                 <SvgImage
                     name="BitcoinCircle"
                     color={theme.colors.orange}
-                    size={SvgImageSize.md}
+                    size={38}
                 />
                 {renderSubIcon()}
             </View>
             <View style={style.centerContainer}>
-                <Text>{makeTxnStatusText(t, txn)}</Text>
+                <Text caption medium>
+                    {makeTxnStatusText(t, txn)}
+                </Text>
                 {txn.notes && (
-                    <Text small numberOfLines={1}>
+                    <Text small numberOfLines={1} style={style.subText}>
                         {txn.notes}
                     </Text>
                 )}
             </View>
 
             <View style={style.rightContainer}>
-                <Text style={style.rightAlignedText}>{renderAmount()}</Text>
+                {renderAmount()}
                 <Text small style={[style.rightAlignedText, style.subText]}>
-                    {`${dateUtils.formatTxnTileTimestamp(txn.createdAt)}`}
+                    {dateUtils.formatTxnTileTimestamp(txn.createdAt)}
                 </Text>
             </View>
         </TouchableOpacity>
@@ -110,12 +123,11 @@ const styles = (theme: Theme) =>
         container: {
             flexDirection: 'row',
             alignItems: 'center',
-            height: 48,
             width: '100%',
             gap: theme.spacing.md,
             paddingHorizontal: theme.spacing.xl,
             backgroundColor: theme.colors.secondary,
-            marginVertical: theme.spacing.md,
+            marginBottom: theme.spacing.lg,
         },
         leftContainer: {
             flexShrink: 0,
@@ -124,11 +136,13 @@ const styles = (theme: Theme) =>
             flex: 1,
             width: '100%',
             flexDirection: 'column',
+            gap: 4,
         },
         rightContainer: {
             flexShrink: 0,
             flexDirection: 'column',
             justifyContent: 'flex-end',
+            gap: 4,
         },
         rightAlignedText: {
             textAlign: 'right',
@@ -141,8 +155,17 @@ const styles = (theme: Theme) =>
         },
         txnBadge: {
             position: 'absolute',
-            left: -4,
-            top: -4,
+            left: -6,
+            top: -6,
+        },
+        amountContainer: {
+            flexDirection: 'row',
+            justifyContent: 'flex-end',
+            alignItems: 'flex-end',
+            gap: 2,
+        },
+        amountSuffix: {
+            paddingBottom: 1,
         },
     })
 
