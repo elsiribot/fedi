@@ -44,7 +44,7 @@ use super::types::{
     SocialRecoveryApproval, SocialRecoveryQr,
 };
 use crate::constants::{LNURL_CHILD_ID, NOSTR_CHILD_ID};
-use crate::error::ErrorCode;
+use crate::error::{get_error_code, ErrorCode};
 use crate::event::SocialRecoveryEvent;
 use crate::federation_v2::{self, FederationV2};
 use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
@@ -533,6 +533,7 @@ impl Bridge {
     /// it, and it is saved to local hashmap by ID
     pub async fn join_federation(&self, invite_code: String) -> Result<RpcFederation> {
         // FIXME: this is kinda unreliable
+        let mut error_code = None;
         match self.join_federation_v2(invite_code.clone()).await {
             Ok(multi) => {
                 info!("Joined v2 federation");
@@ -540,6 +541,7 @@ impl Bridge {
             }
             Err(e) => {
                 error!("failed to join v2 federation {e:?}");
+                error_code = error_code.or(get_error_code(&e));
             }
         }
         match self.join_federation_v1(invite_code.clone()).await {
@@ -549,6 +551,7 @@ impl Bridge {
             }
             Err(e) => {
                 error!("failed to join v1 federation {e:?}");
+                error_code = error_code.or(get_error_code(&e));
             }
         }
         match self.join_federation_v0(invite_code.clone()).await {
@@ -558,7 +561,11 @@ impl Bridge {
             }
             Err(e) => {
                 error!("failed to join v0 federation {e:?}");
+                error_code = error_code.or(get_error_code(&e));
             }
+        }
+        if let Some(error_code) = error_code {
+            bail!(error_code);
         }
         bail!("failed to join")
     }

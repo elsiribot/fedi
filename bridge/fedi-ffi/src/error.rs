@@ -9,6 +9,8 @@ pub enum ErrorCode {
     InitializationFailed,
     #[error("Bad request")]
     BadRequest,
+    #[error("Already joined this federation")]
+    AlreadyJoined,
     #[error("Invalid invoice")]
     InvalidInvoice,
     #[error("Invalid Mnemonic")]
