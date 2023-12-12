@@ -10,13 +10,12 @@ import dateUtils from '@fedi/common/utils/DateUtils'
 import { makeTxnStatusText } from '@fedi/common/utils/wallet'
 
 import { useAppSelector } from '../../../state/hooks'
-import SvgImage, { SvgImageName } from '../../ui/SvgImage'
+import { TransactionIcon } from './TransactionIcon'
 
 type TransactionTileProps = {
     txn: Transaction
     selectTransaction: (txn: Transaction) => void
 }
-type TxnSubIconProps = { svgName: string; color: string }
 
 const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
     const { t } = useTranslation()
@@ -49,40 +48,6 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
         )
     }
 
-    const renderSubIcon = () => {
-        let subIconProps: TxnSubIconProps
-
-        if (txn.direction === TransactionDirection.send) {
-            subIconProps = {
-                svgName: 'ArrowUpBadge',
-                color: theme.colors.black,
-            }
-        } else if (
-            txn.lnState?.type === 'waitingForPayment' ||
-            (txn.bitcoin && txn.onchainState?.type !== 'claimed') ||
-            (txn.lightning && !txn.lnState)
-        ) {
-            subIconProps = {
-                svgName: 'PendingBadge',
-                color: theme.colors.fuschia,
-            }
-        } else {
-            subIconProps = {
-                svgName: 'ArrowDownBadge',
-                color: theme.colors.green,
-            }
-        }
-
-        return (
-            <SvgImage
-                name={subIconProps.svgName as SvgImageName}
-                color={subIconProps.color}
-                size={20}
-                containerStyle={style.txnBadge}
-            />
-        )
-    }
-
     return (
         <TouchableOpacity
             onPress={() => selectTransaction(txn)}
@@ -94,14 +59,7 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                     : {},
             ]}
             hitSlop={4}>
-            <View style={style.leftContainer}>
-                <SvgImage
-                    name="BitcoinCircle"
-                    color={theme.colors.orange}
-                    size={38}
-                />
-                {renderSubIcon()}
-            </View>
+            <TransactionIcon txn={txn} />
             <View style={style.centerContainer}>
                 <Text caption medium>
                     {makeTxnStatusText(t, txn)}
@@ -134,9 +92,6 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.secondary,
             marginBottom: theme.spacing.lg,
         },
-        leftContainer: {
-            flexShrink: 0,
-        },
         centerContainer: {
             flex: 1,
             width: '100%',
@@ -157,11 +112,6 @@ const styles = (theme: Theme) =>
         },
         pending: {
             opacity: 0.6,
-        },
-        txnBadge: {
-            position: 'absolute',
-            left: -6,
-            top: -6,
         },
         amountContainer: {
             flexDirection: 'row',

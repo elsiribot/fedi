@@ -108,8 +108,10 @@ const styles = (theme: Theme) =>
             paddingTop: theme.spacing.md,
         },
         overlayContainer: {
-            borderRadius: theme.borders.defaultRadius,
             width: '90%',
+            maxWidth: 340,
+            padding: theme.spacing.xl,
+            borderRadius: theme.borders.defaultRadius,
             alignItems: 'center',
         },
         overlayErrorContainer: {

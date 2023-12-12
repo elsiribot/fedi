@@ -1,5 +1,4 @@
-import Clipboard from '@react-native-clipboard/clipboard'
-import { Divider, Input, Text, Theme, useTheme } from '@rneui/themed'
+import { Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -14,15 +13,15 @@ import {
 import { Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
-import stringUtils from '@fedi/common/utils/StringUtils'
 import {
     makeTxnDetailStatusText,
     makeTxnDetailTitleText,
 } from '@fedi/common/utils/wallet'
 
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useBridge } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import { TransactionDetailItem } from './TransactionDetailItem'
+import { TransactionIcon } from './TransactionIcon'
 
 type TransactionDetailProps = {
     txn: Transaction
@@ -44,7 +43,6 @@ const TransactionDetail = ({
     const { t } = useTranslation()
     const [notes, setNotes] = useState(txn.notes)
     const [isFocused, setIsFocused] = useState(false)
-    const { toast } = useEnvironmentContext().state
 
     const onNotesInputChanged = (input: string) => {
         setNotes(input)
@@ -56,77 +54,48 @@ const TransactionDetail = ({
     }
 
     const txnFee = txn.lightning?.fee || null
+    const style = styles(theme)
 
     const renderTxnDetails = () => {
         if (txn.lightning) {
             return (
-                <View style={styles(theme).detailItem}>
-                    <Text>{`${t('phrases.lightning-request')}`}</Text>
-                    <Pressable
-                        style={styles(theme).detailItem}
-                        onPress={() => {
-                            Clipboard.setString(txn.lightning?.invoice!)
-                            toast?.show(t('phrases.copied-lightning-request'))
-                        }}>
-                        <Text>
-                            {stringUtils.truncateMiddleOfString(
-                                txn.lightning.invoice,
-                                5,
-                            )}
-                        </Text>
-                        <SvgImage name="Copy" size={SvgImageSize.sm} />
-                    </Pressable>
-                </View>
+                <TransactionDetailItem
+                    label={t('phrases.lightning-request')}
+                    value={txn.lightning.invoice}
+                    copiedMessage={t('phrases.copied-lightning-request')}
+                    copyable
+                    truncated
+                />
             )
         } else {
             let txidDetailItem = null
             if (txn.onchainState && 'txid' in txn.onchainState) {
-                const txid = txn.onchainState.txid
                 txidDetailItem = (
-                    <View style={styles(theme).detailItem}>
-                        <Text>{`${t('phrases.transaction-id')}`}</Text>
-                        <Pressable
-                            style={styles(theme).detailItem}
-                            onPress={() => {
-                                Clipboard.setString(txid!)
-                                toast?.show(t('phrases.copied-transaction-id'))
-                            }}>
-                            <Text>
-                                {stringUtils.truncateMiddleOfString(txid, 5)}
-                            </Text>
-                            <SvgImage name="Copy" size={SvgImageSize.sm} />
-                        </Pressable>
-                    </View>
+                    <TransactionDetailItem
+                        label={t('phrases.transaction-id')}
+                        value={txn.onchainState.txid}
+                        copiedMessage={t('phrases.copied-transaction-id')}
+                        copyable
+                        truncated
+                    />
                 )
             }
 
             return (
                 <>
                     {txn.bitcoin && (
-                        <View style={styles(theme).detailItem}>
-                            <Text>
-                                {txn.onchainState?.type ===
+                        <TransactionDetailItem
+                            label={
+                                txn.onchainState?.type ===
                                 'waitingForTransaction'
                                     ? t('words.address')
-                                    : t('words.to')}
-                            </Text>
-                            <Pressable
-                                style={styles(theme).detailItem}
-                                onPress={() => {
-                                    Clipboard.setString(txn.bitcoin?.address!)
-                                    toast?.show(
-                                        t('phrases.copied-bitcoin-address'),
-                                    )
-                                }}>
-                                <Text>
-                                    {stringUtils.truncateMiddleOfString(
-                                        txn.bitcoin.address,
-                                        5,
-                                    )}
-                                </Text>
-                                <SvgImage name="Copy" size={SvgImageSize.sm} />
-                            </Pressable>
-                        </View>
+                                    : t('words.to')
+                            }
+                            value={txn.bitcoin.address}
+                            copiedMessage={t('phrases.copied-bitcoin-address')}
+                            copyable
+                            truncated
+                        />
                     )}
                     {txidDetailItem}
                 </>
@@ -135,21 +104,17 @@ const TransactionDetail = ({
     }
 
     return (
-        <Pressable style={styles(theme).container} onPress={Keyboard.dismiss}>
+        <Pressable style={style.container} onPress={Keyboard.dismiss}>
             <TouchableOpacity
-                style={styles(theme).closeIconContainer}
+                style={style.closeIconContainer}
                 onPress={() => {
                     submitUpdatedNote()
                     handleCloseModal()
                 }}>
                 <SvgImage name="Close" size={SvgImageSize.md} />
             </TouchableOpacity>
-            <SvgImage
-                name="BitcoinCircle"
-                size={SvgImageSize.lg}
-                color={theme.colors.orange}
-            />
-            <Text style={styles(theme).detailTitle}>
+            <TransactionIcon txn={txn} />
+            <Text style={style.detailTitle}>
                 {makeTxnDetailTitleText(t, txn)}
             </Text>
             {txn.amount !== 0 && (
@@ -157,73 +122,69 @@ const TransactionDetail = ({
                     amountUtils.msatToSat(txn.amount),
                 )} ${t('words.sats')}`}</Text>
             )}
-            <View style={styles(theme).detailItemsContainer}>
-                <Divider />
-                <View style={styles(theme).detailItem}>
-                    <Text>{`${t('words.memo')}`}</Text>
-                    {/* TODO: Refactor notes to be distinct from memo */}
-                    <Text>{txn.notes}</Text>
-                </View>
-                <Divider />
-                <View style={styles(theme).detailItem}>
-                    <Text>{`${t('words.time')}`}</Text>
-                    <Text>{`${dateUtils.formatTimestamp(
+            <View style={style.detailItemsContainer}>
+                <TransactionDetailItem
+                    label={t('words.time')}
+                    value={dateUtils.formatTimestamp(
                         txn.createdAt,
                         'MMM dd yyyy, h:mmaaa',
-                    )}`}</Text>
-                </View>
-                <Divider />
+                    )}
+                />
                 {renderTxnDetails()}
-                <Divider />
                 {txnFee !== null && (
-                    <View style={styles(theme).detailItem}>
-                        <Text>{`${t('words.fee')}`}</Text>
-                        <Text>{`${amountUtils.msatToSat(txnFee)} ${t(
+                    <TransactionDetailItem
+                        label={t('words.fee')}
+                        value={`${amountUtils.msatToSat(txnFee)} ${t(
                             'words.sats',
-                        )}`}</Text>
-                    </View>
+                        )}`}
+                    />
                 )}
-                <View>
-                    <View style={styles(theme).detailItem}>
-                        <Text>{`${t('words.status')}`}</Text>
-                        <Text>{makeTxnDetailStatusText(t, txn)}</Text>
-                    </View>
-                </View>
-                <Divider />
-                <Pressable
-                    style={styles(theme).detailItem}
+                <TransactionDetailItem
+                    label={t('words.status')}
+                    value={makeTxnDetailStatusText(t, txn)}
+                />
+                {/* TODO: Separate memo from notes, since LN invoices have their own memos
+                <TransactionDetailItem
+                    label={t('words.memo')}
+                    value={txn.notes}
+                />
+                */}
+                <TransactionDetailItem
+                    label={`${t('phrases.add-note')} +`}
+                    value={
+                        <Input
+                            ref={(ref: any) => {
+                                inputRef.current = ref
+                            }}
+                            onChangeText={onNotesInputChanged}
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => {
+                                setIsFocused(false)
+                                submitUpdatedNote()
+                            }}
+                            value={notes}
+                            placeholder={t('words.optional')}
+                            returnKeyType="done"
+                            containerStyle={style.inputOuterContainer}
+                            inputContainerStyle={[
+                                style.inputInnerContainer,
+                                isFocused
+                                    ? style.focusedInputInnerContainer
+                                    : {},
+                            ]}
+                            inputStyle={[
+                                style.input,
+                                isFocused ? style.focusedInput : {},
+                            ]}
+                            multiline
+                        />
+                    }
                     onPress={() => {
                         if (!inputRef.current) return
                         const current: TextInput = inputRef.current
                         current.focus()
-                    }}>
-                    <Text>{`${t('phrases.add-note')} +`}</Text>
-                    <Input
-                        ref={(ref: any) => {
-                            inputRef.current = ref
-                        }}
-                        onChangeText={onNotesInputChanged}
-                        onFocus={() => setIsFocused(true)}
-                        onBlur={() => {
-                            setIsFocused(false)
-                            submitUpdatedNote()
-                        }}
-                        value={notes}
-                        placeholder={t('words.optional')}
-                        returnKeyType="done"
-                        containerStyle={styles(theme).inputOuterContainer}
-                        inputContainerStyle={[
-                            styles(theme).inputInnerContainer,
-                            isFocused
-                                ? styles(theme).focusedInputInnerContainer
-                                : {},
-                        ]}
-                        inputStyle={[
-                            styles(theme).input,
-                            isFocused ? styles(theme).focusedInput : {},
-                        ]}
-                    />
-                </Pressable>
+                    }}
+                />
             </View>
         </Pressable>
     )
@@ -237,7 +198,6 @@ const styles = (theme: Theme) =>
         },
         container: {
             alignItems: 'center',
-            margin: theme.spacing.md,
             width: '100%',
         },
         closeIconContainer: {
@@ -245,35 +205,33 @@ const styles = (theme: Theme) =>
         },
         detailItemsContainer: {
             marginTop: theme.spacing.xl,
-            width: '90%',
-        },
-        detailItem: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            height: 36,
+            gap: theme.spacing.xs,
+            width: '100%',
         },
         detailTitle: {
             marginVertical: theme.spacing.sm,
         },
         inputOuterContainer: {
-            width: '70%',
+            flex: 1,
             height: '100%',
             flexDirection: 'row',
             alignItems: 'center',
             paddingRight: 0,
+            minHeight: 0,
         },
         inputInnerContainer: {
             borderBottomColor: 'transparent',
-            height: '100%',
             width: '100%',
+            height: 'auto',
+            minHeight: 0,
         },
         focusedInputInnerContainer: {
             borderBottomColor: theme.colors.primary,
         },
         input: {
-            fontSize: 14,
+            fontSize: 12,
             textAlign: 'right',
+            minHeight: 0,
         },
         focusedInput: {
             // marginBottom: 0,
