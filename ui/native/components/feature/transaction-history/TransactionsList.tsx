@@ -62,6 +62,7 @@ const TransactionsList = ({
                     offset: 56 * index,
                     index,
                 })}
+                initialNumToRender={20}
                 onEndReached={isV1Federation ? loadMoreTransactions : undefined}
                 onEndReachedThreshold={0.9}
             />
