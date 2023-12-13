@@ -348,6 +348,21 @@
             "stable-balance-enabled-info": "Permite la capacidad de convertir sats en moneda estable",
             "wants-to-pay-you": "{{fedimod}} quiere pagarte"
         },
+        "nostr": {
+            "kind-application-data": "Datos específicos de la aplicación",
+            "kind-authentication": "Iniciar sesión con Nostr",
+            "kind-connect": "Nostr conectar",
+            "kind-default": "mensaje de nosotros",
+            "kind-encrypted-dm": "mensaje cifrado",
+            "kind-highlight": "Destacar",
+            "kind-metadata": "Metadatos",
+            "kind-note": "Nota de texto breve",
+            "kind-reaction": "Reacción",
+            "kind-repost": "Volver a publicar",
+            "kind-zap": "Borrar",
+            "kind-zap-request": "Solicitud de descarga",
+            "wants-you-to-sign": "{{fediMod}} quiere que firmes"
+        },
         "omni": {
             "action-enter-ln-address": "Ingrese la dirección relámpago",
             "action-enter-username": "Introduce nombre de usuario",

@@ -348,6 +348,21 @@
             "stable-balance-enabled-info": "Permet de convertir des sats en monnaie stable",
             "wants-to-pay-you": "{{fedimod}} souhaite vous payer"
         },
+        "nostr": {
+            "kind-application-data": "Données spécifiques à l'application",
+            "kind-authentication": "Connectez-vous avec Nostr",
+            "kind-connect": "Notre connexion",
+            "kind-default": "Message Nostr",
+            "kind-encrypted-dm": "Message crypté",
+            "kind-highlight": "Souligner",
+            "kind-metadata": "Métadonnées",
+            "kind-note": "Note de texte courte",
+            "kind-reaction": "Réaction",
+            "kind-repost": "Republier",
+            "kind-zap": "Zapper",
+            "kind-zap-request": "Demande de zapping",
+            "wants-you-to-sign": "{{fediMod}} veut que vous signiez"
+        },
         "omni": {
             "action-enter-ln-address": "Entrez l'adresse Lightning",
             "action-enter-username": "Saisissez votre nom d'utilisateur",

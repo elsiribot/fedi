@@ -348,6 +348,21 @@
             "stable-balance-enabled-info": "Memungkinkan kemampuan untuk mengkonversi sats ke mata uang stabil",
             "wants-to-pay-you": "{{fediMod}} ingin membayar kamu"
         },
+        "nostr": {
+            "kind-application-data": "Data khusus aplikasi",
+            "kind-authentication": "Masuk dengan Nostr",
+            "kind-connect": "Kami terhubung",
+            "kind-default": "Pesan hidung",
+            "kind-encrypted-dm": "Pesan terenkripsi",
+            "kind-highlight": "Menyorot",
+            "kind-metadata": "Metadata",
+            "kind-note": "Catatan teks singkat",
+            "kind-reaction": "Reaksi",
+            "kind-repost": "Posting ulang",
+            "kind-zap": "Pertengkaran",
+            "kind-zap-request": "permintaan Zap",
+            "wants-you-to-sign": "{{fediMod}} ingin Anda menandatanganinya"
+        },
         "omni": {
             "action-enter-ln-address": "Masukkan alamat petir",
             "action-enter-username": "Masukkan nama pengguna",

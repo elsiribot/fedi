@@ -351,18 +351,18 @@
             "wants-to-pay-you": "{{fediMod}} wants to pay you"
         },
         "nostr": {
-            "kind-metadata": "Metadata",
-            "kind-note": "Short text note",
-            "kind-encrypted-dm": "Encrypted message",
-            "kind-repost": "Repost",
-            "kind-reaction": "Reaction",
-            "kind-zap-request": "Zap request",
-            "kind-zap": "Zap",
-            "kind-highlight": "Highlight",
+            "kind-application-data": "Application-specific data",
             "kind-authentication": "Sign in with Nostr",
             "kind-connect": "Nostr connect",
-            "kind-application-data": "Application-specific data",
             "kind-default": "Nostr message",
+            "kind-encrypted-dm": "Encrypted message",
+            "kind-highlight": "Highlight",
+            "kind-metadata": "Metadata",
+            "kind-note": "Short text note",
+            "kind-reaction": "Reaction",
+            "kind-repost": "Repost",
+            "kind-zap": "Zap",
+            "kind-zap-request": "Zap request",
             "wants-you-to-sign": "{{fediMod}} wants you to sign"
         },
         "omni": {
