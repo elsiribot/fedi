@@ -1,5 +1,5 @@
 import { TFunction } from 'i18next'
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { RequestInvoiceArgs } from 'webln'
 
 import {
@@ -207,9 +207,31 @@ export function useAmountInput(
                 fiat = fiat / 10
             }
 
-            const sats = clampSats(
+            let sats = clampSats(
                 amountUtils.btcToSat((fiat / btcToFiatRateRef.current) as Btc),
             )
+
+            // If the amount is being entered as fiat, the equivalent amount in sats
+            // will sometimes be slightly above or below the min/max (in sats)
+            // UX expectation is that the entered amount is exactly equal to the min/max amount
+            // This logic ensures to round the min/max (in fiat) down to the nearest 0.01 to
+            // include the entered amount into the rounding threshold to qualify as a min/max input
+            if (minimumAmount) {
+                const minFiat =
+                    amountUtils.satToBtc(minimumAmount as Sats) *
+                    btcToFiatRateRef.current
+                if (Number(minFiat.toFixed(2)) === fiat && fiat > 0) {
+                    sats = minimumAmount
+                }
+            }
+            if (maximumAmount) {
+                const maxFiat =
+                    amountUtils.satToBtc(maximumAmount as Sats) *
+                    btcToFiatRateRef.current
+                if (Number(maxFiat.toFixed(2)) === fiat && fiat > 0) {
+                    sats = maximumAmount
+                }
+            }
 
             onChangeAmount && onChangeAmount(sats)
             setFiatValue(
@@ -217,7 +239,14 @@ export function useAmountInput(
             )
             setSatsValue(amountUtils.formatSats(sats))
         },
-        [currency, clampSats, btcToFiatRateRef, onChangeAmount],
+        [
+            currency,
+            clampSats,
+            btcToFiatRateRef,
+            maximumAmount,
+            minimumAmount,
+            onChangeAmount,
+        ],
     )
 
     const handleNumpadPress = useCallback(
@@ -263,42 +292,6 @@ export function useAmountInput(
             } as const
         }
     }, [amount, btcToFiatRateRef, minimumAmount, maximumAmount])
-
-    // If the amount is being entered as fiat, the equivalent amount in sats
-    // will sometimes be slightly above or below the min/max (in sats)
-    // UX expectation is that the entered amount is exactly equal to the min/max amount
-    // This logic ensures to round the min/max (in fiat) down to the nearest 0.01 to
-    // include the entered amount into the rounding threshold to qualify as a min/max input
-    useEffect(() => {
-        if (isFiat) {
-            const fiat = amountUtils.parseFiatString(fiatValue)
-            if (maximumAmount) {
-                const maxFiat =
-                    amountUtils.satToBtc(maximumAmount as Sats) *
-                    btcToFiatRateRef.current
-                if (Number(maxFiat.toFixed(2)) === fiat && fiat > 0) {
-                    onChangeAmount && onChangeAmount(maximumAmount)
-                    setSatsValue(amountUtils.formatSats(maximumAmount))
-                }
-            }
-            if (minimumAmount) {
-                const minFiat =
-                    amountUtils.satToBtc(minimumAmount as Sats) *
-                    btcToFiatRateRef.current
-                if (Number(minFiat.toFixed(2)) === fiat && fiat > 0) {
-                    onChangeAmount && onChangeAmount(minimumAmount)
-                    setSatsValue(amountUtils.formatSats(minimumAmount))
-                }
-            }
-        }
-    }, [
-        btcToFiatRateRef,
-        fiatValue,
-        isFiat,
-        maximumAmount,
-        minimumAmount,
-        onChangeAmount,
-    ])
 
     return {
         isFiat,
