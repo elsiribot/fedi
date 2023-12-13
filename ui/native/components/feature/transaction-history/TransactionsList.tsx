@@ -59,8 +59,8 @@ const TransactionsList = ({
                 // optimization that allows skipping the measurement of dynamic content
                 // for fixed-size list items
                 getItemLayout={(_, index) => ({
-                    length: 56, // 38 height + 16 margin
-                    offset: 56 * index,
+                    length: 62, // 38 height + 24 margin
+                    offset: 62 * index,
                     index,
                 })}
                 initialNumToRender={20}

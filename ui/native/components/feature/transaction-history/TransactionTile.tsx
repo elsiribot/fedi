@@ -90,7 +90,7 @@ const styles = (theme: Theme) =>
             gap: theme.spacing.md,
             paddingHorizontal: theme.spacing.xl,
             backgroundColor: theme.colors.secondary,
-            marginBottom: theme.spacing.lg,
+            marginBottom: theme.spacing.xl,
         },
         centerContainer: {
             flex: 1,
