@@ -528,14 +528,22 @@ export function useWithdrawForm() {
  * that increases the stable USD balance in the wallet
  */
 export function useDepositForm() {
+    const btcToFiatRate = useCommonSelector(selectBtcExchangeRate)
+    const currency = useCommonSelector(selectCurrency)
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
     const { minimumAmount, maximumAmount } = useMinMaxDepositAmount()
+
+    const maximumFiatAmount = amountUtils.formatFiat(
+        amountUtils.satToFiat(maximumAmount, btcToFiatRate),
+        currency,
+    )
 
     return {
         inputAmount,
         setInputAmount,
         minimumAmount,
         maximumAmount,
+        maximumFiatAmount,
     }
 }
 
