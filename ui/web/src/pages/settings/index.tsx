@@ -59,13 +59,7 @@ function AdminPage() {
 
     const handleConfirmLeaveFederation = useCallback(async () => {
         if (!federationId) return
-        // TODO: This is temporarily disabled due to WASM not implementing this yet.
-        // Once that's ready, remove this toast and remove !window below.
-        showToast({
-            content:
-                'Leave federation does not work in the PWA right now sorry :(',
-        })
-        if (canLeaveFederation && !window) {
+        if (canLeaveFederation) {
             try {
                 await dispatch(leaveFederation({ fedimint, federationId }))
             } catch (err) {
