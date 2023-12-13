@@ -53,7 +53,17 @@ const SelectedFederationHeader: React.FC<{}> = () => {
         <SafeAreaView
             edges={['top', 'left', 'right']}
             style={styles(theme).container}>
-            <Pressable style={style.federation} onPress={openFederationsDrawer}>
+            <Pressable
+                style={[
+                    style.federation,
+                    hasNewChatActivityInOtherFeds
+                        ? {
+                              marginRight: theme.spacing.sm,
+                              paddingHorizontal: theme.spacing.md,
+                          }
+                        : {},
+                ]}
+                onPress={openFederationsDrawer}>
                 <FederationLogo federation={activeFederation} size={24} />
                 <Text
                     bold
@@ -113,8 +123,7 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'center',
             paddingVertical: theme.spacing.sm,
-            paddingHorizontal: theme.spacing.md,
-            marginHorizontal: theme.spacing.sm,
+            paddingHorizontal: theme.spacing.sm,
         },
         federationName: {
             maxWidth: '80%',
