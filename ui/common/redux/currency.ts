@@ -121,15 +121,14 @@ export const selectBtcExchangeRate = (s: CommonState) => {
     // provides the exchange rate directly if the default_currency
     // is selected
     // TODO: Remove me? Do we want to keep supporting this feature?
-    if (
-        metadata &&
-        metadata.default_currency &&
-        metadata.default_currency === selectedFiatCurrency
-    ) {
+    if (metadata) {
+        const defaultCurrency = getFederationDefaultCurrency(metadata)
+        if (defaultCurrency && defaultCurrency === selectedFiatCurrency) {
         const federationFixedExchangeRate =
             getFederationFixedExchangeRate(metadata)
         if (federationFixedExchangeRate) {
             return federationFixedExchangeRate
+            }
         }
     }
 
