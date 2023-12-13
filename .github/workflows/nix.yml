@@ -142,11 +142,23 @@ jobs:
             - name: Build fedi-fedimint-pkgs
               run: nix build -L .#ci.fedi-fedimint-pkgs
 
+            - name: Build fedi-fedimintd
+              run: nix build -L .#ci.fedi-fedimintd
+
+            - name: Build fedi-fedimint-cli
+              run: nix build -L .#ci.fedi-fedimint-cli
+
             - name: Build fedi-wasm
               run: nix build -L .#wasm32-unknown.ci.fedi-wasm
 
             - name: Build gateway-pkgs
               run: nix build -L .#gateway-pkgs
+
+            - name: Build gatewayd
+              run: nix build -L .#gatewayd
+
+            - name: Build gateway-cli
+              run: nix build -L .#gateway-cli
 
             - name: Build devops-cli
               run: nix build -L .#ci.devops-cli
