@@ -186,8 +186,7 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             width: '110%',
-            paddingHorizontal: theme.spacing.xxs,
-            // backgroundColor: 'lightblue',
+            paddingRight: theme.spacing.xxs,
         },
         labelsContainer: {
             // Makes sure very long federation names do not overflow
@@ -223,7 +222,7 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.red,
             height: theme.sizes.unreadIndicatorSize,
             width: theme.sizes.unreadIndicatorSize,
-            marginHorizontal: theme.spacing.xxs,
+            marginRight: theme.spacing.xs,
             borderRadius: theme.sizes.unreadIndicatorSize * 0.5,
         },
     })

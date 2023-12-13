@@ -53,15 +53,17 @@ const SelectedFederationHeader: React.FC<{}> = () => {
         <SafeAreaView
             edges={['top', 'left', 'right']}
             style={styles(theme).container}>
-            <Pressable style={style.federation} onPress={openFederationsDrawer}>
-                <View
-                    style={[
-                        style.unreadIndicator,
-                        hasNewChatActivityInOtherFeds
-                            ? { opacity: 1 }
-                            : { opacity: 0 },
-                    ]}
-                />
+            <Pressable
+                style={[
+                    style.federation,
+                    hasNewChatActivityInOtherFeds
+                        ? {
+                              marginRight: theme.spacing.sm,
+                              paddingHorizontal: theme.spacing.md,
+                          }
+                        : {},
+                ]}
+                onPress={openFederationsDrawer}>
                 <FederationLogo federation={activeFederation} size={24} />
                 <Text
                     bold
@@ -71,6 +73,14 @@ const SelectedFederationHeader: React.FC<{}> = () => {
                     {activeFederation?.name}
                 </Text>
                 <SvgImage name="ChevronRight" size={20} />
+                <View
+                    style={[
+                        style.unreadIndicator,
+                        hasNewChatActivityInOtherFeds
+                            ? { opacity: 1 }
+                            : { opacity: 0 },
+                    ]}
+                />
             </Pressable>
             {popupInfo && <PopupFederationCountdown />}
             {/* Display a small UI indicator for Fedi Nightly builds */}
@@ -112,7 +122,8 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: theme.spacing.sm,
+            paddingVertical: theme.spacing.sm,
+            paddingHorizontal: theme.spacing.sm,
         },
         federationName: {
             maxWidth: '80%',
@@ -128,8 +139,9 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.red,
             height: theme.sizes.unreadIndicatorSize,
             width: theme.sizes.unreadIndicatorSize,
-            marginHorizontal: theme.spacing.sm,
             borderRadius: theme.sizes.unreadIndicatorSize * 0.5,
+            position: 'absolute',
+            right: 0,
         },
     })
 
