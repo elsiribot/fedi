@@ -156,7 +156,7 @@ struct AddSiteArgs {
     #[arg(long)]
     url: String,
     #[arg(long)]
-    image_url: Option<String>,
+    image_url: String,
     #[arg(long)]
     position: Option<usize>,
 }
