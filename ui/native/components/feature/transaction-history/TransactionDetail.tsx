@@ -14,6 +14,7 @@ import { selectBtcExchangeRate, selectCurrency } from '@fedi/common/redux'
 import { Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
+import { hexToRgba } from '@fedi/common/utils/color'
 import {
     makeTxnDetailStatusText,
     makeTxnDetailTitleText,
@@ -121,7 +122,7 @@ const TransactionDetail = ({
                 {makeTxnDetailTitleText(t, txn)}
             </Text>
             {txn.amount !== 0 && (
-                <Text h2>{`${amountUtils.formatFiat(
+                <Text h2 medium>{`${amountUtils.formatFiat(
                     amountUtils.msatToFiat(txn.amount, btcExchangeRate),
                     currency,
                     { noSymbol: true },
@@ -187,6 +188,10 @@ const TransactionDetail = ({
                                 style.input,
                                 isFocused ? style.focusedInput : {},
                             ]}
+                            placeholderTextColor={hexToRgba(
+                                theme.colors.night,
+                                0.2,
+                            )}
                             multiline
                         />
                     }
@@ -195,6 +200,7 @@ const TransactionDetail = ({
                         const current: TextInput = inputRef.current
                         current.focus()
                     }}
+                    noBorder
                 />
             </View>
         </Pressable>
@@ -241,9 +247,10 @@ const styles = (theme: Theme) =>
             borderBottomColor: theme.colors.primary,
         },
         input: {
-            fontSize: 12,
+            fontSize: 14,
             textAlign: 'right',
             minHeight: 0,
+            paddingTop: 0,
         },
         focusedInput: {
             // marginBottom: 0,

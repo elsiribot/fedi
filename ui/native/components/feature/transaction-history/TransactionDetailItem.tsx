@@ -1,5 +1,5 @@
 import Clipboard from '@react-native-clipboard/clipboard'
-import { Text } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
@@ -11,6 +11,7 @@ import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 interface BaseProps {
     label: React.ReactNode
+    noBorder?: boolean
     onPress?: () => void
 }
 
@@ -32,14 +33,15 @@ const isStringProps = (props: Props): props is StringProps =>
 
 export const TransactionDetailItem: React.FC<Props> = props => {
     const { t } = useTranslation()
+    const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
 
-    const style = styles()
+    const style = styles(theme)
 
     let valueEl: React.ReactNode
     if (isStringProps(props)) {
         valueEl = (
-            <Text small>
+            <Text caption>
                 {props.truncated
                     ? stringUtils.truncateMiddleOfString(props.value, 5)
                     : props.value}
@@ -66,10 +68,14 @@ export const TransactionDetailItem: React.FC<Props> = props => {
         valueEl = props.value
     }
 
+    const containerStyle = [
+        style.container,
+        props.noBorder ? {} : style.containerBorder,
+    ]
     if (props.onPress) {
         return (
-            <Pressable style={style.container} onPress={props.onPress}>
-                <Text small medium>
+            <Pressable style={containerStyle} onPress={props.onPress}>
+                <Text caption medium>
                     {props.label}
                 </Text>
                 {valueEl}
@@ -77,8 +83,8 @@ export const TransactionDetailItem: React.FC<Props> = props => {
         )
     } else {
         return (
-            <View style={style.container}>
-                <Text small medium>
+            <View style={containerStyle}>
+                <Text caption medium>
                     {props.label}
                 </Text>
                 {valueEl}
@@ -87,13 +93,19 @@ export const TransactionDetailItem: React.FC<Props> = props => {
     }
 }
 
-const styles = () =>
+const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            minHeight: 24,
+            minHeight: 20,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
+        },
+        containerBorder: {
+            paddingBottom: theme.spacing.md,
+            marginBottom: theme.spacing.sm,
+            borderBottomWidth: 1,
+            borderBottomColor: theme.colors.extraLightGrey,
         },
         copyPressable: {
             flexDirection: 'row',
