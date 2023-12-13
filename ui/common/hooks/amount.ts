@@ -1,5 +1,5 @@
 import { TFunction } from 'i18next'
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { RequestInvoiceArgs } from 'webln'
 
 import {
@@ -217,7 +217,7 @@ export function useAmountInput(
             )
             setSatsValue(amountUtils.formatSats(sats))
         },
-        [clampSats, btcToFiatRateRef, onChangeAmount, currency],
+        [currency, clampSats, btcToFiatRateRef, onChangeAmount],
     )
 
     const handleNumpadPress = useCallback(
@@ -263,6 +263,42 @@ export function useAmountInput(
             } as const
         }
     }, [amount, btcToFiatRateRef, minimumAmount, maximumAmount])
+
+    // If the amount is being entered as fiat, the equivalent amount in sats
+    // will sometimes be slightly above or below the min/max (in sats)
+    // UX expectation is that the entered amount is exactly equal to the min/max amount
+    // This logic ensures to round the min/max (in fiat) down to the nearest 0.01 to
+    // include the entered amount into the rounding threshold to qualify as a min/max input
+    useEffect(() => {
+        if (isFiat) {
+            const fiat = amountUtils.parseFiatString(fiatValue)
+            if (maximumAmount) {
+                const maxFiat =
+                    amountUtils.satToBtc(maximumAmount as Sats) *
+                    btcToFiatRateRef.current
+                if (Number(maxFiat.toFixed(2)) === fiat && fiat > 0) {
+                    onChangeAmount && onChangeAmount(maximumAmount)
+                    setSatsValue(amountUtils.formatSats(maximumAmount))
+                }
+            }
+            if (minimumAmount) {
+                const minFiat =
+                    amountUtils.satToBtc(minimumAmount as Sats) *
+                    btcToFiatRateRef.current
+                if (Number(minFiat.toFixed(2)) === fiat && fiat > 0) {
+                    onChangeAmount && onChangeAmount(minimumAmount)
+                    setSatsValue(amountUtils.formatSats(minimumAmount))
+                }
+            }
+        }
+    }, [
+        btcToFiatRateRef,
+        fiatValue,
+        isFiat,
+        maximumAmount,
+        minimumAmount,
+        onChangeAmount,
+    ])
 
     return {
         isFiat,
