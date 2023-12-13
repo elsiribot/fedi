@@ -343,8 +343,6 @@
             "fedimod-url": "URL del Fedi Mod",
             "login-failed": "Error de inicio de sesión",
             "login-to": "Iniciar sesión en",
-            "nostr-enabled": "Nostr",
-            "nostr-enabled-info": "Incorpora extensiones Nostr (NIP07) en el navegador al abrir Fedi Mods",
             "payment-request": "Solicitud de pago de {{fediMod}}",
             "stable-balance-enabled": "Saldo estable",
             "stable-balance-enabled-info": "Permite la capacidad de convertir sats en moneda estable",

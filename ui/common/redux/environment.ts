@@ -9,7 +9,6 @@ import { loadFromStorage } from './storage'
 const initialState = {
     developerMode: false,
     fedimodDebugMode: false,
-    nostrEnabled: false,
     onchainDepositsEnabled: false,
     stableBalanceEnabled: false,
     language: null as string | null,
@@ -29,9 +28,6 @@ export const environmentSlice = createSlice({
         },
         setFediModDebugMode(state, action: PayloadAction<boolean>) {
             state.fedimodDebugMode = action.payload
-        },
-        setNostrEnabled(state, action: PayloadAction<boolean>) {
-            state.nostrEnabled = action.payload
         },
         setAmountInputType(
             state,
@@ -76,7 +72,6 @@ export const environmentSlice = createSlice({
 export const {
     setDeveloperMode,
     setFediModDebugMode,
-    setNostrEnabled,
     setAmountInputType,
     setOnchainDepositsEnabled,
     setStableBalanceEnabled,
@@ -98,8 +93,6 @@ export const selectDeveloperMode = (s: CommonState) =>
 
 export const selectFediModDebugMode = (s: CommonState) =>
     s.environment.fedimodDebugMode
-
-export const selectNostrEnabled = (s: CommonState) => s.environment.nostrEnabled
 
 export const selectOnchainDepositsEnabled = (s: CommonState) =>
     s.environment.onchainDepositsEnabled

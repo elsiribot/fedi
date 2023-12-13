@@ -343,8 +343,6 @@
             "fedimod-url": "URL Mod Fedi",
             "login-failed": "Gagal masuk",
             "login-to": "Masuk ke",
-            "nostr-enabled": "Nostr",
-            "nostr-enabled-info": "Menyuntikkan ekstensi Nostr (NIP07) ke browser saat membuka Fedi Mods",
             "payment-request": "Permintaan pembayaran dari {{fediMod}}",
             "stable-balance-enabled": "Saldo Stabil",
             "stable-balance-enabled-info": "Memungkinkan kemampuan untuk mengkonversi sats ke mata uang stabil",

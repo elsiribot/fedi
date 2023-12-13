@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import {
     selectActiveFederation,
     selectFederationMetadata,
-    selectNostrEnabled,
     selectOnchainDepositsEnabled,
 } from '../redux'
 import { Federation } from '../types'
@@ -79,8 +78,6 @@ export function useIsOnchainDepositSupported() {
 
 export function useIsNostrEnabled() {
     const activeFederation = useCommonSelector(selectActiveFederation)
-    const isNostrEnabled = useCommonSelector(selectNostrEnabled)
-    if (isNostrEnabled) return true
     if (!activeFederation) return false
     return shouldEnableNostr(activeFederation)
 }
