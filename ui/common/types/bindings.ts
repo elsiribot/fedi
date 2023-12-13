@@ -426,6 +426,12 @@ export interface RpcModuleFediFeeSchedule {
     receivePpm: number
 }
 
+export type RpcOOBReissueState =
+    | { type: 'created' }
+    | { type: 'issuing' }
+    | { type: 'done' }
+    | { type: 'failed'; error: string }
+
 export type RpcOOBSpendState =
     | { type: 'created' }
     | { type: 'userCanceledProcessing' }
@@ -434,7 +440,7 @@ export type RpcOOBSpendState =
     | { type: 'refunded' }
     | { type: 'success' }
 
-export type RpcOOBState = { type: 'spend' } & RpcOOBSpendState
+export type RpcOOBState = RpcOOBSpendState | RpcOOBReissueState
 
 export type RpcOnchainDepositState =
     | { type: 'waitingForTransaction' }

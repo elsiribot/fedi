@@ -539,14 +539,15 @@ pub enum RpcLnReceiveState {
     Claimed,
 }
 
-#[derive(Debug, Serialize, Deserialize, TS)]
+#[derive(Debug, Serialize, Deserialize, TS, Clone)]
 #[serde(rename_all = "camelCase")]
-#[serde(tag = "type")]
+#[serde(untagged)]
 #[ts(export, export_to = "target/bindings/")]
 pub enum RpcOOBState {
     Spend(RpcOOBSpendState),
+    Reissue(RpcOOBReissueState),
 }
-#[derive(Debug, Serialize, Deserialize, TS)]
+#[derive(Debug, Serialize, Deserialize, TS, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
 #[ts(export, export_to = "target/bindings/")]
@@ -557,6 +558,17 @@ pub enum RpcOOBSpendState {
     UserCanceledFailure,
     Refunded,
     Success,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS, Clone)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcOOBReissueState {
+    Created,
+    Issuing,
+    Done,
+    Failed { error: String },
 }
 
 impl RpcOOBState {
@@ -576,6 +588,18 @@ impl RpcOOBState {
             fedimint_mint_client::SpendOOBState::Refunded => RpcOOBSpendState::Refunded,
         };
         Self::Spend(state)
+    }
+
+    pub fn from_reissue_v2(state: fedimint_mint_client::ReissueExternalNotesState) -> Self {
+        let state = match state {
+            fedimint_mint_client::ReissueExternalNotesState::Created => RpcOOBReissueState::Created,
+            fedimint_mint_client::ReissueExternalNotesState::Issuing => RpcOOBReissueState::Issuing,
+            fedimint_mint_client::ReissueExternalNotesState::Done => RpcOOBReissueState::Done,
+            fedimint_mint_client::ReissueExternalNotesState::Failed(error) => {
+                RpcOOBReissueState::Failed { error }
+            }
+        };
+        Self::Reissue(state)
     }
 }
 
