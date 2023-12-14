@@ -1,24 +1,49 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
-import { selectActiveFederation } from '@fedi/common/redux'
+import { leaveFederation, selectActiveFederation } from '@fedi/common/redux'
 import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
-import { useAppSelector } from '../hooks'
+import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 import { Button } from './Button'
+import { ConfirmDialog } from './ConfirmDialog'
 import { ContentBlock } from './ContentBlock'
 import { FederationAvatar } from './FederationAvatar'
 import * as Layout from './Layout'
 import { Text } from './Text'
 
 export const PopupFederationOver: React.FC = () => {
+    const dispatch = useAppDispatch()
     const { t } = useTranslation()
+    const { showErrorToast } = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
     const popupInfo = usePopupFederationInfo()
+    const [isLeavingFederation, setIsLeavingFederation] = useState(false)
 
     if (!activeFederation || !popupInfo) return null
+
+    const handleLeaveFederation = () => {
+        setIsLeavingFederation(true)
+    }
+
+    const handleConfirmLeaveFederation = async () => {
+        if (!activeFederation) return
+        try {
+            await dispatch(
+                leaveFederation({
+                    fedimint,
+                    federationId: activeFederation.id,
+                }),
+            )
+        } catch (err) {
+            showErrorToast(err, 'errors.unknown-error')
+            return
+        }
+        setIsLeavingFederation(false)
+    }
 
     const tosUrl = getFederationTosUrl(activeFederation?.meta)
 
@@ -45,14 +70,30 @@ export const PopupFederationOver: React.FC = () => {
                         </Text>
                     </Container>
                 </Layout.Content>
-                {tosUrl && (
-                    <Layout.Actions>
+                <Layout.Actions>
+                    {tosUrl && (
                         <Button width="full" variant="secondary" href={tosUrl}>
                             {t('phrases.terms-and-conditions')}
                         </Button>
-                    </Layout.Actions>
-                )}
+                    )}
+                    <Button
+                        variant="primary"
+                        width="full"
+                        onClick={handleLeaveFederation}
+                        loading={isLeavingFederation}>
+                        {t('feature.federations.leave-federation')}
+                    </Button>
+                </Layout.Actions>
             </Layout.Root>
+            <ConfirmDialog
+                open={isLeavingFederation}
+                title={t('feature.federations.leave-federation')}
+                description={t(
+                    'feature.federations.leave-federation-confirmation',
+                )}
+                onClose={() => setIsLeavingFederation(false)}
+                onConfirm={handleConfirmLeaveFederation}
+            />
         </ContentBlock>
     )
 }

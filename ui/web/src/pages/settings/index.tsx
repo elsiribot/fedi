@@ -47,7 +47,7 @@ function AdminPage() {
     const dispatch = useAppDispatch()
     const member = useAppSelector(selectAuthenticatedMember)
     const activeFederation = useAppSelector(selectActiveFederation)
-    const { showToast, showErrorToast } = useToast()
+    const { showErrorToast } = useToast()
     const [isInvitingMember, setIsInvitingMember] = useState(false)
     const [isLeavingFederation, setIsLeavingFederation] = useState(false)
     const isInviteSupported = useIsInviteSupported()
@@ -59,13 +59,7 @@ function AdminPage() {
 
     const handleConfirmLeaveFederation = useCallback(async () => {
         if (!federationId) return
-        // TODO: This is temporarily disabled due to WASM not implementing this yet.
-        // Once that's ready, remove this toast and remove !window below.
-        showToast({
-            content:
-                'Leave federation does not work in the PWA right now sorry :(',
-        })
-        if (canLeaveFederation && !window) {
+        if (canLeaveFederation) {
             try {
                 await dispatch(leaveFederation({ fedimint, federationId }))
             } catch (err) {
@@ -74,7 +68,7 @@ function AdminPage() {
             }
         }
         setIsLeavingFederation(false)
-    }, [canLeaveFederation, federationId, dispatch, showToast, showErrorToast])
+    }, [canLeaveFederation, federationId, dispatch, showErrorToast])
 
     let menu: Menu = [
         {
