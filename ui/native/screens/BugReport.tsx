@@ -36,7 +36,7 @@ import {
 
 const log = makeLog('BugReport')
 
-type Status =
+export type Status =
     | 'idle'
     | 'generating-data'
     | 'uploading-data'
