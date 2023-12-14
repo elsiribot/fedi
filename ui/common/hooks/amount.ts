@@ -220,7 +220,10 @@ export function useAmountInput(
                 const minFiat =
                     amountUtils.satToBtc(minimumAmount as Sats) *
                     btcToFiatRateRef.current
-                if (Number(minFiat.toFixed(2)) === fiat && fiat > 0) {
+                if (
+                    Number(minFiat.toFixed(2)) === Number(fiat.toFixed(2)) &&
+                    fiat > 0
+                ) {
                     sats = minimumAmount
                 }
             }
@@ -228,7 +231,11 @@ export function useAmountInput(
                 const maxFiat =
                     amountUtils.satToBtc(maximumAmount as Sats) *
                     btcToFiatRateRef.current
-                if (Number(maxFiat.toFixed(2)) === fiat && fiat > 0) {
+
+                if (
+                    Number(maxFiat.toFixed(2)) === Number(fiat.toFixed(2)) &&
+                    fiat > 0
+                ) {
                     sats = maximumAmount
                 }
             }
