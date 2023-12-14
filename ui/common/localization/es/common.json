@@ -548,7 +548,7 @@
             "deposit-amount": "Cantidad del depósito",
             "deposit-from": "Depósito desde",
             "deposit-intiated": "Depósito iniciado",
-            "deposit-pending": "+{{amount}} {{currency}} depósito pendiente...",
+            "deposit-pending": "+{{amount}} depósito pendiente...",
             "deposit-time": "Tiempo de espera",
             "details-and-fee": "Detalles y detalles Tarifa",
             "enter-deposit-amount": "Ingrese el monto del depósito",
@@ -556,11 +556,11 @@
             "fees-paid": "Honorarios pagados",
             "pending-withdrawal-blocking": "Espere a que se procesen los retiros pendientes antes de realizar más depósitos o retiros.",
             "will-be-deposited": "{{amount}} se depositará en {{expectedWait}}",
-            "will-be-withdrawn": "{{amount}} {{currency}} se retirará en {{expectedWait}}",
+            "will-be-withdrawn": "{{amount}} se retirará en {{expectedWait}}",
             "withdraw-to": "Retraerse a",
             "withdrawal-amount": "Cantidad de retiro",
             "withdrawal-intiated": "Retiro iniciado",
-            "withdrawal-pending": "-{{amount}} {{currency}} retiro pendiente...",
+            "withdrawal-pending": "-{{amount}} retiro pendiente...",
             "withdrawal-time": "tiempo de retiro"
         },
         "wallet": {
