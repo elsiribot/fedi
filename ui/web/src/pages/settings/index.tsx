@@ -47,7 +47,7 @@ function AdminPage() {
     const dispatch = useAppDispatch()
     const member = useAppSelector(selectAuthenticatedMember)
     const activeFederation = useAppSelector(selectActiveFederation)
-    const { showToast, showErrorToast } = useToast()
+    const { showErrorToast } = useToast()
     const [isInvitingMember, setIsInvitingMember] = useState(false)
     const [isLeavingFederation, setIsLeavingFederation] = useState(false)
     const isInviteSupported = useIsInviteSupported()
@@ -68,7 +68,7 @@ function AdminPage() {
             }
         }
         setIsLeavingFederation(false)
-    }, [canLeaveFederation, federationId, dispatch, showToast, showErrorToast])
+    }, [canLeaveFederation, federationId, dispatch, showErrorToast])
 
     let menu: Menu = [
         {
