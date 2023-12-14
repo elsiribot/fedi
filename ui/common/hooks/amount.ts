@@ -207,9 +207,31 @@ export function useAmountInput(
                 fiat = fiat / 10
             }
 
-            const sats = clampSats(
+            let sats = clampSats(
                 amountUtils.btcToSat((fiat / btcToFiatRateRef.current) as Btc),
             )
+
+            // If the amount is being entered as fiat, the equivalent amount in sats
+            // will sometimes be slightly above or below the min/max (in sats)
+            // UX expectation is that the entered amount is exactly equal to the min/max amount
+            // This logic ensures to round the min/max (in fiat) down to the nearest 0.01 to
+            // include the entered amount into the rounding threshold to qualify as a min/max input
+            if (minimumAmount) {
+                const minFiat =
+                    amountUtils.satToBtc(minimumAmount as Sats) *
+                    btcToFiatRateRef.current
+                if (Number(minFiat.toFixed(2)) === fiat && fiat > 0) {
+                    sats = minimumAmount
+                }
+            }
+            if (maximumAmount) {
+                const maxFiat =
+                    amountUtils.satToBtc(maximumAmount as Sats) *
+                    btcToFiatRateRef.current
+                if (Number(maxFiat.toFixed(2)) === fiat && fiat > 0) {
+                    sats = maximumAmount
+                }
+            }
 
             onChangeAmount && onChangeAmount(sats)
             setFiatValue(
@@ -217,7 +239,14 @@ export function useAmountInput(
             )
             setSatsValue(amountUtils.formatSats(sats))
         },
-        [clampSats, btcToFiatRateRef, onChangeAmount, currency],
+        [
+            currency,
+            clampSats,
+            btcToFiatRateRef,
+            maximumAmount,
+            minimumAmount,
+            onChangeAmount,
+        ],
     )
 
     const handleNumpadPress = useCallback(
@@ -528,14 +557,22 @@ export function useWithdrawForm() {
  * that increases the stable USD balance in the wallet
  */
 export function useDepositForm() {
+    const btcToFiatRate = useCommonSelector(selectBtcExchangeRate)
+    const currency = useCommonSelector(selectCurrency)
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
     const { minimumAmount, maximumAmount } = useMinMaxDepositAmount()
+
+    const maximumFiatAmount = amountUtils.formatFiat(
+        amountUtils.satToFiat(maximumAmount, btcToFiatRate),
+        currency,
+    )
 
     return {
         inputAmount,
         setInputAmount,
         minimumAmount,
         maximumAmount,
+        maximumFiatAmount,
     }
 }
 
