@@ -3,68 +3,48 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
+import { selectBtcExchangeRate, selectCurrency } from '@fedi/common/redux'
 import { Transaction, TransactionDirection } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import { makeTxnStatusText } from '@fedi/common/utils/wallet'
 
-import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
+import { useAppSelector } from '../../../state/hooks'
+import { TransactionIcon } from './TransactionIcon'
 
 type TransactionTileProps = {
     txn: Transaction
     selectTransaction: (txn: Transaction) => void
 }
-type TxnSubIconProps = { svgName: string; color: string }
 
 const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const currency = useAppSelector(selectCurrency)
+    const btcExchangeRate = useAppSelector(selectBtcExchangeRate)
+
+    const style = styles(theme)
 
     const renderAmount = () => {
         if (txn.bitcoin && txn.amount === 0)
             return t('words.onchain').toLowerCase()
 
-        const formattedAmount = amountUtils.formatNumber(
-            amountUtils.msatToSat(txn.amount),
-        )
+        const fiatAmount = amountUtils.msatToFiat(txn.amount, btcExchangeRate)
+        const formattedAmount = amountUtils.formatFiat(fiatAmount, currency, {
+            noSymbol: true,
+        })
         const sign = txn.direction === TransactionDirection.send ? `-` : `+`
 
-        return `${sign}${formattedAmount} ${t('words.sats').toUpperCase()}`
-    }
-
-    const style = styles(theme)
-
-    const renderSubIcon = () => {
-        let subIconProps: TxnSubIconProps
-
-        if (txn.direction === TransactionDirection.send) {
-            subIconProps = {
-                svgName: 'ArrowUpBadge',
-                color: theme.colors.black,
-            }
-        } else if (
-            txn.lnState?.type === 'waitingForPayment' ||
-            (txn.bitcoin && txn.onchainState?.type !== 'claimed') ||
-            (txn.lightning && !txn.lnState)
-        ) {
-            subIconProps = {
-                svgName: 'PendingBadge',
-                color: theme.colors.fuschia,
-            }
-        } else {
-            subIconProps = {
-                svgName: 'ArrowDownBadge',
-                color: theme.colors.green,
-            }
-        }
-
         return (
-            <SvgImage
-                name={subIconProps.svgName as SvgImageName}
-                color={subIconProps.color}
-                size={SvgImageSize.xs}
-                containerStyle={style.txnBadge}
-            />
+            <View style={style.amountContainer}>
+                <Text caption medium>
+                    {sign}
+                    {formattedAmount}
+                </Text>
+                <Text tiny medium style={style.amountSuffix}>
+                    {currency}
+                </Text>
+            </View>
         )
     }
 
@@ -77,28 +57,24 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                 txn.onchainState?.type === 'waitingForTransaction'
                     ? style.pending
                     : {},
-            ]}>
-            <View style={style.leftContainer}>
-                <SvgImage
-                    name="BitcoinCircle"
-                    color={theme.colors.orange}
-                    size={SvgImageSize.md}
-                />
-                {renderSubIcon()}
-            </View>
+            ]}
+            hitSlop={4}>
+            <TransactionIcon txn={txn} />
             <View style={style.centerContainer}>
-                <Text>{makeTxnStatusText(t, txn)}</Text>
+                <Text caption medium>
+                    {makeTxnStatusText(t, txn)}
+                </Text>
                 {txn.notes && (
-                    <Text small numberOfLines={1}>
+                    <Text small numberOfLines={1} style={style.subText}>
                         {txn.notes}
                     </Text>
                 )}
             </View>
 
             <View style={style.rightContainer}>
-                <Text style={style.rightAlignedText}>{renderAmount()}</Text>
+                {renderAmount()}
                 <Text small style={[style.rightAlignedText, style.subText]}>
-                    {`${dateUtils.formatTxnTileTimestamp(txn.createdAt)}`}
+                    {dateUtils.formatTxnTileTimestamp(txn.createdAt)}
                 </Text>
             </View>
         </TouchableOpacity>
@@ -110,25 +86,23 @@ const styles = (theme: Theme) =>
         container: {
             flexDirection: 'row',
             alignItems: 'center',
-            height: 48,
             width: '100%',
             gap: theme.spacing.md,
             paddingHorizontal: theme.spacing.xl,
             backgroundColor: theme.colors.secondary,
-            marginVertical: theme.spacing.md,
-        },
-        leftContainer: {
-            flexShrink: 0,
+            marginBottom: theme.spacing.xl,
         },
         centerContainer: {
             flex: 1,
             width: '100%',
             flexDirection: 'column',
+            gap: 4,
         },
         rightContainer: {
             flexShrink: 0,
             flexDirection: 'column',
             justifyContent: 'flex-end',
+            gap: 4,
         },
         rightAlignedText: {
             textAlign: 'right',
@@ -139,10 +113,14 @@ const styles = (theme: Theme) =>
         pending: {
             opacity: 0.6,
         },
-        txnBadge: {
-            position: 'absolute',
-            left: -4,
-            top: -4,
+        amountContainer: {
+            flexDirection: 'row',
+            justifyContent: 'flex-end',
+            alignItems: 'flex-end',
+            gap: 2,
+        },
+        amountSuffix: {
+            paddingBottom: 1,
         },
     })
 
