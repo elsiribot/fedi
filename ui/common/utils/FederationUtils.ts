@@ -310,13 +310,13 @@ export const getFederationGroupChats = (
 export const getFederationFediMods = (
     metadata: ClientConfigMetadata,
 ): FediMod[] => {
-    const sites = getMetaField('sites', metadata)
+    const sites = getMetaField('fedimods', metadata)
     const fediModSchema: z.ZodSchema<FediMod[]> = z.array(
         z.object({
             id: z.string(),
             title: z.string(),
             url: z.string().url(),
-            imageUrl: z.string().url().optional(),
+            imageUrl: z.string().url().optional().nullable(),
             description: z.string().optional(),
             color: z.string().optional(),
         }),
