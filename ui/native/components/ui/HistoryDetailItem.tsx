@@ -6,8 +6,8 @@ import { Pressable, StyleSheet, View } from 'react-native'
 
 import stringUtils from '@fedi/common/utils/StringUtils'
 
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import { useEnvironmentContext } from '../../state/contexts/EnvironmentContext'
+import SvgImage, { SvgImageSize } from './SvgImage'
 
 interface BaseProps {
     label: React.ReactNode
@@ -26,12 +26,12 @@ interface ReactNodeProps extends BaseProps {
     value: React.ReactElement
 }
 
-type Props = StringProps | ReactNodeProps
+export type HistoryDetailItemProps = StringProps | ReactNodeProps
 
 const isStringProps = (props: Props): props is StringProps =>
     typeof props.value === 'string'
 
-export const TransactionDetailItem: React.FC<Props> = props => {
+export const HistoryDetailItem: React.FC<Props> = props => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state

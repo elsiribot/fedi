@@ -1,9 +1,9 @@
 import { useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet, View } from 'react-native'
 
 import { Transaction, TransactionDirection } from '../../../types'
-import SvgImage, { SvgImageName } from '../../ui/SvgImage'
+import { HistoryIcon, HistoryIconProps } from '../../ui/HistoryIcon'
+import SvgImage from '../../ui/SvgImage'
 
 interface Props {
     txn: Transaction
@@ -12,50 +12,26 @@ interface Props {
 export const TransactionIcon: React.FC<Props> = ({ txn }) => {
     const { theme } = useTheme()
 
-    let badgeSvgName: SvgImageName
-    let badgeColor: string
+    let badge: HistoryIconProps['badge']
     if (txn.direction === TransactionDirection.send) {
-        badgeSvgName = 'ArrowUpBadge'
-        badgeColor = theme.colors.black
+        badge = 'outgoing'
     } else if (
         txn.lnState?.type === 'waitingForPayment' ||
         (txn.bitcoin && txn.onchainState?.type !== 'claimed') ||
         (txn.lightning && !txn.lnState)
     ) {
-        badgeSvgName = 'PendingBadge'
-        badgeColor = theme.colors.fuschia
+        badge = 'pending'
     } else {
-        badgeSvgName = 'ArrowDownBadge'
-        badgeColor = theme.colors.green
+        badge = 'incoming'
     }
 
-    const style = styles()
-
     return (
-        <View style={style.container}>
+        <HistoryIcon badge={badge}>
             <SvgImage
                 name="BitcoinCircle"
                 color={theme.colors.orange}
-                size={38}
+                size={theme.sizes.historyIcon}
             />
-            <SvgImage
-                name={badgeSvgName}
-                color={badgeColor}
-                size={20}
-                containerStyle={style.badge}
-            />
-        </View>
+        </HistoryIcon>
     )
 }
-
-const styles = () =>
-    StyleSheet.create({
-        container: {
-            flexShrink: 0,
-        },
-        badge: {
-            position: 'absolute',
-            left: -6,
-            top: -6,
-        },
-    })

@@ -1,6 +1,8 @@
 import { TFunction } from 'i18next'
 
 import { Transaction, TransactionDirection } from '../types'
+import amountUtils from './AmountUtils'
+import dateUtils from './DateUtils'
 
 export const makePendingBalanceText = (
     t: TFunction,
@@ -188,4 +190,76 @@ export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
         default:
             return ''
     }
+}
+
+export interface DetailItem {
+    label: string
+    value: string
+    truncated?: boolean
+    copyable?: boolean
+    copiedMessage?: string
+}
+
+export const makeTxnDetailItems = (t: TFunction, txn: Transaction) => {
+    const items: DetailItem[] = [
+        {
+            label: t('phrases.bitcoin-equivalent'),
+            value: `${amountUtils.formatNumber(
+                amountUtils.msatToSat(txn.amount),
+            )} ${t('words.sats')}`,
+        },
+        {
+            label: t('words.time'),
+            value: dateUtils.formatTimestamp(
+                txn.createdAt,
+                'MMM dd yyyy, h:mmaaa',
+            ),
+        },
+    ]
+
+    if (txn.lightning) {
+        items.push({
+            label: t('phrases.lightning-request'),
+            value: txn.lightning.invoice,
+            copiedMessage: t('phrases.copied-lightning-request'),
+            copyable: true,
+            truncated: true,
+        })
+    }
+    if (txn.bitcoin) {
+        items.push({
+            label:
+                txn.onchainState?.type === 'waitingForTransaction'
+                    ? t('words.address')
+                    : t('words.to'),
+            value: txn.bitcoin.address,
+            copiedMessage: t('phrases.copied-bitcoin-address'),
+            copyable: true,
+            truncated: true,
+        })
+    }
+    if (txn.onchainState && 'txid' in txn.onchainState) {
+        items.push({
+            label: t('phrases.transaction-id'),
+            value: txn.onchainState.txid,
+            copiedMessage: t('phrases.copied-transaction-id'),
+            copyable: true,
+            truncated: true,
+        })
+    }
+
+    const txnFee = txn.lightning?.fee
+    if (typeof txnFee === 'number') {
+        items.push({
+            label: t('words.fee'),
+            value: `${amountUtils.msatToSat(txnFee)} ${t('words.sats')}`,
+        })
+    }
+
+    items.push({
+        label: t('words.status'),
+        value: makeTxnDetailStatusText(t, txn),
+    })
+
+    return items
 }

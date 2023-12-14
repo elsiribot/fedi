@@ -1,41 +1,47 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
 import { selectBtcExchangeRate, selectCurrency } from '@fedi/common/redux'
-import { Transaction, TransactionDirection } from '@fedi/common/types'
+import { MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
-import { makeTxnStatusText } from '@fedi/common/utils/wallet'
 
-import { useAppSelector } from '../../../state/hooks'
-import { TransactionIcon } from './TransactionIcon'
+import { useAppSelector } from '../../state/hooks'
 
-type TransactionTileProps = {
-    txn: Transaction
-    selectTransaction: (txn: Transaction) => void
+export interface HistoryRowProps {
+    icon: React.ReactNode
+    status: React.ReactNode
+    notes: React.ReactNode
+    amount: MSats | string
+    timestamp: number | undefined | null
+    direction?: 'incoming' | 'outgoing'
+    onSelect: () => void
 }
 
-const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
-    const { t } = useTranslation()
+export const HistoryRow: React.FC<HistoryRowProps> = ({
+    icon,
+    status,
+    notes,
+    amount,
+    timestamp,
+    direction,
+    onSelect,
+}) => {
     const { theme } = useTheme()
     const currency = useAppSelector(selectCurrency)
     const btcExchangeRate = useAppSelector(selectBtcExchangeRate)
 
     const style = styles(theme)
 
-    const renderAmount = () => {
-        if (txn.bitcoin && txn.amount === 0)
-            return t('words.onchain').toLowerCase()
-
-        const fiatAmount = amountUtils.msatToFiat(txn.amount, btcExchangeRate)
+    let amountNode: React.ReactNode
+    if (typeof amount === 'number') {
+        const fiatAmount = amountUtils.msatToFiat(amount, btcExchangeRate)
         const formattedAmount = amountUtils.formatFiat(fiatAmount, currency, {
             noSymbol: true,
         })
-        const sign = txn.direction === TransactionDirection.send ? `-` : `+`
-
-        return (
+        const sign = direction ? (direction === 'outgoing' ? `-` : `+`) : ''
+        amountNode = (
             <View style={style.amountContainer}>
                 <Text caption medium>
                     {sign}
@@ -46,36 +52,40 @@ const TransactionTile = ({ txn, selectTransaction }: TransactionTileProps) => {
                 </Text>
             </View>
         )
+    } else {
+        amountNode = (
+            <View style={style.amountContainer}>
+                <Text caption medium>
+                    {amount}
+                </Text>
+            </View>
+        )
     }
 
     return (
         <TouchableOpacity
-            onPress={() => selectTransaction(txn)}
-            style={[
-                style.container,
-                txn.bitcoin &&
-                txn.onchainState?.type === 'waitingForTransaction'
-                    ? style.pending
-                    : {},
-            ]}
+            onPress={() => onSelect()}
+            style={[style.container]}
             hitSlop={4}>
-            <TransactionIcon txn={txn} />
+            {icon}
             <View style={style.centerContainer}>
                 <Text caption medium>
-                    {makeTxnStatusText(t, txn)}
+                    {status}
                 </Text>
-                {txn.notes && (
+                {notes && (
                     <Text small numberOfLines={1} style={style.subText}>
-                        {txn.notes}
+                        {notes}
                     </Text>
                 )}
             </View>
 
             <View style={style.rightContainer}>
-                {renderAmount()}
-                <Text small style={[style.rightAlignedText, style.subText]}>
-                    {dateUtils.formatTxnTileTimestamp(txn.createdAt)}
-                </Text>
+                {amountNode}
+                {timestamp && (
+                    <Text small style={[style.rightAlignedText, style.subText]}>
+                        {dateUtils.formatTxnTileTimestamp(timestamp)}
+                    </Text>
+                )}
             </View>
         </TouchableOpacity>
     )
@@ -123,5 +133,3 @@ const styles = (theme: Theme) =>
             paddingBottom: 1,
         },
     })
-
-export default TransactionTile

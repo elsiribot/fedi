@@ -97,22 +97,30 @@ const Transactions: React.FC<Props> = () => {
             : undefined
     }, [transactionsList])
 
-    if (isLoading) return <ActivityIndicator />
+    let content: React.ReactNode
+    let centered = false
+    if (isLoading) {
+        content = <ActivityIndicator />
+        centered = true
+    } else if (transactionsList.length === 0) {
+        content = <Text>{t('phrases.no-transactions')}</Text>
+        centered = true
+    } else {
+        content = (
+            <TransactionsList
+                transactions={transactionsList}
+                loadMoreTransactions={
+                    isV0Federation ? undefined : getTransactionsList
+                }
+                updateTransactionInState={updateTransactionInState}
+                isV1Federation={false}
+            />
+        )
+    }
 
     return (
-        <View style={styles.container}>
-            {transactionsList.length === 0 ? (
-                <Text>{t('phrases.no-transactions')}</Text>
-            ) : (
-                <TransactionsList
-                    transactions={transactionsList}
-                    loadMoreTransactions={
-                        isV0Federation ? undefined : getTransactionsList
-                    }
-                    updateTransactionInState={updateTransactionInState}
-                    isV1Federation={false}
-                />
-            )}
+        <View style={[styles.container, centered ? styles.centered : {}]}>
+            {content}
         </View>
     )
 }
@@ -121,9 +129,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    contentContainer: {
+    centered: {
         alignItems: 'center',
-        justifyContent: 'space-evenly',
+        justifyContent: 'center',
     },
 })
 
