@@ -343,12 +343,25 @@
             "fedimod-url": "URL du module Fedi",
             "login-failed": "Échec de la connexion",
             "login-to": "Se connecter à",
-            "nostr-enabled": "Nostr",
-            "nostr-enabled-info": "Injecte les extensions Nostr (NIP07) dans le navigateur lors de l'ouverture de Fedi Mods",
             "payment-request": "Demande de paiement de {{fedimod}}",
             "stable-balance-enabled": "Solde stable",
             "stable-balance-enabled-info": "Permet de convertir des sats en monnaie stable",
             "wants-to-pay-you": "{{fedimod}} souhaite vous payer"
+        },
+        "nostr": {
+            "kind-application-data": "Données spécifiques à l'application",
+            "kind-authentication": "Connectez-vous avec Nostr",
+            "kind-connect": "Notre connexion",
+            "kind-default": "Message Nostr",
+            "kind-encrypted-dm": "Message crypté",
+            "kind-highlight": "Souligner",
+            "kind-metadata": "Métadonnées",
+            "kind-note": "Note de texte courte",
+            "kind-reaction": "Réaction",
+            "kind-repost": "Republier",
+            "kind-zap": "Zapper",
+            "kind-zap-request": "Demande de zapping",
+            "wants-you-to-sign": "{{fediMod}} veut que vous signiez"
         },
         "omni": {
             "action-enter-ln-address": "Entrez l'adresse Lightning",

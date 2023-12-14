@@ -343,12 +343,25 @@
             "fedimod-url": "URL Mod Fedi",
             "login-failed": "Gagal masuk",
             "login-to": "Masuk ke",
-            "nostr-enabled": "Nostr",
-            "nostr-enabled-info": "Menyuntikkan ekstensi Nostr (NIP07) ke browser saat membuka Fedi Mods",
             "payment-request": "Permintaan pembayaran dari {{fediMod}}",
             "stable-balance-enabled": "Saldo Stabil",
             "stable-balance-enabled-info": "Memungkinkan kemampuan untuk mengkonversi sats ke mata uang stabil",
             "wants-to-pay-you": "{{fediMod}} ingin membayar kamu"
+        },
+        "nostr": {
+            "kind-application-data": "Data khusus aplikasi",
+            "kind-authentication": "Masuk dengan Nostr",
+            "kind-connect": "Kami terhubung",
+            "kind-default": "Pesan hidung",
+            "kind-encrypted-dm": "Pesan terenkripsi",
+            "kind-highlight": "Menyorot",
+            "kind-metadata": "Metadata",
+            "kind-note": "Catatan teks singkat",
+            "kind-reaction": "Reaksi",
+            "kind-repost": "Posting ulang",
+            "kind-zap": "Pertengkaran",
+            "kind-zap-request": "permintaan Zap",
+            "wants-you-to-sign": "{{fediMod}} ingin Anda menandatanganinya"
         },
         "omni": {
             "action-enter-ln-address": "Masukkan alamat petir",

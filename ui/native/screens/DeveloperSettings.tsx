@@ -19,13 +19,11 @@ import {
     selectActiveFederation,
     selectFederationCustomFediMods,
     selectFediModDebugMode,
-    selectNostrEnabled,
     selectOnchainDepositsEnabled,
     setChatGroups,
     setChatMembersSeen,
     setChatMessages,
     setFediModDebugMode,
-    setNostrEnabled,
     setOnchainDepositsEnabled,
     selectStableBalanceEnabled,
     setStableBalanceEnabled,
@@ -82,7 +80,6 @@ const DeveloperSettings: React.FC<Props> = () => {
     const selectedFiatCurrency = useAppSelector(selectCurrency)
     const customFediMods = useAppSelector(selectFederationCustomFediMods)
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
-    const nostrEnabled = useAppSelector(selectNostrEnabled)
     const onchainDepositsEnabled = useAppSelector(selectOnchainDepositsEnabled)
     const stableBalanceEnabled = useAppSelector(selectStableBalanceEnabled)
 
@@ -222,22 +219,6 @@ const DeveloperSettings: React.FC<Props> = () => {
                         value={fediModDebugMode}
                         onValueChange={value => {
                             reduxDispatch(setFediModDebugMode(value))
-                        }}
-                    />
-                </View>
-                <View style={styles(theme).switchWrapper}>
-                    <View style={styles(theme).switchLabelContainer}>
-                        <Text caption style={styles(theme).switchLabel}>
-                            {t('feature.fedimods.nostr-enabled')}
-                        </Text>
-                        <Text small style={styles(theme).switchLabel}>
-                            {t('feature.fedimods.nostr-enabled-info')}
-                        </Text>
-                    </View>
-                    <Switch
-                        value={nostrEnabled}
-                        onValueChange={value => {
-                            reduxDispatch(setNostrEnabled(value))
                         }}
                     />
                 </View>

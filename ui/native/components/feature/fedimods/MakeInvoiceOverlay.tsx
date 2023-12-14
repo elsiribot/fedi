@@ -10,6 +10,7 @@ import { selectActiveFederationId } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
@@ -17,6 +18,8 @@ import { useAppSelector, useBridge } from '../../../state/hooks'
 import { FediMod, ParsedLnurlWithdraw } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
+
+const log = makeLog('MakeInvoiceOverlay')
 
 interface Props {
     fediMod: FediMod
@@ -85,6 +88,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
                 : await generateInvoice(msats, memo)
             onAcceptRef.current({ paymentRequest })
         } catch (error) {
+            log.error('Failed to generate invoice', error, lnurlWithdrawal)
             toast?.show(
                 formatErrorMessage(t, error, 'errors.unknown-error'),
                 3000,

@@ -40,13 +40,13 @@ export const AuthOverlay: React.FC<Props> = ({
             await lnurlAuth(fedimint, federationId, lnurlAuthRequest)
             onAccept()
         } catch (e) {
+            log.error('Failed to LNURL auth', e)
             toast?.show(t('feature.fedimods.login-failed'), 3000)
         }
         setIsLoading(false)
     }
 
     const handleReject = () => {
-        log.error('Login denied')
         onReject(new RejectionError('words.rejected'))
     }
 
