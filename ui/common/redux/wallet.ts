@@ -376,8 +376,8 @@ export const selectTotalLockedMsats = createSelector(
  * */
 export const selectTotalLockedCents = createSelector(
     selectStabilityPoolAccountInfo,
-    (s: CommonState) => selectBtcExchangeRate(s),
-    (stabilityPoolAccountInfo, btcExchangeRate): UsdCents => {
+    (s: CommonState) => selectBtcUsdExchangeRate(s),
+    (stabilityPoolAccountInfo, btcUsdExchangeRate): UsdCents => {
         if (!stabilityPoolAccountInfo) return 0 as UsdCents
 
         let totalLockedCents: UsdCents = 0 as UsdCents
@@ -393,9 +393,10 @@ export const selectTotalLockedCents = createSelector(
                     withdrawnAmountCents) as UsdCents
                 const feesPaidInFiat = amountUtils.msatToFiat(
                     feesPaidSoFar,
-                    btcExchangeRate,
+                    btcUsdExchangeRate,
                 )
-                const lockedFiatBalance = remainingAmountCents - feesPaidInFiat
+                const feedPaidInCents = feesPaidInFiat * 100
+                const lockedFiatBalance = remainingAmountCents - feedPaidInCents
                 result = result + lockedFiatBalance
 
                 return result
