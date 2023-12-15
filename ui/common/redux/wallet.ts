@@ -114,6 +114,7 @@ export const fetchStabilityPoolAccountInfo = createAsyncThunk<
         const accountInfo = await fedimint.stabilityPoolAccountInfo(
             federationId,
         )
+        log.info('stabilityPoolAccountInfo', accountInfo)
         dispatch(
             setStabilityPoolAccountInfo({
                 federationId,
@@ -275,6 +276,7 @@ export const decreaseStableBalance = createAsyncThunk<
             lockedBps,
             unlockedAmount,
             stableStagedSeeksMsats,
+            stableBalanceMsats,
         })
         const operationId = await fedimint.stabilityPoolWithdraw(
             lockedBps,
