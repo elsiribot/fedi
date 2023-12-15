@@ -18,7 +18,6 @@ import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog, exportLogs } from '@fedi/common/utils/log'
 import { makeTarGz, File } from '@fedi/common/utils/targz'
 
-import { Status } from '../../../../native/screens/BugReport'
 import { useAppSelector, useAutosizeTextArea, useToast } from '../../hooks'
 import { theme } from '../../styles'
 import { Button } from '../Button'
@@ -30,12 +29,18 @@ import { Switch } from '../Switch'
 import { Text } from '../Text'
 import { FileData, FileUploader } from './FileUploader'
 
+type Status =
+    | 'idle'
+    | 'generating-data'
+    | 'uploading-data'
+    | 'submitting-report'
+
 const log = makeLog('BugReport')
 
 /**
  * Exports application javascript logs and optionally other files as a tar.gz buffer.
  */
-export async function exportGzipLogs(files: Array<File> = []) {
+async function exportGzipLogs(files: Array<File> = []) {
     const jsLogs = await exportLogs()
 
     return await makeTarGz([
@@ -126,7 +131,6 @@ export default function BugReport() {
 
     return (
         <Form onSubmit={handleSubmit}>
-            <Text variant="h2">{t('feature.bug.report-a-bug')}</Text>
             <DescriptionContainer>
                 <DescriptionLabel variant="caption" weight="medium">
                     {t('feature.bug.description-label')}

@@ -1,4 +1,5 @@
 import Image, { StaticImageData } from 'next/image'
+import Link from 'next/link'
 import React from 'react'
 
 import { selectFederationFediMods } from '@fedi/common/redux'
@@ -44,7 +45,7 @@ export const FediModTiles: React.FC = () => {
             })}
 
             {/* Hardcoded for now */}
-            <FediModTile href="/bug-report">
+            <FediModTile href="/bug-report" as={Link}>
                 <FediModIcon
                     src={FEDIMOD_IMAGES['bug-report'] as StaticImageData}
                     as={Image}

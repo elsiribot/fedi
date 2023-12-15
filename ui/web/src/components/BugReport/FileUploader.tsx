@@ -1,8 +1,11 @@
 import { styled } from '@stitches/react'
+import { safebrowsing_v5 } from 'googleapis'
 import * as React from 'react'
 
 import Plus from '@fedi/common/assets/svgs/plus.svg'
+import { makeLog } from '@fedi/common/utils/log'
 
+import { useToast } from '../../hooks'
 import { theme } from '../../styles'
 import { Icon } from '../Icon'
 import { Text } from '../Text'
@@ -19,6 +22,8 @@ export type FileData = {
     fileName: string
 }
 
+const log = makeLog('FileUploader')
+
 export const FileUploader = ({
     files,
     setFiles,
@@ -26,6 +31,7 @@ export const FileUploader = ({
     files: Array<FileData>
     setFiles: React.Dispatch<React.SetStateAction<FileData[]>>
 }) => {
+    const toast = useToast()
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const evtFiles = event.target.files
         if (!evtFiles) return
@@ -53,6 +59,8 @@ export const FileUploader = ({
                     }
                 } else if (file.type.startsWith('video/')) {
                     applyVideo(file, reader.result as string)
+                } else {
+                    toast.showToast('Invalid file type provided')
                 }
             }
 
@@ -63,43 +71,101 @@ export const FileUploader = ({
     /**
      * Adds a video file to the `files` state variable and uses the first frame as a preview image.
      */
-    const applyVideo = (file: File, base64: string) => {
-        let width = 0
-        let height = 0
+    const applyVideo = async (file: File, base64: string) => {
+        try {
+            const video = document.createElement('video')
+            video.src = base64
 
-        const video = document.createElement('video')
-        video.src = base64
+            video.load()
 
-        video.load()
+            video.addEventListener('canplaythrough', () => {
+                const canvas = document.createElement('canvas')
+                const { videoWidth: width, videoHeight: height } = video
 
-        video.addEventListener('loadedmetadata', () => {
-            width = video.videoWidth
-            height = video.videoHeight
-        })
+                canvas.width = width
+                canvas.height = height
 
-        video.addEventListener('canplaythrough', () => {
+                const ctx = canvas.getContext('2d')
+                if (ctx) {
+                    ctx.fillStyle = '#bbb'
+                    ctx.fillRect(0, 0, width, height)
+
+                    // Draw a fallback camera icon in case the video is transparent
+                    ctx.lineWidth = 8
+                    ctx.lineJoin = 'round'
+                    ctx.strokeStyle = '#888'
+                    ctx.strokeRect(15, 25, 50, 50)
+                    ctx.stroke()
+                    ctx.beginPath()
+                    ctx.moveTo(65, 60)
+                    ctx.lineTo(65, 40)
+                    ctx.lineTo(85, 30)
+                    ctx.lineTo(85, 70)
+                    ctx.closePath()
+                    ctx.stroke()
+
+                    // Draw the video frame
+                    ctx.drawImage(video, 0, 0, width, height)
+                    video.remove()
+                }
+
+                const previewBase64 = canvas.toDataURL()
+
+                setFiles(prev => [
+                    ...prev,
+                    {
+                        id: Math.random().toString(36).slice(2),
+                        base64: base64,
+                        preview: previewBase64,
+                        width,
+                        height,
+                        size: file.size,
+                        type: file.type,
+                        fileName: file.name,
+                    },
+                ])
+
+                canvas.remove()
+            })
+
+            await video.play()
+        } catch (e) {
+            log.error('Could not play video', e)
+
             const canvas = document.createElement('canvas')
-            canvas.width = width
-            canvas.height = height
+
+            canvas.width = 100
+            canvas.height = 100
 
             const ctx = canvas.getContext('2d')
+
             if (ctx) {
                 ctx.fillStyle = '#bbb'
-                ctx.fillRect(0, 0, width, height)
-                ctx.drawImage(video, 0, 0, width, height)
-                video.remove()
-            }
+                ctx.fillRect(0, 0, 100, 100)
 
-            const previewBase64 = canvas.toDataURL()
+                // Draw the camera icon
+                ctx.lineWidth = 8
+                ctx.lineJoin = 'round'
+                ctx.strokeStyle = '#888'
+                ctx.strokeRect(15, 25, 50, 50)
+                ctx.stroke()
+                ctx.beginPath()
+                ctx.moveTo(65, 60)
+                ctx.lineTo(65, 40)
+                ctx.lineTo(85, 30)
+                ctx.lineTo(85, 70)
+                ctx.closePath()
+                ctx.stroke()
+            }
 
             setFiles(prev => [
                 ...prev,
                 {
                     id: Math.random().toString(36).slice(2),
                     base64: base64,
-                    preview: previewBase64,
-                    width,
-                    height,
+                    preview: canvas.toDataURL(),
+                    width: 100,
+                    height: 100,
                     size: file.size,
                     type: file.type,
                     fileName: file.name,
@@ -107,9 +173,7 @@ export const FileUploader = ({
             ])
 
             canvas.remove()
-        })
-
-        video.play()
+        }
     }
 
     /**
@@ -131,8 +195,10 @@ export const FileUploader = ({
             <FileInput
                 type="file"
                 onChange={handleFileChange}
-                accept="image/png,image/webp,image/jpg,image/jpeg,video/mp4,video/mov"
+                accept="image/*, video/*"
                 id="file-input"
+                tabIndex={-1}
+                aria-hidden="true"
                 multiple
             />
             <FileTrigger htmlFor="file-input">
