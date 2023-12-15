@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import { Avatar, Theme } from '@rneui/themed'
+import { Theme } from '@rneui/themed'
 import { Card, Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -12,6 +12,7 @@ import { fedimint } from '../../../bridge'
 import { useAppSelector, useStabilityPool } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage from '../../ui/SvgImage'
+import { CurrencyAvatar } from './CurrencyAvatar'
 
 const StabilityWallet: React.FC<{}> = () => {
     const { t } = useTranslation()
@@ -32,13 +33,7 @@ const StabilityWallet: React.FC<{}> = () => {
                 containerStyle={style.cardContainer}
                 wrapperStyle={style.cardWrapper}>
                 <View style={style.titleContainer}>
-                    <Avatar
-                        size={theme.sizes.md}
-                        rounded
-                        title={selectedCurrency}
-                        titleStyle={style.currencyAvatarTitle}
-                        containerStyle={style.currencyAvatar}
-                    />
+                    <CurrencyAvatar />
                     <Text bold style={style.titleText}>
                         {`${selectedCurrency} ${t('words.balance')}`}
                     </Text>
@@ -80,12 +75,6 @@ const styles = (theme: Theme) =>
             flex: 1,
             justifyContent: 'space-between',
             gap: theme.spacing.lg,
-        },
-        currencyAvatar: {
-            backgroundColor: theme.colors.green,
-        },
-        currencyAvatarTitle: {
-            ...theme.styles.avatarText,
         },
         titleContainer: {
             textAlign: 'left',

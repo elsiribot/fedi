@@ -1,8 +1,16 @@
 import { TFunction } from 'i18next'
 
-import { Transaction, TransactionDirection } from '../types'
+import { StabilityPoolTxn, Transaction, TransactionDirection } from '../types'
 import amountUtils from './AmountUtils'
 import dateUtils from './DateUtils'
+
+export interface DetailItem {
+    label: string
+    value: string
+    truncated?: boolean
+    copyable?: boolean
+    copiedMessage?: string
+}
 
 export const makePendingBalanceText = (
     t: TFunction,
@@ -192,14 +200,6 @@ export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
     }
 }
 
-export interface DetailItem {
-    label: string
-    value: string
-    truncated?: boolean
-    copyable?: boolean
-    copiedMessage?: string
-}
-
 export const makeTxnDetailItems = (t: TFunction, txn: Transaction) => {
     const items: DetailItem[] = [
         {
@@ -261,5 +261,54 @@ export const makeTxnDetailItems = (t: TFunction, txn: Transaction) => {
         value: makeTxnDetailStatusText(t, txn),
     })
 
+    return items
+}
+
+export const makeStabilityTxnStatusText = (
+    t: TFunction,
+    txn: StabilityPoolTxn,
+) => {
+    return txn.direction === 'deposit'
+        ? t('words.deposit')
+        : t('words.withdrawal')
+}
+
+export const makeStabilityTxnStatusSubtext = (
+    t: TFunction,
+    txn: StabilityPoolTxn,
+) => {
+    return txn.status === 'complete'
+        ? t('words.complete')
+        : `${t('words.pending')}...`
+}
+
+export const makeStabilityTxnDetailTitleText = (
+    t: TFunction,
+    txn: StabilityPoolTxn,
+) => {
+    return txn.direction === 'deposit'
+        ? t('feature.stabilitypool.you-deposited')
+        : t('feature.stabilitypool.you-withdrew')
+}
+
+export const makeStabilityTxnDetailItems = (
+    t: TFunction,
+    txn: StabilityPoolTxn,
+) => {
+    const items: DetailItem[] = [
+        {
+            label: t('words.time'),
+            value: txn.timestamp
+                ? dateUtils.formatTimestamp(
+                      txn.timestamp,
+                      'MMM dd yyyy, h:mmaaa',
+                  )
+                : t('words.pending'),
+        },
+        {
+            label: t('words.status'),
+            value: txn.status,
+        },
+    ]
     return items
 }
