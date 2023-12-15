@@ -90,12 +90,22 @@ export default function BugReport() {
 
             setStatus('generating-data')
 
-            const gzip = await exportGzipLogs(
+            const gzip = await exportGzipLogs([
                 files.map(f => ({
                     name: f.fileName,
                     content: Buffer.from(f.base64.split(',')[1], 'base64'),
                 })),
-            )
+                {
+                    name: 'device.json',
+                    content: JSON.stringify({
+                        userAgent: window.navigator.userAgent,
+                        preferredLanguage: window.navigator.language,
+                        supportedLanguages: window.navigator.languages,
+                        screen: `${window.screen.width}x${window.screen.height}`,
+                        window: `${window.innerWidth}x${window.innerHeight}`,
+                    }),
+                },
+            ])
 
             setStatus('uploading-data')
 
