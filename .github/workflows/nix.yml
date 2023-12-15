@@ -255,7 +255,7 @@ jobs:
       name: Status
       needs: [lint, build-workspace, build-linux, build-android, build-ios, shell]
       if: ${{ always() }}
-      runs-on: ubuntu-latest
+      runs-on: [self-hosted, linux]
       steps:
         - name: Check status of all jobs
           if: >-
