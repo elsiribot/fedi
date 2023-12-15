@@ -1,5 +1,4 @@
 import { styled } from '@stitches/react'
-import { safebrowsing_v5 } from 'googleapis'
 import * as React from 'react'
 
 import Plus from '@fedi/common/assets/svgs/plus.svg'

@@ -124,10 +124,10 @@ export const selectBtcExchangeRate = (s: CommonState) => {
     if (metadata) {
         const defaultCurrency = getFederationDefaultCurrency(metadata)
         if (defaultCurrency && defaultCurrency === selectedFiatCurrency) {
-        const federationFixedExchangeRate =
-            getFederationFixedExchangeRate(metadata)
-        if (federationFixedExchangeRate) {
-            return federationFixedExchangeRate
+            const federationFixedExchangeRate =
+                getFederationFixedExchangeRate(metadata)
+            if (federationFixedExchangeRate) {
+                return federationFixedExchangeRate
             }
         }
     }
