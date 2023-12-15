@@ -220,7 +220,10 @@ export function useAmountInput(
                 const minFiat =
                     amountUtils.satToBtc(minimumAmount as Sats) *
                     btcToFiatRateRef.current
-                if (Number(minFiat.toFixed(2)) === fiat && fiat > 0) {
+                if (
+                    Number(minFiat.toFixed(2)) === Number(fiat.toFixed(2)) &&
+                    fiat > 0
+                ) {
                     sats = minimumAmount
                 }
             }
@@ -228,7 +231,11 @@ export function useAmountInput(
                 const maxFiat =
                     amountUtils.satToBtc(maximumAmount as Sats) *
                     btcToFiatRateRef.current
-                if (Number(maxFiat.toFixed(2)) === fiat && fiat > 0) {
+
+                if (
+                    Number(maxFiat.toFixed(2)) === Number(fiat.toFixed(2)) &&
+                    fiat > 0
+                ) {
                     sats = maximumAmount
                 }
             }
@@ -541,14 +548,21 @@ export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
  * that decreases the stable USD balance in the wallet
  */
 export function useWithdrawForm() {
+    const btcToFiatRate = useCommonSelector(selectBtcExchangeRate)
+    const currency = useCommonSelector(selectCurrency)
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
     const { minimumAmount, maximumAmount } = useMinMaxWithdrawAmount()
 
+    const maximumFiatAmount = amountUtils.formatFiat(
+        amountUtils.satToFiat(maximumAmount, btcToFiatRate),
+        currency,
+    )
     return {
         inputAmount,
         setInputAmount,
         minimumAmount,
         maximumAmount,
+        maximumFiatAmount,
     }
 }
 

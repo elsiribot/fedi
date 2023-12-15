@@ -7,13 +7,11 @@ import { useTranslation } from 'react-i18next'
 import { Keyboard, StyleSheet } from 'react-native'
 
 import { useWithdrawForm } from '@fedi/common/hooks/amount'
-import { fetchCurrencyPrices, selectCurrency } from '@fedi/common/redux'
-import { selectWithdrawableStableBalance } from '@fedi/common/redux/wallet'
-import amountUtils from '@fedi/common/utils/AmountUtils'
+import { fetchCurrencyPrices } from '@fedi/common/redux'
 import { hexToRgba } from '@fedi/common/utils/color'
 
 import { AmountScreen } from '../components/ui/AmountScreen'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { useAppDispatch } from '../state/hooks'
 import { Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -31,16 +29,10 @@ const StabilityWithdraw: React.FC<Props> = () => {
         setInputAmount: setAmount,
         minimumAmount,
         maximumAmount,
+        maximumFiatAmount,
     } = useWithdrawForm()
     const dispatch = useAppDispatch()
-    const withdrawableBalance = useAppSelector(selectWithdrawableStableBalance)
-    const selectedFiatCurrency = useAppSelector(selectCurrency)
     const [submitAttempts, setSubmitAttempts] = useState(0)
-
-    const formattedBalance = amountUtils.formatFiat(
-        withdrawableBalance,
-        selectedFiatCurrency,
-    )
 
     const onChangeAmount = (updatedValue: Sats) => {
         setSubmitAttempts(0)
@@ -76,7 +68,7 @@ const StabilityWithdraw: React.FC<Props> = () => {
             subHeader={
                 <Text caption style={style.balance}>
                     {`${t('feature.stabilitypool.available-to-withdraw')}: `}
-                    {`${formattedBalance} `}
+                    {`${maximumFiatAmount} `}
                 </Text>
             }
             buttons={[
