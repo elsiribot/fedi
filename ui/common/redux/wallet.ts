@@ -255,12 +255,20 @@ export const decreaseStableBalance = createAsyncThunk<
             const remainingWithdrawal = Number(
                 (amount - unlockedAmount).toFixed(2),
             )
-            lockedBps = Number(
-                (
-                    Number((remainingWithdrawal * 10000).toFixed(0)) /
-                    stableBalanceMsats
-                ).toFixed(0),
-            )
+
+            // If there are <10 sats leftover after this withdrawal,
+            // just withdraw the full 10k basis points on the locked balance
+            const msatsAfterWithdrawal =
+                stableBalanceMsats - remainingWithdrawal
+            lockedBps =
+                msatsAfterWithdrawal < 10000
+                    ? 10000
+                    : Number(
+                          (
+                              Number((remainingWithdrawal * 10000).toFixed(0)) /
+                              stableBalanceMsats
+                          ).toFixed(0),
+                      )
         }
 
         log.info('decreaseStableBalance', {
