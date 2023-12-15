@@ -412,7 +412,7 @@ export const selectTotalStagedMsats = (s: CommonState) =>
     ) as MSats) || (0 as MSats)
 
 /**
- * Calculates the total amount of pending deposits, converted to UsdCents
+ * Converts total amount of pending deposits in msats to the current USD value in cents
  * */
 export const selectTotalStagedCents = createSelector(
     selectTotalStagedMsats,
@@ -428,7 +428,7 @@ export const selectTotalStagedCents = createSelector(
 )
 
 /**
- * Calculates the total amount of pending deposits converted to selectedCurrency
+ * Converts the USD value of pending deposits to selectedCurrency
  * */
 export const selectTotalStagedFiat = createSelector(
     selectTotalStagedCents,
@@ -529,7 +529,7 @@ export const selectStableBalanceCents = createSelector(
 )
 
 /**
- * Calculates the total stable balance, converted to the selectedCurrency
+ * Converts the total stable balance in cents to the selectedCurrency
  * */
 export const selectStableBalance = createSelector(
     selectStableBalanceCents,
@@ -545,7 +545,11 @@ export const selectStableBalance = createSelector(
 )
 
 /**
- * Calculates the pending stable balance (positive if depositing, negative if withdrawing) in cents
+ * Calculates the pending stable balance using:
+ * 1. total locked seeks in cents to calculate pending withdrawals
+ * 2. total staged seeks in cents (estimated USD value) to calculate pending deposits
+ *
+ * should be POSITIVE if net depositing, and NEGATIVE if net withdrawing
  * */
 export const selectStableBalancePendingCents = createSelector(
     selectStabilityPoolAccountInfo,
@@ -571,7 +575,7 @@ export const selectStableBalancePendingCents = createSelector(
 )
 
 /**
- * Calculates the pending stable balance, converted to the selectedCurrency
+ * Converts the pending stable balance in cents to the selectedCurrency
  * */
 export const selectStableBalancePending = createSelector(
     selectStableBalancePendingCents,
