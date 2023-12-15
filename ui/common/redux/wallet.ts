@@ -330,7 +330,7 @@ export const selectStabilityPoolAccountInfo = (s: CommonState) =>
 /**
  * Calculates the total amount locked in deposits in msats
  * */
-export const selectTotalLockedSeeksMsats = createSelector(
+export const selectTotalLockedMsats = createSelector(
     selectStabilityPoolAccountInfo,
     stabilityPoolAccountInfo => {
         if (!stabilityPoolAccountInfo) return 0
@@ -351,19 +351,17 @@ export const selectTotalLockedSeeksMsats = createSelector(
 )
 
 /**
- * Calculates the total amount locked in deposits, converted to the selectedCurrency
- * TODO: Consider deprecating this to keep conversions away from calculations as much as possible
+ * Calculates the total amount locked in deposits in cents
  * */
-export const selectTotalLockedSeeksFiat = createSelector(
+export const selectTotalLockedCents = createSelector(
     selectStabilityPoolAccountInfo,
     (s: CommonState) => selectBtcExchangeRate(s),
-    (s: CommonState) => selectBtcUsdExchangeRate(s),
-    (stabilityPoolAccountInfo, btcExchangeRate, usdExchangeRate) => {
-        if (!stabilityPoolAccountInfo) return 0
+    (stabilityPoolAccountInfo, btcExchangeRate): UsdCents => {
+        if (!stabilityPoolAccountInfo) return 0 as UsdCents
 
-        let totalLockedSeeksAmount = 0
+        let totalLockedCents: UsdCents = 0 as UsdCents
         const { lockedSeeks } = stabilityPoolAccountInfo
-        totalLockedSeeksAmount = lockedSeeks.reduce(
+        totalLockedCents = lockedSeeks.reduce(
             (result: number, ls: RpcLockedSeek) => {
                 const {
                     initialAmountCents,
@@ -372,44 +370,85 @@ export const selectTotalLockedSeeksFiat = createSelector(
                 } = ls
                 const remainingAmountCents = (initialAmountCents -
                     withdrawnAmountCents) as UsdCents
-                const remainingAmountFiat = amountUtils.convertCentsToOtherFiat(
-                    remainingAmountCents,
-                    usdExchangeRate,
-                    btcExchangeRate,
-                )
                 const feesPaidInFiat = amountUtils.msatToFiat(
                     feesPaidSoFar,
                     btcExchangeRate,
                 )
-                const lockedSeekBalance = Number(
-                    (remainingAmountFiat - feesPaidInFiat).toFixed(2),
-                )
-                result = Number((result + lockedSeekBalance).toFixed(2))
+                const lockedFiatBalance = remainingAmountCents - feesPaidInFiat
+                result = result + lockedFiatBalance
 
                 return result
             },
             0,
-        )
+        ) as UsdCents
 
-        return totalLockedSeeksAmount
+        return totalLockedCents
+    },
+)
+
+/**
+ * Calculates the total amount locked in deposits, converted to the selectedCurrency
+ * */
+export const selectTotalLockedFiat = createSelector(
+    selectTotalLockedCents,
+    (s: CommonState) => selectBtcExchangeRate(s),
+    (s: CommonState) => selectBtcUsdExchangeRate(s),
+    (totalLockedCents, btcExchangeRate, usdExchangeRate) => {
+        return amountUtils.convertCentsToOtherFiat(
+            totalLockedCents,
+            usdExchangeRate,
+            btcExchangeRate,
+        )
     },
 )
 
 /**
  * Calculates the total amount of pending deposits in msats
  * */
-export const selectTotalStagedSeeksMsats = (s: CommonState) =>
+export const selectTotalStagedMsats = (s: CommonState) =>
     (selectStabilityPoolAccountInfo(s)?.stagedSeeks.reduce(
         (result, ss) => Number((result + ss).toFixed(0)),
         0,
     ) as MSats) || (0 as MSats)
 
 /**
+ * Calculates the total amount of pending deposits, converted to UsdCents
+ * */
+export const selectTotalStagedCents = createSelector(
+    selectTotalStagedMsats,
+    (s: CommonState) => selectBtcUsdExchangeRate(s),
+    (totalStagedSeeksMsats, btcUsdExchangeRate): UsdCents => {
+        const amountUsd = amountUtils.msatToFiat(
+            totalStagedSeeksMsats as MSats,
+            btcUsdExchangeRate,
+        )
+        const amountCents = amountUsd * 100
+        return amountCents as UsdCents
+    },
+)
+
+/**
+ * Calculates the total amount of pending deposits converted to selectedCurrency
+ * */
+export const selectTotalStagedFiat = createSelector(
+    selectTotalStagedCents,
+    (s: CommonState) => selectBtcExchangeRate(s),
+    (s: CommonState) => selectBtcUsdExchangeRate(s),
+    (totalStagedCents, btcExchangeRate, usdExchangeRate) => {
+        return amountUtils.convertCentsToOtherFiat(
+            totalStagedCents,
+            usdExchangeRate,
+            btcExchangeRate,
+        )
+    },
+)
+
+/**
  * Calculates the total stable balance in msats
  * */
 export const selectStableBalanceMsats = createSelector(
     selectStabilityPoolAccountInfo,
-    selectTotalLockedSeeksMsats,
+    selectTotalLockedMsats,
     (stabilityPoolAccountInfo, totalLockedSeeksMsats) => {
         if (!stabilityPoolAccountInfo) return 0
 
@@ -439,8 +478,8 @@ export const selectStableBalanceMsats = createSelector(
  * */
 export const selectStableBalancePendingMsats = createSelector(
     selectStabilityPoolAccountInfo,
-    selectTotalLockedSeeksMsats,
-    selectTotalStagedSeeksMsats,
+    selectTotalLockedMsats,
+    selectTotalStagedMsats,
     (
         stabilityPoolAccountInfo,
         totalLockedSeeksMsats,
@@ -465,16 +504,15 @@ export const selectStableBalancePendingMsats = createSelector(
 )
 
 /**
- * Calculates the total stable balance, converted to the selectedCurrency
+ * Calculates the total stable balance in cents
  * */
-export const selectStableBalance = createSelector(
+export const selectStableBalanceCents = createSelector(
     selectStabilityPoolAccountInfo,
-    selectTotalLockedSeeksFiat,
-    (s: CommonState) => selectBtcExchangeRate(s),
-    (stabilityPoolAccountInfo, totalLockedSeeksFiat) => {
-        if (!stabilityPoolAccountInfo) return 0
+    selectTotalLockedCents,
+    (stabilityPoolAccountInfo, totalLockedCents) => {
+        if (!stabilityPoolAccountInfo) return 0 as UsdCents
 
-        let stableBalance = totalLockedSeeksFiat
+        let stableBalance = totalLockedCents
         const { stagedCancellation } = stabilityPoolAccountInfo
 
         if (stagedCancellation) {
@@ -482,7 +520,8 @@ export const selectStableBalance = createSelector(
             const cancelledFraction = stagedCancellation / 10000
             // calculate balance without cancelledFraction
             const pendingWithdrawalAmount = stableBalance * cancelledFraction
-            stableBalance = stableBalance - pendingWithdrawalAmount
+            stableBalance = (stableBalance -
+                pendingWithdrawalAmount) as UsdCents
         }
 
         return stableBalance
@@ -490,14 +529,58 @@ export const selectStableBalance = createSelector(
 )
 
 /**
- * Converts the pending stable balance to the selectedCurrency
+ * Calculates the total stable balance, converted to the selectedCurrency
+ * */
+export const selectStableBalance = createSelector(
+    selectStableBalanceCents,
+    (s: CommonState) => selectBtcExchangeRate(s),
+    (s: CommonState) => selectBtcUsdExchangeRate(s),
+    (stableBalanceCents, btcExchangeRate, usdExchangeRate) => {
+        return amountUtils.convertCentsToOtherFiat(
+            stableBalanceCents,
+            usdExchangeRate,
+            btcExchangeRate,
+        )
+    },
+)
+
+/**
+ * Calculates the pending stable balance (positive if depositing, negative if withdrawing) in cents
+ * */
+export const selectStableBalancePendingCents = createSelector(
+    selectStabilityPoolAccountInfo,
+    selectTotalLockedCents,
+    selectTotalStagedCents,
+    (stabilityPoolAccountInfo, totalLockedCents, pendingDepositAmount) => {
+        if (!stabilityPoolAccountInfo) return 0 as UsdCents
+
+        let pendingWithdrawAmount = 0
+        const { stagedCancellation } = stabilityPoolAccountInfo
+
+        if (stagedCancellation) {
+            const cancelledFraction = Number(
+                (stagedCancellation / 10000).toFixed(4),
+            )
+            pendingWithdrawAmount = Number(
+                (totalLockedCents * cancelledFraction).toFixed(2),
+            )
+        }
+
+        return (pendingDepositAmount - pendingWithdrawAmount) as UsdCents
+    },
+)
+
+/**
+ * Calculates the pending stable balance, converted to the selectedCurrency
  * */
 export const selectStableBalancePending = createSelector(
-    selectStableBalancePendingMsats,
+    selectStableBalancePendingCents,
     (s: CommonState) => selectBtcExchangeRate(s),
-    (stableBalancePendingMsats, btcExchangeRate) => {
-        return amountUtils.msatToFiat(
-            stableBalancePendingMsats as MSats,
+    (s: CommonState) => selectBtcUsdExchangeRate(s),
+    (stableBalancePendingCents, btcExchangeRate, usdExchangeRate) => {
+        return amountUtils.convertCentsToOtherFiat(
+            stableBalancePendingCents,
+            usdExchangeRate,
             btcExchangeRate,
         )
     },
@@ -507,7 +590,7 @@ export const selectStabilityTransactionHistory = createSelector(
     selectStabilityPoolAccountInfo,
     (s: CommonState) => selectBtcExchangeRate(s),
     (s: CommonState) => selectBtcUsdExchangeRate(s),
-    selectTotalLockedSeeksFiat,
+    selectTotalLockedFiat,
     (
         stabilityPoolAccountInfo,
         btcExchangeRate,
