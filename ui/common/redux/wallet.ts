@@ -235,7 +235,7 @@ export const decreaseStableBalance = createAsyncThunk<
         const state = getState()
         const activeFederationId = selectActiveFederation(state)?.id
         if (!activeFederationId) throw new Error('No active federation')
-        const btcExchangeRate = selectBtcExchangeRate(state)
+        const btcUsdExchangeRate = selectBtcUsdExchangeRate(state)
         const totalLockedCents = selectTotalLockedCents(state)
         const stableBalanceCents = selectStableBalanceCents(state)
         const totalStagedMsats = selectTotalStagedMsats(state)
@@ -264,7 +264,7 @@ export const decreaseStableBalance = createAsyncThunk<
             )
             const remainingWithdrawalUsd = amountUtils.msatToFiat(
                 remainingWithdrawal as MSats,
-                btcExchangeRate,
+                btcUsdExchangeRate,
             )
             const remainingWithdrawalCents = remainingWithdrawalUsd * 100
             log.info('remainingWithdrawalCents', remainingWithdrawalCents)
@@ -412,12 +412,12 @@ export const selectTotalLockedCents = createSelector(
  * */
 export const selectTotalLockedFiat = createSelector(
     selectTotalLockedCents,
-    (s: CommonState) => selectBtcExchangeRate(s),
     (s: CommonState) => selectBtcUsdExchangeRate(s),
-    (totalLockedCents, btcExchangeRate, usdExchangeRate) => {
+    (s: CommonState) => selectBtcExchangeRate(s),
+    (totalLockedCents, btcUsdExchangeRate, btcExchangeRate) => {
         return amountUtils.convertCentsToOtherFiat(
             totalLockedCents,
-            usdExchangeRate,
+            btcUsdExchangeRate,
             btcExchangeRate,
         )
     },
@@ -453,12 +453,12 @@ export const selectTotalStagedCents = createSelector(
  * */
 export const selectTotalStagedFiat = createSelector(
     selectTotalStagedCents,
-    (s: CommonState) => selectBtcExchangeRate(s),
     (s: CommonState) => selectBtcUsdExchangeRate(s),
-    (totalStagedCents, btcExchangeRate, usdExchangeRate) => {
+    (s: CommonState) => selectBtcExchangeRate(s),
+    (totalStagedCents, btcUsdExchangeRate, btcExchangeRate) => {
         return amountUtils.convertCentsToOtherFiat(
             totalStagedCents,
-            usdExchangeRate,
+            btcUsdExchangeRate,
             btcExchangeRate,
         )
     },
@@ -494,12 +494,12 @@ export const selectStableBalanceCents = createSelector(
  * */
 export const selectStableBalance = createSelector(
     selectStableBalanceCents,
-    (s: CommonState) => selectBtcExchangeRate(s),
     (s: CommonState) => selectBtcUsdExchangeRate(s),
-    (stableBalanceCents, btcExchangeRate, usdExchangeRate) => {
+    (s: CommonState) => selectBtcExchangeRate(s),
+    (stableBalanceCents, btcUsdExchangeRate, btcExchangeRate) => {
         return amountUtils.convertCentsToOtherFiat(
             stableBalanceCents,
-            usdExchangeRate,
+            btcUsdExchangeRate,
             btcExchangeRate,
         )
     },
@@ -540,12 +540,12 @@ export const selectStableBalancePendingCents = createSelector(
  * */
 export const selectStableBalancePending = createSelector(
     selectStableBalancePendingCents,
-    (s: CommonState) => selectBtcExchangeRate(s),
     (s: CommonState) => selectBtcUsdExchangeRate(s),
-    (stableBalancePendingCents, btcExchangeRate, usdExchangeRate) => {
+    (s: CommonState) => selectBtcExchangeRate(s),
+    (stableBalancePendingCents, btcUsdExchangeRate, btcExchangeRate) => {
         return amountUtils.convertCentsToOtherFiat(
             stableBalancePendingCents,
-            usdExchangeRate,
+            btcUsdExchangeRate,
             btcExchangeRate,
         )
     },
@@ -676,19 +676,19 @@ export const selectMinimumWithdrawAmountCents = createSelector(
 
 export const selectWithdrawableStableBalanceMsats = createSelector(
     selectWithdrawableStableBalanceCents,
-    (s: CommonState) => selectBtcExchangeRate(s),
-    (withdrawableCents, btcExchangeRate): MSats => {
+    (s: CommonState) => selectBtcUsdExchangeRate(s),
+    (withdrawableCents, btcUsdExchangeRate): MSats => {
         const usdAmount = withdrawableCents / 100
-        return amountUtils.fiatToMsat(usdAmount as Usd, btcExchangeRate)
+        return amountUtils.fiatToMsat(usdAmount as Usd, btcUsdExchangeRate)
     },
 )
 
 export const selectMinimumWithdrawAmountMsats = createSelector(
     selectMinimumWithdrawAmountCents,
-    (s: CommonState) => selectBtcExchangeRate(s),
-    (minimumWithdrawAmountCents, btcExchangeRate): MSats => {
+    (s: CommonState) => selectBtcUsdExchangeRate(s),
+    (minimumWithdrawAmountCents, btcUsdExchangeRate): MSats => {
         const usdAmount = minimumWithdrawAmountCents / 100
-        return amountUtils.fiatToMsat(usdAmount as Usd, btcExchangeRate)
+        return amountUtils.fiatToMsat(usdAmount as Usd, btcUsdExchangeRate)
     },
 )
 
