@@ -91,7 +91,7 @@ export default function BugReport() {
             setStatus('generating-data')
 
             const gzip = await exportGzipLogs([
-                files.map(f => ({
+                ...files.map(f => ({
                     name: f.fileName,
                     content: Buffer.from(f.base64.split(',')[1], 'base64'),
                 })),
