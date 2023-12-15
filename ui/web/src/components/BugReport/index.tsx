@@ -37,21 +37,6 @@ type Status =
 
 const log = makeLog('BugReport')
 
-/**
- * Exports application javascript logs and optionally other files as a tar.gz buffer.
- */
-async function exportGzipLogs(files: Array<File> = []) {
-    const jsLogs = await exportLogs()
-
-    return await makeTarGz([
-        {
-            name: 'app.log',
-            content: jsLogs,
-        },
-        ...files,
-    ])
-}
-
 export default function BugReport() {
     const [completedModal, setCompletedModal] = useState(false)
     const [description, setDescription] = useState('')
@@ -90,11 +75,13 @@ export default function BugReport() {
 
             setStatus('generating-data')
 
-            const gzip = await exportGzipLogs([
-                ...files.map(f => ({
-                    name: f.fileName,
-                    content: Buffer.from(f.base64.split(',')[1], 'base64'),
-                })),
+            const jsLogs = await exportLogs()
+
+            const gzip = await makeTarGz([
+                {
+                    name: 'app.log',
+                    content: jsLogs,
+                },
                 {
                     name: 'device.json',
                     content: JSON.stringify({
@@ -105,6 +92,10 @@ export default function BugReport() {
                         window: `${window.innerWidth}x${window.innerHeight}`,
                     }),
                 },
+                ...files.map(f => ({
+                    name: f.fileName,
+                    content: Buffer.from(f.base64.split(',')[1], 'base64'),
+                })),
             ])
 
             setStatus('uploading-data')
