@@ -13,14 +13,13 @@ use crate::{
     SetSpecialKeyValueSubCommand, ShowMetaJsonArgs, ShowMetaJsonCommand, Site, UpdateSiteArgs,
 };
 
+const FEDI_PREFIX: &str = "fedi:";
 const SITES_KEY: &str = "sites";
 const DEFAULT_GROUP_CHATS_KEY: &str = "default_group_chats";
 const FEDERATION_NAME_KEY: &str = "federation_name";
 const POPUP_END_TIMESTAMP_KEY: &str = "popup_end_timestamp";
 
-pub(super) async fn get_remote_config(
-    remote_file_args: &RemoteFileArgs,
-) -> anyhow::Result<serde_json::Map<String, serde_json::Value>> {
+async fn get_remote_config(remote_file_args: &RemoteFileArgs) -> anyhow::Result<MetaConfig> {
     let temp_dir = tempfile::tempdir().context("failed to create tempdir")?;
     let temp_meta_json = temp_dir.path().join("meta.json");
     info!(
@@ -44,7 +43,7 @@ pub(super) async fn get_remote_config(
     };
     info!("Parsed config, found {} federations", config.len());
 
-    Ok(config)
+    Ok(MetaConfig(config))
 }
 
 pub(super) async fn edit_meta_json(args: EditMetaJsonArgs) -> anyhow::Result<()> {
@@ -91,7 +90,7 @@ pub(super) async fn edit_meta_json(args: EditMetaJsonArgs) -> anyhow::Result<()>
     .await
     .context("failed to backup remote meta.json")?;
     let mut temp_meta_json_file = std::fs::File::create(&temp_meta_json)?;
-    serde_json::to_writer_pretty(&mut temp_meta_json_file, &config)?;
+    serde_json::to_writer_pretty(&mut temp_meta_json_file, &config.0)?;
     let mut temp_remote_path = args.remote_file_args.remote_path.clone();
     temp_remote_path.set_extension("temp");
     info!(
@@ -134,12 +133,10 @@ pub(super) async fn show_meta_json(args: ShowMetaJsonArgs) -> anyhow::Result<()>
     Ok(())
 }
 
-fn list_federations(
-    config: &serde_json::Map<String, serde_json::Value>,
-    _: ListFederationsArgs,
-) -> anyhow::Result<()> {
+fn list_federations(config: &MetaConfig, _: ListFederationsArgs) -> anyhow::Result<()> {
     let mut info = config
-        .into_iter()
+        .0
+        .iter()
         .filter_map(|(federation_id, federation_config)| {
             if let serde_json::Value::Object(federation_config) = federation_config {
                 match federation_config.get(FEDERATION_NAME_KEY) {
@@ -162,11 +159,8 @@ fn list_federations(
     Ok(())
 }
 
-fn add_site(
-    config: &mut serde_json::Map<String, serde_json::Value>,
-    args: AddSiteArgs,
-) -> anyhow::Result<()> {
-    let federation_config = get_federation_config(config, &args.federation_reference)?;
+fn add_site(config: &mut MetaConfig, args: AddSiteArgs) -> anyhow::Result<()> {
+    let mut federation_config = get_federation_config(config, &args.federation_reference)?;
     let site = Site {
         id: args.id,
         title: args.title,
@@ -194,11 +188,8 @@ fn add_site(
     Ok(())
 }
 
-fn update_site(
-    config: &mut serde_json::Map<String, serde_json::Value>,
-    args: UpdateSiteArgs,
-) -> anyhow::Result<()> {
-    let federation_config = get_federation_config(config, &args.federation_reference)?;
+fn update_site(config: &mut MetaConfig, args: UpdateSiteArgs) -> anyhow::Result<()> {
+    let mut federation_config = get_federation_config(config, &args.federation_reference)?;
     let sites_string = match federation_config.get(SITES_KEY) {
         Some(serde_json::Value::String(s)) => s,
         Some(other) => bail!("sites is not a string: {other:?}"),
@@ -230,11 +221,8 @@ fn update_site(
     Ok(())
 }
 
-fn remove_site(
-    config: &mut serde_json::Map<String, serde_json::Value>,
-    args: RemoveSiteArgs,
-) -> anyhow::Result<()> {
-    let federation_config = get_federation_config(config, &args.federation_reference)?;
+fn remove_site(config: &mut MetaConfig, args: RemoveSiteArgs) -> anyhow::Result<()> {
+    let mut federation_config = get_federation_config(config, &args.federation_reference)?;
     let sites_string = match federation_config.get(SITES_KEY) {
         Some(serde_json::Value::String(s)) => s,
         Some(other) => bail!("sites is not a string: {other:?}"),
@@ -256,10 +244,10 @@ fn remove_site(
 }
 
 fn add_default_group_chat(
-    config: &mut serde_json::Map<String, serde_json::Value>,
+    config: &mut MetaConfig,
     args: AddDefaultGroupChatArgs,
 ) -> anyhow::Result<()> {
-    let federation_config = get_federation_config(config, &args.federation_reference)?;
+    let mut federation_config = get_federation_config(config, &args.federation_reference)?;
     let default_group_chats_string = match federation_config.get(DEFAULT_GROUP_CHATS_KEY) {
         Some(serde_json::Value::String(s)) => s,
         Some(other) => bail!("{DEFAULT_GROUP_CHATS_KEY} is not a string: {other:?}"),
@@ -284,10 +272,10 @@ fn add_default_group_chat(
 }
 
 fn remove_default_group_chat(
-    config: &mut serde_json::Map<String, serde_json::Value>,
+    config: &mut MetaConfig,
     args: RemoveDefaultGroupChatArgs,
 ) -> anyhow::Result<()> {
-    let federation_config = get_federation_config(config, &args.federation_reference)?;
+    let mut federation_config = get_federation_config(config, &args.federation_reference)?;
     let default_group_chats_string = match federation_config.get(DEFAULT_GROUP_CHATS_KEY) {
         Some(serde_json::Value::String(s)) => s,
         Some(other) => bail!("{DEFAULT_GROUP_CHATS_KEY} is not a string: {other:?}"),
@@ -316,11 +304,8 @@ fn remove_default_group_chat(
     Ok(())
 }
 
-fn set_key_value(
-    config: &mut serde_json::Map<String, serde_json::Value>,
-    args: SetKeyValueArgs,
-) -> anyhow::Result<()> {
-    let federation_config = get_federation_config(config, &args.federation_reference)?;
+fn set_key_value(config: &mut MetaConfig, args: SetKeyValueArgs) -> anyhow::Result<()> {
+    let mut federation_config = get_federation_config(config, &args.federation_reference)?;
     match federation_config.insert(args.key.clone(), serde_json::json!(args.value)) {
         Some(serde_json::Value::String(s)) => {
             info!(
@@ -347,13 +332,12 @@ fn set_key_value(
 }
 
 fn set_special_key_value(
-    config: &mut serde_json::Map<String, serde_json::Value>,
+    config: &mut MetaConfig,
     args: SetSpecialKeyValueArgs,
 ) -> anyhow::Result<()> {
     use chrono::TimeZone;
     use chrono_tz::Tz;
-    let federation_config: &mut serde_json::Map<String, serde_json::Value> =
-        get_federation_config(config, &args.federation_reference)?;
+    let mut federation_config = get_federation_config(config, &args.federation_reference)?;
 
     match args.command {
         SetSpecialKeyValueSubCommand::PopupEndTimestamp(a) => {
@@ -382,13 +366,10 @@ fn set_special_key_value(
     Ok(())
 }
 
-fn duplicate_existing(
-    config: &mut serde_json::Map<String, serde_json::Value>,
-    args: DuplicateExistingArgs,
-) -> anyhow::Result<()> {
+fn duplicate_existing(config: &mut MetaConfig, args: DuplicateExistingArgs) -> anyhow::Result<()> {
     let DuplicateExistingSubCommand::As(as_command_args) = args.command;
     let existing_federation_config = get_federation_config(config, &args.existing_reference)?;
-    let mut new_federation = existing_federation_config.clone();
+    let mut new_federation = existing_federation_config.0.clone();
     if !federation_ids_for_name(config, &as_command_args.new_reference.federation_name).is_empty() {
         bail!(
             "Federation with name {} already exists, pick another name or renaming existing one",
@@ -399,7 +380,7 @@ fn duplicate_existing(
         FEDERATION_NAME_KEY.to_owned(),
         as_command_args.new_reference.federation_name.into(),
     );
-    if let Some(conflict) = config.insert(
+    if let Some(conflict) = config.0.insert(
         as_command_args.new_reference.federation_id.clone(),
         new_federation.into(),
     ) {
@@ -411,48 +392,67 @@ fn duplicate_existing(
     Ok(())
 }
 
-fn add_keys_prefix(
-    config: &mut serde_json::Map<String, serde_json::Value>,
-    args: AddKeysPrefixArgs,
-) -> anyhow::Result<()> {
-    let federation_config: &mut serde_json::Map<String, serde_json::Value> =
-        get_federation_config(config, &args.federation_reference)?;
-    for key in federation_config.clone().keys() {
+fn add_keys_prefix(config: &mut MetaConfig, args: AddKeysPrefixArgs) -> anyhow::Result<()> {
+    let federation_config = get_federation_config(config, &args.federation_reference)?;
+    for key in federation_config.0.clone().keys() {
         if !key.starts_with(&args.prefix) {
             let new_key = format!("{}{key}", args.prefix);
             let value = federation_config
+                .0
                 .remove(key)
                 .context("value should exist")?;
-            federation_config.insert(new_key, value);
+            federation_config.0.insert(new_key, value);
         }
     }
     Ok(())
 }
 
-fn remove_keys_prefix(
-    config: &mut serde_json::Map<String, serde_json::Value>,
-    args: RemoveKeysPrefixArgs,
-) -> anyhow::Result<()> {
-    let federation_config: &mut serde_json::Map<String, serde_json::Value> =
-        get_federation_config(config, &args.federation_reference)?;
-    for key in federation_config.clone().keys() {
+fn remove_keys_prefix(config: &mut MetaConfig, args: RemoveKeysPrefixArgs) -> anyhow::Result<()> {
+    let federation_config = get_federation_config(config, &args.federation_reference)?;
+    for key in federation_config.0.clone().keys() {
         if key.starts_with(&args.prefix) {
             let new_key = key
                 .strip_prefix(&args.prefix)
                 .context("prefix should exist")?;
             let value = federation_config
+                .0
                 .remove(key)
                 .context("value should exist")?;
-            federation_config.insert(new_key.to_owned(), value);
+            federation_config.0.insert(new_key.to_owned(), value);
         }
     }
     Ok(())
 }
 
+struct MetaConfig(serde_json::Map<String, serde_json::Value>);
+
+struct FederationConfig<'a>(&'a mut serde_json::Map<String, serde_json::Value>);
+
+impl<'a> FederationConfig<'a> {
+    fn get(&self, key: &str) -> Option<&serde_json::Value> {
+        for k in [&format!("{FEDI_PREFIX}{key}"), key] {
+            if let Some(value) = self.0.get(k) {
+                return Some(value);
+            }
+        }
+        None
+    }
+
+    fn insert(&mut self, key: String, value: serde_json::Value) -> Option<serde_json::Value> {
+        for k in [&format!("{FEDI_PREFIX}{key}"), &key] {
+            if let Some(v) = self.0.get_mut(k) {
+                let old_value = std::mem::replace(v, value);
+                return Some(old_value);
+            }
+        }
+        self.0.insert(key, value)
+    }
+}
+
 fn get_federation_config<'a>(
-    config: &'a mut serde_json::Map<String, serde_json::Value>,
+    config: &'a mut MetaConfig,
     federation_reference: &FederationReferenceOptional,
-) -> anyhow::Result<&'a mut serde_json::Map<String, serde_json::Value>> {
+) -> anyhow::Result<FederationConfig<'a>> {
     let federation_id = match federation_reference {
         FederationReferenceOptional {
             federation_id: Some(federation_id),
@@ -487,24 +487,27 @@ fn get_federation_config<'a>(
         } => bail!("federation_id and federation_name cannot both be specified"),
     }
     .to_owned();
-    match config.get_mut(&federation_id) {
-        Some(serde_json::Value::Object(federation_config)) => Ok(federation_config),
+    match config.0.get_mut(&federation_id) {
+        Some(serde_json::Value::Object(federation_config)) => {
+            Ok(FederationConfig(federation_config))
+        }
         Some(other) => bail!("federation config is not an object: {other:?}"),
         None => bail!("federation config is not present"),
     }
 }
 
 fn federation_ids_for_name<'a>(
-    config: &'a serde_json::Map<String, serde_json::Value>,
+    config: &'a MetaConfig,
     federation_name: &String,
 ) -> Vec<&'a String> {
     config
+        .0
         .iter()
         .filter_map(|(federation_id, federation_config)| {
             if let serde_json::Value::Object(federation_config) = federation_config {
                 for name in [
+                    format!("{FEDI_PREFIX}{FEDERATION_NAME_KEY}"),
                     FEDERATION_NAME_KEY.to_string(),
-                    format!("fedi:{FEDERATION_NAME_KEY}"),
                 ] {
                     match federation_config.get(&name) {
                         Some(serde_json::Value::String(name)) if name == federation_name => {

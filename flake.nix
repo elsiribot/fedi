@@ -1,11 +1,14 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
+    nixpkgs = {
+      url = "github:NixOS/nixpkgs/nixos-23.05";
+      follows = "fedimint-pkgs/nixpkgs";
+    };
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     # we pick upstream packages from here, so we want this to be compatible with our forks
     fedimint-pkgs = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=dpc/v0.2.0-rc-7-devimint-fix&rev=9882d47b2b252218db93eafa6b4160dca554d2f9";
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=refs/tags/v0.2.0-rc-9-dpc-2&rev=f97e3de6d93926c3722ab00a991b336a2d9037e8";
     };
     # TODO shaurya can probably remove once bridge is updated for 0.2
     # Fedimint at consensus version 1. This is used to test bridge against old federations
@@ -28,7 +31,7 @@
 
     android-nixpkgs = {
       url = "github:tadfisher/android-nixpkgs?rev=6370a3aafe37ed453bfdc4af578eb26339f8fee0"; # stable
-      inputs.nixpkgs.follows = "fedimint-pkgs/nixpkgs";
+      # inputs.nixpkgs.follows = "fedimint-pkgs/nixpkgs";
     };
   };
 
@@ -280,8 +283,14 @@
         packages = {
           # straight from Fedimint, without any modifications
           gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
+          gatewayd = fedimint-pkgs.packages.${system}.gatewayd;
+          gateway-cli = fedimint-pkgs.packages.${system}.gateway-cli;
 
           fedi-fedimint-pkgs = craneMultiBuild.fedi-fedimint-pkgs;
+          fedi-fedimintd = craneMultiBuild.fedi-fedimintd;
+          fedi-fedimint-cli = craneMultiBuild.fedi-fedimint-cli;
+          fedi-fedimint-dbtool = craneMultiBuild.fedi-fedimint-dbtool;
+
           fedi-wasm = craneMultiBuild.wasm32-unknown.release.fedi-wasm;
           devops-cli = craneMultiBuild.devops-cli;
         };

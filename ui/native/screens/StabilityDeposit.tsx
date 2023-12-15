@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Keyboard, StyleSheet } from 'react-native'
 
-import { useBalance, useDepositForm } from '@fedi/common/hooks/amount'
+import { useDepositForm } from '@fedi/common/hooks/amount'
 import { fetchCurrencyPrices } from '@fedi/common/redux'
 import { hexToRgba } from '@fedi/common/utils/color'
 
@@ -28,9 +28,9 @@ const StabilityDeposit: React.FC<Props> = () => {
         setInputAmount: setAmount,
         minimumAmount,
         maximumAmount,
+        maximumFiatAmount,
     } = useDepositForm()
     const dispatch = useAppDispatch()
-    const { fiatBalanceWithSymbol } = useBalance()
     const [submitAttempts, setSubmitAttempts] = useState(0)
 
     const onChangeAmount = (updatedValue: Sats) => {
@@ -67,7 +67,7 @@ const StabilityDeposit: React.FC<Props> = () => {
             subHeader={
                 <Text caption style={style.balance}>
                     {`${t('feature.stabilitypool.available-to-deposit')}: `}
-                    {`${fiatBalanceWithSymbol} `}
+                    {`${maximumFiatAmount} `}
                 </Text>
             }
             buttons={[

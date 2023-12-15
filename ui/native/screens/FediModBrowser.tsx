@@ -36,12 +36,16 @@ import {
     generateInjectionJs,
     makeWebViewMessageHandler,
 } from '@fedi/injections'
-import { eventHashFromEvent } from '@fedi/injections/src/injectables/nostr/utils'
+import {
+    SignedNostrEvent,
+    UnsignedNostrEvent,
+} from '@fedi/injections/src/injectables/nostr/types'
 
 import { fedimint } from '../bridge'
 import { AuthOverlay } from '../components/feature/fedimods/AuthOverlay'
 import FediModBrowserHeader from '../components/feature/fedimods/FediModBrowserHeader'
 import { MakeInvoiceOverlay } from '../components/feature/fedimods/MakeInvoiceOverlay'
+import { NostrSignOverlay } from '../components/feature/fedimods/NostrSignOverlay'
 import { SendPaymentOverlay } from '../components/feature/fedimods/SendPaymentOverlay'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useOmniLinkInterceptor } from '../state/contexts/OmniLinkContext'
@@ -52,13 +56,16 @@ const log = makeLog('FediModBrowser')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'FediModBrowser'>
 
-type FediModResponse = RequestInvoiceResponse | SendPaymentResponse
+type FediModResponse =
+    | RequestInvoiceResponse
+    | SendPaymentResponse
+    | SignedNostrEvent
 type FediModResolver<T> = (value: T | PromiseLike<T>) => void
 type Gateway = RpcLightningGatewayV0 | RpcLightningGatewayV1
 
 const FediModBrowser: React.FC<Props> = ({ route }) => {
     const { fediMod } = route.params
-    const { listGateways, getNostrPubKey, signNostrEvent } = useBridge()
+    const { listGateways, getNostrPubKey } = useBridge()
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -84,6 +91,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const [lnurlAuthRequest, setLnurlAuthRequest] = useState<
         ParsedLnurlAuth['data'] | null
     >(null)
+    const [nostrUnsignedEvent, setNostrUnsignedEvent] =
+        useState<UnsignedNostrEvent | null>(null)
     const getActiveGatewayPromiseRef = useRef<Promise<Gateway> | null>(null)
 
     // Intercept any URIs the user tries to navigate to that we can handle inline
@@ -236,24 +245,12 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         },
         [InjectionMessageType.nostr_signEvent]: async evt => {
             log.info('nostr.signEvent', evt)
-            return new Promise(async (resolve, reject) => {
-                try {
-                    const pub_key = await getNostrPubKey()
-                    const event_hash = eventHashFromEvent(pub_key, evt)
-                    let result = await signNostrEvent(event_hash)
-                    resolve({
-                        id: event_hash,
-                        pubkey: pub_key,
-                        created_at: evt.created_at,
-                        kind: evt.kind,
-                        content: evt.content,
-                        tags: evt.tags,
-                        sig: result,
-                    })
-                } catch (err) {
-                    log.warn('nostr.signEvent', err)
-                    reject(t('errors.sign-nostr-event-failed'))
-                }
+            // Wait for user to approve signing
+            return new Promise<SignedNostrEvent>(async (resolve, reject) => {
+                overlayRejectRef.current = reject
+                overlayResolveRef.current =
+                    resolve as FediModResolver<FediModResponse>
+                setNostrUnsignedEvent(evt)
             })
         },
     })
@@ -264,6 +261,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         setInvoiceToPay(null)
         setLnurlPayment(null)
         setLnurlAuthRequest(null)
+        setNostrUnsignedEvent(null)
     }
 
     const overlayProps = {
@@ -319,6 +317,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             <AuthOverlay
                 {...overlayProps}
                 lnurlAuthRequest={lnurlAuthRequest}
+            />
+            <NostrSignOverlay
+                {...overlayProps}
+                nostrEvent={nostrUnsignedEvent}
             />
         </View>
     )

@@ -81,6 +81,10 @@ const App = () => {
                 if (
                     event.transaction.direction === TransactionDirection.receive
                 ) {
+                    const { onchainState, amount } = event.transaction
+                    // dont show notification for onchain txn until it is claimed
+                    if (onchainState && onchainState.type !== 'claimed') return
+
                     const federations = selectFederations(store.getState())
                     const federation = federations.find(
                         f => f.id === event.federationId,
@@ -92,7 +96,7 @@ const App = () => {
                               )}`
                             : t('phrases.transaction-received'),
                         body: `${amountUtils.formatNumber(
-                            amountUtils.msatToSat(event.transaction.amount),
+                            amountUtils.msatToSat(amount),
                         )} ${t('words.sats')}`,
                         android: {
                             channelId,

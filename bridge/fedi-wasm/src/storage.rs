@@ -82,7 +82,8 @@ impl IStorage for WasmStorage {
         let mut fed = self.federation.lock().unwrap();
         let db = fed.remove(db_name).unwrap();
         drop(fed);
-        db.delete().await?;
+        // FIXME: this blocks forever due to being in used in client.
+        // db.delete().await?;
         Ok(())
     }
 

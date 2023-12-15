@@ -289,10 +289,7 @@ export const shouldEnableNostr = (federation: Federation) => {
         return false
     }
 
-    return (
-        getMetaField(SupportedMetaFields.nostr_enabled, federation.meta) ===
-        'true'
-    )
+    return true
 }
 
 export const getFederationGroupChats = (
