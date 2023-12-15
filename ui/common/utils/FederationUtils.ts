@@ -311,16 +311,29 @@ export const getFederationFediMods = (
     metadata: ClientConfigMetadata,
 ): FediMod[] => {
     const sites = getMetaField('fedimods', metadata)
-    const fediModSchema: z.ZodSchema<FediMod[]> = z.array(
-        z.object({
-            id: z.string(),
-            title: z.string(),
-            url: z.string().url(),
-            imageUrl: z.string().url().nullish(),
-            description: z.string().optional(),
-            color: z.string().optional(),
-        }),
-    )
+    const fediModSchema: z.ZodSchema<FediMod[]> = z
+        .array(
+            z.object({
+                id: z.string(),
+                title: z.string(),
+                url: z.string().url(),
+                imageUrl: z.string().url().nullish(),
+                description: z.string().optional(),
+                color: z.string().optional(),
+            }),
+        )
+        .transform(mods =>
+            mods.map(({ imageUrl, ...mod }) => {
+                if (!imageUrl) {
+                    return mod
+                }
+
+                return {
+                    ...mod,
+                    imageUrl,
+                }
+            }),
+        )
 
     if (sites) {
         try {
