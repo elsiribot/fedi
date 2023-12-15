@@ -316,7 +316,7 @@ export const getFederationFediMods = (
             id: z.string(),
             title: z.string(),
             url: z.string().url(),
-            imageUrl: z.string().url().optional().nullable(),
+            imageUrl: z.string().url().nullish(),
             description: z.string().optional(),
             color: z.string().optional(),
         }),
