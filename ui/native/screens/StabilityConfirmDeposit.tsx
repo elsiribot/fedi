@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Avatar, Divider, Text, Theme } from '@rneui/themed'
+import { Divider, Text, Theme } from '@rneui/themed'
 import { useTheme } from '@rneui/themed'
 import { Button } from '@rneui/themed'
 import React, { useState } from 'react'
@@ -18,6 +18,7 @@ import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
+import { CurrencyAvatar } from '../components/feature/stabilitypool/CurrencyAvatar'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -83,13 +84,7 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
                     color={theme.colors.orange}
                 />
                 <SvgImage name="ArrowRight" color={theme.colors.primaryLight} />
-                <Avatar
-                    size={theme.sizes.md}
-                    rounded
-                    title={selectedFiatCurrency}
-                    titleStyle={style.currencyAvatarTitle}
-                    containerStyle={style.currencyAvatar}
-                />
+                <CurrencyAvatar />
             </View>
             <View style={style.amountText}>
                 <Text h1 numberOfLines={1}>
@@ -210,12 +205,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             flexDirection: 'row',
             alignItems: 'center',
             gap: theme.spacing.sm,
-        },
-        currencyAvatar: {
-            backgroundColor: theme.colors.green,
-        },
-        currencyAvatarTitle: {
-            ...theme.styles.avatarText,
         },
         collapsedContainer: {
             height: 0,

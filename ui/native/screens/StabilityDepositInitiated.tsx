@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Avatar, Button, Text, Theme } from '@rneui/themed'
+import { Button, Text, Theme } from '@rneui/themed'
 import { useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,11 +7,10 @@ import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
-import { selectCurrency } from '@fedi/common/redux'
 
+import { CurrencyAvatar } from '../components/feature/stabilitypool/CurrencyAvatar'
 import HoloCircle from '../components/ui/HoloCircle'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
-import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -26,7 +25,6 @@ const StabilityDepositInitiated: React.FC<Props> = ({ route, navigation }) => {
     const { amount } = route.params
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const formattedFiat = convertSatsToFormattedFiat(amount)
-    const selectedFiatCurrency = useAppSelector(selectCurrency)
 
     const style = styles(theme, insets)
 
@@ -39,13 +37,7 @@ const StabilityDepositInitiated: React.FC<Props> = ({ route, navigation }) => {
                     color={theme.colors.orange}
                 />
                 <SvgImage name="ArrowRight" color={theme.colors.primaryLight} />
-                <Avatar
-                    size={theme.sizes.md}
-                    rounded
-                    title={selectedFiatCurrency}
-                    titleStyle={style.currencyAvatarTitle}
-                    containerStyle={style.currencyAvatar}
-                />
+                <CurrencyAvatar />
             </View>
             <View style={style.holoCircleContainer}>
                 <HoloCircle
@@ -99,12 +91,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             flexDirection: 'row',
             alignItems: 'center',
             gap: theme.spacing.sm,
-        },
-        currencyAvatar: {
-            backgroundColor: theme.colors.green,
-        },
-        currencyAvatarTitle: {
-            ...theme.styles.avatarText,
         },
         holoCircleContainer: {
             marginTop: 'auto',
