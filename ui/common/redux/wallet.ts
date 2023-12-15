@@ -235,48 +235,69 @@ export const decreaseStableBalance = createAsyncThunk<
         const state = getState()
         const activeFederationId = selectActiveFederation(state)?.id
         if (!activeFederationId) throw new Error('No active federation')
-        const stableBalanceMsats = selectStableBalanceMsats(state)
-        const stableStagedSeeksMsats = selectTotalStagedSeeksMsats(state)
+        const btcExchangeRate = selectBtcExchangeRate(state)
+        const totalLockedCents = selectTotalLockedCents(state)
+        const stableBalanceCents = selectStableBalanceCents(state)
+        const totalStagedMsats = selectTotalStagedMsats(state)
         let lockedBps = 0
         let unlockedAmount = 0 as MSats
 
         // if we have enough pending balance to cover the withdrawal
         // no need to calculate basis points on stable balance
-        if (amount <= stableStagedSeeksMsats) {
+        if (amount <= totalStagedMsats) {
+            log.info(
+                `withdrawing ${amount} msats from ${totalStagedMsats} staged msats`,
+            )
             // if there is a sub-1sat difference in staged seeks remaining, should be safe to just use the full pending balance to sweep the msats in with the withdrawal
             unlockedAmount =
-                stableStagedSeeksMsats - amount < 1000
-                    ? stableStagedSeeksMsats
-                    : amount
+                totalStagedMsats - amount < 1000 ? totalStagedMsats : amount
         } else {
             // if there is more to withdraw, unlock the full pending balance
             // and calculate what portion of the stable balance
             // is needed to fulfill the withdrawal amount
-            unlockedAmount = stableStagedSeeksMsats
+            unlockedAmount = totalStagedMsats
             const remainingWithdrawal = Number(
                 (amount - unlockedAmount).toFixed(2),
             )
+            log.info(
+                `need to withdraw ${remainingWithdrawal} msats from locked balance`,
+            )
+            const remainingWithdrawalUsd = amountUtils.msatToFiat(
+                remainingWithdrawal as MSats,
+                btcExchangeRate,
+            )
+            const remainingWithdrawalCents = remainingWithdrawalUsd * 100
+            log.info('remainingWithdrawalCents', remainingWithdrawalCents)
 
-            // If there are <10 sats leftover after this withdrawal,
+            lockedBps = Number(
+                ((remainingWithdrawalCents * 10000) / totalLockedCents).toFixed(
+                    0,
+                ),
+            )
+
+            // TODO: remove this? do we need any sweep conditions here at all?
+            // If there is <=1 cent leftover after this withdrawal
             // just withdraw the full 10k basis points on the locked balance
-            const msatsAfterWithdrawal =
-                stableBalanceMsats - remainingWithdrawal
-            lockedBps =
-                msatsAfterWithdrawal < 10000
-                    ? 10000
-                    : Number(
-                          (
-                              Number((remainingWithdrawal * 10000).toFixed(0)) /
-                              stableBalanceMsats
-                          ).toFixed(0),
-                      )
+            // const centsAfterWithdrawal: UsdCents = (stableBalanceCents -
+            //     remainingWithdrawalCents) as UsdCents
+            // console.debug('centsAfterWithdrawal', centsAfterWithdrawal)
+            // lockedBps =
+            //     centsAfterWithdrawal <= 1
+            //         ? 10000
+            //         : Number(
+            //               (
+            //                   Number(
+            //                       (remainingWithdrawalCents * 10000).toFixed(0),
+            //                   ) / totalLockedCents
+            //               ).toFixed(0),
+            //           )
         }
 
         log.info('decreaseStableBalance', {
             lockedBps,
             unlockedAmount,
-            stableStagedSeeksMsats,
-            stableBalanceMsats,
+            totalStagedMsats,
+            stableBalanceCents,
         })
         const operationId = await fedimint.stabilityPoolWithdraw(
             lockedBps,
