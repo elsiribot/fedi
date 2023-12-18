@@ -18,6 +18,7 @@ import {
     getFederationFediMods,
     fetchFederationsExternalMetadata,
     getFederationChatServerDomain,
+    getFederationName,
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
 import { loadFromStorage } from './storage'
@@ -264,7 +265,7 @@ export const selectFederations = createSelector(
             return {
                 ...f,
                 meta,
-                name: meta.federation_name || f.name,
+                name: getFederationName(meta) || f.name,
             }
         }),
 )
