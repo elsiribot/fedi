@@ -14,6 +14,10 @@ export function middleware(req: NextRequest) {
         // Development mode needs eval for hot module reloading.
         `script-src 'self' 'unsafe-inline' ${isDev ? `'unsafe-eval'` : ''}`,
         `style-src 'self' 'unsafe-inline'`,
+        // Allow worker scripts to also use blob: URIs. qr-scanner currently needs
+        // this, would be nice to remove if we can extract its worker to a separate file.
+        // https://github.com/nimiq/qr-scanner/issues/221
+        `worker-src 'self' 'unsafe-inline' blob:`,
         // Allow fetch requsts and WebSockets to any URL. This is due to dynamic federation
         // meta, so we need to be able to interact with any URLs configured at runtime.
         'connect-src *',
