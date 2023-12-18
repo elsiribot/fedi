@@ -370,6 +370,7 @@ export interface RpcMethods {
         },
         string,
     ]
+    setSensitiveLog: [{ enable: boolean }, null]
 }
 
 export type RpcOnchainDepositState =

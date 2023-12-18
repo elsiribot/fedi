@@ -942,6 +942,25 @@ impl Bridge {
             .collect())
     }
 
+    /// Enable logging of potentially sensitive information.
+    pub async fn sensitive_log(&self) -> bool {
+        self.app_state
+            .with_read_lock(|f| Box::pin(async move { f.sensitive_log.unwrap_or(false) }))
+            .await
+    }
+
+    pub async fn set_sensitive_log(&self, enable: bool) -> anyhow::Result<()> {
+        self.app_state
+            .with_write_lock(|f| {
+                Box::pin(async move {
+                    f.sensitive_log = Some(enable);
+                    Ok(())
+                })
+            })
+            .await?;
+        Ok(())
+    }
+
     // FIXME: this function has weird name now that it doesn't do any recovery
     pub async fn recover_from_mnemonic(&self, mnemonic: bip39::Mnemonic) -> Result<()> {
         // Only allow recovery when there are no joined federations
