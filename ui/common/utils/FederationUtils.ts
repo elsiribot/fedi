@@ -275,12 +275,14 @@ export const shouldShowOfflineWallet = (
 }
 
 export const shouldShowOnchainDeposits = (metadata: ClientConfigMetadata) => {
-    return (
-        getMetaField(
-            SupportedMetaFields.onchain_deposits_disabled,
-            metadata,
-        ) !== 'true'
+    const onchainDepositsDisabled = getMetaField(
+        SupportedMetaFields.onchain_deposits_disabled,
+        metadata,
     )
+    // Disable onchain deposits by default if not specified in meta
+    return onchainDepositsDisabled === null
+        ? false
+        : onchainDepositsDisabled !== 'true'
 }
 
 export const shouldEnableNostr = (federation: Federation) => {
