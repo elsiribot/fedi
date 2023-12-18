@@ -310,40 +310,42 @@ export const getFederationGroupChats = (
 export const getFederationFediMods = (
     metadata: ClientConfigMetadata,
 ): FediMod[] => {
-    const sites = getMetaField('fedimods', metadata)
-    const fediModSchema: z.ZodSchema<FediMod[]> = z
-        .array(
-            z.object({
-                id: z.string(),
-                title: z.string(),
-                url: z.string().url(),
-                imageUrl: z.string().url().nullish(),
-                description: z.string().optional(),
-                color: z.string().optional(),
-            }),
-        )
-        .transform(mods =>
-            mods.map(({ imageUrl, ...mod }) => {
-                if (!imageUrl) {
-                    return mod
-                }
-
-                return {
-                    ...mod,
-                    imageUrl,
-                }
-            }),
-        )
+    const sites = getMetaField('sites', metadata)
+    const fediModSchema: z.ZodSchema<FediMod> = z.object({
+        id: z.string(),
+        title: z.string(),
+        url: z.string().url(),
+        imageUrl: z.string().url().optional(),
+        description: z.string().optional(),
+        color: z.string().optional(),
+    })
 
     if (sites) {
         try {
-            const res = fediModSchema.safeParse(JSON.parse(sites))
+            const fediMods: Array<FediMod> = JSON.parse(sites)
 
-            if (!res.success) {
-                throw res.error
+            if (!Array.isArray(fediMods)) {
+                throw new Error('Expected array of fedi mods')
             }
 
-            return res.data
+            return fediMods
+                .map(({ imageUrl, ...mod }) => {
+                    const res = fediModSchema.safeParse(mod)
+
+                    if (res.success && res.data) {
+                        if (!imageUrl) {
+                            return mod
+                        }
+
+                        return {
+                            ...mod,
+                            imageUrl,
+                        }
+                    }
+
+                    return null
+                })
+                .filter(mod => mod !== null) as Array<FediMod>
         } catch (err) {
             log.error((err as Error | z.ZodError).message)
             log.warn(
