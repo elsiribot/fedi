@@ -78,6 +78,7 @@ export enum SupportedMetaFields {
     tos_url = 'tos_url',
     welcome_message = 'welcome_message',
     federation_icon_url = 'federation_icon_url',
+    federation_name = 'federation_name',
 }
 
 export type ClientConfigMetadata = Record<string, string | undefined>

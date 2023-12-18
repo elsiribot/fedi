@@ -382,6 +382,10 @@ export const getFederationTosUrl = (metadata: ClientConfigMetadata) => {
     return getMetaField(SupportedMetaFields.tos_url, metadata)
 }
 
+export const getFederationName = (metadata: ClientConfigMetadata) => {
+    return getMetaField(SupportedMetaFields.federation_name, metadata)
+}
+
 export const getFederationWelcomeMessage = (metadata: ClientConfigMetadata) => {
     return getMetaField(SupportedMetaFields.welcome_message, metadata)
 }
@@ -434,6 +438,10 @@ export async function getFederationPreview(
     }
     return {
         ...preview,
+        name:
+            getFederationName(externalMeta) ||
+            getFederationName(preview.meta) ||
+            preview.name,
         meta: {
             ...preview.meta,
             ...externalMeta,
