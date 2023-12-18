@@ -328,24 +328,24 @@ export const getFederationFediMods = (
                 throw new Error('Expected array of fedi mods')
             }
 
-            return fediMods
-                .map(({ imageUrl, ...mod }) => {
+            return fediMods.reduce(
+                (result: Array<FediMod>, { imageUrl, ...mod }: FediMod) => {
                     const res = fediModSchema.safeParse(mod)
 
                     if (res.success && res.data) {
                         if (!imageUrl) {
-                            return mod
+                            return result.concat(mod)
                         }
 
-                        return {
+                        return result.concat({
                             ...mod,
                             imageUrl,
-                        }
+                        })
                     }
-
-                    return null
-                })
-                .filter(mod => mod !== null) as Array<FediMod>
+                    return result
+                },
+                [] as Array<FediMod>,
+            )
         } catch (err) {
             log.error((err as Error | z.ZodError).message)
             log.warn(
