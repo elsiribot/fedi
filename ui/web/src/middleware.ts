@@ -22,9 +22,10 @@ export function middleware(req: NextRequest) {
         // meta, so we need to be able to interact with any URLs configured at runtime.
         'connect-src *',
         // Allow images, audio, and video from anywhere due to user avatars,
-        // federation icons, recovery videos, etc. etc.
-        `img-src *`,
-        'media-src *',
+        // federation icons, recovery videos, etc. etc. Also allow for media we
+        // construct in JS with blob: and data: URIs.
+        `img-src * blob: data:`,
+        'media-src * blob: data:',
         // Completely disable <iframe>, <object>, <embed>, and <base> tags.
         `frame-src 'none'`,
         `object-src 'none'`,
