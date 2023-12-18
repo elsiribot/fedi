@@ -50,7 +50,7 @@ pub async fn fedimint_initialize_async(
 pub fn rpc_error(error: &anyhow::Error) -> String {
     let code = get_error_code(error);
 
-    json!({ "error": error.to_string(), "code": code }).to_string()
+    json!({ "error": error.to_string(), "code": code, "detail": format!("{error:?}") }).to_string()
 }
 
 pub fn panic_hook(info: &PanicInfo, event_sink: &dyn IEventSink) {
