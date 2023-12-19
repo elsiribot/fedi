@@ -1,6 +1,7 @@
 import Image, { StaticImageData } from 'next/image'
 import Link from 'next/link'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { selectFederationFediMods } from '@fedi/common/redux'
 
@@ -11,6 +12,7 @@ import { Text } from './Text'
 
 export const FediModTiles: React.FC = () => {
     const fediMods = useAppSelector(selectFederationFediMods)
+    const { t } = useTranslation()
 
     return (
         <Container>
@@ -53,7 +55,7 @@ export const FediModTiles: React.FC = () => {
                 />
                 <FediModTitle>
                     <Text variant="small" ellipsize>
-                        Report a Bug
+                        {t('feature.bug.report-a-bug')}
                     </Text>
                 </FediModTitle>
             </FediModTile>

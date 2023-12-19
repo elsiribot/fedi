@@ -94,7 +94,7 @@ export default function BugReport() {
                 },
                 ...files.map(f => ({
                     name: f.fileName,
-                    content: Buffer.from(f.base64.split(',')[1], 'base64'),
+                    content: Buffer.from(f.base64, 'base64'),
                 })),
             ])
 
@@ -143,7 +143,6 @@ export default function BugReport() {
                     ref={textAreaRef}
                     rows={3}
                     name="description"
-                    id="description"
                     required
                 />
             </DescriptionContainer>
@@ -155,7 +154,6 @@ export default function BugReport() {
                     checked={sendInfo}
                     onCheckedChange={setSendInfo}
                     name="sendInfo"
-                    id="sendInfo"
                 />
             </SendFederationNotice>
             <Input

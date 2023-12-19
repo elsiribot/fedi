@@ -2,6 +2,8 @@ import { styled } from '@stitches/react'
 import * as React from 'react'
 
 import Close from '@fedi/common/assets/svgs/close.svg'
+import Video from '@fedi/common/assets/svgs/video.svg'
+import { theme as themeColors } from '@fedi/common/constants/theme'
 
 import { theme } from '../../styles'
 import { Icon } from '../Icon'
@@ -17,10 +19,20 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
     onRemove,
 }) => {
     return (
-        <Container style={{ backgroundImage: `url(${fileData.preview})` }}>
+        <Container
+            style={
+                fileData.preview
+                    ? {
+                          backgroundImage: `url(${fileData.preview})`,
+                      }
+                    : undefined
+            }>
             <CloseButton onClick={() => onRemove(fileData.id)}>
                 <Icon icon={Close} size="xs" />
             </CloseButton>
+            {fileData.preview ? null : (
+                <Icon icon={Video} color={themeColors.colors.grey} />
+            )}
         </Container>
     )
 }
@@ -30,6 +42,8 @@ const Container = styled('div', {
     borderRadius: theme.space.xs,
     width: 44,
     height: 44,
+    display: 'grid',
+    placeItems: 'center',
     backgroundColor: theme.colors.extraLightGrey,
     backgroundSize: 'cover',
     backgroundPosition: 'center',

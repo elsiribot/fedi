@@ -1,5 +1,6 @@
 import { styled } from '@stitches/react'
 import * as React from 'react'
+import { useTranslation } from 'react-i18next'
 
 import Plus from '@fedi/common/assets/svgs/plus.svg'
 import { makeLog } from '@fedi/common/utils/log'
@@ -13,7 +14,7 @@ import { FilePreview } from './FilePreview'
 export type FileData = {
     id: string
     base64: string
-    preview: string
+    preview?: string
     width: number
     height: number
     size: number
@@ -31,6 +32,7 @@ export const FileUploader = ({
     setFiles: React.Dispatch<React.SetStateAction<FileData[]>>
 }) => {
     const toast = useToast()
+    const { t } = useTranslation()
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const evtFiles = event.target.files
         if (!evtFiles) return
@@ -46,7 +48,7 @@ export const FileUploader = ({
                             ...prev,
                             {
                                 id: Math.random().toString(36).slice(2),
-                                base64: reader.result as string,
+                                base64: (reader.result as string).split(',')[1],
                                 preview: reader.result as string,
                                 width: image.width,
                                 height: image.height,
@@ -65,6 +67,8 @@ export const FileUploader = ({
 
             reader.readAsDataURL(file)
         })
+
+        event.target.value = ''
     }
 
     /**
@@ -86,24 +90,6 @@ export const FileUploader = ({
 
                 const ctx = canvas.getContext('2d')
                 if (ctx) {
-                    ctx.fillStyle = '#bbb'
-                    ctx.fillRect(0, 0, width, height)
-
-                    // Draw a fallback camera icon in case the video is transparent
-                    ctx.lineWidth = 8
-                    ctx.lineJoin = 'round'
-                    ctx.strokeStyle = '#888'
-                    ctx.strokeRect(15, 25, 50, 50)
-                    ctx.stroke()
-                    ctx.beginPath()
-                    ctx.moveTo(65, 60)
-                    ctx.lineTo(65, 40)
-                    ctx.lineTo(85, 30)
-                    ctx.lineTo(85, 70)
-                    ctx.closePath()
-                    ctx.stroke()
-
-                    // Draw the video frame
                     ctx.drawImage(video, 0, 0, width, height)
                     video.remove()
                 }
@@ -114,7 +100,7 @@ export const FileUploader = ({
                     ...prev,
                     {
                         id: Math.random().toString(36).slice(2),
-                        base64: base64,
+                        base64: base64.split(',')[1],
                         preview: previewBase64,
                         width,
                         height,
@@ -131,38 +117,11 @@ export const FileUploader = ({
         } catch (e) {
             log.error('Could not play video', e)
 
-            const canvas = document.createElement('canvas')
-
-            canvas.width = 100
-            canvas.height = 100
-
-            const ctx = canvas.getContext('2d')
-
-            if (ctx) {
-                ctx.fillStyle = '#bbb'
-                ctx.fillRect(0, 0, 100, 100)
-
-                // Draw the camera icon
-                ctx.lineWidth = 8
-                ctx.lineJoin = 'round'
-                ctx.strokeStyle = '#888'
-                ctx.strokeRect(15, 25, 50, 50)
-                ctx.stroke()
-                ctx.beginPath()
-                ctx.moveTo(65, 60)
-                ctx.lineTo(65, 40)
-                ctx.lineTo(85, 30)
-                ctx.lineTo(85, 70)
-                ctx.closePath()
-                ctx.stroke()
-            }
-
             setFiles(prev => [
                 ...prev,
                 {
                     id: Math.random().toString(36).slice(2),
-                    base64: base64,
-                    preview: canvas.toDataURL(),
+                    base64: base64.split(',')[1],
                     width: 100,
                     height: 100,
                     size: file.size,
@@ -170,8 +129,6 @@ export const FileUploader = ({
                     fileName: file.name,
                 },
             ])
-
-            canvas.remove()
         }
     }
 
@@ -202,7 +159,7 @@ export const FileUploader = ({
             />
             <FileTrigger htmlFor="file-input">
                 <Icon icon={Plus} size="xs" />
-                <Text weight="medium">Upload</Text>
+                <Text weight="medium">{t('words.upload')}</Text>
             </FileTrigger>
         </Container>
     )
