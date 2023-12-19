@@ -8,6 +8,7 @@ import btcpragueProgramImage from '@fedi/common/assets/images/fedimods/btcprague
 import btcpragueSideEventsImage from '@fedi/common/assets/images/fedimods/btcprague-side-events.png'
 import btcpragueSpeakersImage from '@fedi/common/assets/images/fedimods/btcprague-speakers.png'
 import btcpragueUsefulImage from '@fedi/common/assets/images/fedimods/btcprague-useful.png'
+import bugReportImage from '@fedi/common/assets/images/fedimods/bug-report.png'
 import fediCommunityImage from '@fedi/common/assets/images/fedimods/fedi-community.png'
 import fedifeedbackImage from '@fedi/common/assets/images/fedimods/fedifeedback.png'
 import geyserImage from '@fedi/common/assets/images/fedimods/geyser.png'
@@ -31,6 +32,7 @@ export const FEDIMOD_IMAGES: Record<string, StaticImageData | undefined> = {
     'btcprague-useful': btcpragueUsefulImage,
     'btcprague-speakers': btcpragueSpeakersImage,
     'btcprague-side-events': btcpragueSideEventsImage,
+    'bug-report': bugReportImage,
     'fedi-community': fediCommunityImage,
     fedifeedback: fedifeedbackImage,
     geyser: geyserImage,
