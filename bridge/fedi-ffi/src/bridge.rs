@@ -485,7 +485,10 @@ impl Bridge {
                                     event_sink.clone(),
                                     task_group_v0.make_subgroup().await,
                                 )
-                                .await?,
+                                .await
+                                .with_context(|| {
+                                    format!("loading federation {}", federation_id_str.clone())
+                                })?,
                             )),
                             1 => Arc::new(MultiFederation::V1(
                                 FederationV1::from_db(
@@ -495,7 +498,10 @@ impl Bridge {
                                     event_sink.clone(),
                                     task_group_v1.make_subgroup().await,
                                 )
-                                .await?,
+                                .await
+                                .with_context(|| {
+                                    format!("loading federation {}", federation_id_str.clone())
+                                })?,
                             )),
                             2 => Arc::new(MultiFederation::V2(
                                 FederationV2::from_db(
@@ -507,7 +513,10 @@ impl Bridge {
                                     &root_mnemonic,
                                     None,
                                 )
-                                .await?,
+                                .await
+                                .with_context(|| {
+                                    format!("loading federation {}", federation_id_str.clone())
+                                })?,
                             )),
                             n => bail!("Invalid federation version {n}"),
                         },
