@@ -255,6 +255,14 @@ export class FedimintBridge {
         return this.rpcTyped('socialRecoveryApprovals', {})
     }
 
+    async getSensitiveLog() {
+        return this.rpcTyped('getSensitiveLog', {})
+    }
+
+    async setSensitiveLog(enable: boolean) {
+        return this.rpcTyped('setSensitiveLog', { enable })
+    }
+
     // `_userPublicKey` is what guardian decryption shares are threshold-encrypted to
     async approveSocialRecoveryRequest(
         recoveryId: string,
