@@ -16,7 +16,7 @@ import {
 } from '@fedi/common/utils/bug-report'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog, exportLogs } from '@fedi/common/utils/log'
-import { makeTarGz, File } from '@fedi/common/utils/targz'
+import { makeTarGz } from '@fedi/common/utils/targz'
 
 import { useAppSelector, useAutosizeTextArea, useToast } from '../../hooks'
 import { theme } from '../../styles'
