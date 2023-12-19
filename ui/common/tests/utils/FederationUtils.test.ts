@@ -90,6 +90,20 @@ const fedWithMods: Federation = {
     },
 }
 
+const testModNullImageUrl: FediMod = {
+    id: 'test-mod-null-image-url',
+    title: 'Test Mod (No Image URL)',
+    url: 'https://test-mod-url.com',
+    imageUrl: null,
+}
+
+const fedWithModsNullImageUrl: Federation = {
+    ...baseFed,
+    meta: {
+        fedimods: JSON.stringify([testMod, testModNullImageUrl]),
+    },
+}
+
 describe('FederationUtils', () => {
     describe('getFederationDefaultCurrency', () => {
         test.each([
@@ -168,6 +182,12 @@ describe('FederationUtils', () => {
                 fedimods: 'invalid type here',
             })
             expect(fediMods).toHaveLength(0)
+        })
+        it('omits imageUrl from mods if null', () => {
+            const fediMods = getFederationFediMods(fedWithModsNullImageUrl.meta)
+
+            expect(fediMods[0]).toHaveProperty('imageUrl')
+            expect(fediMods[1]).not.toHaveProperty('imageUrl')
         })
     })
     describe('makeChatServerOptions', () => {
