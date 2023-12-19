@@ -45,6 +45,7 @@ import {
     makeTransactionHistoryCSV,
 } from '@fedi/common/utils/csv'
 import { formatErrorMessage } from '@fedi/common/utils/format'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import { AddCustomFediModDialog } from '../components/feature/developer-settings/AddCustomFediModDialog'
@@ -55,6 +56,8 @@ import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 import { shareLogsExport } from '../utils/logs-export'
+
+const log = makeLog('DeveloperSettings')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -74,6 +77,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const [isAddingCustomFediMod, setIsAddingCustomFediMod] =
         useState<boolean>(false)
     const [isSharingLogs, setIsSharingLogs] = useState(false)
+    const [isSensitiveLogging, setIsSensitiveLogging] = useState<boolean>(false)
     const [guardianOnlineStatus, setGuardianOnlineStatus] = useState<
         GuardianStatus[]
     >([])
@@ -89,6 +93,15 @@ const DeveloperSettings: React.FC<Props> = () => {
     const authenticatedGuardian = useAppSelector(
         s => s.federation.authenticatedGuardian,
     )
+
+    useEffect(() => {
+        fedimint
+            .getSensitiveLog()
+            .then(setIsSensitiveLogging)
+            .catch(err =>
+                log.warn('Failed to get sensitive logging status', err),
+            )
+    }, [])
 
     useEffect(() => {
         const loadGuardianStatus = async () => {
@@ -184,6 +197,25 @@ const DeveloperSettings: React.FC<Props> = () => {
                     onPress={handleShareLogs}
                     loading={isSharingLogs}
                 />
+                <View style={styles(theme).switchWrapper}>
+                    <View style={styles(theme).switchLabelContainer}>
+                        <Text caption style={styles(theme).switchLabel}>
+                            Enable sensitive logging
+                        </Text>
+                        <Text small style={styles(theme).switchLabel}>
+                            This will allow logs to include additional
+                            information that could leak private or secure
+                            details. Use with caution.
+                        </Text>
+                    </View>
+                    <Switch
+                        value={isSensitiveLogging}
+                        onValueChange={value => {
+                            fedimint.setSensitiveLog(value)
+                            setIsSensitiveLogging(value)
+                        }}
+                    />
+                </View>
             </SettingsSection>
             <SettingsSection title={t('feature.fedimods.custom-fedimods')}>
                 {customFediMods.map(fediMod => (

@@ -50,7 +50,7 @@ pub async fn fedimint_initialize_async(
 pub fn rpc_error(error: &anyhow::Error) -> String {
     let code = get_error_code(error);
 
-    json!({ "error": error.to_string(), "code": code }).to_string()
+    json!({ "error": error.to_string(), "code": code, "detail": format!("{error:?}") }).to_string()
 }
 
 pub fn panic_hook(info: &PanicInfo, event_sink: &dyn IEventSink) {
@@ -429,6 +429,16 @@ async fn stabilityPoolWithdraw(
         .await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn getSensitiveLog(bridge: Arc<Bridge>) -> anyhow::Result<bool> {
+    Ok(bridge.sensitive_log().await)
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn setSensitiveLog(bridge: Arc<Bridge>, enable: bool) -> anyhow::Result<()> {
+    bridge.set_sensitive_log(enable).await
+}
+
 // converts from a typed handler into untyped handler
 async fn handle_wrapper<Args, F, Fut, R>(
     f: F,
@@ -528,7 +538,10 @@ rpc_methods!(RpcMethods {
     // Stability Pool
     stabilityPoolAccountInfo,
     stabilityPoolDepositToSeek,
-    stabilityPoolWithdraw
+    stabilityPoolWithdraw,
+    // Developer
+    getSensitiveLog,
+    setSensitiveLog
 });
 
 #[instrument(
@@ -542,8 +555,16 @@ rpc_methods!(RpcMethods {
     )
 )]
 pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: String) -> String {
+    let sensitive_log = bridge.sensitive_log().await;
+    if sensitive_log {
+        tracing::info!(%payload);
+    }
+
     let result = RpcMethods::handle(bridge, &method, payload).await;
 
+    if sensitive_log {
+        tracing::info!(?result);
+    }
     result.unwrap_or_else(|error| {
         error!(%error, "rpc_error");
         rpc_error(&error)

@@ -61,6 +61,8 @@ pub struct AppStateRaw {
 
     // Social recovery state
     pub social_recovery_state: Option<SocialRecoveryState>,
+
+    pub sensitive_log: Option<bool>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -158,6 +160,7 @@ impl AppState {
                 root_mnemonic: Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng()),
                 joined_federations: BTreeMap::new(),
                 social_recovery_state: None,
+                sensitive_log: None,
             }),
             storage,
         }

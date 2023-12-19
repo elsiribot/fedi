@@ -44,7 +44,10 @@ pub fn fedimint_initialize(
     }));
     match value {
         Ok(Ok(())) => String::from("{}"),
-        Ok(Err(e)) => rpc_error(&e),
+        Ok(Err(e)) => {
+            error!(?e);
+            rpc_error(&e)
+        }
         Err(_) => rpc_error(&anyhow::format_err!(ErrorCode::Panic)),
     }
 }
@@ -86,7 +89,7 @@ pub async fn fedimint_initialize_inner(
         Ok(bridge) => bridge,
         Err(e) => {
             let context_error = e.context("Failed to initialize Bridge");
-            error!("{}", context_error);
+            error!("{:?}", context_error);
             return Err(context_error);
         }
     };
