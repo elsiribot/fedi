@@ -95,6 +95,15 @@ const DeveloperSettings: React.FC<Props> = () => {
     )
 
     useEffect(() => {
+        fedimint
+            .getSensitiveLog()
+            .then(setIsSensitiveLogging)
+            .catch(err =>
+                log.warn('Failed to get sensitive logging status', err),
+            )
+    }, [])
+
+    useEffect(() => {
         const loadGuardianStatus = async () => {
             const status = await guardianStatus()
             setGuardianOnlineStatus(status)
@@ -117,15 +126,6 @@ const DeveloperSettings: React.FC<Props> = () => {
 
         getGatewaysList()
     }, [toast, listGateways, t])
-
-    useEffect(() => {
-        fedimint
-            .getSensitiveLog()
-            .then(setIsSensitiveLogging)
-            .catch(err =>
-                log.warn('Failed to get sensitive logging status', err),
-            )
-    }, [])
 
     const handleSelectGateway = async (gateway: LightningGateway) => {
         try {
