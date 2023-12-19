@@ -430,6 +430,11 @@ async fn stabilityPoolWithdraw(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn getSensitiveLog(bridge: Arc<Bridge>) -> anyhow::Result<bool> {
+    Ok(bridge.sensitive_log().await)
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn setSensitiveLog(bridge: Arc<Bridge>, enable: bool) -> anyhow::Result<()> {
     bridge.set_sensitive_log(enable).await
 }
@@ -535,6 +540,7 @@ rpc_methods!(RpcMethods {
     stabilityPoolDepositToSeek,
     stabilityPoolWithdraw,
     // Developer
+    getSensitiveLog,
     setSensitiveLog
 });
 

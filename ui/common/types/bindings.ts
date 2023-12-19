@@ -370,6 +370,7 @@ export interface RpcMethods {
         },
         string,
     ]
+    getSensitiveLog: [{}, boolean]
     setSensitiveLog: [{ enable: boolean }, null]
 }
 
