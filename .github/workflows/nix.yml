@@ -33,13 +33,13 @@ jobs:
             - name: Check out code
               uses: actions/checkout@v3
               with:
-                  ref: ${{ github.event.pull_request.base.ref }}
-                  fetch-depth: 1
+                  fetch-depth: 20
             - name: Check for changes outside 'ui/**'
               id: check-changes
               run: |
-                  git fetch origin ${{ github.event.pull_request.head.sha }} 
-                  FILES_CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+                  git fetch --depth=20 origin ${{ github.event.pull_request.base.sha }}
+                  LAST_COMMON_COMMIT_SHA="$(git merge-base HEAD ${{ github.event.pull_request.base.sha }})"
+                  FILES_CHANGED=$(git diff --name-only HEAD $LAST_COMMON_COMMIT_SHA)
                   HAS_NON_UI_CHANGES=0
                   for file in $FILES_CHANGED; do
                     if [[ ! $file == ui/* ]]; then
