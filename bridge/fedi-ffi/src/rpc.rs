@@ -589,8 +589,10 @@ mod tests {
 
     use super::*;
     use crate::bridge::MultiFederation;
+    use crate::constants::FEDI_FILE_PATH;
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
+    use crate::storage::IStorage;
     use crate::translate::Translate;
     use crate::types::RpcReturningMemberStatus;
 
@@ -836,6 +838,33 @@ mod tests {
         let federation = bridge.get_multi(&fedimint_federation.id.0).await?;
         use_lnd_gateway(&federation).await?;
         Ok(federation)
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_doesnt_overwrite_seed_in_invalid_fedi_file() -> anyhow::Result<()> {
+        INIT_TRACING.call_once(|| {
+            TracingSetup::default()
+                .init()
+                .expect("Failed to initialize tracing");
+        });
+        let event_sink = Arc::new(FakeEventSink::new());
+        let data_dir = create_data_dir();
+        let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
+        let invalid_fedi_file = String::from(r#"{"format_version": 0, "root_seed": "abcd"}"#);
+        storage
+            .write_file(FEDI_FILE_PATH.as_ref(), invalid_fedi_file.clone().into())
+            .await?;
+        assert!(fedimint_initialize_async(storage.clone(), event_sink)
+            .await
+            .is_err());
+        assert_eq!(
+            storage
+                .read_file(FEDI_FILE_PATH.as_ref())
+                .await?
+                .expect("fedi file not found"),
+            invalid_fedi_file.into_bytes()
+        );
+        Ok(())
     }
 
     #[tokio::test(flavor = "multi_thread")]

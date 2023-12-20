@@ -12,6 +12,7 @@ use futures::future::BoxFuture;
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
+use tracing::error;
 use v0_rocksdb::{
     JoinedFederationV0, JoinedFederationV1, JoinedFederationsV0Prefix, JoinedFederationsV1Prefix,
 };
@@ -93,16 +94,31 @@ impl AppState {
     }
 
     async fn existing_from_storage(storage: Storage) -> anyhow::Result<Option<Self>> {
-        let app_state_raw = storage.read_file(Path::new(FEDI_FILE_PATH)).await?;
+        let Some(app_state_raw) = storage.read_file(Path::new(FEDI_FILE_PATH)).await? else {
+            return Ok(None);
+        };
 
-        if let Some(app_state_raw) = app_state_raw {
-            Ok(Some(Self {
-                raw: RwLock::new(serde_json::from_slice(&app_state_raw)?),
-                storage,
-            }))
-        } else {
-            Ok(None)
+        let Some(value) = Self::parse(app_state_raw)? else {
+            return Ok(None);
+        };
+
+        Ok(Some(Self {
+            raw: RwLock::new(value),
+            storage,
+        }))
+    }
+
+    fn parse(app_state_raw: Vec<u8>) -> Result<Option<AppStateRaw>, anyhow::Error> {
+        #[derive(Clone, Deserialize)]
+        struct HasFormatVersion {
+            #[allow(unused)]
+            format_version: u32,
         }
+        if let Err(err) = serde_json::from_slice::<HasFormatVersion>(&app_state_raw) {
+            error!(%err, "invalid fedi file");
+            return Ok(None);
+        }
+        Ok(Some(serde_json::from_slice(&app_state_raw)?))
     }
 
     async fn new_from_legacy_global_database(storage: Storage) -> anyhow::Result<Self> {
@@ -200,5 +216,21 @@ impl AppState {
             )
             .await?;
         Ok(result)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_old_fedi_file_compatible() {
+        let old_file = String::from(r#"{"federations": {"s": "y"}}"#);
+        assert!(AppState::parse(old_file.into()).unwrap().is_none());
+    }
+    #[test]
+    fn test_fedi_file_seed_is_not_overwritten() {
+        let old_file = String::from(r#"{"format_version": 0, "root_seed": "foo"}"#);
+        assert!(AppState::parse(old_file.into()).is_err());
     }
 }
