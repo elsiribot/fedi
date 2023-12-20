@@ -22,44 +22,58 @@ export const FediModTiles: React.FC = () => {
                     <FediModTile
                         key={fediMod.id}
                         href={fediMod.url}
-                        target="_blank"
-                        rel="noopener noreferrer">
-                        {typeof image === 'string' ? (
-                            <FediModIcon src={image} alt="" />
-                        ) : image ? (
-                            <FediModIcon
-                                as={Image}
-                                src={image}
-                                alt=""
-                                width={48}
-                                height={48}
-                            />
-                        ) : (
-                            <FediModIcon as="div" />
-                        )}
-                        <FediModTitle>
-                            <Text variant="small" ellipsize>
-                                {fediMod.title}
-                            </Text>
-                        </FediModTitle>
-                    </FediModTile>
+                        title={fediMod.title}
+                        image={image}
+                    />
                 )
             })}
 
             {/* Hardcoded for now */}
-            <FediModTile href="/bug-report" as={Link}>
-                <FediModIcon
-                    src={FEDIMOD_IMAGES['bug-report'] as StaticImageData}
-                    as={Image}
-                    alt=""
-                />
-                <FediModTitle>
-                    <Text variant="small" ellipsize>
-                        {t('feature.bug.report-a-bug')}
-                    </Text>
-                </FediModTitle>
-            </FediModTile>
+            <FediModTile
+                href="/bug-report"
+                title={t('feature.bug.report-a-bug')}
+                image={FEDIMOD_IMAGES['bug-report'] as StaticImageData}
+            />
         </Container>
+    )
+}
+
+const FediModTile = ({
+    href,
+    image,
+    title,
+}: {
+    href: string
+    image?: string | StaticImageData
+    title: string
+}) => {
+    const isExternal = href.startsWith('http')
+
+    return (
+        <FediModTileBase
+            href={href}
+            as={isExternal ? undefined : Link}
+            target={isExternal ? '_blank' : undefined}
+            rel={isExternal ? 'noopener noreferrer' : undefined}>
+            {typeof image === 'string' ? (
+                <FediModIcon src={image} alt="" />
+            ) : image ? (
+                <FediModIcon
+                    as={Image}
+                    src={image}
+                    alt=""
+                    width={48}
+                    height={48}
+                />
+            ) : (
+                <FediModIcon as="div" />
+            )}
+            <FediModTitle>
+                <Text variant="small" ellipsize>
+                    {title}
+                </Text>
+            </FediModTitle>
+        </FediModTileBase>
     )
 }
 
@@ -78,7 +92,7 @@ const Container = styled('div', {
     },
 })
 
-const FediModTile = styled('a', {
+const FediModTileBase = styled('a', {
     display: 'inline-flex',
     flexDirection: 'column',
     justifyContent: 'center',
