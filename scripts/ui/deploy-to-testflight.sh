@@ -12,6 +12,15 @@ BUILD_BRIDGE=${BUILD_BRIDGE:-1}
 BUILD_UI_DEPS=${BUILD_UI_DEPS:-1}
 REINSTALL_PODS=${REINSTALL_PODS:-1}
 
+# First, delete DerivedData to remove outdated build artifacts
+echo "Deleting DerivedData for a clean build directory..."
+rm -rf $REPO_ROOT/ui/native/ios/build
+if [[ -n "$CI" ]]; then
+  rm -rf /Users/runner/Library/Developer/Xcode/DerivedData
+else
+  rm -rf ~/Library/Developer/Xcode/DerivedData
+fi
+
 if [[ "$BUILD_BRIDGE" == "0" ]]; then
   echo "Skipping bridge build..."
 else
@@ -31,14 +40,6 @@ if [[ "$REINSTALL_PODS" == "0" ]]; then
 else
   echo "Installing iOS dependencies (cocoapods)"
   $REPO_ROOT/scripts/ui/install-ios-deps.sh
-fi
-
-# First, delete DerivedData to remove outdated build artifacts
-echo "Deleting DerivedData for a clean build directory..."
-if [[ -n "$CI" ]]; then
-  rm -rf /Users/runner/Library/Developer/Xcode/DerivedData
-else
-  rm -rf ~/Library/Developer/Xcode/DerivedData
 fi
 
 pushd $REPO_ROOT/ui/native/ios
