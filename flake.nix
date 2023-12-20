@@ -50,6 +50,7 @@
           overlays = [
             (final: prev: {
               fs-dir-cache = fs-dir-cache.packages.${system}.default;
+              fastlane = pkgs-unstable.fastlane;
               convco = pkgs-unstable.convco;
 
               esplora = pkgs-kitman.esplora;
