@@ -151,51 +151,8 @@ export const JoinFederation: React.FC = () => {
                 )}
             </>
         )
-    } else {
-        const tosUrl = getFederationTosUrl(federationPreview.meta)
-        const welcomeMessage = getFederationWelcomeMessage(
-            federationPreview.meta,
-        )
-        const memberStatus = federationPreview.returningMemberStatus.type
-        const welcomeTitle =
-            memberStatus === 'returningMember'
-                ? t('feature.onboarding.welcome-back-to-federation')
-                : t('feature.onboarding.welcome-to-federation')
-        const welcomeInstructions =
-            memberStatus === 'newMember'
-                ? t('feature.onboarding.welcome-instructions-new')
-                : memberStatus === 'returningMember'
-                ? t('feature.onboarding.welcome-instructions-returning')
-                : t('feature.onboarding.welcome-instructions-unknown')
-        const isSupported = getIsFederationSupported(federationPreview)
-        content = isSupported ? (
-            <FederationPreviewOuter>
-                <FederationPreviewInner>
-                    <AvatarWrapper>
-                        <FederationAvatar
-                            federation={{
-                                id: federationPreview.id,
-                                name: federationPreview.name,
-                                meta: federationPreview.meta,
-                            }}
-                            size="lg"
-                        />
-                    </AvatarWrapper>
-                    <Text variant="h2" weight="medium">
-                        {welcomeTitle} {federationPreview.name}
-                    </Text>
-                    {welcomeMessage ? (
-                        <CustomWelcomeMessage>
-                            <Trans components={{ bold: <strong /> }}>
-                                {welcomeMessage}
-                            </Trans>
-                        </CustomWelcomeMessage>
-                    ) : (
-                        <Text variant="caption">{welcomeInstructions}</Text>
-                    )}
-                </FederationPreviewInner>
-            </FederationPreviewOuter>
-        ) : (
+    } else if (!getIsFederationSupported(federationPreview)) {
+        content = (
             <FederationPreviewOuter>
                 <FederationPreviewInner>
                     <AvatarWrapper>
@@ -223,22 +180,7 @@ export const JoinFederation: React.FC = () => {
             </FederationPreviewOuter>
         )
 
-        let joinNewMemberHref = '/'
-        if (tosUrl) {
-            joinNewMemberHref = '/onboarding/terms'
-        } else if (isChatSupported) {
-            joinNewMemberHref = '/onboarding/username'
-        }
-        actions = isSupported ? (
-            <>
-                <Button
-                    width="full"
-                    onClick={() => handleJoin(joinNewMemberHref)}
-                    loading={isJoining}>
-                    {t('words.continue')}
-                </Button>
-            </>
-        ) : (
+        actions = (
             <>
                 <Button
                     width="full"
@@ -246,7 +188,68 @@ export const JoinFederation: React.FC = () => {
                         setIsJoining(false)
                         setFederationPreview(undefined)
                     }}>
-                    {t('words.retry')}
+                    {t('words.okay')}
+                </Button>
+            </>
+        )
+    } else {
+        const tosUrl = getFederationTosUrl(federationPreview.meta)
+        const welcomeMessage = getFederationWelcomeMessage(
+            federationPreview.meta,
+        )
+        const memberStatus = federationPreview.returningMemberStatus.type
+        const welcomeTitle =
+            memberStatus === 'returningMember'
+                ? t('feature.onboarding.welcome-back-to-federation')
+                : t('feature.onboarding.welcome-to-federation')
+        const welcomeInstructions =
+            memberStatus === 'newMember'
+                ? t('feature.onboarding.welcome-instructions-new')
+                : memberStatus === 'returningMember'
+                ? t('feature.onboarding.welcome-instructions-returning')
+                : t('feature.onboarding.welcome-instructions-unknown')
+        content = (
+            <FederationPreviewOuter>
+                <FederationPreviewInner>
+                    <AvatarWrapper>
+                        <FederationAvatar
+                            federation={{
+                                id: federationPreview.id,
+                                name: federationPreview.name,
+                                meta: federationPreview.meta,
+                            }}
+                            size="lg"
+                        />
+                    </AvatarWrapper>
+                    <Text variant="h2" weight="medium">
+                        {welcomeTitle} {federationPreview.name}
+                    </Text>
+                    {welcomeMessage ? (
+                        <CustomWelcomeMessage>
+                            <Trans components={{ bold: <strong /> }}>
+                                {welcomeMessage}
+                            </Trans>
+                        </CustomWelcomeMessage>
+                    ) : (
+                        <Text variant="caption">{welcomeInstructions}</Text>
+                    )}
+                </FederationPreviewInner>
+            </FederationPreviewOuter>
+        )
+
+        let joinNewMemberHref = '/'
+        if (tosUrl) {
+            joinNewMemberHref = '/onboarding/terms'
+        } else if (isChatSupported) {
+            joinNewMemberHref = '/onboarding/username'
+        }
+        actions = (
+            <>
+                <Button
+                    width="full"
+                    onClick={() => handleJoin(joinNewMemberHref)}
+                    loading={isJoining}>
+                    {t('words.continue')}
                 </Button>
             </>
         )
