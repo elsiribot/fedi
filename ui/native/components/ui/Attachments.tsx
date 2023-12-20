@@ -83,14 +83,11 @@ export const Attachments: React.FC<Props> = ({
                     buttonStyle={style.uploadButton}
                     icon={<SvgImage size={SvgImageSize.sm} name="Plus" />}
                     title={
-                        <Text
-                            caption
-                            bold
-                            style={style.uploadButtonTitle}
-                            onPress={handleAddAttachment}>
+                        <Text caption bold style={style.uploadButtonTitle}>
                             {t('words.upload')}
                         </Text>
                     }
+                    onPress={handleAddAttachment}
                 />
             )}
         </View>
