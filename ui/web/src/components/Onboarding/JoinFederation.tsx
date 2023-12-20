@@ -10,6 +10,7 @@ import {
     getFederationPreview,
     getFederationTosUrl,
     getFederationWelcomeMessage,
+    getIsFederationSupported,
 } from '@fedi/common/utils/FederationUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -150,6 +151,47 @@ export const JoinFederation: React.FC = () => {
                 )}
             </>
         )
+    } else if (!getIsFederationSupported(federationPreview)) {
+        content = (
+            <FederationPreviewOuter>
+                <FederationPreviewInner>
+                    <AvatarWrapper>
+                        <FederationAvatar
+                            federation={{
+                                id: federationPreview.id,
+                                name: federationPreview.name,
+                                meta: federationPreview.meta,
+                            }}
+                            size="lg"
+                        />
+                    </AvatarWrapper>
+                    <Text variant="h2" weight="medium">
+                        {federationPreview.name}
+                    </Text>
+                    <UnsupportedBadge>
+                        <Text variant="caption" weight="medium">
+                            {t('words.unsupported')}
+                        </Text>
+                    </UnsupportedBadge>
+                    <Text variant="caption">
+                        {t('feature.onboarding.unsupported-notice')}
+                    </Text>
+                </FederationPreviewInner>
+            </FederationPreviewOuter>
+        )
+
+        actions = (
+            <>
+                <Button
+                    width="full"
+                    onClick={() => {
+                        setIsJoining(false)
+                        setFederationPreview(undefined)
+                    }}>
+                    {t('words.okay')}
+                </Button>
+            </>
+        )
     } else {
         const tosUrl = getFederationTosUrl(federationPreview.meta)
         const welcomeMessage = getFederationWelcomeMessage(
@@ -263,4 +305,11 @@ const CustomWelcomeMessage = styled('div', {
 
 const AvatarWrapper = styled('div', {
     marginBottom: 16,
+})
+
+const UnsupportedBadge = styled('div', {
+    background: theme.colors.red,
+    color: theme.colors.white,
+    borderRadius: 16,
+    padding: `${theme.space.xs} ${theme.space.sm}`,
 })
