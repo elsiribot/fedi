@@ -47,7 +47,7 @@ export async function initializeBridge() {
         worker = new Worker(new URL('./wasm.worker.ts', import.meta.url))
         worker.onmessage = e => {
             if (e.data.error) {
-                log.error('bridge error', e.data.error)
+                log.error('bridge error', e.data)
                 return reject(new Error(e.data.error))
             }
             if (e.data.event) {
