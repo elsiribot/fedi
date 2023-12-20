@@ -49,10 +49,10 @@ export async function attachmentsToFiles(
                     : ''
                 const b64 = await asyncStreamFile(a.uri || '', 'base64')
                 const content = Buffer.from(b64, 'base64')
-                return {
+                files.push({
                     name: `attachment-${index}${fileExt}`,
                     content,
-                }
+                })
             } catch (err) {
                 log.warn('Failed to stream image attachment', err)
             }
