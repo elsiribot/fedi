@@ -57,7 +57,7 @@ BUILD_NUMBER="${YY}${DDD}${HHMM}"
 
 # modify the build numbers so app stores will accept the upload
 # We do not commit this since build numbers are timestamp based
-npx react-native-version --target ios --increment-build --never-amend --set-build $BUILD_NUMBER
+nix develop -c npx react-native-version --target ios --increment-build --never-amend --set-build $BUILD_NUMBER
 
 echo "Building Xcode release archive with fastlane (see $REPO_ROOT/ui/native/ios/Fastfile for lane configurations)..."
 if [ -z "${FLAVOR:-}" ]; then
