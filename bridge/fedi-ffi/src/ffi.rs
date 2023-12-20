@@ -82,6 +82,7 @@ pub async fn fedimint_initialize_inner(
     let data_dir: PathBuf = data_dir.into();
     logging::init_logging(&data_dir, event_sink.clone(), &log_level)
         .context("Failed to initialize logging")?;
+    info!("initialized logging");
     let storage = PathBasedStorage::new(data_dir)
         .await
         .context("Failed to initialize storage")?;

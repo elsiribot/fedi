@@ -13,6 +13,7 @@ interface LogItem {
 const LOG_STORAGE_KEY = 'fedi:logs'
 const MAX_LOGS_STORED = 3000
 const MAX_MESSAGE_LENGTH = 1000
+const MAX_ERROR_MESSAGE_LENGTH = 2000
 
 let storage: StorageApi | undefined
 let cachedLogs: LogItem[] = []
@@ -94,7 +95,7 @@ async function getLogsFromStorage(): Promise<LogItem[]> {
                 context: 'common/utils/log',
                 message:
                     'Encountered an error during log retrieval from storage. Some logging may be missing.',
-                extra: [formatArgForStorage(err)],
+                extra: [formatArgForStorage(err, 'error')],
             },
         ]
     }
@@ -110,8 +111,10 @@ function innerLog(
         timestamp: Date.now(),
         level,
         context,
-        message: formatArgForStorage(message) as string,
-        extra: extra.length ? extra.map(formatArgForStorage) : undefined,
+        message: formatArgForStorage(message, level) as string,
+        extra: extra.length
+            ? extra.map(e => formatArgForStorage(e, level))
+            : undefined,
     }
     cachedLogs.push(logItem)
 
@@ -129,7 +132,7 @@ function innerLog(
     }
 }
 
-function formatArgForStorage(arg: unknown) {
+function formatArgForStorage(arg: unknown, level?: LogLevel) {
     let formatted: string | number | boolean | null
     // Non-objects can stay as-is
     if (
@@ -158,7 +161,10 @@ function formatArgForStorage(arg: unknown) {
         typeof formatted === 'string' &&
         formatted.length > MAX_MESSAGE_LENGTH
     ) {
-        formatted = `${formatted.slice(0, MAX_MESSAGE_LENGTH)}...`
+        formatted =
+            level === 'error'
+                ? `${formatted.slice(0, MAX_ERROR_MESSAGE_LENGTH)}...`
+                : `${formatted.slice(0, MAX_MESSAGE_LENGTH)}...`
     }
     return formatted
 }
