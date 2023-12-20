@@ -51,5 +51,6 @@ jobs:
                   BUILD_BRIDGE: 0
                   BUILD_UI_DEPS: 0
                   REINSTALL_PODS: 0
+                  FLAVOR: 'nightly'
               run: |
                   ./scripts/ui/deploy-to-testflight.sh
