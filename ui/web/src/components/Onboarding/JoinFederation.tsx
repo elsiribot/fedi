@@ -10,6 +10,7 @@ import {
     getFederationPreview,
     getFederationTosUrl,
     getFederationWelcomeMessage,
+    getIsFederationSupported,
 } from '@fedi/common/utils/FederationUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -166,7 +167,8 @@ export const JoinFederation: React.FC = () => {
                 : memberStatus === 'returningMember'
                 ? t('feature.onboarding.welcome-instructions-returning')
                 : t('feature.onboarding.welcome-instructions-unknown')
-        content = (
+        const isSupported = getIsFederationSupported(federationPreview)
+        content = isSupported ? (
             <FederationPreviewOuter>
                 <FederationPreviewInner>
                     <AvatarWrapper>
@@ -193,6 +195,32 @@ export const JoinFederation: React.FC = () => {
                     )}
                 </FederationPreviewInner>
             </FederationPreviewOuter>
+        ) : (
+            <FederationPreviewOuter>
+                <FederationPreviewInner>
+                    <AvatarWrapper>
+                        <FederationAvatar
+                            federation={{
+                                id: federationPreview.id,
+                                name: federationPreview.name,
+                                meta: federationPreview.meta,
+                            }}
+                            size="lg"
+                        />
+                    </AvatarWrapper>
+                    <Text variant="h2" weight="medium">
+                        {federationPreview.name}
+                    </Text>
+                    <UnsupportedBadge>
+                        <Text variant="caption" weight="medium">
+                            {t('words.unsupported')}
+                        </Text>
+                    </UnsupportedBadge>
+                    <Text variant="caption">
+                        {t('feature.onboarding.unsupported-notice')}
+                    </Text>
+                </FederationPreviewInner>
+            </FederationPreviewOuter>
         )
 
         let joinNewMemberHref = '/'
@@ -201,13 +229,24 @@ export const JoinFederation: React.FC = () => {
         } else if (isChatSupported) {
             joinNewMemberHref = '/onboarding/username'
         }
-        actions = (
+        actions = isSupported ? (
             <>
                 <Button
                     width="full"
                     onClick={() => handleJoin(joinNewMemberHref)}
                     loading={isJoining}>
                     {t('words.continue')}
+                </Button>
+            </>
+        ) : (
+            <>
+                <Button
+                    width="full"
+                    onClick={() => {
+                        setIsJoining(false)
+                        setFederationPreview(undefined)
+                    }}>
+                    {t('words.retry')}
                 </Button>
             </>
         )
@@ -263,4 +302,11 @@ const CustomWelcomeMessage = styled('div', {
 
 const AvatarWrapper = styled('div', {
     marginBottom: 16,
+})
+
+const UnsupportedBadge = styled('div', {
+    background: theme.colors.red,
+    color: theme.colors.white,
+    borderRadius: 16,
+    padding: `${theme.space.xs} ${theme.space.sm}`,
 })
