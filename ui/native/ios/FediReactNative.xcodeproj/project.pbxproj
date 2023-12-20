@@ -58,7 +58,7 @@
 		BB56AE9D1B46C7DB7914AC82 /* libPods-FediReactNative-FediReactNativeTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A78793F22F20F868C5729FCD /* libPods-FediReactNative-FediReactNativeTests.a */; };
 		C708E68B70C4324481A23AE4 /* libPods-FediReactNative.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 645940C0CD9AC78202694564 /* libPods-FediReactNative.a */; };
 		C880FF5BC2074D18AAC059D6 /* AlbertSans-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A2718C7E398D4E6D944B3C10 /* AlbertSans-Italic.ttf */; };
-		CEAD846DB806C8334F7E8FB4 /* BuildFile in Frameworks */ = {isa = PBXBuildFile; };
+		CEAD846DB806C8334F7E8FB4 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		D0D73EFA2921E1C80059F06F /* FedimintFfi.m in Sources */ = {isa = PBXBuildFile; fileRef = D0D73EF92921E1C80059F06F /* FedimintFfi.m */; };
 		D0D73EFB2921E1C80059F06F /* FedimintFfi.m in Sources */ = {isa = PBXBuildFile; fileRef = D0D73EF92921E1C80059F06F /* FedimintFfi.m */; };
 		D0D73EFF2921E5480059F06F /* FedimintFfi.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D73EFE2921E5480059F06F /* FedimintFfi.swift */; };
@@ -143,7 +143,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5118AA9C294A6A1700A41911 /* Fedi in Frameworks */,
-				CEAD846DB806C8334F7E8FB4 /* BuildFile in Frameworks */,
+				CEAD846DB806C8334F7E8FB4 /* (null) in Frameworks */,
 				C708E68B70C4324481A23AE4 /* libPods-FediReactNative.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -324,7 +324,6 @@
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				D026A273294B8652001006AD /* ShellScript */,
 				5E89027A1C7AE51885F9F4D1 /* [CP] Embed Pods Frameworks */,
 				55EDEAB12A132C16C4AE3A36 /* [CP] Copy Pods Resources */,
 				4F07992A01BD5A4B823B80D2 /* [CP-User] [RNFB] Core Configuration */,
@@ -351,7 +350,6 @@
 				51BDE89F2AD5FFDF006CF72B /* Frameworks */,
 				51BDE8A22AD5FFDF006CF72B /* Resources */,
 				51BDE8B82AD5FFDF006CF72B /* Bundle React Native code and images */,
-				51BDE8B92AD5FFDF006CF72B /* ShellScript */,
 				51BDE8BA2AD5FFDF006CF72B /* [CP] Embed Pods Frameworks */,
 				51BDE8BB2AD5FFDF006CF72B /* [CP] Copy Pods Resources */,
 			);
@@ -575,23 +573,6 @@
 			shellPath = /bin/sh;
 			shellScript = "export PROJECT_ROOT=$PWD/..\nset -e\n\nWITH_ENVIRONMENT=\"../../node_modules/react-native/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"../../node_modules/react-native/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
 		};
-		51BDE8B92AD5FFDF006CF72B /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = ": '\necho \"building the bridge\"\n\n# re-build bridge bindings for ios\npushd ../../../bridge\n./ios.sh\npopd\n'\n";
-		};
 		51BDE8BA2AD5FFDF006CF72B /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -720,23 +701,6 @@
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
-		};
-		D026A273294B8652001006AD /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = ": '\necho \"building the bridge\"\n\n# re-build bridge bindings for ios\npushd ../../../bridge\n./ios.sh\npopd\n'\n";
 		};
 		FD10A7F022414F080027D42C /* Start Packager */ = {
 			isa = PBXShellScriptBuildPhase;
