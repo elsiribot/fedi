@@ -2,12 +2,14 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import CogIcon from '@fedi/common/assets/svgs/cog.svg'
+import Edit from '@fedi/common/assets/svgs/edit.svg'
 import LeaveRoom from '@fedi/common/assets/svgs/leave-room.svg'
-import QRIcon from '@fedi/common/assets/svgs/qr.svg'
+import Room from '@fedi/common/assets/svgs/room.svg'
 import {
     configureChatGroup,
     leaveChatGroup,
     selectActiveFederationId,
+    selectChat,
     selectChatGroup,
     selectChatGroupRole,
     selectChatMessages,
@@ -19,12 +21,12 @@ import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
 import { styled, theme } from '../styles'
 import { Button } from './Button'
+import { ChatAvatar } from './ChatAvatar'
 import { ChatConversation } from './ChatConversation'
 import { ChatEmptyState } from './ChatEmptyState'
 import { CopyInput } from './CopyInput'
 import { Dialog } from './Dialog'
 import { IconButton } from './IconButton'
-import { Input } from './Input'
 import * as Layout from './Layout'
 import { QRCode } from './QRCode'
 import { Text } from './Text'
@@ -41,9 +43,11 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
     const group = useAppSelector(s => selectChatGroup(s, groupId))
     const messages = useAppSelector(s => selectChatMessages(s, groupId))
     const role = useAppSelector(s => selectChatGroupRole(s, groupId))
-    const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
-    const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
-    const [groupName, setGroupName] = useState(group?.name || '')
+    const [dialogState, setDialogState] = useState<
+        'settings' | 'share' | false
+    >(false)
+
+    const chat = useAppSelector(s => selectChat(s, group?.id))
 
     const handleSend = useCallback(
         async (content: string) => {
@@ -63,26 +67,26 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
     const handleEditGroupName = useCallback(async () => {
         try {
             if (!federationId || !group) return
-            if (!groupName) return
+            const newName = prompt(t('feature.chat.change-group-name'))
+            if (!newName) return
             await dispatch(
                 configureChatGroup({
                     federationId,
                     groupId: group?.id,
-                    groupName,
+                    groupName: newName,
                 }),
             ).unwrap()
-            setIsSettingsDialogOpen(false)
         } catch (err) {
             showErrorToast(err, 'errors.unknown-error')
         }
-    }, [dispatch, showErrorToast, federationId, group, groupName])
+    }, [t, dispatch, showErrorToast, federationId, group])
 
     const handleLeaveGroup = useCallback(async () => {
         const shouldLeave = confirm(t('feature.chat.leave-group-confirmation'))
         if (!federationId || !group) return
         if (shouldLeave) {
             await dispatch(leaveChatGroup({ federationId, groupId: group?.id }))
-            setIsSettingsDialogOpen(false)
+            setDialogState(false)
         }
     }, [t, federationId, group, dispatch])
 
@@ -105,17 +109,14 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
                     <>
                         <IconButton
                             size="md"
-                            icon={QRIcon}
-                            onClick={() => setIsShareDialogOpen(true)}
-                        />
-                        <IconButton
-                            size="md"
                             icon={CogIcon}
-                            onClick={() => setIsSettingsDialogOpen(true)}
+                            onClick={() => setDialogState('settings')}
                         />
                         <Dialog
-                            open={isShareDialogOpen}
-                            onOpenChange={setIsShareDialogOpen}
+                            open={dialogState === 'share'}
+                            onOpenChange={(open: boolean) =>
+                                setDialogState(open ? 'share' : false)
+                            }
                             title={t('feature.chat.invite-to-group')}>
                             <Layout.Root>
                                 <Layout.Content centered>
@@ -134,48 +135,50 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
                             </Layout.Root>
                         </Dialog>
                         <Dialog
-                            open={isSettingsDialogOpen}
-                            onOpenChange={setIsSettingsDialogOpen}
-                            title={group.name}>
+                            open={dialogState === 'settings'}
+                            onOpenChange={(open: boolean) =>
+                                setDialogState(open ? 'settings' : false)
+                            }>
                             <Layout.Root>
                                 <Layout.Content centered>
-                                    <SettingsContentWrapper>
-                                        {role === ChatRole.moderator && (
-                                            <RenameWrapper>
-                                                <Input
-                                                    value={groupName}
-                                                    onChange={e =>
-                                                        setGroupName(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    name="group-name"
-                                                    placeholder={t(
-                                                        'feature.chat.group-name',
-                                                    )}
-                                                    label={
-                                                        <Text variant="caption">
-                                                            {t(
-                                                                'feature.chat.group-name',
-                                                            )}
-                                                        </Text>
-                                                    }
-                                                />
+                                    <SettingsWrapper>
+                                        <GroupHeader>
+                                            <ChatAvatar chat={chat} size="lg" />
+                                            <Text variant="h2">
+                                                {group.name}
+                                            </Text>
+                                        </GroupHeader>
+                                        <ItemsWrapper>
+                                            {role === ChatRole.moderator && (
                                                 <Button
+                                                    variant="outline"
+                                                    icon={Edit}
                                                     onClick={
                                                         handleEditGroupName
                                                     }>
-                                                    {t('words.save')}
+                                                    {t(
+                                                        'feature.chat.edit-group',
+                                                    )}
                                                 </Button>
-                                            </RenameWrapper>
-                                        )}
-                                        <Button
-                                            onClick={handleLeaveGroup}
-                                            variant="outline"
-                                            icon={LeaveRoom}>
-                                            {t('feature.chat.leave-group')}
-                                        </Button>
-                                    </SettingsContentWrapper>
+                                            )}
+                                            <Button
+                                                variant="outline"
+                                                icon={Room}
+                                                onClick={() =>
+                                                    setDialogState('share')
+                                                }>
+                                                {t(
+                                                    'feature.chat.invite-to-group',
+                                                )}
+                                            </Button>
+                                            <Button
+                                                onClick={handleLeaveGroup}
+                                                variant="outline"
+                                                icon={LeaveRoom}>
+                                                {t('feature.chat.leave-group')}
+                                            </Button>
+                                        </ItemsWrapper>
+                                    </SettingsWrapper>
                                 </Layout.Content>
                             </Layout.Root>
                         </Dialog>
@@ -191,14 +194,21 @@ const QRWrapper = styled('div', {
     margin: '12px auto 0',
 })
 
-const RenameWrapper = styled('div', {
-    display: 'flex',
-    gap: theme.space.md,
-    alignItems: 'end',
-})
-
-const SettingsContentWrapper = styled('div', {
+const ItemsWrapper = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     gap: theme.space.md,
+})
+
+const SettingsWrapper = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.space.xl,
+})
+
+const GroupHeader = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.space.lg,
+    alignItems: 'center',
 })
