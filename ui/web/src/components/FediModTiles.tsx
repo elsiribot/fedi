@@ -3,6 +3,7 @@ import Link from 'next/link'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import DefaultFediModIcon from '@fedi/common/assets/images/fedimods/default.png'
 import { selectFederationFediMods } from '@fedi/common/redux'
 
 import { FEDIMOD_IMAGES } from '../constants/fedimodimages'
@@ -17,7 +18,10 @@ export const FediModTiles: React.FC = () => {
     return (
         <Container>
             {fediMods.map(fediMod => {
-                const image = fediMod.imageUrl || FEDIMOD_IMAGES[fediMod.id]
+                const image =
+                    fediMod.imageUrl ||
+                    FEDIMOD_IMAGES[fediMod.id] ||
+                    DefaultFediModIcon
                 return (
                     <FediModTile
                         key={fediMod.id}
@@ -44,7 +48,7 @@ const FediModTile = ({
     title,
 }: {
     href: string
-    image?: string | StaticImageData
+    image: string | StaticImageData
     title: string
 }) => {
     const isExternal = href.startsWith('http')
@@ -57,7 +61,7 @@ const FediModTile = ({
             rel={isExternal ? 'noopener noreferrer' : undefined}>
             {typeof image === 'string' ? (
                 <FediModIcon src={image} alt="" />
-            ) : image ? (
+            ) : (
                 <FediModIcon
                     as={Image}
                     src={image}
@@ -65,8 +69,6 @@ const FediModTile = ({
                     width={48}
                     height={48}
                 />
-            ) : (
-                <FediModIcon as="div" />
             )}
             <FediModTitle>
                 <Text variant="small" ellipsize>
