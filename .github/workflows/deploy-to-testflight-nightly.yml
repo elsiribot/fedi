@@ -28,10 +28,10 @@ jobs:
               continue-on-error: true
 
             - name: Build bridge
-              run: nix develop --command env BUILD_ALL_BRIDGE_TARGETS=1 CARGO_PROFILE=release scripts/ci/run-in-fs-dir-cache.sh build-bridge-ios ./scripts/bridge/build-bridge-ios.sh
+              run: nix develop -c env BUILD_ALL_BRIDGE_TARGETS=1 CARGO_PROFILE=release scripts/ci/run-in-fs-dir-cache.sh build-bridge-ios ./scripts/bridge/build-bridge-ios.sh
 
             - name: Build UI dependencies
-              run: nix develop --command ./scripts/ui/build-deps.sh
+              run: nix develop -c ./scripts/ui/build-deps.sh
 
             - name: Install iOS dependencies (Cocoapods)
               # xcode shell ensures we have cocoapods installed
@@ -40,7 +40,7 @@ jobs:
             - name: Generate JSON credentials file
               env:
                   ASC_API_KEY_JSON_CREDENTIALS_ENCODED: ${{ secrets.ASC_API_KEY_JSON_CREDENTIALS_ENCODED }}
-              run: nix develop --command ./scripts/ci/make-testflight-creds.sh
+              run: nix develop -c ./scripts/ci/make-testflight-creds.sh
 
             - name: Execute fastlane beta lane for CI
               env:

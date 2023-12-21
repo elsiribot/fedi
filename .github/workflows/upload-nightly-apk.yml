@@ -26,16 +26,16 @@ jobs:
                   authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
             - name: Build bridge
-              run: nix develop --command env BUILD_ALL_BRIDGE_TARGETS=1 CARGO_PROFILE=release ./scripts/bridge/build-bridge-android.sh
+              run: nix develop -c env BUILD_ALL_BRIDGE_TARGETS=1 CARGO_PROFILE=release ./scripts/bridge/build-bridge-android.sh
 
             - name: Build UI dependencies
-              run: nix develop --command ./scripts/ui/build-deps.sh
+              run: nix develop -c ./scripts/ui/build-deps.sh
 
             - name: Bump version & prep for APK build
               id: versioning
               env:
                   FLAVOR: 'nightly'
-              run: nix develop --command ./scripts/ui/bump-version-native.sh
+              run: nix develop -c ./scripts/ui/bump-version-native.sh
 
             - name: Build APK
               env:
@@ -43,7 +43,7 @@ jobs:
                   # Consider: should we even have separate steps above for this?
                   BUILD_BRIDGE: 0
                   BUILD_UI_DEPS: 0
-              run: nix develop --command ./scripts/ui/build-nightly-apk.sh
+              run: nix develop -c ./scripts/ui/build-nightly-apk.sh
 
             - name: Create draft GitHub release with APK
               uses: softprops/action-gh-release@v1
