@@ -50,6 +50,7 @@
           overlays = [
             (final: prev: {
               fs-dir-cache = fs-dir-cache.packages.${system}.default;
+              fastlane = pkgs-unstable.fastlane;
               convco = pkgs-unstable.convco;
 
               esplora = pkgs-kitman.esplora;
@@ -324,6 +325,7 @@
               # to use ld instead of clang for linking the bridge binary
               export LD=/usr/bin/clang
               export LD_FOR_TARGET=/usr/bin/clang
+              export MACOSX_DEPLOYMENT_TARGET=""
             '';
           });
           v1 = fedi-v1.devShells.${system}.default.overrideAttrs (prev: {

@@ -11,8 +11,6 @@ jobs:
     release-ios:
         name: Build iOS app and upload to TestFlight
         runs-on: [self-hosted, macos, arm64]
-        # TODO: Remove/change this workflow is fixed
-        timeout-minutes: 1
         steps:
             - name: Checkout repo
               uses: actions/checkout@v3
@@ -36,7 +34,8 @@ jobs:
               run: nix develop --command ./scripts/ui/build-deps.sh
 
             - name: Install iOS dependencies (Cocoapods)
-              run: nix develop --command ./scripts/ui/install-ios-deps.sh
+              # xcode shell ensures we have cocoapods installed
+              run: nix develop .#xcode -c ./scripts/ui/install-ios-deps.sh
 
             - name: Generate JSON credentials file
               env:
@@ -46,12 +45,13 @@ jobs:
             - name: Execute fastlane beta lane for CI
               env:
                   # TODO: for prod, regenerate certificates and convert these to secrets
-                  MATCH_KEYCHAIN_NAME: '/Users/runner/Library/Keychains/ci.keychain'
+                  MATCH_KEYCHAIN_NAME: 'ci-deploy.keychain'
                   MATCH_KEYCHAIN_PASSWORD: 'fedibtc'
                   MATCH_PASSWORD: 'fedibtc'
                   # Consider: should we even have separate steps above for this?
                   BUILD_BRIDGE: 0
                   BUILD_UI_DEPS: 0
                   REINSTALL_PODS: 0
+                  FLAVOR: 'nightly'
               run: |
                   ./scripts/ui/deploy-to-testflight.sh

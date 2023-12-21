@@ -5,9 +5,21 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 
 $REPO_ROOT/scripts/enforce-nix.sh
 
+# Make sure Apple certificates are installed in the keychain
+$REPO_ROOT/scripts/ci/install-apple-certs.sh
+
 BUILD_BRIDGE=${BUILD_BRIDGE:-1}
 BUILD_UI_DEPS=${BUILD_UI_DEPS:-1}
 REINSTALL_PODS=${REINSTALL_PODS:-1}
+
+# First, delete DerivedData to remove outdated build artifacts
+echo "Deleting DerivedData for a clean build directory..."
+rm -rf $REPO_ROOT/ui/native/ios/build
+if [[ -n "$CI" ]]; then
+  rm -rf /Users/runner/Library/Developer/Xcode/DerivedData
+else
+  rm -rf ~/Library/Developer/Xcode/DerivedData
+fi
 
 if [[ "$BUILD_BRIDGE" == "0" ]]; then
   echo "Skipping bridge build..."
@@ -30,14 +42,6 @@ else
   $REPO_ROOT/scripts/ui/install-ios-deps.sh
 fi
 
-# First, delete DerivedData to remove outdated build artifacts
-echo "Deleting DerivedData for a clean build directory..."
-if [[ -n "$CI" ]]; then
-  rm -rf /Users/runner/Library/Developer/Xcode/DerivedData
-else
-  rm -rf ~/Library/Developer/Xcode/DerivedData
-fi
-
 pushd $REPO_ROOT/ui/native/ios
 
 # Build numbers are timestamp based to ensure they are always
@@ -53,7 +57,7 @@ BUILD_NUMBER="${YY}${DDD}${HHMM}"
 
 # modify the build numbers so app stores will accept the upload
 # We do not commit this since build numbers are timestamp based
-npx react-native-version --target ios --increment-build --never-amend --set-build $BUILD_NUMBER
+nix develop -c npx react-native-version --target ios --increment-build --never-amend --set-build $BUILD_NUMBER
 
 echo "Building Xcode release archive with fastlane (see $REPO_ROOT/ui/native/ios/Fastfile for lane configurations)..."
 if [ -z "${FLAVOR:-}" ]; then
