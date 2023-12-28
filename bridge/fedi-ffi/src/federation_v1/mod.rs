@@ -1531,6 +1531,13 @@ impl FederationV1 {
             .context("Error when fetching account info")
     }
 
+    pub async fn stability_pool_next_cycle_start_time(&self) -> Result<u64> {
+        self.client
+            .next_cycle_start_time()
+            .await
+            .context("Error when fetching next cycle start time")
+    }
+
     /// Deposit the given amount of msats into the stability pool
     /// with the intention of seeking. Once the fedimint transaction
     /// is accepted, the deposit is staged (pending). When the next
