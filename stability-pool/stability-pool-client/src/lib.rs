@@ -526,6 +526,13 @@ impl StabilityPoolClientModule {
             .await
     }
 
+    /// Returns the start price of current cycle in cents.
+    pub async fn cycle_start_price(&self) -> anyhow::Result<u64, FederationError> {
+        self.module_api
+            .request_current_consensus("cycle_start_price".to_string(), ApiRequestErased::default())
+            .await
+    }
+
     pub async fn wait_cancellation_processed(&self) -> anyhow::Result<Amount, FederationError> {
         self.module_api
             .request_current_consensus(
