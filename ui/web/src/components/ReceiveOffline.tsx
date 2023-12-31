@@ -12,6 +12,7 @@ import { fedimint } from '../lib/bridge'
 import { DialogStatus, DialogStatusProps } from './DialogStatus'
 import { Input } from './Input'
 import { QRScanner, ScanResult } from './QRScanner'
+import {cashuMeltTokens} from "../lib/cashu";
 
 interface Props {
     onReceive(amount: MSats): void
@@ -31,7 +32,12 @@ export const ReceiveOffline: React.FC<Props> = ({ onReceive }) => {
             setIsRedeeming(true)
             try {
                 if (!federationId) throw new Error('No active federation')
-                const msats = await fedimint.receiveEcash(ecash, federationId)
+                let msats: MSats;
+                if (ecash.startsWith('cashu')) {
+                    msats = await cashuMeltTokens(ecash, federationId);
+                } else {
+                    msats = await fedimint.receiveEcash(ecash, federationId)
+                }
                 setRedeemAmount(msats)
                 // Delay reporting until the message has shown for a bit
                 setTimeout(() => onReceiveRef.current(msats), 3000)
