@@ -1,3 +1,4 @@
+import { SerializedToken } from '../utils/cashu'
 import { Invoice } from './fedimint'
 import { Btc, MSats } from './units'
 
@@ -9,6 +10,7 @@ export enum ParserDataType {
     LnurlAuth = 'lnurl:auth',
     BitcoinAddress = 'bitcoin:address',
     Bip21 = 'bitcoin:bip21',
+    CashuEcash = 'cashu:ecash',
     FedimintEcash = 'fedimint:ecash',
     FedimintInvite = 'fedimint:invite',
     LegacyFediChatMember = 'fedi:member', // TODO: remove after matrixification
@@ -104,6 +106,13 @@ export type ParsedCommunityInvite = ParsedData<
     }
 >
 
+export type ParsedCashuEcash = ParsedData<
+    ParserDataType.CashuEcash,
+    {
+        token: SerializedToken
+    }
+>
+
 export type ParsedFederationInvite = ParsedData<
     ParserDataType.FedimintInvite,
     {
@@ -148,6 +157,7 @@ export type AnyParsedData =
     | ParsedLnurlAuth
     | ParsedBitcoinAddress
     | ParsedBip21
+    | ParsedCashuEcash
     | ParsedFedimintEcash
     | ParsedFederationInvite
     | ParsedCommunityInvite

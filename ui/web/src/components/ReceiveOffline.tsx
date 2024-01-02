@@ -12,7 +12,7 @@ import { fedimint } from '../lib/bridge'
 import { DialogStatus, DialogStatusProps } from './DialogStatus'
 import { Input } from './Input'
 import { QRScanner, ScanResult } from './QRScanner'
-import {cashuMeltTokens} from "../lib/cashu";
+import {cashuMeltTokens} from "@fedi/common/utils/cashu";
 
 interface Props {
     onReceive(amount: MSats): void
@@ -34,7 +34,7 @@ export const ReceiveOffline: React.FC<Props> = ({ onReceive }) => {
                 if (!federationId) throw new Error('No active federation')
                 let msats: MSats;
                 if (ecash.startsWith('cashu')) {
-                    msats = await cashuMeltTokens(ecash, federationId);
+                    msats = await cashuMeltTokens(ecash, fedimint, federationId);
                 } else {
                     msats = await fedimint.receiveEcash(ecash, federationId)
                 }

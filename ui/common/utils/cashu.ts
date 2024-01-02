@@ -1,6 +1,6 @@
 import { Buffer } from 'buffer';
-import {fedimint} from './bridge/index';
 import { MSats } from '@fedi/common/types';
+import { FedimintBridge } from './fedimint';
 
 interface Proof {
   id: string;
@@ -14,7 +14,7 @@ interface Token {
   proofs: Proof[];
 }
 
-interface SerializedToken {
+export interface SerializedToken {
   token: Token[];
   unit?: string;
   memo?: string;
@@ -26,15 +26,18 @@ interface MeltPayload {
   proofs: Array<Proof>;
 };
 
-function getDecodedToken(token: string): SerializedToken {
+export function getDecodedToken(token: string): SerializedToken {
   // remove prefixes
-  const uriPrefixes = ['web+cashu://', 'cashu://', 'cashu:', 'cashuA'];
+  const uriPrefixes = ['web+cashu://', 'cashu://', 'cashu:'];
   uriPrefixes.forEach((prefix) => {
     if (token.startsWith(prefix)) {
       token = token.slice(prefix.length);
     }
   });
-  return handleTokens(token);
+  if (!token.startsWith('cashuA')) {
+    throw new Error('Invalid cashu token');
+  }
+  return handleTokens(token.replace('cashuA', ''))
 }
 
 function handleTokens(token: string): SerializedToken {
@@ -106,7 +109,7 @@ async function buildMeltPayload(amount: number, invoice: string, proofs: Proof[]
   return meltPayload;
 }
 
-async function handleFeesAndInvoice(totalTokensSats: number, feeReserve: number, federationId: string, mintHost: string): Promise<{amountMsats: MSats, invoice: string}> {
+async function handleFeesAndInvoice(totalTokensSats: number, feeReserve: number, federationId: string, mintHost: string, fedimint: FedimintBridge): Promise<{amountMsats: MSats, invoice: string}> {
     // Calculate the amount to melt
     let amountMsats = await calculateAmountMsatsToMelt(totalTokensSats, feeReserve);
 
@@ -127,9 +130,13 @@ async function handleFeesAndInvoice(totalTokensSats: number, feeReserve: number,
     return { amountMsats, invoice };
 }
 
-async function cashuMeltTokens(encodedTokens: string, federationId: string): Promise<MSats> {
-  const decodedTokens = getDecodedToken(encodedTokens);
-  let totalMelted: MSats = 0 as MSats;
+export async function cashuMeltTokens(
+  tokens: string | SerializedToken,
+  fedimint: FedimintBridge,
+  federationId: string
+): Promise<MSats> {
+  const decodedTokens = typeof tokens === 'string' ? getDecodedToken(tokens) : tokens;
+  let totalMelted = 0;
 
   // Iterate over each token
   for (const token of decodedTokens.token) {
@@ -141,7 +148,7 @@ async function cashuMeltTokens(encodedTokens: string, federationId: string): Pro
     // Check if we have enough tokens
     const totalTokensSats = proofs.reduce((sum, proof) => sum + proof.amount, 0);
 
-    const { amountMsats, invoice } = await handleFeesAndInvoice(totalTokensSats, feeReserve, federationId, mintHost);
+    const { amountMsats, invoice } = await handleFeesAndInvoice(totalTokensSats, feeReserve, federationId, mintHost, fedimint);
 
     // Build the melt payload
     const meltPayload = await buildMeltPayload(amountMsats / 1000, invoice, proofs);
@@ -157,7 +164,5 @@ async function cashuMeltTokens(encodedTokens: string, federationId: string): Pro
   }
 
   // Return the total amount of MSats melted
-  return totalMelted;
+  return totalMelted as MSats;
 }
-
-export { cashuMeltTokens };

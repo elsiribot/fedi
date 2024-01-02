@@ -7,7 +7,9 @@ import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederationId,
     selectIsActiveFederationRecovering,
+    selectPayFromFederation,
 } from '@fedi/common/redux'
+import { cashuMeltTokens } from '@fedi/common/utils/cashu'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
 import {
     ALLOWED_PARSER_TYPES_BEFORE_FEDERATION,
@@ -39,6 +41,7 @@ export const OmniConfirmation = <T extends AnyParsedData>({
     const navigation = useNavigation()
     const [isLoading, setIsLoading] = useState(false)
     const activeFederationId = useAppSelector(selectActiveFederationId)
+    const activeWalletFederation = useAppSelector(selectPayFromFederation)
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
     )
@@ -148,6 +151,24 @@ export const OmniConfirmation = <T extends AnyParsedData>({
                         handleNavigate('JoinFederation', {
                             invite: parsedData.data.invite,
                         }),
+                }
+            case ParserDataType.CashuEcash:
+                return {
+                    contents: {
+                        icon: 'Bolt',
+                        title: t('feature.omni.confirm-cashu-token'),
+                    },
+                    continueOnPress: () => {
+                        if (!activeWalletFederation) {
+                            toast.error(t, 'errors.receive-ecash-failed')
+                            return
+                        }
+                        cashuMeltTokens(
+                            parsedData.data.token,
+                            fedimint,
+                            activeWalletFederation?.id,
+                        )
+                    },
                 }
             case ParserDataType.FedimintEcash:
                 return {
