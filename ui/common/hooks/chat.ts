@@ -5,6 +5,7 @@ import type { ChatMember, ChatMessage, Federation } from '@fedi/common/types'
 import {
     connectChat,
     fetchChatMember,
+    publishPushNotificationToken,
     selectActiveFederation,
     selectChatClientStatus,
     selectChatMember,
@@ -16,7 +17,6 @@ import {
     setLastReadPaymentUpdateId,
     setLastSeenMessageId,
     setLastSeenPaymentUpdateId,
-    setPushNotificationToken,
 } from '../redux'
 import { getLatestPaymentUpdate } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
@@ -165,33 +165,32 @@ export function useUpdateLastPaymentUpdateRead(
 
 // This hook sets a given device token to be published to the XMPP server
 // so it can receive push notifications for new messages
-export function usePublishNotificationToken(
-    getDeviceToken: () => Promise<string>,
-) {
+export function usePublishNotificationToken(getToken: () => Promise<string>) {
     const dispatch = useCommonDispatch()
-    const activeFederationId = useCommonSelector(selectActiveFederation)?.id
+    const federationId = useCommonSelector(selectActiveFederation)?.id
     const pushNotificationToken = useCommonSelector(selectPushNotificationToken)
+    const isChatOnline = useCommonSelector(selectChatClientStatus) === 'online'
 
     useEffect(() => {
         // Can't publish if no federation is selected
-        if (!activeFederationId) return
+        if (!federationId) return
 
         // Don't set the token if we already have one
         if (pushNotificationToken) return
 
-        getDeviceToken()
-            .then(token => {
-                dispatch(
-                    setPushNotificationToken({
-                        federationId: activeFederationId as string,
-                        pushNotificationToken: token,
-                    }),
-                )
+        // Can't publish if chat isn't online
+        if (!isChatOnline) return
+
+        log.info('Publishing push notification token')
+        dispatch(publishPushNotificationToken({ federationId, getToken }))
+            .unwrap()
+            .then(() => {
+                log.info('Successfully published push notification token')
             })
-            .catch(error => {
-                log.error('Failed to get device token', error)
+            .catch(err => {
+                log.error('Failed to publish push notification token', err)
             })
-    }, [activeFederationId, dispatch, getDeviceToken, pushNotificationToken])
+    }, [federationId, isChatOnline, dispatch, getToken, pushNotificationToken])
 }
 
 /**
