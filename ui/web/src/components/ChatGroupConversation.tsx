@@ -1,11 +1,15 @@
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import EditIcon from '@fedi/common/assets/svgs/edit.svg'
-import QRIcon from '@fedi/common/assets/svgs/qr.svg'
+import CogIcon from '@fedi/common/assets/svgs/cog.svg'
+import Edit from '@fedi/common/assets/svgs/edit.svg'
+import LeaveRoom from '@fedi/common/assets/svgs/leave-room.svg'
+import Room from '@fedi/common/assets/svgs/room.svg'
 import {
     configureChatGroup,
+    leaveChatGroup,
     selectActiveFederationId,
+    selectChat,
     selectChatGroup,
     selectChatGroupRole,
     selectChatMessages,
@@ -15,7 +19,9 @@ import { ChatRole, ChatType } from '@fedi/common/types'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
-import { styled } from '../styles'
+import { styled, theme } from '../styles'
+import { Button } from './Button'
+import { ChatAvatar } from './ChatAvatar'
 import { ChatConversation } from './ChatConversation'
 import { ChatEmptyState } from './ChatEmptyState'
 import { CopyInput } from './CopyInput'
@@ -23,6 +29,7 @@ import { Dialog } from './Dialog'
 import { IconButton } from './IconButton'
 import * as Layout from './Layout'
 import { QRCode } from './QRCode'
+import { Text } from './Text'
 
 interface Props {
     groupId: string
@@ -36,7 +43,11 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
     const group = useAppSelector(s => selectChatGroup(s, groupId))
     const messages = useAppSelector(s => selectChatMessages(s, groupId))
     const role = useAppSelector(s => selectChatGroupRole(s, groupId))
-    const [isDialogOpen, setIsDialogOpen] = useState(false)
+    const [dialogState, setDialogState] = useState<
+        'settings' | 'share' | false
+    >(false)
+
+    const chat = useAppSelector(s => selectChat(s, group?.id))
 
     const handleSend = useCallback(
         async (content: string) => {
@@ -70,6 +81,15 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
         }
     }, [t, dispatch, showErrorToast, federationId, group])
 
+    const handleLeaveGroup = useCallback(async () => {
+        const shouldLeave = confirm(t('feature.chat.leave-group-confirmation'))
+        if (!federationId || !group) return
+        if (shouldLeave) {
+            await dispatch(leaveChatGroup({ federationId, groupId: group?.id }))
+            setDialogState(false)
+        }
+    }, [t, federationId, group, dispatch])
+
     if (!group) {
         return (
             <ChatEmptyState>{t('feature.chat.group-not-found')}</ChatEmptyState>
@@ -87,21 +107,16 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
             headerActions={
                 group && (
                     <>
-                        {role === ChatRole.moderator && (
-                            <IconButton
-                                size="md"
-                                icon={EditIcon}
-                                onClick={handleEditGroupName}
-                            />
-                        )}
                         <IconButton
                             size="md"
-                            icon={QRIcon}
-                            onClick={() => setIsDialogOpen(true)}
+                            icon={CogIcon}
+                            onClick={() => setDialogState('settings')}
                         />
                         <Dialog
-                            open={isDialogOpen}
-                            onOpenChange={setIsDialogOpen}
+                            open={dialogState === 'share'}
+                            onOpenChange={(open: boolean) =>
+                                setDialogState(open ? 'share' : false)
+                            }
                             title={t('feature.chat.invite-to-group')}>
                             <Layout.Root>
                                 <Layout.Content centered>
@@ -119,6 +134,54 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
                                 </Layout.Actions>
                             </Layout.Root>
                         </Dialog>
+                        <Dialog
+                            open={dialogState === 'settings'}
+                            onOpenChange={(open: boolean) =>
+                                setDialogState(open ? 'settings' : false)
+                            }>
+                            <Layout.Root>
+                                <Layout.Content centered>
+                                    <SettingsWrapper>
+                                        <GroupHeader>
+                                            <ChatAvatar chat={chat} size="lg" />
+                                            <Text variant="h2">
+                                                {group.name}
+                                            </Text>
+                                        </GroupHeader>
+                                        <ItemsWrapper>
+                                            {role === ChatRole.moderator && (
+                                                <Button
+                                                    variant="outline"
+                                                    icon={Edit}
+                                                    onClick={
+                                                        handleEditGroupName
+                                                    }>
+                                                    {t(
+                                                        'feature.chat.edit-group',
+                                                    )}
+                                                </Button>
+                                            )}
+                                            <Button
+                                                variant="outline"
+                                                icon={Room}
+                                                onClick={() =>
+                                                    setDialogState('share')
+                                                }>
+                                                {t(
+                                                    'feature.chat.invite-to-group',
+                                                )}
+                                            </Button>
+                                            <Button
+                                                onClick={handleLeaveGroup}
+                                                variant="outline"
+                                                icon={LeaveRoom}>
+                                                {t('feature.chat.leave-group')}
+                                            </Button>
+                                        </ItemsWrapper>
+                                    </SettingsWrapper>
+                                </Layout.Content>
+                            </Layout.Root>
+                        </Dialog>
                     </>
                 )
             }
@@ -129,4 +192,23 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
 const QRWrapper = styled('div', {
     width: '100%',
     margin: '12px auto 0',
+})
+
+const ItemsWrapper = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.space.md,
+})
+
+const SettingsWrapper = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.space.xl,
+})
+
+const GroupHeader = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.space.lg,
+    alignItems: 'center',
 })
