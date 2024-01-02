@@ -226,7 +226,12 @@ export const useXmppHealthCheck = () => {
 export const useXmppPushNotifications = async () => {
     const { notificationsPermission } = useNotificationsPermission()
     const getDeviceToken = useMemo(() => {
-        return () => messaging().getToken()
+        return async () => {
+            if (!messaging().isDeviceRegisteredForRemoteMessages) {
+                await messaging().registerDeviceForRemoteMessages()
+            }
+            return messaging().getToken()
+        }
     }, [])
     usePublishNotificationToken(
         getDeviceToken,
