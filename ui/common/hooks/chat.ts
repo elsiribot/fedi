@@ -165,13 +165,19 @@ export function useUpdateLastPaymentUpdateRead(
 
 // This hook sets a given device token to be published to the XMPP server
 // so it can receive push notifications for new messages
-export function usePublishNotificationToken(getToken: () => Promise<string>) {
+export function usePublishNotificationToken(
+    getToken: () => Promise<string>,
+    needsPermission = false,
+) {
     const dispatch = useCommonDispatch()
     const federationId = useCommonSelector(selectActiveFederation)?.id
     const pushNotificationToken = useCommonSelector(selectPushNotificationToken)
     const isChatOnline = useCommonSelector(selectChatClientStatus) === 'online'
 
     useEffect(() => {
+        // Can't publish if we don't have permission to get the token.
+        if (needsPermission) return
+
         // Can't publish if no federation is selected
         if (!federationId) return
 
@@ -190,7 +196,14 @@ export function usePublishNotificationToken(getToken: () => Promise<string>) {
             .catch(err => {
                 log.error('Failed to publish push notification token', err)
             })
-    }, [federationId, isChatOnline, dispatch, getToken, pushNotificationToken])
+    }, [
+        needsPermission,
+        federationId,
+        isChatOnline,
+        dispatch,
+        getToken,
+        pushNotificationToken,
+    ])
 }
 
 /**
