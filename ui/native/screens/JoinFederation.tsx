@@ -1,10 +1,15 @@
+import { useIsFocused } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
-import { joinFederation } from '@fedi/common/redux'
+import {
+    joinFederation,
+    selectFederations,
+    setActiveFederationId,
+} from '@fedi/common/redux'
 import { getFederationPreview } from '@fedi/common/utils/FederationUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
@@ -14,7 +19,7 @@ import { OmniInput } from '../components/feature/omni/OmniInput'
 import FederationPreview from '../components/feature/onboarding/FederationPreview'
 import { CameraPermissionGate } from '../components/feature/permissions/CameraPermissionGate'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppDispatch } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import {
     FederationPreview as FederationPreviewType,
     ParserDataType,
@@ -30,18 +35,28 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     const { toast } = useEnvironmentContext().state
     const dispatch = useAppDispatch()
     const invite = route?.params?.invite
+    const isFocused = useIsFocused()
     const [isFetchingPreview, setIsFetchingPreview] = useState(!!invite)
     const [isJoining, setIsJoining] = useState<boolean>(false)
     const [federationPreview, setFederationPreview] =
         useState<FederationPreviewType>()
     const isChatSupported = useIsChatSupported(federationPreview)
+    const federationIds = useAppSelector(s =>
+        selectFederations(s).map(f => f.id),
+    )
 
     const handleCode = useCallback(
         async (code: string) => {
             setIsFetchingPreview(true)
             try {
                 const fed = await getFederationPreview(code, fedimint)
-                setFederationPreview(fed)
+                if (federationIds.includes(fed.id)) {
+                    dispatch(setActiveFederationId(fed.id))
+                    navigation.replace('TabsNavigator')
+                    toast?.show(t('errors.you-have-already-joined'), 3000)
+                } else {
+                    setFederationPreview(fed)
+                }
             } catch (err) {
                 log.error('handleCode', err)
                 toast?.show(
@@ -55,14 +70,14 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
             }
             setIsFetchingPreview(false)
         },
-        [t, toast],
+        [federationIds, dispatch, navigation, t, toast],
     )
 
     // If they came here with route state, paste the code for them
     useEffect(() => {
-        if (!invite) return
+        if (!invite || !isFocused) return
         handleCode(invite)
-    }, [invite, handleCode])
+    }, [invite, handleCode, isFocused])
 
     const goToNextScreen = useCallback(() => {
         if (!federationPreview) return

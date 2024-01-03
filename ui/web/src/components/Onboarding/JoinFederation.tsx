@@ -4,7 +4,11 @@ import { Trans, useTranslation } from 'react-i18next'
 
 import ScanIcon from '@fedi/common/assets/svgs/scan.svg'
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
-import { joinFederation } from '@fedi/common/redux'
+import {
+    joinFederation,
+    selectFederations,
+    setActiveFederationId,
+} from '@fedi/common/redux'
 import { FederationPreview } from '@fedi/common/types'
 import {
     getFederationPreview,
@@ -15,7 +19,7 @@ import {
 import { makeLog } from '@fedi/common/utils/log'
 
 import { useRouteState } from '../../context/RouteStateContext'
-import { useAppDispatch, useToast } from '../../hooks'
+import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled, theme } from '../../styles'
 import { Button } from '../Button'
@@ -36,27 +40,36 @@ export const JoinFederation: React.FC = () => {
     const routeState = useRouteState('/onboarding/join')
     const { t } = useTranslation()
     const { push } = useRouter()
-    const { showErrorToast } = useToast()
+    const { showErrorToast, showToast } = useToast()
     const [wantsScan, setWantsScan] = useState(false)
     const [isFetchingPreview, setIsFetchingPreview] = useState(false)
     const [isJoining, setIsJoining] = useState(false)
     const [federationPreview, setFederationPreview] =
         useState<FederationPreview>()
     const isChatSupported = useIsChatSupported(federationPreview)
+    const federationIds = useAppSelector(s =>
+        selectFederations(s).map(f => f.id),
+    )
 
     const handleCode = useCallback(
         async (code: string) => {
             setIsFetchingPreview(true)
             try {
                 const fed = await getFederationPreview(code, fedimint)
-                setFederationPreview(fed)
+                if (federationIds.includes(fed.id)) {
+                    dispatch(setActiveFederationId(fed.id))
+                    push('/')
+                    showToast(t('errors.you-have-already-joined'))
+                } else {
+                    setFederationPreview(fed)
+                }
             } catch (err) {
                 log.error('handleCode', err)
                 showErrorToast(err, 'errors.invalid-federation-code')
             }
             setIsFetchingPreview(false)
         },
-        [showErrorToast],
+        [federationIds, dispatch, push, showErrorToast, showToast, t],
     )
 
     // If they came here with route state, paste the code for them
