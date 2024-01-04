@@ -16,12 +16,11 @@ import { parseUserInput } from '@fedi/common/utils/parser'
 
 import { useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
-import { Button } from '../Button'
 import { Icon } from '../Icon'
-import { Input } from '../Input'
-import { QRScanner, ScanResult } from '../QRScanner'
 import { Text } from '../Text'
 import { OmniConfirmation } from './OmniConfirmation'
+import { OmniQrScanner } from './OmniQrScanner'
+import { OmniTextInput } from './OmniTextInput'
 
 interface OmniInputAction {
     label: React.ReactNode
@@ -38,8 +37,10 @@ interface Props<T extends ParserDataType, ExpectedData> {
     onUnexpectedSuccess(data: AnyParsedData): void
     inputLabel?: React.ReactNode
     inputPlaceholder?: string
-    pasteLabel?: React.ReactNode
+    pasteLabel?: string
     customActions?: OmniInputAction[]
+    defaultToScan?: boolean
+    loading?: boolean
 }
 
 export function OmniInput<
@@ -49,13 +50,13 @@ export function OmniInput<
     const propsRef = useUpdatingRef(props)
     const { t } = useTranslation()
     const toast = useToast()
-    const [isScanning, setIsScanning] = useState(false)
+    const [isScanning, setIsScanning] = useState(props.defaultToScan || false)
     const [isParsing, setIsParsing] = useState(false)
     const [unexpectedData, setUnexpectedData] = useState<AnyParsedData>()
     const [invalidData, setInvalidData] = useState<ParsedUnknownData>()
-    const [value, setValue] = useState('')
     const fileInputRef = useRef<HTMLInputElement>(null)
-    const isParsingRef = useUpdatingRef(isParsing)
+    const isLoading = props.loading || isParsing
+    const isLoadingRef = useUpdatingRef(isLoading)
 
     const { customActions, inputPlaceholder, onUnexpectedSuccess } = props
     const inputLabel = props.inputLabel || 'Input data'
@@ -63,7 +64,7 @@ export function OmniInput<
 
     const parseInput = useCallback(
         async (input: string) => {
-            if (!input || isParsingRef.current) return
+            if (!input || isLoadingRef.current) return
             setIsParsing(true)
             const parsedData = await parseUserInput(input, fedimint, t)
             setIsParsing(false)
@@ -78,22 +79,7 @@ export function OmniInput<
                 setUnexpectedData(parsedData)
             }
         },
-        [propsRef, isParsingRef, t],
-    )
-
-    const handleScan = useCallback(
-        (result: ScanResult) => {
-            parseInput(result.data)
-        },
-        [parseInput],
-    )
-
-    const handleSubmit = useCallback(
-        (ev: React.FormEvent) => {
-            ev.preventDefault()
-            parseInput(value)
-        },
-        [parseInput, value],
+        [propsRef, isLoadingRef, t],
     )
 
     const handlePaste = useCallback(async () => {
@@ -116,13 +102,13 @@ export function OmniInput<
                 const result = await QrScanner.scanImage(image, {
                     returnDetailedScanResult: true,
                 })
-                handleScan(result)
+                parseInput(result.data)
             } catch (err) {
                 toast.showErrorToast(err, 'errors.unknown-error')
             }
             // Reset the input so they can re-select the same file if they wish
         },
-        [toast, handleScan],
+        [toast, parseInput],
     )
 
     const actions = useMemo(() => {
@@ -178,34 +164,19 @@ export function OmniInput<
         <Container>
             <Main>
                 {isScanning ? (
-                    <QRScanner onScan={handleScan} processing={isParsing} />
+                    <OmniQrScanner onScan={parseInput} processing={isLoading} />
                 ) : (
-                    <>
-                        <InputForm onSubmit={handleSubmit}>
-                            <Input
-                                label={inputLabel || 'Input data'}
-                                value={value}
-                                placeholder={inputPlaceholder}
-                                onChange={ev =>
-                                    setValue(ev.currentTarget.value)
-                                }
-                                disabled={isParsing}
-                                autoFocus
-                            />
-                            <Button
-                                width="full"
-                                type="submit"
-                                disabled={!value}
-                                loading={isParsing}>
-                                {t('words.confirm')}
-                            </Button>
-                        </InputForm>
-                    </>
+                    <OmniTextInput
+                        onSubmit={parseInput}
+                        label={inputLabel}
+                        placeholder={inputPlaceholder}
+                        loading={isLoading}
+                    />
                 )}
             </Main>
             <Actions>
                 {actions.map(({ label, icon, onClick }, idx) => (
-                    <Action key={idx} onClick={onClick}>
+                    <Action key={idx} onClick={onClick} disabled={isLoading}>
                         <Icon size="sm" icon={icon} />
                         <Text weight="bold">{label}</Text>
                     </Action>
@@ -241,13 +212,6 @@ const Main = styled('div', {
     marginBottom: 16,
 })
 
-const InputForm = styled('form', {
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
-    gap: 8,
-})
-
 const Actions = styled('div', {
     width: '100%',
     display: 'flex',
@@ -264,5 +228,10 @@ const Action = styled('button', {
 
     '&:hover': {
         background: 'rgba(0, 0, 0, 0.04)',
+    },
+
+    '&:disabled': {
+        opacity: 0.5,
+        pointerEvents: 'none',
     },
 })

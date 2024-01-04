@@ -52,9 +52,20 @@ export const {
                 value
             ].join(', ')})`,
         }),
+        nightGradient: (_value: unknown) => ({
+            backgroundImage: [
+                // Transparent white linear gradient
+                'linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.00) 56.25%)',
+                // Transparent radial holo gradient
+                `radial-gradient(233.16% 114.07% at 7.36% 24.19%, ${fediTheme.nightHoloAmbientGradient.join(
+                    ', ',
+                )})`,
+                // Solid dark background
+                `linear-gradient(${fediTheme.colors.night}, ${fediTheme.colors.night})`,
+            ].join(', '),
+        }),
     },
 })
-
 export type CSSProp = CSS<typeof config>
 
 function intMapToPx<T extends string>(

@@ -143,6 +143,7 @@
     },
     "errors": {
         "bad-connection": "Your network connection may be unstable. Please try again later or connect to another network.",
+        "camera-unavailable": "Failed to access your camera.",
         "chat-connection-restoring": "Chat connection is unstable or offline. Attempting to restore...",
         "chat-connection-unhealthy": "Chat connection is unstable or offline. Please try again later or restart the app.",
         "chat-list-render-error": "Encountered an error rendering your chats",
@@ -316,6 +317,7 @@
         },
         "federations": {
             "add-federation": "Add a Federation",
+            "enter-federation-code": "Enter a federation code",
             "camera-access-information": "To join a Federation, you will need to allow Fedi access to your camera to scan the Federation invite code",
             "copied-federation-invite": "Copied federation invite link",
             "federation-details": "Federation Details",
