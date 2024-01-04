@@ -8,11 +8,7 @@ import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
-import {
-    increaseStableBalance,
-    selectCurrency,
-    selectMaximumAPR,
-} from '@fedi/common/redux'
+import { increaseStableBalance, selectMaximumAPR } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
@@ -43,7 +39,6 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
     const { convertSatsToFormattedUsd, convertSatsToFormattedFiat } =
         useBtcFiatPrice()
     const maxFeeRate = useAppSelector(selectMaximumAPR)
-    const selectedFiatCurrency = useAppSelector(selectCurrency)
     const formattedFiat = convertSatsToFormattedFiat(amount)
     const formattedUsd = convertSatsToFormattedUsd(amount)
     const formattedSats = `${amountUtils.formatSats(amount)} ${t(

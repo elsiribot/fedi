@@ -28,10 +28,10 @@ interface ReactNodeProps extends BaseProps {
 
 export type HistoryDetailItemProps = StringProps | ReactNodeProps
 
-const isStringProps = (props: Props): props is StringProps =>
+const isStringProps = (props: HistoryDetailItemProps): props is StringProps =>
     typeof props.value === 'string'
 
-export const HistoryDetailItem: React.FC<Props> = props => {
+export const HistoryDetailItem: React.FC<HistoryDetailItemProps> = props => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state

@@ -1,7 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useCallback, useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import {
     refreshActiveStabilityPool,
