@@ -29,7 +29,7 @@ const log = makeLog('App')
 
 const App = () => {
     const { t } = useTranslation()
-    const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(true)
+    const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(false)
     const [bridgeError, setBridgeError] = useState<unknown>()
 
     // Initialize bridge
