@@ -117,7 +117,13 @@ let
         inherit (pkgs) openssl;
       };
       src = rustSrc;
+
       FEDIMINT_BUILD_FORCE_GIT_HASH = gitHashPlaceholderValue;
+
+      # we carefully optimize our debug symbols on cargo level,
+      # and in case of errors and panics, would like to see the
+      # line numbers etc.
+      dontStrip = true;
     } // commonEnvsShell)).overrideArgs'' (craneLib: args:
       # TODO: should we compile from scratch from vendored source for release builds? (allegedly better perf)
       # pkgs.lib.optionalAttrs (builtins.elem (craneLib.cargoProfile or "") [ "dev" "ci" ]) commonEnvsShellRocksdbLink);
