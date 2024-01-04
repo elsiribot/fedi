@@ -18,11 +18,11 @@ export const HistoryIcon: React.FC<HistoryIconProps> = ({
     let badgeSvgName: SvgImageName | undefined
     let badgeColor: string | undefined
     if (badge === 'incoming') {
-        badgeSvgName = 'ArrowUpBadge'
-        badgeColor = theme.colors.black
-    } else if (badge === 'outgoing') {
         badgeSvgName = 'ArrowDownBadge'
         badgeColor = theme.colors.green
+    } else if (badge === 'outgoing') {
+        badgeSvgName = 'ArrowUpBadge'
+        badgeColor = theme.colors.black
     } else if (badge === 'pending') {
         badgeSvgName = 'PendingBadge'
         badgeColor = theme.colors.fuschia

@@ -19,10 +19,6 @@ export interface HistoryRowProps {
     onSelect: () => void
 }
 
-interface HistoryRowMsatsProps {
-    amountMsats: MSats
-}
-
 export const HistoryRow: React.FC<HistoryRowProps> = ({
     icon,
     status,
