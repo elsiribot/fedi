@@ -38,6 +38,7 @@ interface Props<T extends ParserDataType, ExpectedData> {
     onUnexpectedSuccess(data: AnyParsedData): void
     inputLabel?: React.ReactNode
     inputPlaceholder?: string
+    pasteLabel?: React.ReactNode
     customActions?: OmniInputAction[]
 }
 
@@ -58,6 +59,7 @@ export function OmniInput<
 
     const { customActions, inputPlaceholder, onUnexpectedSuccess } = props
     const inputLabel = props.inputLabel || 'Input data'
+    const pasteLabel = props.pasteLabel || t('feature.omni.action-paste')
 
     const parseInput = useCallback(
         async (input: string) => {
@@ -137,7 +139,7 @@ export function OmniInput<
                       onClick: () => setIsScanning(true),
                   },
             {
-                label: t('feature.omni.action-paste'),
+                label: pasteLabel,
                 icon: ClipboardIcon,
                 onClick: handlePaste,
             },
@@ -148,7 +150,15 @@ export function OmniInput<
             },
             ...(customActions || []),
         ]
-    }, [customActions, isScanning, inputLabel, handlePaste, fileInputRef, t])
+    }, [
+        customActions,
+        isScanning,
+        inputLabel,
+        pasteLabel,
+        handlePaste,
+        fileInputRef,
+        t,
+    ])
 
     let confirmation: React.ReactNode | undefined
     if (invalidData || unexpectedData) {
