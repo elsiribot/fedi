@@ -38,7 +38,7 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
     const enableStableBalance = useAppSelector(selectStableBalanceEnabled)
 
     const showStabilityWallet =
-        isStabilityPoolSupported && enableStableBalance && balance > 0
+        true || (isStabilityPoolSupported && enableStableBalance && balance > 0)
 
     return (
         <ScrollView

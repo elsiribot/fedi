@@ -15,6 +15,7 @@ import { TransactionIcon } from './TransactionIcon'
 type TransactionsListProps = {
     transactions: Transaction[]
     isV1Federation: boolean
+    loading?: boolean
     loadMoreTransactions?: () => void
     updateTransactionInState: (
         transactionId: string,
@@ -25,6 +26,7 @@ type TransactionsListProps = {
 const TransactionsList = ({
     transactions,
     isV1Federation,
+    loading,
     loadMoreTransactions,
     updateTransactionInState,
 }: TransactionsListProps) => {
@@ -34,6 +36,7 @@ const TransactionsList = ({
     return (
         <HistoryList
             rows={transactions}
+            loading={loading}
             makeIcon={txn => <TransactionIcon txn={txn} />}
             makeRowProps={txn => ({
                 status: makeTxnStatusText(t, txn),

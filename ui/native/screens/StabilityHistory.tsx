@@ -19,32 +19,25 @@ export type Props = NativeStackScreenProps<
 >
 
 const StabilityHistory: React.FC<Props> = () => {
-    const { t } = useTranslation()
-    const [isLoading, setIsLoading] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
     const transactionsList = useAppSelector(selectStabilityTransactionHistory)
     const dispatch = useAppDispatch()
 
     const refreshStabilityPoolHistory = useCallback(async () => {
-        dispatch(refreshActiveStabilityPool({ fedimint }))
+        await dispatch(refreshActiveStabilityPool({ fedimint }))
     }, [dispatch])
 
     useEffect(() => {
-        refreshStabilityPoolHistory()
-        setIsLoading(false)
+        refreshStabilityPoolHistory().finally(() => setIsLoading(false))
     }, [dispatch, refreshStabilityPoolHistory])
-
-    if (isLoading) return <ActivityIndicator />
 
     return (
         <View style={styles.container}>
-            {transactionsList.length === 0 ? (
-                <Text>{t('phrases.no-transactions')}</Text>
-            ) : (
-                <StabilityTransactionsList
-                    transactions={transactionsList}
-                    refreshTransactions={refreshStabilityPoolHistory}
-                />
-            )}
+            <StabilityTransactionsList
+                transactions={transactionsList}
+                loading={isLoading}
+                refreshTransactions={refreshStabilityPoolHistory}
+            />
         </View>
     )
 }

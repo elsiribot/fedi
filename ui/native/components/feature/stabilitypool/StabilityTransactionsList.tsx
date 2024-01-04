@@ -19,11 +19,13 @@ import { CurrencyAvatar } from './CurrencyAvatar'
 
 type StabilityTransactionsListProps = {
     transactions: StabilityPoolTxn[]
+    loading?: boolean
     refreshTransactions: () => void
 }
 
 const StabilityTransactionsList = ({
     transactions,
+    loading,
 }: StabilityTransactionsListProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -32,6 +34,7 @@ const StabilityTransactionsList = ({
     return (
         <HistoryList
             rows={transactions}
+            loading={loading}
             makeIcon={() => (
                 <HistoryIcon>
                     <CurrencyAvatar size={theme.sizes.historyIcon} />

@@ -1,7 +1,13 @@
 import { Overlay, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
+import {
+    ActivityIndicator,
+    FlatList,
+    ListRenderItem,
+    StyleSheet,
+    View,
+} from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
@@ -13,6 +19,7 @@ import SvgImage, { SvgImageSize } from './SvgImage'
 
 interface Props<T extends { id: string }> {
     rows: T[]
+    loading?: boolean
     makeRowProps: (item: T) => Omit<HistoryRowProps, 'icon' | 'onSelect'>
     makeDetailProps: (item: T) => Omit<HistoryDetailProps, 'icon' | 'onClose'>
     makeIcon: (item: T) => React.ReactNode
@@ -21,6 +28,7 @@ interface Props<T extends { id: string }> {
 
 export function HistoryList<T extends { id: string }>({
     rows,
+    loading,
     makeRowProps,
     makeDetailProps,
     makeIcon,
@@ -45,6 +53,24 @@ export function HistoryList<T extends { id: string }>({
     }
 
     const style = styles(theme, insets)
+
+    if (loading) {
+        return (
+            <View style={style.emptyContainer}>
+                <ActivityIndicator />
+            </View>
+        )
+    }
+
+    if (!rows.length) {
+        return (
+            <View style={style.emptyContainer}>
+                <Text style={style.emptyText}>
+                    {t('phrases.no-transactions')}
+                </Text>
+            </View>
+        )
+    }
 
     return (
         <View style={style.container}>
@@ -121,6 +147,15 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         overlayErrorText: {
             marginTop: theme.spacing.lg,
+            textAlign: 'center',
+        },
+        emptyContainer: {
+            flex: 1,
+            width: '100%',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        emptyText: {
             textAlign: 'center',
         },
     })
