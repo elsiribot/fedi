@@ -35,7 +35,11 @@ resolver = "2"
 [profile.release]
 lto = "fat"
 codegen-units = 1
-strip = true
+# we need debug symbols for debugging panics and such, at least on the backend
+# if don't need them *somewhere*, we should manually call `strip` after the binary
+# is built
+debug = "line-tables-only"
+strip = false
 
 [workspace.metadata]
 authors = ["The Fedi Developers"]
