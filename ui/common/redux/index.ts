@@ -18,6 +18,7 @@ import {
 import { nuxSlice } from './nux'
 import { loadFromStorage, saveToStorage, storageSlice } from './storage'
 import { toastSlice } from './toast'
+import { addTransaction, transactionsSlice } from './transactions'
 import { walletSlice } from './wallet'
 
 const log = makeLog('common/redux/index')
@@ -38,6 +39,7 @@ export const commonReducers = {
     nux: nuxSlice.reducer,
     storage: storageSlice.reducer,
     toast: toastSlice.reducer,
+    transactions: transactionsSlice.reducer,
     wallet: walletSlice.reducer,
 }
 
@@ -76,10 +78,20 @@ export function initializeCommonStore(
         dispatch(updateFederation(federation))
     })
 
+    // Update balance on bridge events
     const unsubscribeBalance = fedimint.addListener('balance', event => {
         log.debug('Balance update', event)
         dispatch(updateFederationBalance(event))
     })
+
+    // Add or update transactions on bridge events
+    const unsubscribeTransaction = fedimint.addListener(
+        'transaction',
+        event => {
+            log.debug('Transaction update', event)
+            dispatch(addTransaction(event))
+        },
+    )
 
     // Load state from local storage, then start listener that syncs to storage
     // on changes to stored state after it's been loaded.
@@ -105,6 +117,7 @@ export function initializeCommonStore(
     return () => {
         unsubscribeFederation()
         unsubscribeBalance()
+        unsubscribeTransaction()
         unsubscribeStorage()
     }
 }
