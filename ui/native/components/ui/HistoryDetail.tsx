@@ -22,7 +22,7 @@ import SvgImage, { SvgImageSize } from './SvgImage'
 export interface HistoryDetailProps {
     icon: React.ReactNode
     title: React.ReactNode
-    amount: MSats
+    amount: MSats | string
     items: HistoryDetailItemProps[]
     notes?: string
     onSaveNotes?: (notes: string) => void
@@ -70,6 +70,17 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
 
     const style = styles(theme)
 
+    let amountText: string | undefined
+    if (typeof amount === 'string') {
+        amountText = amount
+    } else if (amount !== 0) {
+        amountText = `${amountUtils.formatFiat(
+            amountUtils.msatToFiat(amount, btcExchangeRate),
+            currency,
+            { noSymbol: true },
+        )} ${currency}`
+    }
+
     return (
         <Pressable style={style.container} onPress={Keyboard.dismiss}>
             <TouchableOpacity
@@ -79,12 +90,10 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
             </TouchableOpacity>
             {icon}
             <Text style={style.detailTitle}>{title}</Text>
-            {amount !== 0 && (
-                <Text h2 medium>{`${amountUtils.formatFiat(
-                    amountUtils.msatToFiat(amount, btcExchangeRate),
-                    currency,
-                    { noSymbol: true },
-                )} ${currency}`}</Text>
+            {amountText && (
+                <Text h2 medium>
+                    {amountText}
+                </Text>
             )}
             <View style={style.detailItemsContainer}>
                 {items.map((item, idx) => (

@@ -19,6 +19,10 @@ export interface HistoryRowProps {
     onSelect: () => void
 }
 
+interface HistoryRowMsatsProps {
+    amountMsats: MSats
+}
+
 export const HistoryRow: React.FC<HistoryRowProps> = ({
     icon,
     status,
@@ -35,12 +39,12 @@ export const HistoryRow: React.FC<HistoryRowProps> = ({
     const style = styles(theme)
 
     let amountNode: React.ReactNode
+    const sign = direction ? (direction === 'outgoing' ? `-` : `+`) : ''
     if (typeof amount === 'number') {
         const fiatAmount = amountUtils.msatToFiat(amount, btcExchangeRate)
         const formattedAmount = amountUtils.formatFiat(fiatAmount, currency, {
             noSymbol: true,
         })
-        const sign = direction ? (direction === 'outgoing' ? `-` : `+`) : ''
         amountNode = (
             <View style={style.amountContainer}>
                 <Text caption medium>
@@ -56,6 +60,7 @@ export const HistoryRow: React.FC<HistoryRowProps> = ({
         amountNode = (
             <View style={style.amountContainer}>
                 <Text caption medium>
+                    {sign}
                     {amount}
                 </Text>
             </View>

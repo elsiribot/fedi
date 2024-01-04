@@ -38,6 +38,8 @@ const TransactionsList = ({
             makeRowProps={txn => ({
                 status: makeTxnStatusText(t, txn),
                 amount: txn.amount,
+                direction:
+                    txn.direction === 'receive' ? 'incoming' : 'outgoing',
                 timestamp: txn.createdAt,
                 notes: txn.notes,
             })}
