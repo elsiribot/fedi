@@ -6,6 +6,7 @@ import { Linking } from 'react-native'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
+import { ALLOWED_PARSER_TYPES_BEFORE_FEDERATION } from '@fedi/common/utils/parser'
 
 import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
@@ -13,13 +14,6 @@ import { useAppSelector } from '../../../state/hooks'
 import { AnyParsedData, ParserDataType } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import CustomOverlay, { CustomOverlayContents } from '../../ui/CustomOverlay'
-
-// Only certain codes can be used without active federation membership
-const ALLOWED_BEFORE_FEDERATION = [
-    ParserDataType.FedimintInvite,
-    ParserDataType.Website,
-    ParserDataType.Unknown,
-]
 
 interface Props {
     parsedData: AnyParsedData
@@ -77,7 +71,7 @@ export const OmniConfirmation: React.FC<Props> = ({
         // If they're not yet a member of a federation, they can only scan certain codes.
         if (
             !activeFederationId &&
-            !ALLOWED_BEFORE_FEDERATION.includes(parsedData.type)
+            !ALLOWED_PARSER_TYPES_BEFORE_FEDERATION.includes(parsedData.type)
         ) {
             return {
                 contents: {

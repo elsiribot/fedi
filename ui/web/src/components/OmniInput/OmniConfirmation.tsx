@@ -9,6 +9,7 @@ import ScanSadIcon from '@fedi/common/assets/svgs/scan-sad.svg'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { AnyParsedData, ParserDataType } from '@fedi/common/types'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
+import { ALLOWED_PARSER_TYPES_BEFORE_FEDERATION } from '@fedi/common/utils/parser'
 
 import { useRouteStateContext } from '../../context/RouteStateContext'
 import { useAppSelector, useToast } from '../../hooks'
@@ -68,77 +69,107 @@ export const OmniConfirmation: React.FC<Props> = ({
         setIsLoading(false)
     }
 
-    let icon: React.FunctionComponent<React.SVGAttributes<SVGElement>>
-    let url: string | undefined
-    let text: React.ReactNode
-    let continueText = t('words.continue')
-    let continueOnClick: undefined | (() => void)
-    let continueHref: undefined | string
-
-    switch (parsedData.type) {
-        case ParserDataType.Bolt11:
-        case ParserDataType.LnurlPay:
-            icon = BoltIcon
-            text = t('feature.omni.confirm-lightning-pay')
-            continueOnClick = () => pushWithState('/send', parsedData)
-            break
-        case ParserDataType.LnurlWithdraw:
-            icon = BoltIcon
-            text = t('feature.omni.confirm-lightning-withdraw')
-            continueOnClick = () => pushWithState('/request', parsedData)
-            break
-        case ParserDataType.FedimintInvite:
-            icon = FederationIcon
-            text = t('feature.omni.confirm-federation-invite')
-            continueOnClick = () =>
-                pushWithState('/onboarding/join', parsedData)
-            break
-        case ParserDataType.FedimintEcash:
-            icon = BoltIcon
-            text = t('feature.omni.confirm-ecash-token')
-            continueOnClick = handleRedeemToken
-            break
-        case ParserDataType.LnurlAuth:
-            icon = BoltIcon
-            text = t('feature.omni.confirm-lnurl-auth', {
-                domain: parsedData.data.domain,
-            })
-            continueText = t('words.authorize')
-            continueOnClick = handleAuth
-            break
-        case ParserDataType.FediChatGroup:
-        case ParserDataType.FediChatMember: {
-            icon = ChatIcon
-            text = t('feature.omni.confirm-fedi-chat')
-            if (parsedData.type === ParserDataType.FediChatGroup) {
-                continueHref = `/chat/group/${parsedData.data.id}`
-            } else {
-                continueHref = `/chat/member/${parsedData.data.id}`
+    const {
+        icon,
+        url,
+        text,
+        continueText = t('words.continue'),
+        continueOnClick,
+        continueHref,
+    } = ((): {
+        icon: React.FunctionComponent<React.SVGAttributes<SVGElement>>
+        url?: string
+        text: React.ReactNode
+        continueText?: React.ReactNode
+        continueOnClick?: () => void
+        continueHref?: string
+    } => {
+        // If they're not yet a member of a federation, they can only scan certain codes.
+        if (
+            !activeFederationId &&
+            !ALLOWED_PARSER_TYPES_BEFORE_FEDERATION.includes(parsedData.type)
+        ) {
+            return {
+                icon: ScanSadIcon,
+                text: t('feature.omni.unsupported-no-federation'),
             }
-            break
         }
-        case ParserDataType.Website:
-            icon = GlobeIcon
-            text = t('feature.omni.confirm-website-url')
-            url = parsedData.data.url
-            continueHref = url
-            continueOnClick = () => onSuccess(parsedData)
-            break
-        case ParserDataType.Bolt12:
-            icon = ScanSadIcon
-            text = t('feature.omni.unsupported-bolt12')
-            break
-        case ParserDataType.Bip21:
-        case ParserDataType.BitcoinAddress:
-            icon = ScanSadIcon
-            text = t('feature.omni.unsupported-on-chain')
-            break
-        case ParserDataType.Unknown:
-            icon = ScanSadIcon
-            text =
-                parsedData.data.message || t('feature.omni.unsupported-unknown')
-            break
-    }
+
+        switch (parsedData.type) {
+            case ParserDataType.Bolt11:
+            case ParserDataType.LnurlPay:
+                return {
+                    icon: BoltIcon,
+                    text: t('feature.omni.confirm-lightning-pay'),
+                    continueOnClick: () => pushWithState('/send', parsedData),
+                }
+            case ParserDataType.LnurlWithdraw:
+                return {
+                    icon: BoltIcon,
+                    text: t('feature.omni.confirm-lightning-withdraw'),
+                    continueOnClick: () =>
+                        pushWithState('/request', parsedData),
+                }
+            case ParserDataType.FedimintInvite:
+                return {
+                    icon: FederationIcon,
+                    text: t('feature.omni.confirm-federation-invite'),
+                    continueOnClick: () =>
+                        pushWithState('/onboarding/join', parsedData),
+                }
+            case ParserDataType.FedimintEcash:
+                return {
+                    icon: BoltIcon,
+                    text: t('feature.omni.confirm-ecash-token'),
+                    continueOnClick: handleRedeemToken,
+                }
+            case ParserDataType.LnurlAuth:
+                return {
+                    icon: BoltIcon,
+                    text: t('feature.omni.confirm-lnurl-auth', {
+                        domain: parsedData.data.domain,
+                    }),
+                    continueText: t('words.authorize'),
+                    continueOnClick: handleAuth,
+                }
+            case ParserDataType.FediChatGroup:
+            case ParserDataType.FediChatMember:
+                return {
+                    icon: ChatIcon,
+                    text: t('feature.omni.confirm-fedi-chat'),
+                    continueHref:
+                        parsedData.type === ParserDataType.FediChatGroup
+                            ? `/chat/group/${parsedData.data.id}`
+                            : `/chat/member/${parsedData.data.id}`,
+                }
+            case ParserDataType.Website:
+                return {
+                    icon: GlobeIcon,
+                    text: t('feature.omni.confirm-website-url'),
+                    url: parsedData.data.url,
+                    continueHref: parsedData.data.url,
+                    continueOnClick: () => onSuccess(parsedData),
+                }
+            case ParserDataType.Bolt12:
+                return {
+                    icon: ScanSadIcon,
+                    text: t('feature.omni.unsupported-bolt12'),
+                }
+            case ParserDataType.Bip21:
+            case ParserDataType.BitcoinAddress:
+                return {
+                    icon: ScanSadIcon,
+                    text: t('feature.omni.unsupported-on-chain'),
+                }
+            case ParserDataType.Unknown:
+                return {
+                    icon: ScanSadIcon,
+                    text:
+                        parsedData.data.message ||
+                        t('feature.omni.unsupported-unknown'),
+                }
+        }
+    })()
 
     const hasContinue = Boolean(continueOnClick || continueHref)
 
