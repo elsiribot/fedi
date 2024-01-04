@@ -2,14 +2,13 @@ import { useRouter } from 'next/router'
 import React, { useCallback, useState, useEffect } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
-import ScanIcon from '@fedi/common/assets/svgs/scan.svg'
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import {
     joinFederation,
     selectFederations,
     setActiveFederationId,
 } from '@fedi/common/redux'
-import { FederationPreview } from '@fedi/common/types'
+import { FederationPreview, ParserDataType } from '@fedi/common/types'
 import {
     getFederationPreview,
     getFederationTosUrl,
@@ -24,8 +23,7 @@ import { fedimint } from '../../lib/bridge'
 import { styled, theme } from '../../styles'
 import { Button } from '../Button'
 import { FederationAvatar } from '../FederationAvatar'
-import { Icon } from '../Icon'
-import { QRScanner, ScanResult } from '../QRScanner'
+import { OmniInput } from '../OmniInput'
 import { Text } from '../Text'
 import { TermsOfService } from './TermsOfService'
 import {
@@ -42,7 +40,6 @@ export const JoinFederation: React.FC = () => {
     const { t } = useTranslation()
     const { push } = useRouter()
     const { showErrorToast, showToast } = useToast()
-    const [wantsScan, setWantsScan] = useState(false)
     const [isFetchingPreview, setIsFetchingPreview] = useState(false)
     const [isJoining, setIsJoining] = useState(false)
     const [isShowingTos, setIsShowingTos] = useState(false)
@@ -80,21 +77,6 @@ export const JoinFederation: React.FC = () => {
         handleCode(routeState.data.invite)
     }, [routeState, handleCode])
 
-    const handlePaste = useCallback(() => {
-        const code = prompt(t('feature.federations.paste-federation-code'))
-        if (code) {
-            handleCode(code)
-        }
-    }, [handleCode, t])
-
-    const handleScan = useCallback(
-        (result: ScanResult) => {
-            if (isJoining) return
-            handleCode(result.data)
-        },
-        [handleCode, isJoining],
-    )
-
     const handleJoin = useCallback(
         async () => {
             setIsJoining(true)
@@ -122,51 +104,24 @@ export const JoinFederation: React.FC = () => {
     let actions: React.ReactNode
     if (!federationPreview) {
         content = (
-            <>
-                {wantsScan ? (
-                    <>
-                        <Text variant="h2" weight="medium">
-                            {t('feature.federations.scan-federation-invite')}
-                        </Text>
-                        <QRScanner onScan={handleScan} />
-                    </>
-                ) : (
-                    <>
-                        <AccessIcon>
-                            <Icon size="md" icon={ScanIcon} />
-                        </AccessIcon>
-                        <Text variant="h2" weight="medium">
-                            {t('phrases.allow-camera-access')}
-                        </Text>
-                        <Text>
-                            {t('feature.federations.camera-access-information')}
-                        </Text>
-                    </>
-                )}
-            </>
-        )
-        actions = (
-            <>
-                <Button
-                    width="full"
-                    variant={wantsScan ? 'primary' : 'tertiary'}
-                    onClick={handlePaste}
-                    loading={isFetchingPreview}>
-                    {t(
-                        wantsScan
-                            ? 'feature.federations.paste-federation-code-instead'
-                            : 'feature.federations.paste-federation-code',
-                    )}
-                </Button>
-                {!wantsScan && (
-                    <Button
-                        width="full"
-                        onClick={() => setWantsScan(true)}
-                        loading={isFetchingPreview}>
-                        {t('phrases.allow-camera-access')}
-                    </Button>
-                )}
-            </>
+            <ScanWrap>
+                <Text variant="h2" weight="medium">
+                    {t('feature.federations.scan-federation-invite')}
+                </Text>
+                <OmniInput
+                    expectedInputTypes={[ParserDataType.FedimintInvite]}
+                    onExpectedInput={({ data }) => {
+                        if (isJoining) return
+                        handleCode(data.invite)
+                    }}
+                    onUnexpectedSuccess={() => null}
+                    inputLabel={t('feature.federations.enter-federation-code')}
+                    inputPlaceholder="fed1..."
+                    pasteLabel={t('feature.federations.paste-federation-code')}
+                    loading={isFetchingPreview}
+                    defaultToScan
+                />
+            </ScanWrap>
         )
     } else if (!getIsFederationSupported(federationPreview)) {
         content = (
@@ -281,22 +236,20 @@ export const JoinFederation: React.FC = () => {
 
     return (
         <OnboardingContainer>
-            <OnboardingContent>{content}</OnboardingContent>
-            <OnboardingActions>{actions}</OnboardingActions>
+            <OnboardingContent fullWidth={!federationPreview}>
+                {content}
+            </OnboardingContent>
+            {actions && <OnboardingActions>{actions}</OnboardingActions>}
         </OnboardingContainer>
     )
 }
 
-const AccessIcon = styled('div', {
-    flex: 'none',
+const ScanWrap = styled('div', {
+    flex: 1,
     display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 88,
-    height: 88,
-    marginBottom: 16,
-    borderRadius: '100%',
-    holoGradient: '400',
+    flexDirection: 'column',
+    width: '100%',
+    gap: 16,
 })
 
 const previewRadius = 20
