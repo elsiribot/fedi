@@ -52,7 +52,7 @@ export const {
                 value
             ].join(', ')})`,
         }),
-        nightGradient: (_value: unknown) => ({
+        nightGradient: () => ({
             backgroundImage: [
                 // Transparent white linear gradient
                 'linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.00) 56.25%)',
