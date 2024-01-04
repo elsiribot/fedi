@@ -2,10 +2,6 @@ name: Deploy to TestFlight (Fedi Nightly)
 on:
     workflow_dispatch:
     workflow_call:
-        inputs:
-            commit-to-deploy:
-                required: false
-                type: string
 
 jobs:
     release-ios:
@@ -14,8 +10,6 @@ jobs:
         steps:
             - name: Checkout repo
               uses: actions/checkout@v3
-              with:
-                  ref: ${{ inputs.commit-to-deploy }}
 
             - uses: cachix/install-nix-action@v20
               with:

@@ -19,23 +19,10 @@ fi
 
 pushd $REPO_ROOT/ui/native
 
-# Build numbers are timestamp based to ensure they are always
-# increasing. Must be lower than 2,100,000,000 so the scheme is:
-# Get the last two digits of the year
-YY=$(date +"%y")
-# Get the day of the year, zero-padded
-DDD=$(date +"%j")
-# Get the current time in HHMM format
-HHMM=$(date +"%H%M")
-# Combine to form the build number
-BUILD_NUMBER="${YY}${DDD}${HHMM}"
-
-# Here we bump the version and commit to the repo, but only allow if:
-# - script is running locally
-# - script is running on a release branch in CI
+# Here we bump the version and commit to the repo, but only allow if
+# script is running on a release branch in CI
 echo "Checking GITHUB_REF: $GITHUB_REF"
-if [[ -z $GITHUB_REF || $GITHUB_REF == refs/heads/release/* ]]; then
-  
+if [[ $GITHUB_REF == refs/heads/release/* ]]; then
   # Compare release branch with current version to determine
   # major vs minor vs patch version bump
   RELEASE_BRANCH_VERSION="${GITHUB_REF##*/}"
@@ -54,40 +41,30 @@ if [[ -z $GITHUB_REF || $GITHUB_REF == refs/heads/release/* ]]; then
 
   # app stores expect these version codes to increment so update
   # react native version numbers to match npm
-  echo "Bumping Android version numbers to match npm"
-  npx react-native-version --set-build $BUILD_NUMBER --target android
+  echo "Bumping version numbers to match npm"
+
+  # Android: just use react-native-version
+  npx react-native-version --never-amend --never-increment-build --target android
+
   # iOS: Navigate to xcode project and update version using agvtool
   # using only the major.minor version to avoid excessive review times
-  # on Testflight. For the build number use react-native-version
+  # on Testflight.
   # Check if agvtool is available
   if command -v agvtool >/dev/null 2>&1; then
-    echo "Bumping iOS version numbers to match npm"
+    echo "Bumping iOS marketing version to match npm"
     pushd $REPO_ROOT/ui/native/ios
     agvtool new-marketing-version $RELEASE_BRANCH_VERSION
-    npx react-native-version --increment-build --never-amend --set-build $BUILD_NUMBER
     popd
   else
     echo "Error: agvtool is not installed. Could not bump iOS version"
   fi
+
   echo "Pushing version commit to git branch"
   NEW_VERSION="$(npm pkg get version  --ws false | sed 's/"//g')"
   echo "NEW_VERSION $NEW_VERSION"
   git add package.json android/app/build.gradle ios/ && git commit -m "chore: bump version for ${NEW_VERSION}" && git push
 else
   echo "Not on a release branch. Don't push version commit."
-fi
-
-# Skip this step if running locally... Otherwise
-# CI requires these values as outputs for later steps
-if [[ -z $GITHUB_OUTPUT ]]; then
-  echo "Not running in CI. Skip saving outputs for Github Actions."
-else
-  echo "Saving APK path + version + latest commit as outputs for next steps in job"
-  COMMIT_TO_DEPLOY="$(git rev-parse HEAD)"
-  echo "COMMIT_TO_DEPLOY=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-  APK_VERSION="$(npm pkg get version  --ws false | sed 's/"//g')"
-  echo "APK_PATH=$REPO_ROOT/ui/native/android/app/build/outputs/apk/$FLAVOR/release/app-$FLAVOR-release-${APK_VERSION}-${COMMIT_TO_DEPLOY}.apk" >> $GITHUB_OUTPUT
-  echo "APK_VERSION=$(npm pkg get version --ws false | sed 's/"//g')" >> $GITHUB_OUTPUT
 fi
 
 popd
