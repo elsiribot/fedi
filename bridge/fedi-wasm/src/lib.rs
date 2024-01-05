@@ -8,9 +8,11 @@ use fediffi::error::ErrorCode;
 use fediffi::event::IEventSink;
 use fediffi::rpc::rpc_error;
 use futures::FutureExt;
+use js_sys::Uint8Array;
 use storage::WasmStorage;
 use tracing::warn;
 use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsError;
 
 mod db;
 mod logging;
@@ -81,4 +83,33 @@ pub async fn fedimint_rpc(method: String, payload: String) -> String {
         Ok(value) => value,
         Err(_) => rpc_error(&anyhow::format_err!(ErrorCode::Panic)),
     }
+}
+
+/// Read file in bridge VFS.
+#[wasm_bindgen]
+pub async fn fedimint_read_file(path: String) -> Result<Uint8Array, JsError> {
+    let Some(bridge) = BRIDGE.with(|b| b.borrow().clone()) else {
+        return Err(JsError::new("bridge not initialized"));
+    };
+    let data = bridge
+        .storage
+        .read_file(path.as_ref())
+        .await
+        .and_then(|maybe_content| maybe_content.context("File not found"))
+        .map_err(|e| JsError::new(&e.to_string()))?;
+    Ok(Uint8Array::from(data.as_ref()))
+}
+
+/// Write file in bridge VFS.
+#[wasm_bindgen]
+pub async fn fedimint_write_file(path: String, data: Uint8Array) -> Result<(), JsError> {
+    let Some(bridge) = BRIDGE.with(|b| b.borrow().clone()) else {
+        return Err(JsError::new("bridge not initialized"));
+    };
+    bridge
+        .storage
+        .write_file(path.as_ref(), data.to_vec())
+        .await
+        .map_err(|e| JsError::new(&e.to_string()))?;
+    Ok(())
 }
