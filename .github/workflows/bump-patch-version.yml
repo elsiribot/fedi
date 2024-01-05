@@ -1,38 +1,40 @@
 name: Bump patch version
 on:
     workflow_dispatch:
-    # runs on release/X.Y.Z branches but not release/X.Y branches
-    # push:
-    #     branches:
-    #         - 'release/**.**.**'
-    #         - '!release/**.**'
+    push:
+        branches:
+            - 'release/**.**'
+            - '!release/**.**.**'
+        paths:
+            - 'bridge/**'
+            - 'ui/native/**'
+            - 'ui/common/**'
+            - '!ui/native/ios/**' # Don't run for changes in /ios folder
 jobs:
     bump-version:
+        permissions:
+            contents: write
+            pull-requests: write
         name: Update version to match release branch
         runs-on: [self-hosted, linux]
         steps:
             - name: Checkout repo
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
 
-            - name: Setup Node
-              uses: actions/setup-node@v1
+            - name: Install Nix
+              uses: cachix/install-nix-action@v20
               with:
-                  node-version: '18.14.X'
+                  nix_path: nixpkgs=channel:nixos-22.05
 
             - name: Bump version
               id: versioning
-              run: |
-                  git config --global user.email "dev@fedibtc.com"
-                  git config --global user.name "Fedi Dev CI"
-                  RELEASE_BRANCH_VERSION="${GITHUB_REF##*/}"
-                  CURRENT_VERSION="$(npm pkg get version --ws false | sed 's/"//g')"
-                  if [[ "$CURRENT_VERSION" != "$RELEASE_BRANCH_VERSION" ]] && [[ "$RELEASE_BRANCH_VERSION" == *"."* ]];
-                  then
-                      npm version --allow-same-version --force $RELEASE_BRANCH_VERSION
-                      npx react-native-version --amend
-                      git push
-                      NEW_VERSION="$(npm pkg get version --ws false | sed 's/"//g')"
-                      echo "Bumped version from $CURRENT_VERSION to $NEW_VERSION"
-                  else
-                      echo 'No version bump needed'
-                  fi
+              run: nix develop -c ./scripts/ui/bump-version-native.sh
+              
+            - name: Open Versioning PR
+              uses: peter-evans/create-pull-request@v5
+              with:
+                token: ${{ secrets.GITHUB_TOKEN }}
+                body: 'This PR includes a version bump commit from a release branch for v${{steps.versioning.outputs.NEW_VERSION}}'
+                title: 'bump version: v${{ steps.versioning.outputs.NEW_VERSION }}'
+                branch: ${{ steps.versioning.outputs.BRANCH_NAME }} 
+                base: 'master'

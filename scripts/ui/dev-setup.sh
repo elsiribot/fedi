@@ -25,7 +25,7 @@ if [[ "$BUILD_BRIDGE" == "1" ]]; then
 fi
 
 if [[ "$REINSTALL_PODS" == "1" ]]; then
-    $REPO_ROOT/scripts/ui/install-ios-deps.sh
+    nix develop .#xcode -c $REPO_ROOT/scripts/ui/install-ios-deps.sh
 fi
 
 echo "Finished dev-ui setup"

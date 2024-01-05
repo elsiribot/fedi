@@ -2,10 +2,6 @@ name: Deploy to Google Play - Internal Testing
 on:
     workflow_dispatch:
     workflow_call:
-        inputs:
-            commit-to-deploy:
-                required: false
-                type: string
 
 jobs:
     release-android:
@@ -14,8 +10,6 @@ jobs:
         steps:
             - name: Checkout repo
               uses: actions/checkout@v3
-              with:
-                  ref: ${{ inputs.commit-to-deploy }}
 
             - uses: cachix/install-nix-action@v20
               with:
@@ -27,19 +21,19 @@ jobs:
                   authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
             - name: Build bridge
-              run: nix develop --command env BUILD_ALL_BRIDGE_TARGETS=1 CARGO_PROFILE=release ./scripts/bridge/build-bridge-android.sh
+              run: nix develop -c env BUILD_ALL_BRIDGE_TARGETS=1 CARGO_PROFILE=release scripts/ci/run-in-fs-dir-cache.sh build-bridge-android ./scripts/bridge/build-bridge-android.sh
 
             - name: Build UI dependencies
-              run: nix develop --command ./scripts/ui/build-deps.sh
+              run: nix develop -c ./scripts/ui/build-deps.sh
 
             - name: Generate JSON credentials file
               env:
                   PLAY_STORE_JSON_CREDENTIALS_ENCODED: ${{ secrets.PLAY_STORE_JSON_CREDENTIALS_ENCODED }}
-              run: nix develop --command ./scripts/ci/make-play-store-creds.sh
+              run: nix develop -c ./scripts/ci/make-play-store-creds.sh
 
             - name: Execute Fastlane command
               env:
                   # Consider: should we even have separate steps above for this?
                   BUILD_BRIDGE: 0
                   BUILD_UI_DEPS: 0
-              run: nix develop --command ./scripts/ui/deploy-to-google-play.sh
+              run: nix develop -c ./scripts/ui/deploy-to-google-play.sh
