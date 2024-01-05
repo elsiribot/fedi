@@ -1,15 +1,16 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import BitcoinIcon from '@fedi/common/assets/svgs/bitcoin.svg'
 import EditIcon from '@fedi/common/assets/svgs/edit.svg'
 import PlusIcon from '@fedi/common/assets/svgs/plus.svg'
 import { selectActiveFederationId } from '@fedi/common/redux'
+import { updateTransactionNotes } from '@fedi/common/redux/transactions'
 import { MSats, Transaction, TransactionDirection } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
 
-import { useAppSelector, useToast } from '../hooks'
+import { useAppDispatch, useAppSelector, useToast } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 import { Dialog } from './Dialog'
@@ -20,42 +21,37 @@ interface Props {
     open: boolean
     transaction?: Transaction
     onOpenChange(open: boolean): void
-    onSaveNote(): void
 }
 
 export const TransactionDialog: React.FC<Props> = ({
     open,
     transaction: txn,
     onOpenChange,
-    onSaveNote,
 }) => {
+    const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const toast = useToast()
     const federationId = useAppSelector(selectActiveFederationId)
-    const [notes, setNotes] = useState(txn?.notes || '')
 
     const isSent = txn?.direction === TransactionDirection.send
     const fee = txn?.lightning?.fee || (0 as MSats)
 
-    useEffect(() => {
-        setNotes(txn?.notes || '')
-    }, [txn])
-
     const handleAddNote = useCallback(async () => {
         if (!txn || !federationId) return
-        const note = prompt(t('phrases.add-note'))
+        const notes = prompt(t('phrases.add-note')) || ''
         try {
-            await fedimint.updateTransactionNotes(
-                txn.id,
-                note || '',
-                federationId,
+            dispatch(
+                updateTransactionNotes({
+                    fedimint,
+                    federationId,
+                    transactionId: txn.id,
+                    notes,
+                }),
             )
-            setNotes(note || '')
-            onSaveNote()
         } catch (err) {
             toast.showErrorToast(err, 'error.unknown-error')
         }
-    }, [t, txn, federationId, onSaveNote, toast])
+    }, [txn, federationId, t, dispatch, toast])
 
     return (
         <Dialog size="sm" open={open && !!txn} onOpenChange={onOpenChange}>
@@ -113,8 +109,8 @@ export const TransactionDialog: React.FC<Props> = ({
                         <Detail>
                             <div>{t('words.notes')}</div>
                             <div>
-                                {notes}
-                                {notes ? (
+                                {txn.notes}
+                                {txn.notes ? (
                                     <div>
                                         <AddNoteButton onClick={handleAddNote}>
                                             <Icon icon={EditIcon} size={10} />

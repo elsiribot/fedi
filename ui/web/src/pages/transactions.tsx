@@ -1,9 +1,8 @@
-import orderBy from 'lodash/orderBy'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { selectActiveFederationId } from '@fedi/common/redux'
+import { useTransactionHistory } from '@fedi/common/hooks/transactions'
 import { Transaction } from '@fedi/common/types'
 
 import { ContentBlock } from '../components/ContentBlock'
@@ -12,40 +11,30 @@ import * as Layout from '../components/Layout'
 import { TransactionDialog } from '../components/TransactionDialog'
 import { TransactionRow } from '../components/TransactionRow'
 import { TransactionRowError } from '../components/TransactionRowError'
-import { useAppSelector, useToast } from '../hooks'
+import { useToast } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 
 const TransactionsPage: React.FC = () => {
     const { t } = useTranslation()
     const toast = useToast()
-    const federationId = useAppSelector(selectActiveFederationId)
     const [isLoading, setIsLoading] = useState(true)
-    const [transactions, setTransactions] = useState<Transaction[]>([])
     const [selectedTransaction, setSelectedTransaction] =
         useState<Transaction>()
+    const { transactions, fetchTransactions } = useTransactionHistory(fedimint)
 
-    const refreshTransactions = useCallback(() => {
-        if (!federationId) return
-        fedimint
-            .listTransactions(federationId)
-            .then(res => {
-                setTransactions(orderBy(res))
-            })
+    useEffect(() => {
+        fetchTransactions()
             .catch(err => {
                 toast.showErrorToast(err, 'errors.unknown-error')
             })
             .finally(() => {
                 setIsLoading(false)
             })
-    }, [federationId, toast])
-
-    useEffect(() => {
-        refreshTransactions()
-    }, [refreshTransactions])
+    }, [fetchTransactions, toast])
 
     let content
-    if (isLoading) {
+    if (isLoading && !transactions.length) {
         content = (
             <Loading>
                 <HoloLoader size="xl" />
@@ -89,7 +78,6 @@ const TransactionsPage: React.FC = () => {
                 open={!!selectedTransaction}
                 transaction={selectedTransaction}
                 onOpenChange={() => setSelectedTransaction(undefined)}
-                onSaveNote={refreshTransactions}
             />
         </ContentBlock>
     )
