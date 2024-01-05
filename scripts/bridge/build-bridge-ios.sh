@@ -10,7 +10,7 @@ TARGET_DIR="${TARGET_DIR:-${REPO_ROOT}/target}"
 # default to dev-ios profile instead of dev to fix opt-level issue
 CARGO_PROFILE=${CARGO_PROFILE:-dev-ios}
 CARGO_PROFILE_DIR=${CARGO_PROFILE}
-if [ "$CARGO_PROFILE" == "dev-ios" ]; then
+if [ "$CARGO_PROFILE" == "dev" ]; then
   CARGO_PROFILE_DIR="debug"
 fi
 
