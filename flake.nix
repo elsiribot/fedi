@@ -21,8 +21,14 @@
       url = "git+https://x-access-token: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@github.com/fedibtc/fedi.git?ref=master&rev=3502c58bdf37e9abf32615d3ba14b1a109922554";
     };
 
+    fenix = {
+      url = "github:nix-community/fenix?rev=15c95e2adbe285c82ce347a31110b83d13aad586";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     flakebox = {
-      url = "github:rustshop/flakebox?rev=154ffb9d93cbe3f98d9ab5252c1b187e046ab96e";
+      url = "github:rustshop/flakebox?rev=519839a4c91ad6d7d66d78da8f80003812dcebf9";
+      inputs.fenix.follows = "fenix";
     };
 
     fs-dir-cache = {
@@ -35,7 +41,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, fedimint-pkgs, fs-dir-cache, android-nixpkgs, fedi-v1, fedi-v0, flakebox }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, fedimint-pkgs, fs-dir-cache, android-nixpkgs, fedi-v1, fedi-v0, flakebox, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs-unstable = import nixpkgs-unstable {
@@ -149,7 +155,7 @@
         flakeboxLib = flakebox.lib.${system} {
           # customizations will go here in the future
           config = {
-            toolchain.channel.default = "complete";
+            toolchain.channel.default = "latest";
 
             # we have our own weird CI workflows
             github.ci.enable = false;
@@ -198,10 +204,12 @@
           ])
           (flakeboxLib.mkStdFenixToolchains {
             inherit androidSdk;
+            componentTargetsChannelName = "latest";
           })
         );
         toolchain = flakeboxLib.mkFenixMultiToolchain {
           inherit toolchains;
+          componentTargetsChannelName = "latest";
         };
 
         craneMultiBuild = import nix/flakebox.nix {
