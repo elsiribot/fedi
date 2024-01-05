@@ -1331,6 +1331,7 @@
       "original": {
         "owner": "nix-community",
         "repo": "fenix",
+        "rev": "15c95e2adbe285c82ce347a31110b83d13aad586",
         "type": "github"
       }
     },
