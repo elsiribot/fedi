@@ -259,7 +259,7 @@ async fn funds_summary(
         .unwrap_or_else(|| Utc::now().timestamp().to_string());
     let temp_federation_path = args
         .local_backup_directory
-        .join(&format!("{}-{wallet_base_id}", federation.name));
+        .join(format!("{}-{wallet_base_id}", federation.name));
 
     stop_fedimints(&federation).await?;
 
@@ -910,7 +910,7 @@ async fn extract_all_output_descriptors(
 }
 
 fn summarize_output_descriptor_balance(
-    output_descriptors_utxos: &Vec<Vec<RecoveryToolResult>>,
+    output_descriptors_utxos: &[Vec<RecoveryToolResult>],
 ) -> anyhow::Result<Option<Amount>> {
     if output_descriptors_utxos.is_empty() {
         anyhow::bail!("no output descriptors found")

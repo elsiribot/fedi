@@ -77,7 +77,7 @@ pub struct RecoveryFile {
 }
 
 impl RecoveryFile {
-    pub const MAGIC_PREFIX: &[u8; 8] = b"\xFE\xD1RECOVE";
+    pub const MAGIC_PREFIX: &'static [u8; 8] = b"\xFE\xD1RECOVE";
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();

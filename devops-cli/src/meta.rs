@@ -346,9 +346,9 @@ fn set_special_key_value(
                     .map_err(|e| anyhow::anyhow!("Failed to parse timezone: {e:?}"))?;
             let date = tz
                 .with_ymd_and_hms(
-                    a.year.try_into()?,
-                    a.month.try_into()?,
-                    a.day.try_into()?,
+                    a.year.into(),
+                    a.month.into(),
+                    a.day.into(),
                     // end of day: 23:59:59
                     23,
                     59,

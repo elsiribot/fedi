@@ -153,7 +153,7 @@ impl ServerModuleInit for FediSocialInit {
             )
         });
 
-        server_cfg.into_iter().map(|(k, v)| (k, v)).collect()
+        server_cfg.into_iter().collect()
     }
 
     async fn distributed_gen(

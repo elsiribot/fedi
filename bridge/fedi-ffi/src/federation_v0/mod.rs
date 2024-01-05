@@ -468,7 +468,7 @@ impl FederationV0 {
             .await?
             .into_stream();
 
-        match timeout(PAY_INVOICE_TIMEOUT, async {
+        let future = async {
             while let Some(update) = updates.next().await {
                 self.update_operation_state(operation_id, update.clone())
                     .await;
@@ -484,9 +484,8 @@ impl FederationV0 {
                 info!("lightning update: {:?}", update);
             }
             bail!("lightning payment failed")
-        })
-        .await
-        {
+        };
+        match timeout(PAY_INVOICE_TIMEOUT, future).await {
             Ok(result) => result,
             Err(_) => bail!("Lightning payment failed ... awaiting refund"),
         }
