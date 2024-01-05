@@ -1,37 +1,37 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { selectActiveFederationId } from '@fedi/common/redux'
+import { updateTransactionNotes } from '@fedi/common/redux/transactions'
 import { Transaction } from '@fedi/common/types'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 import {
     makeTxnDetailItems,
     makeTxnDetailTitleText,
     makeTxnStatusText,
 } from '@fedi/common/utils/wallet'
 
-import { useBridge } from '../../../state/hooks'
+import { fedimint } from '../../../bridge'
+import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
+import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { HistoryList } from '../../ui/HistoryList'
 import { TransactionIcon } from './TransactionIcon'
 
 type TransactionsListProps = {
     transactions: Transaction[]
-    isV1Federation: boolean
     loading?: boolean
     loadMoreTransactions?: () => void
-    updateTransactionInState: (
-        transactionId: string,
-        updatedNotes: string,
-    ) => void
 }
 
-const TransactionsList = ({
+const TransactionsList: React.FC<TransactionsListProps> = ({
     transactions,
-    isV1Federation,
     loading,
     loadMoreTransactions,
-    updateTransactionInState,
-}: TransactionsListProps) => {
+}) => {
+    const dispatch = useAppDispatch()
     const { t } = useTranslation()
-    const { updateTransactionNotes } = useBridge()
+    const { toast } = useEnvironmentContext().state
+    const activeFederationId = useAppSelector(selectActiveFederationId)
 
     return (
         <HistoryList
@@ -52,11 +52,25 @@ const TransactionsList = ({
                 amount: txn.amount,
                 notes: txn.notes,
                 onSaveNotes: async (notes: string) => {
-                    await updateTransactionNotes(txn.id, notes)
-                    updateTransactionInState(txn.id, notes)
+                    try {
+                        if (!activeFederationId)
+                            throw new Error('errors.unknown-error')
+                        await dispatch(
+                            updateTransactionNotes({
+                                fedimint,
+                                notes,
+                                federationId: activeFederationId,
+                                transactionId: txn.id,
+                            }),
+                        ).unwrap()
+                    } catch (err) {
+                        toast?.show(
+                            formatErrorMessage(t, err, 'errors.unknown-error'),
+                        )
+                    }
                 },
             })}
-            onEndReached={isV1Federation ? loadMoreTransactions : undefined}
+            onEndReached={loadMoreTransactions}
         />
     )
 }
