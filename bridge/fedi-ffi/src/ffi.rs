@@ -86,6 +86,7 @@ pub async fn fedimint_initialize_inner(
     let storage = PathBasedStorage::new(data_dir)
         .await
         .context("Failed to initialize storage")?;
+    let mut bridge_lock = BRIDGE.lock().await;
     let bridge = match fedimint_initialize_async(Arc::new(storage), event_sink).await {
         Ok(bridge) => bridge,
         Err(e) => {
@@ -94,7 +95,7 @@ pub async fn fedimint_initialize_inner(
             return Err(context_error);
         }
     };
-    *BRIDGE.lock().await = Some(bridge);
+    *bridge_lock = Some(bridge);
     info!("bridge initialized");
     Ok(())
 }
