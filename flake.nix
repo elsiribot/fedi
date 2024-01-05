@@ -1,8 +1,7 @@
 {
   inputs = {
     nixpkgs = {
-      url = "github:NixOS/nixpkgs/nixos-23.05";
-      follows = "fedimint-pkgs/nixpkgs";
+      url = "github:NixOS/nixpkgs/nixos-23.11";
     };
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
