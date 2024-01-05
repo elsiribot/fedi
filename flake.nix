@@ -149,6 +149,8 @@
         flakeboxLib = flakebox.lib.${system} {
           # customizations will go here in the future
           config = {
+            toolchain.channel.default = "complete";
+
             # we have our own weird CI workflows
             github.ci.enable = false;
             just.includePaths = [
