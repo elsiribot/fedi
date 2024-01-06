@@ -13,7 +13,6 @@ const NewMemberHeader: React.FC<{}> = () => {
             <SelectedFederationHeader />
             <Header
                 inline
-                backButton
                 headerCenter={
                     <Text bold numberOfLines={1} adjustsFontSizeToFit>
                         {t('phrases.new-member')}
