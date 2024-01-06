@@ -233,6 +233,7 @@
           (flakeboxLib.mkStdFenixToolchains {
             inherit androidSdk;
             componentTargetsChannelName = "latest";
+            extraRustFlags = "--cfg tokio_unstable";
           })
         );
         toolchain = flakeboxLib.mkFenixMultiToolchain {
