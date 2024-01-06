@@ -165,7 +165,7 @@ fn add_site(config: &mut MetaConfig, args: AddSiteArgs) -> anyhow::Result<()> {
         id: args.id,
         title: args.title,
         url: args.url,
-        image_url: args.image_url,
+        image_url: Some(args.image_url),
     };
     let sites_string = match federation_config.get(SITES_KEY) {
         Some(serde_json::Value::String(s)) => s,
