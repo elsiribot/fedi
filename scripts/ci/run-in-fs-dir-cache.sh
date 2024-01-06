@@ -20,7 +20,7 @@ log_file="$FS_DIR_CACHE_ROOT/log"
 fs-dir-cache gc unused --seconds "$((7 * 24 * 60 * 60))" # delete caches not used in more than a week
 
 # create/reuse cache (sub-directory) and lock it (wait if already locked)
-cache_dir=$(fs-dir-cache lock --key-file Cargo.lock --key-str "${CARGO_PROFILE-:dev}" --key-file flake.lock)
+cache_dir=$(fs-dir-cache lock --key-file Cargo.lock --key-str "${CARGO_PROFILE-:dev}" --key-str "2" --key-file flake.lock)
 
 export TARGET_DIR="$cache_dir/target"
 
