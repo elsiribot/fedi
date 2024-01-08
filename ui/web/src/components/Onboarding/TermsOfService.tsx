@@ -1,14 +1,8 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useIsChatSupported } from '@fedi/common/hooks/federation'
-import { selectActiveFederation } from '@fedi/common/redux'
-import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
-
-import { useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
 import { Button } from '../Button'
-import { Redirect } from '../Redirect'
 import { Text } from '../Text'
 import {
     OnboardingActions,
@@ -16,21 +10,24 @@ import {
     OnboardingContent,
 } from './components'
 
-export const FederationTerms: React.FC = () => {
+interface TermsOfServiceProps {
+    tosUrl: string
+    onAccept: () => void | Promise<void>
+}
+
+export const TermsOfService: React.FC<TermsOfServiceProps> = ({
+    tosUrl,
+    onAccept,
+}: TermsOfServiceProps) => {
     const { t } = useTranslation()
-    const activeFederation = useAppSelector(selectActiveFederation)
-    const isChatSupported = useIsChatSupported()
     const [hasTermsLoaded, setHasTermsLoaded] = useState(false)
+    const [isAccepting, setIsAccepting] = useState(false)
 
-    if (!activeFederation) {
-        return <Redirect path="/onboarding/welcome" />
-    }
-
-    const tosUrl = getFederationTosUrl(activeFederation.meta)
-
-    if (!tosUrl) {
-        return <Redirect path="/onboarding/welcome" />
-    }
+    const handleAccept = useCallback(async () => {
+        setIsAccepting(true)
+        await onAccept()
+        setIsAccepting(false)
+    }, [onAccept]);
 
     return (
         <OnboardingContainer>
@@ -47,14 +44,15 @@ export const FederationTerms: React.FC = () => {
                 <Button
                     width="full"
                     href="/onboarding/welcome"
-                    disabled={!hasTermsLoaded}
+                    disabled={!hasTermsLoaded || isAccepting}
                     variant="tertiary">
                     {t('feature.onboarding.i-do-not-accept')}
                 </Button>
                 <Button
                     width="full"
-                    href={isChatSupported ? '/onboarding/username' : '/'}
-                    disabled={!hasTermsLoaded}>
+                    onClick={handleAccept}
+                    disabled={!hasTermsLoaded}
+                loading={isAccepting}>
                     {t('feature.onboarding.i-accept')}
                 </Button>
             </OnboardingActions>

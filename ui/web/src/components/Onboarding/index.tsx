@@ -2,7 +2,6 @@ import React from 'react'
 
 import { styled } from '../../styles'
 import { CreateUsername } from './CreateUsername'
-import { FederationTerms } from './FederationTerms'
 import { JoinFederation } from './JoinFederation'
 import { OnboardingComplete } from './OnboardingComplete'
 import { OnboardingHome } from './OnboardingHome'
@@ -21,8 +20,6 @@ export const Onboarding: React.FC<Props> = ({ step }) => {
         content = <WalletRecovery />
     } else if (step === 'recover/personal') {
         content = <PersonalRecovery />
-    } else if (step === 'terms') {
-        content = <FederationTerms />
     } else if (step === 'username') {
         content = <CreateUsername />
     } else if (step === 'complete') {

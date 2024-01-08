@@ -27,6 +27,7 @@ import { FederationAvatar } from '../FederationAvatar'
 import { Icon } from '../Icon'
 import { QRScanner, ScanResult } from '../QRScanner'
 import { Text } from '../Text'
+import { TermsOfService } from './TermsOfService'
 import {
     OnboardingActions,
     OnboardingContainer,
@@ -44,6 +45,7 @@ export const JoinFederation: React.FC = () => {
     const [wantsScan, setWantsScan] = useState(false)
     const [isFetchingPreview, setIsFetchingPreview] = useState(false)
     const [isJoining, setIsJoining] = useState(false)
+    const [isShowingTos, setIsShowingTos] = useState(false)
     const [federationPreview, setFederationPreview] =
         useState<FederationPreview>()
     const isChatSupported = useIsChatSupported(federationPreview)
@@ -94,7 +96,7 @@ export const JoinFederation: React.FC = () => {
     )
 
     const handleJoin = useCallback(
-        async (nextHref: string) => {
+        async () => {
             setIsJoining(true)
             try {
                 if (!federationPreview) throw new Error()
@@ -104,15 +106,17 @@ export const JoinFederation: React.FC = () => {
                         code: federationPreview.inviteCode,
                     }),
                 ).unwrap()
-                push(nextHref)
+                push(isChatSupported ? '/onboarding/username' : '/')
             } catch (err) {
                 log.error('handleJoin', err)
                 showErrorToast(err, 'errors.invalid-federation-code')
                 setIsJoining(false)
             }
         },
-        [federationPreview, push, dispatch, showErrorToast],
+        [federationPreview, isChatSupported, push, dispatch, showErrorToast],
     )
+
+    const tosUrl = federationPreview ? getFederationTosUrl(federationPreview.meta) : null
 
     let content: React.ReactNode
     let actions: React.ReactNode
@@ -205,8 +209,14 @@ export const JoinFederation: React.FC = () => {
                 </Button>
             </>
         )
+    } else if (tosUrl && isShowingTos) {
+        return (
+                <TermsOfService
+                    tosUrl={tosUrl}
+                    onAccept={handleJoin}
+                />
+            )
     } else {
-        const tosUrl = getFederationTosUrl(federationPreview.meta)
         const welcomeMessage = getFederationWelcomeMessage(
             federationPreview.meta,
         )
@@ -250,17 +260,18 @@ export const JoinFederation: React.FC = () => {
             </FederationPreviewOuter>
         )
 
-        let joinNewMemberHref = '/'
-        if (tosUrl) {
-            joinNewMemberHref = '/onboarding/terms'
-        } else if (isChatSupported) {
-            joinNewMemberHref = '/onboarding/username'
-        }
         actions = (
             <>
                 <Button
                     width="full"
-                    onClick={() => handleJoin(joinNewMemberHref)}
+                    onClick={() => {
+                        if (tosUrl) {
+                            setIsShowingTos(true)
+                        } else {
+                            handleJoin()
+                        }
+                    }
+                    }
                     loading={isJoining}>
                     {t('words.continue')}
                 </Button>
