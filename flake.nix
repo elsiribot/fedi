@@ -26,7 +26,7 @@
     };
 
     flakebox = {
-      url = "github:rustshop/flakebox?rev=22ded87a4ca2a4bcad396f1cc94f0139ab761662";
+      url = "github:rustshop/flakebox?rev=b141d3c7640a7f6fff8da2dec50a72bcbed15056";
       inputs.fenix.follows = "fenix";
     };
 
