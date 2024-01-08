@@ -27,6 +27,7 @@ import { FederationAvatar } from '../FederationAvatar'
 import { Icon } from '../Icon'
 import { QRScanner, ScanResult } from '../QRScanner'
 import { Text } from '../Text'
+import { TermsOfService } from './TermsOfService'
 import {
     OnboardingActions,
     OnboardingContainer,
@@ -44,6 +45,10 @@ export const JoinFederation: React.FC = () => {
     const [wantsScan, setWantsScan] = useState(false)
     const [isFetchingPreview, setIsFetchingPreview] = useState(false)
     const [isJoining, setIsJoining] = useState(false)
+    const [federationTosUrl, setFederationTosUrl] = useState<string | null>(
+        null,
+    )
+    const [hasViewedTos, setHasViewedTos] = useState(false)
     const [federationPreview, setFederationPreview] =
         useState<FederationPreview>()
     const isChatSupported = useIsChatSupported(federationPreview)
@@ -251,9 +256,7 @@ export const JoinFederation: React.FC = () => {
         )
 
         let joinNewMemberHref = '/'
-        if (tosUrl) {
-            joinNewMemberHref = '/onboarding/terms'
-        } else if (isChatSupported) {
+        if (isChatSupported) {
             joinNewMemberHref = '/onboarding/username'
         }
         actions = (
@@ -266,9 +269,21 @@ export const JoinFederation: React.FC = () => {
                 </Button>
             </>
         )
+
+        if (tosUrl && !federationTosUrl && !hasViewedTos) {
+            setFederationTosUrl(tosUrl)
+        }
     }
 
-    return (
+    return federationTosUrl ? (
+        <TermsOfService
+            tosUrl={federationTosUrl}
+            onAccept={() => {
+                setFederationTosUrl(null)
+                setHasViewedTos(true)
+            }}
+        />
+    ) : (
         <OnboardingContainer>
             <OnboardingContent>{content}</OnboardingContent>
             <OnboardingActions>{actions}</OnboardingActions>
