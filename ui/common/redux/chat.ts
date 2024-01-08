@@ -318,17 +318,6 @@ export const chatSlice = createSlice({
                 authenticatedMember,
             }
         },
-        setPushNotificationToken(
-            state,
-            action: FederationPayloadAction<{ pushNotificationToken: string }>,
-        ) {
-            const { federationId, pushNotificationToken } = action.payload
-            const federation = getFederationChatState(state, federationId)
-            state[federationId] = {
-                ...federation,
-                pushNotificationToken,
-            }
-        },
         setChatEncryptionKeys(
             state,
             action: FederationPayloadAction<{ encryptionKeys: Keypair }>,
@@ -504,6 +493,18 @@ export const chatSlice = createSlice({
             }
         })
 
+        builder.addCase(
+            publishPushNotificationToken.fulfilled,
+            (state, action) => {
+                const { federationId } = action.meta.arg
+                const federation = getFederationChatState(state, federationId)
+                state[federationId] = {
+                    ...federation,
+                    pushNotificationToken: action.payload,
+                }
+            },
+        )
+
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
             Object.entries(action.payload.chat).forEach(
@@ -590,7 +591,6 @@ export const {
     setLastReadPaymentUpdateId,
     setLastSeenMessageId,
     setLastSeenPaymentUpdateId,
-    setPushNotificationToken,
     setWebsocketIsHealthy,
     resetAuthenticatedMember,
     resetFederationChatState,
@@ -1470,6 +1470,22 @@ export const sendQueuedMessages = createAsyncThunk<
         }
     },
 )
+
+export const publishPushNotificationToken = createAsyncThunk<
+    string,
+    { federationId: string; getToken: () => Promise<string> },
+    { state: CommonState }
+>('chat/publishPushNotificationToken', async ({ federationId, getToken }) => {
+    const client = xmppChatClientManager.getClient(federationId)
+    if (client.xmpp.status !== 'online') {
+        throw new Error(
+            'Cannot publish notification token while xmpp client is offline',
+        )
+    }
+    const token = await getToken()
+    await client.publishNotificationToken(token)
+    return token
+})
 
 // Async thunk utility functions
 

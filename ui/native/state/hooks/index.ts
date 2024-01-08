@@ -26,6 +26,7 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 import { fedimint } from '../../bridge'
 import { MSats, Sats } from '../../types'
 import { NavigationHook } from '../../types/navigation'
+import { useNotificationsPermission } from '../../utils/hooks'
 import type { AppDispatch, AppState } from '../store'
 
 /**
@@ -223,10 +224,19 @@ export const useXmppHealthCheck = () => {
 // This hook gets the device's FCM token and publishes it
 // to the XMPP server if chat is supported
 export const useXmppPushNotifications = async () => {
+    const { notificationsPermission } = useNotificationsPermission()
     const getDeviceToken = useMemo(() => {
-        return () => messaging().getToken()
+        return async () => {
+            if (!messaging().isDeviceRegisteredForRemoteMessages) {
+                await messaging().registerDeviceForRemoteMessages()
+            }
+            return messaging().getToken()
+        }
     }, [])
-    usePublishNotificationToken(getDeviceToken)
+    usePublishNotificationToken(
+        getDeviceToken,
+        notificationsPermission !== 'granted',
+    )
 }
 
 // This hook provides a stability pool function
