@@ -26,7 +26,7 @@
     };
 
     flakebox = {
-      url = "github:rustshop/flakebox?rev=519839a4c91ad6d7d66d78da8f80003812dcebf9";
+      url = "github:rustshop/flakebox?rev=22ded87a4ca2a4bcad396f1cc94f0139ab761662";
       inputs.fenix.follows = "fenix";
     };
 
@@ -217,6 +217,19 @@
           };
         };
 
+        toolchainArgs =  let llvmPackages = pkgs.llvmPackages_11; in {
+            inherit androidSdk;
+            componentTargetsChannelName = "latest";
+            extraRustFlags = "--cfg tokio_unstable";
+          } // lib.optionalAttrs pkgs.stdenv.isDarwin {
+            # on Darwin newest stdenv doesn't seem to work
+            # linking rocksdb
+            stdenv = pkgs.clang11Stdenv;
+            clang = llvmPackages.clang;
+            libclang = llvmPackages.libclang.lib;
+            clang-unwrapped = llvmPackages.clang-unwrapped;
+          };
+
         toolchains = (pkgs.lib.getAttrs
           ([
             "default"
@@ -230,11 +243,7 @@
             "aarch64-ios-sim"
             "x86_64-ios"
           ])
-          (flakeboxLib.mkStdFenixToolchains {
-            inherit androidSdk;
-            componentTargetsChannelName = "latest";
-            extraRustFlags = "--cfg tokio_unstable";
-          })
+          (flakeboxLib.mkStdFenixToolchains toolchainArgs)
         );
         toolchain = flakeboxLib.mkFenixMultiToolchain {
           inherit toolchains;
@@ -288,7 +297,6 @@
               pkgs.nodePackages.prettier # for ts-bindgen
               pkgs.jdk17
               pkgs.nodePackages.typescript-language-server
-              pkgs.llvmPackages_14.clang
               # tools for managing native app deployments
               pkgs.fastlane
               pkgs.ruby
