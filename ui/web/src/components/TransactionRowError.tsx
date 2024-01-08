@@ -26,7 +26,7 @@ export const TransactionRowError: React.FC<Props> = ({
             <Icon icon={ErrorIcon} size={32} />
             <Message>
                 <Text variant="caption" weight="medium">
-                    {t('errors.transaction-render-error')}
+                    {t('errors.history-render-error')}
                 </Text>
                 <Text variant="small" css={{ color: theme.colors.darkGrey }}>
                     {t('phrases.click-for-more-details')}
