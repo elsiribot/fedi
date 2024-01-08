@@ -45,10 +45,7 @@ export const JoinFederation: React.FC = () => {
     const [wantsScan, setWantsScan] = useState(false)
     const [isFetchingPreview, setIsFetchingPreview] = useState(false)
     const [isJoining, setIsJoining] = useState(false)
-    const [federationTosUrl, setFederationTosUrl] = useState<string | null>(
-        null,
-    )
-    const [hasViewedTos, setHasViewedTos] = useState(false)
+    const [hasAcceptedTos, setHasAcceptedTos] = useState(false)
     const [federationPreview, setFederationPreview] =
         useState<FederationPreview>()
     const isChatSupported = useIsChatSupported(federationPreview)
@@ -212,6 +209,18 @@ export const JoinFederation: React.FC = () => {
         )
     } else {
         const tosUrl = getFederationTosUrl(federationPreview.meta)
+
+        if (tosUrl && !hasAcceptedTos) {
+            return (
+                <TermsOfService
+                    tosUrl={tosUrl}
+                    onAccept={() => {
+                        setHasAcceptedTos(true)
+                    }}
+                />
+            )
+        }
+
         const welcomeMessage = getFederationWelcomeMessage(
             federationPreview.meta,
         )
@@ -269,21 +278,9 @@ export const JoinFederation: React.FC = () => {
                 </Button>
             </>
         )
-
-        if (tosUrl && !federationTosUrl && !hasViewedTos) {
-            setFederationTosUrl(tosUrl)
-        }
     }
 
-    return federationTosUrl ? (
-        <TermsOfService
-            tosUrl={federationTosUrl}
-            onAccept={() => {
-                setFederationTosUrl(null)
-                setHasViewedTos(true)
-            }}
-        />
-    ) : (
+    return (
         <OnboardingContainer>
             <OnboardingContent>{content}</OnboardingContent>
             <OnboardingActions>{actions}</OnboardingActions>
