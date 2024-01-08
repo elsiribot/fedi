@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Avatar, Button, Divider, Text, Theme } from '@rneui/themed'
+import { Button, Divider, Text, Theme } from '@rneui/themed'
 import { useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,15 +7,16 @@ import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
-import { selectCurrency, decreaseStableBalance } from '@fedi/common/redux'
+import { decreaseStableBalance } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
+import { CurrencyAvatar } from '../components/feature/stabilitypool/CurrencyAvatar'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { useAppDispatch } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('StabilityConfirmWithdraw')
@@ -35,7 +36,6 @@ const StabilityConfirmWithdraw: React.FC<Props> = ({ route, navigation }) => {
     const [processingDeposit, setProcessingDeposit] = useState<boolean>(false)
     const [showDetails, setShowDetails] = useState<boolean>(false)
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
-    const selectedFiatCurrency = useAppSelector(selectCurrency)
     const formattedFiat = convertSatsToFormattedFiat(amount)
 
     const handleSubmit = async () => {
@@ -72,13 +72,7 @@ const StabilityConfirmWithdraw: React.FC<Props> = ({ route, navigation }) => {
                     color={theme.colors.orange}
                 />
                 <SvgImage name="ArrowRight" color={theme.colors.primaryLight} />
-                <Avatar
-                    size={theme.sizes.md}
-                    rounded
-                    title={selectedFiatCurrency}
-                    titleStyle={style.currencyAvatarTitle}
-                    containerStyle={style.currencyAvatar}
-                />
+                <CurrencyAvatar />
             </View>
             <View style={style.amountText}>
                 <Text h1 numberOfLines={1}>
@@ -184,12 +178,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             flexDirection: 'row',
             alignItems: 'center',
             gap: theme.spacing.sm,
-        },
-        currencyAvatar: {
-            backgroundColor: theme.colors.green,
-        },
-        currencyAvatarTitle: {
-            ...theme.styles.avatarText,
         },
         collapsedContainer: {
             height: 0,

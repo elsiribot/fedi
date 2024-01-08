@@ -1,8 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Text } from '@rneui/themed'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { selectActiveFederation } from '@fedi/common/redux'
 import { Transaction, TransactionDirection } from '@fedi/common/types'
@@ -19,7 +17,6 @@ const log = makeLog('Transactions')
 export type Props = NativeStackScreenProps<RootStackParamList, 'Transactions'>
 
 const Transactions: React.FC<Props> = () => {
-    const { t } = useTranslation()
     const { listTransactions } = useBridge()
     const { toast } = useEnvironmentContext().state
     const [isLoading, setIsLoading] = useState(false)
@@ -85,6 +82,7 @@ const Transactions: React.FC<Props> = () => {
     useEffect(() => {
         setIsLoading(true)
         const loadTransactions = async () => {
+            await new Promise(resolve => setTimeout(resolve, 1000))
             await getTransactionsList()
             setIsLoading(false)
         }
@@ -97,22 +95,17 @@ const Transactions: React.FC<Props> = () => {
             : undefined
     }, [transactionsList])
 
-    if (isLoading) return <ActivityIndicator />
-
     return (
         <View style={styles.container}>
-            {transactionsList.length === 0 ? (
-                <Text>{t('phrases.no-transactions')}</Text>
-            ) : (
-                <TransactionsList
-                    transactions={transactionsList}
-                    loadMoreTransactions={
-                        isV0Federation ? undefined : getTransactionsList
-                    }
-                    updateTransactionInState={updateTransactionInState}
-                    isV1Federation={false}
-                />
-            )}
+            <TransactionsList
+                transactions={transactionsList}
+                loading={isLoading}
+                loadMoreTransactions={
+                    isV0Federation ? undefined : getTransactionsList
+                }
+                updateTransactionInState={updateTransactionInState}
+                isV1Federation={false}
+            />
         </View>
     )
 }
@@ -120,10 +113,6 @@ const Transactions: React.FC<Props> = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    contentContainer: {
-        alignItems: 'center',
-        justifyContent: 'space-evenly',
     },
 })
 

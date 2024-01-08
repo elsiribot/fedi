@@ -169,7 +169,7 @@
         "receives-have-been-disabled": "Receives have been disabled for this federation",
         "recovery-failed": "Recovery failed, please try again",
         "sign-nostr-event-failed": "Failed to sign nostr event",
-        "transaction-render-error": "Encountered an error rendering this transaction",
+        "history-render-error": "Encountered an error rendering this item",
         "unknown-error": "An unknown error occurred",
         "username-already-exists": "This username already exists. Recover your wallet to restore your username.",
         "webln-canceled": "Canceled request",
@@ -576,7 +576,9 @@
             "withdrawal-amount": "Withdrawal amount",
             "withdrawal-intiated": "Withdrawal initiated",
             "withdrawal-pending": "{{amount}} withdrawal pending...",
-            "withdrawal-time": "Withdrawal time"
+            "withdrawal-time": "Withdrawal time",
+            "you-deposited": "You deposited",
+            "you-withdrew": "You withdrew"
         },
         "wallet": {
             "network-notice": "This federation uses {{network}} SATS"

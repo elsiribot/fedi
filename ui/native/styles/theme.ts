@@ -60,6 +60,7 @@ const themeDefaults = {
         splashLogoWidth: 120,
         stabilityPoolCircleThickness: 2,
         unreadIndicatorSize: 10,
+        historyIcon: 38,
     },
     spacing: {
         ...fediTheme.spacing,

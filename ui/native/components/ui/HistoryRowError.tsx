@@ -3,9 +3,9 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import SvgImage, { SvgImageSize } from './SvgImage'
 
-export const StabilityTransactionTileError: React.FC = () => {
+export const HistoryRowError: React.FC = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 
@@ -19,7 +19,7 @@ export const StabilityTransactionTileError: React.FC = () => {
                 />
             </View>
             <View style={styles(theme).centerContainer}>
-                <Text>{t('errors.transaction-render-error')}</Text>
+                <Text>{t('errors.history-render-error')}</Text>
             </View>
         </View>
     )
