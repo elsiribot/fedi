@@ -26,8 +26,9 @@ export function middleware(req: NextRequest) {
         // construct in JS with blob: and data: URIs.
         `img-src * blob: data:`,
         'media-src * blob: data:',
-        // Completely disable <iframe>, <object>, <embed>, and <base> tags.
+        // Allow iframe tags for displaying ToS
         `frame-src *`,
+        // Completely disable <object>, <embed>, and <base> tags.
         `object-src 'none'`,
         `base-uri 'none'`,
         // Completely disable the site being iframed.
