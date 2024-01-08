@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { styled, theme } from '../../styles'
 import { Button } from '../Button'
 import { Text } from '../Text'
 import FederationTermsPreview, {
@@ -30,7 +29,7 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({
         setIsAccepting(true)
         await onAccept()
         setIsAccepting(false)
-    }, [onAccept]);
+    }, [onAccept])
 
     return (
         <OnboardingContainer>
@@ -62,7 +61,7 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({
                     width="full"
                     onClick={handleAccept}
                     disabled={!hasTermsLoaded}
-                loading={isAccepting}>
+                    loading={isAccepting}>
                     {t('feature.onboarding.i-accept')}
                 </Button>
             </OnboardingActions>
