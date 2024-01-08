@@ -14,13 +14,13 @@ export function useTransactionHistory(fedimint: FedimintBridge) {
     const transactions = useCommonSelector(selectTransactionHistory)
 
     const fetchTransactions = useCallback(
-        async (refresh?: boolean) => {
+        async (args?: Pick<Parameters<typeof reduxFetchTransactions>[0], 'limit' | 'more' | 'refresh'>) => {
             if (!activeFederationId) throw new Error('errors.unknown-error')
             return dispatch(
                 reduxFetchTransactions({
                     federationId: activeFederationId,
                     fedimint,
-                    refresh,
+                    ...args,
                 }),
             ).unwrap()
         },

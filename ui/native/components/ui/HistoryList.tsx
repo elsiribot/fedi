@@ -87,7 +87,7 @@ export function HistoryList<T extends { id: string }>({
                     index,
                 })}
                 initialNumToRender={20}
-                onEndReached={onEndReached}
+                onEndReached={() => onEndReached && onEndReached()}
                 onEndReachedThreshold={0.9}
             />
             <Overlay

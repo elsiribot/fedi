@@ -24,7 +24,7 @@ const TransactionsPage: React.FC = () => {
     const { transactions, fetchTransactions } = useTransactionHistory(fedimint)
 
     useEffect(() => {
-        fetchTransactions()
+        fetchTransactions({ more: false })
             .catch(err => {
                 toast.showErrorToast(err, 'errors.unknown-error')
             })

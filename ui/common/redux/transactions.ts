@@ -21,17 +21,20 @@ const initialTransactionsState = {
 }
 type FederationTransactionsState = typeof initialTransactionsState
 
-// All wallet state is keyed by federation id to keep federation wallets separate, so it starts as an empty object.
+// All transaction state is keyed by federation id to keep federation transactions separate, so it starts as an empty object.
 const initialState = {} as Record<
     Federation['id'],
     FederationTransactionsState | undefined
 >
 
-export type WalletState = typeof initialState
+export type TransactionsState = typeof initialState
 
 /*** Slice definition ***/
 
-const getFederationTxsState = (state: WalletState, federationId: string) =>
+const getFederationTxsState = (
+    state: TransactionsState,
+    federationId: string,
+) =>
     state[federationId] || {
         ...initialTransactionsState,
     }
@@ -134,22 +137,20 @@ export const fetchTransactions = createAsyncThunk<
         fedimint: FedimintBridge
         federationId: string
         limit?: number
+        more?: boolean
         refresh?: boolean
     },
     { state: CommonState }
 >(
     'transactions/refreshTransactions',
-    async (
-        { fedimint, federationId, limit = 100, refresh = false },
-        { getState },
-    ) => {
+    async ({ fedimint, federationId, limit = 100, more }, { getState }) => {
         const { transactions } = getFederationTxsState(
             getState().transactions,
             federationId,
         )
-        const paginationTimestamp = refresh
-            ? undefined
-            : transactions[transactions.length - 1]?.createdAt || undefined
+        const paginationTimestamp = more
+            ? transactions[transactions.length - 1]?.createdAt || undefined
+            : undefined
         return await fedimint.listTransactions(
             federationId,
             paginationTimestamp,

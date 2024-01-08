@@ -24,7 +24,7 @@ const Transactions: React.FC<Props> = () => {
 
     useEffect(() => {
         setIsLoading(true)
-        fetchTransactions(true)
+        fetchTransactions()
             .catch(err => {
                 log.error('Error refreshing transactions', err)
                 toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
@@ -37,7 +37,7 @@ const Transactions: React.FC<Props> = () => {
             <TransactionsList
                 transactions={transactions}
                 loading={transactions.length === 0 && isLoading}
-                loadMoreTransactions={fetchTransactions}
+                loadMoreTransactions={() => fetchTransactions({ more: true })}
             />
         </View>
     )
