@@ -50,7 +50,7 @@ export default function FederationTermsPreview({
                             href={tosUrl}
                             target="_blank"
                             rel="noopener noreferrer">
-                            View in Browser
+                            {t('phrases.open-in-browser')}
                         </ExternalTosLink>
                     </Text>
                 </ContentOverlay>

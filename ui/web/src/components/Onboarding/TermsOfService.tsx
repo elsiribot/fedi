@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '../Button'
 import { Text } from '../Text'
+import FederationTermsPreview from './FederationTermsPreview'
+import { ExternalTosLink } from './FederationTermsPreview'
 import {
     OnboardingActions,
     OnboardingContainer,
@@ -34,10 +36,17 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({
                 <Text variant="h2" weight="medium" css={{ marginBottom: 16 }}>
                     {t('feature.onboarding.terms-and-conditions')}
                 </Text>
-                <FederationTermsIframe
-                    src={tosUrl}
-                    onLoad={() => setHasTermsLoaded(true)}
+                <FederationTermsPreview
+                    tosUrl={tosUrl}
+                    isLoaded={hasTermsLoaded}
+                    setIsLoaded={setHasTermsLoaded}
                 />
+                <ExternalTosLink
+                    href={tosUrl}
+                    target="_blank"
+                    rel="noopener noreferrer">
+                    {t('phrases.open-in-browser')}
+                </ExternalTosLink>
             </OnboardingContent>
             <OnboardingActions>
                 <Button
@@ -58,11 +67,3 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({
         </OnboardingContainer>
     )
 }
-
-const FederationTermsIframe = styled('iframe', {
-    borderRadius: 8,
-    width: '100%',
-    height: 480,
-    border: `1px solid ${theme.colors.lightGrey}`,
-    overflow: 'auto',
-})
