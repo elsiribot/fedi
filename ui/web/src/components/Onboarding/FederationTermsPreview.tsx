@@ -32,7 +32,7 @@ export default function FederationTermsPreview({
         return () => {
             clearInterval(errorTimeout)
         }
-    }, [])
+    }, [setIsLoaded])
 
     return (
         <Container>
