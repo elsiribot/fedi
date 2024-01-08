@@ -7,6 +7,7 @@ use std::sync::Arc;
 use anyhow::Context;
 use bitcoin::secp256k1::Message;
 use bitcoin::{Address, Amount};
+use fedimint_core::timing::TimeReporter;
 use futures::Future;
 use lightning_invoice::Bolt11Invoice;
 use macro_rules_attribute::macro_rules_derive;
@@ -14,7 +15,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 pub use tokio;
-use tracing::{error, info, instrument};
+use tracing::{error, info, instrument, Level};
 
 use super::bridge::Bridge;
 use super::error::ErrorCode;
@@ -41,6 +42,7 @@ pub async fn fedimint_initialize_async(
     storage: Storage,
     event_sink: EventSink,
 ) -> anyhow::Result<Arc<Bridge>> {
+    let _g = TimeReporter::new("fedimint_initialize").level(Level::INFO);
     let bridge = Bridge::new(storage, event_sink)
         .await
         .context("could not create a bridge")?;
@@ -555,6 +557,7 @@ rpc_methods!(RpcMethods {
     )
 )]
 pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: String) -> String {
+    let _g = TimeReporter::new(format!("fedimint_rpc {method}")).level(Level::INFO);
     let sensitive_log = bridge.sensitive_log().await;
     if sensitive_log {
         tracing::info!(%payload);
