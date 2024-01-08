@@ -27,7 +27,7 @@ export function middleware(req: NextRequest) {
         `img-src * blob: data:`,
         'media-src * blob: data:',
         // Completely disable <iframe>, <object>, <embed>, and <base> tags.
-        `frame-src 'none'`,
+        `frame-src *`,
         `object-src 'none'`,
         `base-uri 'none'`,
         // Completely disable the site being iframed.
