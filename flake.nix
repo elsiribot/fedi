@@ -1,8 +1,7 @@
 {
   inputs = {
     nixpkgs = {
-      url = "github:NixOS/nixpkgs/nixos-23.05";
-      follows = "fedimint-pkgs/nixpkgs";
+      url = "github:NixOS/nixpkgs/nixos-23.11";
     };
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
@@ -21,8 +20,14 @@
       url = "git+https://x-access-token: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@github.com/fedibtc/fedi.git?ref=master&rev=3502c58bdf37e9abf32615d3ba14b1a109922554";
     };
 
+    fenix = {
+      url = "github:nix-community/fenix?rev=15c95e2adbe285c82ce347a31110b83d13aad586";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     flakebox = {
-      url = "github:rustshop/flakebox?rev=154ffb9d93cbe3f98d9ab5252c1b187e046ab96e";
+      url = "github:rustshop/flakebox?rev=b141d3c7640a7f6fff8da2dec50a72bcbed15056";
+      inputs.fenix.follows = "fenix";
     };
 
     fs-dir-cache = {
@@ -35,7 +40,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, fedimint-pkgs, fs-dir-cache, android-nixpkgs, fedi-v1, fedi-v0, flakebox }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, fedimint-pkgs, fs-dir-cache, android-nixpkgs, fedi-v1, fedi-v0, flakebox, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs-unstable = import nixpkgs-unstable {
@@ -65,15 +70,44 @@
                 ];
               });
 
-              clightning = prev.clightning.overrideAttrs (oldAttrs: {
-                configureFlags = [ "--enable-developer" "--disable-valgrind" ];
-              } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-                NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
+              rocksdb_7_10 = prev.rocksdb_7_10.overrideAttrs (oldAttrs:
+                pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
+                  # C++ and its damn super-fragie compilation
+                  env = oldAttrs.env // {
+                    NIX_CFLAGS_COMPILE = oldAttrs.env.NIX_CFLAGS_COMPILE + " -Wno-error=unused-but-set-variable";
+                  };
+                });
+
+              rocksdb_6_23 = prev.rocksdb_6_23.overrideAttrs (oldAttrs:
+                pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
+                  # C++ and its damn super-fragie compilation
+                  env = oldAttrs.env // {
+                    NIX_CFLAGS_COMPILE = oldAttrs.env.NIX_CFLAGS_COMPILE + " -Wno-error=unused-but-set-variable -Wno-error=deprecated-copy";
+                  };
+                });
+
+              bitcoind = prev.bitcoind.overrideAttrs (oldAttrs: {
+                # tests broken on Mac for some reason
+                doCheck = !prev.stdenv.isDarwin;
               });
 
-              # Note: we are using cargo-nextest from pkgs-unstable because it has some fixes we need
+              # syncing channels doesn't work right on newer versions, exactly like described here
+              # https://bitcoin.stackexchange.com/questions/84765/how-can-channel-policy-be-missing
+              # note that config-time `--enable-developer` turns into run-time `--developer` at some
+              # point
+              clightning = prev.clightning.overrideAttrs (oldAttrs: rec {
+                version = "23.05.2";
+                src = prev.fetchurl {
+                  url = "https://github.com/ElementsProject/lightning/releases/download/v${version}/clightning-v${version}.zip";
+                  sha256 = "sha256-Tj5ybVaxpk5wmOw85LkeU4pgM9NYl6SnmDG2gyXrTHw=";
+                };
+                makeFlags = [ "VERSION=v${version}" ];
+                configureFlags = [ "--enable-developer" "--disable-valgrind" ];
+                NIX_CFLAGS_COMPILE = "-w";
+              });
+
               # Note: shell script adding DYLD_FALLBACK_LIBRARY_PATH because of: https://github.com/nextest-rs/nextest/issues/962
-              cargo-nextest = pkgs.writeShellScriptBin "cargo-nextest" "exec env DYLD_FALLBACK_LIBRARY_PATH=\"$(dirname $(${pkgs.which}/bin/which rustc))/../lib\" ${pkgs-unstable.cargo-nextest}/bin/cargo-nextest \"$@\"";
+              cargo-nextest = pkgs.writeShellScriptBin "cargo-nextest" "exec env DYLD_FALLBACK_LIBRARY_PATH=\"$(dirname $(${pkgs.which}/bin/which rustc))/../lib\" ${prev.cargo-nextest}/bin/cargo-nextest \"$@\"";
             })
           ];
         };
@@ -149,6 +183,8 @@
         flakeboxLib = flakebox.lib.${system} {
           # customizations will go here in the future
           config = {
+            toolchain.channel.default = "latest";
+
             # we have our own weird CI workflows
             github.ci.enable = false;
             just.includePaths = [
@@ -181,6 +217,12 @@
           };
         };
 
+        toolchainArgs = {
+          inherit androidSdk;
+          componentTargetsChannelName = "latest";
+          extraRustFlags = "--cfg tokio_unstable";
+        };
+
         toolchains = (pkgs.lib.getAttrs
           ([
             "default"
@@ -194,12 +236,11 @@
             "aarch64-ios-sim"
             "x86_64-ios"
           ])
-          (flakeboxLib.mkStdFenixToolchains {
-            inherit androidSdk;
-          })
+          (flakeboxLib.mkStdFenixToolchains toolchainArgs)
         );
         toolchain = flakeboxLib.mkFenixMultiToolchain {
           inherit toolchains;
+          componentTargetsChannelName = "latest";
         };
 
         craneMultiBuild = import nix/flakebox.nix {
@@ -249,7 +290,6 @@
               pkgs.nodePackages.prettier # for ts-bindgen
               pkgs.jdk17
               pkgs.nodePackages.typescript-language-server
-              pkgs.llvmPackages_14.clang
               # tools for managing native app deployments
               pkgs.fastlane
               pkgs.ruby
