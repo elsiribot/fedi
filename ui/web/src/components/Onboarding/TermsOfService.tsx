@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { styled, theme } from '../../styles'
@@ -12,7 +12,7 @@ import {
 
 interface TermsOfServiceProps {
     tosUrl: string
-    onAccept: () => void
+    onAccept: () => void | Promise<void>
 }
 
 export const TermsOfService: React.FC<TermsOfServiceProps> = ({
@@ -21,6 +21,13 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({
 }: TermsOfServiceProps) => {
     const { t } = useTranslation()
     const [hasTermsLoaded, setHasTermsLoaded] = useState(false)
+    const [isAccepting, setIsAccepting] = useState(false)
+
+    const handleAccept = useCallback(async () => {
+        setIsAccepting(true)
+        await onAccept()
+        setIsAccepting(false)
+    }, [onAccept]);
 
     return (
         <OnboardingContainer>
@@ -37,14 +44,15 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({
                 <Button
                     width="full"
                     href="/onboarding/welcome"
-                    disabled={!hasTermsLoaded}
+                    disabled={!hasTermsLoaded || isAccepting}
                     variant="tertiary">
                     {t('feature.onboarding.i-do-not-accept')}
                 </Button>
                 <Button
                     width="full"
-                    onClick={onAccept}
-                    disabled={!hasTermsLoaded}>
+                    onClick={handleAccept}
+                    disabled={!hasTermsLoaded}
+                loading={isAccepting}>
                     {t('feature.onboarding.i-accept')}
                 </Button>
             </OnboardingActions>
