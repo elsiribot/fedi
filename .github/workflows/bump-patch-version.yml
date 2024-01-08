@@ -17,6 +17,7 @@ jobs:
             pull-requests: write
         name: Update version to match release branch
         runs-on: [self-hosted, linux]
+        if: contains(github.ref, 'release/')
         steps:
             - name: Checkout repo
               uses: actions/checkout@v4
@@ -29,12 +30,12 @@ jobs:
             - name: Bump version
               id: versioning
               run: nix develop -c ./scripts/ui/bump-version-native.sh
-              
+
             - name: Open Versioning PR
               uses: peter-evans/create-pull-request@v5
               with:
-                token: ${{ secrets.GITHUB_TOKEN }}
-                body: 'This PR includes a version bump commit from a release branch for v${{steps.versioning.outputs.NEW_VERSION}}'
-                title: 'bump version: v${{ steps.versioning.outputs.NEW_VERSION }}'
-                branch: ${{ steps.versioning.outputs.BRANCH_NAME }} 
-                base: 'master'
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  body: 'This PR includes a version bump commit from a release branch for v${{steps.versioning.outputs.NEW_VERSION}}'
+                  title: 'bump version: v${{ steps.versioning.outputs.NEW_VERSION }}'
+                  branch: ${{ steps.versioning.outputs.BRANCH_NAME }}
+                  base: 'master'
