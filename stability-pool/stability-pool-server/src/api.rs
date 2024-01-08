@@ -27,6 +27,12 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
             }
         },
         api_endpoint! {
+            "cycle_start_price",
+            async |_module: &StabilityPool, context, _request: ()| -> u64 {
+                Ok(cycle_start_price(&mut context.dbtx().into_nc()).await?)
+            }
+        },
+        api_endpoint! {
             "wait_cancellation_processed",
             async |_module: &StabilityPool, context, request: PublicKey| -> Amount {
                 Ok(wait_cancellation_processed(context, request).await?)
@@ -103,6 +109,20 @@ pub async fn next_cycle_start_time(
         .duration_since(UNIX_EPOCH)
         .map_err(|_| ApiError::server_error("Server system clock error".to_owned()))?
         .as_secs())
+}
+
+pub async fn cycle_start_price(
+    dbtx: &mut DatabaseTransaction<'_>,
+) -> anyhow::Result<u64, ApiError> {
+    let current_cycle_start_price = dbtx
+        .get_value(&CurrentCycleKey)
+        .await
+        .ok_or(ApiError::server_error(
+            "First cycle not yet started".to_owned(),
+        ))?
+        .start_price;
+
+    Ok(current_cycle_start_price)
 }
 
 /// Wait until the given account's staged cancellation is processed

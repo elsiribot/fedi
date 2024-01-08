@@ -409,6 +409,24 @@ async fn stabilityPoolAccountInfo(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn stabilityPoolNextCycleStartTime(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+) -> anyhow::Result<u64> {
+    bridge
+        .stability_pool_next_cycle_start_time(federation_id)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn stabilityPoolCycleStartPrice(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+) -> anyhow::Result<u64> {
+    bridge.stability_pool_cycle_start_price(federation_id).await
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn stabilityPoolDepositToSeek(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
@@ -539,6 +557,8 @@ rpc_methods!(RpcMethods {
     signNostrEvent,
     // Stability Pool
     stabilityPoolAccountInfo,
+    stabilityPoolNextCycleStartTime,
+    stabilityPoolCycleStartPrice,
     stabilityPoolDepositToSeek,
     stabilityPoolWithdraw,
     // Developer

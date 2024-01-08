@@ -437,6 +437,22 @@ impl MultiFederation {
             }
         }
     }
+
+    async fn stability_pool_next_cycle_start_time(&self) -> Result<u64> {
+        match self {
+            MultiFederation::V0(_) => bail!(ErrorCode::StabilityPoolNotSupported),
+            MultiFederation::V1(v1) => v1.stability_pool_next_cycle_start_time().await,
+            MultiFederation::V2(v2) => v2.stability_pool_next_cycle_start_time().await,
+        }
+    }
+
+    async fn stability_pool_cycle_start_price(&self) -> Result<u64> {
+        match self {
+            MultiFederation::V0(_) => bail!(ErrorCode::StabilityPoolNotSupported),
+            MultiFederation::V1(_) => bail!(ErrorCode::NotSupportedInVersion),
+            MultiFederation::V2(v2) => v2.stability_pool_cycle_start_price().await,
+        }
+    }
 }
 
 /// This is instantiated once as a global. When RPC commands come in, this
@@ -1343,5 +1359,24 @@ impl Bridge {
             .stability_pool_withdraw(unlocked_amount.0, locked_bps)
             .await
             .map(Into::into)
+    }
+
+    pub(crate) async fn stability_pool_next_cycle_start_time(
+        &self,
+        federation_id: RpcFederationId,
+    ) -> Result<u64> {
+        self.get_multi(&federation_id.0)
+            .await?
+            .stability_pool_next_cycle_start_time()
+            .await
+    }
+    pub(crate) async fn stability_pool_cycle_start_price(
+        &self,
+        federation_id: RpcFederationId,
+    ) -> Result<u64> {
+        self.get_multi(&federation_id.0)
+            .await?
+            .stability_pool_cycle_start_price()
+            .await
     }
 }
