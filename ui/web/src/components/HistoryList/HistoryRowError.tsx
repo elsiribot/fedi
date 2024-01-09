@@ -4,19 +4,19 @@ import { useTranslation } from 'react-i18next'
 import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
-import { styled, theme } from '../styles'
-import { Dialog } from './Dialog'
-import { Icon } from './Icon'
-import { Text } from './Text'
+import { styled, theme } from '../../styles'
+import { Dialog } from '../Dialog'
+import { Icon } from '../Icon'
+import { Text } from '../Text'
 
 interface Props {
     error: unknown
-    transaction: unknown
+    item: unknown
 }
 
-export const TransactionRowError: React.FC<Props> = ({
+export const HistoryRowError: React.FC<Props> = ({
     error,
-    transaction,
+    item,
 }) => {
     const { t } = useTranslation()
     const [isShowingDetails, setIsShowingDetails] = useState(false)
@@ -40,7 +40,7 @@ export const TransactionRowError: React.FC<Props> = ({
                 <Text>
                     {formatErrorMessage(t, error, 'errors.unknown-error')}
                 </Text>
-                <ErrorJSON>{JSON.stringify(transaction, null, 2)}</ErrorJSON>
+                <ErrorJSON>{JSON.stringify(item, null, 2)}</ErrorJSON>
             </Dialog>
         </Container>
     )
