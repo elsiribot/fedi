@@ -130,6 +130,11 @@ export interface StoredStateV12 extends Omit<StoredStateV11, 'version'> {
     version: 12 // This version was only added to run a migration on chat data.
 }
 
+export interface StoredStateV13 extends Omit<StoredStateV12, 'version'> {
+    version: 13
+    showFiatTxnAmounts?: boolean
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -145,9 +150,10 @@ export type AnyStoredState =
     | StoredStateV10
     | StoredStateV11
     | StoredStateV12
+    | StoredStateV13
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV12
+export type LatestStoredState = StoredStateV13
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

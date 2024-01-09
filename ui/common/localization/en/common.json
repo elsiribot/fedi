@@ -583,7 +583,9 @@
             "you-withdrew": "You withdrew"
         },
         "wallet": {
-            "network-notice": "This federation uses {{network}} SATS"
+            "network-notice": "This federation uses {{network}} SATS",
+            "show-fiat-txn-amounts": "Show Fiat Transaction Amounts",
+            "show-fiat-txn-amounts-info": "Transaction amounts will be displayed in the selected fiat currency"
         }
     }
 }

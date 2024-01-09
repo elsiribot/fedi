@@ -13,6 +13,7 @@ const initialState = {
     stableBalanceEnabled: false,
     language: null as string | null,
     amountInputType: undefined as 'sats' | 'fiat' | undefined,
+    showFiatTxnAmounts: true,
 }
 
 export type EnvironmentState = typeof initialState
@@ -41,6 +42,9 @@ export const environmentSlice = createSlice({
         setStableBalanceEnabled(state, action: PayloadAction<boolean>) {
             state.stableBalanceEnabled = action.payload
         },
+        setShowFiatTxnAmounts(state, action: PayloadAction<boolean>) {
+            state.showFiatTxnAmounts = action.payload
+        },
     },
     extraReducers: builder => {
         builder.addCase(changeLanguage.fulfilled, (state, action) => {
@@ -63,6 +67,9 @@ export const environmentSlice = createSlice({
             if (action.payload.developerMode) {
                 state.developerMode = action.payload.developerMode
             }
+            if (action.payload.showFiatTxnAmounts !== undefined) {
+                state.showFiatTxnAmounts = action.payload.showFiatTxnAmounts
+            }
         })
     },
 })
@@ -75,6 +82,7 @@ export const {
     setAmountInputType,
     setOnchainDepositsEnabled,
     setStableBalanceEnabled,
+    setShowFiatTxnAmounts,
 } = environmentSlice.actions
 
 /*** Async thunk actions ***/
@@ -104,3 +112,6 @@ export const selectAmountInputType = (s: CommonState) =>
 
 export const selectStableBalanceEnabled = (s: CommonState) =>
     s.environment.stableBalanceEnabled
+
+export const selectShowFiatTxnAmounts = (s: CommonState) =>
+    s.environment.showFiatTxnAmounts
