@@ -553,7 +553,7 @@
             "you-sent": "Kamu mengirim",
             "you-sent-amount-unit": "Anda mengirim {{amount}} {{unit}}",
             "you-are-sending-amount-unit": "Anda sedang mengirim {{amount}} {{unit}}",
-            "send-amount-unit": "Mengirim {{amount}} {{unit}}"
+            "send-amount-unit": "Mengirim {{amount}} {{unit}"
         },
         "stabilitypool": {
             "amount-may-vary": "Jumlahnya mungkin berbeda-beda",

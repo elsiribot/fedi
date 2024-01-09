@@ -138,7 +138,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                     {t('feature.send.send-amount-unit', {
                         amount: satsFmt,
                         unit: t('words.sats'),
-                    })}{' '}
+                    })}
                 </Button>
             </>
         )
@@ -160,10 +160,11 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
         } else if (isSending) {
             dialogStatusProps = {
                 status: 'loading',
-                description: t('feature.send.you-are-sending-amount-unit', {
-                    amount: satsFmt,
-                    unit: t('words.sats'),
-                }),
+                description:
+                    t('feature.send.you-are-sending-amount-unit', {
+                        amount: satsFmt,
+                        unit: t('words.sats'),
+                    }) + '...',
             }
         }
     } else if (isSendingOffline) {
