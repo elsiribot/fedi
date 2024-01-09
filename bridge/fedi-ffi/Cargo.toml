@@ -84,11 +84,11 @@ fedimint-rocksdb-v1 = { workspace = true }
 fedimint-rocksdb-v0 = { workspace = true }
 tokio-util = { version = "0.7.9", features = ["codec", "net"] }
 tracing-subscriber = { version = "0.3.1", features = ["env-filter", "json"] }
-uniffi_macros = { version = "0.21.0", features = ["builtin-bindgen"] }
-uniffi = { version = "0.21.0", features = ["builtin-bindgen"] }
+uniffi_macros = { version = "0.25.3" }
+uniffi = { version = "0.25.3" }
 
 [build-dependencies]
-uniffi_build = { version = "0.21.0", features = ["builtin-bindgen"] }
+uniffi_build = { version = "0.25.3" }
 
 [dev-dependencies]
 tempfile = "3.3.0"
