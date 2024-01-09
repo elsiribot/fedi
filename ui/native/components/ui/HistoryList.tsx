@@ -37,7 +37,10 @@ export function HistoryList<T extends { id: string }>({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
-    const [selectedItem, setSelectedItem] = useState<T | null>(null)
+    const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
+    const selectedItem = selectedItemId
+        ? rows.find(item => item.id === selectedItemId)
+        : undefined
 
     const renderRow: ListRenderItem<T> = ({ item }) => {
         const rowProps = makeRowProps(item)
@@ -46,7 +49,7 @@ export function HistoryList<T extends { id: string }>({
                 <HistoryRow
                     {...rowProps}
                     icon={makeIcon(item)}
-                    onSelect={() => setSelectedItem(item)}
+                    onSelect={() => setSelectedItemId(item.id)}
                 />
             </ErrorBoundary>
         )
@@ -91,9 +94,9 @@ export function HistoryList<T extends { id: string }>({
                 onEndReachedThreshold={0.9}
             />
             <Overlay
-                isVisible={selectedItem !== null}
+                isVisible={!!selectedItem}
                 overlayStyle={style.overlayContainer}
-                onBackdropPress={() => setSelectedItem(null)}>
+                onBackdropPress={() => setSelectedItemId(null)}>
                 {selectedItem && (
                     <ErrorBoundary
                         fallback={
@@ -111,7 +114,7 @@ export function HistoryList<T extends { id: string }>({
                         <HistoryDetail
                             {...makeDetailProps(selectedItem)}
                             icon={makeIcon(selectedItem)}
-                            onClose={() => setSelectedItem(null)}
+                            onClose={() => setSelectedItemId(null)}
                         />
                     </ErrorBoundary>
                 )}
