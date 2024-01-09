@@ -552,7 +552,7 @@
             "you-are-sending": "Estás enviando",
             "you-sent": "Has enviado",
             "you-sent-amount-unit": "Enviaste {{amount}} {{unit}}",
-            "you-are-sending-amount-unit": "Estás enviando {{amount}} {{unit}}"
+            "you-are-sending-amount-unit": "Estás enviando {{amount}} {{unit}}",
             "send-amount-unit": "Enviar {{amount}} {{unit}}"
         },
         "stabilitypool": {
