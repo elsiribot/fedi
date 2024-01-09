@@ -12,6 +12,7 @@ import {
     selectActiveFederation,
     selectBtcExchangeRate,
     selectBtcUsdExchangeRate,
+    selectFederationBalance,
     selectFederationStabilityPoolConfig,
 } from '.'
 import { Federation, MSats, StabilityPoolTxn, Usd, UsdCents } from '../types'
@@ -161,6 +162,7 @@ export const increaseStableBalance = createAsyncThunk<
         const state = getState()
         const activeFederationId = selectActiveFederation(state)?.id
         if (!activeFederationId) throw new Error('No active federation')
+        const ecashBalance = selectFederationBalance(state)
 
         // Add some fee padding to resist downside price leakage while deposits confirm
         // arbitrarily we just add the estimated fees for the first 10 cycles
@@ -183,12 +185,16 @@ export const increaseStableBalance = createAsyncThunk<
             Number((10 * maxFirstCycleFee).toFixed(0)),
         )
 
-        const amountPlusPadding = Number(
-            (amount + leakagePadding).toFixed(0),
+        const amountPlusPadding = Number((amount + leakagePadding).toFixed(0))
+
+        // Make sure total with fee padding doesn't exceed ecash balance
+        const amountToDeposit = Math.min(
+            ecashBalance,
+            amountPlusPadding,
         ) as MSats
 
         const operationId = await fedimint.stabilityPoolDepositToSeek(
-            amountPlusPadding,
+            amountToDeposit,
             activeFederationId,
         )
 
