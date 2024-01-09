@@ -464,7 +464,9 @@
             "request-sats": "Request {{amount}} SATS",
             "request-via-lightning": "Request via lightning",
             "withdraw-from-domain": "Withdraw from {{domain}}",
-            "you-received": "You received"
+            "you-received": "You received",
+            "you-received-amount-unit": "You received {{amount}} {{unit}}",
+            "receive-amount-unit": "Receive {{amount}} {{unit}}"
         },
         "recovery": {
             "camera-access-information": "To assist with recovery, you will need to allow Fedi access to your camera to scan the social recovery code",
@@ -550,7 +552,10 @@
             "send-sats": "Send {{amount}} SATS",
             "send-to-offline-user": "Send to an offline user",
             "you-are-sending": "You are sending",
-            "you-sent": "You sent"
+            "you-sent": "You sent",
+            "you-sent-amount-unit": "You sent {{amount}} {{unit}}",
+            "you-are-sending-amount-unit": "You are sending {{amount}} {{unit}}",
+            "send-amount-unit": "Send {{amount}} {{unit}}"
         },
         "stabilitypool": {
             "amount-may-vary": "Amount may vary",
