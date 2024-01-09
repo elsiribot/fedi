@@ -76,11 +76,12 @@ export const ReceiveOffline: React.FC<Props> = ({ onReceive }) => {
     } else if (redeemAmount !== null) {
         dialogStatusProps = {
             status: 'success',
-            title: `${t(
-                'feature.receive.you-received',
-            )} ${amountUtils.formatSats(
-                amountUtils.msatToSat(redeemAmount),
-            )} ${t('words.sats')}`,
+            title: t('feature.receive.you-received-amount-unit', {
+                amount: amountUtils.formatSats(
+                    amountUtils.msatToSat(redeemAmount),
+                ),
+                unit: t('words.sats'),
+            }),
         }
     }
 

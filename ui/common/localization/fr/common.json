@@ -462,7 +462,9 @@
             "request-sats": "Demander {{amount}} SATS",
             "request-via-lightning": "Demande via Lightning",
             "withdraw-from-domain": "Se retirer de {{domain}}",
-            "you-received": "Vous avez reçu"
+            "you-received": "Vous avez reçu",
+            "you-received-amount-unit": "Vous avez reçu {{amount}} {{unit}}",
+            "receive-amount-unit": "Recevoir {{amount}} {{unit}}"
         },
         "recovery": {
             "camera-access-information": "Pour aider à la récupération, vous devez autoriser Fedi à accéder à votre caméra pour scanner le code de récupération sociale",
@@ -548,7 +550,10 @@
             "send-sats": "Envoyer {{amount}} SATS",
             "send-to-offline-user": "Send to an offline user",
             "you-are-sending": "You are sending",
-            "you-sent": "You sent"
+            "you-sent": "You sent",
+            "you-sent-amount-unit": "Vous avez envoyé {{amount}} {{unit}}",
+            "you-are-sending-amount-unit": "Vous êtes en train d'envoyer {{amount}} {{unit}}",
+            "send-amount-unit": "Envoyer {{amount}} {{unit}}"
         },
         "stabilitypool": {
             "amount-may-vary": "Le montant peut varier",

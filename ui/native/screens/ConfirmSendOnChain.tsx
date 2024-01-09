@@ -89,13 +89,14 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                 </Text>
             </View>
             <Button
-                title={`${t('words.send')}${
+                title={
                     amount
-                        ? ` ${amountUtils.formatNumber(Number(amount))} ${t(
-                              'words.sats',
-                          ).toUpperCase()}`
-                        : ''
-                }`}
+                        ? t('feature.send.send-amount-unit', {
+                              amount: amountUtils.formatNumber(Number(amount)),
+                              unit: t('words.sats').toUpperCase(),
+                          })
+                        : t('words.send')
+                }
                 onPress={onSendBtc}
                 loading={isLoading}
                 fullWidth

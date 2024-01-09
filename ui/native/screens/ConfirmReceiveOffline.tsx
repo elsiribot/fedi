@@ -100,9 +100,12 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                 </Text>
                 <Button
                     fullWidth
-                    title={`${t('words.receive')} ${amountUtils.formatNumber(
-                        amountUtils.msatToSat(amount),
-                    )} ${t('words.sats').toUpperCase()}`}
+                    title={t('feature.receive.receive-amount-unit', {
+                        amount: amountUtils.formatNumber(
+                            amountUtils.msatToSat(amount),
+                        ),
+                        unit: t('words.sats').toUpperCase(),
+                    })}
                     onPress={onReceive}
                     loading={receiving}
                     containerStyle={styles(theme).buttonContainer}

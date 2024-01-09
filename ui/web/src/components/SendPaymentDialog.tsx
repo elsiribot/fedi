@@ -135,7 +135,10 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                     />
                 </InvoiceContainer>
                 <Button onClick={handleSend}>
-                    {t('words.send')} {satsFmt} {t('words.sats')}
+                    {t('feature.send.send-amount-unit', {
+                        amount: satsFmt,
+                        unit: t('words.sats'),
+                    })}{' '}
                 </Button>
             </>
         )
@@ -143,9 +146,10 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
         if (hasSent) {
             dialogStatusProps = {
                 status: 'success',
-                title: `${t('feature.send.you-sent')} ${satsFmt} ${t(
-                    'words.sats',
-                )}`,
+                title: t('feature.send.you-sent-amount-unit', {
+                    amount: satsFmt,
+                    unit: t('words.sats'),
+                }),
             }
         } else if (sendError) {
             dialogStatusProps = {
@@ -156,9 +160,10 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
         } else if (isSending) {
             dialogStatusProps = {
                 status: 'loading',
-                description: `${t(
-                    'feature.send.you-are-sending',
-                )} ${satsFmt} ${t('words.sats')}...`,
+                description: t('feature.send.you-are-sending-amount-unit', {
+                    amount: satsFmt,
+                    unit: t('words.sats'),
+                }),
             }
         }
     } else if (isSendingOffline) {
