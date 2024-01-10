@@ -56,6 +56,7 @@ interface XmppChatClientEventMap {
     message: ChatMessage
     memberSeen: ChatMember
     group: ChatGroup
+    groupUpdate: ChatGroup['id']
     groupRole: { groupId: string; role: ChatRole }
     groupAffiliation: { groupId: string; affiliation: ChatAffiliation }
     error: Error
@@ -727,6 +728,16 @@ export class XmppChatClient {
     }
 
     private handleIncomingGroupMessage(stanza: Element) {
+        // this message means the config of a group we have joined has been updated
+        // https://xmpp.org/extensions/xep-0045.html#roomconfig-notify
+        if (
+            stanza.getChild('x')?.getChild('status')?.getAttr('code') === '104'
+        ) {
+            const from = stanza.getAttr('from')
+            const [groupId] = from.split('@')
+            return this.emit('groupUpdate', groupId)
+        }
+
         const bodyText = stanza.getChildText('body')
         if (!bodyText) return
 
