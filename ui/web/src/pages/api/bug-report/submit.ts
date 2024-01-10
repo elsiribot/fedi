@@ -10,10 +10,12 @@ const schema = z.object({
     email: z.string().optional(),
     federationName: z.string().optional(),
     username: z.string().optional(),
-    metadata: z.object({
-        platform: z.string(),
-        version: z.string(), // App version / Commit Hash
-    }),
+    metadata: z
+        .object({
+            platform: z.string(),
+            version: z.string(), // App version / Commit Hash
+        })
+        .optional(),
 })
 
 export default async function handler(
@@ -203,7 +205,7 @@ async function appendToNotion(data: z.infer<typeof schema>) {
                 rich_text: [
                     {
                         text: {
-                            content: data.metadata.platform,
+                            content: data.metadata?.platform ?? '',
                         },
                     },
                 ],
@@ -212,7 +214,7 @@ async function appendToNotion(data: z.infer<typeof schema>) {
                 rich_text: [
                     {
                         text: {
-                            content: data.metadata.version,
+                            content: data.metadata?.version ?? '',
                         },
                     },
                 ],
@@ -311,11 +313,11 @@ async function postToSlack(data: z.infer<typeof schema>, notionUrl: string) {
         },
         {
             label: 'Platform',
-            value: data.metadata.platform,
+            value: data.metadata?.platform || 'unknown',
         },
         {
             label: 'Version',
-            value: data.metadata.version,
+            value: data.metadata?.version || 'unknown',
         },
         {
             label: "User's description",

@@ -55,7 +55,7 @@ export async function submitBugReport(args: {
     federationName?: string
     username?: string
     email?: string
-    metadata: {
+    metadata?: {
         platform: string
         version: string
     }
