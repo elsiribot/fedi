@@ -150,6 +150,11 @@ const Container = styled('div', {
     padding,
     holoGradient: '900',
     borderRadius: 20,
+
+    '@sm': {
+        flex: 1,
+        aspectRatio: 'none',
+    },
 })
 
 const Video = styled('video', {

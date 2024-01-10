@@ -38,7 +38,7 @@ export const Avatar: React.FC<AvatarProps> = ({
         ...css,
         '--bg-color': holo ? theme.colors.white : bgColor,
         '--text-color': holo ? theme.colors.primary : textColor,
-    }
+    } as CSSProp
     if (!isFallback) {
         combinedCss['--bg-color'] = 'transparent'
     }

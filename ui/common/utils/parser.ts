@@ -28,6 +28,13 @@ import { decodeGroupInvitationLink, decodeDirectChatLink } from './xmpp'
 
 const log = makeLog('common/utils/parser')
 
+/** List of parse types that are usable before a user is a member of a federation */
+export const ALLOWED_PARSER_TYPES_BEFORE_FEDERATION = [
+    ParserDataType.FedimintInvite,
+    ParserDataType.Website,
+    ParserDataType.Unknown,
+]
+
 /**
  * Parses any data that would the user would input via QR code, copy / paste etc.
  * Returns a structured object that identifies the type of data, and formatted
