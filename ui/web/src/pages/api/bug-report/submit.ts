@@ -10,7 +10,10 @@ const schema = z.object({
     email: z.string().optional(),
     federationName: z.string().optional(),
     username: z.string().optional(),
-    metadata: z.record(z.string()).optional(),
+    metadata: z.object({
+        platform: z.string(),
+        version: z.string(), // App version / Commit Hash
+    }),
 })
 
 export default async function handler(
@@ -196,6 +199,24 @@ async function appendToNotion(data: z.infer<typeof schema>) {
             'Logs S3 URL': {
                 url: makeLogsS3Url(data.id) || null,
             },
+            Platform: {
+                rich_text: [
+                    {
+                        text: {
+                            content: data.metadata.platform,
+                        },
+                    },
+                ],
+            },
+            Version: {
+                rich_text: [
+                    {
+                        text: {
+                            content: data.metadata.version,
+                        },
+                    },
+                ],
+            },
         },
         children: [
             {
@@ -289,13 +310,17 @@ async function postToSlack(data: z.infer<typeof schema>, notionUrl: string) {
             value: '`' + data.id + '`',
         },
         {
+            label: 'Platform',
+            value: data.metadata.platform,
+        },
+        {
+            label: 'Version',
+            value: data.metadata.version,
+        },
+        {
             label: "User's description",
             value: `\n> ${data.description}`, // Placed in block below.
         },
-        ...Object.entries(data.metadata || {}).map(([key, value]) => ({
-            label: key,
-            value,
-        })),
     ]
 
     const s3Url = makeLogsS3Url(data.id)

@@ -113,12 +113,12 @@ export default function BugReport() {
                     : undefined,
                 username: sendInfo ? authenticatedMember?.username : undefined,
                 metadata: {
-                    commit:
+                    version:
                         process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(
                             0,
                             6,
                         ) || 'unknown',
-                    platform: 'PWA',
+                    platform: 'PWA (web)',
                 },
             })
             setCompletedModal(true)
