@@ -55,6 +55,7 @@ export const OnboardingHome: React.FC = () => {
                 <Terms>
                     <Text variant="small">
                         <Trans
+                            i18nKey="feature.onboarding.by-clicking-you-agree-user-agreement"
                             components={{
                                 anchor: (
                                     <a
@@ -62,11 +63,8 @@ export const OnboardingHome: React.FC = () => {
                                         href="https://www.fedi.xyz/eula-en"
                                     />
                                 ),
-                            }}>
-                            {t(
-                                'feature.onboarding.by-clicking-you-agree-user-agreement',
-                            )}
-                        </Trans>
+                            }}
+                        />
                     </Text>
                 </Terms>
             </OnboardingActions>
