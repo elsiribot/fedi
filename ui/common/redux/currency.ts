@@ -1,7 +1,11 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-import { CommonState, selectFederationMetadata } from '.'
-import { SupportedCurrency } from '../types'
+import {
+    CommonState,
+    selectStabilityPoolCycleStartPrice,
+    selectFederationMetadata,
+} from '.'
+import { Federation, SupportedCurrency } from '../types'
 import {
     getFederationDefaultCurrency,
     getFederationFixedExchangeRate,
@@ -106,8 +110,15 @@ export const selectCurrency = (s: CommonState) => {
     return SupportedCurrency.USD
 }
 
-export const selectBtcUsdExchangeRate = (s: CommonState) => {
-    return s.currency.btcUsdRate || 0
+export const selectBtcUsdExchangeRate = (
+    s: CommonState,
+    federationId?: Federation['id'],
+) => {
+    const stabilityPoolPrice = selectStabilityPoolCycleStartPrice(
+        s,
+        federationId,
+    )
+    return stabilityPoolPrice || s.currency.btcUsdRate || 0
 }
 
 export const selectBtcExchangeRate = (s: CommonState) => {
@@ -124,10 +135,10 @@ export const selectBtcExchangeRate = (s: CommonState) => {
     if (metadata) {
         const defaultCurrency = getFederationDefaultCurrency(metadata)
         if (defaultCurrency && defaultCurrency === selectedFiatCurrency) {
-        const federationFixedExchangeRate =
-            getFederationFixedExchangeRate(metadata)
-        if (federationFixedExchangeRate) {
-            return federationFixedExchangeRate
+            const federationFixedExchangeRate =
+                getFederationFixedExchangeRate(metadata)
+            if (federationFixedExchangeRate) {
+                return federationFixedExchangeRate
             }
         }
     }
