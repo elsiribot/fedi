@@ -1,5 +1,5 @@
 import React from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 
 import WorldIllustration from '@fedi/common/assets/images/illustration-world.png'
 import FediLogoIcon from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
@@ -54,10 +54,19 @@ export const OnboardingHome: React.FC = () => {
                 )}
                 <Terms>
                     <Text variant="small">
-                        {t('feature.onboarding.by-clicking-you-agree')}{' '}
-                        <a target="_blank" href="https://www.fedi.xyz/eula-en">
-                            {t('phrases.user-agreement')}
-                        </a>
+                        <Trans
+                            components={{
+                                anchor: (
+                                    <a
+                                        target="_blank"
+                                        href="https://www.fedi.xyz/eula-en"
+                                    />
+                                ),
+                            }}>
+                            {t(
+                                'feature.onboarding.by-clicking-you-agree-user-agreement',
+                            )}
+                        </Trans>
                     </Text>
                 </Terms>
             </OnboardingActions>

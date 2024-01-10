@@ -393,7 +393,7 @@
         },
         "onboarding": {
             "by-clicking-i-accept": "Dengan mengeklik 'Saya setuju', kamu menyetujui persyaratan layanan di {{tos_url}}",
-            "by-clicking-you-agree": "Dengan mengklik 'Bergabung dengan Federasi' kamu menyetujui",
+            "by-clicking-you-agree-user-agreement": "Dengan mengklik 'Bergabung dengan Federasi' kamu menyetujui <anchor>Perjanjian pengguna</anchor>",
             "chat-earn-save-spend": "Ngobrol, dapatkan, simpan, dan belanjakan uang secara pribadi dengan komunitas kamu",
             "community-first": "Komunitas terlebih dahulu",
             "continue-to-fedi": "Lanjut ke Fedi",

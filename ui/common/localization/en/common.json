@@ -395,7 +395,7 @@
         },
         "onboarding": {
             "by-clicking-i-accept": "By clicking 'I accept' you agree to the terms of service at {{tos_url}}",
-            "by-clicking-you-agree": "By clicking 'Join a Federation' you agree to the",
+            "by-clicking-you-agree-user-agreement": "By clicking 'Join a Federation' you agree to the <anchor>User Agreement</anchor>",
             "chat-earn-save-spend": "Chat, earn, save, and spend money privately with your community",
             "community-first": "Community first",
             "continue-to-fedi": "Continue to Fedi",
