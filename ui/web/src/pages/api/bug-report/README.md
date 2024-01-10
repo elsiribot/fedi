@@ -23,10 +23,6 @@ To use these endpoints, you need to provide the following environment variables:
 -   `AWS_SECRET_ACCESS_KEY`
 -   `AWS_REGION`
 -   `AWS_BUG_REPORT_BUCKET_NAME`
--   `GOOGLE_SHEETS_CLIENT_ID`
--   `GOOGLE_SHEETS_CLIENT_EMAIL`
--   `GOOGLE_SHEETS_PRIVATE_KEY`
--   `GOOGLE_SHEETS_SHEET_ID`
 
 The easiest way to do this is to copy `ui/web/.env.development` to `ui/web/.env.local` and fill in the values.
 
@@ -63,19 +59,6 @@ The easiest way to do this is to copy `ui/web/.env.development` to `ui/web/.env.
 5. Copy the database format from the Fedi workspace's ["Bug report submissions" table](https://www.notion.so/fedi21/fcee02514ee44f2d86dcda14885569b9)
 6. Copy the database ID from the URL of the page and set it as `NOTION_DATABASE_ID`
     - The ID is the second part of the path on notion, e.g. it's `abc123` in `https://www.notion.so/fedi21/abc123`
-
-### Google Sheets Setup
-
-1. Create a new Google Cloud project or use an existing one
-2. Enable the [Google Sheets API](https://console.cloud.google.com/marketplace/product/google/sheets.googleapis.com?q=search&referrer=search&project=fedi-feedback)
-3. Create a new [Service Account](https://console.cloud.google.com/iam-admin/serviceaccounts)
-4. Create and download a new JSON key for the service account
-    - Copy over `private_key`, `client_email`, and `client_id` to `GOOGLE_SHEETS_PRIVATE_KEY`, `GOOGLE_SHEETS_CLIENT_ID` and `GOOGLE_SHEETS_CLIENT_EMAIL` respectively
-5. Create a new Google Sheet from your account
-    - Copy the ID from the URL, `/docs.google.com/spreadsheets/d/[id-here]/edit`, and set `GOOGLE_SHEETS_SHEET_ID` with it
-6. On the "Share" menu of the google sheet, give the Service Account's email "Editor" access
-
-_Note: Google Sheets is not necessary for the API to function._
 
 ### Slack Setup
 
