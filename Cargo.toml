@@ -170,7 +170,7 @@ uniffi_bindgen = "0.21.1"
 
 [profile.dev]
 debug = "line-tables-only"
-trim-paths = "all"
+trim-paths = "object"
 
 # in dev mode optimize crates that are perf-critical (usually just crypto crates)
 [profile.dev.package]
