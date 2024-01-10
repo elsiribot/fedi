@@ -66,13 +66,13 @@ const StabilityConfirmWithdraw: React.FC<Props> = ({ route, navigation }) => {
     return (
         <View style={style.container}>
             <View style={style.conversionIndicator}>
+                <CurrencyAvatar />
+                <SvgImage name="ArrowRight" color={theme.colors.primaryLight} />
                 <SvgImage
                     name="BitcoinCircle"
                     size={SvgImageSize.md}
                     color={theme.colors.orange}
                 />
-                <SvgImage name="ArrowRight" color={theme.colors.primaryLight} />
-                <CurrencyAvatar />
             </View>
             <View style={style.amountText}>
                 <Text h1 numberOfLines={1}>
