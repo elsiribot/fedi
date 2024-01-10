@@ -558,6 +558,7 @@ export const chatSlice = createSlice({
                 joinChatGroup.fulfilled,
                 createChatGroup.fulfilled,
                 configureChatGroup.fulfilled,
+                refreshChatGroup.fulfilled,
             ),
             (state, action) => {
                 return upsertEntityToChatState(
@@ -778,6 +779,16 @@ export const connectChat = createAsyncThunk<
             dispatch(addChatGroup({ federationId, group }))
         })
 
+        client.on('groupUpdate', groupId => {
+            const group = chatState?.groups.find(g => g.id === groupId)
+            if (!group) {
+                log.warn(`No group found with ID: ${groupId}`)
+                return
+            }
+
+            dispatch(refreshChatGroup({ federationId, group }))
+        })
+
         client.on('groupRole', ({ groupId, role }) => {
             dispatch(setChatGroupRole({ federationId, groupId, role }))
         })
@@ -816,6 +827,8 @@ export const connectChat = createAsyncThunk<
             // "Enter" every group we have in state
             chatState.groups.forEach(group => {
                 client.enterGroup(group.id)
+                // check to see if the group name has changed
+                dispatch(refreshChatGroup({ federationId, group }))
             })
 
             // Join every default chat group we don't have in state
@@ -1017,6 +1030,22 @@ export const fetchChatMember = createAsyncThunk<
         }
     } else {
         throw new Error('feature.chat.invalid-member')
+    }
+})
+
+export const refreshChatGroup = createAsyncThunk<
+    ChatGroup,
+    { federationId: string; group: ChatGroup }
+>('chat/refreshChatGroup', async ({ federationId, group }) => {
+    const client = xmppChatClientManager.getClient(federationId)
+    const config = await client.fetchGroupConfig(group.id)
+    if (config.name) {
+        return {
+            ...group,
+            ...config,
+        }
+    } else {
+        throw new Error('errors.unknown-error')
     }
 })
 
