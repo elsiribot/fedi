@@ -4,11 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { selectActiveFederation } from '@fedi/common/redux'
 
 import { useAppSelector } from '../hooks'
-import { styled, theme } from '../styles'
-import { CopyInput } from './CopyInput'
-import { Dialog } from './Dialog'
-import { QRCode } from './QRCode'
-import { Text } from './Text'
+import { QRDialog } from './QRDialog'
 
 interface Props {
     open: boolean
@@ -22,33 +18,13 @@ export const InviteMemberDialog: React.FC<Props> = props => {
     if (!inviteCode) return null
 
     return (
-        <Dialog title={t('feature.federations.federation-invite')} {...props}>
-            <Content>
-                <QRCode data={inviteCode.toUpperCase()} />
-                <CopyInput
-                    value={inviteCode}
-                    onCopyMessage={t(
-                        'feature.federations.copied-federation-invite',
-                    )}
-                />
-                <Notice>
-                    <Text variant="caption">
-                        {t('feature.federations.invite-link-notice')}
-                    </Text>
-                </Notice>
-            </Content>
-        </Dialog>
+        <QRDialog
+            title={t('feature.federations.federation-invite')}
+            qrValue={inviteCode.toUpperCase()}
+            copyValue={inviteCode}
+            onCopyMessage={t('feature.federations.copied-federation-invite')}
+            notice={t('feature.federations.invite-link-notice')}
+            {...props}
+        />
     )
 }
-
-const Content = styled('div', {
-    display: 'flex',
-    flexDirection: 'column',
-    paddingTop: 16,
-    gap: 16,
-})
-
-const Notice = styled('div', {
-    textAlign: 'center',
-    color: theme.colors.grey,
-})
