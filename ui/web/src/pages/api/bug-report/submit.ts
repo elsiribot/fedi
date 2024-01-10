@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 import { Client as NotionClient } from '@notionhq/client'
-import { google } from 'googleapis'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { z } from 'zod'
 
@@ -35,97 +34,27 @@ export default async function handler(
     }
 
     try {
-        const results = await Promise.allSettled([
-            appendToGoogleSheet(body.data),
-            appendToNotion(body.data),
-        ])
-        let anySucceeded = false
-        results.forEach(result => {
-            if (result.status === 'rejected') {
-                console.error('Bug report failed to save', result.reason)
-            } else {
-                anySucceeded = true
-            }
-        })
-        if (!anySucceeded) {
+        const notion = await appendToNotion(body.data)
+
+        if (!notion) {
             throw new Error('Bug report failed to save')
         }
 
-        const [sheets, notion] = results
         // Post to slack after responding, but don't throw if it fails.
         try {
-            await postToSlack(
-                body.data,
-                notion.status === 'fulfilled' && 'url' in notion.value
-                    ? notion.value.url
-                    : '',
-            )
+            await postToSlack(body.data, 'url' in notion ? notion.url : '')
         } catch (err) {
             console.warn('Failed to post to Slack', err)
         }
 
         res.status(200).json({
-            sheets: sheets.status === 'fulfilled',
-            notion: notion.status === 'fulfilled',
+            notion: true,
         })
     } catch (err) {
         res.status(500).json({
             error: (err as Error).message || (err as object).toString(),
         })
     }
-}
-
-async function appendToGoogleSheet(data: z.infer<typeof schema>) {
-    const clientId = process.env.GOOGLE_SHEETS_CLIENT_ID
-    const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL
-    const privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY
-    const spreadsheetId = process.env.GOOGLE_SHEETS_SHEET_ID
-    if (!clientId || !clientEmail || !privateKey || !spreadsheetId) {
-        console.error(
-            'Missing required environment variable for sheets append',
-            {
-                GOOGLE_SHEETS_CLIENT_ID: !!clientId,
-                GOOGLE_SHEETS_CLIENT_EMAIL: !!clientEmail,
-                GOOGLE_SHEETS_PRIVATE_KEY: !!privateKey,
-                GOOGLE_SHEETS_SHEET_ID: !!spreadsheetId,
-            },
-        )
-        throw new Error(
-            'Server incorrectly configured for bug report submission',
-        )
-    }
-
-    const auth = new google.auth.GoogleAuth({
-        credentials: {
-            client_id: clientId,
-            client_email: clientEmail,
-            private_key: privateKey.replace(/\\n/g, '\n'),
-        },
-        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-    })
-    const sheets = google.sheets('v4')
-    const sheetsRes = await sheets.spreadsheets.values.append({
-        auth,
-        spreadsheetId,
-        valueInputOption: 'USER_ENTERED',
-        insertDataOption: 'INSERT_ROWS',
-        range: 'Sheet1!A:A',
-        requestBody: {
-            majorDimension: 'ROWS',
-            values: [
-                [
-                    data.id,
-                    new Date().toUTCString(),
-                    data.federationName,
-                    data.username,
-                    data.email,
-                    data.description,
-                    makeLogsS3Url(data.id),
-                ],
-            ],
-        },
-    })
-    return sheetsRes.data
 }
 
 async function appendToNotion(data: z.infer<typeof schema>) {
