@@ -18,3 +18,9 @@ pub mod storage;
 pub mod translate;
 pub mod types;
 pub mod utils;
+
+#[cfg(not(target_family = "wasm"))]
+use ffi::*;
+
+#[cfg(not(target_family = "wasm"))]
+uniffi::include_scaffolding!("fedi");
