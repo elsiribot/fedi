@@ -416,11 +416,11 @@
             "unsupported-notice": "Cette fédération n'est plus supportée. Il ne peut pas être rejoint.",
             "username-guidance": "Entrez un nom d'utilisateur contenant des lettres minuscules sans espaces",
             "username-instructions": "Votre nom d'utilisateur sera le moyen par lequel les autres membres vous identifieront.",
-            "welcome-back-to-federation": "Bon retour à",
+            "welcome-back-to-federation": "Bienvenue de retour à {{federation}}",
             "welcome-instructions-new": "En tant que nouveau membre de la fédération, vous recevrez un nouveau portefeuille.",
             "welcome-instructions-returning": "En tant que membre de retour de la fédération, votre portefeuille sera restauré. Cela peut prendre quelques minutes.",
             "welcome-instructions-unknown": "Les nouveaux membres reçoivent un portefeuille vierge. Les membres revenant seront invités à récupérer leur portefeuille.",
-            "welcome-to-federation": "Bienvenue à",
+            "welcome-to-federation": "Bienvenue à {{federation}}",
             "welcome-to-fedi": "Bienvenue sur Fedi"
         },
         "parser": {

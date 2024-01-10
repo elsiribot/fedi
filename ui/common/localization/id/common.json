@@ -416,11 +416,11 @@
             "unsupported-notice": "Federasi ini tidak lagi didukung. Itu tidak dapat digabungkan.",
             "username-guidance": "Masukkan nama penggunamu yang mengandung huruf kecil tanpa spasi",
             "username-instructions": "Nama penggunamu akan menjadi cara anggota lain mengidentifikasi kamu.",
-            "welcome-back-to-federation": "Selamat datang kembali",
+            "welcome-back-to-federation": "Selamat datang kembali ke {{federation}}",
             "welcome-instructions-new": "Sebagai anggota baru federasi, Anda akan menerima dompet baru.",
             "welcome-instructions-returning": "Sebagai anggota federasi yang kembali, dompet Anda akan dipulihkan. Ini mungkin memakan waktu beberapa menit.",
             "welcome-instructions-unknown": "Anggota baru menerima dompet baru. Anggota yang kembali akan diminta untuk memulihkan dompet mereka.",
-            "welcome-to-federation": "Selamat Datang di",
+            "welcome-to-federation": "Selamat datang di {{federation}}",
             "welcome-to-fedi": "Selamat datang di Fedi"
         },
         "parser": {

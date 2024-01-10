@@ -416,11 +416,11 @@
             "unsupported-notice": "Esta federación ya no es compatible. No se puede unir.",
             "username-guidance": "Ingrese un nombre de usuario que contenga letras minúsculas sin espacios",
             "username-instructions": "Su nombre de usuario será la forma en que otros usuarios lo identificarán.",
-            "welcome-back-to-federation": "Bienvenido de nuevo a",
+            "welcome-back-to-federation": "Bienvenido de nuevo a {{federation}}",
             "welcome-instructions-new": "Como nuevo usuario de la federación, recibirás una billetera nueva.",
             "welcome-instructions-returning": "Como usuario que regresa a la federación, su billetera será restaurada. Esto puede tardar unos minutos.",
             "welcome-instructions-unknown": "Los nuevos usuarios reciben una cartera nueva. A los usuarios que regresen se les pedirá que recuperen su cartera.",
-            "welcome-to-federation": "Te damos la bienvenida a",
+            "welcome-to-federation": "Te damos la bienvenida a {{federation}}",
             "welcome-to-fedi": "Te damos la bienvenida a Fedi"
         },
         "parser": {

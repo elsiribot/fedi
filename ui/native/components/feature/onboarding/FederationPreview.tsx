@@ -88,8 +88,12 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
 
     const welcomeTitle =
         federation.returningMemberStatus.type === 'returningMember'
-            ? t('feature.onboarding.welcome-back-to-federation')
-            : t('feature.onboarding.welcome-to-federation')
+            ? t('feature.onboarding.welcome-back-to-federation', {
+                  federation: federation?.name,
+              })
+            : t('feature.onboarding.welcome-to-federation', {
+                  federation: federation?.name,
+              })
     const welcomeInstructions =
         federation.returningMemberStatus.type === 'newMember'
             ? t('feature.onboarding.welcome-instructions-new')
@@ -104,9 +108,6 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
                     <FederationLogo federation={federation} size={96} />
                     <Text h2 medium style={style.welcome}>
                         {welcomeTitle}
-                    </Text>
-                    <Text h2 medium style={style.welcomeTitle}>
-                        {federation?.name}
                     </Text>
                     {welcomeMessage ? (
                         <HoloGradient
@@ -191,9 +192,6 @@ const styles = (theme: Theme) =>
         },
         welcome: {
             marginTop: theme.spacing.md,
-            textAlign: 'center',
-        },
-        welcomeTitle: {
             marginBottom: theme.spacing.md,
             textAlign: 'center',
         },
