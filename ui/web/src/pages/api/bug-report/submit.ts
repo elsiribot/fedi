@@ -10,6 +10,7 @@ const schema = z.object({
     email: z.string().optional(),
     federationName: z.string().optional(),
     username: z.string().optional(),
+    metadata: z.record(z.string()).optional(),
 })
 
 export default async function handler(
@@ -291,6 +292,10 @@ async function postToSlack(data: z.infer<typeof schema>, notionUrl: string) {
             label: "User's description",
             value: `\n> ${data.description}`, // Placed in block below.
         },
+        ...Object.entries(data.metadata || {}).map(([key, value]) => ({
+            label: key,
+            value,
+        })),
     ]
 
     const s3Url = makeLogsS3Url(data.id)

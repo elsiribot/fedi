@@ -55,6 +55,7 @@ export async function submitBugReport(args: {
     federationName?: string
     username?: string
     email?: string
+    metadata?: Record<string, string>
 }) {
     const res = await fetch(`${API_ORIGIN}/api/bug-report/submit`, {
         method: 'POST',
