@@ -30,6 +30,7 @@ use fedimint_core::module::{
     ApiRequestErased, ApiVersion, CommonModuleInit, ModuleInit, MultiApiVersion,
     TransactionItemAmount,
 };
+use fedimint_core::task::timeout;
 use fedimint_core::{apply, async_trait_maybe_send, Amount, OutPoint, TransactionId};
 use futures::{Stream, StreamExt};
 use secp256k1_zkp::{PublicKey, Secp256k1};
@@ -509,12 +510,15 @@ pub enum StabilityPoolDepositOperationState {
 
 impl StabilityPoolClientModule {
     pub async fn account_info(&self) -> anyhow::Result<AccountInfo, FederationError> {
-        self.module_api
-            .request_current_consensus(
+        timeout(
+            Duration::from_secs(60),
+            self.module_api.request_current_consensus(
                 "account_info".to_string(),
                 ApiRequestErased::new(self.client_key_pair.public_key()),
-            )
-            .await
+            ),
+        )
+        .await
+        .map_err(FederationError::general)?
     }
 
     pub async fn next_cycle_start_time(&self) -> anyhow::Result<u64, FederationError> {
