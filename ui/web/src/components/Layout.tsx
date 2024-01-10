@@ -11,7 +11,7 @@ export const Root = styled('div', {
 export const Header = styled('div', {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     height: 64,
 
     '@sm': {
