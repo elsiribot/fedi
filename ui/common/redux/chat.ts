@@ -781,7 +781,11 @@ export const connectChat = createAsyncThunk<
 
         client.on('groupUpdate', groupId => {
             const group = chatState?.groups.find(g => g.id === groupId)
-            if (!group) throw new Error('No group found with that ID')
+            if (!group) {
+                log.warn(`No group found with ID: ${groupId}`)
+                return
+            }
+
             dispatch(refreshChatGroup({ federationId, group }))
         })
 
