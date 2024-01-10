@@ -109,12 +109,8 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
                 username: isSendingUserInfo
                     ? authenticatedMember?.username
                     : undefined,
-                metadata: {
-                    platform: `${DeviceInfo.getApplicationName()} (${
-                        Platform.OS
-                    })`,
-                    version: DeviceInfo.getVersion(),
-                },
+                platform: `${DeviceInfo.getApplicationName()} (${Platform.OS})`,
+                version: DeviceInfo.getVersion(),
             })
             // Success!
             navigation.push('BugReportSuccess')

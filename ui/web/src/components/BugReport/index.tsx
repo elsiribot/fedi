@@ -112,14 +112,12 @@ export default function BugReport() {
                     ? activeFederation?.name || activeFederation?.id
                     : undefined,
                 username: sendInfo ? authenticatedMember?.username : undefined,
-                metadata: {
-                    version:
-                        process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(
-                            0,
-                            6,
-                        ) || 'unknown',
-                    platform: 'PWA (web)',
-                },
+                version:
+                    process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(
+                        0,
+                        6,
+                    ) || 'unknown',
+                platform: 'PWA (web)',
             })
             setCompletedModal(true)
 
