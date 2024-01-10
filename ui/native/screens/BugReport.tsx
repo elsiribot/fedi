@@ -4,11 +4,13 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     ActivityIndicator,
+    Platform,
     ScrollView,
     StyleSheet,
     View,
     useWindowDimensions,
 } from 'react-native'
+import DeviceInfo from 'react-native-device-info'
 import { Asset } from 'react-native-image-picker'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { v4 as uuidv4 } from 'uuid'
@@ -107,6 +109,8 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
                 username: isSendingUserInfo
                     ? authenticatedMember?.username
                     : undefined,
+                platform: `${DeviceInfo.getApplicationName()} (${Platform.OS})`,
+                version: DeviceInfo.getVersion(),
             })
             // Success!
             navigation.push('BugReportSuccess')

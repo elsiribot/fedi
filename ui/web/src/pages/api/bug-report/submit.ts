@@ -10,6 +10,8 @@ const schema = z.object({
     email: z.string().optional(),
     federationName: z.string().optional(),
     username: z.string().optional(),
+    platform: z.string().optional(),
+    version: z.string().optional(),
 })
 
 export default async function handler(
@@ -195,6 +197,24 @@ async function appendToNotion(data: z.infer<typeof schema>) {
             'Logs S3 URL': {
                 url: makeLogsS3Url(data.id) || null,
             },
+            Platform: {
+                rich_text: [
+                    {
+                        text: {
+                            content: data.platform ?? '',
+                        },
+                    },
+                ],
+            },
+            Version: {
+                rich_text: [
+                    {
+                        text: {
+                            content: data.version ?? '',
+                        },
+                    },
+                ],
+            },
         },
         children: [
             {
@@ -286,6 +306,14 @@ async function postToSlack(data: z.infer<typeof schema>, notionUrl: string) {
         {
             label: 'Report ID',
             value: '`' + data.id + '`',
+        },
+        {
+            label: 'Platform',
+            value: data.platform || 'unknown',
+        },
+        {
+            label: 'Version',
+            value: data.version || 'unknown',
         },
         {
             label: "User's description",
