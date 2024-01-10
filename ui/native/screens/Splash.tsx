@@ -79,6 +79,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                 />
                 <Text style={style.agreementText} small>
                     <Trans
+                        i18nKey="feature.onboarding.by-clicking-you-agree-user-agreement"
                         components={{
                             anchor: (
                                 <Text
@@ -87,11 +88,8 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                                     onPress={() => navigation.navigate('Eula')}
                                 />
                             ),
-                        }}>
-                        {t(
-                            'feature.onboarding.by-clicking-you-agree-user-agreement',
-                        )}
-                    </Trans>
+                        }}
+                    />
                 </Text>
             </View>
         </SafeAreaView>
