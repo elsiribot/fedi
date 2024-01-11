@@ -21,7 +21,15 @@ export const ChatMessage: React.FC<Props> = ({ message }) => {
     const isMe = message.sentBy === authenticatedMember?.id
     const isQueued = status === ChatMessageStatus.queued
 
-    let content: React.ReactNode = message.content
+    let content: React.ReactNode =
+        typeof message.content === 'string'
+            ? message.content.split('\n').map((part, index, array) => (
+                  <React.Fragment key={index}>
+                      {part}
+                      {index !== array.length - 1 && <br />}
+                  </React.Fragment>
+              ))
+            : message.content
     let isPayment = false
     if (payment?.status !== undefined) {
         isPayment = true
