@@ -221,6 +221,16 @@
           inherit androidSdk;
           componentTargetsChannelName = "latest";
           extraRustFlags = "--cfg tokio_unstable";
+
+          components = [
+            "rustc"
+            "cargo"
+            "clippy"
+            "rust-analyzer"
+            "rust-analysis"
+            "rust-src"
+            "llvm-tools-preview"
+          ];
         } // lib.optionalAttrs pkgs.stdenv.isDarwin {
           # on Darwin newest stdenv doesn't seem to work
           # linking rocksdb
@@ -283,6 +293,7 @@
           inherit toolchain;
           nativeBuildInputs =
             [
+              (lib.hiPrio toolchains.default.toolchain)
               fedimint-pkgs.packages.${system}.devimint
               fedimint-pkgs.packages.${system}.gateway-pkgs
               pkgs.fs-dir-cache
