@@ -16,7 +16,7 @@ export const FederationAvatar: React.FC<Props> = ({ federation, ...props }) => {
         <Avatar
             id={federation.id}
             shape="square"
-            src={iconUrl}
+            src={iconUrl || undefined}
             name={federation.name}
             {...props}
         />
