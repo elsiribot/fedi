@@ -50,7 +50,7 @@ This will start the development UI with the default mode and settings. It does n
 To start the development UI in interactive mode, which prompts for build options, use the `interactive` mode:
 
 ```bash
-just run-dev-ui mode=interactive
+just run-dev-ui interactive
 ```
 
 In interactive mode, the script will ask whether to skip reinstalling node modules and rebuilding the bridge. You can respond with `y` (yes) or `n` (no) to each prompt.
