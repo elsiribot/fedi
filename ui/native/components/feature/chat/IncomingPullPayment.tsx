@@ -38,7 +38,9 @@ const OutgoingPaymentActions: React.FC<OutgoingPaymentActionsProps> = ({
     const { payment } = message
 
     const renderPaymentStatus = () => {
-        if (paymentProcessing || !payment?.status) return <ActivityIndicator />
+        if (!payment) return null
+
+        if (paymentProcessing) return <ActivityIndicator />
 
         let paymentStatus = (
             <View style={styles(theme).statusContainer}>

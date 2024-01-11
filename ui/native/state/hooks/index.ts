@@ -51,11 +51,12 @@ export const useBridge = () => {
     const activeFederation = useAppSelector(selectActiveFederation)
     const activeFederationId = activeFederation?.id
 
-    if (!activeFederationId) throw new Error('No active federation ID found')
-
     return {
         approveSocialRecoveryRequest: useCallback(
             (recoveryId: string, peerId: number, password: string) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.approveSocialRecoveryRequest(
                     recoveryId,
                     peerId,
@@ -69,19 +70,31 @@ export const useBridge = () => {
             return fedimint.listFederations()
         }, []),
         leaveFederation: useCallback(() => {
+            if (!activeFederationId)
+                return Promise.reject(new Error('No active federation'))
+
             return fedimint.leaveFederation(activeFederationId)
         }, [activeFederationId]),
         generateAddress: useCallback(() => {
+            if (!activeFederationId)
+                return Promise.reject(new Error('No active federation'))
+
             return fedimint.generateAddress(activeFederationId)
         }, [activeFederationId]),
         generateEcash: useCallback(
             (amount: MSats) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.generateEcash(amount, activeFederationId)
             },
             [activeFederationId],
         ),
         generateInvoice: useCallback(
             (amount: MSats, description: string) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.generateInvoice(
                     amount,
                     description,
@@ -92,6 +105,9 @@ export const useBridge = () => {
         ),
         listTransactions: useCallback(
             (startTime?: number, limit?: number) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.listTransactions(
                     activeFederationId,
                     startTime,
@@ -101,10 +117,16 @@ export const useBridge = () => {
             [activeFederationId],
         ),
         guardianStatus: useCallback(() => {
+            if (!activeFederationId)
+                return Promise.reject(new Error('No active federation'))
+
             return fedimint.guardianStatus(activeFederationId)
         }, [activeFederationId]),
         updateTransactionNotes: useCallback(
             (transactionId: string, notes: string) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.updateTransactionNotes(
                     transactionId,
                     notes,
@@ -114,46 +136,73 @@ export const useBridge = () => {
             [activeFederationId],
         ),
         getNostrPubKey: useCallback(() => {
+            if (!activeFederationId)
+                return Promise.reject(new Error('No active federation'))
+
             return fedimint.getNostrPubKey(activeFederationId)
         }, [activeFederationId]),
         signNostrEvent: useCallback(
             (eventHash: string) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.signNostrEvent(eventHash, activeFederationId)
             },
             [activeFederationId],
         ),
         listGateways: useCallback(() => {
+            if (!activeFederationId)
+                return Promise.reject(new Error('No active federation'))
+
             return fedimint.listGateways(activeFederationId)
         }, [activeFederationId]),
         switchGateway: useCallback(
             (nodePubKey: string) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.switchGateway(nodePubKey, activeFederationId)
             },
             [activeFederationId],
         ),
         locateRecoveryFile: useCallback(() => {
+            if (!activeFederationId)
+                return Promise.reject(new Error('No active federation'))
+
             return fedimint.locateRecoveryFile(activeFederationId)
         }, [activeFederationId]),
         payInvoice: useCallback(
             (invoice: string) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.payInvoice(invoice, activeFederationId)
             },
             [activeFederationId],
         ),
         payAddress: useCallback(
             (address: string, sats: Sats) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.payAddress(address, sats, activeFederationId)
             },
             [activeFederationId],
         ),
         receiveEcash: useCallback(
             (ecash: string) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.receiveEcash(ecash, activeFederationId)
             },
             [activeFederationId],
         ),
         socialRecoveryDownloadVerificationDoc: useCallback(
             (recoveryId: string) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.socialRecoveryDownloadVerificationDoc(
                     recoveryId,
                     activeFederationId,
@@ -166,6 +215,9 @@ export const useBridge = () => {
         }, []),
         uploadBackupFile: useCallback(
             (videoFilePath: string) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.uploadBackupFile(
                     videoFilePath,
                     activeFederationId,
@@ -174,10 +226,16 @@ export const useBridge = () => {
             [activeFederationId],
         ),
         getXmppCredentials: useCallback(() => {
+            if (!activeFederationId)
+                return Promise.reject(new Error('No active federation'))
+
             return fedimint.getXmppCredentials(activeFederationId)
         }, [activeFederationId]),
         backupXmppUsername: useCallback(
             (username: string) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.backupXmppUsername(username, activeFederationId)
             },
             [activeFederationId],
