@@ -38,7 +38,8 @@ const OutgoingPaymentActions: React.FC<OutgoingPaymentActionsProps> = ({
     const { payment } = message
 
     const renderPaymentStatus = () => {
-        if (paymentProcessing) return <ActivityIndicator />
+        if (paymentProcessing || !payment?.status) return <ActivityIndicator />
+
         let paymentStatus = (
             <View style={styles(theme).statusContainer}>
                 <Text medium caption style={styles(theme).statusText}>
@@ -47,7 +48,7 @@ const OutgoingPaymentActions: React.FC<OutgoingPaymentActionsProps> = ({
             </View>
         )
 
-        switch (payment?.status!) {
+        switch (payment.status) {
             case ChatPaymentStatus.paid:
                 paymentStatus = (
                     <View style={styles(theme).statusContainer}>
@@ -160,7 +161,9 @@ const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
 
     // Process for sending a payment starts here
     const acceptPaymentRequest = async () => {
-        if (activeFederation?.balance! < message.payment?.amount!) {
+        if (!activeFederation || !message.payment) return
+
+        if (activeFederation.balance < message.payment.amount) {
             toast?.show(
                 t('errors.insufficient-balance', {
                     balance: `${amountUtils.formatNumber(

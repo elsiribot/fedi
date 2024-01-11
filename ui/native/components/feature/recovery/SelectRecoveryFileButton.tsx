@@ -43,6 +43,7 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
 
     useEffect(() => {
         const checkForValidFile = async () => {
+            if (!result) return
             // copy file to docs directory so rust can read it
             const dest = `${RNFS.DocumentDirectoryPath}/backup.fedi`
             // remove existing file
@@ -52,7 +53,7 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
                 log.error('no existing file to remove')
             }
             // copy file to docs dir
-            await RNFS.copyFile(result!.uri, dest)
+            await RNFS.copyFile(result.uri, dest)
             // validate file
             try {
                 await fedimint.validateRecoveryFile(dest)
@@ -67,7 +68,7 @@ const SelectRecoveryFileButton: React.FC<{}> = () => {
             setValidationInProgress(false)
         }
 
-        if (validationInProgress && result?.uri && result?.name) {
+        if (validationInProgress && result) {
             setTimeout(() => {
                 checkForValidFile()
             })

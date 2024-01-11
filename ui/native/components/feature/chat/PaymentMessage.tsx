@@ -40,32 +40,35 @@ const PaymentMessage: React.FC<PaymentMessageProps> = ({
         exchangeRate,
     )
 
-    if (messageSentTo === me && paymentRecipient === me) {
+    if (messageSentTo === me && paymentRecipient === me && message.payment) {
         return (
             <IncomingPushPayment
                 message={message}
-                incomingPayment={message.payment!}
+                incomingPayment={message.payment}
                 text={paymentText}
             />
         )
     }
-    if (messageSentTo === me && paymentRecipient !== me) {
+
+    if (messageSentTo === me && paymentRecipient !== me && message.payment) {
         return (
             <IncomingPullPayment
                 message={message}
-                outgoingPayment={message.payment!}
+                outgoingPayment={message.payment}
                 text={paymentText}
             />
         )
     }
+
     if (messageSentTo !== me && paymentRecipient !== me) {
         return <OutgoingPushPayment message={message} text={paymentText} />
     }
-    if (messageSentTo !== me && paymentRecipient === me) {
+
+    if (messageSentTo !== me && paymentRecipient === me && message.payment) {
         return (
             <OutgoingPullPayment
                 message={message}
-                incomingPayment={message.payment!}
+                incomingPayment={message.payment}
                 text={paymentText}
             />
         )

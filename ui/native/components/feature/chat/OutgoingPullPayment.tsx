@@ -69,9 +69,9 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
                 </Text>
             </View>
         )
-        if (processingRedemption) return paymentStatus
+        if (processingRedemption || !payment) return paymentStatus
 
-        switch (payment?.status!) {
+        switch (payment?.status) {
             case ChatPaymentStatus.paid:
                 paymentStatus = (
                     <View style={styles(theme).statusContainer}>

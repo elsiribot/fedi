@@ -51,6 +51,8 @@ export const useBridge = () => {
     const activeFederation = useAppSelector(selectActiveFederation)
     const activeFederationId = activeFederation?.id
 
+    if (!activeFederationId) throw new Error('No active federation ID found')
+
     return {
         approveSocialRecoveryRequest: useCallback(
             (recoveryId: string, peerId: number, password: string) => {
@@ -58,7 +60,7 @@ export const useBridge = () => {
                     recoveryId,
                     peerId,
                     password,
-                    activeFederationId!,
+                    activeFederationId,
                 )
             },
             [activeFederationId],
@@ -67,14 +69,14 @@ export const useBridge = () => {
             return fedimint.listFederations()
         }, []),
         leaveFederation: useCallback(() => {
-            return fedimint.leaveFederation(activeFederationId!)
+            return fedimint.leaveFederation(activeFederationId)
         }, [activeFederationId]),
         generateAddress: useCallback(() => {
-            return fedimint.generateAddress(activeFederationId!)
+            return fedimint.generateAddress(activeFederationId)
         }, [activeFederationId]),
         generateEcash: useCallback(
             (amount: MSats) => {
-                return fedimint.generateEcash(amount, activeFederationId!)
+                return fedimint.generateEcash(amount, activeFederationId)
             },
             [activeFederationId],
         ),
@@ -83,7 +85,7 @@ export const useBridge = () => {
                 return fedimint.generateInvoice(
                     amount,
                     description,
-                    activeFederationId!,
+                    activeFederationId,
                 )
             },
             [activeFederationId],
@@ -91,7 +93,7 @@ export const useBridge = () => {
         listTransactions: useCallback(
             (startTime?: number, limit?: number) => {
                 return fedimint.listTransactions(
-                    activeFederationId!,
+                    activeFederationId,
                     startTime,
                     limit,
                 )
@@ -99,54 +101,54 @@ export const useBridge = () => {
             [activeFederationId],
         ),
         guardianStatus: useCallback(() => {
-            return fedimint.guardianStatus(activeFederationId!)
+            return fedimint.guardianStatus(activeFederationId)
         }, [activeFederationId]),
         updateTransactionNotes: useCallback(
             (transactionId: string, notes: string) => {
                 return fedimint.updateTransactionNotes(
                     transactionId,
                     notes,
-                    activeFederationId!,
+                    activeFederationId,
                 )
             },
             [activeFederationId],
         ),
         getNostrPubKey: useCallback(() => {
-            return fedimint.getNostrPubKey(activeFederationId!)
+            return fedimint.getNostrPubKey(activeFederationId)
         }, [activeFederationId]),
         signNostrEvent: useCallback(
             (eventHash: string) => {
-                return fedimint.signNostrEvent(eventHash, activeFederationId!)
+                return fedimint.signNostrEvent(eventHash, activeFederationId)
             },
             [activeFederationId],
         ),
         listGateways: useCallback(() => {
-            return fedimint.listGateways(activeFederationId!)
+            return fedimint.listGateways(activeFederationId)
         }, [activeFederationId]),
         switchGateway: useCallback(
             (nodePubKey: string) => {
-                return fedimint.switchGateway(nodePubKey, activeFederationId!)
+                return fedimint.switchGateway(nodePubKey, activeFederationId)
             },
             [activeFederationId],
         ),
         locateRecoveryFile: useCallback(() => {
-            return fedimint.locateRecoveryFile(activeFederationId!)
+            return fedimint.locateRecoveryFile(activeFederationId)
         }, [activeFederationId]),
         payInvoice: useCallback(
             (invoice: string) => {
-                return fedimint.payInvoice(invoice, activeFederationId!)
+                return fedimint.payInvoice(invoice, activeFederationId)
             },
             [activeFederationId],
         ),
         payAddress: useCallback(
             (address: string, sats: Sats) => {
-                return fedimint.payAddress(address, sats, activeFederationId!)
+                return fedimint.payAddress(address, sats, activeFederationId)
             },
             [activeFederationId],
         ),
         receiveEcash: useCallback(
             (ecash: string) => {
-                return fedimint.receiveEcash(ecash, activeFederationId!)
+                return fedimint.receiveEcash(ecash, activeFederationId)
             },
             [activeFederationId],
         ),
@@ -154,32 +156,29 @@ export const useBridge = () => {
             (recoveryId: string) => {
                 return fedimint.socialRecoveryDownloadVerificationDoc(
                     recoveryId,
-                    activeFederationId!,
+                    activeFederationId,
                 )
             },
             [activeFederationId],
         ),
         validateEcash: useCallback((ecash: string) => {
-            return fedimint.validateEcash(ecash!)
+            return fedimint.validateEcash(ecash)
         }, []),
         uploadBackupFile: useCallback(
             (videoFilePath: string) => {
                 return fedimint.uploadBackupFile(
                     videoFilePath,
-                    activeFederationId!,
+                    activeFederationId,
                 )
             },
             [activeFederationId],
         ),
         getXmppCredentials: useCallback(() => {
-            return fedimint.getXmppCredentials(activeFederationId!)
+            return fedimint.getXmppCredentials(activeFederationId)
         }, [activeFederationId]),
         backupXmppUsername: useCallback(
             (username: string) => {
-                return fedimint.backupXmppUsername(
-                    username,
-                    activeFederationId!,
-                )
+                return fedimint.backupXmppUsername(username, activeFederationId)
             },
             [activeFederationId],
         ),

@@ -32,10 +32,12 @@ const ReviewVideo = () => {
     useEffect(() => {
         const copyVideoAndProceed = async () => {
             try {
+                if (!videoFile) throw new Error('No video file found')
+
                 // Copy file to our temp directory so rust can read it
                 const filename = Math.random().toString(20)
                 const dest = `${RNFS.TemporaryDirectoryPath}/${filename}.mp4`
-                await RNFS.copyFile(videoFile!.path, dest)
+                await RNFS.copyFile(videoFile.path, dest)
                 navigation.navigate('SocialBackupProcessing', {
                     videoFilePath: dest,
                 })
