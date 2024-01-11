@@ -17,6 +17,9 @@
         "@fedi/native#lint": {
             "dependsOn": ["@fedi/common#build", "@fedi/injections#build"]
         },
+        "@fedi/web#lint": {
+            "dependsOn": ["@fedi/common#build"]
+        },
         "format": {},
         "dev": {
             "cache": false,
