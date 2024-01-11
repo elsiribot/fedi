@@ -23,7 +23,7 @@ export const FederationLogo: React.FC<Props> = ({ federation, size }) => {
         <Image style={svgProps} source={{ uri: iconUrl }} resizeMode="cover" />
     ) : (
         <SvgImage
-            name={name}
+            name="Federation"
             size={svgSize}
             svgProps={{ stroke: 'transparent', ...svgProps }}
         />
