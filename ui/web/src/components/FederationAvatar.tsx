@@ -12,7 +12,7 @@ type Props = Omit<AvatarProps, 'id' | 'shape' | 'name'> & {
 export const FederationAvatar: React.FC<Props> = ({ federation, ...props }) => {
     const iconUrl = getFederationIconUrl(federation.meta)
 
-    return iconUrl ? (
+    return (
         <Avatar
             id={federation.id}
             shape="square"
@@ -20,5 +20,5 @@ export const FederationAvatar: React.FC<Props> = ({ federation, ...props }) => {
             name={federation.name}
             {...props}
         />
-    ) : null
+    )
 }
