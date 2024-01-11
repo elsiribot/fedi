@@ -89,7 +89,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 onChangeText={setMessageText}
                 value={messageText}
                 placeholder={`${t('words.message')}`}
-                returnKeyType="next"
                 onContentSizeChange={({
                     nativeEvent: {
                         contentSize: { height },
