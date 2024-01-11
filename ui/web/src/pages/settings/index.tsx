@@ -7,6 +7,7 @@ import FederationIcon from '@fedi/common/assets/svgs/federation.svg'
 import FediLogoICon from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
 import InviteMembersIcon from '@fedi/common/assets/svgs/invite-members.svg'
 import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
+import QRIcon from '@fedi/common/assets/svgs/qr.svg'
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import {
     useFederationSupportsSingleSeed,
@@ -23,8 +24,10 @@ import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { ContentBlock } from '../../components/ContentBlock'
 import { Icon } from '../../components/Icon'
 import { IconProps } from '../../components/Icon'
+import { IconButton } from '../../components/IconButton'
 import { InviteMemberDialog } from '../../components/InviteMemberDialog'
 import * as Layout from '../../components/Layout'
+import { MemberQRDialog } from '../../components/MemberQRDialog'
 import { Text } from '../../components/Text'
 import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
@@ -48,6 +51,7 @@ function AdminPage() {
     const member = useAppSelector(selectAuthenticatedMember)
     const activeFederation = useAppSelector(selectActiveFederation)
     const { showErrorToast } = useToast()
+    const [isMemberQrOpen, setIsMemberQrOpen] = useState(false)
     const [isInvitingMember, setIsInvitingMember] = useState(false)
     const [isLeavingFederation, setIsLeavingFederation] = useState(false)
     const isInviteSupported = useIsInviteSupported()
@@ -127,13 +131,26 @@ function AdminPage() {
             <Layout.Root>
                 <Layout.Header>
                     <Layout.Title>{t('words.settings')}</Layout.Title>
+                    {!!member && (
+                        <IconButton
+                            icon={QRIcon}
+                            size="md"
+                            onClick={() => setIsMemberQrOpen(true)}
+                        />
+                    )}
                 </Layout.Header>
                 <Layout.Content>
                     <div>
                         {member && (
                             <MemberDetails>
-                                <Avatar id={member.id} name={member.username} />
-                                <Text variant="h2">{member.username}</Text>
+                                <Avatar
+                                    id={member.id}
+                                    name={member.username}
+                                    size="lg"
+                                />
+                                <Text variant="h2" weight="medium">
+                                    {member.username}
+                                </Text>
                             </MemberDetails>
                         )}
                         <Menu>
@@ -185,6 +202,11 @@ function AdminPage() {
                 </Layout.Content>
             </Layout.Root>
 
+            <MemberQRDialog
+                open={isMemberQrOpen}
+                onOpenChange={setIsMemberQrOpen}
+            />
+
             <InviteMemberDialog
                 open={isInvitingMember}
                 onOpenChange={setIsInvitingMember}
@@ -211,6 +233,9 @@ const MemberDetails = styled('div', {
     justifyContent: 'center',
     alignItems: 'center',
     gap: 16,
+    padding: '24px 16px',
+    borderRadius: 16,
+    holoGradient: '400',
 })
 
 const Menu = styled('div', {

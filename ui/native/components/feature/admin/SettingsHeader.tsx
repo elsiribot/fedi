@@ -4,6 +4,9 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet } from 'react-native'
 
+import { selectAuthenticatedMember } from '@fedi/common/redux'
+
+import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
@@ -13,6 +16,7 @@ const SettingsHeader: React.FC<{}> = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
+    const hasChatMember = useAppSelector(s => !!selectAuthenticatedMember(s))
 
     return (
         <>
@@ -28,11 +32,13 @@ const SettingsHeader: React.FC<{}> = () => {
                 }
                 centerContainerStyle={{ flex: 2 }}
                 headerRight={
-                    <Pressable
-                        onPress={() => navigation.navigate('MemberQrCode')}
-                        hitSlop={5}>
-                        <SvgImage name="Qr" color={theme.colors.primary} />
-                    </Pressable>
+                    hasChatMember && (
+                        <Pressable
+                            onPress={() => navigation.navigate('MemberQrCode')}
+                            hitSlop={5}>
+                            <SvgImage name="Qr" color={theme.colors.primary} />
+                        </Pressable>
+                    )
                 }
                 rightContainerStyle={styles(theme).rightContainer}
             />
