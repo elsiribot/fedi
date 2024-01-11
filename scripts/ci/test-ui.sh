@@ -10,9 +10,6 @@ pushd $REPO_ROOT/ui
 # Install dependencies
 yarn install
 
-# Build `common`
-cd ui/common && yarn build && cd ../..
-
 # Check for Prettier, ESLint, + Typescript errors
 yarn lint
 
