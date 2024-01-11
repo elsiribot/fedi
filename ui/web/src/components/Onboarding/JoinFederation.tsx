@@ -77,28 +77,27 @@ export const JoinFederation: React.FC = () => {
         handleCode(routeState.data.invite)
     }, [routeState, handleCode])
 
-    const handleJoin = useCallback(
-        async () => {
-            setIsJoining(true)
-            try {
-                if (!federationPreview) throw new Error()
-                await dispatch(
-                    joinFederation({
-                        fedimint,
-                        code: federationPreview.inviteCode,
-                    }),
-                ).unwrap()
-                push(isChatSupported ? '/onboarding/username' : '/')
-            } catch (err) {
-                log.error('handleJoin', err)
-                showErrorToast(err, 'errors.invalid-federation-code')
-                setIsJoining(false)
-            }
-        },
-        [federationPreview, isChatSupported, push, dispatch, showErrorToast],
-    )
+    const handleJoin = useCallback(async () => {
+        setIsJoining(true)
+        try {
+            if (!federationPreview) throw new Error()
+            await dispatch(
+                joinFederation({
+                    fedimint,
+                    code: federationPreview.inviteCode,
+                }),
+            ).unwrap()
+            push(isChatSupported ? '/onboarding/username' : '/')
+        } catch (err) {
+            log.error('handleJoin', err)
+            showErrorToast(err, 'errors.invalid-federation-code')
+            setIsJoining(false)
+        }
+    }, [federationPreview, isChatSupported, push, dispatch, showErrorToast])
 
-    const tosUrl = federationPreview ? getFederationTosUrl(federationPreview.meta) : null
+    const tosUrl = federationPreview
+        ? getFederationTosUrl(federationPreview.meta)
+        : null
 
     let content: React.ReactNode
     let actions: React.ReactNode
@@ -165,12 +164,7 @@ export const JoinFederation: React.FC = () => {
             </>
         )
     } else if (tosUrl && isShowingTos) {
-        return (
-                <TermsOfService
-                    tosUrl={tosUrl}
-                    onAccept={handleJoin}
-                />
-            )
+        return <TermsOfService tosUrl={tosUrl} onAccept={handleJoin} />
     } else {
         const welcomeMessage = getFederationWelcomeMessage(
             federationPreview.meta,
@@ -178,8 +172,12 @@ export const JoinFederation: React.FC = () => {
         const memberStatus = federationPreview.returningMemberStatus.type
         const welcomeTitle =
             memberStatus === 'returningMember'
-                ? t('feature.onboarding.welcome-back-to-federation')
-                : t('feature.onboarding.welcome-to-federation')
+                ? t('feature.onboarding.welcome-back-to-federation', {
+                      federation: federationPreview.name,
+                  })
+                : t('feature.onboarding.welcome-to-federation', {
+                      federation: federationPreview.name,
+                  })
         const welcomeInstructions =
             memberStatus === 'newMember'
                 ? t('feature.onboarding.welcome-instructions-new')
@@ -200,7 +198,7 @@ export const JoinFederation: React.FC = () => {
                         />
                     </AvatarWrapper>
                     <Text variant="h2" weight="medium">
-                        {welcomeTitle} {federationPreview.name}
+                        {welcomeTitle}
                     </Text>
                     {welcomeMessage ? (
                         <CustomWelcomeMessage>
@@ -225,8 +223,7 @@ export const JoinFederation: React.FC = () => {
                         } else {
                             handleJoin()
                         }
-                    }
-                    }
+                    }}
                     loading={isJoining}>
                     {t('words.continue')}
                 </Button>
