@@ -23,7 +23,7 @@ export const ChatMessage: React.FC<Props> = ({ message }) => {
 
     let content: React.ReactNode =
         typeof message.content === 'string'
-            ? message.content.split('\n').map((part, index, array) => (
+            ? message.content.split(/\r?\n/).map((part, index, array) => (
                   <React.Fragment key={index}>
                       {part}
                       {index !== array.length - 1 && <br />}
