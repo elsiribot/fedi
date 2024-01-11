@@ -36,7 +36,7 @@ const GroupInvite: React.FC<Props> = ({ route }: Props) => {
                         link: groupId,
                     }),
                 ).unwrap()
-            } catch (error) {
+            } catch {
                 return
             }
         }

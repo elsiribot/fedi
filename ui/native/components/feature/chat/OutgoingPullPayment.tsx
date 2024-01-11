@@ -52,8 +52,7 @@ const IncomingPaymentActions: React.FC<IncomingPaymentActionsProps> = ({
         }
         // HACK: we just need to give the Rust bridge a split second
         // to resolve some DB lock to avoid a panic so wait 250ms here
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
-        let timeout = setTimeout(() => {})
+        let timeout: ReturnType<typeof setTimeout> | undefined
         if (payment?.token) {
             timeout = setTimeout(() => dispatchPaymentUpdate(), 250)
         }

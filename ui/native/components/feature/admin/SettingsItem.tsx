@@ -22,11 +22,7 @@ const SettingsItem = ({
     return (
         <Pressable
             style={[styles(theme).container, disabled ? { opacity: 0.25 } : {}]}
-            onPress={e => {
-                if (disabled) return
-
-                onPress(e)
-            }}>
+            onPress={disabled ? undefined : onPress}>
             {image}
             <Text style={styles(theme).label}>{label}</Text>
             {action || (
