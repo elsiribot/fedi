@@ -26,9 +26,8 @@ module.exports = {
         ],
     },
     extends: [
-        // TODO: Enable this in a followup PR after fixing non-null assersion errors
-        // 'eslint:recommended',
-        // 'plugin:@typescript-eslint/recommended',
+        'eslint:recommended',
+        'plugin:@typescript-eslint/recommended',
         'prettier',
     ],
     overrides: [

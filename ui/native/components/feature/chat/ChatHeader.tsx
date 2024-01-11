@@ -14,7 +14,7 @@ import { NuxTooltip } from '../../ui/NuxTooltip'
 import SvgImage from '../../ui/SvgImage'
 import { ChatConnectionBadge } from './ChatConnectionBadge'
 
-const ChatHeader: React.FC<{}> = () => {
+const ChatHeader: React.FC = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()

@@ -13,7 +13,7 @@ export const normalizePaymentRequest = (input: string): BtcLnUri => {
         })
     }
     // if this is a URI, strip out the prefix
-    let body = input.substring(prefixIndex + 1)
+    const body = input.substring(prefixIndex + 1)
 
     // check for params
     const paramsIndex = body.indexOf('?')

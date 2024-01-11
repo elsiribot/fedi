@@ -18,7 +18,9 @@ import { MSats, FediMod } from '.'
 // This type declaration allows all instances of useNavigation
 // to be aware of type-safety from RootStackParamsList
 declare global {
+    // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace ReactNavigation {
+        // eslint-disable-next-line @typescript-eslint/no-empty-interface
         interface RootParamList extends RootStackParamList {}
     }
 }

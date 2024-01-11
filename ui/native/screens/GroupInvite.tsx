@@ -36,7 +36,9 @@ const GroupInvite: React.FC<Props> = ({ route }: Props) => {
                         link: groupId,
                     }),
                 ).unwrap()
-            } catch (error) {}
+            } catch (error) {
+                return
+            }
         }
         handleJoinGroup()
     }, [activeFederationId, dispatch, groupId])

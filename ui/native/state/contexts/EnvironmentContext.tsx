@@ -55,7 +55,7 @@ export function reducer(state: AppState, action: Action): AppState {
     }
 }
 
-function EnvironmentProvider(props: React.PropsWithChildren<{}>) {
+function EnvironmentProvider(props: React.PropsWithChildren<object>) {
     const [state, dispatch] = useReducer<React.Reducer<AppState, Action>>(
         reducer,
         initialState,

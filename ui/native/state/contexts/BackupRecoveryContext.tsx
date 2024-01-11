@@ -104,7 +104,7 @@ export function reducer(state: AppState, action: Action): AppState {
     }
 }
 
-function BackupRecoveryProvider(props: React.PropsWithChildren<{}>) {
+function BackupRecoveryProvider(props: React.PropsWithChildren<object>) {
     const [state, dispatch] = useReducer<React.Reducer<AppState, Action>>(
         reducer,
         initialState,

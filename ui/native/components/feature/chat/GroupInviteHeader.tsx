@@ -8,7 +8,7 @@ import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
 
-const GroupInviteHeader: React.FC<{}> = () => {
+const GroupInviteHeader: React.FC = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()

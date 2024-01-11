@@ -7,7 +7,7 @@ import { selectCurrency } from '@fedi/common/redux'
 import { useAppSelector } from '../../../state/hooks'
 import Header from '../../ui/Header'
 
-const StabilityHistoryHeader: React.FC<{}> = () => {
+const StabilityHistoryHeader: React.FC = () => {
     const { t } = useTranslation()
     const selectedCurrency = useAppSelector(selectCurrency)
 

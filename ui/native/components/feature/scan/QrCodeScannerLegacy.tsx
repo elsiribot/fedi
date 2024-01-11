@@ -22,7 +22,7 @@ import { usePrevious } from '../../../state/hooks'
 */
 type QrCodeScanner = {
     device: CameraDevice
-    onQrCodeDetected: Function
+    onQrCodeDetected: (data: string) => void
 }
 
 const QrCodeScanner = ({ device, onQrCodeDetected }: QrCodeScanner) => {

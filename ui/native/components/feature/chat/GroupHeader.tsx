@@ -15,7 +15,7 @@ import GroupIcon from './GroupIcon'
 
 type GroupChatRouteProp = RouteProp<RootStackParamList, 'GroupChat'>
 
-const GroupHeader: React.FC<{}> = () => {
+const GroupHeader: React.FC = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<GroupChatRouteProp>()

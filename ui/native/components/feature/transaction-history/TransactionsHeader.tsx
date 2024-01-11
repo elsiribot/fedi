@@ -7,7 +7,7 @@ import { Pressable } from 'react-native'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
 
-const TransactionsHeader: React.FC<{}> = () => {
+const TransactionsHeader: React.FC = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation()

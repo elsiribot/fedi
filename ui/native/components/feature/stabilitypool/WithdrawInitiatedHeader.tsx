@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const WithdrawInitiatedHeader: React.FC<{}> = () => {
+const WithdrawInitiatedHeader: React.FC = () => {
     const { t } = useTranslation()
 
     return (

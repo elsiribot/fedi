@@ -12,7 +12,7 @@ import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
 import SelectedFederationHeader from '../federations/SelectedFederationHeader'
 
-const SettingsHeader: React.FC<{}> = () => {
+const SettingsHeader: React.FC = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()

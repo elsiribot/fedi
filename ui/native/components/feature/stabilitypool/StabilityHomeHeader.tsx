@@ -11,7 +11,7 @@ import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
 
-const StabilityHomeHeader: React.FC<{}> = () => {
+const StabilityHomeHeader: React.FC = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()

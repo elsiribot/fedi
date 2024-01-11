@@ -70,7 +70,7 @@ const Initializing: React.FC<Props> = () => {
                 return navigation.replace('TabsNavigator')
             } else {
                 // If this RPC resolves with something truthy, then they are doing social recovery
-                let socialRecoveryActive = await fedimint
+                const socialRecoveryActive = await fedimint
                     .recoveryQr()
                     .then(qr => !!qr)
                     .catch(() => false)

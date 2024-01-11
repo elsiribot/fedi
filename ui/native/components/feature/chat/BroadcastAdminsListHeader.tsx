@@ -2,7 +2,7 @@ import React from 'react'
 
 import Header from '../../ui/Header'
 
-const BroadcastAdminsListHeader: React.FC<{}> = () => {
+const BroadcastAdminsListHeader: React.FC = () => {
     return <Header backButton />
 }
 

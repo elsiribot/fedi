@@ -10,7 +10,7 @@ import SvgImage from '../../ui/SvgImage'
 
 type GroupAdminRouteProp = GroupAdminProps['route']
 
-const GroupAdminHeader: React.FC<{}> = () => {
+const GroupAdminHeader: React.FC = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<GroupAdminRouteProp>()
