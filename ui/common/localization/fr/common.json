@@ -136,7 +136,6 @@
         "terms-and-conditions": "Conditions & Conditions",
         "transaction-id": "ID de transaction",
         "transaction-received": "Transaction reçue",
-        "user-agreement": "Accord utilisateur",
         "you-are-offline": "Vous êtes actuellement en mode hors ligne"
     },
     "errors": {
@@ -393,7 +392,7 @@
         },
         "onboarding": {
             "by-clicking-i-accept": "En cliquant sur 'J'accepte' vous acceptez les conditions d'utilisation sur {{tos_url}}",
-            "by-clicking-you-agree": "En cliquant sur 'Rejoindre une Fédération', vous acceptez les",
+            "by-clicking-you-agree-user-agreement": "En cliquant sur 'Rejoindre une Fédération', vous acceptez les <anchor>Accord utilisateur</anchor>",
             "chat-earn-save-spend": "Discutez, gagnez, économisez et dépensez de l'argent en privé avec votre communauté",
             "community-first": "La communauté d'abord",
             "continue-to-fedi": "Continuer vers Fedi",

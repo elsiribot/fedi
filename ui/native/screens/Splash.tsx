@@ -1,7 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import {
     ImageBackground,
     StyleSheet,
@@ -78,15 +78,18 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={handleNewUser}
                 />
                 <Text style={style.agreementText} small>
-                    {t('feature.onboarding.by-clicking-you-agree')}
-                    <Text
-                        small
-                        style={style.agreementLink}
-                        onPress={() => {
-                            navigation.navigate('Eula')
-                        }}>
-                        {` ${t('phrases.user-agreement')}`}
-                    </Text>
+                    <Trans
+                        i18nKey="feature.onboarding.by-clicking-you-agree-user-agreement"
+                        components={{
+                            anchor: (
+                                <Text
+                                    small
+                                    style={style.agreementLink}
+                                    onPress={() => navigation.navigate('Eula')}
+                                />
+                            ),
+                        }}
+                    />
                 </Text>
             </View>
         </SafeAreaView>
