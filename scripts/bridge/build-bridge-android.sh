@@ -50,7 +50,7 @@ done
 # build android lib with ffi-bindgen inside nix
 cd $BRIDGE_ROOT/fedi-ffi
 # note: using '--target-dir' or otherwise this build will completely invalidate previous ones already in the ./target
-cargo run --target-dir "${TARGET_DIR}/pkg/fedi-ffi/ffi-bindgen-run" --package ffi-bindgen -- --language kotlin --out-dir $BRIDGE_ROOT/fedi-android/lib/src/main/kotlin
+cargo run --target-dir "${TARGET_DIR}/pkg/fedi-ffi/ffi-bindgen-run" --package ffi-bindgen -- generate --language kotlin --out-dir $BRIDGE_ROOT/fedi-android/lib/src/main/kotlin "$BRIDGE_ROOT/fedi-ffi/src/fedi.udl"
 
 # publish android live to local maven
 cd $BRIDGE_ROOT/fedi-android

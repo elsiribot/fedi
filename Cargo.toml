@@ -211,5 +211,4 @@ debug = false
 
 [patch.crates-io]
 secp256k1-zkp = { git = "https://github.com/dpc/rust-secp256k1-zkp/", branch = "sanket-pr" }
-uniffi_bindgen = { git = "https://github.com/fedibtc/uniffi-rs", rev = "d00f5ef23553665e2175ae98c12b005d46b26f7a" }
 ring = { git = "https://github.com/dpc/ring", rev = "5493e7e76d0d8fb1d3cbb0be9c4944700741b802" }

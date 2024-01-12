@@ -17,7 +17,7 @@ fi
 # build Swift bindings
 cd $BRIDGE_ROOT/fedi-ffi
 # note: using '--target-dir' or otherwise this build will completely invalidate previous ones already in the ./target
-cargo run --target-dir "${TARGET_DIR}/pkg/ffi-bindgen/ffi-bindgen-run" --package ffi-bindgen -- --language swift --out-dir $BRIDGE_ROOT/fedi-swift/Sources/Fedi
+cargo run --target-dir "${TARGET_DIR}/pkg/ffi-bindgen/ffi-bindgen-run" --package ffi-bindgen -- generate --language swift --out-dir $BRIDGE_ROOT/fedi-swift/Sources/Fedi "$BRIDGE_ROOT/fedi-ffi/src/fedi.udl"
 
 cd $BRIDGE_ROOT
 

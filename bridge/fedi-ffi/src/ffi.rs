@@ -13,10 +13,11 @@ use tokio::sync::Mutex;
 use tracing::{error, info, warn};
 
 use super::bridge::Bridge;
-/// This file contains the bindings to used by React Native app via Uniffi
-use super::event::IEventSink as EventSink;
+// used by uniffi
+pub use super::event::IEventSink as EventSink;
 use super::logging;
-use super::rpc::{fedimint_initialize_async, fedimint_rpc_async, FedimintError};
+pub use super::rpc::FedimintError;
+use super::rpc::{fedimint_initialize_async, fedimint_rpc_async};
 use super::storage::IStorage;
 use crate::error::ErrorCode;
 use crate::remote::{fedimint_remote_initialize, fedimint_remote_rpc};
@@ -31,8 +32,6 @@ lazy_static! {
     // Global bridge object used to handle RPC commands
     static ref BRIDGE: Arc<Mutex<Option<Arc<Bridge>>>> = Arc::new(Mutex::new(None));
 }
-
-uniffi_macros::include_scaffolding!("fedi");
 
 pub fn fedimint_initialize(
     data_dir: String,
