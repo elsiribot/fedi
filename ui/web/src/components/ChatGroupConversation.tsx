@@ -47,7 +47,7 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
         'settings' | 'share' | false
     >(false)
 
-    const chat = useAppSelector(s => selectChat(s, group?.id))
+    const chat = useAppSelector(s => selectChat(s, group?.id || ''))
 
     const handleSend = useCallback(
         async (content: string) => {
