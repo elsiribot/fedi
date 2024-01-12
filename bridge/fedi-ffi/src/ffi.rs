@@ -110,7 +110,7 @@ pub async fn fedimint_rpc(method: String, payload: String) -> String {
                 .expect("rpc failed");
         }
         let Some(bridge) = BRIDGE.lock().await.as_ref().cloned() else {
-            return r#"{"error": "Bridge not initialized"}"#.to_owned();
+            return rpc_error(&anyhow::format_err!(ErrorCode::NotInialized));
         };
         fedimint_rpc_async(bridge, method, payload).await
     })

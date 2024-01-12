@@ -7,6 +7,8 @@ use ts_rs::TS;
 pub enum ErrorCode {
     #[error("Intialization failed")]
     InitializationFailed,
+    #[error("Not initialized")]
+    NotInialized,
     #[error("Bad request")]
     BadRequest,
     #[error("Already joined this federation")]
