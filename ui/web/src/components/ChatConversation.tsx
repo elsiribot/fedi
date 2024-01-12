@@ -65,7 +65,7 @@ export const ChatConversation: React.FC<Props> = ({
     )
 
     // While we have the chat open, mark any message that comes in as read
-    useUpdateLastMessageRead(id, messageCollections[0]?.[0]?.[0])
+    useUpdateLastMessageRead(id, messages)
 
     const handleSend = useCallback(
         async (ev?: React.FormEvent) => {

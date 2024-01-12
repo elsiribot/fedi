@@ -13,12 +13,10 @@ import {
     selectLatestChatMessage,
     selectLatestPaymentUpdate,
     selectPushNotificationToken,
-    setLastReadMessageId,
-    setLastReadPaymentUpdateId,
-    setLastSeenMessageId,
-    setLastSeenPaymentUpdateId,
+    setLastReadMessageTimestamp,
+    setLastSeenMessageTimestamp,
 } from '../redux'
-import { getLatestPaymentUpdate } from '../utils/chat'
+import { getLatestMessage, getLatestPaymentUpdate } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { useCommonDispatch, useCommonSelector } from './redux'
@@ -80,24 +78,31 @@ export function useUpdateLastMessageSeen(pauseUpdates?: boolean) {
 
     useEffect(() => {
         if (!latestMessage || !federationId || pauseUpdates) return
-        dispatch(
-            setLastSeenMessageId({
-                federationId,
-                messageId: latestMessage.id,
-            }),
-        )
-    }, [dispatch, federationId, latestMessage, pauseUpdates])
 
-    useEffect(() => {
-        if (!latestPaymentUpdate || !federationId || pauseUpdates) return
+        let latestTimestamp = latestMessage.sentAt
+
+        // payment updates might come in after the last message so use
+        // that if applicable
+        if (
+            latestPaymentUpdate?.payment?.updatedAt &&
+            latestPaymentUpdate.payment.updatedAt > latestMessage.sentAt
+        ) {
+            latestTimestamp = latestPaymentUpdate.payment.updatedAt
+        }
+
         dispatch(
-            setLastSeenPaymentUpdateId({
+            setLastSeenMessageTimestamp({
                 federationId,
-                messageId: latestPaymentUpdate.id,
-                updatedAt: latestPaymentUpdate.payment?.updatedAt,
+                timestamp: latestTimestamp,
             }),
         )
-    }, [dispatch, federationId, latestPaymentUpdate, pauseUpdates])
+    }, [
+        dispatch,
+        federationId,
+        latestMessage,
+        latestPaymentUpdate,
+        pauseUpdates,
+    ])
 }
 
 /**
@@ -110,56 +115,44 @@ export function useUpdateLastMessageSeen(pauseUpdates?: boolean) {
  */
 export function useUpdateLastMessageRead(
     chatId: string,
-    latestMessage: ChatMessage | null | undefined,
-    pauseUpdates?: boolean,
-) {
-    const dispatch = useCommonDispatch()
-    const federationId = useCommonSelector(selectActiveFederation)?.id
-
-    const messageId = latestMessage?.id
-    useEffect(() => {
-        if (!federationId || !messageId || pauseUpdates) return
-        dispatch(setLastReadMessageId({ federationId, chatId, messageId }))
-    }, [dispatch, chatId, federationId, latestMessage, messageId, pauseUpdates])
-}
-
-/**
- * Automatically dispatch an update to the last payment update read in a chat
- * while a component using this hook is mounted.
- *
- * the pauseUpdates param is used by the native app since components remain
- * mounted even when the screen is not in focus. the navigation library
- * returns isFocused = false for any screen using this hook and we can pause it
- */
-export function useUpdateLastPaymentUpdateRead(
-    chatId: string,
     messages: ChatMessage[],
     pauseUpdates?: boolean,
 ) {
     const dispatch = useCommonDispatch()
     const federationId = useCommonSelector(selectActiveFederation)?.id
-    const latestPaymentUpdate = getLatestPaymentUpdate(messages)
+    const latestMessageInChat = getLatestMessage(messages)
+    const latestPaymentUpdateInChat = getLatestPaymentUpdate(messages)
 
-    const messageId = latestPaymentUpdate?.id
-    const updatedAt = latestPaymentUpdate?.payment?.updatedAt
     useEffect(() => {
-        if (!federationId || !messageId || pauseUpdates) return
+        if (!federationId || !chatId || !latestMessageInChat || pauseUpdates)
+            return
+
+        let latestTimestamp = latestMessageInChat.sentAt
+
+        // payment updates might come in after the last message so use
+        // that if applicable
+        if (
+            latestPaymentUpdateInChat?.payment?.updatedAt &&
+            latestPaymentUpdateInChat.payment.updatedAt >
+                latestMessageInChat.sentAt
+        ) {
+            latestTimestamp = latestPaymentUpdateInChat.payment.updatedAt
+        }
+
         dispatch(
-            setLastReadPaymentUpdateId({
+            setLastReadMessageTimestamp({
                 federationId,
                 chatId,
-                messageId,
-                updatedAt,
+                timestamp: latestTimestamp,
             }),
         )
     }, [
         dispatch,
         chatId,
         federationId,
-        latestPaymentUpdate,
-        messageId,
-        updatedAt,
+        latestMessageInChat,
         pauseUpdates,
+        latestPaymentUpdateInChat,
     ])
 }
 
