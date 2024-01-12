@@ -23,7 +23,6 @@ import { ChatEmptyState } from './ChatEmptyState'
 import { ChatPaymentDialog } from './ChatPaymentDialog'
 import { HoloLoader } from './HoloLoader'
 import { IconButton } from './IconButton'
-import { Redirect } from './Redirect'
 import { Text } from './Text'
 
 interface Props {
@@ -32,7 +31,7 @@ interface Props {
 
 export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
     const { t } = useTranslation()
-    const { back } = useRouter()
+    const { back, replace } = useRouter()
     const dispatch = useAppDispatch()
     const federationId = useAppSelector(selectActiveFederationId)
     const member = useAppSelector(s => selectChatMember(s, memberId))
@@ -41,6 +40,12 @@ export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
     const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'
     const [isLoading, setIsLoading] = useState(!member)
     const [isPaymentOpen, setIsPaymentOpen] = useState(false)
+
+    useEffect(() => {
+        if (memberId === authenticatedMember?.id) {
+            replace('/chat')
+        }
+    }, [memberId, authenticatedMember?.id, replace])
 
     // If we don't have info about this member, attempt to fetch a pubkey for them
     useEffect(() => {
@@ -90,8 +95,6 @@ export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
                 <Button onClick={() => back()}>{t('phrases.go-back')}</Button>
             </ChatEmptyState>
         )
-    } else if (authenticatedMember?.id === member.id) {
-        return <Redirect path="/chat" />
     }
 
     return (

@@ -92,13 +92,15 @@ export const OmniMemberSearchList: React.FC<Props> = ({
         let canceled = false
         const search = async () => {
             const memberId = `${query}@${chatDomain}`
+
+            if (memberId === authenticatedMember?.id) return
+
             try {
                 const member = await dispatch(
                     fetchChatMember({ federationId, memberId }),
                 ).unwrap()
-                if (member.id !== authenticatedMember?.id) {
-                    setFetchedMember(member)
-                }
+                if (canceled) return
+                setFetchedMember(member)
             } catch {
                 /* no-op */
             }
