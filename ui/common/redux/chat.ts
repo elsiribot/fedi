@@ -1669,17 +1669,16 @@ export const selectOrderedChatList = createSelector(
                     members,
                     type,
                     latestMessage: m,
-                    // hasNewMessages: lastReadMessageIds[id] !== m.id,
                     hasNewMessages: lastReadTimestamp < m.sentAt,
-                    hasNewPaymentUpdates: false,
                     broadcastOnly,
                 }
                 if (m.payment && m.payment.updatedAt) {
                     chatMap[id] = {
                         ...chatMap[id],
                         latestPaymentUpdate: m,
-                        hasNewPaymentUpdates:
-                            lastReadTimestamp < m.payment.updatedAt,
+                        hasNewMessages: chatMap[id].hasNewMessages
+                            ? true
+                            : lastReadTimestamp < m.payment.updatedAt,
                     }
                 }
             } else {
@@ -1699,8 +1698,9 @@ export const selectOrderedChatList = createSelector(
                         chatMap[id] = {
                             ...chatMap[id],
                             latestPaymentUpdate: latest,
-                            hasNewPaymentUpdates:
-                                lastReadTimestamp < latest.payment.updatedAt,
+                            hasNewMessages: chatMap[id].hasNewMessages
+                                ? true
+                                : lastReadTimestamp < latest.payment.updatedAt,
                         }
                     }
                 }
@@ -1717,7 +1717,6 @@ export const selectOrderedChatList = createSelector(
                 type: ChatType.group,
                 members: [],
                 hasNewMessages: false,
-                hasNewPaymentUpdates: false,
                 broadcastOnly: !!group.broadcastOnly,
             }
         })
