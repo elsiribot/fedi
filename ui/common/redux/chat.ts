@@ -1622,6 +1622,16 @@ export const selectLatestPaymentUpdate = createSelector(
     messages => getLatestPaymentUpdate(messages),
 )
 
+export const selectLatestChatMessageTimestamp = createSelector(
+    selectLatestChatMessage,
+    latestMessage => latestMessage?.sentAt,
+)
+
+export const selectLatestPaymentUpdateTimestamp = createSelector(
+    selectLatestPaymentUpdate,
+    latestPaymentUpdate => latestPaymentUpdate?.payment?.updatedAt,
+)
+
 export const selectOrderedChatMessages = createSelector(
     selectAllChatMessages,
     messages => orderBy(messages, 'sentAt', 'desc'),
@@ -1832,20 +1842,19 @@ export const selectChatGroup = createSelector(
 )
 
 export const selectHasUnseenMessages = createSelector(
-    selectLatestChatMessage,
+    selectLatestChatMessageTimestamp,
     selectChatLastSeenMessageTimestamp,
-    (latestMessage, lastSeenMessageTimestamp) =>
-        !!latestMessage &&
-        (lastSeenMessageTimestamp || 0) < latestMessage.sentAt,
+    (latestMessageTimestamp, lastSeenMessageTimestamp) =>
+        !!latestMessageTimestamp &&
+        (lastSeenMessageTimestamp || 0) < latestMessageTimestamp,
 )
 
 export const selectHasUnseenPaymentUpdates = createSelector(
-    selectLatestPaymentUpdate,
+    selectLatestPaymentUpdateTimestamp,
     selectChatLastSeenMessageTimestamp,
-    (latestPaymentUpdate, lastSeenMessageTimestamp) =>
-        !!latestPaymentUpdate &&
-        (lastSeenMessageTimestamp || 0) <
-            (latestPaymentUpdate.payment?.updatedAt || 0),
+    (latestPaymentUpdateTimestamp, lastSeenMessageTimestamp) =>
+        !!latestPaymentUpdateTimestamp &&
+        (lastSeenMessageTimestamp || 0) < (latestPaymentUpdateTimestamp || 0),
 )
 
 export const selectHasNewChatActivityInOtherFeds = createSelector(

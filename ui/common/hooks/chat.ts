@@ -8,10 +8,12 @@ import {
     publishPushNotificationToken,
     selectActiveFederation,
     selectChatClientStatus,
+    selectChatLastReadMessageTimestamps,
+    selectChatLastSeenMessageTimestamp,
     selectChatMember,
     selectFederationsWithChatConnections,
-    selectLatestChatMessage,
-    selectLatestPaymentUpdate,
+    selectLatestChatMessageTimestamp,
+    selectLatestPaymentUpdateTimestamp,
     selectPushNotificationToken,
     setLastReadMessageTimestamp,
     setLastSeenMessageTimestamp,
@@ -73,22 +75,35 @@ export function useChatMemberSearch(members: ChatMember[]) {
 export function useUpdateLastMessageSeen(pauseUpdates?: boolean) {
     const dispatch = useCommonDispatch()
     const federationId = useCommonSelector(selectActiveFederation)?.id
-    const latestMessage = useCommonSelector(selectLatestChatMessage)
-    const latestPaymentUpdate = useCommonSelector(selectLatestPaymentUpdate)
+    const lastSeenMessageTimestamp = useCommonSelector(
+        selectChatLastSeenMessageTimestamp,
+    )
+    const latestMessageTimestamp = useCommonSelector(
+        selectLatestChatMessageTimestamp,
+    )
+    const latestPaymentUpdateTimestamp = useCommonSelector(
+        selectLatestPaymentUpdateTimestamp,
+    )
 
     useEffect(() => {
-        if (!latestMessage || !federationId || pauseUpdates) return
+        if (!latestMessageTimestamp || !federationId || pauseUpdates) return
 
-        let latestTimestamp = latestMessage.sentAt
-
+        let latestTimestamp = latestMessageTimestamp
         // payment updates might come in after the last message so use
         // that if applicable
         if (
-            latestPaymentUpdate?.payment?.updatedAt &&
-            latestPaymentUpdate.payment.updatedAt > latestMessage.sentAt
+            latestPaymentUpdateTimestamp &&
+            latestPaymentUpdateTimestamp > latestMessageTimestamp
         ) {
-            latestTimestamp = latestPaymentUpdate.payment.updatedAt
+            latestTimestamp = latestPaymentUpdateTimestamp
         }
+
+        // don't dispatch if we already have the latest timestamp
+        if (
+            lastSeenMessageTimestamp &&
+            lastSeenMessageTimestamp >= latestTimestamp
+        )
+            return
 
         dispatch(
             setLastSeenMessageTimestamp({
@@ -99,8 +114,9 @@ export function useUpdateLastMessageSeen(pauseUpdates?: boolean) {
     }, [
         dispatch,
         federationId,
-        latestMessage,
-        latestPaymentUpdate,
+        lastSeenMessageTimestamp,
+        latestMessageTimestamp,
+        latestPaymentUpdateTimestamp,
         pauseUpdates,
     ])
 }
@@ -120,24 +136,34 @@ export function useUpdateLastMessageRead(
 ) {
     const dispatch = useCommonDispatch()
     const federationId = useCommonSelector(selectActiveFederation)?.id
-    const latestMessageInChat = getLatestMessage(messages)
-    const latestPaymentUpdateInChat = getLatestPaymentUpdate(messages)
+    const lastReadMessageTimestamps = useCommonSelector(
+        selectChatLastReadMessageTimestamps,
+    )
+    const lastReadTimestampInChat = lastReadMessageTimestamps[chatId]
+    const latestMessageTimestamp = getLatestMessage(messages)?.sentAt
+    const latestPaymentUpdateTimestamp =
+        getLatestPaymentUpdate(messages)?.payment?.updatedAt
 
     useEffect(() => {
-        if (!federationId || !chatId || !latestMessageInChat || pauseUpdates)
+        if (!federationId || !chatId || !latestMessageTimestamp || pauseUpdates)
             return
 
-        let latestTimestamp = latestMessageInChat.sentAt
-
+        let latestTimestamp = latestMessageTimestamp
         // payment updates might come in after the last message so use
         // that if applicable
         if (
-            latestPaymentUpdateInChat?.payment?.updatedAt &&
-            latestPaymentUpdateInChat.payment.updatedAt >
-                latestMessageInChat.sentAt
+            latestPaymentUpdateTimestamp &&
+            latestPaymentUpdateTimestamp > latestMessageTimestamp
         ) {
-            latestTimestamp = latestPaymentUpdateInChat.payment.updatedAt
+            latestTimestamp = latestPaymentUpdateTimestamp
         }
+
+        // don't dispatch if we already have the latest timestamp
+        if (
+            lastReadTimestampInChat &&
+            lastReadTimestampInChat >= latestTimestamp
+        )
+            return
 
         dispatch(
             setLastReadMessageTimestamp({
@@ -150,9 +176,11 @@ export function useUpdateLastMessageRead(
         dispatch,
         chatId,
         federationId,
-        latestMessageInChat,
+        lastReadMessageTimestamps,
+        latestPaymentUpdateTimestamp,
+        latestMessageTimestamp,
+        lastReadTimestampInChat,
         pauseUpdates,
-        latestPaymentUpdateInChat,
     ])
 }
 
