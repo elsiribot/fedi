@@ -2,7 +2,10 @@ import { useRouter } from 'next/router'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useUpdateLastMessageSeen } from '@fedi/common/hooks/chat'
+import {
+    useIsChatConnected,
+    useUpdateLastMessageSeen,
+} from '@fedi/common/hooks/chat'
 
 import { ChatBlock } from '../../components/ChatBlock'
 import { ChatGroupConversation } from '../../components/ChatGroupConversation'
@@ -11,14 +14,13 @@ import { ChatNew } from '../../components/ChatNew'
 import { ChatOfflineIndicator } from '../../components/ChatOfflineIndicator'
 import { Redirect } from '../../components/Redirect'
 import { Text } from '../../components/Text'
-import { useIsOnline } from '../../hooks'
 import { styled, theme } from '../../styles'
 
 function ChatPage() {
     const { t } = useTranslation()
     const { query, isReady } = useRouter()
 
-    const isOnline = useIsOnline()
+    const isConnected = useIsChatConnected()
 
     const [chatType, chatId] = Array.isArray(query.path)
         ? [query.path[0], query.path[1]]
@@ -41,7 +43,7 @@ function ChatPage() {
         isShowingContent = false
         content = (
             <Empty>
-                {!isOnline ? (
+                {!isConnected ? (
                     <OfflineIndicatorContainer>
                         <ChatOfflineIndicator />
                     </OfflineIndicatorContainer>

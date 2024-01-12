@@ -4,7 +4,10 @@ import { useTranslation } from 'react-i18next'
 
 import ChevronLeftIcon from '@fedi/common/assets/svgs/chevron-left.svg'
 import SendArrowUpCircleIcon from '@fedi/common/assets/svgs/send-arrow-up-circle.svg'
-import { useUpdateLastMessageRead } from '@fedi/common/hooks/chat'
+import {
+    useIsChatConnected,
+    useUpdateLastMessageRead,
+} from '@fedi/common/hooks/chat'
 import { selectChat, selectChatGroupRole } from '@fedi/common/redux'
 import {
     ChatMessage as ChatMessageType,
@@ -18,7 +21,6 @@ import {
     useAutosizeTextArea,
     useAppSelector,
     useIsTouchScreen,
-    useIsOnline,
 } from '../hooks'
 import { styled, theme } from '../styles'
 import { ChatAvatar } from './ChatAvatar'
@@ -57,7 +59,7 @@ export const ChatConversation: React.FC<Props> = ({
     const [isSending, setIsSending] = useState(false)
     const isTouchScreen = useIsTouchScreen()
     const inputRef = useRef<HTMLTextAreaElement>(null)
-    const isOnline = useIsOnline()
+    const isConnected = useIsChatConnected()
     useAutosizeTextArea(inputRef.current, value)
 
     const isReadOnly = chat?.broadcastOnly && role === ChatRole.visitor
@@ -122,7 +124,7 @@ export const ChatConversation: React.FC<Props> = ({
                         {name}
                     </Text>
                 </HeaderInfo>
-                {isOnline ? null : <ChatOfflineIndicator />}
+                {isConnected ? null : <ChatOfflineIndicator />}
                 {headerActions && (
                     <HeaderActions>{headerActions}</HeaderActions>
                 )}

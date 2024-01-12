@@ -5,7 +5,7 @@ import { CircularLoader } from './CircularLoader'
 import { Text } from './Text'
 
 const Indicator = styled('div', {
-    backgroundColor: theme.colors.blue100,
+    backgroundColor: '#FCDDEC', // TODO: Replace with fuschia from theme when new colors are added
     color: theme.colors.primary,
     padding: '$xs $sm',
     borderRadius: theme.space.md,
