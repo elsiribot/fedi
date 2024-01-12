@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { useSelector } from 'react-redux'
 
 import type { ChatMember, ChatMessage, Federation } from '@fedi/common/types'
 
@@ -7,6 +8,7 @@ import {
     fetchChatMember,
     publishPushNotificationToken,
     selectActiveFederation,
+    selectAuthenticatedMember,
     selectChatClientStatus,
     selectChatMember,
     selectFederationsWithChatConnections,
@@ -28,11 +30,14 @@ const log = makeLog('common/hooks/chat')
 export function useChatMemberSearch(members: ChatMember[]) {
     const [query, setQuery] = useState('')
 
+    const authenticatedMember = useSelector(selectAuthenticatedMember)
     const searchedMembers = useMemo(() => {
-        if (!query) return members
+        if (!query) return members.filter(m => m.id !== authenticatedMember?.id)
         const lowerQuery = query.toLowerCase()
-        const filteredMembers = members.filter(m =>
-            m.username.toLowerCase().includes(lowerQuery),
+        const filteredMembers = members.filter(
+            m =>
+                m.username.toLowerCase().includes(lowerQuery) &&
+                m.id !== authenticatedMember?.id,
         )
         return filteredMembers.sort((m1, m2) => {
             const m1Name = m1.username.toLowerCase()
@@ -51,10 +56,11 @@ export function useChatMemberSearch(members: ChatMember[]) {
             }
             return m1Name.localeCompare(m2Name)
         })
-    }, [members, query])
+    }, [members, query, authenticatedMember])
 
     const isExactMatch =
-        searchedMembers[0]?.username.toLowerCase() === query.toLowerCase()
+        searchedMembers[0]?.username.toLowerCase() === query.toLowerCase() &&
+        searchedMembers[0]?.id !== authenticatedMember?.id
 
     return {
         query,

@@ -66,10 +66,6 @@ export const OmniMemberSearchList: React.FC<Props> = ({
     const hasExactMatchMember = !!exactMatchMember
     let noHistoryMember = exactMatchMember || fetchedMember
 
-    if (noHistoryMember?.id === authenticatedMember?.id) {
-        noHistoryMember = undefined
-    }
-
     // If their query is not an exact match, search for a potentially unknown
     // member. Search is debounced to reduce unnecessary searches while typing.
     useEffect(() => {
@@ -100,7 +96,9 @@ export const OmniMemberSearchList: React.FC<Props> = ({
                 const member = await dispatch(
                     fetchChatMember({ federationId, memberId }),
                 ).unwrap()
-                setFetchedMember(member)
+                if (member.id !== authenticatedMember?.id) {
+                    setFetchedMember(member)
+                }
             } catch {
                 /* no-op */
             }
@@ -122,6 +120,7 @@ export const OmniMemberSearchList: React.FC<Props> = ({
         isExactMatch,
         hasExactMatchMember,
         dispatch,
+        authenticatedMember?.id,
     ])
 
     const searchResultsSections = useMemo(() => {

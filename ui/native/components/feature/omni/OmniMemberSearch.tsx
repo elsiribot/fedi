@@ -16,7 +16,6 @@ import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { useChatMemberSearch } from '@fedi/common/hooks/chat'
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import {
-    selectAuthenticatedMember,
     selectChatMembersWithHistory,
     selectRecentChatMembers,
 } from '@fedi/common/redux'
@@ -49,22 +48,15 @@ export const OmniMemberSearch: React.FC<Props> = ({
     const insets = useSafeAreaInsets()
     const hasTabs = useHasBottomTabsNavigation()
     const membersWithHistory = useAppSelector(selectChatMembersWithHistory)
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const canChat = useIsChatSupported()
     const [isFocused, setIsFocused] = useState(false)
     const { query, setQuery, searchedMembers, isExactMatch } =
         useChatMemberSearch(membersWithHistory)
     const { width, fontScale } = useWindowDimensions()
 
-    const visibleMembers = searchedMembers.filter(
-        m => m.id !== authenticatedMember?.id,
-    )
     const memberCount = Math.max(Math.floor(width / fontScale / 80), 2)
     const recentMembers = useAppSelector(s =>
         selectRecentChatMembers(s, memberCount),
-    )
-    const visibleRecentMembers = recentMembers.filter(
-        m => m.id !== authenticatedMember?.id,
     )
 
     const isShowingSearch = isFocused || query.length > 0
@@ -78,10 +70,8 @@ export const OmniMemberSearch: React.FC<Props> = ({
                 style={style.searchMembersContainer}>
                 <OmniMemberSearchList
                     query={query}
-                    searchedMembers={visibleMembers}
-                    isExactMatch={
-                        isExactMatch && query !== authenticatedMember?.username
-                    }
+                    searchedMembers={searchedMembers}
+                    isExactMatch={isExactMatch}
                     canLnurlPay={!!canLnurlPay}
                     onInput={onInput}
                 />
@@ -94,7 +84,7 @@ export const OmniMemberSearch: React.FC<Props> = ({
                     hasTabs ? ['left', 'right'] : ['left', 'right', 'bottom']
                 }
                 style={style.defaultContainer}>
-                {canChat && visibleRecentMembers.length > 0 && (
+                {canChat && recentMembers.length > 0 && (
                     <View>
                         <Text small medium style={style.recentMembersLabel}>
                             {t('words.people')}
