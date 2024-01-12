@@ -780,11 +780,12 @@ async fn apply_staged_cancellations(
                     *amount -= cancellable;
 
                     let seek_metadata_key = SeekMetadataKey(key.0, *staged_txid);
-                    if *amount == Amount::ZERO {
-                        dbtx.remove_entry(&seek_metadata_key).await;
-                    } else if let Some(mut metadata) = dbtx.get_value(&seek_metadata_key).await {
+                    if let Some(mut metadata) = dbtx.get_value(&seek_metadata_key).await {
                         metadata.withdrawn_amount += cancellable;
                         metadata.withdrawn_amount_cents += amount_to_cents(cancellable, new_price);
+                        if *amount == Amount::ZERO {
+                            metadata.fully_withdrawn = true;
+                        }
                         dbtx.insert_entry(&seek_metadata_key, &metadata).await;
                     }
 
@@ -1222,6 +1223,7 @@ async fn distribute_fees_and_write_cycle(
                 withdrawn_amount_cents: existing.withdrawn_amount_cents,
                 fees_paid_so_far: existing.fees_paid_so_far + amount_and_fee.fee,
                 first_lock_start_time: existing.first_lock_start_time,
+                fully_withdrawn: existing.fully_withdrawn,
             },
             None => {
                 let amount_cents = amount_to_cents(amount_and_fee.amount, cycle_price.into());
@@ -1232,6 +1234,7 @@ async fn distribute_fees_and_write_cycle(
                     withdrawn_amount_cents: 0,
                     fees_paid_so_far: amount_and_fee.fee,
                     first_lock_start_time: cycle_time,
+                    fully_withdrawn: false,
                 }
             }
         };

@@ -403,6 +403,7 @@ pub struct SeekMetadata {
     pub withdrawn_amount_cents: u64,
     pub fees_paid_so_far: Amount,
     pub first_lock_start_time: SystemTime,
+    pub fully_withdrawn: bool,
 }
 
 impl Default for SeekMetadata {
@@ -414,6 +415,7 @@ impl Default for SeekMetadata {
             withdrawn_amount_cents: 0,
             fees_paid_so_far: Amount::ZERO,
             first_lock_start_time: fedimint_core::time::now(),
+            fully_withdrawn: false,
         }
     }
 }
