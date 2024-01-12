@@ -491,12 +491,10 @@ export const chatSlice = createSlice({
                             prevChatState.groupAffiliations,
                         membersSeen: chatState.members,
                         lastFetchedMessageId: chatState.lastFetchedMessageId,
-                        lastReadMessageIds: chatState.lastReadMessageIds,
-                        lastReadPaymentUpdateIds:
-                            chatState.lastReadPaymentUpdateIds,
-                        lastSeenMessageId: chatState.lastSeenMessageId,
-                        lastSeenPaymentUpdateId:
-                            chatState.lastSeenPaymentUpdateId,
+                        lastReadMessageTimestamps:
+                            chatState.lastReadMessageTimestamps,
+                        lastSeenMessageTimestamp:
+                            chatState.lastSeenMessageTimestamp,
                     }
                 },
             )
