@@ -58,7 +58,7 @@
 		BB56AE9D1B46C7DB7914AC82 /* libPods-FediReactNative-FediReactNativeTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A78793F22F20F868C5729FCD /* libPods-FediReactNative-FediReactNativeTests.a */; };
 		C708E68B70C4324481A23AE4 /* libPods-FediReactNative.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 645940C0CD9AC78202694564 /* libPods-FediReactNative.a */; };
 		C880FF5BC2074D18AAC059D6 /* AlbertSans-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A2718C7E398D4E6D944B3C10 /* AlbertSans-Italic.ttf */; };
-		CEAD846DB806C8334F7E8FB4 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
+		CEAD846DB806C8334F7E8FB4 /* BuildFile in Frameworks */ = {isa = PBXBuildFile; };
 		D0D73EFA2921E1C80059F06F /* FedimintFfi.m in Sources */ = {isa = PBXBuildFile; fileRef = D0D73EF92921E1C80059F06F /* FedimintFfi.m */; };
 		D0D73EFB2921E1C80059F06F /* FedimintFfi.m in Sources */ = {isa = PBXBuildFile; fileRef = D0D73EF92921E1C80059F06F /* FedimintFfi.m */; };
 		D0D73EFF2921E5480059F06F /* FedimintFfi.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D73EFE2921E5480059F06F /* FedimintFfi.swift */; };
@@ -143,7 +143,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5118AA9C294A6A1700A41911 /* Fedi in Frameworks */,
-				CEAD846DB806C8334F7E8FB4 /* (null) in Frameworks */,
+				CEAD846DB806C8334F7E8FB4 /* BuildFile in Frameworks */,
 				C708E68B70C4324481A23AE4 /* libPods-FediReactNative.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
