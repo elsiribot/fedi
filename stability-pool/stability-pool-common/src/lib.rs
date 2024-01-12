@@ -409,7 +409,7 @@ impl Default for SeekMetadata {
             withdrawn_amount: Amount::ZERO,
             withdrawn_amount_cents: 0,
             fees_paid_so_far: Amount::ZERO,
-            first_lock_start_time: SystemTime::now(),
+            first_lock_start_time: fedimint_core::time::now(),
         }
     }
 }

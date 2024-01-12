@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
 use std::fmt;
-use std::time::SystemTime;
 
 use anyhow::format_err;
 use async_trait::async_trait;
@@ -140,7 +139,7 @@ impl SocialBackup {
 
         let backup_request = BackupRequest {
             id: BackupId(signing_key.public_key()),
-            timestamp: SystemTime::now(),
+            timestamp: fedimint_core::time::now(),
             verification_doc_hash: recovery_file.verification_document.id(),
             double_encrypted_seed: recovery_file.double_encrypted_seed.clone(),
         };
@@ -281,7 +280,7 @@ impl SocialRecoveryClient {
 
         let request = RecoveryRequest {
             id: RecoveryId(signing_keypair.public_key()),
-            timestamp: SystemTime::now(),
+            timestamp: fedimint_core::time::now(),
             verification_doc,
             recovery_session_encryption_key: SerdeEncodable(
                 self.state.recovery_session_decryption_key.0.public_key(),

@@ -964,7 +964,7 @@ mod tests {
 
         assert_eq!(receive_amount, federation.get_balance().await);
 
-        let label = std::time::SystemTime::now()
+        let label = fedimint_core::time::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_millis()
