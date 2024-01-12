@@ -99,24 +99,34 @@ pub async fn fedimint_initialize_inner(
     Ok(())
 }
 
-/// Synchronous method to execute an RPC command
-pub fn fedimint_rpc(method: String, payload: String) -> String {
-    let value = std::panic::catch_unwind(AssertUnwindSafe(|| {
-        RUNTIME.block_on(async move {
+/// Method to execute an RPC command
+pub async fn fedimint_rpc(method: String, payload: String) -> String {
+    // run future in background tokio worker threads
+    let task_result = RUNTIME
+        .spawn(async move {
             if option_env!("FEDI_BRIDGE_REMOTE").is_some() {
                 return fedimint_remote_rpc(method, payload)
                     .await
                     .expect("rpc failed");
             }
             let Some(bridge) = BRIDGE.lock().await.as_ref().cloned() else {
-                return r#"{"error": "Bridge not initialized"}"#.to_owned();
+                return rpc_error(&anyhow::format_err!(ErrorCode::NotInialized));
             };
             fedimint_rpc_async(bridge, method, payload).await
         })
-    }));
-    match value {
+        .await;
+    match task_result {
         Ok(value) => value,
-        Err(_) => rpc_error(&anyhow::format_err!(ErrorCode::Panic)),
+        Err(join_error) => {
+            if join_error.is_panic() {
+                rpc_error(&anyhow::format_err!(ErrorCode::Panic))
+            } else {
+                // it should unreachable in theory, but didn't want to brick
+                // bridge in that case. currently there are 2 errors - panic or
+                // cancelled and we cancel never this task
+                rpc_error(&anyhow::format_err!("unknown join error"))
+            }
+        }
     }
 }
 

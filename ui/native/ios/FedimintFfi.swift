@@ -9,7 +9,9 @@ class FedimintFfi: NSObject {
 
   @objc
   func rpc(_ method: NSString, payload: NSString, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
-    resolve(fedimintRpc(method: String(method), payload: String(payload)))
+    Task {
+      resolve(await fedimintRpc(method: String(method), payload: String(payload)))
+    }
   }
 
   @objc
