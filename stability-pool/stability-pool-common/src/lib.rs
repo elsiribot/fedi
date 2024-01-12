@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fmt::{self, Display};
 use std::time::SystemTime;
 
@@ -421,17 +422,12 @@ impl Default for SeekMetadata {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct LockedSeekWithMetadata {
-    pub lock: LockedSeek,
-    pub metadata: SeekMetadata,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AccountInfo {
     pub idle_balance: Amount,
     pub staged_seeks: Vec<StagedSeek>,
     pub staged_provides: Vec<StagedProvide>,
     pub staged_cancellation: Option<CancelRenewal>,
-    pub locked_seeks: Vec<LockedSeekWithMetadata>,
+    pub locked_seeks: Vec<LockedSeek>,
     pub locked_provides: Vec<LockedProvide>,
+    pub seeks_metadata: BTreeMap<TransactionId, SeekMetadata>,
 }

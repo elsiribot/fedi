@@ -411,8 +411,14 @@ impl Translate<stability_pool_client::common::AccountInfo>
             staged_seeks: self.staged_seeks.translate(),
             staged_provides: self.staged_provides.translate(),
             staged_cancellation: self.staged_cancellation.translate(),
-            locked_seeks: self.locked_seeks.translate(),
+            locked_seeks: self
+                .locked_seeks
+                .into_iter()
+                .map(|l| l.lock)
+                .collect::<Vec<_>>()
+                .translate(),
             locked_provides: self.locked_provides.translate(),
+            seeks_metadata: BTreeMap::new(),
         }
     }
 }
@@ -488,17 +494,7 @@ impl Translate<stability_pool_client::common::SeekMetadata>
             withdrawn_amount_cents: self.withdrawn_amount_cents,
             fees_paid_so_far: self.fees_paid_so_far.translate(),
             first_lock_start_time: self.first_lock_start_time,
-        }
-    }
-}
-
-impl Translate<stability_pool_client::common::LockedSeekWithMetadata>
-    for stability_pool_client_v1::common::LockedSeekWithMetadata
-{
-    fn translate(self) -> stability_pool_client::common::LockedSeekWithMetadata {
-        stability_pool_client::common::LockedSeekWithMetadata {
-            lock: self.lock.translate(),
-            metadata: self.metadata.translate(),
+            fully_withdrawn: false,
         }
     }
 }

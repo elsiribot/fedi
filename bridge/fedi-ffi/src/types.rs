@@ -788,14 +788,21 @@ impl From<AccountInfo> for RpcStabilityPoolAccountInfo {
             locked_seeks: value
                 .locked_seeks
                 .into_iter()
-                .map(|l| RpcLockedSeek {
-                    initial_amount: RpcAmount(l.metadata.initial_amount),
-                    initial_amount_cents: l.metadata.initial_amount_cents,
-                    withdrawn_amount: RpcAmount(l.metadata.withdrawn_amount),
-                    withdrawn_amount_cents: l.metadata.withdrawn_amount_cents,
-                    fees_paid_so_far: RpcAmount(l.metadata.fees_paid_so_far),
-                    first_lock_start_time: to_unix_time(l.metadata.first_lock_start_time)
-                        .expect("Lock start time must be valid"),
+                .map(|l| {
+                    let metadata = value
+                        .seeks_metadata
+                        .get(&l.staged_txid)
+                        .cloned()
+                        .unwrap_or_default();
+                    RpcLockedSeek {
+                        initial_amount: RpcAmount(metadata.initial_amount),
+                        initial_amount_cents: metadata.initial_amount_cents,
+                        withdrawn_amount: RpcAmount(metadata.withdrawn_amount),
+                        withdrawn_amount_cents: metadata.withdrawn_amount_cents,
+                        fees_paid_so_far: RpcAmount(metadata.fees_paid_so_far),
+                        first_lock_start_time: to_unix_time(metadata.first_lock_start_time)
+                            .expect("Lock start time must be valid"),
+                    }
                 })
                 .collect(),
         }
