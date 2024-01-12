@@ -401,6 +401,7 @@ impl ServerModule for StabilityPool {
                             None
                         } else {
                             Some(StagedSeek {
+                                txid: s.txid,
                                 sequence: s.sequence,
                                 seek: Seek(s.seek.0 - min_extractable),
                             })
@@ -464,7 +465,7 @@ impl ServerModule for StabilityPool {
         &'a self,
         dbtx: &mut DatabaseTransaction<'b>,
         output: &'a StabilityPoolOutput,
-        _outpoint: OutPoint,
+        outpoint: OutPoint,
     ) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
         let (account, intended_action) = (
             output
@@ -554,6 +555,7 @@ impl ServerModule for StabilityPool {
                         .await
                         .unwrap_or_default();
                     user_staged_seeks.push(StagedSeek {
+                        txid: outpoint.txid,
                         sequence,
                         seek: seek.clone(),
                     });
@@ -767,6 +769,7 @@ async fn apply_staged_cancellations(
                 for LockedSeek {
                     amount,
                     staged_sequence,
+                    ..
                 } in seeks_list.iter_mut().rev()
                 {
                     let cancellable = seeks_msat_to_cancel.min(amount.msats.into());
@@ -857,6 +860,7 @@ async fn restage_remaining_locks(
                 account_locked_seeks
                     .into_iter()
                     .map(|locked_seek| StagedSeek {
+                        txid: locked_seek.staged_txid,
                         sequence: locked_seek.staged_sequence,
                         seek: Seek(locked_seek.amount),
                     }),
@@ -865,6 +869,7 @@ async fn restage_remaining_locks(
             .coalesce(|prev, curr| {
                 if prev.sequence == curr.sequence {
                     Ok(StagedSeek {
+                        txid: prev.txid,
                         sequence: prev.sequence,
                         seek: Seek(prev.seek.0 + curr.seek.0),
                     })
@@ -1114,7 +1119,14 @@ fn calculate_locked_seeks(
     // been exhausted and while there are unused seeks left.
     let mut locked_seeks = vec![];
     while included_seeks_sum_before_fees > 0 && !staged_seeks.is_empty() {
-        let (account, StagedSeek { sequence, seek }) = &mut staged_seeks[0];
+        let (
+            account,
+            StagedSeek {
+                txid,
+                sequence,
+                seek,
+            },
+        ) = &mut staged_seeks[0];
 
         // amount_used is guaranteed to fit in u64 since it's a min(u64)
         let amount_used = included_seeks_sum_before_fees.min(seek.0.msats.into());
@@ -1122,6 +1134,7 @@ fn calculate_locked_seeks(
         locked_seeks.push((
             *account,
             LockedSeek {
+                staged_txid: *txid,
                 staged_sequence: *sequence,
                 amount: Amount::from_msats(amount_used as u64),
             },
@@ -1178,6 +1191,7 @@ async fn distribute_fees_and_write_cycle(
             LockedSeek {
                 staged_sequence,
                 amount,
+                ..
             },
         )| {
             // Ceiling division to ensure fee is never undercharged

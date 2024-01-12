@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::str::FromStr;
 
 use fedimint_core::util::SafeUrl;
+use fedimint_core::{BitcoinHash, TransactionId};
 
 pub trait Translate<T> {
     fn translate(self) -> T;
@@ -427,6 +428,7 @@ impl Translate<stability_pool_client::common::StagedSeek>
 {
     fn translate(self) -> stability_pool_client::common::StagedSeek {
         stability_pool_client::common::StagedSeek {
+            txid: TransactionId::all_zeros(),
             sequence: self.sequence,
             seek: self.seek.translate(),
         }
@@ -468,6 +470,7 @@ impl Translate<stability_pool_client::common::LockedSeek>
 {
     fn translate(self) -> stability_pool_client::common::LockedSeek {
         stability_pool_client::common::LockedSeek {
+            staged_txid: TransactionId::all_zeros(),
             staged_sequence: self.staged_sequence,
             amount: self.amount.translate(),
         }

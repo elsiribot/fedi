@@ -5,7 +5,9 @@ use anyhow::bail;
 use fedimint_core::core::{Decoder, ModuleInstanceId, ModuleKind};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::{CommonModuleInit, ModuleCommon, ModuleConsensusVersion};
-use fedimint_core::{extensible_associated_module_type, plugin_types_trait_impl_common, Amount};
+use fedimint_core::{
+    extensible_associated_module_type, plugin_types_trait_impl_common, Amount, TransactionId,
+};
 use secp256k1_zkp::PublicKey;
 use serde::{Deserialize, Serialize};
 
@@ -164,6 +166,7 @@ pub struct CancelRenewal {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct StagedSeek {
+    pub txid: TransactionId,
     pub sequence: u64,
     pub seek: Seek,
 }
@@ -325,6 +328,7 @@ plugin_types_trait_impl_common!(
 
 #[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct LockedSeek {
+    pub staged_txid: TransactionId,
     pub staged_sequence: u64,
     pub amount: Amount,
 }
