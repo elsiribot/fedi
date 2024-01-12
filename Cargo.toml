@@ -166,7 +166,6 @@ fedimint-bip39-v0 = { package = "fedimint-bip39", git = "https://x-access-token:
 # fedimint-aead-v0 = { package = "fedimint-aead", path = "../fedimint/crypto/aead" }
 # fedimint-bip39-v0 = { package = "fedimint-bip39", path = "../fedimint/fedimint-bip39" }
 
-uniffi_bindgen = "0.21.1"
 
 [profile.dev]
 debug = "line-tables-only"
@@ -212,3 +211,5 @@ debug = false
 [patch.crates-io]
 secp256k1-zkp = { git = "https://github.com/dpc/rust-secp256k1-zkp/", branch = "sanket-pr" }
 ring = { git = "https://github.com/dpc/ring", rev = "5493e7e76d0d8fb1d3cbb0be9c4944700741b802" }
+# https://github.com/mozilla/uniffi-rs/issues/1938
+uniffi = { git = "https://github.com/mozilla/uniffi-rs", rev = "f5fc9d7e9aa08889aedc45dd81ae9b4d3ec4cbe8"}

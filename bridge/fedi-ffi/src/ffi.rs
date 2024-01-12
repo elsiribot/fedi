@@ -99,21 +99,23 @@ pub async fn fedimint_initialize_inner(
     Ok(())
 }
 
-/// Synchronous method to execute an RPC command
-pub fn fedimint_rpc(method: String, payload: String) -> String {
-    let value = std::panic::catch_unwind(AssertUnwindSafe(|| {
-        RUNTIME.block_on(async move {
-            if option_env!("FEDI_BRIDGE_REMOTE").is_some() {
-                return fedimint_remote_rpc(method, payload)
-                    .await
-                    .expect("rpc failed");
-            }
-            let Some(bridge) = BRIDGE.lock().await.as_ref().cloned() else {
-                return r#"{"error": "Bridge not initialized"}"#.to_owned();
-            };
-            fedimint_rpc_async(bridge, method, payload).await
-        })
-    }));
+use futures::FutureExt;
+
+/// Method to execute an RPC command
+pub async fn fedimint_rpc(method: String, payload: String) -> String {
+    let value = AssertUnwindSafe(async move {
+        if option_env!("FEDI_BRIDGE_REMOTE").is_some() {
+            return fedimint_remote_rpc(method, payload)
+                .await
+                .expect("rpc failed");
+        }
+        let Some(bridge) = BRIDGE.lock().await.as_ref().cloned() else {
+            return r#"{"error": "Bridge not initialized"}"#.to_owned();
+        };
+        fedimint_rpc_async(bridge, method, payload).await
+    })
+    .catch_unwind()
+    .await;
     match value {
         Ok(value) => value,
         Err(_) => rpc_error(&anyhow::format_err!(ErrorCode::Panic)),
