@@ -64,7 +64,7 @@ export const OmniMemberSearchList: React.FC<Props> = ({
     const [fetchedMember, setFetchedMember] = useState<ChatMember>()
 
     const hasExactMatchMember = !!exactMatchMember
-    let noHistoryMember = exactMatchMember || fetchedMember
+    const noHistoryMember = exactMatchMember || fetchedMember
 
     // If their query is not an exact match, search for a potentially unknown
     // member. Search is debounced to reduce unnecessary searches while typing.

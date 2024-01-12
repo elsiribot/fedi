@@ -29,7 +29,6 @@ export const ChatMemberSearch: React.FC<Props> = ({ onClickNewGroup }) => {
     const federationId = useAppSelector(selectActiveFederationId)
     const members = useAppSelector(selectAllChatMembers)
     const connectionOptions = useAppSelector(selectChatConnectionOptions)
-
     const { query, setQuery, searchedMembers, isExactMatch } =
         useChatMemberSearch(members)
 

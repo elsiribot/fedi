@@ -90,7 +90,7 @@ export const OmniMemberSearch: React.FC<Props> = ({
                             {t('words.people')}
                         </Text>
                         <View style={style.recentMembers}>
-                            {visibleRecentMembers.map(member => (
+                            {recentMembers.map(member => (
                                 <Pressable
                                     key={member.id}
                                     style={style.recentMember}
