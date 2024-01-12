@@ -6,6 +6,7 @@ import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import {
     fetchChatMember,
     selectActiveFederationId,
+    selectAuthenticatedMember,
     selectChatClientStatus,
     selectChatMember,
     selectChatMessages,
@@ -22,6 +23,7 @@ import { ChatEmptyState } from './ChatEmptyState'
 import { ChatPaymentDialog } from './ChatPaymentDialog'
 import { HoloLoader } from './HoloLoader'
 import { IconButton } from './IconButton'
+import { Redirect } from './Redirect'
 import { Text } from './Text'
 
 interface Props {
@@ -34,6 +36,7 @@ export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
     const dispatch = useAppDispatch()
     const federationId = useAppSelector(selectActiveFederationId)
     const member = useAppSelector(s => selectChatMember(s, memberId))
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const messages = useAppSelector(s => selectChatMessages(s, memberId))
     const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'
     const [isLoading, setIsLoading] = useState(!member)
@@ -87,6 +90,8 @@ export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
                 <Button onClick={() => back()}>{t('phrases.go-back')}</Button>
             </ChatEmptyState>
         )
+    } else if (authenticatedMember?.id === member.id) {
+        return <Redirect path="/chat" />
     }
 
     return (

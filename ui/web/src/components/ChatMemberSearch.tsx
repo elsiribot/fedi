@@ -9,6 +9,7 @@ import {
     fetchChatMembers,
     selectActiveFederationId,
     selectAllChatMembers,
+    selectAuthenticatedMember,
     selectChatConnectionOptions,
 } from '@fedi/common/redux'
 
@@ -29,8 +30,14 @@ export const ChatMemberSearch: React.FC<Props> = ({ onClickNewGroup }) => {
     const federationId = useAppSelector(selectActiveFederationId)
     const members = useAppSelector(selectAllChatMembers)
     const connectionOptions = useAppSelector(selectChatConnectionOptions)
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+
     const { query, setQuery, searchedMembers, isExactMatch } =
         useChatMemberSearch(members)
+
+    const visibleMembers = searchedMembers.filter(
+        m => m.id !== authenticatedMember?.id,
+    )
 
     useEffect(() => {
         if (!federationId) return
@@ -57,7 +64,7 @@ export const ChatMemberSearch: React.FC<Props> = ({ onClickNewGroup }) => {
                     </SearchButton>
                     <div>
                         <SearchHeading>{t('words.members')}</SearchHeading>
-                        {searchedMembers.map(member => (
+                        {visibleMembers.map(member => (
                             <SearchButton
                                 as={Link}
                                 key={member.id}

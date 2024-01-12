@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     fetchChatMember,
     selectActiveFederationId,
+    selectAuthenticatedMember,
     selectChatClientStatus,
     selectChatConnectionOptions,
     selectChatMember,
@@ -52,6 +53,7 @@ export const OmniMemberSearchList: React.FC<Props> = ({
     const federationId = useAppSelector(selectActiveFederationId)
     const chatDomain = useAppSelector(selectChatConnectionOptions)?.domain
     const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const [isFetchingUnknownMember, setIsFetchingUnknownMember] =
         useState(false)
     const exactMatchMember = useAppSelector(s =>
@@ -62,7 +64,11 @@ export const OmniMemberSearchList: React.FC<Props> = ({
     const [fetchedMember, setFetchedMember] = useState<ChatMember>()
 
     const hasExactMatchMember = !!exactMatchMember
-    const noHistoryMember = exactMatchMember || fetchedMember
+    let noHistoryMember = exactMatchMember || fetchedMember
+
+    if (noHistoryMember?.id === authenticatedMember?.id) {
+        noHistoryMember = undefined
+    }
 
     // If their query is not an exact match, search for a potentially unknown
     // member. Search is debounced to reduce unnecessary searches while typing.
@@ -94,7 +100,6 @@ export const OmniMemberSearchList: React.FC<Props> = ({
                 const member = await dispatch(
                     fetchChatMember({ federationId, memberId }),
                 ).unwrap()
-                if (canceled) return
                 setFetchedMember(member)
             } catch {
                 /* no-op */
