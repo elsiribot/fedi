@@ -349,8 +349,16 @@ export const chatSlice = createSlice({
         ) {
             const { federationId, chatId, timestamp } = action.payload
             const federation = getFederationChatState(state, federationId)
+            let lastSeenMessageTimestamp = federation.lastSeenMessageTimestamp
+            if (
+                lastSeenMessageTimestamp &&
+                timestamp > lastSeenMessageTimestamp
+            ) {
+                lastSeenMessageTimestamp = timestamp
+            }
             state[federationId] = {
                 ...federation,
+                lastSeenMessageTimestamp,
                 lastReadMessageTimestamps: {
                     ...federation.lastReadMessageTimestamps,
                     [chatId]: timestamp,
