@@ -222,7 +222,7 @@ impl ServerModule for StabilityPool {
                         current_cycle
                             .map(|Cycle { index, .. }| index + 1)
                             .unwrap_or_default(),
-                        SystemTime::now(),
+                        fedimint_core::time::now(),
                         price,
                     )]
                 }
