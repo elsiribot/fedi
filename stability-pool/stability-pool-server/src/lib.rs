@@ -36,7 +36,7 @@ use fedimint_core::module::{
     ServerModuleInit, ServerModuleInitArgs, SupportedModuleApiVersions, TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
-use fedimint_core::{Amount, NumPeers, OutPoint, PeerId, ServerModule};
+use fedimint_core::{Amount, NumPeers, OutPoint, PeerId, ServerModule, TransactionId};
 use futures::{stream, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
@@ -768,7 +768,7 @@ async fn apply_staged_cancellations(
                 // Iterate in reverse to ensure older sequences are preserved
                 for LockedSeek {
                     amount,
-                    staged_sequence,
+                    staged_txid,
                     ..
                 } in seeks_list.iter_mut().rev()
                 {
@@ -779,7 +779,7 @@ async fn apply_staged_cancellations(
                     let cancellable = Amount::from_msats(cancellable as u64);
                     *amount -= cancellable;
 
-                    let seek_metadata_key = SeekMetadataKey(*staged_sequence);
+                    let seek_metadata_key = SeekMetadataKey(key.0, *staged_txid);
                     if *amount == Amount::ZERO {
                         dbtx.remove_entry(&seek_metadata_key).await;
                     } else if let Some(mut metadata) = dbtx.get_value(&seek_metadata_key).await {
@@ -1181,15 +1181,16 @@ async fn distribute_fees_and_write_cycle(
         amount: Amount,
         fee: Amount,
     }
-    let mut seek_amount_and_fee_map: BTreeMap<u64, AmountAndFee> = BTreeMap::new();
+    let mut seek_amount_and_fee_map: BTreeMap<(PublicKey, TransactionId), AmountAndFee> =
+        BTreeMap::new();
 
     // Reduce each locked seek by fee amount and calculate total fee pool
     let mut fee_pool = 0u128;
     locked_seeks.iter_mut().for_each(
         |(
-            _,
+            account,
             LockedSeek {
-                staged_sequence,
+                staged_txid,
                 amount,
                 ..
             },
@@ -1200,7 +1201,7 @@ async fn distribute_fees_and_write_cycle(
 
             let fee = Amount::from_msats(fee as u64); // fee guaranteed to fit in u64
             seek_amount_and_fee_map.insert(
-                *staged_sequence,
+                (*account, *staged_txid),
                 AmountAndFee {
                     amount: *amount,
                     fee,
@@ -1211,8 +1212,8 @@ async fn distribute_fees_and_write_cycle(
     );
 
     // Update seek metadatas in database
-    for (sequence, amount_and_fee) in seek_amount_and_fee_map {
-        let seek_metadata_key = SeekMetadataKey(sequence);
+    for ((account, txid), amount_and_fee) in seek_amount_and_fee_map {
+        let seek_metadata_key = SeekMetadataKey(account, txid);
         let seek_metadata = match dbtx.get_value(&seek_metadata_key).await {
             Some(existing) => SeekMetadata {
                 initial_amount: existing.initial_amount,

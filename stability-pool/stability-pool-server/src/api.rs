@@ -63,7 +63,10 @@ pub async fn account_info(dbtx: &mut DatabaseTransaction<'_>, account: PublicKey
     let locked_seeks = {
         let mut locked_seeks_with_metadata = vec![];
         for lock in locked_seeks {
-            let metadata = match dbtx.get_value(&SeekMetadataKey(lock.staged_sequence)).await {
+            let metadata = match dbtx
+                .get_value(&SeekMetadataKey(account, lock.staged_txid))
+                .await
+            {
                 Some(metadata) => metadata,
                 None => Default::default(),
             };

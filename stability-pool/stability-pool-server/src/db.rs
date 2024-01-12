@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::time::SystemTime;
 
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId};
+use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId, TransactionId};
 use secp256k1_zkp::PublicKey;
 use stability_pool_common::{
     CancelRenewal, LockedProvide, LockedSeek, SeekMetadata, StabilityPoolConsensusItem,
@@ -59,7 +59,7 @@ pub enum DbKeyPrefix {
     /// threshold number of votes is received, cycle turnover happens.
     CycleChangeVote,
 
-    /// Sequence => seek metadata.
+    /// (User account, transaction ID) => seek metadata.
     /// Relevant history pertaining to the seek for client tracking purposes.
     /// Contains information such as initial value in sats and cents,
     /// withdrawn amounts in sats and cents, as well as fees debited so far.
@@ -211,7 +211,10 @@ impl_db_lookup!(
 );
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct SeekMetadataKey(pub u64);
+pub struct SeekMetadataKey(pub PublicKey, pub TransactionId);
+
+#[derive(Debug, Encodable, Decodable)]
+pub struct SeekMetadataAccountPrefix(pub PublicKey);
 
 #[derive(Debug, Encodable, Decodable)]
 pub struct SeekMetadataKeyPrefix;
@@ -221,4 +224,8 @@ impl_db_record!(
     value = SeekMetadata,
     db_prefix = DbKeyPrefix::SeekMetadata
 );
-impl_db_lookup!(key = SeekMetadataKey, query_prefix = SeekMetadataKeyPrefix);
+impl_db_lookup!(
+    key = SeekMetadataKey,
+    query_prefix = SeekMetadataAccountPrefix,
+    query_prefix = SeekMetadataKeyPrefix
+);
