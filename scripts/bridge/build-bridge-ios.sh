@@ -85,5 +85,9 @@ fi
 # clean up unneeded files
 rm Sources/Fedi/fediFFI.h
 rm Sources/Fedi/fediFFI.modulemap
+# clean up binary files after copying to the fediFFI framework
+# but keep dependencies so we dont rebuild from scratch
+# shellcheck disable=SC2046
+rm -f $(find $TARGET_DIR/pkg/fedi-ffi -name libfediffi.a | grep -v '/deps/')
 
 echo -e "\x1B[32;1miOS bridge build complete.\x1B[0m"
