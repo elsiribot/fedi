@@ -1834,7 +1834,7 @@ export const selectRecentChatMembers = createSelector(
 )
 
 export const selectChat = createSelector(
-    selectOrderedChatList,
+    (s: CommonState) => selectOrderedChatList(s),
     (_: CommonState, chatId: Chat['id']) => chatId,
     (chats, chatId) => {
         return chats.find(c => c.id === chatId)
