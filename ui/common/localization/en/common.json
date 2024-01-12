@@ -143,6 +143,7 @@
     },
     "errors": {
         "bad-connection": "Your network connection may be unstable. Please try again later or connect to another network.",
+        "browser-feature-not-supported": "Your browser does not support this feature.",
         "camera-unavailable": "Failed to access your camera.",
         "chat-connection-restoring": "Chat connection is unstable or offline. Attempting to restore...",
         "chat-connection-unhealthy": "Chat connection is unstable or offline. Please try again later or restart the app.",
@@ -198,6 +199,7 @@
             "creating-recovery-file": "Creating encrypted recovery file...",
             "file-backup": "File backup",
             "hold-record-button": "Hold the record button and say:",
+            "press-record-button": "Press the record button and say:",
             "personal-backup": "Personal backup",
             "personal-backup-guidance-check-1": "You will write down 12 words which can be used to recover your Federation wallet",
             "personal-backup-guidance-check-2": "Fedi or the Federation does not keep a copy of these recovery words",

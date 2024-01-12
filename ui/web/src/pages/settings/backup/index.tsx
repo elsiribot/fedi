@@ -40,7 +40,11 @@ function BackupPage() {
                             description={t(
                                 'feature.backup.social-backup-instructions',
                             )}
-                            action={<Button disabled>Coming soon</Button>}
+                            action={
+                                <Button href="/settings/backup/social">
+                                    {t('feature.backup.start-social-backup')}
+                                </Button>
+                            }
                         />
                     </ActionCards>
                 </Layout.Content>

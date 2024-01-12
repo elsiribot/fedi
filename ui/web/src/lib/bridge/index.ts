@@ -89,7 +89,7 @@ export async function initializeBridge() {
     })
 }
 
-export async function readFile(path: string) {
+export async function readBridgeFile(path: string) {
     const response = workerRequest<Uint8Array | string>('readFile', { path })
 
     if (typeof response === 'string') {
@@ -111,7 +111,7 @@ export async function readFile(path: string) {
     return response
 }
 
-export async function writeFile(path: string, data: Uint8Array) {
+export async function writeBridgeFile(path: string, data: Uint8Array) {
     const response = workerRequest<boolean | string>('writeFile', {
         path,
         data,
@@ -132,12 +132,6 @@ export async function writeFile(path: string, data: Uint8Array) {
         }
         throw new Error(errMsg)
     }
-}
-
-// TODO: DELETE ME! Just useful for testing.
-if (typeof window !== 'undefined') {
-    ;(window as any).readFile = readFile
-    ;(window as any).writeFile = writeFile
 }
 
 // Expose bridge API to window for testing in development
