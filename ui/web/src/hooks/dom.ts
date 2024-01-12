@@ -1,5 +1,5 @@
 import Router from 'next/router'
-import { useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useUpdatingRef } from '@fedi/common/hooks/util'
@@ -61,4 +61,41 @@ export const useWarnBeforeUnload = (
             Router.events.off('routeChangeStart', beforeRouteHandler)
         }
     }, [shouldWarn, messageRef])
+}
+
+export const useIsOnline = () => {
+    const [isOnline, setIsOnline] = useState(true)
+
+    const handleOnline = useCallback(
+        (e: Event) => {
+            e.preventDefault()
+            if (!isOnline) {
+                setIsOnline(true)
+            }
+        },
+        [isOnline, setIsOnline],
+    )
+
+    /**
+     * Waits for three seconds before updating the state to prevent flickering
+     */
+    const handleOffline = useCallback(() => {
+        setTimeout(() => {
+            if (!navigator.onLine) {
+                setIsOnline(false)
+            }
+        }, 3000)
+    }, [setIsOnline])
+
+    useEffect(() => {
+        window.addEventListener('online', handleOnline)
+        window.addEventListener('offline', handleOffline)
+
+        return () => {
+            window.removeEventListener('online', handleOnline)
+            window.removeEventListener('offline', handleOffline)
+        }
+    }, [handleOnline, handleOffline])
+
+    return isOnline
 }

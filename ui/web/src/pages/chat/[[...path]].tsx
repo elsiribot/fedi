@@ -8,12 +8,17 @@ import { ChatBlock } from '../../components/ChatBlock'
 import { ChatGroupConversation } from '../../components/ChatGroupConversation'
 import { ChatMemberConversation } from '../../components/ChatMemberConversation'
 import { ChatNew } from '../../components/ChatNew'
+import { ChatOfflineIndicator } from '../../components/ChatOfflineIndicator'
 import { Redirect } from '../../components/Redirect'
+import { Text } from '../../components/Text'
+import { useIsOnline } from '../../hooks'
 import { styled, theme } from '../../styles'
 
 function ChatPage() {
     const { t } = useTranslation()
     const { query, isReady } = useRouter()
+
+    const isOnline = useIsOnline()
 
     const [chatType, chatId] = Array.isArray(query.path)
         ? [query.path[0], query.path[1]]
@@ -35,7 +40,14 @@ function ChatPage() {
     } else if (!chatType) {
         isShowingContent = false
         content = (
-            <EmptyMessage>{t('feature.chat.select-or-start')}</EmptyMessage>
+            <Empty>
+                {!isOnline ? (
+                    <OfflineIndicatorContainer>
+                        <ChatOfflineIndicator />
+                    </OfflineIndicatorContainer>
+                ) : null}
+                <Message>{t('feature.chat.select-or-start')}</Message>
+            </Empty>
         )
     } else {
         return <Redirect path="/chat" />
@@ -44,7 +56,8 @@ function ChatPage() {
     return <ChatBlock isShowingContent={isShowingContent}>{content}</ChatBlock>
 }
 
-const EmptyMessage = styled('div', {
+const Empty = styled('div', {
+    position: 'relative',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -52,6 +65,20 @@ const EmptyMessage = styled('div', {
     height: '100%',
     padding: 24,
     color: theme.colors.darkGrey,
+})
+
+const Message = styled(Text, {
+    color: theme.colors.darkGrey,
+})
+
+const OfflineIndicatorContainer = styled('div', {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    padding: '$lg',
+    display: 'flex',
+    justifyContent: 'flex-end',
 })
 
 export default ChatPage

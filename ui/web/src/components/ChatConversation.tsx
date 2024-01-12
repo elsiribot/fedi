@@ -18,10 +18,12 @@ import {
     useAutosizeTextArea,
     useAppSelector,
     useIsTouchScreen,
+    useIsOnline,
 } from '../hooks'
 import { styled, theme } from '../styles'
 import { ChatAvatar } from './ChatAvatar'
 import { ChatMessageCollection } from './ChatMessageCollection'
+import { ChatOfflineIndicator } from './ChatOfflineIndicator'
 import { Icon } from './Icon'
 import { IconButton } from './IconButton'
 import * as Layout from './Layout'
@@ -55,6 +57,7 @@ export const ChatConversation: React.FC<Props> = ({
     const [isSending, setIsSending] = useState(false)
     const isTouchScreen = useIsTouchScreen()
     const inputRef = useRef<HTMLTextAreaElement>(null)
+    const isOnline = useIsOnline()
     useAutosizeTextArea(inputRef.current, value)
 
     const isReadOnly = chat?.broadcastOnly && role === ChatRole.visitor
@@ -119,6 +122,7 @@ export const ChatConversation: React.FC<Props> = ({
                         {name}
                     </Text>
                 </HeaderInfo>
+                {isOnline ? null : <ChatOfflineIndicator />}
                 {headerActions && (
                     <HeaderActions>{headerActions}</HeaderActions>
                 )}
@@ -163,6 +167,7 @@ const HeaderInfo = styled('div', {
     alignItems: 'center',
     gap: 8,
     flexShrink: 0,
+    flexGrow: 1,
 })
 
 const BackButton = styled('div', {
