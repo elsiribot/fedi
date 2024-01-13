@@ -2,7 +2,7 @@ const baseConfig = require('../.eslintrc.js')
 
 module.exports = {
     root: true,
-    extends: ['@react-native', 'prettier', '../.eslintrc.js'],
+    extends: ['@react-native', '../.eslintrc.js'],
     parser: '@typescript-eslint/parser',
     rules: {
         // The react-navigation library used in native takes nested components

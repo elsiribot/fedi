@@ -54,11 +54,14 @@ export const useBridge = () => {
     return {
         approveSocialRecoveryRequest: useCallback(
             (recoveryId: string, peerId: number, password: string) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.approveSocialRecoveryRequest(
                     recoveryId,
                     peerId,
                     password,
-                    activeFederationId!,
+                    activeFederationId,
                 )
             },
             [activeFederationId],
@@ -67,31 +70,46 @@ export const useBridge = () => {
             return fedimint.listFederations()
         }, []),
         leaveFederation: useCallback(() => {
-            return fedimint.leaveFederation(activeFederationId!)
+            if (!activeFederationId)
+                return Promise.reject(new Error('No active federation'))
+
+            return fedimint.leaveFederation(activeFederationId)
         }, [activeFederationId]),
         generateAddress: useCallback(() => {
-            return fedimint.generateAddress(activeFederationId!)
+            if (!activeFederationId)
+                return Promise.reject(new Error('No active federation'))
+
+            return fedimint.generateAddress(activeFederationId)
         }, [activeFederationId]),
         generateEcash: useCallback(
             (amount: MSats) => {
-                return fedimint.generateEcash(amount, activeFederationId!)
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
+                return fedimint.generateEcash(amount, activeFederationId)
             },
             [activeFederationId],
         ),
         generateInvoice: useCallback(
             (amount: MSats, description: string) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.generateInvoice(
                     amount,
                     description,
-                    activeFederationId!,
+                    activeFederationId,
                 )
             },
             [activeFederationId],
         ),
         listTransactions: useCallback(
             (startTime?: number, limit?: number) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.listTransactions(
-                    activeFederationId!,
+                    activeFederationId,
                     startTime,
                     limit,
                 )
@@ -99,87 +117,126 @@ export const useBridge = () => {
             [activeFederationId],
         ),
         guardianStatus: useCallback(() => {
-            return fedimint.guardianStatus(activeFederationId!)
+            if (!activeFederationId)
+                return Promise.reject(new Error('No active federation'))
+
+            return fedimint.guardianStatus(activeFederationId)
         }, [activeFederationId]),
         updateTransactionNotes: useCallback(
             (transactionId: string, notes: string) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.updateTransactionNotes(
                     transactionId,
                     notes,
-                    activeFederationId!,
+                    activeFederationId,
                 )
             },
             [activeFederationId],
         ),
         getNostrPubKey: useCallback(() => {
-            return fedimint.getNostrPubKey(activeFederationId!)
+            if (!activeFederationId)
+                return Promise.reject(new Error('No active federation'))
+
+            return fedimint.getNostrPubKey(activeFederationId)
         }, [activeFederationId]),
         signNostrEvent: useCallback(
             (eventHash: string) => {
-                return fedimint.signNostrEvent(eventHash, activeFederationId!)
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
+                return fedimint.signNostrEvent(eventHash, activeFederationId)
             },
             [activeFederationId],
         ),
         listGateways: useCallback(() => {
-            return fedimint.listGateways(activeFederationId!)
+            if (!activeFederationId)
+                return Promise.reject(new Error('No active federation'))
+
+            return fedimint.listGateways(activeFederationId)
         }, [activeFederationId]),
         switchGateway: useCallback(
             (nodePubKey: string) => {
-                return fedimint.switchGateway(nodePubKey, activeFederationId!)
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
+                return fedimint.switchGateway(nodePubKey, activeFederationId)
             },
             [activeFederationId],
         ),
         locateRecoveryFile: useCallback(() => {
-            return fedimint.locateRecoveryFile(activeFederationId!)
+            if (!activeFederationId)
+                return Promise.reject(new Error('No active federation'))
+
+            return fedimint.locateRecoveryFile(activeFederationId)
         }, [activeFederationId]),
         payInvoice: useCallback(
             (invoice: string) => {
-                return fedimint.payInvoice(invoice, activeFederationId!)
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
+                return fedimint.payInvoice(invoice, activeFederationId)
             },
             [activeFederationId],
         ),
         payAddress: useCallback(
             (address: string, sats: Sats) => {
-                return fedimint.payAddress(address, sats, activeFederationId!)
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
+                return fedimint.payAddress(address, sats, activeFederationId)
             },
             [activeFederationId],
         ),
         receiveEcash: useCallback(
             (ecash: string) => {
-                return fedimint.receiveEcash(ecash, activeFederationId!)
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
+                return fedimint.receiveEcash(ecash, activeFederationId)
             },
             [activeFederationId],
         ),
         socialRecoveryDownloadVerificationDoc: useCallback(
             (recoveryId: string) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.socialRecoveryDownloadVerificationDoc(
                     recoveryId,
-                    activeFederationId!,
+                    activeFederationId,
                 )
             },
             [activeFederationId],
         ),
         validateEcash: useCallback((ecash: string) => {
-            return fedimint.validateEcash(ecash!)
+            return fedimint.validateEcash(ecash)
         }, []),
         uploadBackupFile: useCallback(
             (videoFilePath: string) => {
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
                 return fedimint.uploadBackupFile(
                     videoFilePath,
-                    activeFederationId!,
+                    activeFederationId,
                 )
             },
             [activeFederationId],
         ),
         getXmppCredentials: useCallback(() => {
-            return fedimint.getXmppCredentials(activeFederationId!)
+            if (!activeFederationId)
+                return Promise.reject(new Error('No active federation'))
+
+            return fedimint.getXmppCredentials(activeFederationId)
         }, [activeFederationId]),
         backupXmppUsername: useCallback(
             (username: string) => {
-                return fedimint.backupXmppUsername(
-                    username,
-                    activeFederationId!,
-                )
+                if (!activeFederationId)
+                    return Promise.reject(new Error('No active federation'))
+
+                return fedimint.backupXmppUsername(username, activeFederationId)
             },
             [activeFederationId],
         ),

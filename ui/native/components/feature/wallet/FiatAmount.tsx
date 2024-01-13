@@ -23,7 +23,7 @@ const FiatAmount = ({
 
     let convertedAmount = '0.00'
     if (amountSats) {
-        convertedAmount = convertSatsToFormattedFiat(amountSats!)
+        convertedAmount = convertSatsToFormattedFiat(amountSats)
     }
 
     const mergedTextProps = {

@@ -189,8 +189,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             }
             // Wait for user to interact with alert
             return new Promise(async (resolve, reject) => {
+                if (!activeFederation)
+                    return reject(new Error('No active federation'))
                 // TODO: Hoist this to respect balance changes
-                if (activeFederation!.balance < invoice.amount) {
+                if (activeFederation.balance < invoice.amount) {
                     const message = t('errors.insufficient-balance', {
                         balance: `${amountUtils.msatToSat(
                             activeFederation?.balance as MSats,

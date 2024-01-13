@@ -137,7 +137,10 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
             )
         }
         // Don't allow leaving sats balance is greater than 100
-        else if (amountUtils.msatToSat(activeFederation!.balance) > 100) {
+        else if (
+            activeFederation &&
+            amountUtils.msatToSat(activeFederation.balance) > 100
+        ) {
             Alert.alert(
                 t('feature.federations.leave-federation'),
                 t('feature.federations.leave-federation-withdraw-first'),

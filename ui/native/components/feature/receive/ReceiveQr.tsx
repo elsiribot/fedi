@@ -30,15 +30,22 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({ uri, type }: ReceiveQrProps) => {
     const { toast } = useEnvironmentContext().state
 
     const copyToClipboard = () => {
-        Clipboard.setString(uri.fullString!)
+        if (!uri.fullString) return
+
+        Clipboard.setString(uri.fullString)
         toast?.show(t('feature.receive.copied-payment-code'))
     }
 
     const openShareDialog = async () => {
         // open share dialog
         try {
+            if (!uri.fullString)
+                throw new Error(
+                    'Share Dialog could not be opened since uri.fullString is undefined',
+                )
+
             const result = await Share.share({
-                message: uri.fullString!,
+                message: uri.fullString,
             })
             log.info('openShareDialog result', result)
         } catch (error) {
@@ -71,11 +78,13 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({ uri, type }: ReceiveQrProps) => {
     return (
         <View style={styles(theme).container}>
             <Card containerStyle={styles(theme).roundedCardContainer}>
-                <QRCode
-                    value={uri.fullString!}
-                    size={QR_CODE_SIZE}
-                    logo={Images.FediQrLogo}
-                />
+                {uri.fullString && (
+                    <QRCode
+                        value={uri.fullString}
+                        size={QR_CODE_SIZE}
+                        logo={Images.FediQrLogo}
+                    />
+                )}
                 <View style={styles(theme).uriInfoContainer}>
                     <Text style={styles(theme).uriTypeText}>
                         {type === BitcoinOrLightning.lightning

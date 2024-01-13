@@ -552,11 +552,13 @@ const DeveloperSettings: React.FC<Props> = () => {
                     title="Reset username"
                     containerStyle={styles(theme).buttonContainer}
                     onPress={() => {
-                        reduxDispatch(
-                            resetAuthenticatedMember({
-                                federationId: activeFederation?.id!,
-                            }),
-                        )
+                        if (activeFederation) {
+                            reduxDispatch(
+                                resetAuthenticatedMember({
+                                    federationId: activeFederation.id,
+                                }),
+                            )
+                        }
                     }}
                 />
             </SettingsSection>

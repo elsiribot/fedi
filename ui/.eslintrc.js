@@ -11,6 +11,7 @@ module.exports = {
             'error',
             { argsIgnorePattern: '^_' },
         ],
+        '@typescript-eslint/no-non-null-assertion': 'error',
         'no-restricted-imports': [
             'error',
             {
@@ -24,6 +25,12 @@ module.exports = {
             },
         ],
     },
+    extends: [
+        // TODO: Enable this in a followup PR after fixing non-null assersion errors
+        // 'eslint:recommended',
+        // 'plugin:@typescript-eslint/recommended',
+        'prettier',
+    ],
     overrides: [
         {
             files: ['*.ts', '*.tsx'],
