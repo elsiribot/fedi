@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 
-const ReceiveLightningHeader: React.FC<{}> = () => {
+const ReceiveLightningHeader: React.FC = () => {
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
     const { routes } = navigation.getState()

@@ -14,7 +14,7 @@ import { NavigationHook } from '../../../types/navigation'
 import SvgImage from '../../ui/SvgImage'
 import { CurrencyAvatar } from './CurrencyAvatar'
 
-const StabilityWallet: React.FC<{}> = () => {
+const StabilityWallet: React.FC = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()

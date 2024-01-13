@@ -133,23 +133,22 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             /* no-op */
             log.info('webln.enable')
         },
-        [InjectionMessageType.webln_getInfo]: () => {
+        [InjectionMessageType.webln_getInfo]: async () => {
             log.info('webln.getInfo')
-            return new Promise(async (resolve, reject) => {
-                const alias = authenticatedMember?.username || ''
-                let pubkey = ''
-                try {
-                    const gateway = await getActiveGatewayOrThrow()
 
-                    if (gateway) {
-                        pubkey = gateway.nodePubKey
-                    }
-                    resolve({ node: { alias, pubkey } })
-                } catch (err) {
-                    log.warn('Failed to list gateways for webln getInfo', err)
-                    reject(t('errors.no-lightning-gateways'))
+            const alias = authenticatedMember?.username || ''
+            let pubkey = ''
+            try {
+                const gateway = await getActiveGatewayOrThrow()
+
+                if (gateway) {
+                    pubkey = gateway.nodePubKey
                 }
-            })
+                return { node: { alias, pubkey } }
+            } catch (err) {
+                log.warn('Failed to list gateways for webln getInfo', err)
+                throw new Error(t('errors.no-lightning-gateways'))
+            }
         },
         [InjectionMessageType.webln_makeInvoice]: async data => {
             log.info('webln.makeInvoice', data)
@@ -157,7 +156,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             await getActiveGatewayOrThrow()
 
             // Wait for user to interact with alert
-            return new Promise(async (resolve, reject) => {
+            return new Promise((resolve, reject) => {
                 // Save these refs to we can resolve / reject elsewhere
                 overlayRejectRef.current = reject
                 overlayResolveRef.current =
@@ -188,7 +187,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 throw Error(t('phrases.failed-to-decode-invoice'))
             }
             // Wait for user to interact with alert
-            return new Promise(async (resolve, reject) => {
+            return new Promise((resolve, reject) => {
                 if (!activeFederation)
                     return reject(new Error('No active federation'))
                 // TODO: Hoist this to respect balance changes
@@ -235,20 +234,18 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         },
         [InjectionMessageType.nostr_getPublicKey]: async () => {
             log.info('nostr.getPublicKey')
-            return new Promise(async (resolve, reject) => {
-                try {
-                    const pub_key = await getNostrPubKey()
-                    resolve(pub_key)
-                } catch (err) {
-                    log.warn('nostr.getPublicKey', err)
-                    reject(t('errors.get-nostr-pubkey-failed'))
-                }
-            })
+            try {
+                const pub_key = await getNostrPubKey()
+                return pub_key
+            } catch (err) {
+                log.warn('nostr.getPublicKey', err)
+                throw new Error(t('errors.get-nostr-pubkey-failed'))
+            }
         },
         [InjectionMessageType.nostr_signEvent]: async evt => {
             log.info('nostr.signEvent', evt)
             // Wait for user to approve signing
-            return new Promise<SignedNostrEvent>(async (resolve, reject) => {
+            return new Promise<SignedNostrEvent>((resolve, reject) => {
                 overlayRejectRef.current = reject
                 overlayResolveRef.current =
                     resolve as FediModResolver<FediModResponse>

@@ -30,9 +30,9 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
     const { toast } = useEnvironmentContext().state
     const { theme } = useTheme()
     const [cameraPermissionGranted, setCameraPermissionGranted] =
-        useState<Boolean>(false)
+        useState<boolean>(false)
     const [microphonePermissionGranted, setMicrophonePermissionGranted] =
-        useState<Boolean>(false)
+        useState<boolean>(false)
     const [isRequestingPermission, setIsRequestingPermission] = useState(false)
 
     useEffect(() => {

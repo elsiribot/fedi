@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 /**
  * Metro configuration
  * https://facebook.github.io/metro/docs/configuration

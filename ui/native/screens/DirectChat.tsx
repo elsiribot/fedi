@@ -38,7 +38,7 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
     useEffect(() => {
         if (memberId && !memberId.includes('@') && connectionOptions) {
             const { domain } = connectionOptions
-            let fullMemberId = `${memberId}@${domain}`
+            const fullMemberId = `${memberId}@${domain}`
             navigation.setParams({
                 memberId: fullMemberId,
             })

@@ -6,7 +6,7 @@ import { Dimensions, ImageBackground, StyleSheet, View } from 'react-native'
 import { Images } from '../../../assets/images'
 
 // TODO: Render within wallet if social recovery is in progress
-const SocialRecoveryProcessing: React.FC<{}> = () => {
+const SocialRecoveryProcessing: React.FC = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 

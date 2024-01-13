@@ -29,14 +29,12 @@ const GroupInvite: React.FC<Props> = ({ route }: Props) => {
 
     useEffect(() => {
         const handleJoinGroup = async () => {
-            try {
-                await dispatch(
-                    joinChatGroup({
-                        federationId: activeFederationId as string,
-                        link: groupId,
-                    }),
-                ).unwrap()
-            } catch (error) {}
+            await dispatch(
+                joinChatGroup({
+                    federationId: activeFederationId as string,
+                    link: groupId,
+                }),
+            )
         }
         handleJoinGroup()
     }, [activeFederationId, dispatch, groupId])

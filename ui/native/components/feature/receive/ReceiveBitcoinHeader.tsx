@@ -5,7 +5,7 @@ import { StyleSheet } from 'react-native'
 
 import Header from '../../ui/Header'
 
-const ReceiveBitcoinHeader: React.FC<{}> = () => {
+const ReceiveBitcoinHeader: React.FC = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 

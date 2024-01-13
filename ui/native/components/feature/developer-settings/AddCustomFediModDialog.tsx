@@ -65,7 +65,7 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
                 fetchedIcon && setImageUrl(fetchedIcon)
             }
             if (url) {
-                let validUrl = new URL(url).toString()
+                const validUrl = new URL(url).toString()
                 if (validUrl.startsWith('http')) {
                     populateFieldsWithMetadata(validUrl)
                 }
@@ -78,7 +78,7 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
     const handleSubmit = async () => {
         if (!federationId) return
         try {
-            let validUrl = new URL(url).toString()
+            const validUrl = new URL(url).toString()
             if (validUrl.startsWith('http')) {
                 const newFediMod = {
                     id: `custom-${Date.now()}`,
@@ -119,7 +119,7 @@ export const AddCustomFediModDialog: React.FC<Props> = ({
                     placeholder={t('feature.fedimods.fedimod-url')}
                     value={url}
                     onChangeText={text => {
-                        let trimmedText = text.trim()
+                        const trimmedText = text.trim()
 
                         // Check if the user only entered a protocol
                         if (

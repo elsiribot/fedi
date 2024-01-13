@@ -113,7 +113,7 @@ async function exportBridgeLogs() {
 }
 
 function asyncStreamFile(path: string, encoding: 'utf8' | 'base64') {
-    return new Promise<string>(async (resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
         let content = ''
         RNFB.fs
             .readStream(

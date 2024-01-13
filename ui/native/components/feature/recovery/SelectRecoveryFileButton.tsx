@@ -16,7 +16,7 @@ import { NavigationHook } from '../../../types/navigation'
 
 const log = makeLog('SelectRecoveryFileButton')
 
-const SelectRecoveryFileButton: React.FC<{}> = () => {
+const SelectRecoveryFileButton: React.FC = () => {
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
     const [validationInProgress, setValidationInProgress] =

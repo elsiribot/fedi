@@ -4,7 +4,7 @@ import React from 'react'
 import { Images } from '../../../assets/images'
 import Header from '../../ui/Header'
 
-const EulaHeader: React.FC<{}> = () => {
+const EulaHeader: React.FC = () => {
     return (
         <Header
             backButton

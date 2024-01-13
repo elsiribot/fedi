@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const AddBroadcastAdminHeader: React.FC<{}> = () => {
+const AddBroadcastAdminHeader: React.FC = () => {
     const { t } = useTranslation()
 
     return (

@@ -13,7 +13,7 @@ import ChatTile from './ChatTile'
 
 const WINDOW_WIDTH = Dimensions.get('window').width
 
-const ChatsList: React.FC<{}> = () => {
+const ChatsList: React.FC = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
 

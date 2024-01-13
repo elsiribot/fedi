@@ -32,7 +32,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
         async (input: string) => {
             if (downloading) return
             try {
-                let qr: SocialRecoveryQrCode = JSON.parse(input)
+                const qr: SocialRecoveryQrCode = JSON.parse(input)
                 if (!qr)
                     throw new Error(
                         'Recovery QR should always exist in this context',
@@ -40,9 +40,10 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                 try {
                     setDownloading(true)
                     // FIXME: this is getting called over-and-over
-                    let videoPath = await socialRecoveryDownloadVerificationDoc(
-                        qr.recoveryId,
-                    )
+                    const videoPath =
+                        await socialRecoveryDownloadVerificationDoc(
+                            qr.recoveryId,
+                        )
                     if (videoPath == null) {
                         toast?.show(
                             t('feature.recovery.nothing-to-download'),

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const ReceiveBitcoinOfflineHeader: React.FC<{}> = () => {
+const ReceiveBitcoinOfflineHeader: React.FC = () => {
     const { t } = useTranslation()
 
     return (

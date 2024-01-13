@@ -13,9 +13,8 @@ export * from '@fedi/common/types'
 
 export default class Base {
     constructor(data?: any) {
-        Object.keys(data).forEach((field: any) => {
-            // @ts-ignore
-            this[field] = data[field]
+        Object.keys(data).forEach(field => {
+            this[field as keyof typeof this] = data[field]
         })
     }
 }
@@ -161,7 +160,7 @@ export type GroupSettings = {
 
 export class Member extends Base {
     jid: JID
-    publicKeyHex?: String
+    publicKeyHex?: string
     constructor(data: any) {
         super(data)
         this.jid = jid(data.jid._local, data.jid._domain, data.jid._resource)
@@ -194,7 +193,7 @@ export class Message extends Base {
 // May need to make stricter types for this...
 export type MessageAction = {
     text: string
-    handler: () => {}
+    handler: () => void
 }
 
 export class Payment extends Base {

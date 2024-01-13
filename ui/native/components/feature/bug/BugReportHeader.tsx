@@ -2,7 +2,7 @@ import React from 'react'
 
 import Header from '../../ui/Header'
 
-const BugReportHeader: React.FC<{}> = () => {
+const BugReportHeader: React.FC = () => {
     return <Header backButton />
 }
 

@@ -14,7 +14,7 @@ import { Screen, Shortcut, FediMod } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import ShortcutTile from './ShortcutTile'
 
-const ShortcutsList: React.FC<{}> = () => {
+const ShortcutsList: React.FC = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()

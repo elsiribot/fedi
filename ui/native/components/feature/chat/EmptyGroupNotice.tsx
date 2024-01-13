@@ -10,7 +10,7 @@ import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type GroupChatRouteProp = GroupChatProps['route']
 
-const EmptyGroupNotice: React.FC<{}> = () => {
+const EmptyGroupNotice: React.FC = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()

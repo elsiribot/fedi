@@ -32,8 +32,8 @@ const log = makeLog('AnimatedQrCodeScannerLegacy')
 
 type QrCodeScanner = {
     device: CameraDevice
-    onQrCodeDetected: Function
-    onProgress: Function
+    onQrCodeDetected: (data: string) => void
+    onProgress: (progress: number) => void
 }
 
 const QrCodeScanner = ({

@@ -22,7 +22,7 @@ import { FederationLogo } from '../../ui/FederationLogo'
 import SvgImage from '../../ui/SvgImage'
 import { PopupFederationCountdown } from './PopupFederationCountdown'
 
-const SelectedFederationHeader: React.FC<{}> = () => {
+const SelectedFederationHeader: React.FC = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()

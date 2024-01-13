@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const DepositInitiatedHeader: React.FC<{}> = () => {
+const DepositInitiatedHeader: React.FC = () => {
     const { t } = useTranslation()
 
     return (
