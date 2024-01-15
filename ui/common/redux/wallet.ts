@@ -10,6 +10,7 @@ import {
     CommonState,
     fetchCurrencyPrices,
     selectActiveFederation,
+    selectActiveFederationId,
     selectBtcExchangeRate,
     selectBtcUsdExchangeRate,
     selectFederationBalance,
@@ -37,6 +38,7 @@ type FederationPayloadAction<T = object> = PayloadAction<
 
 const initialFederationWalletState = {
     stabilityPoolAccountInfo: null as RpcStabilityPoolAccountInfo | null,
+    cycleStartPrice: null as number | null,
 }
 type FederationWalletState = typeof initialFederationWalletState
 
@@ -92,6 +94,18 @@ export const walletSlice = createSlice({
                 }
             },
         )
+
+        builder.addCase(
+            fetchStabilityPoolCycleStartPrice.fulfilled,
+            (state, action) => {
+                const { federationId } = action.meta.arg
+                const federation = getFederationWalletState(state, federationId)
+                state[federationId] = {
+                    ...federation,
+                    cycleStartPrice: action.payload,
+                }
+            },
+        )
     },
 })
 
@@ -126,6 +140,21 @@ export const fetchStabilityPoolAccountInfo = createAsyncThunk<
     },
 )
 
+export const fetchStabilityPoolCycleStartPrice = createAsyncThunk<
+    number,
+    { fedimint: FedimintBridge; federationId: string }
+>(
+    'wallet/fetchStabilityPoolCycleStartPrice',
+    async ({ fedimint, federationId }) => {
+        const priceCents = await fedimint.stabilityPoolCycleStartPrice(
+            federationId,
+        )
+        const price = Number(priceCents) / 100
+        log.info('stabilityPoolCycleStartPrice', { price })
+        return price
+    },
+)
+
 export const refreshActiveStabilityPool = createAsyncThunk<
     void,
     { fedimint: FedimintBridge },
@@ -139,6 +168,7 @@ export const refreshActiveStabilityPool = createAsyncThunk<
         // Make sure we have the latest exchange rates every time we refresh stabilitypool
         // so deposits/withdrawal amount conversions are as accurate as possible
         dispatch(fetchCurrencyPrices())
+        dispatch(fetchStabilityPoolCycleStartPrice({ fedimint, federationId }))
 
         await dispatch(
             fetchStabilityPoolAccountInfo({
@@ -348,8 +378,15 @@ export const decreaseStableBalance = createAsyncThunk<
 
 /*** Selectors ***/
 
-const selectFederationWalletState = (s: CommonState) =>
-    getFederationWalletState(s.wallet, s.federation.activeFederationId || '')
+const selectFederationWalletState = (
+    s: CommonState,
+    federationId?: Federation['id'],
+) => {
+    if (!federationId) {
+        federationId = selectActiveFederationId(s)
+    }
+    return getFederationWalletState(s.wallet, federationId || '')
+}
 
 export const selectStabilityPoolAccountInfo = (s: CommonState) =>
     selectFederationWalletState(s).stabilityPoolAccountInfo
@@ -727,3 +764,15 @@ export const selectMaximumAPR = createSelector(
         return Number(maxFeePercentage)
     },
 )
+
+export const selectStabilityPoolCycleStartPrice = (
+    s: CommonState,
+    federationId?: Federation['id'],
+) => {
+    if (!federationId) {
+        federationId = selectActiveFederationId(s)
+    }
+    return federationId
+        ? selectFederationWalletState(s, federationId).cycleStartPrice
+        : null
+}

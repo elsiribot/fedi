@@ -61,6 +61,16 @@ export class FedimintBridge {
         >('stabilityPoolAccountInfo', { federationId })
     }
 
+    async stabilityPoolCycleStartPrice(federationId: string) {
+        return this.rpcTyped('stabilityPoolCycleStartPrice', { federationId })
+    }
+
+    async stabilityPoolNextCycleStartTime(federationId: string) {
+        return this.rpcTyped('stabilityPoolNextCycleStartTime', {
+            federationId,
+        })
+    }
+
     async listTransactions(
         federationId: string,
         startTime?: number,

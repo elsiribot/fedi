@@ -74,17 +74,6 @@ export interface RpcEcashInfo {
     federationId: RpcFederationId | null
 }
 
-export type RpcFederationId = string
-
-export interface RpcFederationPreview {
-    id: RpcFederationId
-    name: string
-    meta: Record<string, string>
-    inviteCode: string
-    version: number
-    returningMemberStatus: RpcReturningMemberStatus
-}
-
 export interface RpcFederation {
     balance: RpcAmount
     id: RpcFederationId
@@ -96,6 +85,17 @@ export interface RpcFederation {
     nodes: Record<string, { url: string; name: string }>
     version: number
     clientConfig: RpcJsonClientConfig | null
+}
+
+export type RpcFederationId = string
+
+export interface RpcFederationPreview {
+    id: RpcFederationId
+    name: string
+    meta: Record<string, string>
+    inviteCode: string
+    version: number
+    returningMemberStatus: RpcReturningMemberStatus
 }
 
 export interface RpcGenerateEcashResponse {
@@ -358,6 +358,8 @@ export interface RpcMethods {
             lockedSeeks: Array<RpcLockedSeek>
         },
     ]
+    stabilityPoolNextCycleStartTime: [{ federationId: RpcFederationId }, bigint]
+    stabilityPoolCycleStartPrice: [{ federationId: RpcFederationId }, bigint]
     stabilityPoolDepositToSeek: [
         { federationId: RpcFederationId; amount: RpcAmount },
         string,
@@ -373,6 +375,16 @@ export interface RpcMethods {
     getSensitiveLog: [{}, boolean]
     setSensitiveLog: [{ enable: boolean }, null]
 }
+
+export type RpcOOBSpendState =
+    | { type: 'created' }
+    | { type: 'userCanceledProcessing' }
+    | { type: 'userCanceledSuccess' }
+    | { type: 'userCanceledFailure' }
+    | { type: 'refunded' }
+    | { type: 'success' }
+
+export type RpcOOBState = { type: 'spend' } & RpcOOBSpendState
 
 export type RpcOnchainDepositState =
     | { type: 'waitingForTransaction' }
@@ -391,16 +403,6 @@ export type RpcOnchainWithdrawState =
     | { type: 'created' }
     | { type: 'succeeded' }
     | { type: 'failed' }
-
-export type RpcOOBSpendState =
-    | { type: 'created' }
-    | { type: 'userCanceledProcessing' }
-    | { type: 'userCanceledSuccess' }
-    | { type: 'userCanceledFailure' }
-    | { type: 'refunded' }
-    | { type: 'success' }
-
-export type RpcOOBState = { type: 'spend' } & RpcOOBSpendState
 
 export type RpcOperationId = string
 
@@ -442,8 +444,6 @@ export interface RpcStabilityPoolConfig {
     min_allowed_cancellation_bps: number | null
 }
 
-export type RpcTransactionDirection = 'receive' | 'send'
-
 export interface RpcTransaction {
     id: string
     createdAt: number
@@ -457,6 +457,8 @@ export interface RpcTransaction {
     oobState: RpcOOBState | null
     onchainWithdrawalDetails: WithdrawalDetails | null
 }
+
+export type RpcTransactionDirection = 'receive' | 'send'
 
 export interface RpcXmppCredentials {
     password: string

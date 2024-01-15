@@ -30,6 +30,8 @@ import {
     resetNuxSteps,
     selectShowFiatTxnAmounts,
     setShowFiatTxnAmounts,
+    selectStabilityPoolCycleStartPrice,
+    refreshActiveStabilityPool,
 } from '@fedi/common/redux'
 import {
     changeSelectedFiatCurrency,
@@ -89,6 +91,9 @@ const DeveloperSettings: React.FC<Props> = () => {
     const onchainDepositsEnabled = useAppSelector(selectOnchainDepositsEnabled)
     const stableBalanceEnabled = useAppSelector(selectStableBalanceEnabled)
     const showFiatTxnAmounts = useAppSelector(selectShowFiatTxnAmounts)
+    const spBtcUsdPrice = useAppSelector(selectStabilityPoolCycleStartPrice)
+    const apiBtcUsdPrice = useAppSelector(s => s.currency.btcUsdRate)
+    const apiFiatUsdPrices = useAppSelector(s => s.currency.fiatUsdRates)
 
     // This is a partial refactor of state management from context to redux
     const reduxDispatch = useAppDispatch()
@@ -129,6 +134,10 @@ const DeveloperSettings: React.FC<Props> = () => {
 
         getGatewaysList()
     }, [toast, listGateways, t])
+
+    useEffect(() => {
+        reduxDispatch(refreshActiveStabilityPool({ fedimint }))
+    }, [reduxDispatch])
 
     const handleSelectGateway = async (gateway: LightningGateway) => {
         try {
@@ -318,6 +327,30 @@ const DeveloperSettings: React.FC<Props> = () => {
                     />
                 ))}
             </SettingsSection>
+            <SettingsSection title="Exchange rates">
+                <View style={styles(theme).exchangeRate}>
+                    <Text caption medium>
+                        USD/BTC (Stability pool):
+                    </Text>
+                    <Text caption>{spBtcUsdPrice || 'N/A'}</Text>
+                </View>
+                <View style={styles(theme).exchangeRate}>
+                    <Text caption medium>
+                        USD/BTC (API):
+                    </Text>
+                    <Text caption>{apiBtcUsdPrice}</Text>
+                </View>
+                {selectedFiatCurrency !== SupportedCurrency.USD && (
+                    <View style={styles(theme).exchangeRate}>
+                        <Text caption medium>
+                            {selectedFiatCurrency}/USD (API):{' '}
+                        </Text>
+                        <Text caption>
+                            {apiFiatUsdPrices[selectedFiatCurrency] || 'N/A'}
+                        </Text>
+                    </View>
+                )}
+            </SettingsSection>
             <SettingsSection title="Change your lightning gateway">
                 {isLoadingGateways && <ActivityIndicator />}
                 {gateways.map((gw: LightningGateway, index: number) => (
@@ -484,6 +517,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     )
                 })}
             </SettingsSection>
+
             <SettingsSection title="Danger zone">
                 <Button
                     title="Reset new user experience"
@@ -643,6 +677,12 @@ const styles = (theme: Theme) =>
         },
         timeoutStatus: {
             color: 'orange',
+        },
+        exchangeRate: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+            marginBottom: theme.spacing.xs,
         },
     })
 
