@@ -64,6 +64,9 @@ if [[ $GITHUB_REF == refs/heads/release/* ]]; then
   echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
   echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_OUTPUT
   git add package.json android/app/build.gradle ios/ && git commit -m "chore: bump version for ${NEW_VERSION}" && git push
+  # remove unstaged changes
+  rm $REPO_ROOT/ui/package-lock.json
+  git restore $REPO_ROOT
 else
   echo "Not on a release branch. Don't push version commit."
 fi
