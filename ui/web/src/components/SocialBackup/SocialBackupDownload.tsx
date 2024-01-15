@@ -27,7 +27,10 @@ export const SocialBackupDownload: React.FC<Props> = ({ backupBlob }) => {
         hiddenElement.href = url
         hiddenElement.download = 'backup.fedi'
         hiddenElement.click()
-        setHasSaved(true)
+        // Slight delay so that this triggers after the browser shows it's downloading
+        setTimeout(() => {
+            setHasSaved(true)
+        }, 500)
     }
 
     const handleComplete = () => {
@@ -50,7 +53,7 @@ export const SocialBackupDownload: React.FC<Props> = ({ backupBlob }) => {
                     </Text>
                 </Content>
             </Layout.Content>
-            <Layout.Actions css={{ minHeight: 160 }}>
+            <Layout.Actions>
                 <Button
                     variant={hasSaved ? 'tertiary' : 'primary'}
                     width="full"

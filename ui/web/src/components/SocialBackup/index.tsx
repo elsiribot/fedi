@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import { selectActiveFederationId } from '@fedi/common/redux'
 
@@ -11,7 +10,6 @@ import { SocialBackupRecord } from './SocialBackupRecord'
 import { SocialBackupUpload } from './SocialBackupUpload'
 
 export const SocialBackup: React.FC = () => {
-    const { t } = useTranslation()
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const [step, setStep] = useState<
         'intro' | 'record' | 'upload' | 'download' | 'complete'
@@ -59,12 +57,5 @@ export const SocialBackup: React.FC = () => {
         setVideoBlob(null)
     }, [needsReset])
 
-    return (
-        <Layout.Root>
-            <Layout.Header>
-                <Layout.Title>{t('feature.backup.social-backup')}</Layout.Title>
-            </Layout.Header>
-            {content}
-        </Layout.Root>
-    )
+    return <Layout.Root>{content}</Layout.Root>
 }

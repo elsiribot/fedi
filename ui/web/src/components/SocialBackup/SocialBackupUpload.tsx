@@ -29,6 +29,8 @@ export const SocialBackupUpload: React.FC<Props> = ({ videoBlob, next }) => {
     const { t } = useTranslation()
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const [error, setError] = useState<unknown>()
+    const [backupBlob, setBackupBlob] = useState<Blob>()
+    const [hasWaited, setHasWaited] = useState(false)
     const nextRef = useUpdatingRef(next)
 
     useEffect(() => {
@@ -52,7 +54,7 @@ export const SocialBackupUpload: React.FC<Props> = ({ videoBlob, next }) => {
                 const blob = new Blob([file], {
                     type: 'application/octet-stream',
                 })
-                nextRef.current(blob)
+                setBackupBlob(blob)
             } catch (err) {
                 log.error('failed to upload backup video', err)
                 setError(err)
@@ -60,6 +62,20 @@ export const SocialBackupUpload: React.FC<Props> = ({ videoBlob, next }) => {
         }
         upload()
     }, [activeFederationId, videoBlob, error, nextRef])
+
+    useEffect(() => {
+        // TODO: Remove this minimum timeout until uploadBackupFile actually
+        // waits on full upload, currently it's just a background task.
+        const timeout = setTimeout(() => {
+            setHasWaited(true)
+        }, 2000)
+        return () => clearTimeout(timeout)
+    }, [])
+
+    useEffect(() => {
+        if (!backupBlob || !hasWaited) return
+        nextRef.current(backupBlob)
+    }, [backupBlob, hasWaited, nextRef])
 
     return (
         <>
@@ -80,8 +96,8 @@ export const SocialBackupUpload: React.FC<Props> = ({ videoBlob, next }) => {
                     </Error>
                 ) : (
                     <Content>
-                        <HoloLoader size="xl" />
-                        <Text variant="h2">
+                        <HoloLoader size={180} />
+                        <Text variant="h2" weight="medium">
                             {t('feature.backup.creating-recovery-file')}
                         </Text>
                     </Content>
