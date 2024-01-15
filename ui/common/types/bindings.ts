@@ -19,6 +19,7 @@ export interface BalanceEvent {
 
 export type ErrorCode =
     | 'initializationFailed'
+    | 'notInialized'
     | 'badRequest'
     | 'alreadyJoined'
     | 'invalidInvoice'
@@ -284,6 +285,7 @@ export interface RpcMethods {
             lightning: RpcLightningDetails | null
             oobState: RpcOOBState | null
             onchainWithdrawalDetails: WithdrawalDetails | null
+            stabilityPoolState: RpcStabilityPoolTransactionState | null
         }>,
     ]
     updateTransactionNotes: [
@@ -444,6 +446,16 @@ export interface RpcStabilityPoolConfig {
     min_allowed_cancellation_bps: number | null
 }
 
+export type RpcStabilityPoolTransactionState =
+    | { type: 'pendingDeposit' }
+    | {
+          type: 'completeDeposit'
+          initial_amount_cents: bigint
+          fees_paid_so_far: RpcAmount
+      }
+    | { type: 'pendingWithdrawal'; estimated_withdrawal_cents: bigint }
+    | { type: 'completeWithdrawal'; estimated_withdrawal_cents: bigint }
+
 export interface RpcTransaction {
     id: string
     createdAt: number
@@ -456,6 +468,7 @@ export interface RpcTransaction {
     lightning: RpcLightningDetails | null
     oobState: RpcOOBState | null
     onchainWithdrawalDetails: WithdrawalDetails | null
+    stabilityPoolState: RpcStabilityPoolTransactionState | null
 }
 
 export type RpcTransactionDirection = 'receive' | 'send'
