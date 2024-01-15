@@ -135,6 +135,26 @@ export interface StoredStateV13 extends Omit<StoredStateV12, 'version'> {
     showFiatTxnAmounts?: boolean
 }
 
+export interface StoredStateV14
+    extends Omit<StoredStateV13, 'version' | 'chat'> {
+    version: 14
+    chat: Record<
+        Federation['id'],
+        | {
+              authenticatedMember: ChatMember | null
+              messages: ChatMessage[]
+              groups: ChatGroup[]
+              groupRoles?: Record<ChatGroup['id'], string | undefined>
+              groupAffiliations: Record<ChatGroup['id'], string | undefined>
+              members: ChatMember[]
+              lastFetchedMessageId: string | null
+              lastReadMessageTimestamps: Record<Chat['id'], number | undefined>
+              lastSeenMessageTimestamp: number | null
+          }
+        | undefined
+    >
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -151,9 +171,10 @@ export type AnyStoredState =
     | StoredStateV11
     | StoredStateV12
     | StoredStateV13
+    | StoredStateV14
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV13
+export type LatestStoredState = StoredStateV14
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

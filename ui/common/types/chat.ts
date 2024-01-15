@@ -37,7 +37,6 @@ export interface ChatWithLatestMessage extends Chat {
     latestMessage?: ChatMessage
     hasNewMessages: boolean
     latestPaymentUpdate?: ChatMessage
-    hasNewPaymentUpdates: boolean
 }
 
 export enum ChatMessageStatus {

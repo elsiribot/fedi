@@ -69,11 +69,7 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     )
 
     // Use this hook only if the screen is in focus
-    useUpdateLastMessageRead(
-        groupId,
-        messageCollections[0]?.[0]?.[0],
-        isFocused !== true,
-    )
+    useUpdateLastMessageRead(groupId, messages, isFocused !== true)
 
     const handleSend = async (messageText: string) => {
         if (!federationId) return

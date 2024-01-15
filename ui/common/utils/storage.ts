@@ -1,4 +1,5 @@
 import get from 'lodash/get'
+import omit from 'lodash/omit'
 
 import { CommonState } from '../redux'
 import { Chat } from '../types'
@@ -7,6 +8,7 @@ import {
     LatestStoredState,
     StorageApi,
     StoredStateV10,
+    StoredStateV14,
     StoredStateV2,
     StoredStateV3,
     StoredStateV4,
@@ -25,7 +27,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
-        version: 13,
+        version: 14,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
@@ -51,12 +53,10 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
                         groupAffiliations: chatState.groupAffiliations,
                         members: chatState.membersSeen,
                         lastFetchedMessageId: chatState.lastFetchedMessageId,
-                        lastReadMessageIds: chatState.lastReadMessageIds,
-                        lastReadPaymentUpdateIds:
-                            chatState.lastReadPaymentUpdateIds,
-                        lastSeenMessageId: chatState.lastSeenMessageId,
-                        lastSeenPaymentUpdateId:
-                            chatState.lastSeenPaymentUpdateId,
+                        lastReadMessageTimestamps:
+                            chatState.lastReadMessageTimestamps,
+                        lastSeenMessageTimestamp:
+                            chatState.lastSeenMessageTimestamp,
                     }
                 }
                 return stored
@@ -120,17 +120,15 @@ export function hasStorageStateChanged(
             activeFederationId,
             'lastFetchedMessageId',
         ])
-        keysetsToCheck.push(['chat', activeFederationId, 'lastReadMessageIds'])
-        keysetsToCheck.push(['chat', activeFederationId, 'lastSeenMessageId'])
         keysetsToCheck.push([
             'chat',
             activeFederationId,
-            'lastSeenPaymentUpdateId',
+            'lastReadMessageTimestamps',
         ])
         keysetsToCheck.push([
             'chat',
             activeFederationId,
-            'lastReadPaymentUpdateIds',
+            'lastSeenMessageTimestamp',
         ])
     }
 
@@ -387,6 +385,97 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
             ...migrationState,
             version: 13,
             showFiatTxnAmounts: true,
+        }
+    }
+
+    // Version 13 -> 14
+    if (migrationState.version === 13) {
+        const oldChat = migrationState.chat
+        const newChat = Object.entries(oldChat).reduce(
+            (prevChat, [federationId, chatState]) => {
+                if (!chatState) return prevChat
+                const myId = chatState.authenticatedMember?.id
+                if (!myId) return prevChat
+
+                const {
+                    lastReadMessageIds,
+                    lastReadPaymentUpdateIds,
+                    lastSeenMessageId,
+                    lastSeenPaymentUpdateId,
+                } = chatState
+
+                // Find the last read message and extract its timestamp
+                const lastReadMessageTimestamps = Object.keys(
+                    lastReadMessageIds,
+                ).reduce((result, chatId) => {
+                    const msgId = lastReadMessageIds[chatId]
+                    const paymentUpdateId = lastReadPaymentUpdateIds[chatId]
+                    const lastReadMessage = chatState.messages.find(
+                        m => m.id === msgId,
+                    )
+                    // If the last read payment update has a later timestamp, use that instead
+                    const lastReadPaymentUpdate = chatState.messages.find(
+                        m => m.id === paymentUpdateId,
+                    )
+                    if (lastReadMessage) {
+                        result[chatId] = lastReadMessage.sentAt
+                        if (
+                            lastReadPaymentUpdate &&
+                            lastReadPaymentUpdate.payment?.updatedAt &&
+                            lastReadPaymentUpdate.payment?.updatedAt >
+                                lastReadMessage.sentAt
+                        ) {
+                            result[chatId] =
+                                lastReadPaymentUpdate.payment?.updatedAt
+                        }
+                    }
+                    return result
+                }, {} as Record<Chat['id'], number>)
+
+                // Find the last seen message and extract its timestamp
+                let lastSeenMessageTimestamp = null
+                const lastSeenMessage = chatState.messages.find(
+                    m => m.id === lastSeenMessageId,
+                )
+                const lastSeenPaymentUpdate = chatState.messages.find(
+                    m => m.id === lastSeenPaymentUpdateId,
+                )
+                if (lastSeenMessage) {
+                    lastSeenMessageTimestamp = lastSeenMessage.sentAt
+                    // If the last seen payment update has a later timestamp, use that instead
+                    if (
+                        lastSeenPaymentUpdate &&
+                        lastSeenPaymentUpdate.payment?.updatedAt &&
+                        lastSeenPaymentUpdate.payment?.updatedAt >
+                            lastSeenMessage.sentAt
+                    ) {
+                        lastSeenMessageTimestamp =
+                            lastSeenPaymentUpdate.payment?.updatedAt
+                    }
+                }
+
+                const migratedChatState = omit(chatState, [
+                    'lastReadMessageIds',
+                    'lastReadPaymentUpdateIds',
+                    'lastSeenMessageId',
+                    'lastSeenPaymentUpdateId',
+                ])
+
+                return {
+                    ...prevChat,
+                    [federationId]: {
+                        ...migratedChatState,
+                        lastReadMessageTimestamps,
+                        lastSeenMessageTimestamp,
+                    },
+                }
+            },
+            {} as StoredStateV14['chat'],
+        )
+        migrationState = {
+            ...migrationState,
+            version: 14,
+            chat: newChat,
         }
     }
 
