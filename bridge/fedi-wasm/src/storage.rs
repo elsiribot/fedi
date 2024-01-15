@@ -120,7 +120,7 @@ impl IStorage for WasmStorage {
         Ok(())
     }
 
-    fn platform_path(&self, _path: &Path) -> PathBuf {
-        unimplemented!()
+    fn platform_path(&self, path: &Path) -> PathBuf {
+        path.to_owned()
     }
 }
