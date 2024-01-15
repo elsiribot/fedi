@@ -146,9 +146,12 @@ export const fetchStabilityPoolCycleStartPrice = createAsyncThunk<
 >(
     'wallet/fetchStabilityPoolCycleStartPrice',
     async ({ fedimint, federationId }) => {
-        const price = await fedimint.stabilityPoolCycleStartPrice(federationId)
+        const priceCents = await fedimint.stabilityPoolCycleStartPrice(
+            federationId,
+        )
+        const price = Number(priceCents) / 100
         log.info('stabilityPoolCycleStartPrice', { price })
-        return Number(price)
+        return price
     },
 )
 
