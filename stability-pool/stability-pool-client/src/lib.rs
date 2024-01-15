@@ -551,7 +551,7 @@ impl StabilityPoolClientModule {
 
     pub async fn deposit_to_seek(&self, amount: Amount) -> anyhow::Result<OperationId> {
         let (operation_id, _) =
-            submit_tx_with_intended_action(&self, IntendedAction::Seek(Seek(amount))).await?;
+            submit_tx_with_intended_action(self, IntendedAction::Seek(Seek(amount))).await?;
         Ok(operation_id)
     }
 
@@ -561,7 +561,7 @@ impl StabilityPoolClientModule {
         fee_rate: u64,
     ) -> anyhow::Result<OperationId> {
         let (operation_id, _) = submit_tx_with_intended_action(
-            &self,
+            self,
             IntendedAction::Provide(Provide {
                 amount,
                 min_fee_rate: fee_rate,
@@ -668,7 +668,7 @@ impl StabilityPoolClientModule {
             Ok((operation_id, transaction_id))
         } else {
             submit_tx_with_intended_action(
-                &self,
+                self,
                 IntendedAction::CancelRenewal(CancelRenewal { bps: locked_bps }),
             )
             .await
