@@ -293,6 +293,7 @@ impl FederationV0 {
                                 }),
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
+                                stability_pool_state: None,
                             };
                             fed.send_transaction_event(transaction);
                         }
@@ -856,6 +857,7 @@ impl FederationV0 {
                             }),
                             oob_state: None,
                             onchain_withdrawal_details: None,
+                            stability_pool_state: None,
                         }),
                         LightningMeta::Receive { invoice, .. } => Some(RpcTransaction {
                             id: op.0.operation_id.to_string(),
@@ -880,6 +882,7 @@ impl FederationV0 {
                             }),
                             oob_state: None,
                             onchain_withdrawal_details: None,
+                            stability_pool_state: None,
                         }),
                     },
                     MINT_OPERATION_TYPE => {
@@ -904,6 +907,7 @@ impl FederationV0 {
                                         lightning: None,
                                         oob_state: None,
                                         onchain_withdrawal_details: None,
+                                        stability_pool_state: None,
                                     })
                                 } else {
                                     None
@@ -927,6 +931,7 @@ impl FederationV0 {
                                     .await
                                     .map(RpcOOBState::from_spend_v0),
                                 onchain_withdrawal_details: None,
+                                stability_pool_state: None,
                             }),
                         }
                     }

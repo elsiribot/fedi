@@ -9,8 +9,9 @@ use async_stream::stream;
 use bitcoin::KeyPair;
 use common::config::StabilityPoolClientConfig;
 use common::{
-    AccountInfo, CancelRenewal, IntendedAction, Provide, Seek, StabilityPoolCommonGen,
-    StabilityPoolInput, StabilityPoolModuleTypes, StabilityPoolOutput,
+    amount_to_cents, AccountInfo, CancelRenewal, IntendedAction, Provide, Seek,
+    StabilityPoolCommonGen, StabilityPoolInput, StabilityPoolModuleTypes, StabilityPoolOutput,
+    BPS_UNIT,
 };
 use fedimint_client::module::init::{ClientModuleInit, ClientModuleInitArgs};
 use fedimint_client::module::recovery::NoModuleBackup;
@@ -33,7 +34,7 @@ use fedimint_core::module::{
 use fedimint_core::task::timeout;
 use fedimint_core::{apply, async_trait_maybe_send, Amount, OutPoint, TransactionId};
 use futures::{Stream, StreamExt};
-use secp256k1_zkp::{PublicKey, Secp256k1};
+use secp256k1_zkp::Secp256k1;
 use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
 use tracing::info;
@@ -284,6 +285,7 @@ pub enum StabilityPoolMeta {
     CancelRenewal {
         txid: TransactionId,
         bps: u32,
+        estimated_withdrawal_cents: u64,
     },
     // Withdraw given amount from unlocked balance (idle + staged)
     // followed by auto-renewal cancellation of given BPS
@@ -293,6 +295,7 @@ pub enum StabilityPoolMeta {
         outpoints: Vec<OutPoint>,
         unlocked_amount: Amount,
         locked_bps: u32,
+        estimated_withdrawal_cents: u64,
     },
 }
 
@@ -547,12 +550,8 @@ impl StabilityPoolClientModule {
     }
 
     pub async fn deposit_to_seek(&self, amount: Amount) -> anyhow::Result<OperationId> {
-        let (operation_id, _) = submit_tx_with_intended_action(
-            &self.client_ctx,
-            self.client_key_pair.public_key(),
-            IntendedAction::Seek(Seek(amount)),
-        )
-        .await?;
+        let (operation_id, _) =
+            submit_tx_with_intended_action(&self, IntendedAction::Seek(Seek(amount))).await?;
         Ok(operation_id)
     }
 
@@ -562,8 +561,7 @@ impl StabilityPoolClientModule {
         fee_rate: u64,
     ) -> anyhow::Result<OperationId> {
         let (operation_id, _) = submit_tx_with_intended_action(
-            &self.client_ctx,
-            self.client_key_pair.public_key(),
+            &self,
             IntendedAction::Provide(Provide {
                 amount,
                 min_fee_rate: fee_rate,
@@ -649,11 +647,14 @@ impl StabilityPoolClientModule {
                 }),
             };
             let tx = TransactionBuilder::new().with_input(self.client_ctx.make_client_input(input));
+            let estimated_withdrawal_cents =
+                estimated_withdrawal_cents(self, unlocked_amount, locked_bps).await?;
             let withdrawal_meta_gen = |txid, outpoints| StabilityPoolMeta::Withdrawal {
                 txid,
                 outpoints,
                 unlocked_amount,
                 locked_bps,
+                estimated_withdrawal_cents,
             };
             let (transaction_id, _) = self
                 .client_ctx
@@ -667,8 +668,7 @@ impl StabilityPoolClientModule {
             Ok((operation_id, transaction_id))
         } else {
             submit_tx_with_intended_action(
-                &self.client_ctx,
-                self.client_key_pair.public_key(),
+                &self,
                 IntendedAction::CancelRenewal(CancelRenewal { bps: locked_bps }),
             )
             .await
@@ -873,11 +873,12 @@ async fn stability_pool_operation(
 }
 
 async fn submit_tx_with_intended_action(
-    client_ctx: &ClientContext<StabilityPoolClientModule>,
-    client_pub_key: PublicKey,
+    module: &StabilityPoolClientModule,
     intended_action: IntendedAction,
 ) -> anyhow::Result<(OperationId, TransactionId)> {
     let operation_id = OperationId::new_random();
+    let client_ctx = &module.client_ctx;
+    let client_pub_key = module.client_key_pair.public_key();
     let stability_pool_output =
         StabilityPoolOutput::new_v0(client_pub_key, intended_action.clone());
 
@@ -916,7 +917,13 @@ async fn submit_tx_with_intended_action(
                 }),
             };
             let tx = TransactionBuilder::new().with_output(client_ctx.make_client_output(output));
-            let cancellation_meta_gen = |txid, _| StabilityPoolMeta::CancelRenewal { txid, bps };
+            let estimated_withdrawal_cents =
+                estimated_withdrawal_cents(module, Amount::ZERO, bps).await?;
+            let cancellation_meta_gen = |txid, _| StabilityPoolMeta::CancelRenewal {
+                txid,
+                bps,
+                estimated_withdrawal_cents,
+            };
             client_ctx
                 .finalize_and_submit_transaction(
                     operation_id,
@@ -929,6 +936,41 @@ async fn submit_tx_with_intended_action(
         IntendedAction::UndoCancelRenewal => bail!("Not yet supported"),
     };
     Ok((operation_id, transaction_id))
+}
+
+async fn estimated_withdrawal_cents(
+    module: &StabilityPoolClientModule,
+    unlocked_amount: Amount,
+    locked_bps: u32,
+) -> anyhow::Result<u64> {
+    let current_price = module.cycle_start_price().await?;
+    let unlocked_amount_cents = if unlocked_amount != Amount::ZERO {
+        amount_to_cents(unlocked_amount, current_price.into())
+    } else {
+        0
+    };
+
+    let locked_amount_cents = if locked_bps != 0 {
+        let account_info = module.account_info().await?;
+        let estimated_total_locked_cents: u64 = account_info
+            .locked_seeks
+            .iter()
+            .map(|l| {
+                if let Some(metadata) = account_info.seeks_metadata.get(&l.staged_txid) {
+                    metadata.initial_amount_cents
+                        - metadata.withdrawn_amount_cents
+                        - amount_to_cents(metadata.fees_paid_so_far, current_price.into())
+                } else {
+                    0
+                }
+            })
+            .sum();
+        estimated_total_locked_cents * (locked_bps as u64) / (BPS_UNIT as u64)
+    } else {
+        0
+    };
+
+    Ok(unlocked_amount_cents + locked_amount_cents)
 }
 
 async fn await_tx_accepted(

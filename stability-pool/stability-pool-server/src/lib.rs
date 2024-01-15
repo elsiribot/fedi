@@ -12,11 +12,11 @@ use common::config::{
     StabilityPoolGenParams,
 };
 use common::{
-    CancelRenewal, IntendedAction, LockedProvide, LockedSeek, Provide, Seek, SeekMetadata,
-    StabilityPoolCommonGen, StabilityPoolConsensusItem, StabilityPoolInput,
+    amount_to_cents, CancelRenewal, IntendedAction, LockedProvide, LockedSeek, Provide, Seek,
+    SeekMetadata, StabilityPoolCommonGen, StabilityPoolConsensusItem, StabilityPoolInput,
     StabilityPoolInputError, StabilityPoolModuleTypes, StabilityPoolOutput,
     StabilityPoolOutputError, StabilityPoolOutputOutcome, StabilityPoolOutputOutcomeV0,
-    StagedProvide, StagedSeek, CONSENSUS_VERSION,
+    StagedProvide, StagedSeek, BPS_UNIT, CONSENSUS_VERSION,
 };
 use db::{
     CurrentCycleKey, Cycle, CycleChangeVoteIndexPrefix, CycleChangeVoteKey, IdleBalance,
@@ -46,9 +46,6 @@ use tracing::info;
 
 /// PPB unit for fee-related calculations.
 const B: u128 = 1_000_000_000;
-
-/// BPS unit for cancellation-related calculations
-const BPS_UNIT: u128 = 10_000;
 
 #[derive(Debug, Clone)]
 pub struct StabilityPoolInit;
@@ -1401,16 +1398,6 @@ fn included_seeks_sum_before_fees(
     let numerator = included_provides_sum * coll_s * B;
     let denominator = (B - fee_rate) * coll_p;
     numerator / denominator
-}
-
-/// Helper function to convert the given Amount quantity into
-/// cents using the given price.
-fn amount_to_cents(amount: Amount, price: u128) -> u64 {
-    // 1 BTC is worth price cents
-    // 1 BTC = 10^8 SATS = 10^11 MSATS
-    // So 10^11 MSATS is worth price cents
-    // x MSATS is worth (price * x) / 10^11 cents
-    ((price * amount.msats as u128) / 100_000_000_000) as u64
 }
 
 fn ceil_division(dividend: u128, divisor: u128) -> u128 {

@@ -18,6 +18,9 @@ use config::StabilityPoolClientConfig;
 pub const KIND: ModuleKind = ModuleKind::from_static_str("stability_pool");
 pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::new(2, 0);
 
+/// BPS unit for cancellation-related calculations
+pub const BPS_UNIT: u128 = 10_000;
+
 /// Withdrawing unlocked funds from the stability pool is technically just a
 /// fedimint transaction where the input comes from the stability pool module
 /// and the output comes from the e-cash module.
@@ -430,4 +433,14 @@ pub struct AccountInfo {
     pub locked_seeks: Vec<LockedSeek>,
     pub locked_provides: Vec<LockedProvide>,
     pub seeks_metadata: BTreeMap<TransactionId, SeekMetadata>,
+}
+
+/// Helper function to convert the given Amount quantity into
+/// cents using the given price.
+pub fn amount_to_cents(amount: Amount, price: u128) -> u64 {
+    // 1 BTC is worth price cents
+    // 1 BTC = 10^8 SATS = 10^11 MSATS
+    // So 10^11 MSATS is worth price cents
+    // x MSATS is worth (price * x) / 10^11 cents
+    ((price * amount.msats as u128) / 100_000_000_000) as u64
 }

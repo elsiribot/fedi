@@ -423,6 +423,25 @@ pub struct RpcTransaction {
     pub lightning: Option<RpcLightningDetails>,
     pub oob_state: Option<RpcOOBState>,
     pub onchain_withdrawal_details: Option<WithdrawalDetails>,
+    pub stability_pool_state: Option<RpcStabilityPoolTransactionState>,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcStabilityPoolTransactionState {
+    PendingDeposit,
+    CompleteDeposit {
+        initial_amount_cents: u64,
+        fees_paid_so_far: RpcAmount,
+    },
+    PendingWithdrawal {
+        estimated_withdrawal_cents: u64,
+    },
+    CompleteWithdrawal {
+        estimated_withdrawal_cents: u64,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
