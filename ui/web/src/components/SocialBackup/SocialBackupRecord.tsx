@@ -6,6 +6,7 @@ import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
 import PlayIcon from '@fedi/common/assets/svgs/play.svg'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { formatErrorMessage } from '@fedi/common/utils/format'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { styled, theme } from '../../styles'
 import { Button } from '../Button'
@@ -13,6 +14,8 @@ import { Checkbox } from '../Checkbox'
 import { Icon } from '../Icon'
 import * as Layout from '../Layout'
 import { Text } from '../Text'
+
+const log = makeLog('SocialBackupRecord')
 
 interface Props {
     next(videoBlob: Blob): void
@@ -63,6 +66,12 @@ export const SocialBackupRecord: React.FC<Props> = ({ next }) => {
             typeof MediaRecorder === 'undefined' ||
             !MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
         ) {
+            log.error('MediaRecorder or webm vp9 codec is not supported', {
+                MediaRecorder: typeof MediaRecorder,
+                isTypeSupported: MediaRecorder.isTypeSupported(
+                    'video/webm;codecs=vp9',
+                ),
+            })
             setError(tRef.current('errors.browser-feature-not-supported'))
             return
         }
@@ -70,15 +79,16 @@ export const SocialBackupRecord: React.FC<Props> = ({ next }) => {
         navigator.mediaDevices
             .getUserMedia({ video: true })
             .then(setStream)
-            .catch(err =>
+            .catch(err => {
+                log.error('getUserMedia', err)
                 setError(
                     formatErrorMessage(
                         tRef.current,
                         err,
                         'errors.camera-unavailable',
                     ),
-                ),
-            )
+                )
+            })
     }, [tRef, videoBlob])
 
     // When the user wants to record, fire up the MediaRecorder. When they don't want it, stop and save.
@@ -96,6 +106,7 @@ export const SocialBackupRecord: React.FC<Props> = ({ next }) => {
             setIsRecording(false)
         })
         mediaRecorder.addEventListener('error', err => {
+            log.error('mediaRecorder error event', err)
             setError(
                 formatErrorMessage(tRef.current, err, 'errors.unknown-error'),
             )
@@ -104,6 +115,7 @@ export const SocialBackupRecord: React.FC<Props> = ({ next }) => {
         try {
             mediaRecorder.start()
         } catch (err) {
+            log.error('mediaRecorder.start error', err)
             setError(
                 formatErrorMessage(tRef.current, err, 'errors.unknown-error'),
             )

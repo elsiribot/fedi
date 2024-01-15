@@ -5,6 +5,7 @@ import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { useAppSelector } from '../../hooks'
 import { writeBridgeFile } from '../../lib/bridge'
@@ -16,6 +17,7 @@ import { Icon } from '../Icon'
 import * as Layout from '../Layout'
 import { Text } from '../Text'
 
+const log = makeLog('SocialBackupUpload')
 const VIDEO_FILE_PATH = 'backup-video.webm'
 
 interface Props {
@@ -45,6 +47,7 @@ export const SocialBackupUpload: React.FC<Props> = ({ videoBlob, next }) => {
                 // Continue to next screen
                 nextRef.current()
             } catch (err) {
+                log.error('failed to upload backup video', err)
                 setError(err)
             }
         }
@@ -82,8 +85,11 @@ export const SocialBackupUpload: React.FC<Props> = ({ videoBlob, next }) => {
 }
 
 const Content = styled('div', {
+    width: '100%',
     display: 'flex',
     flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
     gap: 16,
 })
 
