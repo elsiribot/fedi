@@ -32,10 +32,7 @@ jobs:
               run: nix develop -c ./scripts/ui/bump-version-native.sh
 
             - name: Open Versioning PR
-              uses: peter-evans/create-pull-request@v5
-              with:
-                  token: ${{ secrets.GITHUB_TOKEN }}
-                  body: 'This PR includes a version bump commit from a release branch for v${{steps.versioning.outputs.NEW_VERSION}}'
-                  title: 'bump version: v${{ steps.versioning.outputs.NEW_VERSION }}'
-                  branch: ${{ steps.versioning.outputs.BRANCH_NAME }}
-                  base: 'master'
+              run: |
+                  nix-shell -p gh --command "gh repo set-default fedibtc/fedi && gh pr create -B master -H ${{ steps.versioning.outputs.BRANCH_NAME }} --title 'bump version: v${{ steps.versioning.outputs.NEW_VERSION }}' --body 'This PR includes a version bump commit from a release branch for v${{steps.versioning.outputs.NEW_VERSION}}'"
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
