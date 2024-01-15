@@ -2,6 +2,7 @@
 set -euo pipefail
 
 export INCLUDE_STABILITY_POOL=1
+export USE_STABILITY_POOL_TEST_PARAMS=1
 export RUST_BACKTRACE=full
 
 # kill everything on exit
