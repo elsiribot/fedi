@@ -699,11 +699,6 @@ impl ForkedClient {
             .as_array()
             .ok_or(anyhow!("key locked_seeks not found"))?
             .iter()
-            .map(|locked_seek_with_metadata_json| {
-                locked_seek_with_metadata_json["lock"]
-                    .as_object()
-                    .expect("key lock must exist inside locked seek with metadata")
-            })
             .map(|locked_seek_json| LockedSeek {
                 staged_sequence: locked_seek_json["staged_sequence"]
                     .as_u64()
