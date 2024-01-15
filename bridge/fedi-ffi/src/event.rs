@@ -106,7 +106,7 @@ pub struct RecoveryStartEvent {
 #[ts(export, export_to = "target/bindings/")]
 #[ts(rename_all = "camelCase")]
 pub enum Event {
-    Transaction(TransactionEvent),
+    Transaction(Box<TransactionEvent>),
     Log(LogEvent),
     Federation(RpcFederation),
     Balance(BalanceEvent),
@@ -118,10 +118,10 @@ pub enum Event {
 
 impl Event {
     pub fn transaction(federation_id: String, transaction: RpcTransaction) -> Self {
-        Self::Transaction(TransactionEvent {
+        Self::Transaction(Box::new(TransactionEvent {
             federation_id: RpcFederationId(federation_id),
             transaction,
-        })
+        }))
     }
     pub fn log(log: String) -> Self {
         Self::Log(LogEvent { log })
