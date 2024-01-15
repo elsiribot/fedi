@@ -105,3 +105,7 @@ clear-remote-bridge:
   rm -rf target/datadir
   # clear android app state
   adb shell pm clear com.fedi
+
+# run linter on UI code
+lint-ui:
+  pushd ./ui && yarn lint && popd
