@@ -5,6 +5,7 @@ import { selectActiveFederationId } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../hooks'
 import * as Layout from '../Layout'
+import { SocialBackupDownload } from './SocialBackupDownload'
 import { SocialBackupIntro } from './SocialBackupIntro'
 import { SocialBackupRecord } from './SocialBackupRecord'
 import { SocialBackupUpload } from './SocialBackupUpload'
@@ -13,9 +14,10 @@ export const SocialBackup: React.FC = () => {
     const { t } = useTranslation()
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const [step, setStep] = useState<
-        'intro' | 'record' | 'upload' | 'backup' | 'complete'
+        'intro' | 'record' | 'upload' | 'download' | 'complete'
     >('intro')
     const [videoBlob, setVideoBlob] = useState<Blob | null>(null)
+    const [backupBlob, setBackupBlob] = useState<Blob | null>(null)
 
     // If they change federations, reset state
     useEffect(() => {
@@ -39,9 +41,14 @@ export const SocialBackup: React.FC = () => {
         content = (
             <SocialBackupUpload
                 videoBlob={videoBlob}
-                next={() => setStep('backup')}
+                next={blob => {
+                    setBackupBlob(blob)
+                    setStep('download')
+                }}
             />
         )
+    } else if (step === 'download' && backupBlob) {
+        content = <SocialBackupDownload backupBlob={backupBlob} />
     }
 
     // If none of the conditions above hit, reset the component state and go back to the intro

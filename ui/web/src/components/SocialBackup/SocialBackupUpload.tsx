@@ -8,7 +8,7 @@ import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { useAppSelector } from '../../hooks'
-import { writeBridgeFile } from '../../lib/bridge'
+import { readBridgeFile, writeBridgeFile } from '../../lib/bridge'
 import { fedimint } from '../../lib/bridge'
 import { styled, theme } from '../../styles'
 import { Button } from '../Button'
@@ -22,7 +22,7 @@ const VIDEO_FILE_PATH = 'backup-video.webm'
 
 interface Props {
     videoBlob: Blob
-    next(): void
+    next(backupBlob: Blob): void
 }
 
 export const SocialBackupUpload: React.FC<Props> = ({ videoBlob, next }) => {
@@ -39,13 +39,20 @@ export const SocialBackupUpload: React.FC<Props> = ({ videoBlob, next }) => {
                 // Write the video file to the bridge's file system
                 const videoArray = new Uint8Array(await videoBlob.arrayBuffer())
                 await writeBridgeFile(VIDEO_FILE_PATH, videoArray)
-                // Upload the video file
+                // Upload the video and backup file
                 await fedimint.uploadBackupFile(
                     VIDEO_FILE_PATH,
                     activeFederationId,
                 )
-                // Continue to next screen
-                nextRef.current()
+                // Pull the backup file as a blob and continue to the next screen
+                const path = await fedimint.locateRecoveryFile(
+                    activeFederationId,
+                )
+                const file = await readBridgeFile(path)
+                const blob = new Blob([file], {
+                    type: 'application/octet-stream',
+                })
+                nextRef.current(blob)
             } catch (err) {
                 log.error('failed to upload backup video', err)
                 setError(err)
