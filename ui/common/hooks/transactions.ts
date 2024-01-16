@@ -64,7 +64,7 @@ export function useTxnDisplayUtils(t: TFunction) {
     const btcUsdExchangeRate = useCommonSelector(selectBtcUsdExchangeRate)
     const btcExchangeRate = useCommonSelector(selectBtcExchangeRate)
     const showFiatTxnAmounts = useCommonSelector(selectShowFiatTxnAmounts)
-    const currencyText = showFiatTxnAmounts
+    const preferredCurrency = showFiatTxnAmounts
         ? selectedCurrency
         : t('words.sats').toUpperCase()
 
@@ -77,12 +77,12 @@ export function useTxnDisplayUtils(t: TFunction) {
                 btcUsdExchangeRate,
                 btcExchangeRate,
                 showFiatTxnAmounts,
-            )} ${currencyText}`
+            )} ${preferredCurrency}`
         },
         [
             btcExchangeRate,
             btcUsdExchangeRate,
-            currencyText,
+            preferredCurrency,
             selectedCurrency,
             showFiatTxnAmounts,
             t,
@@ -177,7 +177,7 @@ export function useTxnDisplayUtils(t: TFunction) {
     )
 
     return {
-        currencyText,
+        preferredCurrency,
         makeTxnDetailAmountText,
         makeTxnDetailItems,
         makeTxnAmountText,

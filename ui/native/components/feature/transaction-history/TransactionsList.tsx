@@ -33,6 +33,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
     const { toast } = useEnvironmentContext().state
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const {
+        preferredCurrency,
         makeTxnNotesText,
         makeTxnAmountText,
         makeTxnDetailAmountText,
@@ -47,6 +48,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
             makeRowProps={txn => ({
                 status: makeTxnStatusText(t, txn),
                 amount: makeTxnAmountText(txn),
+                currencyText: preferredCurrency,
                 timestamp: txn.createdAt,
                 notes: makeTxnNotesText(txn),
             })}

@@ -1,9 +1,7 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
-import { useTxnDisplayUtils } from '@fedi/common/hooks/transactions'
 import { MSats } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
 
@@ -12,6 +10,7 @@ export interface HistoryRowProps {
     status: React.ReactNode
     notes: React.ReactNode
     amount: MSats | string
+    currencyText?: string | undefined
     timestamp: number | undefined | null
     onSelect: () => void
 }
@@ -21,12 +20,11 @@ export const HistoryRow: React.FC<HistoryRowProps> = ({
     status,
     notes,
     amount,
+    currencyText,
     timestamp,
     onSelect,
 }) => {
-    const { t } = useTranslation()
     const { theme } = useTheme()
-    const { currencyText } = useTxnDisplayUtils(t)
 
     const style = styles(theme)
 

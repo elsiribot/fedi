@@ -3,7 +3,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useTxnDisplayUtils } from '@fedi/common/hooks/transactions'
-import { selectActiveFederationId } from '@fedi/common/redux'
+import { selectActiveFederationId, selectCurrency } from '@fedi/common/redux'
 import { updateTransactionNotes } from '@fedi/common/redux/transactions'
 import type { Transaction } from '@fedi/common/types'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -35,6 +35,7 @@ const StabilityTransactionsList = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
+    const selectedCurrency = useAppSelector(selectCurrency)
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const {
         makeStabilityTxnDetailAmountText,
@@ -55,6 +56,7 @@ const StabilityTransactionsList = ({
                 status: makeStabilityTxnStatusText(t, txn),
                 notes: makeStabilityTxnStatusSubtext(t, txn),
                 amount: makeStabilityTxnAmountText(txn),
+                currencyText: selectedCurrency,
                 timestamp: txn.createdAt,
             })}
             makeDetailProps={txn => ({
