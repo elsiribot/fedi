@@ -24,6 +24,14 @@ const navRoutes: Array<PrefixRoute | AbsoluteRoute> = [
         showWhen: 'desktop',
     },
     {
+        path: '/bug-report',
+        showWhen: 'desktop',
+    },
+    {
+        path: '/transactions',
+        showWhen: 'desktop',
+    },
+    {
         path: '/onboarding',
     },
     // TODO: Hide for personal & social backup
