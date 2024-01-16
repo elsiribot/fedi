@@ -12,6 +12,7 @@ import {
 } from '@fedi/common/hooks/chat'
 import {
     selectActiveFederationId,
+    selectAuthenticatedMember,
     selectChatConnectionOptions,
     selectChatMessages,
     sendDirectMessage,
@@ -48,14 +49,9 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
     const isFocused = useIsFocused()
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(selectActiveFederationId)
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const messages = useAppSelector(s => selectChatMessages(s, memberId))
     const { member, isFetchingMember } = useChatMember(memberId)
-
-    useEffect(() => {
-        if (member?.id === memberId) {
-            navigation.navigate('TabsNavigator')
-        }
-    }, [member?.id, memberId, navigation])
 
     const messageCollections = useMemo(
         () => makeMessageGroups(messages, 'desc'),
@@ -87,6 +83,12 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
         },
         [activeFederationId, dispatch, member, memberId],
     )
+
+    useEffect(() => {
+        if (member?.id === authenticatedMember?.id) {
+            navigation.navigate('TabsNavigator')
+        }
+    }, [member?.id, authenticatedMember?.id, navigation])
 
     let content: React.ReactNode
     if (isFetchingMember) {
