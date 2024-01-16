@@ -30,7 +30,7 @@ export const HistoryRow: React.FC<HistoryRowProps> = ({
 
     const style = styles(theme)
 
-    let amountNode: React.ReactNode = (
+    const amountNode: React.ReactNode = (
         <View style={style.amountContainer}>
             <Text caption medium>
                 {amount}

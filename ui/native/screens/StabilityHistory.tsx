@@ -2,14 +2,12 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useCallback, useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 
-import {
-    refreshActiveStabilityPool,
-    selectStabilityTransactionHistory,
-} from '@fedi/common/redux'
+import { useTransactionHistory } from '@fedi/common/hooks/transactions'
+import { refreshActiveStabilityPool } from '@fedi/common/redux'
 
 import { fedimint } from '../bridge'
 import StabilityTransactionsList from '../components/feature/stabilitypool/StabilityTransactionsList'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { useAppDispatch } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -19,12 +17,14 @@ export type Props = NativeStackScreenProps<
 
 const StabilityHistory: React.FC<Props> = () => {
     const [isLoading, setIsLoading] = useState(true)
-    const transactionsList = useAppSelector(selectStabilityTransactionHistory)
     const dispatch = useAppDispatch()
+    const { stabilityPoolTxns, fetchTransactions } =
+        useTransactionHistory(fedimint)
 
     const refreshStabilityPoolHistory = useCallback(async () => {
+        await fetchTransactions()
         await dispatch(refreshActiveStabilityPool({ fedimint }))
-    }, [dispatch])
+    }, [dispatch, fetchTransactions])
 
     useEffect(() => {
         refreshStabilityPoolHistory().finally(() => setIsLoading(false))
@@ -33,9 +33,9 @@ const StabilityHistory: React.FC<Props> = () => {
     return (
         <View style={styles.container}>
             <StabilityTransactionsList
-                transactions={transactionsList}
+                transactions={stabilityPoolTxns}
                 loading={isLoading}
-                refreshTransactions={refreshStabilityPoolHistory}
+                loadMoreTransactions={fetchTransactions}
             />
         </View>
     )

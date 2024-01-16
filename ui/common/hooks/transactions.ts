@@ -6,6 +6,7 @@ import {
     makeTxnDetailItems as makeTxnDetailItemsUtil,
     makeTxnNotesText as makeTxnNotesTextUtil,
     makeStabilityTxnAmountText as makeStabilityTxnAmountTextUtil,
+    makeStabilityTxnDetailItems as makeStabilityTxnDetailItemsUtil,
 } from '@fedi/common/utils/wallet'
 
 import {
@@ -18,8 +19,9 @@ import {
 import {
     fetchTransactions as reduxFetchTransactions,
     selectTransactionHistory,
+    selectStabilityTransactionHistory,
 } from '../redux/transactions'
-import { StabilityPoolTxn, Transaction } from '../types'
+import { Transaction } from '../types'
 import { FedimintBridge } from '../utils/fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
 
@@ -27,6 +29,9 @@ export function useTransactionHistory(fedimint: FedimintBridge) {
     const dispatch = useCommonDispatch()
     const activeFederationId = useCommonSelector(selectActiveFederationId)
     const transactions = useCommonSelector(selectTransactionHistory)
+    const stabilityPoolTxns = useCommonSelector(
+        selectStabilityTransactionHistory,
+    )
 
     const fetchTransactions = useCallback(
         async (
@@ -49,6 +54,7 @@ export function useTransactionHistory(fedimint: FedimintBridge) {
 
     return {
         transactions,
+        stabilityPoolTxns,
         fetchTransactions,
     }
 }
@@ -131,21 +137,43 @@ export function useTxnDisplayUtils(t: TFunction) {
     )
 
     const makeStabilityTxnAmountText = useCallback(
-        (txn: StabilityPoolTxn) => {
-            return makeStabilityTxnAmountTextUtil(t, txn, selectedCurrency)
+        (txn: Transaction) => {
+            return makeStabilityTxnAmountTextUtil(
+                t,
+                txn,
+                selectedCurrency,
+                btcUsdExchangeRate,
+                btcExchangeRate,
+                true,
+            )
         },
-        [selectedCurrency, t],
+        [btcExchangeRate, btcUsdExchangeRate, selectedCurrency, t],
     )
 
     const makeStabilityTxnDetailAmountText = useCallback(
-        (txn: StabilityPoolTxn) => {
+        (txn: Transaction) => {
             return `${makeStabilityTxnAmountTextUtil(
                 t,
                 txn,
                 selectedCurrency,
+                btcUsdExchangeRate,
+                btcExchangeRate,
+                true,
             )} ${selectedCurrency}`
         },
-        [selectedCurrency, t],
+        [btcExchangeRate, btcUsdExchangeRate, selectedCurrency, t],
+    )
+
+    const makeStabilityTxnDetailItems = useCallback(
+        (txn: Transaction) => {
+            return makeStabilityTxnDetailItemsUtil(
+                t,
+                txn,
+                selectedCurrency,
+                btcExchangeRate,
+            )
+        },
+        [btcExchangeRate, selectedCurrency, t],
     )
 
     return {
@@ -156,5 +184,6 @@ export function useTxnDisplayUtils(t: TFunction) {
         makeTxnNotesText,
         makeStabilityTxnAmountText,
         makeStabilityTxnDetailAmountText,
+        makeStabilityTxnDetailItems,
     }
 }
