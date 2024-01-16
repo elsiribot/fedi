@@ -1,5 +1,6 @@
 import Router from 'next/router'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export const useAutosizeTextArea = (
     textAreaRef: HTMLTextAreaElement | null,
@@ -25,11 +26,18 @@ export const useIsTouchScreen = () => {
     )
 }
 
-export const useWarnBeforeUnload = (shouldWarn: boolean) => {
+export const useWarnBeforeUnload = (
+    shouldWarn: boolean,
+    customConfirmationmessage?: string,
+) => {
+    const { t } = useTranslation()
+
     useEffect(() => {
-        const confirmationMessage = 'Changes you made may not be saved.'
+        const confirmationMessage =
+            customConfirmationmessage || t('phrases.changes-may-not-be-saved')
 
         const beforeUnloadHandler = (e: BeforeUnloadEvent) => {
+            e.preventDefault()
             ;(e || window.event).returnValue = confirmationMessage
             return confirmationMessage
         }

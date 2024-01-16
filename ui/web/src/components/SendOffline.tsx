@@ -40,7 +40,7 @@ export const SendOffline: React.FC<Props> = ({
     const federationId = activeFederation?.id
 
     useWarnBeforeUnload(
-        Boolean(!hasConfirmedPayment && offlinePayment && qrFrames),
+        Boolean((!hasConfirmedPayment && offlinePayment) || isGeneratingEcash),
     )
 
     const handleChangeAmount = useCallback((amt: Sats) => {
