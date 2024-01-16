@@ -472,6 +472,31 @@ export const makeTxnDetailItems = (
         value: makeTxnDetailStatusText(t, txn),
     })
 
+    // indicate stabilitypool deposits / withdrawals
+    if (txn.stabilityPoolState) {
+        if (
+            txn.stabilityPoolState.type === 'pendingDeposit' ||
+            txn.stabilityPoolState.type === 'completeDeposit'
+        ) {
+            items.push({
+                label: t('feature.stabilitypool.deposit-to'),
+                value: t('feature.stabilitypool.currency-balance', {
+                    currency,
+                }),
+            })
+        } else if (
+            txn.stabilityPoolState.type === 'pendingWithdrawal' ||
+            txn.stabilityPoolState.type === 'completeWithdrawal'
+        ) {
+            items.push({
+                label: t('feature.stabilitypool.withdrawal-from'),
+                value: t('feature.stabilitypool.currency-balance', {
+                    currency,
+                }),
+            })
+        }
+    }
+
     return items
 }
 
