@@ -5,6 +5,7 @@ import {
     makeTxnAmountText as makeTxnAmountTextUtil,
     makeTxnDetailItems as makeTxnDetailItemsUtil,
     makeTxnNotesText as makeTxnNotesTextUtil,
+    makeStabilityTxnAmountText as makeStabilityTxnAmountTextUtil,
 } from '@fedi/common/utils/wallet'
 
 import {
@@ -18,7 +19,7 @@ import {
     fetchTransactions as reduxFetchTransactions,
     selectTransactionHistory,
 } from '../redux/transactions'
-import { Transaction } from '../types'
+import { StabilityPoolTxn, Transaction } from '../types'
 import { FedimintBridge } from '../utils/fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
 
@@ -129,11 +130,31 @@ export function useTxnDisplayUtils(t: TFunction) {
         [selectedCurrency, t],
     )
 
+    const makeStabilityTxnAmountText = useCallback(
+        (txn: StabilityPoolTxn) => {
+            return makeStabilityTxnAmountTextUtil(t, txn, selectedCurrency)
+        },
+        [selectedCurrency, t],
+    )
+
+    const makeStabilityTxnDetailAmountText = useCallback(
+        (txn: StabilityPoolTxn) => {
+            return `${makeStabilityTxnAmountTextUtil(
+                t,
+                txn,
+                selectedCurrency,
+            )} ${selectedCurrency}`
+        },
+        [selectedCurrency, t],
+    )
+
     return {
         currencyText,
         makeTxnDetailAmountText,
         makeTxnDetailItems,
         makeTxnAmountText,
         makeTxnNotesText,
+        makeStabilityTxnAmountText,
+        makeStabilityTxnDetailAmountText,
     }
 }

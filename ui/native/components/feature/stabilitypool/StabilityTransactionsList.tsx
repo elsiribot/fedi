@@ -2,9 +2,8 @@ import { useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { selectCurrency } from '@fedi/common/redux'
-import type { MSats, StabilityPoolTxn } from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
+import { useTxnDisplayUtils } from '@fedi/common/hooks/transactions'
+import type { StabilityPoolTxn } from '@fedi/common/types'
 import {
     makeStabilityTxnDetailItems,
     makeStabilityTxnDetailTitleText,
@@ -12,7 +11,6 @@ import {
     makeStabilityTxnStatusText,
 } from '@fedi/common/utils/wallet'
 
-import { useAppSelector } from '../../../state/hooks'
 import { HistoryIcon } from '../../ui/HistoryIcon'
 import { HistoryList } from '../../ui/HistoryList'
 import { CurrencyAvatar } from './CurrencyAvatar'
@@ -29,7 +27,8 @@ const StabilityTransactionsList = ({
 }: StabilityTransactionsListProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const selectedCurrency = useAppSelector(selectCurrency)
+    const { makeStabilityTxnDetailAmountText, makeStabilityTxnAmountText } =
+        useTxnDisplayUtils(t)
 
     return (
         <HistoryList
@@ -43,19 +42,13 @@ const StabilityTransactionsList = ({
             makeRowProps={txn => ({
                 status: makeStabilityTxnStatusText(t, txn),
                 notes: makeStabilityTxnStatusSubtext(t, txn),
-                amount: amountUtils.formatFiat(
-                    txn.amountCents / 100,
-                    selectedCurrency,
-                ),
+                amount: makeStabilityTxnAmountText(txn),
                 timestamp: txn.timestamp,
             })}
             makeDetailProps={txn => ({
                 title: makeStabilityTxnDetailTitleText(t, txn),
                 items: makeStabilityTxnDetailItems(t, txn),
-                amount: amountUtils.formatFiat(
-                    txn.amountCents / 100,
-                    selectedCurrency,
-                ),
+                amount: makeStabilityTxnDetailAmountText(txn),
             })}
         />
     )

@@ -548,3 +548,20 @@ export const makeStabilityTxnDetailItems = (
     ]
     return items
 }
+
+export const makeStabilityTxnAmountText = (
+    t: TFunction,
+    txn: StabilityPoolTxn,
+    currency: SupportedCurrency | undefined = SupportedCurrency.USD,
+): string => {
+    const sign = txn.direction ? (txn.direction === 'deposit' ? `+` : `-`) : ''
+
+    const formattedAmount = amountUtils.formatFiat(
+        txn.amountCents / 100,
+        currency,
+        {
+            noSymbol: true,
+        },
+    )
+    return `${sign}${formattedAmount}`
+}
