@@ -326,11 +326,18 @@ export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
             } else if (txn.bitcoin) {
                 switch (txn.onchainState?.type) {
                     case 'waitingForTransaction':
-                        return t('phrases.address-created')
+                        return t('phrases.receive-pending')
                     case 'claimed':
                         return t('phrases.received-bitcoin')
                     default:
                         return t('phrases.receive-pending')
+                }
+            } else if (txn.stabilityPoolState) {
+                switch (txn.stabilityPoolState.type) {
+                    case 'pendingWithdrawal':
+                        return t('phrases.receive-pending')
+                    default:
+                        return t('words.received')
                 }
             } else {
                 return t('words.received')
