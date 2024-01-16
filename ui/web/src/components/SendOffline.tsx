@@ -7,7 +7,7 @@ import { selectActiveFederation } from '@fedi/common/redux'
 import { Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import { useAppSelector, useToast } from '../hooks'
+import { useAppSelector, useToast, useWarnBeforeUnload } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 import { AmountInput } from './AmountInput'
@@ -38,6 +38,10 @@ export const SendOffline: React.FC<Props> = ({
     const [submitAttempts, setSubmitAttempts] = useState(0)
 
     const federationId = activeFederation?.id
+
+    useWarnBeforeUnload(
+        Boolean((!hasConfirmedPayment && offlinePayment) || isGeneratingEcash),
+    )
 
     const handleChangeAmount = useCallback((amt: Sats) => {
         setSubmitAttempts(0)
