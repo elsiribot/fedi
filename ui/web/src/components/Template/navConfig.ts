@@ -26,11 +26,7 @@ const navRoutes: Array<PrefixRoute | AbsoluteRoute> = [
     {
         path: '/onboarding',
     },
-    {
-        path: '/settings/backup/personal',
-        showWhen: 'desktop',
-    },
-    // TODO: Hide for social recovery
+    // TODO: Hide for personal & social backup
 ]
 
 /**
