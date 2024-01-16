@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::time::SystemTime;
 
+use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId, TransactionId};
 use secp256k1_zkp::PublicKey;
@@ -229,3 +230,18 @@ impl_db_lookup!(
     query_prefix = SeekMetadataAccountPrefix,
     query_prefix = SeekMetadataKeyPrefix
 );
+
+/// Migrate DB from version 1 to version 2 by wiping everything
+pub async fn migrate_to_v2(dbtx: &mut DatabaseTransaction<'_>) -> Result<(), anyhow::Error> {
+    dbtx.remove_by_prefix(&IdleBalanceKeyPrefix).await;
+    dbtx.remove_by_prefix(&StagedSeeksKeyPrefix).await;
+    dbtx.remove_by_prefix(&StagedProvidesKeyPrefix).await;
+    dbtx.remove_by_prefix(&StagedCancellationKeyPrefix).await;
+    dbtx.remove_by_prefix(&CurrentCycleKeyPrefix).await;
+    dbtx.remove_by_prefix(&PastCycleKeyPrefix).await;
+    dbtx.remove_by_prefix(&StagedSeekSequenceKeyPrefix).await;
+    dbtx.remove_by_prefix(&StagedProvideSequenceKeyPrefix).await;
+    dbtx.remove_by_prefix(&CycleChangeVoteKeyPrefix).await;
+    dbtx.remove_by_prefix(&SeekMetadataKeyPrefix).await;
+    Ok(())
+}

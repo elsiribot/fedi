@@ -19,8 +19,8 @@ use common::{
     StagedProvide, StagedSeek, BPS_UNIT, CONSENSUS_VERSION,
 };
 use db::{
-    CurrentCycleKey, Cycle, CycleChangeVoteIndexPrefix, CycleChangeVoteKey, IdleBalance,
-    IdleBalanceKey, PastCycleKey, SeekMetadataKey, StagedCancellationKey,
+    migrate_to_v2, CurrentCycleKey, Cycle, CycleChangeVoteIndexPrefix, CycleChangeVoteKey,
+    IdleBalance, IdleBalanceKey, PastCycleKey, SeekMetadataKey, StagedCancellationKey,
     StagedCancellationKeyPrefix, StagedProvideSequenceKey, StagedProvidesKey,
     StagedProvidesKeyPrefix, StagedSeekSequenceKey, StagedSeeksKey, StagedSeeksKeyPrefix,
 };
@@ -29,7 +29,9 @@ use fedimint_core::config::{
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleInstanceId;
-use fedimint_core::db::{DatabaseTransaction, DatabaseVersion, IDatabaseTransactionOpsCoreTyped};
+use fedimint_core::db::{
+    DatabaseTransaction, DatabaseVersion, IDatabaseTransactionOpsCoreTyped, MigrationMap,
+};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
     ApiEndpoint, CoreConsensusVersion, InputMeta, ModuleConsensusVersion, ModuleInit, PeerHandle,
@@ -37,7 +39,7 @@ use fedimint_core::module::{
 };
 use fedimint_core::server::DynServerModule;
 use fedimint_core::{Amount, NumPeers, OutPoint, PeerId, ServerModule, TransactionId};
-use futures::{stream, StreamExt};
+use futures::{stream, FutureExt, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
 use secp256k1_zkp::PublicKey;
@@ -67,7 +69,7 @@ impl ModuleInit for StabilityPoolInit {
 #[async_trait]
 impl ServerModuleInit for StabilityPoolInit {
     type Params = StabilityPoolGenParams;
-    const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(1);
+    const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(2);
 
     fn versions(&self, _core: CoreConsensusVersion) -> &[ModuleConsensusVersion] {
         &[CONSENSUS_VERSION]
@@ -166,6 +168,12 @@ impl ServerModuleInit for StabilityPoolInit {
             max_allowed_provide_fee_rate_ppb: config.max_allowed_provide_fee_rate_ppb,
             min_allowed_cancellation_bps: config.min_allowed_cancellation_bps,
         })
+    }
+
+    fn get_database_migrations(&self) -> MigrationMap {
+        let mut migrations = MigrationMap::new();
+        migrations.insert(DatabaseVersion(1), |dbtx| migrate_to_v2(dbtx).boxed());
+        migrations
     }
 }
 
