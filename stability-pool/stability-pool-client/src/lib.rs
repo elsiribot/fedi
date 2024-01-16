@@ -285,6 +285,7 @@ pub enum StabilityPoolMeta {
     CancelRenewal {
         txid: TransactionId,
         bps: u32,
+        #[serde(default)]
         estimated_withdrawal_cents: u64,
     },
     // Withdraw given amount from unlocked balance (idle + staged)
@@ -295,6 +296,7 @@ pub enum StabilityPoolMeta {
         outpoints: Vec<OutPoint>,
         unlocked_amount: Amount,
         locked_bps: u32,
+        #[serde(default)]
         estimated_withdrawal_cents: u64,
     },
 }
