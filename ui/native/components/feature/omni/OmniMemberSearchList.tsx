@@ -143,7 +143,7 @@ export const OmniMemberSearchList: React.FC<Props> = ({
         }
         // Show members that are exact matches that we have no history with, or a loader
         // if we're looking up if they exist
-        if (noHistoryMember) {
+        if (noHistoryMember && noHistoryMember.id !== authenticatedMember?.id) {
             sections.push({
                 title: t('feature.omni.search-no-history-header'),
                 data: [noHistoryMember],
@@ -157,6 +157,7 @@ export const OmniMemberSearchList: React.FC<Props> = ({
         searchedMembers,
         noHistoryMember,
         isFetchingUnknownMember,
+        authenticatedMember?.id,
         canLnurlPay,
         t,
     ])

@@ -85,10 +85,10 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
     )
 
     useEffect(() => {
-        if (member?.id === authenticatedMember?.id) {
+        if (memberId === authenticatedMember?.id) {
             navigation.navigate('TabsNavigator')
         }
-    }, [member?.id, authenticatedMember?.id, navigation])
+    }, [memberId, authenticatedMember?.id, navigation])
 
     let content: React.ReactNode
     if (isFetchingMember) {
