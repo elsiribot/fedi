@@ -38,7 +38,7 @@ export const useWarnBeforeUnload = (
 
         const beforeUnloadHandler = (e: BeforeUnloadEvent) => {
             e.preventDefault()
-            ;(e || window.event).returnValue = confirmationMessage
+            e.returnValue = confirmationMessage
             return confirmationMessage
         }
 
