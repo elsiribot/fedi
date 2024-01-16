@@ -150,8 +150,17 @@ export const makeTxnDetailTitleText = (
     } else if (txn.bitcoin) {
         switch (txn.onchainState?.type) {
             case 'waitingForTransaction':
-                return t('phrases.address-created')
+                return t('phrases.bitcoin-address-created')
             case 'claimed':
+                return t('feature.receive.you-received')
+            default:
+                return t('phrases.receive-pending')
+        }
+    } else if (txn.stabilityPoolState) {
+        switch (txn.stabilityPoolState?.type) {
+            case 'pendingWithdrawal':
+                return t('phrases.receive-pending')
+            case 'completeWithdrawal':
                 return t('feature.receive.you-received')
             default:
                 return t('phrases.receive-pending')
