@@ -1,6 +1,11 @@
 import { TFunction } from 'i18next'
 
-import { StabilityPoolTxn, Transaction, TransactionDirection } from '../types'
+import {
+    StabilityPoolTxn,
+    SupportedCurrency,
+    Transaction,
+    TransactionDirection,
+} from '../types'
 import amountUtils from './AmountUtils'
 import dateUtils from './DateUtils'
 
@@ -135,6 +140,45 @@ export const makeTxnDetailTitleText = (
     } else {
         return t('feature.receive.you-received')
     }
+}
+
+export const makeTxnNotesText = (
+    t: TFunction,
+    txn: Transaction,
+    currency: SupportedCurrency | undefined = SupportedCurrency.USD,
+): string => {
+    // always render user-submitted notes first
+    if (txn.notes) return txn.notes
+
+    // if notes is empty, some txn types can render placeholder text here
+    if (txn.stabilityPoolState) {
+        if (
+            txn.stabilityPoolState.type === 'pendingDeposit' ||
+            txn.stabilityPoolState.type === 'completeDeposit'
+        ) {
+            // indicate stabilitypool deposits
+            return t('feature.stabilitypool.deposit-to-balance', {
+                currency,
+            })
+        } else if (
+            txn.stabilityPoolState.type === 'pendingWithdrawal' ||
+            txn.stabilityPoolState.type === 'completeWithdrawal'
+        ) {
+            // indicate stabilitypool withdrawals
+            return t('feature.stabilitypool.withdrawal-from-balance', {
+                currency,
+            })
+        }
+    }
+    // indicate bitcoin addresses that do not yet have an onchain txid
+    if (
+        txn.direction === TransactionDirection.receive &&
+        txn.bitcoin &&
+        txn.onchainState?.type === 'waitingForTransaction'
+    ) {
+        return t('phrases.bitcoin-address-created')
+    }
+    return ''
 }
 
 export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
