@@ -6,6 +6,7 @@ import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import {
     fetchChatMember,
     selectActiveFederationId,
+    selectAuthenticatedMember,
     selectChatClientStatus,
     selectChatMember,
     selectChatMessages,
@@ -30,14 +31,21 @@ interface Props {
 
 export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
     const { t } = useTranslation()
-    const { back } = useRouter()
+    const { back, replace } = useRouter()
     const dispatch = useAppDispatch()
     const federationId = useAppSelector(selectActiveFederationId)
     const member = useAppSelector(s => selectChatMember(s, memberId))
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const messages = useAppSelector(s => selectChatMessages(s, memberId))
     const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'
     const [isLoading, setIsLoading] = useState(!member)
     const [isPaymentOpen, setIsPaymentOpen] = useState(false)
+
+    useEffect(() => {
+        if (memberId === authenticatedMember?.id) {
+            replace('/chat')
+        }
+    }, [memberId, authenticatedMember?.id, replace])
 
     // If we don't have info about this member, attempt to fetch a pubkey for them
     useEffect(() => {

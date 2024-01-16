@@ -1785,6 +1785,8 @@ export const selectRecentChatMembers = createSelector(
             if (!member) continue
             // Ignore members we've already added
             if (recentMembers.find(m => m.id === member.id)) continue
+            // Ignore ourselves
+            if (member.id === authenticatedMember?.id) continue
             // Add the member, and once we've reached the limit, break out
             recentMembers.push(member)
             if (recentMembers.length >= limit) break

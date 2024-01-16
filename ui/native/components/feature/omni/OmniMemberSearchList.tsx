@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     fetchChatMember,
     selectActiveFederationId,
+    selectAuthenticatedMember,
     selectChatClientStatus,
     selectChatConnectionOptions,
     selectChatMember,
@@ -52,6 +53,7 @@ export const OmniMemberSearchList: React.FC<Props> = ({
     const federationId = useAppSelector(selectActiveFederationId)
     const chatDomain = useAppSelector(selectChatConnectionOptions)?.domain
     const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const [isFetchingUnknownMember, setIsFetchingUnknownMember] =
         useState(false)
     const exactMatchMember = useAppSelector(s =>
@@ -90,6 +92,9 @@ export const OmniMemberSearchList: React.FC<Props> = ({
         let canceled = false
         const search = async () => {
             const memberId = `${query}@${chatDomain}`
+
+            if (memberId === authenticatedMember?.id) return
+
             try {
                 const member = await dispatch(
                     fetchChatMember({ federationId, memberId }),
@@ -117,6 +122,7 @@ export const OmniMemberSearchList: React.FC<Props> = ({
         isExactMatch,
         hasExactMatchMember,
         dispatch,
+        authenticatedMember?.id,
     ])
 
     const searchResultsSections = useMemo(() => {
@@ -137,7 +143,7 @@ export const OmniMemberSearchList: React.FC<Props> = ({
         }
         // Show members that are exact matches that we have no history with, or a loader
         // if we're looking up if they exist
-        if (noHistoryMember) {
+        if (noHistoryMember && noHistoryMember.id !== authenticatedMember?.id) {
             sections.push({
                 title: t('feature.omni.search-no-history-header'),
                 data: [noHistoryMember],
@@ -151,6 +157,7 @@ export const OmniMemberSearchList: React.FC<Props> = ({
         searchedMembers,
         noHistoryMember,
         isFetchingUnknownMember,
+        authenticatedMember?.id,
         canLnurlPay,
         t,
     ])
