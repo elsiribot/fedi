@@ -3,7 +3,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { selectCurrency } from '@fedi/common/redux'
-import type { StabilityPoolTxn } from '@fedi/common/types'
+import type { MSats, StabilityPoolTxn } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import {
     makeStabilityTxnDetailItems,
@@ -47,8 +47,6 @@ const StabilityTransactionsList = ({
                     txn.amountCents / 100,
                     selectedCurrency,
                 ),
-                direction:
-                    txn.direction === 'deposit' ? 'incoming' : 'outgoing',
                 timestamp: txn.timestamp,
             })}
             makeDetailProps={txn => ({

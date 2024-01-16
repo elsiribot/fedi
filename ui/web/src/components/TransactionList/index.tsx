@@ -1,11 +1,11 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useTxnDisplayUtils } from '@fedi/common/hooks/transactions'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { updateTransactionNotes } from '@fedi/common/redux/transactions'
 import { Transaction } from '@fedi/common/types'
 import {
-    makeTxnDetailItems,
     makeTxnDetailTitleText,
     makeTxnStatusText,
 } from '@fedi/common/utils/wallet'
@@ -28,6 +28,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
     const { t } = useTranslation()
     const { showErrorToast } = useToast()
     const activeFederationId = useAppSelector(selectActiveFederationId)
+    const { makeTxnDetailItems } = useTxnDisplayUtils(t)
 
     return (
         <HistoryList
@@ -44,7 +45,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
             })}
             makeDetailProps={txn => ({
                 title: makeTxnDetailTitleText(t, txn),
-                items: makeTxnDetailItems(t, txn),
+                items: makeTxnDetailItems(txn),
                 amount: txn.amount,
                 notes: txn.notes,
                 onSaveNotes: async (notes: string) => {
