@@ -1,5 +1,6 @@
 import get from 'lodash/get'
 import omit from 'lodash/omit'
+import uniq from 'lodash/uniq'
 
 import { CommonState } from '../redux'
 import { Chat } from '../types'
@@ -107,30 +108,21 @@ export function hasStorageStateChanged(
         ['nux', 'steps'],
     ]
 
-    // Only check current federation's chat state
-    const activeFederationId = newState.federation.activeFederationId
-    if (activeFederationId) {
-        keysetsToCheck.push(['chat', activeFederationId, 'authenticatedMember'])
-        keysetsToCheck.push(['chat', activeFederationId, 'messages'])
-        keysetsToCheck.push(['chat', activeFederationId, 'groups'])
-        keysetsToCheck.push(['chat', activeFederationId, 'groupRoles'])
-        keysetsToCheck.push(['chat', activeFederationId, 'membersSeen'])
-        keysetsToCheck.push([
-            'chat',
-            activeFederationId,
-            'lastFetchedMessageId',
-        ])
-        keysetsToCheck.push([
-            'chat',
-            activeFederationId,
-            'lastReadMessageTimestamps',
-        ])
-        keysetsToCheck.push([
-            'chat',
-            activeFederationId,
-            'lastSeenMessageTimestamp',
-        ])
-    }
+    // Check all federation's chat states, including old and new.
+    const chatStateFedIds = uniq([
+        ...Object.keys(oldState.chat),
+        ...Object.keys(newState.chat),
+    ])
+    chatStateFedIds.forEach(federationId => {
+        keysetsToCheck.push(['chat', federationId, 'authenticatedMember'])
+        keysetsToCheck.push(['chat', federationId, 'messages'])
+        keysetsToCheck.push(['chat', federationId, 'groups'])
+        keysetsToCheck.push(['chat', federationId, 'groupRoles'])
+        keysetsToCheck.push(['chat', federationId, 'membersSeen'])
+        keysetsToCheck.push(['chat', federationId, 'lastFetchedMessageId'])
+        keysetsToCheck.push(['chat', federationId, 'lastReadMessageTimestamps'])
+        keysetsToCheck.push(['chat', federationId, 'lastSeenMessageTimestamp'])
+    })
 
     for (const keysToCheck of keysetsToCheck) {
         if (get(oldState, keysToCheck) !== get(newState, keysToCheck)) {
