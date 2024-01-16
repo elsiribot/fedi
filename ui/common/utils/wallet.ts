@@ -67,6 +67,15 @@ export const makeTxnDetailStatusText = (
                     default:
                         return t('words.pending')
                 }
+            } else if (txn.stabilityPoolState) {
+                switch (txn.stabilityPoolState.type) {
+                    case 'pendingDeposit':
+                        return t('words.pending')
+                    case 'completeDeposit':
+                        return t('words.complete')
+                    default:
+                        return t('phrases.sent-bitcoin')
+                }
             } else {
                 return t('phrases.sent-bitcoin')
             }
@@ -101,6 +110,15 @@ export const makeTxnDetailStatusText = (
                         return t('words.complete')
                     default:
                         return t('phrases.receive-pending')
+                }
+            } else if (txn.stabilityPoolState) {
+                switch (txn.stabilityPoolState?.type) {
+                    case 'pendingWithdrawal':
+                        return t('words.pending')
+                    case 'completeWithdrawal':
+                        return t('words.complete')
+                    default:
+                        return ''
                 }
             } else {
                 return t('words.received')
