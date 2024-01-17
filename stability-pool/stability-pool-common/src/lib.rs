@@ -424,7 +424,7 @@ impl Default for SeekMetadata {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encodable, Decodable)]
 pub struct AccountInfo {
     pub idle_balance: Amount,
     pub staged_seeks: Vec<StagedSeek>,

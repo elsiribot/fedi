@@ -2,9 +2,9 @@ use std::collections::BTreeMap;
 use std::ffi;
 use std::pin::Pin;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
-use anyhow::bail;
+use anyhow::{anyhow, bail};
 use async_stream::stream;
 use bitcoin::KeyPair;
 use common::config::StabilityPoolClientConfig;
@@ -13,6 +13,7 @@ use common::{
     StabilityPoolCommonGen, StabilityPoolInput, StabilityPoolModuleTypes, StabilityPoolOutput,
     BPS_UNIT,
 };
+use db::AccountInfoKey;
 use fedimint_client::module::init::{ClientModuleInit, ClientModuleInitArgs};
 use fedimint_client::module::recovery::NoModuleBackup;
 use fedimint_client::module::{ClientContext, ClientModule};
@@ -25,7 +26,7 @@ use fedimint_client::transaction::{ClientInput, ClientOutput, TransactionBuilder
 use fedimint_client::{sm_enum_variant_translation, DynGlobalClientContext};
 use fedimint_core::api::{DynModuleApi, FederationApiExt, FederationError};
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId, OperationId};
-use fedimint_core::db::DatabaseTransaction;
+use fedimint_core::db::{Database, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::{
     ApiRequestErased, ApiVersion, CommonModuleInit, ModuleInit, MultiApiVersion,
@@ -38,6 +39,8 @@ use secp256k1_zkp::Secp256k1;
 use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
 use tracing::info;
+
+mod db;
 
 #[derive(Debug, Clone)]
 pub struct StabilityPoolClientInit;
@@ -70,6 +73,7 @@ impl ClientModuleInit for StabilityPoolClientInit {
             module_api: args.module_api().clone(),
             client_ctx: args.context(),
             notifier: args.notifier().clone(),
+            db: args.db().clone(),
         })
     }
 
@@ -86,6 +90,7 @@ pub struct StabilityPoolClientModule {
     module_api: DynModuleApi,
     client_ctx: ClientContext<Self>,
     notifier: ModuleNotifier<DynGlobalClientContext, StabilityPoolStateMachines>,
+    db: Database,
 }
 
 #[derive(Debug, Clone)]
@@ -148,7 +153,7 @@ impl ClientModule for StabilityPoolClientModule {
 
         match command.as_ref() {
             "pubkey" => Ok(serde_json::to_value(self.client_key_pair.public_key())?),
-            "account-info" => Ok(serde_json::to_value(self.account_info().await?)?),
+            "account-info" => Ok(serde_json::to_value(self.account_info(true).await?)?),
             "deposit-to-seek" => {
                 if args.len() != 2 {
                     return Err(anyhow::format_err!(
@@ -513,10 +518,59 @@ pub enum StabilityPoolDepositOperationState {
     Success,
 }
 
+/// Wrapper around AccountInfo for consumption on the client-side
+/// that encapsulates the freshness of the data (timestamp), as well
+/// as the origin of the data (local copy vs fetched from server).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClientAccountInfo {
+    pub account_info: AccountInfo,
+    pub timestamp: SystemTime,
+    pub is_fetched_from_server: bool,
+}
+
 impl StabilityPoolClientModule {
-    pub async fn account_info(&self) -> anyhow::Result<AccountInfo, FederationError> {
+    pub async fn account_info(
+        &self,
+        force_update: bool,
+    ) -> anyhow::Result<ClientAccountInfo, FederationError> {
+        let mut dbtx = self.db.begin_transaction_nc().await;
+        let db_account_info = dbtx.get_value(&AccountInfoKey).await;
+
+        if db_account_info.is_none() || force_update {
+            if let Ok(account_info) = self
+                .fetch_account_info_from_server(Duration::from_secs(30))
+                .await
+            {
+                let current_time = fedimint_core::time::now();
+                let mut dbtx = self.db.begin_transaction().await;
+                dbtx.insert_entry(&AccountInfoKey, &(current_time, account_info.clone()))
+                    .await;
+                dbtx.commit_tx().await;
+                return Ok(ClientAccountInfo {
+                    account_info,
+                    timestamp: current_time,
+                    is_fetched_from_server: true,
+                });
+            }
+        }
+
+        if let Some((timestamp, account_info)) = db_account_info {
+            return Ok(ClientAccountInfo {
+                account_info,
+                timestamp,
+                is_fetched_from_server: false,
+            });
+        }
+
+        return Err(FederationError::general(anyhow!("No local data present")));
+    }
+
+    async fn fetch_account_info_from_server(
+        &self,
+        timeout_duration: Duration,
+    ) -> anyhow::Result<AccountInfo, FederationError> {
         timeout(
-            Duration::from_secs(60),
+            timeout_duration,
             self.module_api.request_current_consensus(
                 "account_info".to_string(),
                 ApiRequestErased::new(self.client_key_pair.public_key()),
@@ -953,7 +1007,7 @@ async fn estimated_withdrawal_cents(
     };
 
     let locked_amount_cents = if locked_bps != 0 {
-        let account_info = module.account_info().await?;
+        let account_info = module.account_info(true).await?.account_info;
         let estimated_total_locked_cents: u64 = account_info
             .locked_seeks
             .iter()

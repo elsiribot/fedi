@@ -654,11 +654,17 @@ impl ForkedClient {
             .await?;
         info!("{cmd_out_json}");
 
-        let idle_balance = cmd_out_json["idle_balance"]
+        let account_info = cmd_out_json
+            .as_object()
+            .ok_or(anyhow!("couldn't transform json value into object"))?
+            .get("account_info")
+            .ok_or(anyhow!("key account_info not found"))?;
+
+        let idle_balance = account_info["idle_balance"]
             .as_u64()
             .ok_or(anyhow!("key idle_balance not found"))?;
 
-        let staged_seeks = cmd_out_json["staged_seeks"]
+        let staged_seeks = account_info["staged_seeks"]
             .as_array()
             .ok_or(anyhow!("key staged_seeks not found"))?
             .iter()
@@ -672,7 +678,7 @@ impl ForkedClient {
             })
             .collect();
 
-        let staged_provides = cmd_out_json["staged_provides"]
+        let staged_provides = account_info["staged_provides"]
             .as_array()
             .ok_or(anyhow!("key staged_provides not found"))?
             .iter()
@@ -695,7 +701,7 @@ impl ForkedClient {
             })
             .collect();
 
-        let locked_seeks = cmd_out_json["locked_seeks"]
+        let locked_seeks = account_info["locked_seeks"]
             .as_array()
             .ok_or(anyhow!("key locked_seeks not found"))?
             .iter()
@@ -709,7 +715,7 @@ impl ForkedClient {
             })
             .collect();
 
-        let locked_provides = cmd_out_json["locked_provides"]
+        let locked_provides = account_info["locked_provides"]
             .as_array()
             .ok_or(anyhow!("key locked_provides not found"))?
             .iter()

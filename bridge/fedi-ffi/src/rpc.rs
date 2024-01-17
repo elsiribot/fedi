@@ -404,8 +404,11 @@ async fn signNostrEvent(
 async fn stabilityPoolAccountInfo(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
+    force_update: bool,
 ) -> anyhow::Result<RpcStabilityPoolAccountInfo> {
-    bridge.stability_pool_account_info(federation_id).await
+    bridge
+        .stability_pool_account_info(federation_id, force_update)
+        .await
 }
 
 #[macro_rules_derive(rpc_method!)]

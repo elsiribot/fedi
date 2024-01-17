@@ -13,7 +13,7 @@ use fedimint_wallet_client_v1::{
     WithdrawState as WithdrawStateV1,
 };
 use serde::{Deserialize, Serialize};
-use stability_pool_client::common::AccountInfo;
+use stability_pool_client::ClientAccountInfo;
 use ts_rs::TS;
 
 use super::bridge::MultiFederation;
@@ -777,6 +777,8 @@ pub struct RpcStabilityPoolAccountInfo {
     pub staged_seeks: Vec<RpcAmount>,
     pub staged_cancellation: Option<u32>,
     pub locked_seeks: Vec<RpcLockedSeek>,
+    pub timestamp: u64,
+    pub is_fetched_from_server: bool,
 }
 
 #[derive(Debug, Serialize, TS)]
@@ -794,21 +796,24 @@ pub struct RpcLockedSeek {
     pub first_lock_start_time: u64,
 }
 
-impl From<AccountInfo> for RpcStabilityPoolAccountInfo {
-    fn from(value: AccountInfo) -> Self {
+impl From<ClientAccountInfo> for RpcStabilityPoolAccountInfo {
+    fn from(value: ClientAccountInfo) -> Self {
         RpcStabilityPoolAccountInfo {
-            idle_balance: RpcAmount(value.idle_balance),
+            idle_balance: RpcAmount(value.account_info.idle_balance),
             staged_seeks: value
+                .account_info
                 .staged_seeks
                 .into_iter()
                 .map(|s| RpcAmount(s.seek.0))
                 .collect(),
-            staged_cancellation: value.staged_cancellation.map(|c| c.bps),
+            staged_cancellation: value.account_info.staged_cancellation.map(|c| c.bps),
             locked_seeks: value
+                .account_info
                 .locked_seeks
                 .into_iter()
                 .map(|l| {
                     let metadata = value
+                        .account_info
                         .seeks_metadata
                         .get(&l.staged_txid)
                         .cloned()
@@ -824,6 +829,8 @@ impl From<AccountInfo> for RpcStabilityPoolAccountInfo {
                     }
                 })
                 .collect(),
+            timestamp: to_unix_time(value.timestamp).expect("Response timestamp must be valid"),
+            is_fetched_from_server: value.is_fetched_from_server,
         }
     }
 }
