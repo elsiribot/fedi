@@ -32,43 +32,41 @@ const navRoutes: Array<PrefixRoute | AbsoluteRoute> = [
         showWhen: 'desktop',
     },
     {
-        path: '/transactions',
-        showWhen: 'desktop',
-    },
-    {
         path: '/onboarding',
     },
+    // TODO: Hide for transactions & backup pages when they have a back button
 ]
 
 /**
  * The logic for displaying the navigation component based on the current route and `navRoutes`.
  */
 export function useNavVisibility() {
-    const isSm = useMediaQuery(config.media.sm)
     const popupInfo = usePopupFederationInfo()
     const router = useRouter()
 
+    // useMediaQuery is mobile-first. Translates to > config.media.sm
+    const isDesktop = useMediaQuery(config.media.sm)
+
     const isPopupOver = !!popupInfo && popupInfo.secondsLeft <= 0
 
-    // Check if the current route matches an absolute route, longest first
-    const matchedRoute = (
-        navRoutes.filter(r => 'path' in r) as Array<AbsoluteRoute>
-    )
-        .sort((a, b) => b.path.length - a.path.length)
-        .find(route => router.asPath !== '/' && router.asPath === route.path)
+    const matched = navRoutes
+        .sort((a, b) => {
+            // If using a prefix, prioritize deeper routes
+            if ('prefix' in a && 'prefix' in b)
+                return b.prefix.split('/').length - a.prefix.split('/').length
 
-    // Check if the current route matches a prefix, longest first
-    const matchedPrefix = (
-        navRoutes.filter(r => 'prefix' in r) as Array<PrefixRoute>
-    )
-        .sort((a, b) => b.prefix.length - a.prefix.length)
-        .find(
-            route =>
-                router.asPath !== '/' && router.asPath.startsWith(route.prefix),
-        )
-
-    // Prioritize matchedRoute over matchedPrefix
-    const matched = matchedRoute || matchedPrefix
+            return 0
+        })
+        .find(route => {
+            if ('path' in route) {
+                return router.asPath !== '/' && router.asPath === route.path
+            } else {
+                return (
+                    router.asPath !== '/' &&
+                    router.asPath.startsWith(route.prefix)
+                )
+            }
+        })
 
     if (!matched) return { hideNavigation: false, isPopupOver }
 
@@ -77,12 +75,11 @@ export function useNavVisibility() {
         case 'always':
             shouldHideNavigation = false
             break
-        // useMediaQuery appears to be mobile-first, so `isSm` translates to > config.media.sm
         case 'desktop':
-            shouldHideNavigation = isSm
+            shouldHideNavigation = isDesktop
             break
         case 'mobile':
-            shouldHideNavigation = !isSm
+            shouldHideNavigation = !isDesktop
             break
     }
 
