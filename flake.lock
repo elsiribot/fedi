@@ -1275,17 +1275,17 @@
         "nixpkgs-unstable": "nixpkgs-unstable_12"
       },
       "locked": {
-        "lastModified": 1704211056,
-        "narHash": "sha256-Aa4B+54sGWe34UWH9YB1UdcP04yti/pTF31b2LQXIvM=",
-        "ref": "refs/tags/v0.2.1-rc4",
-        "rev": "1d02818469a237e5a0ea9f5d6b77cb63891f3339",
-        "revCount": 6068,
+        "lastModified": 1705498066,
+        "narHash": "sha256-FZGD3AkXpFP2X0z47m4eBbGGVTChMrKRNn57bHlfflA=",
+        "ref": "refs/tags/v0.2.2-rc1",
+        "rev": "c4f886be86707dbcd8e919f1bf7865951c55c5e4",
+        "revCount": 6074,
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       },
       "original": {
-        "ref": "refs/tags/v0.2.1-rc4",
-        "rev": "1d02818469a237e5a0ea9f5d6b77cb63891f3339",
+        "ref": "refs/tags/v0.2.2-rc1",
+        "rev": "c4f886be86707dbcd8e919f1bf7865951c55c5e4",
         "type": "git",
         "url": "https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git"
       }
