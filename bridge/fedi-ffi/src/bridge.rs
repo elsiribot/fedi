@@ -406,8 +406,18 @@ impl MultiFederation {
         force_update: bool,
     ) -> Result<ClientAccountInfo> {
         match self {
+            Self::V0(_) => bail!(ErrorCode::StabilityPoolNotSupported),
+            Self::V1(v1) => {
+                v1.stability_pool_account_info()
+                    .await
+                    .translate()
+                    .map(|account_info| ClientAccountInfo {
+                        account_info,
+                        timestamp: fedimint_core::time::now(),
+                        is_fetched_from_server: true,
+                    })
+            }
             Self::V2(v2) => v2.stability_pool_account_info(force_update).await,
-            _ => bail!(ErrorCode::StabilityPoolNotSupported),
         }
     }
 
