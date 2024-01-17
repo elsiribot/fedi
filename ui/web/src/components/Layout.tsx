@@ -2,7 +2,8 @@ import { useRouter } from 'next/router'
 
 import ChevronLeft from '@fedi/common/assets/svgs/chevron-left.svg'
 
-import { styled, theme } from '../styles'
+import { useMediaQuery } from '../hooks'
+import { config, styled, theme } from '../styles'
 import { IconButton } from './IconButton'
 import { ShadowScroller } from './ShadowScroller'
 
@@ -18,11 +19,12 @@ export function Header({
     back,
     ...props
 }: React.ComponentProps<typeof HeaderContainer> & { back?: string }) {
+    const isSm = useMediaQuery(config.media.sm)
     const router = useRouter()
 
     return (
         <HeaderContainer {...props}>
-            {back ? (
+            {back && isSm ? (
                 <IconButton
                     icon={ChevronLeft}
                     size="md"
