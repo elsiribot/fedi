@@ -32,9 +32,16 @@ const navRoutes: Array<PrefixRoute | AbsoluteRoute> = [
         showWhen: 'desktop',
     },
     {
+        path: '/transactions',
+        showWhen: 'desktop',
+    },
+    {
+        path: '/settings/app',
+        showWhen: 'desktop',
+    },
+    {
         path: '/onboarding',
     },
-    // TODO: Hide for transactions & backup pages when they have a back button
 ]
 
 /**
