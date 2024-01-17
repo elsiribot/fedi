@@ -48,11 +48,9 @@ const navRoutes: Array<PrefixRoute | AbsoluteRoute> = [
  * The logic for displaying the navigation component based on the current route and `navRoutes`.
  */
 export function useNavVisibility() {
+    const isSm = useMediaQuery(config.media.sm)
     const popupInfo = usePopupFederationInfo()
     const router = useRouter()
-
-    // useMediaQuery is mobile-first. Translates to > config.media.sm
-    const isDesktop = useMediaQuery(config.media.sm)
 
     const isPopupOver = !!popupInfo && popupInfo.secondsLeft <= 0
 
@@ -77,20 +75,20 @@ export function useNavVisibility() {
 
     if (!matched) return { hideNavigation: false, isPopupOver }
 
-    let shouldHideNavigation = true
+    let shouldShowNavigation = false
     switch (matched.showWhen) {
         case 'always':
-            shouldHideNavigation = false
+            shouldShowNavigation = true
             break
         case 'desktop':
-            shouldHideNavigation = isDesktop
+            shouldShowNavigation = !isSm
             break
         case 'mobile':
-            shouldHideNavigation = !isDesktop
+            shouldShowNavigation = isSm
             break
     }
 
-    return { hideNavigation: shouldHideNavigation || isPopupOver, isPopupOver }
+    return { hideNavigation: !shouldShowNavigation || isPopupOver, isPopupOver }
 }
 
 interface PrefixRoute {
