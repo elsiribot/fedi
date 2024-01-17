@@ -457,6 +457,7 @@ impl Translate<stability_pool_client::common::StagedProvide>
 {
     fn translate(self) -> stability_pool_client::common::StagedProvide {
         stability_pool_client::common::StagedProvide {
+            txid: TransactionId::all_zeros(),
             sequence: self.sequence,
             provide: self.provide.translate(),
         }
@@ -488,6 +489,7 @@ impl Translate<stability_pool_client::common::SeekMetadata>
 {
     fn translate(self) -> stability_pool_client::common::SeekMetadata {
         stability_pool_client::common::SeekMetadata {
+            staged_sequence: 0,
             initial_amount: self.initial_amount.translate(),
             initial_amount_cents: self.initial_amount_cents,
             withdrawn_amount: self.withdrawn_amount.translate(),
@@ -504,6 +506,7 @@ impl Translate<stability_pool_client::common::LockedProvide>
 {
     fn translate(self) -> stability_pool_client::common::LockedProvide {
         stability_pool_client::common::LockedProvide {
+            staged_txid: TransactionId::all_zeros(),
             staged_sequence: self.staged_sequence,
             staged_min_fee_rate: self.staged_min_fee_rate,
             amount: self.amount.translate(),
