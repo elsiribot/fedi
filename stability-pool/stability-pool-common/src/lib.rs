@@ -177,6 +177,7 @@ pub struct StagedSeek {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct StagedProvide {
+    pub txid: TransactionId,
     pub sequence: u64,
     pub provide: Provide,
 }
@@ -339,6 +340,7 @@ pub struct LockedSeek {
 
 #[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct LockedProvide {
+    pub staged_txid: TransactionId,
     pub staged_sequence: u64,
     pub staged_min_fee_rate: u64,
     pub amount: Amount,
@@ -401,6 +403,7 @@ impl Display for StabilityPoolConsensusItemV0 {
 
 #[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct SeekMetadata {
+    pub staged_sequence: u64,
     pub initial_amount: Amount,
     pub initial_amount_cents: u64,
     pub withdrawn_amount: Amount,
@@ -413,6 +416,7 @@ pub struct SeekMetadata {
 impl Default for SeekMetadata {
     fn default() -> Self {
         SeekMetadata {
+            staged_sequence: 0,
             initial_amount: Amount::ZERO,
             initial_amount_cents: 0,
             withdrawn_amount: Amount::ZERO,

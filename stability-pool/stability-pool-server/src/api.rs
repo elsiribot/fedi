@@ -82,7 +82,10 @@ pub async fn account_info(dbtx: &mut DatabaseTransaction<'_>, account: PublicKey
             .get_value(&StagedProvidesKey(account))
             .await
             .unwrap_or_default(),
-        staged_cancellation: dbtx.get_value(&StagedCancellationKey(account)).await,
+        staged_cancellation: dbtx
+            .get_value(&StagedCancellationKey(account))
+            .await
+            .map(|(_, cancel)| cancel),
         locked_seeks,
         locked_provides,
         seeks_metadata,

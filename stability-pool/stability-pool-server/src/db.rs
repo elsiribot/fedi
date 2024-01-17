@@ -113,7 +113,7 @@ pub struct StagedCancellationKeyPrefix;
 
 impl_db_record!(
     key = StagedCancellationKey,
-    value = CancelRenewal,
+    value = (TransactionId, CancelRenewal),
     db_prefix = DbKeyPrefix::StagedCancellation
 );
 impl_db_lookup!(
@@ -126,6 +126,7 @@ pub struct Cycle {
     pub index: u64,
     pub start_time: SystemTime,
     pub start_price: u64,
+    pub fee_rate: u64,
     pub locked_seeks: BTreeMap<PublicKey, Vec<LockedSeek>>,
     pub locked_provides: BTreeMap<PublicKey, Vec<LockedProvide>>,
 }

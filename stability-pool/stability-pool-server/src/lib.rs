@@ -437,6 +437,7 @@ impl ServerModule for StabilityPool {
                             None
                         } else {
                             Some(StagedProvide {
+                                txid: p.txid,
                                 sequence: p.sequence,
                                 provide: Provide {
                                     amount: p.provide.amount - min_extractable,
@@ -588,6 +589,7 @@ impl ServerModule for StabilityPool {
                         .await
                         .unwrap_or_default();
                     user_staged_provides.push(StagedProvide {
+                        txid: outpoint.txid,
                         sequence,
                         provide: provide.clone(),
                     });
@@ -612,7 +614,7 @@ impl ServerModule for StabilityPool {
                     && user_staged_cancellation.is_none()
                     && (!user_locked_seeks.is_empty() ^ !user_locked_provides.is_empty())
                 {
-                    dbtx.insert_entry(&StagedCancellationKey(account), &cancel)
+                    dbtx.insert_entry(&StagedCancellationKey(account), &(outpoint.txid, cancel))
                         .await;
                     Ok(TransactionItemAmount {
                         amount: Amount::ZERO,
@@ -752,7 +754,7 @@ async fn apply_staged_cancellations(
         .collect::<Vec<_>>()
         .await;
 
-    for (key, CancelRenewal { bps }) in staged_cancellations {
+    for (key, (_, CancelRenewal { bps })) in staged_cancellations {
         let mut msats_to_refund = 0;
 
         // If account has seeks, cancel portion of seeks
@@ -901,6 +903,7 @@ async fn restage_remaining_locks(
                 account_locked_provides
                     .into_iter()
                     .map(|locked_provide| StagedProvide {
+                        txid: locked_provide.staged_txid,
                         sequence: locked_provide.staged_sequence,
                         provide: Provide {
                             amount: locked_provide.amount,
@@ -912,6 +915,7 @@ async fn restage_remaining_locks(
             .coalesce(|prev, curr| {
                 if prev.sequence == curr.sequence {
                     Ok(StagedProvide {
+                        txid: prev.txid,
                         sequence: prev.sequence,
                         provide: Provide {
                             amount: prev.provide.amount + curr.provide.amount,
@@ -964,7 +968,7 @@ async fn calculate_locks_and_write_cycle(
         dbtx,
         locked_seeks,
         locked_provides,
-        fee_rate.into(),
+        fee_rate,
         included_provides_sum,
         index,
         time,
@@ -1006,6 +1010,7 @@ async fn extract_sorted_staged_seeks_and_provides(
                 StagedProvide {
                     provide: a,
                     sequence: seq_a,
+                    ..
                 },
             ),
              (
@@ -1013,6 +1018,7 @@ async fn extract_sorted_staged_seeks_and_provides(
                 StagedProvide {
                     provide: b,
                     sequence: seq_b,
+                    ..
                 },
             )| a.min_fee_rate.cmp(&b.min_fee_rate).then(seq_a.cmp(seq_b)),
         )
@@ -1054,7 +1060,14 @@ fn calculate_locked_provides_and_fee_rate(
     // and while there are unused provides left.
     let mut locked_provides = vec![];
     while remaining_coll_needed > 0 && !staged_provides.is_empty() {
-        let (account, StagedProvide { sequence, provide }) = &mut staged_provides[0];
+        let (
+            account,
+            StagedProvide {
+                txid,
+                sequence,
+                provide,
+            },
+        ) = &mut staged_provides[0];
 
         // If the fee rate for the next item is the same as the current
         // fee rate, we can just include however much collateral we need from it.
@@ -1087,6 +1100,7 @@ fn calculate_locked_provides_and_fee_rate(
         locked_provides.push((
             *account,
             LockedProvide {
+                staged_txid: *txid,
                 staged_sequence: *sequence,
                 staged_min_fee_rate: provide.min_fee_rate,
                 amount: Amount::from_msats(amount_used as u64),
@@ -1176,19 +1190,24 @@ async fn distribute_fees_and_write_cycle(
     dbtx: &mut DatabaseTransaction<'_>,
     mut locked_seeks: Vec<(PublicKey, LockedSeek)>,
     locked_provides: Vec<(PublicKey, LockedProvide)>,
-    fee_rate: u128,
+    fee_rate: u64,
     included_provides_sum: u128,
     cycle_index: u64,
     cycle_time: SystemTime,
     cycle_price: u64,
     randomness: usize,
 ) {
-    struct AmountAndFee {
+    #[derive(PartialOrd, Ord, PartialEq, Eq)]
+    struct AmountAndFeeKey {
+        pub_key: PublicKey,
+        txid: TransactionId,
+        sequence: u64,
+    }
+    struct AmountAndFeeValue {
         amount: Amount,
         fee: Amount,
     }
-    let mut seek_amount_and_fee_map: BTreeMap<(PublicKey, TransactionId), AmountAndFee> =
-        BTreeMap::new();
+    let mut seek_amount_and_fee_map: BTreeMap<AmountAndFeeKey, AmountAndFeeValue> = BTreeMap::new();
 
     // Reduce each locked seek by fee amount and calculate total fee pool
     let mut fee_pool = 0u128;
@@ -1197,18 +1216,22 @@ async fn distribute_fees_and_write_cycle(
             account,
             LockedSeek {
                 staged_txid,
+                staged_sequence,
                 amount,
-                ..
             },
         )| {
             // Ceiling division to ensure fee is never undercharged
-            let fee = ceil_division(amount.msats as u128 * fee_rate, B);
+            let fee = ceil_division(amount.msats as u128 * fee_rate as u128, B);
             fee_pool += fee;
 
             let fee = Amount::from_msats(fee as u64); // fee guaranteed to fit in u64
             seek_amount_and_fee_map.insert(
-                (*account, *staged_txid),
-                AmountAndFee {
+                AmountAndFeeKey {
+                    pub_key: *account,
+                    txid: *staged_txid,
+                    sequence: *staged_sequence,
+                },
+                AmountAndFeeValue {
                     amount: *amount,
                     fee,
                 },
@@ -1218,10 +1241,19 @@ async fn distribute_fees_and_write_cycle(
     );
 
     // Update seek metadatas in database
-    for ((account, txid), amount_and_fee) in seek_amount_and_fee_map {
-        let seek_metadata_key = SeekMetadataKey(account, txid);
+    for (
+        AmountAndFeeKey {
+            pub_key,
+            txid,
+            sequence,
+        },
+        amount_and_fee,
+    ) in seek_amount_and_fee_map
+    {
+        let seek_metadata_key = SeekMetadataKey(pub_key, txid);
         let seek_metadata = match dbtx.get_value(&seek_metadata_key).await {
             Some(existing) => SeekMetadata {
+                staged_sequence: existing.staged_sequence,
                 initial_amount: existing.initial_amount,
                 initial_amount_cents: existing.initial_amount_cents,
                 withdrawn_amount: existing.withdrawn_amount,
@@ -1233,6 +1265,7 @@ async fn distribute_fees_and_write_cycle(
             None => {
                 let amount_cents = amount_to_cents(amount_and_fee.amount, cycle_price.into());
                 SeekMetadata {
+                    staged_sequence: sequence,
                     initial_amount: amount_and_fee.amount,
                     initial_amount_cents: amount_cents,
                     withdrawn_amount: Amount::ZERO,
@@ -1299,6 +1332,7 @@ async fn distribute_fees_and_write_cycle(
             index: cycle_index,
             start_time: cycle_time,
             start_price: cycle_price,
+            fee_rate,
             locked_seeks: locked_seeks_map,
             locked_provides: locked_provides_map,
         },
