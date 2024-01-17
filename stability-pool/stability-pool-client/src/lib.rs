@@ -562,7 +562,7 @@ impl StabilityPoolClientModule {
             });
         }
 
-        return Err(FederationError::general(anyhow!("No local data present")));
+        Err(FederationError::general(anyhow!("No local data present")))
     }
 
     async fn fetch_account_info_from_server(
