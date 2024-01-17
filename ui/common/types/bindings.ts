@@ -352,12 +352,14 @@ export interface RpcMethods {
         string,
     ]
     stabilityPoolAccountInfo: [
-        { federationId: RpcFederationId },
+        { federationId: RpcFederationId; forceUpdate: boolean },
         {
             idleBalance: RpcAmount
             stagedSeeks: Array<RpcAmount>
             stagedCancellation: number | null
             lockedSeeks: Array<RpcLockedSeek>
+            timestamp: bigint
+            isFetchedFromServer: boolean
         },
     ]
     stabilityPoolNextCycleStartTime: [{ federationId: RpcFederationId }, bigint]
@@ -437,6 +439,8 @@ export interface RpcStabilityPoolAccountInfo {
     stagedSeeks: Array<RpcAmount>
     stagedCancellation: number | null
     lockedSeeks: Array<RpcLockedSeek>
+    timestamp: bigint
+    isFetchedFromServer: boolean
 }
 
 export interface RpcStabilityPoolConfig {
