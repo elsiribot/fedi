@@ -497,6 +497,7 @@
             "locate-social-recovery-instructions-check-3": "Messages",
             "locate-social-recovery-instructions-check-4": "etc",
             "nothing-to-download": "Nothing to download from guardian",
+            "guardians-remaining": "{{guardians}} remaining",
             "open-qr-code": "Open QR Code",
             "opening-backup-file-failed": "Opening backup file failed",
             "opening-backup-file-failed-instructions": "Backup file {{fileName}} failed to open. Please try and recover from another one of your shared locations.",

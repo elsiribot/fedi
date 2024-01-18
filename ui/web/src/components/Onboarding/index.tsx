@@ -6,6 +6,7 @@ import { JoinFederation } from './JoinFederation'
 import { OnboardingComplete } from './OnboardingComplete'
 import { OnboardingHome } from './OnboardingHome'
 import { PersonalRecovery } from './PersonalRecovery'
+import { SocialRecovery } from './SocialRecovery'
 import { WalletRecovery } from './WalletRecovery'
 
 interface Props {
@@ -20,6 +21,8 @@ export const Onboarding: React.FC<Props> = ({ step }) => {
         content = <WalletRecovery />
     } else if (step === 'recover/personal') {
         content = <PersonalRecovery />
+    } else if (step === 'recover/social') {
+        content = <SocialRecovery />
     } else if (step === 'username') {
         content = <CreateUsername />
     } else if (step === 'complete') {
