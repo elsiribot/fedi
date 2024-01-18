@@ -25,9 +25,9 @@ declare global {
     }
 }
 
-export const DRAWER_NAVIGATION_ID: any = 'ConnectedFederationsDrawer'
-export const MAIN_NAVIGATOR_ID: any = 'MainStackNavigator'
-export const TABS_NAVIGATOR_ID: any = 'TabsNavigator'
+export const DRAWER_NAVIGATION_ID = 'ConnectedFederationsDrawer'
+export const MAIN_NAVIGATOR_ID = 'MainStackNavigator'
+export const TABS_NAVIGATOR_ID = 'TabsNavigator'
 
 export type RouteHook = RouteProp<RootStackParamList>
 export type DrawerNavigationHook =

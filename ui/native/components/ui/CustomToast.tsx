@@ -49,8 +49,8 @@ const CustomToast = () => {
 
     return (
         <TypesafeToast
-            ref={(ref: any) => {
-                toastRef.current = ref
+            ref={(ref: unknown) => {
+                toastRef.current = ref as Toast
             }}
             position="bottom"
             positionValue={150 + keyboardHeight}

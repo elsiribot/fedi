@@ -12,6 +12,7 @@ import { RootStackParamList } from './navigation'
 export * from '@fedi/common/types'
 
 export default class Base {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(data?: any) {
         Object.keys(data).forEach(field => {
             this[field as keyof typeof this] = data[field]
@@ -69,6 +70,7 @@ export class FediMod extends Shortcut {
     type = ShortcutType.fediMod
     url: string
     imageUrl?: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(data: any) {
         super(data)
         this.icon = {
@@ -97,6 +99,7 @@ export class Chat extends Base {
     members?: Member[]
     type: ChatType
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(data: any) {
         super(data)
         if (data.members) this.members = this.members?.map(m => new Member(m))
@@ -161,6 +164,7 @@ export type GroupSettings = {
 export class Member extends Base {
     jid: JID
     publicKeyHex?: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(data: any) {
         super(data)
         this.jid = jid(data.jid._local, data.jid._domain, data.jid._resource)
@@ -180,6 +184,8 @@ export class Message extends Base {
     sentTo?: Member
     actions?: MessageAction[]
     payment?: Payment
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(data: any) {
         super(data)
         if (data.sentIn) this.sentIn = new Group(data.sentIn)
@@ -204,6 +210,7 @@ export class Payment extends Base {
     memo?: string
     token?: string
     invoice?: Invoice
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(data: any) {
         super(data)
         if (data.recipient) this.recipient = new Member(data.recipient)

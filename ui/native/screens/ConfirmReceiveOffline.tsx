@@ -62,8 +62,8 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                         amount,
                     } as Transaction,
                 })
-            } catch (e: any) {
-                toast?.show(e.message, 3000)
+            } catch (e) {
+                toast?.show((e as Error).message, 3000)
                 setReceiving(false)
             }
         }

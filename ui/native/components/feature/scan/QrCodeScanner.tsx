@@ -19,6 +19,16 @@ type Props = {
     onQrCodeDetected(data: string): void
 }
 
+/**
+ * `react-native-camera-kit` declares this type locally and does not export it
+ * See https://github.com/teslamotors/react-native-camera-kit/blob/master/src/Camera.d.ts
+ */
+type OnReadCodeData = {
+    nativeEvent: {
+        codeStringValue: string
+    }
+}
+
 const QrCodeScanner: React.FC<Props> = ({ processing, onQrCodeDetected }) => {
     const { theme } = useTheme()
     const [frames, setFrames] = useState<FrameState | null>(null)
@@ -87,7 +97,7 @@ const QrCodeScanner: React.FC<Props> = ({ processing, onQrCodeDetected }) => {
                     cameraType={CameraType.Back}
                     flashMode="auto"
                     scanBarcode={true}
-                    onReadCode={(event: any) =>
+                    onReadCode={(event: OnReadCodeData) =>
                         handleScan(event?.nativeEvent?.codeStringValue)
                     }
                 />

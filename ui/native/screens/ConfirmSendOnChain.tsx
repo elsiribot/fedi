@@ -73,7 +73,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
             <Text caption>{balanceDisplay}</Text>
             <View style={styles(theme).detailsContainer}>
                 <Input
-                    onChangeText={onChangeText as (_: string) => any}
+                    onChangeText={onChangeText as (_: string) => void}
                     value={amount}
                     placeholder={`${t('words.amount')} (${t('words.sats')})`}
                     keyboardType="numeric"
