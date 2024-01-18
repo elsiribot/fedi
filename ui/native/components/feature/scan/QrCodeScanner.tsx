@@ -98,7 +98,7 @@ const QrCodeScanner: React.FC<Props> = ({ processing, onQrCodeDetected }) => {
                     flashMode="auto"
                     scanBarcode={true}
                     onReadCode={(event: OnReadCodeData) =>
-                        handleScan(event?.nativeEvent?.codeStringValue)
+                        handleScan(event.nativeEvent.codeStringValue)
                     }
                 />
             )}
