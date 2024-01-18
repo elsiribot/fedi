@@ -358,7 +358,7 @@ export interface RpcMethods {
             stagedSeeks: Array<RpcAmount>
             stagedCancellation: number | null
             lockedSeeks: Array<RpcLockedSeek>
-            timestamp: bigint
+            timestamp: number
             isFetchedFromServer: boolean
         },
     ]
@@ -439,7 +439,7 @@ export interface RpcStabilityPoolAccountInfo {
     stagedSeeks: Array<RpcAmount>
     stagedCancellation: number | null
     lockedSeeks: Array<RpcLockedSeek>
-    timestamp: bigint
+    timestamp: number
     isFetchedFromServer: boolean
 }
 
@@ -454,11 +454,11 @@ export type RpcStabilityPoolTransactionState =
     | { type: 'pendingDeposit' }
     | {
           type: 'completeDeposit'
-          initial_amount_cents: bigint
+          initial_amount_cents: number
           fees_paid_so_far: RpcAmount
       }
-    | { type: 'pendingWithdrawal'; estimated_withdrawal_cents: bigint }
-    | { type: 'completeWithdrawal'; estimated_withdrawal_cents: bigint }
+    | { type: 'pendingWithdrawal'; estimated_withdrawal_cents: number }
+    | { type: 'completeWithdrawal'; estimated_withdrawal_cents: number }
 
 export interface RpcTransaction {
     id: string
@@ -534,6 +534,6 @@ export interface TransactionEvent {
 
 export interface WithdrawalDetails {
     txid: string
-    fee: bigint
-    feeRate: bigint
+    fee: number
+    feeRate: number
 }
