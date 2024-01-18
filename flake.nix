@@ -344,11 +344,11 @@
           gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
           gatewayd = fedimint-pkgs.packages.${system}.gatewayd;
           gateway-cli = fedimint-pkgs.packages.${system}.gateway-cli;
+          fedimint-dbtool = flakeboxLib.pickBinary { bin = "fedimint-dbtool"; pkg = fedimint-pkgs.packages.${system}.fedimint-pkgs; };
 
           fedi-fedimint-pkgs = craneMultiBuild.fedi-fedimint-pkgs;
           fedi-fedimintd = craneMultiBuild.fedi-fedimintd;
           fedi-fedimint-cli = craneMultiBuild.fedi-fedimint-cli;
-          fedi-fedimint-dbtool = craneMultiBuild.fedi-fedimint-dbtool;
 
           fedi-wasm = craneMultiBuild.wasm32-unknown.release.fedi-wasm;
           devops-cli = craneMultiBuild.devops-cli;

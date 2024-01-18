@@ -217,7 +217,6 @@ rec {
     ];
   };
 
-  fedi-fedimint-dbtool = flakeboxLib.pickBinary { bin = "fedimint-dbtool"; pkg = fedi-fedimint-pkgs; };
   fedi-fedimintd = flakeboxLib.pickBinary { bin = "fedimintd"; pkg = fedi-fedimint-pkgs; };
   fedi-fedimint-cli = flakeboxLib.pickBinary { bin = "fedimint-cli"; pkg = fedi-fedimint-pkgs; };
 
