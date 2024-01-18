@@ -204,7 +204,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         }}
                     />
                 )}
-                {showSocialRecovery && authenticatedGuardian !== null && (
+                {authenticatedGuardian !== null && (
                     <SettingsItem
                         image={<SvgImage name="SocialPeople" />}
                         label={t('feature.recovery.recovery-assist')}

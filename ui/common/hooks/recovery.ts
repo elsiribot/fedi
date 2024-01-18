@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
     fetchSocialRecovery as reduxFetchSocialRecovery,
     completeSocialRecovery as reduxCompleteSocialRecovery,
+    cancelSocialRecovery as reduxCancelSocialRecovery,
     refreshSocialRecoveryState,
     selectHasCheckedForSocialRecovery,
     selectSocialRecoveryId,
@@ -19,6 +20,7 @@ export function useSocialRecovery(fedimint: FedimintBridge) {
     const socialRecoveryId = useCommonSelector(selectSocialRecoveryId)
     const socialRecoveryState = useCommonSelector(selectSocialRecoveryState)
     const [isCompletingRecovery, setIsCompletingRecovery] = useState(false)
+    const [isCancelingRecovery, setIsCancelingRecovery] = useState(false)
 
     const fetchSocialRecovery = useCallback(() => {
         return dispatch(reduxFetchSocialRecovery(fedimint)).unwrap()
@@ -33,14 +35,23 @@ export function useSocialRecovery(fedimint: FedimintBridge) {
         }
     }, [dispatch, fedimint])
 
+    const cancelSocialRecovery = useCallback(async () => {
+        setIsCancelingRecovery(true)
+        try {
+            return dispatch(reduxCancelSocialRecovery(fedimint)).unwrap()
+        } finally {
+            setIsCancelingRecovery(false)
+        }
+    }, [dispatch, fedimint])
+
     // Refresh social recovery state every 3 seconds while recovering.
     useEffect(() => {
         if (!socialRecoveryId) return
         const refresh = async () => {
             await dispatch(refreshSocialRecoveryState(fedimint))
-            setTimeout(refresh, 3000)
+            timeout = setTimeout(refresh, 3000)
         }
-        const timeout = setTimeout(refresh, 3000)
+        let timeout = setTimeout(refresh, 3000)
         return () => clearTimeout(timeout)
     }, [dispatch, fedimint, socialRecoveryId])
 
@@ -49,7 +60,9 @@ export function useSocialRecovery(fedimint: FedimintBridge) {
         socialRecoveryId,
         socialRecoveryState,
         isCompletingRecovery,
+        isCancelingRecovery,
         fetchSocialRecovery,
         completeSocialRecovery,
+        cancelSocialRecovery,
     }
 }

@@ -2,6 +2,7 @@ import { useRouter } from 'next/router'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import CloseIcon from '@fedi/common/assets/svgs/close.svg'
 import FediFileIcon from '@fedi/common/assets/svgs/fedi-file.svg'
 import { useSocialRecovery } from '@fedi/common/hooks/recovery'
 import { makeLog } from '@fedi/common/utils/log'
@@ -11,7 +12,9 @@ import { fedimint, writeBridgeFile } from '../../lib/bridge'
 import { styled, theme } from '../../styles'
 import { ActionCard } from '../ActionCard'
 import { Button } from '../Button'
+import { ConfirmDialog } from '../ConfirmDialog'
 import { HoloLoader } from '../HoloLoader'
+import { IconButton } from '../IconButton'
 import { QRCode } from '../QRCode'
 import { Text } from '../Text'
 import {
@@ -32,8 +35,10 @@ export const SocialRecovery: React.FC = () => {
         isCompletingRecovery,
         fetchSocialRecovery,
         completeSocialRecovery,
+        cancelSocialRecovery,
     } = useSocialRecovery(fedimint)
     const [isCheckingFile, setIsCheckingFile] = useState(false)
+    const [wantsCancel, setWantsCancel] = useState(false)
     const { showToast, showErrorToast } = useToast()
 
     const handleFileChange = async (
@@ -67,8 +72,19 @@ export const SocialRecovery: React.FC = () => {
         }
     }
 
+    const handleCancel = async () => {
+        try {
+            await cancelSocialRecovery()
+            replace('/onboarding')
+        } catch (err) {
+            log.warn('handleCancel', err)
+            showErrorToast(err, 'errors.unknown-error')
+        }
+    }
+
     let content: React.ReactNode
     let actions: React.ReactNode | undefined
+    let extra: React.ReactNode | undefined
     if (!hasCheckedForSocialRecovery) {
         content = (
             <LoadingContainer>
@@ -117,13 +133,34 @@ export const SocialRecovery: React.FC = () => {
                 )}
             </>
         )
-        actions = socialRecoveryState?.remaining === 0 && (
+        const canContinue = socialRecoveryState?.remaining === 0
+        actions = canContinue && (
             <Button
                 width="full"
                 loading={isCompletingRecovery}
                 onClick={handleComplete}>
                 {t('feature.recovery.complete-social-recovery')}
             </Button>
+        )
+        extra = !canContinue && (
+            <>
+                <CloseButtonContainer>
+                    <IconButton
+                        icon={CloseIcon}
+                        size="md"
+                        onClick={() => setWantsCancel(true)}
+                    />
+                </CloseButtonContainer>
+                <ConfirmDialog
+                    open={wantsCancel}
+                    title={t('feature.recovery.cancel-social-recovery')}
+                    description={t(
+                        'feature.recovery.cancel-social-recovery-detail',
+                    )}
+                    onClose={() => setWantsCancel(false)}
+                    onConfirm={handleCancel}
+                />
+            </>
         )
     } else {
         content = (
@@ -204,11 +241,12 @@ export const SocialRecovery: React.FC = () => {
         <OnboardingContainer>
             <OnboardingContent gap="md" fullWidth>
                 <Text variant="h1">
-                    {t('feature.recovery.personal-recovery')}
+                    {t('feature.recovery.social-recovery')}
                 </Text>
                 <Content>{content}</Content>
             </OnboardingContent>
             {actions && <OnboardingActions>{actions}</OnboardingActions>}
+            {extra}
         </OnboardingContainer>
     )
 }
@@ -272,4 +310,10 @@ const GuardianApproval = styled('div', {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+})
+
+const CloseButtonContainer = styled('div', {
+    position: 'absolute',
+    top: 16,
+    right: 16,
 })
