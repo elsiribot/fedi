@@ -11,7 +11,6 @@ import {
     refreshFederations,
     selectActiveFederation,
     selectAuthenticatedMember,
-    selectHasCheckedForSocialRecovery,
     selectSocialRecoveryId,
 } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
