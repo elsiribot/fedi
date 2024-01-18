@@ -317,6 +317,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         <Dialog
             title={t('feature.receive.request-bitcoin')}
             open={open}
+            behavior="overlay"
             onOpenChange={onOpenChange}>
             <Container ref={containerRef}>{content}</Container>
         </Dialog>
