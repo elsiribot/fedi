@@ -234,7 +234,11 @@ impl IStorage for PathBasedStorage {
         // tokio::fs::write is bad, creates a second copy of data
         Ok(tokio::task::spawn_blocking(move || {
             let tmp_path = path.with_extension("tmp");
-            let mut file = std::fs::File::create(&tmp_path)?;
+            let mut file = std::fs::OpenOptions::new()
+                .create(true)
+                .truncate(true)
+                .write(true)
+                .open(&tmp_path)?;
             file.write_all(&data)?;
             file.flush()?;
             file.sync_data()?;

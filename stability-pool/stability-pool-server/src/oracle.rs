@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
+use fedimint_core::task;
 use futures::future::join_all;
 use itertools::Itertools;
 use reqwest::{Client, Url};
@@ -157,7 +158,7 @@ impl Oracle for AggregateOracle {
         let source_prices = join_all(self.sources.iter().map(|source| {
             let client = self.client.clone();
             let url = source.get_url();
-            tokio::spawn(async move {
+            task::spawn("oracle get price", async move {
                 Ok::<_, anyhow::Error>(
                     client
                         .get(url)
@@ -167,6 +168,7 @@ impl Oracle for AggregateOracle {
                         .await?,
                 )
             })
+            .expect("code doesn't rust on wasm")
         }))
         .await
         .into_iter()

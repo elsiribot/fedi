@@ -11,7 +11,7 @@ use futures::FutureExt;
 use js_sys::Uint8Array;
 use storage::WasmStorage;
 use tracing::warn;
-use wasm_bindgen::prelude::*;
+use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::JsError;
 
 mod db;
