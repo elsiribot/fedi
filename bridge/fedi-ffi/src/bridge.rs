@@ -28,7 +28,7 @@ use fedimint_mint_client_v0::parse_ecash;
 use futures::future::join_all;
 use lightning_invoice::Bolt11Invoice;
 use rand::distributions::{Alphanumeric, DistString};
-use stability_pool_client::common::AccountInfo;
+use stability_pool_client::ClientAccountInfo;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info};
 
@@ -401,11 +401,23 @@ impl MultiFederation {
         }
     }
 
-    pub async fn stability_pool_account_info(&self) -> Result<AccountInfo> {
+    pub async fn stability_pool_account_info(
+        &self,
+        force_update: bool,
+    ) -> Result<ClientAccountInfo> {
         match self {
             Self::V0(_) => bail!(ErrorCode::StabilityPoolNotSupported),
-            Self::V1(v1) => v1.stability_pool_account_info().await.translate(),
-            Self::V2(v2) => v2.stability_pool_account_info().await,
+            Self::V1(v1) => {
+                v1.stability_pool_account_info()
+                    .await
+                    .translate()
+                    .map(|account_info| ClientAccountInfo {
+                        account_info,
+                        timestamp: fedimint_core::time::now(),
+                        is_fetched_from_server: true,
+                    })
+            }
+            Self::V2(v2) => v2.stability_pool_account_info(force_update).await,
         }
     }
 
@@ -1328,10 +1340,11 @@ impl Bridge {
     pub async fn stability_pool_account_info(
         &self,
         federation_id: RpcFederationId,
+        force_update: bool,
     ) -> Result<RpcStabilityPoolAccountInfo> {
         self.get_multi(&federation_id.0)
             .await?
-            .stability_pool_account_info()
+            .stability_pool_account_info(force_update)
             .await
             .map(|info| info.into())
     }

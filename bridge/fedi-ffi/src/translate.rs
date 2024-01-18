@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::str::FromStr;
 
 use fedimint_core::util::SafeUrl;
+use fedimint_core::{BitcoinHash, TransactionId};
 
 pub trait Translate<T> {
     fn translate(self) -> T;
@@ -410,8 +411,14 @@ impl Translate<stability_pool_client::common::AccountInfo>
             staged_seeks: self.staged_seeks.translate(),
             staged_provides: self.staged_provides.translate(),
             staged_cancellation: self.staged_cancellation.translate(),
-            locked_seeks: self.locked_seeks.translate(),
+            locked_seeks: self
+                .locked_seeks
+                .into_iter()
+                .map(|l| l.lock)
+                .collect::<Vec<_>>()
+                .translate(),
             locked_provides: self.locked_provides.translate(),
+            seeks_metadata: BTreeMap::new(),
         }
     }
 }
@@ -427,6 +434,7 @@ impl Translate<stability_pool_client::common::StagedSeek>
 {
     fn translate(self) -> stability_pool_client::common::StagedSeek {
         stability_pool_client::common::StagedSeek {
+            txid: TransactionId::all_zeros(),
             sequence: self.sequence,
             seek: self.seek.translate(),
         }
@@ -449,6 +457,7 @@ impl Translate<stability_pool_client::common::StagedProvide>
 {
     fn translate(self) -> stability_pool_client::common::StagedProvide {
         stability_pool_client::common::StagedProvide {
+            txid: TransactionId::all_zeros(),
             sequence: self.sequence,
             provide: self.provide.translate(),
         }
@@ -468,6 +477,7 @@ impl Translate<stability_pool_client::common::LockedSeek>
 {
     fn translate(self) -> stability_pool_client::common::LockedSeek {
         stability_pool_client::common::LockedSeek {
+            staged_txid: TransactionId::all_zeros(),
             staged_sequence: self.staged_sequence,
             amount: self.amount.translate(),
         }
@@ -479,23 +489,14 @@ impl Translate<stability_pool_client::common::SeekMetadata>
 {
     fn translate(self) -> stability_pool_client::common::SeekMetadata {
         stability_pool_client::common::SeekMetadata {
+            staged_sequence: 0,
             initial_amount: self.initial_amount.translate(),
             initial_amount_cents: self.initial_amount_cents,
             withdrawn_amount: self.withdrawn_amount.translate(),
             withdrawn_amount_cents: self.withdrawn_amount_cents,
             fees_paid_so_far: self.fees_paid_so_far.translate(),
             first_lock_start_time: self.first_lock_start_time,
-        }
-    }
-}
-
-impl Translate<stability_pool_client::common::LockedSeekWithMetadata>
-    for stability_pool_client_v1::common::LockedSeekWithMetadata
-{
-    fn translate(self) -> stability_pool_client::common::LockedSeekWithMetadata {
-        stability_pool_client::common::LockedSeekWithMetadata {
-            lock: self.lock.translate(),
-            metadata: self.metadata.translate(),
+            fully_withdrawn: false,
         }
     }
 }
@@ -505,6 +506,7 @@ impl Translate<stability_pool_client::common::LockedProvide>
 {
     fn translate(self) -> stability_pool_client::common::LockedProvide {
         stability_pool_client::common::LockedProvide {
+            staged_txid: TransactionId::all_zeros(),
             staged_sequence: self.staged_sequence,
             staged_min_fee_rate: self.staged_min_fee_rate,
             amount: self.amount.translate(),

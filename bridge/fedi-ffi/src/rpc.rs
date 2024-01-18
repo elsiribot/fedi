@@ -404,8 +404,11 @@ async fn signNostrEvent(
 async fn stabilityPoolAccountInfo(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
+    force_update: bool,
 ) -> anyhow::Result<RpcStabilityPoolAccountInfo> {
-    bridge.stability_pool_account_info(federation_id).await
+    bridge
+        .stability_pool_account_info(federation_id, force_update)
+        .await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1156,7 +1159,7 @@ mod tests {
         );
 
         let account_info = recovery_bridge
-            .stability_pool_account_info(recovery_federation.federation_id())
+            .stability_pool_account_info(recovery_federation.federation_id(), true)
             .await?;
         assert_eq!(account_info.idle_balance.0, Amount::ZERO);
         assert_eq!(account_info.staged_seeks[0].0, amount_to_deposit);
@@ -1302,7 +1305,7 @@ mod tests {
         );
 
         let account_info = recovery_bridge
-            .stability_pool_account_info(recovery_federation.federation_id())
+            .stability_pool_account_info(recovery_federation.federation_id(), true)
             .await?;
         assert_eq!(account_info.idle_balance.0, Amount::ZERO);
         assert_eq!(account_info.staged_seeks[0].0, amount_to_deposit);
@@ -1323,7 +1326,7 @@ mod tests {
 
         // Test default account info state
         let account_info = bridge
-            .stability_pool_account_info(federation.federation_id())
+            .stability_pool_account_info(federation.federation_id(), true)
             .await?;
         assert_eq!(account_info.idle_balance.0, Amount::ZERO);
         assert!(account_info.staged_seeks.is_empty());
@@ -1357,7 +1360,7 @@ mod tests {
             fedimint_core::task::sleep(Duration::from_secs(2)).await;
         }
         let account_info = bridge
-            .stability_pool_account_info(federation.federation_id())
+            .stability_pool_account_info(federation.federation_id(), true)
             .await?;
         assert_eq!(account_info.idle_balance.0, Amount::ZERO);
         assert_eq!(account_info.staged_seeks[0].0, amount_to_deposit);
@@ -1388,7 +1391,7 @@ mod tests {
             fedimint_core::task::sleep(Duration::from_secs(2)).await;
         }
         let account_info = bridge
-            .stability_pool_account_info(federation.federation_id())
+            .stability_pool_account_info(federation.federation_id(), true)
             .await?;
         assert_eq!(account_info.idle_balance.0, Amount::ZERO);
         assert_eq!(

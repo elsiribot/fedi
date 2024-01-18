@@ -1,8 +1,9 @@
 use std::collections::BTreeMap;
 use std::time::SystemTime;
 
+use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId};
+use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId, TransactionId};
 use secp256k1_zkp::PublicKey;
 use stability_pool_common::{
     CancelRenewal, LockedProvide, LockedSeek, SeekMetadata, StabilityPoolConsensusItem,
@@ -59,7 +60,7 @@ pub enum DbKeyPrefix {
     /// threshold number of votes is received, cycle turnover happens.
     CycleChangeVote,
 
-    /// Sequence => seek metadata.
+    /// (User account, transaction ID) => seek metadata.
     /// Relevant history pertaining to the seek for client tracking purposes.
     /// Contains information such as initial value in sats and cents,
     /// withdrawn amounts in sats and cents, as well as fees debited so far.
@@ -112,7 +113,7 @@ pub struct StagedCancellationKeyPrefix;
 
 impl_db_record!(
     key = StagedCancellationKey,
-    value = CancelRenewal,
+    value = (TransactionId, CancelRenewal),
     db_prefix = DbKeyPrefix::StagedCancellation
 );
 impl_db_lookup!(
@@ -125,6 +126,7 @@ pub struct Cycle {
     pub index: u64,
     pub start_time: SystemTime,
     pub start_price: u64,
+    pub fee_rate: u64,
     pub locked_seeks: BTreeMap<PublicKey, Vec<LockedSeek>>,
     pub locked_provides: BTreeMap<PublicKey, Vec<LockedProvide>>,
 }
@@ -211,7 +213,10 @@ impl_db_lookup!(
 );
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct SeekMetadataKey(pub u64);
+pub struct SeekMetadataKey(pub PublicKey, pub TransactionId);
+
+#[derive(Debug, Encodable, Decodable)]
+pub struct SeekMetadataAccountPrefix(pub PublicKey);
 
 #[derive(Debug, Encodable, Decodable)]
 pub struct SeekMetadataKeyPrefix;
@@ -221,4 +226,23 @@ impl_db_record!(
     value = SeekMetadata,
     db_prefix = DbKeyPrefix::SeekMetadata
 );
-impl_db_lookup!(key = SeekMetadataKey, query_prefix = SeekMetadataKeyPrefix);
+impl_db_lookup!(
+    key = SeekMetadataKey,
+    query_prefix = SeekMetadataAccountPrefix,
+    query_prefix = SeekMetadataKeyPrefix
+);
+
+/// Migrate DB from version 1 to version 2 by wiping everything
+pub async fn migrate_to_v2(dbtx: &mut DatabaseTransaction<'_>) -> Result<(), anyhow::Error> {
+    dbtx.remove_by_prefix(&IdleBalanceKeyPrefix).await;
+    dbtx.remove_by_prefix(&StagedSeeksKeyPrefix).await;
+    dbtx.remove_by_prefix(&StagedProvidesKeyPrefix).await;
+    dbtx.remove_by_prefix(&StagedCancellationKeyPrefix).await;
+    dbtx.remove_by_prefix(&CurrentCycleKeyPrefix).await;
+    dbtx.remove_by_prefix(&PastCycleKeyPrefix).await;
+    dbtx.remove_by_prefix(&StagedSeekSequenceKeyPrefix).await;
+    dbtx.remove_by_prefix(&StagedProvideSequenceKeyPrefix).await;
+    dbtx.remove_by_prefix(&CycleChangeVoteKeyPrefix).await;
+    dbtx.remove_by_prefix(&SeekMetadataKeyPrefix).await;
+    Ok(())
+}

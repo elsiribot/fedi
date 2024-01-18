@@ -13,7 +13,7 @@ use fedimint_wallet_client_v1::{
     WithdrawState as WithdrawStateV1,
 };
 use serde::{Deserialize, Serialize};
-use stability_pool_client::common::AccountInfo;
+use stability_pool_client::ClientAccountInfo;
 use ts_rs::TS;
 
 use super::bridge::MultiFederation;
@@ -403,7 +403,9 @@ pub enum RpcTransactionDirection {
 #[ts(export, export_to = "target/bindings/")]
 pub struct WithdrawalDetails {
     pub txid: String,
+    #[ts(type = "number")]
     pub fee: u64,
+    #[ts(type = "number")]
     pub fee_rate: u64,
 }
 
@@ -423,6 +425,28 @@ pub struct RpcTransaction {
     pub lightning: Option<RpcLightningDetails>,
     pub oob_state: Option<RpcOOBState>,
     pub onchain_withdrawal_details: Option<WithdrawalDetails>,
+    pub stability_pool_state: Option<RpcStabilityPoolTransactionState>,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcStabilityPoolTransactionState {
+    PendingDeposit,
+    CompleteDeposit {
+        #[ts(type = "number")]
+        initial_amount_cents: u64,
+        fees_paid_so_far: RpcAmount,
+    },
+    PendingWithdrawal {
+        #[ts(type = "number")]
+        estimated_withdrawal_cents: u64,
+    },
+    CompleteWithdrawal {
+        #[ts(type = "number")]
+        estimated_withdrawal_cents: u64,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -758,6 +782,9 @@ pub struct RpcStabilityPoolAccountInfo {
     pub staged_seeks: Vec<RpcAmount>,
     pub staged_cancellation: Option<u32>,
     pub locked_seeks: Vec<RpcLockedSeek>,
+    #[ts(type = "number")]
+    pub timestamp: u64,
+    pub is_fetched_from_server: bool,
 }
 
 #[derive(Debug, Serialize, TS)]
@@ -775,29 +802,41 @@ pub struct RpcLockedSeek {
     pub first_lock_start_time: u64,
 }
 
-impl From<AccountInfo> for RpcStabilityPoolAccountInfo {
-    fn from(value: AccountInfo) -> Self {
+impl From<ClientAccountInfo> for RpcStabilityPoolAccountInfo {
+    fn from(value: ClientAccountInfo) -> Self {
         RpcStabilityPoolAccountInfo {
-            idle_balance: RpcAmount(value.idle_balance),
+            idle_balance: RpcAmount(value.account_info.idle_balance),
             staged_seeks: value
+                .account_info
                 .staged_seeks
                 .into_iter()
                 .map(|s| RpcAmount(s.seek.0))
                 .collect(),
-            staged_cancellation: value.staged_cancellation.map(|c| c.bps),
+            staged_cancellation: value.account_info.staged_cancellation.map(|c| c.bps),
             locked_seeks: value
+                .account_info
                 .locked_seeks
                 .into_iter()
-                .map(|l| RpcLockedSeek {
-                    initial_amount: RpcAmount(l.metadata.initial_amount),
-                    initial_amount_cents: l.metadata.initial_amount_cents,
-                    withdrawn_amount: RpcAmount(l.metadata.withdrawn_amount),
-                    withdrawn_amount_cents: l.metadata.withdrawn_amount_cents,
-                    fees_paid_so_far: RpcAmount(l.metadata.fees_paid_so_far),
-                    first_lock_start_time: to_unix_time(l.metadata.first_lock_start_time)
-                        .expect("Lock start time must be valid"),
+                .map(|l| {
+                    let metadata = value
+                        .account_info
+                        .seeks_metadata
+                        .get(&l.staged_txid)
+                        .cloned()
+                        .unwrap_or_default();
+                    RpcLockedSeek {
+                        initial_amount: RpcAmount(metadata.initial_amount),
+                        initial_amount_cents: metadata.initial_amount_cents,
+                        withdrawn_amount: RpcAmount(metadata.withdrawn_amount),
+                        withdrawn_amount_cents: metadata.withdrawn_amount_cents,
+                        fees_paid_so_far: RpcAmount(metadata.fees_paid_so_far),
+                        first_lock_start_time: to_unix_time(metadata.first_lock_start_time)
+                            .expect("Lock start time must be valid"),
+                    }
                 })
                 .collect(),
+            timestamp: to_unix_time(value.timestamp).expect("Response timestamp must be valid"),
+            is_fetched_from_server: value.is_fetched_from_server,
         }
     }
 }

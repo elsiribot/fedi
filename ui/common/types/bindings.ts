@@ -19,6 +19,7 @@ export interface BalanceEvent {
 
 export type ErrorCode =
     | 'initializationFailed'
+    | 'notInialized'
     | 'badRequest'
     | 'alreadyJoined'
     | 'invalidInvoice'
@@ -284,6 +285,7 @@ export interface RpcMethods {
             lightning: RpcLightningDetails | null
             oobState: RpcOOBState | null
             onchainWithdrawalDetails: WithdrawalDetails | null
+            stabilityPoolState: RpcStabilityPoolTransactionState | null
         }>,
     ]
     updateTransactionNotes: [
@@ -350,12 +352,14 @@ export interface RpcMethods {
         string,
     ]
     stabilityPoolAccountInfo: [
-        { federationId: RpcFederationId },
+        { federationId: RpcFederationId; forceUpdate: boolean },
         {
             idleBalance: RpcAmount
             stagedSeeks: Array<RpcAmount>
             stagedCancellation: number | null
             lockedSeeks: Array<RpcLockedSeek>
+            timestamp: number
+            isFetchedFromServer: boolean
         },
     ]
     stabilityPoolNextCycleStartTime: [{ federationId: RpcFederationId }, bigint]
@@ -435,6 +439,8 @@ export interface RpcStabilityPoolAccountInfo {
     stagedSeeks: Array<RpcAmount>
     stagedCancellation: number | null
     lockedSeeks: Array<RpcLockedSeek>
+    timestamp: number
+    isFetchedFromServer: boolean
 }
 
 export interface RpcStabilityPoolConfig {
@@ -443,6 +449,16 @@ export interface RpcStabilityPoolConfig {
     max_allowed_provide_fee_rate_ppb: number | null
     min_allowed_cancellation_bps: number | null
 }
+
+export type RpcStabilityPoolTransactionState =
+    | { type: 'pendingDeposit' }
+    | {
+          type: 'completeDeposit'
+          initial_amount_cents: number
+          fees_paid_so_far: RpcAmount
+      }
+    | { type: 'pendingWithdrawal'; estimated_withdrawal_cents: number }
+    | { type: 'completeWithdrawal'; estimated_withdrawal_cents: number }
 
 export interface RpcTransaction {
     id: string
@@ -456,6 +472,7 @@ export interface RpcTransaction {
     lightning: RpcLightningDetails | null
     oobState: RpcOOBState | null
     onchainWithdrawalDetails: WithdrawalDetails | null
+    stabilityPoolState: RpcStabilityPoolTransactionState | null
 }
 
 export type RpcTransactionDirection = 'receive' | 'send'
@@ -517,6 +534,6 @@ export interface TransactionEvent {
 
 export interface WithdrawalDetails {
     txid: string
-    fee: bigint
-    feeRate: bigint
+    fee: number
+    feeRate: number
 }

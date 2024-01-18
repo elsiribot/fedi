@@ -383,6 +383,7 @@ impl FederationV1 {
                                 lightning: None,
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
+                                stability_pool_state: None,
                             };
                             info!("send_transaction_event: {:?}", transaction);
                             fed.send_transaction_event(transaction);
@@ -439,6 +440,7 @@ impl FederationV1 {
                                 }),
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
+                                stability_pool_state: None,
                             };
                             fed.send_transaction_event(transaction);
                         }
@@ -1242,6 +1244,7 @@ impl FederationV1 {
                                 }),
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
+                                stability_pool_state: None,
                             }),
                             LightningMeta::Receive { invoice, .. } => {
                                 let ln_state = RpcLnState::from_ln_recv_state(
@@ -1269,6 +1272,7 @@ impl FederationV1 {
                                     }),
                                     oob_state: None,
                                     onchain_withdrawal_details: None,
+                                    stability_pool_state: None,
                                 })
                             }
                         },
@@ -1286,6 +1290,7 @@ impl FederationV1 {
                                 lightning: None,
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
+                                stability_pool_state: None,
                             }),
                             StabilityPoolMeta::Withdrawal {
                                 unlocked_amount, ..
@@ -1302,6 +1307,7 @@ impl FederationV1 {
                                 lightning: None,
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
+                                stability_pool_state: None,
                             }),
                             StabilityPoolMeta::CancelRenewal { .. } => None,
                         },
@@ -1327,6 +1333,7 @@ impl FederationV1 {
                                             lightning: None,
                                             oob_state: None,
                                             onchain_withdrawal_details: None,
+                                            stability_pool_state: None,
                                         })
                                     } else {
                                         None
@@ -1350,6 +1357,7 @@ impl FederationV1 {
                                         .await
                                         .map(crate::types::RpcOOBState::from_spend_v1),
                                     onchain_withdrawal_details: None,
+                                    stability_pool_state: None,
                                 }),
                             }
                         }
@@ -1393,6 +1401,7 @@ impl FederationV1 {
                                     lightning: None,
                                     oob_state: None,
                                     onchain_withdrawal_details: None,
+                                    stability_pool_state: None,
                                 })
                             }
                             WalletOperationMeta::Withdraw {
@@ -1437,6 +1446,7 @@ impl FederationV1 {
                                         fee: fee.amount().to_sat(),
                                         fee_rate: fee.fee_rate.sats_per_kvb,
                                     }),
+                                    stability_pool_state: None,
                                 })
                             }
 

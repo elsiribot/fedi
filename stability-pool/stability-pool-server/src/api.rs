@@ -3,12 +3,13 @@ use std::time::UNIX_EPOCH;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiError};
 use fedimint_core::Amount;
+use futures::StreamExt;
 use secp256k1_zkp::PublicKey;
-use stability_pool_common::{AccountInfo, LockedSeekWithMetadata};
+use stability_pool_common::AccountInfo;
 
 use crate::db::{
-    CurrentCycleKey, Cycle, IdleBalance, IdleBalanceKey, SeekMetadataKey, StagedCancellationKey,
-    StagedProvidesKey, StagedSeeksKey,
+    CurrentCycleKey, Cycle, IdleBalance, IdleBalanceKey, SeekMetadataAccountPrefix,
+    StagedCancellationKey, StagedProvidesKey, StagedSeeksKey,
 };
 use crate::StabilityPool;
 
@@ -60,17 +61,13 @@ pub async fn account_info(dbtx: &mut DatabaseTransaction<'_>, account: PublicKey
         None => (vec![], vec![]),
     };
 
-    let locked_seeks = {
-        let mut locked_seeks_with_metadata = vec![];
-        for lock in locked_seeks {
-            let metadata = match dbtx.get_value(&SeekMetadataKey(lock.staged_sequence)).await {
-                Some(metadata) => metadata,
-                None => Default::default(),
-            };
-            locked_seeks_with_metadata.push(LockedSeekWithMetadata { lock, metadata });
-        }
-        locked_seeks_with_metadata
-    };
+    let seeks_metadata = dbtx
+        .find_by_prefix(&SeekMetadataAccountPrefix(account))
+        .await
+        .map(|(key, metadata)| (key.1, metadata))
+        .collect()
+        .await;
+
     AccountInfo {
         idle_balance: dbtx
             .get_value(&IdleBalanceKey(account))
@@ -85,9 +82,13 @@ pub async fn account_info(dbtx: &mut DatabaseTransaction<'_>, account: PublicKey
             .get_value(&StagedProvidesKey(account))
             .await
             .unwrap_or_default(),
-        staged_cancellation: dbtx.get_value(&StagedCancellationKey(account)).await,
+        staged_cancellation: dbtx
+            .get_value(&StagedCancellationKey(account))
+            .await
+            .map(|(_, cancel)| cancel),
         locked_seeks,
         locked_provides,
+        seeks_metadata,
     }
 }
 

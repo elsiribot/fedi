@@ -56,9 +56,8 @@ use fedimint_wallet_client::{
 use futures::{Future, StreamExt};
 use lightning_invoice::Bolt11Invoice;
 use serde::de::DeserializeOwned;
-use stability_pool_client::common::AccountInfo;
 use stability_pool_client::{
-    StabilityPoolClientInit, StabilityPoolClientModule, StabilityPoolMeta,
+    ClientAccountInfo, StabilityPoolClientInit, StabilityPoolClientModule, StabilityPoolMeta,
     StabilityPoolWithdrawalOperationState,
 };
 use tokio::sync::Mutex;
@@ -88,7 +87,8 @@ use crate::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
     EcashReceiveMetadata, GuardianStatus, RpcBalanceInfo, RpcBitcoinDetails, RpcEcashInfo,
     RpcFederationId, RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
-    RpcPayAddressResponse, RpcTransaction, RpcTransactionDirection, WithdrawalDetails,
+    RpcPayAddressResponse, RpcStabilityPoolTransactionState, RpcTransaction,
+    RpcTransactionDirection, WithdrawalDetails,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
 pub const GUARDIAN_STATUS_TIMEOUT: Duration = Duration::from_secs(10);
@@ -505,6 +505,7 @@ impl FederationV2 {
                                 lightning: None,
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
+                                stability_pool_state: None,
                             };
                             info!("send_transaction_event: {:?}", transaction);
                             fed.send_transaction_event(transaction);
@@ -559,6 +560,7 @@ impl FederationV2 {
                                 }),
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
+                                stability_pool_state: None,
                             };
                             fed.send_transaction_event(transaction);
                         }
@@ -1541,6 +1543,7 @@ impl FederationV2 {
                                     }),
                                     oob_state: None,
                                     onchain_withdrawal_details: None,
+                                    stability_pool_state: None,
                                 }),
                                 LightningOperationMetaVariant::Receive{ invoice, .. } => {
                                     let ln_state = RpcLnState::from_ln_recv_state(
@@ -1565,26 +1568,37 @@ impl FederationV2 {
                                         }),
                                         oob_state: None,
                                         onchain_withdrawal_details: None,
+                                        stability_pool_state: None,
                                     })
                                 }
                             }
                         },
                         STABILITY_POOL_OPERATION_TYPE => match op.1.meta() {
-                            StabilityPoolMeta::Deposit { amount, .. } => Some(RpcTransaction {
+                            StabilityPoolMeta::Deposit { txid, amount, .. } => {
+                                let stability_pool_state = match self.stability_pool_account_info(false).await {
+                                    Ok(ClientAccountInfo { account_info, .. }) => if let Some(metadata) = account_info.seeks_metadata.get(&txid) {
+                                        Some(RpcStabilityPoolTransactionState::CompleteDeposit { initial_amount_cents: metadata.initial_amount_cents, fees_paid_so_far: RpcAmount(metadata.fees_paid_so_far) })
+                                    } else {
+                                        Some(RpcStabilityPoolTransactionState::PendingDeposit)
+                                    },
+                                    Err(_) => None,
+                                };
+                                Some(RpcTransaction {
                                 id: op.0.operation_id.to_string(),
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
                                 amount: RpcAmount(amount),
                                 direction: RpcTransactionDirection::Send,
-                                notes: "stability pool".to_string(),
+                                notes,
                                 onchain_state: None,
                                 bitcoin: None,
                                 ln_state: None,
                                 lightning: None,
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
-                            }),
-                            _ => {
+                                stability_pool_state,
+                            })},
+                            StabilityPoolMeta::Withdrawal { estimated_withdrawal_cents, .. } | StabilityPoolMeta::CancelRenewal { estimated_withdrawal_cents, .. } => {
                                 let outcome = self
                                     .get_client_operation_outcome(op.0.operation_id, op.1)
                                     .await;
@@ -1603,13 +1617,18 @@ impl FederationV2 {
                                         _ => RpcAmount(Amount::ZERO),
                                     },
                                     direction: RpcTransactionDirection::Receive,
-                                    notes: "stability pool".to_string(),
+                                    notes,
                                     onchain_state: None,
                                     bitcoin: None,
                                     ln_state: None,
                                     lightning: None,
                                     oob_state: None,
                                     onchain_withdrawal_details: None,
+                                    stability_pool_state: match outcome {
+                                        Some(StabilityPoolWithdrawalOperationState::Success(_)) => Some(RpcStabilityPoolTransactionState::CompleteWithdrawal { estimated_withdrawal_cents }),
+                                        Some(_) => Some(RpcStabilityPoolTransactionState::PendingWithdrawal { estimated_withdrawal_cents }),
+                                        None => None,
+                                    }
                                 })
                             }
                         },
@@ -1635,6 +1654,7 @@ impl FederationV2 {
                                             lightning: None,
                                             oob_state: None,
                                             onchain_withdrawal_details: None,
+                                            stability_pool_state: None,
                                         })
                                     } else {
                                         None
@@ -1658,6 +1678,7 @@ impl FederationV2 {
                                         .await
                                         .map(crate::types::RpcOOBState::from_spend_v2),
                                     onchain_withdrawal_details: None,
+                                    stability_pool_state: None,
                                 }),
                             }
                         }
@@ -1700,6 +1721,7 @@ impl FederationV2 {
                                         lightning: None,
                                         oob_state: None,
                                         onchain_withdrawal_details: None,
+                                        stability_pool_state: None,
                                     })
                                 }
                                 WalletOperationMetaVariant::Withdraw {
@@ -1744,6 +1766,7 @@ impl FederationV2 {
                                             fee: fee.amount().to_sat(),
                                             fee_rate: fee.fee_rate.sats_per_kvb,
                                         }),
+                                        stability_pool_state: None,
                                     })
                                 }
                                 WalletOperationMetaVariant::RbfWithdraw { rbf: _, change: _ } => None,
@@ -1832,10 +1855,13 @@ impl FederationV2 {
     /// Stability Pool
 
     /// Get user's stability pool account info
-    pub async fn stability_pool_account_info(&self) -> Result<AccountInfo> {
+    pub async fn stability_pool_account_info(
+        &self,
+        force_update: bool,
+    ) -> Result<ClientAccountInfo> {
         self.client
             .get_first_module::<StabilityPoolClientModule>()
-            .account_info()
+            .account_info(force_update)
             .await
             .context("Error when fetching account info")
     }

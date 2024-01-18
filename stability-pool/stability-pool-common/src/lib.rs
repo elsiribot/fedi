@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fmt::{self, Display};
 use std::time::SystemTime;
 
@@ -5,7 +6,9 @@ use anyhow::bail;
 use fedimint_core::core::{Decoder, ModuleInstanceId, ModuleKind};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::{CommonModuleInit, ModuleCommon, ModuleConsensusVersion};
-use fedimint_core::{extensible_associated_module_type, plugin_types_trait_impl_common, Amount};
+use fedimint_core::{
+    extensible_associated_module_type, plugin_types_trait_impl_common, Amount, TransactionId,
+};
 use secp256k1_zkp::PublicKey;
 use serde::{Deserialize, Serialize};
 
@@ -14,6 +17,9 @@ use config::StabilityPoolClientConfig;
 
 pub const KIND: ModuleKind = ModuleKind::from_static_str("stability_pool");
 pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::new(2, 0);
+
+/// BPS unit for cancellation-related calculations
+pub const BPS_UNIT: u128 = 10_000;
 
 /// Withdrawing unlocked funds from the stability pool is technically just a
 /// fedimint transaction where the input comes from the stability pool module
@@ -164,12 +170,14 @@ pub struct CancelRenewal {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct StagedSeek {
+    pub txid: TransactionId,
     pub sequence: u64,
     pub seek: Seek,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct StagedProvide {
+    pub txid: TransactionId,
     pub sequence: u64,
     pub provide: Provide,
 }
@@ -325,12 +333,14 @@ plugin_types_trait_impl_common!(
 
 #[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct LockedSeek {
+    pub staged_txid: TransactionId,
     pub staged_sequence: u64,
     pub amount: Amount,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct LockedProvide {
+    pub staged_txid: TransactionId,
     pub staged_sequence: u64,
     pub staged_min_fee_rate: u64,
     pub amount: Amount,
@@ -393,39 +403,48 @@ impl Display for StabilityPoolConsensusItemV0 {
 
 #[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct SeekMetadata {
+    pub staged_sequence: u64,
     pub initial_amount: Amount,
     pub initial_amount_cents: u64,
     pub withdrawn_amount: Amount,
     pub withdrawn_amount_cents: u64,
     pub fees_paid_so_far: Amount,
     pub first_lock_start_time: SystemTime,
+    pub fully_withdrawn: bool,
 }
 
 impl Default for SeekMetadata {
     fn default() -> Self {
         SeekMetadata {
+            staged_sequence: 0,
             initial_amount: Amount::ZERO,
             initial_amount_cents: 0,
             withdrawn_amount: Amount::ZERO,
             withdrawn_amount_cents: 0,
             fees_paid_so_far: Amount::ZERO,
             first_lock_start_time: fedimint_core::time::now(),
+            fully_withdrawn: false,
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct LockedSeekWithMetadata {
-    pub lock: LockedSeek,
-    pub metadata: SeekMetadata,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encodable, Decodable)]
 pub struct AccountInfo {
     pub idle_balance: Amount,
     pub staged_seeks: Vec<StagedSeek>,
     pub staged_provides: Vec<StagedProvide>,
     pub staged_cancellation: Option<CancelRenewal>,
-    pub locked_seeks: Vec<LockedSeekWithMetadata>,
+    pub locked_seeks: Vec<LockedSeek>,
     pub locked_provides: Vec<LockedProvide>,
+    pub seeks_metadata: BTreeMap<TransactionId, SeekMetadata>,
+}
+
+/// Helper function to convert the given Amount quantity into
+/// cents using the given price.
+pub fn amount_to_cents(amount: Amount, price: u128) -> u64 {
+    // 1 BTC is worth price cents
+    // 1 BTC = 10^8 SATS = 10^11 MSATS
+    // So 10^11 MSATS is worth price cents
+    // x MSATS is worth (price * x) / 10^11 cents
+    ((price * amount.msats as u128) / 100_000_000_000) as u64
 }

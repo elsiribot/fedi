@@ -12,15 +12,15 @@ use common::config::{
     StabilityPoolGenParams,
 };
 use common::{
-    CancelRenewal, IntendedAction, LockedProvide, LockedSeek, Provide, Seek, SeekMetadata,
-    StabilityPoolCommonGen, StabilityPoolConsensusItem, StabilityPoolInput,
+    amount_to_cents, CancelRenewal, IntendedAction, LockedProvide, LockedSeek, Provide, Seek,
+    SeekMetadata, StabilityPoolCommonGen, StabilityPoolConsensusItem, StabilityPoolInput,
     StabilityPoolInputError, StabilityPoolModuleTypes, StabilityPoolOutput,
     StabilityPoolOutputError, StabilityPoolOutputOutcome, StabilityPoolOutputOutcomeV0,
-    StagedProvide, StagedSeek, CONSENSUS_VERSION,
+    StagedProvide, StagedSeek, BPS_UNIT, CONSENSUS_VERSION,
 };
 use db::{
-    CurrentCycleKey, Cycle, CycleChangeVoteIndexPrefix, CycleChangeVoteKey, IdleBalance,
-    IdleBalanceKey, PastCycleKey, SeekMetadataKey, StagedCancellationKey,
+    migrate_to_v2, CurrentCycleKey, Cycle, CycleChangeVoteIndexPrefix, CycleChangeVoteKey,
+    IdleBalance, IdleBalanceKey, PastCycleKey, SeekMetadataKey, StagedCancellationKey,
     StagedCancellationKeyPrefix, StagedProvideSequenceKey, StagedProvidesKey,
     StagedProvidesKeyPrefix, StagedSeekSequenceKey, StagedSeeksKey, StagedSeeksKeyPrefix,
 };
@@ -29,15 +29,17 @@ use fedimint_core::config::{
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleInstanceId;
-use fedimint_core::db::{DatabaseTransaction, DatabaseVersion, IDatabaseTransactionOpsCoreTyped};
+use fedimint_core::db::{
+    DatabaseTransaction, DatabaseVersion, IDatabaseTransactionOpsCoreTyped, MigrationMap,
+};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
     ApiEndpoint, CoreConsensusVersion, InputMeta, ModuleConsensusVersion, ModuleInit, PeerHandle,
     ServerModuleInit, ServerModuleInitArgs, SupportedModuleApiVersions, TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
-use fedimint_core::{Amount, NumPeers, OutPoint, PeerId, ServerModule};
-use futures::{stream, StreamExt};
+use fedimint_core::{Amount, NumPeers, OutPoint, PeerId, ServerModule, TransactionId};
+use futures::{stream, FutureExt, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
 use secp256k1_zkp::PublicKey;
@@ -46,9 +48,6 @@ use tracing::info;
 
 /// PPB unit for fee-related calculations.
 const B: u128 = 1_000_000_000;
-
-/// BPS unit for cancellation-related calculations
-const BPS_UNIT: u128 = 10_000;
 
 #[derive(Debug, Clone)]
 pub struct StabilityPoolInit;
@@ -70,7 +69,7 @@ impl ModuleInit for StabilityPoolInit {
 #[async_trait]
 impl ServerModuleInit for StabilityPoolInit {
     type Params = StabilityPoolGenParams;
-    const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(1);
+    const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(2);
 
     fn versions(&self, _core: CoreConsensusVersion) -> &[ModuleConsensusVersion] {
         &[CONSENSUS_VERSION]
@@ -169,6 +168,12 @@ impl ServerModuleInit for StabilityPoolInit {
             max_allowed_provide_fee_rate_ppb: config.max_allowed_provide_fee_rate_ppb,
             min_allowed_cancellation_bps: config.min_allowed_cancellation_bps,
         })
+    }
+
+    fn get_database_migrations(&self) -> MigrationMap {
+        let mut migrations = MigrationMap::new();
+        migrations.insert(DatabaseVersion(1), |dbtx| migrate_to_v2(dbtx).boxed());
+        migrations
     }
 }
 
@@ -401,6 +406,7 @@ impl ServerModule for StabilityPool {
                             None
                         } else {
                             Some(StagedSeek {
+                                txid: s.txid,
                                 sequence: s.sequence,
                                 seek: Seek(s.seek.0 - min_extractable),
                             })
@@ -431,6 +437,7 @@ impl ServerModule for StabilityPool {
                             None
                         } else {
                             Some(StagedProvide {
+                                txid: p.txid,
                                 sequence: p.sequence,
                                 provide: Provide {
                                     amount: p.provide.amount - min_extractable,
@@ -464,7 +471,7 @@ impl ServerModule for StabilityPool {
         &'a self,
         dbtx: &mut DatabaseTransaction<'b>,
         output: &'a StabilityPoolOutput,
-        _outpoint: OutPoint,
+        outpoint: OutPoint,
     ) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
         let (account, intended_action) = (
             output
@@ -554,6 +561,7 @@ impl ServerModule for StabilityPool {
                         .await
                         .unwrap_or_default();
                     user_staged_seeks.push(StagedSeek {
+                        txid: outpoint.txid,
                         sequence,
                         seek: seek.clone(),
                     });
@@ -581,6 +589,7 @@ impl ServerModule for StabilityPool {
                         .await
                         .unwrap_or_default();
                     user_staged_provides.push(StagedProvide {
+                        txid: outpoint.txid,
                         sequence,
                         provide: provide.clone(),
                     });
@@ -605,7 +614,7 @@ impl ServerModule for StabilityPool {
                     && user_staged_cancellation.is_none()
                     && (!user_locked_seeks.is_empty() ^ !user_locked_provides.is_empty())
                 {
-                    dbtx.insert_entry(&StagedCancellationKey(account), &cancel)
+                    dbtx.insert_entry(&StagedCancellationKey(account), &(outpoint.txid, cancel))
                         .await;
                     Ok(TransactionItemAmount {
                         amount: Amount::ZERO,
@@ -745,7 +754,7 @@ async fn apply_staged_cancellations(
         .collect::<Vec<_>>()
         .await;
 
-    for (key, CancelRenewal { bps }) in staged_cancellations {
+    for (key, (_, CancelRenewal { bps })) in staged_cancellations {
         let mut msats_to_refund = 0;
 
         // If account has seeks, cancel portion of seeks
@@ -766,7 +775,8 @@ async fn apply_staged_cancellations(
                 // Iterate in reverse to ensure older sequences are preserved
                 for LockedSeek {
                     amount,
-                    staged_sequence,
+                    staged_txid,
+                    ..
                 } in seeks_list.iter_mut().rev()
                 {
                     let cancellable = seeks_msat_to_cancel.min(amount.msats.into());
@@ -776,12 +786,13 @@ async fn apply_staged_cancellations(
                     let cancellable = Amount::from_msats(cancellable as u64);
                     *amount -= cancellable;
 
-                    let seek_metadata_key = SeekMetadataKey(*staged_sequence);
-                    if *amount == Amount::ZERO {
-                        dbtx.remove_entry(&seek_metadata_key).await;
-                    } else if let Some(mut metadata) = dbtx.get_value(&seek_metadata_key).await {
+                    let seek_metadata_key = SeekMetadataKey(key.0, *staged_txid);
+                    if let Some(mut metadata) = dbtx.get_value(&seek_metadata_key).await {
                         metadata.withdrawn_amount += cancellable;
                         metadata.withdrawn_amount_cents += amount_to_cents(cancellable, new_price);
+                        if *amount == Amount::ZERO {
+                            metadata.fully_withdrawn = true;
+                        }
                         dbtx.insert_entry(&seek_metadata_key, &metadata).await;
                     }
 
@@ -857,6 +868,7 @@ async fn restage_remaining_locks(
                 account_locked_seeks
                     .into_iter()
                     .map(|locked_seek| StagedSeek {
+                        txid: locked_seek.staged_txid,
                         sequence: locked_seek.staged_sequence,
                         seek: Seek(locked_seek.amount),
                     }),
@@ -865,6 +877,7 @@ async fn restage_remaining_locks(
             .coalesce(|prev, curr| {
                 if prev.sequence == curr.sequence {
                     Ok(StagedSeek {
+                        txid: prev.txid,
                         sequence: prev.sequence,
                         seek: Seek(prev.seek.0 + curr.seek.0),
                     })
@@ -890,6 +903,7 @@ async fn restage_remaining_locks(
                 account_locked_provides
                     .into_iter()
                     .map(|locked_provide| StagedProvide {
+                        txid: locked_provide.staged_txid,
                         sequence: locked_provide.staged_sequence,
                         provide: Provide {
                             amount: locked_provide.amount,
@@ -901,6 +915,7 @@ async fn restage_remaining_locks(
             .coalesce(|prev, curr| {
                 if prev.sequence == curr.sequence {
                     Ok(StagedProvide {
+                        txid: prev.txid,
                         sequence: prev.sequence,
                         provide: Provide {
                             amount: prev.provide.amount + curr.provide.amount,
@@ -953,7 +968,7 @@ async fn calculate_locks_and_write_cycle(
         dbtx,
         locked_seeks,
         locked_provides,
-        fee_rate.into(),
+        fee_rate,
         included_provides_sum,
         index,
         time,
@@ -995,6 +1010,7 @@ async fn extract_sorted_staged_seeks_and_provides(
                 StagedProvide {
                     provide: a,
                     sequence: seq_a,
+                    ..
                 },
             ),
              (
@@ -1002,6 +1018,7 @@ async fn extract_sorted_staged_seeks_and_provides(
                 StagedProvide {
                     provide: b,
                     sequence: seq_b,
+                    ..
                 },
             )| a.min_fee_rate.cmp(&b.min_fee_rate).then(seq_a.cmp(seq_b)),
         )
@@ -1043,7 +1060,14 @@ fn calculate_locked_provides_and_fee_rate(
     // and while there are unused provides left.
     let mut locked_provides = vec![];
     while remaining_coll_needed > 0 && !staged_provides.is_empty() {
-        let (account, StagedProvide { sequence, provide }) = &mut staged_provides[0];
+        let (
+            account,
+            StagedProvide {
+                txid,
+                sequence,
+                provide,
+            },
+        ) = &mut staged_provides[0];
 
         // If the fee rate for the next item is the same as the current
         // fee rate, we can just include however much collateral we need from it.
@@ -1076,6 +1100,7 @@ fn calculate_locked_provides_and_fee_rate(
         locked_provides.push((
             *account,
             LockedProvide {
+                staged_txid: *txid,
                 staged_sequence: *sequence,
                 staged_min_fee_rate: provide.min_fee_rate,
                 amount: Amount::from_msats(amount_used as u64),
@@ -1114,7 +1139,14 @@ fn calculate_locked_seeks(
     // been exhausted and while there are unused seeks left.
     let mut locked_seeks = vec![];
     while included_seeks_sum_before_fees > 0 && !staged_seeks.is_empty() {
-        let (account, StagedSeek { sequence, seek }) = &mut staged_seeks[0];
+        let (
+            account,
+            StagedSeek {
+                txid,
+                sequence,
+                seek,
+            },
+        ) = &mut staged_seeks[0];
 
         // amount_used is guaranteed to fit in u64 since it's a min(u64)
         let amount_used = included_seeks_sum_before_fees.min(seek.0.msats.into());
@@ -1122,6 +1154,7 @@ fn calculate_locked_seeks(
         locked_seeks.push((
             *account,
             LockedSeek {
+                staged_txid: *txid,
                 staged_sequence: *sequence,
                 amount: Amount::from_msats(amount_used as u64),
             },
@@ -1157,37 +1190,48 @@ async fn distribute_fees_and_write_cycle(
     dbtx: &mut DatabaseTransaction<'_>,
     mut locked_seeks: Vec<(PublicKey, LockedSeek)>,
     locked_provides: Vec<(PublicKey, LockedProvide)>,
-    fee_rate: u128,
+    fee_rate: u64,
     included_provides_sum: u128,
     cycle_index: u64,
     cycle_time: SystemTime,
     cycle_price: u64,
     randomness: usize,
 ) {
-    struct AmountAndFee {
+    #[derive(PartialOrd, Ord, PartialEq, Eq)]
+    struct AmountAndFeeKey {
+        pub_key: PublicKey,
+        txid: TransactionId,
+        sequence: u64,
+    }
+    struct AmountAndFeeValue {
         amount: Amount,
         fee: Amount,
     }
-    let mut seek_amount_and_fee_map: BTreeMap<u64, AmountAndFee> = BTreeMap::new();
+    let mut seek_amount_and_fee_map: BTreeMap<AmountAndFeeKey, AmountAndFeeValue> = BTreeMap::new();
 
     // Reduce each locked seek by fee amount and calculate total fee pool
     let mut fee_pool = 0u128;
     locked_seeks.iter_mut().for_each(
         |(
-            _,
+            account,
             LockedSeek {
+                staged_txid,
                 staged_sequence,
                 amount,
             },
         )| {
             // Ceiling division to ensure fee is never undercharged
-            let fee = ceil_division(amount.msats as u128 * fee_rate, B);
+            let fee = ceil_division(amount.msats as u128 * fee_rate as u128, B);
             fee_pool += fee;
 
             let fee = Amount::from_msats(fee as u64); // fee guaranteed to fit in u64
             seek_amount_and_fee_map.insert(
-                *staged_sequence,
-                AmountAndFee {
+                AmountAndFeeKey {
+                    pub_key: *account,
+                    txid: *staged_txid,
+                    sequence: *staged_sequence,
+                },
+                AmountAndFeeValue {
                     amount: *amount,
                     fee,
                 },
@@ -1197,26 +1241,38 @@ async fn distribute_fees_and_write_cycle(
     );
 
     // Update seek metadatas in database
-    for (sequence, amount_and_fee) in seek_amount_and_fee_map {
-        let seek_metadata_key = SeekMetadataKey(sequence);
+    for (
+        AmountAndFeeKey {
+            pub_key,
+            txid,
+            sequence,
+        },
+        amount_and_fee,
+    ) in seek_amount_and_fee_map
+    {
+        let seek_metadata_key = SeekMetadataKey(pub_key, txid);
         let seek_metadata = match dbtx.get_value(&seek_metadata_key).await {
             Some(existing) => SeekMetadata {
+                staged_sequence: existing.staged_sequence,
                 initial_amount: existing.initial_amount,
                 initial_amount_cents: existing.initial_amount_cents,
                 withdrawn_amount: existing.withdrawn_amount,
                 withdrawn_amount_cents: existing.withdrawn_amount_cents,
                 fees_paid_so_far: existing.fees_paid_so_far + amount_and_fee.fee,
                 first_lock_start_time: existing.first_lock_start_time,
+                fully_withdrawn: existing.fully_withdrawn,
             },
             None => {
                 let amount_cents = amount_to_cents(amount_and_fee.amount, cycle_price.into());
                 SeekMetadata {
+                    staged_sequence: sequence,
                     initial_amount: amount_and_fee.amount,
                     initial_amount_cents: amount_cents,
                     withdrawn_amount: Amount::ZERO,
                     withdrawn_amount_cents: 0,
                     fees_paid_so_far: amount_and_fee.fee,
                     first_lock_start_time: cycle_time,
+                    fully_withdrawn: false,
                 }
             }
         };
@@ -1276,6 +1332,7 @@ async fn distribute_fees_and_write_cycle(
             index: cycle_index,
             start_time: cycle_time,
             start_price: cycle_price,
+            fee_rate,
             locked_seeks: locked_seeks_map,
             locked_provides: locked_provides_map,
         },
@@ -1383,16 +1440,6 @@ fn included_seeks_sum_before_fees(
     let numerator = included_provides_sum * coll_s * B;
     let denominator = (B - fee_rate) * coll_p;
     numerator / denominator
-}
-
-/// Helper function to convert the given Amount quantity into
-/// cents using the given price.
-fn amount_to_cents(amount: Amount, price: u128) -> u64 {
-    // 1 BTC is worth price cents
-    // 1 BTC = 10^8 SATS = 10^11 MSATS
-    // So 10^11 MSATS is worth price cents
-    // x MSATS is worth (price * x) / 10^11 cents
-    ((price * amount.msats as u128) / 100_000_000_000) as u64
 }
 
 fn ceil_division(dividend: u128, divisor: u128) -> u128 {
