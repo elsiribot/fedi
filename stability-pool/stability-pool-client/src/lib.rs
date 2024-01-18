@@ -38,7 +38,7 @@ use futures::{Stream, StreamExt};
 use secp256k1_zkp::Secp256k1;
 use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
-use tracing::info;
+use tracing::{error, info};
 
 mod db;
 
@@ -537,20 +537,25 @@ impl StabilityPoolClientModule {
         let db_account_info = dbtx.get_value(&AccountInfoKey).await;
 
         if db_account_info.is_none() || force_update {
-            if let Ok(account_info) = self
+            match self
                 .fetch_account_info_from_server(Duration::from_secs(30))
                 .await
             {
-                let current_time = fedimint_core::time::now();
-                let mut dbtx = self.db.begin_transaction().await;
-                dbtx.insert_entry(&AccountInfoKey, &(current_time, account_info.clone()))
-                    .await;
-                dbtx.commit_tx().await;
-                return Ok(ClientAccountInfo {
-                    account_info,
-                    timestamp: current_time,
-                    is_fetched_from_server: true,
-                });
+                Ok(account_info) => {
+                    let current_time = fedimint_core::time::now();
+                    let mut dbtx = self.db.begin_transaction().await;
+                    dbtx.insert_entry(&AccountInfoKey, &(current_time, account_info.clone()))
+                        .await;
+                    dbtx.commit_tx().await;
+                    return Ok(ClientAccountInfo {
+                        account_info,
+                        timestamp: current_time,
+                        is_fetched_from_server: true,
+                    });
+                }
+                Err(e) => {
+                    error!("Failed to fetch account info from server: {:?}", e);
+                }
             }
         }
 
