@@ -24,10 +24,27 @@ enum ActionType {
     SAVE_VIDEO_FILE = 'SAVE_VIDEO_FILE',
     COMPLETE_SOCIAL_BACKUP = 'COMPLETE_SOCIAL_BACKUP',
 }
-interface Action {
-    type: ActionType
-    payload?: any
-}
+
+type Action =
+    | {
+          type: typeof ActionType.CHANGE_SOCIAL_BACKUPS_COMPLETED
+          payload: number
+      }
+    | {
+          type: typeof ActionType.SET_RECOVERY_FILE_CREATED
+          payload: boolean
+      }
+    | {
+          type: typeof ActionType.RESET_BACKUP_RECOVERY_STATE
+          payload: null
+      }
+    | {
+          type: typeof ActionType.SAVE_VIDEO_FILE
+          payload: VideoFile | null
+      }
+    | {
+          type: typeof ActionType.COMPLETE_SOCIAL_BACKUP
+      }
 
 // Wrap with state and dispatch fields and create the Context
 type BaseContext = {

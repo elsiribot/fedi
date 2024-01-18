@@ -62,8 +62,8 @@ const SeedWordInput = ({
             }}>
             <Text style={styles(theme).wordNumber}>{`${number}`}</Text>
             <Input
-                ref={(ref: any) => {
-                    inputRef.current = ref
+                ref={(ref: unknown) => {
+                    inputRef.current = ref as TextInput
                 }}
                 value={word}
                 onChangeText={onInputUpdated}

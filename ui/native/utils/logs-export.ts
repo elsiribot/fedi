@@ -81,7 +81,8 @@ async function exportBridgeLogs() {
     for (const file of files) {
         try {
             bridgeLogs += await asyncStreamFile(`${LOGS_DIR}/${file}`, 'utf8')
-        } catch (err: any) {
+        } catch (error) {
+            const err = error as Error
             bridgeLogs += JSON.stringify({
                 error: `Error reading file stream for ${file}: ${
                     err.stack || err.message || err.toString()

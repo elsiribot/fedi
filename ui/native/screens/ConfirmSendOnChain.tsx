@@ -62,8 +62,12 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
         }
     }
 
-    const onChangeText = (updatedValue: SatsString) => {
-        setAmount(updatedValue)
+    const onChangeText = (updatedValue: string) => {
+        const valueAsSatsString: SatsString = updatedValue as SatsString
+
+        valueAsSatsString._ = 'SatsString'
+
+        setAmount(valueAsSatsString)
     }
 
     if (!bitcoinUri.data) return <ActivityIndicator />
@@ -73,7 +77,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
             <Text caption>{balanceDisplay}</Text>
             <View style={styles(theme).detailsContainer}>
                 <Input
-                    onChangeText={onChangeText as (_: string) => any}
+                    onChangeText={onChangeText}
                     value={amount}
                     placeholder={`${t('words.amount')} (${t('words.sats')})`}
                     keyboardType="numeric"

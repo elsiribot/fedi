@@ -110,8 +110,8 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
                         label={`${t('phrases.add-note')} +`}
                         value={
                             <Input
-                                ref={(ref: any) => {
-                                    inputRef.current = ref
+                                ref={(ref: unknown) => {
+                                    inputRef.current = ref as TextInput
                                 }}
                                 onChangeText={handleNotesInputChanged}
                                 onFocus={() => setIsFocused(true)}

@@ -6,6 +6,7 @@ import { DimensionValue, TextStyle, ViewStyle } from 'react-native'
 declare module '@rneui/themed' {
     export interface Theme {
         dark: boolean
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         components: any
         colors: {
             // Add new color labels here

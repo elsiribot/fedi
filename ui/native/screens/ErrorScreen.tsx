@@ -32,7 +32,7 @@ export const ErrorScreen: React.FC<Props> = ({ error }) => {
         setIsSharingLogs(false)
     }
 
-    const stack: Error['stack'] = (error as any)?.stack
+    const stack: Error['stack'] = (error as Error)?.stack
 
     return (
         <SafeAreaView style={style.container}>
