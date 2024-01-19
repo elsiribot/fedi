@@ -24,6 +24,8 @@ import { ChatAvatar } from './ChatAvatar'
 import { CopyInput } from './CopyInput'
 import { Input } from './Input'
 import { QRScanner } from './QRScanner'
+import { Switch } from './Switch'
+import { Text } from './Text'
 
 export const ChatJoinOrCreateGroup: React.FC = () => {
     const { t } = useTranslation()
@@ -40,6 +42,7 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
         t('feature.chat.new-group'),
     )
     const [isSavingGroup, setIsSavingGroup] = useState(false)
+    const [isBroadcastOnly, setIsBroadcastOnly] = useState(false)
     const isTouchScreen = useIsTouchScreen()
 
     useEffect(() => {
@@ -76,6 +79,7 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
                     federationId,
                     id: newGroupId,
                     name: newGroupName,
+                    broadcastOnly: isBroadcastOnly,
                 }),
             ).unwrap()
             push(`/chat/group/${newGroup.id}`)
@@ -83,7 +87,15 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
             toast.showErrorToast(err, 'errors.chat-unavailable')
         }
         setIsSavingGroup(false)
-    }, [federationId, newGroupId, newGroupName, dispatch, push, toast])
+    }, [
+        federationId,
+        newGroupId,
+        newGroupName,
+        dispatch,
+        push,
+        toast,
+        isBroadcastOnly,
+    ])
 
     // Automatically attempt to join group after changing value
     useEffect(() => {
@@ -100,9 +112,9 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
             id: newGroupId,
             name: newGroupName,
             type: ChatType.group,
-            broadcastOnly: false,
+            broadcastOnly: isBroadcastOnly,
         }
-    }, [newGroupId, newGroupName])
+    }, [newGroupId, newGroupName, isBroadcastOnly])
 
     let content: React.ReactNode
     if (isCreatingGroup) {
@@ -125,6 +137,13 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
                     }
                     onCopyMessage={t('feature.chat.copied-group-invite-code')}
                 />
+                <BroadcastSwitchContainer>
+                    <Text>{t('feature.chat.broadcast-only')}</Text>
+                    <Switch
+                        checked={isBroadcastOnly}
+                        onCheckedChange={setIsBroadcastOnly}
+                    />
+                </BroadcastSwitchContainer>
                 <Buttons>
                     <Button
                         width="full"
@@ -208,4 +227,12 @@ const Buttons = styled('div', {
     flexDirection: 'column',
     width: '100%',
     gap: 8,
+})
+
+const BroadcastSwitchContainer = styled('div', {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
 })
