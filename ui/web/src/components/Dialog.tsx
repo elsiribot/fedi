@@ -37,7 +37,7 @@ export const Dialog: React.FC<Props> = ({
 }) => {
     const isSm = useMediaQuery(config.media.sm)
 
-    const mobileDismissBack = mobileDismiss === 'close' && isSm
+    const mobileDismissBack = mobileDismiss === 'back' && isSm
 
     const handleCloseTrigger = useCallback(
         (ev: Event) => {
