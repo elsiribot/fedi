@@ -1,9 +1,10 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::time::Duration;
 use std::vec;
 
-use anyhow::Context;
+use anyhow::{ensure, Context};
 use bitcoin::{Address, Amount, Txid};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -194,6 +195,11 @@ struct ListChannelsResponse {
     channels: Vec<ListChannelsResponseChannel>,
 }
 
+#[derive(Debug, Deserialize)]
+struct BitcoinGetWalletInfoResponse {
+    scanning: Value,
+}
+
 impl ListChannelsResponse {
     fn local_balance_sum(&self) -> anyhow::Result<Amount> {
         let sats = self
@@ -381,9 +387,8 @@ async fn funds_summary(
                         None
                     };
                 if let (Some(utxo_balance), Some(epochs_balance)) = (utxo_balance, epochs_balance) {
-                    if utxo_balance != epochs_balance {
-                        anyhow::bail!("utxo balance {utxo_balance} is not the same as epochs balance {epochs_balance}")
-                    }
+                    ensure!(utxo_balance == epochs_balance,
+                        "utxo balance {utxo_balance} is not the same as epochs balance {epochs_balance}");
                 }
                 let balance = utxo_balance
                     .or(epochs_balance)
@@ -507,22 +512,18 @@ async fn recover_federation_funds(
             .with_context(|| format!("Expected to found one of wallets: {wallet_names:?} on machine {machine_name} but it has only: {remote_wallets:?}"))?;
         let balance = get_remote_wallet_balance(&subargs, wallet_name).await?;
         info!("The balance on wallet {wallet_name} is: {balance:?}");
-        if balance.trusted == 0.0 {
-            anyhow::bail!(
-                "The balance on wallet {wallet_name} is 0, so we can't recover funds from it"
-            );
-        }
-        if balance.immature > 0.0 {
-            anyhow::bail!(
-                "The balance on wallet {wallet_name} has immature funds, so we can't recover funds from it"
-            );
-        }
+        ensure!(
+            balance.trusted != 0.0,
+            "The balance on wallet {wallet_name} is 0, so we can't recover funds from it"
+        );
+        let immature = balance.immature;
+        ensure!(immature == 0.0,
+            "The balance on wallet {wallet_name} has immature funds ({immature}), so we can't recover funds from it"
+        );
         if let Some(wallet_balance) = wallet_balance {
-            if wallet_balance != balance {
-                anyhow::bail!(
-                    "The balance on wallet {wallet_name}: {balance:?} is not the same as the one on the previous wallet: {wallet_balance:?}"
-                );
-            }
+            ensure!(wallet_balance == balance,
+                "The balance on wallet {wallet_name}: {balance:?} is not the same as the one on the previous wallet: {wallet_balance:?}"
+            );
         }
         wallet_balance = Some(balance);
         found_wallets.push(wallet_name.to_owned());
@@ -544,11 +545,10 @@ async fn recover_federation_funds(
             break;
         }
     }
-    if !processed_psbt.complete {
-        anyhow::bail!(
-            "Even using all wallets the psbt is not complete, so we can't recover funds from it"
-        );
-    }
+    ensure!(
+        processed_psbt.complete,
+        "Even using all wallets the psbt is not complete, so we can't recover funds from it"
+    );
 
     let finalized = remote_finalize_psbt(&subargs, &processed_psbt.psbt).await?;
     assert!(finalized.complete);
@@ -583,11 +583,9 @@ async fn recover_lightning_funds(
                 .iter()
                 .filter(|channel| !channel.active)
                 .count();
-            if inactive_channels > 0 && !args.allow_force_close {
-                anyhow::bail!(
-                    "There are {inactive_channels} channels on gateway {}. Use --allow-force-close to force close them", gateway.name
-                );
-            }
+            ensure!(inactive_channels == 0 || args.allow_force_close,
+                "There are {inactive_channels} channels on gateway {}. Use --allow-force-close to force close them", gateway.name
+            );
             let local_balance = response.local_balance_sum()?;
             info!(
                 "{}: Will close {} channels, expecting {local_balance}",
@@ -625,9 +623,7 @@ async fn recover_lightning_funds(
         }
     }
 
-    if error {
-        anyhow::bail!("There were errors recovering lightning funds");
-    }
+    ensure!(!error, "There were errors recovering lightning funds");
 
     Ok(())
 }
@@ -686,6 +682,17 @@ async fn remote_send_raw_transaction(
     Ok(txid)
 }
 
+async fn remote_get_wallet_info(
+    subargs: &crate::UsingRemoteBitcoinArgs,
+    wallet: &str,
+) -> anyhow::Result<BitcoinGetWalletInfoResponse> {
+    let command = "getwalletinfo";
+    let response = run_remote_wallet_command(subargs, wallet, command).await?;
+    let response = serde_json::from_str::<BitcoinGetWalletInfoResponse>(&response)
+        .with_context(|| format!("failed to parse getwalletinfo response: {response:?}"))?;
+    Ok(response)
+}
+
 async fn do_get_wallet_balances_using_remote_bitcoin(
     subargs: &crate::UsingRemoteBitcoinArgs,
     federation: &Federation,
@@ -699,25 +706,23 @@ async fn do_get_wallet_balances_using_remote_bitcoin(
     import_federation_descriptors_into_wallet(federation, &wallets, output_descriptors, subargs)
         .await?;
     let wallet_balances = get_wallet_balances_using_remote_bitcoin(wallets, subargs).await?;
-    if wallet_balances.is_empty() {
-        anyhow::bail!("no wallet balances found")
-    }
+    ensure!(!wallet_balances.is_empty(), "no wallet balances found");
     let first_wallet_balance = &wallet_balances[0];
-    if wallet_balances
-        .iter()
-        .any(|wallet_balance| wallet_balance != first_wallet_balance)
-    {
-        anyhow::bail!("wallet balances are not the same")
-    }
-    if first_wallet_balance.untrusted_pending != 0.0 {
-        anyhow::bail!("there is a pending balance")
-    }
+    ensure!(
+        wallet_balances
+            .iter()
+            .all(|wallet_balance| wallet_balance == first_wallet_balance),
+        "wallet balances are not the same: {wallet_balances:?}"
+    );
+    let pending = first_wallet_balance.untrusted_pending;
+    ensure!(pending == 0.0, "there is a pending balance: {pending}");
     let wallet_balance = Amount::from_btc(first_wallet_balance.trusted)
         .context("failed to convert wallet balance to Amount")?;
     if let Some(balance_on_descriptors) = balance_on_descriptors {
-        if wallet_balance != balance_on_descriptors {
-            anyhow::bail!("wallet balance is not the same as the one we got from the descriptors")
-        }
+        ensure!(
+            wallet_balance == balance_on_descriptors,
+            "wallet balance {wallet_balance} is not the same as the one we got from the descriptors {balance_on_descriptors}"
+        );
     }
     Ok(wallet_balance)
 }
@@ -728,12 +733,11 @@ async fn get_gateway_balances(federation: &Federation) -> anyhow::Result<Vec<Amo
 
         let info_response = serde_json::from_slice::<GatewayCliInfoResponse>(&info_response.stdout)
             .context("failed to parse gateway-cli info response")?;
-        if info_response.federations.len() != 1 {
-            anyhow::bail!(
-                "gateway-cli info response has more than one federation, this is not supported"
-            )
-        }
-        let federation_id = &info_response.federations[0].federation_id;
+        let federations = &info_response.federations;
+        ensure!(federations.len() == 1,
+            "gateway-cli info response has more than one federation ({federations:?}), this is not supported"
+        );
+        let federation_id = &federations[0].federation_id;
         debug!("The federation id is: {federation_id}");
         let balance_response = run_ssh_checked(
             &gateway.ssh_args,
@@ -816,12 +820,33 @@ async fn import_federation_descriptors_into_wallet(
                             })
                             .collect(),
                     );
-                    run_remote_wallet_command(
+                    match run_remote_wallet_command(
                         subargs,
                         wallet_name,
                         &format!(r#"importdescriptors '{output_descriptors}'"#,),
                     )
                     .await
+                    {
+                        Ok(_) => Ok(()),
+                        Err(e) => {
+                            if e.to_string().to_lowercase().contains("timeout") {
+                                info!("Importing descriptors for wallet {wallet_name} is taking a long time, will continue to wait for it");
+                                loop {
+                                    let info = remote_get_wallet_info(subargs, wallet_name).await?;
+                                    if info.scanning != Value::Bool(false) {
+                                        debug!("Waiting for wallet {wallet_name} to finish import: {scanning}", scanning = info.scanning);
+                                    } else {
+                                        info!("Finished import for wallet {wallet_name}");
+                                        return Ok(());
+                                    }
+                                    tokio::time::sleep(Duration::from_secs(60)).await;
+                                }
+                            } else {
+                                warn!("Failed to import descriptors for wallet {wallet_name}: {e:?}");
+                                Err(e)
+                            }
+                        }
+                    }
                 }
             }),
     )
@@ -912,9 +937,10 @@ async fn extract_all_output_descriptors(
 fn summarize_output_descriptor_balance(
     output_descriptors_utxos: &[Vec<RecoveryToolResult>],
 ) -> anyhow::Result<Option<Amount>> {
-    if output_descriptors_utxos.is_empty() {
-        anyhow::bail!("no output descriptors found")
-    }
+    ensure!(
+        !output_descriptors_utxos.is_empty(),
+        "no output descriptors found"
+    );
     let amounts = if output_descriptors_utxos
         .iter()
         .all(|output_descriptors| output_descriptors.iter().all(|o| o.amount_sat.is_some()))
@@ -933,9 +959,10 @@ fn summarize_output_descriptor_balance(
     };
     // check all amounts are the same
     let first_amount = amounts[0];
-    if amounts.iter().any(|amount| *amount != first_amount) {
-        anyhow::bail!("not all amounts are the same")
-    }
+    ensure!(
+        amounts.iter().all(|amount| *amount == first_amount),
+        "not all amounts are the same: {amounts:?}"
+    );
     let balance = Amount::from_sat(first_amount);
     Ok(Some(balance))
 }
@@ -1063,9 +1090,7 @@ async fn extract_output_descriptors_checked(
         .context("failed to run recovery tool")?;
     let jsons: Vec<RecoveryToolResult> = serde_json::from_slice(output.stdout.as_slice())
         .with_context(|| anyhow::anyhow!("failed to parse output descriptors from: {output:?}"))?;
-    if jsons.is_empty() {
-        anyhow::bail!("no output descriptors found")
-    }
+    ensure!(!jsons.is_empty(), "no output descriptors found");
     Ok(jsons)
 }
 
