@@ -30,7 +30,7 @@ export const SocialRecovery: React.FC = () => {
     const { replace } = useRouter()
     const {
         hasCheckedForSocialRecovery,
-        socialRecoveryId,
+        socialRecoveryQr,
         socialRecoveryState,
         isCompletingRecovery,
         fetchSocialRecovery,
@@ -91,14 +91,14 @@ export const SocialRecovery: React.FC = () => {
                 <HoloLoader size={180} />
             </LoadingContainer>
         )
-    } else if (socialRecoveryId) {
+    } else if (socialRecoveryQr) {
         content = (
             <>
                 <Text>
                     {t('feature.recovery.guardian-approval-instructions')}
                 </Text>
                 <QRCodeContainer>
-                    <QRCode data={socialRecoveryId} />
+                    <QRCode data={socialRecoveryQr} />
                 </QRCodeContainer>
                 {socialRecoveryState ? (
                     <GuardianApprovals>

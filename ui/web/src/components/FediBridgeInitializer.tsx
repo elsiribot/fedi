@@ -11,7 +11,7 @@ import {
     refreshFederations,
     selectActiveFederation,
     selectAuthenticatedMember,
-    selectSocialRecoveryId,
+    selectSocialRecoveryQr,
 } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
@@ -31,7 +31,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const { asPath } = useRouter()
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const socialRecoveryId = useAppSelector(selectSocialRecoveryId)
+    const socialRecoveryId = useAppSelector(selectSocialRecoveryQr)
     const [isInitialized, setIsInitialized] = useState(false)
     const [isShowingLoading, setIsShowingLoading] = useState(false)
     const [error, setError] = useState<string>()

@@ -6,7 +6,7 @@ import {
     cancelSocialRecovery as reduxCancelSocialRecovery,
     refreshSocialRecoveryState,
     selectHasCheckedForSocialRecovery,
-    selectSocialRecoveryId,
+    selectSocialRecoveryQr,
     selectSocialRecoveryState,
 } from '../redux'
 import { FedimintBridge } from '../utils/fedimint'
@@ -17,7 +17,7 @@ export function useSocialRecovery(fedimint: FedimintBridge) {
     const hasCheckedForSocialRecovery = useCommonSelector(
         selectHasCheckedForSocialRecovery,
     )
-    const socialRecoveryId = useCommonSelector(selectSocialRecoveryId)
+    const socialRecoveryQr = useCommonSelector(selectSocialRecoveryQr)
     const socialRecoveryState = useCommonSelector(selectSocialRecoveryState)
     const [isCompletingRecovery, setIsCompletingRecovery] = useState(false)
     const [isCancelingRecovery, setIsCancelingRecovery] = useState(false)
@@ -29,7 +29,9 @@ export function useSocialRecovery(fedimint: FedimintBridge) {
     const completeSocialRecovery = useCallback(async () => {
         setIsCompletingRecovery(true)
         try {
-            return dispatch(reduxCompleteSocialRecovery({ fedimint })).unwrap()
+            return await dispatch(
+                reduxCompleteSocialRecovery({ fedimint }),
+            ).unwrap()
         } finally {
             setIsCompletingRecovery(false)
         }
@@ -46,18 +48,18 @@ export function useSocialRecovery(fedimint: FedimintBridge) {
 
     // Refresh social recovery state every 3 seconds while recovering.
     useEffect(() => {
-        if (!socialRecoveryId) return
+        if (!socialRecoveryQr) return
         const refresh = async () => {
             await dispatch(refreshSocialRecoveryState(fedimint))
             timeout = setTimeout(refresh, 3000)
         }
         let timeout = setTimeout(refresh, 3000)
         return () => clearTimeout(timeout)
-    }, [dispatch, fedimint, socialRecoveryId])
+    }, [dispatch, fedimint, socialRecoveryQr])
 
     return {
         hasCheckedForSocialRecovery,
-        socialRecoveryId,
+        socialRecoveryQr,
         socialRecoveryState,
         isCompletingRecovery,
         isCancelingRecovery,

@@ -8,7 +8,7 @@ import { FedimintBridge } from '../utils/fedimint'
 
 const initialState = {
     hasCheckedForSocialRecovery: false,
-    socialRecoveryId: null as string | null,
+    socialRecoveryQr: null as string | null,
     socialRecoveryState: null as SocialRecoveryEvent | null,
 }
 
@@ -31,10 +31,10 @@ export const recoverySlice = createSlice({
         builder.addCase(fetchSocialRecovery.fulfilled, (state, action) => {
             state.hasCheckedForSocialRecovery = true
             if (action.payload) {
-                state.socialRecoveryId = action.payload.id
+                state.socialRecoveryQr = action.payload.qr
                 state.socialRecoveryState = action.payload.state
             } else {
-                state.socialRecoveryId = null
+                state.socialRecoveryQr = null
                 state.socialRecoveryState = null
             }
         })
@@ -47,12 +47,12 @@ export const recoverySlice = createSlice({
         )
 
         builder.addCase(completeSocialRecovery.fulfilled, state => {
-            state.socialRecoveryId = null
+            state.socialRecoveryQr = null
             state.socialRecoveryState = null
         })
 
         builder.addCase(cancelSocialRecovery.fulfilled, state => {
-            state.socialRecoveryId = null
+            state.socialRecoveryQr = null
             state.socialRecoveryState = null
         })
     },
@@ -65,13 +65,13 @@ export const { setSocialRecoveryState } = recoverySlice.actions
 /*** Async thunk actions ***/
 
 export const fetchSocialRecovery = createAsyncThunk<
-    { id: string; state: SocialRecoveryEvent } | void,
+    { qr: string; state: SocialRecoveryEvent } | void,
     FedimintBridge
 >('recovery/fetchSocialRecovery', async fedimint => {
     const qr = await fedimint.recoveryQr()
     if (!qr) return
     const state = await fedimint.socialRecoveryApprovals()
-    return { id: qr.recoveryId, state }
+    return { qr: JSON.stringify(qr), state }
 })
 
 export const refreshSocialRecoveryState = createAsyncThunk<
@@ -101,8 +101,8 @@ export const cancelSocialRecovery = createAsyncThunk<void, FedimintBridge>(
 export const selectHasCheckedForSocialRecovery = (s: CommonState) =>
     s.recovery.hasCheckedForSocialRecovery
 
-export const selectSocialRecoveryId = (s: CommonState) =>
-    s.recovery.socialRecoveryId
+export const selectSocialRecoveryQr = (s: CommonState) =>
+    s.recovery.socialRecoveryQr
 
 export const selectSocialRecoveryState = (s: CommonState) =>
     s.recovery.socialRecoveryState
