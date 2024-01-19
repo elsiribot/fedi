@@ -22,7 +22,7 @@ interface Props {
      * Behaves like a normal dialog when the view is greater than the `sm` breakpoint.
      * If specified, behaves like an overlay on mobile, showing a Back button and a centered header instead of a Close button.
      */
-    behavior?: 'overlay'
+    mobileDismiss?: 'back' | 'close'
 }
 
 export const Dialog: React.FC<Props> = ({
@@ -33,11 +33,11 @@ export const Dialog: React.FC<Props> = ({
     children,
     size,
     disableClose,
-    behavior,
+    mobileDismiss = 'close',
 }) => {
     const isSm = useMediaQuery(config.media.sm)
 
-    const enableOverlayBehavior = behavior === 'overlay' && isSm
+    const mobileDismissBack = mobileDismiss === 'close' && isSm
 
     const handleCloseTrigger = useCallback(
         (ev: Event) => {
@@ -62,7 +62,7 @@ export const Dialog: React.FC<Props> = ({
                                     <>
                                         <Title>
                                             {!disableClose &&
-                                                enableOverlayBehavior && (
+                                                mobileDismissBack && (
                                                     <BackButtonContainer>
                                                         <IconButton
                                                             icon={
@@ -80,7 +80,7 @@ export const Dialog: React.FC<Props> = ({
                                             <TitleText
                                                 variant="body"
                                                 weight="bold"
-                                                center={enableOverlayBehavior}>
+                                                center={isSm}>
                                                 {title}
                                             </TitleText>
                                         </Title>
@@ -96,7 +96,7 @@ export const Dialog: React.FC<Props> = ({
                             </Header>
                         )}
                         <Main>{children}</Main>
-                        {!disableClose && !enableOverlayBehavior && (
+                        {!disableClose && !mobileDismissBack && (
                             <CloseButton>
                                 <Icon icon={CloseIcon} />
                             </CloseButton>
