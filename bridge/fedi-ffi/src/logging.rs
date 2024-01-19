@@ -13,6 +13,7 @@ use tracing::metadata::LevelFilter;
 use tracing_appender::non_blocking::NonBlocking;
 use tracing_serde::AsSerde;
 use tracing_subscriber::layer::SubscriberExt;
+// nosemgrep: ban-wildcard-imports
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{EnvFilter, Layer};
 
@@ -81,6 +82,7 @@ pub fn init_logging(
                 .with_ansi(true)
                 .pretty()
                 // using time because we can't overwrite existing files in Download
+                // nosemgrep: ban-file-create
                 .with_writer(Mutex::new(std::fs::File::create(format!(
                     "/storage/emulated/0/Download/fedi-{time}.log",
                 ))?))
