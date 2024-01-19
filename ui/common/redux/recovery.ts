@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-import { CommonState, completeSocialRecovery } from '.'
+import { CommonState, refreshFederations } from '.'
 import { SocialRecoveryEvent } from '../types'
 import { FedimintBridge } from '../utils/fedimint'
 
@@ -81,13 +81,14 @@ export const refreshSocialRecoveryState = createAsyncThunk<
     return fedimint.socialRecoveryApprovals()
 })
 
-// TODO: Federation has same action?
-// export const completeSocialRecovery = createAsyncThunk<
-//     void,
-//     { fedimint: FedimintBridge }
-// >('recovery/completeSocialRecovery', async ({ fedimint }) => {
-//     await fedimint.completeSocialRecovery()
-// })
+export const completeSocialRecovery = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge },
+    { state: CommonState }
+>('recovery/completeSocialRecovery', async ({ fedimint }, { dispatch }) => {
+    await fedimint.completeSocialRecovery()
+    await dispatch(refreshFederations(fedimint))
+})
 
 export const cancelSocialRecovery = createAsyncThunk<void, FedimintBridge>(
     'recovery/cancelSocialRecovery',
