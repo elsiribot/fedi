@@ -163,6 +163,9 @@ jobs:
             - name: Build devops-cli
               run: nix build -L .#ci.devops-cli
 
+            - name: Build fedimint-dbtool
+              run: nix build -L .#fedimint-dbtool
+
 
     build-android:
         name: 'Build - android'
