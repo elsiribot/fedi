@@ -28,6 +28,9 @@ const navRoutes: Array<PrefixRoute | AbsoluteRoute> = [
         showWhen: 'desktop',
     },
     {
+        prefix: '/onboarding',
+    },
+    {
         path: '/bug-report',
         showWhen: 'desktop',
     },
@@ -38,9 +41,6 @@ const navRoutes: Array<PrefixRoute | AbsoluteRoute> = [
     {
         path: '/settings/app',
         showWhen: 'desktop',
-    },
-    {
-        path: '/onboarding',
     },
 ]
 
