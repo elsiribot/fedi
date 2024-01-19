@@ -43,9 +43,14 @@ const Container = styled('div', {
 })
 
 const Description = styled('div', {
-    maxWidth: 300,
+    maxWidth: 340,
 })
 
 const Action = styled('div', {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    maxWidth: 340,
     paddingTop: 8,
 })

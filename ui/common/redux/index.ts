@@ -16,6 +16,7 @@ import {
     updateFederationBalance,
 } from './federation'
 import { nuxSlice } from './nux'
+import { recoverySlice } from './recovery'
 import { loadFromStorage, saveToStorage, storageSlice } from './storage'
 import { toastSlice } from './toast'
 import { addTransaction, transactionsSlice } from './transactions'
@@ -28,6 +29,7 @@ export * from './currency'
 export * from './environment'
 export * from './federation'
 export * from './nux'
+export * from './recovery'
 export * from './toast'
 export * from './wallet'
 
@@ -37,6 +39,7 @@ export const commonReducers = {
     environment: environmentSlice.reducer,
     federation: federationSlice.reducer,
     nux: nuxSlice.reducer,
+    recovery: recoverySlice.reducer,
     storage: storageSlice.reducer,
     toast: toastSlice.reducer,
     transactions: transactionsSlice.reducer,
@@ -49,7 +52,10 @@ export type CommonState = {
 }
 export type CommonDispatch = ThunkDispatch<CommonState, unknown, AnyAction>
 
-export const listenerMiddleware = createListenerMiddleware<CommonState>()
+export const listenerMiddleware = createListenerMiddleware<
+    CommonState,
+    CommonDispatch
+>()
 export const commonMiddleware = (
     getDefaultMiddleware: CurriedGetDefaultMiddleware<CommonState>,
 ) => getDefaultMiddleware().prepend(listenerMiddleware.middleware)

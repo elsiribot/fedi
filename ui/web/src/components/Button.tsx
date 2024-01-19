@@ -24,7 +24,14 @@ type ButtonLinkProps = BaseProps &
 type ButtonExternalLinkProps = BaseProps &
     Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, keyof BaseProps>
 
-type Props = ButtonProps | ButtonLinkProps | ButtonExternalLinkProps
+type ButtonFileLabelProps = BaseProps &
+    Omit<React.LabelHTMLAttributes<HTMLLabelElement>, keyof BaseProps>
+
+type Props =
+    | ButtonProps
+    | ButtonLinkProps
+    | ButtonExternalLinkProps
+    | ButtonFileLabelProps
 
 export const Button: React.FC<Props> = ({
     variant = 'primary',
@@ -85,6 +92,15 @@ export const Button: React.FC<Props> = ({
                 </ButtonBase>
             )
         }
+    } else if ('htmlFor' in props) {
+        return (
+            <ButtonBase
+                as="label"
+                {...(props as React.HTMLAttributes<HTMLLabelElement>)}
+                {...sharedProps}>
+                {content}
+            </ButtonBase>
+        )
     } else {
         return (
             <ButtonBase

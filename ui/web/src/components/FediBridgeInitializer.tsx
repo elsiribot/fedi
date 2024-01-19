@@ -7,9 +7,11 @@ import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     connectChat,
     disconnectChat,
+    fetchSocialRecovery,
     refreshFederations,
     selectActiveFederation,
     selectAuthenticatedMember,
+    selectSocialRecoveryQr,
 } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
@@ -26,9 +28,10 @@ interface Props {
 export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
-    const { pathname } = useRouter()
+    const { asPath } = useRouter()
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const socialRecoveryId = useAppSelector(selectSocialRecoveryQr)
     const [isInitialized, setIsInitialized] = useState(false)
     const [isShowingLoading, setIsShowingLoading] = useState(false)
     const [error, setError] = useState<string>()
@@ -43,7 +46,12 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
 
         initializeBridge()
             .then(() =>
-                dispatchRef.current(refreshFederations(fedimint)).unwrap(),
+                // Fetch federations and social recovery in parallel after bridge.
+                // is initialized. Only throw (via unwrap) for refreshFederations.
+                Promise.all([
+                    dispatchRef.current(refreshFederations(fedimint)).unwrap(),
+                    dispatchRef.current(fetchSocialRecovery(fedimint)),
+                ]),
             )
             .then(() => setIsInitialized(true))
             .catch(err =>
@@ -82,9 +90,15 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     }, [federationId, isInitialized, authenticatedMember?.id, dispatch])
 
     if (isInitialized && !error) {
-        if (!activeFederation && !pathname.startsWith('/onboarding')) {
+        // If we're mid social recovery, force them to stay on the page
+        if (socialRecoveryId && asPath !== '/onboarding/recover/social') {
+            return <Redirect path="/onboarding/recover/social" />
+        }
+        // If they haven't joined a federation, force them into onboarding
+        if (!activeFederation && !asPath.startsWith('/onboarding')) {
             return <Redirect path="/onboarding" />
         }
+        // Otherwise render the page as normal
         return <>{children}</>
     }
 
