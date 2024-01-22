@@ -7651,8 +7651,8 @@ checksum = "3528ecfd12c466c6f163363caf2d02a71161dd5e1cc6ae7b34207ea2d42d81ed"
 
 [[package]]
 name = "ts-rs"
-version = "6.2.0"
-source = "git+https://github.com/maan2003/ts-rs?branch=fix-type-struct-zero#89f76422c2af0db47b9c03f26144f2417bcf51d8"
+version = "7.1.1"
+source = "git+https://github.com/maan2003/ts-rs?branch=fix-allow-rename-all-unit-structs#1caf10367593a459b486e13a10c4b89e8dc478f4"
 dependencies = [
  "thiserror",
  "ts-rs-macros",
@@ -7660,13 +7660,13 @@ dependencies = [
 
 [[package]]
 name = "ts-rs-macros"
-version = "6.2.0"
-source = "git+https://github.com/maan2003/ts-rs?branch=fix-type-struct-zero#89f76422c2af0db47b9c03f26144f2417bcf51d8"
+version = "7.1.1"
+source = "git+https://github.com/maan2003/ts-rs?branch=fix-allow-rename-all-unit-structs#1caf10367593a459b486e13a10c4b89e8dc478f4"
 dependencies = [
  "Inflector",
  "proc-macro2",
  "quote 1.0.33",
- "syn 1.0.109",
+ "syn 2.0.32",
  "termcolor",
 ]
 

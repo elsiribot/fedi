@@ -196,7 +196,7 @@ export interface RpcMethods {
     ]
     leaveFederation: [{ federationId: RpcFederationId }, null]
     listFederations: [
-        {},
+        Record<string, never>,
         Array<{
             balance: RpcAmount
             id: RpcFederationId
@@ -292,22 +292,22 @@ export interface RpcMethods {
         { federationId: RpcFederationId; transactionId: string; notes: string },
         null,
     ]
-    getMnemonic: [{}, Array<string>]
+    getMnemonic: [Record<string, never>, Array<string>]
     recoverFromMnemonic: [{ mnemonic: Array<string> }, null]
     uploadBackupFile: [
         { federationId: RpcFederationId; videoFilePath: string },
         string,
     ]
-    locateRecoveryFile: [{}, string]
+    locateRecoveryFile: [Record<string, never>, string]
     validateRecoveryFile: [{ path: string }, null]
-    recoveryQr: [{}, { recoveryId: RpcRecoveryId } | null]
-    cancelSocialRecovery: [{}, null]
+    recoveryQr: [Record<string, never>, { recoveryId: RpcRecoveryId } | null]
+    cancelSocialRecovery: [Record<string, never>, null]
     socialRecoveryApprovals: [
-        {},
+        Record<string, never>,
         { approvals: Array<SocialRecoveryApproval>; remaining: number },
     ]
     completeSocialRecovery: [
-        {},
+        Record<string, never>,
         {
             balance: RpcAmount
             id: RpcFederationId
@@ -376,7 +376,7 @@ export interface RpcMethods {
         },
         string,
     ]
-    getSensitiveLog: [{}, boolean]
+    getSensitiveLog: [Record<string, never>, boolean]
     setSensitiveLog: [{ enable: boolean }, null]
 }
 
