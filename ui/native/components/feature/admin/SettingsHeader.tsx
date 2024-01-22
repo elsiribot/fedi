@@ -26,7 +26,7 @@ const SettingsHeader: React.FC = () => {
                 backButton
                 containerStyle={styles(theme).container}
                 headerCenter={
-                    <Text h2 medium>
+                    <Text bold numberOfLines={1} adjustsFontSizeToFit>
                         {t('words.settings')}
                     </Text>
                 }
