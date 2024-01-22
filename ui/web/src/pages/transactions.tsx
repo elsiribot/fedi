@@ -28,7 +28,7 @@ const TransactionsPage: React.FC = () => {
     return (
         <ContentBlock>
             <Layout.Root>
-                <Layout.Header>
+                <Layout.Header back="/">
                     <Layout.Title>{t('words.transactions')}</Layout.Title>
                 </Layout.Header>
                 <Layout.Content centered={isLoading} fullWidth>

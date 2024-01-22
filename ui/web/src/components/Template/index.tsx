@@ -1,48 +1,33 @@
-import { useRouter } from 'next/router'
 import React from 'react'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 
-import { useMediaQuery } from '../../hooks'
-import { styled, theme, config } from '../../styles'
+import { styled, theme } from '../../styles'
 import { PageError } from '../PageError'
 import { PopupFederationOver } from '../PopupFederationOver'
 import { FederationSelector } from './FederationSelector'
 import { Navigation } from './Navigation'
 import { PopupFederationCountdown } from './PopupFederationCountdown'
+import { useNavVisibility } from './navConfig'
 
 interface Props {
     children: React.ReactNode
 }
 
 export const Template: React.FC<Props> = ({ children }) => {
-    const router = useRouter()
-    const isSm = useMediaQuery(config.media.sm)
-    const popupInfo = usePopupFederationInfo()
-
-    // TODO: Move these out of template and into some better configuration management
-    const isOnboardingPage = router.pathname.startsWith('/onboarding')
-    const isChatPage =
-        router.asPath.startsWith('/chat/group') ||
-        router.asPath.startsWith('/chat/member')
-    const hideControls = isOnboardingPage || (isSm && isChatPage)
-
-    const isPopupOver =
-        !isOnboardingPage && !!popupInfo && popupInfo.secondsLeft <= 0
-    const hideNavigation = hideControls || isPopupOver
+    const { hideNavigation, isPopupOver } = useNavVisibility()
 
     return (
         <Container className={hideNavigation ? 'hide-navigation' : ''}>
             {!hideNavigation && <Navigation />}
             <Content>
-                {!hideControls && (
+                {!hideNavigation && (
                     <FederationControls>
                         <FederationSelector />
                         <PopupFederationCountdown />
                     </FederationControls>
                 )}
-                <Main centered={hideControls}>
+                <Main centered={hideNavigation}>
                     <ErrorBoundary fallback={() => <PageError />}>
                         {isPopupOver ? <PopupFederationOver /> : children}
                     </ErrorBoundary>

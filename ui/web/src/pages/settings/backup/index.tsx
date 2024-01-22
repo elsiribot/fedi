@@ -17,7 +17,7 @@ function BackupPage() {
     return (
         <ContentBlock>
             <Layout.Root>
-                <Layout.Header>
+                <Layout.Header back="/settings">
                     <Layout.Title>
                         {t('feature.backup.choose-method')}
                     </Layout.Title>

@@ -10,7 +10,7 @@ export default function BugReportPage() {
     return (
         <ContentBlock>
             <Layout.Root>
-                <Layout.Header>
+                <Layout.Header back="/">
                     <Layout.Title>{t('feature.bug.report-a-bug')}</Layout.Title>
                 </Layout.Header>
 

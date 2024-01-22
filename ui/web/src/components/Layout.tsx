@@ -1,4 +1,10 @@
-import { styled, theme } from '../styles'
+import { useRouter } from 'next/router'
+
+import ChevronLeft from '@fedi/common/assets/svgs/chevron-left.svg'
+
+import { useMediaQuery } from '../hooks'
+import { config, styled, theme } from '../styles'
+import { IconButton } from './IconButton'
 import { ShadowScroller } from './ShadowScroller'
 
 export const Root = styled('div', {
@@ -8,10 +14,34 @@ export const Root = styled('div', {
     minHeight: 0,
 })
 
-export const Header = styled('div', {
+export function Header({
+    children,
+    back,
+    ...props
+}: React.ComponentProps<typeof HeaderContainer> & { back?: string }) {
+    const isSm = useMediaQuery(config.media.sm)
+    const router = useRouter()
+
+    return (
+        <HeaderContainer {...props}>
+            {back && isSm ? (
+                <IconButton
+                    icon={ChevronLeft}
+                    size="md"
+                    onClick={() => {
+                        router.push(back)
+                    }}
+                />
+            ) : null}
+            <HeaderContent>{children}</HeaderContent>
+        </HeaderContainer>
+    )
+}
+
+export const HeaderContainer = styled('div', {
     display: 'flex',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
     height: 64,
 
     '@sm': {
@@ -26,6 +56,15 @@ export const Header = styled('div', {
             },
         },
     },
+})
+
+const HeaderContent = styled('div', {
+    display: 'flex',
+    flex: 1,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+    height: '100%',
 })
 
 export const Title = styled('h1', {
