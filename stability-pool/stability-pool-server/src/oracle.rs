@@ -1,11 +1,12 @@
 use std::fmt::Debug;
+use std::time::Duration;
 
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use futures::future::join_all;
 use itertools::Itertools;
 use reqwest::{Client, Url};
-use tracing::warn;
+use tracing::{info, warn};
 
 #[async_trait]
 pub trait Oracle: Sync + Send + Debug {
@@ -154,6 +155,7 @@ impl AggregateOracle {
 #[async_trait]
 impl Oracle for AggregateOracle {
     async fn get_price(&self) -> anyhow::Result<u64> {
+        info!("began fetching prices from oracle sources");
         let source_prices = join_all(self.sources.iter().map(|source| {
             let client = self.client.clone();
             let url = source.get_url();
@@ -161,6 +163,7 @@ impl Oracle for AggregateOracle {
                 Ok::<_, anyhow::Error>(
                     client
                         .get(url)
+                        .timeout(Duration::from_secs(15))
                         .send()
                         .await?
                         .json::<serde_json::Value>()
@@ -196,6 +199,7 @@ impl Oracle for AggregateOracle {
             bail!("None of the oracle sources worked");
         }
 
+        info!("finished successfully fetching prices from sources");
         Ok(source_prices[source_prices.len() / 2])
     }
 }

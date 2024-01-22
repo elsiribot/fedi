@@ -44,7 +44,7 @@ use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
 use secp256k1_zkp::PublicKey;
 pub use stability_pool_common as common;
-use tracing::info;
+use tracing::{info, warn};
 
 /// PPB unit for fee-related calculations.
 const B: u128 = 1_000_000_000;
@@ -221,7 +221,10 @@ impl ServerModule for StabilityPool {
 
         if should_propose_new_cycle {
             match self.oracle.get_price().await {
-                Err(_) => vec![],
+                Err(e) => {
+                    warn!("oracle price fetch error: {e}");
+                    vec![]
+                }
                 Ok(price) => {
                     vec![StabilityPoolConsensusItem::new_v0(
                         current_cycle
