@@ -127,9 +127,6 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
             contentContainerStyle={style.contentContainer}
             overScrollMode="auto">
             <View style={style.form}>
-                <Text h2 medium>
-                    {t('feature.bug.report-a-bug')}
-                </Text>
                 <Input
                     {...inputProps}
                     label={
