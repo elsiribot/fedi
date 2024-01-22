@@ -166,11 +166,8 @@ export const useBridge = () => {
             [activeFederationId],
         ),
         locateRecoveryFile: useCallback(() => {
-            if (!activeFederationId)
-                return Promise.reject(new Error('No active federation'))
-
-            return fedimint.locateRecoveryFile(activeFederationId)
-        }, [activeFederationId]),
+            return fedimint.locateRecoveryFile()
+        }, []),
         payInvoice: useCallback(
             (invoice: string) => {
                 if (!activeFederationId)
