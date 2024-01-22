@@ -248,8 +248,8 @@ export class FedimintBridge {
         })
     }
 
-    async locateRecoveryFile(federationId: string) {
-        return this.rpcTyped('locateRecoveryFile', { federationId })
+    async locateRecoveryFile() {
+        return this.rpcTyped('locateRecoveryFile', {})
     }
 
     async validateRecoveryFile(path: string) {

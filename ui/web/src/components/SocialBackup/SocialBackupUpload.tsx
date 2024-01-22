@@ -47,9 +47,7 @@ export const SocialBackupUpload: React.FC<Props> = ({ videoBlob, next }) => {
                     activeFederationId,
                 )
                 // Pull the backup file as a blob and continue to the next screen
-                const path = await fedimint.locateRecoveryFile(
-                    activeFederationId,
-                )
+                const path = await fedimint.locateRecoveryFile()
                 const file = await readBridgeFile(path)
                 const blob = new Blob([file], {
                     type: 'application/octet-stream',
