@@ -2,6 +2,7 @@ import React from 'react'
 
 import ArrowDownBadgeIcon from '@fedi/common/assets/svgs/arrow-down-badge.svg'
 import ArrowUpBadgeIcon from '@fedi/common/assets/svgs/arrow-up-badge.svg'
+import ExpiredBadgeIcon from '@fedi/common/assets/svgs/expired-badge.svg'
 import PendingBadgeIcon from '@fedi/common/assets/svgs/pending-badge.svg'
 
 import { theme, CSSProp, styled } from '../../styles'
@@ -9,7 +10,7 @@ import { Icon } from '../Icon'
 
 export interface HistoryIconProps {
     children: React.ReactNode
-    badge?: 'incoming' | 'outgoing' | 'pending'
+    badge?: 'incoming' | 'outgoing' | 'pending' | 'expired'
     color?: CSSProp['color']
 }
 
@@ -29,6 +30,9 @@ export const HistoryIcon: React.FC<HistoryIconProps> = ({
     } else if (badge === 'pending') {
         badgeIcon = PendingBadgeIcon
         badgeColor = theme.colors.fuschia
+    } else {
+        badgeIcon = ExpiredBadgeIcon
+        badgeColor = theme.colors.red
     }
 
     return (

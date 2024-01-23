@@ -21,6 +21,8 @@ export const TransactionIcon: React.FC<Props> = ({ txn }) => {
         (txn.lightning && !txn.lnState)
     ) {
         badge = 'pending'
+    } else if (txn.lnState?.type === 'canceled') {
+        badge = 'expired'
     } else {
         badge = 'incoming'
     }
