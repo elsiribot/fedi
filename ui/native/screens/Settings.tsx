@@ -210,7 +210,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                 )}
                 {showInviteCode && (
                     <SettingsItem
-                        image={<SvgImage name="InviteMembers" />}
+                        image={<SvgImage name="Qr" />}
                         label={t('feature.federations.invite-members')}
                         onPress={() => {
                             navigation.navigate('FederationInvite', {
