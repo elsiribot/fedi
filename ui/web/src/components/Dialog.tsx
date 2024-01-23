@@ -1,10 +1,13 @@
 import * as RadixDialog from '@radix-ui/react-dialog'
 import { useCallback } from 'react'
 
+import ChevronLeftIcon from '@fedi/common/assets/svgs/chevron-left.svg'
 import CloseIcon from '@fedi/common/assets/svgs/close.svg'
 
-import { keyframes, styled, theme } from '../styles'
+import { useMediaQuery } from '../hooks'
+import { config, keyframes, styled, theme } from '../styles'
 import { Icon } from './Icon'
+import { IconButton } from './IconButton'
 import { Text } from './Text'
 
 interface Props {
@@ -15,6 +18,11 @@ interface Props {
     children: React.ReactNode
     size?: 'sm' | 'md' | 'lg'
     disableClose?: boolean
+    /**
+     * Behaves like a normal dialog when the view is greater than the `sm` breakpoint.
+     * If specified, behaves like an overlay on mobile, showing a Back button and a centered header instead of a Close button.
+     */
+    mobileDismiss?: 'back' | 'close'
 }
 
 export const Dialog: React.FC<Props> = ({
@@ -25,7 +33,12 @@ export const Dialog: React.FC<Props> = ({
     children,
     size,
     disableClose,
+    mobileDismiss = 'close',
 }) => {
+    const isSm = useMediaQuery(config.media.sm)
+
+    const mobileDismissBack = mobileDismiss === 'back' && isSm
+
     const handleCloseTrigger = useCallback(
         (ev: Event) => {
             if (disableClose) ev.preventDefault()
@@ -46,11 +59,32 @@ export const Dialog: React.FC<Props> = ({
                         {(title || description) && (
                             <Header>
                                 {title && (
-                                    <Title>
-                                        <Text variant="body" weight="bold">
-                                            {title}
-                                        </Text>
-                                    </Title>
+                                    <>
+                                        <Title>
+                                            {!disableClose &&
+                                                mobileDismissBack && (
+                                                    <BackButtonContainer>
+                                                        <IconButton
+                                                            icon={
+                                                                ChevronLeftIcon
+                                                            }
+                                                            size="md"
+                                                            onClick={() =>
+                                                                onOpenChange(
+                                                                    false,
+                                                                )
+                                                            }
+                                                        />
+                                                    </BackButtonContainer>
+                                                )}
+                                            <TitleText
+                                                variant="body"
+                                                weight="bold"
+                                                center={isSm}>
+                                                {title}
+                                            </TitleText>
+                                        </Title>
+                                    </>
                                 )}
                                 {description && (
                                     <Description>
@@ -62,7 +96,7 @@ export const Dialog: React.FC<Props> = ({
                             </Header>
                         )}
                         <Main>{children}</Main>
-                        {!disableClose && (
+                        {!disableClose && !mobileDismissBack && (
                             <CloseButton>
                                 <Icon icon={CloseIcon} />
                             </CloseButton>
@@ -164,6 +198,25 @@ const Header = styled('div', {
 
 const Title = styled(RadixDialog.Title, {
     marginBottom: 8,
+    display: 'flex',
+    alignItems: 'center',
+    position: 'relative',
+})
+
+const BackButtonContainer = styled('div', {
+    position: 'absolute',
+    left: 0,
+})
+
+const TitleText = styled(Text, {
+    variants: {
+        center: {
+            true: {
+                textAlign: 'center',
+                flex: 1,
+            },
+        },
+    },
 })
 
 const Description = styled(RadixDialog.Description, {

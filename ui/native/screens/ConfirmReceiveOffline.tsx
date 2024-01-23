@@ -62,8 +62,11 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                         amount,
                     } as Transaction,
                 })
-            } catch (e: any) {
-                toast?.show(e.message, 3000)
+            } catch (e) {
+                toast?.show(
+                    formatErrorMessage(t, e, 'errors.unknown-error'),
+                    3000,
+                )
                 setReceiving(false)
             }
         }

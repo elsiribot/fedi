@@ -1096,7 +1096,7 @@ mod tests {
         .ecash;
 
         // cancel too fast doesn't work: https://github.com/fedimint/fedimint/pull/3435
-        tokio::time::sleep(Duration::from_secs(1)).await;
+        fedimint_core::task::sleep(Duration::from_secs(1)).await;
 
         cancelEcash(bridge.clone(), federation.federation_id(), send_ecash).await?;
         Ok(())

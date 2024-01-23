@@ -5,6 +5,8 @@ import { makeLog } from '@fedi/common/utils/log'
 import init, {
     fedimint_initialize,
     fedimint_rpc,
+    fedimint_read_file,
+    fedimint_write_file,
     get_logs,
 } from '@fedi/common/wasm/'
 
@@ -52,6 +54,26 @@ addEventListener('message', e => {
                 result: JSON.stringify({ result: URL.createObjectURL(file) }),
             })
         })()
+        return
+    }
+    if (method === 'readFile') {
+        fedimint_read_file(data.path)
+            .then(result => {
+                postMessage({ token, result })
+            })
+            .catch(err => {
+                postMessage({ token, error: String(err) })
+            })
+        return
+    }
+    if (method === 'writeFile') {
+        fedimint_write_file(data.path, data.data)
+            .then(() => {
+                postMessage({ token, result: true })
+            })
+            .catch(err => {
+                postMessage({ token, error: String(err) })
+            })
         return
     }
     rpcRequest(method, data)

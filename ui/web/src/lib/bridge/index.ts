@@ -7,6 +7,23 @@ let worker: Worker
 let callbackId = 0
 const callbacks = new Map()
 
+async function workerRequest<ResponseData, RequestData = unknown>(
+    method: string,
+    data: RequestData,
+): Promise<ResponseData> {
+    // Instant throw if bridge is not initialized
+    // TODO: Just await promise until it is?
+    if (!worker) {
+        throw new Error('Fedimint bridge is not ready!')
+    }
+
+    return new Promise(resolve => {
+        callbackId++
+        callbacks.set(callbackId, (res: ResponseData) => resolve(res))
+        worker.postMessage({ token: callbackId, method, data })
+    })
+}
+
 async function fedimintRpc<Type = void>(
     method: string,
     payload: object,
@@ -19,12 +36,7 @@ async function fedimintRpc<Type = void>(
 
     // Post a message to the worker
     const jsonPayload = JSON.stringify(payload)
-    const json: string = await new Promise(resolve => {
-        callbackId++
-        callbacks.set(callbackId, (res: unknown) => resolve(res as string))
-        worker.postMessage({ token: callbackId, method, data: jsonPayload })
-    })
-
+    const json = await workerRequest<string>(method, jsonPayload)
     const parsed = JSON.parse(json)
     if (parsed.error) {
         throw Error(parsed.error)
@@ -75,6 +87,51 @@ export async function initializeBridge() {
     return initializePromise.finally(() => {
         initializePromise = undefined
     })
+}
+
+export async function readBridgeFile(path: string) {
+    const response = workerRequest<Uint8Array | string>('readFile', { path })
+
+    if (typeof response === 'string') {
+        let errMsg: string
+        try {
+            const parsed = JSON.parse(response)
+            errMsg = parsed.error
+        } catch (err) {
+            log.error(
+                'Failed to parse response from readFile as JSON',
+                response,
+                err,
+            )
+            throw err
+        }
+        throw new Error(errMsg)
+    }
+
+    return response
+}
+
+export async function writeBridgeFile(path: string, data: Uint8Array) {
+    const response = workerRequest<boolean | string>('writeFile', {
+        path,
+        data,
+    })
+
+    if (typeof response === 'string') {
+        let errMsg: string
+        try {
+            const parsed = JSON.parse(response)
+            errMsg = parsed.error
+        } catch (err) {
+            log.error(
+                'Failed to parse response from readFile as JSON',
+                response,
+                err,
+            )
+            throw err
+        }
+        throw new Error(errMsg)
+    }
 }
 
 // Expose bridge API to window for testing in development

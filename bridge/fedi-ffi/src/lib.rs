@@ -20,6 +20,7 @@ pub mod types;
 pub mod utils;
 
 #[cfg(not(target_family = "wasm"))]
+// nosemgrep: ban-wildcard-imports
 use ffi::*;
 
 #[cfg(not(target_family = "wasm"))]

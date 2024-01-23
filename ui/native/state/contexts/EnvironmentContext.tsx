@@ -15,10 +15,15 @@ enum ActionType {
     INITIALIZE_TOAST_REF = 'INITIALIZE_TOAST_REF',
     RESET_ENVIRONMENT_STATE = 'RESET_ENVIRONMENT_STATE',
 }
-interface Action {
-    type: ActionType
-    payload?: any
-}
+
+type Action =
+    | {
+          type: typeof ActionType.INITIALIZE_TOAST_REF
+          payload: Toast | null
+      }
+    | {
+          type: typeof ActionType.RESET_ENVIRONMENT_STATE
+      }
 
 // Wrap with state and dispatch fields and create the Context
 type BaseContext = {
@@ -28,7 +33,7 @@ type BaseContext = {
 export const EnvironmentContext = createContext({} as BaseContext)
 
 // Export action creators as convenience functions to trigger state changes
-export function initializeToastRef(toastRef: any): Action {
+export function initializeToastRef(toastRef: Toast | null): Action {
     return {
         type: ActionType.INITIALIZE_TOAST_REF,
         payload: toastRef,

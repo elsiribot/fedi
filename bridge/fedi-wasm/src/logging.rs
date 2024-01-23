@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex as StdMutex};
 
 use fediffi::event::IEventSink;
 use tracing_subscriber::fmt::MakeWriter;
+// nosemgrep: ban-wildcard-imports
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
 use wasm_bindgen::prelude::wasm_bindgen;

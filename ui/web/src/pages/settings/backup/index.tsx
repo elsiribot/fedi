@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import WordListIcon from '@fedi/common/assets/svgs/word-list.svg'
+import { useIsSocialRecoverySupported } from '@fedi/common/hooks/federation'
 
 import { ActionCard } from '../../../components/ActionCard'
 import { Button } from '../../../components/Button'
@@ -12,10 +13,11 @@ import { styled } from '../../../styles'
 
 function BackupPage() {
     const { t } = useTranslation()
+    const canSocialBackup = useIsSocialRecoverySupported()
     return (
         <ContentBlock>
             <Layout.Root>
-                <Layout.Header>
+                <Layout.Header back="/settings">
                     <Layout.Title>
                         {t('feature.backup.choose-method')}
                     </Layout.Title>
@@ -34,14 +36,22 @@ function BackupPage() {
                                 </Button>
                             }
                         />
-                        <ActionCard
-                            icon={SocialPeopleIcon}
-                            title={t('feature.backup.social-backup')}
-                            description={t(
-                                'feature.backup.social-backup-instructions',
-                            )}
-                            action={<Button disabled>Coming soon</Button>}
-                        />
+                        {canSocialBackup && (
+                            <ActionCard
+                                icon={SocialPeopleIcon}
+                                title={t('feature.backup.social-backup')}
+                                description={t(
+                                    'feature.backup.social-backup-instructions',
+                                )}
+                                action={
+                                    <Button href="/settings/backup/social">
+                                        {t(
+                                            'feature.backup.start-social-backup',
+                                        )}
+                                    </Button>
+                                }
+                            />
+                        )}
                     </ActionCards>
                 </Layout.Content>
             </Layout.Root>

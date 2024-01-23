@@ -27,7 +27,11 @@ const FederationInviteHeader: React.FC = () => {
             }
             headerRight={
                 <Pressable
-                    onPress={() => navigation.replace('TabsNavigator')}
+                    onPress={() =>
+                        navigation.canGoBack()
+                            ? navigation.goBack()
+                            : navigation.navigate('TabsNavigator')
+                    }
                     hitSlop={5}
                     style={{
                         padding: theme.spacing.sm,

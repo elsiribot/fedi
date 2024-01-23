@@ -196,7 +196,7 @@ export interface RpcMethods {
     ]
     leaveFederation: [{ federationId: RpcFederationId }, null]
     listFederations: [
-        {},
+        Record<string, never>,
         Array<{
             balance: RpcAmount
             id: RpcFederationId
@@ -292,22 +292,22 @@ export interface RpcMethods {
         { federationId: RpcFederationId; transactionId: string; notes: string },
         null,
     ]
-    getMnemonic: [{}, Array<string>]
+    getMnemonic: [Record<string, never>, Array<string>]
     recoverFromMnemonic: [{ mnemonic: Array<string> }, null]
     uploadBackupFile: [
         { federationId: RpcFederationId; videoFilePath: string },
         string,
     ]
-    locateRecoveryFile: [{}, string]
+    locateRecoveryFile: [Record<string, never>, string]
     validateRecoveryFile: [{ path: string }, null]
-    recoveryQr: [{}, { recoveryId: RpcRecoveryId } | null]
-    cancelSocialRecovery: [{}, null]
+    recoveryQr: [Record<string, never>, { recoveryId: RpcRecoveryId } | null]
+    cancelSocialRecovery: [Record<string, never>, null]
     socialRecoveryApprovals: [
-        {},
+        Record<string, never>,
         { approvals: Array<SocialRecoveryApproval>; remaining: number },
     ]
     completeSocialRecovery: [
-        {},
+        Record<string, never>,
         {
             balance: RpcAmount
             id: RpcFederationId
@@ -358,7 +358,7 @@ export interface RpcMethods {
             stagedSeeks: Array<RpcAmount>
             stagedCancellation: number | null
             lockedSeeks: Array<RpcLockedSeek>
-            timestamp: bigint
+            timestamp: number
             isFetchedFromServer: boolean
         },
     ]
@@ -376,7 +376,7 @@ export interface RpcMethods {
         },
         string,
     ]
-    getSensitiveLog: [{}, boolean]
+    getSensitiveLog: [Record<string, never>, boolean]
     setSensitiveLog: [{ enable: boolean }, null]
 }
 
@@ -439,7 +439,7 @@ export interface RpcStabilityPoolAccountInfo {
     stagedSeeks: Array<RpcAmount>
     stagedCancellation: number | null
     lockedSeeks: Array<RpcLockedSeek>
-    timestamp: bigint
+    timestamp: number
     isFetchedFromServer: boolean
 }
 
@@ -454,11 +454,11 @@ export type RpcStabilityPoolTransactionState =
     | { type: 'pendingDeposit' }
     | {
           type: 'completeDeposit'
-          initial_amount_cents: bigint
+          initial_amount_cents: number
           fees_paid_so_far: RpcAmount
       }
-    | { type: 'pendingWithdrawal'; estimated_withdrawal_cents: bigint }
-    | { type: 'completeWithdrawal'; estimated_withdrawal_cents: bigint }
+    | { type: 'pendingWithdrawal'; estimated_withdrawal_cents: number }
+    | { type: 'completeWithdrawal'; estimated_withdrawal_cents: number }
 
 export interface RpcTransaction {
     id: string
@@ -534,6 +534,6 @@ export interface TransactionEvent {
 
 export interface WithdrawalDetails {
     txid: string
-    fee: bigint
-    feeRate: bigint
+    fee: number
+    feeRate: number
 }

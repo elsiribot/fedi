@@ -57,7 +57,7 @@ function AppSettings() {
     return (
         <ContentBlock>
             <Layout.Root>
-                <Layout.Header>
+                <Layout.Header back="/settings">
                     <Layout.Title>
                         {t('phrases.app-settings-security')}
                     </Layout.Title>

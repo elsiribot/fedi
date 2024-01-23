@@ -223,15 +223,6 @@ export const leaveFederation = createAsyncThunk<
     await fedimint.leaveFederation(federationId)
 })
 
-export const completeSocialRecovery = createAsyncThunk<
-    void,
-    { fedimint: FedimintBridge },
-    { state: CommonState }
->('federation/completeSocialRecovery', async ({ fedimint }, { dispatch }) => {
-    await fedimint.completeSocialRecovery()
-    await dispatch(refreshFederations(fedimint))
-})
-
 export const recoverFromMnemonic = createAsyncThunk<
     void,
     { fedimint: FedimintBridge; mnemonic: SeedWords },

@@ -403,7 +403,9 @@ pub enum RpcTransactionDirection {
 #[ts(export, export_to = "target/bindings/")]
 pub struct WithdrawalDetails {
     pub txid: String,
+    #[ts(type = "number")]
     pub fee: u64,
+    #[ts(type = "number")]
     pub fee_rate: u64,
 }
 
@@ -433,13 +435,16 @@ pub struct RpcTransaction {
 pub enum RpcStabilityPoolTransactionState {
     PendingDeposit,
     CompleteDeposit {
+        #[ts(type = "number")]
         initial_amount_cents: u64,
         fees_paid_so_far: RpcAmount,
     },
     PendingWithdrawal {
+        #[ts(type = "number")]
         estimated_withdrawal_cents: u64,
     },
     CompleteWithdrawal {
+        #[ts(type = "number")]
         estimated_withdrawal_cents: u64,
     },
 }
@@ -777,6 +782,7 @@ pub struct RpcStabilityPoolAccountInfo {
     pub staged_seeks: Vec<RpcAmount>,
     pub staged_cancellation: Option<u32>,
     pub locked_seeks: Vec<RpcLockedSeek>,
+    #[ts(type = "number")]
     pub timestamp: u64,
     pub is_fetched_from_server: bool,
 }

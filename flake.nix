@@ -7,7 +7,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     # we pick upstream packages from here, so we want this to be compatible with our forks
     fedimint-pkgs = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=refs/tags/v0.2.1-rc4&rev=1d02818469a237e5a0ea9f5d6b77cb63891f3339";
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=refs/tags/v0.2.2-rc3&rev=3021eae7fb20d8d40664456af6debc6cdf9c873d";
     };
     # TODO shaurya can probably remove once bridge is updated for 0.2
     # Fedimint at consensus version 1. This is used to test bridge against old federations
@@ -298,6 +298,7 @@
               fedimint-pkgs.packages.${system}.gateway-pkgs
               pkgs.fs-dir-cache
               pkgs.cargo-nextest
+              pkgs.cargo-audit
               pkgs.curl # wasm build needs it for some reason
               pkgs.wasm-pack
               pkgs.wasm-bindgen-cli
@@ -344,11 +345,11 @@
           gateway-pkgs = fedimint-pkgs.packages.${system}.gateway-pkgs;
           gatewayd = fedimint-pkgs.packages.${system}.gatewayd;
           gateway-cli = fedimint-pkgs.packages.${system}.gateway-cli;
+          fedimint-dbtool = flakeboxLib.pickBinary { bin = "fedimint-dbtool"; pkg = fedimint-pkgs.packages.${system}.fedimint-pkgs; };
 
           fedi-fedimint-pkgs = craneMultiBuild.fedi-fedimint-pkgs;
           fedi-fedimintd = craneMultiBuild.fedi-fedimintd;
           fedi-fedimint-cli = craneMultiBuild.fedi-fedimint-cli;
-          fedi-fedimint-dbtool = craneMultiBuild.fedi-fedimint-dbtool;
 
           fedi-wasm = craneMultiBuild.wasm32-unknown.release.fedi-wasm;
           devops-cli = craneMultiBuild.devops-cli;

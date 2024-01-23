@@ -30,7 +30,8 @@ const SelectedFederationHeader: React.FC = () => {
     const previousActiveFederation = usePrevious(activeFederation)
     const popupInfo = usePopupFederationInfo()
     const drawerNavigator = navigation.getParent(
-        DRAWER_NAVIGATION_ID,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        DRAWER_NAVIGATION_ID as any,
     ) as DrawerNavigationHook
 
     const hasNewChatActivityInOtherFeds = useAppSelector(

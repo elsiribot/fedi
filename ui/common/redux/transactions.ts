@@ -208,3 +208,13 @@ export const selectTransactionHistory = createSelector(
             return true
         }),
 )
+
+export const selectStabilityTransactionHistory = createSelector(
+    selectTransactionHistory,
+    transactions =>
+        transactions.filter(txn => {
+            if (txn.stabilityPoolState) {
+                return true
+            }
+        }),
+)

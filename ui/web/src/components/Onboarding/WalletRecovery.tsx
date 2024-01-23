@@ -36,7 +36,11 @@ export const WalletRecovery: React.FC = () => {
                         description={t(
                             'feature.recovery.social-recovery-instructions',
                         )}
-                        action={<Button disabled>Coming soon</Button>}
+                        action={
+                            <Button href="/onboarding/recover/social">
+                                {t('feature.recovery.start-social-recovery')}
+                            </Button>
+                        }
                     />
                 </Cards>
             </OnboardingContent>
@@ -45,8 +49,11 @@ export const WalletRecovery: React.FC = () => {
 }
 
 const Cards = styled('div', {
+    flex: 1,
     display: 'flex',
     flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
     maxWidth: 360,
     gap: 16,
 })
