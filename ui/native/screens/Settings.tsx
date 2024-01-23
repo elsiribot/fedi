@@ -34,11 +34,7 @@ import {
     getFederationTosUrl,
     shouldShowInviteCode,
 } from '@fedi/common/utils/FederationUtils'
-import {
-    makeTxnDetailStatusText,
-    makeTxnNotesText,
-    makeTxnStatusText,
-} from '@fedi/common/utils/wallet'
+import { makeTxnNotesText, makeTxnStatusText } from '@fedi/common/utils/wallet'
 
 import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
