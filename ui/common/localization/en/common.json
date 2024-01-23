@@ -197,6 +197,7 @@
             "complete-social-backup": "Complete social backup",
             "confirm-backup-video": "Confirm backup video",
             "creating-recovery-file": "Creating encrypted recovery file...",
+            "export-transactions-to-csv": "Export transactions to CSV",
             "file-backup": "File backup",
             "hold-record-button": "Hold the record button and say:",
             "press-record-button": "Press the record button and say:",

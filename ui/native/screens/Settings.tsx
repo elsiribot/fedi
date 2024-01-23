@@ -10,8 +10,11 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
+import Share from 'react-native-share'
+import RNFetchBlob from 'rn-fetch-blob'
 
 import { useFederationSupportsSingleSeed } from '@fedi/common/hooks/federation'
+import { useTransactionHistory } from '@fedi/common/hooks/transactions'
 import {
     changeAuthenticatedGuardian,
     leaveFederation,
@@ -24,11 +27,18 @@ import {
     selectStableBalancePending,
     setDeveloperMode,
 } from '@fedi/common/redux'
+import { RpcTransaction } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import dateUtils from '@fedi/common/utils/DateUtils'
 import {
     getFederationTosUrl,
     shouldShowInviteCode,
 } from '@fedi/common/utils/FederationUtils'
+import {
+    makeTxnDetailStatusText,
+    makeTxnNotesText,
+    makeTxnStatusText,
+} from '@fedi/common/utils/wallet'
 
 import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
@@ -45,7 +55,9 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
+    const { fetchTransactions } = useTransactionHistory(fedimint)
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
+    const [isExportingCSV, setIsExportingCSV] = useState(false)
 
     const dispatch = useAppDispatch()
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -174,6 +186,67 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         }
     }
 
+    const exportTransactionsAsCsv = async () => {
+        try {
+            setIsExportingCSV(true)
+
+            /**
+             * Surrounds each value with double quotes
+             * Escapes double quotes with two double quotes
+             */
+            const joinCsvRow = (...args: string[]) => {
+                return args
+                    .map(x => `"${String(x).replaceAll('"', '""')}"`)
+                    .join(',')
+            }
+
+            /**
+             * Constructs a single row in the CSV document from a Transaction
+             */
+            const parseTransaction = (tx: RpcTransaction) => {
+                const amount = String(tx.amount)
+                const invoice = String(tx.lightning?.invoice || 'none')
+                const status = makeTxnStatusText(t, tx)
+                const notes = makeTxnNotesText(t, tx)
+                const createdAt = dateUtils.formatTimestamp(
+                    tx.createdAt,
+                    'MMM dd yyyy, h:mmaaa',
+                )
+
+                return joinCsvRow(amount, status, invoice, notes, createdAt)
+            }
+
+            const transactions = await fetchTransactions({
+                // TODO: Find a better way than a hardcoded value
+                limit: 10000,
+            })
+
+            const fileContent = `${joinCsvRow(
+                'amountMsat',
+                'status',
+                'invoice',
+                'notes',
+                'createdAt',
+            )}\n${transactions.map(parseTransaction).join('\n')}`
+
+            const filePath = `${RNFetchBlob.fs.dirs.CacheDir}/transactions.csv`
+
+            // Save the CSV content to a file
+            await RNFetchBlob.fs.writeFile(filePath, fileContent, 'utf8')
+
+            // Get this CSV out into the world
+            await Share.open({
+                url: `file://${filePath}`,
+                type: 'text/csv',
+                filename: `transactions.csv`,
+            })
+        } catch {
+            /* no-op */
+        } finally {
+            setIsExportingCSV(false)
+        }
+    }
+
     const showInviteCode =
         activeFederation && shouldShowInviteCode(activeFederation.meta)
 
@@ -245,6 +318,12 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         onPress={() =>
                             navigation.navigate('ChooseBackupMethod')
                         }
+                    />
+                    <SettingsItem
+                        image={<SvgImage name="TableExport" />}
+                        label={t('feature.backup.export-transactions-to-csv')}
+                        onPress={exportTransactionsAsCsv}
+                        disabled={isExportingCSV}
                     />
                 </View>
             )}
