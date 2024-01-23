@@ -323,6 +323,7 @@
             "camera-access-information": "To join a Federation, you will need to allow Fedi access to your camera to scan the Federation invite code",
             "copied-federation-invite": "Copied federation invite link",
             "federation-details": "Federation Details",
+            "federation-terms": "Federation Terms",
             "federation-invite": "Federation invite",
             "invite-link-notice": "Invite link is valid for 2 hours",
             "invite-members": "Invite members",
