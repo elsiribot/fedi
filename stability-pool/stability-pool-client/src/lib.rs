@@ -1050,8 +1050,10 @@ async fn await_cancellation_processed(
     loop {
         match context.module.wait_cancellation_processed().await {
             Ok(amount) => break Ok(amount),
-            Err(e) if e.is_retryable() => fedimint_core::task::sleep(Duration::from_secs(10)).await,
-            Err(e) => break Err(e.to_string()),
+            Err(e) => {
+                e.report_if_important();
+                fedimint_core::task::sleep(Duration::from_secs(10)).await
+            }
         }
     }
 }
