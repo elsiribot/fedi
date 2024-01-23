@@ -1,26 +1,17 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
-import {
-    selectBtcExchangeRate,
-    selectCurrency,
-    selectShowFiatTxnAmounts,
-} from '@fedi/common/redux'
 import { MSats } from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
-
-import { useAppSelector } from '../../state/hooks'
 
 export interface HistoryRowProps {
     icon: React.ReactNode
     status: React.ReactNode
     notes: React.ReactNode
     amount: MSats | string
+    currencyText?: string | undefined
     timestamp: number | undefined | null
-    direction?: 'incoming' | 'outgoing'
     onSelect: () => void
 }
 
@@ -29,56 +20,26 @@ export const HistoryRow: React.FC<HistoryRowProps> = ({
     status,
     notes,
     amount,
+    currencyText,
     timestamp,
-    direction,
     onSelect,
 }) => {
-    const { t } = useTranslation()
     const { theme } = useTheme()
-    const currency = useAppSelector(selectCurrency)
-    const btcExchangeRate = useAppSelector(selectBtcExchangeRate)
-    const showFiatTxnAmounts = useAppSelector(selectShowFiatTxnAmounts)
 
     const style = styles(theme)
 
-    let amountNode: React.ReactNode
-    const sign = direction ? (direction === 'outgoing' ? `-` : `+`) : ''
-    if (typeof amount === 'number') {
-        let formattedAmount: string
-        let currencyText: string
-        if (showFiatTxnAmounts) {
-            const fiatAmount = amountUtils.msatToFiat(amount, btcExchangeRate)
-            formattedAmount = amountUtils.formatFiat(fiatAmount, currency, {
-                noSymbol: true,
-            })
-            currencyText = currency
-        } else {
-            formattedAmount = amountUtils.formatNumber(
-                amountUtils.msatToSat(amount),
-            )
-            currencyText = t('words.sats').toUpperCase()
-        }
-        amountNode = (
-            <View style={style.amountContainer}>
-                <Text caption medium>
-                    {sign}
-                    {formattedAmount}
-                </Text>
+    const amountNode: React.ReactNode = (
+        <View style={style.amountContainer}>
+            <Text caption medium>
+                {amount}
+            </Text>
+            {currencyText && (
                 <Text tiny medium style={style.amountSuffix}>
                     {currencyText}
                 </Text>
-            </View>
-        )
-    } else {
-        amountNode = (
-            <View style={style.amountContainer}>
-                <Text caption medium>
-                    {sign}
-                    {amount}
-                </Text>
-            </View>
-        )
-    }
+            )}
+        </View>
+    )
 
     return (
         <TouchableOpacity

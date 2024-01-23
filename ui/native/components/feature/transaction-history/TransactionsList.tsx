@@ -1,12 +1,12 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useTxnDisplayUtils } from '@fedi/common/hooks/transactions'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { updateTransactionNotes } from '@fedi/common/redux/transactions'
 import { Transaction } from '@fedi/common/types'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import {
-    makeTxnDetailItems,
     makeTxnDetailTitleText,
     makeTxnStatusText,
 } from '@fedi/common/utils/wallet'
@@ -32,6 +32,13 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
     const activeFederationId = useAppSelector(selectActiveFederationId)
+    const {
+        preferredCurrency,
+        makeTxnNotesText,
+        makeTxnAmountText,
+        makeTxnDetailAmountText,
+        makeTxnDetailItems,
+    } = useTxnDisplayUtils(t)
 
     return (
         <HistoryList
@@ -40,16 +47,15 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
             makeIcon={txn => <TransactionIcon txn={txn} />}
             makeRowProps={txn => ({
                 status: makeTxnStatusText(t, txn),
-                amount: txn.amount,
-                direction:
-                    txn.direction === 'receive' ? 'incoming' : 'outgoing',
+                amount: makeTxnAmountText(txn),
+                currencyText: preferredCurrency,
                 timestamp: txn.createdAt,
-                notes: txn.notes,
+                notes: makeTxnNotesText(txn),
             })}
             makeDetailProps={txn => ({
                 title: makeTxnDetailTitleText(t, txn),
-                items: makeTxnDetailItems(t, txn),
-                amount: txn.amount,
+                items: makeTxnDetailItems(txn),
+                amount: makeTxnDetailAmountText(txn),
                 notes: txn.notes,
                 onSaveNotes: async (notes: string) => {
                     try {
