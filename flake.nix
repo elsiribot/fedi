@@ -7,7 +7,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     # we pick upstream packages from here, so we want this to be compatible with our forks
     fedimint-pkgs = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=refs/tags/v0.2.2-rc3&rev=3021eae7fb20d8d40664456af6debc6cdf9c873d";
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=refs/tags/v0.2.2-rc5&rev=d1057945486a34d6864326c30659d0e10efec353";
     };
     # TODO shaurya can probably remove once bridge is updated for 0.2
     # Fedimint at consensus version 1. This is used to test bridge against old federations
