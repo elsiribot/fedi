@@ -1,6 +1,7 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { GestureResponderEvent, Pressable, StyleSheet } from 'react-native'
 
+import * as Svgs from '../../../assets/images/svgs'
 import SvgImage from '../../ui/SvgImage'
 
 type SettingsItemProps = {
@@ -8,6 +9,7 @@ type SettingsItemProps = {
     image: React.ReactNode
     label: string
     action?: React.ReactNode
+    actionIcon?: keyof typeof Svgs
     onPress: (event: GestureResponderEvent) => void
 }
 
@@ -16,6 +18,7 @@ const SettingsItem = ({
     image,
     label,
     action,
+    actionIcon = 'ChevronRight',
     onPress,
 }: SettingsItemProps) => {
     const { theme } = useTheme()
@@ -26,10 +29,7 @@ const SettingsItem = ({
             {image}
             <Text style={styles(theme).label}>{label}</Text>
             {action || (
-                <SvgImage
-                    name="ChevronRight"
-                    color={theme.colors.primaryLight}
-                />
+                <SvgImage name={actionIcon} color={theme.colors.primaryLight} />
             )}
         </Pressable>
     )

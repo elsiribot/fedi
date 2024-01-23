@@ -2,7 +2,14 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import {
+    Alert,
+    Linking,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    View,
+} from 'react-native'
 
 import { useFederationSupportsSingleSeed } from '@fedi/common/hooks/federation'
 import {
@@ -18,7 +25,10 @@ import {
     setDeveloperMode,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
+import {
+    getFederationTosUrl,
+    shouldShowInviteCode,
+} from '@fedi/common/utils/FederationUtils'
 
 import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
@@ -167,6 +177,9 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const showInviteCode =
         activeFederation && shouldShowInviteCode(activeFederation.meta)
 
+    const tosUrl =
+        activeFederation && getFederationTosUrl(activeFederation.meta)
+
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             {authenticatedMember && (
@@ -187,9 +200,17 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                 <Text style={styles(theme).sectionTitle}>
                     {t('words.federation')}
                 </Text>
+                {tosUrl && (
+                    <SettingsItem
+                        image={<SvgImage name="Scroll" />}
+                        label={t('feature.federations.federation-terms')}
+                        actionIcon="ExternalLink"
+                        onPress={() => Linking.openURL(tosUrl)}
+                    />
+                )}
                 {showInviteCode && (
                     <SettingsItem
-                        image={<SvgImage name="InviteMembers" />}
+                        image={<SvgImage name="Qr" />}
                         label={t('feature.federations.invite-members')}
                         onPress={() => {
                             navigation.navigate('FederationInvite', {
