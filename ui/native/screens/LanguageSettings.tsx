@@ -7,7 +7,7 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import CheckBox from '../components/ui/CheckBox'
 import SvgImage from '../components/ui/SvgImage'
 
-const LanguageSettings: React.FC<{}> = () => {
+const LanguageSettings: React.FC = () => {
     const { theme } = useTheme()
     const { i18n } = useTranslation()
     const insets = useSafeAreaInsets()

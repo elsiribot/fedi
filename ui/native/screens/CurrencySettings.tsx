@@ -13,7 +13,7 @@ import CheckBox from '../components/ui/CheckBox'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 
-const CurrencySettings: React.FC<{}> = () => {
+const CurrencySettings: React.FC = () => {
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const reduxDispatch = useAppDispatch()
