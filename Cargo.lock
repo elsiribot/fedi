@@ -1051,15 +1051,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "counter"
-version = "0.5.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d458e66999348f56fd3ffcfbb7f7951542075ca8359687c703de6500c1ddccd"
-dependencies = [
- "num-traits",
-]
-
-[[package]]
 name = "cpufeatures"
 version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1085,30 +1076,6 @@ checksum = "a33c2bf77f2df06183c3aa30d1e96c0695a313d4f9c453cc3762a6db39f99200"
 dependencies = [
  "cfg-if",
  "crossbeam-utils",
-]
-
-[[package]]
-name = "crossbeam-deque"
-version = "0.8.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce6fd6f855243022dcecf8702fef0c297d4338e226845fe067f6341ad9fa0cef"
-dependencies = [
- "cfg-if",
- "crossbeam-epoch",
- "crossbeam-utils",
-]
-
-[[package]]
-name = "crossbeam-epoch"
-version = "0.9.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae211234986c545741a7dc064309f67ee1e5ad243d0e48335adc0484d960bcc7"
-dependencies = [
- "autocfg",
- "cfg-if",
- "crossbeam-utils",
- "memoffset 0.9.0",
- "scopeguard",
 ]
 
 [[package]]
@@ -1439,7 +1406,6 @@ dependencies = [
  "base64 0.20.0",
  "bip39",
  "bitcoin 0.29.2",
- "devimint",
  "fedi-social-client",
  "fedimint-aead",
  "fedimint-bip39",
@@ -1456,7 +1422,6 @@ dependencies = [
  "futures",
  "hex",
  "lazy_static",
- "lightning-invoice 0.21.0",
  "lightning-invoice 0.26.0",
  "macro_rules_attribute",
  "rand",
@@ -1495,7 +1460,6 @@ dependencies = [
  "async-trait",
  "bincode",
  "bitcoin_hashes 0.11.0",
- "counter",
  "erased-serde",
  "fedi-social-common",
  "fedimint-client",
@@ -1505,7 +1469,6 @@ dependencies = [
  "impl-tools 0.6.2",
  "itertools 0.10.5",
  "rand",
- "rayon",
  "secp256k1 0.24.3",
  "secp256k1-zkp",
  "serde",
@@ -1523,10 +1486,8 @@ dependencies = [
  "async-trait",
  "bincode",
  "bitcoin_hashes 0.11.0",
- "counter",
  "erased-serde",
  "fedimint-aead",
- "fedimint-client",
  "fedimint-core",
  "fedimint-threshold-crypto",
  "futures",
@@ -1534,7 +1495,6 @@ dependencies = [
  "impl-tools 0.6.2",
  "itertools 0.10.5",
  "rand",
- "rayon",
  "secp256k1 0.24.3",
  "secp256k1-zkp",
  "serde",
@@ -1554,7 +1514,6 @@ dependencies = [
  "async-trait",
  "bincode",
  "bitcoin_hashes 0.11.0",
- "counter",
  "erased-serde",
  "fedi-social-common",
  "fedimint-aead",
@@ -1566,7 +1525,6 @@ dependencies = [
  "impl-tools 0.6.2",
  "itertools 0.10.5",
  "rand",
- "rayon",
  "secp256k1 0.24.3",
  "secp256k1-zkp",
  "serde",
@@ -3504,15 +3462,6 @@ dependencies = [
 
 [[package]]
 name = "lightning"
-version = "0.0.113"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "087add70f81d2fdc6d4409bc0cef69e11ad366ef1d0068550159bd22b3ac8664"
-dependencies = [
- "bitcoin 0.29.2",
-]
-
-[[package]]
-name = "lightning"
 version = "0.0.115"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e009e1c0c21f66378b491bb40f548682138c63e09db6f3a05af59f8804bb9f4a"
@@ -3540,19 +3489,6 @@ dependencies = [
  "bitcoin 0.29.2",
  "lightning 0.0.115",
  "lightning-rapid-gossip-sync",
-]
-
-[[package]]
-name = "lightning-invoice"
-version = "0.21.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9680857590c3529cf8c7d32b04501f215f2bf1e029fdfa22f4112f66c1741e4"
-dependencies = [
- "bech32",
- "bitcoin_hashes 0.11.0",
- "lightning 0.0.113",
- "num-traits",
- "secp256k1 0.24.3",
 ]
 
 [[package]]
@@ -3730,15 +3666,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "memoffset"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a634b1c61a95585bd15607c6ab0c4e5b226e695ff2800ba0cdccddf208c406c"
-dependencies = [
- "autocfg",
-]
-
-[[package]]
 name = "mime"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3805,7 +3732,7 @@ dependencies = [
  "bitflags 1.3.2",
  "cfg-if",
  "libc",
- "memoffset 0.7.1",
+ "memoffset",
  "pin-utils",
  "static_assertions",
 ]
@@ -4441,28 +4368,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rayon"
-version = "1.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d2df5196e37bcc87abebc0053e20787d73847bb33134a69841207dd0a47f03b"
-dependencies = [
- "either",
- "rayon-core",
-]
-
-[[package]]
-name = "rayon-core"
-version = "1.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b8f95bd6966f5c87776639160a66bd8ab9895d9d4ab01ddba9fc60661aebe8d"
-dependencies = [
- "crossbeam-channel",
- "crossbeam-deque",
- "crossbeam-utils",
- "num_cpus",
-]
-
-[[package]]
 name = "rcgen"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5078,7 +4983,6 @@ dependencies = [
  "fedimint-core",
  "futures",
  "rand",
- "reqwest",
  "secp256k1-zkp",
  "serde",
  "serde_json",
