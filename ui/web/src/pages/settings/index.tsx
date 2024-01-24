@@ -112,12 +112,12 @@ function AdminPage() {
             name: 'words.general',
             items: [
                 {
-                    name: 'phrases.display-currency',
+                    name: 'words.language',
                     icon: LanguageIcon,
                     href: '/settings/language',
                 },
                 {
-                    name: 'words.currency',
+                    name: 'phrases.display-currency',
                     icon: UsdIcon,
                     href: '/settings/currency',
                 },
