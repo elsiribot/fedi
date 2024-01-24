@@ -42,6 +42,7 @@ export { default as HomeFilled } from '@fedi/common/assets/svgs/home-filled.svg'
 export { default as Info } from '@fedi/common/assets/svgs/info.svg'
 export { default as InviteMembers } from '@fedi/common/assets/svgs/invite-members.svg'
 export { default as Keyboard } from '@fedi/common/assets/svgs/keyboard.svg'
+export { default as Language } from '@fedi/common/assets/svgs/language.svg'
 export { default as LeaveFederation } from '@fedi/common/assets/svgs/leave-federation.svg'
 export { default as LeaveRoom } from '@fedi/common/assets/svgs/leave-room.svg'
 export { default as List } from '@fedi/common/assets/svgs/list.svg'
@@ -74,7 +75,11 @@ export { default as SpeakerPhone } from '@fedi/common/assets/svgs/speakerphone.s
 export { default as Switch } from '@fedi/common/assets/svgs/switch.svg'
 export { default as SwitchLeft } from '@fedi/common/assets/svgs/switch-left.svg'
 export { default as SwitchRight } from '@fedi/common/assets/svgs/switch-right.svg'
+<<<<<<< HEAD
 export { default as TableExport } from '@fedi/common/assets/svgs/table-export.svg'
+=======
+export { default as Usd } from '@fedi/common/assets/svgs/usd.svg'
+>>>>>>> adb74d38 (feat: (Native) Language & Display Currency settings)
 export { default as Video } from '@fedi/common/assets/svgs/video.svg'
 export { default as Wallet } from '@fedi/common/assets/svgs/wallet.svg'
 export { default as WordList } from '@fedi/common/assets/svgs/word-list.svg'

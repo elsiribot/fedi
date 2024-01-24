@@ -342,6 +342,16 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={() => navigation.navigate('FediModSettings')}
                 />
                 <SettingsItem
+                    image={<SvgImage name="Language" />}
+                    label={t('words.language')}
+                    onPress={() => navigation.navigate('LanguageSettings')}
+                />
+                <SettingsItem
+                    image={<SvgImage name="Usd" />}
+                    label={t('phrases.display-currency')}
+                    onPress={() => navigation.navigate('CurrencySettings')}
+                />
+                <SettingsItem
                     image={<SvgImage name="Bug" />}
                     label={t('feature.bug.report-a-bug')}
                     onPress={() => navigation.navigate('BugReport')}
