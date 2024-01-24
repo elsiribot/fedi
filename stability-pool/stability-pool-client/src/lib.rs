@@ -38,6 +38,7 @@ use futures::{Stream, StreamExt};
 use secp256k1_zkp::Secp256k1;
 use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
+use tokio::sync::Mutex;
 use tracing::{error, info};
 
 mod db;
@@ -74,6 +75,7 @@ impl ClientModuleInit for StabilityPoolClientInit {
             client_ctx: args.context(),
             notifier: args.notifier().clone(),
             db: args.db().clone(),
+            account_info_lock: Arc::new(Mutex::new(())),
         })
     }
 
@@ -91,6 +93,8 @@ pub struct StabilityPoolClientModule {
     client_ctx: ClientContext<Self>,
     notifier: ModuleNotifier<DynGlobalClientContext, StabilityPoolStateMachines>,
     db: Database,
+    /// Mutex to synchronize concurrent calls to the account_info method
+    account_info_lock: Arc<Mutex<()>>,
 }
 
 #[derive(Debug, Clone)]
@@ -533,6 +537,7 @@ impl StabilityPoolClientModule {
         &self,
         force_update: bool,
     ) -> anyhow::Result<ClientAccountInfo, FederationError> {
+        let _lock = self.account_info_lock.lock().await;
         let mut dbtx = self.db.begin_transaction_nc().await;
         let db_account_info = dbtx.get_value(&AccountInfoKey).await;
 
