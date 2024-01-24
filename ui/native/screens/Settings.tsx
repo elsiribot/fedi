@@ -194,7 +194,9 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
 
             const rows = makeTransactionHistoryCSV(transactions)
             const fileName = makeCSVFilename(
-                activeFederation?.name || 'transactions',
+                activeFederation?.name
+                    ? 'transactions-' + activeFederation.name
+                    : 'transactions',
             )
 
             const filePath = `${RNFetchBlob.fs.dirs.CacheDir}/${fileName}.csv`
