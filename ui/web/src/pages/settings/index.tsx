@@ -4,10 +4,11 @@ import { useTranslation } from 'react-i18next'
 
 import ChevronRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
 import FederationIcon from '@fedi/common/assets/svgs/federation.svg'
-import FediLogoICon from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
 import InviteMembersIcon from '@fedi/common/assets/svgs/invite-members.svg'
+import LanguageIcon from '@fedi/common/assets/svgs/language.svg'
 import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
 import QRIcon from '@fedi/common/assets/svgs/qr.svg'
+import UsdIcon from '@fedi/common/assets/svgs/usd.svg'
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import {
     useFederationSupportsSingleSeed,
@@ -111,9 +112,14 @@ function AdminPage() {
             name: 'words.general',
             items: [
                 {
-                    name: 'phrases.app-settings-security',
-                    icon: FediLogoICon,
-                    href: '/settings/app',
+                    name: 'phrases.display-currency',
+                    icon: LanguageIcon,
+                    href: '/settings/language',
+                },
+                {
+                    name: 'words.currency',
+                    icon: UsdIcon,
+                    href: '/settings/currency',
                 },
             ],
         },
