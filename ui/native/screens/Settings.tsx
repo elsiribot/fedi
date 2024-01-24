@@ -27,14 +27,15 @@ import {
     selectStableBalancePending,
     setDeveloperMode,
 } from '@fedi/common/redux'
-import { RpcTransaction } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import dateUtils from '@fedi/common/utils/DateUtils'
 import {
     getFederationTosUrl,
     shouldShowInviteCode,
 } from '@fedi/common/utils/FederationUtils'
-import { makeTxnNotesText, makeTxnStatusText } from '@fedi/common/utils/wallet'
+import {
+    makeCSVFilename,
+    makeTransactionHistoryCSV,
+} from '@fedi/common/utils/csv'
 
 import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
@@ -186,55 +187,30 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         try {
             setIsExportingCSV(true)
 
-            /**
-             * Surrounds each value with double quotes
-             * Escapes double quotes with two double quotes
-             */
-            const joinCsvRow = (...args: string[]) => {
-                return args
-                    .map(x => `"${String(x).replaceAll('"', '""')}"`)
-                    .join(',')
-            }
-
-            /**
-             * Constructs a single row in the CSV document from a Transaction
-             */
-            const parseTransaction = (tx: RpcTransaction) => {
-                const amount = String(tx.amount)
-                const invoice = String(tx.lightning?.invoice || 'none')
-                const status = makeTxnStatusText(t, tx)
-                const notes = makeTxnNotesText(t, tx)
-                const createdAt = dateUtils.formatTimestamp(
-                    tx.createdAt,
-                    'MMM dd yyyy, h:mmaaa',
-                )
-
-                return joinCsvRow(amount, status, invoice, notes, createdAt)
-            }
-
             const transactions = await fetchTransactions({
                 // TODO: Find a better way than a hardcoded value
                 limit: 10000,
             })
 
-            const fileContent = `${joinCsvRow(
-                'amountMsat',
-                'status',
-                'invoice',
-                'notes',
-                'createdAt',
-            )}\n${transactions.map(parseTransaction).join('\n')}`
+            const rows = makeTransactionHistoryCSV(transactions)
+            const fileName = makeCSVFilename(
+                activeFederation?.name || 'transactions',
+            )
 
-            const filePath = `${RNFetchBlob.fs.dirs.CacheDir}/transactions.csv`
+            const filePath = `${RNFetchBlob.fs.dirs.CacheDir}/${fileName}.csv`
 
             // Save the CSV content to a file
-            await RNFetchBlob.fs.writeFile(filePath, fileContent, 'utf8')
+            await RNFetchBlob.fs.writeFile(
+                filePath,
+                Buffer.from(rows, 'utf8').toString('base64'),
+                'base64',
+            )
 
             // Get this CSV out into the world
             await Share.open({
                 url: `file://${filePath}`,
                 type: 'text/csv',
-                filename: `transactions.csv`,
+                filename: `${fileName}.csv`,
             })
         } catch {
             /* no-op */
