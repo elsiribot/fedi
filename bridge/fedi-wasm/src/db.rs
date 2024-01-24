@@ -260,6 +260,8 @@ mod tests {
     use fedimint_core::module::registry::ModuleDecoderRegistry;
     use wasm_bindgen_test::wasm_bindgen_test;
 
+    // BIG FIXME: what is this code
+    // testing upstream memdb???
     macro_rules! db_test {
         ($name:ident) => {
             #[wasm_bindgen_test]
