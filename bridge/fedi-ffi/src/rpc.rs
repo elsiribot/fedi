@@ -876,17 +876,15 @@ mod tests {
 
         let event_sink = Arc::new(FakeEventSink::new());
         // This fixture contains a "datadir" with 1 global database and one federations
-        // database (fedi alpha mutinynet)
+        // database (fedi alpha mutinynet v0)
         let data_dir = create_data_dir();
         let fixture_dir = get_fixture_dir().join("v0_db");
         copy_recursively(fixture_dir, &data_dir)?;
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
         let bridge = fedimint_initialize_async(storage, event_sink).await?;
         let federations = listFederations(bridge.clone()).await?;
-        assert_eq!(federations.len(), 1);
-        let federation = &federations[0];
-        let xmpp_credentials = xmppCredentials(bridge, federation.id.clone()).await?;
-        assert_eq!(Some("hotrod77".to_string()), xmpp_credentials.username);
+        // old federations are ignored
+        assert_eq!(federations.len(), 0);
         Ok(())
     }
 
@@ -1397,7 +1395,6 @@ mod tests {
         let (bridge, federation) = setup().await?;
         let invite_code = std::env::var("FM_INVITE_CODE").unwrap();
 
-        // for v2 and above, status is "new" initially and "returning" afterwards
         drop(federation);
         drop(bridge);
 

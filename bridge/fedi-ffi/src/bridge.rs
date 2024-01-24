@@ -372,32 +372,33 @@ impl Bridge {
             .into_iter()
             .collect::<Vec<_>>();
 
-        let federations =
-            joined_federations
-                .iter()
-                .map(|(federation_id_str, federation_info)| async {
-                    Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
-                        federation_id_str.clone(),
-                        match federation_info.version {
-                            2 => Arc::new(MultiFederation::V2(
-                                FederationV2::from_db(
-                                    storage
-                                        .federation_database_v2(&federation_info.database_name)
-                                        .await?,
-                                    event_sink.clone(),
-                                    task_group.make_subgroup().await,
-                                    &root_mnemonic,
-                                    None,
-                                )
-                                .await
-                                .with_context(|| {
-                                    format!("loading federation {}", federation_id_str.clone())
-                                })?,
-                            )),
-                            n => bail!("Invalid federation version {n}"),
-                        },
-                    ))
-                });
+        let federations = joined_federations
+            .iter()
+            // Ignore older version
+            .filter(|(_, info)| info.version >= 2)
+            .map(|(federation_id_str, federation_info)| async {
+                Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
+                    federation_id_str.clone(),
+                    match federation_info.version {
+                        2 => Arc::new(MultiFederation::V2(
+                            FederationV2::from_db(
+                                storage
+                                    .federation_database_v2(&federation_info.database_name)
+                                    .await?,
+                                event_sink.clone(),
+                                task_group.make_subgroup().await,
+                                &root_mnemonic,
+                                None,
+                            )
+                            .await
+                            .with_context(|| {
+                                format!("loading federation {}", federation_id_str.clone())
+                            })?,
+                        )),
+                        n => bail!("Invalid federation version {n}"),
+                    },
+                ))
+            });
 
         let federations = HashMap::from_iter(futures::future::try_join_all(federations).await?);
 
