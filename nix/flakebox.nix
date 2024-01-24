@@ -1,4 +1,4 @@
-{ pkgs, pkgs-unstable, flakeboxLib, fedi-v1, fedi-v0, fedimint-pkgs, toolchains, pkgs-kitman, replaceGitHash }:
+{ pkgs, pkgs-unstable, flakeboxLib, fedimint-pkgs, toolchains, pkgs-kitman, replaceGitHash }:
 let
   system = pkgs.system;
   lib = pkgs.lib;
@@ -272,13 +272,6 @@ rec {
 
   testBridgeAll = pkgs.linkFarmFromDrvs "fedi-test-bridge-all" [
     testBridgeCurrent
-    testBridgeV1
-    testBridgeV0
-  ];
-
-  testBridgeAllNoV0 = pkgs.linkFarmFromDrvs "fedi-test-bridge-all" [
-    testBridgeCurrent
-    testBridgeV1
   ];
 
   testBridgeCurrent = craneLib.buildCommand {
@@ -314,103 +307,6 @@ rec {
 
       export HOME=/tmp
       ./scripts/test-bridge-current.sh
-    '';
-  };
-
-  testBridgeV1 = craneLib.buildCommand {
-    pname = "fedi-test-bridge-v1";
-    cargoArtifacts = workspaceBuild;
-    doInstallCargoArtifacts = false;
-    src = rustTestSrc;
-
-    nativeBuildInputs =
-      let
-        pkgs-v1 = (import fedi-v1.inputs.nixpkgs { inherit system; });
-      in
-      craneLib.args.nativeBuildInputs ++ [
-        # Get compatible lightningd, lnd, bitcoind, electrs from fedi-v1
-        (
-          pkgs-v1.clightning.overrideAttrs
-            (oldAttrs: {
-              configureFlags = [ "--enable-developer" "--disable-valgrind" ];
-            } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-              NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
-            })
-        )
-        pkgs-v1.lnd
-        pkgs-v1.bitcoind
-        pkgs-v1.electrs
-        # Get esplora from pkgs-kitman
-        pkgs-kitman.esplora
-        # Get fedimint deps from fedi-v1
-        fedi-v1.inputs.fedimint-pkgs.packages.${system}.devimint
-        fedi-v1.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
-        fedi-v1.packages.${system}.fedi-fedimint-pkgs
-        # helpers
-        pkgs.jq
-        pkgs.bc
-        pkgs.which
-      ];
-    cmd = ''
-      patchShebangs ./scripts
-      export FM_CARGO_DENY_COMPILATION=1
-
-      # check that all expected binaries are available
-      for i in lnd lightningd gatewayd devimint esplora electrs bitcoind faucet ; do
-         which $i
-      done
-
-      export HOME=/tmp
-      ./scripts/test-bridge-v1.sh
-    '';
-  };
-
-  testBridgeV0 = craneLib.buildCommand {
-    pname = "fedi-test-bridge-v0";
-    cargoArtifacts = workspaceBuild;
-    doInstallCargoArtifacts = false;
-    src = rustTestSrc;
-
-    nativeBuildInputs =
-      let
-        pkgs-v0 = (import fedi-v0.inputs.nixpkgs { inherit system; });
-      in
-      craneLib.args.nativeBuildInputs ++ [
-        # get compatible lightningd, lnd, bitcoind, electrs from fedi-v0
-        (
-          pkgs-v0.clightning.overrideAttrs
-            (oldAttrs: {
-              configureFlags = [ "--enable-developer" "--disable-valgrind" ];
-            } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-              NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
-            })
-        )
-        pkgs-v0.lnd
-        pkgs-v0.electrs
-        # get esplora from pkgs-kitman
-        pkgs-kitman.esplora
-        # we don't use the specific version from pkgs-v0 because it doesn't work for some unknown reason
-        pkgs.bitcoind
-        # get fedimint deps from fedi-v0
-        fedi-v0.inputs.fedimint-pkgs.packages.${system}.devimint
-        fedi-v0.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
-        fedi-v0.packages.${system}.fedi-fedimint-pkgs
-        # helpers
-        pkgs.jq
-        pkgs.bc
-        pkgs.which
-      ];
-    cmd = ''
-      patchShebangs ./scripts
-      export FM_CARGO_DENY_COMPILATION=1
-
-      # check that all expected binaries are available
-      for i in fedimintd lnd lightningd gatewayd devimint esplora electrs bitcoind faucet distributedgen ; do
-         which $i
-      done
-
-      export HOME=/tmp
-      ./scripts/test-bridge-v0.sh
     '';
   };
 

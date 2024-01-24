@@ -619,7 +619,6 @@ mod tests {
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
     use crate::storage::IStorage;
-    use crate::translate::Translate;
     use crate::types::RpcReturningMemberStatus;
 
     struct FakeEventSink {
@@ -675,17 +674,6 @@ mod tests {
             .parse()
             .unwrap();
         match multi {
-            MultiFederation::V0(v0) => v0.switch_gateway(&lnd_node_pubkey).await,
-            MultiFederation::V1(v1) => {
-                let gateways = v1.list_gateways().await?;
-                for gateway in gateways {
-                    if gateway.node_pub_key.0 == lnd_node_pubkey {
-                        v1.switch_gateway(&gateway.gateway_id.0).await?;
-                        return Ok(());
-                    }
-                }
-                bail!("No gateway is using LND's node pubkey")
-            }
             MultiFederation::V2(v2) => {
                 let gateways = v2.list_gateways().await?;
                 for gateway in gateways {
@@ -702,10 +690,6 @@ mod tests {
     async fn amount_from_ecash(ecash_string: String) -> anyhow::Result<fedimint_core::Amount> {
         if let Ok(ecash) = fedimint_mint_client::OOBNotes::from_str(&ecash_string) {
             Ok(ecash.total_amount())
-        } else if let Ok(ecash) = fedimint_mint_client_v1::OOBNotes::from_str(&ecash_string) {
-            Ok(ecash.total_amount().translate())
-        } else if let Ok(ecash) = fedimint_mint_client_v0::parse_ecash(&ecash_string) {
-            Ok(ecash.total_amount().translate())
         } else {
             bail!("failed to parse ecash")
         }
@@ -716,20 +700,12 @@ mod tests {
         federation: &MultiFederation,
     ) -> anyhow::Result<String> {
         let ecash_string = match federation {
-            MultiFederation::V0(_) => cmd!(FedimintCli, "ng", "spend", amount.msats.to_string())
+            MultiFederation::V2(_) => cmd!(FedimintCli, "spend", amount.msats.to_string())
                 .out_json()
                 .await?["notes"]
                 .as_str()
                 .map(|s| s.to_owned())
                 .expect("'note' key not found generating ecash with fedimint-cli"),
-            MultiFederation::V1(_) | MultiFederation::V2(_) => {
-                cmd!(FedimintCli, "spend", amount.msats.to_string())
-                    .out_json()
-                    .await?["notes"]
-                    .as_str()
-                    .map(|s| s.to_owned())
-                    .expect("'note' key not found generating ecash with fedimint-cli")
-            }
         };
         Ok(ecash_string)
     }
@@ -749,10 +725,7 @@ mod tests {
         federation: Arc<MultiFederation>,
     ) -> anyhow::Result<()> {
         match *federation {
-            MultiFederation::V0(_) => {
-                cmd!(FedimintCli, "ng", "reissue", ecash).run().await?;
-            }
-            MultiFederation::V1(_) | MultiFederation::V2(_) => {
+            MultiFederation::V2(_) => {
                 cmd!(FedimintCli, "reissue", ecash).run().await?;
             }
         }
@@ -937,11 +910,9 @@ mod tests {
         leaveFederation(bridge.clone(), rpc_federation_id).await?;
         assert_eq!(listFederations(bridge.clone()).await?.len(), 0);
 
-        // Newer federations can rejoin without any rocksdb locking problems
-        if let MultiFederation::V1(_) | MultiFederation::V2(_) = *federation {
-            joinFederation(bridge.clone(), env_invite_code).await?;
-            assert_eq!(listFederations(bridge).await?.len(), 1);
-        }
+        // rejoin without any rocksdb locking problems
+        joinFederation(bridge.clone(), env_invite_code).await?;
+        assert_eq!(listFederations(bridge).await?.len(), 1);
 
         Ok(())
     }
@@ -1054,11 +1025,6 @@ mod tests {
     async fn test_on_chain() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
 
-        // On-chain payments not supported for v0 federations.
-        if let MultiFederation::V0(_) = *federation {
-            return Ok(());
-        }
-
         let address = generateAddress(bridge.clone(), federation.federation_id()).await?;
         bitcoin_cli_send_to_address(&address, "0.1").await?;
 
@@ -1105,11 +1071,6 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_backup_and_recovery() -> anyhow::Result<()> {
         let (backup_bridge, federation) = setup().await?;
-
-        // backup and recovery support has been removed from v0 and v1 federations
-        if let MultiFederation::V0(_) | MultiFederation::V1(_) = *federation {
-            return Ok(());
-        }
 
         // receive ecash
         let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
@@ -1183,12 +1144,6 @@ mod tests {
         let (original_bridge, federation) = setup().await?;
         let recovery_bridge = setup_bridge().await?;
         let (guardian_bridge, _) = setup().await?;
-
-        // social backup and recovery support has been removed from v0 and v1
-        // federations
-        if let MultiFederation::V0(_) | MultiFederation::V1(_) = *federation {
-            return Ok(());
-        }
 
         // receive ecash
         let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
@@ -1319,11 +1274,6 @@ mod tests {
     async fn test_stability_pool() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
 
-        // Stability pool not supported for v0 federations.
-        if let MultiFederation::V0(_) = *federation {
-            return Ok(());
-        }
-
         // Test default account info state
         let account_info = bridge
             .stability_pool_account_info(federation.federation_id(), true)
@@ -1427,11 +1377,6 @@ mod tests {
         );
         assert_eq!(sig1.signature, sig2.signature);
 
-        // Only v2 produces different signatures for different domains at the moment
-        if let MultiFederation::V0(_) | MultiFederation::V1(_) = *federation {
-            return Ok(());
-        }
-
         // Test that signing the same message on a different domain results in a
         // different signature.
         let sig3 = bridge
@@ -1452,60 +1397,46 @@ mod tests {
         let (bridge, federation) = setup().await?;
         let invite_code = std::env::var("FM_INVITE_CODE").unwrap();
 
-        // returning member status is always "unknown" for v0/v1 federations
-        if let MultiFederation::V0(_) | MultiFederation::V1(_) = *federation {
-            drop(federation);
-            drop(bridge);
+        // for v2 and above, status is "new" initially and "returning" afterwards
+        drop(federation);
+        drop(bridge);
 
-            let bridge = setup_bridge().await?;
-            assert!(matches!(
-                federationPreview(bridge.clone(), invite_code.clone())
-                    .await?
-                    .returning_member_status,
-                RpcReturningMemberStatus::Unknown
-            ));
-        } else {
-            // for v2 and above, status is "new" initially and "returning" afterwards
-            drop(federation);
-            drop(bridge);
+        let bridge = setup_bridge().await?;
+        assert!(matches!(
+            federationPreview(bridge.clone(), invite_code.clone())
+                .await?
+                .returning_member_status,
+            RpcReturningMemberStatus::NewMember
+        ));
 
-            let bridge = setup_bridge().await?;
-            assert!(matches!(
-                federationPreview(bridge.clone(), invite_code.clone())
-                    .await?
-                    .returning_member_status,
-                RpcReturningMemberStatus::NewMember
-            ));
+        // join
+        let fedimint_federation = joinFederation(bridge.clone(), invite_code.clone()).await?;
+        let federation = bridge.get_multi(&fedimint_federation.id.0).await?;
+        use_lnd_gateway(&federation).await?;
 
-            // join
-            let fedimint_federation = joinFederation(bridge.clone(), invite_code.clone()).await?;
-            let federation = bridge.get_multi(&fedimint_federation.id.0).await?;
-            use_lnd_gateway(&federation).await?;
+        // receive ecash and backup
+        let ecash =
+            cli_generate_ecash(fedimint_core::Amount::from_msats(10_000), &federation).await?;
+        federation.receive_ecash(ecash).await?;
+        let federation_id = federation.federation_id();
+        let username = "satoshi".to_string();
+        backupXmppUsername(bridge.clone(), federation_id.clone(), username.clone()).await?;
 
-            // receive ecash and backup
-            let ecash =
-                cli_generate_ecash(fedimint_core::Amount::from_msats(10_000), &federation).await?;
-            federation.receive_ecash(ecash).await?;
-            let federation_id = federation.federation_id();
-            let username = "satoshi".to_string();
-            backupXmppUsername(bridge.clone(), federation_id.clone(), username.clone()).await?;
+        // extract mnemonic, leave federation and drop bridge
+        let mnemonic = getMnemonic(bridge.clone()).await?;
+        leaveFederation(bridge.clone(), federation_id).await?;
+        drop(bridge);
 
-            // extract mnemonic, leave federation and drop bridge
-            let mnemonic = getMnemonic(bridge.clone()).await?;
-            leaveFederation(bridge.clone(), federation_id).await?;
-            drop(bridge);
-
-            // query preview again w/ new bridge (recovered using mnemonic), it should be
-            // "returning"
-            let bridge = setup_bridge().await?;
-            recoverFromMnemonic(bridge.clone(), mnemonic).await?;
-            assert!(matches!(
-                federationPreview(bridge.clone(), invite_code.clone())
-                    .await?
-                    .returning_member_status,
-                RpcReturningMemberStatus::ReturningMember
-            ));
-        }
+        // query preview again w/ new bridge (recovered using mnemonic), it should be
+        // "returning"
+        let bridge = setup_bridge().await?;
+        recoverFromMnemonic(bridge.clone(), mnemonic).await?;
+        assert!(matches!(
+            federationPreview(bridge.clone(), invite_code.clone())
+                .await?
+                .returning_member_status,
+            RpcReturningMemberStatus::ReturningMember
+        ));
 
         Ok(())
     }

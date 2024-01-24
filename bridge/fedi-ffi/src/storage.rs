@@ -9,7 +9,6 @@ use fedimint_core_v1::db::IDatabase;
 use fedimint_core_v1::task::{MaybeSend, MaybeSync};
 use fedimint_core_v1::{apply, async_trait_maybe_send};
 use futures::future::BoxFuture;
-use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::error;

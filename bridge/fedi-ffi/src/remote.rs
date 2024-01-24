@@ -4,7 +4,7 @@ use std::thread;
 
 use anyhow::{Context, Result};
 use fedimint_core::task;
-use fedimint_logging_v1::TracingSetup;
+use fedimint_logging::TracingSetup;
 use futures::{Future, SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use tokio::net::{TcpListener, TcpStream};

@@ -1,8 +1,0 @@
-[package]
-name = "v1-rocksdb"
-version = "0.1.2"
-edition = "2021"
-
-[dependencies]
-fedimint-core = { git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedimint-client-v1 = { workspace = true }

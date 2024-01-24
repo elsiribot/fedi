@@ -4,8 +4,7 @@ use std::sync::Mutex as StdMutex;
 
 use anyhow::bail;
 use fediffi::storage::IStorage;
-use fedimint_core_v1::db::IDatabase;
-use fedimint_core_v1::{apply, async_trait_maybe_send};
+use fedimint_core::{apply, async_trait_maybe_send};
 use rexie::{ObjectStore, Rexie, TransactionMode};
 use wasm_bindgen::{JsCast, JsValue};
 
@@ -33,31 +32,6 @@ impl WasmStorage {
 
 #[apply(async_trait_maybe_send!)]
 impl IStorage for WasmStorage {
-    /// Database to store all federation joined
-    async fn global_database_v0(&self) -> anyhow::Result<fedimint_core_v0::db::Database> {
-        let db = MemAndIndexedDb::new("main").await?;
-        let registry = fedimint_core_v0::module::registry::ModuleDecoderRegistry::from_iter([]);
-        let db = fedimint_core_v0::db::Database::new(db, registry);
-        Ok(db)
-    }
-
-    async fn federation_idb(&self, db_name: &str) -> anyhow::Result<Box<dyn IDatabase>> {
-        let db = MemAndIndexedDb::new(db_name).await?;
-        let mut fed = self.federation.lock().unwrap();
-        fed.insert(db_name.to_owned(), db.clone());
-        Ok(Box::new(db))
-    }
-
-    async fn federation_idb_v0(
-        &self,
-        id: &str,
-    ) -> anyhow::Result<Box<dyn fedimint_core_v0::db::IDatabase>> {
-        let db = MemAndIndexedDb::new(id).await?;
-        let mut fed = self.federation.lock().unwrap();
-        fed.insert(id.to_string(), db.clone());
-        Ok(Box::new(db))
-    }
-
     async fn federation_database_v2(
         &self,
         db_name: &str,
@@ -66,16 +40,6 @@ impl IStorage for WasmStorage {
         let mut fed = self.federation.lock().unwrap();
         fed.insert(db_name.to_string(), db.clone());
         Ok(fedimint_core::db::Database::new(db, Default::default()))
-    }
-
-    async fn federation_database_v0(
-        &self,
-        id: &str,
-    ) -> anyhow::Result<fedimint_core_v0::db::Database> {
-        let db = MemAndIndexedDb::new(id).await?;
-        // FIXME: this really seems like a footgun
-        let registry = fedimint_core_v0::module::registry::ModuleDecoderRegistry::from_iter([]);
-        Ok(fedimint_core_v0::db::Database::new(db, registry))
     }
 
     async fn delete_federation_db(&self, db_name: &str) -> anyhow::Result<()> {

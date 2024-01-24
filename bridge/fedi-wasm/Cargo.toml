@@ -26,5 +26,3 @@ wasm-bindgen-futures = "0.4.34"
 wasm-bindgen-test = "0.3.34"
 
 fedimint-core = { workspace = true }
-fedimint-core-v1 = { workspace = true }
-fedimint-core-v0 = { workspace = true }

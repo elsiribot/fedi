@@ -9,16 +9,6 @@
     fedimint-pkgs = {
       url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=refs/tags/v0.2.2-rc5&rev=d1057945486a34d6864326c30659d0e10efec353";
     };
-    # TODO shaurya can probably remove once bridge is updated for 0.2
-    # Fedimint at consensus version 1. This is used to test bridge against old federations
-    fedi-v1 = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedi.git?ref=pre-0.2&rev=77eab0a8943e4af814e23831fc34cb197a3d5523";
-    };
-    # TODO shaurya can probably remove once bridge is updated for 0.2
-    # Fedi at consensus version 0. This is used to test bridge against old federations
-    fedi-v0 = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedi.git?ref=master&rev=3502c58bdf37e9abf32615d3ba14b1a109922554";
-    };
 
     fenix = {
       url = "github:nix-community/fenix?rev=15c95e2adbe285c82ce347a31110b83d13aad586";
@@ -40,7 +30,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, fedimint-pkgs, fs-dir-cache, android-nixpkgs, fedi-v1, fedi-v0, flakebox, ... }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, fedimint-pkgs, fs-dir-cache, android-nixpkgs, flakebox, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs-unstable = import nixpkgs-unstable {
@@ -261,7 +251,7 @@
         };
 
         craneMultiBuild = import nix/flakebox.nix {
-          inherit pkgs pkgs-unstable flakeboxLib fedi-v1 fedi-v0 fedimint-pkgs toolchains replaceGitHash pkgs-kitman;
+          inherit pkgs pkgs-unstable flakeboxLib fedimint-pkgs toolchains replaceGitHash pkgs-kitman;
         };
 
         lib = pkgs.lib;
@@ -386,33 +376,6 @@
               export LD_FOR_TARGET=/usr/bin/clang
               export MACOSX_DEPLOYMENT_TARGET=""
             '';
-          });
-          v1 = fedi-v1.devShells.${system}.default.overrideAttrs (prev: {
-            nativeBuildInputs = [
-              fedi-v1.inputs.fedimint-pkgs.packages.${system}.devimint
-              fedi-v1.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
-              fedi-v1.packages.${system}.fedi-fedimint-pkgs
-            ]
-            ++ prev.nativeBuildInputs;
-          });
-          v0 = fedi-v1.devShells.${system}.default.overrideAttrs (prev: {
-            nativeBuildInputs = [
-              # Get compatible lightningd from fedi-v0
-              (
-                (import fedi-v0.inputs.nixpkgs { inherit system; }).clightning.overrideAttrs
-                  (oldAttrs: {
-                    configureFlags = [ "--enable-developer" "--disable-valgrind" ];
-                  } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-                    NIX_CFLAGS_COMPILE = "-Wno-stringop-truncation -w";
-                  })
-              )
-              fedi-v0.inputs.fedimint-pkgs.packages.${system}.devimint
-              fedi-v0.inputs.fedimint-pkgs.packages.${system}.gateway-pkgs
-              fedi-v0.inputs.fedimint-pkgs.packages.${system}.fedimint-dbtool-pkgs
-              fedi-v0.packages.${system}.fedi-fedimint-pkgs
-              pkgs-unstable.cargo-nextest
-            ]
-            ++ prev.nativeBuildInputs;
           });
           # tool for managing pwa deployment
           vercel = crossDevShell.overrideAttrs (prev: {

@@ -22,31 +22,6 @@ fedimint-bip39 = { workspace = true }
 fedimint_threshold_crypto = { workspace = true }
 fedimint-aead = { workspace = true }
 
-fedimint-core-v1 = { workspace = true }
-fedimint-client-v1 = { workspace = true }
-fedimint-mint-client-v1 = { workspace = true }
-fedimint-ln-client-v1 = { workspace = true }
-fedimint-wallet-client-v1 = { workspace = true }
-fedi-social-client-v1 = { workspace = true }
-stability-pool-client-v1 = { workspace = true }
-fedimint-derive-secret-v1 = { workspace = true }
-fedimint-logging-v1 = { workspace = true }
-fedimint-bip39-v1 = { workspace = true }
-threshold_crypto = { workspace = true }
-fedimint-aead-v1 = { workspace = true }
-
-fedimint-core-v0 = { workspace = true }
-fedimint-client-v0 = { workspace = true }
-fedimint-mint-client-v0 = { workspace = true }
-fedimint-ln-client-v0 = { workspace = true }
-fedimint-wallet-client-v0 = { workspace = true }
-fedimint-derive-secret-v0 = { workspace = true }
-fedimint-logging-v0 = { workspace = true }
-fedimint-bip39-v0 = { workspace = true }
-fedimint-aead-v0 = { workspace = true }
-v0-rocksdb = { path = "../v0-rocksdb" }
-v1-rocksdb = { path = "../v1-rocksdb" }
-
 anyhow = "1"
 bip39 = { version = "2.0.0", features = ["rand"] }
 serde = { version = "1.0.142", features = ["derive"] }
@@ -68,20 +43,14 @@ base64 = "0.20.0"
 tokio = { version = "1.0", features = ["time", "macros"] }
 url = "2.3.1"
 ring = "0.17.5"
-ring-v1 = { version = "0.16.20", package = "ring" }
 rolling-file = "0.2.0"
 tracing-appender = "0.2.2"
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.17.5", features = ["wasm32_unknown_unknown_js"] }
-ring-v1 = { version = "0.16.20", features = [
-    "wasm32_unknown_unknown_js",
-], package = "ring" }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 fedimint-rocksdb = { workspace = true }
-fedimint-rocksdb-v1 = { workspace = true }
-fedimint-rocksdb-v0 = { workspace = true }
 tokio-util = { version = "0.7.9", features = ["codec", "net"] }
 tracing-subscriber = { version = "0.3.1", features = ["env-filter", "json"] }
 uniffi = { version = "0.25.3" }
@@ -96,11 +65,7 @@ tempfile = "3.3.0"
 [target.'cfg(target_os = "macos")'.dependencies]
 fedimint-logging = { workspace = true }
 devimint = { workspace = true }
-fedimint-logging-v1 = { workspace = true }
-devimint-v1 = { workspace = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 fedimint-logging = { workspace = true }
 devimint = { workspace = true }
-fedimint-logging-v1 = { workspace = true }
-devimint-v1 = { workspace = true }
