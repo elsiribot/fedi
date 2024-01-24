@@ -248,7 +248,6 @@ rec {
         pkgs.electrs
         # Get esplora from pkgs-kitman
         pkgs-kitman.esplora
-        # Get fedimint deps from fedi-v1
         fedimint-pkgs.packages.${system}.devimint
         fedimint-pkgs.packages.${system}.gateway-pkgs
         # helpers
@@ -288,7 +287,6 @@ rec {
         pkgs.electrs
         # Get esplora from pkgs-kitman
         pkgs-kitman.esplora
-        # Get fedimint deps from fedi-v1
         fedimint-pkgs.packages.${system}.devimint
         fedimint-pkgs.packages.${system}.gateway-pkgs
         # helpers
