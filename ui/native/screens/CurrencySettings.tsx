@@ -10,7 +10,8 @@ import {
 } from '@fedi/common/redux/currency'
 import { SupportedCurrency } from '@fedi/common/types'
 
-import Radio from '../components/ui/Radio'
+import CheckBox from '../components/ui/CheckBox'
+import SvgImage from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 
 const CurrencySettings: React.FC<{}> = () => {
@@ -28,8 +29,10 @@ const CurrencySettings: React.FC<{}> = () => {
             overScrollMode="auto">
             <View style={style.container}>
                 {Object.values(SupportedCurrency).map(currency => (
-                    <Radio
+                    <CheckBox
                         key={currency}
+                        checkedIcon={<SvgImage name="RadioSelected" />}
+                        uncheckedIcon={<SvgImage name="RadioUnselected" />}
                         title={<Text style={style.radioText}>{currency}</Text>}
                         checked={selectedFiatCurrency === currency}
                         onPress={() =>

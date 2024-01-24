@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import Radio from '../components/ui/Radio'
+import CheckBox from '../components/ui/CheckBox'
+import SvgImage from '../components/ui/SvgImage'
 
 const LanguageSettings: React.FC<{}> = () => {
     const { theme } = useTheme()
@@ -27,7 +28,9 @@ const LanguageSettings: React.FC<{}> = () => {
             overScrollMode="auto">
             <View style={style.container}>
                 {Object.entries(languages).map(([language, display]) => (
-                    <Radio
+                    <CheckBox
+                        checkedIcon={<SvgImage name="RadioSelected" />}
+                        uncheckedIcon={<SvgImage name="RadioUnselected" />}
                         title={<Text style={style.radioText}>{display}</Text>}
                         checked={i18n.language === language}
                         onPress={() => i18n.changeLanguage(language)}
