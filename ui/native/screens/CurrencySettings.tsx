@@ -1,6 +1,5 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
