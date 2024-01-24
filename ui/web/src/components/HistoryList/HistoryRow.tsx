@@ -15,7 +15,7 @@ export interface HistoryRowProps {
     notes: React.ReactNode
     amount: MSats | string
     timestamp: number | undefined | null
-    direction?: 'incoming' | 'outgoing'
+    direction?: 'incoming' | 'outgoing' | 'stale'
     onSelect: () => void
 }
 
@@ -32,7 +32,13 @@ export const HistoryRow: React.FC<HistoryRowProps> = ({
     const btcExchangeRate = useAppSelector(selectBtcExchangeRate)
 
     let amountNode: React.ReactNode
-    const sign = direction ? (direction === 'outgoing' ? `-` : `+`) : ''
+    const sign = direction
+        ? direction === 'stale'
+            ? ''
+            : direction === 'outgoing'
+            ? `-`
+            : `+`
+        : ''
     if (typeof amount === 'number') {
         const fiatAmount = amountUtils.msatToFiat(amount, btcExchangeRate)
         const formattedAmount = amountUtils.formatFiat(fiatAmount, currency, {
