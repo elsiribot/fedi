@@ -1130,10 +1130,8 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_validate_ecash() -> anyhow::Result<()> {
         let (bridge, _) = setup().await?;
-        let v0_ecash = "AAAAAAAAAAUAAAAAAAAAEAAAAAAAAAAB+Sv7Dn2y90wLjt3eKPIISfgCW0AONlTt6QOwMR/kpkam0ZRJYOy6zvigZw1ZrL1B3hWv539BkIyxe8iGt7C9w21RbtNoU7kQXM3t1R1J1BLS3Fn5k29H/W+EK+URll22tWol2TvYNP163aG72ZU1ZgAAAAAAAAEAAAAAAAAAAAHjdGQW7J+yBRVMYBhYvoPlMG6YXWWHf5em9gwSCd5xILCJmk3Wn9aoBHiEGkLxftXGTO8KQTuCXamh0vp3N5204dr24GjvLmpQkeXHN499q2j65BxiQ+5eGEuuY9nsnG7DixfuNVhDOWvuS8x1chYYAAAAAAAAAgAAAAAAAAAAAWT8v87IDmBR8kY1r9uC1lCdH/Stm7S52X6bEK3J6SSYkhtNQ4LDjjyC1dFF/wHZo8uze2xf7ymsJd3XaKKsMX6hk2qavk8UrhqMrLNjpnZnVVUps9qfaAyrrPCWQZOL+7s9DJIMGEZeABTXeiPMkuMAAAAAAAAEAAAAAAAAAAABHldc1heuf3fYNydKE2PlAI++ExVmML78k4sThwyZ0T6QMb5OMEApflWIjIrixUk5ykS4thcmxZ5eSEZEzdpEnQTYOiQnrXssewwO7LgmXqUv3Ghe+wkzfnAtk/04DOiRarzTyzyvnTfSuIJT/5U1RgAAAAAAACAAAAAAAAAAAAHYzGl9AFLjUglFEXDi5bReQfdc9G4L19C6V+UsfB0wH4t0NFeYYQOPUDL2qBXDxn56Sg4PdTB8rlCStlVLHsKkOQUK6OzH61hWnWmYlUJF4ahTlm2vKixHBYraH8ONPPU7sV38nfCaLIZBi22BMCSy";
-        let v1_ecash = "hCgVzawCOl6TXbPE1jqGKDWmj+fvbQ0R/LXQq84VpoJcF7voSpJTQEogGX7wxmZkBRABf92CWHw2uOSODjbgHtXAwwXFOLbBh1m5kQsUi9r6uGurI1EpVJR0SN/CWtreM7crq2tdfWJSSEcsdkxqq2xgGSNPfsR45YxBz6At4gnqyBG6NVyizAdV2kaF+XbDfN2q9THVhJTYfEYL37e7KDHzTf0BAAHFatgMm0jh7iXu6JzIZtqHlGEZWK8NoLydEjcj9CpAeasNveNGyQ0LXMZ2qLyPfJIWCIi+5019IT20ivda8lJ2NoMvZ4eD0kzwxYFbhg5iImU2t3NI+9kzpkPMPtbqhU77VmEAdBGSMNyneEt5/Muh/QIAAaCpfoUafZFIstNmlrn86Ux7cerZl6WVZmL2jZgTSrcigaNXlIUPztwthLkMz4WEGClKJWpnqv0br05emwhr1CB8RB4Q122Weo41WA8PjJbdM8HMMpVYAyyVmpWam6zDgZi3KFdFz2EhiT++opeMkxr9BAABvqJ8zBoNsZhzYpTQtpGRv/8oIlg6wDiGu6yaaEKotu2P3aiLzbCHHGtST6O0bphvz0nZDczF+KqgxoaO3CH2jIs2FNvcJOi6EWYRZF8GvGjIROPS5IycppSfqFlnEq15RiSrtTJlP/p+p5/nclD1cf0gAAEd/Anr3rY5vqtOoY3YMxm1yqWiIil2a7yCVx9E5AocoakvwMX+LvCwQR1yY8Q5UeCaVq39wXsFmcDNFM28lO/zaC1TlcEI6ZzL2SL0KuvyPM2k437mxRCXm3bI36kyYRlplR4DPABDu8slatdzcGZg";
-        validateEcash(bridge.clone(), v0_ecash.into()).await?;
-        validateEcash(bridge.clone(), v1_ecash.into()).await?;
+        let v2_ecash = "AgEEsuFO5gD3AwQBmW/h68gy6W5cgnl93aTdduN1OnnFofSCqjth03Q6CA+fXnKlVXQSIVSLqcHzsbhozAuo2q5jPMsO6XMZZZXaYvZyIdXzCUIuDNhdCHkGJWAgAa9M5zsSPPVWDVeCWgkerg0Z+Xv8IQGMh7rsgpLh77NCSVRKA2i4fBYNwPglSbkGs42Yllmz6HJtgmmtl/tdjcyVSR30Nc2cfkZYTJcEEnRjQAGC8ZX5eLYQB8rCAZiX5/gQX2QtjasZMy+BJ67kJ0klVqsS9G1IVWhea6ILISOd9H1MJElma8aHBiWBaWeGjrCXru8Ns7Lz4J18CbxFdHyWEQ==";
+        validateEcash(bridge.clone(), v2_ecash.into()).await?;
         Ok(())
     }
 
