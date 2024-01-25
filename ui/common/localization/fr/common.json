@@ -330,18 +330,7 @@
             "scan-federation-invite": "Scanner une invitation de Fédération"
         },
         "fedimods": {
-            "add-custom-fedimod": "Ajouter Fedi Mod personnalisé",
-            "boost-this-post": "Booster ce post sur {{fedimod}}?",
-            "custom-fedimod-added": "Fedi Mod personnalisé ajouté",
-            "custom-fedimod-removed": "Fedi Mod personnalisé supprimé",
-            "custom-fedimods": "Mods Fedi personnalisés",
-            "debug-mode": "Mode de débogage Fedi Mod",
-            "debug-mode-info": "Injecte un outil de développement (Eruda) dans le navigateur lors de l'ouverture de Fedi Mods",
             "enter-amount-to-withdraw": "Entrez un montant à retirer de {{fediMod}}",
-            "enter-valid-url": "Veuillez saisir une URL valide (http:// ou https://)",
-            "fedimod-icon": "Icône Mod Fedi",
-            "fedimod-title": "Titre du module Fedi",
-            "fedimod-url": "URL du module Fedi",
             "login-failed": "Échec de la connexion",
             "login-to": "Se connecter à",
             "payment-request": "Demande de paiement de {{fedimod}}",

@@ -337,6 +337,11 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     />
                 )}
                 <SettingsItem
+                    image={<SvgImage name="Apps" />}
+                    label={t('feature.fedimods.fedi-mods')}
+                    onPress={() => navigation.navigate('FediModSettings')}
+                />
+                <SettingsItem
                     image={<SvgImage name="Bug" />}
                     label={t('feature.bug.report-a-bug')}
                     onPress={() => navigation.navigate('BugReport')}

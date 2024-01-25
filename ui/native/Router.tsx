@@ -11,6 +11,8 @@ import { useMonitorChatConnections } from '@fedi/common/hooks/chat'
 import { selectActiveFederation } from '@fedi/common/redux'
 
 import { fedimint } from './bridge'
+import AddFediModHeader from './components/feature/admin/AddFediMod'
+import FediModSettingsHeader from './components/feature/admin/FediModSettingsHeader'
 import SettingsHeader from './components/feature/admin/SettingsHeader'
 import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
@@ -59,6 +61,7 @@ import WithdrawInitiatedHeader from './components/feature/stabilitypool/Withdraw
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 import Header from './components/ui/Header'
 import AddBroadcastAdmin from './screens/AddBroadcastAdmin'
+import AddFediMod from './screens/AddFediMod'
 import BitcoinRequest from './screens/BitcoinRequest'
 import BroadcastAdminsList from './screens/BroadcastAdminsList'
 import BugReport from './screens/BugReport'
@@ -82,6 +85,7 @@ import Eula from './screens/Eula'
 import FederationGreeting from './screens/FederationGreeting'
 import FederationInvite from './screens/FederationInvite'
 import FediModBrowser from './screens/FediModBrowser'
+import FediModSettings from './screens/FediModSettings'
 import GroupAdmin from './screens/GroupAdmin'
 import GroupChat from './screens/GroupChat'
 import GroupInvite from './screens/GroupInvite'
@@ -643,6 +647,20 @@ const MainNavigator = () => {
                                 component={Settings}
                                 options={() => ({
                                     header: () => <SettingsHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="FediModSettings"
+                                component={FediModSettings}
+                                options={() => ({
+                                    header: () => <FediModSettingsHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="AddFediMod"
+                                component={AddFediMod}
+                                options={() => ({
+                                    header: () => <AddFediModHeader />,
                                 })}
                             />
                             {/* Stability Pools */}

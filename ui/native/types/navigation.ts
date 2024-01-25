@@ -47,6 +47,7 @@ export type TabsNavigatorParamList = {
 }
 export type RootStackParamList = {
     AddBroadcastAdmin: { groupId: string }
+    AddFediMod: undefined
     BroadcastAdminsList: { groupId: string }
     BitcoinRequest: { uri: string }
     BugReport: undefined
@@ -71,6 +72,7 @@ export type RootStackParamList = {
     FederationInvite: { inviteLink: string }
     FederationGreeting: undefined
     FederationAcceptTerms: { federation: FederationPreview }
+    FediModSettings: undefined
     Initializing: undefined
     JoinFederation: { invite?: string }
     MemberQrCode: undefined
