@@ -91,11 +91,7 @@ function DeveloperPage() {
         () =>
             gateways.map(gateway => ({
                 label: gateway.api,
-                // v0 federation gateways use nodePubKey, v1 use gatewayId which isn't present for v0
-                value:
-                    'gatewayId' in gateway
-                        ? gateway.gatewayId
-                        : gateway.nodePubKey,
+                value: gateway.gatewayId,
             })),
         [gateways],
     )

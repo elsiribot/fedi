@@ -141,10 +141,7 @@ const DeveloperSettings: React.FC<Props> = () => {
 
     const handleSelectGateway = async (gateway: LightningGateway) => {
         try {
-            // v0 federation gateways use nodePubKey, v1 use gatewayId which isn't present for v0
-            await switchGateway(
-                'gatewayId' in gateway ? gateway.gatewayId : gateway.nodePubKey,
-            )
+            await switchGateway(gateway.gatewayId)
         } catch (e) {
             toast?.show(t('errors.failed-to-switch-gateways'), 3000)
         }
