@@ -11,7 +11,6 @@ import {
     View,
 } from 'react-native'
 import Share from 'react-native-share'
-import RNFetchBlob from 'rn-fetch-blob'
 
 import { useFederationSupportsSingleSeed } from '@fedi/common/hooks/federation'
 import { useTransactionHistory } from '@fedi/common/hooks/transactions'
