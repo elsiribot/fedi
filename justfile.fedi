@@ -14,14 +14,6 @@ build-wasm:
 release-wasm:
   ./scripts/build-wasm.sh --release
 
-# FIXME: maybe we should just run the fixtures using the v0 nix shell,
-# but us the normal environment to run `cargo test`
-test-bridge-v0 testcase="":
-   nix develop .#v0 --command ./scripts/test-bridge-v0.sh "{{testcase}}"
-
-test-bridge-v1 testcase="":
-   nix develop .#v1 --command ./scripts/test-bridge-v1.sh "{{testcase}}"
-
 test-bridge-current testcase="":
    ./scripts/test-bridge-current.sh "{{testcase}}"
 

@@ -82,7 +82,7 @@ jobs:
             include:
               - host: linux
                 runs-on: [self-hosted, linux]
-                test-bridge: testBridgeAllNoV0
+                test-bridge: testBridgeCurrent
                 run-tests: true
               - host: macos
                 runs-on: [self-hosted, macos, arm64]

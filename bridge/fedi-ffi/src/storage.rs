@@ -5,41 +5,22 @@ use std::sync::Arc;
 use anyhow::bail;
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
-use fedimint_core_v1::db::IDatabase;
-use fedimint_core_v1::task::{MaybeSend, MaybeSync};
-use fedimint_core_v1::{apply, async_trait_maybe_send};
+use fedimint_core::task::{MaybeSend, MaybeSync};
+use fedimint_core::{apply, async_trait_maybe_send};
 use futures::future::BoxFuture;
-use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::error;
-use v0_rocksdb::{
-    JoinedFederationV0, JoinedFederationV1, JoinedFederationsV0Prefix, JoinedFederationsV1Prefix,
-};
 
 use crate::constants::FEDI_FILE_PATH;
 use crate::social::SocialRecoveryState;
 
 #[apply(async_trait_maybe_send!)]
 pub trait IStorage: 'static + MaybeSend + MaybeSync {
-    /// Database to store all federation joined
-    async fn global_database_v0(&self) -> anyhow::Result<fedimint_core_v0::db::Database>;
-    // Dpc proposed alternative: open_federation_db(federation_id) which just tries
-    // each version in descending order
-    async fn federation_idb(&self, db_name: &str) -> anyhow::Result<Box<dyn IDatabase>>;
     async fn federation_database_v2(
         &self,
         db_name: &str,
     ) -> anyhow::Result<fedimint_core::db::Database>;
-    /// FIXME: can I get rid of this?
-    async fn federation_database_v0(
-        &self,
-        id: &str,
-    ) -> anyhow::Result<fedimint_core_v0::db::Database>;
-    async fn federation_idb_v0(
-        &self,
-        id: &str,
-    ) -> anyhow::Result<Box<dyn fedimint_core_v0::db::IDatabase>>;
     async fn delete_federation_db(&self, db_name: &str) -> anyhow::Result<()>;
     async fn read_file(&self, path: &Path) -> anyhow::Result<Option<Vec<u8>>>;
     async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()>;
@@ -86,11 +67,11 @@ impl AppState {
     /// legacy global DB and writes to a new file (migration). If migration
     /// results in error, just loads a default empty file.
     pub async fn load(storage: Storage) -> anyhow::Result<Self> {
-        if let Some(app_state) = AppState::existing_from_storage(storage.clone()).await? {
-            return Ok(app_state);
+        if let Some(state) = AppState::existing_from_storage(storage.clone()).await? {
+            Ok(state)
+        } else {
+            Ok(Self::default_with_storage(storage).await)
         }
-
-        AppState::new_from_legacy_global_database(storage.clone()).await
     }
 
     async fn existing_from_storage(storage: Storage) -> anyhow::Result<Option<Self>> {
@@ -119,54 +100,6 @@ impl AppState {
             return Ok(None);
         }
         Ok(Some(serde_json::from_slice(&app_state_raw)?))
-    }
-
-    async fn new_from_legacy_global_database(storage: Storage) -> anyhow::Result<Self> {
-        let app_state = Self::default_with_storage(storage).await;
-
-        // Read v0 and v1 joined federations from legacy global DB
-        let db = app_state.storage.global_database_v0().await?;
-        let mut dbtx = db.begin_transaction().await;
-        let v0_joined = dbtx
-            .find_by_prefix(&JoinedFederationsV0Prefix)
-            .await
-            .collect::<Vec<_>>()
-            .await;
-        let v1_joined = dbtx
-            .find_by_prefix(&JoinedFederationsV1Prefix)
-            .await
-            .collect::<Vec<_>>()
-            .await;
-        dbtx.commit_tx().await;
-
-        // Write found v0 and v1 joined federations to fedi file
-        app_state
-            .with_write_lock(move |state| {
-                Box::pin(async move {
-                    for (JoinedFederationV0(federation_id), _) in v0_joined {
-                        state.joined_federations.insert(
-                            federation_id.to_string(),
-                            FederationInfo {
-                                version: 0,
-                                database_name: federation_id.to_string(),
-                            },
-                        );
-                    }
-                    for (JoinedFederationV1(federation_id), db_name) in v1_joined {
-                        state.joined_federations.insert(
-                            federation_id.to_string(),
-                            FederationInfo {
-                                version: 1,
-                                database_name: db_name,
-                            },
-                        );
-                    }
-                    Ok(())
-                })
-            })
-            .await?;
-
-        Ok(app_state)
     }
 
     async fn default_with_storage(storage: Storage) -> Self {

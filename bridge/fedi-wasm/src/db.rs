@@ -7,7 +7,7 @@ use fedimint_core::db::{
     IDatabaseTransactionOps, IDatabaseTransactionOpsCore, IRawDatabase, IRawDatabaseTransaction,
     PrefixStream,
 };
-use fedimint_core_v1::{apply, async_trait_maybe_send};
+use fedimint_core::{apply, async_trait_maybe_send};
 use futures::stream;
 use imbl::OrdMap;
 use rexie::{Rexie, TransactionMode};
@@ -118,59 +118,9 @@ impl IRawDatabase for MemAndIndexedDb {
 }
 
 #[apply(async_trait_maybe_send!)]
-impl fedimint_core_v1::db::IDatabase for MemAndIndexedDb {
-    async fn begin_transaction<'a>(
-        &'a self,
-    ) -> Box<dyn fedimint_core_v1::db::ISingleUseDatabaseTransaction<'a>> {
-        let db_clone = self.data.lock().await.clone();
-        let mut memtx = MemTransaction {
-            operations: Vec::new(),
-            tx_data: db_clone.clone(),
-            db: self,
-            savepoint: db_clone,
-            num_pending_operations: 0,
-            num_savepoint_operations: 0,
-        };
-
-        memtx
-            .set_tx_savepoint()
-            .await
-            .expect("MemTransaction never fails");
-        Box::new(fedimint_core_v1::db::SingleUseDatabaseTransaction::new(
-            memtx,
-        ))
-    }
-}
-
-#[apply(async_trait_maybe_send!)]
-impl fedimint_core_v0::db::IDatabase for MemAndIndexedDb {
-    async fn begin_transaction<'a>(
-        &'a self,
-    ) -> Box<dyn fedimint_core_v0::db::ISingleUseDatabaseTransaction<'a>> {
-        let db_clone = self.data.lock().await.clone();
-        let mut memtx = MemTransaction {
-            operations: Vec::new(),
-            tx_data: db_clone.clone(),
-            db: self,
-            savepoint: db_clone,
-            num_pending_operations: 0,
-            num_savepoint_operations: 0,
-        };
-
-        memtx
-            .set_tx_savepoint()
-            .await
-            .expect("MemTransaction never fails");
-        Box::new(fedimint_core_v0::db::SingleUseDatabaseTransaction::new(
-            memtx,
-        ))
-    }
-}
-
-#[apply(async_trait_maybe_send!)]
 impl<'a> IDatabaseTransactionOpsCore for MemTransaction<'a> {
     async fn raw_insert_bytes(&mut self, key: &[u8], value: &[u8]) -> Result<Option<Vec<u8>>> {
-        let val = fedimint_core_v1::db::IDatabaseTransactionOps::raw_get_bytes(self, key).await;
+        let val = IDatabaseTransactionOpsCore::raw_get_bytes(self, key).await;
         // Insert data from copy so we can read our own writes
         self.tx_data.insert(key.to_vec(), value.to_vec());
         self.operations
@@ -263,98 +213,6 @@ impl<'a> IDatabaseTransactionOps for MemTransaction<'a> {
     }
 }
 
-#[apply(async_trait_maybe_send!)]
-impl<'a> fedimint_core_v1::db::IDatabaseTransactionOps<'a> for MemTransaction<'a> {
-    async fn raw_insert_bytes(&mut self, key: &[u8], value: &[u8]) -> Result<Option<Vec<u8>>> {
-        let val = fedimint_core_v1::db::IDatabaseTransactionOps::raw_get_bytes(self, key).await;
-        // Insert data from copy so we can read our own writes
-        self.tx_data.insert(key.to_vec(), value.to_vec());
-        self.operations
-            .push(DatabaseOperation::Insert(DatabaseInsertOperation {
-                key: key.to_vec(),
-                value: value.to_vec(),
-            }));
-        self.num_pending_operations += 1;
-        val
-    }
-
-    async fn raw_get_bytes(&mut self, key: &[u8]) -> Result<Option<Vec<u8>>> {
-        Ok(self.tx_data.get(key).cloned())
-    }
-
-    async fn raw_remove_entry(&mut self, key: &[u8]) -> Result<Option<Vec<u8>>> {
-        // Remove data from copy so we can read our own writes
-        let ret = self.tx_data.remove(&key.to_vec());
-        self.operations
-            .push(DatabaseOperation::Delete(DatabaseDeleteOperation {
-                key: key.to_vec(),
-            }));
-        self.num_pending_operations += 1;
-        Ok(ret)
-    }
-
-    async fn raw_find_by_prefix(&mut self, key_prefix: &[u8]) -> Result<PrefixStream<'_>> {
-        let data = self
-            .tx_data
-            .range::<_, Vec<u8>>((key_prefix.to_vec())..)
-            .take_while(|(key, _)| key.starts_with(key_prefix))
-            .map(|(key, value)| (key.clone(), value.clone()))
-            .collect::<Vec<_>>();
-
-        Ok(Box::pin(stream::iter(data)))
-    }
-
-    async fn raw_remove_by_prefix(&mut self, key_prefix: &[u8]) -> anyhow::Result<()> {
-        let keys = self
-            .tx_data
-            .range::<_, Vec<u8>>((key_prefix.to_vec())..)
-            .take_while(|(key, _)| key.starts_with(key_prefix))
-            .map(|(key, _)| key.clone())
-            .collect::<Vec<_>>();
-        for key in keys.iter() {
-            let _ret = self.tx_data.remove(&key.to_vec());
-            self.operations
-                .push(DatabaseOperation::Delete(DatabaseDeleteOperation {
-                    key: key.to_vec(),
-                }));
-            self.num_pending_operations += 1;
-        }
-        Ok(())
-    }
-
-    async fn raw_find_by_prefix_sorted_descending(
-        &mut self,
-        key_prefix: &[u8],
-    ) -> Result<PrefixStream<'_>> {
-        let mut data = self
-            .tx_data
-            .range::<_, Vec<u8>>((key_prefix.to_vec())..)
-            .take_while(|(key, _)| key.starts_with(key_prefix))
-            .map(|(key, value)| (key.clone(), value.clone()))
-            .collect::<Vec<_>>();
-        data.sort_by(|a, b| a.cmp(b).reverse());
-
-        Ok(Box::pin(stream::iter(data)))
-    }
-    async fn rollback_tx_to_savepoint(&mut self) -> Result<()> {
-        self.tx_data = self.savepoint.clone();
-
-        // Remove any pending operations beyond the savepoint
-        let removed_ops = self.num_pending_operations - self.num_savepoint_operations;
-        for _i in 0..removed_ops {
-            self.operations.pop();
-        }
-
-        Ok(())
-    }
-
-    async fn set_tx_savepoint(&mut self) -> Result<()> {
-        self.savepoint = self.tx_data.clone();
-        self.num_savepoint_operations = self.num_pending_operations;
-        Ok(())
-    }
-}
-
 // In-memory database transaction should only be used for test code and never
 // for production as it doesn't properly implement MVCC
 #[apply(async_trait_maybe_send!)]
@@ -396,169 +254,21 @@ impl<'a> IRawDatabaseTransaction for MemTransaction<'a> {
     }
 }
 
-// In-memory database transaction should only be used for test code and never
-// for production as it doesn't properly implement MVCC
-#[apply(async_trait_maybe_send!)]
-impl<'a> fedimint_core_v1::db::IDatabaseTransaction<'a> for MemTransaction<'a> {
-    async fn commit_tx(self) -> Result<()> {
-        let mut data = self.db.data.lock().await;
-        let mut data_new = data.clone();
-        let idb_tx = self
-            .db
-            .idb
-            .transaction(&["default"], TransactionMode::ReadWrite)
-            .map_err(rexie_to_anyhow)?;
-
-        let idb_store = idb_tx.store("default").map_err(rexie_to_anyhow)?;
-
-        for op in self.operations {
-            match op {
-                DatabaseOperation::Insert(insert_op) => {
-                    let key = js_sys::Uint8Array::from(&insert_op.key[..]);
-                    let value = js_sys::Uint8Array::from(&insert_op.value[..]);
-                    idb_store
-                        .put(&value, Some(&key))
-                        .await
-                        .map_err(rexie_to_anyhow)?;
-                    data_new.insert(insert_op.key, insert_op.value);
-                }
-                DatabaseOperation::Delete(delete_op) => {
-                    let key = js_sys::Uint8Array::from(&delete_op.key[..]);
-                    idb_store.delete(&key).await.map_err(rexie_to_anyhow)?;
-                    data_new.remove(&delete_op.key);
-                }
-            }
-        }
-        idb_tx.commit().await.unwrap();
-        // TODO: rollback idb on failure
-        // if everything succeeds
-        *data = data_new;
-        Ok(())
-    }
-}
-// In-memory database transaction should only be used for test code and never
-// for production as it doesn't properly implement MVCC
-#[apply(async_trait_maybe_send!)]
-impl<'a> fedimint_core_v0::db::IDatabaseTransaction<'a> for MemTransaction<'a> {
-    async fn raw_insert_bytes(&mut self, key: &[u8], value: &[u8]) -> Result<Option<Vec<u8>>> {
-        let val = fedimint_core_v0::db::IDatabaseTransaction::raw_get_bytes(self, key).await;
-        // Insert data from copy so we can read our own writes
-        self.tx_data.insert(key.to_vec(), value.to_vec());
-        self.operations
-            .push(DatabaseOperation::Insert(DatabaseInsertOperation {
-                key: key.to_vec(),
-                value: value.to_vec(),
-            }));
-        self.num_pending_operations += 1;
-        val
-    }
-
-    async fn raw_get_bytes(&mut self, key: &[u8]) -> Result<Option<Vec<u8>>> {
-        Ok(self.tx_data.get(key).cloned())
-    }
-
-    async fn raw_remove_entry(&mut self, key: &[u8]) -> Result<Option<Vec<u8>>> {
-        // Remove data from copy so we can read our own writes
-        let ret = self.tx_data.remove(&key.to_vec());
-        self.operations
-            .push(DatabaseOperation::Delete(DatabaseDeleteOperation {
-                key: key.to_vec(),
-            }));
-        self.num_pending_operations += 1;
-        Ok(ret)
-    }
-
-    async fn raw_find_by_prefix(&mut self, key_prefix: &[u8]) -> Result<PrefixStream<'_>> {
-        let data = self
-            .tx_data
-            .range::<_, Vec<u8>>((key_prefix.to_vec())..)
-            .take_while(|(key, _)| key.starts_with(key_prefix))
-            .map(|(key, value)| (key.clone(), value.clone()))
-            .collect::<Vec<_>>();
-
-        Ok(Box::pin(stream::iter(data)))
-    }
-
-    async fn raw_find_by_prefix_sorted_descending(
-        &mut self,
-        key_prefix: &[u8],
-    ) -> Result<PrefixStream<'_>> {
-        let mut data = self
-            .tx_data
-            .range::<_, Vec<u8>>((key_prefix.to_vec())..)
-            .take_while(|(key, _)| key.starts_with(key_prefix))
-            .map(|(key, value)| (key.clone(), value.clone()))
-            .collect::<Vec<_>>();
-        data.sort_by(|a, b| a.cmp(b).reverse());
-
-        Ok(Box::pin(stream::iter(data)))
-    }
-
-    async fn commit_tx(self) -> Result<()> {
-        let mut data = self.db.data.lock().await;
-        let mut data_new = data.clone();
-        let idb_tx = self
-            .db
-            .idb
-            .transaction(&["default"], TransactionMode::ReadWrite)
-            .map_err(rexie_to_anyhow)?;
-
-        let idb_store = idb_tx.store("default").map_err(rexie_to_anyhow)?;
-
-        for op in self.operations {
-            match op {
-                DatabaseOperation::Insert(insert_op) => {
-                    let key = js_sys::Uint8Array::from(&insert_op.key[..]);
-                    let value = js_sys::Uint8Array::from(&insert_op.value[..]);
-                    idb_store
-                        .put(&value, Some(&key))
-                        .await
-                        .map_err(rexie_to_anyhow)?;
-                    data_new.insert(insert_op.key, insert_op.value);
-                }
-                DatabaseOperation::Delete(delete_op) => {
-                    let key = js_sys::Uint8Array::from(&delete_op.key[..]);
-                    idb_store.delete(&key).await.map_err(rexie_to_anyhow)?;
-                    data_new.remove(&delete_op.key);
-                }
-            }
-        }
-        idb_tx.commit().await.unwrap();
-        // TODO: rollback idb on failure
-        // if everything succeeds
-        *data = data_new;
-        Ok(())
-    }
-
-    async fn rollback_tx_to_savepoint(&mut self) {
-        self.tx_data = self.savepoint.clone();
-
-        // Remove any pending operations beyond the savepoint
-        let removed_ops = self.num_pending_operations - self.num_savepoint_operations;
-        for _i in 0..removed_ops {
-            self.operations.pop();
-        }
-    }
-
-    async fn set_tx_savepoint(&mut self) {
-        self.savepoint = self.tx_data.clone();
-        self.num_savepoint_operations = self.num_pending_operations;
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use fedimint_core_v1::db::mem_impl::MemDatabase;
-    use fedimint_core_v1::module::registry::ModuleDecoderRegistry;
+    use fedimint_core::db::mem_impl::MemDatabase;
+    use fedimint_core::module::registry::ModuleDecoderRegistry;
     use wasm_bindgen_test::wasm_bindgen_test;
 
+    // BIG FIXME: what is this code
+    // testing upstream memdb???
     macro_rules! db_test {
         ($name:ident) => {
             #[wasm_bindgen_test]
             pub async fn $name() {
                 let db = MemDatabase::new();
-                let db = fedimint_core_v1::db::Database::new(db, ModuleDecoderRegistry::default());
-                fedimint_core_v1::db::$name(db).await
+                let db = fedimint_core::db::Database::new(db, ModuleDecoderRegistry::default());
+                fedimint_core::db::$name(db).await
             }
         };
     }

@@ -19,16 +19,8 @@ pub enum ErrorCode {
     InvalidMnemonic,
     #[error("Ecash cancel failed, the e-cash notes have been spent by someone else already")]
     EcashCancelFailed,
-    #[error("Social backup and recovery is not supported for this version of federation")]
-    SocialRecoveryNotSupported,
-    #[error("Nostr events not supported for this version of federation")]
-    NostrNotSupported,
     #[error("Bridge panicked")]
     Panic,
-    #[error("Not supported for this version of federation")]
-    NotSupportedInVersion,
-    #[error("Stability pool module not supported for this version of federation")]
-    StabilityPoolNotSupported,
     #[error("Invalid social recovery file")]
     InvalidSocialRecoveryFile,
 }

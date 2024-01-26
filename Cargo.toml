@@ -12,7 +12,6 @@ members = [
     "bridge/ffi-bindgen",
     "bridge/fedi-wasm",
     "bridge/fedi-rpc-server",
-    "bridge/v0-rocksdb",
     "stability-pool/stability-pool-client",
     "stability-pool/stability-pool-common",
     "stability-pool/stability-pool-server",
@@ -57,7 +56,6 @@ keywords = ["bitcoin", "lightning", "chaumian", "e-cash", "federated"]
 
 [workspace.dependencies]
 fedimint_threshold_crypto = { version = "0.1", package = "fedimint-threshold-crypto" }
-threshold_crypto = { git = "https://github.com/fedimint/threshold_crypto", rev = "9b0eeec8f23f41a385174c0d84290cbf8d88a656" }
 
 fedimintd = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", tag = "v0.2.2-rc5" }
 fedimint-cli = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", tag = "v0.2.2-rc5" }
@@ -98,75 +96,6 @@ ln-gateway = { git = "https://x-access-token:github_pat_11ABBCQBI0xWGdvtpcftZj_6
 # devimint = { path = "../fedimint/devimint" }
 # ln-gateway = { path = "../fedimint/gateway/ln-gateway" }
 
-# NOTE: You want to update the `fedimint` input git hash in `flake.nix` as well, to keep gateway-pkgs in sync
-# NOTE: To use local fedimint depenencies, comment out the "paths" section in .cargo/config.toml
-fedimintd-v1 = { package = "fedimintd", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedimint-cli-v1 = { package = "fedimint-cli", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedimint-build-v1 = { package = "fedimint-build", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedimint-core-v1 = { package = "fedimint-core", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedimint-server-v1 = { package = "fedimint-server", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedimint-client-v1 = { package = "fedimint-client", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedimint-derive-secret-v1 = { package = "fedimint-derive-secret", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedimint-mint-client-v1 = { package = "fedimint-mint-client", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedimint-wallet-client-v1 = { package = "fedimint-wallet-client", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedimint-ln-client-v1 = { package = "fedimint-ln-client", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedimint-client-legacy-v1 = { package = "fedimint-client-legacy", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedimint-aead-v1 = { package = "fedimint-aead", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedimint-rocksdb-v1 = { package = "fedimint-rocksdb", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedimint-bip39-v1 = { package = "fedimint-bip39", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-tbs-v1 = { package = "tbs", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedimint-logging-v1 = { package = "fedimint-logging", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-devimint-v1 = { package = "devimint", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-ln-gateway-v1 = { package = "ln-gateway", git = "https://github.com/fedimint/fedimint", branch = "releases/v0.1" }
-fedi-social-client-v1 = { package = "fedi-social-client", git = "https://x-access-token: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@github.com/fedibtc/fedi", branch = "pre-0.2" }
-stability-pool-client-v1 = { package = "stability-pool-client", git = "https://x-access-token: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@github.com/fedibtc/fedi", branch = "pre-0.2" }
-
-# Uncomment these to use local fedimint v1
-# fedimintd-v1 = { path = "../fedimint/fedimintd"}
-# fedimint-cli-v1 = { path = "../fedimint/fedimint-cli"}
-# fedimint-build-v1 = { path = "../fedimint/fedimint-build"}
-# fedimint-core-v1 = { path = "../fedimint/fedimint-core"}
-# fedimint-server-v1 = { path = "../fedimint/fedimint-server"}
-# fedimint-client-v1 = { path = "../fedimint/fedimint-client"}
-# fedimint-derive-secret-v1 = { path = "../fedimint/crypto/derive-secret"}
-# fedimint-mint-client-v1 = { path = "../fedimint/modules/fedimint-mint-client"}
-# fedimint-wallet-client-v1 = { path = "../fedimint/modules/fedimint-wallet-client"}
-# fedimint-ln-client-v1 = { path = "../fedimint/modules/fedimint-ln-client"}
-# fedimint-client-legacy-v1 = { path = "../fedimint/fedimint-client-legacy"}
-# fedimint-aead-v1 = { path = "../fedimint/crypto/aead"}
-# fedimint-rocksdb-v1 = { path = "../fedimint/fedimint-rocksdb"}
-# fedimint-bip39-v1 = { path = "../fedimint/fedimint-bip39"}
-# tbs-v1 = { path = "../fedimint/crypto/tbs"}
-# fedimint-logging-v1 = { path = "../fedimint/fedimint-logging"}
-# devimint-v1 = { path = "../fedimint/devimint"}
-# ln-gateway-v1 = { path = "../fedimint/gateway/ln-gateway"}
-# stability-pool-client-v1 = { path = "../fedi/stability-pool/stability-pool-client" }
-
-fedimint-rocksdb-v0 = { package = "fedimint-rocksdb", git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "ma/rel-a05-backport" }
-fedimint-core-v0 = { package = "fedimint-core", git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "ma/rel-a05-backport" }
-fedimint-client-v0 = { package = "fedimint-client", git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "ma/rel-a05-backport" }
-fedimint-ln-client-v0 = { package = "fedimint-ln-client", git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "ma/rel-a05-backport" }
-fedimint-mint-client-v0 = { package = "fedimint-mint-client", git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "ma/rel-a05-backport" }
-fedimint-wallet-client-v0 = { package = "fedimint-wallet-client", git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "ma/rel-a05-backport" }
-fedimint-derive-secret-v0 = { package = "fedimint-derive-secret", git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "ma/rel-a05-backport" }
-fedimint-logging-v0 = { package = "fedimint-logging", git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "ma/rel-a05-backport" }
-fedimint-aead-v0 = { package = "fedimint-aead", git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "ma/rel-a05-backport" }
-fedimint-bip39-v0 = { package = "fedimint-bip39", git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", branch = "ma/rel-a05-backport" }
-
-# Uncomment these to use local fedimint v0
-# (you need to also do this for bridge/v0-rocksdb crate)
-# fedimint-rocksdb-v0 = { package = "fedimint-rocksdb", path = "../fedimint/fedimint-rocksdb" }
-# fedimint-core-v0 = { package = "fedimint-core", path = "../fedimint/fedimint-core" }
-# fedimint-client-v0 = { package = "fedimint-client", path = "../fedimint/fedimint-client" }
-# fedimint-ln-client-v0 = { package = "fedimint-ln-client", path = "../fedimint/modules/fedimint-ln-client" }
-# fedimint-mint-client-v0 = { package = "fedimint-mint-client", path = "../fedimint/modules/fedimint-mint-client" }
-# fedimint-wallet-client-v0 = { package = "fedimint-wallet-client", path = "../fedimint/modules/fedimint-wallet-client" }
-# fedimint-derive-secret-v0 = { package = "fedimint-derive-secret", path = "../fedimint/crypto/derive-secret" }
-# fedimint-logging-v0 = { package = "fedimint-logging", path = "../fedimint/fedimint-logging" }
-# fedimint-aead-v0 = { package = "fedimint-aead", path = "../fedimint/crypto/aead" }
-# fedimint-bip39-v0 = { package = "fedimint-bip39", path = "../fedimint/fedimint-bip39" }
-
-
 [profile.dev]
 debug = "line-tables-only"
 trim-paths = "object"
@@ -187,7 +116,7 @@ zeroize = { opt-level = 3 }
 bls12_381 = { opt-level = 3 }
 subtle = { opt-level = 3 }
 ring = { opt-level = 3 }
-threshold_crypto = { opt-level = 3 }
+fedimint-threshold-crypto = { opt-level = 3 }
 
 # ios gets its own profile since it crashes on opt-level 0
 [profile.dev-ios]

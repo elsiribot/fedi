@@ -25,11 +25,7 @@ export type ErrorCode =
     | 'invalidInvoice'
     | 'invalidMnemonic'
     | 'ecashCancelFailed'
-    | 'socialRecoveryNotSupported'
-    | 'nostrNotSupported'
     | 'panic'
-    | 'notSupportedInVersion'
-    | 'stabilityPoolNotSupported'
     | 'invalidSocialRecoveryFile'
 
 export type Event =
@@ -122,16 +118,7 @@ export interface RpcLightningDetails {
     fee: RpcAmount | null
 }
 
-export type RpcLightningGateway = RpcLightningGatewayV0 | RpcLightningGatewayV1
-
-export interface RpcLightningGatewayV0 {
-    nodePubKey: RpcPublicKey
-    mintPubKey: string
-    api: string
-    active: boolean
-}
-
-export interface RpcLightningGatewayV1 {
+export interface RpcLightningGateway {
     nodePubKey: RpcPublicKey
     gatewayId: RpcPublicKey
     api: string
@@ -242,7 +229,12 @@ export interface RpcMethods {
     ]
     listGateways: [
         { federationId: RpcFederationId },
-        Array<RpcLightningGatewayV0 | RpcLightningGatewayV1>,
+        Array<{
+            nodePubKey: RpcPublicKey
+            gatewayId: RpcPublicKey
+            api: string
+            active: boolean
+        }>,
     ]
     switchGateway: [
         { federationId: RpcFederationId; gatewayId: RpcPublicKey },

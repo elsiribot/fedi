@@ -25,10 +25,7 @@ import {
     ParsedLnurlWithdraw,
     ParserDataType,
 } from '@fedi/common/types'
-import {
-    RpcLightningGatewayV0,
-    RpcLightningGatewayV1,
-} from '@fedi/common/types/bindings'
+import { RpcLightningGateway } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 import {
@@ -61,7 +58,6 @@ type FediModResponse =
     | SendPaymentResponse
     | SignedNostrEvent
 type FediModResolver<T> = (value: T | PromiseLike<T>) => void
-type Gateway = RpcLightningGatewayV0 | RpcLightningGatewayV1
 
 const FediModBrowser: React.FC<Props> = ({ route }) => {
     const { fediMod } = route.params
@@ -93,7 +89,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     >(null)
     const [nostrUnsignedEvent, setNostrUnsignedEvent] =
         useState<UnsignedNostrEvent | null>(null)
-    const getActiveGatewayPromiseRef = useRef<Promise<Gateway> | null>(null)
+    const getActiveGatewayPromiseRef =
+        useRef<Promise<RpcLightningGateway> | null>(null)
 
     // Intercept any URIs the user tries to navigate to that we can handle inline
     useOmniLinkInterceptor(parsedLink => {

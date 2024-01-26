@@ -8,19 +8,12 @@ use fedimint_core::config::{GlobalClientConfig, JsonWithKind, PeerUrl};
 use fedimint_ln_client::pay::GatewayPayError;
 use fedimint_ln_client::{LnPayState, LnReceiveState};
 use fedimint_wallet_client::{BitcoinTransactionData, DepositState, WithdrawState};
-use fedimint_wallet_client_v1::{
-    BitcoinTransactionData as BitcoinTransactionDataV1, DepositState as DepositStateV1,
-    WithdrawState as WithdrawStateV1,
-};
 use serde::{Deserialize, Serialize};
 use stability_pool_client::ClientAccountInfo;
 use ts_rs::TS;
 
 use super::bridge::MultiFederation;
-use super::federation_v0::FederationV0;
-use super::federation_v1::FederationV1;
 use super::federation_v2::FederationV2;
-use super::translate::Translate;
 use super::utils::to_unix_time;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
@@ -109,75 +102,6 @@ impl From<fedimint_core::core::OperationId> for RpcOperationId {
     }
 }
 
-pub async fn federation_v0_to_rpc_federation(federation: &FederationV0) -> RpcFederation {
-    let balance = RpcAmount(federation.get_balance().await.translate());
-    let id = RpcFederationId(federation.federation_id().to_string());
-    let name = federation.federation_name();
-    let network = federation.get_network();
-    let invite_code = federation.get_invite_code().await;
-    let client_config = federation.client.get_config().await;
-    let meta = client_config.meta.clone();
-    let nodes = client_config
-        .api_endpoints
-        .clone()
-        .iter()
-        .map(|(peer_id, peer_url)| (RpcPeerId(peer_id.translate()), peer_url.clone().translate()))
-        .collect();
-    // Social recovery is disabled for v0 federations
-    let social_recovery_active = false;
-    RpcFederation {
-        balance,
-        id,
-        network,
-        name,
-        invite_code,
-        meta,
-        nodes,
-        social_recovery_active,
-        version: 0,
-        client_config: None,
-    }
-}
-
-pub async fn federation_v1_to_rpc_federation(federation: &FederationV1) -> RpcFederation {
-    let balance = RpcAmount(federation.get_balance().await.translate());
-    let id = RpcFederationId(federation.federation_id().to_string());
-    let name = federation.federation_name();
-    let network = federation.get_network();
-    let invite_code = federation.get_invite_code().await;
-    let client_config = federation.client.get_config();
-    let meta = federation.client.get_config().global.meta.clone();
-    let nodes = client_config
-        .global
-        .api_endpoints
-        .clone()
-        .iter()
-        .map(|(peer_id, peer_url)| (RpcPeerId(peer_id.translate()), peer_url.clone().translate()))
-        .collect();
-    // Social recovery is disabled for v1 federations
-    let social_recovery_active = false;
-    let client_config_json = federation.client.get_config_json();
-    RpcFederation {
-        balance,
-        id,
-        network,
-        name,
-        invite_code,
-        meta,
-        nodes,
-        social_recovery_active,
-        version: 1,
-        client_config: Some(RpcJsonClientConfig {
-            global: client_config_json.global.translate(),
-            modules: client_config_json
-                .modules
-                .into_iter()
-                .map(|(id, config)| (id, config.translate()))
-                .collect(),
-        }),
-    }
-}
-
 pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFederation {
     let balance = RpcAmount(federation.get_balance().await);
     let id = RpcFederationId(federation.federation_id().to_string());
@@ -213,8 +137,6 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
 
 pub async fn multi_federation_to_rpc_federation(multi: &MultiFederation) -> RpcFederation {
     match multi {
-        MultiFederation::V0(federation) => federation_v0_to_rpc_federation(federation).await,
-        MultiFederation::V1(federation) => federation_v1_to_rpc_federation(federation).await,
         MultiFederation::V2(federation) => federation_v2_to_rpc_federation(federation).await,
     }
 }
@@ -312,31 +234,11 @@ pub struct RpcPayAddressResponse {
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RpcLightningGatewayV1 {
+pub struct RpcLightningGateway {
     pub node_pub_key: RpcPublicKey,
     pub gateway_id: RpcPublicKey,
     pub api: String, // TODO: url::Ur;
     pub active: bool,
-}
-
-#[derive(Debug, Serialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
-pub struct RpcLightningGatewayV0 {
-    pub node_pub_key: RpcPublicKey,
-    #[ts(type = "string")]
-    pub mint_pub_key: bitcoin::secp256k1::XOnlyPublicKey,
-    pub api: String, // TODO: url::Ur;
-    pub active: bool,
-}
-
-#[derive(Debug, Serialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[serde(untagged)] // this just gives serialization of variant itself
-#[ts(export, export_to = "target/bindings/")]
-pub enum RpcLightningGateway {
-    V0(RpcLightningGatewayV0),
-    V1(RpcLightningGatewayV1),
 }
 
 #[derive(Serialize, Deserialize)]
@@ -478,26 +380,6 @@ impl RpcOnchainState {
         Some(Self::DepositState(state))
     }
 
-    pub fn from_deposit_state_v1(opt: Option<DepositStateV1>) -> Option<RpcOnchainState> {
-        let state = match opt? {
-            DepositStateV1::WaitingForTransaction => RpcOnchainDepositState::WaitingForTransaction,
-            DepositStateV1::WaitingForConfirmation(data) => {
-                RpcOnchainDepositState::WaitingForConfirmation(
-                    RpcOnchainDepositTransactionData::new_v1(&data),
-                )
-            }
-            DepositStateV1::Confirmed(data) => {
-                RpcOnchainDepositState::Confirmed(RpcOnchainDepositTransactionData::new_v1(&data))
-            }
-            DepositStateV1::Claimed(data) => {
-                RpcOnchainDepositState::Claimed(RpcOnchainDepositTransactionData::new_v1(&data))
-            }
-            DepositStateV1::Failed(_) => RpcOnchainDepositState::Failed,
-            DepositStateV1::ClaimedOld => return None,
-        };
-        Some(Self::DepositState(state))
-    }
-
     pub fn from_withdraw_state(opt: Option<WithdrawState>) -> Option<RpcOnchainState> {
         opt.map(|state| match state {
             WithdrawState::Created => {
@@ -507,20 +389,6 @@ impl RpcOnchainState {
                 RpcOnchainState::WithdrawState(RpcOnchainWithdrawState::Succeeded)
             }
             WithdrawState::Failed(_) => {
-                RpcOnchainState::WithdrawState(RpcOnchainWithdrawState::Failed)
-            }
-        })
-    }
-
-    pub fn from_withdraw_state_v1(opt: Option<WithdrawStateV1>) -> Option<RpcOnchainState> {
-        opt.map(|state| match state {
-            WithdrawStateV1::Created => {
-                RpcOnchainState::WithdrawState(RpcOnchainWithdrawState::Created)
-            }
-            WithdrawStateV1::Succeeded(_) => {
-                RpcOnchainState::WithdrawState(RpcOnchainWithdrawState::Succeeded)
-            }
-            WithdrawStateV1::Failed(_) => {
                 RpcOnchainState::WithdrawState(RpcOnchainWithdrawState::Failed)
             }
         })
@@ -548,11 +416,6 @@ pub struct RpcOnchainDepositTransactionData {
 
 impl RpcOnchainDepositTransactionData {
     pub fn new(data: &BitcoinTransactionData) -> Self {
-        Self {
-            txid: data.btc_transaction.txid().to_string(),
-        }
-    }
-    pub fn new_v1(data: &BitcoinTransactionDataV1) -> Self {
         Self {
             txid: data.btc_transaction.txid().to_string(),
         }
@@ -708,44 +571,6 @@ impl RpcOOBState {
             }
             fedimint_mint_client::SpendOOBState::Success => RpcOOBSpendState::UserCanceledSuccess,
             fedimint_mint_client::SpendOOBState::Refunded => RpcOOBSpendState::Refunded,
-        };
-        Self::Spend(state)
-    }
-    pub fn from_spend_v1(state: fedimint_mint_client_v1::SpendOOBState) -> Self {
-        let state = match state {
-            fedimint_mint_client_v1::SpendOOBState::Created => RpcOOBSpendState::Created,
-            fedimint_mint_client_v1::SpendOOBState::UserCanceledProcessing => {
-                RpcOOBSpendState::UserCanceledProcessing
-            }
-            fedimint_mint_client_v1::SpendOOBState::UserCanceledSuccess => {
-                RpcOOBSpendState::UserCanceledSuccess
-            }
-            fedimint_mint_client_v1::SpendOOBState::UserCanceledFailure => {
-                RpcOOBSpendState::UserCanceledFailure
-            }
-            fedimint_mint_client_v1::SpendOOBState::Success => {
-                RpcOOBSpendState::UserCanceledSuccess
-            }
-            fedimint_mint_client_v1::SpendOOBState::Refunded => RpcOOBSpendState::Refunded,
-        };
-        Self::Spend(state)
-    }
-    pub fn from_spend_v0(state: fedimint_mint_client_v0::SpendOOBState) -> Self {
-        let state = match state {
-            fedimint_mint_client_v0::SpendOOBState::Created => RpcOOBSpendState::Created,
-            fedimint_mint_client_v0::SpendOOBState::UserCanceledProcessing => {
-                RpcOOBSpendState::UserCanceledProcessing
-            }
-            fedimint_mint_client_v0::SpendOOBState::UserCanceledSuccess => {
-                RpcOOBSpendState::UserCanceledSuccess
-            }
-            fedimint_mint_client_v0::SpendOOBState::UserCanceledFailure => {
-                RpcOOBSpendState::UserCanceledFailure
-            }
-            fedimint_mint_client_v0::SpendOOBState::Success => {
-                RpcOOBSpendState::UserCanceledSuccess
-            }
-            fedimint_mint_client_v0::SpendOOBState::Refunded => RpcOOBSpendState::Refunded,
         };
         Self::Spend(state)
     }

@@ -5,9 +5,6 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use async_trait::async_trait;
-use fedimint_core_v0::db::Database as DatabaseV0;
-use fedimint_core_v0::module::registry::ModuleDecoderRegistry as ModuleDecoderRegistryV0;
-use fedimint_core_v1::db::IDatabase;
 use lazy_static::lazy_static;
 use tokio::sync::Mutex;
 use tracing::{error, info, warn};
@@ -147,45 +144,16 @@ pub fn fedimint_get_supported_events() -> Vec<String> {
 #[derive(Clone)]
 pub struct PathBasedStorage {
     data_dir: PathBuf,
-    global_db: DatabaseV0,
 }
 
 impl PathBasedStorage {
     pub async fn new(data_dir: PathBuf) -> anyhow::Result<Self> {
-        // using .gdb instead to .db to avoid collision with federation named `global`
-        let db_path = data_dir.join("global.gdb");
-
-        let db = fedimint_rocksdb_v0::RocksDb::open(db_path)?;
-        let db = DatabaseV0::new(db, ModuleDecoderRegistryV0::from_iter([]));
-        Ok(Self {
-            data_dir,
-            global_db: db,
-        })
+        Ok(Self { data_dir })
     }
 }
 
 #[async_trait]
 impl IStorage for PathBasedStorage {
-    async fn global_database_v0(&self) -> anyhow::Result<DatabaseV0> {
-        Ok(self.global_db.clone())
-    }
-
-    async fn federation_idb(&self, db_name: &str) -> anyhow::Result<Box<dyn IDatabase>> {
-        let db_name = self.data_dir.join(format!("{db_name}.db"));
-        let db = fedimint_rocksdb_v1::RocksDb::open(db_name)?;
-        Ok(Box::new(db))
-    }
-
-    async fn federation_idb_v0(
-        &self,
-        // FIXME: we don't really need the v0 type here ...
-        id: &str,
-    ) -> anyhow::Result<Box<dyn fedimint_core_v0::db::IDatabase>> {
-        let db_name = self.data_dir.join(format!("{id}.db"));
-        let db = fedimint_rocksdb_v0::RocksDb::open(db_name)?;
-        Ok(Box::new(db))
-    }
-
     async fn federation_database_v2(
         &self,
         db_name: &str,
@@ -193,16 +161,6 @@ impl IStorage for PathBasedStorage {
         let db_name = self.data_dir.join(format!("{db_name}.db"));
         let db = fedimint_rocksdb::RocksDb::open(db_name)?;
         Ok(db.into())
-    }
-
-    async fn federation_database_v0(
-        &self,
-        id: &str,
-    ) -> anyhow::Result<fedimint_core_v0::db::Database> {
-        let db_name = self.data_dir.join(format!("{id}.db"));
-        let db = fedimint_rocksdb_v0::RocksDb::open(db_name)?;
-        let registry = fedimint_core_v0::module::registry::ModuleDecoderRegistry::from_iter([]);
-        Ok(fedimint_core_v0::db::Database::new(db, registry))
     }
 
     async fn delete_federation_db(&self, db_name: &str) -> anyhow::Result<()> {

@@ -79,7 +79,7 @@ use super::social::{
 use super::storage::Storage;
 use super::types::{
     federation_v2_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
-    RpcLightningGatewayV1, RpcPayInvoiceResponse, RpcPublicKey, RpcXmppCredentials,
+    RpcLightningGateway, RpcPayInvoiceResponse, RpcPublicKey, RpcXmppCredentials,
 };
 use crate::error::ErrorCode;
 use crate::event::RecoveryStartEvent;
@@ -1009,7 +1009,7 @@ impl FederationV2 {
     }
 
     /// List all lightning gateways registered with the federation
-    pub async fn list_gateways(&self) -> anyhow::Result<Vec<RpcLightningGatewayV1>> {
+    pub async fn list_gateways(&self) -> anyhow::Result<Vec<RpcLightningGateway>> {
         let gateways = self
             .client
             .get_first_module::<LightningClientModule>()
@@ -1021,9 +1021,9 @@ impl FederationV2 {
             .select_active_gateway()
             .await
             .ok();
-        let bridge_gateways: Vec<RpcLightningGatewayV1> = gateways
+        let bridge_gateways: Vec<RpcLightningGateway> = gateways
             .into_iter()
-            .map(|gw| RpcLightningGatewayV1 {
+            .map(|gw| RpcLightningGateway {
                 api: gw.info.api.to_string(),
                 node_pub_key: RpcPublicKey(gw.info.node_pub_key),
                 gateway_id: RpcPublicKey(gw.info.gateway_id),

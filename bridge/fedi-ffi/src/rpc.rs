@@ -619,7 +619,6 @@ mod tests {
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
     use crate::storage::IStorage;
-    use crate::translate::Translate;
     use crate::types::RpcReturningMemberStatus;
 
     struct FakeEventSink {
@@ -675,17 +674,6 @@ mod tests {
             .parse()
             .unwrap();
         match multi {
-            MultiFederation::V0(v0) => v0.switch_gateway(&lnd_node_pubkey).await,
-            MultiFederation::V1(v1) => {
-                let gateways = v1.list_gateways().await?;
-                for gateway in gateways {
-                    if gateway.node_pub_key.0 == lnd_node_pubkey {
-                        v1.switch_gateway(&gateway.gateway_id.0).await?;
-                        return Ok(());
-                    }
-                }
-                bail!("No gateway is using LND's node pubkey")
-            }
             MultiFederation::V2(v2) => {
                 let gateways = v2.list_gateways().await?;
                 for gateway in gateways {
@@ -702,10 +690,6 @@ mod tests {
     async fn amount_from_ecash(ecash_string: String) -> anyhow::Result<fedimint_core::Amount> {
         if let Ok(ecash) = fedimint_mint_client::OOBNotes::from_str(&ecash_string) {
             Ok(ecash.total_amount())
-        } else if let Ok(ecash) = fedimint_mint_client_v1::OOBNotes::from_str(&ecash_string) {
-            Ok(ecash.total_amount().translate())
-        } else if let Ok(ecash) = fedimint_mint_client_v0::parse_ecash(&ecash_string) {
-            Ok(ecash.total_amount().translate())
         } else {
             bail!("failed to parse ecash")
         }
@@ -716,20 +700,12 @@ mod tests {
         federation: &MultiFederation,
     ) -> anyhow::Result<String> {
         let ecash_string = match federation {
-            MultiFederation::V0(_) => cmd!(FedimintCli, "ng", "spend", amount.msats.to_string())
+            MultiFederation::V2(_) => cmd!(FedimintCli, "spend", amount.msats.to_string())
                 .out_json()
                 .await?["notes"]
                 .as_str()
                 .map(|s| s.to_owned())
                 .expect("'note' key not found generating ecash with fedimint-cli"),
-            MultiFederation::V1(_) | MultiFederation::V2(_) => {
-                cmd!(FedimintCli, "spend", amount.msats.to_string())
-                    .out_json()
-                    .await?["notes"]
-                    .as_str()
-                    .map(|s| s.to_owned())
-                    .expect("'note' key not found generating ecash with fedimint-cli")
-            }
         };
         Ok(ecash_string)
     }
@@ -749,10 +725,7 @@ mod tests {
         federation: Arc<MultiFederation>,
     ) -> anyhow::Result<()> {
         match *federation {
-            MultiFederation::V0(_) => {
-                cmd!(FedimintCli, "ng", "reissue", ecash).run().await?;
-            }
-            MultiFederation::V1(_) | MultiFederation::V2(_) => {
+            MultiFederation::V2(_) => {
                 cmd!(FedimintCli, "reissue", ecash).run().await?;
             }
         }
@@ -903,17 +876,15 @@ mod tests {
 
         let event_sink = Arc::new(FakeEventSink::new());
         // This fixture contains a "datadir" with 1 global database and one federations
-        // database (fedi alpha mutinynet)
+        // database (fedi alpha mutinynet v0)
         let data_dir = create_data_dir();
         let fixture_dir = get_fixture_dir().join("v0_db");
         copy_recursively(fixture_dir, &data_dir)?;
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
         let bridge = fedimint_initialize_async(storage, event_sink).await?;
         let federations = listFederations(bridge.clone()).await?;
-        assert_eq!(federations.len(), 1);
-        let federation = &federations[0];
-        let xmpp_credentials = xmppCredentials(bridge, federation.id.clone()).await?;
-        assert_eq!(Some("hotrod77".to_string()), xmpp_credentials.username);
+        // old federations are ignored
+        assert_eq!(federations.len(), 0);
         Ok(())
     }
 
@@ -937,11 +908,9 @@ mod tests {
         leaveFederation(bridge.clone(), rpc_federation_id).await?;
         assert_eq!(listFederations(bridge.clone()).await?.len(), 0);
 
-        // Newer federations can rejoin without any rocksdb locking problems
-        if let MultiFederation::V1(_) | MultiFederation::V2(_) = *federation {
-            joinFederation(bridge.clone(), env_invite_code).await?;
-            assert_eq!(listFederations(bridge).await?.len(), 1);
-        }
+        // rejoin without any rocksdb locking problems
+        joinFederation(bridge.clone(), env_invite_code).await?;
+        assert_eq!(listFederations(bridge).await?.len(), 1);
 
         Ok(())
     }
@@ -1054,11 +1023,6 @@ mod tests {
     async fn test_on_chain() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
 
-        // On-chain payments not supported for v0 federations.
-        if let MultiFederation::V0(_) = *federation {
-            return Ok(());
-        }
-
         let address = generateAddress(bridge.clone(), federation.federation_id()).await?;
         bitcoin_cli_send_to_address(&address, "0.1").await?;
 
@@ -1105,11 +1069,6 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_backup_and_recovery() -> anyhow::Result<()> {
         let (backup_bridge, federation) = setup().await?;
-
-        // backup and recovery support has been removed from v0 and v1 federations
-        if let MultiFederation::V0(_) | MultiFederation::V1(_) = *federation {
-            return Ok(());
-        }
 
         // receive ecash
         let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
@@ -1171,10 +1130,8 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_validate_ecash() -> anyhow::Result<()> {
         let (bridge, _) = setup().await?;
-        let v0_ecash = "AAAAAAAAAAUAAAAAAAAAEAAAAAAAAAAB+Sv7Dn2y90wLjt3eKPIISfgCW0AONlTt6QOwMR/kpkam0ZRJYOy6zvigZw1ZrL1B3hWv539BkIyxe8iGt7C9w21RbtNoU7kQXM3t1R1J1BLS3Fn5k29H/W+EK+URll22tWol2TvYNP163aG72ZU1ZgAAAAAAAAEAAAAAAAAAAAHjdGQW7J+yBRVMYBhYvoPlMG6YXWWHf5em9gwSCd5xILCJmk3Wn9aoBHiEGkLxftXGTO8KQTuCXamh0vp3N5204dr24GjvLmpQkeXHN499q2j65BxiQ+5eGEuuY9nsnG7DixfuNVhDOWvuS8x1chYYAAAAAAAAAgAAAAAAAAAAAWT8v87IDmBR8kY1r9uC1lCdH/Stm7S52X6bEK3J6SSYkhtNQ4LDjjyC1dFF/wHZo8uze2xf7ymsJd3XaKKsMX6hk2qavk8UrhqMrLNjpnZnVVUps9qfaAyrrPCWQZOL+7s9DJIMGEZeABTXeiPMkuMAAAAAAAAEAAAAAAAAAAABHldc1heuf3fYNydKE2PlAI++ExVmML78k4sThwyZ0T6QMb5OMEApflWIjIrixUk5ykS4thcmxZ5eSEZEzdpEnQTYOiQnrXssewwO7LgmXqUv3Ghe+wkzfnAtk/04DOiRarzTyzyvnTfSuIJT/5U1RgAAAAAAACAAAAAAAAAAAAHYzGl9AFLjUglFEXDi5bReQfdc9G4L19C6V+UsfB0wH4t0NFeYYQOPUDL2qBXDxn56Sg4PdTB8rlCStlVLHsKkOQUK6OzH61hWnWmYlUJF4ahTlm2vKixHBYraH8ONPPU7sV38nfCaLIZBi22BMCSy";
-        let v1_ecash = "hCgVzawCOl6TXbPE1jqGKDWmj+fvbQ0R/LXQq84VpoJcF7voSpJTQEogGX7wxmZkBRABf92CWHw2uOSODjbgHtXAwwXFOLbBh1m5kQsUi9r6uGurI1EpVJR0SN/CWtreM7crq2tdfWJSSEcsdkxqq2xgGSNPfsR45YxBz6At4gnqyBG6NVyizAdV2kaF+XbDfN2q9THVhJTYfEYL37e7KDHzTf0BAAHFatgMm0jh7iXu6JzIZtqHlGEZWK8NoLydEjcj9CpAeasNveNGyQ0LXMZ2qLyPfJIWCIi+5019IT20ivda8lJ2NoMvZ4eD0kzwxYFbhg5iImU2t3NI+9kzpkPMPtbqhU77VmEAdBGSMNyneEt5/Muh/QIAAaCpfoUafZFIstNmlrn86Ux7cerZl6WVZmL2jZgTSrcigaNXlIUPztwthLkMz4WEGClKJWpnqv0br05emwhr1CB8RB4Q122Weo41WA8PjJbdM8HMMpVYAyyVmpWam6zDgZi3KFdFz2EhiT++opeMkxr9BAABvqJ8zBoNsZhzYpTQtpGRv/8oIlg6wDiGu6yaaEKotu2P3aiLzbCHHGtST6O0bphvz0nZDczF+KqgxoaO3CH2jIs2FNvcJOi6EWYRZF8GvGjIROPS5IycppSfqFlnEq15RiSrtTJlP/p+p5/nclD1cf0gAAEd/Anr3rY5vqtOoY3YMxm1yqWiIil2a7yCVx9E5AocoakvwMX+LvCwQR1yY8Q5UeCaVq39wXsFmcDNFM28lO/zaC1TlcEI6ZzL2SL0KuvyPM2k437mxRCXm3bI36kyYRlplR4DPABDu8slatdzcGZg";
-        validateEcash(bridge.clone(), v0_ecash.into()).await?;
-        validateEcash(bridge.clone(), v1_ecash.into()).await?;
+        let v2_ecash = "AgEEsuFO5gD3AwQBmW/h68gy6W5cgnl93aTdduN1OnnFofSCqjth03Q6CA+fXnKlVXQSIVSLqcHzsbhozAuo2q5jPMsO6XMZZZXaYvZyIdXzCUIuDNhdCHkGJWAgAa9M5zsSPPVWDVeCWgkerg0Z+Xv8IQGMh7rsgpLh77NCSVRKA2i4fBYNwPglSbkGs42Yllmz6HJtgmmtl/tdjcyVSR30Nc2cfkZYTJcEEnRjQAGC8ZX5eLYQB8rCAZiX5/gQX2QtjasZMy+BJ67kJ0klVqsS9G1IVWhea6ILISOd9H1MJElma8aHBiWBaWeGjrCXru8Ns7Lz4J18CbxFdHyWEQ==";
+        validateEcash(bridge.clone(), v2_ecash.into()).await?;
         Ok(())
     }
 
@@ -1183,12 +1140,6 @@ mod tests {
         let (original_bridge, federation) = setup().await?;
         let recovery_bridge = setup_bridge().await?;
         let (guardian_bridge, _) = setup().await?;
-
-        // social backup and recovery support has been removed from v0 and v1
-        // federations
-        if let MultiFederation::V0(_) | MultiFederation::V1(_) = *federation {
-            return Ok(());
-        }
 
         // receive ecash
         let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
@@ -1319,11 +1270,6 @@ mod tests {
     async fn test_stability_pool() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
 
-        // Stability pool not supported for v0 federations.
-        if let MultiFederation::V0(_) = *federation {
-            return Ok(());
-        }
-
         // Test default account info state
         let account_info = bridge
             .stability_pool_account_info(federation.federation_id(), true)
@@ -1427,11 +1373,6 @@ mod tests {
         );
         assert_eq!(sig1.signature, sig2.signature);
 
-        // Only v2 produces different signatures for different domains at the moment
-        if let MultiFederation::V0(_) | MultiFederation::V1(_) = *federation {
-            return Ok(());
-        }
-
         // Test that signing the same message on a different domain results in a
         // different signature.
         let sig3 = bridge
@@ -1452,60 +1393,45 @@ mod tests {
         let (bridge, federation) = setup().await?;
         let invite_code = std::env::var("FM_INVITE_CODE").unwrap();
 
-        // returning member status is always "unknown" for v0/v1 federations
-        if let MultiFederation::V0(_) | MultiFederation::V1(_) = *federation {
-            drop(federation);
-            drop(bridge);
+        drop(federation);
+        drop(bridge);
 
-            let bridge = setup_bridge().await?;
-            assert!(matches!(
-                federationPreview(bridge.clone(), invite_code.clone())
-                    .await?
-                    .returning_member_status,
-                RpcReturningMemberStatus::Unknown
-            ));
-        } else {
-            // for v2 and above, status is "new" initially and "returning" afterwards
-            drop(federation);
-            drop(bridge);
+        let bridge = setup_bridge().await?;
+        assert!(matches!(
+            federationPreview(bridge.clone(), invite_code.clone())
+                .await?
+                .returning_member_status,
+            RpcReturningMemberStatus::NewMember
+        ));
 
-            let bridge = setup_bridge().await?;
-            assert!(matches!(
-                federationPreview(bridge.clone(), invite_code.clone())
-                    .await?
-                    .returning_member_status,
-                RpcReturningMemberStatus::NewMember
-            ));
+        // join
+        let fedimint_federation = joinFederation(bridge.clone(), invite_code.clone()).await?;
+        let federation = bridge.get_multi(&fedimint_federation.id.0).await?;
+        use_lnd_gateway(&federation).await?;
 
-            // join
-            let fedimint_federation = joinFederation(bridge.clone(), invite_code.clone()).await?;
-            let federation = bridge.get_multi(&fedimint_federation.id.0).await?;
-            use_lnd_gateway(&federation).await?;
+        // receive ecash and backup
+        let ecash =
+            cli_generate_ecash(fedimint_core::Amount::from_msats(10_000), &federation).await?;
+        federation.receive_ecash(ecash).await?;
+        let federation_id = federation.federation_id();
+        let username = "satoshi".to_string();
+        backupXmppUsername(bridge.clone(), federation_id.clone(), username.clone()).await?;
 
-            // receive ecash and backup
-            let ecash =
-                cli_generate_ecash(fedimint_core::Amount::from_msats(10_000), &federation).await?;
-            federation.receive_ecash(ecash).await?;
-            let federation_id = federation.federation_id();
-            let username = "satoshi".to_string();
-            backupXmppUsername(bridge.clone(), federation_id.clone(), username.clone()).await?;
+        // extract mnemonic, leave federation and drop bridge
+        let mnemonic = getMnemonic(bridge.clone()).await?;
+        leaveFederation(bridge.clone(), federation_id).await?;
+        drop(bridge);
 
-            // extract mnemonic, leave federation and drop bridge
-            let mnemonic = getMnemonic(bridge.clone()).await?;
-            leaveFederation(bridge.clone(), federation_id).await?;
-            drop(bridge);
-
-            // query preview again w/ new bridge (recovered using mnemonic), it should be
-            // "returning"
-            let bridge = setup_bridge().await?;
-            recoverFromMnemonic(bridge.clone(), mnemonic).await?;
-            assert!(matches!(
-                federationPreview(bridge.clone(), invite_code.clone())
-                    .await?
-                    .returning_member_status,
-                RpcReturningMemberStatus::ReturningMember
-            ));
-        }
+        // query preview again w/ new bridge (recovered using mnemonic), it should be
+        // "returning"
+        let bridge = setup_bridge().await?;
+        recoverFromMnemonic(bridge.clone(), mnemonic).await?;
+        assert!(matches!(
+            federationPreview(bridge.clone(), invite_code.clone())
+                .await?
+                .returning_member_status,
+            RpcReturningMemberStatus::ReturningMember
+        ));
 
         Ok(())
     }
