@@ -65,10 +65,8 @@ export default function ChatBroadcastAdminSettings({
     }
 
     useEffect(() => {
-        if (activeFederationId) {
-            refreshAdminList()
-        }
-    }, [activeFederationId, refreshAdminList])
+        refreshAdminList()
+    }, [refreshAdminList])
 
     return (
         <Container>
