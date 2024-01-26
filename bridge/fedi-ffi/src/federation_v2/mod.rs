@@ -495,6 +495,7 @@ impl FederationV2 {
                                 amount: RpcAmount(Amount::from_sats(
                                     data.btc_transaction.output[data.out_idx as usize].value,
                                 )),
+                                fedi_fee: RpcAmount(Amount::ZERO),
                                 direction: RpcTransactionDirection::Receive,
                                 notes: "".into(),
                                 onchain_state: RpcOnchainState::from_deposit_state(Some(
@@ -549,6 +550,7 @@ impl FederationV2 {
                                 amount: RpcAmount(Amount {
                                     msats: invoice.amount_milli_satoshis().unwrap(),
                                 }),
+                                fedi_fee: RpcAmount(Amount::ZERO),
                                 direction: RpcTransactionDirection::Receive,
                                 notes: "".into(),
                                 bitcoin: None,
@@ -1530,6 +1532,7 @@ impl FederationV2 {
                                     amount: RpcAmount(Amount {
                                         msats: invoice.amount_milli_satoshis().unwrap(),
                                     }),
+                                    fedi_fee: RpcAmount(Amount::ZERO),
                                     direction: RpcTransactionDirection::Send,
                                     notes,
                                     onchain_state: None,
@@ -1556,6 +1559,7 @@ impl FederationV2 {
                                         amount: RpcAmount(Amount {
                                             msats: invoice.amount_milli_satoshis().unwrap(),
                                         }),
+                                        fedi_fee: RpcAmount(Amount::ZERO),
                                         direction: RpcTransactionDirection::Receive,
                                         notes,
                                         onchain_state: None,
@@ -1588,6 +1592,7 @@ impl FederationV2 {
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
                                 amount: RpcAmount(amount),
+                                fedi_fee: RpcAmount(Amount::ZERO),
                                 direction: RpcTransactionDirection::Send,
                                 notes,
                                 onchain_state: None,
@@ -1616,6 +1621,7 @@ impl FederationV2 {
                                             StabilityPoolWithdrawalOperationState::WithdrawIdleAccepted(amount)) => RpcAmount(amount),
                                         _ => RpcAmount(Amount::ZERO),
                                     },
+                                    fedi_fee: RpcAmount(Amount::ZERO),
                                     direction: RpcTransactionDirection::Receive,
                                     notes,
                                     onchain_state: None,
@@ -1651,6 +1657,7 @@ impl FederationV2 {
                                             bitcoin: None,
                                             ln_state: None,
                                             amount: RpcAmount(mint_meta.amount),
+                                            fedi_fee: RpcAmount(Amount::ZERO),
                                             lightning: None,
                                             oob_state: None,
                                             onchain_withdrawal_details: None,
@@ -1672,6 +1679,7 @@ impl FederationV2 {
                                     bitcoin: None,
                                     ln_state: None,
                                     amount: RpcAmount(requested_amount),
+                                    fedi_fee: RpcAmount(Amount::ZERO),
                                     lightning: None,
                                     oob_state: self
                                         .get_client_operation_outcome(op.0.operation_id, op.1)
@@ -1718,6 +1726,7 @@ impl FederationV2 {
                                             )),
                                             _ => RpcAmount(Amount::ZERO),
                                         },
+                                        fedi_fee: RpcAmount(Amount::ZERO),
                                         lightning: None,
                                         oob_state: None,
                                         onchain_withdrawal_details: None,
@@ -1754,6 +1763,7 @@ impl FederationV2 {
                                         created_at: to_unix_time(op.0.creation_time)
                                             .expect("unix time should exist"),
                                         amount: rpc_amount,
+                                        fedi_fee: RpcAmount(Amount::ZERO),
                                         direction: RpcTransactionDirection::Send,
                                         notes,
                                         onchain_state,

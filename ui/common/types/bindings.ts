@@ -269,6 +269,7 @@ export interface RpcMethods {
             id: string
             createdAt: number
             amount: RpcAmount
+            fediFee: RpcAmount
             direction: RpcTransactionDirection
             notes: string
             onchainState: RpcOnchainState | null
@@ -456,6 +457,7 @@ export interface RpcTransaction {
     id: string
     createdAt: number
     amount: RpcAmount
+    fediFee: RpcAmount
     direction: RpcTransactionDirection
     notes: string
     onchainState: RpcOnchainState | null

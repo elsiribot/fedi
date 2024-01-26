@@ -319,6 +319,7 @@ pub struct RpcTransaction {
     #[ts(type = "number")]
     pub created_at: u64,
     pub amount: RpcAmount,
+    pub fedi_fee: RpcAmount,
     pub direction: RpcTransactionDirection,
     pub notes: String,
     pub onchain_state: Option<RpcOnchainState>,
