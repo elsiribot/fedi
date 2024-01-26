@@ -14,7 +14,6 @@ let
     "fedi-social-client"
     "fedi-social-common"
     "fedi-social-server"
-    "devops-cli"
     "stability-pool/stability-pool-client"
     "stability-pool/stability-pool-common"
     "stability-pool/stability-pool-server"
@@ -224,13 +223,6 @@ rec {
     pname = "fedi-wasm";
     packages = [
       "fedi-wasm"
-    ];
-  };
-
-  devops-cli = fediBuildPackageGroup {
-    pname = "devops-cli";
-    packages = [
-      "devops-cli"
     ];
   };
 

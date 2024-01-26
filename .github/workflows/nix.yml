@@ -160,9 +160,6 @@ jobs:
             - name: Build gateway-cli
               run: nix build -L .#gateway-cli
 
-            - name: Build devops-cli
-              run: nix build -L .#ci.devops-cli
-
             - name: Build fedimint-dbtool
               run: nix build -L .#fedimint-dbtool
 

@@ -2,7 +2,6 @@ cargo-features = ["trim-paths"]
 
 [workspace]
 members = [
-    "devops-cli",
     "fedimintd",
     "fedimint-cli",
     "fedi-social-common",
@@ -18,7 +17,6 @@ members = [
     "stability-pool/stability-pool-tests",
 ]
 default-members = [
-    "devops-cli",
     "fedimintd",
     "fedimint-cli",
     "fedi-social-common",
