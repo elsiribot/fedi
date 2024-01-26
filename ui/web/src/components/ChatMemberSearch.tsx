@@ -1,4 +1,4 @@
-import React, { useEffect } krom 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import RoomIcon from '@fedi/common/assets/svgs/room.svg'

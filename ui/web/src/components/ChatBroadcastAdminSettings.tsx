@@ -87,6 +87,7 @@ export default function ChatBroadcastAdminSettings({
                             <Avatar id={admin.id} name={admin.username} />
                             <AdminUsername>{admin.username}</AdminUsername>
                             <IconButton
+                                size="md"
                                 icon={Close}
                                 onClick={() => confirmRemoveAdmin(admin)}
                             />
@@ -109,7 +110,7 @@ export default function ChatBroadcastAdminSettings({
 const Container = styled('div', {
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.space.md,
+    gap: theme.space.lg,
 })
 
 const AdminsContainer = styled('div', {

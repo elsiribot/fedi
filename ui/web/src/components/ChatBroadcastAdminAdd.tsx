@@ -1,12 +1,15 @@
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import {
     addAdminToChatGroup,
+    fetchChatGroupMembersList,
     fetchChatMember,
     selectActiveFederationId,
 } from '@fedi/common/redux'
 import { ChatMember } from '@fedi/common/types'
+import { XmppMemberRole } from '@fedi/common/utils/XmlUtils'
 
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
 import { styled, theme } from '../styles'
@@ -34,6 +37,8 @@ export default function ChatBroadcastAdminAdd({
     const federationId = useAppSelector(selectActiveFederationId)
 
     const toast = useToast()
+
+    const [visitors, setVisitors] = useState<ChatMember[]>([])
 
     const confirmAddAdmin = async (member: ChatMember) => {
         if (
@@ -72,9 +77,27 @@ export default function ChatBroadcastAdminAdd({
         }
     }
 
+    const refreshVisitorList = useCallback(async () => {
+        if (federationId) {
+            const groupVisitors = await dispatch(
+                fetchChatGroupMembersList({
+                    federationId,
+                    groupId,
+                    role: XmppMemberRole.visitor,
+                }),
+            ).unwrap()
+            setVisitors(groupVisitors)
+        }
+    }, [federationId, dispatch, groupId])
+
+    useEffect(() => {
+        refreshVisitorList()
+    }, [refreshVisitorList])
+
     return (
         <Container>
             <ChatMemberSearch
+                members={visitors}
                 renderMember={member => (
                     <SearchButton
                         key={member.id}
