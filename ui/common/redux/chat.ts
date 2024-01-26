@@ -82,7 +82,7 @@ const initialFederationChatState = {
     groups: [] as ChatGroup[],
     groupRoles: {} as Record<Chat['id'], string | undefined>,
     groupAffiliations: {} as Record<Chat['id'], string | undefined>,
-    membersSeen: [] as CatMember[],
+    membersSeen: [] as ChatMember[],
     lastFetchedMessageId: null as string | null,
     lastReadMessageTimestamps: {} as Record<Chat['id'], number | undefined>,
     lastSeenMessageTimestamp: null as number | null,

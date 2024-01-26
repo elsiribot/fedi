@@ -167,7 +167,10 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
                                 )
                             }
                             title={t('feature.chat.add-admin')}>
-                            <ChatBroadcastAdminAdd />
+                            <ChatBroadcastAdminAdd
+                                setDialogState={setDialogState}
+                                groupId={groupId}
+                            />
                         </Dialog>
 
                         <Dialog

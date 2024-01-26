@@ -249,6 +249,7 @@
         },
         "chat": {
             "add-admin": "Add Admin",
+            "add-user-as-an-admin": "Add {{username}} as an admin",
             "added-admin-to-group": "Added {{username}} as an admin",
             "admin-settings": "Admin settings",
             "admin-settings-instructions": "These members can send messages in the broadcast only groups",
