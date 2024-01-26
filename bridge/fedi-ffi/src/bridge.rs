@@ -102,10 +102,7 @@ impl MultiFederation {
 
     pub async fn list_gateways(&self) -> Result<Vec<RpcLightningGateway>> {
         match self {
-            Self::V2(v2) => v2
-                .list_gateways()
-                .await
-                .map(|gws| gws.into_iter().map(RpcLightningGateway::V1).collect()),
+            Self::V2(v2) => v2.list_gateways().await,
         }
     }
 

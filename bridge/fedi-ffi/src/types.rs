@@ -235,19 +235,11 @@ pub struct RpcPayAddressResponse {
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RpcLightningGatewayV1 {
+pub struct RpcLightningGateway {
     pub node_pub_key: RpcPublicKey,
     pub gateway_id: RpcPublicKey,
     pub api: String, // TODO: url::Ur;
     pub active: bool,
-}
-
-#[derive(Debug, Serialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[serde(untagged)] // this just gives serialization of variant itself
-#[ts(export, export_to = "target/bindings/")]
-pub enum RpcLightningGateway {
-    V1(RpcLightningGatewayV1),
 }
 
 #[derive(Serialize, Deserialize)]
