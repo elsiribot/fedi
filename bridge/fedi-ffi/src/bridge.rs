@@ -466,6 +466,8 @@ impl Bridge {
                         FederationInfo {
                             version: 2,
                             database_name: db_name,
+                            // TODO shaurya actually fetch fee schedule when endpoint available
+                            fedi_fee_schedule: Default::default(),
                         },
                     );
                     Ok(())

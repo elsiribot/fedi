@@ -5,6 +5,7 @@ use std::sync::Arc;
 use anyhow::bail;
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
+use fedimint_core::core::ModuleKind;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send};
 use futures::future::BoxFuture;
@@ -55,6 +56,74 @@ pub struct FederationInfo {
     /// The name used for the database file for the federation's fedimint-client
     /// instance on disk
     pub database_name: String,
+
+    /// The Fedi fee schedule to use for transactions made by the user within
+    /// this federation.
+    #[serde(default)]
+    pub fedi_fee_schedule: FediFeeSchedule,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct FediFeeSchedule {
+    /// The minimum amount of fee in msat that must be accrued before an attempt
+    /// is made to remit it to Fedi.
+    pub remittance_threshold_msat: u64,
+
+    /// Different types of transactions may have different fees. So each known
+    /// module (identified by ModuleKind) has its own fee schedule for its
+    /// transactions.
+    pub modules: BTreeMap<ModuleKind, ModuleFediFeeSchedule>,
+}
+
+impl Default for FediFeeSchedule {
+    fn default() -> Self {
+        let mut modules = BTreeMap::new();
+        // Default all fees to 0 for now.
+        // TODO shaurya change defaults to non-0 when closer to live testing/prod.
+        modules.insert(
+            fedimint_mint_client::KIND,
+            ModuleFediFeeSchedule {
+                send_ppm: 0,
+                receive_ppm: 0,
+            },
+        );
+        modules.insert(
+            fedimint_ln_common::KIND,
+            ModuleFediFeeSchedule {
+                send_ppm: 0,
+                receive_ppm: 0,
+            },
+        );
+        modules.insert(
+            fedimint_wallet_client::KIND,
+            ModuleFediFeeSchedule {
+                send_ppm: 0,
+                receive_ppm: 0,
+            },
+        );
+        modules.insert(
+            stability_pool_client::common::KIND,
+            ModuleFediFeeSchedule {
+                send_ppm: 0,
+                receive_ppm: 0,
+            },
+        );
+        Self {
+            remittance_threshold_msat: 100,
+            modules,
+        }
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ModuleFediFeeSchedule {
+    /// Represents the fee to charge on the amount in ppm whenever a module
+    /// contributes an input to a transaction.
+    pub send_ppm: u64,
+
+    /// Represents the fee to charge on the amount in ppm whenever a module
+    /// contributes an output to a transaction.
+    pub receive_ppm: u64,
 }
 
 pub struct AppState {
