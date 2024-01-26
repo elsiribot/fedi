@@ -595,8 +595,13 @@ impl FederationV2 {
     /// TODO: should we check if our balance exceeds it?
     pub async fn can_pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<()> {
         // Has an amount
-        if invoice.amount_milli_satoshis().is_none() {
-            bail!("Invoice is missing amount")
+        match invoice.amount_milli_satoshis() {
+            Some(amount) => {
+                if amount > self.get_balance().await.msats {
+                    bail!("Insufficient balance")
+                }
+            }
+            None => bail!("Invoice is missing amount"),
         }
 
         // Same network
@@ -637,16 +642,21 @@ impl FederationV2 {
         address: Address,
         amount: bitcoin::Amount,
     ) -> Result<RpcPayAddressResponse> {
-        let fees = self
+        let network_fees = self
             .client
             .get_first_module::<WalletClientModule>()
             .get_withdraw_fees(address.clone(), amount)
             .await?;
 
+        let est_total_spend = network_fees.amount() + amount;
+        if est_total_spend.to_sat() * 1000 > self.get_balance().await.msats {
+            bail!("Insufficient funds");
+        }
+
         let operation_id = self
             .client
             .get_first_module::<WalletClientModule>()
-            .withdraw(address, amount, fees, ())
+            .withdraw(address, amount, network_fees, ())
             .await?;
         let mut updates = self
             .client
@@ -1102,6 +1112,10 @@ impl FederationV2 {
 
     /// Generate ecash
     pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
+        if amount > self.get_balance().await {
+            bail!("Insufficient funds");
+        }
+
         let cancel_time = fedimint_core::time::now() + ONE_WEEK;
         let (operation_id, notes) = self
             .client
@@ -1898,6 +1912,10 @@ impl FederationV2 {
     /// cycle turnover occurs, staged seeks are processed in order
     /// to produce locks.
     pub async fn stability_pool_deposit_to_seek(&self, amount: Amount) -> Result<OperationId> {
+        if amount > self.get_balance().await {
+            bail!("Insufficient funds");
+        }
+
         let operation_id = self
             .client
             .get_first_module::<StabilityPoolClientModule>()
