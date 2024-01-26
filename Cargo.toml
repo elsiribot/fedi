@@ -116,7 +116,7 @@ zeroize = { opt-level = 3 }
 bls12_381 = { opt-level = 3 }
 subtle = { opt-level = 3 }
 ring = { opt-level = 3 }
-fedimint_threshold_crypto = { opt-level = 3 }
+fedimint-threshold-crypto = { opt-level = 3 }
 
 # ios gets its own profile since it crashes on opt-level 0
 [profile.dev-ios]
