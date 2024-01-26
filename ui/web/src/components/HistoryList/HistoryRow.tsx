@@ -32,7 +32,13 @@ export const HistoryRow: React.FC<HistoryRowProps> = ({
     const btcExchangeRate = useAppSelector(selectBtcExchangeRate)
 
     let amountNode: React.ReactNode
-    const sign = direction ? (direction === 'outgoing' ? `-` : `+`) : ''
+    const sign = direction
+        ? direction === undefined
+            ? ''
+            : direction === 'outgoing'
+            ? `-`
+            : `+`
+        : ''
     if (typeof amount === 'number') {
         const fiatAmount = amountUtils.msatToFiat(amount, btcExchangeRate)
         const formattedAmount = amountUtils.formatFiat(fiatAmount, currency, {

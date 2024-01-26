@@ -39,7 +39,11 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                 status: makeTxnStatusText(t, txn),
                 amount: txn.amount,
                 direction:
-                    txn.direction === 'receive' ? 'incoming' : 'outgoing',
+                    txn.lnState?.type === 'canceled'
+                        ? undefined
+                        : txn.direction === 'receive'
+                        ? 'incoming'
+                        : 'outgoing',
                 timestamp: txn.createdAt,
                 notes: txn.notes,
             })}

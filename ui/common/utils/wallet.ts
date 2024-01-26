@@ -237,6 +237,10 @@ export const makeTxnAmountText = (
         formattedAmount = ''
     }
 
+    if (txn.lnState?.type === 'canceled') {
+        sign = ''
+    }
+
     if (txn.stabilityPoolState && showFiatTxnAmounts) {
         if ('estimated_withdrawal_cents' in txn.stabilityPoolState) {
             const estimatedWithdrawalCents = Number(
@@ -621,6 +625,10 @@ export const makeStabilityTxnAmountText = (
     // amount may be zero for onchain pending receives or for pending stabilitypool withdrawals
     if (txn.onchainState?.type === 'waitingForTransaction') {
         sign = `~`
+    }
+
+    if (txn.lnState?.type === 'canceled') {
+        sign = ''
     }
 
     if (txn.stabilityPoolState && showFiatTxnAmounts) {

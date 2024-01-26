@@ -6,7 +6,7 @@ import SvgImage, { SvgImageName } from './SvgImage'
 
 export interface HistoryIconProps {
     children: React.ReactNode
-    badge?: 'incoming' | 'outgoing' | 'pending'
+    badge?: 'incoming' | 'outgoing' | 'pending' | 'expired'
 }
 
 export const HistoryIcon: React.FC<HistoryIconProps> = ({
@@ -26,6 +26,9 @@ export const HistoryIcon: React.FC<HistoryIconProps> = ({
     } else if (badge === 'pending') {
         badgeSvgName = 'PendingBadge'
         badgeColor = theme.colors.fuschia
+    } else {
+        badgeSvgName = 'ExpiredBadgeIcon'
+        badgeColor = theme.colors.red
     }
 
     const style = styles()

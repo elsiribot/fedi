@@ -22,6 +22,8 @@ export const TransactionIcon: React.FC<Props> = ({ txn }) => {
         txn.stabilityPoolState?.type === 'pendingWithdrawal'
     ) {
         badge = 'pending'
+    } else if (txn.lnState?.type === 'canceled') {
+        badge = 'expired'
     } else {
         badge = 'incoming'
     }
