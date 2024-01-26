@@ -4,13 +4,18 @@ import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { changeLanguage, selectLanguage } from '@fedi/common/redux'
+
 import CheckBox from '../components/ui/CheckBox'
 import SvgImage from '../components/ui/SvgImage'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 
 const LanguageSettings: React.FC = () => {
     const { theme } = useTheme()
     const { i18n } = useTranslation()
+    const dispatch = useAppDispatch()
     const insets = useSafeAreaInsets()
+    const language = useAppSelector(selectLanguage)
 
     const style = styles(theme, insets)
 
@@ -27,13 +32,20 @@ const LanguageSettings: React.FC = () => {
             contentContainerStyle={style.contentContainer}
             overScrollMode="auto">
             <View style={style.container}>
-                {Object.entries(languages).map(([language, display]) => (
+                {Object.entries(languages).map(([lang, display]) => (
                     <CheckBox
                         checkedIcon={<SvgImage name="RadioSelected" />}
                         uncheckedIcon={<SvgImage name="RadioUnselected" />}
                         title={<Text style={style.radioText}>{display}</Text>}
-                        checked={i18n.language === language}
-                        onPress={() => i18n.changeLanguage(language)}
+                        checked={(language || i18n.language) === lang}
+                        onPress={() => {
+                            dispatch(
+                                changeLanguage({
+                                    i18n,
+                                    language: lang,
+                                }),
+                            )
+                        }}
                         containerStyle={style.radioContainer}
                     />
                 ))}
