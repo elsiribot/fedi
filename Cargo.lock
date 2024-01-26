@@ -1406,6 +1406,7 @@ dependencies = [
  "base64 0.20.0",
  "bip39",
  "bitcoin 0.29.2",
+ "devimint",
  "fedi-social-client",
  "fedimint-aead",
  "fedimint-bip39",

@@ -63,6 +63,8 @@ tempfile = "3.3.0"
 # FIXME: just put these above? or dev-dependencies
 [target.'cfg(target_os = "macos")'.dependencies]
 fedimint-logging = { workspace = true }
+devimint = { workspace = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 fedimint-logging = { workspace = true }
+devimint = { workspace = true }
