@@ -342,7 +342,6 @@
           fedi-fedimint-cli = craneMultiBuild.fedi-fedimint-cli;
 
           fedi-wasm = craneMultiBuild.wasm32-unknown.release.fedi-wasm;
-          devops-cli = craneMultiBuild.devops-cli;
         };
 
         legacyPackages = craneMultiBuild;
