@@ -42,7 +42,7 @@ use crate::federation_v2::{self, FederationV2};
 use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
 use crate::storage::{AppState, FederationInfo};
 use crate::types::{
-    GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
+    GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
     RpcLightningGateway, RpcPayAddressResponse, RpcReturningMemberStatus,
 };
 use crate::utils::required_threashold_of;
@@ -115,12 +115,6 @@ impl MultiFederation {
     pub async fn get_balance(&self) -> Amount {
         match self {
             Self::V2(v2) => v2.get_balance().await,
-        }
-    }
-
-    pub async fn balance_info(&self) -> RpcBalanceInfo {
-        match self {
-            Self::V2(v2) => v2.balance_info().await,
         }
     }
 
@@ -569,13 +563,6 @@ impl Bridge {
         let multi = self.get_multi(&federation_id.0).await?;
         let status = multi.guardian_status().await?;
         Ok(status)
-    }
-
-    pub async fn balance_info(
-        &self,
-        federation_id: RpcFederationId,
-    ) -> anyhow::Result<RpcBalanceInfo> {
-        Ok(self.get_multi(&federation_id.0).await?.balance_info().await)
     }
 
     pub async fn generate_address(&self, federation_id: RpcFederationId) -> Result<String> {

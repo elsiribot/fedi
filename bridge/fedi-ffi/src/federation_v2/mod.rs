@@ -63,6 +63,7 @@ use stability_pool_client::{
 use tokio::sync::Mutex;
 use tracing::{error, info, warn};
 
+use self::db::OutstandingFediFeesKey;
 use self::dev::{
     override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
 };
@@ -85,8 +86,8 @@ use crate::error::ErrorCode;
 use crate::event::RecoveryStartEvent;
 use crate::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
-    EcashReceiveMetadata, GuardianStatus, RpcBalanceInfo, RpcBitcoinDetails, RpcEcashInfo,
-    RpcFederationId, RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
+    EcashReceiveMetadata, GuardianStatus, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId,
+    RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
     RpcPayAddressResponse, RpcStabilityPoolTransactionState, RpcTransaction,
     RpcTransactionDirection, WithdrawalDetails,
 };
@@ -351,17 +352,13 @@ impl FederationV2 {
 
     /// Fetch balance
     pub async fn get_balance(&self) -> Amount {
-        self.wallet_summary().await.total_amount()
-    }
-
-    pub async fn balance_info(&self) -> RpcBalanceInfo {
-        let summary = self.wallet_summary().await;
-        RpcBalanceInfo {
-            tiers: summary
-                .iter()
-                .map(|(tier, count)| (tier.msats, count))
-                .collect(),
-        }
+        let mint_client = self.client.get_first_module::<MintClientModule>();
+        let mut dbtx = mint_client.db.begin_transaction_nc().await;
+        mint_client
+            .get_wallet_summary(&mut dbtx)
+            .await
+            .total_amount()
+            - self.get_outstanding_fedi_fees().await
     }
 
     pub async fn guardian_status(&self) -> anyhow::Result<Vec<GuardianStatus>> {
@@ -418,10 +415,13 @@ impl FederationV2 {
         Ok(guardians_status)
     }
 
-    async fn wallet_summary(&self) -> fedimint_core::TieredSummary {
-        let mint_client = self.client.get_first_module::<MintClientModule>();
-        let mut dbtx = mint_client.db.begin_transaction_nc().await;
-        mint_client.get_wallet_summary(&mut dbtx).await
+    async fn get_outstanding_fedi_fees(&self) -> Amount {
+        self.dbtx()
+            .await
+            .into_nc()
+            .get_value(&OutstandingFediFeesKey)
+            .await
+            .unwrap_or(Amount::ZERO)
     }
 
     /// Generate bitcoin address

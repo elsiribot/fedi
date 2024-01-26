@@ -28,7 +28,7 @@ use super::types::{
 use crate::error::get_error_code;
 use crate::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use crate::types::{
-    GuardianStatus, RpcBalanceInfo, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
+    GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
     RpcLightningGateway, RpcPayAddressResponse,
 };
 
@@ -127,14 +127,6 @@ async fn leaveFederation(
     federation_id: RpcFederationId,
 ) -> anyhow::Result<()> {
     bridge.leave_federation(&federation_id.0).await
-}
-
-#[macro_rules_derive(rpc_method!)]
-async fn balanceInfo(
-    bridge: Arc<Bridge>,
-    federation_id: RpcFederationId,
-) -> anyhow::Result<RpcBalanceInfo> {
-    bridge.balance_info(federation_id).await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -529,7 +521,6 @@ rpc_methods!(RpcMethods {
     generateAddress,
     payAddress,
     // Ecash
-    balanceInfo,
     generateEcash,
     receiveEcash,
     validateEcash,
