@@ -5,23 +5,27 @@ import CogIcon from '@fedi/common/assets/svgs/cog.svg'
 import Edit from '@fedi/common/assets/svgs/edit.svg'
 import LeaveRoom from '@fedi/common/assets/svgs/leave-room.svg'
 import Room from '@fedi/common/assets/svgs/room.svg'
+import SpeakerPhone from '@fedi/common/assets/svgs/speakerphone.svg'
 import {
     configureChatGroup,
     leaveChatGroup,
     selectActiveFederationId,
     selectChat,
     selectChatGroup,
+    selectChatGroupAffiliation,
     selectChatGroupRole,
     selectChatMessages,
     sendGroupMessage,
 } from '@fedi/common/redux'
-import { ChatRole, ChatType } from '@fedi/common/types'
+import { ChatAffiliation, ChatRole, ChatType } from '@fedi/common/types'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
 import { styled, theme } from '../styles'
 import { Button } from './Button'
 import { ChatAvatar } from './ChatAvatar'
+import ChatBroadcastAdminAdd from './ChatBroadcastAdminAdd'
+import ChatBroadcastAdminSettings from './ChatBroadcastAdminSettings'
 import { ChatConversation } from './ChatConversation'
 import { ChatEmptyState } from './ChatEmptyState'
 import { CopyInput } from './CopyInput'
@@ -43,8 +47,15 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
     const group = useAppSelector(s => selectChatGroup(s, groupId))
     const messages = useAppSelector(s => selectChatMessages(s, groupId))
     const role = useAppSelector(s => selectChatGroupRole(s, groupId))
+    const myAffiliation = useAppSelector(s =>
+        selectChatGroupAffiliation(s, groupId),
+    )
     const [dialogState, setDialogState] = useState<
-        'settings' | 'share' | false
+        | 'settings'
+        | 'share'
+        | 'broadcast-admins'
+        | 'add-broadcast-admin'
+        | false
     >(false)
 
     const chat = useAppSelector(s => selectChat(s, group?.id || ''))
@@ -135,6 +146,31 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
                             </Layout.Root>
                         </Dialog>
                         <Dialog
+                            open={dialogState === 'broadcast-admins'}
+                            onOpenChange={(open: boolean) =>
+                                setDialogState(
+                                    open ? 'broadcast-admins' : false,
+                                )
+                            }
+                            title={t('feature.chat.admin-settings')}>
+                            <ChatBroadcastAdminSettings
+                                setDialogState={setDialogState}
+                                groupId={groupId}
+                            />
+                        </Dialog>
+
+                        <Dialog
+                            open={dialogState === 'add-broadcast-admin'}
+                            onOpenChange={(open: boolean) =>
+                                setDialogState(
+                                    open ? 'add-broadcast-admin' : false,
+                                )
+                            }
+                            title={t('feature.chat.add-admin')}>
+                            <ChatBroadcastAdminAdd />
+                        </Dialog>
+
+                        <Dialog
                             open={dialogState === 'settings'}
                             onOpenChange={(open: boolean) =>
                                 setDialogState(open ? 'settings' : false)
@@ -158,6 +194,21 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
                                                     }>
                                                     {t(
                                                         'feature.chat.edit-group',
+                                                    )}
+                                                </Button>
+                                            )}
+                                            {myAffiliation ===
+                                                ChatAffiliation.owner && (
+                                                <Button
+                                                    variant="outline"
+                                                    icon={SpeakerPhone}
+                                                    onClick={() =>
+                                                        setDialogState(
+                                                            'broadcast-admins',
+                                                        )
+                                                    }>
+                                                    {t(
+                                                        'feature.chat.broadcast-admin-settings',
                                                     )}
                                                 </Button>
                                             )}
