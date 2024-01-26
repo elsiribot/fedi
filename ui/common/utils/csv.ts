@@ -42,7 +42,9 @@ function makeCSV<T>(items: T[], columns: CSVColumns<T>): string {
         csv += `\r\n`
         columns.forEach((column, idx) => {
             if (idx !== 0) csv += ','
-            csv += column.getValue(item)
+            // Wrap the value in quotes and escape any quotes inside the value.
+            // Otherwise, commas and quotes will break the CSV.
+            csv += `"${String(column.getValue(item)).replace(/"/g, '""')}"`
         })
     })
     return csv

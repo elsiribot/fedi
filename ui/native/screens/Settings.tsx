@@ -10,8 +10,10 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
+import Share from 'react-native-share'
 
 import { useFederationSupportsSingleSeed } from '@fedi/common/hooks/federation'
+import { useTransactionHistory } from '@fedi/common/hooks/transactions'
 import {
     changeAuthenticatedGuardian,
     leaveFederation,
@@ -29,6 +31,12 @@ import {
     getFederationTosUrl,
     shouldShowInviteCode,
 } from '@fedi/common/utils/FederationUtils'
+import {
+    makeBase64CSVUri,
+    makeCSVFilename,
+    makeTransactionHistoryCSV,
+} from '@fedi/common/utils/csv'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
@@ -37,7 +45,10 @@ import SvgImage from '../components/ui/SvgImage'
 import { version } from '../package.json'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { Transaction } from '../types'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('Settings')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>
 
@@ -45,7 +56,9 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
+    const { fetchTransactions } = useTransactionHistory(fedimint)
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
+    const [isExportingCSV, setIsExportingCSV] = useState(false)
 
     const dispatch = useAppDispatch()
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -174,6 +187,40 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         }
     }
 
+    const exportTransactionsAsCsv = async () => {
+        let transactions: Array<Transaction> = []
+
+        setIsExportingCSV(true)
+
+        try {
+            transactions = await fetchTransactions({
+                // TODO: Find a better way than a hardcoded value
+                limit: 10000,
+            })
+        } catch (e) {
+            log.error('error', e)
+            toast?.show(t('errors.failed-to-fetch-transactions'))
+            setIsExportingCSV(false)
+            return
+        }
+
+        try {
+            await Share.open({
+                filename: makeCSVFilename(
+                    activeFederation?.name
+                        ? 'transactions-' + activeFederation.name
+                        : 'transactions',
+                ),
+                type: 'text/csv',
+                url: makeBase64CSVUri(makeTransactionHistoryCSV(transactions)),
+            })
+        } catch {
+            /* no-op */
+        } finally {
+            setIsExportingCSV(false)
+        }
+    }
+
     const showInviteCode =
         activeFederation && shouldShowInviteCode(activeFederation.meta)
 
@@ -245,6 +292,12 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         onPress={() =>
                             navigation.navigate('ChooseBackupMethod')
                         }
+                    />
+                    <SettingsItem
+                        image={<SvgImage name="TableExport" />}
+                        label={t('feature.backup.export-transactions-to-csv')}
+                        onPress={exportTransactionsAsCsv}
+                        disabled={isExportingCSV}
                     />
                 </View>
             )}

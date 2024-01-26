@@ -9,7 +9,6 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
-import Share from 'react-native-share'
 
 import {
     changeAuthenticatedGuardian,
@@ -43,11 +42,6 @@ import {
     SupportedCurrency,
 } from '@fedi/common/types'
 import { GuardianStatus } from '@fedi/common/types/bindings'
-import {
-    makeBase64CSVUri,
-    makeCSVFilename,
-    makeTransactionHistoryCSV,
-} from '@fedi/common/utils/csv'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -160,24 +154,6 @@ const DeveloperSettings: React.FC<Props> = () => {
             toast?.show(formatErrorMessage(t, e, 'errors.unknown-error'))
         }
         setIsSharingLogs(false)
-    }
-
-    const shareTxCsv = async () => {
-        try {
-            if (!activeFederation) throw new Error('No active federation')
-            const transactions = await fedimint.listTransactions(
-                activeFederation.id,
-            )
-            await Share.open({
-                filename: makeCSVFilename(
-                    `transactions-${activeFederation.name}`,
-                ),
-                type: 'text/csv',
-                url: makeBase64CSVUri(makeTransactionHistoryCSV(transactions)),
-            })
-        } catch (err) {
-            toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
-        }
     }
 
     const removeFediMod = (fediModId: string) => {
@@ -369,11 +345,6 @@ const DeveloperSettings: React.FC<Props> = () => {
                 ))}
             </SettingsSection>
             <SettingsSection title={t('words.wallet')}>
-                <Button
-                    title={t('feature.developer.export-transactions-csv')}
-                    containerStyle={styles(theme).buttonContainer}
-                    onPress={shareTxCsv}
-                />
                 <View style={styles(theme).switchWrapper}>
                     <View style={styles(theme).switchLabelContainer}>
                         <Text caption style={styles(theme).switchLabel}>

@@ -71,6 +71,7 @@ export { default as SpeakerPhone } from '@fedi/common/assets/svgs/speakerphone.s
 export { default as Switch } from '@fedi/common/assets/svgs/switch.svg'
 export { default as SwitchLeft } from '@fedi/common/assets/svgs/switch-left.svg'
 export { default as SwitchRight } from '@fedi/common/assets/svgs/switch-right.svg'
+export { default as TableExport } from '@fedi/common/assets/svgs/table-export.svg'
 export { default as Video } from '@fedi/common/assets/svgs/video.svg'
 export { default as Wallet } from '@fedi/common/assets/svgs/wallet.svg'
 export { default as WordList } from '@fedi/common/assets/svgs/word-list.svg'
