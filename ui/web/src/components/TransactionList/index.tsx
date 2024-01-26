@@ -40,7 +40,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                 amount: txn.amount,
                 direction:
                     txn.lnState?.type === 'canceled'
-                        ? 'stale'
+                        ? undefined
                         : txn.direction === 'receive'
                         ? 'incoming'
                         : 'outgoing',

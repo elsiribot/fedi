@@ -15,7 +15,7 @@ export interface HistoryRowProps {
     notes: React.ReactNode
     amount: MSats | string
     timestamp: number | undefined | null
-    direction?: 'incoming' | 'outgoing' | 'stale'
+    direction?: 'incoming' | 'outgoing'
     onSelect: () => void
 }
 
@@ -33,7 +33,7 @@ export const HistoryRow: React.FC<HistoryRowProps> = ({
 
     let amountNode: React.ReactNode
     const sign = direction
-        ? direction === 'stale'
+        ? direction === undefined
             ? ''
             : direction === 'outgoing'
             ? `-`
