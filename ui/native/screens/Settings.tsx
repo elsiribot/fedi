@@ -33,6 +33,7 @@ import {
     shouldShowInviteCode,
 } from '@fedi/common/utils/FederationUtils'
 import {
+    makeBase64CSVUri,
     makeCSVFilename,
     makeTransactionHistoryCSV,
 } from '@fedi/common/utils/csv'
@@ -189,8 +190,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
 
     const exportTransactionsAsCsv = async () => {
         let transactions: Array<Transaction> = []
-        let fileName: string
-        let filePath: string
 
         setIsExportingCSV(true)
 
@@ -207,32 +206,14 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         }
 
         try {
-            const rows = makeTransactionHistoryCSV(transactions)
-            fileName = makeCSVFilename(
-                activeFederation?.name
-                    ? 'transactions-' + activeFederation.name
-                    : 'transactions',
-            )
-
-            filePath = `${RNFetchBlob.fs.dirs.CacheDir}/${fileName}.csv`
-
-            await RNFetchBlob.fs.writeFile(
-                filePath,
-                Buffer.from(rows, 'utf8').toString('base64'),
-                'base64',
-            )
-        } catch (e) {
-            log.error('error', e)
-            toast?.show(t('errors.unknown-error'))
-            setIsExportingCSV(false)
-            return
-        }
-
-        try {
             await Share.open({
-                url: `file://${filePath}`,
+                filename: makeCSVFilename(
+                    activeFederation?.name
+                        ? 'transactions-' + activeFederation.name
+                        : 'transactions',
+                ),
                 type: 'text/csv',
-                filename: `${fileName}.csv`,
+                url: makeBase64CSVUri(makeTransactionHistoryCSV(transactions)),
             })
         } catch {
             /* no-op */
