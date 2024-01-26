@@ -8,7 +8,6 @@ use fedimint_core::config::{GlobalClientConfig, JsonWithKind, PeerUrl};
 use fedimint_ln_client::pay::GatewayPayError;
 use fedimint_ln_client::{LnPayState, LnReceiveState};
 use fedimint_wallet_client::{BitcoinTransactionData, DepositState, WithdrawState};
-
 use serde::{Deserialize, Serialize};
 use stability_pool_client::ClientAccountInfo;
 use ts_rs::TS;
