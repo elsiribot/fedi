@@ -36,6 +36,7 @@ import {
     makeCSVFilename,
     makeTransactionHistoryCSV,
 } from '@fedi/common/utils/csv'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
@@ -44,7 +45,10 @@ import SvgImage from '../components/ui/SvgImage'
 import { version } from '../package.json'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { Transaction } from '../types'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('Settings')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>
 
@@ -184,31 +188,47 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     const exportTransactionsAsCsv = async () => {
-        try {
-            setIsExportingCSV(true)
+        let transactions: Array<Transaction> = []
+        let fileName: string
+        let filePath: string
 
-            const transactions = await fetchTransactions({
+        setIsExportingCSV(true)
+
+        try {
+            transactions = await fetchTransactions({
                 // TODO: Find a better way than a hardcoded value
                 limit: 10000,
             })
+        } catch (e) {
+            log.error('error', e)
+            toast?.show(t('errors.failed-to-fetch-transactions'))
+            setIsExportingCSV(false)
+            return
+        }
 
+        try {
             const rows = makeTransactionHistoryCSV(transactions)
-            const fileName = makeCSVFilename(
+            fileName = makeCSVFilename(
                 activeFederation?.name
                     ? 'transactions-' + activeFederation.name
                     : 'transactions',
             )
 
-            const filePath = `${RNFetchBlob.fs.dirs.CacheDir}/${fileName}.csv`
+            filePath = `${RNFetchBlob.fs.dirs.CacheDir}/${fileName}.csv`
 
-            // Save the CSV content to a file
             await RNFetchBlob.fs.writeFile(
                 filePath,
                 Buffer.from(rows, 'utf8').toString('base64'),
                 'base64',
             )
+        } catch (e) {
+            log.error('error', e)
+            toast?.show(t('errors.unknown-error'))
+            setIsExportingCSV(false)
+            return
+        }
 
-            // Get this CSV out into the world
+        try {
             await Share.open({
                 url: `file://${filePath}`,
                 type: 'text/csv',
