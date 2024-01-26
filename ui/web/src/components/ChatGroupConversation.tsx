@@ -202,20 +202,21 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
                                                 </Button>
                                             )}
                                             {myAffiliation ===
-                                                ChatAffiliation.owner && (
-                                                <Button
-                                                    variant="outline"
-                                                    icon={SpeakerPhone}
-                                                    onClick={() =>
-                                                        setDialogState(
-                                                            'broadcast-admins',
-                                                        )
-                                                    }>
-                                                    {t(
-                                                        'feature.chat.broadcast-admin-settings',
-                                                    )}
-                                                </Button>
-                                            )}
+                                                ChatAffiliation.owner &&
+                                                group.broadcastOnly && (
+                                                    <Button
+                                                        variant="outline"
+                                                        icon={SpeakerPhone}
+                                                        onClick={() =>
+                                                            setDialogState(
+                                                                'broadcast-admins',
+                                                            )
+                                                        }>
+                                                        {t(
+                                                            'feature.chat.broadcast-admin-settings',
+                                                        )}
+                                                    </Button>
+                                                )}
                                             <Button
                                                 variant="outline"
                                                 icon={Room}
