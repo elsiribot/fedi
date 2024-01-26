@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 
 import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import { selectAllChatMembers } from '@fedi/common/redux'
-import { ChatMember } from '@fedi/common/types'
 
 import { useAppSelector } from '../hooks'
 import { Avatar } from './Avatar'
@@ -28,7 +27,7 @@ export const ChatNew: React.FC = () => {
             <ChatMemberSearch
                 members={members}
                 onClickNewGroup={() => setIsNewGrouping(true)}
-                renderMember={(member: ChatMember) => (
+                renderMember={member => (
                     <SearchButton
                         as={Link}
                         key={member.id}
@@ -43,13 +42,7 @@ export const ChatNew: React.FC = () => {
                         </Text>
                     </SearchButton>
                 )}
-                renderUnknownResult={({
-                    query,
-                    domain,
-                }: {
-                    query: string
-                    domain: string
-                }) => (
+                renderUnknownResult={({ query, domain }) => (
                     <SearchButton
                         as={Link}
                         href={`/chat/member/${query}@${domain}`}>

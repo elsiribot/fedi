@@ -39,6 +39,13 @@ interface Props {
     groupId: string
 }
 
+export type ChatGroupDialogState =
+    | 'settings'
+    | 'share'
+    | 'broadcast-admins'
+    | 'add-broadcast-admin'
+    | false
+
 export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
@@ -50,13 +57,7 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
     const myAffiliation = useAppSelector(s =>
         selectChatGroupAffiliation(s, groupId),
     )
-    const [dialogState, setDialogState] = useState<
-        | 'settings'
-        | 'share'
-        | 'broadcast-admins'
-        | 'add-broadcast-admin'
-        | false
-    >(false)
+    const [dialogState, setDialogState] = useState<ChatGroupDialogState>(false)
 
     const chat = useAppSelector(s => selectChat(s, group?.id || ''))
 

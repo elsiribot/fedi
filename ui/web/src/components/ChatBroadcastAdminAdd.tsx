@@ -14,6 +14,7 @@ import { XmppMemberRole } from '@fedi/common/utils/XmlUtils'
 import { useAppDispatch, useAppSelector, useToast } from '../hooks'
 import { styled, theme } from '../styles'
 import { Avatar } from './Avatar'
+import { ChatGroupDialogState } from './ChatGroupConversation'
 import { ChatMemberSearch, SearchButton } from './ChatMemberSearch'
 import { Icon } from './Icon'
 import { Text } from './Text'
@@ -23,20 +24,13 @@ export default function ChatBroadcastAdminAdd({
     setDialogState,
 }: {
     groupId: string
-    setDialogState: (
-        state:
-            | 'settings'
-            | 'share'
-            | 'broadcast-admins'
-            | 'add-broadcast-admin'
-            | false,
-    ) => void
+    setDialogState: (state: ChatGroupDialogState) => void
 }) {
     const { t } = useTranslation()
-    const dispatch = useAppDispatch()
-    const federationId = useAppSelector(selectActiveFederationId)
 
     const toast = useToast()
+    const dispatch = useAppDispatch()
+    const federationId = useAppSelector(selectActiveFederationId)
 
     const [visitors, setVisitors] = useState<ChatMember[]>([])
 

@@ -14,6 +14,7 @@ import { useAppDispatch, useAppSelector, useToast } from '../hooks'
 import { styled, theme } from '../styles'
 import { Avatar } from './Avatar'
 import { Button } from './Button'
+import { ChatGroupDialogState } from './ChatGroupConversation'
 import { IconButton } from './IconButton'
 import { Text } from './Text'
 
@@ -21,19 +22,12 @@ export default function ChatBroadcastAdminSettings({
     setDialogState,
     groupId,
 }: {
-    setDialogState: (
-        state:
-            | 'settings'
-            | 'share'
-            | 'broadcast-admins'
-            | 'add-broadcast-admin'
-            | false,
-    ) => void
+    setDialogState: (state: ChatGroupDialogState) => void
     groupId: string
 }) {
     const { t } = useTranslation()
-    const toast = useToast()
 
+    const toast = useToast()
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(selectActiveFederationId)
 
