@@ -30,7 +30,7 @@ export const HistoryIcon: React.FC<HistoryIconProps> = ({
     } else if (badge === 'pending') {
         badgeIcon = PendingBadgeIcon
         badgeColor = theme.colors.fuschia
-    } else {
+    } else if (badge === 'expired') {
         badgeIcon = ExpiredBadgeIcon
         badgeColor = theme.colors.red
     }
