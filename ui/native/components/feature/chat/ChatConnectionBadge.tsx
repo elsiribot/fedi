@@ -10,10 +10,8 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import {
-    selectChatClientLastOnlineAt,
-    selectChatClientStatus,
-} from '@fedi/common/redux'
+import { useIsChatConnected } from '@fedi/common/hooks/chat'
+import { selectChatClientStatus } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 
@@ -32,28 +30,14 @@ export const ChatConnectionBadge: React.FC<Props> = ({
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const chatStatus = useAppSelector(selectChatClientStatus)
-    const lastOnlineAt = useAppSelector(selectChatClientLastOnlineAt)
 
     const isOffline = chatStatus !== 'online'
-    const [showOffline, setShowOffline] = useState(isOffline)
+    const isConnected = useIsChatConnected()
     const [isDisplayNone, setIsDisplayNone] = useState(!isOffline)
-    const isVisible = showOffline && !hide
+    const isVisible = !isConnected && !hide
     const visibleAnimation = useRef(
         new Animated.Value(isVisible ? 1 : 0),
     ).current
-
-    // Show offline badge after initial render if we go offline for more than
-    // 3 seconds. Initial render will show immediately if we're offline.
-    useEffect(() => {
-        if (!isOffline) {
-            setShowOffline(false)
-            return
-        }
-        const now = Date.now()
-        const delay = lastOnlineAt - now + 3000
-        const timeout = setTimeout(() => setShowOffline(true), delay)
-        return () => clearTimeout(timeout)
-    }, [isOffline, lastOnlineAt])
 
     // Animate container in and out when visible
     useEffect(() => {

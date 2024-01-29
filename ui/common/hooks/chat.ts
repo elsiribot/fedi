@@ -9,6 +9,7 @@ import {
     publishPushNotificationToken,
     selectActiveFederation,
     selectAuthenticatedMember,
+    selectChatClientLastOnlineAt,
     selectChatClientStatus,
     selectChatLastReadMessageTimestamps,
     selectChatLastSeenMessageTimestamp,
@@ -313,4 +314,27 @@ export async function useMonitorChatConnections(fedimint: FedimintBridge) {
         // Dependencies are non-exhaustive here intentionally to prevent
         // multiple calls to connectChat which may cause race-condition bugs
     }, [federationsWithChat.length])
+}
+
+export const useIsChatConnected = () => {
+    const chatStatus = useCommonSelector(selectChatClientStatus)
+    const lastOnlineAt = useCommonSelector(selectChatClientLastOnlineAt)
+
+    const isOffline = chatStatus !== 'online'
+    const [showOffline, setShowOffline] = useState(isOffline)
+
+    // Show offline badge after initial render if we go offline for more than
+    // 3 seconds. Initial render will show immediately if we're offline.
+    useEffect(() => {
+        if (!isOffline) {
+            setShowOffline(false)
+            return
+        }
+        const now = Date.now()
+        const delay = lastOnlineAt - now + 3000
+        const timeout = setTimeout(() => setShowOffline(true), delay)
+        return () => clearTimeout(timeout)
+    }, [isOffline, lastOnlineAt])
+
+    return !showOffline
 }

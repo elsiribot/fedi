@@ -1,8 +1,11 @@
+import { useRouter } from 'next/router'
 import React from 'react'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
+import { useIsChatConnected } from '@fedi/common/hooks/chat'
 
 import { styled, theme } from '../../styles'
+import { ChatOfflineIndicator } from '../ChatOfflineIndicator'
 import { PageError } from '../PageError'
 import { PopupFederationOver } from '../PopupFederationOver'
 import { FederationSelector } from './FederationSelector'
@@ -16,16 +19,23 @@ interface Props {
 
 export const Template: React.FC<Props> = ({ children }) => {
     const { hideNavigation, isPopupOver } = useNavVisibility()
+    const isConnected = useIsChatConnected()
+    const router = useRouter()
 
     return (
         <Container className={hideNavigation ? 'hide-navigation' : ''}>
             {!hideNavigation && <Navigation />}
             <Content>
                 {!hideNavigation && (
-                    <FederationControls>
-                        <FederationSelector />
-                        <PopupFederationCountdown />
-                    </FederationControls>
+                    <FederationHeader>
+                        <FederationControls>
+                            <FederationSelector />
+                            <PopupFederationCountdown />
+                        </FederationControls>
+                        {!isConnected && router.asPath.startsWith('/chat') && (
+                            <ChatOfflineIndicator />
+                        )}
+                    </FederationHeader>
                 )}
                 <Main centered={hideNavigation}>
                     <ErrorBoundary fallback={() => <PageError />}>
@@ -137,11 +147,19 @@ const FederationControls = styled('div', {
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    padding: 'var(--template-padding) 8px',
     gap: 4,
+})
+
+const FederationHeader = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.space.lg,
+    padding: 'var(--template-padding) 8px',
 
     '@sm': {
         padding: '16px 8px',
-        borderBottom: `1px solid ${theme.colors.extraLightGrey}`,
+        gap: theme.space.sm,
     },
 })
