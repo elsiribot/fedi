@@ -1061,15 +1061,17 @@ impl FederationV2 {
         let mut federation = self.clone();
         self.task_group
             .spawn("subscribe recovery", |_| async move {
+                info!("waiting for recovery to complete");
                 federation
                     .client
                     .get_first_module::<MintClientModule>()
                     .await_restore_finished()
                     .await?;
-                federation.start_background_tasks().await;
+                info!("recovery completed");
                 federation.event_sink.typed_event(&Event::recovery_complete(
                     federation.federation_id().to_string(),
                 ));
+                federation.start_background_tasks().await;
                 anyhow::Ok(())
             })
             .await;
