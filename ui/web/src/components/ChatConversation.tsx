@@ -4,10 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import ChevronLeftIcon from '@fedi/common/assets/svgs/chevron-left.svg'
 import SendArrowUpCircleIcon from '@fedi/common/assets/svgs/send-arrow-up-circle.svg'
-import {
-    useIsChatConnected,
-    useUpdateLastMessageRead,
-} from '@fedi/common/hooks/chat'
+import { useUpdateLastMessageRead } from '@fedi/common/hooks/chat'
 import { selectChat, selectChatGroupRole } from '@fedi/common/redux'
 import {
     ChatMessage as ChatMessageType,
@@ -166,7 +163,6 @@ const HeaderInfo = styled('div', {
     alignItems: 'center',
     gap: 8,
     flexShrink: 0,
-    flexGrow: 1,
 })
 
 const BackButton = styled('div', {

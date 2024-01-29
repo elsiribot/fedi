@@ -9,7 +9,6 @@ import { ChatGroupConversation } from '../../components/ChatGroupConversation'
 import { ChatMemberConversation } from '../../components/ChatMemberConversation'
 import { ChatNew } from '../../components/ChatNew'
 import { Redirect } from '../../components/Redirect'
-import { Text } from '../../components/Text'
 import { styled, theme } from '../../styles'
 
 function ChatPage() {
@@ -36,9 +35,7 @@ function ChatPage() {
     } else if (!chatType) {
         isShowingContent = false
         content = (
-            <Empty>
-                <Message>{t('feature.chat.select-or-start')}</Message>
-            </Empty>
+            <EmptyMessage>{t('feature.chat.select-or-start')}</EmptyMessage>
         )
     } else {
         return <Redirect path="/chat" />
@@ -47,18 +44,13 @@ function ChatPage() {
     return <ChatBlock isShowingContent={isShowingContent}>{content}</ChatBlock>
 }
 
-const Empty = styled('div', {
-    position: 'relative',
+const EmptyMessage = styled('div', {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     textAlign: 'center',
     height: '100%',
     padding: 24,
-    color: theme.colors.darkGrey,
-})
-
-const Message = styled(Text, {
     color: theme.colors.darkGrey,
 })
 
