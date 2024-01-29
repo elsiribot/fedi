@@ -499,7 +499,6 @@ const DeveloperSettings: React.FC<Props> = () => {
                                     federationId: activeFederation.id,
                                     membersSeen: [],
                                 }),
-                                2,
                             )
                         }
                     }}
