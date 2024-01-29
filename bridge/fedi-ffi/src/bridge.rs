@@ -446,11 +446,11 @@ impl Bridge {
         // Check if we've already joined this federation
         let invite_code: InviteCodeV2 = InviteCodeV2::from_str(&invite_code_string)?;
         if self
-            .get_multi(&invite_code.federation_id().to_string())
+            .get_multi_maybe_recovering(&invite_code.federation_id().to_string())
             .await
             .is_ok()
         {
-            bail!("Already joined this federation")
+            bail!(ErrorCode::AlreadyJoined)
         }
 
         let root_mnemonic = self
@@ -533,6 +533,19 @@ impl Bridge {
 
     /// Look up federation by id from in-memory hashmap
     pub async fn get_multi(&self, federation_id: &str) -> Result<Arc<MultiFederation>> {
+        let federation = self.get_multi_maybe_recovering(federation_id).await?;
+        let recovering = match &*federation {
+            MultiFederation::V2(f) => f.recovering,
+        };
+        anyhow::ensure!(!recovering, "client is still recovering");
+        Ok(federation)
+    }
+
+    /// Look up federation by id from in-memory hashmap
+    pub async fn get_multi_maybe_recovering(
+        &self,
+        federation_id: &str,
+    ) -> Result<Arc<MultiFederation>> {
         let lock = self.federations.lock().await;
         lock.get(federation_id)
             .cloned()

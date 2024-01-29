@@ -37,7 +37,7 @@ export type Event =
     | { panic: PanicEvent }
     | { stabilityPoolDeposit: StabilityPoolDepositEvent }
     | { stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent }
-    | { recoveryStart: RecoveryStartEvent }
+    | { recoveryComplete: RecoveryCompleteEvent }
 
 export type GuardianStatus =
     | { online: { guardian: string } }
@@ -52,7 +52,7 @@ export interface PanicEvent {
     message: string
 }
 
-export interface RecoveryStartEvent {
+export interface RecoveryCompleteEvent {
     federationId: RpcFederationId
 }
 
