@@ -1788,11 +1788,16 @@ impl FederationV2 {
             .collect()
     }
 
-    pub async fn update_transaction_notes(&self, transaction: OperationId, notes: String) {
+    pub async fn update_transaction_notes(
+        &self,
+        transaction: OperationId,
+        notes: String,
+    ) -> Result<()> {
         let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&TransactionNotesKey(transaction), &notes)
             .await;
-        dbtx.commit_tx().await;
+        dbtx.commit_tx_result().await?;
+        Ok(())
     }
 
     // Database

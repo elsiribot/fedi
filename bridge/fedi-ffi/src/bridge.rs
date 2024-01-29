@@ -231,7 +231,7 @@ impl MultiFederation {
         match self {
             Self::V2(v2) => {
                 v2.update_transaction_notes(transaction_id.parse()?, notes)
-                    .await
+                    .await?
             }
         };
         Ok(())
