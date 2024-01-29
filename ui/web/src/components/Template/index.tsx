@@ -1,3 +1,4 @@
+import { useRouter } from 'next/router'
 import React from 'react'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
@@ -19,6 +20,7 @@ interface Props {
 export const Template: React.FC<Props> = ({ children }) => {
     const { hideNavigation, isPopupOver } = useNavVisibility()
     const isConnected = useIsChatConnected()
+    const router = useRouter()
 
     return (
         <Container className={hideNavigation ? 'hide-navigation' : ''}>
@@ -30,7 +32,9 @@ export const Template: React.FC<Props> = ({ children }) => {
                             <FederationSelector />
                             <PopupFederationCountdown />
                         </FederationControls>
-                        {isConnected ? null : <ChatOfflineIndicator />}
+                        {!isConnected && router.asPath.startsWith('/chat') && (
+                            <ChatOfflineIndicator />
+                        )}
                     </FederationHeader>
                 )}
                 <Main centered={hideNavigation}>
