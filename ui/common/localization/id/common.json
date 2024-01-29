@@ -330,6 +330,8 @@
             "scan-federation-invite": "Pindai Undangan Federasi"
         },
         "fedimods": {
+            "debug-mode": "Mode Debug Mod Fedi",
+            "debug-mode-info": "Menyuntikkan alat pengembang (Eruda) ke dalam browser saat membuka Fedi Mods",
             "enter-amount-to-withdraw": "Masukkan jumlah yang akan ditarik dari {{fediMod}}",
             "login-failed": "Gagal masuk",
             "login-to": "Masuk ke",

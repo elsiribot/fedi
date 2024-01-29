@@ -38,7 +38,9 @@ const AddFediMod: React.FC = () => {
         try {
             const validUrl = new URL(
                 /^https?:\/\//.test(url) ? url : `https://${url}`,
-            ).toString()
+            )
+                .toString()
+                .toLowerCase()
 
             dispatch(
                 addCustomFediMod({
@@ -72,7 +74,9 @@ const AddFediMod: React.FC = () => {
                 try {
                     const validUrl = new URL(
                         /^https?:\/\//.test(url) ? url : `https://${url}`,
-                    ).toString()
+                    )
+                        .toString()
+                        .toLowerCase()
 
                     setIsValidUrl(true)
                     populateFieldsWithMetadata(validUrl)
@@ -88,18 +92,19 @@ const AddFediMod: React.FC = () => {
     const canSave = isValidUrl && !isFetching && title && url && federationId
 
     return (
-        <ScrollView
-            style={style.scrollContainer}
-            contentContainerStyle={style.contentContainer}
-            overScrollMode="auto">
-            <View style={style.container}>
+        <View style={style.container}>
+            <ScrollView
+                style={style.scrollContainer}
+                contentContainerStyle={style.contentContainer}
+                overScrollMode="auto">
                 <Input
                     value={url}
-                    onChangeText={text => setUrl(text.toLowerCase())}
+                    onChangeText={setUrl}
                     placeholder={t('words.url')}
                     label={<Text small>{t('words.URL')}</Text>}
                     inputContainerStyle={style.innerInputContainer}
                     containerStyle={style.inputContainer}
+                    keyboardType="url"
                 />
                 <Input
                     value={title}
@@ -116,6 +121,7 @@ const AddFediMod: React.FC = () => {
                     label={<Text small>{t('words.icon')}</Text>}
                     inputContainerStyle={style.innerInputContainer}
                     containerStyle={style.inputContainer}
+                    keyboardType="url"
                     rightIcon={
                         <Image
                             source={
@@ -128,6 +134,8 @@ const AddFediMod: React.FC = () => {
                     }
                     disabled={isFetching}
                 />
+            </ScrollView>
+            <View>
                 <Button
                     style={style.button}
                     disabled={!canSave}
@@ -136,7 +144,7 @@ const AddFediMod: React.FC = () => {
                     {t('words.save')}
                 </Button>
             </View>
-        </ScrollView>
+        </View>
     )
 }
 
@@ -147,15 +155,14 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         contentContainer: {
             flexGrow: 1,
+            gap: theme.spacing.lg,
+        },
+        container: {
+            flex: 1,
             paddingTop: theme.spacing.lg,
             paddingLeft: insets.left + theme.spacing.lg,
             paddingRight: insets.right + theme.spacing.lg,
             paddingBottom: Math.max(insets.bottom, theme.spacing.lg),
-        },
-        container: {
-            flex: 1,
-            flexDirection: 'column',
-            gap: theme.spacing.lg,
         },
         innerInputContainer: {
             marginTop: theme.spacing.xs,

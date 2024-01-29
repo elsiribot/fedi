@@ -11,7 +11,7 @@ import { useMonitorChatConnections } from '@fedi/common/hooks/chat'
 import { selectActiveFederation } from '@fedi/common/redux'
 
 import { fedimint } from './bridge'
-import AddFediModHeader from './components/feature/admin/AddFediMod'
+import AddFediModHeader from './components/feature/admin/AddFediModHeader'
 import FediModSettingsHeader from './components/feature/admin/FediModSettingsHeader'
 import SettingsHeader from './components/feature/admin/SettingsHeader'
 import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'

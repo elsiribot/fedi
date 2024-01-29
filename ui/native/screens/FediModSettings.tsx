@@ -37,38 +37,45 @@ const FediModSettings: React.FC = () => {
     }
 
     return (
-        <ScrollView
-            style={style.scrollContainer}
-            contentContainerStyle={style.contentContainer}
-            overScrollMode="auto">
-            <View style={style.container}>
+        <View style={style.container}>
+            <ScrollView
+                style={style.scrollContainer}
+                contentContainerStyle={style.contentContainer}
+                overScrollMode="auto">
                 {customFediMods.length > 0 ? (
-                    <View>
-                        {customFediMods.map(fediMod => (
-                            <View key={fediMod.id} style={style.fediMod}>
-                                <Image
-                                    style={style.iconImage}
-                                    source={
-                                        fediMod.imageUrl
-                                            ? {
-                                                  uri: fediMod.imageUrl,
-                                              }
-                                            : FediModImages.default
-                                    }
-                                    resizeMode="contain"
-                                />
+                    <>
+                        <Text style={style.label}>
+                            {t('feature.fedimods.your-mods')}
+                        </Text>
+                        <View>
+                            {customFediMods.map(fediMod => (
+                                <View key={fediMod.id} style={style.fediMod}>
+                                    <Image
+                                        style={style.iconImage}
+                                        source={
+                                            fediMod.imageUrl
+                                                ? {
+                                                      uri: fediMod.imageUrl,
+                                                  }
+                                                : FediModImages.default
+                                        }
+                                        resizeMode="contain"
+                                    />
 
-                                <View style={style.fediModText}>
-                                    <Text>{fediMod.title}</Text>
-                                    <Text small>{fediMod.url}</Text>
+                                    <View style={style.fediModText}>
+                                        <Text>{fediMod.title}</Text>
+                                        <Text small>{fediMod.url}</Text>
+                                    </View>
+                                    <Pressable
+                                        onPress={() =>
+                                            removeFediMod(fediMod.id)
+                                        }>
+                                        <SvgImage name="Close" size={24} />
+                                    </Pressable>
                                 </View>
-                                <Pressable
-                                    onPress={() => removeFediMod(fediMod.id)}>
-                                    <SvgImage name="Close" />
-                                </Pressable>
-                            </View>
-                        ))}
-                    </View>
+                            ))}
+                        </View>
+                    </>
                 ) : (
                     <View style={style.empty}>
                         <Pressable
@@ -78,11 +85,11 @@ const FediModSettings: React.FC = () => {
                         <Text>{t('feature.fedimods.add-mods-homescreen')}</Text>
                     </View>
                 )}
-            </View>
+            </ScrollView>
             <Button onPress={() => navigation.navigate('AddFediMod')}>
                 {t('feature.fedimods.add-a-mod')}
             </Button>
-        </ScrollView>
+        </View>
     )
 }
 
@@ -93,15 +100,16 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         contentContainer: {
             flexGrow: 1,
-            paddingTop: theme.spacing.lg,
-            paddingLeft: insets.left + theme.spacing.lg,
-            paddingRight: insets.right + theme.spacing.lg,
-            paddingBottom: Math.max(insets.bottom, theme.spacing.lg),
-            gap: theme.spacing.md,
+            gap: theme.spacing.lg,
         },
         container: {
             flex: 1,
             flexDirection: 'column',
+            gap: theme.spacing.md,
+            paddingTop: theme.spacing.lg,
+            paddingLeft: insets.left + theme.spacing.lg,
+            paddingRight: insets.right + theme.spacing.lg,
+            paddingBottom: Math.max(insets.bottom, theme.spacing.lg),
         },
         empty: {
             flex: 1,
@@ -126,6 +134,9 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             height: 32,
             overflow: 'hidden',
             borderRadius: 8,
+        },
+        label: {
+            color: theme.colors.darkGrey,
         },
     })
 

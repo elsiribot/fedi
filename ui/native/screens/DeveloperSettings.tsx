@@ -21,6 +21,8 @@ import {
     setShowFiatTxnAmounts,
     selectStabilityPoolCycleStartPrice,
     refreshActiveStabilityPool,
+    selectFediModDebugMode,
+    setFediModDebugMode,
 } from '@fedi/common/redux'
 import {
     changeSelectedFiatCurrency,
@@ -66,6 +68,7 @@ const DeveloperSettings: React.FC<Props> = () => {
         GuardianStatus[]
     >([])
     const selectedFiatCurrency = useAppSelector(selectCurrency)
+    const fediModDebugMode = useAppSelector(selectFediModDebugMode)
     const onchainDepositsEnabled = useAppSelector(selectOnchainDepositsEnabled)
     const stableBalanceEnabled = useAppSelector(selectStableBalanceEnabled)
     const showFiatTxnAmounts = useAppSelector(selectShowFiatTxnAmounts)
@@ -171,6 +174,21 @@ const DeveloperSettings: React.FC<Props> = () => {
                         onValueChange={value => {
                             fedimint.setSensitiveLog(value)
                             setIsSensitiveLogging(value)
+                        }}
+                    />
+                </View>
+            </SettingsSection>
+            <SettingsSection title={t('feature.fedimods.debug-mode')}>
+                <View style={styles(theme).switchWrapper}>
+                    <View style={styles(theme).switchLabelContainer}>
+                        <Text small style={styles(theme).switchLabel}>
+                            {t('feature.fedimods.debug-mode-info')}
+                        </Text>
+                    </View>
+                    <Switch
+                        value={fediModDebugMode}
+                        onValueChange={value => {
+                            reduxDispatch(setFediModDebugMode(value))
                         }}
                     />
                 </View>

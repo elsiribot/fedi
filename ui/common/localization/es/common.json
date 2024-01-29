@@ -330,6 +330,8 @@
             "scan-federation-invite": "Escanear la invitación a una Federación"
         },
         "fedimods": {
+            "debug-mode": "Modo de depuración de Fedi Mod",
+            "debug-mode-info": "Incorpora una herramienta de desarrollo (Eruda) en el navegador al abrir Fedi Mods",
             "enter-amount-to-withdraw": "Introduce el monto que deseas retirar de {{fediMod}}",
             "login-failed": "Error de inicio de sesión",
             "login-to": "Iniciar sesión en",
