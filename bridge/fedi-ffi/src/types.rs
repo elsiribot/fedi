@@ -33,7 +33,6 @@ pub struct RpcFederation {
     pub name: String,
     pub invite_code: String,
     pub meta: BTreeMap<String, String>,
-    pub social_recovery_active: bool,
     #[ts(type = "Record<string, {url: string, name: string}>")]
     pub nodes: BTreeMap<RpcPeerId, PeerUrl>,
     pub version: u32,
@@ -128,7 +127,6 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
         invite_code,
         meta,
         nodes,
-        social_recovery_active: false,
         version: 2,
         client_config: Some(RpcJsonClientConfig {
             global: client_config_json.global,
