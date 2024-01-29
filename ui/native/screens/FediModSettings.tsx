@@ -47,7 +47,7 @@ const FediModSettings: React.FC = () => {
                         <Text style={style.label}>
                             {t('feature.fedimods.your-mods')}
                         </Text>
-                        <View>
+                        <View style={style.fediModsContainer}>
                             {customFediMods.map(fediMod => (
                                 <View key={fediMod.id} style={style.fediMod}>
                                     <Image
@@ -119,12 +119,14 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             alignItems: 'center',
             justifyContent: 'center',
         },
+        fediModsContainer: {
+            gap: theme.spacing.lg,
+        },
         fediMod: {
             flexDirection: 'row',
             alignItems: 'center',
-            gap: theme.spacing.sm,
+            gap: theme.spacing.md,
             justifyContent: 'space-between',
-            marginBottom: theme.spacing.md,
         },
         fediModText: {
             flex: 1,
