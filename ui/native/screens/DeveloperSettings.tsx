@@ -2,27 +2,17 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Switch, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    ActivityIndicator,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    View,
-} from 'react-native'
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 
 import {
     changeAuthenticatedGuardian,
-    removeCustomFediMod,
     resetAuthenticatedMember,
     resetFederationChatState,
     selectActiveFederation,
-    selectFederationCustomFediMods,
-    selectFediModDebugMode,
     selectOnchainDepositsEnabled,
     setChatGroups,
     setChatMembersSeen,
     setChatMessages,
-    setFediModDebugMode,
     setOnchainDepositsEnabled,
     selectStableBalanceEnabled,
     setStableBalanceEnabled,
@@ -31,6 +21,8 @@ import {
     setShowFiatTxnAmounts,
     selectStabilityPoolCycleStartPrice,
     refreshActiveStabilityPool,
+    selectFediModDebugMode,
+    setFediModDebugMode,
 } from '@fedi/common/redux'
 import {
     changeSelectedFiatCurrency,
@@ -46,9 +38,7 @@ import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
-import { AddCustomFediModDialog } from '../components/feature/developer-settings/AddCustomFediModDialog'
 import CheckBox from '../components/ui/CheckBox'
-import SvgImage from '../components/ui/SvgImage'
 import { version } from '../package.json'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
@@ -72,15 +62,12 @@ const DeveloperSettings: React.FC<Props> = () => {
         i18n.language,
     )
     const [gateways, setGateways] = useState<LightningGateway[]>([])
-    const [isAddingCustomFediMod, setIsAddingCustomFediMod] =
-        useState<boolean>(false)
     const [isSharingLogs, setIsSharingLogs] = useState(false)
     const [isSensitiveLogging, setIsSensitiveLogging] = useState<boolean>(false)
     const [guardianOnlineStatus, setGuardianOnlineStatus] = useState<
         GuardianStatus[]
     >([])
     const selectedFiatCurrency = useAppSelector(selectCurrency)
-    const customFediMods = useAppSelector(selectFederationCustomFediMods)
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
     const onchainDepositsEnabled = useAppSelector(selectOnchainDepositsEnabled)
     const stableBalanceEnabled = useAppSelector(selectStableBalanceEnabled)
@@ -156,17 +143,6 @@ const DeveloperSettings: React.FC<Props> = () => {
         setIsSharingLogs(false)
     }
 
-    const removeFediMod = (fediModId: string) => {
-        if (!activeFederation) return
-        reduxDispatch(
-            removeCustomFediMod({
-                federationId: activeFederation.id,
-                fediModId,
-            }),
-        )
-        toast?.show(t('feature.fedimods.custom-fedimod-removed'), 3000)
-    }
-
     useEffect(() => {
         i18n.changeLanguage(selectedLanguage)
     }, [i18n, selectedLanguage])
@@ -202,32 +178,9 @@ const DeveloperSettings: React.FC<Props> = () => {
                     />
                 </View>
             </SettingsSection>
-            <SettingsSection title={t('feature.fedimods.custom-fedimods')}>
-                {customFediMods.map(fediMod => (
-                    <View key={fediMod.id} style={styles(theme).fediMod}>
-                        <View>
-                            <Text>{fediMod.title}</Text>
-                            <Text small>{fediMod.url}</Text>
-                        </View>
-                        <Pressable onPress={() => removeFediMod(fediMod.id)}>
-                            <SvgImage name="Close" />
-                        </Pressable>
-                    </View>
-                ))}
-                <Button
-                    title={t('feature.fedimods.add-custom-fedimod')}
-                    containerStyle={styles(theme).buttonContainer}
-                    onPress={() => setIsAddingCustomFediMod(true)}
-                />
-                <AddCustomFediModDialog
-                    isVisible={isAddingCustomFediMod}
-                    onClose={() => setIsAddingCustomFediMod(false)}
-                />
+            <SettingsSection title={t('feature.fedimods.debug-mode')}>
                 <View style={styles(theme).switchWrapper}>
                     <View style={styles(theme).switchLabelContainer}>
-                        <Text caption style={styles(theme).switchLabel}>
-                            {t('feature.fedimods.debug-mode')}
-                        </Text>
                         <Text small style={styles(theme).switchLabel}>
                             {t('feature.fedimods.debug-mode-info')}
                         </Text>

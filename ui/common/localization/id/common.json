@@ -330,18 +330,9 @@
             "scan-federation-invite": "Pindai Undangan Federasi"
         },
         "fedimods": {
-            "add-custom-fedimod": "Tambahkan Mod Fedi khusus",
-            "boost-this-post": "Tingkatkan postingan ini di {{fediMod}}?",
-            "custom-fedimod-added": "Mod Fedi Kustom ditambahkan",
-            "custom-fedimod-removed": "Mod Fedi Kustom dihapus",
-            "custom-fedimods": "Mod Fedi Kustom",
             "debug-mode": "Mode Debug Mod Fedi",
             "debug-mode-info": "Menyuntikkan alat pengembang (Eruda) ke dalam browser saat membuka Fedi Mods",
             "enter-amount-to-withdraw": "Masukkan jumlah yang akan ditarik dari {{fediMod}}",
-            "enter-valid-url": "Silakan masukkan url yang valid (http:// atau https://)",
-            "fedimod-icon": "Ikon Mod Fedi",
-            "fedimod-title": "Judul Mod Fedi",
-            "fedimod-url": "URL Mod Fedi",
             "login-failed": "Gagal masuk",
             "login-to": "Masuk ke",
             "payment-request": "Permintaan pembayaran dari {{fediMod}}",
