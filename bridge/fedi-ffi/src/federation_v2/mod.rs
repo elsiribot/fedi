@@ -68,9 +68,9 @@ use self::dev::{
     override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
 };
 use super::constants::{
-    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, ONE_WEEK, PAY_INVOICE_TIMEOUT,
-    REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE, XMPP_CHILD_ID,
-    XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
+    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE, ONE_WEEK,
+    PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE,
+    WALLET_OPERATION_TYPE, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
 };
 use super::event::{Event, EventSink, TypedEventExt};
 use super::social::{
@@ -91,7 +91,7 @@ use crate::types::{
     RpcPayAddressResponse, RpcStabilityPoolTransactionState, RpcTransaction,
     RpcTransactionDirection, WithdrawalDetails,
 };
-use crate::utils::{display_currency, to_unix_time, unix_now};
+use crate::utils::{ceil_division, display_currency, to_unix_time, unix_now};
 pub const GUARDIAN_STATUS_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -590,19 +590,25 @@ impl FederationV2 {
         Ok(())
     }
 
-    /// Check whether lightning invoice is safe to pay
-    ///
-    /// TODO: should we check if our balance exceeds it?
-    pub async fn can_pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<()> {
+    /// Pay lightning invoice
+    pub async fn pay_invoice(
+        &self,
+        invoice: &Bolt11Invoice,
+        fedi_fee_ppm: u64,
+    ) -> Result<RpcPayInvoiceResponse> {
+        self.override_active_gateway().await?;
+
         // Has an amount
-        match invoice.amount_milli_satoshis() {
+        let _fedi_fee = match invoice.amount_milli_satoshis() {
             Some(amount) => {
-                if amount > self.get_balance().await.msats {
+                let fedi_fee = ceil_division(amount * fedi_fee_ppm, MILLION);
+                if amount + fedi_fee > self.get_balance().await.msats {
                     bail!("Insufficient balance")
                 }
+                fedi_fee
             }
             None => bail!("Invoice is missing amount"),
-        }
+        };
 
         // Same network
         if self.get_network() != invoice.network() {
@@ -612,15 +618,6 @@ impl FederationV2 {
                 display_currency(invoice.currency())
             ))
         }
-
-        Ok(())
-    }
-
-    /// Pay lightning invoice
-    pub async fn pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<RpcPayInvoiceResponse> {
-        self.override_active_gateway().await?;
-
-        self.can_pay_invoice(invoice).await?;
 
         let _federation_id = self.federation_id();
         let OutgoingLightningPayment { payment_type, .. } = self
@@ -641,6 +638,7 @@ impl FederationV2 {
         &self,
         address: Address,
         amount: bitcoin::Amount,
+        fedi_fee_ppm: u64,
     ) -> Result<RpcPayAddressResponse> {
         let network_fees = self
             .client
@@ -648,8 +646,10 @@ impl FederationV2 {
             .get_withdraw_fees(address.clone(), amount)
             .await?;
 
-        let est_total_spend = network_fees.amount() + amount;
-        if est_total_spend.to_sat() * 1000 > self.get_balance().await.msats {
+        let amount_msat = amount.to_sat() * 1000;
+        let fedi_fee = ceil_division(amount_msat * fedi_fee_ppm, MILLION);
+        let est_total_spend = amount_msat + fedi_fee + (network_fees.amount().to_sat() * 1000);
+        if est_total_spend > self.get_balance().await.msats {
             bail!("Insufficient funds");
         }
 
@@ -1111,8 +1111,13 @@ impl FederationV2 {
     }
 
     /// Generate ecash
-    pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
-        if amount > self.get_balance().await {
+    pub async fn generate_ecash(
+        &self,
+        amount: Amount,
+        fedi_fee_ppm: u64,
+    ) -> Result<RpcGenerateEcashResponse> {
+        let fedi_fee = ceil_division(amount.msats * fedi_fee_ppm, MILLION);
+        if amount.msats + fedi_fee > self.get_balance().await.msats {
             bail!("Insufficient funds");
         }
 
@@ -1911,8 +1916,13 @@ impl FederationV2 {
     /// is accepted, the deposit is staged (pending). When the next
     /// cycle turnover occurs, staged seeks are processed in order
     /// to produce locks.
-    pub async fn stability_pool_deposit_to_seek(&self, amount: Amount) -> Result<OperationId> {
-        if amount > self.get_balance().await {
+    pub async fn stability_pool_deposit_to_seek(
+        &self,
+        amount: Amount,
+        fedi_fee_ppm: u64,
+    ) -> Result<OperationId> {
+        let fedi_fee = ceil_division(amount.msats * fedi_fee_ppm, MILLION);
+        if amount.msats + fedi_fee > self.get_balance().await.msats {
             bail!("Insufficient funds");
         }
 

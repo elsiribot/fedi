@@ -28,3 +28,11 @@ pub fn to_unix_time(system_time: SystemTime) -> anyhow::Result<u64> {
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_secs())?)
 }
+
+pub fn ceil_division(dividend: u64, divisor: u64) -> u64 {
+    if dividend % divisor == 0 {
+        dividend / divisor
+    } else {
+        dividend / divisor + 1
+    }
+}

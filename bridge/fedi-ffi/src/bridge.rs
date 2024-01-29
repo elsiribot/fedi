@@ -13,7 +13,7 @@ use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::api::{DynGlobalApi, InviteCode as InviteCodeV2, WsFederationApi};
 use fedimint_core::config::ClientConfig;
-use fedimint_core::core::OperationId;
+use fedimint_core::core::{ModuleKind, OperationId};
 use fedimint_core::encoding::Decodable;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::CommonModuleInit;
@@ -40,7 +40,7 @@ use crate::error::{get_error_code, ErrorCode};
 use crate::event::SocialRecoveryEvent;
 use crate::federation_v2::{self, FederationV2};
 use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
-use crate::storage::{AppState, FederationInfo};
+use crate::storage::{AppState, FederationInfo, ModuleFediFeeSchedule};
 use crate::types::{
     GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
     RpcLightningGateway, RpcPayAddressResponse, RpcReturningMemberStatus,
@@ -83,9 +83,13 @@ impl MultiFederation {
         }
     }
 
-    pub async fn pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<RpcPayInvoiceResponse> {
+    pub async fn pay_invoice(
+        &self,
+        invoice: &Bolt11Invoice,
+        fedi_fee_ppm: u64,
+    ) -> Result<RpcPayInvoiceResponse> {
         match self {
-            Self::V2(v2) => v2.pay_invoice(&invoice.clone()).await,
+            Self::V2(v2) => v2.pay_invoice(&invoice.clone(), fedi_fee_ppm).await,
         }
     }
 
@@ -93,10 +97,11 @@ impl MultiFederation {
         &self,
         address: Address,
         amount: bitcoin::Amount,
+        fedi_fee_ppm: u64,
     ) -> Result<RpcPayAddressResponse> {
         info!("pay address amount is {}", amount);
         match self {
-            Self::V2(v2) => v2.pay_address(address, amount).await,
+            Self::V2(v2) => v2.pay_address(address, amount, fedi_fee_ppm).await,
         }
     }
 
@@ -130,9 +135,13 @@ impl MultiFederation {
         }
     }
 
-    pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
+    pub async fn generate_ecash(
+        &self,
+        amount: Amount,
+        fedi_fee_ppm: u64,
+    ) -> Result<RpcGenerateEcashResponse> {
         match self {
-            Self::V2(v2) => v2.generate_ecash(amount).await,
+            Self::V2(v2) => v2.generate_ecash(amount, fedi_fee_ppm).await,
         }
     }
 
@@ -304,9 +313,16 @@ impl MultiFederation {
         }
     }
 
-    pub async fn stability_pool_deposit_to_seek(&self, amount: Amount) -> Result<OperationId> {
+    pub async fn stability_pool_deposit_to_seek(
+        &self,
+        amount: Amount,
+        fedi_fee_ppm: u64,
+    ) -> Result<OperationId> {
         match self {
-            MultiFederation::V2(v2) => v2.stability_pool_deposit_to_seek(amount).await,
+            MultiFederation::V2(v2) => {
+                v2.stability_pool_deposit_to_seek(amount, fedi_fee_ppm)
+                    .await
+            }
         }
     }
 
@@ -592,7 +608,11 @@ impl Bridge {
         invoice: &Bolt11Invoice,
     ) -> Result<RpcPayInvoiceResponse> {
         let multi = self.get_multi(&federation_id.0).await?;
-        multi.pay_invoice(invoice).await
+        let fedi_fee_ppm = self
+            .get_federation_module_fee_schedule(federation_id, fedimint_ln_common::KIND)
+            .await?
+            .send_ppm;
+        multi.pay_invoice(invoice, fedi_fee_ppm).await
     }
 
     pub async fn pay_address(
@@ -602,7 +622,11 @@ impl Bridge {
         amount: bitcoin::Amount,
     ) -> Result<RpcPayAddressResponse> {
         let multi = self.get_multi(&federation_id.0).await?;
-        multi.pay_address(address, amount).await
+        let fedi_fee_ppm = self
+            .get_federation_module_fee_schedule(federation_id, fedimint_wallet_client::KIND)
+            .await?
+            .send_ppm;
+        multi.pay_address(address, amount, fedi_fee_ppm).await
     }
 
     pub async fn list_gateways(
@@ -641,7 +665,11 @@ impl Bridge {
         amount: RpcAmount,
     ) -> Result<RpcGenerateEcashResponse> {
         let multi = self.get_multi(&federation_id.0).await?;
-        multi.generate_ecash(amount.0).await
+        let fedi_fee_ppm = self
+            .get_federation_module_fee_schedule(federation_id, fedimint_mint_client::KIND)
+            .await?
+            .send_ppm;
+        multi.generate_ecash(amount.0, fedi_fee_ppm).await
     }
 
     pub async fn cancel_ecash(&self, federation_id: RpcFederationId, ecash: String) -> Result<()> {
@@ -681,6 +709,31 @@ impl Bridge {
             .word_iter()
             .map(|x| x.to_owned())
             .collect())
+    }
+
+    async fn get_federation_module_fee_schedule(
+        &self,
+        federation_id: RpcFederationId,
+        module: ModuleKind,
+    ) -> anyhow::Result<ModuleFediFeeSchedule> {
+        self.app_state
+            .with_read_lock(move |state| {
+                Box::pin(async move {
+                    state
+                        .joined_federations
+                        .get(&federation_id.0)
+                        .ok_or(anyhow!("Unknown federation"))
+                        .map(|fed_info| {
+                            fed_info
+                                .fedi_fee_schedule
+                                .modules
+                                .get(&module)
+                                .cloned()
+                                .ok_or(anyhow!("Unknown module"))
+                        })
+                })
+            })
+            .await?
     }
 
     /// Enable logging of potentially sensitive information.
@@ -1058,9 +1111,13 @@ impl Bridge {
         federation_id: RpcFederationId,
         amount: RpcAmount,
     ) -> Result<RpcOperationId> {
-        self.get_multi(&federation_id.0)
+        let multi = self.get_multi(&federation_id.0).await?;
+        let fedi_fee_ppm = self
+            .get_federation_module_fee_schedule(federation_id, stability_pool_client::common::KIND)
             .await?
-            .stability_pool_deposit_to_seek(amount.0)
+            .send_ppm;
+        multi
+            .stability_pool_deposit_to_seek(amount.0, fedi_fee_ppm)
             .await
             .map(Into::into)
     }
