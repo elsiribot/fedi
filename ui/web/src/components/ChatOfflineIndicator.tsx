@@ -8,7 +8,7 @@ const Indicator = styled('div', {
     backgroundColor: '#FCDDEC', // TODO: Replace with fuschia from theme when new colors are added
     color: theme.colors.primary,
     padding: '$xs $sm',
-    borderRadius: theme.space.md,
+    borderRadius: 8,
     display: 'flex',
     gap: theme.space.sm,
     alignItems: 'center',
@@ -21,7 +21,9 @@ export const ChatOfflineIndicator = () => {
     return (
         <Indicator>
             <CircularLoader size={16} />
-            <Text variant="small">{t('feature.chat.waiting-for-network')}</Text>
+            <Text variant="small" weight="medium">
+                {t('feature.chat.waiting-for-network')}
+            </Text>
         </Indicator>
     )
 }

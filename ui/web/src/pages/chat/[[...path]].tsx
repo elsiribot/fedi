@@ -2,16 +2,12 @@ import { useRouter } from 'next/router'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import {
-    useIsChatConnected,
-    useUpdateLastMessageSeen,
-} from '@fedi/common/hooks/chat'
+import { useUpdateLastMessageSeen } from '@fedi/common/hooks/chat'
 
 import { ChatBlock } from '../../components/ChatBlock'
 import { ChatGroupConversation } from '../../components/ChatGroupConversation'
 import { ChatMemberConversation } from '../../components/ChatMemberConversation'
 import { ChatNew } from '../../components/ChatNew'
-import { ChatOfflineIndicator } from '../../components/ChatOfflineIndicator'
 import { Redirect } from '../../components/Redirect'
 import { Text } from '../../components/Text'
 import { styled, theme } from '../../styles'
@@ -19,8 +15,6 @@ import { styled, theme } from '../../styles'
 function ChatPage() {
     const { t } = useTranslation()
     const { query, isReady } = useRouter()
-
-    const isConnected = useIsChatConnected()
 
     const [chatType, chatId] = Array.isArray(query.path)
         ? [query.path[0], query.path[1]]
@@ -43,11 +37,6 @@ function ChatPage() {
         isShowingContent = false
         content = (
             <Empty>
-                {!isConnected ? (
-                    <OfflineIndicatorContainer>
-                        <ChatOfflineIndicator />
-                    </OfflineIndicatorContainer>
-                ) : null}
                 <Message>{t('feature.chat.select-or-start')}</Message>
             </Empty>
         )
@@ -71,16 +60,6 @@ const Empty = styled('div', {
 
 const Message = styled(Text, {
     color: theme.colors.darkGrey,
-})
-
-const OfflineIndicatorContainer = styled('div', {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    padding: '$lg',
-    display: 'flex',
-    justifyContent: 'flex-end',
 })
 
 export default ChatPage
