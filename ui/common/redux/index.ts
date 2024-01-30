@@ -1,6 +1,5 @@
 import {
     EnhancedStore,
-    Store,
     UnsubscribeListener,
     createListenerMiddleware,
 } from '@reduxjs/toolkit'
