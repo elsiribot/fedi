@@ -4,11 +4,10 @@ import {
     commonMiddleware,
     commonReducers,
     initializeCommonStore,
-    selectLanguage,
 } from '@fedi/common/redux'
 
 import { fedimint } from '../lib/bridge'
-import i18n, { detectLanguage } from '../localization/i18n'
+import i18n from '../localization/i18n'
 import { asyncLocalStorage } from '../utils/localstorage'
 
 const reducer = combineReducers({ ...commonReducers })
@@ -28,16 +27,6 @@ export function initializeWebStore() {
         asyncLocalStorage,
         i18n,
     )
-
-    // Initialize i18n, change language on store updates
-    const initialLanguage = selectLanguage(store.getState())
-    if (initialLanguage) {
-        i18n.changeLanguage(initialLanguage)
-    } else {
-        detectLanguage().then(detectedLanguage => {
-            i18n.changeLanguage(detectedLanguage)
-        })
-    }
 
     return unsubscribe
 }

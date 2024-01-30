@@ -1,4 +1,5 @@
 import {
+    EnhancedStore,
     Store,
     UnsubscribeListener,
     createListenerMiddleware,
@@ -73,7 +74,11 @@ export function initializeCommonStore(
         dispatch,
         subscribe,
         getState,
-    }: Store<CommonState, AnyAction> & { dispatch: CommonDispatch },
+    }: EnhancedStore<
+        CommonState,
+        AnyAction,
+        ReturnType<typeof commonMiddleware>
+    >,
     fedimint: FedimintBridge,
     storage: StorageApi,
     i18n: I18n,
