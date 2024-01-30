@@ -203,14 +203,6 @@ impl TryFrom<lightning_invoice::Bolt11Invoice> for RpcInvoice {
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RpcBalanceInfo {
-    #[ts(type = "Record<string, number>")]
-    pub tiers: BTreeMap<u64, usize>,
-}
-
-#[derive(Debug, Serialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
 pub struct RpcPayInvoiceResponse {
     pub preimage: String,
 }
@@ -319,6 +311,7 @@ pub struct RpcTransaction {
     #[ts(type = "number")]
     pub created_at: u64,
     pub amount: RpcAmount,
+    pub fedi_fee: RpcAmount,
     pub direction: RpcTransactionDirection,
     pub notes: String,
     pub onchain_state: Option<RpcOnchainState>,

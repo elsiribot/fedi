@@ -57,10 +57,6 @@ export interface RecoveryStartEvent {
 
 export type RpcAmount = MSats
 
-export interface RpcBalanceInfo {
-    tiers: Record<string, number>
-}
-
 export interface RpcBitcoinDetails {
     address: string
     expiresAt: number
@@ -245,10 +241,6 @@ export interface RpcMethods {
         { federationId: RpcFederationId; address: string; sats: bigint },
         { txid: string },
     ]
-    balanceInfo: [
-        { federationId: RpcFederationId },
-        { tiers: Record<string, number> },
-    ]
     generateEcash: [
         { federationId: RpcFederationId; amount: RpcAmount },
         { ecash: string; cancelAt: number },
@@ -269,6 +261,7 @@ export interface RpcMethods {
             id: string
             createdAt: number
             amount: RpcAmount
+            fediFee: RpcAmount
             direction: RpcTransactionDirection
             notes: string
             onchainState: RpcOnchainState | null
@@ -456,6 +449,7 @@ export interface RpcTransaction {
     id: string
     createdAt: number
     amount: RpcAmount
+    fediFee: RpcAmount
     direction: RpcTransactionDirection
     notes: string
     onchainState: RpcOnchainState | null

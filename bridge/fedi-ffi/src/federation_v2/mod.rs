@@ -63,13 +63,14 @@ use stability_pool_client::{
 use tokio::sync::Mutex;
 use tracing::{error, info, warn};
 
+use self::db::OutstandingFediFeesKey;
 use self::dev::{
     override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
 };
 use super::constants::{
-    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MINT_OPERATION_TYPE, ONE_WEEK, PAY_INVOICE_TIMEOUT,
-    REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE, XMPP_CHILD_ID,
-    XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
+    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE, ONE_WEEK,
+    PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE,
+    WALLET_OPERATION_TYPE, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
 };
 use super::event::{Event, EventSink, TypedEventExt};
 use super::social::{
@@ -85,8 +86,8 @@ use crate::error::ErrorCode;
 use crate::event::RecoveryStartEvent;
 use crate::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
-    EcashReceiveMetadata, GuardianStatus, RpcBalanceInfo, RpcBitcoinDetails, RpcEcashInfo,
-    RpcFederationId, RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
+    EcashReceiveMetadata, GuardianStatus, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId,
+    RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
     RpcPayAddressResponse, RpcStabilityPoolTransactionState, RpcTransaction,
     RpcTransactionDirection, WithdrawalDetails,
 };
@@ -351,17 +352,13 @@ impl FederationV2 {
 
     /// Fetch balance
     pub async fn get_balance(&self) -> Amount {
-        self.wallet_summary().await.total_amount()
-    }
-
-    pub async fn balance_info(&self) -> RpcBalanceInfo {
-        let summary = self.wallet_summary().await;
-        RpcBalanceInfo {
-            tiers: summary
-                .iter()
-                .map(|(tier, count)| (tier.msats, count))
-                .collect(),
-        }
+        let mint_client = self.client.get_first_module::<MintClientModule>();
+        let mut dbtx = mint_client.db.begin_transaction_nc().await;
+        mint_client
+            .get_wallet_summary(&mut dbtx)
+            .await
+            .total_amount()
+            - self.get_outstanding_fedi_fees().await
     }
 
     pub async fn guardian_status(&self) -> anyhow::Result<Vec<GuardianStatus>> {
@@ -418,10 +415,13 @@ impl FederationV2 {
         Ok(guardians_status)
     }
 
-    async fn wallet_summary(&self) -> fedimint_core::TieredSummary {
-        let mint_client = self.client.get_first_module::<MintClientModule>();
-        let mut dbtx = mint_client.db.begin_transaction_nc().await;
-        mint_client.get_wallet_summary(&mut dbtx).await
+    async fn get_outstanding_fedi_fees(&self) -> Amount {
+        self.dbtx()
+            .await
+            .into_nc()
+            .get_value(&OutstandingFediFeesKey)
+            .await
+            .unwrap_or(Amount::ZERO)
     }
 
     /// Generate bitcoin address
@@ -495,6 +495,7 @@ impl FederationV2 {
                                 amount: RpcAmount(Amount::from_sats(
                                     data.btc_transaction.output[data.out_idx as usize].value,
                                 )),
+                                fedi_fee: RpcAmount(Amount::ZERO),
                                 direction: RpcTransactionDirection::Receive,
                                 notes: "".into(),
                                 onchain_state: RpcOnchainState::from_deposit_state(Some(
@@ -549,6 +550,7 @@ impl FederationV2 {
                                 amount: RpcAmount(Amount {
                                     msats: invoice.amount_milli_satoshis().unwrap(),
                                 }),
+                                fedi_fee: RpcAmount(Amount::ZERO),
                                 direction: RpcTransactionDirection::Receive,
                                 notes: "".into(),
                                 bitcoin: None,
@@ -588,14 +590,25 @@ impl FederationV2 {
         Ok(())
     }
 
-    /// Check whether lightning invoice is safe to pay
-    ///
-    /// TODO: should we check if our balance exceeds it?
-    pub async fn can_pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<()> {
+    /// Pay lightning invoice
+    pub async fn pay_invoice(
+        &self,
+        invoice: &Bolt11Invoice,
+        fedi_fee_ppm: u64,
+    ) -> Result<RpcPayInvoiceResponse> {
+        self.override_active_gateway().await?;
+
         // Has an amount
-        if invoice.amount_milli_satoshis().is_none() {
-            bail!("Invoice is missing amount")
-        }
+        let _fedi_fee = match invoice.amount_milli_satoshis() {
+            Some(amount) => {
+                let fedi_fee = (amount * fedi_fee_ppm).div_ceil(MILLION);
+                if amount + fedi_fee > self.get_balance().await.msats {
+                    bail!(ErrorCode::InsufficientBalance);
+                }
+                fedi_fee
+            }
+            None => bail!("Invoice is missing amount"),
+        };
 
         // Same network
         if self.get_network() != invoice.network() {
@@ -605,15 +618,6 @@ impl FederationV2 {
                 display_currency(invoice.currency())
             ))
         }
-
-        Ok(())
-    }
-
-    /// Pay lightning invoice
-    pub async fn pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<RpcPayInvoiceResponse> {
-        self.override_active_gateway().await?;
-
-        self.can_pay_invoice(invoice).await?;
 
         let _federation_id = self.federation_id();
         let OutgoingLightningPayment { payment_type, .. } = self
@@ -634,17 +638,25 @@ impl FederationV2 {
         &self,
         address: Address,
         amount: bitcoin::Amount,
+        fedi_fee_ppm: u64,
     ) -> Result<RpcPayAddressResponse> {
-        let fees = self
+        let network_fees = self
             .client
             .get_first_module::<WalletClientModule>()
             .get_withdraw_fees(address.clone(), amount)
             .await?;
 
+        let amount_msat = amount.to_sat() * 1000;
+        let fedi_fee = (amount_msat * fedi_fee_ppm).div_ceil(MILLION);
+        let est_total_spend = amount_msat + fedi_fee + (network_fees.amount().to_sat() * 1000);
+        if est_total_spend > self.get_balance().await.msats {
+            bail!(ErrorCode::InsufficientBalance);
+        }
+
         let operation_id = self
             .client
             .get_first_module::<WalletClientModule>()
-            .withdraw(address, amount, fees, ())
+            .withdraw(address, amount, network_fees, ())
             .await?;
         let mut updates = self
             .client
@@ -1099,7 +1111,16 @@ impl FederationV2 {
     }
 
     /// Generate ecash
-    pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
+    pub async fn generate_ecash(
+        &self,
+        amount: Amount,
+        fedi_fee_ppm: u64,
+    ) -> Result<RpcGenerateEcashResponse> {
+        let fedi_fee = (amount.msats * fedi_fee_ppm).div_ceil(MILLION);
+        if amount.msats + fedi_fee > self.get_balance().await.msats {
+            bail!(ErrorCode::InsufficientBalance);
+        }
+
         let cancel_time = fedimint_core::time::now() + ONE_WEEK;
         let (operation_id, notes) = self
             .client
@@ -1530,6 +1551,7 @@ impl FederationV2 {
                                     amount: RpcAmount(Amount {
                                         msats: invoice.amount_milli_satoshis().unwrap(),
                                     }),
+                                    fedi_fee: RpcAmount(Amount::ZERO),
                                     direction: RpcTransactionDirection::Send,
                                     notes,
                                     onchain_state: None,
@@ -1556,6 +1578,7 @@ impl FederationV2 {
                                         amount: RpcAmount(Amount {
                                             msats: invoice.amount_milli_satoshis().unwrap(),
                                         }),
+                                        fedi_fee: RpcAmount(Amount::ZERO),
                                         direction: RpcTransactionDirection::Receive,
                                         notes,
                                         onchain_state: None,
@@ -1588,6 +1611,7 @@ impl FederationV2 {
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
                                 amount: RpcAmount(amount),
+                                fedi_fee: RpcAmount(Amount::ZERO),
                                 direction: RpcTransactionDirection::Send,
                                 notes,
                                 onchain_state: None,
@@ -1616,6 +1640,7 @@ impl FederationV2 {
                                             StabilityPoolWithdrawalOperationState::WithdrawIdleAccepted(amount)) => RpcAmount(amount),
                                         _ => RpcAmount(Amount::ZERO),
                                     },
+                                    fedi_fee: RpcAmount(Amount::ZERO),
                                     direction: RpcTransactionDirection::Receive,
                                     notes,
                                     onchain_state: None,
@@ -1651,6 +1676,7 @@ impl FederationV2 {
                                             bitcoin: None,
                                             ln_state: None,
                                             amount: RpcAmount(mint_meta.amount),
+                                            fedi_fee: RpcAmount(Amount::ZERO),
                                             lightning: None,
                                             oob_state: None,
                                             onchain_withdrawal_details: None,
@@ -1672,6 +1698,7 @@ impl FederationV2 {
                                     bitcoin: None,
                                     ln_state: None,
                                     amount: RpcAmount(requested_amount),
+                                    fedi_fee: RpcAmount(Amount::ZERO),
                                     lightning: None,
                                     oob_state: self
                                         .get_client_operation_outcome(op.0.operation_id, op.1)
@@ -1718,6 +1745,7 @@ impl FederationV2 {
                                             )),
                                             _ => RpcAmount(Amount::ZERO),
                                         },
+                                        fedi_fee: RpcAmount(Amount::ZERO),
                                         lightning: None,
                                         oob_state: None,
                                         onchain_withdrawal_details: None,
@@ -1754,6 +1782,7 @@ impl FederationV2 {
                                         created_at: to_unix_time(op.0.creation_time)
                                             .expect("unix time should exist"),
                                         amount: rpc_amount,
+                                        fedi_fee: RpcAmount(Amount::ZERO),
                                         direction: RpcTransactionDirection::Send,
                                         notes,
                                         onchain_state,
@@ -1891,7 +1920,16 @@ impl FederationV2 {
     /// is accepted, the deposit is staged (pending). When the next
     /// cycle turnover occurs, staged seeks are processed in order
     /// to produce locks.
-    pub async fn stability_pool_deposit_to_seek(&self, amount: Amount) -> Result<OperationId> {
+    pub async fn stability_pool_deposit_to_seek(
+        &self,
+        amount: Amount,
+        fedi_fee_ppm: u64,
+    ) -> Result<OperationId> {
+        let fedi_fee = (amount.msats * fedi_fee_ppm).div_ceil(MILLION);
+        if amount.msats + fedi_fee > self.get_balance().await.msats {
+            bail!(ErrorCode::InsufficientBalance);
+        }
+
         let operation_id = self
             .client
             .get_first_module::<StabilityPoolClientModule>()

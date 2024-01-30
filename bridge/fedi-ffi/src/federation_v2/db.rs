@@ -2,7 +2,7 @@ use std::time::SystemTime;
 
 use fedimint_core::core::OperationId;
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::impl_db_record;
+use fedimint_core::{impl_db_record, Amount};
 
 #[repr(u8)]
 pub enum BridgeDbPrefix {
@@ -11,6 +11,7 @@ pub enum BridgeDbPrefix {
     InviteCode = 0xb3,
     LastBackupTimestamp = 0xb4,
     TransactionNote = 0xb7,
+    OutstandingFediFees = 0xb8,
 }
 
 #[derive(Debug, Decodable, Encodable)]
@@ -56,4 +57,13 @@ impl_db_record!(
     key = TransactionNotesKey,
     value = String,
     db_prefix = BridgeDbPrefix::TransactionNote,
+);
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct OutstandingFediFeesKey;
+
+impl_db_record!(
+    key = OutstandingFediFeesKey,
+    value = Amount,
+    db_prefix = BridgeDbPrefix::OutstandingFediFees,
 );
