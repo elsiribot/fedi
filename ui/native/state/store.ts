@@ -28,7 +28,12 @@ export type AppDispatch = typeof store.dispatch
 
 export function initializeNativeStore() {
     // Common initialization behavior
-    const unsubscribe = initializeCommonStore(store, fedimint, storage, i18n)
+    const unsubscribe = initializeCommonStore({
+        store,
+        fedimint,
+        storage,
+        i18n,
+    })
 
     // Whenever the app is brought back into the foreground, refresh prices.
     const changeSubscription = RNAppState.addEventListener('change', state => {

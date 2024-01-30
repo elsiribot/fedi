@@ -68,20 +68,23 @@ export const commonMiddleware = (
 /**
  * Sets up any initial redux behavior that is consistent across all platforms.
  */
-export function initializeCommonStore(
-    {
-        dispatch,
-        subscribe,
-        getState,
-    }: EnhancedStore<
+export function initializeCommonStore({
+    store: { dispatch, subscribe, getState },
+    fedimint,
+    storage,
+    i18n,
+    detectLanguage,
+}: {
+    store: EnhancedStore<
         CommonState,
         AnyAction,
         ReturnType<typeof commonMiddleware>
-    >,
-    fedimint: FedimintBridge,
-    storage: StorageApi,
-    i18n: I18n,
-) {
+    >
+    fedimint: FedimintBridge
+    storage: StorageApi
+    i18n: I18n
+    detectLanguage?: () => Promise<string>
+}) {
     // Fetch the latest prices immediately.
     dispatch(fetchCurrencyPrices()).catch(err => {
         log.warn('Failed initial currency price fetch', err)
@@ -137,7 +140,12 @@ export function initializeCommonStore(
     const unsubscribeInitialLang = subscribe(() => {
         const language = selectLanguage(getState())
 
-        if (language) i18n.changeLanguage(language)
+        if (detectLanguage) {
+            detectLanguage().then(detectedLanguage => {
+                if (!language) i18n.changeLanguage(detectedLanguage)
+                else i18n.changeLanguage(language)
+            })
+        } else if (language) i18n.changeLanguage(language)
 
         unsubscribeInitialLang()
     })

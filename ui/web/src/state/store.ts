@@ -7,7 +7,7 @@ import {
 } from '@fedi/common/redux'
 
 import { fedimint } from '../lib/bridge'
-import i18n from '../localization/i18n'
+import i18n, { detectLanguage } from '../localization/i18n'
 import { asyncLocalStorage } from '../utils/localstorage'
 
 const reducer = combineReducers({ ...commonReducers })
@@ -21,12 +21,13 @@ export type AppDispatch = typeof store.dispatch
 
 export function initializeWebStore() {
     // Common initialization behavior
-    const unsubscribe = initializeCommonStore(
+    const unsubscribe = initializeCommonStore({
         store,
         fedimint,
-        asyncLocalStorage,
+        storage: asyncLocalStorage,
         i18n,
-    )
+        detectLanguage,
+    })
 
     return unsubscribe
 }
