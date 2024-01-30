@@ -91,7 +91,7 @@ use crate::types::{
     RpcPayAddressResponse, RpcStabilityPoolTransactionState, RpcTransaction,
     RpcTransactionDirection, WithdrawalDetails,
 };
-use crate::utils::{ceil_division, display_currency, to_unix_time, unix_now};
+use crate::utils::{display_currency, to_unix_time, unix_now};
 pub const GUARDIAN_STATUS_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -601,7 +601,7 @@ impl FederationV2 {
         // Has an amount
         let _fedi_fee = match invoice.amount_milli_satoshis() {
             Some(amount) => {
-                let fedi_fee = ceil_division(amount * fedi_fee_ppm, MILLION);
+                let fedi_fee = (amount * fedi_fee_ppm).div_ceil(MILLION);
                 if amount + fedi_fee > self.get_balance().await.msats {
                     bail!(ErrorCode::InsufficientBalance);
                 }
@@ -647,7 +647,7 @@ impl FederationV2 {
             .await?;
 
         let amount_msat = amount.to_sat() * 1000;
-        let fedi_fee = ceil_division(amount_msat * fedi_fee_ppm, MILLION);
+        let fedi_fee = (amount_msat * fedi_fee_ppm).div_ceil(MILLION);
         let est_total_spend = amount_msat + fedi_fee + (network_fees.amount().to_sat() * 1000);
         if est_total_spend > self.get_balance().await.msats {
             bail!(ErrorCode::InsufficientBalance);
@@ -1116,7 +1116,7 @@ impl FederationV2 {
         amount: Amount,
         fedi_fee_ppm: u64,
     ) -> Result<RpcGenerateEcashResponse> {
-        let fedi_fee = ceil_division(amount.msats * fedi_fee_ppm, MILLION);
+        let fedi_fee = (amount.msats * fedi_fee_ppm).div_ceil(MILLION);
         if amount.msats + fedi_fee > self.get_balance().await.msats {
             bail!(ErrorCode::InsufficientBalance);
         }
@@ -1921,7 +1921,7 @@ impl FederationV2 {
         amount: Amount,
         fedi_fee_ppm: u64,
     ) -> Result<OperationId> {
-        let fedi_fee = ceil_division(amount.msats * fedi_fee_ppm, MILLION);
+        let fedi_fee = (amount.msats * fedi_fee_ppm).div_ceil(MILLION);
         if amount.msats + fedi_fee > self.get_balance().await.msats {
             bail!(ErrorCode::InsufficientBalance);
         }
