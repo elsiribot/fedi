@@ -425,12 +425,14 @@ impl FederationV2 {
     }
 
     /// Generate bitcoin address
-    pub async fn generate_address(&self) -> Result<String> {
+    pub async fn generate_address(&self, fedi_fee_ppm: u64) -> Result<String> {
         let expires_at = fedimint_core::time::now() + Duration::from_secs(86400 * 365);
         let (operation_id, address) = self
             .client
             .get_first_module::<WalletClientModule>()
             .get_deposit_address(expires_at, ())
+            .await?;
+        self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
             .await?;
 
         self.subscribe_deposit(operation_id, address.to_string(), expires_at)
@@ -445,6 +447,7 @@ impl FederationV2 {
         amount: RpcAmount,
         description: String,
         expiry_time: Option<u64>,
+        fedi_fee_ppm: u64,
     ) -> Result<RpcInvoice> {
         let (operation_id, invoice) = self
             .client
@@ -452,6 +455,8 @@ impl FederationV2 {
             .create_bolt11_invoice(amount.0, description, expiry_time, ())
             .await?;
 
+        self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
+            .await?;
         self.subscribe_invoice(operation_id, invoice.clone())
             .await?;
 
@@ -625,7 +630,7 @@ impl FederationV2 {
             .get_first_module::<LightningClientModule>()
             .pay_bolt11_invoice(invoice.to_owned(), ())
             .await?;
-        self.write_pending_operation_fedi_fee(
+        self.write_pending_send_fedi_fee(
             match payment_type {
                 PayType::Internal(operation_id) => operation_id,
                 PayType::Lightning(operation_id) => operation_id,
@@ -666,7 +671,7 @@ impl FederationV2 {
             .get_first_module::<WalletClientModule>()
             .withdraw(address, amount, network_fees, ())
             .await?;
-        self.write_pending_operation_fedi_fee(operation_id, Amount::from_msats(fedi_fee))
+        self.write_pending_send_fedi_fee(operation_id, Amount::from_msats(fedi_fee))
             .await?;
         let mut updates = self
             .client
@@ -1068,6 +1073,7 @@ impl FederationV2 {
         &self,
         ecash: OOBNotes,
         meta: EcashReceiveMetadata,
+        fedi_fee_ppm: u64,
     ) -> Result<Amount> {
         let amount = ecash.total_amount();
         // TODO: include metadata as 2nd argument
@@ -1076,16 +1082,22 @@ impl FederationV2 {
             .get_first_module::<MintClientModule>()
             .reissue_external_notes(ecash, meta)
             .await?;
+        self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
+            .await?;
         self.subscribe_to_ecash_reissue(operation_id).await?;
         Ok(amount)
     }
 
     /// Receive ecash
     /// TODO: user a better type than String
-    pub async fn receive_ecash(&self, ecash: String) -> Result<Amount> {
+    pub async fn receive_ecash(&self, ecash: String, fedi_fee_ppm: u64) -> Result<Amount> {
         let ecash = OOBNotes::from_str(&ecash)?;
         let amt = self
-            .receive_ecash_with_meta(ecash, EcashReceiveMetadata { internal: false })
+            .receive_ecash_with_meta(
+                ecash,
+                EcashReceiveMetadata { internal: false },
+                fedi_fee_ppm,
+            )
             .await?;
         Ok(amt)
     }
@@ -1137,13 +1149,13 @@ impl FederationV2 {
             .get_first_module::<MintClientModule>()
             .spend_notes(amount, ONE_WEEK, ())
             .await?;
-        self.write_pending_operation_fedi_fee(operation_id, fedi_fee)
+        self.write_pending_send_fedi_fee(operation_id, fedi_fee)
             .await?;
         self.subscribe_to_operation(operation_id).await?;
         let notes = if amount != notes.total_amount() {
-            // try to make change
+            // try to make change (exempt this from fedi app fee)
             timeout(REISSUE_ECASH_TIMEOUT, async {
-                self.receive_ecash_with_meta(notes, EcashReceiveMetadata { internal: true })
+                self.receive_ecash_with_meta(notes, EcashReceiveMetadata { internal: true }, 0)
                     .await
             })
             .await
@@ -1943,7 +1955,7 @@ impl FederationV2 {
             .get_first_module::<StabilityPoolClientModule>()
             .deposit_to_seek(amount)
             .await?;
-        self.write_pending_operation_fedi_fee(operation_id, fedi_fee)
+        self.write_pending_send_fedi_fee(operation_id, fedi_fee)
             .await?;
         let fed = self.clone();
         self.task_group
@@ -1980,11 +1992,14 @@ impl FederationV2 {
         &self,
         unlocked_amount: Amount,
         locked_bps: u32,
+        fedi_fee_ppm: u64,
     ) -> Result<OperationId> {
         let (operation_id, _) = self
             .client
             .get_first_module::<StabilityPoolClientModule>()
             .withdraw(unlocked_amount, locked_bps)
+            .await?;
+        self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
             .await?;
         let fed = self.clone();
         self.task_group
@@ -2029,7 +2044,10 @@ impl FederationV2 {
         }
     }
 
-    async fn write_pending_operation_fedi_fee(
+    /// We optimistically charge the fee from the send amount (since the amount
+    /// + fee must already be in the user's possession) and refund the fee
+    /// in case the operation ends up failing.
+    async fn write_pending_send_fedi_fee(
         &self,
         operation_id: OperationId,
         fedi_fee: Amount,
@@ -2046,11 +2064,43 @@ impl FederationV2 {
                                 .unwrap_or(Amount::ZERO);
                         dbtx.insert_entry(
                             &OperationFediFeeStatusKey(operation_id),
-                            &OperationFediFeeStatus::Pending(fedi_fee),
+                            &OperationFediFeeStatus::PendingSend { fedi_fee },
                         )
                         .await;
                         dbtx.insert_entry(&OutstandingFediFeesKey, &outstanding_fedi_fees)
                             .await;
+                        Ok::<(), anyhow::Error>(())
+                    })
+                },
+                Some(100),
+            )
+            .await
+            .map_err(|e| match e {
+                fedimint_core::db::AutocommitError::CommitFailed { last_error, .. } => last_error,
+                fedimint_core::db::AutocommitError::ClosureError { error, .. } => error,
+            })
+    }
+
+    /// We don't always know the amount to be received (in the case of
+    /// generate_address for example), and even if we do, the amount to be
+    /// received (from which the fee is to be debited) is not in the user's
+    /// possession until the operation completes. So for receives, we just
+    /// record the ppm, and when the operation succeeds, we debit the fee.
+    async fn write_pending_receive_fedi_fee_ppm(
+        &self,
+        operation_id: OperationId,
+        fedi_fee_ppm: u64,
+    ) -> anyhow::Result<()> {
+        self.client
+            .db()
+            .autocommit(
+                |dbtx, _| {
+                    Box::pin(async move {
+                        dbtx.insert_entry(
+                            &OperationFediFeeStatusKey(operation_id),
+                            &OperationFediFeeStatus::PendingReceive { fedi_fee_ppm },
+                        )
+                        .await;
                         Ok::<(), anyhow::Error>(())
                     })
                 },

@@ -62,9 +62,9 @@ impl MultiFederation {
         }
     }
 
-    pub async fn generate_address(&self) -> Result<String> {
+    pub async fn generate_address(&self, fedi_fee_ppm: u64) -> Result<String> {
         match self {
-            Self::V2(multi) => multi.generate_address().await,
+            Self::V2(multi) => multi.generate_address(fedi_fee_ppm).await,
         }
     }
 
@@ -73,11 +73,12 @@ impl MultiFederation {
         amount: RpcAmount,
         description: String,
         expiry_time: Option<u64>,
+        fedi_fee_ppm: u64,
     ) -> Result<RpcInvoice> {
         match self {
             Self::V2(multi) => {
                 multi
-                    .generate_invoice(amount, description, expiry_time)
+                    .generate_invoice(amount, description, expiry_time, fedi_fee_ppm)
                     .await
             }
         }
@@ -129,9 +130,9 @@ impl MultiFederation {
         }
     }
 
-    pub async fn receive_ecash(&self, ecash: String) -> Result<Amount> {
+    pub async fn receive_ecash(&self, ecash: String, fedi_fee_ppm: u64) -> Result<Amount> {
         match self {
-            Self::V2(v2) => v2.receive_ecash(ecash).await,
+            Self::V2(v2) => v2.receive_ecash(ecash, fedi_fee_ppm).await,
         }
     }
 
@@ -330,10 +331,11 @@ impl MultiFederation {
         &self,
         unlocked_amount: Amount,
         locked_bps: u32,
+        fedi_fee_ppm: u64,
     ) -> Result<OperationId> {
         match self {
             MultiFederation::V2(v2) => {
-                v2.stability_pool_withdraw(unlocked_amount, locked_bps)
+                v2.stability_pool_withdraw(unlocked_amount, locked_bps, fedi_fee_ppm)
                     .await
             }
         }
@@ -585,7 +587,11 @@ impl Bridge {
 
     pub async fn generate_address(&self, federation_id: RpcFederationId) -> Result<String> {
         let multi = self.get_multi(&federation_id.0).await?;
-        multi.generate_address().await
+        let fedi_fee_ppm = self
+            .get_federation_module_fee_schedule(federation_id, fedimint_wallet_client::KIND)
+            .await?
+            .receive_ppm;
+        multi.generate_address(fedi_fee_ppm).await
     }
 
     pub async fn generate_invoice(
@@ -597,8 +603,12 @@ impl Bridge {
         let multi = self.get_multi(&federation_id.0).await?;
         // FIXME: add this to RPC interface
         let expiry_time = None;
+        let fedi_fee_ppm = self
+            .get_federation_module_fee_schedule(federation_id, fedimint_ln_common::KIND)
+            .await?
+            .receive_ppm;
         multi
-            .generate_invoice(amount, description, expiry_time)
+            .generate_invoice(amount, description, expiry_time, fedi_fee_ppm)
             .await
     }
 
@@ -652,7 +662,14 @@ impl Bridge {
         ecash: String,
     ) -> Result<RpcAmount> {
         let multi = self.get_multi(&federation_id.0).await?;
-        multi.receive_ecash(ecash).await.map(RpcAmount)
+        let fedi_fee_ppm = self
+            .get_federation_module_fee_schedule(federation_id, fedimint_mint_client::KIND)
+            .await?
+            .receive_ppm;
+        multi
+            .receive_ecash(ecash, fedi_fee_ppm)
+            .await
+            .map(RpcAmount)
     }
 
     pub async fn validate_ecash(&self, ecash: String) -> Result<RpcEcashInfo> {
@@ -1128,9 +1145,13 @@ impl Bridge {
         unlocked_amount: RpcAmount,
         locked_bps: u32,
     ) -> Result<RpcOperationId> {
-        self.get_multi(&federation_id.0)
+        let multi = self.get_multi(&federation_id.0).await?;
+        let fedi_fee_ppm = self
+            .get_federation_module_fee_schedule(federation_id, stability_pool_client::common::KIND)
             .await?
-            .stability_pool_withdraw(unlocked_amount.0, locked_bps)
+            .receive_ppm;
+        multi
+            .stability_pool_withdraw(unlocked_amount.0, locked_bps, fedi_fee_ppm)
             .await
             .map(Into::into)
     }

@@ -661,9 +661,20 @@ impl From<ClientAccountInfo> for RpcStabilityPoolAccountInfo {
     }
 }
 
+/// We differentiate between "send" and "receive" because in the case of a send
+/// we optimistically charge the fee from the send amount (since the amount +
+/// fee must already be in the user's possession) and refund the fee in case the
+/// operation ends up failing. However, in the case of a receive, we don't
+/// always know the amount to be received (in the case of generate_address for
+/// example), and even if we do, the amount to be received (from which the fee
+/// is to be debited) is not in the user's possession until the
+/// operation completes. So for receives, we just record the ppm, and when the
+/// operation succeeds, we debit the fee.
 #[derive(Debug, Encodable, Decodable)]
 pub enum OperationFediFeeStatus {
-    Pending(Amount),
-    Success(Amount),
-    Failure(Amount),
+    PendingSend { fedi_fee: Amount },
+    PendingReceive { fedi_fee_ppm: u64 },
+    Success { fedi_fee: Amount },
+    FailedSend { fedi_fee: Amount },
+    FailedReceive { fedi_fee_ppm: u64 },
 }
