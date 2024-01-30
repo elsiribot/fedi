@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import Close from '@fedi/common/assets/svgs/close.svg'
+import Delete from '@fedi/common/assets/svgs/delete.svg'
 import {
     fetchChatGroupMembersList,
     removeAdminFromChatGroup,
@@ -70,7 +70,7 @@ export default function ChatBroadcastAdminSettings({
 
     return (
         <Container>
-            <Text>{t('feature.chat.admin-settings-instructions')}</Text>
+            <Text>{t('feature.chat.broadcast-admin-instructions')}</Text>
 
             {admins.length > 0 ? (
                 <AdminsContainer>
@@ -80,7 +80,7 @@ export default function ChatBroadcastAdminSettings({
                             <AdminUsername>{admin.username}</AdminUsername>
                             <IconButton
                                 size="md"
-                                icon={Close}
+                                icon={Delete}
                                 onClick={() => confirmRemoveAdmin(admin)}
                             />
                         </AdminUser>
@@ -88,6 +88,7 @@ export default function ChatBroadcastAdminSettings({
                 </AdminsContainer>
             ) : (
                 <EmptyContainer>
+                    <BubblesIcon>{'🫧'}</BubblesIcon>
                     <Text>{t('feature.chat.no-admins')}</Text>
                 </EmptyContainer>
             )}
@@ -108,7 +109,9 @@ const Container = styled('div', {
 const AdminsContainer = styled('div', {
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.space.sm,
+    gap: theme.space.lg,
+    maxHeight: 220,
+    overflowY: 'scroll',
 })
 
 const AdminUser = styled('div', {
@@ -124,10 +127,19 @@ const AdminUsername = styled(Text, {
 const EmptyContainer = styled('div', {
     display: 'flex',
     flexDirection: 'column',
+    gap: theme.space.lg,
     paddingTop: theme.space.lg,
     paddingBottom: theme.space.lg,
     border: `1px solid ${theme.colors.extraLightGrey}`,
     borderRadius: 12,
     color: theme.colors.grey,
     alignItems: 'center',
+})
+
+const BubblesIcon = styled('span', {
+    width: 48,
+    height: 48,
+    fontSize: 48,
+    lineHeight: '64.8px',
+    textAlign: 'center',
 })

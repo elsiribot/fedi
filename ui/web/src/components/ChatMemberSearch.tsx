@@ -1,40 +1,33 @@
+import Link from 'next/link'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import RoomIcon from '@fedi/common/assets/svgs/room.svg'
+import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import { useChatMemberSearch } from '@fedi/common/hooks/chat'
 import {
     fetchChatMembers,
     selectActiveFederationId,
+    selectAllChatMembers,
     selectChatConnectionOptions,
 } from '@fedi/common/redux'
-import { ChatMember } from '@fedi/common/types'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
+import { Avatar } from './Avatar'
 import { Icon } from './Icon'
 import { ShadowScroller } from './ShadowScroller'
 import { Text } from './Text'
 
 interface Props {
-    members: Array<ChatMember>
-    onClickNewGroup?: () => void
-    renderMember: (member: ChatMember) => React.ReactNode
-    renderUnknownResult?: (args: {
-        query: string
-        domain: string | undefined
-    }) => React.ReactNode
+    onClickNewGroup(): void
 }
 
-export const ChatMemberSearch: React.FC<Props> = ({
-    onClickNewGroup,
-    renderMember,
-    renderUnknownResult,
-    members,
-}: Props) => {
+export const ChatMemberSearch: React.FC<Props> = ({ onClickNewGroup }) => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const federationId = useAppSelector(selectActiveFederationId)
+    const members = useAppSelector(selectAllChatMembers)
     const connectionOptions = useAppSelector(selectChatConnectionOptions)
     const { query, setQuery, searchedMembers, isExactMatch } =
         useChatMemberSearch(members)
@@ -56,27 +49,41 @@ export const ChatMemberSearch: React.FC<Props> = ({
             </SearchHeader>
             <ShadowScroller>
                 <SearchResults>
-                    {typeof onClickNewGroup === 'function' && (
-                        <SearchButton onClick={onClickNewGroup}>
-                            <Icon icon={RoomIcon} />
-                            <Text weight="medium">
-                                {t('feature.chat.create-or-join-a-new-group')}
-                            </Text>
-                        </SearchButton>
-                    )}
+                    <SearchButton onClick={onClickNewGroup}>
+                        <Icon icon={RoomIcon} />
+                        <Text weight="medium">
+                            {t('feature.chat.create-or-join-a-new-group')}
+                        </Text>
+                    </SearchButton>
                     <div>
-                        {typeof onClickNewGroup === 'function' && (
-                            <SearchHeading>{t('words.members')}</SearchHeading>
+                        <SearchHeading>{t('words.members')}</SearchHeading>
+                        {searchedMembers.map(member => (
+                            <SearchButton
+                                as={Link}
+                                key={member.id}
+                                href={`/chat/member/${member.id}`}>
+                                <Avatar
+                                    id={member.id}
+                                    size="md"
+                                    name={member.username}
+                                />
+                                <Text variant="caption" weight="bold">
+                                    {member.username}
+                                </Text>
+                            </SearchButton>
+                        ))}
+                        {query && !isExactMatch && connectionOptions && (
+                            <SearchButton
+                                as={Link}
+                                href={`/chat/member/${query}@${connectionOptions.domain}`}>
+                                <Icon icon={SocialPeopleIcon} />
+                                <Text weight="medium">
+                                    {t('feature.chat.send-a-message-to', {
+                                        name: query,
+                                    })}
+                                </Text>
+                            </SearchButton>
                         )}
-                        {searchedMembers.map(renderMember)}
-                        {query &&
-                            !isExactMatch &&
-                            connectionOptions &&
-                            typeof renderUnknownResult === 'function' &&
-                            renderUnknownResult({
-                                query,
-                                domain: connectionOptions.domain,
-                            })}
                     </div>
                 </SearchResults>
             </ShadowScroller>
@@ -131,7 +138,7 @@ const SearchHeading = styled('div', {
     color: theme.colors.darkGrey,
 })
 
-export const SearchButton = styled('button', {
+const SearchButton = styled('button', {
     display: 'flex',
     width: '100%',
     minHeight: 48,

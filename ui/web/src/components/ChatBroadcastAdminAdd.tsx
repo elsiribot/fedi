@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
+import ChevronRight from '@fedi/common/assets/svgs/chevron-right.svg'
+import { useChatMemberSearch } from '@fedi/common/hooks/chat'
 import {
     addAdminToChatGroup,
     fetchChatGroupMembersList,
@@ -15,8 +16,9 @@ import { useAppDispatch, useAppSelector, useToast } from '../hooks'
 import { styled, theme } from '../styles'
 import { Avatar } from './Avatar'
 import { ChatGroupDialogState } from './ChatGroupConversation'
-import { ChatMemberSearch, SearchButton } from './ChatMemberSearch'
 import { Icon } from './Icon'
+import { IconButton } from './IconButton'
+import { Input } from './Input'
 import { Text } from './Text'
 
 export default function ChatBroadcastAdminAdd({
@@ -33,6 +35,9 @@ export default function ChatBroadcastAdminAdd({
     const federationId = useAppSelector(selectActiveFederationId)
 
     const [visitors, setVisitors] = useState<ChatMember[]>([])
+
+    const { query, setQuery, searchedMembers, isExactMatch } =
+        useChatMemberSearch(visitors)
 
     const confirmAddAdmin = async (member: ChatMember) => {
         if (
@@ -90,39 +95,23 @@ export default function ChatBroadcastAdminAdd({
 
     return (
         <Container>
-            <ChatMemberSearch
-                members={visitors}
-                renderMember={member => (
-                    <SearchButton
-                        key={member.id}
-                        onClick={() => selectMember(member)}>
-                        <Avatar
-                            id={member.id}
-                            size="md"
-                            name={member.username}
-                        />
-                        <Text variant="caption" weight="bold">
-                            {member.username}
-                        </Text>
-                    </SearchButton>
-                )}
-                renderUnknownResult={({ query, domain }) => (
-                    <SearchButton
-                        onClick={() =>
-                            selectMember({
-                                id: `${query}@${domain}`,
-                                username: query,
-                            } as ChatMember)
-                        }>
-                        <Icon icon={SocialPeopleIcon} />
-                        <Text weight="medium">
-                            {t('feature.chat.add-user-as-an-admin', {
-                                username: query,
-                            })}
-                        </Text>
-                    </SearchButton>
-                )}
+            <Input
+                label={t('feature.onboarding.enter-username')}
+                placeholder={t('words.username')}
+                value={query}
+                onChange={e => setQuery(e.target.value)}
             />
+            <MemberContainer>
+                {searchedMembers.map((member, i) => (
+                    <MemberItem key={i} onClick={() => selectMember(member)}>
+                        <MemberInfoWrapper>
+                            <Avatar id={member.id} name={member.username} />
+                            <Text weight="bold">{member.username}</Text>
+                        </MemberInfoWrapper>
+                        <Icon icon={ChevronRight} size="md" />
+                    </MemberItem>
+                ))}
+            </MemberContainer>
         </Container>
     )
 }
@@ -131,4 +120,33 @@ const Container = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     gap: theme.space.md,
+})
+
+const MemberContainer = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.space.sm,
+    maxHeight: 220,
+    overflowY: 'scroll',
+})
+
+const MemberItem = styled('button', {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: theme.space.md,
+    padding: theme.space.sm,
+    borderRadius: 1024,
+    cursor: 'pointer',
+    width: '100%',
+
+    '&:hover': {
+        backgroundColor: theme.colors.offWhite,
+    },
+})
+
+const MemberInfoWrapper = styled('div', {
+    display: 'flex',
+    gap: theme.space.md,
+    alignItems: 'center',
 })
