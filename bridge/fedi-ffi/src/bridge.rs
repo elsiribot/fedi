@@ -163,10 +163,11 @@ impl MultiFederation {
         }
     }
 
-    pub async fn save_xmpp_username(&self, username: &str) {
+    pub async fn save_xmpp_username(&self, username: &str) -> Result<()> {
         match self {
-            Self::V2(v2) => v2.save_xmpp_username(username).await,
+            Self::V2(v2) => v2.save_xmpp_username(username).await?,
         }
+        Ok(())
     }
 
     pub async fn upload_backup_file(
@@ -231,7 +232,7 @@ impl MultiFederation {
         match self {
             Self::V2(v2) => {
                 v2.update_transaction_notes(transaction_id.parse()?, notes)
-                    .await
+                    .await?
             }
         };
         Ok(())
@@ -1015,7 +1016,7 @@ impl Bridge {
         username: String,
     ) -> Result<()> {
         let multi = self.get_multi(&federation_id.0).await?;
-        multi.save_xmpp_username(&username).await;
+        multi.save_xmpp_username(&username).await?;
         multi.backup().await
     }
 

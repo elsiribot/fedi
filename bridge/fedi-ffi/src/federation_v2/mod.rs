@@ -1193,7 +1193,7 @@ impl FederationV2 {
     pub async fn save_restored_metadata(&self, metadata: Metadata) -> Result<()> {
         if let Ok(fedi_backup_metadata) = metadata.to_json_deserialized::<FediBackupMetadata>() {
             if let Some(username) = fedi_backup_metadata.username {
-                self.save_xmpp_username(&username).await;
+                self.save_xmpp_username(&username).await?;
             }
         };
         Ok(())
@@ -1392,7 +1392,7 @@ impl FederationV2 {
         // Hack to make sure recovery balance events have been processed
         fedimint_core::task::sleep(Duration::from_secs(15)).await;
         self.backup().await?;
-        self.save_last_backup_timestamp(now).await;
+        self.save_last_backup_timestamp(now).await?;
 
         info!("Finished periodic backup");
         Ok(())
@@ -1788,11 +1788,15 @@ impl FederationV2 {
             .collect()
     }
 
-    pub async fn update_transaction_notes(&self, transaction: OperationId, notes: String) {
+    pub async fn update_transaction_notes(
+        &self,
+        transaction: OperationId,
+        notes: String,
+    ) -> Result<()> {
         let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&TransactionNotesKey(transaction), &notes)
             .await;
-        dbtx.commit_tx().await;
+        dbtx.commit_tx_result().await
     }
 
     // Database
@@ -1801,21 +1805,21 @@ impl FederationV2 {
         self.dbtx().await.get_value(&XmppUsernameKey).await
     }
 
-    pub async fn save_xmpp_username(&self, username: &str) {
+    pub async fn save_xmpp_username(&self, username: &str) -> Result<()> {
         let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&XmppUsernameKey, &username.to_owned())
             .await;
-        dbtx.commit_tx().await;
+        dbtx.commit_tx_result().await
     }
 
     pub async fn get_last_backup_timestamp(&self) -> Option<SystemTime> {
         self.dbtx().await.get_value(&LastBackupTimestampKey).await
     }
 
-    pub async fn save_last_backup_timestamp(&self, timestamp: SystemTime) {
+    pub async fn save_last_backup_timestamp(&self, timestamp: SystemTime) -> Result<()> {
         let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&LastBackupTimestampKey, &timestamp).await;
-        dbtx.commit_tx().await;
+        dbtx.commit_tx_result().await
     }
 
     // FIXME this is busted in social recovery
