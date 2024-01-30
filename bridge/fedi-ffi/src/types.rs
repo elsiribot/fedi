@@ -5,6 +5,8 @@ use anyhow::anyhow;
 use bitcoin::secp256k1::ecdsa::Signature;
 use bitcoin::Network;
 use fedimint_core::config::{GlobalClientConfig, JsonWithKind, PeerUrl};
+use fedimint_core::encoding::{Decodable, Encodable};
+use fedimint_core::Amount;
 use fedimint_ln_client::pay::GatewayPayError;
 use fedimint_ln_client::{LnPayState, LnReceiveState};
 use fedimint_wallet_client::{BitcoinTransactionData, DepositState, WithdrawState};
@@ -657,4 +659,11 @@ impl From<ClientAccountInfo> for RpcStabilityPoolAccountInfo {
             is_fetched_from_server: value.is_fetched_from_server,
         }
     }
+}
+
+#[derive(Debug, Encodable, Decodable)]
+pub enum OperationFediFeeStatus {
+    Pending(Amount),
+    Success(Amount),
+    Failure(Amount),
 }

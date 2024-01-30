@@ -63,7 +63,7 @@ use stability_pool_client::{
 use tokio::sync::Mutex;
 use tracing::{error, info, warn};
 
-use self::db::OutstandingFediFeesKey;
+use self::db::{OperationFediFeeStatusKey, OutstandingFediFeesKey};
 use self::dev::{
     override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
 };
@@ -86,8 +86,8 @@ use crate::error::ErrorCode;
 use crate::event::RecoveryStartEvent;
 use crate::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
-    EcashReceiveMetadata, GuardianStatus, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId,
-    RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
+    EcashReceiveMetadata, GuardianStatus, OperationFediFeeStatus, RpcBitcoinDetails, RpcEcashInfo,
+    RpcFederationId, RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
     RpcPayAddressResponse, RpcStabilityPoolTransactionState, RpcTransaction,
     RpcTransactionDirection, WithdrawalDetails,
 };
@@ -599,7 +599,7 @@ impl FederationV2 {
         self.override_active_gateway().await?;
 
         // Has an amount
-        let _fedi_fee = match invoice.amount_milli_satoshis() {
+        let fedi_fee = match invoice.amount_milli_satoshis() {
             Some(amount) => {
                 let fedi_fee = (amount * fedi_fee_ppm).div_ceil(MILLION);
                 if amount + fedi_fee > self.get_balance().await.msats {
@@ -625,6 +625,14 @@ impl FederationV2 {
             .get_first_module::<LightningClientModule>()
             .pay_bolt11_invoice(invoice.to_owned(), ())
             .await?;
+        self.write_pending_operation_fedi_fee(
+            match payment_type {
+                PayType::Internal(operation_id) => operation_id,
+                PayType::Lightning(operation_id) => operation_id,
+            },
+            Amount::from_msats(fedi_fee),
+        )
+        .await?;
 
         let response = self
             .subscribe_to_ln_pay(payment_type, invoice.clone())
@@ -657,6 +665,8 @@ impl FederationV2 {
             .client
             .get_first_module::<WalletClientModule>()
             .withdraw(address, amount, network_fees, ())
+            .await?;
+        self.write_pending_operation_fedi_fee(operation_id, Amount::from_msats(fedi_fee))
             .await?;
         let mut updates = self
             .client
@@ -1116,8 +1126,8 @@ impl FederationV2 {
         amount: Amount,
         fedi_fee_ppm: u64,
     ) -> Result<RpcGenerateEcashResponse> {
-        let fedi_fee = (amount.msats * fedi_fee_ppm).div_ceil(MILLION);
-        if amount.msats + fedi_fee > self.get_balance().await.msats {
+        let fedi_fee = Amount::from_msats((amount.msats * fedi_fee_ppm).div_ceil(MILLION));
+        if amount + fedi_fee > self.get_balance().await {
             bail!(ErrorCode::InsufficientBalance);
         }
 
@@ -1126,6 +1136,8 @@ impl FederationV2 {
             .client
             .get_first_module::<MintClientModule>()
             .spend_notes(amount, ONE_WEEK, ())
+            .await?;
+        self.write_pending_operation_fedi_fee(operation_id, fedi_fee)
             .await?;
         self.subscribe_to_operation(operation_id).await?;
         let notes = if amount != notes.total_amount() {
@@ -1921,8 +1933,8 @@ impl FederationV2 {
         amount: Amount,
         fedi_fee_ppm: u64,
     ) -> Result<OperationId> {
-        let fedi_fee = (amount.msats * fedi_fee_ppm).div_ceil(MILLION);
-        if amount.msats + fedi_fee > self.get_balance().await.msats {
+        let fedi_fee = Amount::from_msats((amount.msats * fedi_fee_ppm).div_ceil(MILLION));
+        if amount + fedi_fee > self.get_balance().await {
             bail!(ErrorCode::InsufficientBalance);
         }
 
@@ -1930,6 +1942,8 @@ impl FederationV2 {
             .client
             .get_first_module::<StabilityPoolClientModule>()
             .deposit_to_seek(amount)
+            .await?;
+        self.write_pending_operation_fedi_fee(operation_id, fedi_fee)
             .await?;
         let fed = self.clone();
         self.task_group
@@ -2013,6 +2027,40 @@ impl FederationV2 {
                 self.event_sink.typed_event(&event_gen(state))
             }
         }
+    }
+
+    async fn write_pending_operation_fedi_fee(
+        &self,
+        operation_id: OperationId,
+        fedi_fee: Amount,
+    ) -> anyhow::Result<()> {
+        self.client
+            .db()
+            .autocommit(
+                |dbtx, _| {
+                    Box::pin(async move {
+                        let outstanding_fedi_fees = fedi_fee
+                            + dbtx
+                                .get_value(&OutstandingFediFeesKey)
+                                .await
+                                .unwrap_or(Amount::ZERO);
+                        dbtx.insert_entry(
+                            &OperationFediFeeStatusKey(operation_id),
+                            &OperationFediFeeStatus::Pending(fedi_fee),
+                        )
+                        .await;
+                        dbtx.insert_entry(&OutstandingFediFeesKey, &outstanding_fedi_fees)
+                            .await;
+                        Ok::<(), anyhow::Error>(())
+                    })
+                },
+                Some(100),
+            )
+            .await
+            .map_err(|e| match e {
+                fedimint_core::db::AutocommitError::CommitFailed { last_error, .. } => last_error,
+                fedimint_core::db::AutocommitError::ClosureError { error, .. } => error,
+            })
     }
 }
 

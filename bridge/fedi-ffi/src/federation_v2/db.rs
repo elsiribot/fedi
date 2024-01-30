@@ -4,6 +4,8 @@ use fedimint_core::core::OperationId;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_record, Amount};
 
+use crate::types::OperationFediFeeStatus;
+
 #[repr(u8)]
 pub enum BridgeDbPrefix {
     ClientConfig = 0xb1,
@@ -12,6 +14,7 @@ pub enum BridgeDbPrefix {
     LastBackupTimestamp = 0xb4,
     TransactionNote = 0xb7,
     OutstandingFediFees = 0xb8,
+    OperationFediFeeStatus = 0xb9,
 }
 
 #[derive(Debug, Decodable, Encodable)]
@@ -66,4 +69,13 @@ impl_db_record!(
     key = OutstandingFediFeesKey,
     value = Amount,
     db_prefix = BridgeDbPrefix::OutstandingFediFees,
+);
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct OperationFediFeeStatusKey(pub OperationId);
+
+impl_db_record!(
+    key = OperationFediFeeStatusKey,
+    value = OperationFediFeeStatus,
+    db_prefix = BridgeDbPrefix::OperationFediFeeStatus,
 );
