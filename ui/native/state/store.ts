@@ -10,6 +10,7 @@ import {
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
+import i18n from '../localization/i18n'
 import { storage } from '../utils/storage'
 
 const log = makeLog('native/state/store')
@@ -27,7 +28,7 @@ export type AppDispatch = typeof store.dispatch
 
 export function initializeNativeStore() {
     // Common initialization behavior
-    const unsubscribe = initializeCommonStore(store.dispatch, fedimint, storage)
+    const unsubscribe = initializeCommonStore(store, fedimint, storage, i18n)
 
     // Whenever the app is brought back into the foreground, refresh prices.
     const changeSubscription = RNAppState.addEventListener('change', state => {

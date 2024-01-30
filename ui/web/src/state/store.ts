@@ -23,9 +23,10 @@ export type AppDispatch = typeof store.dispatch
 export function initializeWebStore() {
     // Common initialization behavior
     const unsubscribe = initializeCommonStore(
-        store.dispatch,
+        store,
         fedimint,
         asyncLocalStorage,
+        i18n,
     )
 
     // Initialize i18n, change language on store updates
