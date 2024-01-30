@@ -159,7 +159,13 @@ impl MultiFederation {
 
     pub async fn save_xmpp_username(&self, username: &str) -> Result<()> {
         match self {
-            Self::V2(v2) => v2.save_xmpp_username(username).await?,
+            Self::V2(v2) => {
+                v2.save_xmpp_username(username).await?;
+                // after recovering we will do backup always
+                if !v2.recovering {
+                    v2.backup().await?;
+                }
+            }
         }
         Ok(())
     }
@@ -594,7 +600,7 @@ impl Bridge {
         &self,
         federation_id: RpcFederationId,
     ) -> anyhow::Result<Vec<GuardianStatus>> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         let status = multi.guardian_status().await?;
         Ok(status)
     }
@@ -641,7 +647,7 @@ impl Bridge {
         &self,
         federation_id: RpcFederationId,
     ) -> Result<Vec<RpcLightningGateway>> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         multi.list_gateways().await
     }
 
@@ -650,7 +656,7 @@ impl Bridge {
         federation_id: RpcFederationId,
         gateway_id: RpcPublicKey,
     ) -> Result<()> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         multi.switch_gateway(&gateway_id.0).await
     }
 
@@ -1008,7 +1014,7 @@ impl Bridge {
         message: Message,
         domain: String,
     ) -> Result<RpcSignedLnurlMessage> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         let global_root_secret = self
             .app_state
             .with_read_lock(move |state| {
@@ -1026,7 +1032,7 @@ impl Bridge {
         &self,
         federation_id: RpcFederationId,
     ) -> Result<RpcXmppCredentials> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         Ok(multi.get_xmpp_credentials().await)
     }
 
@@ -1035,13 +1041,13 @@ impl Bridge {
         federation_id: RpcFederationId,
         username: String,
     ) -> Result<()> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         multi.save_xmpp_username(&username).await?;
-        multi.backup().await
+        Ok(())
     }
 
     pub async fn get_nostr_pub_key(&self, federation_id: RpcFederationId) -> Result<String> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         let global_root_secret = self
             .app_state
             .with_read_lock(move |state| {
@@ -1061,7 +1067,7 @@ impl Bridge {
         federation_id: RpcFederationId,
         event_hash: String,
     ) -> Result<String> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         let global_root_secret = self
             .app_state
             .with_read_lock(move |state| {
