@@ -17,7 +17,6 @@ import { styled, theme } from '../styles'
 import { Avatar } from './Avatar'
 import { ChatGroupDialogState } from './ChatGroupConversation'
 import { Icon } from './Icon'
-import { IconButton } from './IconButton'
 import { Input } from './Input'
 import { Text } from './Text'
 
@@ -36,8 +35,7 @@ export default function ChatBroadcastAdminAdd({
 
     const [visitors, setVisitors] = useState<ChatMember[]>([])
 
-    const { query, setQuery, searchedMembers, isExactMatch } =
-        useChatMemberSearch(visitors)
+    const { query, setQuery, searchedMembers } = useChatMemberSearch(visitors)
 
     const confirmAddAdmin = async (member: ChatMember) => {
         if (
