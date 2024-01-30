@@ -23,6 +23,8 @@ pub enum ErrorCode {
     Panic,
     #[error("Invalid social recovery file")]
     InvalidSocialRecoveryFile,
+    #[error("Insufficient balance to cover requested spend amount plus fees")]
+    InsufficientBalance,
 }
 
 pub fn get_error_code(err: &anyhow::Error) -> Option<ErrorCode> {

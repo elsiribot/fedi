@@ -603,7 +603,7 @@ impl FederationV2 {
             Some(amount) => {
                 let fedi_fee = ceil_division(amount * fedi_fee_ppm, MILLION);
                 if amount + fedi_fee > self.get_balance().await.msats {
-                    bail!("Insufficient balance")
+                    bail!(ErrorCode::InsufficientBalance);
                 }
                 fedi_fee
             }
@@ -650,7 +650,7 @@ impl FederationV2 {
         let fedi_fee = ceil_division(amount_msat * fedi_fee_ppm, MILLION);
         let est_total_spend = amount_msat + fedi_fee + (network_fees.amount().to_sat() * 1000);
         if est_total_spend > self.get_balance().await.msats {
-            bail!("Insufficient funds");
+            bail!(ErrorCode::InsufficientBalance);
         }
 
         let operation_id = self
@@ -1118,7 +1118,7 @@ impl FederationV2 {
     ) -> Result<RpcGenerateEcashResponse> {
         let fedi_fee = ceil_division(amount.msats * fedi_fee_ppm, MILLION);
         if amount.msats + fedi_fee > self.get_balance().await.msats {
-            bail!("Insufficient funds");
+            bail!(ErrorCode::InsufficientBalance);
         }
 
         let cancel_time = fedimint_core::time::now() + ONE_WEEK;
@@ -1923,7 +1923,7 @@ impl FederationV2 {
     ) -> Result<OperationId> {
         let fedi_fee = ceil_division(amount.msats * fedi_fee_ppm, MILLION);
         if amount.msats + fedi_fee > self.get_balance().await.msats {
-            bail!("Insufficient funds");
+            bail!(ErrorCode::InsufficientBalance);
         }
 
         let operation_id = self
