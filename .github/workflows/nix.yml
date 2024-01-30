@@ -31,7 +31,7 @@ jobs:
                   fi
                   echo "IS_PUSH_TO_MASTER=$IS_PUSH_TO_MASTER" >> $GITHUB_OUTPUT
             - name: Check out code
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
               with:
                   fetch-depth: 20
             - name: Check for changes outside 'ui/**'
@@ -58,7 +58,7 @@ jobs:
         runs-on: [self-hosted, linux]
         timeout-minutes: 5
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - uses: cachix/install-nix-action@v20
               with:
                   nix_path: nixpkgs=channel:nixos-22.05
@@ -98,7 +98,7 @@ jobs:
             needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
             needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - uses: cachix/install-nix-action@v20
               with:
                   nix_path: nixpkgs=channel:nixos-22.05
@@ -130,7 +130,7 @@ jobs:
         runs-on: [self-hosted, linux]
         timeout-minutes: 60
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - uses: cachix/install-nix-action@v20
               with:
                   nix_path: nixpkgs=channel:nixos-22.05
@@ -173,7 +173,7 @@ jobs:
         runs-on: [self-hosted, linux]
         timeout-minutes: 60
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - uses: cachix/install-nix-action@v20
               with:
                   nix_path: nixpkgs=channel:nixos-22.05
@@ -194,7 +194,7 @@ jobs:
         runs-on: [self-hosted, macos, arm64]
         timeout-minutes: 60
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - uses: cachix/install-nix-action@v20
               with:
                   nix_path: nixpkgs=channel:nixos-22.05
@@ -232,7 +232,7 @@ jobs:
         timeout-minutes: ${{ matrix.timeout }}
 
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
               if: github.ref == 'refs/heads/master' || matrix.build-in-pr
 
             - uses: cachix/install-nix-action@v20
