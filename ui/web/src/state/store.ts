@@ -4,7 +4,6 @@ import {
     commonMiddleware,
     commonReducers,
     initializeCommonStore,
-    selectLanguage,
 } from '@fedi/common/redux'
 
 import { fedimint } from '../lib/bridge'
@@ -22,21 +21,13 @@ export type AppDispatch = typeof store.dispatch
 
 export function initializeWebStore() {
     // Common initialization behavior
-    const unsubscribe = initializeCommonStore(
-        store.dispatch,
+    const unsubscribe = initializeCommonStore({
+        store,
         fedimint,
-        asyncLocalStorage,
-    )
-
-    // Initialize i18n, change language on store updates
-    const initialLanguage = selectLanguage(store.getState())
-    if (initialLanguage) {
-        i18n.changeLanguage(initialLanguage)
-    } else {
-        detectLanguage().then(detectedLanguage => {
-            i18n.changeLanguage(detectedLanguage)
-        })
-    }
+        storage: asyncLocalStorage,
+        i18n,
+        detectLanguage,
+    })
 
     return unsubscribe
 }

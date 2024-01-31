@@ -64,6 +64,7 @@ export type RootStackParamList = {
     ConfirmSendLightning: { parsedData: ParsedBolt11 | ParsedLnurlPay }
     ConfirmSendOnChain: { bitcoinUri: ParsedBip21 | ParsedBitcoinAddress }
     ConnectedFederationsDrawer: undefined
+    CurrencySettings: undefined
     CreateGroup: undefined
     CreateUsername: undefined
     DirectChat: { memberId: string }
@@ -75,6 +76,7 @@ export type RootStackParamList = {
     FediModSettings: undefined
     Initializing: undefined
     JoinFederation: { invite?: string }
+    LanguageSettings: undefined
     MemberQrCode: undefined
     NewMessage: undefined
     NotificationsPermission:

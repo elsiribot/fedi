@@ -24,10 +24,7 @@ import {
     selectFediModDebugMode,
     setFediModDebugMode,
 } from '@fedi/common/redux'
-import {
-    changeSelectedFiatCurrency,
-    selectCurrency,
-} from '@fedi/common/redux/currency'
+import { selectCurrency } from '@fedi/common/redux/currency'
 import {
     Guardian,
     LightningGateway,
@@ -54,13 +51,10 @@ export type Props = NativeStackScreenProps<
 
 const DeveloperSettings: React.FC<Props> = () => {
     const { theme } = useTheme()
-    const { t, i18n } = useTranslation()
+    const { t } = useTranslation()
     const { listGateways, switchGateway, guardianStatus } = useBridge()
     const { toast } = useEnvironmentContext().state
     const [isLoadingGateways, setIsLoadingGateways] = useState<boolean>(false)
-    const [selectedLanguage, setSelectedLanguage] = useState<string>(
-        i18n.language,
-    )
     const [gateways, setGateways] = useState<LightningGateway[]>([])
     const [isSharingLogs, setIsSharingLogs] = useState(false)
     const [isSensitiveLogging, setIsSensitiveLogging] = useState<boolean>(false)
@@ -143,10 +137,6 @@ const DeveloperSettings: React.FC<Props> = () => {
         setIsSharingLogs(false)
     }
 
-    useEffect(() => {
-        i18n.changeLanguage(selectedLanguage)
-    }, [i18n, selectedLanguage])
-
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <SettingsSection title="App info">
@@ -192,66 +182,6 @@ const DeveloperSettings: React.FC<Props> = () => {
                         }}
                     />
                 </View>
-            </SettingsSection>
-            <SettingsSection title="Change your language">
-                {/* TODO: Change to iterating over array of languages */}
-                <CheckBox
-                    title={
-                        <Text style={styles(theme).checkboxText}>
-                            {'English'}
-                        </Text>
-                    }
-                    checked={selectedLanguage === 'en'}
-                    onPress={() => setSelectedLanguage('en')}
-                    containerStyle={styles(theme).checkboxContainer}
-                />
-                <CheckBox
-                    title={
-                        <Text style={styles(theme).checkboxText}>
-                            {'Spanish'}
-                        </Text>
-                    }
-                    checked={selectedLanguage === 'es'}
-                    onPress={() => setSelectedLanguage('es')}
-                    containerStyle={styles(theme).checkboxContainer}
-                />
-                <CheckBox
-                    title={
-                        <Text style={styles(theme).checkboxText}>
-                            {'French'}
-                        </Text>
-                    }
-                    checked={selectedLanguage === 'fr'}
-                    onPress={() => setSelectedLanguage('fr')}
-                    containerStyle={styles(theme).checkboxContainer}
-                />
-                <CheckBox
-                    title={
-                        <Text style={styles(theme).checkboxText}>
-                            {'Indonesian'}
-                        </Text>
-                    }
-                    checked={selectedLanguage === 'id'}
-                    onPress={() => setSelectedLanguage('id')}
-                    containerStyle={styles(theme).checkboxContainer}
-                />
-            </SettingsSection>
-            <SettingsSection title="Change your currency">
-                {Object.values(SupportedCurrency).map(currency => (
-                    <CheckBox
-                        key={currency}
-                        title={
-                            <Text style={styles(theme).checkboxText}>
-                                {currency}
-                            </Text>
-                        }
-                        checked={selectedFiatCurrency === currency}
-                        onPress={() =>
-                            reduxDispatch(changeSelectedFiatCurrency(currency))
-                        }
-                        containerStyle={styles(theme).checkboxContainer}
-                    />
-                ))}
             </SettingsSection>
             <SettingsSection title="Exchange rates">
                 <View style={styles(theme).exchangeRate}>

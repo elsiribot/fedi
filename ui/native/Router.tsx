@@ -12,7 +12,9 @@ import { selectActiveFederation } from '@fedi/common/redux'
 
 import { fedimint } from './bridge'
 import AddFediModHeader from './components/feature/admin/AddFediModHeader'
+import CurrencySettingsHeader from './components/feature/admin/CurrencySettingsHeader'
 import FediModSettingsHeader from './components/feature/admin/FediModSettingsHeader'
+import LanguageSettingsHeader from './components/feature/admin/LanguageSettingsHeader'
 import SettingsHeader from './components/feature/admin/SettingsHeader'
 import ChooseBackupMethodHeader from './components/feature/backup/ChooseBackupMethodHeader'
 import PersonalBackupHeader from './components/feature/backup/PersonalBackupHeader'
@@ -78,6 +80,7 @@ import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import CreateGroup from './screens/CreateGroup'
 import CreateUsername from './screens/CreateUsername'
+import CurrencySettings from './screens/CurrencySettings'
 import DeveloperSettings from './screens/DeveloperSettings'
 import DirectChat from './screens/DirectChat'
 import EditGroup from './screens/EditGroup'
@@ -91,6 +94,7 @@ import GroupChat from './screens/GroupChat'
 import GroupInvite from './screens/GroupInvite'
 import Initializing from './screens/Initializing'
 import JoinFederation from './screens/JoinFederation'
+import LanguageSettings from './screens/LanguageSettings'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
 import MemberQrCode from './screens/MemberQrCode'
 import NewMessage from './screens/NewMessage'
@@ -661,6 +665,20 @@ const MainNavigator = () => {
                                 component={AddFediMod}
                                 options={() => ({
                                     header: () => <AddFediModHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="LanguageSettings"
+                                component={LanguageSettings}
+                                options={() => ({
+                                    header: () => <LanguageSettingsHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="CurrencySettings"
+                                component={CurrencySettings}
+                                options={() => ({
+                                    header: () => <CurrencySettingsHeader />,
                                 })}
                             />
                             {/* Stability Pools */}
