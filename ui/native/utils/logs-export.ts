@@ -120,7 +120,11 @@ function asyncStreamFile(path: string, encoding: 'utf8' | 'base64') {
             .readStream(
                 path.replace('file://', ''), // RNFB doesn't want uri prefix
                 encoding,
-                102400, // 100kb at a time
+                // Stream files 100kb at a time to avoid locking the main thread
+                // on large files. However, chunk size must be a multiple of 3
+                // or else base64 decoding will stop at the first chunk.
+                // https://github.com/joltup/rn-fetch-blob?tab=readme-ov-file#file-stream
+                1000_02,
             )
             .then(fileStream => {
                 fileStream.onData(chunk => {
