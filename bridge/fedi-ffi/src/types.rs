@@ -313,7 +313,7 @@ pub struct RpcTransaction {
     #[ts(type = "number")]
     pub created_at: u64,
     pub amount: RpcAmount,
-    pub fedi_fee: RpcAmount,
+    pub fedi_fee_status: Option<RpcOperationFediFeeStatus>,
     pub direction: RpcTransactionDirection,
     pub notes: String,
     pub onchain_state: Option<RpcOnchainState>,
@@ -677,4 +677,54 @@ pub enum OperationFediFeeStatus {
     Success { fedi_fee: Amount },
     FailedSend { fedi_fee: Amount },
     FailedReceive { fedi_fee_ppm: u64 },
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcOperationFediFeeStatus {
+    PendingSend {
+        fedi_fee: RpcAmount,
+    },
+    PendingReceive {
+        #[ts(type = "number")]
+        fedi_fee_ppm: u64,
+    },
+    Success {
+        fedi_fee: RpcAmount,
+    },
+    FailedSend {
+        fedi_fee: RpcAmount,
+    },
+    FailedReceive {
+        #[ts(type = "number")]
+        fedi_fee_ppm: u64,
+    },
+}
+
+impl From<OperationFediFeeStatus> for RpcOperationFediFeeStatus {
+    fn from(value: OperationFediFeeStatus) -> Self {
+        match value {
+            OperationFediFeeStatus::PendingSend { fedi_fee } => {
+                RpcOperationFediFeeStatus::PendingSend {
+                    fedi_fee: RpcAmount(fedi_fee),
+                }
+            }
+            OperationFediFeeStatus::PendingReceive { fedi_fee_ppm } => {
+                RpcOperationFediFeeStatus::PendingReceive { fedi_fee_ppm }
+            }
+            OperationFediFeeStatus::Success { fedi_fee } => RpcOperationFediFeeStatus::Success {
+                fedi_fee: RpcAmount(fedi_fee),
+            },
+            OperationFediFeeStatus::FailedSend { fedi_fee } => {
+                RpcOperationFediFeeStatus::FailedSend {
+                    fedi_fee: RpcAmount(fedi_fee),
+                }
+            }
+            OperationFediFeeStatus::FailedReceive { fedi_fee_ppm } => {
+                RpcOperationFediFeeStatus::FailedReceive { fedi_fee_ppm }
+            }
+        }
+    }
 }

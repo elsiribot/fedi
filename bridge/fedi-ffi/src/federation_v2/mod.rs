@@ -500,11 +500,19 @@ impl FederationV2 {
                                 expires_at: to_unix_time(expires_at)
                                     .expect("unix time should exist"),
                             });
+                            let fedi_fee_status = fed
+                                .client
+                                .db()
+                                .begin_transaction_nc()
+                                .await
+                                .get_value(&OperationFediFeeStatusKey(operation_id))
+                                .await
+                                .map(Into::into);
                             let transaction = RpcTransaction {
                                 id: operation_id.to_string(),
                                 created_at: unix_now().expect("unix time should exist"),
                                 amount: RpcAmount(amount),
-                                fedi_fee: RpcAmount(Amount::ZERO),
+                                fedi_fee_status,
                                 direction: RpcTransactionDirection::Receive,
                                 notes: "".into(),
                                 onchain_state: RpcOnchainState::from_deposit_state(Some(
@@ -560,11 +568,19 @@ impl FederationV2 {
                             let _ = fed
                                 .write_success_receive_fedi_fee(operation_id, amount)
                                 .await;
+                            let fedi_fee_status = fed
+                                .client
+                                .db()
+                                .begin_transaction_nc()
+                                .await
+                                .get_value(&OperationFediFeeStatusKey(operation_id))
+                                .await
+                                .map(Into::into);
                             let transaction = RpcTransaction {
                                 id: operation_id.to_string(),
                                 created_at: unix_now().expect("unix time should exist"),
                                 amount: RpcAmount(amount),
-                                fedi_fee: RpcAmount(Amount::ZERO),
+                                fedi_fee_status,
                                 direction: RpcTransactionDirection::Receive,
                                 notes: "".into(),
                                 bitcoin: None,
@@ -1618,6 +1634,14 @@ impl FederationV2 {
                         .get_value(&TransactionNotesKey(op.0.operation_id))
                         .await
                         .unwrap_or_default();
+                    let fedi_fee_status = self
+                        .client
+                        .db()
+                        .begin_transaction_nc()
+                        .await
+                        .get_value(&OperationFediFeeStatusKey(op.0.operation_id))
+                        .await
+                        .map(Into::into);
 
                     match op.1.operation_module_kind() {
                         LIGHTNING_OPERATION_TYPE => {
@@ -1630,7 +1654,7 @@ impl FederationV2 {
                                     amount: RpcAmount(Amount {
                                         msats: invoice.amount_milli_satoshis().unwrap(),
                                     }),
-                                    fedi_fee: RpcAmount(Amount::ZERO),
+                                    fedi_fee_status,
                                     direction: RpcTransactionDirection::Send,
                                     notes,
                                     onchain_state: None,
@@ -1657,7 +1681,7 @@ impl FederationV2 {
                                         amount: RpcAmount(Amount {
                                             msats: invoice.amount_milli_satoshis().unwrap(),
                                         }),
-                                        fedi_fee: RpcAmount(Amount::ZERO),
+                                        fedi_fee_status,
                                         direction: RpcTransactionDirection::Receive,
                                         notes,
                                         onchain_state: None,
@@ -1690,7 +1714,7 @@ impl FederationV2 {
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
                                 amount: RpcAmount(amount),
-                                fedi_fee: RpcAmount(Amount::ZERO),
+                                fedi_fee_status,
                                 direction: RpcTransactionDirection::Send,
                                 notes,
                                 onchain_state: None,
@@ -1719,7 +1743,7 @@ impl FederationV2 {
                                             StabilityPoolWithdrawalOperationState::WithdrawIdleAccepted(amount)) => RpcAmount(amount),
                                         _ => RpcAmount(Amount::ZERO),
                                     },
-                                    fedi_fee: RpcAmount(Amount::ZERO),
+                                    fedi_fee_status,
                                     direction: RpcTransactionDirection::Receive,
                                     notes,
                                     onchain_state: None,
@@ -1755,7 +1779,7 @@ impl FederationV2 {
                                             bitcoin: None,
                                             ln_state: None,
                                             amount: RpcAmount(mint_meta.amount),
-                                            fedi_fee: RpcAmount(Amount::ZERO),
+                                            fedi_fee_status,
                                             lightning: None,
                                             oob_state: None,
                                             onchain_withdrawal_details: None,
@@ -1777,7 +1801,7 @@ impl FederationV2 {
                                     bitcoin: None,
                                     ln_state: None,
                                     amount: RpcAmount(requested_amount),
-                                    fedi_fee: RpcAmount(Amount::ZERO),
+                                    fedi_fee_status,
                                     lightning: None,
                                     oob_state: self
                                         .get_client_operation_outcome(op.0.operation_id, op.1)
@@ -1824,7 +1848,7 @@ impl FederationV2 {
                                             )),
                                             _ => RpcAmount(Amount::ZERO),
                                         },
-                                        fedi_fee: RpcAmount(Amount::ZERO),
+                                        fedi_fee_status,
                                         lightning: None,
                                         oob_state: None,
                                         onchain_withdrawal_details: None,
@@ -1861,7 +1885,7 @@ impl FederationV2 {
                                         created_at: to_unix_time(op.0.creation_time)
                                             .expect("unix time should exist"),
                                         amount: rpc_amount,
-                                        fedi_fee: RpcAmount(Amount::ZERO),
+                                        fedi_fee_status,
                                         direction: RpcTransactionDirection::Send,
                                         notes,
                                         onchain_state,

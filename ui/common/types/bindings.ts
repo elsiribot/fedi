@@ -27,6 +27,7 @@ export type ErrorCode =
     | 'ecashCancelFailed'
     | 'panic'
     | 'invalidSocialRecoveryFile'
+    | 'insufficientBalance'
 
 export type Event =
     | { transaction: TransactionEvent }
@@ -261,7 +262,7 @@ export interface RpcMethods {
             id: string
             createdAt: number
             amount: RpcAmount
-            fediFee: RpcAmount
+            fediFeeStatus: RpcOperationFediFeeStatus | null
             direction: RpcTransactionDirection
             notes: string
             onchainState: RpcOnchainState | null
@@ -393,6 +394,13 @@ export type RpcOnchainWithdrawState =
     | { type: 'succeeded' }
     | { type: 'failed' }
 
+export type RpcOperationFediFeeStatus =
+    | { type: 'pendingSend'; fedi_fee: RpcAmount }
+    | { type: 'pendingReceive'; fedi_fee_ppm: number }
+    | { type: 'success'; fedi_fee: RpcAmount }
+    | { type: 'failedSend'; fedi_fee: RpcAmount }
+    | { type: 'failedReceive'; fedi_fee_ppm: number }
+
 export type RpcOperationId = string
 
 export interface RpcPayAddressResponse {
@@ -449,7 +457,7 @@ export interface RpcTransaction {
     id: string
     createdAt: number
     amount: RpcAmount
-    fediFee: RpcAmount
+    fediFeeStatus: RpcOperationFediFeeStatus | null
     direction: RpcTransactionDirection
     notes: string
     onchainState: RpcOnchainState | null

@@ -606,7 +606,7 @@ mod tests {
 
     use super::*;
     use crate::bridge::MultiFederation;
-    use crate::constants::FEDI_FILE_PATH;
+    use crate::constants::{FEDI_FILE_PATH, MILLION};
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
     use crate::storage::IStorage;
@@ -1064,8 +1064,17 @@ mod tests {
         // receive ecash
         let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
-        federation.receive_ecash(ecash).await?;
-        assert_eq!(ecash_receive_amount, federation.get_balance().await);
+        let receive_ecash_fedi_fee_ppm = 10;
+        let receive_ecash_fedi_fee = Amount::from_msats(
+            (ecash_receive_amount.msats * receive_ecash_fedi_fee_ppm).div_ceil(MILLION),
+        );
+        federation
+            .receive_ecash(ecash, receive_ecash_fedi_fee_ppm)
+            .await?;
+        assert_eq!(
+            ecash_receive_amount - receive_ecash_fedi_fee,
+            federation.get_balance().await
+        );
 
         // Interact with stability pool
         let amount_to_deposit = Amount::from_msats(110_000);
@@ -1100,7 +1109,8 @@ mod tests {
         // Rejoin federation and assert that balances are correct
         let recovery_federation = join_test_fed(&recovery_bridge).await?;
         assert_eq!(
-            ecash_balance_before,
+            // Outstanding fee gets lost on recovery currently
+            ecash_balance_before + receive_ecash_fedi_fee,
             recovery_federation.get_balance().await
         );
         assert_eq!(
@@ -1135,8 +1145,17 @@ mod tests {
         // receive ecash
         let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
-        federation.receive_ecash(ecash).await?;
-        assert_eq!(ecash_receive_amount, federation.get_balance().await);
+        let receive_ecash_fedi_fee_ppm = 4;
+        let receive_ecash_fedi_fee = Amount::from_msats(
+            (ecash_receive_amount.msats * receive_ecash_fedi_fee_ppm).div_ceil(MILLION),
+        );
+        federation
+            .receive_ecash(ecash, receive_ecash_fedi_fee_ppm)
+            .await?;
+        assert_eq!(
+            ecash_receive_amount - receive_ecash_fedi_fee,
+            federation.get_balance().await
+        );
 
         // Interact with stability pool
         let amount_to_deposit = Amount::from_msats(110_000);
@@ -1242,7 +1261,8 @@ mod tests {
             .next()
             .ok_or(anyhow!("Rejoined federation must exist"))?;
         assert_eq!(
-            ecash_balance_before,
+            // Outstanding fee gets lost on recovery currently
+            ecash_balance_before + receive_ecash_fedi_fee,
             recovery_federation.get_balance().await
         );
 
@@ -1273,7 +1293,7 @@ mod tests {
         // Receive some ecash first
         let initial_balance = Amount::from_msats(500_000);
         let ecash = cli_generate_ecash(initial_balance, &federation).await?;
-        federation.receive_ecash(ecash).await?;
+        federation.receive_ecash(ecash, 0).await?;
 
         // Deposit to seek and verify account info
         let amount_to_deposit = Amount::from_msats(initial_balance.msats / 2);
@@ -1403,7 +1423,7 @@ mod tests {
         // receive ecash and backup
         let ecash =
             cli_generate_ecash(fedimint_core::Amount::from_msats(10_000), &federation).await?;
-        federation.receive_ecash(ecash).await?;
+        federation.receive_ecash(ecash, 0).await?;
         let federation_id = federation.federation_id();
         let username = "satoshi".to_string();
         backupXmppUsername(bridge.clone(), federation_id.clone(), username.clone()).await?;
