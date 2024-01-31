@@ -34,6 +34,7 @@ const LanguageSettings: React.FC = () => {
             <View style={style.container}>
                 {Object.entries(languages).map(([lang, display]) => (
                     <CheckBox
+                        key={lang}
                         checkedIcon={<SvgImage name="RadioSelected" />}
                         uncheckedIcon={<SvgImage name="RadioUnselected" />}
                         title={<Text style={style.radioText}>{display}</Text>}
