@@ -21,7 +21,7 @@ use fedi_social_client::{FediSocialClientInit, RecoveryId};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::backup::Metadata;
 use fedimint_client::db::ChronologicalOperationLogKey;
-use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
+use fedimint_client::oplog::OperationLogEntry;
 use fedimint_client::secret::{
     get_default_client_secret, DeriveableSecretClientExt, RootSecretStrategy,
 };
@@ -53,7 +53,7 @@ use fedimint_wallet_client::{
     DepositState, WalletClientInit, WalletClientModule, WalletOperationMeta,
     WalletOperationMetaVariant, WithdrawState,
 };
-use futures::{Future, StreamExt};
+use futures::StreamExt;
 use lightning_invoice::Bolt11Invoice;
 use serde::de::DeserializeOwned;
 use stability_pool_client::{
@@ -489,6 +489,12 @@ impl FederationV2 {
                         DepositState::WaitingForConfirmation(data)
                         | DepositState::Claimed(data)
                         | DepositState::Confirmed(data) => {
+                            let amount = Amount::from_sats(
+                                data.btc_transaction.output[data.out_idx as usize].value,
+                            );
+                            let _ = fed
+                                .write_success_receive_fedi_fee(operation_id, amount)
+                                .await;
                             let onchain_details = Some(RpcBitcoinDetails {
                                 address: address.clone(),
                                 expires_at: to_unix_time(expires_at)
@@ -497,9 +503,7 @@ impl FederationV2 {
                             let transaction = RpcTransaction {
                                 id: operation_id.to_string(),
                                 created_at: unix_now().expect("unix time should exist"),
-                                amount: RpcAmount(Amount::from_sats(
-                                    data.btc_transaction.output[data.out_idx as usize].value,
-                                )),
+                                amount: RpcAmount(amount),
                                 fedi_fee: RpcAmount(Amount::ZERO),
                                 direction: RpcTransactionDirection::Receive,
                                 notes: "".into(),
@@ -517,6 +521,7 @@ impl FederationV2 {
                             fed.send_transaction_event(transaction);
                         }
                         DepositState::Failed(reason) => {
+                            let _ = fed.write_failed_receive_fedi_fee(operation_id).await;
                             // FIXME: handle this
                             error!("Failed to claim on-chain deposit: {reason}");
                         }
@@ -549,12 +554,16 @@ impl FederationV2 {
                     info!("Update: {:?}", update);
                     match update {
                         LnReceiveState::Claimed => {
+                            let amount = Amount {
+                                msats: invoice.amount_milli_satoshis().unwrap(),
+                            };
+                            let _ = fed
+                                .write_success_receive_fedi_fee(operation_id, amount)
+                                .await;
                             let transaction = RpcTransaction {
                                 id: operation_id.to_string(),
                                 created_at: unix_now().expect("unix time should exist"),
-                                amount: RpcAmount(Amount {
-                                    msats: invoice.amount_milli_satoshis().unwrap(),
-                                }),
+                                amount: RpcAmount(amount),
                                 fedi_fee: RpcAmount(Amount::ZERO),
                                 direction: RpcTransactionDirection::Receive,
                                 notes: "".into(),
@@ -572,6 +581,7 @@ impl FederationV2 {
                             fed.send_transaction_event(transaction);
                         }
                         LnReceiveState::Canceled { reason } => {
+                            let _ = fed.write_failed_receive_fedi_fee(operation_id).await;
                             // FIXME: handle this
                             error!("Failed to claim incoming contract: {reason}");
                         }
@@ -825,7 +835,8 @@ impl FederationV2 {
                             .clone()
                             .spawn("subscribe_to_ecash_reissue", move |_| async move {
                                 // FIXME: what happens if it fails?
-                                fed.subscribe_to_ecash_reissue(operation_id).await
+                                fed.subscribe_to_ecash_reissue(operation_id, meta.amount)
+                                    .await
                             })
                             .await;
                     }
@@ -870,20 +881,7 @@ impl FederationV2 {
                         self.task_group
                             .clone()
                             .spawn("subscribe_stability_pool_withdraw", move |_| async move {
-                                fed.subscribe_client_operation(
-                                    operation_id,
-                                    fed.client
-                                        .get_first_module::<StabilityPoolClientModule>()
-                                        .subscribe_withdraw(operation_id),
-                                    |state| {
-                                        Event::stability_pool_withdrawal(
-                                            fed.federation_id().to_string(),
-                                            operation_id,
-                                            state,
-                                        )
-                                    },
-                                )
-                                .await
+                                fed.subscribe_stability_pool_withdraw(operation_id).await
                             })
                             .await;
                     }
@@ -1107,7 +1105,8 @@ impl FederationV2 {
             .await?;
         self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
             .await?;
-        self.subscribe_to_ecash_reissue(operation_id).await?;
+        self.subscribe_to_ecash_reissue(operation_id, amount)
+            .await?;
         Ok(amount)
     }
 
@@ -1135,7 +1134,11 @@ impl FederationV2 {
         })
     }
 
-    pub async fn subscribe_to_ecash_reissue(&self, operation_id: OperationId) -> Result<()> {
+    pub async fn subscribe_to_ecash_reissue(
+        &self,
+        operation_id: OperationId,
+        amount: Amount,
+    ) -> Result<()> {
         let mut updates = self
             .client
             .get_first_module::<MintClientModule>()
@@ -1147,6 +1150,17 @@ impl FederationV2 {
         while let Some(update) = updates.next().await {
             self.update_operation_state(operation_id, update.clone())
                 .await;
+            match update {
+                ReissueExternalNotesState::Done => {
+                    let _ = self
+                        .write_success_receive_fedi_fee(operation_id, amount)
+                        .await;
+                }
+                ReissueExternalNotesState::Failed(_) => {
+                    let _ = self.write_failed_receive_fedi_fee(operation_id).await;
+                }
+                _ => (),
+            }
             if let ReissueExternalNotesState::Failed(e) = update {
                 updates.next().await;
                 bail!(format!("Reissue failed: {e}"));
@@ -2034,43 +2048,10 @@ impl FederationV2 {
         self.task_group
             .clone()
             .spawn("subscribe_stability_pool_withdraw", move |_| async move {
-                fed.subscribe_client_operation(
-                    operation_id,
-                    fed.client
-                        .get_first_module::<StabilityPoolClientModule>()
-                        .subscribe_withdraw(operation_id),
-                    |state| {
-                        Event::stability_pool_withdrawal(
-                            fed.federation_id().to_string(),
-                            operation_id,
-                            state,
-                        )
-                    },
-                )
-                .await
+                fed.subscribe_stability_pool_withdraw(operation_id).await
             })
             .await;
         Ok(operation_id)
-    }
-
-    async fn subscribe_client_operation<S, E, U>(
-        &self,
-        operation_id: OperationId,
-        stream_gen: S,
-        event_gen: E,
-    ) where
-        S: Future<Output = Result<UpdateStreamOrOutcome<U>>>,
-        E: Fn(U) -> Event,
-        U: Clone + MaybeSend + MaybeSync + 'static,
-    {
-        if let Ok(update_stream) = stream_gen.await {
-            let mut updates = update_stream.into_stream();
-            while let Some(state) = updates.next().await {
-                self.update_operation_state(operation_id, state.clone())
-                    .await;
-                self.event_sink.typed_event(&event_gen(state))
-            }
-        }
     }
 
     async fn subscribe_stability_pool_deposit_to_seek(&self, operation_id: OperationId) {
@@ -2103,6 +2084,43 @@ impl FederationV2 {
         } else {
             // TODO shaurya ok to ignore result? Or should bridge panic if error?
             let _ = self.write_failed_send_fedi_fee(operation_id).await;
+        }
+    }
+
+    async fn subscribe_stability_pool_withdraw(&self, operation_id: OperationId) {
+        let update_stream = self
+            .client
+            .get_first_module::<StabilityPoolClientModule>()
+            .subscribe_withdraw(operation_id)
+            .await;
+        if let Ok(update_stream) = update_stream {
+            let mut updates = update_stream.into_stream();
+            while let Some(state) = updates.next().await {
+                self.update_operation_state(operation_id, state.clone())
+                    .await;
+                match state {
+                    StabilityPoolWithdrawalOperationState::Success(amount) => {
+                        let _ = self
+                            .write_success_receive_fedi_fee(operation_id, amount)
+                            .await;
+                    }
+                    StabilityPoolWithdrawalOperationState::InvalidOperationType
+                    | StabilityPoolWithdrawalOperationState::TxRejected(_)
+                    | StabilityPoolWithdrawalOperationState::PrimaryOutputError(_)
+                    | StabilityPoolWithdrawalOperationState::CancellationSubmissionFailure(_)
+                    | StabilityPoolWithdrawalOperationState::AwaitCycleTurnoverError(_)
+                    | StabilityPoolWithdrawalOperationState::WithdrawIdleSubmissionFailure(_) => {
+                        let _ = self.write_failed_receive_fedi_fee(operation_id).await;
+                    }
+                    _ => (),
+                }
+                self.event_sink
+                    .typed_event(&Event::stability_pool_withdrawal(
+                        self.federation_id().to_string(),
+                        operation_id,
+                        state,
+                    ))
+            }
         }
     }
 
@@ -2179,7 +2197,8 @@ impl FederationV2 {
                                 .await;
                                 true
                             }
-                            Some(_) => false,
+                            Some(OperationFediFeeStatus::Success { .. }) => false,
+                            Some(_) => bail!("Invalid operation fedi fee status found!"),
                             None => bail!("No operation fedi fee status found!"),
                         };
                         Ok::<bool, anyhow::Error>(did_overwrite)
@@ -2245,7 +2264,8 @@ impl FederationV2 {
                                     .await;
                                 true
                             }
-                            Some(_) => false,
+                            Some(OperationFediFeeStatus::FailedSend { .. }) => false,
+                            Some(_) => bail!("Invalid operation fedi fee status found!"),
                             None => bail!("No operation fedi fee status found!"),
                         };
                         Ok::<bool, anyhow::Error>(did_overwrite)
@@ -2317,6 +2337,135 @@ impl FederationV2 {
             Err(ref e) => warn!(
                 "Error writing pending receive fedi fee for op ID {} with ppm {}: {}",
                 operation_id, fedi_fee_ppm, e
+            ),
+        }
+
+        res
+    }
+
+    /// Transitions the OperationFediFeeStatus for a receive operation from
+    /// pending to success, iff the status is currently pending. Therefore
+    /// the transition only happens once. We also debit the fee at this
+    /// point since the amount must be known now and the funds are in the user's
+    /// possession. Returns Ok(true) if a DB write actually occurred, and
+    /// Ok(false) if no write was needed, meaning that the status
+    /// has already been recorded as a success.
+    async fn write_success_receive_fedi_fee(
+        &self,
+        operation_id: OperationId,
+        amount: Amount,
+    ) -> anyhow::Result<bool> {
+        let res = self
+            .client
+            .db()
+            .autocommit(
+                |dbtx, _| {
+                    Box::pin(async move {
+                        let key = OperationFediFeeStatusKey(operation_id);
+                        let did_overwrite = match dbtx.get_value(&key).await {
+                            Some(OperationFediFeeStatus::PendingReceive { fedi_fee_ppm }) => {
+                                let fedi_fee = Amount::from_msats(
+                                    (amount.msats * fedi_fee_ppm).div_ceil(MILLION),
+                                );
+                                let outstanding_fedi_fees = fedi_fee
+                                    + dbtx
+                                        .get_value(&OutstandingFediFeesKey)
+                                        .await
+                                        .unwrap_or(Amount::ZERO);
+                                dbtx.insert_entry(
+                                    &key,
+                                    &OperationFediFeeStatus::Success { fedi_fee },
+                                )
+                                .await;
+                                dbtx.insert_entry(&OutstandingFediFeesKey, &outstanding_fedi_fees)
+                                    .await;
+                                true
+                            }
+                            Some(OperationFediFeeStatus::Success { .. }) => false,
+                            Some(_) => bail!("Invalid operation fedi fee status found!"),
+                            None => bail!("No operation fedi fee status found!"),
+                        };
+                        Ok::<bool, anyhow::Error>(did_overwrite)
+                    })
+                },
+                Some(100),
+            )
+            .await
+            .map_err(|e| match e {
+                fedimint_core::db::AutocommitError::CommitFailed { last_error, .. } => last_error,
+                fedimint_core::db::AutocommitError::ClosureError { error, .. } => error,
+            });
+
+        match res {
+            Ok(true) => info!(
+                "Successfully wrote success receive fedi fee for op ID {}",
+                operation_id
+            ),
+            Ok(false) => info!(
+                "Already recorded success receive fedi fee for op ID {}, nothing overwritten",
+                operation_id
+            ),
+            Err(ref e) => warn!(
+                "Error writing success receive fedi fee for op ID {}: {}",
+                operation_id, e
+            ),
+        }
+
+        res
+    }
+
+    /// Transitions the OperationFediFeeStatus for a receive operation from
+    /// pending to failure, iff the status is currently pending. Therefore
+    /// the transition only happens once. Returns Ok(true) if a DB write
+    /// actually occurred, and Ok(false) if no write was needed, meaning
+    /// that the status has already been recorded as a failure.
+    async fn write_failed_receive_fedi_fee(
+        &self,
+        operation_id: OperationId,
+    ) -> anyhow::Result<bool> {
+        let res = self
+            .client
+            .db()
+            .autocommit(
+                |dbtx, _| {
+                    Box::pin(async move {
+                        let key = OperationFediFeeStatusKey(operation_id);
+                        let did_overwrite = match dbtx.get_value(&key).await {
+                            Some(OperationFediFeeStatus::PendingReceive { fedi_fee_ppm }) => {
+                                dbtx.insert_entry(
+                                    &key,
+                                    &OperationFediFeeStatus::FailedReceive { fedi_fee_ppm },
+                                )
+                                .await;
+                                true
+                            }
+                            Some(OperationFediFeeStatus::FailedReceive { .. }) => false,
+                            Some(_) => bail!("Invalid operation fedi fee status found!"),
+                            None => bail!("No operation fedi fee status found!"),
+                        };
+                        Ok::<bool, anyhow::Error>(did_overwrite)
+                    })
+                },
+                Some(100),
+            )
+            .await
+            .map_err(|e| match e {
+                fedimint_core::db::AutocommitError::CommitFailed { last_error, .. } => last_error,
+                fedimint_core::db::AutocommitError::ClosureError { error, .. } => error,
+            });
+
+        match res {
+            Ok(true) => info!(
+                "Successfully wrote failed receive fedi fee for op ID {}",
+                operation_id
+            ),
+            Ok(false) => info!(
+                "Already recorded failed receive fedi fee for op ID {}, nothing overwritten",
+                operation_id
+            ),
+            Err(ref e) => warn!(
+                "Error writing failed receive fedi fee for op ID {}: {}",
+                operation_id, e
             ),
         }
 
