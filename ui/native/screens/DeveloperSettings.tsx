@@ -40,7 +40,7 @@ import { version } from '../package.json'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
-import { shareLogsExport } from '../utils/logs-export'
+import { shareLogsExport, shareReduxState } from '../utils/logs-export'
 
 const log = makeLog('DeveloperSettings')
 
@@ -57,6 +57,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const [isLoadingGateways, setIsLoadingGateways] = useState<boolean>(false)
     const [gateways, setGateways] = useState<LightningGateway[]>([])
     const [isSharingLogs, setIsSharingLogs] = useState(false)
+    const [isSharingState, setIsSharingState] = useState(false)
     const [isSensitiveLogging, setIsSensitiveLogging] = useState<boolean>(false)
     const [guardianOnlineStatus, setGuardianOnlineStatus] = useState<
         GuardianStatus[]
@@ -137,6 +138,16 @@ const DeveloperSettings: React.FC<Props> = () => {
         setIsSharingLogs(false)
     }
 
+    const handleShareStorage = async () => {
+        setIsSharingState(true)
+        try {
+            await shareReduxState()
+        } catch (e) {
+            toast?.show(formatErrorMessage(t, e, 'errors.unknown-error'))
+        }
+        setIsSharingState(false)
+    }
+
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <SettingsSection title="App info">
@@ -147,6 +158,12 @@ const DeveloperSettings: React.FC<Props> = () => {
                     containerStyle={styles(theme).buttonContainer}
                     onPress={handleShareLogs}
                     loading={isSharingLogs}
+                />
+                <Button
+                    title={t('feature.developer.share-state')}
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={handleShareStorage}
+                    loading={isSharingState}
                 />
                 <View style={styles(theme).switchWrapper}>
                     <View style={styles(theme).switchLabelContainer}>

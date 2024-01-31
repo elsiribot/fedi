@@ -322,7 +322,8 @@
             "export-transactions-csv": "Export transactions CSV",
             "logs": "Logs",
             "nightly": "nightly",
-            "share-logs": "Share logs"
+            "share-logs": "Share logs",
+            "share-state": "Share app state"
         },
         "federations": {
             "add-federation": "Add a Federation",

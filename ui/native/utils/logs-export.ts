@@ -5,6 +5,7 @@ import RNFB from 'rn-fetch-blob'
 import { exportLogs as exportAppLogs, makeLog } from '@fedi/common/utils/log'
 import { File, makeTarGz } from '@fedi/common/utils/targz'
 
+import { store } from '../state/store'
 import { getAllDeviceInfo } from './device-info'
 
 const log = makeLog('native/utils/logs-export')
@@ -34,6 +35,18 @@ export async function shareLogsExport() {
         url: `data:application/tar+gzip;base64,${targz.toString('base64')}`,
         filename: filename,
         type: 'application/tar+gzip',
+    })
+}
+
+export async function shareReduxState() {
+    const state = store.getState()
+    const stateJson = JSON.stringify(state, null, 2)
+    const stateB64 = Buffer.from(stateJson).toString('base64')
+    return Share.open({
+        title: 'Fedi state',
+        url: `data:application/json;base64,${stateB64}`,
+        filename: `fedi-state-${Math.floor(Date.now() / 1000)}.json`,
+        type: 'application/json',
     })
 }
 
