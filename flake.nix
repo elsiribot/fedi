@@ -108,6 +108,8 @@
         #
         # To avoid impurity, we use a git hash placeholder when building binaries
         # and then replace them with the real git hash in the binaries themselves.
+        #
+        # BUG: rev and dirtyRev are not available in-local flake builds. :/
         replaceGitHash =
           let
             # the hash we will set if the tree is dirty;
@@ -120,7 +122,7 @@
           { name
           , package
           , placeholder ? "01234569abcdef7afa1d2683a099c7af48a523c1"
-          , gitHash ? if (self ? rev) then self.rev else dirtyHash
+          , gitHash ? if (self ? rev) then self.rev else if (self ? dirtyRev) then dirtyHash else placeholder
           }:
           stdenv.mkDerivation {
             inherit system;
