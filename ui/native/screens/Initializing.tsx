@@ -4,7 +4,6 @@ import { Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { ImageBackground, StyleSheet } from 'react-native'
 
-import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import {
     refreshFederations,
     selectActiveFederation,
@@ -30,7 +29,6 @@ const Initializing: React.FC<Props> = () => {
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const hasStorageLoaded = useAppSelector(selectHasLoadedFromStorage)
-    const isChatSupported = useIsChatSupported()
     const [hasRefreshedFederations, setHasRefreshedFederations] =
         useState(false)
     const [bridgeError, setBridgeError] = useState<unknown | null>(null)
@@ -59,13 +57,6 @@ const Initializing: React.FC<Props> = () => {
             if (!hasLoaded) return
 
             if (hasFederation) {
-                // if chat is supported but auth is not set, recover/create username
-                // TODO: move this out of initializing, this will only send us here
-                // on first launch of app, but won't catch if you switch to a
-                // federation that's in this state!
-                if (isChatSupported && !hasAuthenticatedMember) {
-                    return navigation.replace('CreateUsername')
-                }
                 // Otherwise, go Home
                 return navigation.replace('TabsNavigator')
             } else {
@@ -83,13 +74,7 @@ const Initializing: React.FC<Props> = () => {
             }
         }
         doNavigation()
-    }, [
-        hasLoaded,
-        hasFederation,
-        hasAuthenticatedMember,
-        isChatSupported,
-        navigation,
-    ])
+    }, [hasLoaded, hasFederation, hasAuthenticatedMember, navigation])
 
     if (bridgeError) {
         return <ErrorScreen error={bridgeError} />
