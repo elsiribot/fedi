@@ -7,7 +7,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     # we pick upstream packages from here, so we want this to be compatible with our forks
     fedimint-pkgs = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=refs/tags/v0.2.2-rc7&rev=989282cb118c25f6f6dce62d0727f61cfd6ec3d9";
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=refs/tags/v0.2.2-rc7&rev=989282cb118c25f6f6dce62d0727f61cfd6ec3d9";
     };
 
     fenix = {
