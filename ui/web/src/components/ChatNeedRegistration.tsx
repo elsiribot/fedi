@@ -28,23 +28,21 @@ export const ChatNeedRegistration: React.FC = () => {
                     <Text>
                         {t('feature.chat.need-registration-description')}
                     </Text>
+                    <Button
+                        width="full"
+                        href="/onboarding/username"
+                        css={{ maxWidth: 320 }}>
+                        {t('feature.chat.register-a-username')}
+                    </Button>
                 </Content>
             </Layout.Content>
-            <Layout.Actions>
-                <Button
-                    width="full"
-                    href="/onboarding/username"
-                    css={{ maxWidth: 320 }}>
-                    {t('feature.chat.register-a-username')}
-                </Button>
-            </Layout.Actions>
         </Layout.Root>
     )
 }
 
 const Content = styled('div', {
-    flex: 1,
     maxWidth: 320,
+    gap: 16,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
