@@ -510,22 +510,17 @@ impl FederationV2 {
                             let amount = Amount::from_sats(
                                 data.btc_transaction.output[data.out_idx as usize].value,
                             );
-                            let _ = fed
+                            let fedi_fee_status = fed
                                 .write_success_receive_fedi_fee(operation_id, amount)
-                                .await;
+                                .await
+                                .map(|(_, status)| status)
+                                .ok()
+                                .map(Into::into);
                             let onchain_details = Some(RpcBitcoinDetails {
                                 address: address.clone(),
                                 expires_at: to_unix_time(expires_at)
                                     .expect("unix time should exist"),
                             });
-                            let fedi_fee_status = fed
-                                .client
-                                .db()
-                                .begin_transaction_nc()
-                                .await
-                                .get_value(&OperationFediFeeStatusKey(operation_id))
-                                .await
-                                .map(Into::into);
                             let transaction = RpcTransaction {
                                 id: operation_id.to_string(),
                                 created_at: unix_now().expect("unix time should exist"),
@@ -583,16 +578,11 @@ impl FederationV2 {
                             let amount = Amount {
                                 msats: invoice.amount_milli_satoshis().unwrap(),
                             };
-                            let _ = fed
-                                .write_success_receive_fedi_fee(operation_id, amount)
-                                .await;
                             let fedi_fee_status = fed
-                                .client
-                                .db()
-                                .begin_transaction_nc()
+                                .write_success_receive_fedi_fee(operation_id, amount)
                                 .await
-                                .get_value(&OperationFediFeeStatusKey(operation_id))
-                                .await
+                                .map(|(_, status)| status)
+                                .ok()
                                 .map(Into::into);
                             let transaction = RpcTransaction {
                                 id: operation_id.to_string(),
@@ -1040,10 +1030,7 @@ impl FederationV2 {
 
         if timeout_res.is_err() {
             let _ = self
-                .write_failed_send_fedi_fee(match pay_type {
-                    PayType::Internal(operation_id) => operation_id,
-                    PayType::Lightning(operation_id) => operation_id,
-                })
+                .write_failed_send_fedi_fee(pay_type.operation_id())
                 .await;
         }
 
@@ -2239,10 +2226,14 @@ impl FederationV2 {
 
     /// Transitions the OperationFediFeeStatus for a send operation from pending
     /// to success, iff the status is currently pending. Therefore the
-    /// transition only happens once. Returns Ok(true) if a DB write actually
-    /// occurred, and Ok(false) if no write was needed, meaning that the status
-    /// has already been recorded as a success.
-    async fn write_success_send_fedi_fee(&self, operation_id: OperationId) -> anyhow::Result<bool> {
+    /// transition only happens once. Returns Ok((true, new_status)) if a DB
+    /// write actually occurred, and Ok((false, current_status)) if no write
+    /// was needed, meaning that the status has already been recorded as a
+    /// success.
+    async fn write_success_send_fedi_fee(
+        &self,
+        operation_id: OperationId,
+    ) -> anyhow::Result<(bool, OperationFediFeeStatus)> {
         let res = self
             .client
             .db()
@@ -2250,20 +2241,19 @@ impl FederationV2 {
                 |dbtx, _| {
                     Box::pin(async move {
                         let key = OperationFediFeeStatusKey(operation_id);
-                        let did_overwrite = match dbtx.get_value(&key).await {
+                        let (did_overwrite, status) = match dbtx.get_value(&key).await {
                             Some(OperationFediFeeStatus::PendingSend { fedi_fee }) => {
-                                dbtx.insert_entry(
-                                    &key,
-                                    &OperationFediFeeStatus::Success { fedi_fee },
-                                )
-                                .await;
-                                true
+                                let new_status = OperationFediFeeStatus::Success { fedi_fee };
+                                dbtx.insert_entry(&key, &new_status).await;
+                                (true, new_status)
                             }
-                            Some(OperationFediFeeStatus::Success { .. }) => false,
+                            Some(status @ OperationFediFeeStatus::Success { .. }) => {
+                                (false, status)
+                            }
                             Some(_) => bail!("Invalid operation fedi fee status found!"),
                             None => bail!("No operation fedi fee status found!"),
                         };
-                        Ok::<bool, anyhow::Error>(did_overwrite)
+                        Ok::<(bool, OperationFediFeeStatus), anyhow::Error>((did_overwrite, status))
                     })
                 },
                 Some(100),
@@ -2275,11 +2265,11 @@ impl FederationV2 {
             });
 
         match res {
-            Ok(true) => info!(
+            Ok((true, _)) => info!(
                 "Successfully wrote success send fedi fee for op ID {}",
                 operation_id
             ),
-            Ok(false) => info!(
+            Ok((false, _)) => info!(
                 "Already recorded success send fedi fee for op ID {}, nothing overwritten",
                 operation_id
             ),
@@ -2295,10 +2285,13 @@ impl FederationV2 {
     /// Transitions the OperationFediFeeStatus for a send operation from pending
     /// to failure, iff the status is currently pending. Therefore the
     /// transition only happens once. We also credit the fee back to the user.
-    /// Returns Ok(true) if a DB write actually occurred, and Ok(false) if
-    /// no write was needed, meaning that the status has already been
-    /// recorded as a failure.
-    async fn write_failed_send_fedi_fee(&self, operation_id: OperationId) -> anyhow::Result<bool> {
+    /// Returns Ok((true, new_status)) if a DB write actually occurred, and
+    /// Ok((false, current_status)) if no write was needed, meaning that the
+    /// status has already been recorded as a failure.
+    async fn write_failed_send_fedi_fee(
+        &self,
+        operation_id: OperationId,
+    ) -> anyhow::Result<(bool, OperationFediFeeStatus)> {
         let res = self
             .client
             .db()
@@ -2306,13 +2299,10 @@ impl FederationV2 {
                 |dbtx, _| {
                     Box::pin(async move {
                         let key = OperationFediFeeStatusKey(operation_id);
-                        let did_overwrite = match dbtx.get_value(&key).await {
+                        let (did_overwrite, status) = match dbtx.get_value(&key).await {
                             Some(OperationFediFeeStatus::PendingSend { fedi_fee }) => {
-                                dbtx.insert_entry(
-                                    &key,
-                                    &OperationFediFeeStatus::FailedSend { fedi_fee },
-                                )
-                                .await;
+                                let new_status = OperationFediFeeStatus::FailedSend { fedi_fee };
+                                dbtx.insert_entry(&key, &new_status).await;
                                 let outstanding_fedi_fees = dbtx
                                     .get_value(&OutstandingFediFeesKey)
                                     .await
@@ -2324,13 +2314,15 @@ impl FederationV2 {
                                 };
                                 dbtx.insert_entry(&OutstandingFediFeesKey, &outstanding_fedi_fees)
                                     .await;
-                                true
+                                (true, new_status)
                             }
-                            Some(OperationFediFeeStatus::FailedSend { .. }) => false,
+                            Some(status @ OperationFediFeeStatus::FailedSend { .. }) => {
+                                (false, status)
+                            }
                             Some(_) => bail!("Invalid operation fedi fee status found!"),
                             None => bail!("No operation fedi fee status found!"),
                         };
-                        Ok::<bool, anyhow::Error>(did_overwrite)
+                        Ok::<(bool, OperationFediFeeStatus), anyhow::Error>((did_overwrite, status))
                     })
                 },
                 Some(100),
@@ -2342,11 +2334,11 @@ impl FederationV2 {
             });
 
         match res {
-            Ok(true) => info!(
+            Ok((true, _)) => info!(
                 "Successfully wrote failed send fedi fee for op ID {}",
                 operation_id
             ),
-            Ok(false) => info!(
+            Ok((false, _)) => info!(
                 "Already recorded failed send fedi fee for op ID {}, nothing overwritten",
                 operation_id
             ),
@@ -2409,14 +2401,14 @@ impl FederationV2 {
     /// pending to success, iff the status is currently pending. Therefore
     /// the transition only happens once. We also debit the fee at this
     /// point since the amount must be known now and the funds are in the user's
-    /// possession. Returns Ok(true) if a DB write actually occurred, and
-    /// Ok(false) if no write was needed, meaning that the status
-    /// has already been recorded as a success.
+    /// possession. Returns Ok((true, new_status)) if a DB write actually
+    /// occurred, and Ok((false, current_status)) if no write was needed,
+    /// meaning that the status has already been recorded as a success.
     async fn write_success_receive_fedi_fee(
         &self,
         operation_id: OperationId,
         amount: Amount,
-    ) -> anyhow::Result<bool> {
+    ) -> anyhow::Result<(bool, OperationFediFeeStatus)> {
         let res = self
             .client
             .db()
@@ -2424,7 +2416,7 @@ impl FederationV2 {
                 |dbtx, _| {
                     Box::pin(async move {
                         let key = OperationFediFeeStatusKey(operation_id);
-                        let did_overwrite = match dbtx.get_value(&key).await {
+                        let (did_overwrite, status) = match dbtx.get_value(&key).await {
                             Some(OperationFediFeeStatus::PendingReceive { fedi_fee_ppm }) => {
                                 let fedi_fee = Amount::from_msats(
                                     (amount.msats * fedi_fee_ppm).div_ceil(MILLION),
@@ -2434,20 +2426,19 @@ impl FederationV2 {
                                         .get_value(&OutstandingFediFeesKey)
                                         .await
                                         .unwrap_or(Amount::ZERO);
-                                dbtx.insert_entry(
-                                    &key,
-                                    &OperationFediFeeStatus::Success { fedi_fee },
-                                )
-                                .await;
+                                let new_status = OperationFediFeeStatus::Success { fedi_fee };
+                                dbtx.insert_entry(&key, &new_status).await;
                                 dbtx.insert_entry(&OutstandingFediFeesKey, &outstanding_fedi_fees)
                                     .await;
-                                true
+                                (true, new_status)
                             }
-                            Some(OperationFediFeeStatus::Success { .. }) => false,
+                            Some(status @ OperationFediFeeStatus::Success { .. }) => {
+                                (false, status)
+                            }
                             Some(_) => bail!("Invalid operation fedi fee status found!"),
                             None => bail!("No operation fedi fee status found!"),
                         };
-                        Ok::<bool, anyhow::Error>(did_overwrite)
+                        Ok::<(bool, OperationFediFeeStatus), anyhow::Error>((did_overwrite, status))
                     })
                 },
                 Some(100),
@@ -2459,11 +2450,11 @@ impl FederationV2 {
             });
 
         match res {
-            Ok(true) => info!(
+            Ok((true, _)) => info!(
                 "Successfully wrote success receive fedi fee for op ID {}",
                 operation_id
             ),
-            Ok(false) => info!(
+            Ok((false, _)) => info!(
                 "Already recorded success receive fedi fee for op ID {}, nothing overwritten",
                 operation_id
             ),
@@ -2478,13 +2469,14 @@ impl FederationV2 {
 
     /// Transitions the OperationFediFeeStatus for a receive operation from
     /// pending to failure, iff the status is currently pending. Therefore
-    /// the transition only happens once. Returns Ok(true) if a DB write
-    /// actually occurred, and Ok(false) if no write was needed, meaning
-    /// that the status has already been recorded as a failure.
+    /// the transition only happens once. Returns Ok((true, new_status)) if a DB
+    /// write actually occurred, and Ok((false, current_status)) if no write
+    /// was needed, meaning that the status has already been recorded as a
+    /// failure.
     async fn write_failed_receive_fedi_fee(
         &self,
         operation_id: OperationId,
-    ) -> anyhow::Result<bool> {
+    ) -> anyhow::Result<(bool, OperationFediFeeStatus)> {
         let res = self
             .client
             .db()
@@ -2492,20 +2484,20 @@ impl FederationV2 {
                 |dbtx, _| {
                     Box::pin(async move {
                         let key = OperationFediFeeStatusKey(operation_id);
-                        let did_overwrite = match dbtx.get_value(&key).await {
+                        let (did_overwrite, status) = match dbtx.get_value(&key).await {
                             Some(OperationFediFeeStatus::PendingReceive { fedi_fee_ppm }) => {
-                                dbtx.insert_entry(
-                                    &key,
-                                    &OperationFediFeeStatus::FailedReceive { fedi_fee_ppm },
-                                )
-                                .await;
-                                true
+                                let new_status =
+                                    OperationFediFeeStatus::FailedReceive { fedi_fee_ppm };
+                                dbtx.insert_entry(&key, &new_status).await;
+                                (true, new_status)
                             }
-                            Some(OperationFediFeeStatus::FailedReceive { .. }) => false,
+                            Some(status @ OperationFediFeeStatus::FailedReceive { .. }) => {
+                                (false, status)
+                            }
                             Some(_) => bail!("Invalid operation fedi fee status found!"),
                             None => bail!("No operation fedi fee status found!"),
                         };
-                        Ok::<bool, anyhow::Error>(did_overwrite)
+                        Ok::<(bool, OperationFediFeeStatus), anyhow::Error>((did_overwrite, status))
                     })
                 },
                 Some(100),
@@ -2517,11 +2509,11 @@ impl FederationV2 {
             });
 
         match res {
-            Ok(true) => info!(
+            Ok((true, _)) => info!(
                 "Successfully wrote failed receive fedi fee for op ID {}",
                 operation_id
             ),
-            Ok(false) => info!(
+            Ok((false, _)) => info!(
                 "Already recorded failed receive fedi fee for op ID {}, nothing overwritten",
                 operation_id
             ),
