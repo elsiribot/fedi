@@ -13,7 +13,7 @@ use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::api::{DynGlobalApi, InviteCode as InviteCodeV2, WsFederationApi};
 use fedimint_core::config::ClientConfig;
-use fedimint_core::core::{ModuleKind, OperationId};
+use fedimint_core::core::OperationId;
 use fedimint_core::encoding::Decodable;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::CommonModuleInit;
@@ -40,7 +40,7 @@ use crate::error::{get_error_code, ErrorCode};
 use crate::event::SocialRecoveryEvent;
 use crate::federation_v2::{self, FederationV2};
 use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
-use crate::storage::{AppState, FederationInfo, ModuleFediFeeSchedule};
+use crate::storage::{AppState, FederationInfo, FediFeeSchedule};
 use crate::types::{
     GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
     RpcLightningGateway, RpcPayAddressResponse, RpcReturningMemberStatus,
@@ -62,9 +62,9 @@ impl MultiFederation {
         }
     }
 
-    pub async fn generate_address(&self, fedi_fee_ppm: u64) -> Result<String> {
+    pub async fn generate_address(&self) -> Result<String> {
         match self {
-            Self::V2(multi) => multi.generate_address(fedi_fee_ppm).await,
+            Self::V2(multi) => multi.generate_address().await,
         }
     }
 
@@ -73,24 +73,19 @@ impl MultiFederation {
         amount: RpcAmount,
         description: String,
         expiry_time: Option<u64>,
-        fedi_fee_ppm: u64,
     ) -> Result<RpcInvoice> {
         match self {
             Self::V2(multi) => {
                 multi
-                    .generate_invoice(amount, description, expiry_time, fedi_fee_ppm)
+                    .generate_invoice(amount, description, expiry_time)
                     .await
             }
         }
     }
 
-    pub async fn pay_invoice(
-        &self,
-        invoice: &Bolt11Invoice,
-        fedi_fee_ppm: u64,
-    ) -> Result<RpcPayInvoiceResponse> {
+    pub async fn pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<RpcPayInvoiceResponse> {
         match self {
-            Self::V2(v2) => v2.pay_invoice(&invoice.clone(), fedi_fee_ppm).await,
+            Self::V2(v2) => v2.pay_invoice(&invoice.clone()).await,
         }
     }
 
@@ -98,11 +93,10 @@ impl MultiFederation {
         &self,
         address: Address,
         amount: bitcoin::Amount,
-        fedi_fee_ppm: u64,
     ) -> Result<RpcPayAddressResponse> {
         info!("pay address amount is {}", amount);
         match self {
-            Self::V2(v2) => v2.pay_address(address, amount, fedi_fee_ppm).await,
+            Self::V2(v2) => v2.pay_address(address, amount).await,
         }
     }
 
@@ -130,19 +124,15 @@ impl MultiFederation {
         }
     }
 
-    pub async fn receive_ecash(&self, ecash: String, fedi_fee_ppm: u64) -> Result<Amount> {
+    pub async fn receive_ecash(&self, ecash: String) -> Result<Amount> {
         match self {
-            Self::V2(v2) => v2.receive_ecash(ecash, fedi_fee_ppm).await,
+            Self::V2(v2) => v2.receive_ecash(ecash).await,
         }
     }
 
-    pub async fn generate_ecash(
-        &self,
-        amount: Amount,
-        fedi_fee_ppm: u64,
-    ) -> Result<RpcGenerateEcashResponse> {
+    pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
         match self {
-            Self::V2(v2) => v2.generate_ecash(amount, fedi_fee_ppm).await,
+            Self::V2(v2) => v2.generate_ecash(amount).await,
         }
     }
 
@@ -314,16 +304,9 @@ impl MultiFederation {
         }
     }
 
-    pub async fn stability_pool_deposit_to_seek(
-        &self,
-        amount: Amount,
-        fedi_fee_ppm: u64,
-    ) -> Result<OperationId> {
+    pub async fn stability_pool_deposit_to_seek(&self, amount: Amount) -> Result<OperationId> {
         match self {
-            MultiFederation::V2(v2) => {
-                v2.stability_pool_deposit_to_seek(amount, fedi_fee_ppm)
-                    .await
-            }
+            MultiFederation::V2(v2) => v2.stability_pool_deposit_to_seek(amount).await,
         }
     }
 
@@ -331,11 +314,10 @@ impl MultiFederation {
         &self,
         unlocked_amount: Amount,
         locked_bps: u32,
-        fedi_fee_ppm: u64,
     ) -> Result<OperationId> {
         match self {
             MultiFederation::V2(v2) => {
-                v2.stability_pool_withdraw(unlocked_amount, locked_bps, fedi_fee_ppm)
+                v2.stability_pool_withdraw(unlocked_amount, locked_bps)
                     .await
             }
         }
@@ -398,6 +380,11 @@ impl Bridge {
                                 task_group.make_subgroup().await,
                                 &root_mnemonic,
                                 None,
+                                get_federation_fedi_fee_schedule(
+                                    &app_state,
+                                    federation_id_str.clone(),
+                                )
+                                .await?,
                             )
                             .await
                             .with_context(|| {
@@ -460,6 +447,9 @@ impl Bridge {
             .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
             .await;
 
+        // TODO shaurya actually fetch fee schedule when endpoint available
+        let fedi_fee_schedule = FediFeeSchedule::default();
+
         let db_name = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
         let federation = FederationV2::join(
             invite_code_string,
@@ -468,6 +458,7 @@ impl Bridge {
             TaskGroup::new(),
             &db_name,
             &root_mnemonic,
+            fedi_fee_schedule.clone(),
         )
         .await?;
         let federation_id = federation.federation_id();
@@ -484,8 +475,7 @@ impl Bridge {
                         FederationInfo {
                             version: 2,
                             database_name: db_name,
-                            // TODO shaurya actually fetch fee schedule when endpoint available
-                            fedi_fee_schedule: Default::default(),
+                            fedi_fee_schedule,
                         },
                     );
                     Ok(())
@@ -587,11 +577,7 @@ impl Bridge {
 
     pub async fn generate_address(&self, federation_id: RpcFederationId) -> Result<String> {
         let multi = self.get_multi(&federation_id.0).await?;
-        let fedi_fee_ppm = self
-            .get_federation_module_fee_schedule(federation_id, fedimint_wallet_client::KIND)
-            .await?
-            .receive_ppm;
-        multi.generate_address(fedi_fee_ppm).await
+        multi.generate_address().await
     }
 
     pub async fn generate_invoice(
@@ -603,12 +589,8 @@ impl Bridge {
         let multi = self.get_multi(&federation_id.0).await?;
         // FIXME: add this to RPC interface
         let expiry_time = None;
-        let fedi_fee_ppm = self
-            .get_federation_module_fee_schedule(federation_id, fedimint_ln_common::KIND)
-            .await?
-            .receive_ppm;
         multi
-            .generate_invoice(amount, description, expiry_time, fedi_fee_ppm)
+            .generate_invoice(amount, description, expiry_time)
             .await
     }
 
@@ -618,11 +600,7 @@ impl Bridge {
         invoice: &Bolt11Invoice,
     ) -> Result<RpcPayInvoiceResponse> {
         let multi = self.get_multi(&federation_id.0).await?;
-        let fedi_fee_ppm = self
-            .get_federation_module_fee_schedule(federation_id, fedimint_ln_common::KIND)
-            .await?
-            .send_ppm;
-        multi.pay_invoice(invoice, fedi_fee_ppm).await
+        multi.pay_invoice(invoice).await
     }
 
     pub async fn pay_address(
@@ -632,11 +610,7 @@ impl Bridge {
         amount: bitcoin::Amount,
     ) -> Result<RpcPayAddressResponse> {
         let multi = self.get_multi(&federation_id.0).await?;
-        let fedi_fee_ppm = self
-            .get_federation_module_fee_schedule(federation_id, fedimint_wallet_client::KIND)
-            .await?
-            .send_ppm;
-        multi.pay_address(address, amount, fedi_fee_ppm).await
+        multi.pay_address(address, amount).await
     }
 
     pub async fn list_gateways(
@@ -662,14 +636,7 @@ impl Bridge {
         ecash: String,
     ) -> Result<RpcAmount> {
         let multi = self.get_multi(&federation_id.0).await?;
-        let fedi_fee_ppm = self
-            .get_federation_module_fee_schedule(federation_id, fedimint_mint_client::KIND)
-            .await?
-            .receive_ppm;
-        multi
-            .receive_ecash(ecash, fedi_fee_ppm)
-            .await
-            .map(RpcAmount)
+        multi.receive_ecash(ecash).await.map(RpcAmount)
     }
 
     pub async fn validate_ecash(&self, ecash: String) -> Result<RpcEcashInfo> {
@@ -682,11 +649,7 @@ impl Bridge {
         amount: RpcAmount,
     ) -> Result<RpcGenerateEcashResponse> {
         let multi = self.get_multi(&federation_id.0).await?;
-        let fedi_fee_ppm = self
-            .get_federation_module_fee_schedule(federation_id, fedimint_mint_client::KIND)
-            .await?
-            .send_ppm;
-        multi.generate_ecash(amount.0, fedi_fee_ppm).await
+        multi.generate_ecash(amount.0).await
     }
 
     pub async fn cancel_ecash(&self, federation_id: RpcFederationId, ecash: String) -> Result<()> {
@@ -726,31 +689,6 @@ impl Bridge {
             .word_iter()
             .map(|x| x.to_owned())
             .collect())
-    }
-
-    async fn get_federation_module_fee_schedule(
-        &self,
-        federation_id: RpcFederationId,
-        module: ModuleKind,
-    ) -> anyhow::Result<ModuleFediFeeSchedule> {
-        self.app_state
-            .with_read_lock(move |state| {
-                Box::pin(async move {
-                    state
-                        .joined_federations
-                        .get(&federation_id.0)
-                        .ok_or(anyhow!("Unknown federation"))
-                        .map(|fed_info| {
-                            fed_info
-                                .fedi_fee_schedule
-                                .modules
-                                .get(&module)
-                                .cloned()
-                                .ok_or(anyhow!("Unknown module"))
-                        })
-                })
-            })
-            .await?
     }
 
     /// Enable logging of potentially sensitive information.
@@ -1129,12 +1067,8 @@ impl Bridge {
         amount: RpcAmount,
     ) -> Result<RpcOperationId> {
         let multi = self.get_multi(&federation_id.0).await?;
-        let fedi_fee_ppm = self
-            .get_federation_module_fee_schedule(federation_id, stability_pool_client::common::KIND)
-            .await?
-            .send_ppm;
         multi
-            .stability_pool_deposit_to_seek(amount.0, fedi_fee_ppm)
+            .stability_pool_deposit_to_seek(amount.0)
             .await
             .map(Into::into)
     }
@@ -1146,12 +1080,8 @@ impl Bridge {
         locked_bps: u32,
     ) -> Result<RpcOperationId> {
         let multi = self.get_multi(&federation_id.0).await?;
-        let fedi_fee_ppm = self
-            .get_federation_module_fee_schedule(federation_id, stability_pool_client::common::KIND)
-            .await?
-            .receive_ppm;
         multi
-            .stability_pool_withdraw(unlocked_amount.0, locked_bps, fedi_fee_ppm)
+            .stability_pool_withdraw(unlocked_amount.0, locked_bps)
             .await
             .map(Into::into)
     }
@@ -1174,4 +1104,24 @@ impl Bridge {
             .stability_pool_cycle_start_price()
             .await
     }
+}
+
+/// Static helper method. For the given AppState and federation ID, reads the
+/// AppState to retrieve the fedi fee schedule and returns it. If the federation
+/// is unknown, returns an error.
+async fn get_federation_fedi_fee_schedule(
+    app_state: &AppState,
+    federation_id_str: String,
+) -> anyhow::Result<FediFeeSchedule> {
+    app_state
+        .with_read_lock(move |state| {
+            Box::pin(async move {
+                state
+                    .joined_federations
+                    .get(&federation_id_str)
+                    .ok_or(anyhow!("Unknown federation"))
+                    .map(|fed_info| fed_info.fedi_fee_schedule.clone())
+            })
+        })
+        .await
 }
