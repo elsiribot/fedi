@@ -5,6 +5,10 @@ rules:
     - rust
   message: Use fedimint_core::time::now instead of std::time::SystemTime::now for better wasm compatibility.
   pattern: std::time::SystemTime::now
+  paths:
+    exclude:
+      # doesn't run in wasm
+      - devi/
 
   severity: WARNING
 
@@ -16,6 +20,11 @@ rules:
   pattern-either:
     - pattern: std::time::Instant::now
     - pattern: tokio::time::Instant::now
+
+  paths:
+    exclude:
+      # doesn't run in wasm
+      - devi/
 
   severity: WARNING
 
@@ -50,6 +59,10 @@ rules:
   message: "`tokio::time::sleep` doesn't work in WASM. Use `fedimint_core::task::sleep` instead."
   pattern: tokio::time::sleep
   severity: WARNING
+  paths:
+    exclude:
+      # doesn't run in wasm
+      - devi/
 
 - id: ban-wildcard-imports
   languages:
