@@ -15,6 +15,7 @@ import { styled, theme } from '../styles'
 import { Avatar } from './Avatar'
 import { Button } from './Button'
 import { ChatGroupDialogState } from './ChatGroupConversation'
+import { CircularLoader } from './CircularLoader'
 import { IconButton } from './IconButton'
 import { Text } from './Text'
 
@@ -31,7 +32,7 @@ export default function ChatBroadcastAdminSettings({
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(selectActiveFederationId)
 
-    const [admins, setAdmins] = useState<ChatMember[]>([])
+    const [admins, setAdmins] = useState<ChatMember[] | null>(null)
 
     const refreshAdminList = useCallback(async () => {
         if (activeFederationId) {
@@ -72,7 +73,11 @@ export default function ChatBroadcastAdminSettings({
         <Container>
             <Text>{t('feature.chat.broadcast-admin-instructions')}</Text>
 
-            {admins.length > 0 ? (
+            {admins === null ? (
+                <EmptyContainer>
+                    <CircularLoader />
+                </EmptyContainer>
+            ) : admins.length > 0 ? (
                 <AdminsContainer>
                     {admins.map((admin, i) => (
                         <AdminUser key={i}>
@@ -104,6 +109,8 @@ const Container = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     gap: theme.space.lg,
+    flexGrow: 1,
+    height: '100%',
 })
 
 const AdminsContainer = styled('div', {
@@ -112,6 +119,11 @@ const AdminsContainer = styled('div', {
     gap: theme.space.lg,
     maxHeight: 220,
     overflowY: 'scroll',
+    flexGrow: 1,
+
+    '@sm': {
+        maxHeight: 'unset',
+    },
 })
 
 const AdminUser = styled('div', {

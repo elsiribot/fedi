@@ -16,6 +16,7 @@ import { useAppDispatch, useAppSelector, useToast } from '../hooks'
 import { styled, theme } from '../styles'
 import { Avatar } from './Avatar'
 import { ChatGroupDialogState } from './ChatGroupConversation'
+import { CircularLoader } from './CircularLoader'
 import { Icon } from './Icon'
 import { Input } from './Input'
 import { Text } from './Text'
@@ -34,6 +35,7 @@ export default function ChatBroadcastAdminAdd({
     const federationId = useAppSelector(selectActiveFederationId)
 
     const [visitors, setVisitors] = useState<ChatMember[]>([])
+    const [searchLoading, setSearchLoading] = useState(false)
 
     const { query, setQuery, searchedMembers } = useChatMemberSearch(visitors)
 
@@ -75,6 +77,7 @@ export default function ChatBroadcastAdminAdd({
     }
 
     const refreshVisitorList = useCallback(async () => {
+        setSearchLoading(true)
         if (federationId) {
             const groupVisitors = await dispatch(
                 fetchChatGroupMembersList({
@@ -85,6 +88,7 @@ export default function ChatBroadcastAdminAdd({
             ).unwrap()
             setVisitors(groupVisitors)
         }
+        setSearchLoading(false)
     }, [federationId, dispatch, groupId])
 
     useEffect(() => {
@@ -100,15 +104,29 @@ export default function ChatBroadcastAdminAdd({
                 onChange={e => setQuery(e.target.value)}
             />
             <MemberContainer>
-                {searchedMembers.map((member, i) => (
-                    <MemberItem key={i} onClick={() => selectMember(member)}>
-                        <MemberInfoWrapper>
-                            <Avatar id={member.id} name={member.username} />
-                            <Text weight="bold">{member.username}</Text>
-                        </MemberInfoWrapper>
-                        <Icon icon={ChevronRight} size="md" />
-                    </MemberItem>
-                ))}
+                {searchLoading ? (
+                    <CircularLoader />
+                ) : searchedMembers.length > 0 ? (
+                    searchedMembers.map((member, i) => (
+                        <MemberItem
+                            key={i}
+                            onClick={() => selectMember(member)}>
+                            <MemberInfoWrapper>
+                                <Avatar id={member.id} name={member.username} />
+                                <Text weight="bold">{member.username}</Text>
+                            </MemberInfoWrapper>
+                            <Icon icon={ChevronRight} size="md" />
+                        </MemberItem>
+                    ))
+                ) : (
+                    <EmptyIndicatorText>
+                        {query
+                            ? t('feature.omni.search-no-results', {
+                                  query,
+                              })
+                            : t('feature.chat.no-users-found')}
+                    </EmptyIndicatorText>
+                )}
             </MemberContainer>
         </Container>
     )
@@ -123,9 +141,10 @@ const Container = styled('div', {
 const MemberContainer = styled('div', {
     display: 'flex',
     flexDirection: 'column',
+    alignItems: 'center',
     gap: theme.space.sm,
     maxHeight: 220,
-    overflowY: 'scroll',
+    overflowY: 'auto',
 })
 
 const MemberItem = styled('button', {
@@ -147,4 +166,8 @@ const MemberInfoWrapper = styled('div', {
     display: 'flex',
     gap: theme.space.md,
     alignItems: 'center',
+})
+
+const EmptyIndicatorText = styled(Text, {
+    color: theme.colors.grey,
 })
