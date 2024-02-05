@@ -20,7 +20,11 @@ export const FederationLogo: React.FC<Props> = ({ federation, size }) => {
         typeof size === 'number' ? { width: size, height: size } : undefined
 
     return iconUrl ? (
-        <Image style={svgProps} source={{ uri: iconUrl }} resizeMode="cover" />
+        <Image
+            style={{ borderRadius: 8, ...svgProps }}
+            source={{ uri: iconUrl }}
+            resizeMode="cover"
+        />
     ) : (
         <SvgImage
             name="Federation"
