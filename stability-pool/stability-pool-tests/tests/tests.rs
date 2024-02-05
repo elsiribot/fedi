@@ -67,15 +67,15 @@ async fn starter_test() -> anyhow::Result<()> {
     let seek1_msats = 200_000;
     let provide1_msats = 500_000;
     let provide1_min_fee_rate = 24;
-    tokio::try_join!(
+    let (seeker_acc_info, provider_acc_info) = tokio::try_join!(
         seeker.deposit_to_seek(seek1_msats),
         provider.deposit_to_provide(provide1_msats, provide1_min_fee_rate)
     )?;
 
     // Verify locked seek and provide and fee remittance
     let (seeker_info, provider_info) = tokio::try_join!(
-        seeker.wait_for_locked_seek_change(),
-        provider.wait_for_locked_provide_change()
+        seeker.wait_for_locked_seek_change(seeker_acc_info),
+        provider.wait_for_locked_provide_change(provider_acc_info)
     )?;
 
     let fees_paid = 1; // 24ppb means 1 part for 200k (ceiling division)
@@ -123,15 +123,15 @@ async fn starter_test() -> anyhow::Result<()> {
     let seek2_msats = 500_000;
     let provide2_msats = 100_000;
     let provide2_min_fee_rate = 50;
-    tokio::try_join!(
+    let (seeker_acc_info, provider_acc_info) = tokio::try_join!(
         seeker.deposit_to_seek(seek2_msats),
         provider.deposit_to_provide(provide2_msats, provide2_min_fee_rate)
     )?;
 
     // Verify locked seek and provide and fee remittance
     let (seeker_info, provider_info) = tokio::try_join!(
-        seeker.wait_for_locked_seek_change(),
-        provider.wait_for_locked_provide_change()
+        seeker.wait_for_locked_seek_change(seeker_acc_info),
+        provider.wait_for_locked_provide_change(provider_acc_info)
     )?;
 
     let fees_paid = fees_paid + 1 + 1; // 50ppb is 1 part for 600_000 (ceiling division), +1 for rounding
@@ -269,8 +269,8 @@ async fn starter_test() -> anyhow::Result<()> {
     // Wait for one last cycle change
     // Verify locked seek and provide and fee remittance
     let (seeker_info, provider_info) = tokio::try_join!(
-        seeker.wait_for_locked_seek_change(),
-        provider.wait_for_locked_provide_change()
+        seeker.wait_for_locked_seek_change(seeker.get_sp_account_info().await?),
+        provider.wait_for_locked_provide_change(provider.get_sp_account_info().await?)
     )?;
 
     let fees_paid = 1 + 1; // 24ppb is 1 parts for 300_000, +1 for rounding
@@ -740,7 +740,7 @@ impl ForkedClient {
         })
     }
 
-    async fn deposit_to_seek(&self, amount: u64) -> anyhow::Result<()> {
+    async fn deposit_to_seek(&self, amount: u64) -> anyhow::Result<AccountInfo> {
         cmd!(
             self,
             "module",
@@ -750,10 +750,10 @@ impl ForkedClient {
         )
         .run()
         .await?;
-        Ok(())
+        self.get_sp_account_info().await
     }
 
-    async fn deposit_to_provide(&self, amount: u64, fee_rate: u64) -> anyhow::Result<()> {
+    async fn deposit_to_provide(&self, amount: u64, fee_rate: u64) -> anyhow::Result<AccountInfo> {
         cmd!(
             self,
             "module",
@@ -764,7 +764,7 @@ impl ForkedClient {
         )
         .run()
         .await?;
-        Ok(())
+        self.get_sp_account_info().await
     }
 
     async fn withdraw(&self, unlocked_amount: u64, locked_bps: u32) -> anyhow::Result<()> {
@@ -781,29 +781,29 @@ impl ForkedClient {
         Ok(())
     }
 
-    async fn wait_for_locked_seek_change(&self) -> anyhow::Result<AccountInfo> {
-        let initial_account_info = self.get_sp_account_info().await?;
-        tokio::time::sleep(Duration::from_secs(5)).await;
-
+    async fn wait_for_locked_seek_change(
+        &self,
+        initial_account_info: AccountInfo,
+    ) -> anyhow::Result<AccountInfo> {
         loop {
             let new_account_info = self.get_sp_account_info().await?;
             if new_account_info.locked_seeks != initial_account_info.locked_seeks {
                 return Ok(new_account_info);
             }
-            tokio::time::sleep(Duration::from_secs(5)).await;
+            tokio::time::sleep(Duration::from_secs(2)).await;
         }
     }
 
-    async fn wait_for_locked_provide_change(&self) -> anyhow::Result<AccountInfo> {
-        let initial_account_info = self.get_sp_account_info().await?;
-        tokio::time::sleep(Duration::from_secs(5)).await;
-
+    async fn wait_for_locked_provide_change(
+        &self,
+        initial_account_info: AccountInfo,
+    ) -> anyhow::Result<AccountInfo> {
         loop {
             let new_account_info = self.get_sp_account_info().await?;
             if new_account_info.locked_provides != initial_account_info.locked_provides {
                 return Ok(new_account_info);
             }
-            tokio::time::sleep(Duration::from_secs(5)).await;
+            tokio::time::sleep(Duration::from_secs(2)).await;
         }
     }
 }
