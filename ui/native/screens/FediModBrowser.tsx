@@ -284,7 +284,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     // automitaclly handled by the OS webview.
     const onShouldStartLoadWithRequest: OnShouldStartLoadWithRequest = req => {
         // Unless it's a URI we're handling in-app, allow the webview to handle it.
-        console.log(req.url, handledUriRegex.test(req.url))
         if (!handledUriRegex.test(req.url)) return true
         // Otherwise, optimistically block it and attempt to parse whatever it was.
         // If it can be handled inline by the FediModBrowser, do that. If it can
