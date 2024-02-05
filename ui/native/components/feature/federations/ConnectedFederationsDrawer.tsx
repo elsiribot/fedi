@@ -4,11 +4,17 @@ import {
     DrawerItem,
 } from '@react-navigation/drawer'
 import { useNavigation } from '@react-navigation/native'
-import { Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImageBackground, Pressable, StyleSheet, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import {
+    Dimensions,
+    ImageBackground,
+    Pressable,
+    StyleSheet,
+    View,
+} from 'react-native'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
 import {
@@ -94,13 +100,24 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     const { theme } = useTheme()
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const federations = useAppSelector(selectFederations)
+    const insets = useSafeAreaInsets()
 
     const style = styles(theme)
     return (
         <ImageBackground
             style={style.imageBackground}
             source={Images.HoloBackground}>
-            <DrawerContentScrollView {...props} style={style.container}>
+            <DrawerContentScrollView
+                {...props}
+                style={[
+                    style.container,
+                    {
+                        maxHeight:
+                            Dimensions.get('window').height -
+                            56 -
+                            insets.bottom,
+                    },
+                ]}>
                 <Text
                     h2
                     style={style.headerTitle}
@@ -134,26 +151,18 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                     />
                 ))}
             </DrawerContentScrollView>
-            <SafeAreaView edges={['bottom', 'left']}>
-                <Pressable
-                    style={style.addFederationButton}
+            <SafeAreaView
+                edges={['bottom', 'left']}
+                style={style.addFederationContainer}>
+                <Button
+                    style={{ height: 56 }}
                     onPress={() => {
                         mainNavigation.navigate('JoinFederation', {
                             invite: undefined,
                         })
                     }}>
-                    <SvgImage
-                        name="Plus"
-                        color={theme.colors.darkGrey}
-                        maxFontSizeMultiplier={1.8}
-                    />
-                    <Text
-                        style={style.addFederationText}
-                        caption
-                        maxFontSizeMultiplier={1.8}>
-                        {t('feature.federations.add-federation')}
-                    </Text>
-                </Pressable>
+                    {t('feature.federations.add-federation')}
+                </Button>
             </SafeAreaView>
         </ImageBackground>
     )
@@ -163,16 +172,14 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             padding: 0,
+            flex: 0,
+            flexGrow: 0,
+            flexShrink: 0,
         },
-        addFederationButton: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            overflow: 'hidden',
-            gap: theme.spacing.xs,
-            paddingHorizontal: theme.spacing.lg,
-            paddingVertical: theme.spacing.sm,
-            color: theme.colors.darkGrey,
+        addFederationContainer: {
+            paddingLeft: theme.spacing.xl,
+            paddingRight: theme.spacing.xl,
+            height: 56,
         },
         addFederationText: {
             paddingLeft: theme.spacing.xs,
