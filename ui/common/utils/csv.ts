@@ -3,7 +3,19 @@ import { Transaction } from '../types'
 type CSVColumns<T> = { name: string; getValue: (item: T) => string | number }[]
 
 export function makeTransactionHistoryCSV(txs: Transaction[]) {
-    const sortedTxs = txs.sort((a, b) => a.createdAt - b.createdAt)
+    const sortedTxs = txs
+        .sort((a, b) => a.createdAt - b.createdAt)
+        .filter(
+            txn =>
+                !(
+                    txn.lnState?.type === 'waitingForPayment' ||
+                    (txn.bitcoin && txn.onchainState?.type !== 'claimed') ||
+                    (txn.lightning && !txn.lnState) ||
+                    txn.stabilityPoolState?.type === 'pendingWithdrawal' ||
+                    txn.lnState?.type === 'canceled'
+                ),
+        )
+
     return makeCSV(sortedTxs, [
         {
             name: 'ID',
@@ -65,5 +77,5 @@ export function makeCSVFilename(name: string) {
     return `${name
         .toLowerCase()
         .replace(/\s/g, '-')
-        .replace(/[^a-zA-Z0-9-]/g, '')}.csv`
+        .replace(/[^a-zA-Z0-9-]/g, '')}`
 }

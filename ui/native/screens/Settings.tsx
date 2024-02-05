@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import {
     Alert,
     Linking,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -206,28 +207,14 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
 
         try {
             await Share.open({
-                filename: makeCSVFilename(
-                    activeFederation?.name
-                        ? 'transactions-' + activeFederation.name
-                        : 'transactions',
-                ),
+                filename:
+                    makeCSVFilename(
+                        activeFederation?.name
+                            ? 'transactions-' + activeFederation.name
+                            : 'transactions',
+                    ) + (Platform.OS === 'ios' ? '.csv' : ''),
                 type: 'text/csv',
-                url: makeBase64CSVUri(
-                    makeTransactionHistoryCSV(
-                        transactions.filter(
-                            txn =>
-                                !(
-                                    txn.lnState?.type === 'waitingForPayment' ||
-                                    (txn.bitcoin &&
-                                        txn.onchainState?.type !== 'claimed') ||
-                                    (txn.lightning && !txn.lnState) ||
-                                    txn.stabilityPoolState?.type ===
-                                        'pendingWithdrawal' ||
-                                    txn.lnState?.type === 'canceled'
-                                ),
-                        ),
-                    ),
-                ),
+                url: makeBase64CSVUri(makeTransactionHistoryCSV(transactions)),
             })
         } catch {
             /* no-op */
