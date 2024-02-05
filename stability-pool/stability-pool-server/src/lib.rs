@@ -2,6 +2,7 @@ pub mod api;
 pub mod db;
 pub mod oracle;
 use std::collections::{BTreeMap, VecDeque};
+use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::bail;
@@ -44,7 +45,7 @@ use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
 use secp256k1_zkp::PublicKey;
 pub use stability_pool_common as common;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, RwLock};
 use tracing::{info, warn};
 
 /// PPB unit for fee-related calculations.
@@ -178,10 +179,18 @@ impl ServerModuleInit for StabilityPoolInit {
     }
 }
 
+/// Helper struct to encapsulate the price of Bitcoin in cents, along with the
+/// time at which the price was fetched.
+#[derive(Debug)]
+pub struct PrefetchedPrice {
+    pub time: SystemTime,
+    pub price: u64,
+}
+
 #[derive(Debug)]
 pub struct StabilityPool {
     pub cfg: StabilityPoolConfig,
-    pub oracle: Box<dyn Oracle>,
+    pub prefetched_price: Arc<RwLock<Option<PrefetchedPrice>>>,
     pub last_consensus_proposal: Mutex<Option<StabilityPoolConsensusItem>>,
 }
 
@@ -191,9 +200,42 @@ impl StabilityPool {
             OracleConfig::Mock => Box::new(MockOracle::new()),
             OracleConfig::Aggregate => Box::new(AggregateOracle::new_with_default_sources()),
         };
+        let prefetched_price = Arc::new(RwLock::new(None));
+        let prefetched_price_copy = Arc::clone(&prefetched_price);
+        fedimint_core::task::spawn("oracle price fetch", async move {
+            // To speed up consensus_proposal(), we pre-fetch the price from the
+            // oracle in a separate task. The price fetch happens
+            // every 30s, or at an interval which is 10% of the cycle duration,
+            // whichever is shorter.
+            //
+            // In case the price fetch fails, we retry again after waiting half
+            // the time and record a "None". If consensus_proposal() sees that the
+            // prefetched price is recorded as "None" it will abstain from
+            // proposing any consensus items. This ensures that outdated
+            // prices don't accidentally lead to stale consensus items.
+            let price_fetch_interval =
+                Duration::from_secs(30.min(cfg.consensus.cycle_duration.as_secs().div_ceil(10)));
+
+            loop {
+                match oracle.get_price().await {
+                    Ok(price) => {
+                        *prefetched_price_copy.write().await = Some(PrefetchedPrice {
+                            time: fedimint_core::time::now(),
+                            price,
+                        });
+                        fedimint_core::task::sleep(price_fetch_interval).await;
+                    }
+                    Err(e) => {
+                        warn!("oracle price fetch error: {e}");
+                        *prefetched_price_copy.write().await = None;
+                        fedimint_core::task::sleep(price_fetch_interval / 2).await;
+                    }
+                }
+            }
+        });
         StabilityPool {
             cfg,
-            oracle,
+            prefetched_price,
             last_consensus_proposal: Mutex::new(None),
         }
     }
@@ -282,17 +324,17 @@ impl ServerModule for StabilityPool {
         };
 
         if should_propose_new_cycle {
-            match self.oracle.get_price().await {
-                Err(e) => {
-                    warn!("oracle price fetch error: {e}");
+            match *self.prefetched_price.read().await {
+                None => {
+                    warn!("prefetched price absent, cannot propose CI");
                     vec![]
                 }
-                Ok(price) => {
+                Some(PrefetchedPrice { time, price }) => {
                     let new_cp = StabilityPoolConsensusItem::new_v0(
                         current_cycle
                             .map(|Cycle { index, .. }| index + 1)
                             .unwrap_or_default(),
-                        fedimint_core::time::now(),
+                        time,
                         price,
                     );
                     *self.last_consensus_proposal.lock().await = Some(new_cp.clone());
