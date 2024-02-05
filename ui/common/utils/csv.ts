@@ -23,8 +23,8 @@ export function makeTransactionHistoryCSV(txs: Transaction[]) {
                 tx.bitcoin ? 'on-chain' : tx.lightning ? 'lightning' : 'ecash',
         },
         {
-            name: 'Amount (msats)',
-            getValue: tx => tx.amount,
+            name: 'Amount (sats)',
+            getValue: tx => Math.round(tx.amount / 1000),
         },
         {
             name: 'Notes',

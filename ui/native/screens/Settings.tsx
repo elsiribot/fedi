@@ -212,7 +212,22 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         : 'transactions',
                 ),
                 type: 'text/csv',
-                url: makeBase64CSVUri(makeTransactionHistoryCSV(transactions)),
+                url: makeBase64CSVUri(
+                    makeTransactionHistoryCSV(
+                        transactions.filter(
+                            txn =>
+                                !(
+                                    txn.lnState?.type === 'waitingForPayment' ||
+                                    (txn.bitcoin &&
+                                        txn.onchainState?.type !== 'claimed') ||
+                                    (txn.lightning && !txn.lnState) ||
+                                    txn.stabilityPoolState?.type ===
+                                        'pendingWithdrawal' ||
+                                    txn.lnState?.type === 'canceled'
+                                ),
+                        ),
+                    ),
+                ),
             })
         } catch {
             /* no-op */
