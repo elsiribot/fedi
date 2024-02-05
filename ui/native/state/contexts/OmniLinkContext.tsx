@@ -31,7 +31,8 @@ interface OmniLinkContextState {
     isParsingLink: boolean
     /** The parsed version of the link that prompted the app into the foreground */
     parsedLink: AnyParsedData | null
-    clearParsedLink(): void
+    /** Set a parsed link to be handled by the OmniLink sheet */
+    setParsedLink(parsedLink: AnyParsedData | null): void
     /**
      * Add an interceptor to optionally handle a parsed link in a component
      * rather than the OmniLinkHandler. Returns an unsubscribe function.
@@ -78,8 +79,6 @@ export const OmniLinkContextProvider: React.FC<{
         Linking.addEventListener('url', event => parseUrl(event.url))
     }, [tRef])
 
-    const clearParsedLink = useCallback(() => setParsedLink(null), [])
-
     const subscribeInterceptor: OmniLinkContextState['subscribeInterceptor'] =
         useCallback(interceptor => {
             interceptorsRef.current.push(interceptor)
@@ -93,10 +92,10 @@ export const OmniLinkContextProvider: React.FC<{
         () => ({
             parsedLink,
             isParsingLink,
-            clearParsedLink,
+            setParsedLink,
             subscribeInterceptor,
         }),
-        [parsedLink, isParsingLink, clearParsedLink, subscribeInterceptor],
+        [parsedLink, isParsingLink, setParsedLink, subscribeInterceptor],
     )
 
     return (
