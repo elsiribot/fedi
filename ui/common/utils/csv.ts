@@ -77,5 +77,5 @@ export function makeCSVFilename(name: string) {
     return `${name
         .toLowerCase()
         .replace(/\s/g, '-')
-        .replace(/[^a-zA-Z0-9-]/g, '')}`
+        .replace(/[^a-zA-Z0-9-]/g, '')}.csv`
 }

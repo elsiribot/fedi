@@ -206,13 +206,16 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         }
 
         try {
+            const filename = makeCSVFilename(
+                activeFederation?.name
+                    ? 'transactions-' + activeFederation.name
+                    : 'transactions',
+            )
             await Share.open({
                 filename:
-                    makeCSVFilename(
-                        activeFederation?.name
-                            ? 'transactions-' + activeFederation.name
-                            : 'transactions',
-                    ) + (Platform.OS === 'ios' ? '.csv' : ''),
+                    Platform.OS === 'android'
+                        ? filename.slice(0, -4)
+                        : filename,
                 type: 'text/csv',
                 url: makeBase64CSVUri(makeTransactionHistoryCSV(transactions)),
             })
