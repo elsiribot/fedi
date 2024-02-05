@@ -5,6 +5,8 @@ use anyhow::anyhow;
 use bitcoin::secp256k1::ecdsa::Signature;
 use bitcoin::Network;
 use fedimint_core::config::{GlobalClientConfig, JsonWithKind, PeerUrl};
+use fedimint_core::encoding::{Decodable, Encodable};
+use fedimint_core::Amount;
 use fedimint_ln_client::pay::GatewayPayError;
 use fedimint_ln_client::{LnPayState, LnReceiveState};
 use fedimint_wallet_client::{BitcoinTransactionData, DepositState, WithdrawState};
@@ -311,7 +313,7 @@ pub struct RpcTransaction {
     #[ts(type = "number")]
     pub created_at: u64,
     pub amount: RpcAmount,
-    pub fedi_fee: RpcAmount,
+    pub fedi_fee_status: Option<RpcOperationFediFeeStatus>,
     pub direction: RpcTransactionDirection,
     pub notes: String,
     pub onchain_state: Option<RpcOnchainState>,
@@ -655,6 +657,74 @@ impl From<ClientAccountInfo> for RpcStabilityPoolAccountInfo {
                 .collect(),
             timestamp: to_unix_time(value.timestamp).expect("Response timestamp must be valid"),
             is_fetched_from_server: value.is_fetched_from_server,
+        }
+    }
+}
+
+/// We differentiate between "send" and "receive" because in the case of a send
+/// we optimistically charge the fee from the send amount (since the amount +
+/// fee must already be in the user's possession) and refund the fee in case the
+/// operation ends up failing. However, in the case of a receive, we don't
+/// always know the amount to be received (in the case of generate_address for
+/// example), and even if we do, the amount to be received (from which the fee
+/// is to be debited) is not in the user's possession until the
+/// operation completes. So for receives, we just record the ppm, and when the
+/// operation succeeds, we debit the fee.
+#[derive(Debug, Encodable, Decodable)]
+pub enum OperationFediFeeStatus {
+    PendingSend { fedi_fee: Amount },
+    PendingReceive { fedi_fee_ppm: u64 },
+    Success { fedi_fee: Amount },
+    FailedSend { fedi_fee: Amount },
+    FailedReceive { fedi_fee_ppm: u64 },
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcOperationFediFeeStatus {
+    PendingSend {
+        fedi_fee: RpcAmount,
+    },
+    PendingReceive {
+        #[ts(type = "number")]
+        fedi_fee_ppm: u64,
+    },
+    Success {
+        fedi_fee: RpcAmount,
+    },
+    FailedSend {
+        fedi_fee: RpcAmount,
+    },
+    FailedReceive {
+        #[ts(type = "number")]
+        fedi_fee_ppm: u64,
+    },
+}
+
+impl From<OperationFediFeeStatus> for RpcOperationFediFeeStatus {
+    fn from(value: OperationFediFeeStatus) -> Self {
+        match value {
+            OperationFediFeeStatus::PendingSend { fedi_fee } => {
+                RpcOperationFediFeeStatus::PendingSend {
+                    fedi_fee: RpcAmount(fedi_fee),
+                }
+            }
+            OperationFediFeeStatus::PendingReceive { fedi_fee_ppm } => {
+                RpcOperationFediFeeStatus::PendingReceive { fedi_fee_ppm }
+            }
+            OperationFediFeeStatus::Success { fedi_fee } => RpcOperationFediFeeStatus::Success {
+                fedi_fee: RpcAmount(fedi_fee),
+            },
+            OperationFediFeeStatus::FailedSend { fedi_fee } => {
+                RpcOperationFediFeeStatus::FailedSend {
+                    fedi_fee: RpcAmount(fedi_fee),
+                }
+            }
+            OperationFediFeeStatus::FailedReceive { fedi_fee_ppm } => {
+                RpcOperationFediFeeStatus::FailedReceive { fedi_fee_ppm }
+            }
         }
     }
 }
