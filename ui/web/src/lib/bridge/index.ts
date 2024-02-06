@@ -39,6 +39,7 @@ async function fedimintRpc<Type = void>(
     const json = await workerRequest<string>(method, jsonPayload)
     const parsed = JSON.parse(json)
     if (parsed.error) {
+        log.error(method, parsed)
         throw Error(parsed.error)
     } else {
         return parsed.result

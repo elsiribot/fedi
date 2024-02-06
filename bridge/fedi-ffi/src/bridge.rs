@@ -5,7 +5,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, bail, Context, Result};
-use bitcoin::secp256k1::Message;
+use bitcoin::secp256k1::{Message, Secp256k1};
 use bitcoin::Address;
 use fedi_social_client::FediSocialCommonGen;
 use fedimint_bip39::Bip39RootSecretStrategy;
@@ -17,10 +17,11 @@ use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::CommonModuleInit;
 use fedimint_core::task::TaskGroup;
 use fedimint_core::PeerId;
+use fedimint_derive_secret::{ChildId, DerivableSecret};
 use futures::future::join_all;
 use lightning_invoice::Bolt11Invoice;
 use rand::distributions::{Alphanumeric, DistString};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, OnceCell};
 use tracing::{debug, error, info, info_span, warn, Instrument};
 
 use super::event::EventSink;
@@ -32,10 +33,12 @@ use super::types::{
     SocialRecoveryApproval, SocialRecoveryQr,
 };
 use crate::api::IFediApi;
+use crate::constants::{MATRIX_CHILD_ID, NOSTR_CHILD_ID};
 use crate::error::{get_error_code, ErrorCode};
 use crate::event::{Event, SocialRecoveryEvent, TypedEventExt as _};
 use crate::federation_v2::{self, BackupServiceStatus, FederationV2};
 use crate::fedi_fee::FediFeeHelper;
+use crate::matrix::Matrix;
 use crate::multi::MultiFederation;
 use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
 use crate::storage::{AppState, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule};
@@ -60,6 +63,7 @@ pub struct Bridge {
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
     pub fedi_fee_helper: Arc<FediFeeHelper>,
+    pub matrix: OnceCell<Matrix>,
 }
 
 impl Bridge {
@@ -142,6 +146,7 @@ impl Bridge {
             event_sink,
             task_group,
             fedi_fee_helper,
+            matrix: OnceCell::default(),
         };
         let federations = bridge.federations.lock().await.clone();
         for federation in federations.into_values() {
@@ -907,18 +912,18 @@ impl Bridge {
             .await
     }
 
-    pub async fn get_nostr_pub_key(&self, federation_id: RpcFederationId) -> Result<String> {
-        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
+    pub async fn get_nostr_pub_key(&self) -> Result<String> {
         let global_root_secret = self
             .app_state
             .with_read_lock(move |state| {
                 Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
             })
             .await;
-        multi
-            .get_nostr_pub_key(global_root_secret)
-            .await
-            .map(|pubkey| pubkey.to_string())
+        let secp = Secp256k1::new();
+        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+        let nostr_keypair = nostr_secret.to_secp_key(&secp);
+        let nostr_pubkey = nostr_keypair.x_only_public_key();
+        Ok(nostr_pubkey.0.to_string())
     }
 
     pub async fn sign_nostr_event(
@@ -934,6 +939,31 @@ impl Bridge {
             })
             .await;
         multi.sign_nostr_event(event_hash, global_root_secret).await
+    }
+
+    pub async fn get_matrix_credentials(&self, home_server: String) -> Result<(String, String)> {
+        let global_root_secret = self
+            .app_state
+            .with_read_lock(move |state| {
+                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
+            })
+            .await;
+        let matrix_secret = global_root_secret.child_key(ChildId(MATRIX_CHILD_ID));
+        let password_bytes: [u8; 16] = matrix_secret.to_random_bytes();
+        let password_secret = DerivableSecret::new_root(&password_bytes, home_server.as_bytes());
+        let password_secret_bytes: [u8; 16] = password_secret.to_random_bytes();
+        let username = self.get_nostr_pub_key().await?;
+
+        Ok((username, hex::encode(password_secret_bytes)))
+    }
+
+    pub async fn get_matrix_media_file(&self, path: PathBuf) -> Result<Vec<u8>> {
+        let storage = self.storage.clone();
+        let media_file = storage
+            .read_file(&path)
+            .await?
+            .ok_or(anyhow!("media file not found"))?;
+        Ok(media_file)
     }
 
     pub async fn stability_pool_account_info(

@@ -10,10 +10,13 @@ pub mod fedi_fee;
 mod ffi;
 #[cfg(not(target_family = "wasm"))]
 pub mod logging;
+pub mod matrix;
 pub mod multi;
+pub mod observable;
 #[cfg(not(target_family = "wasm"))]
 pub mod remote;
 pub mod rpc;
+pub mod serde;
 pub mod social;
 pub mod storage;
 pub mod translate;

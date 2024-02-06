@@ -7,6 +7,7 @@ use ts_rs::TS;
 use super::types::{
     RpcFederation, RpcFederationId, RpcOperationId, RpcTransaction, SocialRecoveryApproval,
 };
+use crate::observable::ObservableUpdate;
 use crate::types::RpcAmount;
 
 #[derive(Serialize, Debug, TS)]
@@ -229,6 +230,14 @@ pub trait IEventSink: MaybeSend + MaybeSync + 'static {
 pub type EventSink = Arc<dyn IEventSink>;
 
 pub trait TypedEventExt: IEventSink {
+    fn observable_update<T: Serialize>(&self, update: ObservableUpdate<T>) {
+        IEventSink::event(
+            self,
+            "observableUpdate".into(),
+            serde_json::to_string(&update).expect("failed to json serialize"),
+        );
+    }
+
     fn typed_event(&self, event: &Event) {
         match event {
             Event::Log(event) => {

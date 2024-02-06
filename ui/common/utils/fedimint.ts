@@ -319,6 +319,97 @@ export class FedimintBridge {
         return this.rpcTyped('cancelSocialRecovery', {})
     }
 
+    /*** MATRIX ***/
+
+    async matrixInit(args: bindings.RpcPayload<'matrixInit'>) {
+        return this.rpcTyped('matrixInit', args)
+    }
+
+    async matrixRoomList(args: bindings.RpcPayload<'matrixRoomList'>) {
+        return this.rpcTyped('matrixRoomList', args)
+    }
+
+    async matrixRoomListUpdateRanges(
+        args: bindings.RpcPayload<'matrixRoomListUpdateRanges'>,
+    ) {
+        return this.rpcTyped('matrixRoomListUpdateRanges', args)
+    }
+
+    async matrixRoomTimelineItems(
+        args: bindings.RpcPayload<'matrixRoomTimelineItems'>,
+    ) {
+        return this.rpcTyped('matrixRoomTimelineItems', args)
+    }
+
+    async matrixRoomTimelineItemsPaginateBackwards(
+        args: bindings.RpcPayload<'matrixRoomTimelineItemsPaginateBackwards'>,
+    ) {
+        return this.rpcTyped('matrixRoomTimelineItemsPaginateBackwards', args)
+    }
+
+    async matrixRoomObserveTimelineItemsPaginateBackwards(
+        args: bindings.RpcPayload<'matrixRoomObserveTimelineItemsPaginateBackwards'>,
+    ) {
+        return this.rpcTyped(
+            'matrixRoomObserveTimelineItemsPaginateBackwards',
+            args,
+        )
+    }
+
+    async matrixSendMessage(args: bindings.RpcPayload<'matrixSendMessage'>) {
+        return this.rpcTyped('matrixSendMessage', args)
+    }
+
+    async matrixRoomCreate(args: bindings.RpcPayload<'matrixRoomCreate'>) {
+        return this.rpcTyped('matrixRoomCreate', args)
+    }
+
+    async matrixRoomCreateOrGetDm(
+        args: bindings.RpcPayload<'matrixRoomCreateOrGetDm'>,
+    ) {
+        return this.rpcTyped('matrixRoomCreateOrGetDm', args)
+    }
+
+    async matrixRoomJoin(args: bindings.RpcPayload<'matrixRoomJoin'>) {
+        return this.rpcTyped('matrixRoomJoin', args)
+    }
+
+    async matrixRoomJoinPublic(
+        args: bindings.RpcPayload<'matrixRoomJoinPublic'>,
+    ) {
+        return this.rpcTyped('matrixRoomJoinPublic', args)
+    }
+
+    async matrixRoomLeave(args: bindings.RpcPayload<'matrixRoomLeave'>) {
+        return this.rpcTyped('matrixRoomLeave', args)
+    }
+
+    async matrixRoomObserveInfo(
+        args: bindings.RpcPayload<'matrixRoomObserveInfo'>,
+    ) {
+        return this.rpcTyped('matrixRoomObserveInfo', args)
+    }
+
+    async matrixRoomInviteUserById(
+        args: bindings.RpcPayload<'matrixRoomInviteUserById'>,
+    ) {
+        return this.rpcTyped('matrixRoomInviteUserById', args)
+    }
+
+    async matrixRoomSetName(args: bindings.RpcPayload<'matrixRoomSetName'>) {
+        return this.rpcTyped('matrixRoomSetName', args)
+    }
+
+    async matrixRoomSetTopic(args: bindings.RpcPayload<'matrixRoomSetTopic'>) {
+        return this.rpcTyped('matrixRoomSetTopic', args)
+    }
+
+    async matrixUserDirectorySearch(
+        args: bindings.RpcPayload<'matrixUserDirectorySearch'>,
+    ) {
+        return this.rpcTyped('matrixUserDirectorySearch', args)
+    }
+
     /*** BRIDGE EVENTS ***/
 
     private listeners = new Map<string, Array<(data: unknown) => void>>()

@@ -79,7 +79,7 @@ bump-version-native-ui:
 
 # generate typescript bindings for the bridge
 generate-bridge-bindings:
-  ./scripts/bridge/ts-bindgen.sh
+  ./scripts/bridge/ts-bindgen.sh && pushd ./ui && yarn run lint --filter=common
 
 # start dev UI (native + pwa). Use `just run-dev-ui interactive` for build options
 run-dev-ui mode="default":

@@ -170,7 +170,7 @@
         toolchainArgs = let llvmPackages = pkgs.llvmPackages_11; in {
           inherit androidSdk;
           componentTargetsChannelName = "latest";
-          extraRustFlags = "--cfg tokio_unstable -Z threads=8";
+          extraRustFlags = "--cfg tokio_unstable -Z threads=8 --cfg=curve25519_dalek_backend=\"serial\"";
 
           components = [
             "rustc"

@@ -11,6 +11,10 @@ use fedimint_core::timing::TimeReporter;
 use futures::Future;
 use lightning_invoice::Bolt11Invoice;
 use macro_rules_attribute::macro_rules_derive;
+use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
+use matrix_sdk::sliding_sync::Ranges;
+use matrix_sdk::RoomInfo;
+use mime::Mime;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -29,6 +33,12 @@ use crate::api::IFediApi;
 use crate::error::get_error_code;
 use crate::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use crate::federation_v2::BackupServiceStatus;
+use crate::matrix::{
+    self, Matrix, RpcBackPaginationStatus, RpcMatrixAccountSession, RpcMatrixUploadResult,
+    RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomListEntry, RpcRoomMember,
+    RpcSyncIndicator, RpcTimelineItem, RpcUserId,
+};
+use crate::observable::{Observable, ObservableVec};
 use crate::types::{
     GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
     RpcLightningGateway, RpcPayAddressResponse,
@@ -80,7 +90,7 @@ macro_rules! rpc_method {
     ) => {
         mod $name {
             use super::*;
-            #[derive(Debug, Serialize, Deserialize, TS)]
+            #[derive(Debug, Deserialize, TS)]
             #[serde(rename_all = "camelCase")]
             pub struct Args {
             $(
@@ -414,9 +424,9 @@ async fn backupStatus(
 #[macro_rules_derive(rpc_method!)]
 async fn getNostrPubKey(
     bridge: Arc<Bridge>,
-    federation_id: RpcFederationId,
+    _federation_id: RpcFederationId, // TODO: Remove me
 ) -> anyhow::Result<String> {
-    bridge.get_nostr_pub_key(federation_id).await
+    bridge.get_nostr_pub_key().await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -564,6 +574,351 @@ async fn dumpDb(bridge: Arc<Bridge>, federation_id: String) -> anyhow::Result<Pa
     bridge.dump_db(&federation_id).await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn matrixInit(
+    bridge: Arc<Bridge>,
+    home_server: String,
+    sliding_sync_proxy: String,
+) -> anyhow::Result<RpcMatrixAccountSession> {
+    let (username, password) = bridge.get_matrix_credentials(home_server.clone()).await?;
+    bridge
+        .matrix
+        .set(
+            Matrix::init(
+                bridge.event_sink.clone(),
+                bridge.task_group.clone(),
+                &bridge.storage.platform_path("matrix".as_ref()),
+                &username,
+                &password,
+                home_server,
+                sliding_sync_proxy,
+                &bridge.app_state,
+            )
+            .await?,
+        )
+        .map_err(|_| anyhow::anyhow!("matrix already initialized"))?;
+    let matrix = get_matrix(&bridge).await?;
+    matrix.get_account_session().await
+}
+
+async fn get_matrix(bridge: &Bridge) -> anyhow::Result<&Matrix> {
+    bridge.matrix.get().context(ErrorCode::MatrixNotInitialized)
+}
+
+macro_rules! ts_type_ser {
+    ($name:ident: $ty:ty = $ts_ty:literal) => {
+        #[derive(serde::Serialize, ts_rs::TS)]
+        #[ts(export, export_to = "target/bindings/")]
+        pub struct $name(#[ts(type = $ts_ty)] pub $ty);
+    };
+}
+
+macro_rules! ts_type_de {
+    ($name:ident: $ty:ty = $ts_ty:literal) => {
+        #[derive(Debug, serde::Deserialize, ts_rs::TS)]
+        #[ts(export, export_to = "target/bindings/")]
+        pub struct $name(#[ts(type = $ts_ty)] pub $ty);
+    };
+}
+
+macro_rules! ts_type_serde {
+    ($name:ident: $ty:ty = $ts_ty:literal) => {
+        #[derive(Debug, serde::Deserialize, serde::Serialize, ts_rs::TS)]
+        #[ts(export, export_to = "target/bindings/")]
+        pub struct $name(#[ts(type = $ts_ty)] pub $ty);
+    };
+}
+
+// we are really binding generator pushing to its limits.
+ts_type_ser!(
+    ObservableRoomList: ObservableVec<RpcRoomListEntry> = "ObservableVec<RpcRoomListEntry>"
+);
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixGetAccountSession(bridge: Arc<Bridge>) -> anyhow::Result<RpcMatrixAccountSession> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.get_account_session().await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomList(bridge: Arc<Bridge>) -> anyhow::Result<ObservableRoomList> {
+    let matrix = get_matrix(&bridge).await?;
+    Ok(ObservableRoomList(matrix.room_list().await?))
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomListInvites(bridge: Arc<Bridge>) -> anyhow::Result<ObservableRoomList> {
+    let matrix = get_matrix(&bridge).await?;
+    Ok(ObservableRoomList(matrix.room_list_invites().await?))
+}
+// inclusive on both sides
+ts_type_de!(RpcRanges: Ranges = "Array<{start: number, end: number}>");
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomListUpdateRanges(bridge: Arc<Bridge>, ranges: RpcRanges) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.room_list_update_ranges(ranges.0).await?;
+    Ok(())
+}
+
+ts_type_ser!(
+    ObservableTimelineItems: ObservableVec<RpcTimelineItem> = "ObservableVec<RpcTimelineItem>"
+);
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomTimelineItems(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+) -> anyhow::Result<ObservableTimelineItems> {
+    let matrix = get_matrix(&bridge).await?;
+    let items = matrix.room_timeline_items(&room_id.into_typed()?).await?;
+    Ok(ObservableTimelineItems(items))
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomTimelineItemsPaginateBackwards(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    event_num: u16,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .room_timeline_items_paginate_backwards(&room_id.into_typed()?, event_num)
+        .await?;
+    Ok(())
+}
+
+ts_type_ser!(
+    ObservableBackPaginationStatus: Observable<RpcBackPaginationStatus> =
+        "Observable<RpcBackPaginationStatus>"
+);
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomObserveTimelineItemsPaginateBackwards(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+) -> anyhow::Result<ObservableBackPaginationStatus> {
+    let matrix = get_matrix(&bridge).await?;
+    Ok(ObservableBackPaginationStatus(
+        matrix
+            .room_observe_timeline_items_paginate_backwards_status(&room_id.into_typed()?)
+            .await?,
+    ))
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixObserverCancel(bridge: Arc<Bridge>, id: u64) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.observable_cancel(id).await?;
+    Ok(())
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixSendMessage(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    message: String,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .send_message_text(&room_id.into_typed()?, message)
+        .await
+}
+
+ts_type_de!(CustomMessageData: serde_json::Map<String, serde_json::Value> = "Record<string, any>");
+#[macro_rules_derive(rpc_method!)]
+async fn matrixSendMessageJson(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    msgtype: String,
+    body: String,
+    data: CustomMessageData,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .send_message_json(&room_id.into_typed()?, msgtype, body, data.0)
+        .await
+}
+
+ts_type_de!(CreateRoomRequest: matrix::create_room::Request = "any");
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomCreate(
+    bridge: Arc<Bridge>,
+    request: CreateRoomRequest,
+) -> anyhow::Result<RpcRoomId> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.room_create(request.0).await.map(RpcRoomId::from)
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomCreateOrGetDm(
+    bridge: Arc<Bridge>,
+    user_id: RpcUserId,
+) -> anyhow::Result<RpcRoomId> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .create_or_get_dm(&user_id.into_typed()?)
+        .await
+        .map(RpcRoomId::from)
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomJoin(bridge: Arc<Bridge>, room_id: RpcRoomId) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.room_join(&room_id.into_typed()?).await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomJoinPublic(bridge: Arc<Bridge>, room_id: RpcRoomId) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.room_join_public(&room_id.into_typed()?).await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomLeave(bridge: Arc<Bridge>, room_id: RpcRoomId) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.room_leave(&room_id.into_typed()?).await
+}
+
+// sorry for any
+ts_type_ser!(ObservableRoomInfo: Observable<RoomInfo> = "Observable<any>");
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomObserveInfo(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+) -> anyhow::Result<ObservableRoomInfo> {
+    let matrix = get_matrix(&bridge).await?;
+    Ok(ObservableRoomInfo(
+        matrix.room_observe_info(&room_id.into_typed()?).await?,
+    ))
+}
+
+ts_type_ser!(ObservableRpcSyncIndicator: Observable<RpcSyncIndicator> = "Observable<RpcSyncIndicator>");
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixObserveSyncIndicator(
+    bridge: Arc<Bridge>,
+) -> anyhow::Result<ObservableRpcSyncIndicator> {
+    let matrix = get_matrix(&bridge).await?;
+    Ok(ObservableRpcSyncIndicator(
+        matrix.observe_sync_status().await?,
+    ))
+}
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomInviteUserById(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    user_id: RpcUserId,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .room_invite_user_by_id(&room_id.into_typed()?, &user_id.into_typed()?)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomSetName(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    name: String,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.room_set_name(&room_id.into_typed()?, name).await?;
+    Ok(())
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomSetTopic(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    topic: String,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.room_set_topic(&room_id.into_typed()?, topic).await?;
+    Ok(())
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomGetMembers(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+) -> anyhow::Result<Vec<RpcRoomMember>> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.room_get_members(&room_id.into_typed()?).await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixUserDirectorySearch(
+    bridge: Arc<Bridge>,
+    search_term: String,
+    limit: u32,
+) -> anyhow::Result<RpcMatrixUserDirectorySearchResponse> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .search_user_directory(&search_term, limit.into())
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixSetDisplayName(bridge: Arc<Bridge>, display_name: String) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.set_display_name(display_name).await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixSetAvatarUrl(bridge: Arc<Bridge>, avatar_url: String) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.set_avatar_url(avatar_url).await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixUploadMedia(
+    bridge: Arc<Bridge>,
+    path: PathBuf,
+    mime_type: String,
+) -> anyhow::Result<RpcMatrixUploadResult> {
+    let mime = mime_type.parse::<Mime>().context(ErrorCode::BadRequest)?;
+    let file = bridge.get_matrix_media_file(path).await?;
+    let matrix = get_matrix(&bridge).await?;
+    matrix.upload_file(mime, file).await
+}
+
+ts_type_serde!(RpcRoomPowerLevelsEventContent: RoomPowerLevelsEventContent = "any");
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomGetPowerLevels(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+) -> anyhow::Result<RpcRoomPowerLevelsEventContent> {
+    let matrix = get_matrix(&bridge).await?;
+    Ok(RpcRoomPowerLevelsEventContent(
+        matrix.room_get_power_levels(&room_id.into_typed()?).await?,
+    ))
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomSetPowerLevels(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    new: RpcRoomPowerLevelsEventContent,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .room_change_power_levels(&room_id.into_typed()?, new.0)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomSendReceipt(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    event_id: String,
+) -> anyhow::Result<bool> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .room_send_receipt(&room_id.into_typed()?, &event_id)
+        .await
+}
+
 // converts from a typed handler into untyped handler
 async fn handle_wrapper<Args, F, Fut, R>(
     f: F,
@@ -678,6 +1033,38 @@ rpc_methods!(RpcMethods {
     setStabilityPoolModuleFediFeeSchedule,
     getAccruedOutstandingFediFees,
     dumpDb,
+
+    matrixObserverCancel,
+
+    // Matrix
+    matrixInit,
+    matrixGetAccountSession,
+    matrixObserveSyncIndicator,
+    matrixRoomList,
+    matrixRoomListInvites,
+    matrixRoomListUpdateRanges,
+    matrixRoomTimelineItems,
+    matrixRoomTimelineItemsPaginateBackwards,
+    matrixRoomObserveTimelineItemsPaginateBackwards,
+    matrixSendMessage,
+    matrixSendMessageJson,
+    matrixRoomCreate,
+    matrixRoomCreateOrGetDm,
+    matrixRoomJoin,
+    matrixRoomJoinPublic,
+    matrixRoomLeave,
+    matrixRoomObserveInfo,
+    matrixRoomInviteUserById,
+    matrixRoomSetName,
+    matrixRoomSetTopic,
+    matrixRoomGetMembers,
+    matrixUserDirectorySearch,
+    matrixSetDisplayName,
+    matrixSetAvatarUrl,
+    matrixUploadMedia,
+    matrixRoomGetPowerLevels,
+    matrixRoomSetPowerLevels,
+    matrixRoomSendReceipt,
 });
 
 #[instrument(
