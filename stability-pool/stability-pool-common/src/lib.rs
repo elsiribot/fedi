@@ -395,8 +395,8 @@ impl Display for StabilityPoolConsensusItemV0 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Consensus item with time {:?} and price {} in cents",
-            self.time, self.price
+            "Consensus item for cycle index {:?} with time {:?} and price {} in cents",
+            self.next_cycle_index, self.time, self.price
         )
     }
 }

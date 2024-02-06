@@ -2,7 +2,7 @@ pub mod api;
 pub mod db;
 pub mod oracle;
 use std::collections::{BTreeMap, VecDeque};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::bail;
 use async_trait::async_trait;
@@ -44,6 +44,7 @@ use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
 use secp256k1_zkp::PublicKey;
 pub use stability_pool_common as common;
+use tokio::sync::Mutex;
 use tracing::{info, warn};
 
 /// PPB unit for fee-related calculations.
@@ -181,6 +182,7 @@ impl ServerModuleInit for StabilityPoolInit {
 pub struct StabilityPool {
     pub cfg: StabilityPoolConfig,
     pub oracle: Box<dyn Oracle>,
+    pub last_consensus_proposal: Mutex<Option<StabilityPoolConsensusItem>>,
 }
 
 impl StabilityPool {
@@ -189,7 +191,11 @@ impl StabilityPool {
             OracleConfig::Mock => Box::new(MockOracle::new()),
             OracleConfig::Aggregate => Box::new(AggregateOracle::new_with_default_sources()),
         };
-        StabilityPool { cfg, oracle }
+        StabilityPool {
+            cfg,
+            oracle,
+            last_consensus_proposal: Mutex::new(None),
+        }
     }
 }
 
@@ -202,21 +208,77 @@ impl ServerModule for StabilityPool {
         &self,
         dbtx: &mut DatabaseTransaction<'_>,
     ) -> Vec<StabilityPoolConsensusItem> {
-        // TODO shaurya backoff incase of oracle failure
+        // Below we use some calculations to determine if enough time has passed since
+        // the last recorded consensus proposal. Here we define "enough time" as 15s or
+        // 5% of the cycle duration, whichever is shorter.
+        let enough_time_duration =
+            Duration::from_secs(15.min(self.cfg.consensus.cycle_duration.as_secs().div_ceil(20)));
 
-        // Once the first cycle is started, `CurrentCycleKey` will always have
-        // a value. In this case, we can only propose a CI if enough time has passed
-        // since the beginning of the current cycle.
-        //
-        // Otherwise, if the first cycle hasn't started yet, we should propose a CI
-        // immediately.
         let current_cycle = dbtx.get_value(&CurrentCycleKey).await;
-        let should_propose_new_cycle = match current_cycle {
-            Some(Cycle { start_time, .. }) => match start_time.elapsed() {
-                Ok(duration) => duration > self.cfg.consensus.cycle_duration,
-                Err(_) => false,
-            },
-            None => true,
+        let last_cp_v0 = self
+            .last_consensus_proposal
+            .lock()
+            .await
+            .clone()
+            .map(|cp| cp.maybe_v0_ref().cloned())
+            .unwrap_or_default();
+        let should_propose_new_cycle = match (&current_cycle, last_cp_v0) {
+            (None, None) => {
+                // If no current cycle logged, and no recorded last consensus proposal,
+                // we should propose a consensus item immediately.
+                //
+                // This should only happen on the very first run with a fresh DB.
+                true
+            }
+            (None, Some(last_cp_v0)) => {
+                // If no current cycle logged, but a record of the last consensus proposal
+                // exists, we should propose a consensus item only if "enough time" has passed
+                // since the last consensus proposal.
+                //
+                // This should only happen when the DB is fresh (no stability pool cycles
+                // logged) and the guardians are trying to arrive at consensus regarding the
+                // first cycle.
+                match last_cp_v0.time.elapsed() {
+                    Ok(duration) => duration > enough_time_duration,
+                    Err(_) => false,
+                }
+            }
+            (Some(current_cycle), None) => {
+                // If a current cycle exists, but no record of the last consensus proposal
+                // exists, we should propose a consensus item only if cycle_duration time has
+                // passed since the beginning of the current cycle.
+                //
+                // This should only happen when an upgraded fedimintd binary is run for the
+                // first time where stability pool cycles already exist in the DB.
+                match current_cycle.start_time.elapsed() {
+                    Ok(duration) => duration > self.cfg.consensus.cycle_duration,
+                    Err(_) => false,
+                }
+            }
+            (Some(current_cycle), Some(last_cp_v0)) => {
+                // If a current cycle exists, and a record of the last consensus proposal exists
+                // we should propose a consensus item only if cycle_duration has passed since
+                // the beginning of the current cycle AND:
+                // - if (last_cp_v0's index == current_cycle's index + 1), then "enough time"
+                //   has passed since the last CP
+                // - if the indices don't respect this equality, propose immediately
+                //
+                // This should be the usual case whereby stability pool cycles already exist in
+                // the DB and consensus items have been proposed by this module in the past.
+                match current_cycle.start_time.elapsed() {
+                    Ok(duration) if duration > self.cfg.consensus.cycle_duration => {
+                        if last_cp_v0.next_cycle_index == current_cycle.index + 1 {
+                            match last_cp_v0.time.elapsed() {
+                                Ok(duration) => duration > enough_time_duration,
+                                Err(_) => false,
+                            }
+                        } else {
+                            true
+                        }
+                    }
+                    _ => false,
+                }
+            }
         };
 
         if should_propose_new_cycle {
@@ -226,13 +288,15 @@ impl ServerModule for StabilityPool {
                     vec![]
                 }
                 Ok(price) => {
-                    vec![StabilityPoolConsensusItem::new_v0(
+                    let new_cp = StabilityPoolConsensusItem::new_v0(
                         current_cycle
                             .map(|Cycle { index, .. }| index + 1)
                             .unwrap_or_default(),
                         fedimint_core::time::now(),
                         price,
-                    )]
+                    );
+                    *self.last_consensus_proposal.lock().await = Some(new_cp.clone());
+                    vec![new_cp]
                 }
             }
         } else {
