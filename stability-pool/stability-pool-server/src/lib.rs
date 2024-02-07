@@ -329,12 +329,12 @@ impl ServerModule for StabilityPool {
                     warn!("prefetched price absent, cannot propose CI");
                     vec![]
                 }
-                Some(PrefetchedPrice { time, price }) => {
+                Some(PrefetchedPrice { price, .. }) => {
                     let new_cp = StabilityPoolConsensusItem::new_v0(
                         current_cycle
                             .map(|Cycle { index, .. }| index + 1)
                             .unwrap_or_default(),
-                        time,
+                        fedimint_core::time::now(),
                         price,
                     );
                     *self.last_consensus_proposal.lock().await = Some(new_cp.clone());
