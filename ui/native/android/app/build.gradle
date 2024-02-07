@@ -141,6 +141,9 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
+            packagingOptions {
+                doNotStrip '**/libfediffi.so'
+            }
         }
         release {
             // Caution! In production, you need to generate your own keystore file.
@@ -149,6 +152,15 @@ android {
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             proguardFile "${rootProject.projectDir}/../../node_modules/detox/android/detox/proguard-rules-app.pro"
+            packagingOptions {
+                gradle.startParameter.getTaskNames().each { task ->
+                    if (task.contains('assemble') || task.contains('bundle')) {
+                        if (task.contains('nightly')) {
+                            doNotStrip '**/libfediffi.so'
+                        }
+                    }
+                }
+            }
         }
     }
     flavorDimensions "env"
