@@ -13,7 +13,7 @@ use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::api::{DynGlobalApi, InviteCode as InviteCodeV2, WsFederationApi};
 use fedimint_core::config::ClientConfig;
-use fedimint_core::core::OperationId;
+use fedimint_core::core::{ModuleKind, OperationId};
 use fedimint_core::encoding::Decodable;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::CommonModuleInit;
@@ -40,7 +40,7 @@ use crate::error::{get_error_code, ErrorCode};
 use crate::event::SocialRecoveryEvent;
 use crate::federation_v2::{self, FederationV2};
 use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
-use crate::storage::{AppState, FederationInfo, FediFeeSchedule};
+use crate::storage::{AppState, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule};
 use crate::types::{
     GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
     RpcLightningGateway, RpcPayAddressResponse, RpcReturningMemberStatus,
@@ -333,6 +333,16 @@ impl MultiFederation {
     async fn stability_pool_cycle_start_price(&self) -> Result<u64> {
         match self {
             MultiFederation::V2(v2) => v2.stability_pool_cycle_start_price().await,
+        }
+    }
+
+    pub async fn set_module_fee_schedule(
+        &self,
+        module: ModuleKind,
+        fee_schedule: ModuleFediFeeSchedule,
+    ) {
+        match self {
+            MultiFederation::V2(v2) => v2.set_module_fee_schedule(module, fee_schedule).await,
         }
     }
 }
@@ -1103,6 +1113,105 @@ impl Bridge {
         self.get_multi(&federation_id.0)
             .await?
             .stability_pool_cycle_start_price()
+            .await
+    }
+
+    pub async fn set_mint_module_fedi_fee_schedule(
+        &self,
+        federation_id: RpcFederationId,
+        send_ppm: u64,
+        receive_ppm: u64,
+    ) -> Result<()> {
+        self.set_federation_module_fedi_fee_schedule(
+            federation_id.0,
+            fedimint_mint_client::KIND,
+            send_ppm,
+            receive_ppm,
+        )
+        .await
+    }
+
+    pub async fn set_wallet_module_fedi_fee_schedule(
+        &self,
+        federation_id: RpcFederationId,
+        send_ppm: u64,
+        receive_ppm: u64,
+    ) -> Result<()> {
+        self.set_federation_module_fedi_fee_schedule(
+            federation_id.0,
+            fedimint_wallet_client::KIND,
+            send_ppm,
+            receive_ppm,
+        )
+        .await
+    }
+
+    pub async fn set_lightning_module_fedi_fee_schedule(
+        &self,
+        federation_id: RpcFederationId,
+        send_ppm: u64,
+        receive_ppm: u64,
+    ) -> Result<()> {
+        self.set_federation_module_fedi_fee_schedule(
+            federation_id.0,
+            fedimint_ln_common::KIND,
+            send_ppm,
+            receive_ppm,
+        )
+        .await
+    }
+
+    pub async fn set_stability_pool_module_fedi_fee_schedule(
+        &self,
+        federation_id: RpcFederationId,
+        send_ppm: u64,
+        receive_ppm: u64,
+    ) -> Result<()> {
+        self.set_federation_module_fedi_fee_schedule(
+            federation_id.0,
+            stability_pool_client::common::KIND,
+            send_ppm,
+            receive_ppm,
+        )
+        .await
+    }
+
+    // We need to update both the runtime instance of the federation, as well as the
+    // FederationInfo stored in the AppState.
+    async fn set_federation_module_fedi_fee_schedule(
+        &self,
+        federation_id_str: String,
+        module: ModuleKind,
+        send_ppm: u64,
+        receive_ppm: u64,
+    ) -> Result<()> {
+        let multi = self.get_multi(&federation_id_str).await?;
+        multi
+            .set_module_fee_schedule(
+                module.clone(),
+                ModuleFediFeeSchedule {
+                    send_ppm,
+                    receive_ppm,
+                },
+            )
+            .await;
+        self.app_state
+            .with_write_lock(move |state| {
+                Box::pin(async move {
+                    let Some(fed_info) = state.joined_federations.get_mut(&federation_id_str)
+                    else {
+                        bail!("Unknown federation")
+                    };
+                    fed_info.fedi_fee_schedule.modules.insert(
+                        module,
+                        ModuleFediFeeSchedule {
+                            send_ppm,
+                            receive_ppm,
+                        },
+                    );
+                    Ok(())
+                })
+            })
             .await
     }
 }

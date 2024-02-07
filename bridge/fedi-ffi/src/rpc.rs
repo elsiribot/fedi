@@ -454,6 +454,54 @@ async fn setSensitiveLog(bridge: Arc<Bridge>, enable: bool) -> anyhow::Result<()
     bridge.set_sensitive_log(enable).await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn setMintModuleFediFeeSchedule(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+    send_ppm: u64,
+    receive_ppm: u64,
+) -> anyhow::Result<()> {
+    bridge
+        .set_mint_module_fedi_fee_schedule(federation_id, send_ppm, receive_ppm)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn setWalletModuleFediFeeSchedule(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+    send_ppm: u64,
+    receive_ppm: u64,
+) -> anyhow::Result<()> {
+    bridge
+        .set_wallet_module_fedi_fee_schedule(federation_id, send_ppm, receive_ppm)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn setLightningModuleFediFeeSchedule(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+    send_ppm: u64,
+    receive_ppm: u64,
+) -> anyhow::Result<()> {
+    bridge
+        .set_lightning_module_fedi_fee_schedule(federation_id, send_ppm, receive_ppm)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn setStabilityPoolModuleFediFeeSchedule(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+    send_ppm: u64,
+    receive_ppm: u64,
+) -> anyhow::Result<()> {
+    bridge
+        .set_stability_pool_module_fedi_fee_schedule(federation_id, send_ppm, receive_ppm)
+        .await
+}
+
 // converts from a typed handler into untyped handler
 async fn handle_wrapper<Args, F, Fut, R>(
     f: F,
@@ -557,7 +605,11 @@ rpc_methods!(RpcMethods {
     stabilityPoolWithdraw,
     // Developer
     getSensitiveLog,
-    setSensitiveLog
+    setSensitiveLog,
+    setMintModuleFediFeeSchedule,
+    setWalletModuleFediFeeSchedule,
+    setLightningModuleFediFeeSchedule,
+    setStabilityPoolModuleFediFeeSchedule,
 });
 
 #[instrument(
@@ -606,7 +658,7 @@ mod tests {
 
     use super::*;
     use crate::bridge::MultiFederation;
-    use crate::constants::FEDI_FILE_PATH;
+    use crate::constants::{FEDI_FILE_PATH, MILLION};
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
     use crate::storage::IStorage;
@@ -908,8 +960,30 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_lightning_send_and_receive() -> anyhow::Result<()> {
+        // Vec of tuple of (send_ppm, receive_ppm)
+        let fee_ppm_values = vec![(0, 0), (10, 5), (100, 50)];
+        for (send_ppm, receive_ppm) in fee_ppm_values {
+            test_lightning_send_and_receive_with_fedi_fees(send_ppm, receive_ppm).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn test_lightning_send_and_receive_with_fedi_fees(
+        fedi_fees_send_ppm: u64,
+        fedi_fees_receive_ppm: u64,
+    ) -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
+        setLightningModuleFediFeeSchedule(
+            bridge.clone(),
+            federation.federation_id(),
+            fedi_fees_send_ppm,
+            fedi_fees_receive_ppm,
+        )
+        .await?;
         let receive_amount = fedimint_core::Amount::from_sats(100);
+        let fedi_fee =
+            Amount::from_msats((receive_amount.msats * fedi_fees_receive_ppm).div_ceil(MILLION));
         let rpc_receive_amount = RpcAmount(receive_amount);
         let description = "test".to_string();
         let invoice_string = generateInvoice(
@@ -925,7 +999,7 @@ mod tests {
         // TODO: generateInvoice needs to spawn a task that reacts to updates
         fedimint_core::task::sleep(Duration::from_secs(15)).await;
 
-        assert_eq!(receive_amount, federation.get_balance().await);
+        assert_eq!(receive_amount - fedi_fee, federation.get_balance().await);
 
         let label = fedimint_core::time::now()
             .duration_since(UNIX_EPOCH)
@@ -944,30 +1018,78 @@ mod tests {
 
         // check that core-lightning got paid
         cln_wait_invoice(&label).await?;
+
+        // TODO shaurya unsure how to account for gateway fee when verifying fedi fee
+        // amount
         Ok(())
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_ecash() -> anyhow::Result<()> {
+        // Vec of tuple of (send_ppm, receive_ppm)
+        let fee_ppm_values = vec![(0, 0), (10, 5), (100, 50)];
+        for (send_ppm, receive_ppm) in fee_ppm_values {
+            test_ecash_with_fedi_fees(send_ppm, receive_ppm).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn test_ecash_with_fedi_fees(
+        fedi_fees_send_ppm: u64,
+        fedi_fees_receive_ppm: u64,
+    ) -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
+        setMintModuleFediFeeSchedule(
+            bridge.clone(),
+            federation.federation_id(),
+            fedi_fees_send_ppm,
+            fedi_fees_receive_ppm,
+        )
+        .await?;
 
         // receive ecash
         let ecash_receive_amount = fedimint_core::Amount::from_msats(10000);
         let ecash = cli_generate_ecash(ecash_receive_amount, &federation).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
+        let receive_fedi_fee = Amount::from_msats(
+            (ecash_receive_amount.msats * fedi_fees_receive_ppm).div_ceil(MILLION),
+        );
         receiveEcash(bridge.clone(), federation.federation_id(), ecash).await?;
 
         // check balance (sometimes fedimint-cli gives more than we ask for)
-        assert_eq!(ecash_receive_amount, federation.get_balance().await,);
+        assert_eq!(
+            ecash_receive_amount - receive_fedi_fee,
+            federation.get_balance().await,
+        );
 
         // spend ecash
+        // If fedi_fee != 0, we expect this to fail since we cannot spend all of
+        // ecash_receive_amount
+        if receive_fedi_fee != Amount::ZERO {
+            assert!(generateEcash(
+                bridge.clone(),
+                federation.federation_id(),
+                RpcAmount(ecash_receive_amount),
+            )
+            .await
+            .is_err());
+        }
+        let ecash_send_amount = Amount::from_msats(ecash_receive_amount.msats / 2);
+        let send_fedi_fee =
+            Amount::from_msats((ecash_send_amount.msats * fedi_fees_send_ppm).div_ceil(MILLION));
         let send_ecash = generateEcash(
             bridge.clone(),
             federation.federation_id(),
-            RpcAmount(ecash_receive_amount),
+            RpcAmount(ecash_send_amount),
         )
         .await?
         .ecash;
+
+        assert_eq!(
+            ecash_receive_amount - receive_fedi_fee - ecash_send_amount - send_fedi_fee,
+            federation.get_balance().await,
+        );
 
         // receive with fedimint-cli
         cli_receive_ecash(send_ecash, federation).await?;
@@ -1012,16 +1134,39 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_on_chain() -> anyhow::Result<()> {
+        // Vec of tuple of (send_ppm, receive_ppm)
+        let fee_ppm_values = vec![(0, 0), (10, 5), (100, 50)];
+        for (send_ppm, receive_ppm) in fee_ppm_values {
+            test_on_chain_with_fedi_fees(send_ppm, receive_ppm).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn test_on_chain_with_fedi_fees(
+        fedi_fees_send_ppm: u64,
+        fedi_fees_receive_ppm: u64,
+    ) -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
+        setWalletModuleFediFeeSchedule(
+            bridge.clone(),
+            federation.federation_id(),
+            fedi_fees_send_ppm,
+            fedi_fees_receive_ppm,
+        )
+        .await?;
 
         let address = generateAddress(bridge.clone(), federation.federation_id()).await?;
         bitcoin_cli_send_to_address(&address, "0.1").await?;
 
         // TODO: do something smarter than sleep
-        fedimint_core::task::sleep(Duration::from_secs(10)).await;
+        fedimint_core::task::sleep(Duration::from_secs(15)).await;
 
+        let btc_amount = Amount::from_sats(10_000_000);
+        let receive_fedi_fee =
+            Amount::from_msats((btc_amount.msats * fedi_fees_receive_ppm).div_ceil(MILLION));
         assert_eq!(
-            fedimint_core::Amount::from_sats(10_000_000),
+            btc_amount - receive_fedi_fee,
             federation.get_balance().await,
         );
 
@@ -1259,7 +1404,27 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_stability_pool() -> anyhow::Result<()> {
+        // Vec of tuple of (send_ppm, receive_ppm)
+        let fee_ppm_values = vec![(0, 0), (10, 5), (100, 50)];
+        for (send_ppm, receive_ppm) in fee_ppm_values {
+            test_stability_pool_with_fedi_fees(send_ppm, receive_ppm).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn test_stability_pool_with_fedi_fees(
+        fedi_fees_send_ppm: u64,
+        fedi_fees_receive_ppm: u64,
+    ) -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
+        setStabilityPoolModuleFediFeeSchedule(
+            bridge.clone(),
+            federation.federation_id(),
+            fedi_fees_send_ppm,
+            fedi_fees_receive_ppm,
+        )
+        .await?;
 
         // Test default account info state
         let account_info = bridge
@@ -1273,10 +1438,12 @@ mod tests {
         // Receive some ecash first
         let initial_balance = Amount::from_msats(500_000);
         let ecash = cli_generate_ecash(initial_balance, &federation).await?;
-        federation.receive_ecash(ecash).await?;
+        let receive_amount = federation.receive_ecash(ecash).await?;
 
         // Deposit to seek and verify account info
-        let amount_to_deposit = Amount::from_msats(initial_balance.msats / 2);
+        let amount_to_deposit = Amount::from_msats(receive_amount.msats / 2);
+        let deposit_fedi_fee =
+            Amount::from_msats((amount_to_deposit.msats * fedi_fees_send_ppm).div_ceil(MILLION));
         bridge
             .stability_pool_deposit_to_seek(
                 federation.federation_id(),
@@ -1296,6 +1463,11 @@ mod tests {
 
             fedimint_core::task::sleep(Duration::from_secs(2)).await;
         }
+
+        assert_eq!(
+            receive_amount - amount_to_deposit - deposit_fedi_fee,
+            federation.get_balance().await,
+        );
         let account_info = bridge
             .stability_pool_account_info(federation.federation_id(), true)
             .await?;
@@ -1306,6 +1478,9 @@ mod tests {
 
         // Withdraw and verify account info
         let amount_to_withdraw = Amount::from_msats(amount_to_deposit.msats / 2);
+        let withdraw_fedi_fee = Amount::from_msats(
+            (amount_to_withdraw.msats * fedi_fees_receive_ppm).div_ceil(MILLION),
+        );
         bridge
             .stability_pool_withdraw(
                 federation.federation_id(),
@@ -1327,6 +1502,12 @@ mod tests {
 
             fedimint_core::task::sleep(Duration::from_secs(2)).await;
         }
+
+        assert_eq!(
+            receive_amount - amount_to_deposit - deposit_fedi_fee + amount_to_withdraw
+                - withdraw_fedi_fee,
+            federation.get_balance().await,
+        );
         let account_info = bridge
             .stability_pool_account_info(federation.federation_id(), true)
             .await?;

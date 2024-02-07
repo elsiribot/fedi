@@ -364,6 +364,22 @@ export interface RpcMethods {
     ]
     getSensitiveLog: [Record<string, never>, boolean]
     setSensitiveLog: [{ enable: boolean }, null]
+    setMintModuleFediFeeSchedule: [
+        { federationId: RpcFederationId; sendPpm: bigint; receivePpm: bigint },
+        null,
+    ]
+    setWalletModuleFediFeeSchedule: [
+        { federationId: RpcFederationId; sendPpm: bigint; receivePpm: bigint },
+        null,
+    ]
+    setLightningModuleFediFeeSchedule: [
+        { federationId: RpcFederationId; sendPpm: bigint; receivePpm: bigint },
+        null,
+    ]
+    setStabilityPoolModuleFediFeeSchedule: [
+        { federationId: RpcFederationId; sendPpm: bigint; receivePpm: bigint },
+        null,
+    ]
 }
 
 export type RpcOOBSpendState =
