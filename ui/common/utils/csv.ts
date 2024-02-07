@@ -3,7 +3,40 @@ import { Transaction } from '../types'
 type CSVColumns<T> = { name: string; getValue: (item: T) => string | number }[]
 
 export function makeTransactionHistoryCSV(txs: Transaction[]) {
-    const sortedTxs = txs.sort((a, b) => a.createdAt - b.createdAt)
+    const sortedTxs = txs
+        .sort((a, b) => a.createdAt - b.createdAt)
+        .filter(txn => {
+            if (txn.lnState) {
+                const { type } = txn.lnState
+
+                return (
+                    type === 'success' ||
+                    type === 'claimed' ||
+                    type === 'funded'
+                )
+            } else if (txn.stabilityPoolState) {
+                const { type } = txn.stabilityPoolState
+
+                return (
+                    type === 'completeDeposit' || type === 'completeWithdrawal'
+                )
+            } else if (txn.onchainState) {
+                const { type } = txn.onchainState
+
+                return (
+                    type === 'succeeded' ||
+                    type === 'claimed' ||
+                    type === 'confirmed'
+                )
+            } else if (txn.oobState) {
+                const { type } = txn.oobState
+
+                return type === 'success'
+            }
+
+            return false
+        })
+
     return makeCSV(sortedTxs, [
         {
             name: 'ID',
@@ -23,8 +56,8 @@ export function makeTransactionHistoryCSV(txs: Transaction[]) {
                 tx.bitcoin ? 'on-chain' : tx.lightning ? 'lightning' : 'ecash',
         },
         {
-            name: 'Amount (msats)',
-            getValue: tx => tx.amount,
+            name: 'Amount (sats)',
+            getValue: tx => Math.round(tx.amount / 1000),
         },
         {
             name: 'Notes',
