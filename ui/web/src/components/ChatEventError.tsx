@@ -6,7 +6,7 @@ import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
 import { styled, theme } from '../styles'
 import { Icon } from './Icon'
 
-export const ChatMessageError: React.FC = () => {
+export const ChatEventError: React.FC = () => {
     const { t } = useTranslation()
     return (
         <Container>

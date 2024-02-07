@@ -18,17 +18,17 @@ import { useExportTransactions } from '@fedi/common/hooks/transactions'
 import {
     leaveFederation,
     selectActiveFederation,
-    selectAuthenticatedMember,
+    selectMatrixAuth,
 } from '@fedi/common/redux'
 import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
 import { Avatar } from '../../components/Avatar'
+import { ChatUserQRDialog } from '../../components/ChatUserQRDialog'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { ContentBlock } from '../../components/ContentBlock'
 import { IconButton } from '../../components/IconButton'
 import { InviteMemberDialog } from '../../components/InviteMemberDialog'
 import * as Layout from '../../components/Layout'
-import { MemberQRDialog } from '../../components/MemberQRDialog'
 import { SettingsMenu, SettingsMenuProps } from '../../components/SettingsMenu'
 import { Text } from '../../components/Text'
 import { useAppDispatch, useAppSelector } from '../../hooks'
@@ -38,7 +38,7 @@ import { styled } from '../../styles'
 function AdminPage() {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
-    const member = useAppSelector(selectAuthenticatedMember)
+    const matrixAuth = useAppSelector(selectMatrixAuth)
     const activeFederation = useAppSelector(selectActiveFederation)
     const toast = useToast()
     const exportTransactions = useExportTransactions(fedimint)
@@ -159,7 +159,7 @@ function AdminPage() {
             <Layout.Root>
                 <Layout.Header>
                     <Layout.Title>{t('words.settings')}</Layout.Title>
-                    {!!member && (
+                    {!!matrixAuth && (
                         <IconButton
                             icon={QRIcon}
                             size="md"
@@ -169,15 +169,15 @@ function AdminPage() {
                 </Layout.Header>
                 <Layout.Content>
                     <div>
-                        {member && (
+                        {matrixAuth && (
                             <MemberDetails>
                                 <Avatar
-                                    id={member.id}
-                                    name={member.username}
+                                    id={matrixAuth.userId}
+                                    name={matrixAuth.displayName}
                                     size="lg"
                                 />
                                 <Text variant="h2" weight="medium">
-                                    {member.username}
+                                    {matrixAuth.displayName}
                                 </Text>
                             </MemberDetails>
                         )}
@@ -186,7 +186,7 @@ function AdminPage() {
                 </Layout.Content>
             </Layout.Root>
 
-            <MemberQRDialog
+            <ChatUserQRDialog
                 open={isMemberQrOpen}
                 onOpenChange={setIsMemberQrOpen}
             />

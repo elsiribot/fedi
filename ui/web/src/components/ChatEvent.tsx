@@ -1,39 +1,39 @@
 import React from 'react'
 
-import { selectAuthenticatedMember } from '@fedi/common/redux'
-import {
-    ChatMessageStatus,
-    ChatMessage as ChatMessageType,
-} from '@fedi/common/types'
+import { selectMatrixAuth } from '@fedi/common/redux'
+import { MatrixEvent } from '@fedi/common/types'
+import { isPaymentEvent } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
-import { ChatMessagePayment } from './ChatMessagePayment'
+import { ChatPaymentEvent } from './ChatPaymentEvent'
 
 interface Props {
-    message: ChatMessageType
+    event: MatrixEvent
 }
 
-export const ChatMessage: React.FC<Props> = ({ message }) => {
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+export const ChatEvent: React.FC<Props> = ({ event }) => {
+    const matrixAuth = useAppSelector(selectMatrixAuth)
 
-    const { payment, status } = message
-    const isMe = message.sentBy === authenticatedMember?.id
-    const isQueued = status === ChatMessageStatus.queued
+    const isMe = event.senderId === matrixAuth?.userId
+    const isQueued = false
+    let isPayment = false
 
+    // Default to using the body as the content
     let content: React.ReactNode =
-        typeof message.content === 'string'
-            ? message.content.split(/\r?\n/).map((part, index, array) => (
+        typeof event.content.body === 'string'
+            ? event.content.body.split(/\r?\n/).map((part, index, array) => (
                   <React.Fragment key={index}>
                       {part}
                       {index !== array.length - 1 && <br />}
                   </React.Fragment>
               ))
-            : message.content
-    let isPayment = false
-    if (payment?.status !== undefined) {
+            : event.content.body
+
+    // For certain message types, use custom components
+    if (isPaymentEvent(event)) {
         isPayment = true
-        content = <ChatMessagePayment message={message} payment={payment} />
+        content = <ChatPaymentEvent event={event} />
     }
 
     return (

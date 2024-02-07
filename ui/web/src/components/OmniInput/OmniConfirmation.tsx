@@ -133,15 +133,17 @@ export const OmniConfirmation: React.FC<Props> = ({
                     continueText: t('words.authorize'),
                     continueOnClick: handleAuth,
                 }
+            case ParserDataType.FediChatUser:
+                return {
+                    icon: ChatIcon,
+                    text: t('feature.omni.confirm-fedi-chat'),
+                    continueHref: `/chat/user/${parsedData.data.id}`,
+                }
             case ParserDataType.FediChatGroup:
             case ParserDataType.FediChatMember:
                 return {
                     icon: ChatIcon,
-                    text: t('feature.omni.confirm-fedi-chat'),
-                    continueHref:
-                        parsedData.type === ParserDataType.FediChatGroup
-                            ? `/chat/group/${parsedData.data.id}`
-                            : `/chat/member/${parsedData.data.id}`,
+                    text: t('feature.omni.unsupported-legacy-chat'),
                 }
             case ParserDataType.Website:
                 return {

@@ -1,8 +1,8 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { selectAuthenticatedMember } from '@fedi/common/redux'
-import { encodeDirectChatLink } from '@fedi/common/utils/xmpp'
+import { selectMatrixAuth } from '@fedi/common/redux'
+import { encodeFediMatrixUserUri } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../hooks'
 import { QRDialog } from './QRDialog'
@@ -12,17 +12,17 @@ interface Props {
     onOpenChange(open: boolean): void
 }
 
-export const MemberQRDialog: React.FC<Props> = props => {
+export const ChatUserQRDialog: React.FC<Props> = props => {
     const { t } = useTranslation()
-    const member = useAppSelector(selectAuthenticatedMember)
+    const matrixAuth = useAppSelector(selectMatrixAuth)
 
-    if (!member) return null
+    if (!matrixAuth) return null
 
-    const directChatLink = encodeDirectChatLink(member.username)
+    const directChatLink = encodeFediMatrixUserUri(matrixAuth.userId)
 
     return (
         <QRDialog
-            title={member.username}
+            title={t('feature.chat.chat-invite')}
             qrValue={directChatLink}
             onCopyMessage={t('phrases.copied-to-clipboard')}
             notice={t('feature.chat.scan-member-code-notice')}
