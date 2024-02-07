@@ -5,16 +5,37 @@ type CSVColumns<T> = { name: string; getValue: (item: T) => string | number }[]
 export function makeTransactionHistoryCSV(txs: Transaction[]) {
     const sortedTxs = txs
         .sort((a, b) => a.createdAt - b.createdAt)
-        .filter(
-            txn =>
-                !(
-                    txn.lnState?.type === 'waitingForPayment' ||
-                    (txn.bitcoin && txn.onchainState?.type !== 'claimed') ||
-                    (txn.lightning && !txn.lnState) ||
-                    txn.stabilityPoolState?.type === 'pendingWithdrawal' ||
-                    txn.lnState?.type === 'canceled'
-                ),
-        )
+        .filter(txn => {
+            if (txn.lnState) {
+                const { type } = txn.lnState
+
+                return (
+                    type === 'success' ||
+                    type === 'claimed' ||
+                    type === 'funded'
+                )
+            } else if (txn.stabilityPoolState) {
+                const { type } = txn.stabilityPoolState
+
+                return (
+                    type === 'completeDeposit' || type === 'completeWithdrawal'
+                )
+            } else if (txn.onchainState) {
+                const { type } = txn.onchainState
+
+                return (
+                    type === 'succeeded' ||
+                    type === 'claimed' ||
+                    type === 'confirmed'
+                )
+            } else if (txn.oobState) {
+                const { type } = txn.oobState
+
+                return type === 'success'
+            }
+
+            return false
+        })
 
     return makeCSV(sortedTxs, [
         {
