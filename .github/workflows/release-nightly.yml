@@ -1,11 +1,11 @@
-name: Upload Fedi Nightly APK to GitHub
+name: Release Fedi Nightly
 on:
     workflow_dispatch:
     schedule:
         - cron: '0 5 * * *'
 
 jobs:
-    release-android-nightly:
+    release-nightly-apk:
         name: Build Android APK and upload to GitHub draft release
         runs-on: [self-hosted, linux]
         steps:
@@ -55,7 +55,7 @@ jobs:
 
     call-deployment-workflow:
         name: Trigger deployment to Google Play for Internal Testing
-        needs: release-android-nightly
+        needs: release-nightly-apk # wait for APK build so we can reuse cached bridge artifacts
         uses: ./.github/workflows/deploy-to-gp-internal-testing-nightly.yml
         secrets: inherit
         if: >-
@@ -64,7 +64,7 @@ jobs:
 
     call-deployment-workflow-testflight:
         name: Trigger deployment to TestFlight
-        needs: release-android-nightly
+        needs: release-nightly-apk
         uses: ./.github/workflows/deploy-to-testflight-nightly.yml
         secrets: inherit
         if: >-
