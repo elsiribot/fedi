@@ -20,10 +20,11 @@ use common::{
     StagedProvide, StagedSeek, BPS_UNIT, CONSENSUS_VERSION,
 };
 use db::{
-    migrate_to_v2, CurrentCycleKey, Cycle, CycleChangeVoteIndexPrefix, CycleChangeVoteKey,
-    IdleBalance, IdleBalanceKey, PastCycleKey, SeekMetadataKey, StagedCancellationKey,
-    StagedCancellationKeyPrefix, StagedProvideSequenceKey, StagedProvidesKey,
-    StagedProvidesKeyPrefix, StagedSeekSequenceKey, StagedSeeksKey, StagedSeeksKeyPrefix,
+    migrate_to_v2, CurrentCycleKey, CurrentCycleKeyPrefix, Cycle, CycleChangeVoteIndexPrefix,
+    CycleChangeVoteKey, IdleBalance, IdleBalanceKey, IdleBalanceKeyPrefix, PastCycleKey,
+    SeekMetadataKey, StagedCancellationKey, StagedCancellationKeyPrefix, StagedProvideSequenceKey,
+    StagedProvidesKey, StagedProvidesKeyPrefix, StagedSeekSequenceKey, StagedSeeksKey,
+    StagedSeeksKeyPrefix,
 };
 use fedimint_core::config::{
     ConfigGenModuleParams, DkgResult, ServerModuleConfig, ServerModuleConsensusConfig,
@@ -763,10 +764,67 @@ impl ServerModule for StabilityPool {
     /// occurred in the database and consensus should halt.
     async fn audit(
         &self,
-        _dbtx: &mut DatabaseTransaction<'_>,
-        _audit: &mut Audit,
-        _module_instance_id: ModuleInstanceId,
+        dbtx: &mut DatabaseTransaction<'_>,
+        audit: &mut Audit,
+        module_instance_id: ModuleInstanceId,
     ) {
+        // All recorded idle balance is a liability
+        audit
+            .add_items(
+                dbtx,
+                module_instance_id,
+                &IdleBalanceKeyPrefix,
+                |_, idle_bal| -(idle_bal.0.msats as i64),
+            )
+            .await;
+
+        // Staged seeks and provides are also liabilities
+        audit
+            .add_items(
+                dbtx,
+                module_instance_id,
+                &StagedSeeksKeyPrefix,
+                |_, seek_list| -(seek_list.iter().fold(0, |acc, s| acc + s.seek.0.msats) as i64),
+            )
+            .await;
+        audit
+            .add_items(
+                dbtx,
+                module_instance_id,
+                &StagedProvidesKeyPrefix,
+                |_, provide_list| {
+                    -(provide_list
+                        .iter()
+                        .fold(0, |acc, p| acc + p.provide.amount.msats)
+                        as i64)
+                },
+            )
+            .await;
+
+        // Finally, the combined amount of locked seeks and provides in the
+        // current cycle is also a liability. Locked seeks and provides are born
+        // out of staged seeks and provides, respectively, leaving behind any "unused"
+        // portions as still staged.
+        audit
+            .add_items(
+                dbtx,
+                module_instance_id,
+                &CurrentCycleKeyPrefix,
+                |_, current_cycle| {
+                    let all_locked_seeks = current_cycle
+                        .locked_seeks
+                        .iter()
+                        .flat_map(|(_, seek_list)| seek_list)
+                        .fold(0, |acc, s| acc + s.amount.msats);
+                    let all_locked_provides = current_cycle
+                        .locked_provides
+                        .iter()
+                        .flat_map(|(_, provide_list)| provide_list)
+                        .fold(0, |acc, p| acc + p.amount.msats);
+                    -((all_locked_seeks + all_locked_provides) as i64)
+                },
+            )
+            .await;
     }
 
     fn api_endpoints(&self) -> Vec<ApiEndpoint<Self>> {
