@@ -1,4 +1,4 @@
-name: Bump patch version
+name: Bump version - Native UI
 on:
     workflow_dispatch:
     push:
