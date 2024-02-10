@@ -35,4 +35,4 @@ jobs:
               run: |
                   nix-shell -p gh --command "gh repo set-default fedibtc/fedi && gh pr create -B master -H ${{ steps.versioning.outputs.BRANCH_NAME }} --title 'bump version: v${{ steps.versioning.outputs.NEW_VERSION }}' --body 'This PR includes a version bump commit from a release branch for v${{steps.versioning.outputs.NEW_VERSION}}'"
               env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_TOKEN: ${{ secrets.GH_PAT_FEDI_CI_CREATE_PRS }}
