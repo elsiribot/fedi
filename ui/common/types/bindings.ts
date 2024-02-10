@@ -75,7 +75,7 @@ export interface RpcFederation {
     name: string
     inviteCode: string
     meta: Record<string, string>
-    socialRecoveryActive: boolean
+    recovering: boolean
     nodes: Record<string, { url: string; name: string }>
     version: number
     clientConfig: RpcJsonClientConfig | null
@@ -161,7 +161,7 @@ export interface RpcMethods {
             name: string
             inviteCode: string
             meta: Record<string, string>
-            socialRecoveryActive: boolean
+            recovering: boolean
             nodes: Record<string, { url: string; name: string }>
             version: number
             clientConfig: RpcJsonClientConfig | null
@@ -188,7 +188,7 @@ export interface RpcMethods {
             name: string
             inviteCode: string
             meta: Record<string, string>
-            socialRecoveryActive: boolean
+            recovering: boolean
             nodes: Record<string, { url: string; name: string }>
             version: number
             clientConfig: RpcJsonClientConfig | null
@@ -301,7 +301,7 @@ export interface RpcMethods {
             name: string
             inviteCode: string
             meta: Record<string, string>
-            socialRecoveryActive: boolean
+            recovering: boolean
             nodes: Record<string, { url: string; name: string }>
             version: number
             clientConfig: RpcJsonClientConfig | null
