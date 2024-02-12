@@ -1,9 +1,10 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { MutableRefObject, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { WebView } from 'react-native-webview'
+import { OnShouldStartLoadWithRequest } from 'react-native-webview/lib/WebViewTypes'
 import {
     RequestInvoiceArgs,
     RequestInvoiceResponse,
@@ -18,6 +19,7 @@ import {
     selectFediModDebugMode,
 } from '@fedi/common/redux'
 import {
+    AnyParsedData,
     Invoice,
     MSats,
     ParsedLnurlAuth,
@@ -28,6 +30,7 @@ import {
 import { RpcLightningGateway } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
+import { parseUserInput } from '@fedi/common/utils/parser'
 import {
     InjectionMessageType,
     generateInjectionJs,
@@ -45,11 +48,32 @@ import { MakeInvoiceOverlay } from '../components/feature/fedimods/MakeInvoiceOv
 import { NostrSignOverlay } from '../components/feature/fedimods/NostrSignOverlay'
 import { SendPaymentOverlay } from '../components/feature/fedimods/SendPaymentOverlay'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useOmniLinkInterceptor } from '../state/contexts/OmniLinkContext'
+import {
+    useOmniLinkContext,
+    useOmniLinkInterceptor,
+} from '../state/contexts/OmniLinkContext'
 import { useAppSelector, useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('FediModBrowser')
+
+const HANDLED_URI_SCHEMES = [
+    'fedi',
+    'bitcoin',
+    'lightning',
+    'lnurl',
+    'lnurlp',
+    'lnurlw',
+    'keyauth',
+]
+const ORIGIN_WHITELIST = [
+    // Allow any HTTP(S) origins
+    'http:*',
+    'https:*',
+    // Also allow URI schemes that will be handled in-app
+    ...HANDLED_URI_SCHEMES.map(scheme => `${scheme}:*`),
+]
+const handledUriRegex = new RegExp(`^(${HANDLED_URI_SCHEMES.join('|')}):`, 'i')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'FediModBrowser'>
 
@@ -74,7 +98,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         FediModResolver<FediModResponse> | undefined
     >() as MutableRefObject<FediModResolver<FediModResponse> | undefined>
     const overlayRejectRef = useRef<(reason: Error) => void>()
-
     const [requestInvoiceArgs, setRequestInvoiceArgs] =
         useState<RequestInvoiceArgs | null>(null)
     const [lnurlWithdrawal, setLnurlWithdrawal] = useState<
@@ -89,11 +112,12 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     >(null)
     const [nostrUnsignedEvent, setNostrUnsignedEvent] =
         useState<UnsignedNostrEvent | null>(null)
+    const [isParsingLink, setIsParsingLink] = useState(false)
     const getActiveGatewayPromiseRef =
         useRef<Promise<RpcLightningGateway> | null>(null)
+    const { setParsedLink } = useOmniLinkContext()
 
-    // Intercept any URIs the user tries to navigate to that we can handle inline
-    useOmniLinkInterceptor(parsedLink => {
+    const handleParsedLink = (parsedLink: AnyParsedData) => {
         switch (parsedLink.type) {
             case ParserDataType.LnurlWithdraw:
                 setLnurlWithdrawal(parsedLink.data)
@@ -109,7 +133,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 return true
         }
         return false
-    })
+    }
+
+    // Intercept any URIs the user tries to navigate to that we can handle inline
+    useOmniLinkInterceptor(handleParsedLink)
 
     const getActiveGatewayOrThrow = async () => {
         if (getActiveGatewayPromiseRef.current)
@@ -251,6 +278,34 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         },
     })
 
+    // Decide whether or not to handle links clicked in the webview natively.
+    // Links that are passed to this are decided based on the `originWhitelist`
+    // param below. Any URI that does not match that whitelist should be
+    // automitaclly handled by the OS webview.
+    const onShouldStartLoadWithRequest: OnShouldStartLoadWithRequest = req => {
+        // Unless it's a URI we're handling in-app, allow the webview to handle it.
+        if (!handledUriRegex.test(req.url)) return true
+        // Otherwise, optimistically block it and attempt to parse whatever it was.
+        // If it can be handled inline by the FediModBrowser, do that. If it can
+        // be handled elsewhere in the app, pass it to the OmniLinkContext. If it
+        // can't be parsed, pass it on to the OS to decide how to handle it.
+        setIsParsingLink(true)
+        parseUserInput(req.url, fedimint, t)
+            .then(parsed => {
+                const handled = handleParsedLink(parsed)
+                if (handled) return
+                if (parsed.type !== ParserDataType.Unknown) {
+                    setParsedLink(parsed)
+                } else {
+                    Linking.openURL(req.url)
+                }
+            })
+            .finally(() => {
+                setIsParsingLink(false)
+            })
+        return false
+    }
+
     const resetOverlay = () => {
         setRequestInvoiceArgs(null)
         setLnurlWithdrawal(null)
@@ -298,8 +353,15 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 })}
                 allowsInlineMediaPlayback
                 onMessage={onMessage}
+                onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
                 style={{ width: '100%', height: '100%', flex: 1 }}
+                originWhitelist={ORIGIN_WHITELIST}
             />
+            {isParsingLink && (
+                <View style={style.loadingOverlay}>
+                    <ActivityIndicator color="#FFF" />
+                </View>
+            )}
             <MakeInvoiceOverlay
                 {...overlayProps}
                 requestInvoiceArgs={requestInvoiceArgs}
@@ -327,6 +389,16 @@ const styles = (insets: EdgeInsets) =>
         container: {
             flex: 1,
             paddingBottom: insets.bottom,
+        },
+        loadingOverlay: {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
         },
     })
 
