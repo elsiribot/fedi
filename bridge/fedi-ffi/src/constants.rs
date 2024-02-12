@@ -22,3 +22,7 @@ pub const LIGHTNING_OPERATION_TYPE: &str = "ln";
 pub const MINT_OPERATION_TYPE: &str = "mint";
 pub const WALLET_OPERATION_TYPE: &str = "wallet";
 pub const STABILITY_POOL_OPERATION_TYPE: &str = "stability_pool";
+
+// URL for Fedi fee schedule API
+// TODO shaurya update URL post deployment
+pub const FEDI_FEE_API_URL: &str = "https://github.com/fedibtc/devops-automation";

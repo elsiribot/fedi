@@ -3,6 +3,7 @@ use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
 use anyhow::Context;
+use fediffi::api::LiveFediApi;
 use fediffi::bridge::Bridge;
 use fediffi::error::ErrorCode;
 use fediffi::event::IEventSink;
@@ -59,10 +60,12 @@ pub async fn fedimint_initialize_inner(event_sink: EventSink) -> anyhow::Result<
     let storage = WasmStorage::new()
         .await
         .context("Failed to initialize storage")?;
+    let fedi_api = Box::new(LiveFediApi::new());
 
-    let bridge = fediffi::rpc::fedimint_initialize_async(Arc::new(storage), event_sink.clone())
-        .await
-        .context("Failed to initialize the bridge")?;
+    let bridge =
+        fediffi::rpc::fedimint_initialize_async(Arc::new(storage), event_sink.clone(), fedi_api)
+            .await
+            .context("Failed to initialize the bridge")?;
 
     BRIDGE.with(|bridge_cell| bridge_cell.replace(Some(bridge)));
     Ok(())

@@ -35,6 +35,7 @@ use super::types::{
     RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo, RpcTransaction, RpcXmppCredentials,
     SocialRecoveryApproval, SocialRecoveryQr,
 };
+use crate::api::IFediApi;
 use crate::constants::{LNURL_CHILD_ID, NOSTR_CHILD_ID};
 use crate::error::{get_error_code, ErrorCode};
 use crate::event::SocialRecoveryEvent;
@@ -362,10 +363,15 @@ pub struct Bridge {
     pub federations: Arc<Mutex<HashMap<String, Arc<MultiFederation>>>>,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
+    pub fedi_api: Box<dyn IFediApi>,
 }
 
 impl Bridge {
-    pub async fn new(storage: Storage, event_sink: EventSink) -> Result<Self> {
+    pub async fn new(
+        storage: Storage,
+        event_sink: EventSink,
+        fedi_api: Box<dyn IFediApi>,
+    ) -> Result<Self> {
         let task_group = TaskGroup::new();
         let app_state = AppState::load(storage.clone()).await?;
 
@@ -421,6 +427,7 @@ impl Bridge {
             federations: Arc::new(Mutex::new(federations)),
             event_sink,
             task_group,
+            fedi_api,
         })
     }
 

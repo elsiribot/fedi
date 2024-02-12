@@ -16,6 +16,7 @@ use super::logging;
 pub use super::rpc::FedimintError;
 use super::rpc::{fedimint_initialize_async, fedimint_rpc_async};
 use super::storage::IStorage;
+use crate::api::LiveFediApi;
 use crate::error::ErrorCode;
 use crate::remote::{fedimint_remote_initialize, fedimint_remote_rpc};
 use crate::rpc::{self, rpc_error};
@@ -83,7 +84,13 @@ pub async fn fedimint_initialize_inner(
         .await
         .context("Failed to initialize storage")?;
     let mut bridge_lock = BRIDGE.lock().await;
-    let bridge = match fedimint_initialize_async(Arc::new(storage), event_sink).await {
+    let bridge = match fedimint_initialize_async(
+        Arc::new(storage),
+        event_sink,
+        Box::new(LiveFediApi::new()),
+    )
+    .await
+    {
         Ok(bridge) => bridge,
         Err(e) => {
             let context_error = e.context("Failed to initialize Bridge");

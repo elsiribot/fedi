@@ -25,6 +25,7 @@ use super::types::{
     RpcPeerId, RpcPublicKey, RpcRecoveryId, RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo,
     RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
 };
+use crate::api::IFediApi;
 use crate::error::get_error_code;
 use crate::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use crate::types::{
@@ -41,9 +42,10 @@ pub enum FedimintError {
 pub async fn fedimint_initialize_async(
     storage: Storage,
     event_sink: EventSink,
+    fedi_api: Box<dyn IFediApi>,
 ) -> anyhow::Result<Arc<Bridge>> {
     let _g = TimeReporter::new("fedimint_initialize").level(Level::INFO);
-    let bridge = Bridge::new(storage, event_sink)
+    let bridge = Bridge::new(storage, event_sink, fedi_api)
         .await
         .context("could not create a bridge")?;
     Ok(Arc::new(bridge))
@@ -653,15 +655,16 @@ mod tests {
     use devimint::cmd;
     use devimint::util::{ClnLightningCli, FedimintCli, LnCli};
     use fedi_social_client::common::VerificationDocument;
-    use fedimint_core::Amount;
+    use fedimint_core::{apply, async_trait_maybe_send, Amount};
     use fedimint_logging::TracingSetup;
 
     use super::*;
+    use crate::api::IFediApi;
     use crate::bridge::MultiFederation;
     use crate::constants::{FEDI_FILE_PATH, MILLION};
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
-    use crate::storage::IStorage;
+    use crate::storage::{FediFeeSchedule, IStorage};
     use crate::types::RpcReturningMemberStatus;
 
     struct FakeEventSink {
@@ -694,6 +697,15 @@ mod tests {
         }
         fn num_events_of_type(&self, event_type: String) -> usize {
             self.events().iter().filter(|e| e.0 == event_type).count()
+        }
+    }
+
+    struct MockFediApi;
+
+    #[apply(async_trait_maybe_send!)]
+    impl IFediApi for MockFediApi {
+        async fn fetch_fedi_fee_schedule(&self) -> anyhow::Result<FediFeeSchedule> {
+            Ok(FediFeeSchedule::default())
         }
     }
 
@@ -863,7 +875,8 @@ mod tests {
         let event_sink = Arc::new(FakeEventSink::new());
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
-        let bridge = match fedimint_initialize_async(storage, event_sink).await {
+        let fedi_api = Box::new(MockFediApi);
+        let bridge = match fedimint_initialize_async(storage, event_sink, fedi_api).await {
             Ok(bridge) => bridge,
             Err(e) => {
                 let context_error = e.context("Failed to initialize Bridge");
@@ -894,13 +907,16 @@ mod tests {
         let event_sink = Arc::new(FakeEventSink::new());
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
+        let fedi_api = Box::new(MockFediApi);
         let invalid_fedi_file = String::from(r#"{"format_version": 0, "root_seed": "abcd"}"#);
         storage
             .write_file(FEDI_FILE_PATH.as_ref(), invalid_fedi_file.clone().into())
             .await?;
-        assert!(fedimint_initialize_async(storage.clone(), event_sink)
-            .await
-            .is_err());
+        assert!(
+            fedimint_initialize_async(storage.clone(), event_sink, fedi_api)
+                .await
+                .is_err()
+        );
         assert_eq!(
             storage
                 .read_file(FEDI_FILE_PATH.as_ref())
@@ -926,7 +942,8 @@ mod tests {
         let fixture_dir = get_fixture_dir().join("v0_db");
         copy_recursively(fixture_dir, &data_dir)?;
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
-        let bridge = fedimint_initialize_async(storage, event_sink).await?;
+        let fedi_api = Box::new(MockFediApi);
+        let bridge = fedimint_initialize_async(storage, event_sink, fedi_api).await?;
         let federations = listFederations(bridge.clone()).await?;
         // old federations are ignored
         assert_eq!(federations.len(), 0);
