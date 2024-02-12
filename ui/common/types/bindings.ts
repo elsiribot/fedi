@@ -78,6 +78,7 @@ export interface RpcFederation {
     nodes: Record<string, { url: string; name: string }>
     version: number
     clientConfig: RpcJsonClientConfig | null
+    fediFeeSchedule: RpcFediFeeSchedule
 }
 
 export type RpcFederationId = string
@@ -89,6 +90,11 @@ export interface RpcFederationPreview {
     inviteCode: string
     version: number
     returningMemberStatus: RpcReturningMemberStatus
+}
+
+export interface RpcFediFeeSchedule {
+    remittanceThresholdMsat: number
+    modules: Record<string, RpcModuleFediFeeSchedule>
 }
 
 export interface RpcGenerateEcashResponse {
@@ -164,6 +170,7 @@ export interface RpcMethods {
             nodes: Record<string, { url: string; name: string }>
             version: number
             clientConfig: RpcJsonClientConfig | null
+            fediFeeSchedule: RpcFediFeeSchedule
         },
     ]
     federationPreview: [
@@ -191,6 +198,7 @@ export interface RpcMethods {
             nodes: Record<string, { url: string; name: string }>
             version: number
             clientConfig: RpcJsonClientConfig | null
+            fediFeeSchedule: RpcFediFeeSchedule
         }>,
     ]
     guardianStatus: [
@@ -304,6 +312,7 @@ export interface RpcMethods {
             nodes: Record<string, { url: string; name: string }>
             version: number
             clientConfig: RpcJsonClientConfig | null
+            fediFeeSchedule: RpcFediFeeSchedule
         },
     ]
     socialRecoveryDownloadVerificationDoc: [
@@ -379,6 +388,11 @@ export interface RpcMethods {
         { federationId: RpcFederationId; sendPpm: bigint; receivePpm: bigint },
         null,
     ]
+}
+
+export interface RpcModuleFediFeeSchedule {
+    sendPpm: number
+    receivePpm: number
 }
 
 export type RpcOOBSpendState =

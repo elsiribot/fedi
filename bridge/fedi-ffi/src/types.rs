@@ -17,6 +17,7 @@ use ts_rs::TS;
 use super::bridge::MultiFederation;
 use super::federation_v2::FederationV2;
 use super::utils::to_unix_time;
+use crate::storage::FediFeeSchedule;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
@@ -38,6 +39,7 @@ pub struct RpcFederation {
     pub nodes: BTreeMap<RpcPeerId, PeerUrl>,
     pub version: u32,
     pub client_config: Option<RpcJsonClientConfig>,
+    pub fedi_fee_schedule: RpcFediFeeSchedule,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]
@@ -134,6 +136,7 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
             global: client_config_json.global,
             modules: client_config_json.modules,
         }),
+        fedi_fee_schedule: federation.fedi_fee_schedule.read().await.clone().into(),
     }
 }
 
@@ -725,6 +728,46 @@ impl From<OperationFediFeeStatus> for RpcOperationFediFeeStatus {
             OperationFediFeeStatus::FailedReceive { fedi_fee_ppm } => {
                 RpcOperationFediFeeStatus::FailedReceive { fedi_fee_ppm }
             }
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcFediFeeSchedule {
+    #[ts(type = "number")]
+    pub remittance_threshold_msat: u64,
+    pub modules: BTreeMap<String, RpcModuleFediFeeSchedule>,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcModuleFediFeeSchedule {
+    #[ts(type = "number")]
+    pub send_ppm: u64,
+    #[ts(type = "number")]
+    pub receive_ppm: u64,
+}
+
+impl From<FediFeeSchedule> for RpcFediFeeSchedule {
+    fn from(value: FediFeeSchedule) -> Self {
+        Self {
+            remittance_threshold_msat: value.remittance_threshold_msat,
+            modules: value
+                .modules
+                .into_iter()
+                .map(|(k, v)| {
+                    (
+                        k.to_string(),
+                        RpcModuleFediFeeSchedule {
+                            send_ppm: v.send_ppm,
+                            receive_ppm: v.receive_ppm,
+                        },
+                    )
+                })
+                .collect(),
         }
     }
 }
