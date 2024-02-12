@@ -379,6 +379,27 @@ impl Bridge {
             .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
             .await;
 
+        // Fetch fee schedule from Fedi API. Presently the endpoint is
+        // federation-agnostic. So we just have to do one call, and then we can
+        // overwrite all the locally stored fee schedules if the call is successful. If
+        // the call fails, we can just ignore it and rely on the fee schedules already
+        // present locally.
+        if let Ok(fedi_fee_schedule) = fedi_api.fetch_fedi_fee_schedule().await {
+            let _ = app_state
+                .with_write_lock(move |state| {
+                    Box::pin(async move {
+                        state
+                            .joined_federations
+                            .iter_mut()
+                            .for_each(|(_, fed_info)| {
+                                fed_info.fedi_fee_schedule = fedi_fee_schedule.clone()
+                            });
+                        Ok(())
+                    })
+                })
+                .await;
+        }
+
         // load joined federations
         let joined_federations = app_state
             .with_read_lock(move |state| Box::pin(async move { state.joined_federations.clone() }))
@@ -471,8 +492,14 @@ impl Bridge {
             .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
             .await;
 
-        // TODO shaurya actually fetch fee schedule when endpoint available
-        let fedi_fee_schedule = FediFeeSchedule::default();
+        // Fetch fee schedule from Fedi API. If the call fails, we can just ignore it
+        // and rely on the default value. On the next bridge initialized, we would retry
+        // fetching the fee schedule anyway.
+        let fedi_fee_schedule = self
+            .fedi_api
+            .fetch_fedi_fee_schedule()
+            .await
+            .unwrap_or_default();
 
         let db_name = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
         let federation = FederationV2::join(
