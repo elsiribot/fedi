@@ -54,7 +54,7 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             width: '100%',
-            marginVertical: theme.spacing.lg,
+            marginTop: theme.spacing.lg,
         },
         balanceText: {
             color: theme.colors.primary,

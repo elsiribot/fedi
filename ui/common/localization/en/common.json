@@ -539,6 +539,7 @@
             "recovery-confirm-identity-instructions-2": "Does this video show the same member trying to do social recovery now?",
             "recovery-confirm-identity-no": "No, the person in the video is not the same person as the member",
             "recovery-confirm-identity-yes": "Yes, the person in the video is the same person as the member",
+            "recovery-in-progress-balance": "Recovery is in progress. Your balances will be available soon.",
             "search-files": "Search files",
             "social-recovery": "Social recovery",
             "social-recovery-instructions": "Open your social recovery Fedi file that was created when you recorded your backup video. We prompted you to save the file and share it with friends.",
