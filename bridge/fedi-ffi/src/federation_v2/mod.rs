@@ -2177,6 +2177,20 @@ impl FederationV2 {
             .ok_or(anyhow!("Unknown module {module}"))
     }
 
+    /// For the given module (identified by ModuleKind), sets the
+    /// ModuleFediFeeSchedule.
+    pub async fn set_module_fee_schedule(
+        &self,
+        module: ModuleKind,
+        fee_schedule: ModuleFediFeeSchedule,
+    ) {
+        self.fedi_fee_schedule
+            .write()
+            .await
+            .modules
+            .insert(module, fee_schedule);
+    }
+
     /// We optimistically charge the fee from the send amount (since the amount
     /// + fee must already be in the user's possession) and refund the fee
     /// in case the operation ends up failing.
