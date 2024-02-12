@@ -3,7 +3,9 @@ import React from 'react'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useIsChatConnected } from '@fedi/common/hooks/chat'
+import { selectNeedsChatRegistration } from '@fedi/common/redux'
 
+import { useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
 import { ChatOfflineIndicator } from '../ChatOfflineIndicator'
 import { PageError } from '../PageError'
@@ -20,7 +22,13 @@ interface Props {
 export const Template: React.FC<Props> = ({ children }) => {
     const { hideNavigation, isPopupOver } = useNavVisibility()
     const isConnected = useIsChatConnected()
+    const needsChatRegistration = useAppSelector(selectNeedsChatRegistration)
     const router = useRouter()
+
+    const shouldShowChatOffline =
+        !isConnected &&
+        !needsChatRegistration &&
+        router.asPath.startsWith('/chat')
 
     return (
         <Container className={hideNavigation ? 'hide-navigation' : ''}>
@@ -32,9 +40,7 @@ export const Template: React.FC<Props> = ({ children }) => {
                             <FederationSelector />
                             <PopupFederationCountdown />
                         </FederationControls>
-                        {!isConnected && router.asPath.startsWith('/chat') && (
-                            <ChatOfflineIndicator />
-                        )}
+                        {shouldShowChatOffline && <ChatOfflineIndicator />}
                     </FederationHeader>
                 )}
                 <Main centered={hideNavigation}>

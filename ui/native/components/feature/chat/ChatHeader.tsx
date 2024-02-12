@@ -5,7 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet } from 'react-native'
 
 import { useNuxStep } from '@fedi/common/hooks/nux'
-import { selectIsChatEmpty } from '@fedi/common/redux'
+import {
+    selectIsChatEmpty,
+    selectNeedsChatRegistration,
+} from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
@@ -19,6 +22,7 @@ const ChatHeader: React.FC = () => {
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
     const isChatEmpty = useAppSelector(selectIsChatEmpty)
+    const needsChatRegistration = useAppSelector(selectNeedsChatRegistration)
     const [hasViewedMemberQr, completeViewedMemberQr] =
         useNuxStep('hasViewedMemberQr')
 
@@ -35,30 +39,37 @@ const ChatHeader: React.FC = () => {
                 }
                 centerContainerStyle={{ flex: 2 }}
                 headerRight={
-                    <>
-                        <Pressable
-                            onPress={() => {
-                                navigation.navigate('MemberQrCode')
-                                completeViewedMemberQr()
-                            }}
-                            hitSlop={5}>
-                            <SvgImage name="Qr" color={theme.colors.primary} />
-                        </Pressable>
+                    needsChatRegistration ? null : (
+                        <>
+                            <Pressable
+                                onPress={() => {
+                                    navigation.navigate('MemberQrCode')
+                                    completeViewedMemberQr()
+                                }}
+                                hitSlop={5}>
+                                <SvgImage
+                                    name="Qr"
+                                    color={theme.colors.primary}
+                                />
+                            </Pressable>
 
-                        <NuxTooltip
-                            delay={600}
-                            shouldShow={isChatEmpty && !hasViewedMemberQr}
-                            orientation="below"
-                            side="right"
-                            text="Your username"
-                            horizontalOffset={12}
-                            verticalOffset={32}
-                        />
-                    </>
+                            <NuxTooltip
+                                delay={600}
+                                shouldShow={isChatEmpty && !hasViewedMemberQr}
+                                orientation="below"
+                                side="right"
+                                text="Your username"
+                                horizontalOffset={12}
+                                verticalOffset={32}
+                            />
+                        </>
+                    )
                 }
                 rightContainerStyle={styles(theme).rightContainer}
             />
-            <ChatConnectionBadge offset={14} noSafeArea />
+            {!needsChatRegistration && (
+                <ChatConnectionBadge offset={14} noSafeArea />
+            )}
         </>
     )
 }

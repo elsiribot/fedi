@@ -1760,6 +1760,10 @@ export const selectOrderedChatList = createSelector(
 export const selectIsChatEmpty = (s: CommonState) =>
     selectOrderedChatList(s).length === 0
 
+/** Returns whether or not the user needs to register a username on the chat server */
+export const selectNeedsChatRegistration = (s: CommonState) =>
+    !!selectChatConnectionOptions(s) && !selectAuthenticatedMember(s)
+
 /**
  * Returns members who have sent us messages recently. Optionally
  * takes in an argument of the number to return, defaults to 4.

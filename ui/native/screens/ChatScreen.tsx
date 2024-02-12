@@ -1,18 +1,19 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { useIsFocused, useNavigation } from '@react-navigation/native'
-import { FAB, Image, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, FAB, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useUpdateLastMessageSeen } from '@fedi/common/hooks/chat'
+import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
     fetchChatMembers,
     selectActiveFederationId,
-    selectChatConnectionOptions,
     selectIsChatEmpty,
+    selectNeedsChatRegistration,
     selectWebsocketIsHealthy,
 } from '@fedi/common/redux'
 
@@ -41,19 +42,18 @@ const ChatScreen: React.FC<Props> = () => {
     const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(selectActiveFederationId)
-    const activeChatConnectionOptions = useAppSelector(
-        selectChatConnectionOptions,
-    )
+    const isChatSupported = useIsChatSupported()
+    const needsChatRegistration = useAppSelector(selectNeedsChatRegistration)
     const isChatEmpty = useAppSelector(selectIsChatEmpty)
     const [hasOpenedNewChat, completeOpenedNewChat] =
         useNuxStep('hasOpenedNewChat')
 
     // Navigate back to home screen if this federation doesn't support chat
     useEffect(() => {
-        if (!activeChatConnectionOptions) {
+        if (!isChatSupported) {
             navigation.dispatch(reset('TabsNavigator'))
         }
-    }, [activeChatConnectionOptions, navigation])
+    }, [isChatSupported, navigation])
 
     useEffect(() => {
         if (websocketIsHealthy && activeFederationId) {
@@ -68,7 +68,28 @@ const ChatScreen: React.FC<Props> = () => {
     const style = styles(theme)
     return (
         <View style={style.container}>
-            {isChatEmpty ? (
+            {needsChatRegistration ? (
+                <>
+                    <View style={style.registration}>
+                        <Image
+                            resizeMode="contain"
+                            source={Images.IllustrationChat}
+                            style={style.emptyImage}
+                        />
+                        <Text h1 style={style.registrationText}>
+                            {t('feature.chat.need-registration-title')}
+                        </Text>
+                        <Text style={style.registrationText}>
+                            {t('feature.chat.need-registration-description')}
+                        </Text>
+                        <Button
+                            fullWidth
+                            title={t('feature.chat.register-a-username')}
+                            onPress={() => navigation.push('CreateUsername')}
+                        />
+                    </View>
+                </>
+            ) : isChatEmpty ? (
                 <>
                     <Image
                         resizeMode="contain"
@@ -98,17 +119,21 @@ const ChatScreen: React.FC<Props> = () => {
                 </ErrorBoundary>
             )}
 
-            <FAB
-                icon={<SvgImage name="Plus" color={theme.colors.secondary} />}
-                color={theme.colors.blue}
-                style={style.actionButton}
-                size="large"
-                placement="right"
-                onPress={() => {
-                    navigation.navigate('NewMessage')
-                    completeOpenedNewChat()
-                }}
-            />
+            {!needsChatRegistration && (
+                <FAB
+                    icon={
+                        <SvgImage name="Plus" color={theme.colors.secondary} />
+                    }
+                    color={theme.colors.blue}
+                    style={style.actionButton}
+                    size="large"
+                    placement="right"
+                    onPress={() => {
+                        navigation.navigate('NewMessage')
+                        completeOpenedNewChat()
+                    }}
+                />
+            )}
         </View>
     )
 }
@@ -138,6 +163,17 @@ const styles = (theme: Theme) =>
         },
         error: {
             color: theme.colors.red,
+        },
+        registration: {
+            flex: 1,
+            width: '100%',
+            maxWidth: 320,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        registrationText: {
+            textAlign: 'center',
+            marginBottom: theme.spacing.lg,
         },
     })
 
