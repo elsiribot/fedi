@@ -2,18 +2,18 @@ import { InjectionMessageType, InjectionMessageResponseMap } from '../types'
 import { sendInjectorMessage } from '../utils'
 
 interface FediInternalProvider {
-    requestEcash(amountMsat: number): Promise<string>;
-    redeemEcash(ecash: string): Promise<string>;
+    generateEcash(amountMsat: number): Promise<string>;
+    receiveEcash(ecash: string): Promise<string>;
 }
 
 class InjectionFediProvider implements FediInternalProvider {
     private lastMessageId = 0;
 
-    async requestEcash(amountMsat: number): Promise<string> {
+    async generateEcash(amountMsat: number): Promise<string> {
         return this.sendMessage(InjectionMessageType.fedi_generateEcash, amountMsat);
     }
 
-    async redeemEcash(ecash: string): Promise<string> {
+    async receiveEcash(ecash: string): Promise<string> {
         return this.sendMessage(InjectionMessageType.fedi_receiveEcash, ecash);
     }
 
