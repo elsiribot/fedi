@@ -58,6 +58,7 @@ export enum SupportedCurrency {
     CZK = 'CZK',
     INR = 'INR',
     IDR = 'IDR',
+    GTQ = 'GTQ',
 }
 
 export enum SupportedMetaFields {

@@ -299,7 +299,12 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             })
         },
         [InjectionMessageType.fedi_generateEcash]: async amountMsat => {
-            log.info('fedi.requestEcash', amountMsat)
+            log.info('fedi.generateEcash', amountMsat)
+
+            if (activeFederation?.id === undefined) {
+                log.error('fedi.receiveEcash', 'No active federation')
+                throw new Error('No active federation')
+            }
 
             // Wait for user to interact with alert
             return new Promise((resolve, reject) => {
@@ -313,7 +318,13 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                     typeof amountMsat === 'string' ||
                     typeof amountMsat === 'number'
                 ) {
-                    setRequestInvoiceArgs({ amount: amountMsat })
+                    fedimint
+                        .generateEcash(
+                            amountMsat as MSats,
+                            activeFederation?.id,
+                        )
+                        .then(ecash => resolve(ecash.ecash))
+                        .catch(reject)
                 } else {
                     log.error(
                         'Invalid amount type for fedi.requestEcash',
