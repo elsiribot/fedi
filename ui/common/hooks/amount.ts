@@ -32,6 +32,12 @@ import { useUpdatingRef } from './util'
 interface RequestAmountArgs {
     lnurlWithdrawal?: ParsedLnurlWithdraw['data'] | null
     requestInvoiceArgs?: RequestInvoiceArgs | null
+    ecashRequest?: {
+        amount?: string | number
+        defaultAmount?: string | number
+        minimumAmount?: string | number
+        maximumAmount?: string | number
+    } | null
 }
 
 interface SendAmountArgs {
@@ -322,6 +328,7 @@ export function useAmountInput(
 export function useMinMaxRequestAmount({
     lnurlWithdrawal,
     requestInvoiceArgs,
+    ecashRequest,
 }: RequestAmountArgs = {}) {
     const maxReceiveAmount = useCommonSelector(selectMaxReceiveAmount)
 
@@ -352,6 +359,20 @@ export function useMinMaxRequestAmount({
             if (requestInvoiceArgs.maximumAmount) {
                 maximumAmount = Math.min(
                     parseInt(requestInvoiceArgs.maximumAmount as string, 10),
+                    maximumAmount,
+                ) as Sats
+            }
+        }
+        if (ecashRequest) {
+            if (ecashRequest.minimumAmount) {
+                minimumAmount = Math.max(
+                    parseInt(ecashRequest.minimumAmount as string, 10),
+                    minimumAmount,
+                ) as Sats
+            }
+            if (ecashRequest.maximumAmount) {
+                maximumAmount = Math.min(
+                    parseInt(ecashRequest.maximumAmount as string, 10),
                     maximumAmount,
                 ) as Sats
             }
@@ -459,6 +480,10 @@ export function useRequestForm(args: RequestAmountArgs = {}) {
         ) as Sats
     }
 
+    if (args.ecashRequest?.amount) {
+        exactAmount = parseInt(args.ecashRequest.amount as string, 10) as Sats
+    }
+
     return {
         inputAmount,
         setInputAmount,
@@ -474,6 +499,7 @@ export function useRequestForm(args: RequestAmountArgs = {}) {
 function getDefaultRequestAmount({
     requestInvoiceArgs,
     lnurlWithdrawal,
+    ecashRequest,
 }: RequestAmountArgs) {
     if (lnurlWithdrawal?.maxWithdrawable) {
         return amountUtils.msatToSat(lnurlWithdrawal?.maxWithdrawable)
@@ -483,6 +509,12 @@ function getDefaultRequestAmount({
     }
     if (requestInvoiceArgs?.defaultAmount) {
         return parseInt(requestInvoiceArgs.defaultAmount as string, 10) as Sats
+    }
+    if (ecashRequest?.amount) {
+        return parseInt(ecashRequest.amount as string, 10) as Sats
+    }
+    if (ecashRequest?.defaultAmount) {
+        return parseInt(ecashRequest.defaultAmount as string, 10) as Sats
     }
     return 0 as Sats
 }

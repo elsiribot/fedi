@@ -64,13 +64,20 @@ export type InjectionMessageResponseMap = {
         response: SignedNostrEvent
     }
     [InjectionMessageType.fedi_generateEcash]: {
-        message: number
+        message: EcashRequest
         response: string
     }
     [InjectionMessageType.fedi_receiveEcash]: {
         message: string
         response: string
     }
+}
+
+export type EcashRequest = {
+    amount?: string | number
+    defaultAmount?: string | number
+    minimumAmount?: string | number
+    maximumAmount?: string | number
 }
 
 export type InjectionRequestMessage<T extends InjectionMessageType> = {
