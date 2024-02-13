@@ -17,6 +17,7 @@ import { currencySlice, fetchCurrencyPrices } from './currency'
 import { environmentSlice, selectLanguage } from './environment'
 import {
     federationSlice,
+    refreshFederations,
     updateFederation,
     updateFederationBalance,
 } from './federation'
@@ -116,6 +117,15 @@ export function initializeCommonStore({
         },
     )
 
+    // Refresh federations on recoveryComplete event to enable UI
+    const unsubscribeRecovery = fedimint.addListener(
+        'recoveryComplete',
+        event => {
+            log.debug('Recovery complete', event)
+            dispatch(refreshFederations(fedimint))
+        },
+    )
+
     // Load state from local storage, then start listener that syncs to storage
     // on changes to stored state after it's been loaded.
     let unsubscribeStorage: UnsubscribeListener = () => null
@@ -154,6 +164,7 @@ export function initializeCommonStore({
         unsubscribeFederation()
         unsubscribeBalance()
         unsubscribeTransaction()
+        unsubscribeRecovery()
         unsubscribeStorage()
     }
 }
