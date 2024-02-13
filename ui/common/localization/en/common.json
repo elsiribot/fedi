@@ -176,6 +176,7 @@
         "onchain-deposits-disabled": "Onchain deposits have been disabled for this federation",
         "only-group-owners-can-change-name": "Only group owners can change the group name",
         "please-force-quit-the-app": "An error occurred, please force quit the app and try again",
+        "receive-ecash-failed": "Failed to receive ecash",
         "receives-have-been-disabled": "Receives have been disabled for this federation",
         "recovery-failed": "Recovery failed, please try again",
         "sign-nostr-event-failed": "Failed to sign nostr event",

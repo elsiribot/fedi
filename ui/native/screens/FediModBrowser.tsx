@@ -298,6 +298,50 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 setNostrUnsignedEvent(evt)
             })
         },
+        [InjectionMessageType.fedi_generateEcash]: async amountMsat => {
+            log.info('fedi.requestEcash', amountMsat)
+
+            // Wait for user to interact with alert
+            return new Promise((resolve, reject) => {
+                // Save these refs so we can resolve / reject elsewhere
+                overlayRejectRef.current = reject
+                overlayResolveRef.current =
+                    resolve as unknown as FediModResolver<FediModResponse>
+
+                // Handle requestEcash payload
+                if (
+                    typeof amountMsat === 'string' ||
+                    typeof amountMsat === 'number'
+                ) {
+                    setRequestInvoiceArgs({ amount: amountMsat })
+                } else {
+                    log.error(
+                        'Invalid amount type for fedi.requestEcash',
+                        typeof amountMsat,
+                    )
+                    reject(
+                        new Error('Invalid amount type for fedi.requestEcash'),
+                    )
+                }
+            })
+        },
+        [InjectionMessageType.fedi_receiveEcash]: async ecash => {
+            log.info('fedi.receiveEcash', ecash)
+            if (activeFederation?.id === undefined) {
+                log.error('fedi.receiveEcash', 'No active federation')
+                throw new Error('No active federation')
+            }
+            try {
+                const res = await fedimint.receiveEcash(
+                    ecash,
+                    activeFederation.id,
+                )
+                return res.toString()
+            } catch (err) {
+                log.warn('fedi.receiveEcash', err)
+                throw new Error(t('errors.receive-ecash-failed'))
+            }
+        },
     })
 
     // Decide whether or not to handle links clicked in the webview natively.

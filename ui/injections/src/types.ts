@@ -19,6 +19,8 @@ export enum InjectionMessageType {
     webln_verifyMessage = 'webln_verifyMessage',
     nostr_getPublicKey = 'nostr_getPublicKey',
     nostr_signEvent = 'nostr_signEvent',
+    fedi_generateEcash = 'fedi_generateEcash',
+    fedi_receiveEcash = 'fedi_receiveEcash',
 }
 
 export type InjectionMessageResponseMap = {
@@ -60,6 +62,14 @@ export type InjectionMessageResponseMap = {
     [InjectionMessageType.nostr_signEvent]: {
         message: UnsignedNostrEvent
         response: SignedNostrEvent
+    }
+    [InjectionMessageType.fedi_generateEcash]: {
+        message: number
+        response: string
+    }
+    [InjectionMessageType.fedi_receiveEcash]: {
+        message: string
+        response: string
     }
 }
 
