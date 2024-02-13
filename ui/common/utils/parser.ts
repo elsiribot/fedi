@@ -35,6 +35,13 @@ export const ALLOWED_PARSER_TYPES_BEFORE_FEDERATION = [
     ParserDataType.Unknown,
 ]
 
+/** List of parse types that are not usable before recovery is complete */
+export const BLOCKED_PARSER_TYPES_DURING_RECOVERY = [
+    ParserDataType.Bolt11,
+    ParserDataType.LnurlPay,
+    ParserDataType.LnurlWithdraw,
+]
+
 /**
  * Parses any data that would the user would input via QR code, copy / paste etc.
  * Returns a structured object that identifies the type of data, and formatted
