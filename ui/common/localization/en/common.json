@@ -540,6 +540,7 @@
             "recovery-confirm-identity-no": "No, the person in the video is not the same person as the member",
             "recovery-confirm-identity-yes": "Yes, the person in the video is the same person as the member",
             "recovery-in-progress-balance": "Recovery is in progress. Your balances will be available soon.",
+            "recovery-in-progress-chat-payments": "Recovery is in progress. Chat payments will be available soon.",
             "recovery-in-progress-payments": "Recovery is in progress. Payments will be available soon.",
             "search-files": "Search files",
             "social-recovery": "Social recovery",
