@@ -5,7 +5,7 @@ import { Trans, useTranslation } from 'react-i18next'
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import {
     joinFederation,
-    selectFederations,
+    selectFederationIds,
     setActiveFederationId,
 } from '@fedi/common/redux'
 import { FederationPreview, ParserDataType } from '@fedi/common/types'
@@ -37,6 +37,7 @@ const log = makeLog('JoinFederation')
 export const JoinFederation: React.FC = () => {
     const dispatch = useAppDispatch()
     const routeState = useRouteState('/onboarding/join')
+    const invite = routeState?.data.invite
     const { t } = useTranslation()
     const { push } = useRouter()
     const { showErrorToast, showToast } = useToast()
@@ -46,9 +47,7 @@ export const JoinFederation: React.FC = () => {
     const [federationPreview, setFederationPreview] =
         useState<FederationPreview>()
     const isChatSupported = useIsChatSupported(federationPreview)
-    const federationIds = useAppSelector(s =>
-        selectFederations(s).map(f => f.id),
-    )
+    const federationIds = useAppSelector(selectFederationIds)
 
     const handleCode = useCallback(
         async (code: string) => {
@@ -73,9 +72,9 @@ export const JoinFederation: React.FC = () => {
 
     // If they came here with route state, paste the code for them
     useEffect(() => {
-        if (!routeState) return
-        handleCode(routeState.data.invite)
-    }, [routeState, handleCode])
+        if (!invite) return
+        handleCode(invite)
+    }, [invite, handleCode])
 
     const handleJoin = useCallback(async () => {
         setIsJoining(true)

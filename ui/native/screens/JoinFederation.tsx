@@ -5,9 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
+import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     joinFederation,
-    selectFederations,
+    selectFederationIds,
     setActiveFederationId,
 } from '@fedi/common/redux'
 import { getFederationPreview } from '@fedi/common/utils/FederationUtils'
@@ -41,9 +42,8 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     const [federationPreview, setFederationPreview] =
         useState<FederationPreviewType>()
     const isChatSupported = useIsChatSupported(federationPreview)
-    const federationIds = useAppSelector(s =>
-        selectFederations(s).map(f => f.id),
-    )
+    const federationIds = useAppSelector(selectFederationIds)
+    const navigationRef = useUpdatingRef(navigation)
 
     const handleCode = useCallback(
         async (code: string) => {
@@ -52,7 +52,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
                 const fed = await getFederationPreview(code, fedimint)
                 if (federationIds.includes(fed.id)) {
                     dispatch(setActiveFederationId(fed.id))
-                    navigation.replace('TabsNavigator')
+                    navigationRef.current.replace('TabsNavigator')
                     toast?.show(t('errors.you-have-already-joined'), 3000)
                 } else {
                     setFederationPreview(fed)
@@ -70,7 +70,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
             }
             setIsFetchingPreview(false)
         },
-        [federationIds, dispatch, navigation, t, toast],
+        [federationIds, dispatch, navigationRef, t, toast],
     )
 
     // If they came here with route state, paste the code for them

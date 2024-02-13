@@ -254,6 +254,11 @@ export const selectFederations = createSelector(
         }),
 )
 
+export const selectFederationIds = createSelector(
+    selectFederations,
+    federations => federations.map(f => f.id),
+)
+
 export const selectActiveFederation = createSelector(
     selectFederations,
     (s: CommonState) => s.federation.activeFederationId,
