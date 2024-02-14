@@ -128,7 +128,7 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
         invite_code,
         meta,
         nodes,
-        recovering: federation.recovering,
+        recovering: *federation.recovering.lock().await,
         version: 2,
         client_config: Some(RpcJsonClientConfig {
             global: client_config_json.global,

@@ -1247,7 +1247,7 @@ mod tests {
         // Rejoin federation and assert that balances are correct
         let recovery_federation = join_test_fed(&recovery_bridge).await?;
         match &*recovery_federation {
-            MultiFederation::V2(x) => assert!(x.recovering),
+            MultiFederation::V2(x) => assert!(*x.recovering.lock().await),
         }
         loop {
             // Wait until recovery complete
@@ -1404,7 +1404,7 @@ mod tests {
             .next()
             .ok_or(anyhow!("Rejoined federation must exist"))?;
         match &*recovery_federation {
-            MultiFederation::V2(x) => assert!(x.recovering),
+            MultiFederation::V2(x) => assert!(*x.recovering.lock().await),
         }
         loop {
             // Wait until recovery complete

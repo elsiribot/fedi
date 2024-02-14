@@ -130,7 +130,7 @@ pub struct FederationV2 {
     // an RwLock since most of the the time the schedule will only be read, but sometimes the
     // Bridge may wish to update it dynamically.
     pub fedi_fee_schedule: Arc<RwLock<FediFeeSchedule>>,
-    pub recovering: bool,
+    pub recovering: Arc<Mutex<bool>>,
 }
 
 impl FederationV2 {
@@ -168,7 +168,7 @@ impl FederationV2 {
             operation_states: Default::default(),
             auxiliary_secret: secret,
             fedi_fee_schedule: Arc::new(RwLock::new(fee_schedule)),
-            recovering,
+            recovering: Arc::new(Mutex::new(recovering)),
         };
         if recovering {
             federation.subscribe_recovery().await;
@@ -1068,6 +1068,7 @@ impl FederationV2 {
                     .await_restore_finished()
                     .await?;
                 info!("recovery completed");
+                *federation.recovering.lock().await = false;
                 federation.event_sink.typed_event(&Event::recovery_complete(
                     federation.federation_id().to_string(),
                 ));

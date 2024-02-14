@@ -162,7 +162,7 @@ impl MultiFederation {
             Self::V2(v2) => {
                 v2.save_xmpp_username(username).await?;
                 // after recovering we will do backup always
-                if !v2.recovering {
+                if !*v2.recovering.lock().await {
                     v2.backup().await?;
                 }
             }
@@ -541,7 +541,7 @@ impl Bridge {
     pub async fn get_multi(&self, federation_id: &str) -> Result<Arc<MultiFederation>> {
         let federation = self.get_multi_maybe_recovering(federation_id).await?;
         let recovering = match &*federation {
-            MultiFederation::V2(f) => f.recovering,
+            MultiFederation::V2(f) => *f.recovering.lock().await,
         };
         anyhow::ensure!(!recovering, "client is still recovering");
         Ok(federation)
