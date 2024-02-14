@@ -114,7 +114,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                     {
                         maxHeight:
                             Dimensions.get('window').height -
-                            56 -
+                            theme.sizes.addFederationButtonHeight -
                             insets.bottom,
                     },
                 ]}>
