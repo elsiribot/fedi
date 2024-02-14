@@ -15,17 +15,17 @@ import {
 
 const SAMPLE_CHAT_SERVER_DOMAIN = 'chat.dev.fedibtc.com'
 
-const baseFed = {
+const baseFed: Federation = {
     id: 'fedid',
     name: 'testfed',
     inviteCode: 'tesfedinvitecode',
     nodes: { '0': { name: 'alpha', url: 'alphaurl' } },
     balance: 0 as MSats,
-    socialRecoveryActive: false,
     recovering: false,
     network: Network.regtest,
     version: 0,
     clientConfig: null,
+    meta: {},
 }
 
 const fedWithNoMetadata: Federation = {
