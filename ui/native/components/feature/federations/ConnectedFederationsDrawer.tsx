@@ -155,7 +155,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                 edges={['bottom', 'left']}
                 style={style.addFederationContainer}>
                 <Button
-                    style={{ height: 56 }}
+                    style={style.addFederationButton}
                     onPress={() => {
                         mainNavigation.navigate('JoinFederation', {
                             invite: undefined,
@@ -179,7 +179,10 @@ const styles = (theme: Theme) =>
         addFederationContainer: {
             paddingLeft: theme.spacing.xl,
             paddingRight: theme.spacing.xl,
-            height: 56,
+            height: theme.sizes.addFederationButtonHeight,
+        },
+        addFederationButton: {
+            height: theme.sizes.addFederationButtonHeight,
         },
         addFederationText: {
             paddingLeft: theme.spacing.xs,
