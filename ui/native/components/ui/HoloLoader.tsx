@@ -13,10 +13,11 @@ import * as Progress from 'react-native-progress'
 import { Images } from '../../assets/images'
 
 export type Props = {
+    size?: number
     label?: string
 }
 
-const HoloLoader: React.FC<Props> = ({ label }: Props) => {
+const HoloLoader: React.FC<Props> = ({ label, size = 200 }: Props) => {
     const { theme } = useTheme()
     const animatedSpin = useRef(new Animated.Value(0)).current
 
@@ -40,43 +41,42 @@ const HoloLoader: React.FC<Props> = ({ label }: Props) => {
         transform: [{ rotate: spinInterpolation }],
     }
 
+    const style = styles(theme, size)
+
     return (
-        <View style={[styles(theme).container]}>
+        <View style={[style.container]}>
             <ImageBackground
                 source={Images.HoloBackgroundStrong}
-                style={styles(theme).holoCircle}
-                imageStyle={styles(theme).holoCircleImage}
+                style={style.holoCircle}
+                imageStyle={style.holoCircleImage}
             />
-            <View style={styles(theme).whiteCircle} />
+            <View style={style.whiteCircle} />
             <Animated.View
-                style={[
-                    styles(theme).progressCircleContainer,
-                    transformedStyle,
-                ]}>
+                style={[style.progressCircleContainer, transformedStyle]}>
                 <Progress.Circle
                     progress={0.35}
                     color={theme.colors.white}
                     thickness={theme.sizes.progressCircleThickness}
-                    size={theme.sizes.progressCircle}
+                    size={size}
                     borderWidth={1}
                 />
             </Animated.View>
 
-            <View style={styles(theme).percentLabelContainer}>
+            <View style={style.percentLabelContainer}>
                 <Text medium>{label}</Text>
             </View>
         </View>
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, size: number) =>
     StyleSheet.create({
         container: {
             position: 'relative',
             alignItems: 'center',
             justifyContent: 'center',
-            height: theme.sizes.progressCircle,
-            width: theme.sizes.progressCircle,
+            height: size,
+            width: size,
         },
         progressCircleContainer: {
             position: 'absolute',
@@ -89,17 +89,17 @@ const styles = (theme: Theme) =>
             // Shaves a couple pixels off the holographic ring
             // to remove a thin border that appears while the white
             // progress ring is uncovering the holographic ring
-            height: theme.sizes.progressCircle,
-            width: theme.sizes.progressCircle,
+            height: size,
+            width: size,
         },
         holoCircleImage: {
-            borderRadius: theme.sizes.progressCircle * 0.5,
+            borderRadius: size * 0.5,
         },
         whiteCircle: {
             position: 'absolute',
-            height: theme.sizes.progressInnerCircle,
-            width: theme.sizes.progressInnerCircle,
-            borderRadius: theme.sizes.progressInnerCircle * 0.5,
+            height: size - 10,
+            width: size - 10,
+            borderRadius: (size - 10) * 0.5,
             backgroundColor: theme.colors.white,
         },
     })

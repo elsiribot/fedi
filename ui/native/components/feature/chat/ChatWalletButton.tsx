@@ -1,15 +1,19 @@
 import { useNavigation } from '@react-navigation/native'
 import { useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable } from 'react-native'
 
-import { selectChatMember } from '@fedi/common/redux'
+import {
+    selectChatMember,
+    selectIsActiveFederationRecovering,
+} from '@fedi/common/redux'
 
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import { RecoveryInProgressOverlay } from '../recovery/RecoveryInProgressOverlay'
 
 type ChatWalletButtonProps = {
     memberId: string
@@ -21,34 +25,51 @@ const ChatWalletButton: React.FC<ChatWalletButtonProps> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
+    const [showOverlay, setShowOverlay] = useState(false)
     const { toast } = useEnvironmentContext().state
     const member = useAppSelector(s => selectChatMember(s, memberId))
+    const recoveryInProgress = useAppSelector(
+        selectIsActiveFederationRecovering,
+    )
 
     return (
-        <Pressable
-            onPress={() => {
-                if (!member) {
-                    toast?.show(t('errors.chat-member-not-found'), 4000)
-                    return
-                }
-                navigation.navigate('ChatWallet', {
-                    recipientId: memberId,
-                })
-            }}>
-            <SvgImage
-                name="Wallet"
-                containerStyle={{
-                    marginRight: theme.spacing.md,
-                    marginBottom: theme.spacing.sm,
-                }}
-                size={SvgImageSize.md}
-                color={
-                    member
-                        ? theme.colors.primary
-                        : theme.colors.primaryVeryLight
-                }
+        <>
+            <Pressable
+                onPress={() => {
+                    if (!member) {
+                        toast?.show(t('errors.chat-member-not-found'), 4000)
+                        return
+                    }
+                    if (recoveryInProgress) {
+                        setShowOverlay(true)
+                        return
+                    }
+
+                    navigation.navigate('ChatWallet', {
+                        recipientId: memberId,
+                    })
+                }}>
+                <SvgImage
+                    name="Wallet"
+                    containerStyle={{
+                        marginRight: theme.spacing.md,
+                        marginBottom: theme.spacing.sm,
+                    }}
+                    size={SvgImageSize.md}
+                    color={
+                        member
+                            ? theme.colors.primary
+                            : theme.colors.primaryVeryLight
+                    }
+                />
+            </Pressable>
+
+            <RecoveryInProgressOverlay
+                show={showOverlay}
+                onDismiss={() => setShowOverlay(false)}
+                label={t('feature.recovery.recovery-in-progress-chat-payments')}
             />
-        </Pressable>
+        </>
     )
 }
 

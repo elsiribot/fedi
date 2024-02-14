@@ -17,6 +17,7 @@ import {
     selectActiveFederation,
     selectAuthenticatedMember,
     selectFediModDebugMode,
+    selectIsActiveFederationRecovering,
 } from '@fedi/common/redux'
 import {
     AnyParsedData,
@@ -47,6 +48,7 @@ import FediModBrowserHeader from '../components/feature/fedimods/FediModBrowserH
 import { MakeInvoiceOverlay } from '../components/feature/fedimods/MakeInvoiceOverlay'
 import { NostrSignOverlay } from '../components/feature/fedimods/NostrSignOverlay'
 import { SendPaymentOverlay } from '../components/feature/fedimods/SendPaymentOverlay'
+import { RecoveryInProgressOverlay } from '../components/feature/recovery/RecoveryInProgressOverlay'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
     useOmniLinkContext,
@@ -93,6 +95,9 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
     const nostrEnabled = useIsNostrEnabled()
     const { toast } = useEnvironmentContext().state
+    const recoveryInProgress = useAppSelector(
+        selectIsActiveFederationRecovering,
+    )
     const webview = useRef<WebView>() as MutableRefObject<WebView>
     const overlayResolveRef = useRef<
         FediModResolver<FediModResponse> | undefined
@@ -115,18 +120,26 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const [isParsingLink, setIsParsingLink] = useState(false)
     const getActiveGatewayPromiseRef =
         useRef<Promise<RpcLightningGateway> | null>(null)
+    const [showRecoveryInProgress, setShowRecoveryInProgress] =
+        useState<boolean>(false)
     const { setParsedLink } = useOmniLinkContext()
 
     const handleParsedLink = (parsedLink: AnyParsedData) => {
         switch (parsedLink.type) {
             case ParserDataType.LnurlWithdraw:
-                setLnurlWithdrawal(parsedLink.data)
+                recoveryInProgress
+                    ? setShowRecoveryInProgress(true)
+                    : setLnurlWithdrawal(parsedLink.data)
                 return true
             case ParserDataType.Bolt11:
-                setInvoiceToPay(parsedLink.data)
+                recoveryInProgress
+                    ? setShowRecoveryInProgress(true)
+                    : setInvoiceToPay(parsedLink.data)
                 return true
             case ParserDataType.LnurlPay:
-                setLnurlPayment(parsedLink.data)
+                recoveryInProgress
+                    ? setShowRecoveryInProgress(true)
+                    : setLnurlPayment(parsedLink.data)
                 return true
             case ParserDataType.LnurlAuth:
                 setLnurlAuthRequest(parsedLink.data)
@@ -139,6 +152,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     useOmniLinkInterceptor(handleParsedLink)
 
     const getActiveGatewayOrThrow = async () => {
+        log.info('getActiveGatewayOrThrow')
         if (getActiveGatewayPromiseRef.current)
             return getActiveGatewayPromiseRef.current
         getActiveGatewayPromiseRef.current = listGateways().then(gateways => {
@@ -176,6 +190,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         },
         [InjectionMessageType.webln_makeInvoice]: async data => {
             log.info('webln.makeInvoice', data)
+            if (recoveryInProgress) {
+                setShowRecoveryInProgress(true)
+                throw Error(t('errors.unknown-error'))
+            }
             // Check for an active gateway or throw error
             await getActiveGatewayOrThrow()
 
@@ -199,6 +217,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         },
         [InjectionMessageType.webln_sendPayment]: async data => {
             log.info('webln.sendPayment', data)
+            if (recoveryInProgress) {
+                setShowRecoveryInProgress(true)
+                throw Error(t('errors.unknown-error'))
+            }
             // Check for an active gateway or throw error
             await getActiveGatewayOrThrow()
 
@@ -313,6 +335,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         setLnurlPayment(null)
         setLnurlAuthRequest(null)
         setNostrUnsignedEvent(null)
+        setShowRecoveryInProgress(false)
     }
 
     const overlayProps = {
@@ -379,6 +402,11 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             <NostrSignOverlay
                 {...overlayProps}
                 nostrEvent={nostrUnsignedEvent}
+            />
+            <RecoveryInProgressOverlay
+                show={showRecoveryInProgress}
+                onDismiss={overlayProps.onAccept}
+                label={t('feature.recovery.recovery-in-progress-payments')}
             />
         </View>
     )
