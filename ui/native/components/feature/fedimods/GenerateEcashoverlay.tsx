@@ -25,7 +25,7 @@ interface Props {
     fediMod: FediMod
     ecashRequest?: EcashRequest | null
     onReject: (err: Error) => void
-    onAccept: (res: { ecash: string }) => void
+    onAccept: (ecash: string) => void
 }
 
 export const GenerateEcashOverlay: React.FC<Props> = ({

@@ -85,7 +85,7 @@ type FediModResponse =
     | RequestInvoiceResponse
     | SendPaymentResponse
     | SignedNostrEvent
-    | { ecash: string }
+    | string
 type FediModResolver<T> = (value: T | PromiseLike<T>) => void
 
 const FediModBrowser: React.FC<Props> = ({ route }) => {
