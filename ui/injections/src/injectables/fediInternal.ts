@@ -36,7 +36,7 @@ class InjectionFediProvider implements FediInternalProvider {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-;(window as any)['fediInternal'] = new InjectionFediProvider();
+;(window as any)['fediInternal'] = new InjectionFediProvider()
 
 // Removed during compilation
 export default ''
