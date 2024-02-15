@@ -12,7 +12,7 @@ import {
     StabilityPoolWithdrawalEvent,
     StabilityPoolDepositEvent,
     RpcFederationPreview,
-    RecoveryStartEvent,
+    RecoveryCompleteEvent,
 } from './bindings'
 import { Usd, UsdCents } from './units'
 
@@ -134,7 +134,7 @@ export type FedimintBridgeEventMap = {
     panic: PanicEvent
     stabilityPoolDeposit: StabilityPoolDepositEvent
     stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent
-    recoveryStart: RecoveryStartEvent
+    recoveryComplete: RecoveryCompleteEvent
 }
 
 export type StabilityPoolTxn = {

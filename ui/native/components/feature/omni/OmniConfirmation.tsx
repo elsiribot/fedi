@@ -3,10 +3,16 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking } from 'react-native'
 
-import { selectActiveFederationId } from '@fedi/common/redux'
+import {
+    selectActiveFederationId,
+    selectIsActiveFederationRecovering,
+} from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
-import { ALLOWED_PARSER_TYPES_BEFORE_FEDERATION } from '@fedi/common/utils/parser'
+import {
+    ALLOWED_PARSER_TYPES_BEFORE_FEDERATION,
+    BLOCKED_PARSER_TYPES_DURING_RECOVERY,
+} from '@fedi/common/utils/parser'
 
 import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
@@ -14,6 +20,7 @@ import { useAppSelector } from '../../../state/hooks'
 import { AnyParsedData, ParserDataType } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import CustomOverlay, { CustomOverlayContents } from '../../ui/CustomOverlay'
+import RecoveryInProgress from '../recovery/RecoveryInProgress'
 
 interface Props {
     parsedData: AnyParsedData
@@ -33,6 +40,9 @@ export const OmniConfirmation: React.FC<Props> = ({
     const navigation = useNavigation()
     const [isLoading, setIsLoading] = useState(false)
     const activeFederationId = useAppSelector(selectActiveFederationId)
+    const recoveryInProgress = useAppSelector(
+        selectIsActiveFederationRecovering,
+    )
 
     // OmniConfirmation can be rendered ourside of StackNavigator, so `replace`
     // is not always available, so fall back to navigate. Cast as NavigationHook
@@ -77,6 +87,24 @@ export const OmniConfirmation: React.FC<Props> = ({
                 contents: {
                     icon: 'ScanSad',
                     title: t('feature.omni.unsupported-no-federation'),
+                },
+            }
+        }
+        // If recovery has not completed, payment-related codes cannot be scanned.
+        if (
+            recoveryInProgress &&
+            BLOCKED_PARSER_TYPES_DURING_RECOVERY.includes(parsedData.type)
+        ) {
+            return {
+                contents: {
+                    title: '',
+                    body: (
+                        <RecoveryInProgress
+                            label={t(
+                                'feature.recovery.recovery-in-progress-payments',
+                            )}
+                        />
+                    ),
                 },
             }
         }

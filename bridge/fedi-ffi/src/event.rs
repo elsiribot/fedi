@@ -98,7 +98,7 @@ pub enum StabilityPoolWithdrawalState {
 #[derive(Serialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RecoveryStartEvent {
+pub struct RecoveryCompleteEvent {
     pub federation_id: RpcFederationId,
 }
 
@@ -113,7 +113,7 @@ pub enum Event {
     Panic(PanicEvent),
     StabilityPoolDeposit(StabilityPoolDepositEvent),
     StabilityPoolWithdrawal(StabilityPoolWithdrawalEvent),
-    RecoveryStart(RecoveryStartEvent),
+    RecoveryComplete(RecoveryCompleteEvent),
 }
 
 impl Event {
@@ -135,6 +135,12 @@ impl Event {
             balance: RpcAmount(balance),
         })
     }
+    pub fn recovery_complete(federation_id: String) -> Self {
+        Self::RecoveryComplete(RecoveryCompleteEvent {
+            federation_id: RpcFederationId(federation_id),
+        })
+    }
+
     pub fn stability_pool_deposit(
         federation_id: String,
         operation_id: fedimint_core::core::OperationId,
@@ -235,9 +241,9 @@ pub trait TypedEventExt: IEventSink {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 IEventSink::event(self, "stabilityPoolWithdrawal".into(), body);
             }
-            Event::RecoveryStart(event) => {
+            Event::RecoveryComplete(event) => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
-                IEventSink::event(self, "recoveryStart".into(), body);
+                IEventSink::event(self, "recoveryComplete".into(), body);
             }
         };
     }

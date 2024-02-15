@@ -83,11 +83,10 @@ use super::types::{
     RpcLightningGateway, RpcPayInvoiceResponse, RpcPublicKey, RpcXmppCredentials,
 };
 use crate::error::ErrorCode;
-use crate::event::RecoveryStartEvent;
 use crate::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::types::{
     EcashReceiveMetadata, GuardianStatus, OperationFediFeeStatus, RpcBitcoinDetails, RpcEcashInfo,
-    RpcFederationId, RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
+    RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
     RpcPayAddressResponse, RpcStabilityPoolTransactionState, RpcTransaction,
     RpcTransactionDirection, WithdrawalDetails,
 };
@@ -131,6 +130,7 @@ pub struct FederationV2 {
     // an RwLock since most of the the time the schedule will only be read, but sometimes the
     // Bridge may wish to update it dynamically.
     pub fedi_fee_schedule: Arc<RwLock<FediFeeSchedule>>,
+    pub recovering: Arc<Mutex<bool>>,
 }
 
 impl FederationV2 {
@@ -153,8 +153,6 @@ impl FederationV2 {
         Ok(client_builder)
     }
 
-    /// Constructor which starts a bunch of async tasks and ensures username is
-    /// saved to db (e.g. after recovery)
     pub async fn new(
         ng: ClientArc,
         event_sink: EventSink,
@@ -162,6 +160,7 @@ impl FederationV2 {
         secret: DerivableSecret,
         fee_schedule: FediFeeSchedule,
     ) -> Self {
+        let recovering = ng.has_active_states(OperationId([0x01; 32])).await;
         let mut federation = Self {
             client: ng,
             event_sink,
@@ -169,11 +168,22 @@ impl FederationV2 {
             operation_states: Default::default(),
             auxiliary_secret: secret,
             fedi_fee_schedule: Arc::new(RwLock::new(fee_schedule)),
+            recovering: Arc::new(Mutex::new(recovering)),
         };
-        federation.subscribe_balance_updates().await;
-        federation.poll_scheduled_backups().await;
-        federation.subscribe_to_all_operations().await;
+        if recovering {
+            federation.subscribe_recovery().await;
+        } else {
+            federation.start_background_tasks().await;
+        }
         federation
+    }
+
+    /// Starts a bunch of async tasks and ensures username is
+    /// saved to db (e.g. after recovery)
+    async fn start_background_tasks(&mut self) {
+        self.subscribe_balance_updates().await;
+        self.poll_scheduled_backups().await;
+        self.subscribe_to_all_operations().await;
     }
 
     async fn client_from_db(
@@ -305,14 +315,7 @@ impl FederationV2 {
             // TODO: ensure that if user exists app and re-opens during the restoration,
             // they will still see a spinner
             info!("backup found {:?}", backup);
-            event_sink.typed_event(&Event::RecoveryStart(RecoveryStartEvent {
-                federation_id: RpcFederationId(client.federation_id().to_string()),
-            }));
             let metadata = client.restore_from_backup(Some(backup)).await?;
-            client
-                .get_first_module::<MintClientModule>()
-                .await_restore_finished()
-                .await?;
             let this = Self::new(
                 client,
                 event_sink,
@@ -1051,6 +1054,27 @@ impl FederationV2 {
                     }
                 },
             )
+            .await;
+    }
+
+    async fn subscribe_recovery(&mut self) {
+        let mut federation = self.clone();
+        self.task_group
+            .spawn("subscribe recovery", |_| async move {
+                info!("waiting for recovery to complete");
+                federation
+                    .client
+                    .get_first_module::<MintClientModule>()
+                    .await_restore_finished()
+                    .await?;
+                info!("recovery completed");
+                *federation.recovering.lock().await = false;
+                federation.event_sink.typed_event(&Event::recovery_complete(
+                    federation.federation_id().to_string(),
+                ));
+                federation.start_background_tasks().await;
+                anyhow::Ok(())
+            })
             .await;
     }
 

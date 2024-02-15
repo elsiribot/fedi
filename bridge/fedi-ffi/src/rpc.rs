@@ -877,7 +877,9 @@ mod tests {
     async fn join_test_fed(bridge: &Arc<Bridge>) -> Result<Arc<MultiFederation>, anyhow::Error> {
         let invite_code = std::env::var("FM_INVITE_CODE").unwrap();
         let fedimint_federation = joinFederation(bridge.clone(), invite_code).await?;
-        let federation = bridge.get_multi(&fedimint_federation.id.0).await?;
+        let federation = bridge
+            .get_multi_maybe_recovering(&fedimint_federation.id.0)
+            .await?;
         use_lnd_gateway(&federation).await?;
         Ok(federation)
     }
@@ -1244,6 +1246,21 @@ mod tests {
 
         // Rejoin federation and assert that balances are correct
         let recovery_federation = join_test_fed(&recovery_bridge).await?;
+        match &*recovery_federation {
+            MultiFederation::V2(x) => assert!(*x.recovering.lock().await),
+        }
+        loop {
+            // Wait until recovery complete
+            if recovery_bridge
+                .event_sink
+                .num_events_of_type("recoveryComplete".into())
+                == 1
+            {
+                break;
+            }
+
+            fedimint_core::task::sleep(Duration::from_secs(2)).await;
+        }
         assert_eq!(
             ecash_balance_before,
             recovery_federation.get_balance().await
@@ -1386,6 +1403,21 @@ mod tests {
             .into_values()
             .next()
             .ok_or(anyhow!("Rejoined federation must exist"))?;
+        match &*recovery_federation {
+            MultiFederation::V2(x) => assert!(*x.recovering.lock().await),
+        }
+        loop {
+            // Wait until recovery complete
+            if recovery_bridge
+                .event_sink
+                .num_events_of_type("recoveryComplete".into())
+                == 1
+            {
+                break;
+            }
+
+            fedimint_core::task::sleep(Duration::from_secs(2)).await;
+        }
         assert_eq!(
             ecash_balance_before,
             recovery_federation.get_balance().await

@@ -159,7 +159,13 @@ impl MultiFederation {
 
     pub async fn save_xmpp_username(&self, username: &str) -> Result<()> {
         match self {
-            Self::V2(v2) => v2.save_xmpp_username(username).await?,
+            Self::V2(v2) => {
+                v2.save_xmpp_username(username).await?;
+                // after recovering we will do backup always
+                if !*v2.recovering.lock().await {
+                    v2.backup().await?;
+                }
+            }
         }
         Ok(())
     }
@@ -446,11 +452,11 @@ impl Bridge {
         // Check if we've already joined this federation
         let invite_code: InviteCodeV2 = InviteCodeV2::from_str(&invite_code_string)?;
         if self
-            .get_multi(&invite_code.federation_id().to_string())
+            .get_multi_maybe_recovering(&invite_code.federation_id().to_string())
             .await
             .is_ok()
         {
-            bail!("Already joined this federation")
+            bail!(ErrorCode::AlreadyJoined)
         }
 
         let root_mnemonic = self
@@ -533,6 +539,19 @@ impl Bridge {
 
     /// Look up federation by id from in-memory hashmap
     pub async fn get_multi(&self, federation_id: &str) -> Result<Arc<MultiFederation>> {
+        let federation = self.get_multi_maybe_recovering(federation_id).await?;
+        let recovering = match &*federation {
+            MultiFederation::V2(f) => *f.recovering.lock().await,
+        };
+        anyhow::ensure!(!recovering, "client is still recovering");
+        Ok(federation)
+    }
+
+    /// Look up federation by id from in-memory hashmap
+    pub async fn get_multi_maybe_recovering(
+        &self,
+        federation_id: &str,
+    ) -> Result<Arc<MultiFederation>> {
         let lock = self.federations.lock().await;
         lock.get(federation_id)
             .cloned()
@@ -581,7 +600,7 @@ impl Bridge {
         &self,
         federation_id: RpcFederationId,
     ) -> anyhow::Result<Vec<GuardianStatus>> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         let status = multi.guardian_status().await?;
         Ok(status)
     }
@@ -628,7 +647,7 @@ impl Bridge {
         &self,
         federation_id: RpcFederationId,
     ) -> Result<Vec<RpcLightningGateway>> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         multi.list_gateways().await
     }
 
@@ -637,7 +656,7 @@ impl Bridge {
         federation_id: RpcFederationId,
         gateway_id: RpcPublicKey,
     ) -> Result<()> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         multi.switch_gateway(&gateway_id.0).await
     }
 
@@ -995,7 +1014,7 @@ impl Bridge {
         message: Message,
         domain: String,
     ) -> Result<RpcSignedLnurlMessage> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         let global_root_secret = self
             .app_state
             .with_read_lock(move |state| {
@@ -1013,7 +1032,7 @@ impl Bridge {
         &self,
         federation_id: RpcFederationId,
     ) -> Result<RpcXmppCredentials> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         Ok(multi.get_xmpp_credentials().await)
     }
 
@@ -1022,13 +1041,13 @@ impl Bridge {
         federation_id: RpcFederationId,
         username: String,
     ) -> Result<()> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         multi.save_xmpp_username(&username).await?;
-        multi.backup().await
+        Ok(())
     }
 
     pub async fn get_nostr_pub_key(&self, federation_id: RpcFederationId) -> Result<String> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         let global_root_secret = self
             .app_state
             .with_read_lock(move |state| {
@@ -1048,7 +1067,7 @@ impl Bridge {
         federation_id: RpcFederationId,
         event_hash: String,
     ) -> Result<String> {
-        let multi = self.get_multi(&federation_id.0).await?;
+        let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         let global_root_secret = self
             .app_state
             .with_read_lock(move |state| {

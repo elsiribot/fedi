@@ -313,6 +313,13 @@ export const selectFederationBalance = createSelector(
     },
 )
 
+export const selectIsActiveFederationRecovering = createSelector(
+    selectActiveFederation,
+    activeFederation => {
+        return activeFederation ? activeFederation.recovering : false
+    },
+)
+
 export const selectFederationCustomFediMods = (s: CommonState) => {
     const activeFederation = selectActiveFederation(s)
     return activeFederation

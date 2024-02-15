@@ -39,7 +39,7 @@ const themeDefaults = {
     sizes: {
         ...fediTheme.sizes,
         adminProfileCircle: 90,
-        walletCardHeight: 200,
+        walletCardHeight: 204,
         detailItemHeight: 52,
         defaultHoloGradient: 32,
         holoGuidanceCircle: 180,

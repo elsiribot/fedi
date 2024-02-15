@@ -3,7 +3,11 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-import { selectActiveFederation, updateChatPayment } from '@fedi/common/redux'
+import {
+    selectActiveFederation,
+    selectIsActiveFederationRecovering,
+    updateChatPayment,
+} from '@fedi/common/redux'
 import {
     ChatMessage,
     ChatPayment,
@@ -17,6 +21,7 @@ import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import { RecoveryInProgressOverlay } from '../recovery/RecoveryInProgressOverlay'
 
 const log = makeLog('IncomingPullPayment')
 
@@ -144,6 +149,10 @@ const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
     const { toast } = useEnvironmentContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
     const [paymentProcessing, setPaymentProcessing] = useState<boolean>(false)
+    const [showOverlay, setShowOverlay] = useState(false)
+    const recoveryInProgress = useAppSelector(
+        selectIsActiveFederationRecovering,
+    )
 
     const rejectPaymentRequest = async () => {
         try {
@@ -164,6 +173,10 @@ const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
     // Process for sending a payment starts here
     const acceptPaymentRequest = async () => {
         if (!activeFederation || !message.payment) return
+        if (recoveryInProgress) {
+            setShowOverlay(true)
+            return
+        }
 
         if (activeFederation.balance < message.payment.amount) {
             toast?.show(
@@ -204,6 +217,12 @@ const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
                 onReject={rejectPaymentRequest}
                 onPay={acceptPaymentRequest}
                 paymentProcessing={paymentProcessing}
+            />
+
+            <RecoveryInProgressOverlay
+                show={showOverlay}
+                onDismiss={() => setShowOverlay(false)}
+                label={t('feature.recovery.recovery-in-progress-chat-payments')}
             />
         </View>
     )
