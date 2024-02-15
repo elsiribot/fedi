@@ -339,6 +339,24 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 throw new Error(t('errors.receive-ecash-failed'))
             }
         },
+        [InjectionMessageType.fedi_getUsername]: async () => {
+            log.info('fedi.getUsername')
+
+            if (!authenticatedMember?.username) {
+                throw new Error('No authenticated member')
+            }
+
+            return authenticatedMember.username
+        },
+        [InjectionMessageType.fedi_getActiveFederationId]: async () => {
+            log.info('fedi.getActiveFederationId')
+
+            if (!activeFederation?.id) {
+                throw new Error('No active federation Id')
+            }
+
+            return activeFederation.id
+        },
     })
 
     // Decide whether or not to handle links clicked in the webview natively.

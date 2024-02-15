@@ -21,6 +21,8 @@ export enum InjectionMessageType {
     nostr_signEvent = 'nostr_signEvent',
     fedi_generateEcash = 'fedi_generateEcash',
     fedi_receiveEcash = 'fedi_receiveEcash',
+    fedi_getUsername = 'fedi_getUsername',
+    fedi_getActiveFederationId = 'fedi_getActiveFederationId',
 }
 
 export type InjectionMessageResponseMap = {
@@ -69,6 +71,14 @@ export type InjectionMessageResponseMap = {
     }
     [InjectionMessageType.fedi_receiveEcash]: {
         message: string
+        response: string
+    }
+    [InjectionMessageType.fedi_getUsername]: {
+        message: void
+        response: string
+    }
+    [InjectionMessageType.fedi_getActiveFederationId]: {
+        message: void
         response: string
     }
 }

@@ -8,6 +8,8 @@ import { sendInjectorMessage } from '../utils'
 interface FediInternalProvider {
     generateEcash(amountMsat: EcashRequest): Promise<string>
     receiveEcash(ecash: string): Promise<string>
+    getUsername(): Promise<string>
+    getActiveFederationId(): Promise<string>
 }
 
 class InjectionFediProvider implements FediInternalProvider {
@@ -22,6 +24,20 @@ class InjectionFediProvider implements FediInternalProvider {
 
     async receiveEcash(ecash: string): Promise<string> {
         return this.sendMessage(InjectionMessageType.fedi_receiveEcash, ecash)
+    }
+
+    async getUsername(): Promise<string> {
+        return this.sendMessage(
+            InjectionMessageType.fedi_getUsername,
+            undefined,
+        )
+    }
+
+    async getActiveFederationId(): Promise<string> {
+        return this.sendMessage(
+            InjectionMessageType.fedi_getActiveFederationId,
+            undefined,
+        )
     }
 
     /** Sends a message to the injector via postMessage, returns response */
