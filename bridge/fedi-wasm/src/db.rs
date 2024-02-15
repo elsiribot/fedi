@@ -2,7 +2,7 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{Context as _, Result};
 use fedimint_core::db::{
     IDatabaseTransactionOps, IDatabaseTransactionOpsCore, IRawDatabase, IRawDatabaseTransaction,
     PrefixStream,
@@ -12,6 +12,7 @@ use futures::stream;
 use imbl::OrdMap;
 use rexie::{Rexie, TransactionMode};
 use tokio::sync::Mutex;
+use tracing::error;
 use wasm_bindgen::JsCast;
 
 pub fn rexie_to_anyhow(e: rexie::Error) -> anyhow::Error {
@@ -22,11 +23,13 @@ pub fn rexie_to_anyhow(e: rexie::Error) -> anyhow::Error {
 pub struct DatabaseInsertOperation {
     pub key: Vec<u8>,
     pub value: Vec<u8>,
+    pub old_value: Option<Vec<u8>>,
 }
 
 #[derive(Debug, Default)]
 pub struct DatabaseDeleteOperation {
     pub key: Vec<u8>,
+    pub old_value: Option<Vec<u8>>,
 }
 
 #[derive(Debug)]
@@ -122,11 +125,12 @@ impl<'a> IDatabaseTransactionOpsCore for MemTransaction<'a> {
     async fn raw_insert_bytes(&mut self, key: &[u8], value: &[u8]) -> Result<Option<Vec<u8>>> {
         let val = IDatabaseTransactionOpsCore::raw_get_bytes(self, key).await;
         // Insert data from copy so we can read our own writes
-        self.tx_data.insert(key.to_vec(), value.to_vec());
+        let old_value = self.tx_data.insert(key.to_vec(), value.to_vec());
         self.operations
             .push(DatabaseOperation::Insert(DatabaseInsertOperation {
                 key: key.to_vec(),
                 value: value.to_vec(),
+                old_value,
             }));
         self.num_pending_operations += 1;
         val
@@ -138,13 +142,14 @@ impl<'a> IDatabaseTransactionOpsCore for MemTransaction<'a> {
 
     async fn raw_remove_entry(&mut self, key: &[u8]) -> Result<Option<Vec<u8>>> {
         // Remove data from copy so we can read our own writes
-        let ret = self.tx_data.remove(&key.to_vec());
+        let old_value = self.tx_data.remove(&key.to_vec());
         self.operations
             .push(DatabaseOperation::Delete(DatabaseDeleteOperation {
                 key: key.to_vec(),
+                old_value: old_value.clone(),
             }));
         self.num_pending_operations += 1;
-        Ok(ret)
+        Ok(old_value)
     }
 
     async fn raw_find_by_prefix(&mut self, key_prefix: &[u8]) -> Result<PrefixStream<'_>> {
@@ -166,10 +171,11 @@ impl<'a> IDatabaseTransactionOpsCore for MemTransaction<'a> {
             .map(|(key, _)| key.clone())
             .collect::<Vec<_>>();
         for key in keys.iter() {
-            let _ret = self.tx_data.remove(&key.to_vec());
+            let old_value = self.tx_data.remove(&key.to_vec());
             self.operations
                 .push(DatabaseOperation::Delete(DatabaseDeleteOperation {
                     key: key.to_vec(),
+                    old_value,
                 }));
             self.num_pending_operations += 1;
         }
@@ -228,29 +234,50 @@ impl<'a> IRawDatabaseTransaction for MemTransaction<'a> {
 
         let idb_store = idb_tx.store("default").map_err(rexie_to_anyhow)?;
 
-        for op in self.operations {
-            match op {
-                DatabaseOperation::Insert(insert_op) => {
-                    let key = js_sys::Uint8Array::from(&insert_op.key[..]);
-                    let value = js_sys::Uint8Array::from(&insert_op.value[..]);
-                    idb_store
-                        .put(&value, Some(&key))
-                        .await
-                        .map_err(rexie_to_anyhow)?;
-                    data_new.insert(insert_op.key, insert_op.value);
-                }
-                DatabaseOperation::Delete(delete_op) => {
-                    let key = js_sys::Uint8Array::from(&delete_op.key[..]);
-                    idb_store.delete(&key).await.map_err(rexie_to_anyhow)?;
-                    data_new.remove(&delete_op.key);
+        let result = async {
+            for op in self.operations {
+                match op {
+                    DatabaseOperation::Insert(insert_op) => {
+                        let key = js_sys::Uint8Array::from(&insert_op.key[..]);
+                        let value = js_sys::Uint8Array::from(&insert_op.value[..]);
+                        idb_store
+                            .put(&value, Some(&key))
+                            .await
+                            .map_err(rexie_to_anyhow)?;
+                        let old_value = data_new.insert(insert_op.key, insert_op.value);
+                        anyhow::ensure!(old_value == insert_op.old_value, "write-write conflict");
+                    }
+                    DatabaseOperation::Delete(delete_op) => {
+                        let key = js_sys::Uint8Array::from(&delete_op.key[..]);
+                        idb_store.delete(&key).await.map_err(rexie_to_anyhow)?;
+                        let old_value = data_new.remove(&delete_op.key);
+                        anyhow::ensure!(old_value == delete_op.old_value, "write-write conflict");
+                    }
                 }
             }
+            Ok(())
         }
-        idb_tx.commit().await.unwrap();
-        // TODO: rollback idb on failure
-        // if everything succeeds
-        *data = data_new;
-        Ok(())
+        .await;
+        match result {
+            Ok(()) => {
+                idb_tx
+                    .commit()
+                    .await
+                    .map_err(rexie_to_anyhow)
+                    .context("indexeddb commit failed")?;
+                // commit the data to memdb
+                *data = data_new;
+                Ok(())
+            }
+            Err(e) => {
+                idb_tx
+                    .abort()
+                    .await
+                    .map_err(rexie_to_anyhow)
+                    .context("indexeddb abort failed")?;
+                Err(e)
+            }
+        }
     }
 }
 
