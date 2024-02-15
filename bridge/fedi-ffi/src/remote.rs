@@ -169,7 +169,7 @@ pub async fn init(data_dir: PathBuf) -> anyhow::Result<()> {
     let bridge = fedimint_initialize_async(
         Arc::new(storage),
         Arc::new(response_tx.clone()),
-        Box::new(LiveFediApi::new()),
+        Arc::new(LiveFediApi::new()),
     )
     .await
     .context("fedimint initalize")?;

@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::time::Duration;
 
-use anyhow::bail;
+use anyhow::{bail, Context};
 use fedimint_core::core::ModuleKind;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send};
@@ -16,7 +16,6 @@ use crate::storage::{FediFeeSchedule, ModuleFediFeeSchedule};
 pub trait IFediApi: MaybeSend + MaybeSync + 'static {
     /// Fetches the fee schedule for transactions conducted within a federation
     /// through the Fedi app.
-    // #[allow(async_fn_in_trait)]
     async fn fetch_fedi_fee_schedule(&self) -> anyhow::Result<FediFeeSchedule>;
 }
 
@@ -48,17 +47,22 @@ impl IFediApi for LiveFediApi {
         let fee_schedule_list = fedimint_core::task::timeout(Duration::from_secs(15), async {
             self.client.get(FEDI_FEE_API_URL).send().await
         })
-        .await??
+        .await
+        .context("Request to fetch fee schedule took too long")?
+        .context("Fetch fee schedule response error")?
         .json::<Vec<FediFeeScheduleItem>>()
         .await?;
 
-        let Some(FediFeeScheduleItem::V0(fee_schedule)) = fee_schedule_list.first() else {
+        let Some(fee_schedule_v0) = fee_schedule_list.iter().find_map(|item| match item {
+            FediFeeScheduleItem::V0(v0) => Some(v0),
+            FediFeeScheduleItem::Unknown => None,
+        }) else {
             bail!("No known fee schedules found");
         };
 
         Ok(FediFeeSchedule {
-            remittance_threshold_msat: fee_schedule.remittance_threshold_msat,
-            modules: fee_schedule
+            remittance_threshold_msat: fee_schedule_v0.remittance_threshold_msat,
+            modules: fee_schedule_v0
                 .modules
                 .iter()
                 .map(|(k, v)| {
@@ -79,6 +83,8 @@ impl IFediApi for LiveFediApi {
 #[serde(tag = "type")]
 pub enum FediFeeScheduleItem {
     V0(FediFeeScheduleV0),
+    #[serde(other)]
+    Unknown,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -87,7 +87,7 @@ pub async fn fedimint_initialize_inner(
     let bridge = match fedimint_initialize_async(
         Arc::new(storage),
         event_sink,
-        Box::new(LiveFediApi::new()),
+        Arc::new(LiveFediApi::new()),
     )
     .await
     {

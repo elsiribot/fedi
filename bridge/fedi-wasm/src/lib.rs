@@ -60,7 +60,7 @@ pub async fn fedimint_initialize_inner(event_sink: EventSink) -> anyhow::Result<
     let storage = WasmStorage::new()
         .await
         .context("Failed to initialize storage")?;
-    let fedi_api = Box::new(LiveFediApi::new());
+    let fedi_api = Arc::new(LiveFediApi::new());
 
     let bridge =
         fediffi::rpc::fedimint_initialize_async(Arc::new(storage), event_sink.clone(), fedi_api)

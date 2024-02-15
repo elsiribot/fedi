@@ -352,6 +352,12 @@ impl MultiFederation {
             MultiFederation::V2(v2) => v2.set_module_fee_schedule(module, fee_schedule).await,
         }
     }
+
+    async fn set_fedi_fee_schedule(&self, fee_schedule: FediFeeSchedule) {
+        match self {
+            MultiFederation::V2(v2) => v2.set_fedi_fee_schedule(fee_schedule).await,
+        }
+    }
 }
 
 /// This is instantiated once as a global. When RPC commands come in, this
@@ -359,46 +365,25 @@ impl MultiFederation {
 /// command using it.
 pub struct Bridge {
     pub storage: Storage,
-    pub app_state: AppState,
+    pub app_state: Arc<AppState>,
     pub federations: Arc<Mutex<HashMap<String, Arc<MultiFederation>>>>,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
-    pub fedi_api: Box<dyn IFediApi>,
+    pub fedi_api: Arc<dyn IFediApi>,
 }
 
 impl Bridge {
     pub async fn new(
         storage: Storage,
         event_sink: EventSink,
-        fedi_api: Box<dyn IFediApi>,
+        fedi_api: Arc<dyn IFediApi>,
     ) -> Result<Self> {
         let task_group = TaskGroup::new();
-        let app_state = AppState::load(storage.clone()).await?;
+        let app_state = Arc::new(AppState::load(storage.clone()).await?);
 
         let root_mnemonic = app_state
             .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
             .await;
-
-        // Fetch fee schedule from Fedi API. Presently the endpoint is
-        // federation-agnostic. So we just have to do one call, and then we can
-        // overwrite all the locally stored fee schedules if the call is successful. If
-        // the call fails, we can just ignore it and rely on the fee schedules already
-        // present locally.
-        if let Ok(fedi_fee_schedule) = fedi_api.fetch_fedi_fee_schedule().await {
-            let _ = app_state
-                .with_write_lock(move |state| {
-                    Box::pin(async move {
-                        state
-                            .joined_federations
-                            .iter_mut()
-                            .for_each(|(_, fed_info)| {
-                                fed_info.fedi_fee_schedule = fedi_fee_schedule.clone()
-                            });
-                        Ok(())
-                    })
-                })
-                .await;
-        }
 
         // load joined federations
         let joined_federations = app_state
@@ -440,12 +425,25 @@ impl Bridge {
                 ))
             });
 
-        let federations = HashMap::from_iter(futures::future::try_join_all(federations).await?);
+        let federations = Arc::new(Mutex::new(HashMap::from_iter(
+            futures::future::try_join_all(federations).await?,
+        )));
+
+        // Spawn a new task to asynchronously fetch the fee schedule and update app
+        // state and loaded federations
+        fedimint_core::task::spawn(
+            "fetch and update fedi fee schedule",
+            fetch_and_update_fedi_fee_schedule(
+                fedi_api.clone(),
+                app_state.clone(),
+                federations.clone(),
+            ),
+        );
 
         Ok(Self {
             storage,
             app_state,
-            federations: Arc::new(Mutex::new(federations)),
+            federations,
             event_sink,
             task_group,
             fedi_api,
@@ -492,15 +490,6 @@ impl Bridge {
             .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
             .await;
 
-        // Fetch fee schedule from Fedi API. If the call fails, we can just ignore it
-        // and rely on the default value. On the next bridge initialized, we would retry
-        // fetching the fee schedule anyway.
-        let fedi_fee_schedule = self
-            .fedi_api
-            .fetch_fedi_fee_schedule()
-            .await
-            .unwrap_or_default();
-
         let db_name = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
         let federation = FederationV2::join(
             invite_code_string,
@@ -509,7 +498,7 @@ impl Bridge {
             TaskGroup::new(),
             &db_name,
             &root_mnemonic,
-            fedi_fee_schedule.clone(),
+            FediFeeSchedule::default(),
         )
         .await?;
         let federation_id = federation.federation_id();
@@ -526,7 +515,7 @@ impl Bridge {
                         FederationInfo {
                             version: 2,
                             database_name: db_name,
-                            fedi_fee_schedule,
+                            fedi_fee_schedule: FediFeeSchedule::default(),
                         },
                     );
                     Ok(())
@@ -537,6 +526,18 @@ impl Bridge {
         federations
             .entry(federation_id.to_string())
             .or_insert_with(|| multi.clone());
+
+        // Spawn a new task to asynchronously fetch the fee schedule and update app
+        // state and loaded federations
+        fedimint_core::task::spawn(
+            "fetch and update fedi fee schedule",
+            fetch_and_update_fedi_fee_schedule(
+                self.fedi_api.clone(),
+                self.app_state.clone(),
+                self.federations.clone(),
+            ),
+        );
+
         Ok(multi)
     }
 
@@ -1287,4 +1288,44 @@ async fn get_federation_fedi_fee_schedule(
             })
         })
         .await
+}
+
+/// Helper function that queries Fedi api to fetch the fee schedule and updates
+/// the AppState as well as all the runtime federations
+async fn fetch_and_update_fedi_fee_schedule(
+    fedi_api: Arc<dyn IFediApi>,
+    app_state: Arc<AppState>,
+    federations: Arc<Mutex<HashMap<String, Arc<MultiFederation>>>>,
+) {
+    // Fetch fee schedule from Fedi API. Presently the endpoint is
+    // federation-agnostic. So we just have to do one call, and then we can
+    // overwrite all the locally stored fee schedules if the call is successful.
+    match fedi_api.fetch_fedi_fee_schedule().await {
+        Ok(fedi_fee_schedule) => {
+            let fee_schedule = fedi_fee_schedule.clone();
+            let app_state_update_res = app_state
+                .with_write_lock(move |state| {
+                    Box::pin(async move {
+                        state
+                            .joined_federations
+                            .iter_mut()
+                            .for_each(|(_, fed_info)| {
+                                fed_info.fedi_fee_schedule = fee_schedule.clone();
+                            });
+                        Ok(())
+                    })
+                })
+                .await;
+
+            match app_state_update_res {
+                Ok(_) => {
+                    for fed in federations.lock().await.values_mut() {
+                        fed.set_fedi_fee_schedule(fedi_fee_schedule.clone()).await
+                    }
+                }
+                Err(e) => error!("Failed to update app state with new fedi fee schedule {e:?}"),
+            }
+        }
+        Err(e) => error!("Failed to fetch fedi fee schedule {e:?}"),
+    }
 }

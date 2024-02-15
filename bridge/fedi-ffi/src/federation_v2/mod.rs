@@ -2215,6 +2215,12 @@ impl FederationV2 {
             .insert(module, fee_schedule);
     }
 
+    /// Overwrites the entire Fedi fee schedule within this FederationV2
+    /// instance.
+    pub async fn set_fedi_fee_schedule(&self, fee_schedule: FediFeeSchedule) {
+        *self.fedi_fee_schedule.write().await = fee_schedule;
+    }
+
     /// We optimistically charge the fee from the send amount (since the amount
     /// + fee must already be in the user's possession) and refund the fee
     /// in case the operation ends up failing.

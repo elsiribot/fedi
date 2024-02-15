@@ -42,7 +42,7 @@ pub enum FedimintError {
 pub async fn fedimint_initialize_async(
     storage: Storage,
     event_sink: EventSink,
-    fedi_api: Box<dyn IFediApi>,
+    fedi_api: Arc<dyn IFediApi>,
 ) -> anyhow::Result<Arc<Bridge>> {
     let _g = TimeReporter::new("fedimint_initialize").level(Level::INFO);
     let bridge = Bridge::new(storage, event_sink, fedi_api)
@@ -875,7 +875,7 @@ mod tests {
         let event_sink = Arc::new(FakeEventSink::new());
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
-        let fedi_api = Box::new(MockFediApi);
+        let fedi_api = Arc::new(MockFediApi);
         let bridge = match fedimint_initialize_async(storage, event_sink, fedi_api).await {
             Ok(bridge) => bridge,
             Err(e) => {
@@ -907,7 +907,7 @@ mod tests {
         let event_sink = Arc::new(FakeEventSink::new());
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
-        let fedi_api = Box::new(MockFediApi);
+        let fedi_api = Arc::new(MockFediApi);
         let invalid_fedi_file = String::from(r#"{"format_version": 0, "root_seed": "abcd"}"#);
         storage
             .write_file(FEDI_FILE_PATH.as_ref(), invalid_fedi_file.clone().into())
@@ -942,7 +942,7 @@ mod tests {
         let fixture_dir = get_fixture_dir().join("v0_db");
         copy_recursively(fixture_dir, &data_dir)?;
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
-        let fedi_api = Box::new(MockFediApi);
+        let fedi_api = Arc::new(MockFediApi);
         let bridge = fedimint_initialize_async(storage, event_sink, fedi_api).await?;
         let federations = listFederations(bridge.clone()).await?;
         // old federations are ignored
