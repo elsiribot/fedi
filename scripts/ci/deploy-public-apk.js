@@ -21,7 +21,7 @@ module.exports = async ({ github, context, core }) => {
         console.log(`APK file found: ${apkAsset.name}`);
 
         // Extract version and commit hash from the APK filename
-        const regex = /app-production-release-(\d+\.\d+\.\d+)-([0-9a-f]+)\.apk/;
+        const regex = /app-production-release-(\d+\.\d+\.\d+)-\d+-commit-([0-9a-f]+)\.apk/;
         const match = apkAsset.name.match(regex);
         if (!match) {
             throw new Error('Invalid APK filename format');
