@@ -18,6 +18,22 @@ import { makeLog } from './log'
 
 const log = makeLog('common/utils/FederationUtils')
 
+/**
+ * This function is used to look for the meta URL to use as an external override
+ * to any meta fields that may exist in consensus-signed metadata
+ *
+ * This fallback behavior is needed to preserve backwards compatibility since
+ * fedimint uses meta_override_url and Fedi uses meta_external_url for essentially
+ * the same behavior
+ *
+ * Fedi should phase out its use of meta_external_url and use the fedimint standard
+ * meta_override_url but until all known federations stop using meta_external_url
+ * we support both via this function
+ */
+export const getMetaUrl = (meta: ClientConfigMetadata): string | undefined => {
+    return meta.meta_override_url || meta.meta_external_url || undefined
+}
+
 type ExternalMetaJson = Record<string, Federation['meta'] | undefined>
 
 /**
@@ -97,7 +113,7 @@ export const fetchFederationsExternalMetadata = (
 ): Promise<ExternalMetaJson> => {
     // Collect & dedpulicate external meta URLs
     const externalUrls = federations
-        .map(f => f.meta.meta_external_url)
+        .map(f => getMetaUrl(f.meta))
         .filter((url, idx, arr): url is string =>
             Boolean(url && arr.indexOf(url) === idx),
         )
@@ -435,11 +451,12 @@ export async function getFederationPreview(
     // servers after joining which will break onboarding
     // TODO: Refactor this to the bridge...?
     try {
-        if (preview.meta?.meta_external_url) {
+        const metaUrl = getMetaUrl(preview.meta)
+        if (metaUrl) {
             log.info(
-                `Found meta_external_url in preview for federation ${preview.id}, fetching...`,
+                `Found metaUrl in preview for federation ${preview.id}, fetching...`,
             )
-            const response = await fetch(preview.meta?.meta_external_url, {
+            const response = await fetch(metaUrl, {
                 cache: 'no-cache',
             })
             const metaJson = await response.json()

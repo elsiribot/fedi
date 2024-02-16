@@ -9,6 +9,7 @@ import type { AnyAction } from 'redux'
 import type { ThunkDispatch } from 'redux-thunk'
 
 import { Federation, StorageApi } from '../types'
+import { getMetaUrl } from '../utils/FederationUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { hasStorageStateChanged } from '../utils/storage'
@@ -95,7 +96,7 @@ export function initializeCommonStore({
     const unsubscribeFederation = fedimint.addListener('federation', event => {
         // If they have an external meta configured, exclude name and meta from update
         const federation: Partial<Federation> = { ...event }
-        if (event.meta.meta_external_url) {
+        if (getMetaUrl(event.meta)) {
             delete federation.name
             delete federation.meta
         }
