@@ -14,9 +14,9 @@ use serde::{Deserialize, Serialize};
 use stability_pool_client::ClientAccountInfo;
 use ts_rs::TS;
 
-use super::bridge::MultiFederation;
 use super::federation_v2::FederationV2;
 use super::utils::to_unix_time;
+use crate::multi::MultiFederation;
 use crate::storage::FediFeeSchedule;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]

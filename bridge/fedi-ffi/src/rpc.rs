@@ -660,10 +660,10 @@ mod tests {
 
     use super::*;
     use crate::api::IFediApi;
-    use crate::bridge::MultiFederation;
     use crate::constants::{FEDI_FILE_PATH, MILLION};
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
+    use crate::multi::MultiFederation;
     use crate::storage::{FediFeeSchedule, IStorage};
     use crate::types::RpcReturningMemberStatus;
 
