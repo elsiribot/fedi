@@ -136,7 +136,7 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
             global: client_config_json.global,
             modules: client_config_json.modules,
         }),
-        fedi_fee_schedule: federation.fedi_fee_schedule.read().await.clone().into(),
+        fedi_fee_schedule: federation.fedi_fee_schedule().await.into(),
     }
 }
 

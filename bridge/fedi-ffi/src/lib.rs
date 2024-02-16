@@ -5,6 +5,7 @@ pub mod federation_v2;
 pub mod constants;
 pub mod error;
 pub mod event;
+pub mod fedi_fee;
 #[cfg(not(target_family = "wasm"))]
 mod ffi;
 #[cfg(not(target_family = "wasm"))]

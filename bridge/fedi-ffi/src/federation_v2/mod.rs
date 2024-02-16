@@ -32,7 +32,7 @@ use fedimint_core::api::{
 };
 use fedimint_core::backup::ClientBackupSnapshot;
 use fedimint_core::config::{ClientConfig, FederationId};
-use fedimint_core::core::{ModuleKind, OperationId};
+use fedimint_core::core::OperationId;
 use fedimint_core::db::{
     Committable, Database, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped,
 };
@@ -60,7 +60,7 @@ use stability_pool_client::{
     ClientAccountInfo, StabilityPoolClientInit, StabilityPoolClientModule,
     StabilityPoolDepositOperationState, StabilityPoolMeta, StabilityPoolWithdrawalOperationState,
 };
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::Mutex;
 use tracing::{error, info, warn};
 
 use self::db::{OperationFediFeeStatusKey, OutstandingFediFeesKey};
@@ -77,13 +77,15 @@ use super::social::{
     RecoveryFile, SocialBackup, SocialRecoveryClient, SocialRecoveryState, SocialVerification,
     UserSeedPhrase,
 };
-use super::storage::{FediFeeSchedule, ModuleFediFeeSchedule, Storage};
+use super::storage::Storage;
 use super::types::{
     federation_v2_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
     RpcLightningGateway, RpcPayInvoiceResponse, RpcPublicKey, RpcXmppCredentials,
 };
 use crate::error::ErrorCode;
+use crate::fedi_fee::FediFeeHelper;
 use crate::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
+use crate::storage::FediFeeSchedule;
 use crate::types::{
     EcashReceiveMetadata, GuardianStatus, OperationFediFeeStatus, RpcBitcoinDetails, RpcEcashInfo,
     RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
@@ -126,10 +128,9 @@ pub struct FederationV2 {
         Arc<Mutex<HashMap<OperationId, Box<maybe_add_send_sync!(dyn Any + 'static)>>>>,
     // DerivableSecret used for non-client usecases like LNURL and Nostr etc
     pub auxiliary_secret: DerivableSecret,
-    // The schedule used for charging Fedi's fee for different types of transactions. We use
-    // an RwLock since most of the the time the schedule will only be read, but sometimes the
-    // Bridge may wish to update it dynamically.
-    pub fedi_fee_schedule: Arc<RwLock<FediFeeSchedule>>,
+    // Helper object to retrieve the schedule used for charging Fedi's fee for different types of
+    // transactions.
+    pub fedi_fee_helper: Arc<FediFeeHelper>,
     pub recovering: Arc<Mutex<bool>>,
 }
 
@@ -158,7 +159,7 @@ impl FederationV2 {
         event_sink: EventSink,
         task_group: TaskGroup,
         secret: DerivableSecret,
-        fee_schedule: FediFeeSchedule,
+        fedi_fee_helper: Arc<FediFeeHelper>,
     ) -> Self {
         let recovering = ng.has_active_states(OperationId([0x01; 32])).await;
         let mut federation = Self {
@@ -167,7 +168,7 @@ impl FederationV2 {
             task_group,
             operation_states: Default::default(),
             auxiliary_secret: secret,
-            fedi_fee_schedule: Arc::new(RwLock::new(fee_schedule)),
+            fedi_fee_helper,
             recovering: Arc::new(Mutex::new(recovering)),
         };
         if recovering {
@@ -229,7 +230,7 @@ impl FederationV2 {
         task_group: TaskGroup,
         root_mnemonic: &bip39::Mnemonic,
         client_config: Option<ClientConfig>,
-        fee_schedule: FediFeeSchedule,
+        fedi_fee_helper: Arc<FediFeeHelper>,
     ) -> anyhow::Result<Self> {
         let client = Self::client_from_db(db, root_mnemonic, client_config).await?;
         // FIXME: repetitive
@@ -241,7 +242,7 @@ impl FederationV2 {
             event_sink,
             task_group.make_subgroup().await,
             auxiliary_secret,
-            fee_schedule,
+            fedi_fee_helper,
         )
         .await)
     }
@@ -281,7 +282,7 @@ impl FederationV2 {
         task_group: TaskGroup,
         db_name: &str,
         root_mnemonic: &bip39::Mnemonic,
-        fee_schedule: FediFeeSchedule,
+        fedi_fee_helper: Arc<FediFeeHelper>,
     ) -> Result<Self> {
         // Download federation config
         let mut invite_code: InviteCode = InviteCode::from_str(&invite_code_string)?;
@@ -321,7 +322,7 @@ impl FederationV2 {
                 event_sink,
                 task_group.make_subgroup().await,
                 auxiliary_secret,
-                fee_schedule,
+                fedi_fee_helper,
             )
             .await;
             this.save_restored_metadata(metadata).await?;
@@ -333,7 +334,7 @@ impl FederationV2 {
                 event_sink,
                 task_group.make_subgroup().await,
                 auxiliary_secret,
-                fee_schedule,
+                fedi_fee_helper,
             )
             .await)
         }
@@ -342,6 +343,15 @@ impl FederationV2 {
     /// Get federation ID
     pub fn federation_id(&self) -> FederationId {
         self.client.federation_id()
+    }
+
+    /// Get full Fedi fee schedule. This is made to be infallible so that
+    /// consumers can always get a valid fee schedule back.
+    pub async fn fedi_fee_schedule(&self) -> FediFeeSchedule {
+        self.fedi_fee_helper
+            .get_federation_schedule(self.federation_id().to_string())
+            .await
+            .unwrap_or_default()
     }
 
     // Fetch which network we're using
@@ -441,9 +451,13 @@ impl FederationV2 {
     /// Generate bitcoin address
     pub async fn generate_address(&self) -> Result<String> {
         let fedi_fee_ppm = self
-            .get_module_fee_schedule(fedimint_wallet_client::KIND)
-            .await?
-            .receive_ppm;
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                fedimint_wallet_client::KIND,
+                RpcTransactionDirection::Receive,
+            )
+            .await?;
         let expires_at = fedimint_core::time::now() + Duration::from_secs(86400 * 365);
         let (operation_id, address) = self
             .client
@@ -467,9 +481,13 @@ impl FederationV2 {
         expiry_time: Option<u64>,
     ) -> Result<RpcInvoice> {
         let fedi_fee_ppm = self
-            .get_module_fee_schedule(fedimint_ln_common::KIND)
-            .await?
-            .receive_ppm;
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                fedimint_ln_common::KIND,
+                RpcTransactionDirection::Receive,
+            )
+            .await?;
         let (operation_id, invoice) = self
             .client
             .get_first_module::<LightningClientModule>()
@@ -636,9 +654,13 @@ impl FederationV2 {
     pub async fn pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<RpcPayInvoiceResponse> {
         self.override_active_gateway().await?;
         let fedi_fee_ppm = self
-            .get_module_fee_schedule(fedimint_ln_common::KIND)
-            .await?
-            .send_ppm;
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                fedimint_ln_common::KIND,
+                RpcTransactionDirection::Send,
+            )
+            .await?;
 
         // Has an amount
         let fedi_fee = match invoice.amount_milli_satoshis() {
@@ -684,9 +706,13 @@ impl FederationV2 {
         amount: bitcoin::Amount,
     ) -> Result<RpcPayAddressResponse> {
         let fedi_fee_ppm = self
-            .get_module_fee_schedule(fedimint_wallet_client::KIND)
-            .await?
-            .send_ppm;
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                fedimint_wallet_client::KIND,
+                RpcTransactionDirection::Send,
+            )
+            .await?;
         let network_fees = self
             .client
             .get_first_module::<WalletClientModule>()
@@ -1157,9 +1183,13 @@ impl FederationV2 {
     pub async fn receive_ecash(&self, ecash: String) -> Result<Amount> {
         let ecash = OOBNotes::from_str(&ecash)?;
         let fedi_fee_ppm = self
-            .get_module_fee_schedule(fedimint_mint_client::KIND)
-            .await?
-            .receive_ppm;
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                fedimint_mint_client::KIND,
+                RpcTransactionDirection::Receive,
+            )
+            .await?;
         let amt = self
             .receive_ecash_with_meta(
                 ecash,
@@ -1218,9 +1248,13 @@ impl FederationV2 {
     /// Generate ecash
     pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
         let fedi_fee_ppm = self
-            .get_module_fee_schedule(fedimint_mint_client::KIND)
-            .await?
-            .send_ppm;
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                fedimint_mint_client::KIND,
+                RpcTransactionDirection::Send,
+            )
+            .await?;
         let fedi_fee = Amount::from_msats((amount.msats * fedi_fee_ppm).div_ceil(MILLION));
         if amount + fedi_fee > self.get_balance().await {
             bail!(ErrorCode::InsufficientBalance);
@@ -2055,9 +2089,13 @@ impl FederationV2 {
     /// to produce locks.
     pub async fn stability_pool_deposit_to_seek(&self, amount: Amount) -> Result<OperationId> {
         let fedi_fee_ppm = self
-            .get_module_fee_schedule(stability_pool_client::common::KIND)
-            .await?
-            .send_ppm;
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                stability_pool_client::common::KIND,
+                RpcTransactionDirection::Send,
+            )
+            .await?;
         let fedi_fee = Amount::from_msats((amount.msats * fedi_fee_ppm).div_ceil(MILLION));
         if amount + fedi_fee > self.get_balance().await {
             bail!(ErrorCode::InsufficientBalance);
@@ -2095,9 +2133,13 @@ impl FederationV2 {
         locked_bps: u32,
     ) -> Result<OperationId> {
         let fedi_fee_ppm = self
-            .get_module_fee_schedule(stability_pool_client::common::KIND)
-            .await?
-            .receive_ppm;
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                stability_pool_client::common::KIND,
+                RpcTransactionDirection::Receive,
+            )
+            .await?;
         let (operation_id, _) = self
             .client
             .get_first_module::<StabilityPoolClientModule>()
@@ -2183,42 +2225,6 @@ impl FederationV2 {
                     ))
             }
         }
-    }
-
-    /// For the given module (identified by ModuleKind), reads the
-    /// FediFeeSchedule that's stored in "self" and returns the module's
-    /// ModuleFediFeeSchedule. If the module is unknown, returns an error.
-    async fn get_module_fee_schedule(
-        &self,
-        module: ModuleKind,
-    ) -> anyhow::Result<ModuleFediFeeSchedule> {
-        self.fedi_fee_schedule
-            .read()
-            .await
-            .modules
-            .get(&module)
-            .cloned()
-            .ok_or(anyhow!("Unknown module {module}"))
-    }
-
-    /// For the given module (identified by ModuleKind), sets the
-    /// ModuleFediFeeSchedule.
-    pub async fn set_module_fee_schedule(
-        &self,
-        module: ModuleKind,
-        fee_schedule: ModuleFediFeeSchedule,
-    ) {
-        self.fedi_fee_schedule
-            .write()
-            .await
-            .modules
-            .insert(module, fee_schedule);
-    }
-
-    /// Overwrites the entire Fedi fee schedule within this FederationV2
-    /// instance.
-    pub async fn set_fedi_fee_schedule(&self, fee_schedule: FediFeeSchedule) {
-        *self.fedi_fee_schedule.write().await = fee_schedule;
     }
 
     /// We optimistically charge the fee from the send amount (since the amount
