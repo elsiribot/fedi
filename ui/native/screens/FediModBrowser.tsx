@@ -122,7 +122,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const [nostrUnsignedEvent, setNostrUnsignedEvent] =
         useState<UnsignedNostrEvent | null>(null)
     const [isParsingLink, setIsParsingLink] = useState(false)
-    const [ecashArgs, setEcashArgs] = useState<EcashRequest | null>(null)
+    const [ecashRequest, setEcashRequest] = useState<EcashRequest | null>(null)
 
     const getActiveGatewayPromiseRef =
         useRef<Promise<RpcLightningGateway> | null>(null)
@@ -308,7 +308,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             log.info('fedi.generateEcash', ecashRequestArgs)
 
             if (activeFederation?.id === undefined) {
-                log.error('fedi.receiveEcash', 'No active federation')
+                log.error('fedi.generateEcash', 'No active federation')
                 throw new Error('No active federation')
             }
 
@@ -319,7 +319,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 overlayResolveRef.current =
                     resolve as unknown as FediModResolver<FediModResponse>
 
-                setEcashArgs(ecashRequestArgs)
+                setEcashRequest(ecashRequestArgs)
             })
         },
         [InjectionMessageType.fedi_receiveEcash]: async ecash => {
@@ -329,33 +329,37 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 throw new Error('No active federation')
             }
             try {
-                const res = await fedimint.receiveEcash(
+                const msats = await fedimint.receiveEcash(
                     ecash,
                     activeFederation.id,
                 )
-                return res.toString()
+                return { msats }
             } catch (err) {
                 log.warn('fedi.receiveEcash', err)
                 throw new Error(t('errors.receive-ecash-failed'))
             }
         },
-        [InjectionMessageType.fedi_getUsername]: async () => {
-            log.info('fedi.getUsername')
+        [InjectionMessageType.fedi_getAuthenticatedMember]: async () => {
+            log.info('fedi.getAuthenticatedMember')
 
-            if (!authenticatedMember?.username) {
+            if (!authenticatedMember) {
                 throw new Error('No authenticated member')
             }
 
-            return authenticatedMember.username
+            return authenticatedMember
         },
-        [InjectionMessageType.fedi_getActiveFederationId]: async () => {
-            log.info('fedi.getActiveFederationId')
+        [InjectionMessageType.fedi_getActiveFederation]: async () => {
+            log.info('fedi.getActiveFederation')
 
-            if (!activeFederation?.id) {
-                throw new Error('No active federation Id')
+            if (!activeFederation) {
+                throw new Error('No active federation')
             }
 
-            return activeFederation.id
+            return {
+                id: activeFederation.id,
+                name: activeFederation.name,
+                network: activeFederation.network,
+            }
         },
     })
 
@@ -395,7 +399,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         setLnurlAuthRequest(null)
         setNostrUnsignedEvent(null)
         setShowRecoveryInProgress(false)
-        setEcashArgs(null)
+        setEcashRequest(null)
     }
 
     const overlayProps = {
@@ -469,7 +473,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 onDismiss={overlayProps.onAccept}
                 label={t('feature.recovery.recovery-in-progress-payments')}
             />
-            <GenerateEcashOverlay {...overlayProps} ecashRequest={ecashArgs} />
+            <GenerateEcashOverlay
+                {...overlayProps}
+                ecashRequest={ecashRequest}
+            />
         </View>
     )
 }

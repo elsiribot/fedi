@@ -7,6 +7,9 @@ import type {
     SignMessageResponse,
 } from 'webln'
 
+import { ChatMember, MSats } from '@fedi/common/types'
+import { RpcFederation } from '@fedi/common/types/bindings'
+
 import { SignedNostrEvent, UnsignedNostrEvent } from './injectables/nostr/types'
 
 export enum InjectionMessageType {
@@ -21,8 +24,8 @@ export enum InjectionMessageType {
     nostr_signEvent = 'nostr_signEvent',
     fedi_generateEcash = 'fedi_generateEcash',
     fedi_receiveEcash = 'fedi_receiveEcash',
-    fedi_getUsername = 'fedi_getUsername',
-    fedi_getActiveFederationId = 'fedi_getActiveFederationId',
+    fedi_getAuthenticatedMember = 'fedi_getUsername',
+    fedi_getActiveFederation = 'fedi_getActiveFederationId',
 }
 
 export type InjectionMessageResponseMap = {
@@ -67,28 +70,23 @@ export type InjectionMessageResponseMap = {
     }
     [InjectionMessageType.fedi_generateEcash]: {
         message: EcashRequest
-        response: string
+        response: { notes: string }
     }
     [InjectionMessageType.fedi_receiveEcash]: {
         message: string
-        response: string
+        response: { msats: MSats }
     }
-    [InjectionMessageType.fedi_getUsername]: {
+    [InjectionMessageType.fedi_getAuthenticatedMember]: {
         message: void
-        response: string
+        response: ChatMember
     }
-    [InjectionMessageType.fedi_getActiveFederationId]: {
+    [InjectionMessageType.fedi_getActiveFederation]: {
         message: void
-        response: string
+        response: Pick<RpcFederation, 'id' | 'name' | 'network'>
     }
 }
 
-export type EcashRequest = {
-    amount?: string | number
-    defaultAmount?: string | number
-    minimumAmount?: string | number
-    maximumAmount?: string | number
-}
+export type EcashRequest = Omit<RequestInvoiceArgs, 'defaultMemo'>
 
 export type InjectionRequestMessage<T extends InjectionMessageType> = {
     id: number

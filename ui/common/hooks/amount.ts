@@ -32,12 +32,7 @@ import { useUpdatingRef } from './util'
 interface RequestAmountArgs {
     lnurlWithdrawal?: ParsedLnurlWithdraw['data'] | null
     requestInvoiceArgs?: RequestInvoiceArgs | null
-    ecashRequest?: {
-        amount?: string | number
-        defaultAmount?: string | number
-        minimumAmount?: string | number
-        maximumAmount?: string | number
-    } | null
+    ecashRequest?: Omit<RequestInvoiceArgs, 'defaultMemo'> | null
 }
 
 interface SendAmountArgs {

@@ -1,3 +1,5 @@
+import { ChatMember } from '@fedi/common/types'
+
 import {
     InjectionMessageType,
     InjectionMessageResponseMap,
@@ -5,37 +7,32 @@ import {
 } from '../types'
 import { sendInjectorMessage } from '../utils'
 
-interface FediInternalProvider {
-    generateEcash(amountMsat: EcashRequest): Promise<string>
-    receiveEcash(ecash: string): Promise<string>
-    getUsername(): Promise<string>
-    getActiveFederationId(): Promise<string>
-}
-
-class InjectionFediProvider implements FediInternalProvider {
+class InjectionFediProvider {
     private lastMessageId = 0
 
-    async generateEcash(ecashRequest: EcashRequest): Promise<string> {
+    async generateEcash(
+        ecashRequest: EcashRequest,
+    ): Promise<{ notes: string }> {
         return this.sendMessage(
             InjectionMessageType.fedi_generateEcash,
             ecashRequest,
         )
     }
 
-    async receiveEcash(ecash: string): Promise<string> {
+    async receiveEcash(ecash: string): Promise<{ msats: string }> {
         return this.sendMessage(InjectionMessageType.fedi_receiveEcash, ecash)
     }
 
-    async getUsername(): Promise<string> {
+    async getAuthenticatedMember(): Promise<ChatMember> {
         return this.sendMessage(
-            InjectionMessageType.fedi_getUsername,
+            InjectionMessageType.fedi_getAuthenticatedMember,
             undefined,
         )
     }
 
-    async getActiveFederationId(): Promise<string> {
+    async getActiveFederationId(): Promise<{ activeFederationId: string }> {
         return this.sendMessage(
-            InjectionMessageType.fedi_getActiveFederationId,
+            InjectionMessageType.fedi_getActiveFederation,
             undefined,
         )
     }
