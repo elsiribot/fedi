@@ -18,6 +18,7 @@ export function generateInjectionJs(config: {
     webln?: boolean
     eruda?: boolean
     nostr?: boolean
+    fediInternal?: boolean
 }) {
     const injections: string[] = []
 
@@ -31,6 +32,10 @@ export function generateInjectionJs(config: {
 
     if (config.nostr) {
         injections.push(process.env.INJECTION_NOSTR as string)
+    }
+
+    if (config.fediInternal) {
+        injections.push(process.env.INJECTION_FEDI_INTERNAL as string)
     }
 
     return injections.join('\n')

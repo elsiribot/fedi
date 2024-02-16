@@ -28,7 +28,7 @@ import {
     ParsedLnurlWithdraw,
     ParserDataType,
 } from '@fedi/common/types'
-import { RpcLightningGateway } from '@fedi/common/types/bindings'
+import { EcashRequest, RpcLightningGateway } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 import { parseUserInput } from '@fedi/common/utils/parser'
@@ -45,6 +45,7 @@ import {
 import { fedimint } from '../bridge'
 import { AuthOverlay } from '../components/feature/fedimods/AuthOverlay'
 import FediModBrowserHeader from '../components/feature/fedimods/FediModBrowserHeader'
+import { GenerateEcashOverlay } from '../components/feature/fedimods/GenerateEcashoverlay'
 import { MakeInvoiceOverlay } from '../components/feature/fedimods/MakeInvoiceOverlay'
 import { NostrSignOverlay } from '../components/feature/fedimods/NostrSignOverlay'
 import { SendPaymentOverlay } from '../components/feature/fedimods/SendPaymentOverlay'
@@ -83,6 +84,7 @@ type FediModResponse =
     | RequestInvoiceResponse
     | SendPaymentResponse
     | SignedNostrEvent
+    | string
 type FediModResolver<T> = (value: T | PromiseLike<T>) => void
 
 const FediModBrowser: React.FC<Props> = ({ route }) => {
@@ -103,6 +105,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         FediModResolver<FediModResponse> | undefined
     >() as MutableRefObject<FediModResolver<FediModResponse> | undefined>
     const overlayRejectRef = useRef<(reason: Error) => void>()
+
     const [requestInvoiceArgs, setRequestInvoiceArgs] =
         useState<RequestInvoiceArgs | null>(null)
     const [lnurlWithdrawal, setLnurlWithdrawal] = useState<
@@ -118,6 +121,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const [nostrUnsignedEvent, setNostrUnsignedEvent] =
         useState<UnsignedNostrEvent | null>(null)
     const [isParsingLink, setIsParsingLink] = useState(false)
+    const [ecashRequest, setEcashRequest] = useState<EcashRequest | null>(null)
+
     const getActiveGatewayPromiseRef =
         useRef<Promise<RpcLightningGateway> | null>(null)
     const [showRecoveryInProgress, setShowRecoveryInProgress] =
@@ -298,6 +303,66 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 setNostrUnsignedEvent(evt)
             })
         },
+        [InjectionMessageType.fedi_generateEcash]: async ecashRequestArgs => {
+            log.info('fedi.generateEcash', ecashRequestArgs)
+
+            if (activeFederation?.id === undefined) {
+                log.error('fedi.generateEcash', 'No active federation')
+                throw new Error('No active federation')
+            }
+
+            // Wait for user to interact with alert
+            return new Promise((resolve, reject) => {
+                // Save these refs so we can resolve / reject elsewhere
+                overlayRejectRef.current = reject
+                overlayResolveRef.current =
+                    resolve as unknown as FediModResolver<FediModResponse>
+
+                setEcashRequest(ecashRequestArgs)
+            })
+        },
+        [InjectionMessageType.fedi_receiveEcash]: async ecash => {
+            log.info('fedi.receiveEcash', ecash)
+            if (activeFederation?.id === undefined) {
+                log.error('fedi.receiveEcash', 'No active federation')
+                throw new Error('No active federation')
+            }
+            try {
+                const msats = await fedimint.receiveEcash(
+                    ecash,
+                    activeFederation.id,
+                )
+                return { msats }
+            } catch (err) {
+                log.warn('fedi.receiveEcash', err)
+                throw new Error(t('errors.receive-ecash-failed'))
+            }
+        },
+        [InjectionMessageType.fedi_getAuthenticatedMember]: async () => {
+            log.info('fedi.getAuthenticatedMember')
+
+            if (!authenticatedMember) {
+                throw new Error('No authenticated member')
+            }
+
+            return {
+                id: authenticatedMember.id,
+                username: authenticatedMember.username,
+            }
+        },
+        [InjectionMessageType.fedi_getActiveFederation]: async () => {
+            log.info('fedi.getActiveFederation')
+
+            if (!activeFederation) {
+                throw new Error('No active federation')
+            }
+
+            return {
+                id: activeFederation.id,
+                name: activeFederation.name,
+                network: activeFederation.network,
+            }
+        },
     })
 
     // Decide whether or not to handle links clicked in the webview natively.
@@ -336,6 +401,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         setLnurlAuthRequest(null)
         setNostrUnsignedEvent(null)
         setShowRecoveryInProgress(false)
+        setEcashRequest(null)
     }
 
     const overlayProps = {
@@ -373,6 +439,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                     webln: true,
                     eruda: fediModDebugMode,
                     nostr: nostrEnabled,
+                    fediInternal: true,
                 })}
                 allowsInlineMediaPlayback
                 onMessage={onMessage}
@@ -407,6 +474,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 show={showRecoveryInProgress}
                 onDismiss={overlayProps.onAccept}
                 label={t('feature.recovery.recovery-in-progress-payments')}
+            />
+            <GenerateEcashOverlay
+                {...overlayProps}
+                ecashRequest={ecashRequest}
             />
         </View>
     )

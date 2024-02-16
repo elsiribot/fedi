@@ -27,6 +27,7 @@ const makeInjectableDefinePlugin = isProd => {
         'process.env.INJECTION_WEBLN': makeInjection('webln'),
         'process.env.INJECTION_ERUDA': makeInjection('eruda'),
         'process.env.INJECTION_NOSTR': makeInjection('nostr'),
+        'process.env.INJECTION_FEDI_INTERNAL': makeInjection('fediInternal'),
     })
 }
 
