@@ -4,7 +4,6 @@ Federations can supply additional config and metadata to clients.
 
 The following meta fields are interpretable by the Fedi app (note the `fedi:` prefix on all fields) to provide additional functionality that affects the user experience:
 
-* [`fedi:meta_external_url`](https://github.com/fedimint/fedimint/blob/master/docs/meta_fields/meta_override_url.md): A URL to a file containing overrides for meta fields (will be deprecated in the future... behaves exactly the same as [meta_override_url](https://github.com/fedimint/fedimint/blob/master/docs/meta_fields/meta_override_url.md))
 * [`fedi:chat_server_domain`](chat_server_domain.md): The domain of a self-hosted Prosody XMPP server that enable in-app chat functionality
 * [`fedi:default_currency`](default_currency.md): 3-letter ISO 4217 currency code
 * [`fedi:tos_url`](tos_url.md): A URL presented to the user before joining the federation
