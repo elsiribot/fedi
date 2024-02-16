@@ -8,11 +8,11 @@ import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-    Dimensions,
     ImageBackground,
     Pressable,
     StyleSheet,
     View,
+    useWindowDimensions,
 } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -98,6 +98,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     const drawerNavigation = props.navigation
     const mainNavigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
+    const { height } = useWindowDimensions()
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const federations = useAppSelector(selectFederations)
     const insets = useSafeAreaInsets()
@@ -113,7 +114,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                     style.container,
                     {
                         maxHeight:
-                            Dimensions.get('window').height -
+                            height -
                             theme.sizes.addFederationButtonHeight -
                             insets.bottom,
                     },
@@ -160,9 +161,16 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                         mainNavigation.navigate('JoinFederation', {
                             invite: undefined,
                         })
-                    }}>
-                    {t('feature.federations.add-federation')}
-                </Button>
+                    }}
+                    title={
+                        <Text
+                            style={style.addFederationText}
+                            caption
+                            maxFontSizeMultiplier={1.8}>
+                            {t('feature.federations.add-federation')}
+                        </Text>
+                    }
+                />
             </SafeAreaView>
         </ImageBackground>
     )
