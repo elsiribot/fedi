@@ -24,6 +24,7 @@ import {
     Sats,
     SupportedCurrency,
 } from '../types'
+import { EcashRequest } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'
 import { useCommonDispatch, useCommonSelector } from './redux'
@@ -32,7 +33,7 @@ import { useUpdatingRef } from './util'
 interface RequestAmountArgs {
     lnurlWithdrawal?: ParsedLnurlWithdraw['data'] | null
     requestInvoiceArgs?: RequestInvoiceArgs | null
-    ecashRequest?: Omit<RequestInvoiceArgs, 'defaultMemo'> | null
+    ecashRequest?: EcashRequest | null
 }
 
 interface SendAmountArgs {
@@ -373,7 +374,7 @@ export function useMinMaxRequestAmount({
             }
         }
         return { minimumAmount, maximumAmount }
-    }, [maxReceiveAmount, lnurlWithdrawal, requestInvoiceArgs])
+    }, [maxReceiveAmount, lnurlWithdrawal, requestInvoiceArgs, ecashRequest])
 }
 
 /**

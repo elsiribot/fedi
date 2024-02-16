@@ -1,9 +1,9 @@
-import { ChatMember } from '@fedi/common/types'
+import { MSats } from '@fedi/common/types'
+import { EcashRequest, RpcFederation } from '@fedi/common/types/bindings'
 
 import {
     InjectionMessageType,
     InjectionMessageResponseMap,
-    EcashRequest,
 } from '../types'
 import { sendInjectorMessage } from '../utils'
 
@@ -19,18 +19,20 @@ class InjectionFediProvider {
         )
     }
 
-    async receiveEcash(ecash: string): Promise<{ msats: string }> {
+    async receiveEcash(ecash: string): Promise<{ msats: MSats }> {
         return this.sendMessage(InjectionMessageType.fedi_receiveEcash, ecash)
     }
 
-    async getAuthenticatedMember(): Promise<ChatMember> {
+    async getAuthenticatedMember(): Promise<{ id: string; username: string }> {
         return this.sendMessage(
             InjectionMessageType.fedi_getAuthenticatedMember,
             undefined,
         )
     }
 
-    async getActiveFederationId(): Promise<{ activeFederationId: string }> {
+    async getActiveFederationId(): Promise<
+        Pick<RpcFederation, 'id' | 'name' | 'network'>
+    > {
         return this.sendMessage(
             InjectionMessageType.fedi_getActiveFederation,
             undefined,

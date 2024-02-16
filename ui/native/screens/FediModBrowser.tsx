@@ -28,12 +28,11 @@ import {
     ParsedLnurlWithdraw,
     ParserDataType,
 } from '@fedi/common/types'
-import { RpcLightningGateway } from '@fedi/common/types/bindings'
+import { EcashRequest, RpcLightningGateway } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 import { parseUserInput } from '@fedi/common/utils/parser'
 import {
-    EcashRequest,
     InjectionMessageType,
     generateInjectionJs,
     makeWebViewMessageHandler,
@@ -346,7 +345,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 throw new Error('No authenticated member')
             }
 
-            return authenticatedMember
+            return {
+                id: authenticatedMember.id,
+                username: authenticatedMember.username,
+            }
         },
         [InjectionMessageType.fedi_getActiveFederation]: async () => {
             log.info('fedi.getActiveFederation')
