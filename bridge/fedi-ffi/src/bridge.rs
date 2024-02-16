@@ -264,9 +264,9 @@ impl Bridge {
     }
 
     pub async fn list_federations(&self) -> Vec<RpcFederation> {
-        let lock = self.federations.lock().await;
+        let federations = self.federations.lock().await.clone();
         join_all(
-            lock.clone().into_values().map(|multi| async move {
+            federations.into_values().map(|multi| async move {
                 multi_federation_to_rpc_federation(&multi.clone()).await
             }),
         )
