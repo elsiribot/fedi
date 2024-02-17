@@ -320,6 +320,7 @@
           buildInputs = [ pkgs.openssl ];
 
           FEDI_CROSS_DEV_SHELL = "1";
+          RUSTFLAGS = "-Z threads=8";
           shellHook = ''
             export PATH=$PATH:''${ANDROID_SDK_ROOT}/../../bin
             alias create-avd="avdmanager create avd --force --name phone --package 'system-images;android-32;google_apis;arm64-v8a' --path $PWD/avd";
