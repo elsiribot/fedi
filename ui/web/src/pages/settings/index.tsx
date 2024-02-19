@@ -8,18 +8,26 @@ import LanguageIcon from '@fedi/common/assets/svgs/language.svg'
 import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
 import QRIcon from '@fedi/common/assets/svgs/qr.svg'
 import ScrollIcon from '@fedi/common/assets/svgs/scroll.svg'
+import TableExportIcon from '@fedi/common/assets/svgs/table-export.svg'
 import UsdIcon from '@fedi/common/assets/svgs/usd.svg'
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import {
     useFederationSupportsSingleSeed,
     useIsInviteSupported,
 } from '@fedi/common/hooks/federation'
+import { useTransactionHistory } from '@fedi/common/hooks/transactions'
 import {
     leaveFederation,
     selectActiveFederation,
     selectAuthenticatedMember,
 } from '@fedi/common/redux'
 import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
+import { Transaction } from '@fedi/common/types'
+import {
+    makeBase64CSVUri,
+    makeCSVFilename,
+    makeTransactionHistoryCSV,
+} from '@fedi/common/utils/csv'
 
 import { Avatar } from '../../components/Avatar'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
@@ -53,9 +61,11 @@ function AdminPage() {
     const member = useAppSelector(selectAuthenticatedMember)
     const activeFederation = useAppSelector(selectActiveFederation)
     const { showErrorToast } = useToast()
+    const { fetchTransactions } = useTransactionHistory(fedimint)
     const [isMemberQrOpen, setIsMemberQrOpen] = useState(false)
     const [isInvitingMember, setIsInvitingMember] = useState(false)
     const [isLeavingFederation, setIsLeavingFederation] = useState(false)
+    const [isExportingCSV, setIsExportingCSV] = useState(false)
     const isInviteSupported = useIsInviteSupported()
     const supportsSingleSeed = useFederationSupportsSingleSeed()
 
@@ -79,6 +89,40 @@ function AdminPage() {
     const tosUrl =
         (activeFederation && getFederationTosUrl(activeFederation.meta)) ||
         undefined
+
+    const exportTransactionsAsCsv = async () => {
+        let transactions: Array<Transaction> = []
+
+        setIsExportingCSV(true)
+
+        try {
+            transactions = await fetchTransactions({
+                // TODO: find a better way than a hardcoded value
+                limit: 10000,
+            })
+
+            const fileName = makeCSVFilename(
+                activeFederation?.name
+                    ? 'transactions-' + activeFederation.name
+                    : 'transactions',
+            )
+            const uri = makeBase64CSVUri(
+                makeTransactionHistoryCSV(transactions),
+            )
+
+            const element = document.createElement('a')
+            element.setAttribute('href', uri)
+            element.setAttribute('download', fileName)
+
+            document.body.appendChild(element)
+            element.click()
+            document.body.removeChild(element)
+        } catch (e) {
+            showErrorToast(e, 'errors.unknown-error')
+        } finally {
+            setIsExportingCSV(false)
+        }
+    }
 
     let menu: Menu = [
         {
@@ -104,13 +148,19 @@ function AdminPage() {
             ],
         },
         {
-            name: 'words.backup',
+            name: 'words.wallet',
             items: [
                 {
                     name: 'feature.backup.backup-wallet',
                     icon: WalletIcon,
                     href: '/settings/backup',
                     hidden: !supportsSingleSeed,
+                },
+                {
+                    name: 'feature.backup.export-transactions-to-csv',
+                    icon: TableExportIcon,
+                    onClick: exportTransactionsAsCsv,
+                    disabled: isExportingCSV,
                 },
             ],
         },
