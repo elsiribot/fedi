@@ -24,7 +24,7 @@ import {
     Sats,
     SupportedCurrency,
 } from '../types'
-import { EcashRequest } from '../types/bindings'
+import { EcashRequest } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'
 import { useCommonDispatch, useCommonSelector } from './redux'

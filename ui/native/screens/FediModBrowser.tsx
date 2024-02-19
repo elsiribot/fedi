@@ -21,6 +21,7 @@ import {
 } from '@fedi/common/redux'
 import {
     AnyParsedData,
+    EcashRequest,
     Invoice,
     MSats,
     ParsedLnurlAuth,
@@ -28,7 +29,7 @@ import {
     ParsedLnurlWithdraw,
     ParserDataType,
 } from '@fedi/common/types'
-import { EcashRequest, RpcLightningGateway } from '@fedi/common/types/bindings'
+import { RpcLightningGateway } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 import { parseUserInput } from '@fedi/common/utils/parser'
