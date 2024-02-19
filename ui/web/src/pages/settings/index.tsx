@@ -3,11 +3,11 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import ChevronRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
-import FederationIcon from '@fedi/common/assets/svgs/federation.svg'
 import InviteMembersIcon from '@fedi/common/assets/svgs/invite-members.svg'
 import LanguageIcon from '@fedi/common/assets/svgs/language.svg'
 import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
 import QRIcon from '@fedi/common/assets/svgs/qr.svg'
+import ScrollIcon from '@fedi/common/assets/svgs/scroll.svg'
 import UsdIcon from '@fedi/common/assets/svgs/usd.svg'
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import {
@@ -19,6 +19,7 @@ import {
     selectActiveFederation,
     selectAuthenticatedMember,
 } from '@fedi/common/redux'
+import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
 import { Avatar } from '../../components/Avatar'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
@@ -75,14 +76,19 @@ function AdminPage() {
         setIsLeavingFederation(false)
     }, [canLeaveFederation, federationId, dispatch, showErrorToast])
 
+    const tosUrl =
+        (activeFederation && getFederationTosUrl(activeFederation.meta)) ||
+        undefined
+
     let menu: Menu = [
         {
             name: 'words.federation',
             items: [
                 {
-                    name: 'feature.federations.federation-details',
-                    icon: FederationIcon,
-                    disabled: true,
+                    name: 'feature.federations.federation-terms',
+                    icon: ScrollIcon,
+                    href: tosUrl,
+                    disabled: !tosUrl,
                 },
                 {
                     name: 'feature.federations.invite-members',
