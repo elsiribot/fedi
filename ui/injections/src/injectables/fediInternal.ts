@@ -27,7 +27,7 @@ class InjectionFediProvider {
         )
     }
 
-    async getActiveFederationId(): Promise<
+    async getActiveFederation(): Promise<
         Pick<RpcFederation, 'id' | 'name' | 'network'>
     > {
         return this.sendMessage(
