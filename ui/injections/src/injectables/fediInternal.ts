@@ -1,10 +1,7 @@
-import { MSats } from '@fedi/common/types'
-import { EcashRequest, RpcFederation } from '@fedi/common/types/bindings'
+import { EcashRequest, MSats } from '@fedi/common/types'
+import { RpcFederation } from '@fedi/common/types/bindings'
 
-import {
-    InjectionMessageType,
-    InjectionMessageResponseMap,
-} from '../types'
+import { InjectionMessageType, InjectionMessageResponseMap } from '../types'
 import { sendInjectorMessage } from '../utils'
 
 class InjectionFediProvider {

@@ -7,8 +7,8 @@ import type {
     SignMessageResponse,
 } from 'webln'
 
-import { MSats } from '@fedi/common/types'
-import { EcashRequest, RpcFederation } from '@fedi/common/types/bindings'
+import { EcashRequest, MSats } from '@fedi/common/types'
+import { RpcFederation } from '@fedi/common/types/bindings'
 
 import { SignedNostrEvent, UnsignedNostrEvent } from './injectables/nostr/types'
 
