@@ -750,6 +750,10 @@ mod tests {
         async fn fetch_fedi_fee_schedule(&self) -> anyhow::Result<FediFeeSchedule> {
             Ok(FediFeeSchedule::default())
         }
+
+        async fn fetch_fedi_fee_invoice(&self, _amount: Amount) -> anyhow::Result<Bolt11Invoice> {
+            unimplemented!("TODO shaurya implement when testing");
+        }
     }
 
     // note: logging doesn't work yet at this point
