@@ -312,6 +312,7 @@
               pkgs.esplora
               pkgs.clightning
               pkgs.lnd
+              pkgs.sccache
 
               androidSdk
             ];
@@ -328,6 +329,7 @@
             export CARGO_ORIG_BIN="$(${pkgs.which}/bin/which cargo)"
             git_root="$(git rev-parse --show-toplevel)"
             export PATH="''${git_root}/nix/cargo-wrapper/:$PATH"
+            export RUSTC_WRAPPER=${pkgs.sccache}/bin/sccache
           '';
         });
       in
