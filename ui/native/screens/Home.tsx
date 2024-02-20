@@ -36,14 +36,12 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
     const { theme } = useTheme()
     // TODO: Hoist state and listen to bridge for updates
     const isStabilityPoolSupported = useIsStabilityPoolSupported()
-    const balance = useAppSelector(selectFederationBalance)
     const enableStableBalance = useAppSelector(selectStableBalanceEnabled)
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
     )
 
-    const showStabilityWallet =
-        isStabilityPoolSupported && enableStableBalance && balance > 0
+    const showStabilityWallet = isStabilityPoolSupported && enableStableBalance
 
     return (
         <ScrollView

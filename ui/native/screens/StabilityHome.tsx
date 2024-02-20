@@ -9,11 +9,13 @@ import * as Progress from 'react-native-progress'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
+    selectFederationBalance,
     selectStableBalance,
     selectStableBalancePending,
 } from '@fedi/common/redux'
 import { makePendingBalanceText } from '@fedi/common/utils/wallet'
 
+import { StabilityBitcoinBanner } from '../components/feature/wallet/StabilityBitcoinBanner'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useStabilityPool } from '../state/hooks'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
@@ -29,6 +31,7 @@ const StabilityHome: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const stableBalance = useAppSelector(selectStableBalance)
     const stableBalancePending = useAppSelector(selectStableBalancePending)
+    const balance = useAppSelector(selectFederationBalance)
 
     const { formattedStableBalance, formattedStableBalancePending } =
         useStabilityPool()
@@ -37,78 +40,84 @@ const StabilityHome: React.FC<Props> = () => {
 
     return (
         <View style={style.container}>
-            <View style={style.balanceContainer}>
-                <Progress.Circle
-                    progress={1}
-                    color={
-                        stableBalance > 0
-                            ? theme.colors.green
-                            : theme.colors.primaryVeryLight
-                    }
-                    thickness={theme.sizes.stabilityPoolCircleThickness}
-                    size={width - theme.spacing.lg * 2}
-                    borderWidth={1}
-                />
-                <View style={style.balanceTextContainer}>
-                    <Text h1 h1Style={style.balanceText}>
-                        {`${formattedStableBalance}`}
-                    </Text>
-                    {stableBalancePending !== 0 && (
-                        <Text small style={style.balancePendingText}>
-                            {makePendingBalanceText(
-                                t,
-                                stableBalancePending,
-                                formattedStableBalancePending,
-                            )}
+            <StabilityBitcoinBanner />
+            <View style={style.content}>
+                <View style={style.balanceContainer}>
+                    <Progress.Circle
+                        progress={1}
+                        color={
+                            stableBalance > 0
+                                ? theme.colors.green
+                                : theme.colors.primaryVeryLight
+                        }
+                        thickness={theme.sizes.stabilityPoolCircleThickness}
+                        size={width - theme.spacing.lg * 2}
+                        borderWidth={1}
+                    />
+                    <View style={style.balanceTextContainer}>
+                        <Text h1 h1Style={style.balanceText}>
+                            {`${formattedStableBalance}`}
                         </Text>
-                    )}
+                        {stableBalancePending !== 0 && (
+                            <Text small style={style.balancePendingText}>
+                                {makePendingBalanceText(
+                                    t,
+                                    stableBalancePending,
+                                    formattedStableBalancePending,
+                                )}
+                            </Text>
+                        )}
+                    </View>
                 </View>
-            </View>
-            <View style={style.buttonContainer}>
-                <Button
-                    containerStyle={style.button}
-                    onPress={() => {
-                        // Block deposits if pending balance is negative because we have to wait until pending withdrawals have processed
-                        if (stableBalancePending < 0) {
-                            toast?.show(
-                                t(
-                                    'feature.stabilitypool.pending-withdrawal-blocking',
-                                ),
-                                5000,
-                            )
-                        } else {
-                            navigation.navigate('StabilityDeposit')
+                <View style={style.buttonContainer}>
+                    <Button
+                        containerStyle={style.button}
+                        onPress={() => {
+                            // Block deposits if pending balance is negative because we have to wait until pending withdrawals have processed
+                            if (stableBalancePending < 0) {
+                                toast?.show(
+                                    t(
+                                        'feature.stabilitypool.pending-withdrawal-blocking',
+                                    ),
+                                    5000,
+                                )
+                            } else {
+                                navigation.navigate('StabilityDeposit')
+                            }
+                        }}
+                        title={
+                            <Text medium caption style={style.buttonText}>
+                                {t('words.deposit')}
+                            </Text>
                         }
-                    }}
-                    title={
-                        <Text medium caption style={style.buttonText}>
-                            {t('words.deposit')}
-                        </Text>
-                    }
-                />
-                <Button
-                    containerStyle={style.button}
-                    onPress={() => {
-                        // Block withdrawals if pending balance is negative because we have to wait until pending withdrawals have processed
-                        if (stableBalancePending < 0) {
-                            toast?.show(
-                                t(
-                                    'feature.stabilitypool.pending-withdrawal-blocking',
-                                ),
-                                5000,
-                            )
-                        } else {
-                            navigation.navigate('StabilityWithdraw')
+                        disabled={balance === 0}
+                    />
+                    <Button
+                        containerStyle={style.button}
+                        onPress={() => {
+                            // Block withdrawals if pending balance is negative because we have to wait until pending withdrawals have processed
+                            if (stableBalancePending < 0) {
+                                toast?.show(
+                                    t(
+                                        'feature.stabilitypool.pending-withdrawal-blocking',
+                                    ),
+                                    5000,
+                                )
+                            } else {
+                                navigation.navigate('StabilityWithdraw')
+                            }
+                        }}
+                        title={
+                            <Text medium caption style={style.buttonText}>
+                                {t('words.withdraw')}
+                            </Text>
                         }
-                    }}
-                    title={
-                        <Text medium caption style={style.buttonText}>
-                            {t('words.withdraw')}
-                        </Text>
-                    }
-                    // TODO: implement withdrawals && compare against minimum withdraw amount
-                    disabled={stableBalance === 0 && stableBalancePending === 0}
-                />
+                        // TODO: implement withdrawals && compare against minimum withdraw amount
+                        disabled={
+                            stableBalance === 0 && stableBalancePending === 0
+                        }
+                    />
+                </View>
             </View>
         </View>
     )
@@ -117,6 +126,11 @@ const StabilityHome: React.FC<Props> = () => {
 const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+        },
+        content: {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
