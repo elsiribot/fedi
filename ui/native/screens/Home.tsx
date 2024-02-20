@@ -8,7 +8,6 @@ import { ScrollView, StyleSheet, View } from 'react-native'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useIsStabilityPoolSupported } from '@fedi/common/hooks/federation'
 import {
-    selectFederationBalance,
     selectIsActiveFederationRecovering,
     selectStableBalanceEnabled,
 } from '@fedi/common/redux'
