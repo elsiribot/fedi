@@ -26,6 +26,10 @@ const baseFed: Federation = {
     version: 0,
     clientConfig: null,
     meta: {},
+    fediFeeSchedule: {
+        remittanceThresholdMsat: 100_000,
+        modules: {},
+    },
 }
 
 const fedWithNoMetadata: Federation = {

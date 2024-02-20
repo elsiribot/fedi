@@ -2,28 +2,23 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
-use std::time::UNIX_EPOCH;
-use std::usize;
 
 use anyhow::{anyhow, bail, Context, Result};
-use bitcoin::secp256k1::{Message, PublicKey, Secp256k1};
-use bitcoin::{Address, XOnlyPublicKey};
-use fedi_social_client::{FediSocialCommonGen, RecoveryId};
+use bitcoin::secp256k1::Message;
+use bitcoin::Address;
+use fedi_social_client::FediSocialCommonGen;
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
-use fedimint_core::api::{DynGlobalApi, InviteCode as InviteCodeV2, WsFederationApi};
+use fedimint_core::api::{DynGlobalApi, InviteCode, WsFederationApi};
 use fedimint_core::config::ClientConfig;
-use fedimint_core::core::{ModuleKind, OperationId};
 use fedimint_core::encoding::Decodable;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::CommonModuleInit;
 use fedimint_core::task::TaskGroup;
-use fedimint_core::{Amount, PeerId};
-use fedimint_derive_secret::{ChildId, DerivableSecret};
+use fedimint_core::PeerId;
 use futures::future::join_all;
 use lightning_invoice::Bolt11Invoice;
 use rand::distributions::{Alphanumeric, DistString};
-use stability_pool_client::ClientAccountInfo;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info};
 
@@ -35,10 +30,12 @@ use super::types::{
     RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo, RpcTransaction, RpcXmppCredentials,
     SocialRecoveryApproval, SocialRecoveryQr,
 };
-use crate::constants::{LNURL_CHILD_ID, NOSTR_CHILD_ID};
+use crate::api::IFediApi;
 use crate::error::{get_error_code, ErrorCode};
 use crate::event::SocialRecoveryEvent;
 use crate::federation_v2::{self, FederationV2};
+use crate::fedi_fee::FediFeeHelper;
+use crate::multi::MultiFederation;
 use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
 use crate::storage::{AppState, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule};
 use crate::types::{
@@ -51,323 +48,30 @@ use crate::utils::required_threashold_of;
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
 pub const VERIFICATION_FILENAME: &str = "verification.mp4";
 
-pub enum MultiFederation {
-    V2(FederationV2),
-}
-
-impl MultiFederation {
-    pub fn federation_id(&self) -> RpcFederationId {
-        match self {
-            Self::V2(multi) => RpcFederationId(multi.federation_id().to_string()),
-        }
-    }
-
-    pub async fn generate_address(&self) -> Result<String> {
-        match self {
-            Self::V2(multi) => multi.generate_address().await,
-        }
-    }
-
-    pub async fn generate_invoice(
-        &self,
-        amount: RpcAmount,
-        description: String,
-        expiry_time: Option<u64>,
-    ) -> Result<RpcInvoice> {
-        match self {
-            Self::V2(multi) => {
-                multi
-                    .generate_invoice(amount, description, expiry_time)
-                    .await
-            }
-        }
-    }
-
-    pub async fn pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<RpcPayInvoiceResponse> {
-        match self {
-            Self::V2(v2) => v2.pay_invoice(&invoice.clone()).await,
-        }
-    }
-
-    pub async fn pay_address(
-        &self,
-        address: Address,
-        amount: bitcoin::Amount,
-    ) -> Result<RpcPayAddressResponse> {
-        info!("pay address amount is {}", amount);
-        match self {
-            Self::V2(v2) => v2.pay_address(address, amount).await,
-        }
-    }
-
-    pub async fn list_gateways(&self) -> Result<Vec<RpcLightningGateway>> {
-        match self {
-            Self::V2(v2) => v2.list_gateways().await,
-        }
-    }
-
-    pub async fn switch_gateway(&self, gateway_id: &PublicKey) -> Result<()> {
-        match self {
-            Self::V2(v2) => v2.switch_gateway(gateway_id).await,
-        }
-    }
-
-    pub async fn get_balance(&self) -> Amount {
-        match self {
-            Self::V2(v2) => v2.get_balance().await,
-        }
-    }
-
-    pub async fn guardian_status(&self) -> anyhow::Result<Vec<GuardianStatus>> {
-        match self {
-            Self::V2(v2) => v2.guardian_status().await,
-        }
-    }
-
-    pub async fn receive_ecash(&self, ecash: String) -> Result<Amount> {
-        match self {
-            Self::V2(v2) => v2.receive_ecash(ecash).await,
-        }
-    }
-
-    pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
-        match self {
-            Self::V2(v2) => v2.generate_ecash(amount).await,
-        }
-    }
-
-    pub async fn cancel_ecash(&self, ecash: String) -> Result<()> {
-        match self {
-            Self::V2(v2) => {
-                v2.cancel_ecash(ecash.parse().context(ErrorCode::BadRequest)?)
-                    .await
-            }
-        }
-    }
-
-    pub async fn backup(&self) -> Result<()> {
-        match self {
-            Self::V2(v2) => v2.backup().await,
-        }
-    }
-
-    pub async fn get_xmpp_username(&self) -> Option<String> {
-        match self {
-            Self::V2(v2) => v2.get_xmpp_username().await,
-        }
-    }
-
-    pub async fn save_xmpp_username(&self, username: &str) -> Result<()> {
-        match self {
-            Self::V2(v2) => {
-                v2.save_xmpp_username(username).await?;
-                // after recovering we will do backup always
-                if !*v2.recovering.lock().await {
-                    v2.backup().await?;
-                }
-            }
-        }
-        Ok(())
-    }
-
-    pub async fn upload_backup_file(
-        &self,
-        video_file: Vec<u8>,
-        root_mnemonic: bip39::Mnemonic,
-    ) -> Result<Vec<u8>> {
-        match self {
-            Self::V2(v2) => v2.upload_backup_file(video_file, root_mnemonic).await,
-        }
-    }
-
-    pub async fn download_verification_doc(
-        &self,
-        recovery_id: RecoveryId,
-    ) -> Result<Option<Vec<u8>>> {
-        match self {
-            Self::V2(v2) => v2.download_verification_doc(&recovery_id).await,
-        }
-    }
-
-    pub async fn approve_social_recovery_request(
-        &self,
-        recovery_id: &RecoveryId,
-        peer_id: PeerId,
-        password: &str,
-    ) -> Result<()> {
-        match self {
-            Self::V2(v2) => {
-                v2.approve_social_recovery_request(recovery_id, peer_id, password)
-                    .await
-            }
-        }
-    }
-
-    pub async fn list_transactions(
-        &self,
-        start_time: Option<u32>,
-        limit: Option<u32>,
-    ) -> Result<Vec<RpcTransaction>> {
-        let time = start_time.map(|n| UNIX_EPOCH + std::time::Duration::from_secs(n.into()));
-        let operation_id = OperationId::new_random();
-
-        let usize_limit = limit.map_or(usize::MAX as u32, |l| l) as usize;
-
-        Ok(match self {
-            Self::V2(v2) => {
-                let start_after = time.map(|t| fedimint_client::db::ChronologicalOperationLogKey {
-                    creation_time: t,
-                    operation_id,
-                });
-                v2.list_transactions(usize_limit, start_after).await
-            }
-        })
-    }
-
-    pub async fn update_transaction_notes(
-        &self,
-        transaction_id: String,
-        notes: String,
-    ) -> anyhow::Result<()> {
-        match self {
-            Self::V2(v2) => {
-                v2.update_transaction_notes(transaction_id.parse()?, notes)
-                    .await?
-            }
-        };
-        Ok(())
-    }
-
-    pub async fn sign_lnurl_message(
-        &self,
-        message: &Message,
-        domain: String,
-        global_root_secret: DerivableSecret,
-    ) -> RpcSignedLnurlMessage {
-        match self {
-            Self::V2(_) => {
-                let secp = Secp256k1::new();
-                let lnurl_secret = global_root_secret.child_key(ChildId(LNURL_CHILD_ID));
-                let lnurl_secret_bytes: [u8; 32] = lnurl_secret.to_random_bytes();
-                let lnurl_domain_secret =
-                    DerivableSecret::new_root(&lnurl_secret_bytes, domain.as_bytes());
-                let lnurl_domain_keypair = lnurl_domain_secret.to_secp_key(&secp);
-                let lnurl_domain_pubkey = lnurl_domain_keypair.public_key();
-                let signature = secp.sign_ecdsa(message, &lnurl_domain_keypair.secret_key());
-                RpcSignedLnurlMessage {
-                    signature,
-                    pubkey: RpcPublicKey(lnurl_domain_pubkey),
-                }
-            }
-        }
-    }
-
-    pub async fn get_xmpp_credentials(&self) -> RpcXmppCredentials {
-        match self {
-            Self::V2(v2) => v2.get_xmpp_credentials().await,
-        }
-    }
-
-    pub async fn get_nostr_pub_key(
-        &self,
-        global_root_secret: DerivableSecret,
-    ) -> Result<XOnlyPublicKey> {
-        match self {
-            Self::V2(_) => {
-                let secp = Secp256k1::new();
-                let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
-                let nostr_keypair = nostr_secret.to_secp_key(&secp);
-                let nostr_pubkey = nostr_keypair.x_only_public_key();
-                Ok(nostr_pubkey.0)
-            }
-        }
-    }
-
-    pub async fn sign_nostr_event(
-        &self,
-        event_hash: String,
-        global_root_secret: DerivableSecret,
-    ) -> Result<String> {
-        match self {
-            Self::V2(_) => {
-                let secp = Secp256k1::new();
-                let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
-                let nostr_keypair = nostr_secret.to_secp_key(&secp);
-                let data = &hex::decode(event_hash)?;
-                let message = Message::from_slice(data)?;
-                let sig = secp.sign_schnorr(&message, &nostr_keypair);
-                // Return hex-encoded string
-                Ok(format!("{}", sig))
-            }
-        }
-    }
-
-    pub async fn stability_pool_account_info(
-        &self,
-        force_update: bool,
-    ) -> Result<ClientAccountInfo> {
-        match self {
-            Self::V2(v2) => v2.stability_pool_account_info(force_update).await,
-        }
-    }
-
-    pub async fn stability_pool_deposit_to_seek(&self, amount: Amount) -> Result<OperationId> {
-        match self {
-            MultiFederation::V2(v2) => v2.stability_pool_deposit_to_seek(amount).await,
-        }
-    }
-
-    pub async fn stability_pool_withdraw(
-        &self,
-        unlocked_amount: Amount,
-        locked_bps: u32,
-    ) -> Result<OperationId> {
-        match self {
-            MultiFederation::V2(v2) => {
-                v2.stability_pool_withdraw(unlocked_amount, locked_bps)
-                    .await
-            }
-        }
-    }
-
-    async fn stability_pool_next_cycle_start_time(&self) -> Result<u64> {
-        match self {
-            MultiFederation::V2(v2) => v2.stability_pool_next_cycle_start_time().await,
-        }
-    }
-
-    async fn stability_pool_cycle_start_price(&self) -> Result<u64> {
-        match self {
-            MultiFederation::V2(v2) => v2.stability_pool_cycle_start_price().await,
-        }
-    }
-
-    pub async fn set_module_fee_schedule(
-        &self,
-        module: ModuleKind,
-        fee_schedule: ModuleFediFeeSchedule,
-    ) {
-        match self {
-            MultiFederation::V2(v2) => v2.set_module_fee_schedule(module, fee_schedule).await,
-        }
-    }
-}
-
 /// This is instantiated once as a global. When RPC commands come in, this
 /// struct is used as a router to look up the federation and handle the RPC
 /// command using it.
 pub struct Bridge {
     pub storage: Storage,
-    pub app_state: AppState,
+    pub app_state: Arc<AppState>,
     pub federations: Arc<Mutex<HashMap<String, Arc<MultiFederation>>>>,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
+    pub fedi_fee_helper: Arc<FediFeeHelper>,
 }
 
 impl Bridge {
-    pub async fn new(storage: Storage, event_sink: EventSink) -> Result<Self> {
+    pub async fn new(
+        storage: Storage,
+        event_sink: EventSink,
+        fedi_api: Arc<dyn IFediApi>,
+    ) -> Result<Self> {
         let task_group = TaskGroup::new();
-        let app_state = AppState::load(storage.clone()).await?;
+        let app_state = Arc::new(AppState::load(storage.clone()).await?);
+
+        // Note that instantiating FediFeeHelper spawns a new task to asynchronously
+        // fetch the fee schedule and update appstate
+        let fedi_fee_helper = Arc::new(FediFeeHelper::new(fedi_api.clone(), app_state.clone()));
 
         let root_mnemonic = app_state
             .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
@@ -397,11 +101,7 @@ impl Bridge {
                                 task_group.make_subgroup().await,
                                 &root_mnemonic,
                                 None,
-                                get_federation_fedi_fee_schedule(
-                                    &app_state,
-                                    federation_id_str.clone(),
-                                )
-                                .await?,
+                                fedi_fee_helper.clone(),
                             )
                             .await
                             .with_context(|| {
@@ -413,14 +113,17 @@ impl Bridge {
                 ))
             });
 
-        let federations = HashMap::from_iter(futures::future::try_join_all(federations).await?);
+        let federations = Arc::new(Mutex::new(HashMap::from_iter(
+            futures::future::try_join_all(federations).await?,
+        )));
 
         Ok(Self {
             storage,
             app_state,
-            federations: Arc::new(Mutex::new(federations)),
+            federations,
             event_sink,
             task_group,
+            fedi_fee_helper,
         })
     }
 
@@ -450,7 +153,7 @@ impl Bridge {
 
     async fn join_federation_v2(&self, invite_code_string: String) -> Result<Arc<MultiFederation>> {
         // Check if we've already joined this federation
-        let invite_code: InviteCodeV2 = InviteCodeV2::from_str(&invite_code_string)?;
+        let invite_code = InviteCode::from_str(&invite_code_string)?;
         if self
             .get_multi_maybe_recovering(&invite_code.federation_id().to_string())
             .await
@@ -464,9 +167,6 @@ impl Bridge {
             .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
             .await;
 
-        // TODO shaurya actually fetch fee schedule when endpoint available
-        let fedi_fee_schedule = FediFeeSchedule::default();
-
         let db_name = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
         let federation = FederationV2::join(
             invite_code_string,
@@ -475,7 +175,7 @@ impl Bridge {
             TaskGroup::new(),
             &db_name,
             &root_mnemonic,
-            fedi_fee_schedule.clone(),
+            self.fedi_fee_helper.clone(),
         )
         .await?;
         let federation_id = federation.federation_id();
@@ -492,7 +192,7 @@ impl Bridge {
                         FederationInfo {
                             version: 2,
                             database_name: db_name,
-                            fedi_fee_schedule,
+                            fedi_fee_schedule: FediFeeSchedule::default(),
                         },
                     );
                     Ok(())
@@ -503,6 +203,11 @@ impl Bridge {
         federations
             .entry(federation_id.to_string())
             .or_insert_with(|| multi.clone());
+
+        // Spawn a new task to asynchronously fetch the fee schedule and update app
+        // state
+        self.fedi_fee_helper.fetch_and_update_fedi_fee_schedule();
+
         Ok(multi)
     }
 
@@ -1141,13 +846,16 @@ impl Bridge {
         send_ppm: u64,
         receive_ppm: u64,
     ) -> Result<()> {
-        self.set_federation_module_fedi_fee_schedule(
-            federation_id.0,
-            fedimint_mint_client::KIND,
-            send_ppm,
-            receive_ppm,
-        )
-        .await
+        self.fedi_fee_helper
+            .set_module_fee_schedule(
+                federation_id.0,
+                fedimint_mint_client::KIND,
+                ModuleFediFeeSchedule {
+                    send_ppm,
+                    receive_ppm,
+                },
+            )
+            .await
     }
 
     pub async fn set_wallet_module_fedi_fee_schedule(
@@ -1156,13 +864,16 @@ impl Bridge {
         send_ppm: u64,
         receive_ppm: u64,
     ) -> Result<()> {
-        self.set_federation_module_fedi_fee_schedule(
-            federation_id.0,
-            fedimint_wallet_client::KIND,
-            send_ppm,
-            receive_ppm,
-        )
-        .await
+        self.fedi_fee_helper
+            .set_module_fee_schedule(
+                federation_id.0,
+                fedimint_wallet_client::KIND,
+                ModuleFediFeeSchedule {
+                    send_ppm,
+                    receive_ppm,
+                },
+            )
+            .await
     }
 
     pub async fn set_lightning_module_fedi_fee_schedule(
@@ -1171,13 +882,16 @@ impl Bridge {
         send_ppm: u64,
         receive_ppm: u64,
     ) -> Result<()> {
-        self.set_federation_module_fedi_fee_schedule(
-            federation_id.0,
-            fedimint_ln_common::KIND,
-            send_ppm,
-            receive_ppm,
-        )
-        .await
+        self.fedi_fee_helper
+            .set_module_fee_schedule(
+                federation_id.0,
+                fedimint_ln_common::KIND,
+                ModuleFediFeeSchedule {
+                    send_ppm,
+                    receive_ppm,
+                },
+            )
+            .await
     }
 
     pub async fn set_stability_pool_module_fedi_fee_schedule(
@@ -1186,71 +900,15 @@ impl Bridge {
         send_ppm: u64,
         receive_ppm: u64,
     ) -> Result<()> {
-        self.set_federation_module_fedi_fee_schedule(
-            federation_id.0,
-            stability_pool_client::common::KIND,
-            send_ppm,
-            receive_ppm,
-        )
-        .await
-    }
-
-    // We need to update both the runtime instance of the federation, as well as the
-    // FederationInfo stored in the AppState.
-    async fn set_federation_module_fedi_fee_schedule(
-        &self,
-        federation_id_str: String,
-        module: ModuleKind,
-        send_ppm: u64,
-        receive_ppm: u64,
-    ) -> Result<()> {
-        let multi = self.get_multi(&federation_id_str).await?;
-        multi
+        self.fedi_fee_helper
             .set_module_fee_schedule(
-                module.clone(),
+                federation_id.0,
+                stability_pool_client::common::KIND,
                 ModuleFediFeeSchedule {
                     send_ppm,
                     receive_ppm,
                 },
             )
-            .await;
-        self.app_state
-            .with_write_lock(move |state| {
-                Box::pin(async move {
-                    let Some(fed_info) = state.joined_federations.get_mut(&federation_id_str)
-                    else {
-                        bail!("Unknown federation")
-                    };
-                    fed_info.fedi_fee_schedule.modules.insert(
-                        module,
-                        ModuleFediFeeSchedule {
-                            send_ppm,
-                            receive_ppm,
-                        },
-                    );
-                    Ok(())
-                })
-            })
             .await
     }
-}
-
-/// Static helper method. For the given AppState and federation ID, reads the
-/// AppState to retrieve the fedi fee schedule and returns it. If the federation
-/// is unknown, returns an error.
-async fn get_federation_fedi_fee_schedule(
-    app_state: &AppState,
-    federation_id_str: String,
-) -> anyhow::Result<FediFeeSchedule> {
-    app_state
-        .with_read_lock(move |state| {
-            Box::pin(async move {
-                state
-                    .joined_federations
-                    .get(&federation_id_str)
-                    .ok_or(anyhow!("Unknown federation"))
-                    .map(|fed_info| fed_info.fedi_fee_schedule.clone())
-            })
-        })
-        .await
 }

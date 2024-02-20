@@ -1363,6 +1363,7 @@ dependencies = [
  "lightning-invoice 0.26.0",
  "macro_rules_attribute",
  "rand",
+ "reqwest",
  "ring 0.17.5",
  "rolling-file",
  "serde",

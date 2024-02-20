@@ -12,6 +12,7 @@ use tokio::sync::{mpsc, oneshot, Mutex};
 use tokio_util::codec::{Framed, LinesCodec};
 use tracing::{error, info};
 
+use crate::api::LiveFediApi;
 use crate::event::IEventSink;
 use crate::ffi::PathBasedStorage;
 use crate::rpc::{fedimint_initialize_async, fedimint_rpc_async};
@@ -165,9 +166,13 @@ pub async fn init(data_dir: PathBuf) -> anyhow::Result<()> {
             });
         }
     }
-    let bridge = fedimint_initialize_async(Arc::new(storage), Arc::new(response_tx.clone()))
-        .await
-        .context("fedimint initalize")?;
+    let bridge = fedimint_initialize_async(
+        Arc::new(storage),
+        Arc::new(response_tx.clone()),
+        Arc::new(LiveFediApi::new()),
+    )
+    .await
+    .context("fedimint initalize")?;
 
     while let Some(request) = request_rx.recv().await {
         let response = fedimint_rpc_async(bridge.clone(), request.method, request.body).await;
