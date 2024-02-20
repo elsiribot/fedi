@@ -5,7 +5,7 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 $REPO_ROOT/scripts/enforce-nix.sh
 
 pushd $REPO_ROOT/bridge/fedi-wasm || exit
-wasm-pack build --target web --out-dir out "$@"
+env CARGO_TARGET_DIR=$REPO_ROOT/target/wasm-pack wasm-pack build --target web --out-dir out "$@"
 popd || exit
 
 WASM_OUT="$REPO_ROOT/bridge/fedi-wasm/out"
