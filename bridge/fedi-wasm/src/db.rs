@@ -8,10 +8,10 @@ use fedimint_core::db::{
     PrefixStream,
 };
 use fedimint_core::{apply, async_trait_maybe_send};
+use futures::lock::Mutex;
 use futures::stream;
 use imbl::OrdMap;
 use rexie::{Rexie, TransactionMode};
-use tokio::sync::Mutex;
 use tracing::error;
 use wasm_bindgen::JsCast;
 
