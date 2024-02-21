@@ -320,10 +320,9 @@ impl Bridge {
         federation_id: RpcFederationId,
         amount: RpcAmount,
         description: String,
+        expiry_time: Option<u64>,
     ) -> Result<RpcInvoice> {
         let multi = self.get_multi(&federation_id.0).await?;
-        // FIXME: add this to RPC interface
-        let expiry_time = None;
         multi
             .generate_invoice(amount, description, expiry_time)
             .await

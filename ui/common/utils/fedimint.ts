@@ -124,11 +124,13 @@ export class FedimintBridge {
         amount: MSats,
         description: string,
         federationId: string,
+        expiry: number | null = null,
     ) {
         return this.rpcTyped('generateInvoice', {
             amount,
             description,
             federationId,
+            expiry,
         })
     }
 
