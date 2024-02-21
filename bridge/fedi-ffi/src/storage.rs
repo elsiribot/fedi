@@ -77,38 +77,37 @@ pub struct FediFeeSchedule {
 impl Default for FediFeeSchedule {
     fn default() -> Self {
         let mut modules = BTreeMap::new();
-        // Default all fees to 0 for now.
-        // TODO shaurya change defaults to non-0 when closer to live testing/prod.
+        let default_send_ppm = 2100; // 21 BPS
         modules.insert(
             fedimint_mint_client::KIND,
             ModuleFediFeeSchedule {
-                send_ppm: 0,
+                send_ppm: default_send_ppm,
                 receive_ppm: 0,
             },
         );
         modules.insert(
             fedimint_ln_common::KIND,
             ModuleFediFeeSchedule {
-                send_ppm: 0,
+                send_ppm: default_send_ppm,
                 receive_ppm: 0,
             },
         );
         modules.insert(
             fedimint_wallet_client::KIND,
             ModuleFediFeeSchedule {
-                send_ppm: 0,
+                send_ppm: default_send_ppm,
                 receive_ppm: 0,
             },
         );
         modules.insert(
             stability_pool_client::common::KIND,
             ModuleFediFeeSchedule {
-                send_ppm: 0,
+                send_ppm: default_send_ppm,
                 receive_ppm: 0,
             },
         );
         Self {
-            remittance_threshold_msat: 100,
+            remittance_threshold_msat: 10_000,
             modules,
         }
     }
