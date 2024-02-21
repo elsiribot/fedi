@@ -214,6 +214,7 @@ export interface RpcMethods {
             federationId: RpcFederationId
             amount: RpcAmount
             description: string
+            expiry: number | null
         },
         string,
     ]

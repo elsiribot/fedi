@@ -137,9 +137,11 @@ async fn generateInvoice(
     federation_id: RpcFederationId,
     amount: RpcAmount,
     description: String,
+    // 2^32 is big enough for expiry
+    expiry: Option<u32>,
 ) -> anyhow::Result<String> {
     let rpc_invoice = bridge
-        .generate_invoice(federation_id, amount, description)
+        .generate_invoice(federation_id, amount, description, expiry.map(|x| x.into()))
         .await?;
     // TODO: actually return the RpcInvoice (frontend expects string)
     Ok(rpc_invoice.invoice)
@@ -1010,6 +1012,7 @@ mod tests {
             federation.federation_id(),
             rpc_receive_amount,
             description,
+            None,
         )
         .await?;
 
