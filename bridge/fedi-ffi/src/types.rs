@@ -602,6 +602,11 @@ pub struct EcashReceiveMetadata {
     pub internal: bool,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct LightningSendMetadata {
+    pub is_fedi_fee_remittance: bool,
+}
+
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]

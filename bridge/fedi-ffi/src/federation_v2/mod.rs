@@ -10,6 +10,7 @@ use std::time::{Duration, SystemTime};
 
 use ::serde::{Deserialize, Serialize};
 use anyhow::{anyhow, bail, Context, Result};
+use async_recursion::async_recursion;
 use bitcoin::secp256k1::{self, PublicKey, Secp256k1};
 use bitcoin::{Address, Network};
 use db::{FediRawClientConfigKey, InviteCodeKey, TransactionNotesKey, XmppUsernameKey};
@@ -86,7 +87,7 @@ use crate::fedi_fee::FediFeeHelper;
 use crate::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::storage::FediFeeSchedule;
 use crate::types::{
-    EcashReceiveMetadata, GuardianStatus, OperationFediFeeStatus, RpcBitcoinDetails, RpcEcashInfo,
+    EcashReceiveMetadata, GuardianStatus, LightningSendMetadata, OperationFediFeeStatus, RpcBitcoinDetails, RpcEcashInfo,
     RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
     RpcPayAddressResponse, RpcStabilityPoolTransactionState, RpcTransaction,
     RpcTransactionDirection, WithdrawalDetails,
@@ -750,16 +751,19 @@ impl FederationV2 {
         }
 
         let _federation_id = self.federation_id();
+        let extra_meta = LightningSendMetadata {
+            is_fedi_fee_remittance: false,
+        };
         let OutgoingLightningPayment { payment_type, .. } = self
             .client
             .get_first_module::<LightningClientModule>()
-            .pay_bolt11_invoice(invoice.to_owned(), ())
+            .pay_bolt11_invoice(invoice.to_owned(), extra_meta.clone())
             .await?;
         self.write_pending_send_fedi_fee(payment_type.operation_id(), Amount::from_msats(fedi_fee))
             .await?;
 
         let response = self
-            .subscribe_to_ln_pay(payment_type, invoice.clone())
+            .subscribe_to_ln_pay(payment_type, extra_meta, invoice.clone())
             .await?;
 
         Ok(response)
@@ -922,9 +926,13 @@ impl FederationV2 {
             LIGHTNING_OPERATION_TYPE => match operation.meta() {
                 LightningOperationMeta {
                     variant: LightningOperationMetaVariant::Pay(pay_meta),
-                    ..
+                    extra_meta,
                 } => {
                     let fed = self.clone();
+                    let extra_meta = serde_json::from_value::<LightningSendMetadata>(extra_meta)
+                        .unwrap_or(LightningSendMetadata {
+                            is_fedi_fee_remittance: false,
+                        });
                     self.task_group
                         .clone()
                         .spawn("subscribe_to_ln_pay", move |_| async move {
@@ -932,6 +940,7 @@ impl FederationV2 {
                             if let Err(e) = fed
                                 .subscribe_to_ln_pay(
                                     PayType::Lightning(operation_id),
+                                    extra_meta,
                                     pay_meta.invoice,
                                 )
                                 .await
@@ -1040,9 +1049,12 @@ impl FederationV2 {
         Ok(())
     }
 
+    #[cfg_attr(target_family = "wasm", async_recursion(?Send))]
+    #[cfg_attr(not(target_family = "wasm"), async_recursion)]
     pub async fn subscribe_to_ln_pay(
         &self,
         pay_type: PayType,
+        extra_meta: LightningSendMetadata,
         _invoice: Bolt11Invoice,
     ) -> Result<RpcPayInvoiceResponse> {
         let timeout_res = timeout(PAY_INVOICE_TIMEOUT, async {
@@ -1056,13 +1068,16 @@ impl FederationV2 {
                         .into_stream();
 
                     while let Some(update) = updates.next().await {
-                        match update {
-                            InternalPayState::Preimage(_) => {
-                                let _ = self.write_success_send_fedi_fee(operation_id).await;
-                            }
-                            InternalPayState::Funding => (),
-                            _ => {
-                                let _ = self.write_failed_send_fedi_fee(operation_id).await;
+                        // Skip updating fee status if payment is for fee remittance
+                        if !extra_meta.is_fedi_fee_remittance {
+                            match update {
+                                InternalPayState::Preimage(_) => {
+                                    let _ = self.write_success_send_fedi_fee(operation_id).await;
+                                }
+                                InternalPayState::Funding => (),
+                                _ => {
+                                    let _ = self.write_failed_send_fedi_fee(operation_id).await;
+                                }
                             }
                         }
                         match update {
@@ -1106,16 +1121,19 @@ impl FederationV2 {
                     while let Some(update) = updates.next().await {
                         self.update_operation_state(operation_id, update.clone())
                             .await;
-                        match update {
-                            LnPayState::Success { .. } => {
-                                let _ = self.write_success_send_fedi_fee(operation_id).await;
+                        // Skip updating fee status if payment is for fee remittance
+                        if !extra_meta.is_fedi_fee_remittance {
+                            match update {
+                                LnPayState::Success { .. } => {
+                                    let _ = self.write_success_send_fedi_fee(operation_id).await;
+                                }
+                                LnPayState::Refunded { .. }
+                                | LnPayState::Canceled
+                                | LnPayState::UnexpectedError { .. } => {
+                                    let _ = self.write_failed_send_fedi_fee(operation_id).await;
+                                }
+                                _ => (),
                             }
-                            LnPayState::Refunded { .. }
-                            | LnPayState::Canceled
-                            | LnPayState::UnexpectedError { .. } => {
-                                let _ = self.write_failed_send_fedi_fee(operation_id).await;
-                            }
-                            _ => (),
                         }
                         match update {
                             LnPayState::Success { preimage } => {
@@ -1148,7 +1166,8 @@ impl FederationV2 {
         .await
         .context("Lightning payment failed ... awaiting refund");
 
-        if timeout_res.is_err() {
+        // Skip updating fee status if payment is for fee remittance
+        if timeout_res.is_err() && !extra_meta.is_fedi_fee_remittance {
             let _ = self
                 .write_failed_send_fedi_fee(pay_type.operation_id())
                 .await;
@@ -1764,29 +1783,40 @@ impl FederationV2 {
                         LIGHTNING_OPERATION_TYPE => {
                             let lightning_meta: LightningOperationMeta = op.1.meta();
                             match lightning_meta.variant {
-                                LightningOperationMetaVariant::Pay(LightningOperationMetaPay{ invoice, .. }) => Some(RpcTransaction {
-                                    id: op.0.operation_id.to_string(),
-                                    created_at: to_unix_time(op.0.creation_time)
-                                        .expect("unix time should exist"),
-                                    amount: RpcAmount(Amount {
-                                        msats: invoice.amount_milli_satoshis().unwrap(),
-                                    }),
-                                    fedi_fee_status,
-                                    direction: RpcTransactionDirection::Send,
-                                    notes,
-                                    onchain_state: None,
-                                    bitcoin: None,
-                                    ln_state: RpcLnState::from_ln_pay_state(
-                                        self.get_ln_pay_outcome(op.0.operation_id, op.1).await,
-                                    ),
-                                    lightning: Some(RpcLightningDetails {
-                                        invoice: invoice.to_string(),
-                                        fee: None, // TODO: to be implemented on the fedimint side
-                                    }),
-                                    oob_state: None,
-                                    onchain_withdrawal_details: None,
-                                    stability_pool_state: None,
-                                }),
+                                LightningOperationMetaVariant::Pay(LightningOperationMetaPay{ invoice, .. }) => {
+                                    let extra_meta = serde_json::from_value::<LightningSendMetadata>(lightning_meta.extra_meta)
+                                        .unwrap_or(LightningSendMetadata {
+                                            is_fedi_fee_remittance: false,
+                                        });
+                                    // Exclude fee remittance transactions from TX list
+                                    if extra_meta.is_fedi_fee_remittance {
+                                        None
+                                    } else {
+                                        Some(RpcTransaction {
+                                            id: op.0.operation_id.to_string(),
+                                            created_at: to_unix_time(op.0.creation_time)
+                                                .expect("unix time should exist"),
+                                            amount: RpcAmount(Amount {
+                                                msats: invoice.amount_milli_satoshis().unwrap(),
+                                            }),
+                                            fedi_fee_status,
+                                            direction: RpcTransactionDirection::Send,
+                                            notes,
+                                            onchain_state: None,
+                                            bitcoin: None,
+                                            ln_state: RpcLnState::from_ln_pay_state(
+                                                self.get_ln_pay_outcome(op.0.operation_id, op.1).await,
+                                            ),
+                                            lightning: Some(RpcLightningDetails {
+                                                invoice: invoice.to_string(),
+                                                fee: None, // TODO: to be implemented on the fedimint side
+                                            }),
+                                            oob_state: None,
+                                            onchain_withdrawal_details: None,
+                                            stability_pool_state: None,
+                                        })
+                                    }
+                                }
                                 LightningOperationMetaVariant::Receive{ invoice, .. } => {
                                     let ln_state = RpcLnState::from_ln_recv_state(
                                         op.1.outcome::<LnReceiveState>(),
@@ -2365,10 +2395,21 @@ impl FederationV2 {
             });
 
         match res {
-            Ok((true, _)) => info!(
-                "Successfully wrote success send fedi fee for op ID {}",
-                operation_id
-            ),
+            Ok((true, _)) => {
+                info!(
+                    "Successfully wrote success send fedi fee for op ID {}",
+                    operation_id
+                );
+                match self.remit_fedi_fee_if_threshold_met().await {
+                    Ok(true) => info!(
+                        "Successfully initiated fedi fee remittance, accrued fee exceeds threshold"
+                    ),
+                    Ok(false) => info!(
+                        "Fedi fee remittance not initiated, accrued fee doesn't exceed threshold"
+                    ),
+                    Err(e) => warn!("Error initiating fedi fee remittance {e:?}"),
+                }
+            }
             Ok((false, _)) => info!(
                 "Already recorded success send fedi fee for op ID {}, nothing overwritten",
                 operation_id
@@ -2550,10 +2591,21 @@ impl FederationV2 {
             });
 
         match res {
-            Ok((true, _)) => info!(
-                "Successfully wrote success receive fedi fee for op ID {}",
-                operation_id
-            ),
+            Ok((true, _)) => {
+                info!(
+                    "Successfully wrote success receive fedi fee for op ID {}",
+                    operation_id
+                );
+                match self.remit_fedi_fee_if_threshold_met().await {
+                    Ok(true) => info!(
+                        "Successfully initiated fedi fee remittance, accrued fee exceeds threshold"
+                    ),
+                    Ok(false) => info!(
+                        "Fedi fee remittance not initiated, accrued fee doesn't exceed threshold"
+                    ),
+                    Err(e) => warn!("Error initiating fedi fee remittance {e:?}"),
+                }
+            }
             Ok((false, _)) => info!(
                 "Already recorded success receive fedi fee for op ID {}, nothing overwritten",
                 operation_id
@@ -2624,6 +2676,85 @@ impl FederationV2 {
         }
 
         res
+    }
+
+    /// Checks whether the accrued outstanding fedi fees has surpassed the
+    /// remittance threshold. If yes, queries the fee helper to obtain a
+    /// lightning invoice to remit the fees. If the accrued outstanding fees has
+    /// not surpassed the threshold, returns Ok(false). If the fees HAS
+    /// surpassed the threshold, and we were able to successfully obtain a
+    /// lightning invoice and initiate payment, returns Ok(true). Otherwise,
+    /// returns any error we may have encountered in the remittance process.
+    async fn remit_fedi_fee_if_threshold_met(&self) -> anyhow::Result<bool> {
+        let outstanding_fees = self.get_outstanding_fedi_fees().await;
+        let remittance_threshold = self.fedi_fee_schedule().await.remittance_threshold_msat;
+        if outstanding_fees.msats < remittance_threshold {
+            return Ok(false);
+        }
+
+        self.override_active_gateway().await?;
+        let gateway = self
+            .client
+            .get_first_module::<LightningClientModule>()
+            .select_active_gateway()
+            .await?;
+        let gateway_fees = gateway.fees;
+
+        // We want to ensure that any gateway fees is debited from the accrued
+        // outstanding fees. This means that the invoice amount for remitting fees will
+        // actually be less than the accrued outstanding fees.
+
+        // Let's say that the accrued oustanding fees is Q and the desired invoice
+        // amount is X. Gateway fees is made up of two components, (base) and (ppm).
+        // Therefore, the following equation must be satisfied:
+        // X + (gateway fees) = Q
+        //
+        // Expanding (gateway fees), we get:
+        // X + (base) + [(X/M)(ppm)] = Q, where M is the constant for MILLION
+        //
+        // Solving for X, we get:
+        // X[1 + (ppm)/M] = Q - base
+        //
+        // Finally:
+        // X = [(M)(Q - base)]/(M + ppm)
+        //
+        // We keep division as the very last step to ensure minimal loss in precision.
+        // We also perform regular (floor) division to ensure that the invoice is never
+        // overestimated.
+        let invoice_amt_numerator =
+            MILLION * (outstanding_fees.msats - gateway_fees.base_msat as u64);
+        let invoice_amt_denominator = MILLION + gateway_fees.proportional_millionths as u64;
+        let invoice_amt = invoice_amt_numerator / invoice_amt_denominator;
+
+        let invoice = self
+            .fedi_fee_helper
+            .fetch_fedi_fee_invoice(Amount::from_msats(invoice_amt))
+            .await?;
+
+        // If pay_bolt11_invoice() returns successfully, we optimistically zero out
+        // oustanding fedi fees. This is ok since as part of pay_bolt11_invoice(), the
+        // ecash to pay the invoice would have already been deducted from the "real"
+        // balance and therefore the "virtual" balance should remain unaffected even if
+        // we zero out the accrued oustanding fees at this point. Note that it is still
+        // possible for the lightning payment to fail for a variety of reasons but we
+        // will address such edge cases and race conditions later. For now, losing fee
+        // sometimes is a much better outcome than double-charging fees.
+        let extra_meta = LightningSendMetadata {
+            is_fedi_fee_remittance: true,
+        };
+        let OutgoingLightningPayment { payment_type, .. } = self
+            .client
+            .get_first_module::<LightningClientModule>()
+            .pay_bolt11_invoice(invoice.to_owned(), extra_meta.clone())
+            .await?;
+        self.dbtx()
+            .await
+            .insert_entry(&OutstandingFediFeesKey, &Amount::ZERO)
+            .await;
+        self.subscribe_to_ln_pay(payment_type, extra_meta, invoice.clone())
+            .await?;
+
+        Ok(true)
     }
 }
 

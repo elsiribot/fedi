@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use anyhow::bail;
 use fedimint_core::core::ModuleKind;
+use fedimint_core::Amount;
+use lightning_invoice::Bolt11Invoice;
 use tracing::error;
 
 use crate::api::IFediApi;
@@ -140,5 +142,14 @@ impl FediFeeHelper {
                 Ok(())
             })
             .await?
+    }
+
+    /// Queries Fedi api to fetch a lightning invoice for the given amount so
+    /// that accrued oustanding fees may be remitted. Note that fee is accrued
+    /// and remitted at the federation-level (and not at the bridge-level), even
+    /// though this method is federation agnostic (because only an amount is
+    /// needed to ask for an invoice).
+    pub async fn fetch_fedi_fee_invoice(&self, amount: Amount) -> anyhow::Result<Bolt11Invoice> {
+        self.fedi_api.fetch_fedi_fee_invoice(amount).await
     }
 }
