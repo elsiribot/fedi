@@ -26,24 +26,11 @@ const SendOfflineAmount: React.FC<Props> = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState(0 as Sats)
     const [submitAttempts, setSubmitAttempts] = useState(0)
-    const { generateEcash } = useBridge()
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount()
 
-    const onGenerateEcash = async () => {
-        setIsLoading(true)
-        try {
-            const millis = amountUtils.satToMsat(Number(amount) as Sats)
-            const { ecash } = await generateEcash(millis)
-            navigation.navigate('SendOfflineQr', { ecash, amount: millis })
-        } catch (error) {
-            log.error('onGenerateEcash', error)
-        }
-        setIsLoading(false)
-    }
-
-    const continueSend = () => {
-        Keyboard.dismiss()
-        onGenerateEcash()
+    const onChangeAmount = (updatedValue: Sats) => {
+        setSubmitAttempts(0)
+        setAmount(updatedValue)
     }
 
     const onNext = () => {
@@ -51,25 +38,7 @@ const SendOfflineAmount: React.FC<Props> = () => {
         if (amount < minimumAmount || amount > maximumAmount) {
             return
         }
-
-        Alert.alert(
-            t('phrases.please-confirm'),
-            t('feature.send.offline-send-warning'),
-            [
-                {
-                    text: t('phrases.go-back'),
-                },
-                {
-                    text: t('words.continue'),
-                    onPress: continueSend,
-                },
-            ],
-        )
-    }
-
-    const onChangeAmount = (updatedValue: Sats) => {
-        setSubmitAttempts(0)
-        setAmount(updatedValue)
+        navigation.navigate('ConfirmSendEcash', { amount })
     }
 
     return (

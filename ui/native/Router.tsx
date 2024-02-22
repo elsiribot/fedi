@@ -48,6 +48,7 @@ import ChooseRecoveryMethodHeader from './components/feature/recovery/ChooseReco
 import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
 import RecoveryAssistHeader from './components/feature/recovery/RecoveryAssistHeader'
 import SocialRecoveryHeader from './components/feature/recovery/SocialRecoveryHeader'
+import ConfirmSendEcashHeader from './components/feature/send/ConfirmSendEcashHeader'
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
 import SendBitcoinOfflineHeader from './components/feature/send/SendBitcoinOfflineHeader'
 import SendBitcoinOfflineQrHeader from './components/feature/send/SendBitcoinOfflineQrHeader'
@@ -76,6 +77,8 @@ import CompleteSocialBackup from './screens/CompleteSocialBackup'
 import CompleteSocialRecovery from './screens/CompleteSocialRecovery'
 import ConfirmReceiveOffline from './screens/ConfirmReceiveOffline'
 import ConfirmRecoveryAssist from './screens/ConfirmRecoveryAssist'
+import ConfirmSendOfflineAmount from './screens/ConfirmSendEcash'
+import ConfirmSendEcash from './screens/ConfirmSendEcash'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import CreateGroup from './screens/CreateGroup'
@@ -371,6 +374,13 @@ const MainNavigator = () => {
                                 component={SendOfflineAmount}
                                 options={() => ({
                                     header: () => <SendBitcoinOfflineHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ConfirmSendEcash"
+                                component={ConfirmSendEcash}
+                                options={() => ({
+                                    header: () => <ConfirmSendEcashHeader />,
                                 })}
                             />
                             <Stack.Screen
@@ -812,7 +822,8 @@ const linking: NavigationLinkingConfig = {
                     SendSuccess: 'send-success',
                     SendOfflineAmount: 'send-offline-amount',
                     SendOfflineQr: 'send-offline-qr',
-                    // Wallet (Send)
+                    ConfirmSendOfflineAmount: 'confirm-send-offline-amount',
+                    // Wallet (Receive)
                     Receive: 'receive',
                     BitcoinRequest: 'bitcoin-request',
                     ReceiveSuccess: 'receive-success',

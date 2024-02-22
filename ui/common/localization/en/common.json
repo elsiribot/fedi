@@ -577,6 +577,7 @@
         },
         "send": {
             "camera-access-information": "To send money, you will need to allow Fedi access to your camera to scan a payment request",
+            "confirm-ecash-send": "Confirm Ecash Send",
             "confirm-send": "Confirm Send",
             "copied-offline-payment": "Copied offline payment",
             "enter-payment-request": "Enter a payment request",
