@@ -340,6 +340,15 @@ impl Bridge {
             .await
     }
 
+    pub async fn decode_invoice(
+        &self,
+        federation_id: RpcFederationId,
+        invoice: String,
+    ) -> Result<RpcInvoice> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi.decode_invoice(invoice).await
+    }
+
     pub async fn pay_invoice(
         &self,
         federation_id: RpcFederationId,

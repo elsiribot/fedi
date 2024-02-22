@@ -98,6 +98,12 @@ export interface RpcFediFeeSchedule {
     modules: Record<string, RpcModuleFediFeeSchedule>
 }
 
+export interface RpcFeeDetails {
+    fediFee: RpcAmount
+    networkFee: RpcAmount
+    federationFee: RpcAmount
+}
+
 export interface RpcGenerateEcashResponse {
     ecash: string
     cancelAt: number
@@ -106,7 +112,7 @@ export interface RpcGenerateEcashResponse {
 export interface RpcInvoice {
     paymentHash: string
     amount: RpcAmount
-    fee: RpcAmount
+    fee: RpcFeeDetails | null
     description: string
     invoice: string
 }
@@ -220,11 +226,11 @@ export interface RpcMethods {
         string,
     ]
     decodeInvoice: [
-        { invoice: string },
+        { federationId: RpcFederationId | null; invoice: string },
         {
             paymentHash: string
             amount: RpcAmount
-            fee: RpcAmount
+            fee: RpcFeeDetails | null
             description: string
             invoice: string
         },

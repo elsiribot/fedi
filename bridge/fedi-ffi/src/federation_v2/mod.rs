@@ -88,7 +88,7 @@ use crate::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::storage::FediFeeSchedule;
 use crate::types::{
     EcashReceiveMetadata, GuardianStatus, OperationFediFeeStatus, RpcBitcoinDetails, RpcEcashInfo,
-    RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
+    RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
     RpcPayAddressResponse, RpcStabilityPoolTransactionState, RpcTransaction,
     RpcTransactionDirection, WithdrawalDetails,
 };
@@ -499,7 +499,17 @@ impl FederationV2 {
         self.subscribe_invoice(operation_id, invoice.clone())
             .await?;
 
-        invoice.try_into()
+        let invoice: RpcInvoice = invoice.try_into()?;
+        Ok(RpcInvoice {
+            fee: Some(RpcFeeDetails {
+                fedi_fee: RpcAmount(Amount::from_msats(
+                    (invoice.amount.0.msats * fedi_fee_ppm).div_ceil(MILLION),
+                )),
+                network_fee: RpcAmount(Amount::ZERO),
+                federation_fee: RpcAmount(Amount::ZERO),
+            }),
+            ..invoice
+        })
     }
 
     async fn subscribe_deposit(
@@ -648,6 +658,42 @@ impl FederationV2 {
             .await?;
         override_localhost_gateway(&mut gateway, dbtx).await;
         Ok(())
+    }
+
+    /// Decodes the given lightning invoice (as String) into an RpcInvoice
+    /// whilst attaching federation-specific fee details to the response
+    pub async fn decode_invoice(&self, invoice: String) -> Result<RpcInvoice> {
+        let invoice: Bolt11Invoice = invoice.trim().parse().context(ErrorCode::InvalidInvoice)?;
+        let invoice: RpcInvoice = invoice.try_into()?;
+        let amount = invoice.amount.0;
+
+        // Calculate the different fee components
+        let fedi_fee_ppm = self
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                fedimint_ln_common::KIND,
+                RpcTransactionDirection::Send,
+            )
+            .await?;
+        let fedi_fee = (amount.msats * fedi_fee_ppm).div_ceil(MILLION);
+
+        self.override_active_gateway().await?;
+        let gateway = self
+            .client
+            .get_first_module::<LightningClientModule>()
+            .select_active_gateway()
+            .await?;
+        let gateway_fees = gateway.fees;
+        let network_fee = gateway_fees.base_msat as u64
+            + (amount.msats * gateway_fees.proportional_millionths as u64).div_ceil(MILLION);
+        let fee = Some(RpcFeeDetails {
+            fedi_fee: RpcAmount(Amount::from_msats(fedi_fee)),
+            network_fee: RpcAmount(Amount::from_msats(network_fee)),
+            federation_fee: RpcAmount(Amount::ZERO),
+        });
+
+        Ok(RpcInvoice { fee, ..invoice })
     }
 
     /// Pay lightning invoice

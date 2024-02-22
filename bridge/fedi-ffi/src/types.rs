@@ -160,24 +160,13 @@ pub struct RpcEcashInfo {
 pub struct RpcInvoice {
     pub payment_hash: String,
     pub amount: RpcAmount,
-    pub fee: RpcAmount,
+    pub fee: Option<RpcFeeDetails>,
     pub description: String,
     pub invoice: String,
 }
 
-/// FIXME: probably shouldn't return option
-pub fn hacky_lightning_invoice_fee(
-    invoice: &lightning_invoice::Bolt11Invoice,
-) -> anyhow::Result<fedimint_core::Amount> {
-    invoice
-        .amount_milli_satoshis()
-        .map(|msat| {
-            fedimint_core::Amount::from_msats(msat / 100) // FIXME: hard-coded
-                                                          // 1% fee
-        })
-        .ok_or(anyhow!("Invoice missing amount"))
-}
-
+// Federation-agnostic conversion of Bolt11Invoice to RpcInvoice. Fee details
+// are absent as a result.
 impl TryFrom<lightning_invoice::Bolt11Invoice> for RpcInvoice {
     type Error = anyhow::Error;
 
@@ -193,16 +182,23 @@ impl TryFrom<lightning_invoice::Bolt11Invoice> for RpcInvoice {
             lightning_invoice::Bolt11InvoiceDescription::Hash(_) => "".to_string(),
         };
 
-        let fee = hacky_lightning_invoice_fee(&invoice)?;
-
         Ok(RpcInvoice {
             amount: RpcAmount(amount),
-            fee: RpcAmount(fee),
+            fee: None,
             description,
             invoice: invoice.to_string(),
             payment_hash: invoice.payment_hash().to_string(),
         })
     }
+}
+
+#[derive(Clone, Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcFeeDetails {
+    pub fedi_fee: RpcAmount,
+    pub network_fee: RpcAmount,
+    pub federation_fee: RpcAmount,
 }
 
 #[derive(Debug, Serialize, TS)]

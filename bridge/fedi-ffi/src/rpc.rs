@@ -149,11 +149,19 @@ async fn generateInvoice(
 
 #[macro_rules_derive(rpc_method!)]
 // FIXME: make this argument RpcInvoice?
-async fn decodeInvoice(_bridge: Arc<Bridge>, invoice: String) -> anyhow::Result<RpcInvoice> {
+async fn decodeInvoice(
+    bridge: Arc<Bridge>,
+    federation_id: Option<RpcFederationId>,
+    invoice: String,
+) -> anyhow::Result<RpcInvoice> {
     // TODO: validate the invoice (same network, haven't already paid, etc)
-    let invoice: Bolt11Invoice = invoice.trim().parse().context(ErrorCode::InvalidInvoice)?;
-    let bridge_invoice = RpcInvoice::try_from(invoice)?;
-    Ok(bridge_invoice)
+    if let Some(federation_id) = federation_id {
+        bridge.decode_invoice(federation_id, invoice).await
+    } else {
+        let invoice: Bolt11Invoice = invoice.trim().parse().context(ErrorCode::InvalidInvoice)?;
+        let bridge_invoice = RpcInvoice::try_from(invoice)?;
+        Ok(bridge_invoice)
+    }
 }
 
 #[macro_rules_derive(rpc_method!)]

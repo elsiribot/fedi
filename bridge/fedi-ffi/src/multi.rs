@@ -54,6 +54,12 @@ impl MultiFederation {
         }
     }
 
+    pub async fn decode_invoice(&self, invoice: String) -> Result<RpcInvoice> {
+        match self {
+            Self::V2(v2) => v2.decode_invoice(invoice).await,
+        }
+    }
+
     pub async fn pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<RpcPayInvoiceResponse> {
         match self {
             Self::V2(v2) => v2.pay_invoice(&invoice.clone()).await,
