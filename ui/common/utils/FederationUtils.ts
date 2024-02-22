@@ -301,6 +301,17 @@ export const shouldShowOnchainDeposits = (metadata: ClientConfigMetadata) => {
         : onchainDepositsDisabled !== 'true'
 }
 
+export const shouldShowStabilityPool = (metadata: ClientConfigMetadata) => {
+    const stabilityPoolDisabled = getMetaField(
+        SupportedMetaFields.stability_pool_disabled,
+        metadata,
+    )
+    // Disable stability pool by default if not specified in meta
+    return stabilityPoolDisabled === null
+        ? false
+        : stabilityPoolDisabled !== 'true'
+}
+
 export const shouldEnableNostr = (federation: Federation) => {
     // Nostr RPCs not supported on v0 federations
     if (federation.version === 0) {

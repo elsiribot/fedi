@@ -15,6 +15,7 @@ import {
     shouldEnableNostr,
     getFederationChatServerDomain,
     getFederationPopupInfo,
+    shouldShowStabilityPool,
 } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
 
@@ -51,7 +52,9 @@ export function useIsStabilityPoolSupported() {
             }
         }
     }
-    return supported
+    return (
+        supported || shouldShowStabilityPool(activeFederation.meta)
+    )
 }
 
 export function useIsOfflineWalletSupported() {
@@ -68,6 +71,7 @@ export function useIsOnchainDepositSupported() {
         selectOnchainDepositsEnabled,
     )
     if (!activeFederation) return false
+
     if (activeFederation.version < 1) return false
 
     return (
