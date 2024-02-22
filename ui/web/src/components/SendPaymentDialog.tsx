@@ -176,7 +176,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
         )
     } else {
         content = (
-            <>
+            <OmniInputContainer>
                 <OmniInput
                     inputLabel={t('feature.send.enter-payment-request')}
                     inputPlaceholder="lnbc..."
@@ -195,7 +195,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                             : undefined
                     }
                 />
-            </>
+            </OmniInputContainer>
         )
     }
 
@@ -218,6 +218,10 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
         </Dialog>
     )
 }
+
+const OmniInputContainer = styled('div', {
+    display: 'flex',
+})
 
 const Container = styled('div', {
     flex: 1,
