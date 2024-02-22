@@ -61,6 +61,7 @@ const themeDefaults = {
         stabilityPoolCircleThickness: 2,
         unreadIndicatorSize: 10,
         historyIcon: 38,
+        addFederationButtonHeight: 56,
     },
     spacing: {
         ...fediTheme.spacing,
