@@ -39,7 +39,7 @@ function PersonalBackupPage() {
         <ContentBlock>
             <Layout.Root>
                 <Layout.Header back="/settings/backup">
-                    <Layout.Title>
+                    <Layout.Title subheader>
                         {t('feature.backup.personal-backup')}
                     </Layout.Title>
                 </Layout.Header>

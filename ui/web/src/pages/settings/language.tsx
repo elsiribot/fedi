@@ -37,7 +37,7 @@ function LanguageSettings() {
         <ContentBlock>
             <Layout.Root>
                 <Layout.Header back="/settings">
-                    <Layout.Title>{t('words.language')}</Layout.Title>
+                    <Layout.Title subheader>{t('words.language')}</Layout.Title>
                 </Layout.Header>
                 <Layout.Content>
                     <RadioGroup

@@ -42,6 +42,14 @@ const navRoutes: Array<PrefixRoute | AbsoluteRoute> = [
         path: '/settings/app',
         showWhen: 'desktop',
     },
+    {
+        path: '/settings/language',
+        showWhen: 'desktop',
+    },
+    {
+        path: '/settings/currency',
+        showWhen: 'desktop',
+    },
 ]
 
 /**

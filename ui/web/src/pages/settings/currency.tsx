@@ -27,7 +27,7 @@ function AppSettings() {
         <ContentBlock>
             <Layout.Root>
                 <Layout.Header back="/settings">
-                    <Layout.Title>{t('words.currency')}</Layout.Title>
+                    <Layout.Title subheader>{t('words.currency')}</Layout.Title>
                 </Layout.Header>
                 <Layout.Content>
                     <RadioGroup

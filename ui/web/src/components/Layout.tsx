@@ -23,7 +23,7 @@ export function Header({
     const router = useRouter()
 
     return (
-        <HeaderContainer {...props}>
+        <HeaderContainer displaceBackIcon={!!back} {...props}>
             {back && isSm ? (
                 <IconButton
                     icon={ChevronLeft}
@@ -55,6 +55,15 @@ export const HeaderContainer = styled('div', {
                 padding: 16,
             },
         },
+        displaceBackIcon: {
+            true: {
+                '@sm': {
+                    // Makes up for the space taken by the back button
+                    // 32px width + 8px gap
+                    marginRight: 40,
+                },
+            },
+        },
     },
 })
 
@@ -82,6 +91,16 @@ export const Title = styled('h1', {
             true: {
                 fontSize: theme.fontSizes.h2,
                 fontWeight: theme.fontWeights.medium,
+            },
+        },
+        subheader: {
+            true: {
+                '@sm': {
+                    fontSize: theme.fontSizes.body,
+                    fontWeight: theme.fontWeights.bold,
+                    flexGrow: 1,
+                    textAlign: 'center',
+                },
             },
         },
     },

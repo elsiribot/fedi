@@ -17,6 +17,12 @@ export const SocialBackupIntro: React.FC<Props> = ({ next }) => {
     const { t } = useTranslation()
     return (
         <>
+            <Layout.Header back="/settings/backup">
+                <Layout.Title subheader>
+                    {t('feature.backup.file-backup')}
+                </Layout.Title>
+            </Layout.Header>
+
             <Layout.Content>
                 <Content>
                     <IconContainer>
