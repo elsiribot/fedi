@@ -27,7 +27,7 @@ export type ErrorCode =
     | 'ecashCancelFailed'
     | 'panic'
     | 'invalidSocialRecoveryFile'
-    | 'insufficientBalance'
+    | { insufficientBalance: RpcAmount }
 
 export type Event =
     | { transaction: TransactionEvent }

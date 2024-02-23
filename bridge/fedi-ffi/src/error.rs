@@ -1,6 +1,8 @@
 use serde::Serialize;
 use thiserror::Error;
 use ts_rs::TS;
+
+use crate::types::RpcAmount;
 #[derive(Debug, Error, Copy, Clone, PartialEq, Eq, Serialize, TS)]
 #[ts(export, export_to = "target/bindings/")]
 #[serde(rename_all = "camelCase")]
@@ -23,8 +25,8 @@ pub enum ErrorCode {
     Panic,
     #[error("Invalid social recovery file")]
     InvalidSocialRecoveryFile,
-    #[error("Insufficient balance to cover requested spend amount plus fees")]
-    InsufficientBalance,
+    #[error("Insufficient balance for spend amount plus fees, max spendable is {0}")]
+    InsufficientBalance(RpcAmount),
 }
 
 pub fn get_error_code(err: &anyhow::Error) -> Option<ErrorCode> {

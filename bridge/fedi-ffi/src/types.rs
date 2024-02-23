@@ -19,9 +19,15 @@ use super::utils::to_unix_time;
 use crate::multi::MultiFederation;
 use crate::storage::FediFeeSchedule;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcAmount(#[ts(type = "MSats")] pub fedimint_core::Amount);
+
+impl std::fmt::Display for RpcAmount {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
