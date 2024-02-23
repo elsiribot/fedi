@@ -14,7 +14,7 @@ import {
 import Share from 'react-native-share'
 
 import { useFederationSupportsSingleSeed } from '@fedi/common/hooks/federation'
-import { useTransactionHistory } from '@fedi/common/hooks/transactions'
+import { useExportTransactions } from '@fedi/common/hooks/transactions'
 import {
     changeAuthenticatedGuardian,
     leaveFederation,
@@ -32,11 +32,6 @@ import {
     getFederationTosUrl,
     shouldShowInviteCode,
 } from '@fedi/common/utils/FederationUtils'
-import {
-    makeBase64CSVUri,
-    makeCSVFilename,
-    makeTransactionHistoryCSV,
-} from '@fedi/common/utils/csv'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
@@ -46,7 +41,6 @@ import SvgImage from '../components/ui/SvgImage'
 import { version } from '../package.json'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import { Transaction } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('Settings')
@@ -57,7 +51,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { toast } = useEnvironmentContext().state
-    const { fetchTransactions } = useTransactionHistory(fedimint)
+    const exportTransactions = useExportTransactions(fedimint)
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
     const [isExportingCSV, setIsExportingCSV] = useState(false)
 
@@ -189,41 +183,29 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     const exportTransactionsAsCsv = async () => {
-        let transactions: Array<Transaction> = []
-
         setIsExportingCSV(true)
 
-        try {
-            transactions = await fetchTransactions({
-                // TODO: Find a better way than a hardcoded value
-                limit: 10000,
-            })
-        } catch (e) {
-            log.error('error', e)
+        const res = await exportTransactions()
+
+        if (res.success) {
+            try {
+                await Share.open({
+                    filename:
+                        Platform.OS === 'android'
+                            ? res.fileName.slice(0, -4)
+                            : res.fileName,
+                    type: 'text/csv',
+                    url: res.uri,
+                })
+            } catch {
+                /* no-op */
+            }
+        } else {
+            log.error('error', res.message)
             toast?.show(t('errors.failed-to-fetch-transactions'))
-            setIsExportingCSV(false)
-            return
         }
 
-        try {
-            const filename = makeCSVFilename(
-                activeFederation?.name
-                    ? 'transactions-' + activeFederation.name
-                    : 'transactions',
-            )
-            await Share.open({
-                filename:
-                    Platform.OS === 'android'
-                        ? filename.slice(0, -4)
-                        : filename,
-                type: 'text/csv',
-                url: makeBase64CSVUri(makeTransactionHistoryCSV(transactions)),
-            })
-        } catch {
-            /* no-op */
-        } finally {
-            setIsExportingCSV(false)
-        }
+        setIsExportingCSV(false)
     }
 
     const showInviteCode =

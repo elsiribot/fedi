@@ -10,6 +10,7 @@ import {
 } from '@fedi/common/utils/wallet'
 
 import {
+    selectActiveFederation,
     selectActiveFederationId,
     selectBtcExchangeRate,
     selectBtcUsdExchangeRate,
@@ -22,6 +23,11 @@ import {
     selectStabilityTransactionHistory,
 } from '../redux/transactions'
 import { Transaction } from '../types'
+import {
+    makeBase64CSVUri,
+    makeCSVFilename,
+    makeTransactionHistoryCSV,
+} from '../utils/csv'
 import { FedimintBridge } from '../utils/fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
 
@@ -186,4 +192,45 @@ export function useTxnDisplayUtils(t: TFunction) {
         makeStabilityTxnDetailAmountText,
         makeStabilityTxnDetailItems,
     }
+}
+
+export function useExportTransactions(fedimint: FedimintBridge) {
+    const { fetchTransactions } = useTransactionHistory(fedimint)
+    const activeFederation = useCommonSelector(selectActiveFederation)
+
+    const exportTransactions = useCallback(async (): Promise<
+        | { success: true; uri: string; fileName: string }
+        | { success: false; message: string }
+    > => {
+        let transactions: Array<Transaction> = []
+
+        try {
+            transactions = await fetchTransactions({
+                // TODO: find a better way than a hardcoded value
+                limit: 10000,
+            })
+
+            const fileName = makeCSVFilename(
+                activeFederation?.name
+                    ? 'transactions-' + activeFederation.name
+                    : 'transactions',
+            )
+            const uri = makeBase64CSVUri(
+                makeTransactionHistoryCSV(transactions),
+            )
+
+            return {
+                success: true,
+                uri,
+                fileName,
+            }
+        } catch (e) {
+            return {
+                success: false,
+                message: (e as Error).message,
+            }
+        }
+    }, [])
+
+    return exportTransactions
 }

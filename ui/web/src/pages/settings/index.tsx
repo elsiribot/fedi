@@ -15,19 +15,13 @@ import {
     useFederationSupportsSingleSeed,
     useIsInviteSupported,
 } from '@fedi/common/hooks/federation'
-import { useTransactionHistory } from '@fedi/common/hooks/transactions'
+import { useExportTransactions } from '@fedi/common/hooks/transactions'
 import {
     leaveFederation,
     selectActiveFederation,
     selectAuthenticatedMember,
 } from '@fedi/common/redux'
 import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
-import { Transaction } from '@fedi/common/types'
-import {
-    makeBase64CSVUri,
-    makeCSVFilename,
-    makeTransactionHistoryCSV,
-} from '@fedi/common/utils/csv'
 
 import { Avatar } from '../../components/Avatar'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
@@ -61,7 +55,7 @@ function AdminPage() {
     const member = useAppSelector(selectAuthenticatedMember)
     const activeFederation = useAppSelector(selectActiveFederation)
     const { showErrorToast } = useToast()
-    const { fetchTransactions } = useTransactionHistory(fedimint)
+    const exportTransactions = useExportTransactions(fedimint)
     const [isMemberQrOpen, setIsMemberQrOpen] = useState(false)
     const [isInvitingMember, setIsInvitingMember] = useState(false)
     const [isLeavingFederation, setIsLeavingFederation] = useState(false)
@@ -91,37 +85,23 @@ function AdminPage() {
         undefined
 
     const exportTransactionsAsCsv = async () => {
-        let transactions: Array<Transaction> = []
-
         setIsExportingCSV(true)
 
-        try {
-            transactions = await fetchTransactions({
-                // TODO: find a better way than a hardcoded value
-                limit: 10000,
-            })
+        const res = await exportTransactions()
 
-            const fileName = makeCSVFilename(
-                activeFederation?.name
-                    ? 'transactions-' + activeFederation.name
-                    : 'transactions',
-            )
-            const uri = makeBase64CSVUri(
-                makeTransactionHistoryCSV(transactions),
-            )
-
+        if (res.success) {
             const element = document.createElement('a')
-            element.setAttribute('href', uri)
-            element.setAttribute('download', fileName)
+            element.setAttribute('href', res.uri)
+            element.setAttribute('download', res.fileName)
 
             document.body.appendChild(element)
             element.click()
             document.body.removeChild(element)
-        } catch (e) {
-            showErrorToast(e, 'errors.unknown-error')
-        } finally {
-            setIsExportingCSV(false)
+        } else {
+            showErrorToast(res.message, 'errors.unknown-error')
         }
+
+        setIsExportingCSV(false)
     }
 
     let menu: Menu = [
