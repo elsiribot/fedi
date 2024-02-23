@@ -43,6 +43,7 @@ jobs:
 
             - name: Execute fastlane beta lane for CI
               env:
+                  GH_PAT_FEDI_FETCH_IOS_CERTS: ${{ secrets.GH_PAT_FEDI_FETCH_IOS_CERTS }}
                   # TODO: for prod, regenerate certificates and convert these to secrets
                   MATCH_KEYCHAIN_NAME: 'ci-deploy.keychain'
                   MATCH_KEYCHAIN_PASSWORD: 'fedibtc'
