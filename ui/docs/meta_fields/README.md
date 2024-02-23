@@ -20,3 +20,4 @@ The following meta fields are interpretable by the Fedi app (note the `fedi:` pr
 * [`fedi:max_balance_msats`](max_balance_msats.md): Number value in millisats that prevents users from having a balance higher than the specified amount
 * [`fedi:fedimods`](fedimods.md): Stringified JSON array of objects representing the default FediMods shown to users upon joining the federation
 * [`fedi:default_group_chats`](default_group_chats.md): Stringified JSON array of strings representing the IDs of any chat groups that all users will join automatically upon creating their username
+* [`fedi:welcome_message`](welcome_message.md): A message presented to users upon joining the federation
