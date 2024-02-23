@@ -212,7 +212,7 @@
         toolchainArgs = let llvmPackages = pkgs.llvmPackages_11; in {
           inherit androidSdk;
           componentTargetsChannelName = "latest";
-          extraRustFlags = "--cfg tokio_unstable";
+          extraRustFlags = "--cfg tokio_unstable -Z threads=8";
 
           components = [
             "rustc"
