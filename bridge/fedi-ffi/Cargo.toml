@@ -16,6 +16,7 @@ fedimint-ln-common = { workspace = true }
 fedimint-wallet-client = { workspace = true }
 fedi-social-client = { path = "../../fedi-social-client" }
 stability-pool-client = { path = "../../stability-pool/stability-pool-client" }
+fedi-db-dump = { path = "../../fedi-db-dump" }
 fedimint-derive-secret = { workspace = true }
 fedimint-logging = { workspace = true }
 fedimint-bip39 = { workspace = true }
