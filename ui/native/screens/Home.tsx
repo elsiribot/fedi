@@ -8,7 +8,6 @@ import { ScrollView, StyleSheet, View } from 'react-native'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useIsStabilityPoolSupported } from '@fedi/common/hooks/federation'
 import {
-    selectFederationBalance,
     selectIsActiveFederationRecovering,
     selectStableBalanceEnabled,
 } from '@fedi/common/redux'
@@ -36,14 +35,12 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
     const { theme } = useTheme()
     // TODO: Hoist state and listen to bridge for updates
     const isStabilityPoolSupported = useIsStabilityPoolSupported()
-    const balance = useAppSelector(selectFederationBalance)
     const enableStableBalance = useAppSelector(selectStableBalanceEnabled)
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
     )
 
-    const showStabilityWallet =
-        isStabilityPoolSupported && enableStableBalance && balance > 0
+    const showStabilityWallet = isStabilityPoolSupported && enableStableBalance
 
     return (
         <ScrollView

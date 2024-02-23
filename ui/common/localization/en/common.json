@@ -584,6 +584,7 @@
         "stabilitypool": {
             "amount-may-vary": "Amount may vary",
             "amount-may-vary-during-withdraw": "Amount may vary during withdrawal",
+            "amount-pending": "{{amount}} pending",
             "available-to-deposit": "Available to deposit",
             "available-to-withdraw": "Available to withdraw",
             "bitcoin-amount": "Bitcoin amount",
@@ -616,7 +617,8 @@
             "withdrawal-time": "Withdrawal time",
             "withdrawal-value": "Withdrawal value",
             "you-deposited": "You deposited",
-            "you-withdrew": "You withdrew"
+            "you-withdrew": "You withdrew",
+            "no-bitcoin-notice": "You must have bitcoin to deposit into {{currency}} balance"
         },
         "wallet": {
             "network-notice": "This federation uses {{network}} SATS",

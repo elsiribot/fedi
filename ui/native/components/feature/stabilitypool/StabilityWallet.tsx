@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { useMonitorStabilityPool } from '@fedi/common/hooks/stabilitypool'
-import { selectCurrency } from '@fedi/common/redux'
+import { selectCurrency, selectStableBalancePending } from '@fedi/common/redux'
 
 import { fedimint } from '../../../bridge'
 import { useAppSelector, useStabilityPool } from '../../../state/hooks'
@@ -19,7 +19,10 @@ const StabilityWallet: React.FC = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const selectedCurrency = useAppSelector(selectCurrency)
-    const { formattedStableBalance } = useStabilityPool()
+    const stableBalancePending = useAppSelector(selectStableBalancePending)
+
+    const { formattedStableBalance, formattedStableBalancePending } =
+        useStabilityPool()
 
     // React Navigation should keep this mounted even when clicking into the StabilityHome screen so the monitor will continue to run
     useMonitorStabilityPool(fedimint)
@@ -37,9 +40,22 @@ const StabilityWallet: React.FC = () => {
                     <Text bold style={style.titleText}>
                         {`${selectedCurrency} ${t('words.balance')}`}
                     </Text>
-                    <Text medium style={style.balanceText}>
-                        {`${formattedStableBalance}`}
-                    </Text>
+                    <View style={style.amountContainer}>
+                        <Text medium style={style.balanceText}>
+                            {`${formattedStableBalance}`}
+                        </Text>
+                        {stableBalancePending !== 0 && (
+                            <Text small style={style.balanceText}>
+                                {t('feature.stabilitypool.amount-pending', {
+                                    amount:
+                                        stableBalancePending > 0
+                                            ? '+' +
+                                              formattedStableBalancePending
+                                            : formattedStableBalancePending,
+                                })}
+                            </Text>
+                        )}
+                    </View>
                     <SvgImage
                         name="ChevronRight"
                         color={theme.colors.primary}
@@ -60,7 +76,6 @@ const styles = (theme: Theme) =>
             color: theme.colors.primary,
             marginLeft: 'auto',
             paddingHorizontal: theme.spacing.sm,
-            flex: 1,
             textAlign: 'right',
         },
         cardContainer: {
@@ -85,6 +100,12 @@ const styles = (theme: Theme) =>
             color: theme.colors.primary,
             paddingHorizontal: theme.spacing.sm,
             flex: 1,
+        },
+        amountContainer: {
+            display: 'flex',
+            gap: theme.spacing.xs,
+            flexDirection: 'column',
+            justifyContent: 'center',
         },
         button: {
             backgroundColor: theme.colors.secondary,
