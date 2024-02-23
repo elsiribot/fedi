@@ -142,7 +142,13 @@ android {
         debug {
             signingConfig signingConfigs.debug
             packagingOptions {
-                doNotStrip '**/libfediffi.so'
+                gradle.startParameter.getTaskNames().each { task ->
+                    if (task.contains('assemble') || task.contains('bundle')) {
+                        if (task.contains('nightly')) {
+                            doNotStrip '**/libfediffi.so'
+                        }
+                    }
+                }
             }
         }
         release {
