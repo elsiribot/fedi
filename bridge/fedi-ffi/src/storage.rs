@@ -208,6 +208,7 @@ impl AppState {
         let result = closure(&mut app_state_raw).await?;
 
         if v2_federation_exists && app_state_raw.root_mnemonic != root_mnemonic_snapshot {
+            app_state_raw.root_mnemonic = root_mnemonic_snapshot;
             bail!("Root mnemonic cannot be overwritten while joined v2 federations are present");
         }
 
