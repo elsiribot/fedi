@@ -253,6 +253,10 @@ export interface RpcMethods {
         null,
     ]
     generateAddress: [{ federationId: RpcFederationId }, string]
+    previewPayAddress: [
+        { federationId: RpcFederationId; address: string; sats: bigint },
+        { fediFee: RpcAmount; networkFee: RpcAmount; federationFee: RpcAmount },
+    ]
     payAddress: [
         { federationId: RpcFederationId; address: string; sats: bigint },
         { txid: string },

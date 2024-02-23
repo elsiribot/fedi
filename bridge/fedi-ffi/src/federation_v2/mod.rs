@@ -755,12 +755,13 @@ impl FederationV2 {
         Ok(response)
     }
 
-    // Pay an onchain address
-    pub async fn pay_address(
+    // Returns the fee details for making a payment on-chain. Returns an error in
+    // case the amount exceeds the max spendable amount.
+    pub async fn preview_pay_address(
         &self,
         address: Address,
         amount: bitcoin::Amount,
-    ) -> Result<RpcPayAddressResponse> {
+    ) -> Result<RpcFeeDetails> {
         let fedi_fee_ppm = self
             .fedi_fee_helper
             .get_fedi_fee_ppm(
@@ -777,7 +778,8 @@ impl FederationV2 {
 
         let amount_msat = amount.to_sat() * 1000;
         let fedi_fee = (amount_msat * fedi_fee_ppm).div_ceil(MILLION);
-        let est_total_spend = amount_msat + fedi_fee + (network_fees.amount().to_sat() * 1000);
+        let network_fees_msat = network_fees.amount().to_sat() * 1000;
+        let est_total_spend = amount_msat + fedi_fee + network_fees_msat;
         let virtual_balance = self.get_balance().await;
         if est_total_spend > virtual_balance.msats {
             bail!(ErrorCode::InsufficientBalance(RpcAmount(
@@ -785,12 +787,32 @@ impl FederationV2 {
             )));
         }
 
+        Ok(RpcFeeDetails {
+            fedi_fee: RpcAmount(Amount::from_msats(fedi_fee)),
+            network_fee: RpcAmount(Amount::from_msats(network_fees_msat)),
+            federation_fee: RpcAmount(Amount::ZERO),
+        })
+    }
+
+    // Pay an onchain address
+    pub async fn pay_address(
+        &self,
+        address: Address,
+        amount: bitcoin::Amount,
+    ) -> Result<RpcPayAddressResponse> {
+        let fee_details = self.preview_pay_address(address.clone(), amount).await?;
+        let network_fees = self
+            .client
+            .get_first_module::<WalletClientModule>()
+            .get_withdraw_fees(address.clone(), amount)
+            .await?;
+
         let operation_id = self
             .client
             .get_first_module::<WalletClientModule>()
             .withdraw(address, amount, network_fees, ())
             .await?;
-        self.write_pending_send_fedi_fee(operation_id, Amount::from_msats(fedi_fee))
+        self.write_pending_send_fedi_fee(operation_id, fee_details.fedi_fee.0)
             .await?;
         let mut updates = self
             .client

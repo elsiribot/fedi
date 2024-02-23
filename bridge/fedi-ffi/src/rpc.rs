@@ -29,7 +29,7 @@ use crate::api::IFediApi;
 use crate::error::get_error_code;
 use crate::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use crate::types::{
-    GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
+    GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
     RpcLightningGateway, RpcPayAddressResponse,
 };
 
@@ -198,6 +198,21 @@ async fn generateAddress(
 ) -> anyhow::Result<String> {
     let address = bridge.generate_address(federation_id).await?;
     Ok(address)
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn previewPayAddress(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+    address: String,
+    // TODO: parse this as bitcoin::Amount
+    sats: u64,
+) -> anyhow::Result<RpcFeeDetails> {
+    let address: Address = address.trim().parse().context("Invalid Bitcoin Address")?;
+    let amount: Amount = Amount::from_sat(sats);
+    bridge
+        .preview_pay_address(federation_id, address, amount)
+        .await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -584,6 +599,7 @@ rpc_methods!(RpcMethods {
     switchGateway,
     // On-Chain
     generateAddress,
+    previewPayAddress,
     payAddress,
     // Ecash
     generateEcash,
