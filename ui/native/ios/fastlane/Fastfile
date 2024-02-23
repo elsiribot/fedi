@@ -25,7 +25,7 @@ platform :ios do
       generate_apple_certs: false,
       force: false,
       verbose: true,
-      git_url: 'https://x-access-token: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@github.com/fedibtc/fedi-alpha-react-native-certs',
+      git_url: "https://x-access-token:#{ENV['GH_PAT_FEDI_FETCH_IOS_CERTS']}@github.com/fedibtc/fedi-alpha-react-native-certs",
       storage_mode: 'git',
       api_key_path: 'fastlane/../decoded-asc-api-key-credentials.json'
     )
@@ -98,7 +98,7 @@ platform :ios do
       generate_apple_certs: false,
       force: false,
       verbose: true,
-      git_url: 'https://x-access-token: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@github.com/fedibtc/fedi-nightly-react-native-certs',
+      git_url: "https://x-access-token:#{ENV['GH_PAT_FEDI_FETCH_IOS_CERTS']}@github.com/fedibtc/fedi-nightly-react-native-certs",
       storage_mode: 'git',
       api_key_path: 'fastlane/../decoded-asc-api-key-credentials.json'
     )
@@ -144,7 +144,7 @@ platform :ios do
       type: 'appstore',
       app_identifier: 'org.fedi.alpha',
       generate_apple_certs: false,
-      git_url: 'https://x-access-token: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@github.com/fedibtc/fedi-alpha-react-native-certs',
+      git_url: "https://x-access-token:#{ENV['GH_PAT_FEDI_FETCH_IOS_CERTS']}@github.com/fedibtc/fedi-alpha-react-native-certs",
       storage_mode: 'git',
       api_key_path: 'fastlane/../decoded-asc-api-key-credentials.json'
     )
@@ -156,7 +156,7 @@ platform :ios do
       type: 'appstore',
       app_identifier: 'org.fedi.nightly',
       generate_apple_certs: false,
-      git_url: 'https://x-access-token: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@github.com/fedibtc/fedi-nightly-react-native-certs',
+      git_url: "https://x-access-token:#{ENV['GH_PAT_FEDI_FETCH_IOS_CERTS']}@github.com/fedibtc/fedi-nightly-react-native-certs",
       storage_mode: 'git',
       api_key_path: 'fastlane/../decoded-asc-api-key-credentials.json'
     )
