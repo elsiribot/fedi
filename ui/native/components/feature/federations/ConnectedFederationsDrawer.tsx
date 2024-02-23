@@ -194,6 +194,7 @@ const styles = (theme: Theme) =>
         },
         addFederationText: {
             paddingLeft: theme.spacing.xs,
+            color: theme.colors.white,
         },
         drawerItem: {
             marginHorizontal: 0,
