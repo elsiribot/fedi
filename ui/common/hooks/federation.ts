@@ -4,6 +4,7 @@ import {
     selectActiveFederation,
     selectFederationMetadata,
     selectOnchainDepositsEnabled,
+    selectStableBalanceEnabled,
 } from '../redux'
 import { Federation } from '../types'
 import dateUtils from '../utils/DateUtils'
@@ -15,7 +16,7 @@ import {
     shouldEnableNostr,
     getFederationChatServerDomain,
     getFederationPopupInfo,
-    shouldShowStabilityPool,
+    shouldShowStabilityPool as isStabilityPoolEnabledInMeta,
 } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
 
@@ -52,8 +53,20 @@ export function useIsStabilityPoolSupported() {
             }
         }
     }
+    return supported
+}
+
+export function useShouldShowStabilityPool() {
+    const stabilityPoolSupported = useIsStabilityPoolSupported()
+    const stabilityPoolEnabled = useCommonSelector(selectStableBalanceEnabled)
+    const activeFederation = useCommonSelector(selectActiveFederation)
+    if (!activeFederation) return false
+    const stabilityPoolEnabledInMeta = isStabilityPoolEnabledInMeta(
+        activeFederation.meta,
+    )
     return (
-        supported || shouldShowStabilityPool(activeFederation.meta)
+        stabilityPoolSupported &&
+        (stabilityPoolEnabled || stabilityPoolEnabledInMeta)
     )
 }
 
