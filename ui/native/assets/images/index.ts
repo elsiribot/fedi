@@ -12,6 +12,7 @@ export const Images: ImagesMap = {
     HoloBackgroundStrong: require('./holo-background-strong-900.png'),
     IllustrationChat: require('@fedi/common/assets/images/illustration-chat.png'),
     IllustrationWorld: require('@fedi/common/assets/images/illustration-world.png'),
+    FallbackInset: require('@fedi/common/assets/images/fallback-inset.png'),
 }
 
 export const FediModImages: ImagesMap = {
