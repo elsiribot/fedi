@@ -127,6 +127,20 @@ impl Bridge {
         })
     }
 
+    /// Dump the database for a given federation.
+    pub async fn dump_db(&self, federation_id: &str) -> anyhow::Result<PathBuf> {
+        let db_dump_path = format!("db-{federation_id}.dump");
+        let db = match &*self.get_multi(federation_id).await? {
+            MultiFederation::V2(fed) => fed.client.db().clone(),
+        };
+        let mut buffer = Vec::new();
+        fedi_db_dump::dump_db(&db, &mut buffer).await?;
+        self.storage
+            .write_file(db_dump_path.as_ref(), buffer)
+            .await?;
+        Ok(self.storage.platform_path(db_dump_path.as_ref()))
+    }
+
     /// Joins federation from invite code
     ///
     /// Federation ID saved to global database, new rocksdb database created for

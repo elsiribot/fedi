@@ -11,6 +11,7 @@ let
     "bridge"
     "fedimintd"
     "fedimint-cli"
+    "fedi-db-dump"
     "fedi-social-client"
     "fedi-social-common"
     "fedi-social-server"

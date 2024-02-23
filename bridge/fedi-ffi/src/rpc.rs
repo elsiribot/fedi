@@ -506,6 +506,11 @@ async fn setStabilityPoolModuleFediFeeSchedule(
         .await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn dumpDb(bridge: Arc<Bridge>, federation_id: String) -> anyhow::Result<PathBuf> {
+    bridge.dump_db(&federation_id).await
+}
+
 // converts from a typed handler into untyped handler
 async fn handle_wrapper<Args, F, Fut, R>(
     f: F,
@@ -614,6 +619,7 @@ rpc_methods!(RpcMethods {
     setWalletModuleFediFeeSchedule,
     setLightningModuleFediFeeSchedule,
     setStabilityPoolModuleFediFeeSchedule,
+    dumpDb,
 });
 
 #[instrument(
