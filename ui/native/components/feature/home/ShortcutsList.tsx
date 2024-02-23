@@ -42,8 +42,11 @@ const ShortcutsList: React.FC = () => {
 
     const onSelectFediMod = (shortcut: Shortcut) => {
         const fediMod = shortcut as FediMod
-        // Handle telegram links natively
-        if (fediMod.url.includes('https://t.me')) {
+        // Handle telegram and whatsapp links natively
+        if (
+            fediMod.url.includes('https://t.me') ||
+            fediMod.url.includes('https://wa.me')
+        ) {
             Linking.openURL(fediMod.url)
         } else {
             navigation.navigate('FediModBrowser', { fediMod })
