@@ -8,7 +8,6 @@ use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send};
-use futures::future::BoxFuture;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::error;
@@ -31,7 +30,7 @@ pub trait IStorage: 'static + MaybeSend + MaybeSync {
 
 pub type Storage = Arc<dyn IStorage>;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AppStateRaw {
     /// Version indicator for the app state
     pub format_version: u32,
@@ -127,7 +126,7 @@ pub struct ModuleFediFeeSchedule {
 }
 
 pub struct AppState {
-    raw: RwLock<AppStateRaw>,
+    raw: RwLock<Arc<AppStateRaw>>,
     storage: Storage,
 }
 
@@ -153,7 +152,7 @@ impl AppState {
         };
 
         Ok(Some(Self {
-            raw: RwLock::new(value),
+            raw: RwLock::new(Arc::new(value)),
             storage,
         }))
     }
@@ -173,28 +172,28 @@ impl AppState {
 
     async fn default_with_storage(storage: Storage) -> Self {
         Self {
-            raw: RwLock::new(AppStateRaw {
+            raw: RwLock::new(Arc::new(AppStateRaw {
                 format_version: 0,
                 root_mnemonic: Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng()),
                 joined_federations: BTreeMap::new(),
                 social_recovery_state: None,
                 sensitive_log: None,
-            }),
+            })),
             storage,
         }
     }
 
     pub async fn with_read_lock<T, F>(&self, closure: F) -> T
     where
-        F: FnOnce(&AppStateRaw) -> BoxFuture<T>,
+        F: FnOnce(&AppStateRaw) -> T,
     {
-        let app_state_raw = self.raw.read().await;
-        closure(&app_state_raw).await
+        let app_state_raw = self.raw.read().await.clone();
+        closure(&app_state_raw)
     }
 
-    pub async fn with_write_lock<T, F>(&self, closure: F) -> anyhow::Result<T>
+    pub async fn with_write_lock<F, T>(&self, closure: F) -> anyhow::Result<T>
     where
-        F: FnOnce(&mut AppStateRaw) -> BoxFuture<anyhow::Result<T>>,
+        F: FnOnce(&mut AppStateRaw) -> T,
     {
         let mut app_state_raw = self.raw.write().await;
 
@@ -204,10 +203,13 @@ impl AppState {
             .joined_federations
             .iter()
             .any(|(_, FederationInfo { version, .. })| *version >= 2);
-        let root_mnemonic_snapshot = app_state_raw.root_mnemonic.clone();
-        let result = closure(&mut app_state_raw).await?;
+        let app_state_raw_snapshot = app_state_raw.clone();
+        let mut app_state_raw_new = app_state_raw.as_ref().clone();
+        let result = closure(&mut app_state_raw_new);
 
-        if v2_federation_exists && app_state_raw.root_mnemonic != root_mnemonic_snapshot {
+        if v2_federation_exists
+            && app_state_raw_new.root_mnemonic != app_state_raw_snapshot.root_mnemonic
+        {
             bail!("Root mnemonic cannot be overwritten while joined v2 federations are present");
         }
 
@@ -217,6 +219,7 @@ impl AppState {
                 serde_json::to_vec::<AppStateRaw>(&app_state_raw)?,
             )
             .await?;
+        *app_state_raw = Arc::new(app_state_raw_new);
         Ok(result)
     }
 }
