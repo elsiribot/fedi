@@ -212,7 +212,7 @@
         toolchainArgs = let llvmPackages = pkgs.llvmPackages_11; in {
           inherit androidSdk;
           componentTargetsChannelName = "latest";
-          extraRustFlags = "--cfg tokio_unstable";
+          extraRustFlags = "--cfg tokio_unstable -Z threads=8";
 
           components = [
             "rustc"
@@ -320,7 +320,6 @@
           buildInputs = [ pkgs.openssl ];
 
           FEDI_CROSS_DEV_SHELL = "1";
-          RUSTFLAGS = "-Z threads=8";
           shellHook = ''
             export PATH=$PATH:''${ANDROID_SDK_ROOT}/../../bin
             alias create-avd="avdmanager create avd --force --name phone --package 'system-images;android-32;google_apis;arm64-v8a' --path $PWD/avd";
