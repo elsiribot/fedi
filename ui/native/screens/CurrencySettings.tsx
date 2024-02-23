@@ -1,5 +1,6 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -8,12 +9,14 @@ import {
     selectCurrency,
 } from '@fedi/common/redux/currency'
 import { SupportedCurrency } from '@fedi/common/types'
+import { formatCurrencyText } from '@fedi/common/utils/format'
 
 import CheckBox from '../components/ui/CheckBox'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 
 const CurrencySettings: React.FC = () => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const reduxDispatch = useAppDispatch()
@@ -32,7 +35,11 @@ const CurrencySettings: React.FC = () => {
                         key={currency}
                         checkedIcon={<SvgImage name="RadioSelected" />}
                         uncheckedIcon={<SvgImage name="RadioUnselected" />}
-                        title={<Text style={style.radioText}>{currency}</Text>}
+                        title={
+                            <Text style={style.radioText}>
+                                {formatCurrencyText(t, currency)}
+                            </Text>
+                        }
                         checked={selectedFiatCurrency === currency}
                         onPress={() =>
                             reduxDispatch(changeSelectedFiatCurrency(currency))

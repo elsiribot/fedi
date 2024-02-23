@@ -1,5 +1,7 @@
 import { TFunction } from 'i18next'
 
+import { SupportedCurrency } from '../types'
+
 /**
  * Attempts to turn an unknown error object into a user-readable message.
  * The message can either be plaintext, or a translation key which will
@@ -26,4 +28,13 @@ export function formatErrorMessage<T extends TFunction>(
         )
     }
     return defaultMessage
+}
+
+export function formatCurrencyText<T extends TFunction>(
+    t: T,
+    currency: SupportedCurrency,
+) {
+    const i18nKey = `feature.settings.currency-names.${currency.toLowerCase()}`
+
+    return `${currency} - ${t(i18nKey as Parameters<T>[0])}`
 }
