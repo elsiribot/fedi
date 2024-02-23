@@ -8,7 +8,6 @@ use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send};
-use futures::future::BoxFuture;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::error;
@@ -186,15 +185,15 @@ impl AppState {
 
     pub async fn with_read_lock<T, F>(&self, closure: F) -> T
     where
-        F: FnOnce(&AppStateRaw) -> BoxFuture<T>,
+        F: FnOnce(&AppStateRaw) -> T,
     {
         let app_state_raw = self.raw.read().await;
-        closure(&app_state_raw).await
+        closure(&app_state_raw)
     }
 
-    pub async fn with_write_lock<T, F>(&self, closure: F) -> anyhow::Result<T>
+    pub async fn with_write_lock<F, T>(&self, closure: F) -> anyhow::Result<T>
     where
-        F: FnOnce(&mut AppStateRaw) -> BoxFuture<anyhow::Result<T>>,
+        F: FnOnce(&mut AppStateRaw) -> T,
     {
         let mut app_state_raw = self.raw.write().await;
 
@@ -205,7 +204,7 @@ impl AppState {
             .iter()
             .any(|(_, FederationInfo { version, .. })| *version >= 2);
         let root_mnemonic_snapshot = app_state_raw.root_mnemonic.clone();
-        let result = closure(&mut app_state_raw).await?;
+        let result = closure(&mut app_state_raw);
 
         if v2_federation_exists && app_state_raw.root_mnemonic != root_mnemonic_snapshot {
             app_state_raw.root_mnemonic = root_mnemonic_snapshot;

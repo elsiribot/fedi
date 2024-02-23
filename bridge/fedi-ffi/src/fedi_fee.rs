@@ -48,16 +48,13 @@ impl FediFeeHelper {
                 Ok(fedi_fee_schedule) => {
                     let fee_schedule = fedi_fee_schedule.clone();
                     let app_state_update_res = app_state
-                        .with_write_lock(move |state| {
-                            Box::pin(async move {
-                                state
-                                    .joined_federations
-                                    .iter_mut()
-                                    .for_each(|(_, fed_info)| {
-                                        fed_info.fedi_fee_schedule = fee_schedule.clone();
-                                    });
-                                Ok(())
-                            })
+                        .with_write_lock(|state| {
+                            state
+                                .joined_federations
+                                .iter_mut()
+                                .for_each(|(_, fed_info)| {
+                                    fed_info.fedi_fee_schedule = fee_schedule.clone();
+                                });
                         })
                         .await;
 
@@ -78,13 +75,11 @@ impl FediFeeHelper {
     ) -> anyhow::Result<FediFeeSchedule, FediFeeHelperError> {
         self.app_state
             .with_read_lock(move |state| {
-                Box::pin(async move {
-                    state
-                        .joined_federations
-                        .get(&federation_id_str)
-                        .ok_or(FediFeeHelperError::UnknownFederation(federation_id_str))
-                        .map(|fed_info| fed_info.fedi_fee_schedule.clone())
-                })
+                state
+                    .joined_federations
+                    .get(&federation_id_str)
+                    .ok_or(FediFeeHelperError::UnknownFederation(federation_id_str))
+                    .map(|fed_info| fed_info.fedi_fee_schedule.clone())
             })
             .await
     }
@@ -103,23 +98,21 @@ impl FediFeeHelper {
     ) -> anyhow::Result<u64, FediFeeHelperError> {
         self.app_state
             .with_read_lock(move |state| {
-                Box::pin(async move {
-                    state
-                        .joined_federations
-                        .get(&federation_id_str)
-                        .ok_or(FediFeeHelperError::UnknownFederation(federation_id_str))
-                        .map(|fed_info| {
-                            fed_info
-                                .fedi_fee_schedule
-                                .modules
-                                .get(&module)
-                                .ok_or(FediFeeHelperError::UnknownModule(module))
-                                .map(|module_schedule| match direction {
-                                    RpcTransactionDirection::Receive => module_schedule.receive_ppm,
-                                    RpcTransactionDirection::Send => module_schedule.send_ppm,
-                                })
-                        })
-                })
+                state
+                    .joined_federations
+                    .get(&federation_id_str)
+                    .ok_or(FediFeeHelperError::UnknownFederation(federation_id_str))
+                    .map(|fed_info| {
+                        fed_info
+                            .fedi_fee_schedule
+                            .modules
+                            .get(&module)
+                            .ok_or(FediFeeHelperError::UnknownModule(module))
+                            .map(|module_schedule| match direction {
+                                RpcTransactionDirection::Receive => module_schedule.receive_ppm,
+                                RpcTransactionDirection::Send => module_schedule.send_ppm,
+                            })
+                    })
             })
             .await?
     }
@@ -136,19 +129,16 @@ impl FediFeeHelper {
         fee_schedule: ModuleFediFeeSchedule,
     ) -> anyhow::Result<()> {
         self.app_state
-            .with_write_lock(move |state| {
-                Box::pin(async move {
-                    let Some(fed_info) = state.joined_federations.get_mut(&federation_id_str)
-                    else {
-                        bail!(FediFeeHelperError::UnknownFederation(federation_id_str));
-                    };
-                    fed_info
-                        .fedi_fee_schedule
-                        .modules
-                        .insert(module, fee_schedule);
-                    Ok(())
-                })
+            .with_write_lock(|state| {
+                let Some(fed_info) = state.joined_federations.get_mut(&federation_id_str) else {
+                    bail!(FediFeeHelperError::UnknownFederation(federation_id_str));
+                };
+                fed_info
+                    .fedi_fee_schedule
+                    .modules
+                    .insert(module, fee_schedule);
+                Ok(())
             })
-            .await
+            .await?
     }
 }

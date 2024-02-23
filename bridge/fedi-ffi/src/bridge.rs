@@ -74,12 +74,12 @@ impl Bridge {
         let fedi_fee_helper = Arc::new(FediFeeHelper::new(fedi_api.clone(), app_state.clone()));
 
         let root_mnemonic = app_state
-            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
+            .with_read_lock(move |state| state.root_mnemonic.clone())
             .await;
 
         // load joined federations
         let joined_federations = app_state
-            .with_read_lock(move |state| Box::pin(async move { state.joined_federations.clone() }))
+            .with_read_lock(move |state| state.joined_federations.clone())
             .await
             .into_iter()
             .collect::<Vec<_>>();
@@ -164,7 +164,7 @@ impl Bridge {
 
         let root_mnemonic = self
             .app_state
-            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
+            .with_read_lock(move |state| state.root_mnemonic.clone())
             .await;
 
         let db_name = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
@@ -185,18 +185,15 @@ impl Bridge {
         // exist in the app_state, and we'd reattempt to join it. And the name of the
         // DB file is random so there shouldn't be any collisions.
         self.app_state
-            .with_write_lock(move |state| {
-                Box::pin(async move {
-                    state.joined_federations.insert(
-                        federation_id.to_string(),
-                        FederationInfo {
-                            version: 2,
-                            database_name: db_name,
-                            fedi_fee_schedule: FediFeeSchedule::default(),
-                        },
-                    );
-                    Ok(())
-                })
+            .with_write_lock(|state| {
+                state.joined_federations.insert(
+                    federation_id.to_string(),
+                    FederationInfo {
+                        version: 2,
+                        database_name: db_name,
+                        fedi_fee_schedule: FediFeeSchedule::default(),
+                    },
+                );
             })
             .await?;
         let multi = Arc::new(MultiFederation::V2(federation));
@@ -215,7 +212,7 @@ impl Bridge {
         let invite_code = invite_code.to_lowercase();
         let root_mnemonic = self
             .app_state
-            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
+            .with_read_lock(move |state| state.root_mnemonic.clone())
             .await;
         let (v2,) = futures::join!(FederationV2::download_client_config(
             &invite_code,
@@ -278,9 +275,7 @@ impl Bridge {
         let federation_id = federation_id_str.to_owned();
         let removed_federation_info = self
             .app_state
-            .with_write_lock(move |state| {
-                Box::pin(async move { Ok(state.joined_federations.remove(&federation_id)) })
-            })
+            .with_write_lock(|state| state.joined_federations.remove(&federation_id))
             .await?;
 
         // If the phone dies here, it's still ok because the federation would be removed
@@ -395,9 +390,7 @@ impl Bridge {
     async fn get_social_recovery_state(&self) -> anyhow::Result<Option<SocialRecoveryState>> {
         Ok(self
             .app_state
-            .with_read_lock(move |state| {
-                Box::pin(async move { state.social_recovery_state.clone() })
-            })
+            .with_read_lock(move |state| state.social_recovery_state.clone())
             .await)
     }
 
@@ -406,11 +399,8 @@ impl Bridge {
         social_recovery_state: Option<SocialRecoveryState>,
     ) -> anyhow::Result<()> {
         self.app_state
-            .with_write_lock(move |state| {
-                Box::pin(async move {
-                    state.social_recovery_state = social_recovery_state;
-                    Ok(())
-                })
+            .with_write_lock(|state| {
+                state.social_recovery_state = social_recovery_state;
             })
             .await
     }
@@ -418,7 +408,7 @@ impl Bridge {
     pub async fn get_mnemonic_words(&self) -> anyhow::Result<Vec<String>> {
         Ok(self
             .app_state
-            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
+            .with_read_lock(move |state| state.root_mnemonic.clone())
             .await
             .word_iter()
             .map(|x| x.to_owned())
@@ -428,17 +418,14 @@ impl Bridge {
     /// Enable logging of potentially sensitive information.
     pub async fn sensitive_log(&self) -> bool {
         self.app_state
-            .with_read_lock(|f| Box::pin(async move { f.sensitive_log.unwrap_or(false) }))
+            .with_read_lock(|f| f.sensitive_log.unwrap_or(false))
             .await
     }
 
     pub async fn set_sensitive_log(&self, enable: bool) -> anyhow::Result<()> {
         self.app_state
             .with_write_lock(|f| {
-                Box::pin(async move {
-                    f.sensitive_log = Some(enable);
-                    Ok(())
-                })
+                f.sensitive_log = Some(enable);
             })
             .await?;
         Ok(())
@@ -452,11 +439,8 @@ impl Bridge {
         }
 
         self.app_state
-            .with_write_lock(move |state| {
-                Box::pin(async move {
-                    state.root_mnemonic = mnemonic;
-                    Ok(())
-                })
+            .with_write_lock(|state| {
+                state.root_mnemonic = mnemonic;
             })
             .await?;
         Ok(())
@@ -476,7 +460,7 @@ impl Bridge {
             .ok_or(anyhow!("video file not found"))?;
         let root_mnemonic = self
             .app_state
-            .with_read_lock(move |state| Box::pin(async move { state.root_mnemonic.clone() }))
+            .with_read_lock(|state| state.root_mnemonic.clone())
             .await;
         let recovery_file = multi.upload_backup_file(video_file, root_mnemonic).await?;
         storage
@@ -722,9 +706,7 @@ impl Bridge {
         let global_root_secret = self
             .app_state
             .with_read_lock(move |state| {
-                Box::pin(async move {
-                    Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
-                })
+                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
             })
             .await;
         Ok(multi
@@ -755,9 +737,7 @@ impl Bridge {
         let global_root_secret = self
             .app_state
             .with_read_lock(move |state| {
-                Box::pin(async move {
-                    Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
-                })
+                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
             })
             .await;
         multi
@@ -775,9 +755,7 @@ impl Bridge {
         let global_root_secret = self
             .app_state
             .with_read_lock(move |state| {
-                Box::pin(async move {
-                    Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
-                })
+                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
             })
             .await;
         multi.sign_nostr_event(event_hash, global_root_secret).await
