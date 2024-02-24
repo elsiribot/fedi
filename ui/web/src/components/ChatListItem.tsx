@@ -3,11 +3,8 @@ import { useRouter } from 'next/router'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import {
-    selectAuthenticatedMember,
-    selectBtcExchangeRate,
-    selectCurrency,
-} from '@fedi/common/redux'
+import { useAmountFormatter } from '@fedi/common/hooks/amount'
+import { selectAuthenticatedMember } from '@fedi/common/redux'
 import { ChatType, ChatWithLatestMessage } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import { makePaymentText } from '@fedi/common/utils/chat'
@@ -26,8 +23,7 @@ export const ChatListItem: React.FC<Props> = ({ chat }) => {
     const { t } = useTranslation()
     const { query } = useRouter()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const currency = useAppSelector(selectCurrency)
-    const exchangeRate = useAppSelector(selectBtcExchangeRate)
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
     const isActive = chat.id === query?.path?.[1]
     const { latestMessage, hasNewMessages } = chat
@@ -38,8 +34,7 @@ export const ChatListItem: React.FC<Props> = ({ chat }) => {
             t,
             latestMessage,
             authenticatedMember,
-            currency,
-            exchangeRate,
+            makeFormattedAmountsFromMSats,
         )
     }
 

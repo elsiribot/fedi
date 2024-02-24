@@ -28,7 +28,8 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
     const { t } = useTranslation()
     const { showErrorToast } = useToast()
     const activeFederationId = useAppSelector(selectActiveFederationId)
-    const { makeTxnDetailItems } = useTxnDisplayUtils(t)
+    const { makeTxnDetailAmountText, makeTxnDetailItems } =
+        useTxnDisplayUtils(t)
 
     return (
         <HistoryList
@@ -50,7 +51,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
             makeDetailProps={txn => ({
                 title: makeTxnDetailTitleText(t, txn),
                 items: makeTxnDetailItems(txn),
-                amount: txn.amount,
+                amount: makeTxnDetailAmountText(txn),
                 notes: txn.notes,
                 onSaveNotes: async (notes: string) => {
                     try {

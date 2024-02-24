@@ -12,8 +12,6 @@ import {
 import {
     selectActiveFederation,
     selectActiveFederationId,
-    selectBtcExchangeRate,
-    selectBtcUsdExchangeRate,
     selectCurrency,
     selectEcashFeeSchedule,
     selectShowFiatTxnAmounts,
@@ -31,7 +29,7 @@ import {
     makeTransactionHistoryCSV,
 } from '../utils/csv'
 import { FedimintBridge } from '../utils/fedimint'
-import { AmountLabelFormat, useBtcFiatPrice } from './amount'
+import { useAmountFormatter, useBtcFiatPrice } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
 
 export function useTransactionHistory(fedimint: FedimintBridge) {
@@ -69,10 +67,10 @@ export function useTransactionHistory(fedimint: FedimintBridge) {
 }
 
 export function useTxnDisplayUtils(t: TFunction) {
+    const { convertCentsToFormattedFiat } = useBtcFiatPrice()
     const selectedCurrency = useCommonSelector(selectCurrency)
-    const btcUsdExchangeRate = useCommonSelector(selectBtcUsdExchangeRate)
-    const btcExchangeRate = useCommonSelector(selectBtcExchangeRate)
     const showFiatTxnAmounts = useCommonSelector(selectShowFiatTxnAmounts)
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
     const preferredCurrency = showFiatTxnAmounts
         ? selectedCurrency
         : t('words.sats').toUpperCase()
@@ -82,17 +80,15 @@ export function useTxnDisplayUtils(t: TFunction) {
             return `${makeTxnAmountTextUtil(
                 t,
                 txn,
-                selectedCurrency,
-                btcUsdExchangeRate,
-                btcExchangeRate,
                 showFiatTxnAmounts,
+                makeFormattedAmountsFromMSats,
+                convertCentsToFormattedFiat,
             )} ${preferredCurrency}`
         },
         [
-            btcExchangeRate,
-            btcUsdExchangeRate,
+            convertCentsToFormattedFiat,
+            makeFormattedAmountsFromMSats,
             preferredCurrency,
-            selectedCurrency,
             showFiatTxnAmounts,
             t,
         ],
@@ -104,14 +100,14 @@ export function useTxnDisplayUtils(t: TFunction) {
                 t,
                 txn,
                 selectedCurrency,
-                btcUsdExchangeRate,
-                btcExchangeRate,
                 showFiatTxnAmounts,
+                makeFormattedAmountsFromMSats,
+                convertCentsToFormattedFiat,
             )
         },
         [
-            btcExchangeRate,
-            btcUsdExchangeRate,
+            convertCentsToFormattedFiat,
+            makeFormattedAmountsFromMSats,
             selectedCurrency,
             showFiatTxnAmounts,
             t,
@@ -123,16 +119,14 @@ export function useTxnDisplayUtils(t: TFunction) {
             return makeTxnAmountTextUtil(
                 t,
                 txn,
-                selectedCurrency,
-                btcUsdExchangeRate,
-                btcExchangeRate,
                 showFiatTxnAmounts,
+                makeFormattedAmountsFromMSats,
+                convertCentsToFormattedFiat,
             )
         },
         [
-            btcExchangeRate,
-            btcUsdExchangeRate,
-            selectedCurrency,
+            convertCentsToFormattedFiat,
+            makeFormattedAmountsFromMSats,
             showFiatTxnAmounts,
             t,
         ],
@@ -150,13 +144,12 @@ export function useTxnDisplayUtils(t: TFunction) {
             return makeStabilityTxnAmountTextUtil(
                 t,
                 txn,
-                selectedCurrency,
-                btcUsdExchangeRate,
-                btcExchangeRate,
                 true,
+                makeFormattedAmountsFromMSats,
+                convertCentsToFormattedFiat,
             )
         },
-        [btcExchangeRate, btcUsdExchangeRate, selectedCurrency, t],
+        [convertCentsToFormattedFiat, makeFormattedAmountsFromMSats, t],
     )
 
     const makeStabilityTxnDetailAmountText = useCallback(
@@ -164,13 +157,17 @@ export function useTxnDisplayUtils(t: TFunction) {
             return `${makeStabilityTxnAmountTextUtil(
                 t,
                 txn,
-                selectedCurrency,
-                btcUsdExchangeRate,
-                btcExchangeRate,
                 true,
+                makeFormattedAmountsFromMSats,
+                convertCentsToFormattedFiat,
             )} ${selectedCurrency}`
         },
-        [btcExchangeRate, btcUsdExchangeRate, selectedCurrency, t],
+        [
+            convertCentsToFormattedFiat,
+            makeFormattedAmountsFromMSats,
+            selectedCurrency,
+            t,
+        ],
     )
 
     const makeStabilityTxnDetailItems = useCallback(
@@ -178,11 +175,10 @@ export function useTxnDisplayUtils(t: TFunction) {
             return makeStabilityTxnDetailItemsUtil(
                 t,
                 txn,
-                selectedCurrency,
-                btcExchangeRate,
+                makeFormattedAmountsFromMSats,
             )
         },
-        [btcExchangeRate, selectedCurrency, t],
+        [makeFormattedAmountsFromMSats, t],
     )
 
     return {
@@ -250,7 +246,7 @@ export function useEcashFeeDisplayUtils(t: TFunction) {
     const showFiatTxnAmounts = useCommonSelector(selectShowFiatTxnAmounts)
     const ecashFeeSchedule = useCommonSelector(selectEcashFeeSchedule)
 
-    const makeEcashFeeItems = (amount: MSats) => {
+    const makeEcashFeeContent = (amount: MSats) => {
         let ecashSendFediFeeMsats: MSats = 0 as MSats
         let federationFee = 0
         // Fedi fee for sending ecash is calculated from the federation fee schedule
@@ -269,10 +265,8 @@ export function useEcashFeeDisplayUtils(t: TFunction) {
         const formattedFediFeeSats = `${amountUtils.formatSats(
             ecashSendFediFeeSats,
         )} ${t('words.sats').toUpperCase()}`
-        const formattedFediFeeFiat = convertSatsToFormattedFiat(
-            ecashSendFediFeeSats,
-            AmountLabelFormat.currencyCode,
-        )
+        const formattedFediFeeFiat =
+            convertSatsToFormattedFiat(ecashSendFediFeeSats)
         const formattedFediFee = showFiatTxnAmounts
             ? `${formattedFediFeeFiat} (${formattedFediFeeSats})`
             : `${formattedFediFeeSats} (${formattedFediFeeFiat})`
@@ -283,7 +277,6 @@ export function useEcashFeeDisplayUtils(t: TFunction) {
         )} ${t('words.sats').toUpperCase()}`
         const formattedFederationFeeFiat = convertSatsToFormattedFiat(
             federationFee as Sats,
-            AmountLabelFormat.currencyCode,
         )
         const formattedFederationFee = showFiatTxnAmounts
             ? `${formattedFederationFeeFiat} (${formattedFederationFeeSats})`
@@ -299,7 +292,22 @@ export function useEcashFeeDisplayUtils(t: TFunction) {
                 formattedAmount: formattedFederationFee,
             },
         ]
-        return ecashFeeItems
+
+        // Format total fees
+        const totalFees = ecashSendFediFeeMsats + federationFee
+        const totalFeesSats: Sats = amountUtils.msatToSat(totalFees as MSats)
+        const formattedTotalFeesSats = `${amountUtils.formatSats(
+            totalFeesSats,
+        )} ${t('words.sats').toUpperCase()}`
+        const formattedTotalFeesFiat = convertSatsToFormattedFiat(totalFeesSats)
+        const formattedTotalFees = showFiatTxnAmounts
+            ? `${formattedTotalFeesFiat} (${formattedTotalFeesSats})`
+            : `${formattedTotalFeesSats} (${formattedTotalFeesFiat})`
+
+        return {
+            feeItemsBreakdown: ecashFeeItems,
+            formattedTotalFee: formattedTotalFees,
+        }
     }
 
     const ecashFeesTitle = t('phrases.ecash-fees')
@@ -308,6 +316,6 @@ export function useEcashFeeDisplayUtils(t: TFunction) {
     return {
         ecashFeesTitle,
         ecashFeesGuidanceText,
-        makeEcashFeeItems,
+        makeEcashFeeContent,
     }
 }

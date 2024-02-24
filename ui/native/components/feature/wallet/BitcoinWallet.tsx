@@ -65,7 +65,7 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
                     <SvgImage name="List" color={theme.colors.secondary} />
                 </Pressable>
             </View>
-            <Balance balance={activeFederation.balance} />
+            <Balance />
             <View style={styles(theme).buttonsGroupContainer}>
                 {receivesDisabled ? (
                     <Pressable

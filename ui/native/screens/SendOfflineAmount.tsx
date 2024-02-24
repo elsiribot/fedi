@@ -2,14 +2,11 @@ import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Keyboard } from 'react-native'
 
 import { useMinMaxSendAmount } from '@fedi/common/hooks/amount'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { AmountScreen } from '../components/ui/AmountScreen'
-import { useBridge } from '../state/hooks'
 import { Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 

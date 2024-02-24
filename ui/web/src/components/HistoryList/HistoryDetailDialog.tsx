@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { selectBtcExchangeRate, selectCurrency } from '@fedi/common/redux'
+import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import { MSats } from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import { useAppSelector, useAutosizeTextArea } from '../../hooks'
+import { useAutosizeTextArea } from '../../hooks'
 import { styled, theme } from '../../styles'
 import { Dialog } from '../Dialog'
 import { Text } from '../Text'
@@ -31,8 +30,7 @@ export const HistoryDetailDialog: React.FC<HistoryDetailDialogProps> = ({
     onClose,
 }) => {
     const { t } = useTranslation()
-    const currency = useAppSelector(selectCurrency)
-    const btcExchangeRate = useAppSelector(selectBtcExchangeRate)
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
     const [notes, setNotes] = useState(propsNotes || '')
     const [inputEl, setInputEl] = useState<HTMLTextAreaElement | null>(null)
     useAutosizeTextArea(inputEl, notes)
@@ -65,11 +63,8 @@ export const HistoryDetailDialog: React.FC<HistoryDetailDialogProps> = ({
     if (typeof amount === 'string') {
         amountText = amount
     } else if (amount !== 0) {
-        amountText = `${amountUtils.formatFiat(
-            amountUtils.msatToFiat(amount, btcExchangeRate),
-            currency,
-            { noSymbol: true },
-        )} ${currency}`
+        const { formattedPrimaryAmount } = makeFormattedAmountsFromMSats(amount)
+        amountText = formattedPrimaryAmount
     }
 
     return (

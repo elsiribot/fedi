@@ -4,13 +4,13 @@ import { useTranslation } from 'react-i18next'
 
 import ChevronRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
 import PlusIcon from '@fedi/common/assets/svgs/plus.svg'
+import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import {
     selectActiveFederation,
     selectFederations,
     setActiveFederationId,
 } from '@fedi/common/redux'
 import { Federation } from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppDispatch, useAppSelector, useMediaQuery } from '../../hooks'
 import { config, styled, theme } from '../../styles'
@@ -26,6 +26,7 @@ export const FederationSelector: React.FC = () => {
     const federations = useAppSelector(selectFederations)
     const [isSelectorOpen, setIsSelectorOpen] = useState(false)
     const isSmall = useMediaQuery(config.media.sm)
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
     const handleSelectFederation = useCallback(
         (fed: Federation) => {
@@ -39,26 +40,27 @@ export const FederationSelector: React.FC = () => {
 
     const federationList = (
         <FederationList>
-            {federations.map(fed => (
-                <li key={fed.id}>
-                    <FederationItem
-                        active={fed.id === activeFederation.id}
-                        onClick={() => handleSelectFederation(fed)}>
-                        <FederationAvatar federation={fed} size="sm" />
-                        <div>
-                            <Text variant="caption" weight="bold">
-                                {fed.name}
-                            </Text>
-                            <Text variant="small">
-                                {amountUtils.formatSats(
-                                    amountUtils.msatToSat(fed.balance),
-                                )}{' '}
-                                {t('words.sats')}
-                            </Text>
-                        </div>
-                    </FederationItem>
-                </li>
-            ))}
+            {federations.map(fed => {
+                const { formattedPrimaryAmount, formattedSecondaryAmount } =
+                    makeFormattedAmountsFromMSats(fed.balance)
+                return (
+                    <li key={fed.id}>
+                        <FederationItem
+                            active={fed.id === activeFederation.id}
+                            onClick={() => handleSelectFederation(fed)}>
+                            <FederationAvatar federation={fed} size="sm" />
+                            <div>
+                                <Text variant="caption" weight="bold">
+                                    {fed.name}
+                                </Text>
+                                <Text variant="small">
+                                    {`${formattedPrimaryAmount} (${formattedSecondaryAmount})`}
+                                </Text>
+                            </div>
+                        </FederationItem>
+                    </li>
+                )
+            })}
             <li>
                 <FederationItem add as={Link} href="/onboarding/join">
                     <Icon icon={PlusIcon} size="sm" />

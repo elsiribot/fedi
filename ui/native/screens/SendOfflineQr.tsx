@@ -5,8 +5,7 @@ import { dataToFrames } from 'qrloop'
 import React, { useEffect, useMemo, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 
-import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
-import amountUtils from '@fedi/common/utils/AmountUtils'
+import { useAmountFormatter } from '@fedi/common/hooks/amount'
 
 import QRScreen from '../components/ui/QRScreen'
 import type { RootStackParamList } from '../types/navigation'
@@ -18,7 +17,7 @@ const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
     const { ecash, amount } = route.params
     const [index, setIndex] = useState(0)
     const [unit] = useState('sats')
-    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
     const frames = useMemo(() => {
         return dataToFrames(Buffer.from(ecash, 'base64'))
@@ -32,15 +31,14 @@ const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
         return () => clearInterval(interval)
     }, [index, frames])
 
-    const amountSats = amountUtils.msatToSat(amount)
+    const { formattedPrimaryAmount, formattedSecondaryAmount } =
+        makeFormattedAmountsFromMSats(amount)
     const style = styles(theme)
 
     return (
         <QRScreen
-            title={`${amountUtils.formatNumber(amountSats)} ${t(
-                'words.sats',
-            ).toUpperCase()}`}
-            subtitle={convertSatsToFormattedFiat(amountSats)}
+            title={formattedPrimaryAmount}
+            subtitle={formattedSecondaryAmount}
             qrValue={frames[index]}
             copyValue={ecash}
             copyMessage={t('phrases.copied-ecash-token')}

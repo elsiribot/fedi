@@ -1,8 +1,8 @@
 import React from 'react'
 
-import { selectBtcExchangeRate, selectCurrency } from '@fedi/common/redux'
+import { useAmountFormatter } from '@fedi/common/hooks/amount'
+import { selectCurrency } from '@fedi/common/redux'
 import { MSats } from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 import dateUtils from '@fedi/common/utils/DateUtils'
 
 import { useAppSelector } from '../../hooks'
@@ -29,7 +29,7 @@ export const HistoryRow: React.FC<HistoryRowProps> = ({
     onSelect,
 }) => {
     const currency = useAppSelector(selectCurrency)
-    const btcExchangeRate = useAppSelector(selectBtcExchangeRate)
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
     let amountNode: React.ReactNode
     const sign = direction
@@ -40,15 +40,15 @@ export const HistoryRow: React.FC<HistoryRowProps> = ({
             : `+`
         : ''
     if (typeof amount === 'number') {
-        const fiatAmount = amountUtils.msatToFiat(amount, btcExchangeRate)
-        const formattedAmount = amountUtils.formatFiat(fiatAmount, currency, {
-            noSymbol: true,
-        })
+        const { formattedPrimaryAmount } = makeFormattedAmountsFromMSats(
+            amount,
+            'none',
+        )
         amountNode = (
             <Amount>
                 <Text variant="caption" weight="medium">
                     {sign}
-                    {formattedAmount}
+                    {formattedPrimaryAmount}
                 </Text>
                 <Text variant="tiny" weight="medium">
                     {currency}

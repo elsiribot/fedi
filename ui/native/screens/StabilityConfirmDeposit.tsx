@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
+import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import { increaseStableBalance, selectMaximumAPR } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -36,14 +36,10 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
     const { toast } = useEnvironmentContext().state
     const [processingDeposit, setProcessingDeposit] = useState<boolean>(false)
     const [showDetails, setShowDetails] = useState<boolean>(false)
-    const { convertSatsToFormattedUsd, convertSatsToFormattedFiat } =
-        useBtcFiatPrice()
+    const { makeFormattedAmountsFromSats } = useAmountFormatter()
+    const { formattedFiat, formattedSats, formattedUsd } =
+        makeFormattedAmountsFromSats(amount)
     const maxFeeRate = useAppSelector(selectMaximumAPR)
-    const formattedFiat = convertSatsToFormattedFiat(amount)
-    const formattedUsd = convertSatsToFormattedUsd(amount)
-    const formattedSats = `${amountUtils.formatSats(amount)} ${t(
-        'words.sats',
-    ).toUpperCase()}`
 
     const handleSubmit = async () => {
         try {

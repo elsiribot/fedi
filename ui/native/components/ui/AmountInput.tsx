@@ -111,6 +111,7 @@ const AmountInput: React.FC<Props> = ({
                                 ? amountUtils.formatFiat(
                                       validation.fiatValue,
                                       currency,
+                                      { symbolPosition: 'end' },
                                   )
                                 : `${amountUtils.formatSats(
                                       validation.amount,

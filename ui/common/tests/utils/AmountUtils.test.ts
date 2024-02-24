@@ -218,10 +218,10 @@ describe('AmountUtils', () => {
                     })
                     expect(result).toEqual(expectedResult)
                 })
-                it(`should format ${amount} to ${expectedResultNoSymbol} for ${currency} in ${locale} locale with noSymbol`, () => {
+                it(`should format ${amount} to ${expectedResultNoSymbol} for ${currency} in ${locale} locale with no symbol`, () => {
                     const result = amountUtils.formatFiat(amount, currency, {
                         locale: locale,
-                        noSymbol: true,
+                        symbolPosition: 'none',
                     })
                     expect(result).toEqual(expectedResultNoSymbol)
                 })
