@@ -85,6 +85,12 @@ export function useBalance() {
     }
 }
 
+export enum AmountLabelFormat {
+    none = 'none',
+    currencyCode = 'currencyCode',
+    currencySymbol = 'currencySymbol',
+}
+
 export const useBtcFiatPrice = () => {
     const selectedFiatCurrency = useCommonSelector(selectCurrency)
     const exchangeRate: number = useCommonSelector(selectBtcExchangeRate)
@@ -106,8 +112,25 @@ export const useBtcFiatPrice = () => {
             [exchangeRate],
         ),
         convertSatsToFormattedFiat: useCallback(
-            (sats: Sats) => {
+            (
+                sats: Sats,
+                labelFormat: AmountLabelFormat = AmountLabelFormat.currencySymbol,
+            ) => {
                 const amount = amountUtils.satToFiat(sats, exchangeRate)
+                if (labelFormat === AmountLabelFormat.none) {
+                    return amountUtils.formatFiat(
+                        amount,
+                        selectedFiatCurrency,
+                        { noSymbol: true },
+                    )
+                }
+                if (labelFormat === AmountLabelFormat.currencyCode) {
+                    return `${amountUtils.formatFiat(
+                        amount,
+                        selectedFiatCurrency,
+                        { noSymbol: true },
+                    )} ${selectedFiatCurrency}`
+                }
                 return amountUtils.formatFiat(amount, selectedFiatCurrency)
             },
             [exchangeRate, selectedFiatCurrency],

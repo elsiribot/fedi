@@ -15,6 +15,7 @@ import {
     selectBtcExchangeRate,
     selectBtcUsdExchangeRate,
     selectCurrency,
+    selectEcashFeeSchedule,
     selectShowFiatTxnAmounts,
 } from '../redux'
 import {
@@ -22,13 +23,15 @@ import {
     selectTransactionHistory,
     selectStabilityTransactionHistory,
 } from '../redux/transactions'
-import { Transaction } from '../types'
+import { MSats, Sats, Transaction } from '../types'
+import amountUtils from '../utils/AmountUtils'
 import {
     makeBase64CSVUri,
     makeCSVFilename,
     makeTransactionHistoryCSV,
 } from '../utils/csv'
 import { FedimintBridge } from '../utils/fedimint'
+import { AmountLabelFormat, useBtcFiatPrice } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
 
 export function useTransactionHistory(fedimint: FedimintBridge) {
@@ -233,4 +236,78 @@ export function useExportTransactions(fedimint: FedimintBridge) {
     }, [])
 
     return exportTransactions
+}
+
+export type FeeItem = {
+    label: string
+    formattedAmount: string
+}
+
+// Ecash fees are ppm values specified in the federations feeSchedule so we calculate
+// the fee from the amount and provide all formatted UI display content
+export function useEcashFeeDisplayUtils(t: TFunction) {
+    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
+    const showFiatTxnAmounts = useCommonSelector(selectShowFiatTxnAmounts)
+    const ecashFeeSchedule = useCommonSelector(selectEcashFeeSchedule)
+
+    const makeEcashFeeItems = (amount: MSats) => {
+        let ecashSendFediFeeMsats: MSats = 0 as MSats
+        let federationFee = 0
+        // Fedi fee for sending ecash is calculated from the federation fee schedule
+        if (ecashFeeSchedule) {
+            ecashSendFediFeeMsats = (amount *
+                (ecashFeeSchedule.sendPpm / 1000000)) as MSats
+            // Federation fee is hard-coded to 0 sats for now
+            // TODO: fetch this from bridge
+            federationFee = 0
+        }
+
+        // Format fedi fee
+        const ecashSendFediFeeSats: Sats = amountUtils.msatToSat(
+            ecashSendFediFeeMsats,
+        )
+        const formattedFediFeeSats = `${amountUtils.formatSats(
+            ecashSendFediFeeSats,
+        )} ${t('words.sats').toUpperCase()}`
+        const formattedFediFeeFiat = convertSatsToFormattedFiat(
+            ecashSendFediFeeSats,
+            AmountLabelFormat.currencyCode,
+        )
+        const formattedFediFee = showFiatTxnAmounts
+            ? `${formattedFediFeeFiat} (${formattedFediFeeSats})`
+            : `${formattedFediFeeSats} (${formattedFediFeeFiat})`
+
+        // Format federation fee
+        const formattedFederationFeeSats = `${amountUtils.formatSats(
+            federationFee as Sats,
+        )} ${t('words.sats').toUpperCase()}`
+        const formattedFederationFeeFiat = convertSatsToFormattedFiat(
+            federationFee as Sats,
+            AmountLabelFormat.currencyCode,
+        )
+        const formattedFederationFee = showFiatTxnAmounts
+            ? `${formattedFederationFeeFiat} (${formattedFederationFeeSats})`
+            : `${formattedFederationFeeSats} (${formattedFederationFeeFiat})`
+
+        const ecashFeeItems: FeeItem[] = [
+            {
+                label: t('phrases.fedi-fee'),
+                formattedAmount: formattedFediFee,
+            },
+            {
+                label: t('phrases.federation-fee'),
+                formattedAmount: formattedFederationFee,
+            },
+        ]
+        return ecashFeeItems
+    }
+
+    const ecashFeesTitle = t('phrases.ecash-fees')
+    const ecashFeesGuidanceText = t('feature.fees.guidance-ecash')
+
+    return {
+        ecashFeesTitle,
+        ecashFeesGuidanceText,
+        makeEcashFeeItems,
+    }
 }
