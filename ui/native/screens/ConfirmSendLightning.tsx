@@ -1,16 +1,23 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Button, Overlay, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { ActivityIndicator } from 'react-native'
+import { Trans, useTranslation } from 'react-i18next'
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
+import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context'
 
 import { useOmniPaymentState } from '@fedi/common/hooks/pay'
+import { FeeItem, useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { hexToRgba } from '@fedi/common/utils/color'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { fedimint } from '../bridge'
+import { FeeBreakdown } from '../components/feature/send/FeeBreakdown'
 import { AmountScreen } from '../components/ui/AmountScreen'
+import LineBreak from '../components/ui/LineBreak'
+import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../state/hooks'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
@@ -21,10 +28,14 @@ export type Props = NativeStackScreenProps<
 >
 
 const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
+    const { theme } = useTheme()
+    const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
     const { toast } = useEnvironmentContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
+    const { lightningFeesTitle, makeLightningFeeContent } =
+        useFeeDisplayUtils(t)
     const { parsedData } = route.params
     const {
         isReadyToPay,
@@ -33,6 +44,8 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
         maximumAmount,
         inputAmount,
         description,
+        feeDetails,
+        sendTo,
         setInputAmount,
         handleOmniInput,
         handleOmniSend,
@@ -42,7 +55,11 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
         handleOmniInput(parsedData)
     }, [handleOmniInput, parsedData])
 
+    console.info('feeDetails', feeDetails)
     const [unit] = useState('sats')
+    const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
+    const [showDetails, setShowDetails] = useState<boolean>(false)
+
     const [isPayingInvoice, setIsPayingInvoice] = useState<boolean>(false)
     const [submitAttempts, setSubmitAttempts] = useState(0)
 
@@ -75,6 +92,112 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
 
     if (!isReadyToPay) return <ActivityIndicator />
 
+    const style = styles(theme, insets)
+
+    // TODO: rename to renderDetails
+    const renderDetails = () => {
+        if (!feeDetails) return null
+
+        const feeContent = makeLightningFeeContent(feeDetails)
+        const { formattedTotalFee, feeItemsBreakdown } = feeContent
+
+        return (
+            <>
+                <View
+                    style={[
+                        showDetails
+                            ? style.detailsContainer
+                            : style.collapsedContainer,
+                    ]}>
+                    <View style={[style.detailItem, style.bottomBorder]}>
+                        <Text caption bold style={style.darkGrey}>{`${t(
+                            'feature.send.send-to',
+                        )}`}</Text>
+                        <Text caption style={style.darkGrey}>
+                            {sendTo}
+                        </Text>
+                    </View>
+                    <Pressable
+                        style={[style.detailItem, style.bottomBorder]}
+                        onPress={() => setShowFeeBreakdown(true)}>
+                        <Text
+                            caption
+                            bold
+                            style={[
+                                style.darkGrey,
+                                style.detailItemTitle,
+                            ]}>{`${t('words.fees')}`}</Text>
+                        <Text
+                            caption
+                            style={
+                                style.darkGrey
+                            }>{`${formattedTotalFee}`}</Text>
+                        <SvgImage
+                            name="Info"
+                            size={16}
+                            color={theme.colors.grey}
+                            containerStyle={style.feeIcon}
+                        />
+                    </Pressable>
+                    <View style={[style.detailItem]}>
+                        <Text caption bold style={style.darkGrey}>{`${t(
+                            'feature.send.send-from',
+                        )}`}</Text>
+
+                        <Text caption style={style.darkGrey}>
+                            {`${t('feature.stabilitypool.bitcoin-balance')}`}
+                        </Text>
+                    </View>
+                </View>
+                <Button
+                    fullWidth
+                    containerStyle={[style.button]}
+                    buttonStyle={[style.detailsButton]}
+                    onPress={() => setShowDetails(!showDetails)}
+                    title={
+                        <Text medium caption>
+                            {showDetails
+                                ? t('phrases.hide-details')
+                                : t('feature.stabilitypool.details-and-fee')}
+                        </Text>
+                    }
+                />
+
+                <Overlay
+                    isVisible={showFeeBreakdown}
+                    overlayStyle={style.overlayContainer}
+                    onBackdropPress={() => setShowFeeBreakdown(false)}>
+                    <FeeBreakdown
+                        title={lightningFeesTitle}
+                        icon={
+                            <SvgImage
+                                name="Info"
+                                size={32}
+                                color={theme.colors.black}
+                            />
+                        }
+                        feeItems={feeItemsBreakdown.map(
+                            ({ label, formattedAmount }: FeeItem) => ({
+                                label: label,
+                                value: formattedAmount,
+                            }),
+                        )}
+                        onClose={() => setShowFeeBreakdown(false)}
+                        guidanceText={
+                            <Trans
+                                t={t}
+                                i18nKey="feature.fees.guidance-lightning"
+                                components={{
+                                    br: <LineBreak />,
+                                }}
+                            />
+                        }
+                    />
+                </Overlay>
+            </>
+        )
+    }
+
     return (
         <AmountScreen
             showBalance
@@ -86,6 +209,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
             isSubmitting={isPayingInvoice}
             readOnly={!!exactAmount}
             description={description}
+            subContent={renderDetails()}
             buttons={[
                 {
                     title: `${t('words.send')}${
@@ -101,5 +225,73 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
         />
     )
 }
+const styles = (theme: Theme, insets: EdgeInsets) =>
+    StyleSheet.create({
+        container: {
+            flexDirection: 'column',
+            flex: 1,
+            alignItems: 'center',
+            paddingTop: theme.spacing.lg,
+            paddingLeft: theme.spacing.lg + insets.left,
+            paddingRight: theme.spacing.lg + insets.right,
+            paddingBottom: Math.max(theme.spacing.lg, insets.bottom),
+        },
+        amountContainer: {
+            marginTop: 'auto',
+        },
+        balance: {
+            color: hexToRgba(theme.colors.primary, 0.6),
+            textAlign: 'center',
+        },
+        bottomBorder: {
+            borderBottomWidth: 1,
+            borderBottomColor: theme.colors.extraLightGrey,
+        },
+        buttonsGroup: {
+            width: '100%',
+            marginTop: 'auto',
+            flexDirection: 'column',
+        },
+        button: {
+            marginTop: theme.spacing.lg,
+        },
+        buttonText: {
+            color: theme.colors.secondary,
+        },
+        collapsedContainer: {
+            height: 0,
+            opacity: 0,
+        },
+        detailsContainer: {
+            width: '100%',
+            opacity: 1,
+            flexDirection: 'column',
+        },
+        detailItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: 52,
+        },
+        detailItemTitle: {
+            marginRight: 'auto',
+        },
+        darkGrey: {
+            color: theme.colors.darkGrey,
+        },
+        detailsButton: {
+            backgroundColor: theme.colors.offWhite,
+        },
+        feeIcon: {
+            marginLeft: theme.spacing.xxs,
+        },
+        overlayContainer: {
+            width: '90%',
+            maxWidth: 312,
+            padding: theme.spacing.xl,
+            borderRadius: theme.borders.defaultRadius,
+            alignItems: 'center',
+        },
+    })
 
 export default ConfirmSendLightning

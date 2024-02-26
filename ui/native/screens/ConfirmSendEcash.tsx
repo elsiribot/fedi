@@ -11,10 +11,7 @@ import {
     useBalanceDisplay,
     useAmountFormatter,
 } from '@fedi/common/hooks/amount'
-import {
-    FeeItem,
-    useEcashFeeDisplayUtils,
-} from '@fedi/common/hooks/transactions'
+import { FeeItem, useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import { Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { hexToRgba } from '@fedi/common/utils/color'
@@ -43,7 +40,7 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
     const { generateEcash } = useBridge()
     const balanceDisplay = useBalanceDisplay(t)
     const { ecashFeesTitle, ecashFeesGuidanceText, makeEcashFeeContent } =
-        useEcashFeeDisplayUtils(t)
+        useFeeDisplayUtils(t)
     const { formattedTotalFee, feeItemsBreakdown } = makeEcashFeeContent(
         amountUtils.satToMsat(amount),
     )
@@ -173,7 +170,7 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
                     loading={isLoading}
                     title={
                         <Text medium caption style={style.buttonText}>
-                            {t('words.deposit')}
+                            {t('words.send')}
                         </Text>
                     }
                 />

@@ -1,6 +1,5 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 import {
     Keyboard,
     Pressable,
@@ -17,7 +16,7 @@ import { FeeBreakdownItem } from './FeeBreakdownItem'
 export interface FeeBreakdownProps {
     icon: React.ReactNode
     title: React.ReactNode
-    guidanceText: string
+    guidanceText: string | React.ReactNode
     feeItems: DetailItem[]
     onClose: () => void
 }
@@ -54,7 +53,7 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
                         noBorder={idx === feeItems.length - 1}
                     />
                 ))}
-                <Text caption style={style.feesGuidance}>
+                <Text caption medium style={style.feesGuidance}>
                     {guidanceText}
                 </Text>
             </View>

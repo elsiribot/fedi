@@ -365,8 +365,7 @@
         },
         "fees": {
             "guidance-ecash": "Transferring ecash inside your community is the cheapest and easiest way to send money.",
-            "guidance-lightning-1": "Transactions between members inside the same community are the cheapest and fastest.",
-            "guidance-lightning-2": "Transactions outside the community use the lightning network where the fees are larger.",
+            "guidance-lightning": "Transactions between members inside the same community are the cheapest and fastest.<br/><br/>Transactions outside the community use the lightning network where the fees are larger.",
             "guidance-stable-balance-1": "*Fees if you hold the balance for a year APR = Annual Percentage Rate",
             "guidance-stable-balance-2": "This is the amount it costs to hold a stable balance.",
             "guidance-onchain": "Sending on-chain bitcoin is subject to network fees."

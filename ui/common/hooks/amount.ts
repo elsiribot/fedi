@@ -27,8 +27,10 @@ import {
     UsdCents,
 } from '../types'
 import { EcashRequest } from '../types'
+import { RpcFeeDetails } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'
+import stringUtils from '../utils/StringUtils'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useUpdatingRef } from './util'
 
@@ -615,9 +617,13 @@ export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
     // amount is requested.
     let exactAmount: Sats | undefined = undefined
     let description: string | undefined
+    let feeDetails: RpcFeeDetails | undefined
+    let sendTo: string | undefined
     if (invoice) {
         exactAmount = amountUtils.msatToSat(invoice.amount)
         description = invoice.description
+        feeDetails = invoice.fee
+        sendTo = stringUtils.truncateMiddleOfString(invoice.invoice, 8)
     } else if (
         lnurlPayment &&
         lnurlPayment.minSendable &&
@@ -635,6 +641,8 @@ export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
         inputAmount,
         setInputAmount,
         description,
+        feeDetails,
+        sendTo,
         exactAmount,
         minimumAmount,
         maximumAmount,

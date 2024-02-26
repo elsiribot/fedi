@@ -21,8 +21,8 @@ import {
     selectTransactionHistory,
     selectStabilityTransactionHistory,
 } from '../redux/transactions'
-import { MSats, Sats, Transaction } from '../types'
-import amountUtils from '../utils/AmountUtils'
+import { MSats, Transaction } from '../types'
+import { RpcFeeDetails } from '../types/bindings'
 import {
     makeBase64CSVUri,
     makeCSVFilename,
@@ -241,81 +241,111 @@ export type FeeItem = {
 
 // Ecash fees are ppm values specified in the federations feeSchedule so we calculate
 // the fee from the amount and provide all formatted UI display content
-export function useEcashFeeDisplayUtils(t: TFunction) {
-    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
-    const showFiatTxnAmounts = useCommonSelector(selectShowFiatTxnAmounts)
+export function useFeeDisplayUtils(t: TFunction) {
     const ecashFeeSchedule = useCommonSelector(selectEcashFeeSchedule)
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
     const makeEcashFeeContent = (amount: MSats) => {
-        let ecashSendFediFeeMsats: MSats = 0 as MSats
-        let federationFee = 0
+        let fediFee: MSats = 0 as MSats
+        let federationFee: MSats = 0 as MSats
         // Fedi fee for sending ecash is calculated from the federation fee schedule
         if (ecashFeeSchedule) {
-            ecashSendFediFeeMsats = (amount *
-                (ecashFeeSchedule.sendPpm / 1000000)) as MSats
+            fediFee = (amount * (ecashFeeSchedule.sendPpm / 1000000)) as MSats
             // Federation fee is hard-coded to 0 sats for now
             // TODO: fetch this from bridge
-            federationFee = 0
+            federationFee = 0 as MSats
         }
+        const totalFees: MSats = (fediFee + federationFee) as MSats
 
-        // Format fedi fee
-        const ecashSendFediFeeSats: Sats = amountUtils.msatToSat(
-            ecashSendFediFeeMsats,
-        )
-        const formattedFediFeeSats = `${amountUtils.formatSats(
-            ecashSendFediFeeSats,
-        )} ${t('words.sats').toUpperCase()}`
-        const formattedFediFeeFiat =
-            convertSatsToFormattedFiat(ecashSendFediFeeSats)
-        const formattedFediFee = showFiatTxnAmounts
-            ? `${formattedFediFeeFiat} (${formattedFediFeeSats})`
-            : `${formattedFediFeeSats} (${formattedFediFeeFiat})`
-
-        // Format federation fee
-        const formattedFederationFeeSats = `${amountUtils.formatSats(
-            federationFee as Sats,
-        )} ${t('words.sats').toUpperCase()}`
-        const formattedFederationFeeFiat = convertSatsToFormattedFiat(
-            federationFee as Sats,
-        )
-        const formattedFederationFee = showFiatTxnAmounts
-            ? `${formattedFederationFeeFiat} (${formattedFederationFeeSats})`
-            : `${formattedFederationFeeSats} (${formattedFederationFeeFiat})`
+        const {
+            formattedPrimaryAmount: formattedFediFee,
+            formattedSecondaryAmount: formattedFediFeeSecondary,
+        } = makeFormattedAmountsFromMSats(fediFee)
+        const {
+            formattedPrimaryAmount: formattedFederationFee,
+            formattedSecondaryAmount: formattedFederationFeeSecondary,
+        } = makeFormattedAmountsFromMSats(federationFee)
+        const {
+            formattedPrimaryAmount: formattedTotalFee,
+            formattedSecondaryAmount: formattedTotalFeeSecondary,
+        } = makeFormattedAmountsFromMSats(totalFees)
 
         const ecashFeeItems: FeeItem[] = [
             {
                 label: t('phrases.fedi-fee'),
-                formattedAmount: formattedFediFee,
+                formattedAmount: `${formattedFediFee} (${formattedFediFeeSecondary})`,
             },
             {
                 label: t('phrases.federation-fee'),
-                formattedAmount: formattedFederationFee,
+                formattedAmount: `${formattedFederationFee} (${formattedFederationFeeSecondary})`,
             },
         ]
 
-        // Format total fees
-        const totalFees = ecashSendFediFeeMsats + federationFee
-        const totalFeesSats: Sats = amountUtils.msatToSat(totalFees as MSats)
-        const formattedTotalFeesSats = `${amountUtils.formatSats(
-            totalFeesSats,
-        )} ${t('words.sats').toUpperCase()}`
-        const formattedTotalFeesFiat = convertSatsToFormattedFiat(totalFeesSats)
-        const formattedTotalFees = showFiatTxnAmounts
-            ? `${formattedTotalFeesFiat} (${formattedTotalFeesSats})`
-            : `${formattedTotalFeesSats} (${formattedTotalFeesFiat})`
-
         return {
             feeItemsBreakdown: ecashFeeItems,
-            formattedTotalFee: formattedTotalFees,
+            formattedTotalFee: `${
+                totalFees > 0 ? '+' : ''
+            }${formattedTotalFee} (${formattedTotalFeeSecondary})`,
+        }
+    }
+
+    const makeLightningFeeContent = (feeDetails: RpcFeeDetails) => {
+        const { fediFee, federationFee, networkFee } = feeDetails
+        // prettier-ignore
+        const lightningSendTotalFeeMsats = (
+            fediFee + federationFee + networkFee
+        ) as MSats
+
+        // Format fedi fee
+        const {
+            formattedPrimaryAmount: formattedFediFee,
+            formattedSecondaryAmount: formattedFediFeeSecondary,
+        } = makeFormattedAmountsFromMSats(fediFee)
+        const {
+            formattedPrimaryAmount: formattedFederationFee,
+            formattedSecondaryAmount: formattedFederationFeeSecondary,
+        } = makeFormattedAmountsFromMSats(federationFee)
+        const {
+            formattedPrimaryAmount: formattedNetworkFee,
+            formattedSecondaryAmount: formattedNetworkFeeSecondary,
+        } = makeFormattedAmountsFromMSats(networkFee)
+        const {
+            formattedPrimaryAmount: formattedTotalFee,
+            formattedSecondaryAmount: formattedTotalFeeSecondary,
+        } = makeFormattedAmountsFromMSats(lightningSendTotalFeeMsats)
+
+        const lightningFeeItems: FeeItem[] = [
+            {
+                label: t('phrases.lightning-network'),
+                formattedAmount: `${formattedNetworkFee} (${formattedNetworkFeeSecondary})`,
+            },
+            {
+                label: t('phrases.fedi-fee'),
+                formattedAmount: `${formattedFediFee} (${formattedFediFeeSecondary})`,
+            },
+            {
+                label: t('phrases.federation-fee'),
+                formattedAmount: `${formattedFederationFee} (${formattedFederationFeeSecondary})`,
+            },
+        ]
+
+        return {
+            feeItemsBreakdown: lightningFeeItems,
+            formattedTotalFee: `${
+                lightningSendTotalFeeMsats > 0 ? '+' : ''
+            }${formattedTotalFee} (${formattedTotalFeeSecondary})`,
         }
     }
 
     const ecashFeesTitle = t('phrases.ecash-fees')
     const ecashFeesGuidanceText = t('feature.fees.guidance-ecash')
+    const lightningFeesTitle = t('phrases.lightning-fees')
 
     return {
         ecashFeesTitle,
         ecashFeesGuidanceText,
         makeEcashFeeContent,
+        lightningFeesTitle,
+        makeLightningFeeContent,
     }
 }

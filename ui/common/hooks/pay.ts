@@ -7,6 +7,7 @@ import {
     ParserDataType,
     Sats,
 } from '../types'
+import { RpcFeeDetails } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { lnurlPay } from '../utils/lnurl'
@@ -32,6 +33,10 @@ interface OmniPaymentState {
     maximumAmount: Sats
     /** A short description of the payment */
     description: string | undefined
+    /** The fees associated with the payment */
+    feeDetails: RpcFeeDetails | undefined
+    /** Describes where the payment is being sent to (LN invoice, chat username, bitcoin address, etc) */
+    sendTo: string | undefined
     /** Handles sending the payment when the user has confirmed, can throw errors */
     handleOmniSend: (amount: Sats) => Promise<{ preimage: string }>
     /** For passing to <AmountInput amount /> prop or useAmountInput */
@@ -65,12 +70,17 @@ export function useOmniPaymentState(
         minimumAmount,
         maximumAmount,
         description,
+        feeDetails,
+        sendTo,
     } = useSendForm({ invoice, lnurlPayment })
 
     const handleOmniInput = useCallback(
         async (input: ExpectedInputData) => {
-            if (input.type === ParserDataType.Bolt11) {
-                const decoded = await fedimint.decodeInvoice(input.data.invoice)
+            if (input.type === ParserDataType.Bolt11 && federationId) {
+                const decoded = await fedimint.decodeInvoice(
+                    input.data.invoice,
+                    federationId,
+                )
                 if (decoded.amount) {
                     setInputAmount(amountUtils.msatToSat(decoded.amount))
                 }
@@ -84,7 +94,7 @@ export function useOmniPaymentState(
                 setLnurlPayment(input.data)
             }
         },
-        [fedimint, setInputAmount],
+        [federationId, fedimint, setInputAmount],
     )
 
     const handleOmniSend = useCallback(
@@ -119,7 +129,9 @@ export function useOmniPaymentState(
         exactAmount,
         minimumAmount,
         maximumAmount,
+        feeDetails,
         description,
+        sendTo,
         handleOmniSend,
         inputAmount,
         setInputAmount,

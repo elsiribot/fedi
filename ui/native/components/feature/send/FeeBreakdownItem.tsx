@@ -20,7 +20,7 @@ export const FeeBreakdownItem: React.FC<FeeBreakdownItemProps> = props => {
 
     return (
         <View style={containerStyle}>
-            <Text caption medium>
+            <Text caption bold style={style.labelText}>
                 {props.label}
             </Text>
             <Text caption>{props.value}</Text>
@@ -41,5 +41,8 @@ const styles = (theme: Theme) =>
             marginBottom: theme.spacing.sm,
             borderBottomWidth: 1,
             borderBottomColor: theme.colors.extraLightGrey,
+        },
+        labelText: {
+            color: theme.colors.darkGrey,
         },
     })

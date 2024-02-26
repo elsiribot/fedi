@@ -15,6 +15,7 @@ import KeyboardAwareWrapper from './KeyboardAwareWrapper'
 interface Props extends AmountInputProps {
     showBalance?: boolean
     subHeader?: React.ReactNode | null
+    subContent?: React.ReactNode | null
     description?: string
     buttons: ButtonProps[]
 }
@@ -22,6 +23,7 @@ interface Props extends AmountInputProps {
 export const AmountScreen: React.FC<Props> = ({
     showBalance,
     subHeader = null,
+    subContent = null,
     buttons,
     ...amountInputProps
 }) => {
@@ -50,6 +52,7 @@ export const AmountScreen: React.FC<Props> = ({
                     )}
                 </View>
                 <AmountInput {...amountInputProps} />
+                {subContent && <View>{subContent}</View>}
                 <View style={style.buttonGroup}>
                     {buttons.map((button, index) => (
                         <Button
