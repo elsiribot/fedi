@@ -290,7 +290,7 @@ export const shouldShowOfflineWallet = (
     )
 }
 
-export const shouldShowOnchainDeposits = (metadata: ClientConfigMetadata) => {
+export const shouldEnableOnchainDeposits = (metadata: ClientConfigMetadata) => {
     const onchainDepositsDisabled = getMetaField(
         SupportedMetaFields.onchain_deposits_disabled,
         metadata,
@@ -301,7 +301,7 @@ export const shouldShowOnchainDeposits = (metadata: ClientConfigMetadata) => {
         : onchainDepositsDisabled !== 'true'
 }
 
-export const shouldShowStabilityPool = (metadata: ClientConfigMetadata) => {
+export const shouldEnableStabilityPool = (metadata: ClientConfigMetadata) => {
     const stabilityPoolDisabled = getMetaField(
         SupportedMetaFields.stability_pool_disabled,
         metadata,

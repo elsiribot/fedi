@@ -12,11 +12,11 @@ import {
     shouldShowOfflineWallet,
     shouldShowSocialRecovery,
     shouldShowInviteCode,
-    shouldShowOnchainDeposits,
+    shouldEnableOnchainDeposits,
     shouldEnableNostr,
     getFederationChatServerDomain,
     getFederationPopupInfo,
-    shouldShowStabilityPool as isStabilityPoolEnabledInMeta,
+    shouldEnableStabilityPool,
 } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
 
@@ -58,15 +58,17 @@ export function useIsStabilityPoolSupported() {
 
 export function useShouldShowStabilityPool() {
     const stabilityPoolSupported = useIsStabilityPoolSupported()
-    const stabilityPoolEnabled = useCommonSelector(selectStableBalanceEnabled)
+    const stabilityPoolEnabledByUser = useCommonSelector(
+        selectStableBalanceEnabled,
+    )
     const activeFederation = useCommonSelector(selectActiveFederation)
     if (!activeFederation) return false
-    const stabilityPoolEnabledInMeta = isStabilityPoolEnabledInMeta(
+    const stabilityPoolEnabledByFederation = shouldEnableStabilityPool(
         activeFederation.meta,
     )
     return (
         stabilityPoolSupported &&
-        (stabilityPoolEnabled || stabilityPoolEnabledInMeta)
+        (stabilityPoolEnabledByUser || stabilityPoolEnabledByFederation)
     )
 }
 
@@ -89,7 +91,7 @@ export function useIsOnchainDepositSupported() {
 
     return (
         userEnabledOnchainDeposits ||
-        shouldShowOnchainDeposits(activeFederation.meta)
+        shouldEnableOnchainDeposits(activeFederation.meta)
     )
 }
 
