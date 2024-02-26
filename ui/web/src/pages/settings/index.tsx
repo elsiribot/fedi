@@ -8,12 +8,14 @@ import LanguageIcon from '@fedi/common/assets/svgs/language.svg'
 import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
 import QRIcon from '@fedi/common/assets/svgs/qr.svg'
 import ScrollIcon from '@fedi/common/assets/svgs/scroll.svg'
+import TableExportIcon from '@fedi/common/assets/svgs/table-export.svg'
 import UsdIcon from '@fedi/common/assets/svgs/usd.svg'
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import {
     useFederationSupportsSingleSeed,
     useIsInviteSupported,
 } from '@fedi/common/hooks/federation'
+import { useExportTransactions } from '@fedi/common/hooks/transactions'
 import {
     leaveFederation,
     selectActiveFederation,
@@ -53,9 +55,11 @@ function AdminPage() {
     const member = useAppSelector(selectAuthenticatedMember)
     const activeFederation = useAppSelector(selectActiveFederation)
     const { showErrorToast } = useToast()
+    const exportTransactions = useExportTransactions(fedimint)
     const [isMemberQrOpen, setIsMemberQrOpen] = useState(false)
     const [isInvitingMember, setIsInvitingMember] = useState(false)
     const [isLeavingFederation, setIsLeavingFederation] = useState(false)
+    const [isExportingCSV, setIsExportingCSV] = useState(false)
     const isInviteSupported = useIsInviteSupported()
     const supportsSingleSeed = useFederationSupportsSingleSeed()
 
@@ -79,6 +83,26 @@ function AdminPage() {
     const tosUrl =
         (activeFederation && getFederationTosUrl(activeFederation.meta)) ||
         undefined
+
+    const exportTransactionsAsCsv = async () => {
+        setIsExportingCSV(true)
+
+        const res = await exportTransactions()
+
+        if (res.success) {
+            const element = document.createElement('a')
+            element.setAttribute('href', res.uri)
+            element.setAttribute('download', res.fileName)
+
+            document.body.appendChild(element)
+            element.click()
+            document.body.removeChild(element)
+        } else {
+            showErrorToast(res.message, 'errors.unknown-error')
+        }
+
+        setIsExportingCSV(false)
+    }
 
     let menu: Menu = [
         {
@@ -104,13 +128,19 @@ function AdminPage() {
             ],
         },
         {
-            name: 'words.backup',
+            name: 'words.wallet',
             items: [
                 {
                     name: 'feature.backup.backup-wallet',
                     icon: WalletIcon,
                     href: '/settings/backup',
                     hidden: !supportsSingleSeed,
+                },
+                {
+                    name: 'feature.backup.export-transactions-to-csv',
+                    icon: TableExportIcon,
+                    onClick: exportTransactionsAsCsv,
+                    disabled: isExportingCSV,
                 },
             ],
         },
