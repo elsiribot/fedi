@@ -51,16 +51,17 @@ export function parseUserInput<T extends TFunction>(
     raw: string,
     fedimint: FedimintBridge,
     t: T,
+    federationId: string | undefined = undefined,
 ): Promise<AnyParsedData> {
     raw = raw.trim()
     return new Promise(resolve => {
         // Run all parsers simultaneously.
         const parserPromises = [
-            parseBolt11(raw, fedimint, t),
+            parseBolt11(raw, fedimint, t, federationId),
             parseBolt12(raw),
             parseLnurl(raw, t),
             parseBitcoinAddress(raw),
-            parseBip21(raw, fedimint),
+            parseBip21(raw, fedimint, federationId),
             parseFediUri(raw),
             parseFedimintInvite(raw),
             parseFedimintEcash(raw, fedimint),
@@ -255,6 +256,7 @@ async function parseBolt11(
     raw: string,
     fedimint: FedimintBridge,
     t: TFunction,
+    federationId: string | undefined,
 ): Promise<ParsedBolt11 | ParsedUnknownData | undefined> {
     const lnRaw = stripProtocol(raw, 'lightning').toLowerCase()
 
@@ -268,7 +270,9 @@ async function parseBolt11(
     }
 
     try {
-        const decoded = await fedimint.decodeInvoice(lnRaw)
+        // TODO: allow parsing with no federation ID
+        if (!federationId) return
+        const decoded = await fedimint.decodeInvoice(lnRaw, federationId)
 
         return {
             type: ParserDataType.Bolt11,
@@ -326,6 +330,7 @@ function parseBitcoinAddress(raw: string): ParsedBitcoinAddress | undefined {
 async function parseBip21(
     raw: string,
     fedimint: FedimintBridge,
+    federationId: string | undefined,
 ): Promise<ParsedBip21 | ParsedBolt11 | undefined> {
     // Only consider things that start with URIs, otherwise it's handled by parseBitcoinAddress.
     if (!raw.toLowerCase().startsWith('bitcoin:')) return
@@ -352,7 +357,9 @@ async function parseBip21(
     // If lightning invoice is present, return this as a bolt11 rather than a bip21
     if (bolt11) {
         try {
-            const invoice = await fedimint.decodeInvoice(bolt11)
+            // TODO: allow parsing with no federation ID
+            if (!federationId) return
+            const invoice = await fedimint.decodeInvoice(bolt11, federationId)
             return {
                 type: ParserDataType.Bolt11,
                 data: {
