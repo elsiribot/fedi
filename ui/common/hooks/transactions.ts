@@ -271,10 +271,8 @@ export function useFeeDisplayUtils(t: TFunction) {
             formattedPrimaryAmount: formattedFederationFee,
             formattedSecondaryAmount: formattedFederationFeeSecondary,
         } = makeFormattedAmountsFromMSats(federationFee)
-        const {
-            formattedPrimaryAmount: formattedTotalFee,
-            formattedSecondaryAmount: formattedTotalFeeSecondary,
-        } = makeFormattedAmountsFromMSats(totalFees)
+        const { formattedPrimaryAmount: formattedTotalFee } =
+            makeFormattedAmountsFromMSats(totalFees)
 
         const ecashFeeItems: FeeItem[] = [
             {
@@ -291,7 +289,7 @@ export function useFeeDisplayUtils(t: TFunction) {
             feeItemsBreakdown: ecashFeeItems,
             formattedTotalFee: `${
                 totalFees > 0 ? '+' : ''
-            }${formattedTotalFee} (${formattedTotalFeeSecondary})`,
+            }${formattedTotalFee}`,
         }
     }
 
@@ -315,10 +313,8 @@ export function useFeeDisplayUtils(t: TFunction) {
             formattedPrimaryAmount: formattedNetworkFee,
             formattedSecondaryAmount: formattedNetworkFeeSecondary,
         } = makeFormattedAmountsFromMSats(networkFee)
-        const {
-            formattedPrimaryAmount: formattedTotalFee,
-            formattedSecondaryAmount: formattedTotalFeeSecondary,
-        } = makeFormattedAmountsFromMSats(lightningSendTotalFeeMsats)
+        const { formattedPrimaryAmount: formattedTotalFee } =
+            makeFormattedAmountsFromMSats(lightningSendTotalFeeMsats)
 
         const lightningFeeItems: FeeItem[] = [
             {
@@ -339,7 +335,7 @@ export function useFeeDisplayUtils(t: TFunction) {
             feeItemsBreakdown: lightningFeeItems,
             formattedTotalFee: `${
                 lightningSendTotalFeeMsats > 0 ? '+' : ''
-            }${formattedTotalFee} (${formattedTotalFeeSecondary})`,
+            }${formattedTotalFee}`,
         }
     }
 
@@ -365,10 +361,8 @@ export function useFeeDisplayUtils(t: TFunction) {
             formattedPrimaryAmount: formattedFederationFee,
             formattedSecondaryAmount: formattedFederationFeeSecondary,
         } = makeFormattedAmountsFromMSats(federationFee)
-        const {
-            formattedPrimaryAmount: formattedTotalFee,
-            formattedSecondaryAmount: formattedTotalFeeSecondary,
-        } = makeFormattedAmountsFromMSats(totalFees)
+        const { formattedPrimaryAmount: formattedTotalFee } =
+            makeFormattedAmountsFromMSats(totalFees)
 
         const ecashFeeItems: FeeItem[] = [
             {
