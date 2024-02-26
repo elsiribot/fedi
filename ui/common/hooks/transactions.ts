@@ -14,14 +14,16 @@ import {
     selectActiveFederationId,
     selectCurrency,
     selectEcashFeeSchedule,
+    selectMaximumAPR,
     selectShowFiatTxnAmounts,
+    selectStabilityPoolFeeSchedule,
 } from '../redux'
 import {
     fetchTransactions as reduxFetchTransactions,
     selectTransactionHistory,
     selectStabilityTransactionHistory,
 } from '../redux/transactions'
-import { MSats, Transaction } from '../types'
+import { MSats, Sats, Transaction } from '../types'
 import { RpcFeeDetails } from '../types/bindings'
 import {
     makeBase64CSVUri,
@@ -242,7 +244,11 @@ export type FeeItem = {
 // Ecash fees are ppm values specified in the federations feeSchedule so we calculate
 // the fee from the amount and provide all formatted UI display content
 export function useFeeDisplayUtils(t: TFunction) {
+    const maxFeeRate = useCommonSelector(selectMaximumAPR)
     const ecashFeeSchedule = useCommonSelector(selectEcashFeeSchedule)
+    const stabilityPoolFeeSchedule = useCommonSelector(
+        selectStabilityPoolFeeSchedule,
+    )
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
     const makeEcashFeeContent = (amount: MSats) => {
@@ -337,9 +343,58 @@ export function useFeeDisplayUtils(t: TFunction) {
         }
     }
 
+    const makeStabilityPoolFeeContent = (amount: Sats) => {
+        const amountMsats = amountUtils.satToMsat(amount)
+        let fediFee: MSats = 0 as MSats
+        let federationFee: MSats = 0 as MSats
+        // Fedi fee for sending ecash is calculated from the federation fee schedule
+        if (stabilityPoolFeeSchedule) {
+            fediFee = (amountMsats *
+                (stabilityPoolFeeSchedule.sendPpm / 1000000)) as MSats
+            // Federation fee is hard-coded to 0 sats for now
+            // TODO: fetch this from bridge
+            federationFee = 0 as MSats
+        }
+        const totalFees: MSats = (fediFee + federationFee) as MSats
+
+        const {
+            formattedPrimaryAmount: formattedFediFee,
+            formattedSecondaryAmount: formattedFediFeeSecondary,
+        } = makeFormattedAmountsFromMSats(fediFee)
+        const {
+            formattedPrimaryAmount: formattedFederationFee,
+            formattedSecondaryAmount: formattedFederationFeeSecondary,
+        } = makeFormattedAmountsFromMSats(federationFee)
+        const {
+            formattedPrimaryAmount: formattedTotalFee,
+            formattedSecondaryAmount: formattedTotalFeeSecondary,
+        } = makeFormattedAmountsFromMSats(totalFees)
+
+        const ecashFeeItems: FeeItem[] = [
+            {
+                label: `${t('phrases.yearly-fee')}*`,
+                formattedAmount: `${maxFeeRate}% APR or less`,
+            },
+            {
+                label: t('phrases.fedi-fee'),
+                formattedAmount: `${formattedFediFee} (${formattedFediFeeSecondary})`,
+            },
+            {
+                label: t('phrases.federation-fee'),
+                formattedAmount: `${formattedFederationFee} (${formattedFederationFeeSecondary})`,
+            },
+        ]
+
+        return {
+            feeItemsBreakdown: ecashFeeItems,
+            formattedTotalFee: `${formattedTotalFee} + ${maxFeeRate}% yearly`,
+        }
+    }
+
     const ecashFeesTitle = t('phrases.ecash-fees')
     const ecashFeesGuidanceText = t('feature.fees.guidance-ecash')
     const lightningFeesTitle = t('phrases.lightning-fees')
+    const stabilityPoolFeesTitle = t('phrases.stable-balance-fees')
 
     return {
         ecashFeesTitle,
@@ -347,5 +402,7 @@ export function useFeeDisplayUtils(t: TFunction) {
         makeEcashFeeContent,
         lightningFeesTitle,
         makeLightningFeeContent,
+        stabilityPoolFeesTitle,
+        makeStabilityPoolFeeContent,
     }
 }

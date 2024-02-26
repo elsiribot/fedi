@@ -366,8 +366,7 @@
         "fees": {
             "guidance-ecash": "Transferring ecash inside your community is the cheapest and easiest way to send money.",
             "guidance-lightning": "Transactions between members inside the same community are the cheapest and fastest.<br/><br/>Transactions outside the community use the lightning network where the fees are larger.",
-            "guidance-stable-balance-1": "*Fees if you hold the balance for a year APR = Annual Percentage Rate",
-            "guidance-stable-balance-2": "This is the amount it costs to hold a stable balance.",
+            "guidance-stable-balance": "*Fees if you hold the balance for a year APR = Annual Percentage Rate<br/><br/>This is the amount it costs to hold a stable balance.",
             "guidance-onchain": "Sending on-chain bitcoin is subject to network fees."
         },
         "fedimods": {
@@ -654,7 +653,12 @@
             "enter-deposit-amount": "Enter deposit amount",
             "enter-withdrawal-amount": "Enter withdrawal amount",
             "fees-paid": "Fees paid",
+            "more-than-an-hour": "1+ hr",
+            "minutes": "{{minutes}} minutes",
+            "one-minute": "1 minute",
+            "one-second": "1 second",
             "pending-withdrawal-blocking": "Please wait for pending withdrawals to process before making further deposits or withdrawals",
+            "seconds": "{{seconds}} seconds",
             "will-be-deposited": "{{amount}} will be deposited in {{expectedWait}}",
             "will-be-withdrawn": "{{amount}} will be withdrawn in {{expectedWait}}",
             "withdraw-to": "Withdraw to",
