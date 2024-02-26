@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 
+import { useIsStabilityPoolSupported } from '@fedi/common/hooks/federation'
 import {
     changeAuthenticatedGuardian,
     resetAuthenticatedMember,
@@ -65,6 +66,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const selectedFiatCurrency = useAppSelector(selectCurrency)
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
     const onchainDepositsEnabled = useAppSelector(selectOnchainDepositsEnabled)
+    const stabilityPoolSupported = useIsStabilityPoolSupported()
     const stableBalanceEnabled = useAppSelector(selectStableBalanceEnabled)
     const showFiatTxnAmounts = useAppSelector(selectShowFiatTxnAmounts)
     const spBtcUsdPrice = useAppSelector(selectStabilityPoolCycleStartPrice)
@@ -112,8 +114,9 @@ const DeveloperSettings: React.FC<Props> = () => {
     }, [toast, listGateways, t])
 
     useEffect(() => {
-        reduxDispatch(refreshActiveStabilityPool({ fedimint }))
-    }, [reduxDispatch])
+        if (stabilityPoolSupported)
+            reduxDispatch(refreshActiveStabilityPool({ fedimint }))
+    }, [reduxDispatch, stabilityPoolSupported])
 
     const handleSelectGateway = async (gateway: LightningGateway) => {
         try {
@@ -258,22 +261,26 @@ const DeveloperSettings: React.FC<Props> = () => {
                         }}
                     />
                 </View>
-                <View style={styles(theme).switchWrapper}>
-                    <View style={styles(theme).switchLabelContainer}>
-                        <Text caption style={styles(theme).switchLabel}>
-                            {t('feature.fedimods.stable-balance-enabled')}
-                        </Text>
-                        <Text small style={styles(theme).switchLabel}>
-                            {t('feature.fedimods.stable-balance-enabled-info')}
-                        </Text>
+                {stabilityPoolSupported && (
+                    <View style={styles(theme).switchWrapper}>
+                        <View style={styles(theme).switchLabelContainer}>
+                            <Text caption style={styles(theme).switchLabel}>
+                                {t('feature.fedimods.stable-balance-enabled')}
+                            </Text>
+                            <Text small style={styles(theme).switchLabel}>
+                                {t(
+                                    'feature.fedimods.stable-balance-enabled-info',
+                                )}
+                            </Text>
+                        </View>
+                        <Switch
+                            value={stableBalanceEnabled}
+                            onValueChange={value => {
+                                reduxDispatch(setStableBalanceEnabled(value))
+                            }}
+                        />
                     </View>
-                    <Switch
-                        value={stableBalanceEnabled}
-                        onValueChange={value => {
-                            reduxDispatch(setStableBalanceEnabled(value))
-                        }}
-                    />
-                </View>
+                )}
                 <View style={styles(theme).switchWrapper}>
                     <View style={styles(theme).switchLabelContainer}>
                         <Text caption style={styles(theme).switchLabel}>

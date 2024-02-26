@@ -16,6 +16,7 @@ The following meta fields are interpretable by the Fedi app (note the `fedi:` pr
 * [`fedi:social_recovery_disabled`](social_recovery_disabled.md): Boolean value that disables the social backup & recovery features
 * [`fedi:offline_wallet_disabled`](offline_wallet_disabled.md): Boolean value that disables offline ecash generation features
 * [`fedi:onchain_deposits_disabled`](onchain_deposits_disabled.md): Boolean value that disables the onchain deposit features
+* [`fedi:stability_pool_disabled`](stability_pool_disabled.md): Boolean value that disables the stability pool features
 * [`fedi:max_invoice_msats`](max_invoice_msats.md): Number value in millisats that prevents users from generating invoices higher than the specified amount
 * [`fedi:max_balance_msats`](max_balance_msats.md): Number value in millisats that prevents users from having a balance higher than the specified amount
 * [`fedi:fedimods`](fedimods.md): Stringified JSON array of objects representing the default FediMods shown to users upon joining the federation

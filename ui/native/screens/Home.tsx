@@ -6,11 +6,8 @@ import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { useIsStabilityPoolSupported } from '@fedi/common/hooks/federation'
-import {
-    selectIsActiveFederationRecovering,
-    selectStableBalanceEnabled,
-} from '@fedi/common/redux'
+import { useShouldShowStabilityPool } from '@fedi/common/hooks/federation'
+import { selectIsActiveFederationRecovering } from '@fedi/common/redux'
 
 import ShortcutsList from '../components/feature/home/ShortcutsList'
 import RecoveryInProgress from '../components/feature/recovery/RecoveryInProgress'
@@ -33,14 +30,10 @@ export type Props =
 const Home: React.FC<Props> = ({ offline }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    // TODO: Hoist state and listen to bridge for updates
-    const isStabilityPoolSupported = useIsStabilityPoolSupported()
-    const enableStableBalance = useAppSelector(selectStableBalanceEnabled)
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
     )
-
-    const showStabilityWallet = isStabilityPoolSupported && enableStableBalance
+    const showStabilityWallet = useShouldShowStabilityPool()
 
     return (
         <ScrollView

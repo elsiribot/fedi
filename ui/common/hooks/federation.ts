@@ -4,6 +4,7 @@ import {
     selectActiveFederation,
     selectFederationMetadata,
     selectOnchainDepositsEnabled,
+    selectStableBalanceEnabled,
 } from '../redux'
 import { Federation } from '../types'
 import dateUtils from '../utils/DateUtils'
@@ -11,10 +12,11 @@ import {
     shouldShowOfflineWallet,
     shouldShowSocialRecovery,
     shouldShowInviteCode,
-    shouldShowOnchainDeposits,
+    shouldEnableOnchainDeposits,
     shouldEnableNostr,
     getFederationChatServerDomain,
     getFederationPopupInfo,
+    shouldEnableStabilityPool,
 } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
 
@@ -54,6 +56,22 @@ export function useIsStabilityPoolSupported() {
     return supported
 }
 
+export function useShouldShowStabilityPool() {
+    const stabilityPoolSupported = useIsStabilityPoolSupported()
+    const stabilityPoolEnabledByUser = useCommonSelector(
+        selectStableBalanceEnabled,
+    )
+    const activeFederation = useCommonSelector(selectActiveFederation)
+    if (!activeFederation) return false
+    const stabilityPoolEnabledByFederation = shouldEnableStabilityPool(
+        activeFederation.meta,
+    )
+    return (
+        stabilityPoolSupported &&
+        (stabilityPoolEnabledByUser || stabilityPoolEnabledByFederation)
+    )
+}
+
 export function useIsOfflineWalletSupported() {
     const activeFederation = useCommonSelector(selectActiveFederation)
     if (!activeFederation) return false
@@ -68,11 +86,12 @@ export function useIsOnchainDepositSupported() {
         selectOnchainDepositsEnabled,
     )
     if (!activeFederation) return false
+
     if (activeFederation.version < 1) return false
 
     return (
         userEnabledOnchainDeposits ||
-        shouldShowOnchainDeposits(activeFederation.meta)
+        shouldEnableOnchainDeposits(activeFederation.meta)
     )
 }
 
