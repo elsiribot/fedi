@@ -367,7 +367,7 @@ export function useFeeDisplayUtils(t: TFunction) {
         const ecashFeeItems: FeeItem[] = [
             {
                 label: `${t('phrases.yearly-fee')}*`,
-                formattedAmount: `${maxFeeRate}% APR or less`,
+                formattedAmount: `${maxFeeRate}% max`,
             },
             {
                 label: t('phrases.fedi-fee'),

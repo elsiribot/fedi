@@ -698,7 +698,7 @@ export const selectMaximumAPR = createSelector(
         const cyclesPerYear = secondsInYear / secondsPerCycle
         const compoundedAnnualRate =
             1 - Math.pow(1 - periodicRate, cyclesPerYear)
-        const maxFeePercentage = (compoundedAnnualRate * 100).toFixed(4)
+        const maxFeePercentage = (compoundedAnnualRate * 100).toFixed(2)
         return Number(maxFeePercentage)
     },
 )

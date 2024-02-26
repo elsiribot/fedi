@@ -148,7 +148,7 @@
         "return-to-home": "Return to home",
         "save-changes": "Save changes",
         "sent-bitcoin": "Sent bitcoin",
-        "stable-balance-fees": "Stable balance fees",
+        "stable-balance-fees": "Stable Balance fees",
         "terms-and-conditions": "Terms & Conditions",
         "transaction-id": "Transaction ID",
         "transaction-received": "Transaction received",
@@ -366,7 +366,7 @@
         "fees": {
             "guidance-ecash": "Transferring ecash inside your community is the cheapest and easiest way to send money.",
             "guidance-lightning": "Transactions between members inside the same community are the cheapest and fastest.<br/><br/>Transactions outside the community use the lightning network where the fees are larger.",
-            "guidance-stable-balance": "*Fees if you hold the balance for a year APR = Annual Percentage Rate<br/><br/>This is the amount it costs to hold a stable balance.",
+            "guidance-stable-balance": "*This is the max amount it could cost to hold this balance for a year.",
             "guidance-onchain": "Sending on-chain bitcoin is subject to network fees."
         },
         "fedimods": {
