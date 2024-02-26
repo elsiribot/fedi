@@ -581,6 +581,36 @@
             "you-are-sending-amount-unit": "You are sending {{amount}} {{unit}}",
             "send-amount-unit": "Send {{amount}} {{unit}}"
         },
+        "settings": {
+            "currency-names": {
+                "usd": "US Dollar",
+                "eur": "EU Euro",
+                "cfa": "Central African Franc",
+                "czk": "Czech koruna",
+                "inr": "Indian rupee",
+                "idr": "Indonesian Rupiah",
+                "ugx": "Ugandan Shillings",
+                "zar": "South African Rand",
+                "etb": "Ethiopian Birr",
+                "bif": "Burundian Franc",
+                "rwf": "Rwandan Franc",
+                "sdg": "Sudanese Pound",
+                "ssp": "South Sudanese Pound",
+                "sos": "Somali Shilling",
+                "cdf": "Congolese Franc",
+                "ern": "Eritrean Nakfa",
+                "myr": "Malaysian Ringgit",
+                "thb": "Thailand Baht",
+                "vnd": "Vietnam Dong",
+                "mxn": "Mexican Peso",
+                "cop": "Colombian Peso",
+                "clp": "Chilean Peso",
+                "uyu": "Uruguayan Peso",
+                "ars": "Argentinian Peso",
+                "pen": "Peruvian Nuevo Sol",
+                "brl": "Brazilian Real"
+            }
+        },
         "stabilitypool": {
             "amount-may-vary": "Amount may vary",
             "amount-may-vary-during-withdraw": "Amount may vary during withdrawal",

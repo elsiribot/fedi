@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { changeSelectedFiatCurrency, selectCurrency } from '@fedi/common/redux'
 import { SupportedCurrency } from '@fedi/common/types'
+import { formatCurrencyText } from '@fedi/common/utils/format'
 
 import { ContentBlock } from '../../components/ContentBlock'
 import * as Layout from '../../components/Layout'
@@ -16,10 +17,12 @@ function AppSettings() {
 
     const currencyOptions = useMemo(
         () =>
-            Object.entries(SupportedCurrency).map(([label, value]) => ({
-                label,
-                value,
-            })),
+            Object.entries(SupportedCurrency).map(
+                ([_, value]: [string, SupportedCurrency]) => ({
+                    label: formatCurrencyText(t, value),
+                    value,
+                }),
+            ),
         [],
     )
 

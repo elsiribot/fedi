@@ -52,32 +52,32 @@ export interface FederationCredentials {
 }
 
 export enum SupportedCurrency {
-    USD = 'USD', // US Dollar
-    EUR = 'EUR', // EU Euro
-    CFA = 'CFA', // Central African Franc
-    CZK = 'CZK', // Czech koruna
-    INR = 'INR', // Indian rupee
-    IDR = 'IDR', // Indonesian Rupiah
-    UGX = 'UGX', // Ugandan Shillings
-    ZAR = 'ZAR', // South African Rand
-    ETB = 'ETB', // Ethiopian Birr
-    BIF = 'BIF', // Burundian Franc
-    RWF = 'RWF', // Rwandan Franc
-    SDG = 'SDG', // Sudanese Pound
-    SSP = 'SSP', // South Sudanese Pound
-    SOS = 'SOS', // Somali Shilling
-    CDF = 'CDF', // Congolese Franc
-    ERN = 'ERN', // Eritrean Nakfa
-    MYR = 'MYR', // Malaysian Ringgit
-    THB = 'THB', // Thailand Baht
-    VND = 'VND', // Vietnam Dong
-    MXN = 'MXN', // Peso Mexicano
-    COP = 'COP', // Peso Colombiano
-    CLP = 'CLP', // Peso Chileno
-    UYU = 'UYU', // Peso Uruguayo
-    ARS = 'ARS', // Peso Argentino
-    PEN = 'PEN', // Nuevo Sol Peruano
-    BRL = 'BRL', // Brazilian Real
+    USD = 'USD',
+    EUR = 'EUR',
+    CFA = 'CFA',
+    CZK = 'CZK',
+    INR = 'INR',
+    IDR = 'IDR',
+    UGX = 'UGX',
+    ZAR = 'ZAR',
+    ETB = 'ETB',
+    BIF = 'BIF',
+    RWF = 'RWF',
+    SDG = 'SDG',
+    SSP = 'SSP',
+    SOS = 'SOS',
+    CDF = 'CDF',
+    ERN = 'ERN',
+    MYR = 'MYR',
+    THB = 'THB',
+    VND = 'VND',
+    MXN = 'MXN',
+    COP = 'COP',
+    CLP = 'CLP',
+    UYU = 'UYU',
+    ARS = 'ARS',
+    PEN = 'PEN',
+    BRL = 'BRL',
 }
 
 export enum SupportedMetaFields {
