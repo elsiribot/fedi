@@ -12,10 +12,7 @@ use ::serde::{Deserialize, Serialize};
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{self, PublicKey, Secp256k1};
 use bitcoin::{Address, Network};
-use db::{
-    FediRawClientConfigKey, InviteCodeKey, LastBackupTimestampKey, TransactionNotesKey,
-    XmppUsernameKey,
-};
+use db::{FediRawClientConfigKey, InviteCodeKey, TransactionNotesKey, XmppUsernameKey};
 use fedi_social_client::common::VerificationDocument;
 use fedi_social_client::{FediSocialClientInit, RecoveryId};
 use fedimint_bip39::Bip39RootSecretStrategy;
@@ -60,17 +57,18 @@ use stability_pool_client::{
     ClientAccountInfo, StabilityPoolClientInit, StabilityPoolClientModule,
     StabilityPoolDepositOperationState, StabilityPoolMeta, StabilityPoolWithdrawalOperationState,
 };
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, OnceCell};
 use tracing::{error, info, warn};
 
+use self::backup_service::BackupService;
 use self::db::{OperationFediFeeStatusKey, OutstandingFediFeesKey};
 use self::dev::{
     override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
 };
 use super::constants::{
-    BACKUP_FREQUENCY, LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE, ONE_WEEK,
-    PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE,
-    WALLET_OPERATION_TYPE, XMPP_CHILD_ID, XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
+    LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE, ONE_WEEK, PAY_INVOICE_TIMEOUT,
+    REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE, XMPP_CHILD_ID,
+    XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
 };
 use super::event::{Event, EventSink, TypedEventExt};
 use super::social::{
@@ -93,6 +91,9 @@ use crate::types::{
     RpcTransactionDirection, WithdrawalDetails,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
+
+mod backup_service;
+
 pub const GUARDIAN_STATUS_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -132,6 +133,7 @@ pub struct FederationV2 {
     // transactions.
     pub fedi_fee_helper: Arc<FediFeeHelper>,
     pub recovering: Arc<Mutex<bool>>,
+    pub backup_service: OnceCell<BackupService>,
 }
 
 impl FederationV2 {
@@ -170,6 +172,7 @@ impl FederationV2 {
             auxiliary_secret: secret,
             fedi_fee_helper,
             recovering: Arc::new(Mutex::new(recovering)),
+            backup_service: OnceCell::new(),
         };
         if recovering {
             federation.subscribe_recovery().await;
@@ -183,7 +186,13 @@ impl FederationV2 {
     /// saved to db (e.g. after recovery)
     async fn start_background_tasks(&mut self) {
         self.subscribe_balance_updates().await;
-        self.poll_scheduled_backups().await;
+        if self
+            .backup_service
+            .set(BackupService::new(self.client.clone(), &mut self.task_group).await)
+            .is_err()
+        {
+            panic!("backup service already initialized");
+        }
         self.subscribe_to_all_operations().await;
     }
 
@@ -1360,10 +1369,10 @@ impl FederationV2 {
 
     /// Backup all ecash and username with the federation
     pub async fn backup(&self) -> Result<()> {
-        let username = self.get_xmpp_username().await;
-        let backup = FediBackupMetadata::new(username);
-        self.client
-            .backup_to_federation(Metadata::from_json_serialized(backup))
+        self.backup_service
+            .get()
+            .context("backup not intialized")?
+            .trigger_manual_backup()
             .await?;
         Ok(())
     }
@@ -1548,56 +1557,6 @@ impl FederationV2 {
             keypair_seed: hex::encode(keypair_seed_bytes),
             username,
         }
-    }
-
-    /// Execute a backup if one is due and username is present (according to db)
-    pub async fn scheduled_backup(&self) -> Result<()> {
-        let now = fedimint_core::time::now();
-
-        // Backup is due
-        if let Some(last_backup) = self.get_last_backup_timestamp().await {
-            if now.duration_since(last_backup)? < BACKUP_FREQUENCY {
-                return Ok(());
-            }
-        };
-
-        // FIXME: this potentially prevents race conditions, but degrades recovery for
-        // federations without chat Username is present
-        // FIXME: what was this race condition???
-        // if self.get_xmpp_username().await.is_none() {
-        //     return Ok(());
-        // }
-
-        // Do backup and save timestamp to db
-        // Hack to make sure recovery balance events have been processed
-        fedimint_core::task::sleep(Duration::from_secs(15)).await;
-        self.backup().await?;
-        self.save_last_backup_timestamp(now).await?;
-
-        info!("Finished periodic backup");
-        Ok(())
-    }
-
-    /// Background task which does a backup with the federation twice per day
-    async fn poll_scheduled_backups(&mut self) {
-        let federation = self.clone();
-        self.task_group
-            .spawn(
-                format!("{:?} scheduled backups", federation.federation_name()),
-                |handle| async move {
-                    loop {
-                        // TODO: select!
-                        if !handle.is_shutting_down() {
-                            if let Err(e) = federation.scheduled_backup().await {
-                                warn!("Error executing scheduled backup {e:?}");
-                            }
-                        }
-                        // We check if a backup is due every 10 seconds
-                        fedimint_core::task::sleep(Duration::from_secs(10)).await;
-                    }
-                },
-            )
-            .await;
     }
 
     pub async fn get_ln_pay_outcome(
@@ -2005,16 +1964,6 @@ impl FederationV2 {
         let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&XmppUsernameKey, &username.to_owned())
             .await;
-        dbtx.commit_tx_result().await
-    }
-
-    pub async fn get_last_backup_timestamp(&self) -> Option<SystemTime> {
-        self.dbtx().await.get_value(&LastBackupTimestampKey).await
-    }
-
-    pub async fn save_last_backup_timestamp(&self, timestamp: SystemTime) -> Result<()> {
-        let mut dbtx = self.dbtx().await;
-        dbtx.insert_entry(&LastBackupTimestampKey, &timestamp).await;
         dbtx.commit_tx_result().await
     }
 
