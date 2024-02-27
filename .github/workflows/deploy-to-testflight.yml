@@ -9,7 +9,12 @@ on:
 
 jobs:
     release-ios:
-        if: github.event.pull_request.merged == true && startsWith(github.head_ref, 'release/')
+        if: >
+            (github.event_name == 'workflow_dispatch') ||
+            (
+              github.event.pull_request.merged == true &&
+              startsWith(github.head_ref, 'release/')
+            )
         name: Build iOS app and upload to TestFlight
         runs-on: [self-hosted, macos, arm64]
         steps:
