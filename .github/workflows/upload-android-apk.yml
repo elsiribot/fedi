@@ -9,7 +9,12 @@ on:
 
 jobs:
     release-android:
-        if: github.event.pull_request.merged == true && startsWith(github.head_ref, 'release/')
+        if: >
+            (github.event_name == 'workflow_dispatch') ||
+            (
+              github.event.pull_request.merged == true &&
+              startsWith(github.head_ref, 'release/')
+            )
         name: Build Android APK and publish in GitHub draft release
         runs-on: [self-hosted, linux]
         steps:
