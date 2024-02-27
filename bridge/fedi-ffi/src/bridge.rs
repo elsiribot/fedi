@@ -20,7 +20,7 @@ use futures::future::join_all;
 use lightning_invoice::Bolt11Invoice;
 use rand::distributions::{Alphanumeric, DistString};
 use tokio::sync::Mutex;
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, info_span, Instrument};
 
 use super::event::EventSink;
 use super::storage::Storage;
@@ -88,29 +88,32 @@ impl Bridge {
             .iter()
             // Ignore older version
             .filter(|(_, info)| info.version >= 2)
-            .map(|(federation_id_str, federation_info)| async {
-                Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
-                    federation_id_str.clone(),
-                    match federation_info.version {
-                        2 => Arc::new(MultiFederation::V2(
-                            FederationV2::from_db(
-                                storage
-                                    .federation_database_v2(&federation_info.database_name)
-                                    .await?,
-                                event_sink.clone(),
-                                task_group.make_subgroup().await,
-                                &root_mnemonic,
-                                None,
-                                fedi_fee_helper.clone(),
-                            )
-                            .await
-                            .with_context(|| {
-                                format!("loading federation {}", federation_id_str.clone())
-                            })?,
-                        )),
-                        n => bail!("Invalid federation version {n}"),
-                    },
-                ))
+            .map(|(federation_id_str, federation_info)| {
+                async {
+                    Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
+                        federation_id_str.clone(),
+                        match federation_info.version {
+                            2 => Arc::new(MultiFederation::V2(
+                                FederationV2::from_db(
+                                    storage
+                                        .federation_database_v2(&federation_info.database_name)
+                                        .await?,
+                                    event_sink.clone(),
+                                    task_group.make_subgroup().await,
+                                    &root_mnemonic,
+                                    None,
+                                    fedi_fee_helper.clone(),
+                                )
+                                .await
+                                .with_context(|| {
+                                    format!("loading federation {}", federation_id_str.clone())
+                                })?,
+                            )),
+                            n => bail!("Invalid federation version {n}"),
+                        },
+                    ))
+                }
+                .instrument(info_span!("federation", federation_id = federation_id_str))
             });
 
         let federations = Arc::new(Mutex::new(HashMap::from_iter(
