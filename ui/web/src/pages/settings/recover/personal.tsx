@@ -49,7 +49,7 @@ function PersonalRecoverPage() {
     return (
         <ContentBlock>
             <Layout.Header>
-                <Layout.Title>
+                <Layout.Title subheader>
                     {t('feature.recovery.personal-recovery')}
                 </Layout.Title>
             </Layout.Header>

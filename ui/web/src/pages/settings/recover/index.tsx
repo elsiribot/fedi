@@ -16,7 +16,7 @@ function RecoverPage() {
         <ContentBlock>
             <Layout.Root>
                 <Layout.Header>
-                    <Layout.Title>
+                    <Layout.Title subheader>
                         {t('feature.recovery.choose-method')}
                     </Layout.Title>
                 </Layout.Header>

@@ -11,7 +11,9 @@ export default function BugReportPage() {
         <ContentBlock>
             <Layout.Root>
                 <Layout.Header back="/">
-                    <Layout.Title>{t('feature.bug.report-a-bug')}</Layout.Title>
+                    <Layout.Title subheader>
+                        {t('feature.bug.report-a-bug')}
+                    </Layout.Title>
                 </Layout.Header>
 
                 <Layout.Content>

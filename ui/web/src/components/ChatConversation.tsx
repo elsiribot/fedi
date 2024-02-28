@@ -105,7 +105,7 @@ export const ChatConversation: React.FC<Props> = ({
 
     return (
         <Layout.Root>
-            <Layout.Header padded>
+            <Layout.Header padded displaceBackIcon={!headerActions}>
                 <HeaderInfo>
                     <BackButton>
                         <IconButton
@@ -114,11 +114,12 @@ export const ChatConversation: React.FC<Props> = ({
                             onClick={() => back()}
                         />
                     </BackButton>
-                    <ChatAvatar chat={chat} size="sm" />
-                    <Text weight="medium" css={{ flex: 1 }}>
-                        {name}
-                    </Text>
                 </HeaderInfo>
+                <HeaderContent>
+                    <ChatAvatar chat={chat} size="sm" />
+                    <Text weight="medium">{name}</Text>
+                </HeaderContent>
+
                 {headerActions && (
                     <HeaderActions>{headerActions}</HeaderActions>
                 )}
@@ -157,6 +158,14 @@ export const ChatConversation: React.FC<Props> = ({
         </Layout.Root>
     )
 }
+
+const HeaderContent = styled('div', {
+    display: 'flex',
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+})
 
 const HeaderInfo = styled('div', {
     display: 'flex',
