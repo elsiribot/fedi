@@ -39,7 +39,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
     const activeFederation = useAppSelector(selectActiveFederation)
     const myId = useAppSelector(selectAuthenticatedMember)?.id
     const sendMinMax = useMinMaxSendAmount()
-    const requestMinMax = useMinMaxRequestAmount()
+    const requestMinMax = useMinMaxRequestAmount({ ecashRequest: {} })
     const [amount, setAmount] = useState(0 as Sats)
     const [submitAction, setSubmitAction] = useState<null | 'send' | 'request'>(
         null,

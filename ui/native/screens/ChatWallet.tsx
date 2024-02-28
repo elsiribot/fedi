@@ -12,7 +12,6 @@ import { useChatMember } from '@fedi/common/hooks/chat'
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
-    selectMaxReceiveAmount,
     sendDirectMessage,
 } from '@fedi/common/redux'
 import { ChatPayment, ChatPaymentStatus, MSats, Sats } from '@fedi/common/types'
@@ -35,7 +34,6 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const dispatch = useAppDispatch()
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const maxReceiveAmount = useAppSelector(selectMaxReceiveAmount)
     const [confirmingSend, setConfirmingSend] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [sendingEcash, setSendingEcash] = useState(false)
@@ -47,7 +45,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const { recipientId } = route.params
     const { member, isFetchingMember } = useChatMember(recipientId)
     const sendMinMax = useMinMaxSendAmount()
-    const requestMinMax = useMinMaxRequestAmount()
+    const requestMinMax = useMinMaxRequestAmount({ ecashRequest: {} })
 
     // Reset navigation stack on going back to the chat to give better back
     // button behavior if directed here from Omni.
@@ -164,21 +162,6 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         Keyboard.dismiss()
     }
 
-    const onChangeAmount = (updatedValue: Sats) => {
-        if (maxReceiveAmount > -1 && updatedValue > maxReceiveAmount) {
-            toast?.show(
-                t('feature.receive.maximum-invoice-amount', {
-                    maxAmount: amountUtils.formatSats(maxReceiveAmount as Sats),
-                }),
-                3000,
-            )
-        } else {
-            toast?.close(0)
-        }
-
-        setAmount(updatedValue)
-    }
-
     if (isFetchingMember) {
         return (
             <View style={styles().centeredContainer}>
@@ -207,7 +190,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         <AmountScreen
             showBalance
             amount={amount}
-            onChangeAmount={onChangeAmount}
+            onChangeAmount={setAmount}
             submitAttempts={submitAttempts}
             isSubmitting={isLoading || sendingEcash}
             verb={submitType === 'send' ? t('words.send') : t('words.request')}
