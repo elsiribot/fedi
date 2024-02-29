@@ -22,7 +22,7 @@ type CustomOverlayButton = {
 }
 
 export type CustomOverlayContents = {
-    title: string
+    title?: string
     icon?: SvgImageName
     url?: string | null
     message?: string | null
@@ -146,9 +146,11 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                             {url}
                         </Text>
                     )}
-                    <Text medium style={style.overlayTitle}>
-                        {title}
-                    </Text>
+                    {title && (
+                        <Text medium style={style.overlayTitle}>
+                            {title}
+                        </Text>
+                    )}
                     {message && (
                         <Text h1 h1Style={style.overlayText}>
                             {message}
