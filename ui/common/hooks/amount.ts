@@ -5,7 +5,7 @@ import { RequestInvoiceArgs } from 'webln'
 import {
     selectBtcExchangeRate,
     selectCurrency,
-    selectMaxReceiveAmount,
+    selectMaxInvoiceAmount,
     selectFederationMetadata,
     selectFederationBalance,
     selectAmountInputType,
@@ -319,18 +319,18 @@ export function useAmountInput(
 
 /**
  * Get the minimum and maximum amount you can receive. Optionally take in an
- * LNURL withdrawal or WebLN invoice request as part of the calculation.
+ * LNURL withdrawal, WebLN invoice request, or ecash request as part of the calculation.
  */
 export function useMinMaxRequestAmount({
     lnurlWithdrawal,
     requestInvoiceArgs,
     ecashRequest,
 }: RequestAmountArgs = {}) {
-    const maxReceiveAmount = useCommonSelector(selectMaxReceiveAmount)
+    const maxInvoiceAmount = useCommonSelector(selectMaxInvoiceAmount)
 
     return useMemo(() => {
         let minimumAmount = 1 as Sats
-        let maximumAmount = maxReceiveAmount
+        let maximumAmount = maxInvoiceAmount
         if (lnurlWithdrawal) {
             if (lnurlWithdrawal.minWithdrawable) {
                 minimumAmount = Math.max(
@@ -360,6 +360,7 @@ export function useMinMaxRequestAmount({
             }
         }
         if (ecashRequest) {
+            maximumAmount = 1_000_000_000_000_000 as Sats // MAX_SAFE_INTEGER rounded down
             if (ecashRequest.minimumAmount) {
                 minimumAmount = Math.max(
                     parseInt(ecashRequest.minimumAmount as string, 10),
@@ -374,7 +375,7 @@ export function useMinMaxRequestAmount({
             }
         }
         return { minimumAmount, maximumAmount }
-    }, [maxReceiveAmount, lnurlWithdrawal, requestInvoiceArgs, ecashRequest])
+    }, [maxInvoiceAmount, lnurlWithdrawal, requestInvoiceArgs, ecashRequest])
 }
 
 /**

@@ -327,13 +327,13 @@ export const selectFederationCustomFediMods = (s: CommonState) => {
         : []
 }
 
-// For now we are setting a high default of 1BTC unless otherwise
+// For now we are setting a high default of 10 BTC unless otherwise
 // specified by the federation feature flags. At some points we probably
 // can remove this hard-coded value altogether
-const MAX_INVOICE_AMOUNT_SATS = 100000000 as Sats
-const MAX_BALANCE_AMOUNT_SATS = 100000000 as Sats
+const MAX_INVOICE_AMOUNT_SATS = 1_000_000_000 as Sats
+const MAX_BALANCE_AMOUNT_SATS = 1_000_000_000 as Sats
 
-export const selectMaxReceiveAmount = createSelector(
+export const selectMaxInvoiceAmount = createSelector(
     selectFederationMetadata,
     metadata => {
         const maxInvoiceMsats =
@@ -362,7 +362,7 @@ export const selectMaxBalanceAmount = createSelector(
 )
 
 export const selectReceivesDisabled = createSelector(
-    selectMaxReceiveAmount,
+    selectMaxInvoiceAmount,
     selectMaxBalanceAmount,
     selectFederationBalance,
     (maxReceiveAmount, maxBalanceAmount, balance) => {
