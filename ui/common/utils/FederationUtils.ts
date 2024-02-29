@@ -31,7 +31,16 @@ const log = makeLog('common/utils/FederationUtils')
  * we support both via this function
  */
 export const getMetaUrl = (meta: ClientConfigMetadata): string | undefined => {
-    return meta.meta_override_url || meta.meta_external_url || undefined
+    const url = meta.meta_override_url || meta.meta_external_url || undefined
+    if (!url) return undefined
+    // Attempt to parse as JSON in case the URL is encoded as a JSON string
+    try {
+        const parsed: string = url && JSON.parse(url)
+        return typeof parsed === 'string' ? parsed : url
+    } catch (error) {
+        log.info(`getMetaUrl: error parsing meta url ${url}`, error)
+        return url
+    }
 }
 
 type ExternalMetaJson = Record<string, Federation['meta'] | undefined>
