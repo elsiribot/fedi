@@ -8,6 +8,11 @@ use crate::types::OperationFediFeeStatus;
 
 #[repr(u8)]
 pub enum BridgeDbPrefix {
+    // Do not use RN, but we should migrate everything to this prefix
+    // (after fedimint adds proper support for it)
+    // see https://github.com/fedimint/fedimint/pull/4445
+    #[allow(dead_code)]
+    FedimintUserData = 0xb0,
     ClientConfig = 0xb1,
     XmppUsername = 0xb2,
     InviteCode = 0xb3,
@@ -15,6 +20,11 @@ pub enum BridgeDbPrefix {
     TransactionNote = 0xb7,
     OutstandingFediFees = 0xb8,
     OperationFediFeeStatus = 0xb9,
+
+    // Do not use anything after this key (inclusive)
+    // see https://github.com/fedimint/fedimint/pull/4445
+    #[allow(dead_code)]
+    FedimintInternalReservedStart = 0xd0,
 }
 
 #[derive(Debug, Decodable, Encodable)]
