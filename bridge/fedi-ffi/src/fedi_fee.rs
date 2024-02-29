@@ -1,14 +1,22 @@
 use std::sync::Arc;
 
-use anyhow::bail;
+use anyhow::{bail, Context};
 use fedimint_core::core::ModuleKind;
+use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
+use fedimint_core::task::TaskHandle;
 use fedimint_core::Amount;
+use fedimint_ln_client::{LightningClientModule, OutgoingLightningPayment};
+use futures::FutureExt;
 use lightning_invoice::Bolt11Invoice;
-use tracing::error;
+use tokio::sync::mpsc::{Receiver, Sender};
+use tracing::{error, info, warn};
 
 use crate::api::IFediApi;
+use crate::constants::MILLION;
+use crate::federation_v2::db::OutstandingFediFeesKey;
+use crate::federation_v2::FederationV2;
 use crate::storage::{AppState, FediFeeSchedule, ModuleFediFeeSchedule};
-use crate::types::RpcTransactionDirection;
+use crate::types::{LightningSendMetadata, RpcTransactionDirection};
 
 /// Helper struct to encapsulate all state and logic related to Fedi fee. This
 /// struct can be consumed by both the bridge and each individual federation
@@ -151,5 +159,152 @@ impl FediFeeHelper {
     /// needed to ask for an invoice).
     pub async fn fetch_fedi_fee_invoice(&self, amount: Amount) -> anyhow::Result<Bolt11Invoice> {
         self.fedi_api.fetch_fedi_fee_invoice(amount).await
+    }
+}
+
+pub struct FeeRemittanceRequest {}
+
+// Service that spawns a task to remit accrued oustanding fedi fee. We use a
+// channel to communicate with the task. Whenever the channel sends through a
+// request, the task checks whether enough fee has been accrued, and if so, it
+// attempts to remit the fee to fedi.
+#[derive(Clone)]
+pub struct FediFeeRemittanceService {
+    tx: Sender<FeeRemittanceRequest>,
+}
+
+impl FediFeeRemittanceService {
+    pub async fn new(fed: FederationV2) -> Self {
+        let (tx, rx) = tokio::sync::mpsc::channel(10);
+        let mut tg = fed.task_group.clone();
+        tg.spawn("fedi_fee_remittance_service", move |handle| {
+            Self::task(fed, handle, rx)
+        })
+        .await;
+        Self { tx }
+    }
+
+    pub async fn trigger_fee_remittance(&self) -> anyhow::Result<()> {
+        self.tx
+            .send(FeeRemittanceRequest {})
+            .await
+            .context("fee remittance service died")
+    }
+
+    /// Checks whether the accrued outstanding fedi fees has surpassed the
+    /// remittance threshold. If yes, queries the fee helper to obtain a
+    /// lightning invoice to remit the fees. If the accrued outstanding fees has
+    /// not surpassed the threshold, returns Ok(false). If the fees HAS
+    /// surpassed the threshold, and we were able to successfully obtain a
+    /// lightning invoice and initiate payment, returns Ok(true). Otherwise,
+    /// returns any error we may have encountered in the remittance process.
+    async fn remit_fedi_fee_if_threshold_met(fed: &FederationV2) -> anyhow::Result<bool> {
+        let outstanding_fees = fed.get_outstanding_fedi_fees().await;
+        let remittance_threshold = fed.fedi_fee_schedule().await.remittance_threshold_msat;
+        if outstanding_fees.msats < remittance_threshold {
+            return Ok(false);
+        }
+
+        fed.override_active_gateway().await?;
+        let gateway = fed
+            .client
+            .get_first_module::<LightningClientModule>()
+            .select_active_gateway()
+            .await?;
+        let gateway_fees = gateway.fees;
+
+        // We want to ensure that any gateway fees is debited from the accrued
+        // outstanding fees. This means that the invoice amount for remitting fees will
+        // actually be less than the accrued outstanding fees.
+
+        // Let's say that the accrued oustanding fees is Q and the desired invoice
+        // amount is X. Gateway fees is made up of two components, (base) and (ppm).
+        // Therefore, the following equation must be satisfied:
+        // X + (gateway fees) = Q
+        //
+        // Expanding (gateway fees), we get:
+        // X + (base) + [(X/M)(ppm)] = Q, where M is the constant for MILLION
+        //
+        // Solving for X, we get:
+        // X[1 + (ppm)/M] = Q - base
+        //
+        // Finally:
+        // X = [(M)(Q - base)]/(M + ppm)
+        //
+        // We keep division as the very last step to ensure minimal loss in precision.
+        // We also perform regular (floor) division to ensure that the invoice is never
+        // overestimated.
+        let invoice_amt_numerator =
+            MILLION * (outstanding_fees.msats - gateway_fees.base_msat as u64);
+        let invoice_amt_denominator = MILLION + gateway_fees.proportional_millionths as u64;
+        let invoice_amt = invoice_amt_numerator / invoice_amt_denominator;
+
+        let invoice = fed
+            .fedi_fee_helper
+            .fetch_fedi_fee_invoice(Amount::from_msats(invoice_amt))
+            .await?;
+
+        // If pay_bolt11_invoice() returns successfully, we optimistically zero out
+        // oustanding fedi fees. This is ok since as part of pay_bolt11_invoice(), the
+        // ecash to pay the invoice would have already been deducted from the "real"
+        // balance and therefore the "virtual" balance should remain unaffected even if
+        // we zero out the accrued oustanding fees at this point. Note that it is still
+        // possible for the lightning payment to fail for a variety of reasons but we
+        // will address such edge cases and race conditions later. For now, losing fee
+        // sometimes is a much better outcome than double-charging fees.
+        let extra_meta = LightningSendMetadata {
+            is_fedi_fee_remittance: true,
+        };
+        let OutgoingLightningPayment { payment_type, .. } = fed
+            .client
+            .get_first_module::<LightningClientModule>()
+            .pay_bolt11_invoice(invoice.to_owned(), extra_meta.clone())
+            .await?;
+        fed.dbtx()
+            .await
+            .insert_entry(&OutstandingFediFeesKey, &Amount::ZERO)
+            .await;
+        fed.subscribe_to_ln_pay(payment_type, extra_meta, invoice.clone())
+            .await?;
+
+        Ok(true)
+    }
+
+    async fn task(
+        fed: FederationV2,
+        handle: TaskHandle,
+        mut request_rx: Receiver<FeeRemittanceRequest>,
+    ) {
+        let mut shutdown = handle.make_shutdown_rx().await.fuse();
+        loop {
+            let result = tokio::select! {
+                biased;
+                _ = &mut shutdown => {
+                    info!("fedi_fee_remittance_service shutting down");
+                    break;
+                }
+                msg = request_rx.recv() => {
+                    match msg {
+                        Some(_) => {
+                            Self::remit_fedi_fee_if_threshold_met(&fed).await
+                        }
+                        None => {
+                            info!("fedi_fee_remittance_service shutting down on drop");
+                            break;
+                        }
+                    }
+                }
+            };
+
+            match result {
+                Ok(true) => info!(
+                    "Successfully initiated fedi fee remittance, accrued fee exceeds threshold"
+                ),
+                Ok(false) => {
+                    info!("Fedi fee remittance not initiated, accrued fee doesn't exceed threshold")
+                }
+                Err(e) => warn!("Error initiating fedi fee remittance {e:?}"),
+            }
+        }
     }
 }
