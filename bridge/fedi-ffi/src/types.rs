@@ -317,6 +317,7 @@ pub enum RpcTransactionDirection {
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct WithdrawalDetails {
+    pub address: String,
     pub txid: String,
     #[ts(type = "number")]
     pub fee: u64,

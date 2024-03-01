@@ -2057,7 +2057,7 @@ impl FederationV2 {
                                     })
                                 }
                                 WalletOperationMetaVariant::Withdraw {
-                                    address: _,
+                                    address,
                                     amount,
                                     fee,
                                     change: _,
@@ -2095,6 +2095,7 @@ impl FederationV2 {
                                         lightning: None,
                                         oob_state: None,
                                         onchain_withdrawal_details: Some(WithdrawalDetails {
+                                            address: address.to_string(),
                                             txid: txid_str,
                                             fee: fee.amount().to_sat(),
                                             fee_rate: fee.fee_rate.sats_per_kvb,

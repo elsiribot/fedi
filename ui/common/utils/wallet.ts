@@ -429,6 +429,13 @@ export const makeTxnDetailItems = (
     }
     if (txn.onchainWithdrawalDetails) {
         items.push({
+            label: t('words.address'),
+            value: txn.onchainWithdrawalDetails.address,
+            copiedMessage: t('phrases.copied-bitcoin-address'),
+            copyable: true,
+            truncated: true,
+        })
+        items.push({
             label: t('phrases.transaction-id'),
             value: txn.onchainWithdrawalDetails.txid,
             copiedMessage: t('phrases.copied-transaction-id'),
