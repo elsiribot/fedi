@@ -28,6 +28,7 @@ use super::types::{
 use crate::api::IFediApi;
 use crate::error::get_error_code;
 use crate::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
+use crate::federation_v2::BackupServiceStatus;
 use crate::types::{
     GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
     RpcLightningGateway, RpcPayAddressResponse,
@@ -380,6 +381,14 @@ async fn backupXmppUsername(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn backupStatus(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+) -> anyhow::Result<BackupServiceStatus> {
+    bridge.backup_status(federation_id).await
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn getNostrPubKey(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
@@ -600,6 +609,8 @@ rpc_methods!(RpcMethods {
     approveSocialRecoveryRequest,
     // LNURL
     signLnurlMessage,
+    // backup
+    backupStatus,
     // XMPP
     xmppCredentials,
     backupXmppUsername,

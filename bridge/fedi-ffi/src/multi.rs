@@ -17,7 +17,7 @@ use super::types::{
 };
 use crate::constants::{LNURL_CHILD_ID, NOSTR_CHILD_ID};
 use crate::error::ErrorCode;
-use crate::federation_v2::FederationV2;
+use crate::federation_v2::{BackupServiceStatus, FederationV2};
 use crate::types::{
     GuardianStatus, RpcGenerateEcashResponse, RpcLightningGateway, RpcPayAddressResponse,
 };
@@ -119,6 +119,12 @@ impl MultiFederation {
     pub async fn backup(&self) -> Result<()> {
         match self {
             Self::V2(v2) => v2.backup().await,
+        }
+    }
+
+    pub async fn backup_status(&self) -> Result<BackupServiceStatus> {
+        match self {
+            Self::V2(v2) => v2.backup_status().await,
         }
     }
 

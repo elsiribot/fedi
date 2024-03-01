@@ -10,8 +10,10 @@ use fedimint_core::task::{TaskGroup, TaskHandle};
 use futures::lock::Mutex;
 use futures::FutureExt;
 use rand::Rng;
+use serde::Serialize;
 use tokio::sync::watch;
 use tracing::{error, info};
+use ts_rs::TS;
 
 use super::super::constants::BACKUP_FREQUENCY;
 use super::super::types::FediBackupMetadata;
@@ -29,16 +31,24 @@ pub struct BackupServiceShared {
     state: Mutex<BackupServiceState>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct BackupServiceStatus {
+    #[ts(type = "number | null")]
     last_backup_timestamp: Option<u64>,
     state: BackupServiceState,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export, export_to = "target/bindings/")]
 pub enum BackupServiceState {
     Waiting {
+        #[ts(type = "number")]
         failed_count: u64,
+        #[ts(type = "number | null")]
         next_backup_timestamp: Option<u64>,
     },
     Running,

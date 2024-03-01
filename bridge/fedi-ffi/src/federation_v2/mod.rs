@@ -61,6 +61,7 @@ use tokio::sync::{Mutex, OnceCell};
 use tracing::{error, info, warn};
 
 use self::backup_service::BackupService;
+pub use self::backup_service::BackupServiceStatus;
 use self::db::{OperationFediFeeStatusKey, OutstandingFediFeesKey};
 use self::dev::{
     override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
@@ -1373,8 +1374,17 @@ impl FederationV2 {
             .get()
             .context("backup not intialized")?
             .trigger_manual_backup()
-            .await?;
+            .await;
         Ok(())
+    }
+
+    pub async fn backup_status(&self) -> Result<BackupServiceStatus> {
+        Ok(self
+            .backup_service
+            .get()
+            .context("backup not intialized")?
+            .status()
+            .await)
     }
 
     /// Extract username (and potentially more in future) from recovered
