@@ -941,6 +941,16 @@ impl Bridge {
         multi.sign_nostr_event(event_hash, global_root_secret).await
     }
 
+    pub async fn get_matrix_secret(&self) -> DerivableSecret {
+        let global_root_secret = self
+            .app_state
+            .with_read_lock(move |state| {
+                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
+            })
+            .await;
+        global_root_secret.child_key(ChildId(MATRIX_CHILD_ID))
+    }
+
     pub async fn get_matrix_credentials(&self, home_server: String) -> Result<(String, String)> {
         let global_root_secret = self
             .app_state

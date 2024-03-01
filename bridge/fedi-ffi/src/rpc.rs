@@ -580,7 +580,8 @@ async fn matrixInit(
     home_server: String,
     sliding_sync_proxy: String,
 ) -> anyhow::Result<RpcMatrixAccountSession> {
-    let (username, password) = bridge.get_matrix_credentials(home_server.clone()).await?;
+    let nostr_pubkey = bridge.get_nostr_pub_key().await?;
+    let matrix_secret = bridge.get_matrix_secret().await;
     bridge
         .matrix
         .set(
@@ -588,8 +589,8 @@ async fn matrixInit(
                 bridge.event_sink.clone(),
                 bridge.task_group.clone(),
                 &bridge.storage.platform_path("matrix".as_ref()),
-                &username,
-                &password,
+                &matrix_secret,
+                &nostr_pubkey,
                 home_server,
                 sliding_sync_proxy,
                 &bridge.app_state,

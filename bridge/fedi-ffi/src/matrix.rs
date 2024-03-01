@@ -7,6 +7,7 @@ use std::time::Duration;
 use anyhow::{bail, Context, Result};
 use eyeball::Subscriber;
 use fedimint_core::task::{MaybeSend, MaybeSync, TaskGroup};
+use fedimint_derive_secret::DerivableSecret;
 use futures::{Future, StreamExt};
 pub use matrix_sdk::ruma::api::client::account::register::v3 as register;
 use matrix_sdk::ruma::api::client::directory::get_public_rooms_filtered::v3 as get_public_rooms_filtered;
@@ -49,16 +50,32 @@ pub struct Matrix {
 }
 
 impl Matrix {
-    async fn build_client(base_dir: &Path, home_server: String) -> Result<Client> {
+    async fn build_client(
+        base_dir: &Path,
+        home_server: String,
+        passphrase: &str,
+    ) -> Result<Client> {
         // TODO: change this
         let builder = Client::builder().homeserver_url(home_server);
         #[cfg(not(target_family = "wasm"))]
-        let builder = builder.sqlite_store(base_dir.join("db-unencrypted.sqlite"), None);
+        let builder = builder.sqlite_store(base_dir.join("db.sqlite"), Some(passphrase));
         #[cfg(target_family = "wasm")]
-        let builder = builder.indexeddb_store("db-unencrypted", None);
+        let builder = builder.indexeddb_store("db", Some(passphrase));
 
         let client = builder.build().await?;
         Ok(client)
+    }
+
+    fn db_passphrase(matrix_secret: &DerivableSecret) -> String {
+        let passphase_bytes: [u8; 16] = matrix_secret.to_random_bytes();
+        hex::encode(passphase_bytes)
+    }
+
+    fn home_server_password(matrix_secret: &DerivableSecret, home_server: &str) -> String {
+        let password_bytes: [u8; 16] = matrix_secret.to_random_bytes();
+        let password_secret = DerivableSecret::new_root(&password_bytes, home_server.as_bytes());
+        let password_secret_bytes: [u8; 16] = password_secret.to_random_bytes();
+        hex::encode(password_secret_bytes)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -66,14 +83,16 @@ impl Matrix {
         event_sink: EventSink,
         task_group: TaskGroup,
         base_dir: &Path,
+        matrix_secret: &DerivableSecret,
         user_name: &str,
-        password: &str,
         home_server: String,
         sliding_sync_proxy: String,
         app_state: &AppState,
     ) -> Result<Self> {
         let matrix_session = app_state.with_read_lock(|r| r.matrix_session.clone()).await;
-        let client = Self::build_client(base_dir, home_server).await?;
+        let user_password = &Self::home_server_password(matrix_secret, &home_server);
+        let db_passphrase = Self::db_passphrase(matrix_secret);
+        let client = Self::build_client(base_dir, home_server, &db_passphrase).await?;
 
         if let Some(session) = matrix_session {
             client
@@ -81,13 +100,9 @@ impl Matrix {
                 .await
                 .context("matrix restore_session")?;
         }
-        info!(
-            "Logging in with username: {} password: {}",
-            user_name, password
-        );
         let matrix_auth = client.matrix_auth();
         if !matrix_auth.logged_in() {
-            let login_result = matrix_auth.login_username(user_name, password).await;
+            let login_result = matrix_auth.login_username(user_name, user_password).await;
             match login_result {
                 Ok(_) => (),
                 Err(login_error) => {
@@ -97,7 +112,7 @@ impl Matrix {
                     // open registration enabled.
                     let mut request = register::Request::new();
                     request.username = Some(user_name.to_owned());
-                    request.password = Some(password.to_owned());
+                    request.password = Some(user_password.to_owned());
                     request.auth = Some(uiaa::AuthData::Dummy(uiaa::Dummy::new()));
                     request.initial_device_display_name = Some("Fedi".to_owned()); // TODO: Make this user-agent specific?
                     let register_result = matrix_auth.register(request).await;
@@ -599,10 +614,7 @@ impl Matrix {
 
 #[cfg(test)]
 mod tests {
-
     use fedimint_logging::TracingSetup;
-
-    use rand::distributions::Alphanumeric;
     use rand::{thread_rng, Rng};
     use tempfile::TempDir;
     use tokio::sync::mpsc;
@@ -617,7 +629,6 @@ mod tests {
 
     async fn mk_matrix_login(
         user_name: &str,
-        password: &str,
         home_server: &str,
         sliding_sync_proxy: &str,
     ) -> Result<(Matrix, mpsc::Receiver<(String, String)>, TempDir)> {
@@ -628,6 +639,8 @@ mod tests {
             }
         }
 
+        let (key, salt): ([u8; 32], [u8; 32]) = thread_rng().gen();
+        let secret = DerivableSecret::new_root(&key, &salt);
         let (event_tx, event_rx) = mpsc::channel(1000);
         let event_sink = Arc::new(TestEventSink(event_tx));
         let tg = TaskGroup::new();
@@ -637,8 +650,8 @@ mod tests {
             event_sink,
             tg,
             tmp_dir.as_ref(),
+            &secret,
             user_name,
-            password,
             format!("https://{home_server}"),
             sliding_sync_proxy.to_string(),
             &AppState::load(Arc::new(storage)).await?,
@@ -649,13 +662,8 @@ mod tests {
 
     async fn mk_matrix_new_user() -> Result<(Matrix, mpsc::Receiver<(String, String)>, TempDir)> {
         let username = format!("tester{id}", id = rand::random::<u64>());
-        let password: String = thread_rng()
-            .sample_iter(Alphanumeric)
-            .take(12)
-            .map(char::from)
-            .collect();
-        info!(%username, %password, "creating a new user for testing");
-        mk_matrix_login(&username, &password, TEST_HOME_SERVER, TEST_SLIDING_SYNC).await
+        info!(%username, "creating a new user for testing");
+        mk_matrix_login(&username, TEST_HOME_SERVER, TEST_SLIDING_SYNC).await
     }
 
     #[tokio::test(flavor = "multi_thread")]
