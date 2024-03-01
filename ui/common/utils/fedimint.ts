@@ -135,7 +135,7 @@ export class FedimintBridge {
     }
 
     async decodeInvoice(invoice: string) {
-        return this.rpcTyped('decodeInvoice', { invoice })
+        return this.rpcTyped('decodeInvoice', { invoice, federationId: null })
     }
 
     async payInvoice(invoice: string, federationId: string) {

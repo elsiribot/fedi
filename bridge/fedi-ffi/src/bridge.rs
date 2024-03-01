@@ -39,7 +39,7 @@ use crate::multi::MultiFederation;
 use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
 use crate::storage::{AppState, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule};
 use crate::types::{
-    GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcGenerateEcashResponse,
+    GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
     RpcLightningGateway, RpcPayAddressResponse, RpcReturningMemberStatus,
 };
 use crate::utils::required_threashold_of;
@@ -340,6 +340,15 @@ impl Bridge {
             .await
     }
 
+    pub async fn decode_invoice(
+        &self,
+        federation_id: RpcFederationId,
+        invoice: String,
+    ) -> Result<RpcInvoice> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi.decode_invoice(invoice).await
+    }
+
     pub async fn pay_invoice(
         &self,
         federation_id: RpcFederationId,
@@ -347,6 +356,16 @@ impl Bridge {
     ) -> Result<RpcPayInvoiceResponse> {
         let multi = self.get_multi(&federation_id.0).await?;
         multi.pay_invoice(invoice).await
+    }
+
+    pub async fn preview_pay_address(
+        &self,
+        federation_id: RpcFederationId,
+        address: Address,
+        amount: bitcoin::Amount,
+    ) -> Result<RpcFeeDetails> {
+        let multi = self.get_multi(&federation_id.0).await?;
+        multi.preview_pay_address(address, amount).await
     }
 
     pub async fn pay_address(

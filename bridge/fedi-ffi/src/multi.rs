@@ -19,7 +19,8 @@ use crate::constants::{LNURL_CHILD_ID, NOSTR_CHILD_ID};
 use crate::error::ErrorCode;
 use crate::federation_v2::FederationV2;
 use crate::types::{
-    GuardianStatus, RpcGenerateEcashResponse, RpcLightningGateway, RpcPayAddressResponse,
+    GuardianStatus, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
+    RpcPayAddressResponse,
 };
 
 pub enum MultiFederation {
@@ -54,9 +55,26 @@ impl MultiFederation {
         }
     }
 
+    pub async fn decode_invoice(&self, invoice: String) -> Result<RpcInvoice> {
+        match self {
+            Self::V2(v2) => v2.decode_invoice(invoice).await,
+        }
+    }
+
     pub async fn pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<RpcPayInvoiceResponse> {
         match self {
             Self::V2(v2) => v2.pay_invoice(&invoice.clone()).await,
+        }
+    }
+
+    pub async fn preview_pay_address(
+        &self,
+        address: Address,
+        amount: bitcoin::Amount,
+    ) -> Result<RpcFeeDetails> {
+        info!("preview pay address amount is {}", amount);
+        match self {
+            Self::V2(v2) => v2.preview_pay_address(address, amount).await,
         }
     }
 

@@ -50,11 +50,11 @@ use fedimint_mint_client::{
     MintOperationMetaVariant, OOBNotes, ReissueExternalNotesState,
 };
 use fedimint_wallet_client::{
-    DepositState, WalletClientInit, WalletClientModule, WalletOperationMeta,
+    DepositState, PegOutFees, WalletClientInit, WalletClientModule, WalletOperationMeta,
     WalletOperationMetaVariant, WithdrawState,
 };
 use futures::StreamExt;
-use lightning_invoice::Bolt11Invoice;
+use lightning_invoice::{Bolt11Invoice, RoutingFees};
 use serde::de::DeserializeOwned;
 use stability_pool_client::{
     ClientAccountInfo, StabilityPoolClientInit, StabilityPoolClientModule,
@@ -88,7 +88,7 @@ use crate::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::storage::FediFeeSchedule;
 use crate::types::{
     EcashReceiveMetadata, GuardianStatus, OperationFediFeeStatus, RpcBitcoinDetails, RpcEcashInfo,
-    RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
+    RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
     RpcPayAddressResponse, RpcStabilityPoolTransactionState, RpcTransaction,
     RpcTransactionDirection, WithdrawalDetails,
 };
@@ -499,7 +499,17 @@ impl FederationV2 {
         self.subscribe_invoice(operation_id, invoice.clone())
             .await?;
 
-        invoice.try_into()
+        let invoice: RpcInvoice = invoice.try_into()?;
+        Ok(RpcInvoice {
+            fee: Some(RpcFeeDetails {
+                fedi_fee: RpcAmount(Amount::from_msats(
+                    (invoice.amount.0.msats * fedi_fee_ppm).div_ceil(MILLION),
+                )),
+                network_fee: RpcAmount(Amount::ZERO),
+                federation_fee: RpcAmount(Amount::ZERO),
+            }),
+            ..invoice
+        })
     }
 
     async fn subscribe_deposit(
@@ -650,9 +660,14 @@ impl FederationV2 {
         Ok(())
     }
 
-    /// Pay lightning invoice
-    pub async fn pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<RpcPayInvoiceResponse> {
-        self.override_active_gateway().await?;
+    /// Decodes the given lightning invoice (as String) into an RpcInvoice
+    /// whilst attaching federation-specific fee details to the response
+    pub async fn decode_invoice(&self, invoice: String) -> Result<RpcInvoice> {
+        let invoice: Bolt11Invoice = invoice.trim().parse().context(ErrorCode::InvalidInvoice)?;
+        let invoice: RpcInvoice = invoice.try_into()?;
+        let amount = invoice.amount.0;
+
+        // Calculate the different fee components
         let fedi_fee_ppm = self
             .fedi_fee_helper
             .get_fedi_fee_ppm(
@@ -661,18 +676,59 @@ impl FederationV2 {
                 RpcTransactionDirection::Send,
             )
             .await?;
+        let fedi_fee = (amount.msats * fedi_fee_ppm).div_ceil(MILLION);
 
+        self.override_active_gateway().await?;
+        let gateway = self
+            .client
+            .get_first_module::<LightningClientModule>()
+            .select_active_gateway()
+            .await?;
+        let gateway_fees = gateway.fees;
+        let network_fee = gateway_fees.base_msat as u64
+            + (amount.msats * gateway_fees.proportional_millionths as u64).div_ceil(MILLION);
+        let fee = Some(RpcFeeDetails {
+            fedi_fee: RpcAmount(Amount::from_msats(fedi_fee)),
+            network_fee: RpcAmount(Amount::from_msats(network_fee)),
+            federation_fee: RpcAmount(Amount::ZERO),
+        });
+
+        Ok(RpcInvoice { fee, ..invoice })
+    }
+
+    /// Pay lightning invoice
+    pub async fn pay_invoice(&self, invoice: &Bolt11Invoice) -> Result<RpcPayInvoiceResponse> {
         // Has an amount
-        let fedi_fee = match invoice.amount_milli_satoshis() {
-            Some(amount) => {
-                let fedi_fee = (amount * fedi_fee_ppm).div_ceil(MILLION);
-                if amount + fedi_fee > self.get_balance().await.msats {
-                    bail!(ErrorCode::InsufficientBalance);
-                }
-                fedi_fee
-            }
-            None => bail!("Invoice is missing amount"),
-        };
+        let amount_msat = invoice
+            .amount_milli_satoshis()
+            .ok_or(anyhow!("Invoice missing amount"))?;
+        let amount = Amount::from_msats(amount_msat);
+
+        self.override_active_gateway().await?;
+        let gateway = self
+            .client
+            .get_first_module::<LightningClientModule>()
+            .select_active_gateway()
+            .await?;
+        let gateway_fees = gateway.fees;
+        let network_fee = gateway_fees.base_msat as u64
+            + (amount.msats * gateway_fees.proportional_millionths as u64).div_ceil(MILLION);
+
+        let fedi_fee_ppm = self
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                fedimint_ln_common::KIND,
+                RpcTransactionDirection::Send,
+            )
+            .await?;
+        let fedi_fee = (amount.msats * fedi_fee_ppm).div_ceil(MILLION);
+        let virtual_balance = self.get_balance().await;
+        if amount.msats + fedi_fee + network_fee > virtual_balance.msats {
+            bail!(ErrorCode::InsufficientBalance(RpcAmount(
+                get_max_spendable_amount(virtual_balance, fedi_fee_ppm, None, Some(gateway_fees))
+            )));
+        }
 
         // Same network
         if self.get_network() != invoice.network() {
@@ -699,12 +755,13 @@ impl FederationV2 {
         Ok(response)
     }
 
-    // Pay an onchain address
-    pub async fn pay_address(
+    // Returns the fee details for making a payment on-chain. Returns an error in
+    // case the amount exceeds the max spendable amount.
+    pub async fn preview_pay_address(
         &self,
         address: Address,
         amount: bitcoin::Amount,
-    ) -> Result<RpcPayAddressResponse> {
+    ) -> Result<RpcFeeDetails> {
         let fedi_fee_ppm = self
             .fedi_fee_helper
             .get_fedi_fee_ppm(
@@ -721,17 +778,41 @@ impl FederationV2 {
 
         let amount_msat = amount.to_sat() * 1000;
         let fedi_fee = (amount_msat * fedi_fee_ppm).div_ceil(MILLION);
-        let est_total_spend = amount_msat + fedi_fee + (network_fees.amount().to_sat() * 1000);
-        if est_total_spend > self.get_balance().await.msats {
-            bail!(ErrorCode::InsufficientBalance);
+        let network_fees_msat = network_fees.amount().to_sat() * 1000;
+        let est_total_spend = amount_msat + fedi_fee + network_fees_msat;
+        let virtual_balance = self.get_balance().await;
+        if est_total_spend > virtual_balance.msats {
+            bail!(ErrorCode::InsufficientBalance(RpcAmount(
+                get_max_spendable_amount(virtual_balance, fedi_fee_ppm, Some(network_fees), None)
+            )));
         }
+
+        Ok(RpcFeeDetails {
+            fedi_fee: RpcAmount(Amount::from_msats(fedi_fee)),
+            network_fee: RpcAmount(Amount::from_msats(network_fees_msat)),
+            federation_fee: RpcAmount(Amount::ZERO),
+        })
+    }
+
+    // Pay an onchain address
+    pub async fn pay_address(
+        &self,
+        address: Address,
+        amount: bitcoin::Amount,
+    ) -> Result<RpcPayAddressResponse> {
+        let fee_details = self.preview_pay_address(address.clone(), amount).await?;
+        let network_fees = self
+            .client
+            .get_first_module::<WalletClientModule>()
+            .get_withdraw_fees(address.clone(), amount)
+            .await?;
 
         let operation_id = self
             .client
             .get_first_module::<WalletClientModule>()
             .withdraw(address, amount, network_fees, ())
             .await?;
-        self.write_pending_send_fedi_fee(operation_id, Amount::from_msats(fedi_fee))
+        self.write_pending_send_fedi_fee(operation_id, fee_details.fedi_fee.0)
             .await?;
         let mut updates = self
             .client
@@ -1256,8 +1337,11 @@ impl FederationV2 {
             )
             .await?;
         let fedi_fee = Amount::from_msats((amount.msats * fedi_fee_ppm).div_ceil(MILLION));
-        if amount + fedi_fee > self.get_balance().await {
-            bail!(ErrorCode::InsufficientBalance);
+        let virtual_balance = self.get_balance().await;
+        if amount + fedi_fee > virtual_balance {
+            bail!(ErrorCode::InsufficientBalance(RpcAmount(
+                get_max_spendable_amount(virtual_balance, fedi_fee_ppm, None, None)
+            )));
         }
 
         let cancel_time = fedimint_core::time::now() + ONE_WEEK;
@@ -2097,8 +2181,11 @@ impl FederationV2 {
             )
             .await?;
         let fedi_fee = Amount::from_msats((amount.msats * fedi_fee_ppm).div_ceil(MILLION));
-        if amount + fedi_fee > self.get_balance().await {
-            bail!(ErrorCode::InsufficientBalance);
+        let virtual_balance = self.get_balance().await;
+        if amount + fedi_fee > virtual_balance {
+            bail!(ErrorCode::InsufficientBalance(RpcAmount(
+                get_max_spendable_amount(virtual_balance, fedi_fee_ppm, None, None)
+            )));
         }
 
         let operation_id = self
@@ -2601,4 +2688,46 @@ fn get_per_federation_secret(
     let federation_root_secret = multi_federation_root_secret.federation_key(federation_id);
     let federation_wallet_root_secret = federation_root_secret.child_key(ChildId(wallet_number));
     federation_wallet_root_secret.child_key(ChildId(key_type))
+}
+
+// Given the current virtual balance and the Fedi fee ppm for a spend operation,
+// as well an optional gateway fee and an optional on-chain fee, returns the max
+// amount of the spend transaction such that:
+//
+// (  max spend  ) + (total fee)      <=        virtual balance
+// ^return value^                ^really "=="^
+fn get_max_spendable_amount(
+    virtual_balance: Amount,
+    fedi_fee_ppm: u64,
+    on_chain_fee: Option<PegOutFees>,
+    gateway_fee: Option<RoutingFees>,
+) -> Amount {
+    // The on-chain fee depends on the spend amount, and the maximum spend amount
+    // depends on the on-chain fee. So to avoid this chicken-and-egg problem, we
+    // assume the on-chain fee to be constant since this function is really only
+    // called when the user-specified amount exceeds the max spendable amount. It is
+    // an imperfect assumption, but good enough for our use case. So at the
+    // start, we can just deduct the on-chain fee from the virtual balance and
+    // reassign the difference to virtual balance.
+    let virtual_balance =
+        virtual_balance - on_chain_fee.map_or(Amount::ZERO, |f| f.amount().into());
+
+    let gateway_base = gateway_fee.map_or(0, |f| f.base_msat as u64);
+    let gateway_ppm = gateway_fee.map_or(0, |f| f.proportional_millionths as u64);
+
+    // Let's say the max spend is x, Fedi fee ppm is (ppm_F), and virtual balance is
+    // V. Gateway fees is made up of (base) and (ppm_G).
+    //
+    // Then:
+    // x + [(x * ppm_F) / M] + base + [(X * ppm_G) / M] = V, where M is the constant
+    // for million
+    //
+    // Solving for x:
+    // x[1 + (ppm_F/M) + (ppm_G/M)] = V - base
+    //
+    // Finally:
+    // x = [(V - base) * M]/(M + ppm_F + ppm_G)
+    let numerator_msats = (virtual_balance.msats - gateway_base) * MILLION;
+    let denominator_msats = MILLION + fedi_fee_ppm + gateway_ppm;
+    Amount::from_msats(numerator_msats / denominator_msats)
 }
