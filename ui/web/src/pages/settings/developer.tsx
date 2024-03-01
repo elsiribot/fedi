@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     changeAuthenticatedGuardian,
     selectActiveFederation,
@@ -23,7 +24,7 @@ import { Input } from '../../components/Input'
 import * as Layout from '../../components/Layout'
 import { RadioGroup } from '../../components/RadioGroup'
 import { Text } from '../../components/Text'
-import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
+import { useAppDispatch, useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 
@@ -36,7 +37,7 @@ function DeveloperPage() {
     )
     const [gateways, setGateways] = useState<LightningGateway[]>([])
     const [guardianPassword, setGuardianPassword] = useState('')
-    const { showErrorToast } = useToast()
+    const toast = useToast()
 
     const federationId = activeFederation?.id
     const federationNodes = activeFederation?.nodes
@@ -54,9 +55,9 @@ function DeveloperPage() {
             hiddenElement.download = 'fedi.log'
             hiddenElement.click()
         } catch (err) {
-            showErrorToast(err, 'errors.unknown-error')
+            toast.error(err, 'errors.unknown-error')
         }
-    }, [showErrorToast])
+    }, [toast])
 
     /* TX history */
 
@@ -76,9 +77,9 @@ function DeveloperPage() {
             )
             hiddenElement.click()
         } catch (err) {
-            showErrorToast(err, 'errors.unknown-error')
+            toast.error(err, 'errors.unknown-error')
         }
-    }, [showErrorToast, activeFederation])
+    }, [toast, activeFederation])
 
     /* Lightning gateways */
 

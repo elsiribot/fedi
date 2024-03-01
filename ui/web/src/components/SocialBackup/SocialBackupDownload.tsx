@@ -3,8 +3,8 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import FediFileIcon from '@fedi/common/assets/svgs/fedi-file.svg'
+import { useToast } from '@fedi/common/hooks/toast'
 
-import { useToast } from '../../hooks'
 import { styled } from '../../styles'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
@@ -19,7 +19,7 @@ export const SocialBackupDownload: React.FC<Props> = ({ backupBlob }) => {
     const { t } = useTranslation()
     const { push } = useRouter()
     const [hasSaved, setHasSaved] = useState(false)
-    const { showToast } = useToast()
+    const toast = useToast()
 
     const handleDownload = () => {
         const url = URL.createObjectURL(backupBlob)
@@ -34,7 +34,7 @@ export const SocialBackupDownload: React.FC<Props> = ({ backupBlob }) => {
     }
 
     const handleComplete = () => {
-        showToast(t('feature.backup.successfully-backed-up'))
+        toast.show(t('feature.backup.successfully-backed-up'))
         push('/')
     }
 

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import ChevronRight from '@fedi/common/assets/svgs/chevron-right.svg'
 import { useChatMemberSearch } from '@fedi/common/hooks/chat'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     addAdminToChatGroup,
     fetchChatGroupMembersList,
@@ -12,7 +13,7 @@ import {
 import { ChatMember } from '@fedi/common/types'
 import { XmppMemberRole } from '@fedi/common/utils/XmlUtils'
 
-import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { Avatar } from './Avatar'
 import { ChatGroupDialogState } from './ChatGroupConversation'
@@ -58,7 +59,7 @@ export default function ChatBroadcastAdminAdd({
                 ).unwrap()
                 setDialogState('broadcast-admins')
             } catch (e) {
-                toast?.showErrorToast(e, t('errors.unknown-error'))
+                toast.error(e, t('errors.unknown-error'))
             }
         }
     }
@@ -71,7 +72,7 @@ export default function ChatBroadcastAdminAdd({
                 ).unwrap()
                 confirmAddAdmin(member)
             } catch {
-                toast?.showToast(t('errors.chat-member-not-found'))
+                toast.show(t('errors.chat-member-not-found'))
             }
         }
     }

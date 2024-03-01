@@ -13,6 +13,7 @@ import {
     useFederationSupportsSingleSeed,
     useIsInviteSupported,
 } from '@fedi/common/hooks/federation'
+import { useToast } from '@fedi/common/hooks/toast'
 import { useExportTransactions } from '@fedi/common/hooks/transactions'
 import {
     leaveFederation,
@@ -30,7 +31,7 @@ import * as Layout from '../../components/Layout'
 import { MemberQRDialog } from '../../components/MemberQRDialog'
 import { SettingsMenu, SettingsMenuProps } from '../../components/SettingsMenu'
 import { Text } from '../../components/Text'
-import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
+import { useAppDispatch, useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 
@@ -39,7 +40,7 @@ function AdminPage() {
     const dispatch = useAppDispatch()
     const member = useAppSelector(selectAuthenticatedMember)
     const activeFederation = useAppSelector(selectActiveFederation)
-    const { showErrorToast } = useToast()
+    const toast = useToast()
     const exportTransactions = useExportTransactions(fedimint)
     const [isMemberQrOpen, setIsMemberQrOpen] = useState(false)
     const [isInvitingMember, setIsInvitingMember] = useState(false)
@@ -58,12 +59,12 @@ function AdminPage() {
             try {
                 await dispatch(leaveFederation({ fedimint, federationId }))
             } catch (err) {
-                showErrorToast(err, 'errors.unknown-error')
+                toast.error(err, 'errors.unknown-error')
                 return
             }
         }
         setIsLeavingFederation(false)
-    }, [canLeaveFederation, federationId, dispatch, showErrorToast])
+    }, [canLeaveFederation, federationId, dispatch, toast])
 
     const tosUrl =
         (activeFederation && getFederationTosUrl(activeFederation.meta)) ||
@@ -83,7 +84,7 @@ function AdminPage() {
             element.click()
             document.body.removeChild(element)
         } else {
-            showErrorToast(res.message, 'errors.unknown-error')
+            toast.error(res.message, 'errors.unknown-error')
         }
 
         setIsExportingCSV(false)

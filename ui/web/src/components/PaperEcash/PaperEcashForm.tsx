@@ -1,6 +1,7 @@
 import { dataToFrames } from 'qrloop'
 import React, { useMemo, useState } from 'react'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederation,
     selectBtcExchangeRate,
@@ -15,7 +16,7 @@ import { Button } from '../../components/Button'
 import { Checkbox } from '../../components/Checkbox'
 import { Input } from '../../components/Input'
 import { Text } from '../../components/Text'
-import { useAppSelector, useToast } from '../../hooks'
+import { useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { EcashPaper } from '../../pages/internal/paper-ecash'
 import { styled, theme } from '../../styles'
@@ -27,7 +28,7 @@ interface Props {
 }
 
 export const PaperEcashForm: React.FC<Props> = ({ onChangeEcashPapers }) => {
-    const { showErrorToast } = useToast()
+    const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
     const balance = useAppSelector(selectFederationBalance)
     const currency = useAppSelector(selectCurrency)
@@ -85,7 +86,7 @@ export const PaperEcashForm: React.FC<Props> = ({ onChangeEcashPapers }) => {
             }
         } catch (err) {
             log.error('Failed to generate', err)
-            showErrorToast(err, 'Failed to generate, check logs')
+            toast.error(err, 'Failed to generate, check logs')
         }
         onChangeEcashPapers(ecashPapers)
         setIsGenerating(false)

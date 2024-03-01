@@ -76,6 +76,7 @@ function EnvironmentProvider(props: { children: React.ReactNode }) {
     return <EnvironmentContext.Provider value={providerValue} {...props} />
 }
 
+// @deprecated use useEnvironmentContext from @fedi/common/hooks instead
 function useEnvironmentContext() {
     return useContext(EnvironmentContext)
 }

@@ -5,9 +5,9 @@ import { useTranslation } from 'react-i18next'
 import CloseIcon from '@fedi/common/assets/svgs/close.svg'
 import FediFileIcon from '@fedi/common/assets/svgs/fedi-file.svg'
 import { useSocialRecovery } from '@fedi/common/hooks/recovery'
+import { useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { useToast } from '../../hooks'
 import { fedimint, writeBridgeFile } from '../../lib/bridge'
 import { styled, theme } from '../../styles'
 import { ActionCard } from '../ActionCard'
@@ -40,7 +40,7 @@ export const SocialRecovery: React.FC = () => {
     } = useSocialRecovery(fedimint)
     const [isCheckingFile, setIsCheckingFile] = useState(false)
     const [wantsCancel, setWantsCancel] = useState(false)
-    const { showToast, showErrorToast } = useToast()
+    const toast = useToast()
 
     const handleFileChange = async (
         ev: React.ChangeEvent<HTMLInputElement>,
@@ -53,10 +53,10 @@ export const SocialRecovery: React.FC = () => {
             writeBridgeFile('backup.fedi', backupData)
             await fedimint.validateRecoveryFile('backup.fedi')
             await fetchSocialRecovery()
-            showToast(t('feature.recovery.successfully-opened-fedi-file'))
+            toast.show(t('feature.recovery.successfully-opened-fedi-file'))
         } catch (err) {
             log.warn('handleFileChange', err)
-            showErrorToast(err, 'errors.unknown-error')
+            toast.error(err, 'errors.unknown-error')
         }
         setIsCheckingFile(false)
         ev.target.value = ''
@@ -66,10 +66,10 @@ export const SocialRecovery: React.FC = () => {
         try {
             await completeSocialRecovery()
             replace('/')
-            showToast(t('feature.recovery.you-completed-social-recovery'))
+            toast.show(t('feature.recovery.you-completed-social-recovery'))
         } catch (err) {
             log.warn('handleComplete', err)
-            showErrorToast(err, 'errors.unknown-error')
+            toast.error(err, 'errors.unknown-error')
         }
     }
 
@@ -79,7 +79,7 @@ export const SocialRecovery: React.FC = () => {
             replace('/onboarding')
         } catch (err) {
             log.warn('handleCancel', err)
-            showErrorToast(err, 'errors.unknown-error')
+            toast.error(err, 'errors.unknown-error')
         }
     }
 

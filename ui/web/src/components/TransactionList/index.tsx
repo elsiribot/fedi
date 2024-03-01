@@ -1,6 +1,7 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import { useTxnDisplayUtils } from '@fedi/common/hooks/transactions'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { updateTransactionNotes } from '@fedi/common/redux/transactions'
@@ -10,7 +11,7 @@ import {
     makeTxnStatusText,
 } from '@fedi/common/utils/wallet'
 
-import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
+import { useAppDispatch, useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { HistoryList } from '../HistoryList'
 import { TransactionIcon } from './TransactionIcon'
@@ -26,7 +27,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
 }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
-    const { showErrorToast } = useToast()
+    const toast = useToast()
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const { makeTxnDetailAmountText, makeTxnDetailItems } =
         useTxnDisplayUtils(t)
@@ -66,7 +67,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                             }),
                         ).unwrap()
                     } catch (err) {
-                        showErrorToast(err, 'errors.unknown-error')
+                        toast.error(err, 'errors.unknown-error')
                     }
                 },
             })}

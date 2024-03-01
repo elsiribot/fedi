@@ -46,6 +46,7 @@ export const showToast = createAsyncThunk<
     const toast: Toast = {
         key: Date.now().toString(),
         duration: 3000,
+        status: 'info',
         ...toastArgs,
     }
 

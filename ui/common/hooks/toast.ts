@@ -8,13 +8,13 @@ import {
 import { ToastArgs } from '@fedi/common/types'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
-import { useAppDispatch } from './store'
+import { useCommonDispatch } from './redux'
 
 export function useToast() {
     const { t } = useTranslation()
-    const dispatch = useAppDispatch()
+    const dispatch = useCommonDispatch()
 
-    const showToast = useCallback(
+    const show = useCallback(
         (toast: string | ToastArgs) => {
             const args = typeof toast === 'string' ? { content: toast } : toast
             dispatch(reduxShowToast(args))
@@ -22,14 +22,17 @@ export function useToast() {
         [dispatch],
     )
 
-    const showErrorToast = useCallback(
+    const error = useCallback(
         (err: unknown, defaultMsg: string) => {
-            showToast({ content: formatErrorMessage(t, err, defaultMsg) })
+            show({
+                content: formatErrorMessage(t, err, defaultMsg),
+                status: 'error',
+            })
         },
-        [t, showToast],
+        [t, show],
     )
 
-    const closeToast = useCallback(
+    const close = useCallback(
         (key?: string) => {
             dispatch(reduxCloseToast(key))
         },
@@ -37,6 +40,6 @@ export function useToast() {
     )
 
     return useMemo(() => {
-        return { showToast, showErrorToast, closeToast }
-    }, [showToast, showErrorToast, closeToast])
+        return { show, error, close }
+    }, [show, error, close])
 }

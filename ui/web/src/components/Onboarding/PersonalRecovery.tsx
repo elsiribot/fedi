@@ -3,13 +3,14 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { BIP39_WORD_LIST } from '@fedi/common/constants/bip39'
+import { useToast } from '@fedi/common/hooks/toast'
 import { recoverFromMnemonic } from '@fedi/common/redux'
 import { SeedWords } from '@fedi/common/types'
 
 import { Button } from '../../components/Button'
 import { RecoverySeedWords } from '../../components/RecoverySeedWords'
 import { Text } from '../../components/Text'
-import { useAppDispatch, useToast } from '../../hooks'
+import { useAppDispatch } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 import { Header, Title } from '../Layout'
@@ -21,7 +22,7 @@ import {
 
 export const PersonalRecovery: React.FC = () => {
     const { t } = useTranslation()
-    const { showErrorToast } = useToast()
+    const toast = useToast()
     const { push } = useRouter()
     const dispatch = useAppDispatch()
     const [words, setWords] = useState<SeedWords>([])
@@ -41,10 +42,10 @@ export const PersonalRecovery: React.FC = () => {
             ).unwrap()
             push('/onboarding/join')
         } catch (err) {
-            showErrorToast(err, 'errors.unknown-error')
+            toast.error(err, 'errors.unknown-error')
         }
         setIsRecovering(false)
-    }, [words, dispatch, showErrorToast, push])
+    }, [words, dispatch, toast, push])
 
     return (
         <OnboardingContainer>

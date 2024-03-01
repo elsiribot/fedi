@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next'
 
 import ScanSadIcon from '@fedi/common/assets/svgs/scan-sad.svg'
 import ScanIcon from '@fedi/common/assets/svgs/scan.svg'
+import { useToast } from '@fedi/common/hooks/toast'
 
-import { useToast } from '../../hooks'
 import { styled, theme } from '../../styles'
 import { Button } from '../Button'
 import { HoloLoader } from '../HoloLoader'
@@ -20,7 +20,7 @@ interface Props {
 export const OmniQrScanner: React.FC<Props> = ({ processing, onScan }) => {
     const { t } = useTranslation()
     const [cameraPermission, setCameraPermission] = useState<PermissionState>()
-    const { showErrorToast } = useToast()
+    const toast = useToast()
 
     useEffect(() => {
         // Not all browsers support querying for camera permission, so it's
@@ -49,9 +49,9 @@ export const OmniQrScanner: React.FC<Props> = ({ processing, onScan }) => {
                 setCameraPermission('granted')
             })
             .catch(err => {
-                showErrorToast(err, 'errors.camera-unavailable')
+                toast.error(err, 'errors.camera-unavailable')
             })
-    }, [showErrorToast])
+    }, [toast])
 
     if (cameraPermission === 'granted') {
         return <QRScanner onScan={handleScan} processing={processing} />

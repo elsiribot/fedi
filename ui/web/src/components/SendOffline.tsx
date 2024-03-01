@@ -3,11 +3,12 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useMinMaxSendAmount } from '@fedi/common/hooks/amount'
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import { useAppSelector, useToast, useWarnBeforeUnload } from '../hooks'
+import { useAppSelector, useWarnBeforeUnload } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 import { AmountInput } from './AmountInput'
@@ -27,7 +28,7 @@ export const SendOffline: React.FC<Props> = ({
     onPaymentSent,
 }) => {
     const { t } = useTranslation()
-    const { showErrorToast } = useToast()
+    const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount()
     const [amount, setAmount] = useState(0 as Sats)
@@ -63,7 +64,7 @@ export const SendOffline: React.FC<Props> = ({
             setOfflinePayment(ecash)
             setQrFrames(dataToFrames(Buffer.from(ecash, 'base64')))
         } catch (err) {
-            showErrorToast(err, 'errors.unknown-error')
+            toast.error(err, 'errors.unknown-error')
         }
         setIsGeneratingEcash(false)
     }, [
@@ -71,7 +72,7 @@ export const SendOffline: React.FC<Props> = ({
         amount,
         minimumAmount,
         maximumAmount,
-        showErrorToast,
+        toast,
         onEcashGenerated,
     ])
 

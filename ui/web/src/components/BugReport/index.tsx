@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { v4 as uuidv4 } from 'uuid'
 
 import Info from '@fedi/common/assets/svgs/info.svg'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
@@ -18,7 +19,7 @@ import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog, exportLogs } from '@fedi/common/utils/log'
 import { makeTarGz } from '@fedi/common/utils/targz'
 
-import { useAppSelector, useAutosizeTextArea, useToast } from '../../hooks'
+import { useAppSelector, useAutosizeTextArea } from '../../hooks'
 import { theme } from '../../styles'
 import { Button } from '../Button'
 import { Dialog } from '../Dialog'
@@ -126,10 +127,7 @@ export default function BugReport() {
             }, 2500)
         } catch (err) {
             log.error('Failed to submit bug report', err)
-            toast.showErrorToast(
-                err,
-                formatErrorMessage(t, err, 'errors.unknown-error'),
-            )
+            toast.error(err, formatErrorMessage(t, err, 'errors.unknown-error'))
             setStatus('idle')
         }
     }

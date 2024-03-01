@@ -6,6 +6,7 @@ import {
     useMinMaxRequestAmount,
     useMinMaxSendAmount,
 } from '@fedi/common/hooks/amount'
+import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     selectActiveFederation,
@@ -15,7 +16,7 @@ import {
 import { ChatPaymentStatus, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 import { AmountInput } from './AmountInput'
@@ -80,7 +81,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
                 ).unwrap()
                 onOpenChangeRef.current(false)
             } catch (err) {
-                toast.showErrorToast(err, 'errors.chat-unavailable')
+                toast.error(err, 'errors.chat-unavailable')
             }
         },
         [
@@ -113,7 +114,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
             )
             await sendPaymentMessage(token.ecash)
         } catch (err) {
-            toast.showErrorToast(err, 'errors.unknown-error')
+            toast.error(err, 'errors.unknown-error')
         }
         setSubmitAction(null)
     }, [sendPaymentMessage, amount, sendMinMax, toast, federationId])

@@ -6,6 +6,7 @@ import ClipboardIcon from '@fedi/common/assets/svgs/clipboard.svg'
 import KeyboardIcon from '@fedi/common/assets/svgs/keyboard.svg'
 import QRIcon from '@fedi/common/assets/svgs/qr.svg'
 import ScanIcon from '@fedi/common/assets/svgs/scan.svg'
+import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import {
@@ -15,7 +16,7 @@ import {
 } from '@fedi/common/types'
 import { parseUserInput } from '@fedi/common/utils/parser'
 
-import { useAppSelector, useToast } from '../../hooks'
+import { useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { Icon } from '../Icon'
 import { Text } from '../Text'
@@ -94,7 +95,7 @@ export function OmniInput<
             const input = await navigator.clipboard.readText()
             await parseInput(input)
         } catch (err) {
-            toast.showErrorToast(err, 'errors.unknown-error')
+            toast.error(err, 'errors.unknown-error')
         }
     }, [parseInput, toast])
 
@@ -111,7 +112,7 @@ export function OmniInput<
                 })
                 parseInput(result.data)
             } catch (err) {
-                toast.showErrorToast(err, 'errors.unknown-error')
+                toast.error(err, 'errors.unknown-error')
             }
             // Reset the input so they can re-select the same file if they wish
         },

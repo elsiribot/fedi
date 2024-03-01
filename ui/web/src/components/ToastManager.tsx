@@ -2,9 +2,10 @@ import * as Portal from '@radix-ui/react-portal'
 import * as RadixToast from '@radix-ui/react-toast'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectToast } from '@fedi/common/redux'
 
-import { useAppSelector, useMediaQuery, useToast } from '../hooks'
+import { useAppSelector, useMediaQuery } from '../hooks'
 import { config, keyframes, styled, theme } from '../styles'
 import { Text } from './Text'
 
@@ -14,15 +15,15 @@ export const ToastManager: React.FC = () => {
     const [cachedToast, setCachedToast] = useState(toast)
     const [isToastOpen, setIsToastOpen] = useState(!!toast)
     const [isPaused, setIsPaused] = useState(false)
-    const { closeToast } = useToast()
+    const { close } = useToast()
     const isMobile = useMediaQuery(config.media.sm)
 
     const handleCloseToast = useCallback(
         (open: boolean) => {
             setIsToastOpen(open)
-            if (!open) closeToast(toast?.key)
+            if (!open) close(toast?.key)
         },
-        [toast, closeToast],
+        [toast, close],
     )
 
     useEffect(() => {

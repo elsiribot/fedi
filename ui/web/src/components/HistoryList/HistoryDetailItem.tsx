@@ -2,9 +2,9 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import CopyIcon from '@fedi/common/assets/svgs/copy.svg'
+import { useToast } from '@fedi/common/hooks/toast'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
-import { useToast } from '../../hooks'
 import { styled, theme } from '../../styles'
 import { Icon } from '../Icon'
 import { Text } from '../Text'
@@ -32,7 +32,7 @@ const isStringProps = (props: HistoryDetailItemProps): props is StringProps =>
 
 export const HistoryDetailItem: React.FC<HistoryDetailItemProps> = props => {
     const { t } = useTranslation()
-    const { showToast, showErrorToast } = useToast()
+    const toast = useToast()
 
     let valueEl: React.ReactNode
     if (isStringProps(props)) {
@@ -49,12 +49,12 @@ export const HistoryDetailItem: React.FC<HistoryDetailItemProps> = props => {
                     onClick={() => {
                         try {
                             navigator.clipboard.writeText(props.value)
-                            showToast(
+                            toast.show(
                                 props.copiedMessage ||
                                     t('phrases.copied-to-clipboard'),
                             )
                         } catch (err) {
-                            showErrorToast(err, 'errors.unknown-error')
+                            toast.error(err, 'errors.unknown-error')
                         }
                     }}>
                     {valueEl}

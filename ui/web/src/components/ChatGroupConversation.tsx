@@ -6,6 +6,7 @@ import Edit from '@fedi/common/assets/svgs/edit.svg'
 import LeaveRoom from '@fedi/common/assets/svgs/leave-room.svg'
 import Room from '@fedi/common/assets/svgs/room.svg'
 import SpeakerPhone from '@fedi/common/assets/svgs/speakerphone.svg'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     configureChatGroup,
     leaveChatGroup,
@@ -20,7 +21,7 @@ import {
 import { ChatAffiliation, ChatRole, ChatType } from '@fedi/common/types'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
-import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { Button } from './Button'
 import { ChatAvatar } from './ChatAvatar'
@@ -49,7 +50,7 @@ export type ChatGroupDialogState =
 export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
-    const { showErrorToast } = useToast()
+    const toast = useToast()
     const federationId = useAppSelector(selectActiveFederationId)
     const group = useAppSelector(s => selectChatGroup(s, groupId))
     const messages = useAppSelector(s => selectChatMessages(s, groupId))
@@ -89,9 +90,9 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
                 }),
             ).unwrap()
         } catch (err) {
-            showErrorToast(err, 'errors.unknown-error')
+            toast.error(err, 'errors.unknown-error')
         }
-    }, [t, dispatch, showErrorToast, federationId, group])
+    }, [t, dispatch, toast, federationId, group])
 
     const handleLeaveGroup = useCallback(async () => {
         const shouldLeave = confirm(t('feature.chat.leave-group-confirmation'))
