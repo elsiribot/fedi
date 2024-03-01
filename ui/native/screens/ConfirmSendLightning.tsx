@@ -55,7 +55,6 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
         handleOmniInput(parsedData)
     }, [handleOmniInput, parsedData])
 
-    console.info('feeDetails', feeDetails)
     const [unit] = useState('sats')
     const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
     const [showDetails, setShowDetails] = useState<boolean>(false)
@@ -94,7 +93,6 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
 
     const style = styles(theme, insets)
 
-    // TODO: rename to renderDetails
     const renderDetails = () => {
         if (!feeDetails) return null
 

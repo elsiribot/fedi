@@ -20,6 +20,8 @@ import {
     Btc,
     Invoice,
     MSats,
+    ParsedBip21,
+    ParsedBitcoinAddress,
     ParsedLnurlPay,
     ParsedLnurlWithdraw,
     Sats,
@@ -41,6 +43,8 @@ interface RequestAmountArgs {
 }
 
 interface SendAmountArgs {
+    btcAddress?: ParsedBitcoinAddress['data'] | null
+    bip21Payment?: ParsedBip21['data'] | null
     invoice?: Invoice | null
     lnurlPayment?: ParsedLnurlPay['data'] | null
 }
@@ -605,7 +609,13 @@ function getDefaultRequestMemo({
  * Provide all the state necessary to implement a pay form that generates
  * a Lightning invoice. Optionally provide an LNURL pay request.
  */
-export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
+export function useSendForm({
+    btcAddress,
+    bip21Payment,
+    invoice,
+    lnurlPayment,
+}: SendAmountArgs = {}) {
+    const [feeDetails, setFeeDetails] = useState<RpcFeeDetails>()
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount({
         invoice,
@@ -617,13 +627,14 @@ export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
     // amount is requested.
     let exactAmount: Sats | undefined = undefined
     let description: string | undefined
-    let feeDetails: RpcFeeDetails | undefined
     let sendTo: string | undefined
     if (invoice) {
         exactAmount = amountUtils.msatToSat(invoice.amount)
         description = invoice.description
-        feeDetails = invoice.fee
         sendTo = stringUtils.truncateMiddleOfString(invoice.invoice, 8)
+        if (invoice.fee) {
+            setFeeDetails(invoice.fee)
+        }
     } else if (
         lnurlPayment &&
         lnurlPayment.minSendable &&
@@ -631,6 +642,12 @@ export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
     ) {
         exactAmount = amountUtils.msatToSat(lnurlPayment.minSendable)
         description = lnurlPayment.description
+    } else if (bip21Payment && bip21Payment.amount) {
+        exactAmount = amountUtils.btcToSat(bip21Payment.amount)
+        description = bip21Payment.message
+        sendTo = stringUtils.truncateMiddleOfString(bip21Payment.address, 8)
+    } else if (btcAddress) {
+        sendTo = stringUtils.truncateMiddleOfString(btcAddress.address, 8)
     }
 
     const reset = useCallback(() => {
@@ -642,6 +659,7 @@ export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
         setInputAmount,
         description,
         feeDetails,
+        setFeeDetails,
         sendTo,
         exactAmount,
         minimumAmount,

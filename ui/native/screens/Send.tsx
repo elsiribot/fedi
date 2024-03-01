@@ -51,7 +51,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                         parsedData.type === ParserDataType.BitcoinAddress
                     ) {
                         navigate('ConfirmSendOnChain', {
-                            bitcoinUri: parsedData,
+                            parsedData,
                         })
                     } else {
                         navigate('ConfirmSendLightning', { parsedData })

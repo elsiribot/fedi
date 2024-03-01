@@ -119,6 +119,7 @@ import SelectRecoveryFileSuccess from './screens/SelectRecoveryFileSuccess'
 import Send from './screens/Send'
 import SendOfflineAmount from './screens/SendOfflineAmount'
 import SendOfflineQr from './screens/SendOfflineQr'
+import SendOnChainAmount from './screens/SendOnChainAmount'
 import SendSuccess from './screens/SendSuccess'
 import Settings from './screens/Settings'
 import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
@@ -348,6 +349,13 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="ConfirmSendLightning"
                                 component={ConfirmSendLightning}
+                                options={() => ({
+                                    header: () => <SendBitcoinHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SendOnChainAmount"
+                                component={SendOnChainAmount}
                                 options={() => ({
                                     header: () => <SendBitcoinHeader />,
                                 })}

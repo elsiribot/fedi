@@ -205,8 +205,13 @@ export const OmniConfirmation: React.FC<Props> = ({
             case ParserDataType.BitcoinAddress:
                 return {
                     contents: {
-                        icon: 'ScanSad',
-                        title: t('feature.omni.unsupported-on-chain'),
+                        icon: 'Bitcoin',
+                        title: t('feature.omni.confirm-onchain-pay'),
+                    },
+                    continueOnPress: () => {
+                        handleNavigate('SendOnChainAmount', {
+                            parsedData,
+                        })
                     },
                 }
         }

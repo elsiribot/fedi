@@ -1,19 +1,35 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { Button, Input, Overlay, Text, Theme, useTheme } from '@rneui/themed'
+import React, { useCallback, useEffect, useState } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useBalanceDisplay } from '@fedi/common/hooks/amount'
+import {
+    useAmountFormatter,
+    useBalanceDisplay,
+} from '@fedi/common/hooks/amount'
+import { useOmniPaymentState } from '@fedi/common/hooks/pay'
+import { FeeItem, useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
+import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import stringUtils from '@fedi/common/utils/StringUtils'
+import { hexToRgba } from '@fedi/common/utils/color'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
+import { fedimint } from '../bridge'
+import { FeeBreakdown } from '../components/feature/send/FeeBreakdown'
 import FiatAmount from '../components/feature/wallet/FiatAmount'
-import { useBridge } from '../state/hooks'
+import { AmountScreen } from '../components/ui/AmountScreen'
+import LineBreak from '../components/ui/LineBreak'
+import SvgImage from '../components/ui/SvgImage'
+import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
+import { useAppSelector, useBridge } from '../state/hooks'
 import { Btc, ParserDataType, Sats, SatsString } from '../types'
-import type { RootStackParamList } from '../types/navigation'
+import type { NavigationHook, RootStackParamList } from '../types/navigation'
+import ConfirmSendLightning from './ConfirmSendLightning'
 
 const log = makeLog('ConfirmSendOnChain')
 
@@ -24,110 +40,277 @@ export type Props = NativeStackScreenProps<
 
 const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
+    const insets = useSafeAreaInsets()
     const { t } = useTranslation()
-    const navigation = useNavigation()
-    const balanceDisplay = useBalanceDisplay(t)
-    const { payAddress } = useBridge()
-    const { bitcoinUri } = route.params
-    const [isLoading, setIsLoading] = useState<boolean>(false)
-    const [amount, setAmount] = useState<SatsString>('' as SatsString)
+    const navigation = useNavigation<NavigationHook>()
+    const { toast } = useEnvironmentContext().state
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const { parsedData } = route.params
     const [unit] = useState('sats')
+    const { onchainFeesTitle, makeOnchainFeeContent } = useFeeDisplayUtils(t)
+    const balanceDisplay = useBalanceDisplay(t)
+    const {
+        isReadyToPay,
+        inputAmount,
+        feeDetails,
+        sendTo,
+        handleOmniInput,
+        handleOmniSend,
+    } = useOmniPaymentState(fedimint, activeFederation?.id)
+    const { makeFormattedAmountsFromSats } = useAmountFormatter()
+    const { formattedPrimaryAmount, formattedSecondaryAmount } =
+        makeFormattedAmountsFromSats(inputAmount)
 
     useEffect(() => {
-        if (
-            bitcoinUri.type === ParserDataType.Bip21 &&
-            bitcoinUri.data.amount
-        ) {
-            const amountInSats = amountUtils.btcToSat(
-                Number(bitcoinUri.data?.amount) as Btc,
-            )
-            setAmount(String(amountInSats) as SatsString)
-        }
-    }, [bitcoinUri])
+        handleOmniInput(parsedData)
+    }, [handleOmniInput, parsedData])
 
-    const onSendBtc = async () => {
+    const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
+    const [showDetails, setShowDetails] = useState<boolean>(false)
+    const [isPayingAddress, setIsPayingAddress] = useState<boolean>(false)
+
+    const navigationReplace = navigation.replace
+    const handleSend = useCallback(async () => {
+        setIsPayingAddress(true)
         try {
-            log.info('paying address', bitcoinUri.data.address, amount)
-            setIsLoading(true)
-            await payAddress(bitcoinUri.data.address, Number(amount) as Sats)
-
-            setIsLoading(false)
-            navigation.navigate('SendSuccess', {
-                amount: amountUtils.satToMsat(Number(amount) as Sats),
+            await handleOmniSend(inputAmount)
+            navigationReplace('SendSuccess', {
+                amount: amountUtils.satToMsat(inputAmount),
                 unit,
             })
-        } catch (error) {
-            log.error('onSendBtc', error)
-            setIsLoading(false)
+        } catch (err) {
+            toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
         }
+        setIsPayingAddress(false)
+    }, [handleOmniSend, unit, navigationReplace, toast, t])
+
+    if (!isReadyToPay) return <ActivityIndicator />
+
+    const renderDetails = () => {
+        if (!feeDetails) return null
+
+        const feeContent = makeOnchainFeeContent(feeDetails)
+        const { formattedTotalFee, feeItemsBreakdown } = feeContent
+
+        return (
+            <>
+                <View
+                    style={[
+                        showDetails
+                            ? style.detailsContainer
+                            : style.collapsedContainer,
+                    ]}>
+                    <View style={[style.detailItem, style.bottomBorder]}>
+                        <Text caption bold style={style.darkGrey}>{`${t(
+                            'feature.send.send-to',
+                        )}`}</Text>
+                        <Text caption style={style.darkGrey}>
+                            {sendTo}
+                        </Text>
+                    </View>
+                    <Pressable
+                        style={[style.detailItem, style.bottomBorder]}
+                        onPress={() => setShowFeeBreakdown(true)}>
+                        <Text
+                            caption
+                            bold
+                            style={[
+                                style.darkGrey,
+                                style.detailItemTitle,
+                            ]}>{`${t('words.fees')}`}</Text>
+                        <Text
+                            caption
+                            style={
+                                style.darkGrey
+                            }>{`${formattedTotalFee}`}</Text>
+                        <SvgImage
+                            name="Info"
+                            size={16}
+                            color={theme.colors.grey}
+                        />
+                    </Pressable>
+                    <View style={[style.detailItem]}>
+                        <Text caption bold style={style.darkGrey}>{`${t(
+                            'feature.send.send-from',
+                        )}`}</Text>
+
+                        <Text caption style={style.darkGrey}>
+                            {`${t('feature.stabilitypool.bitcoin-balance')}`}
+                        </Text>
+                    </View>
+
+                    <Overlay
+                        isVisible={showFeeBreakdown}
+                        overlayStyle={style.overlayContainer}
+                        onBackdropPress={() => setShowFeeBreakdown(false)}>
+                        <FeeBreakdown
+                            title={onchainFeesTitle}
+                            icon={
+                                <SvgImage
+                                    name="Info"
+                                    size={32}
+                                    color={theme.colors.blue}
+                                />
+                            }
+                            feeItems={feeItemsBreakdown.map(
+                                ({ label, formattedAmount }: FeeItem) => ({
+                                    label: label,
+                                    value: formattedAmount,
+                                }),
+                            )}
+                            onClose={() => setShowFeeBreakdown(false)}
+                            guidanceText={t('feature.fees.guidance-onchain')}
+                        />
+                    </Overlay>
+                </View>
+            </>
+        )
     }
-
-    const onChangeText = (updatedValue: string) => {
-        const valueAsSatsString: SatsString = updatedValue as SatsString
-
-        valueAsSatsString._ = 'SatsString'
-
-        setAmount(valueAsSatsString)
-    }
-
-    if (!bitcoinUri.data) return <ActivityIndicator />
+    const style = styles(theme, insets)
 
     return (
-        <View style={styles(theme).container}>
-            <Text caption>{balanceDisplay}</Text>
-            <View style={styles(theme).detailsContainer}>
-                <Input
-                    onChangeText={onChangeText}
-                    value={amount}
-                    placeholder={`${t('words.amount')} (${t('words.sats')})`}
-                    keyboardType="numeric"
-                    returnKeyType="done"
-                    containerStyle={styles(theme).textInput}
-                />
-                <FiatAmount amountSats={Number(amount) as Sats} />
-                <Text>
-                    {`${stringUtils.truncateMiddleOfString(
-                        bitcoinUri.data.address,
-                        14,
-                    )}`}
+        <View style={style.container}>
+            <Text
+                caption
+                style={style.balance}
+                numberOfLines={1}
+                adjustsFontSizeToFit>
+                {balanceDisplay}
+            </Text>
+            <View style={style.amountContainer}>
+                <Text h1 numberOfLines={1}>
+                    {formattedPrimaryAmount}
+                </Text>
+                <Text
+                    style={style.secondaryAmountText}
+                    medium
+                    numberOfLines={1}>
+                    {formattedSecondaryAmount}
                 </Text>
             </View>
-            <Button
-                title={
-                    amount
-                        ? t('feature.send.send-amount-unit', {
-                              amount: amountUtils.formatNumber(Number(amount)),
-                              unit: t('words.sats').toUpperCase(),
-                          })
-                        : t('words.send')
-                }
-                onPress={onSendBtc}
-                loading={isLoading}
-                fullWidth
-            />
+            <View style={style.buttonsGroup}>
+                {renderDetails()}
+                <Button
+                    fullWidth
+                    containerStyle={[style.button]}
+                    buttonStyle={[style.detailsButton]}
+                    onPress={() => setShowDetails(!showDetails)}
+                    title={
+                        <Text medium caption>
+                            {showDetails
+                                ? t('phrases.hide-details')
+                                : t('feature.stabilitypool.details-and-fee')}
+                        </Text>
+                    }
+                />
+                <Button
+                    fullWidth
+                    containerStyle={[style.button]}
+                    onPress={handleSend}
+                    disabled={isPayingAddress}
+                    loading={isPayingAddress}
+                    title={
+                        <Text medium caption style={style.buttonText}>
+                            {t('words.send')}
+                        </Text>
+                    }
+                />
+            </View>
         </View>
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
+            flexDirection: 'column',
             flex: 1,
             alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: theme.spacing.xl,
+            paddingTop: theme.spacing.lg,
+            paddingLeft: theme.spacing.lg + insets.left,
+            paddingRight: theme.spacing.lg + insets.right,
+            paddingBottom: Math.max(theme.spacing.lg, insets.bottom),
+        },
+        amountContainer: {
+            marginTop: 'auto',
+        },
+        balance: {
+            color: hexToRgba(theme.colors.primary, 0.6),
+            textAlign: 'center',
+        },
+        bottomBorder: {
+            borderBottomWidth: 1,
+            borderBottomColor: theme.colors.extraLightGrey,
+        },
+        buttonsGroup: {
+            width: '100%',
+            marginTop: 'auto',
+            flexDirection: 'column',
         },
         button: {
-            marginTop: 'auto',
+            marginTop: theme.spacing.lg,
+        },
+        buttonText: {
+            color: theme.colors.secondary,
+        },
+        collapsedContainer: {
+            height: 0,
+            opacity: 0,
         },
         detailsContainer: {
-            alignItems: 'center',
             width: '100%',
+            opacity: 1,
+            flexDirection: 'column',
         },
-        textInput: {
+        detailItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: 52,
+        },
+        detailItemTitle: {
+            marginRight: 'auto',
+        },
+        darkGrey: {
+            color: theme.colors.darkGrey,
+        },
+        detailsButton: {
+            backgroundColor: theme.colors.offWhite,
+        },
+        overlayContainer: {
             width: '90%',
-            marginTop: 'auto',
+            maxWidth: 312,
+            padding: theme.spacing.xl,
+            borderRadius: theme.borders.defaultRadius,
+            alignItems: 'center',
+        },
+        secondaryAmountText: {
+            color: theme.colors.darkGrey,
+            textAlign: 'center',
+            marginRight: theme.spacing.xs,
+            marginTop: theme.spacing.xs,
         },
     })
 
 export default ConfirmSendOnChain
+
+// const styles = (theme: Theme) =>
+//     StyleSheet.create({
+//         container: {
+//             flex: 1,
+//             alignItems: 'center',
+//             justifyContent: 'space-between',
+//             padding: theme.spacing.xl,
+//         },
+//         button: {
+//             marginTop: 'auto',
+//         },
+//         detailsContainer: {
+//             alignItems: 'center',
+//             width: '100%',
+//         },
+//         textInput: {
+//             width: '90%',
+//             marginTop: 'auto',
+//         },
+//     })

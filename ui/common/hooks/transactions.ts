@@ -339,6 +339,48 @@ export function useFeeDisplayUtils(t: TFunction) {
         }
     }
 
+    const makeOnchainFeeContent = (feeDetails: RpcFeeDetails) => {
+        const { fediFee, federationFee, networkFee } = feeDetails
+        // prettier-ignore
+        const lightningSendTotalFeeMsats = (
+            fediFee + federationFee + networkFee
+        ) as MSats
+
+        // Format fedi fee
+        const {
+            formattedPrimaryAmount: formattedFediFee,
+            formattedSecondaryAmount: formattedFediFeeSecondary,
+        } = makeFormattedAmountsFromMSats(fediFee)
+        const {
+            formattedPrimaryAmount: formattedFederationFee,
+            formattedSecondaryAmount: formattedFederationFeeSecondary,
+        } = makeFormattedAmountsFromMSats(federationFee)
+        const {
+            formattedPrimaryAmount: formattedNetworkFee,
+            formattedSecondaryAmount: formattedNetworkFeeSecondary,
+        } = makeFormattedAmountsFromMSats(networkFee)
+        const { formattedPrimaryAmount: formattedTotalFee } =
+            makeFormattedAmountsFromMSats(lightningSendTotalFeeMsats)
+
+        const lightningFeeItems: FeeItem[] = [
+            {
+                label: t('phrases.network-fee'),
+                formattedAmount: `${formattedNetworkFee} (${formattedNetworkFeeSecondary})`,
+            },
+            {
+                label: t('phrases.fedi-fee'),
+                formattedAmount: `${formattedFediFee} (${formattedFediFeeSecondary})`,
+            },
+        ]
+
+        return {
+            feeItemsBreakdown: lightningFeeItems,
+            formattedTotalFee: `${
+                lightningSendTotalFeeMsats > 0 ? '+' : ''
+            }${formattedTotalFee}`,
+        }
+    }
+
     const makeStabilityPoolFeeContent = (amount: Sats) => {
         const amountMsats = amountUtils.satToMsat(amount)
         let fediFee: MSats = 0 as MSats
@@ -388,6 +430,7 @@ export function useFeeDisplayUtils(t: TFunction) {
     const ecashFeesTitle = t('phrases.ecash-fees')
     const ecashFeesGuidanceText = t('feature.fees.guidance-ecash')
     const lightningFeesTitle = t('phrases.lightning-fees')
+    const onchainFeesTitle = t('phrases.onchain-fees')
     const stabilityPoolFeesTitle = t('phrases.stable-balance-fees')
 
     return {
@@ -396,6 +439,8 @@ export function useFeeDisplayUtils(t: TFunction) {
         makeEcashFeeContent,
         lightningFeesTitle,
         makeLightningFeeContent,
+        onchainFeesTitle,
+        makeOnchainFeeContent,
         stabilityPoolFeesTitle,
         makeStabilityPoolFeeContent,
     }

@@ -367,7 +367,7 @@
             "guidance-ecash": "Transferring ecash inside your community is the cheapest and easiest way to send money.",
             "guidance-lightning": "Transactions between members inside the same community are the cheapest and fastest.<br/><br/>Transactions outside the community use the lightning network where the fees are larger.",
             "guidance-stable-balance": "*This is the max amount it could cost to hold this balance for a year.",
-            "guidance-onchain": "Sending on-chain bitcoin is subject to network fees."
+            "guidance-onchain": "Sending on-chain bitcoin is subject to network fees. Honestly, it's better for beefy amounts."
         },
         "fedimods": {
             "add-a-mod": "Add a mod",
@@ -417,6 +417,7 @@
             "confirm-lightning-pay": "This is a lightning payment request, do you want to pay it?",
             "confirm-lightning-withdraw": "This is a lightning withdrawal, do you want to withdraw?",
             "confirm-lnurl-auth": "Do you want to log in to {{domain}} with lightning?",
+            "confirm-onchain-pay": "This is a bitcoin onchain payment, do you want to pay it?",
             "confirm-website-url": "This is a website url, do you want to open this in your browser?",
             "search-no-history-header": "No history with user",
             "search-no-results": "No users match “{{query}}”",
