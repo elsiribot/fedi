@@ -17,6 +17,7 @@ import { makeLog } from '@fedi/common/utils/log'
 import Router from './Router'
 import { fedimint, initializeBridge } from './bridge'
 import CustomToast from './components/ui/CustomToast'
+import ToastManager from './components/ui/ToastManager'
 import { ErrorScreen } from './screens/ErrorScreen'
 import { BackupRecoveryProvider } from './state/contexts/BackupRecoveryContext'
 import { EnvironmentProvider } from './state/contexts/EnvironmentContext'
@@ -156,6 +157,7 @@ const App = () => {
                             ]}>
                             {bridgeIsReady && <Router />}
                             <CustomToast />
+                            <ToastManager />
                         </ProviderComposer>
                     </ReduxProvider>
                 </ErrorBoundary>
