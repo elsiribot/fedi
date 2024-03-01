@@ -1,7 +1,10 @@
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useMediaQuery } from '../../hooks'
+import { config } from '../../styles'
 import { Button } from '../Button'
+import { Header, Title } from '../Layout'
 import { Text } from '../Text'
 import FederationTermsPreview from './FederationTermsPreview'
 import { ExternalTosLink } from './FederationTermsPreview'
@@ -20,6 +23,7 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({
     tosUrl,
     onAccept,
 }: TermsOfServiceProps) => {
+    const isSm = useMediaQuery(config.media.sm)
     const { t } = useTranslation()
     const [hasTermsLoaded, setHasTermsLoaded] = useState(false)
     const [isAccepting, setIsAccepting] = useState(false)
@@ -32,6 +36,13 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({
 
     return (
         <OnboardingContainer>
+            {isSm && (
+                <Header back="/onboarding/welcome">
+                    <Title subheader>
+                        {t('feature.federations.join-federation')}
+                    </Title>
+                </Header>
+            )}
             <OnboardingContent fullWidth>
                 <Text variant="h2" weight="medium" css={{ marginBottom: 16 }}>
                     {t('feature.onboarding.terms-and-conditions')}

@@ -22,6 +22,7 @@ import {
     OnboardingContainer,
     OnboardingContent,
 } from './components'
+import { Header, Title } from '../Layout'
 
 const log = makeLog('SocialRecovery')
 
@@ -239,10 +240,10 @@ export const SocialRecovery: React.FC = () => {
 
     return (
         <OnboardingContainer>
+            <Header back="/onboarding/recover">
+                <Title subheader>{t('feature.recovery.social-recovery')}</Title>
+            </Header>
             <OnboardingContent gap="md" fullWidth>
-                <Text variant="h1">
-                    {t('feature.recovery.social-recovery')}
-                </Text>
                 <Content>{content}</Content>
             </OnboardingContent>
             {actions && <OnboardingActions>{actions}</OnboardingActions>}

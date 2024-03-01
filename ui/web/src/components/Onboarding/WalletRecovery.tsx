@@ -6,8 +6,8 @@ import WordListIcon from '@fedi/common/assets/svgs/word-list.svg'
 
 import { ActionCard } from '../../components/ActionCard'
 import { Button } from '../../components/Button'
-import { Text } from '../../components/Text'
 import { styled } from '../../styles'
+import { Header, Title } from '../Layout'
 import { OnboardingContainer, OnboardingContent } from './components'
 
 export const WalletRecovery: React.FC = () => {
@@ -15,8 +15,11 @@ export const WalletRecovery: React.FC = () => {
 
     return (
         <OnboardingContainer>
+            <Header back="/onboarding/welcome">
+                <Title subheader>{t('feature.recovery.choose-method')}</Title>
+            </Header>
+
             <OnboardingContent gap="md" fullWidth>
-                <Text variant="h1">{t('feature.recovery.choose-method')}</Text>
                 <Cards>
                     <ActionCard
                         icon={WordListIcon}
