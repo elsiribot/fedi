@@ -427,6 +427,21 @@ export const makeTxnDetailItems = (
             truncated: true,
         })
     }
+    if (txn.onchainWithdrawalDetails) {
+        items.push({
+            label: t('phrases.transaction-id'),
+            value: txn.onchainWithdrawalDetails.txid,
+            copiedMessage: t('phrases.copied-transaction-id'),
+            copyable: true,
+            truncated: true,
+        })
+        items.push({
+            label: t('words.fees'),
+            value: `${amountUtils.formatNumber(
+                txn.onchainWithdrawalDetails.fee,
+            )} ${t('words.sats')}`,
+        })
+    }
 
     const txnFee = txn.lightning?.fee
     if (typeof txnFee === 'number') {
