@@ -12,7 +12,10 @@ import {
     UnsupportedMethodError,
 } from 'webln'
 
-import { useIsNostrEnabled } from '@fedi/common/hooks/federation'
+import {
+    useIsFediInternalInjectionEnabled,
+    useIsNostrEnabled,
+} from '@fedi/common/hooks/federation'
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
@@ -97,6 +100,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
     const nostrEnabled = useIsNostrEnabled()
+    const fediInternalEnabled = useIsFediInternalInjectionEnabled()
     const { toast } = useEnvironmentContext().state
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
@@ -440,7 +444,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                     webln: true,
                     eruda: fediModDebugMode,
                     nostr: nostrEnabled,
-                    fediInternal: true,
+                    fediInternal: fediInternalEnabled,
                 })}
                 allowsInlineMediaPlayback
                 onMessage={onMessage}
