@@ -67,6 +67,7 @@ export function useOmniPaymentState(
     fedimint: FedimintBridge,
     federationId: string | undefined,
 ): OmniPaymentState {
+    const [feeDetails, setFeeDetails] = useState<RpcFeeDetails>()
     const [invoice, setInvoice] = useState<Invoice>()
     const [lnurlPayment, setLnurlPayment] = useState<ParsedLnurlPay['data']>()
     const [bip21Payment, setBip21Payment] = useState<ParsedBip21['data']>()
@@ -78,8 +79,6 @@ export function useOmniPaymentState(
         minimumAmount,
         maximumAmount,
         description,
-        feeDetails,
-        setFeeDetails,
         sendTo,
     } = useSendForm({ btcAddress, bip21Payment, invoice, lnurlPayment })
 
@@ -119,6 +118,9 @@ export function useOmniPaymentState(
                     setInputAmount(amountUtils.msatToSat(decoded.amount))
                 }
                 setInvoice(decoded)
+                if (decoded.fee) {
+                    setFeeDetails(decoded.fee)
+                }
             } else if (input.type === ParserDataType.LnurlPay) {
                 if (input.data.minSendable) {
                     setInputAmount(
@@ -187,6 +189,7 @@ export function useOmniPaymentState(
     )
 
     const resetOmniPaymentState = useCallback(() => {
+        setFeeDetails(undefined)
         setInvoice(undefined)
         setLnurlPayment(undefined)
         setBtcAddress(undefined)

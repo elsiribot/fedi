@@ -615,7 +615,6 @@ export function useSendForm({
     invoice,
     lnurlPayment,
 }: SendAmountArgs = {}) {
-    const [feeDetails, setFeeDetails] = useState<RpcFeeDetails>()
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount({
         invoice,
@@ -632,9 +631,6 @@ export function useSendForm({
         exactAmount = amountUtils.msatToSat(invoice.amount)
         description = invoice.description
         sendTo = stringUtils.truncateMiddleOfString(invoice.invoice, 8)
-        if (invoice.fee) {
-            setFeeDetails(invoice.fee)
-        }
     } else if (
         lnurlPayment &&
         lnurlPayment.minSendable &&
@@ -658,8 +654,6 @@ export function useSendForm({
         inputAmount,
         setInputAmount,
         description,
-        feeDetails,
-        setFeeDetails,
         sendTo,
         exactAmount,
         minimumAmount,
