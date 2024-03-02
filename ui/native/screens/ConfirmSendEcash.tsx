@@ -276,6 +276,3 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
     })
 
 export default ConfirmSendEcash
-function convertSatsToFormattedFiat(amount: Sats) {
-    throw new Error('Function not implemented.')
-}

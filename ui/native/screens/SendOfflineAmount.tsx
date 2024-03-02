@@ -4,13 +4,10 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useMinMaxSendAmount } from '@fedi/common/hooks/amount'
-import { makeLog } from '@fedi/common/utils/log'
 
 import { AmountScreen } from '../components/ui/AmountScreen'
 import { Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
-
-const log = makeLog('SendOfflineAmount')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -20,7 +17,6 @@ export type Props = NativeStackScreenProps<
 const SendOfflineAmount: React.FC<Props> = () => {
     const navigation = useNavigation()
     const { t } = useTranslation()
-    const [isLoading, setIsLoading] = useState(false)
     const [amount, setAmount] = useState(0 as Sats)
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount()
@@ -46,14 +42,11 @@ const SendOfflineAmount: React.FC<Props> = () => {
             minimumAmount={minimumAmount}
             maximumAmount={maximumAmount}
             submitAttempts={submitAttempts}
-            isSubmitting={isLoading}
             verb={t('words.send')}
             buttons={[
                 {
                     title: t('words.next'),
                     onPress: onNext,
-                    disabled: isLoading,
-                    loading: isLoading,
                 },
             ]}
         />

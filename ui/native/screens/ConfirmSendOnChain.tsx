@@ -1,8 +1,8 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Input, Overlay, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Overlay, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
-import { Trans, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -14,24 +14,15 @@ import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { FeeItem, useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import stringUtils from '@fedi/common/utils/StringUtils'
 import { hexToRgba } from '@fedi/common/utils/color'
 import { formatErrorMessage } from '@fedi/common/utils/format'
-import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import { FeeBreakdown } from '../components/feature/send/FeeBreakdown'
-import FiatAmount from '../components/feature/wallet/FiatAmount'
-import { AmountScreen } from '../components/ui/AmountScreen'
-import LineBreak from '../components/ui/LineBreak'
 import SvgImage from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppSelector, useBridge } from '../state/hooks'
-import { Btc, ParserDataType, Sats, SatsString } from '../types'
+import { useAppSelector } from '../state/hooks'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
-import ConfirmSendLightning from './ConfirmSendLightning'
-
-const log = makeLog('ConfirmSendOnChain')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -82,7 +73,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
             toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
         }
         setIsPayingAddress(false)
-    }, [handleOmniSend, unit, navigationReplace, toast, t])
+    }, [handleOmniSend, inputAmount, unit, navigationReplace, toast, t])
 
     if (!isReadyToPay) return <ActivityIndicator />
 

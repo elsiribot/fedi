@@ -29,7 +29,6 @@ import {
     UsdCents,
 } from '../types'
 import { EcashRequest } from '../types'
-import { RpcFeeDetails } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'
 import stringUtils from '../utils/StringUtils'

@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import { selectAuthenticatedMember } from '@fedi/common/redux'
 import { ChatMessage } from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makePaymentText } from '@fedi/common/utils/chat'
 
 import { useAppSelector } from '../../../state/hooks'

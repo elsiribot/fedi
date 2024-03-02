@@ -96,7 +96,7 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
             }
             getDecodedInvoice()
         }
-    }, [decodedUri])
+    }, [decodedUri, federationId])
 
     // Generate onchain address if needed
     useEffect(() => {

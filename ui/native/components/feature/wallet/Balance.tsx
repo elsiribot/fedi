@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native'
 
 import { useBalance } from '@fedi/common/hooks/amount'
 
-const Balance: React.FC<{}> = () => {
+const Balance: React.FC = () => {
     const { theme } = useTheme()
     const { formattedBalanceSats, formattedBalanceFiat } = useBalance()
 

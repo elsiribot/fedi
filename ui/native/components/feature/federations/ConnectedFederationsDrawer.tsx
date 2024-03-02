@@ -37,7 +37,6 @@ type Props = {
 }
 
 const FederationDrawerItemLabel = ({ federation }: Props) => {
-    const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation()
     const hasNewMessages = useAppSelector(s =>

@@ -23,7 +23,7 @@ function AppSettings() {
                     value,
                 }),
             ),
-        [],
+        [t],
     )
 
     return (

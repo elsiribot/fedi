@@ -25,6 +25,7 @@ import {
 } from '../redux/transactions'
 import { MSats, Sats, Transaction } from '../types'
 import { RpcFeeDetails } from '../types/bindings'
+import amountUtils from '../utils/AmountUtils'
 import {
     makeBase64CSVUri,
     makeCSVFilename,
@@ -231,7 +232,7 @@ export function useExportTransactions(fedimint: FedimintBridge) {
                 message: (e as Error).message,
             }
         }
-    }, [])
+    }, [activeFederation, fetchTransactions])
 
     return exportTransactions
 }
@@ -342,7 +343,7 @@ export function useFeeDisplayUtils(t: TFunction) {
     const makeOnchainFeeContent = (feeDetails: RpcFeeDetails) => {
         const { fediFee, federationFee, networkFee } = feeDetails
         // prettier-ignore
-        const lightningSendTotalFeeMsats = (
+        const onchainSendTotalFeeMsats = (
             fediFee + federationFee + networkFee
         ) as MSats
 
@@ -352,15 +353,11 @@ export function useFeeDisplayUtils(t: TFunction) {
             formattedSecondaryAmount: formattedFediFeeSecondary,
         } = makeFormattedAmountsFromMSats(fediFee)
         const {
-            formattedPrimaryAmount: formattedFederationFee,
-            formattedSecondaryAmount: formattedFederationFeeSecondary,
-        } = makeFormattedAmountsFromMSats(federationFee)
-        const {
             formattedPrimaryAmount: formattedNetworkFee,
             formattedSecondaryAmount: formattedNetworkFeeSecondary,
         } = makeFormattedAmountsFromMSats(networkFee)
         const { formattedPrimaryAmount: formattedTotalFee } =
-            makeFormattedAmountsFromMSats(lightningSendTotalFeeMsats)
+            makeFormattedAmountsFromMSats(onchainSendTotalFeeMsats)
 
         const lightningFeeItems: FeeItem[] = [
             {
@@ -376,7 +373,7 @@ export function useFeeDisplayUtils(t: TFunction) {
         return {
             feeItemsBreakdown: lightningFeeItems,
             formattedTotalFee: `${
-                lightningSendTotalFeeMsats > 0 ? '+' : ''
+                onchainSendTotalFeeMsats > 0 ? '+' : ''
             }${formattedTotalFee}`,
         }
     }
