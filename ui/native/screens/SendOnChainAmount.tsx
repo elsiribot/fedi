@@ -60,13 +60,13 @@ const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
 
     const [submitAttempts, setSubmitAttempts] = useState(0)
 
-    const navigationReplace = navigation.replace
+    const navigationPush = navigation.push
     const handleContinue = useCallback(async () => {
         setSubmitAttempts(attempts => attempts + 1)
         if (inputAmount > maximumAmount || inputAmount < minimumAmount) return
 
         try {
-            navigationReplace('ConfirmSendOnChain', {
+            navigationPush('ConfirmSendOnChain', {
                 parsedData: {
                     type: ParserDataType.Bip21,
                     data: {
@@ -83,7 +83,8 @@ const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
         inputAmount,
         minimumAmount,
         maximumAmount,
-        navigationReplace,
+        navigationPush,
+        parsedData.data.address,
         toast,
         t,
     ])
