@@ -187,19 +187,19 @@ describe('AmountUtils', () => {
             {
                 currency: SupportedCurrency.USD,
                 locale: 'en-US',
-                expectedResult: '$1,234.57',
+                expectedResult: 'USD\xa01,234.57',
                 expectedResultNoSymbol: '1,234.57',
             },
             {
                 currency: SupportedCurrency.USD,
                 locale: 'en-CA',
-                expectedResult: 'US$1,234.57',
+                expectedResult: 'USD\xa01,234.57', // test for non-breaking space char
                 expectedResultNoSymbol: '1,234.57',
             },
             {
                 currency: SupportedCurrency.EUR,
                 locale: 'de-DE',
-                expectedResult: '1.234,57 €', // careful for non-standard whitespace char
+                expectedResult: '1.234,57\xa0EUR', // test for non-breaking space char
                 expectedResultNoSymbol: '1.234,57',
             },
             {
