@@ -1,8 +1,6 @@
-import Link from 'next/link'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import ChevronRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
 import InviteMembersIcon from '@fedi/common/assets/svgs/invite-members.svg'
 import LanguageIcon from '@fedi/common/assets/svgs/language.svg'
 import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
@@ -26,28 +24,15 @@ import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 import { Avatar } from '../../components/Avatar'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { ContentBlock } from '../../components/ContentBlock'
-import { Icon } from '../../components/Icon'
-import { IconProps } from '../../components/Icon'
 import { IconButton } from '../../components/IconButton'
 import { InviteMemberDialog } from '../../components/InviteMemberDialog'
 import * as Layout from '../../components/Layout'
 import { MemberQRDialog } from '../../components/MemberQRDialog'
+import { SettingsMenu, SettingsMenuProps } from '../../components/SettingsMenu'
 import { Text } from '../../components/Text'
 import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
-import { styled, theme } from '../../styles'
-
-type Menu = Array<{
-    name: string // TODO: Type as valid translation key?
-    items: Array<{
-        name: string // TODO: Type as valid translation key?
-        icon: IconProps['icon']
-        disabled?: boolean
-        hidden?: boolean
-        href?: string
-        onClick?: () => void
-    }>
-}>
+import { styled } from '../../styles'
 
 function AdminPage() {
     const { t } = useTranslation()
@@ -104,40 +89,40 @@ function AdminPage() {
         setIsExportingCSV(false)
     }
 
-    let menu: Menu = [
+    let menu: SettingsMenuProps['menu'] = [
         {
-            name: 'words.federation',
+            label: t('words.federation'),
             items: [
                 {
-                    name: 'feature.federations.federation-terms',
+                    label: t('feature.federations.federation-terms'),
                     icon: ScrollIcon,
                     href: tosUrl,
                     disabled: !tosUrl,
                 },
                 {
-                    name: 'feature.federations.invite-members',
+                    label: t('feature.federations.invite-members'),
                     icon: InviteMembersIcon,
                     onClick: () => setIsInvitingMember(true),
                     disabled: !isInviteSupported,
                 },
                 {
-                    name: 'feature.federations.leave-federation',
+                    label: t('feature.federations.leave-federation'),
                     icon: LeaveFederationIcon,
                     onClick: () => setIsLeavingFederation(true),
                 },
             ],
         },
         {
-            name: 'words.wallet',
+            label: 'words.wallet',
             items: [
                 {
-                    name: 'feature.backup.backup-wallet',
+                    label: t('feature.backup.backup-wallet'),
                     icon: WalletIcon,
                     href: '/settings/backup',
                     hidden: !supportsSingleSeed,
                 },
                 {
-                    name: 'feature.backup.export-transactions-to-csv',
+                    label: t('feature.backup.export-transactions-to-csv'),
                     icon: TableExportIcon,
                     onClick: exportTransactionsAsCsv,
                     disabled: isExportingCSV,
@@ -145,15 +130,15 @@ function AdminPage() {
             ],
         },
         {
-            name: 'words.general',
+            label: t('words.general'),
             items: [
                 {
-                    name: 'words.language',
+                    label: t('words.language'),
                     icon: LanguageIcon,
                     href: '/settings/language',
                 },
                 {
-                    name: 'phrases.display-currency',
+                    label: t('phrases.display-currency'),
                     icon: UsdIcon,
                     href: '/settings/currency',
                 },
@@ -195,51 +180,7 @@ function AdminPage() {
                                 </Text>
                             </MemberDetails>
                         )}
-                        <Menu>
-                            {menu.map(group => (
-                                <MenuGroup key={group.name}>
-                                    <MenuGroupName>
-                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                        <Text>{t(group.name as any)}</Text>
-                                    </MenuGroupName>
-                                    <MenuGroupItems>
-                                        {group.items.map(item => {
-                                            const linkProps = item.href
-                                                ? { as: Link, href: item.href }
-                                                : undefined
-                                            return (
-                                                <MenuItem
-                                                    {...linkProps}
-                                                    key={item.name}
-                                                    disabled={item.disabled}
-                                                    onClick={
-                                                        item.disabled
-                                                            ? undefined
-                                                            : item.onClick
-                                                    }>
-                                                    <>
-                                                        <Icon
-                                                            icon={item.icon}
-                                                        />
-                                                        <Text>
-                                                            {t(
-                                                                /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-                                                                item.name as any,
-                                                            )}
-                                                        </Text>
-                                                        <Icon
-                                                            icon={
-                                                                ChevronRightIcon
-                                                            }
-                                                        />
-                                                    </>
-                                                </MenuItem>
-                                            )
-                                        })}
-                                    </MenuGroupItems>
-                                </MenuGroup>
-                            ))}
-                        </Menu>
+                        <SettingsMenu menu={menu} />
                     </div>
                 </Layout.Content>
             </Layout.Root>
@@ -278,68 +219,6 @@ const MemberDetails = styled('div', {
     padding: '24px 16px',
     borderRadius: 16,
     holoGradient: '400',
-})
-
-const Menu = styled('div', {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 16,
-    padding: 8,
-})
-
-const MenuGroup = styled('div', {})
-
-const MenuGroupName = styled('div', {
-    color: theme.colors.grey,
-    padding: '8px 0',
-})
-
-const MenuGroupItems = styled('div', {
-    margin: '0 -8px -8px',
-})
-
-const MenuItem = styled('button', {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    width: '100%',
-    padding: 8,
-    borderRadius: 8,
-    textAlign: 'left',
-    transition: 'background-color 100ms ease',
-
-    '& > *:nth-child(0n+2)': {
-        flex: 1,
-    },
-
-    '& > *:last-child': {
-        opacity: 0.5,
-        transition: 'transform 100ms ease, opacity 100ms ease',
-    },
-
-    '&:hover, &:focus': {
-        background: theme.colors.primary05,
-
-        '& > *:last-child': {
-            opacity: 1,
-            transform: 'translateX(2px)',
-        },
-    },
-
-    variants: {
-        disabled: {
-            true: {
-                cursor: 'not-allowed',
-                color: theme.colors.grey,
-                background: 'none',
-
-                '& > *:last-child': {
-                    opacity: 1,
-                    transform: 'none',
-                },
-            },
-        },
-    },
 })
 
 export default AdminPage
