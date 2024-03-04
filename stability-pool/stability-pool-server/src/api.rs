@@ -3,13 +3,15 @@ use std::time::UNIX_EPOCH;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiError};
 use fedimint_core::Amount;
-use futures::StreamExt;
+use futures::{stream, StreamExt};
 use secp256k1_zkp::PublicKey;
+use serde_json::json;
 use stability_pool_common::AccountInfo;
 
 use crate::db::{
     CurrentCycleKey, Cycle, IdleBalance, IdleBalanceKey, SeekMetadataAccountPrefix,
-    StagedCancellationKey, StagedProvidesKey, StagedSeeksKey,
+    StagedCancellationKey, StagedProvidesKey, StagedProvidesKeyPrefix, StagedSeeksKey,
+    StagedSeeksKeyPrefix,
 };
 use crate::StabilityPool;
 
@@ -37,6 +39,12 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
             "wait_cancellation_processed",
             async |_module: &StabilityPool, context, request: PublicKey| -> Amount {
                 Ok(wait_cancellation_processed(context, request).await?)
+            }
+        },
+        api_endpoint! {
+            "liquidity_stats",
+            async |_module: &StabilityPool, context, _request: ()| -> serde_json::Value {
+                Ok(liquidity_stats(&mut context.dbtx().into_nc()).await?)
             }
         },
     ]
@@ -164,4 +172,57 @@ pub async fn wait_cancellation_processed(
             }
         }
     }
+}
+
+/// Return a snapshot of the current aggregate liquidity stats including
+/// - sum of currently locked seeks
+/// - sum of currently locked provides
+/// - sum of currently staged seeks
+/// - sum of currently staged provides
+pub async fn liquidity_stats(
+    dbtx: &mut DatabaseTransaction<'_>,
+) -> anyhow::Result<serde_json::Value, ApiError> {
+    let current_cycle = dbtx
+        .get_value(&CurrentCycleKey)
+        .await
+        .ok_or(ApiError::server_error(
+            "First cycle not yet started".to_owned(),
+        ))?;
+    let locked_seeks_sum_msat: u64 = current_cycle
+        .locked_seeks
+        .values()
+        .flatten()
+        .map(|s| s.amount.msats)
+        .sum();
+    let locked_provides_sum_msat: u64 = current_cycle
+        .locked_provides
+        .values()
+        .flatten()
+        .map(|p| p.amount.msats)
+        .sum();
+    let staged_seeks_sum_msat: u64 = dbtx
+        .find_by_prefix(&StagedSeeksKeyPrefix)
+        .await
+        .flat_map(|(_, seeks)| stream::iter(seeks))
+        .collect::<Vec<_>>()
+        .await
+        .iter()
+        .map(|s| s.seek.0.msats)
+        .sum();
+    let staged_provides_sum_msat: u64 = dbtx
+        .find_by_prefix(&StagedProvidesKeyPrefix)
+        .await
+        .flat_map(|(_, provides)| stream::iter(provides))
+        .collect::<Vec<_>>()
+        .await
+        .iter()
+        .map(|p| p.provide.amount.msats)
+        .sum();
+
+    Ok(json!({
+        "locked_seeks_sum_msat": locked_seeks_sum_msat,
+        "locked_provides_sum_msat": locked_provides_sum_msat,
+        "staged_seeks_sum_msat": staged_seeks_sum_msat,
+        "staged_provides_sum_msat": staged_provides_sum_msat,
+    }))
 }
