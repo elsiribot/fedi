@@ -7,7 +7,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     # we pick upstream packages from here, so we want this to be compatible with our forks
     fedimint-pkgs = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=refs/tags/v0.2.2-fed1&rev=d3e154ef0ea2fde064d6f3c3d40b9800c9a9a3ce";
+      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=refs/tags/v0.3.0-alpha.1&rev=bd9a93e0ab571ab513ece591d1d91d8ee9fb26b4";
     };
 
     fenix = {
@@ -36,9 +36,6 @@
         pkgs-unstable = import nixpkgs-unstable {
           inherit system;
         };
-        pkgs-kitman = import fedimint-pkgs.inputs.nixpkgs-kitman {
-          inherit system;
-        };
 
         pkgs = import nixpkgs {
           inherit system;
@@ -47,8 +44,6 @@
               fs-dir-cache = fs-dir-cache.packages.${system}.default;
               fastlane = pkgs-unstable.fastlane;
               convco = pkgs-unstable.convco;
-
-              esplora = pkgs-kitman.esplora;
 
               mprocs = prev.mprocs.overrideAttrs (final: prev: {
                 patches = prev.patches ++ [
@@ -60,45 +55,8 @@
                 ];
               });
 
-              rocksdb_7_10 = prev.rocksdb_7_10.overrideAttrs (oldAttrs:
-                pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
-                  # C++ and its damn super-fragie compilation
-                  env = oldAttrs.env // {
-                    NIX_CFLAGS_COMPILE = oldAttrs.env.NIX_CFLAGS_COMPILE + " -Wno-error=unused-but-set-variable";
-                  };
-                });
-
-              rocksdb_6_23 = prev.rocksdb_6_23.overrideAttrs (oldAttrs:
-                pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
-                  # C++ and its damn super-fragie compilation
-                  env = oldAttrs.env // {
-                    NIX_CFLAGS_COMPILE = oldAttrs.env.NIX_CFLAGS_COMPILE + " -Wno-error=unused-but-set-variable -Wno-error=deprecated-copy";
-                  };
-                });
-
-              bitcoind = prev.bitcoind.overrideAttrs (oldAttrs: {
-                # tests broken on Mac for some reason
-                doCheck = !prev.stdenv.isDarwin;
-              });
-
-              # syncing channels doesn't work right on newer versions, exactly like described here
-              # https://bitcoin.stackexchange.com/questions/84765/how-can-channel-policy-be-missing
-              # note that config-time `--enable-developer` turns into run-time `--developer` at some
-              # point
-              clightning = prev.clightning.overrideAttrs (oldAttrs: rec {
-                version = "23.05.2";
-                src = prev.fetchurl {
-                  url = "https://github.com/ElementsProject/lightning/releases/download/v${version}/clightning-v${version}.zip";
-                  sha256 = "sha256-Tj5ybVaxpk5wmOw85LkeU4pgM9NYl6SnmDG2gyXrTHw=";
-                };
-                makeFlags = [ "VERSION=v${version}" ];
-                configureFlags = [ "--enable-developer" "--disable-valgrind" ];
-                NIX_CFLAGS_COMPILE = "-w";
-              });
-
-              # Note: shell script adding DYLD_FALLBACK_LIBRARY_PATH because of: https://github.com/nextest-rs/nextest/issues/962
-              cargo-nextest = pkgs.writeShellScriptBin "cargo-nextest" "exec env DYLD_FALLBACK_LIBRARY_PATH=\"$(dirname $(${pkgs.which}/bin/which rustc))/../lib\" ${prev.cargo-nextest}/bin/cargo-nextest \"$@\"";
             })
+            fedimint-pkgs.overlays.all
           ];
         };
 
@@ -253,7 +211,7 @@
         };
 
         craneMultiBuild = import nix/flakebox.nix {
-          inherit pkgs pkgs-unstable flakeboxLib fedimint-pkgs toolchains replaceGitHash pkgs-kitman;
+          inherit pkgs pkgs-unstable flakeboxLib fedimint-pkgs toolchains replaceGitHash;
         };
 
         lib = pkgs.lib;
@@ -309,7 +267,7 @@
               pkgs.mprocs
               pkgs.bitcoind
               pkgs.electrs
-              pkgs.esplora
+              pkgs.esplora-electrs
               pkgs.clightning
               pkgs.lnd
               pkgs.sccache
