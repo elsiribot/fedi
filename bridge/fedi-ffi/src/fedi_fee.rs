@@ -260,12 +260,61 @@ impl FediFeeRemittanceService {
             .get_first_module::<LightningClientModule>()
             .pay_bolt11_invoice(invoice.to_owned(), extra_meta.clone())
             .await?;
-        fed.dbtx()
+        fed.client
+            .db()
+            .autocommit(
+                |dbtx, _| {
+                    Box::pin(async move {
+                        let current_outstanding_fees = dbtx
+                            .get_value(&OutstandingFediFeesKey)
+                            .await
+                            .unwrap_or(Amount::ZERO);
+                        let new_outstanding_fees =
+                            current_outstanding_fees.saturating_sub(outstanding_fees);
+                        dbtx.insert_entry(&OutstandingFediFeesKey, &new_outstanding_fees)
+                            .await;
+                        Ok::<(), anyhow::Error>(())
+                    })
+                },
+                Some(100),
+            )
             .await
-            .insert_entry(&OutstandingFediFeesKey, &Amount::ZERO)
-            .await;
-        fed.subscribe_to_ln_pay(payment_type, extra_meta, invoice.clone())
-            .await?;
+            .map_err(|e| match e {
+                fedimint_core::db::AutocommitError::CommitFailed { last_error, .. } => last_error,
+                fedimint_core::db::AutocommitError::ClosureError { error, .. } => error,
+            })?;
+
+        // If payment fails, un-zero the oustanding fee before returning the error.
+        if let Err(e) = fed
+            .subscribe_to_ln_pay(payment_type, extra_meta, invoice.clone())
+            .await
+        {
+            fed.client
+                .db()
+                .autocommit(
+                    |dbtx, _| {
+                        Box::pin(async move {
+                            let current_outstanding_fees = dbtx
+                                .get_value(&OutstandingFediFeesKey)
+                                .await
+                                .unwrap_or(Amount::ZERO);
+                            let new_outstanding_fees = current_outstanding_fees + outstanding_fees;
+                            dbtx.insert_entry(&OutstandingFediFeesKey, &new_outstanding_fees)
+                                .await;
+                            Ok::<(), anyhow::Error>(())
+                        })
+                    },
+                    Some(100),
+                )
+                .await
+                .map_err(|e| match e {
+                    fedimint_core::db::AutocommitError::CommitFailed { last_error, .. } => {
+                        last_error
+                    }
+                    fedimint_core::db::AutocommitError::ClosureError { error, .. } => error,
+                })?;
+            return Err(e);
+        }
 
         Ok(true)
     }
