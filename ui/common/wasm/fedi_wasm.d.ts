@@ -54,15 +54,15 @@ export interface InitOutput {
   readonly __wbindgen_realloc: (a: number, b: number, c: number) => number;
   readonly __wbindgen_export_2: WebAssembly.Table;
   readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
-  readonly wasm_bindgen__convert__closures__invoke1_mut__ha622dcd8d6f463da: (a: number, b: number, c: number, d: number) => void;
-  readonly wasm_bindgen__convert__closures__invoke1_mut__hf9468372f05d0c69: (a: number, b: number, c: number, d: number) => void;
-  readonly wasm_bindgen__convert__closures__invoke0_mut__h5315baf25b532075: (a: number, b: number) => void;
-  readonly wasm_bindgen__convert__closures__invoke1_mut__h09f8e95eae18a864: (a: number, b: number, c: number) => void;
-  readonly wasm_bindgen__convert__closures__invoke1_mut__hcdf9301817a70b7f: (a: number, b: number, c: number) => void;
-  readonly wasm_bindgen__convert__closures__invoke0_mut__h62a77050ef2881f6: (a: number, b: number) => void;
+  readonly wasm_bindgen__convert__closures__invoke1_mut__h3c37def074764752: (a: number, b: number, c: number, d: number) => void;
+  readonly wasm_bindgen__convert__closures__invoke1_mut__hbc4c5b1dabebcb54: (a: number, b: number, c: number, d: number) => void;
+  readonly wasm_bindgen__convert__closures__invoke1_mut__h182ca2b336c45f60: (a: number, b: number, c: number) => void;
+  readonly wasm_bindgen__convert__closures__invoke0_mut__h1edc0c0a311f8b6c: (a: number, b: number) => void;
+  readonly wasm_bindgen__convert__closures__invoke1_mut__h6170d54cc6be9bf0: (a: number, b: number, c: number) => void;
+  readonly wasm_bindgen__convert__closures__invoke0_mut__h082ee8df3dcbab46: (a: number, b: number) => void;
   readonly __wbindgen_free: (a: number, b: number) => void;
   readonly __wbindgen_exn_store: (a: number) => void;
-  readonly wasm_bindgen__convert__closures__invoke2_mut__h88ad8b4295ba9092: (a: number, b: number, c: number, d: number) => void;
+  readonly wasm_bindgen__convert__closures__invoke2_mut__h07e9b5b8826b3e8b: (a: number, b: number, c: number, d: number) => void;
 }
 
 export type SyncInitInput = BufferSource | WebAssembly.Module;

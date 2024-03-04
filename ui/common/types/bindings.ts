@@ -417,6 +417,7 @@ export interface RpcMethods {
         { federationId: RpcFederationId; sendPpm: bigint; receivePpm: bigint },
         null,
     ]
+    getAccruedOutstandingFediFees: [{ federationId: RpcFederationId }, MSats]
     dumpDb: [{ federationId: string }, string]
 }
 

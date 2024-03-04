@@ -539,6 +539,16 @@ async fn setStabilityPoolModuleFediFeeSchedule(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn getAccruedOutstandingFediFees(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+) -> anyhow::Result<RpcAmount> {
+    bridge
+        .get_accrued_outstanding_fedi_fees(federation_id)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn dumpDb(bridge: Arc<Bridge>, federation_id: String) -> anyhow::Result<PathBuf> {
     bridge.dump_db(&federation_id).await
 }
@@ -654,6 +664,7 @@ rpc_methods!(RpcMethods {
     setWalletModuleFediFeeSchedule,
     setLightningModuleFediFeeSchedule,
     setStabilityPoolModuleFediFeeSchedule,
+    getAccruedOutstandingFediFees,
     dumpDb,
 });
 
