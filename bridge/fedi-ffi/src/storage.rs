@@ -195,20 +195,19 @@ impl AppState {
     where
         F: FnOnce(&mut AppStateRaw) -> T,
     {
-        let mut app_state_raw = self.raw.write().await;
+        let mut app_state_in_memory = self.raw.write().await;
 
         // Ensure root mnemonic cannot be overwritten while a joined V2 federation
         // exists
-        let v2_federation_exists = app_state_raw
+        let v2_federation_exists = app_state_in_memory
             .joined_federations
             .iter()
             .any(|(_, FederationInfo { version, .. })| *version >= 2);
-        let app_state_raw_snapshot = app_state_raw.clone();
-        let mut app_state_raw_new = app_state_raw.as_ref().clone();
+        let mut app_state_raw_new = app_state_in_memory.as_ref().clone();
         let result = closure(&mut app_state_raw_new);
 
         if v2_federation_exists
-            && app_state_raw_new.root_mnemonic != app_state_raw_snapshot.root_mnemonic
+            && app_state_raw_new.root_mnemonic != app_state_in_memory.root_mnemonic
         {
             bail!("Root mnemonic cannot be overwritten while joined v2 federations are present");
         }
@@ -216,10 +215,10 @@ impl AppState {
         self.storage
             .write_file(
                 Path::new(FEDI_FILE_PATH),
-                serde_json::to_vec::<AppStateRaw>(&app_state_raw)?,
+                serde_json::to_vec::<AppStateRaw>(&app_state_raw_new)?,
             )
             .await?;
-        *app_state_raw = Arc::new(app_state_raw_new);
+        *app_state_in_memory = Arc::new(app_state_raw_new);
         Ok(result)
     }
 }
