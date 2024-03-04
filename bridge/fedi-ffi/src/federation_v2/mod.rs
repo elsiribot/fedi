@@ -4,6 +4,7 @@ mod dev;
 use std::any::Any;
 use std::collections::HashMap;
 use std::default::Default;
+use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -22,10 +23,10 @@ use fedimint_client::oplog::OperationLogEntry;
 use fedimint_client::secret::{
     get_default_client_secret, DeriveableSecretClientExt, RootSecretStrategy,
 };
-use fedimint_client::{ClientArc, ClientBuilder, FederationInfo};
+use fedimint_client::{Client, ClientBuilder, ClientHandle};
 use fedimint_core::api::{
-    DynModuleApi, FederationApiExt, FederationResult, GlobalFederationApi, InviteCode,
-    StatusResponse, WsFederationApi,
+    DynGlobalApi, DynModuleApi, FederationApiExt, FederationResult, IGlobalFederationApi,
+    InviteCode, StatusResponse, WsFederationApi,
 };
 use fedimint_core::backup::ClientBackupSnapshot;
 use fedimint_core::config::{ClientConfig, FederationId};
@@ -117,13 +118,17 @@ pub fn invite_code_from_client_confing(config: &ClientConfig) -> InviteCode {
         .next()
         .expect("client config must have one api endpoint");
 
-    InviteCode::new(endpoint.url.clone(), *peer, config.global.federation_id())
+    InviteCode::new(
+        endpoint.url.clone(),
+        *peer,
+        config.global.calculate_federation_id(),
+    )
 }
 
 /// Federation is a wrapper of "client ng" to assist with handling RPC commands
 #[derive(Clone)]
 pub struct FederationV2 {
-    pub client: ClientArc,
+    pub client: ClientHandle,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
     pub operation_states:
@@ -140,32 +145,25 @@ pub struct FederationV2 {
 
 impl FederationV2 {
     /// Instantiate Federation from FediConfig
-    async fn build_client_builder(
-        client_config: Option<ClientConfig>,
-        db: Database,
-    ) -> anyhow::Result<ClientBuilder> {
-        let mut client_builder = ClientBuilder::default();
+    async fn build_client_builder(db: Database) -> anyhow::Result<ClientBuilder> {
+        let mut client_builder = fedimint_client::Client::builder(db);
         client_builder.with_module(MintClientInit);
         client_builder.with_module(LightningClientInit);
         client_builder.with_module(WalletClientInit(None));
         client_builder.with_module(FediSocialClientInit);
         client_builder.with_module(StabilityPoolClientInit);
         client_builder.with_primary_module(1);
-        if let Some(client_config) = client_config {
-            client_builder.with_federation_info(FederationInfo::from_config(client_config).await?);
-        }
-        client_builder.with_database(db);
         Ok(client_builder)
     }
 
     pub async fn new(
-        ng: ClientArc,
+        ng: ClientHandle,
         event_sink: EventSink,
         task_group: TaskGroup,
         secret: DerivableSecret,
         fedi_fee_helper: Arc<FediFeeHelper>,
     ) -> Self {
-        let recovering = ng.has_active_states(OperationId([0x01; 32])).await;
+        let recovering = ng.has_pending_recoveries().await;
         let mut federation = Self {
             client: ng,
             event_sink,
@@ -207,26 +205,6 @@ impl FederationV2 {
         }
     }
 
-    async fn client_from_db(
-        db: Database,
-        root_mnemonic: &bip39::Mnemonic,
-        client_config: Option<ClientConfig>,
-    ) -> Result<ClientArc, anyhow::Error> {
-        let config = fedimint_client::get_config_from_db(&db).await;
-        let config = client_config
-            .clone()
-            .or(config)
-            .expect("config not found in db or provided");
-
-        let federation_id = config.global.federation_id();
-        let client_root_secret =
-            Self::client_root_secret_from_root_mnemonic(root_mnemonic, &federation_id);
-        let client_builder = Self::build_client_builder(client_config, db).await?;
-        let client = client_builder.build(client_root_secret).await?;
-
-        Ok(client)
-    }
-
     pub fn client_root_secret_from_root_mnemonic(
         root_mnemonic: &bip39::Mnemonic,
         federation_id: &FederationId,
@@ -249,12 +227,19 @@ impl FederationV2 {
         event_sink: EventSink,
         task_group: TaskGroup,
         root_mnemonic: &bip39::Mnemonic,
-        client_config: Option<ClientConfig>,
         fedi_fee_helper: Arc<FediFeeHelper>,
     ) -> anyhow::Result<Self> {
-        let client = Self::client_from_db(db, root_mnemonic, client_config).await?;
-        // FIXME: repetitive
-        let federation_id = client.federation_id();
+        let client_builder = Self::build_client_builder(db.clone()).await?;
+        let config = Client::get_config_from_db(&db)
+            .await
+            .context("config not found in database")?;
+        let federation_id = config.calculate_federation_id();
+        let client = client_builder
+            .open(Self::client_root_secret_from_root_mnemonic(
+                root_mnemonic,
+                &federation_id,
+            ))
+            .await?;
         let auxiliary_secret =
             Self::auxiliary_secret_from_root_mnemonic(root_mnemonic, &federation_id);
         Ok(Self::new(
@@ -273,11 +258,12 @@ impl FederationV2 {
     ) -> anyhow::Result<(ClientConfig, FederationResult<Vec<ClientBackupSnapshot>>)> {
         let mut invite_code: InviteCode = InviteCode::from_str(invite_code_string)?;
         override_localhost_invite_code(&mut invite_code);
-        let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]));
-        let client_config: ClientConfig = api.as_ref().download_client_config(&invite_code).await?;
+        let api = DynGlobalApi::from_invite_code(&[invite_code.clone()]);
+        let client_config: ClientConfig =
+            ClientConfig::download_from_invite_code(&invite_code).await?;
 
         // Check if a backup exists
-        let federation_id = client_config.global.federation_id();
+        let federation_id = client_config.global.calculate_federation_id();
         // We do an additional derivation using `DerivableSecret::federation_key` since
         // that is what fedimint-client does internally
         let client_root_secret =
@@ -304,12 +290,12 @@ impl FederationV2 {
         root_mnemonic: &bip39::Mnemonic,
         fedi_fee_helper: Arc<FediFeeHelper>,
     ) -> Result<Self> {
-        // Download federation config
-        let mut invite_code: InviteCode = InviteCode::from_str(&invite_code_string)?;
+        let mut invite_code =
+            InviteCode::from_str(&invite_code_string).context("invalid invite code")?;
         override_localhost_invite_code(&mut invite_code);
-        let api = Arc::new(WsFederationApi::from_invite_code(&[invite_code.clone()]));
         let mut client_config: ClientConfig =
-            api.as_ref().download_client_config(&invite_code).await?;
+            ClientConfig::download_from_invite_code(&invite_code).await?;
+        override_localhost_client_config(&mut client_config);
 
         // Save client config and invite code
         let db = storage.federation_database_v2(db_name).await?;
@@ -326,17 +312,24 @@ impl FederationV2 {
         dbtx.insert_entry(&InviteCodeKey, &invite_code_string).await;
         dbtx.commit_tx().await;
 
-        override_localhost_client_config(&mut client_config);
-        let client = Self::client_from_db(db, root_mnemonic, Some(client_config)).await?;
-        let federation_id = client.federation_id();
+        let client_builder = Self::build_client_builder(db).await?;
+        let federation_id = client_config.calculate_federation_id();
+        let client_secret =
+            Self::client_root_secret_from_root_mnemonic(root_mnemonic, &federation_id);
         let auxiliary_secret =
             Self::auxiliary_secret_from_root_mnemonic(root_mnemonic, &federation_id);
         // restore from scratch is not used because it takes too much time.
-        if let Some(backup) = client.download_backup_from_federation().await? {
+        if let Some(backup) = client_builder
+            .download_backup_from_federation(&client_secret, &client_config)
+            .await?
+        {
             // TODO: ensure that if user exists app and re-opens during the restoration,
             // they will still see a spinner
             info!("backup found {:?}", backup);
-            let metadata = client.restore_from_backup(Some(backup)).await?;
+            let client = client_builder
+                .recover(client_secret, client_config, invite_code, Some(backup))
+                .await?;
+            let metadata = client.get_metadata().await;
             let this = Self::new(
                 client,
                 event_sink,
@@ -349,6 +342,9 @@ impl FederationV2 {
             Ok(this)
         } else {
             info!("backup not found");
+            let client = client_builder
+                .join(client_secret, client_config, invite_code)
+                .await?;
             Ok(Self::new(
                 client,
                 event_sink,
@@ -508,7 +504,7 @@ impl FederationV2 {
                 RpcTransactionDirection::Receive,
             )
             .await?;
-        let (operation_id, invoice) = self
+        let (operation_id, invoice, _) = self
             .client
             .get_first_module::<LightningClientModule>()
             .create_bolt11_invoice(amount.0, description, expiry_time, ())
@@ -763,10 +759,10 @@ impl FederationV2 {
         let extra_meta = LightningSendMetadata {
             is_fedi_fee_remittance: false,
         };
-        let OutgoingLightningPayment { payment_type, .. } = self
-            .client
-            .get_first_module::<LightningClientModule>()
-            .pay_bolt11_invoice(invoice.to_owned(), extra_meta.clone())
+        let ln = self.client.get_first_module::<LightningClientModule>();
+        let active_gw = ln.select_active_gateway_opt().await;
+        let OutgoingLightningPayment { payment_type, .. } = ln
+            .pay_bolt11_invoice(active_gw, invoice.to_owned(), extra_meta.clone())
             .await?;
         self.write_pending_send_fedi_fee(payment_type.operation_id(), Amount::from_msats(fedi_fee))
             .await?;
@@ -1205,11 +1201,7 @@ impl FederationV2 {
         self.task_group
             .spawn("subscribe recovery", |_| async move {
                 info!("waiting for recovery to complete");
-                federation
-                    .client
-                    .get_first_module::<MintClientModule>()
-                    .await_restore_finished()
-                    .await?;
+                federation.client.wait_for_all_recoveries().await?;
                 info!("recovery completed");
                 *federation.recovering.lock().await = false;
                 federation.event_sink.typed_event(&Event::recovery_complete(
@@ -1422,7 +1414,7 @@ impl FederationV2 {
         let (operation_id, notes) = self
             .client
             .get_first_module::<MintClientModule>()
-            .spend_notes(amount, ONE_WEEK, ())
+            .spend_notes(amount, ONE_WEEK, false, ())
             .await?;
         self.write_pending_send_fedi_fee(operation_id, fedi_fee)
             .await?;
@@ -1444,7 +1436,7 @@ impl FederationV2 {
             let (operation_id, new_notes) = self
                 .client
                 .get_first_module::<MintClientModule>()
-                .spend_notes(amount, ONE_WEEK, ())
+                .spend_notes(amount, ONE_WEEK, false, ())
                 .await?;
             self.subscribe_to_operation(operation_id).await?;
             new_notes

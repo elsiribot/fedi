@@ -23,7 +23,7 @@ use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::db::{DatabaseTransaction, DatabaseVersion, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
-    api_endpoint, ApiEndpoint, ApiError, CoreConsensusVersion, InputMeta, ModuleCommon,
+    api_endpoint, ApiEndpoint, ApiError, ApiVersion, CoreConsensusVersion, InputMeta, ModuleCommon,
     ModuleConsensusVersion, ModuleInit, PeerHandle, ServerModuleInit, ServerModuleInitArgs,
     SupportedModuleApiVersions, TransactionItemAmount,
 };
@@ -47,6 +47,7 @@ pub struct FediSocialInit;
 #[async_trait]
 impl ModuleInit for FediSocialInit {
     type Common = FediSocialCommonGen;
+    const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(0);
 
     async fn dump_database(
         &self,
@@ -110,14 +111,13 @@ impl ModuleInit for FediSocialInit {
 #[async_trait]
 impl ServerModuleInit for FediSocialInit {
     type Params = FediSocialGenParams;
-    const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(0);
 
     fn versions(&self, _core: CoreConsensusVersion) -> &[ModuleConsensusVersion] {
         &[CONSENSUS_VERSION]
     }
 
     fn supported_api_versions(&self) -> SupportedModuleApiVersions {
-        SupportedModuleApiVersions::from_raw((2, 0), (2, 0), &[(0, 0)])
+        SupportedModuleApiVersions::from_raw((3, 0), (3, 0), &[(0, 0)])
     }
 
     async fn init(&self, args: &ServerModuleInitArgs<Self>) -> anyhow::Result<DynServerModule> {
@@ -267,6 +267,7 @@ impl ServerModule for FediSocial {
             // user's call to make a backup (usually when creating the account)
             api_endpoint! {
                 "backup",
+                ApiVersion::new(0, 0),
                 async |module: &FediSocial, context, request: SignedBackupRequest| -> () {
                         module
                             .handle_backup(&mut context.dbtx().to_ref_nc(), request).await?;
@@ -276,6 +277,7 @@ impl ServerModule for FediSocial {
             // user's call to initiate the recovery process
             api_endpoint! {
                 "recover",
+                ApiVersion::new(0, 0),
                 async |module: &FediSocial, context, request: SignedRecoveryRequest| -> () {
                         module
                             .handle_recover(&mut context.dbtx().to_ref_nc(), request).await?;
@@ -285,6 +287,7 @@ impl ServerModule for FediSocial {
             // guardian's call to download verification document
             api_endpoint! {
                 "get_verification",
+                ApiVersion::new(0, 0),
                 async |module: &FediSocial, context, request: RecoveryId| -> Option<VerificationDocument> {
                         module
                             .handle_get_verification(&mut context.dbtx().to_ref_nc(), request).await
@@ -293,6 +296,7 @@ impl ServerModule for FediSocial {
             // guardian's call to approve the recovery and produce decryption share
             api_endpoint! {
                 "approve_recovery",
+                ApiVersion::new(0, 0),
                 async |module: &FediSocial, context, req: (RecoveryId, String)| -> () {
                         module
                             .handle_approve_recovery(&mut context.dbtx().to_ref_nc(), req.0, req.1).await?;
@@ -301,6 +305,7 @@ impl ServerModule for FediSocial {
             },
             api_endpoint! {
                 "decryption_share",
+                ApiVersion::new(0, 0),
                 async |module: &FediSocial, context, request: RecoveryId| -> Option<EncryptedRecoveryShare> {
                         module
                             .handle_get_decryption_share(&mut context.dbtx().to_ref_nc(), request).await
@@ -465,7 +470,7 @@ impl FediSocial {
             .cfg
             .private
             .sk_share
-            .decrypt_share(&backup.double_encrypted_seed.0)
+            .decrypt_share(&(*backup.double_encrypted_seed).0)
             .ok_or_else(|| {
                 ApiError::bad_request("invalid request: can't create decryption share".into())
             })?;

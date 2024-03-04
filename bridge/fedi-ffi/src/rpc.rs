@@ -828,9 +828,14 @@ mod tests {
         federation: &MultiFederation,
     ) -> anyhow::Result<String> {
         let ecash_string = match federation {
-            MultiFederation::V2(_) => cmd!(FedimintCli, "spend", amount.msats.to_string())
-                .out_json()
-                .await?["notes"]
+            MultiFederation::V2(_) => cmd!(
+                FedimintCli,
+                "spend",
+                "--allow-overpay",
+                amount.msats.to_string()
+            )
+            .out_json()
+            .await?["notes"]
                 .as_str()
                 .map(|s| s.to_owned())
                 .expect("'note' key not found generating ecash with fedimint-cli"),

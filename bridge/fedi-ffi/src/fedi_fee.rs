@@ -255,10 +255,10 @@ impl FediFeeRemittanceService {
         let extra_meta = LightningSendMetadata {
             is_fedi_fee_remittance: true,
         };
-        let OutgoingLightningPayment { payment_type, .. } = fed
-            .client
-            .get_first_module::<LightningClientModule>()
-            .pay_bolt11_invoice(invoice.to_owned(), extra_meta.clone())
+        let ln = fed.client.get_first_module::<LightningClientModule>();
+        let active_gw = ln.select_active_gateway_opt().await;
+        let OutgoingLightningPayment { payment_type, .. } = ln
+            .pay_bolt11_invoice(active_gw, invoice.to_owned(), extra_meta.clone())
             .await?;
         fed.client
             .db()

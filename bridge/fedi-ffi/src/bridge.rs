@@ -101,7 +101,6 @@ impl Bridge {
                                     event_sink.clone(),
                                     task_group.make_subgroup().await,
                                     &root_mnemonic,
-                                    None,
                                     fedi_fee_helper.clone(),
                                 )
                                 .await
@@ -237,12 +236,14 @@ impl Bridge {
         ));
         match (v2,) {
             (Ok((config, backup_snapshots_result)),) => Ok(RpcFederationPreview {
-                id: RpcFederationId(config.global.federation_id().to_string()),
+                id: RpcFederationId(config.global.calculate_federation_id().to_string()),
                 name: config
                     .global
                     .federation_name()
                     .map(|x| x.to_owned())
-                    .unwrap_or(config.global.federation_id().to_string()[0..8].to_string()),
+                    .unwrap_or(
+                        config.global.calculate_federation_id().to_string()[0..8].to_string(),
+                    ),
                 meta: config.global.meta,
                 invite_code: invite_code.to_string(),
                 version: 2,
@@ -525,8 +526,7 @@ impl Bridge {
             )
             .expect("needs social recovery module client config");
 
-        let social_api =
-            DynGlobalApi::from(WsFederationApi::from_config(&config)).with_module(social_module_id);
+        let social_api = DynGlobalApi::from_config(&config).with_module(social_module_id);
         let client = SocialRecoveryClient::new_start(
             social_module_id,
             social_cfg.clone(),
@@ -623,8 +623,7 @@ impl Bridge {
                 "fedi-social",
             )
             .expect("needs social recovery module client config");
-        let social_api =
-            DynGlobalApi::from(WsFederationApi::from_config(&config)).with_module(social_module_id);
+        let social_api = DynGlobalApi::from_config(&config).with_module(social_module_id);
         let recovery_client = SocialRecoveryClient::new_continue(
             social_module_id,
             social_cfg.clone(),

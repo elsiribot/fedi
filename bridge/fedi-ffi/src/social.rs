@@ -10,7 +10,7 @@ use fedi_social_client::common::{
     VerificationDocument,
 };
 use fedi_social_client::config::FediSocialClientConfig;
-use fedimint_core::api::{DynModuleApi, FederationApiExt, FederationResult, IFederationApi};
+use fedimint_core::api::{DynModuleApi, FederationApiExt, FederationResult, IRawFederationApi};
 use fedimint_core::config::ClientConfig;
 use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::encoding::{Decodable, Encodable};
@@ -215,10 +215,7 @@ impl SocialRecoveryState {
             encryption_key: recovery_file.encryption_key,
             double_encrypted_seed: recovery_file.double_encrypted_seed,
             shares: Default::default(),
-            client_config: recovery_file
-                .client_config
-                .consensus_encode_to_hex()
-                .expect("can encode hex"),
+            client_config: recovery_file.client_config.consensus_encode_to_hex(),
         }
     }
 
@@ -444,7 +441,7 @@ pub trait FediSocialFederationApi {
 #[cfg_attr(not(target_family = "wasm"), async_trait)]
 impl<T: ?Sized> FediSocialFederationApi for T
 where
-    T: IFederationApi + MaybeSend + MaybeSync + 'static,
+    T: IRawFederationApi + MaybeSend + MaybeSync + 'static,
 {
     /// Upload social recovery backup for mint to safekeep
     async fn social_backup(

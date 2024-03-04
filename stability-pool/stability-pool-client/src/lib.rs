@@ -26,7 +26,9 @@ use fedimint_client::transaction::{ClientInput, ClientOutput, TransactionBuilder
 use fedimint_client::{sm_enum_variant_translation, DynGlobalClientContext};
 use fedimint_core::api::{DynModuleApi, FederationApiExt, FederationError};
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId, OperationId};
-use fedimint_core::db::{Database, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
+use fedimint_core::db::{
+    Database, DatabaseTransaction, DatabaseVersion, IDatabaseTransactionOpsCoreTyped,
+};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::{
     ApiRequestErased, ApiVersion, CommonModuleInit, ModuleInit, MultiApiVersion,
@@ -49,6 +51,7 @@ pub struct StabilityPoolClientInit;
 #[apply(async_trait_maybe_send!)]
 impl ModuleInit for StabilityPoolClientInit {
     type Common = StabilityPoolCommonGen;
+    const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(0);
 
     // No client-side database for stability pool
     async fn dump_database(
@@ -91,7 +94,7 @@ pub struct StabilityPoolClientModule {
     client_key_pair: KeyPair,
     module_api: DynModuleApi,
     client_ctx: ClientContext<Self>,
-    notifier: ModuleNotifier<DynGlobalClientContext, StabilityPoolStateMachines>,
+    notifier: ModuleNotifier<StabilityPoolStateMachines>,
     db: Database,
     /// Mutex to synchronize concurrent calls to the account_info method
     account_info_lock: Arc<Mutex<()>>,
@@ -276,7 +279,7 @@ impl ClientModule for StabilityPoolClientModule {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Decodable, Encodable)]
+#[derive(Debug, Clone, Eq, PartialEq, Decodable, Encodable, Hash)]
 pub enum StabilityPoolStateMachines {
     WithdrawUnlocked(StabilityPoolWithdrawUnlockedStateMachine),
     CancelLocked(StabilityPoolCancelLockedStateMachine),
@@ -311,7 +314,7 @@ pub enum StabilityPoolMeta {
 }
 
 impl IntoDynInstance for StabilityPoolStateMachines {
-    type DynType = DynState<DynGlobalClientContext>;
+    type DynType = DynState;
 
     fn into_dyn(self, instance_id: ModuleInstanceId) -> Self::DynType {
         DynState::from_typed(instance_id, self)
@@ -320,7 +323,6 @@ impl IntoDynInstance for StabilityPoolStateMachines {
 
 impl State for StabilityPoolStateMachines {
     type ModuleContext = StabilityPoolClientContext;
-    type GlobalContext = DynGlobalClientContext;
 
     fn transitions(
         &self,
@@ -347,7 +349,7 @@ impl State for StabilityPoolStateMachines {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Decodable, Encodable)]
+#[derive(Debug, Clone, Eq, PartialEq, Decodable, Encodable, Hash)]
 pub struct StabilityPoolWithdrawUnlockedStateMachine {
     pub operation_id: OperationId,
     pub transaction_id: TransactionId,
@@ -355,7 +357,7 @@ pub struct StabilityPoolWithdrawUnlockedStateMachine {
     pub maybe_cancel_locked_bps: Option<u32>,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Decodable, Encodable)]
+#[derive(Debug, Clone, Eq, PartialEq, Decodable, Encodable, Hash)]
 pub enum StabilityPoolWithdrawUnlockedState {
     Created,
     Accepted {
@@ -366,22 +368,17 @@ pub enum StabilityPoolWithdrawUnlockedState {
 
 impl State for StabilityPoolWithdrawUnlockedStateMachine {
     type ModuleContext = StabilityPoolClientContext;
-    type GlobalContext = DynGlobalClientContext;
 
     fn transitions(
         &self,
         context: &Self::ModuleContext,
-        global_context: &Self::GlobalContext,
+        global_context: &DynGlobalClientContext,
     ) -> Vec<StateTransition<Self>> {
         let context = context.clone();
         let global_context = global_context.clone();
         match self.state {
             StabilityPoolWithdrawUnlockedState::Created => vec![StateTransition::new(
-                await_tx_accepted(
-                    global_context.clone(),
-                    self.operation_id,
-                    self.transaction_id,
-                ),
+                await_tx_accepted(global_context.clone(), self.transaction_id),
                 move |dbtx, result, old_state: StabilityPoolWithdrawUnlockedStateMachine| {
                     match result {
                         Ok(_) => Box::pin(maybe_fund_cancellation_output(
@@ -411,14 +408,14 @@ impl State for StabilityPoolWithdrawUnlockedStateMachine {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Decodable, Encodable)]
+#[derive(Debug, Clone, Eq, PartialEq, Decodable, Encodable, Hash)]
 pub struct StabilityPoolCancelLockedStateMachine {
     pub operation_id: OperationId,
     pub transaction_id: TransactionId,
     pub state: StabilityPoolCancelLockedState,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Decodable, Encodable)]
+#[derive(Debug, Clone, Eq, PartialEq, Decodable, Encodable, Hash)]
 pub enum StabilityPoolCancelLockedState {
     Created,
     Accepted,
@@ -433,22 +430,17 @@ pub enum StabilityPoolCancelLockedState {
 
 impl State for StabilityPoolCancelLockedStateMachine {
     type ModuleContext = StabilityPoolClientContext;
-    type GlobalContext = DynGlobalClientContext;
 
     fn transitions(
         &self,
         context: &Self::ModuleContext,
-        global_context: &Self::GlobalContext,
+        global_context: &DynGlobalClientContext,
     ) -> Vec<StateTransition<Self>> {
         let context = context.clone();
         let global_context = global_context.clone();
         match self.state {
             StabilityPoolCancelLockedState::Created => vec![StateTransition::new(
-                await_tx_accepted(
-                    global_context.clone(),
-                    self.operation_id,
-                    self.transaction_id,
-                ),
+                await_tx_accepted(global_context.clone(), self.transaction_id),
                 move |_, result, old_state: StabilityPoolCancelLockedStateMachine| match result {
                     Ok(_) => Box::pin(async move {
                         StabilityPoolCancelLockedStateMachine {
@@ -1055,12 +1047,9 @@ async fn estimated_withdrawal_cents(
 
 async fn await_tx_accepted(
     global_context: DynGlobalClientContext,
-    operation_id: OperationId,
     transaction_id: TransactionId,
 ) -> Result<(), String> {
-    global_context
-        .await_tx_accepted(operation_id, transaction_id)
-        .await
+    global_context.await_tx_accepted(transaction_id).await
 }
 
 async fn await_cancellation_processed(

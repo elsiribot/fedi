@@ -45,7 +45,7 @@ $FM_BTC_CLIENT sendtoaddress $PEGIN_ADDRESS $AMOUNT_BTC
 $FM_BTC_CLIENT -generate 11
 $FM_MINT_CLIENT await-deposit $OPERATION_ID
 # deposit to stability pool
-$FM_MINT_CLIENT module --module stability_pool deposit-to-provide $AMOUNT_MSATS 1000
+$FM_MINT_CLIENT module stability_pool deposit-to-provide $AMOUNT_MSATS 1000
 # check amount is in account
 echo "Done... Printing stability pool account info"
-$FM_MINT_CLIENT module --module stability_pool account-info
+$FM_MINT_CLIENT module stability_pool account-info

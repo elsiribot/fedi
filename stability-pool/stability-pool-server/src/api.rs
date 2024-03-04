@@ -1,7 +1,7 @@
 use std::time::UNIX_EPOCH;
 
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
-use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiError};
+use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiError, ApiVersion};
 use fedimint_core::Amount;
 use futures::{stream, StreamExt};
 use secp256k1_zkp::PublicKey;
@@ -19,36 +19,42 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
     vec![
         api_endpoint! {
             "account_info",
+            ApiVersion::new(0, 0),
             async |_module: &StabilityPool, context, request: PublicKey| -> AccountInfo {
                 Ok(account_info(&mut context.dbtx().into_nc(), request).await)
             }
         },
         api_endpoint! {
             "next_cycle_start_time",
+            ApiVersion::new(0, 0),
             async |module: &StabilityPool, context, _request: ()| -> u64 {
                 Ok(next_cycle_start_time(&mut context.dbtx().into_nc(), module).await?)
             }
         },
         api_endpoint! {
             "cycle_start_price",
+            ApiVersion::new(0, 0),
             async |_module: &StabilityPool, context, _request: ()| -> u64 {
                 Ok(cycle_start_price(&mut context.dbtx().into_nc()).await?)
             }
         },
         api_endpoint! {
             "wait_cancellation_processed",
+            ApiVersion::new(0, 0),
             async |_module: &StabilityPool, context, request: PublicKey| -> Amount {
                 Ok(wait_cancellation_processed(context, request).await?)
             }
         },
         api_endpoint! {
             "liquidity_stats",
+            ApiVersion::new(0, 0),
             async |_module: &StabilityPool, context, _request: ()| -> serde_json::Value {
                 Ok(liquidity_stats(&mut context.dbtx().into_nc()).await?)
             }
         },
         api_endpoint! {
             "average_fee_rate",
+            ApiVersion::new(0, 0),
             async |_module: &StabilityPool, context, request: u64| -> u64 {
                 Ok(average_fee_rate(&mut context.dbtx().into_nc(), request).await?)
             }

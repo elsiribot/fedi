@@ -1,6 +1,6 @@
 [package]
 name = "fedi-wasm"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 resolver = "2"
 
@@ -11,7 +11,7 @@ crate-type = ["cdylib", "rlib"]
 anyhow = "1.0.69"
 async-trait = "0.1.64"
 console_error_panic_hook = "0.1.7"
-fedi-ffi = { version = "0.2.0", path = "../fedi-ffi" }
+fedi-ffi = { version = "0.3.0", path = "../fedi-ffi" }
 futures = "0.3.26"
 gloo-file = "0.2.3"
 imbl = "2.0.0"
