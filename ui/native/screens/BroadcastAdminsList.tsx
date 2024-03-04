@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     fetchChatGroupMembersList,
     removeAdminFromChatGroup,
@@ -15,7 +16,6 @@ import { XmppMemberRole } from '@fedi/common/utils/XmlUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import MemberItem from '../components/feature/chat/MemberItem'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -33,7 +33,7 @@ const BroadcastAdminsList: React.FC<Props> = ({ navigation, route }: Props) => {
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const isFocused = useIsFocused()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const [admins, setAdmins] = useState<ChatMember[]>([])
     const style = styles(theme)
 
@@ -67,16 +67,16 @@ const BroadcastAdminsList: React.FC<Props> = ({ navigation, route }: Props) => {
                     }),
                 ).unwrap()
                 refreshAdminList()
-                toast?.show(
-                    t('feature.chat.removed-admin-from-group', {
+                toast.show({
+                    content: t('feature.chat.removed-admin-from-group', {
                         username: member.username,
                     }),
-                    3000,
-                )
+                    status: 'success',
+                })
             }
         } catch (error) {
             log.error('confirmRemoveAdmin', error)
-            toast?.show(t('errors.unknown-error'), 3000)
+            toast.error(error)
         }
     }
 

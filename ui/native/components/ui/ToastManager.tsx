@@ -1,98 +1,170 @@
+import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
     Animated,
     View,
     Text,
-    TouchableOpacity,
-    PanResponder,
+    StyleSheet,
+    useWindowDimensions,
+    Pressable,
 } from 'react-native'
+import LinearGradient from 'react-native-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectToast } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../state/hooks'
+import SvgImage from './SvgImage'
+
+const nightGradient = [...fediTheme.nightHoloAmbientGradient]
 
 export default function ToastManager() {
     const toast = useAppSelector(selectToast)
     const slideAnim = useRef(new Animated.Value(-100)).current
+    const dimensions = useWindowDimensions()
     const insets = useSafeAreaInsets()
+
     const [cachedToast, setCachedToast] = useState(toast)
-    const [isPaused, setIsPaused] = useState(false)
+    const [isToastOpen, setIsToastOpen] = useState(!!toast)
 
     const { close } = useToast()
+    const { theme } = useTheme()
 
-    const handleCloseToast = useCallback(() => {
-        Animated.timing(slideAnim, {
-            toValue: -100, // Move back to the initial off-screen position
-            duration: 300,
-            useNativeDriver: true,
-        }).start()
-
-        if (toast?.key) {
-            close(toast.key)
-        }
-    }, [close, toast, slideAnim])
-
-    const panResponder = useRef(
-        PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
-            // User is holding a finger on the toast
-            onPanResponderGrant: () => {
-                setIsPaused(true)
-            },
-            // User releases finger from the toast
-            onPanResponderRelease: () => {
-                setIsPaused(false)
-            },
-            // Reset state if gesture is cancelled
-            onPanResponderTerminate: () => {
-                setIsPaused(false)
-            },
-        }),
-    ).current
+    const handleCloseToast = useCallback(
+        (open: boolean) => {
+            setIsToastOpen(open)
+            if (!open) close(toast?.key)
+        },
+        [toast, close],
+    )
 
     useEffect(() => {
-        if (toast && !isPaused) {
+        if (toast) {
             setCachedToast(toast)
-            slideAnim.setValue(-100) // Reset position before animation
+            setIsToastOpen(true)
+        } else {
+            setIsToastOpen(false)
+        }
+    }, [toast])
+
+    useEffect(() => {
+        if (isToastOpen) {
             Animated.timing(slideAnim, {
-                toValue: insets.top, // Adjust for safe area
+                toValue: insets.top,
                 duration: 300,
                 useNativeDriver: true,
             }).start()
-        } else if (!toast && !isPaused) {
-            handleCloseToast()
+        } else {
+            Animated.timing(slideAnim, {
+                toValue: -100,
+                duration: 300,
+                useNativeDriver: true,
+            }).start()
         }
-    }, [toast, slideAnim, handleCloseToast, insets, isPaused])
+    }, [isToastOpen, insets, slideAnim])
+
+    const style = styles(theme)
 
     return (
         <Animated.View
-            style={{
-                transform: [{ translateY: slideAnim }],
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                alignItems: 'center',
-                padding: 20,
-                backgroundColor: 'black',
-            }}
-            {...panResponder.panHandlers}>
-            {cachedToast && (
-                <View
-                    style={{
-                        padding: 10,
-                        borderRadius: 5,
-                    }}>
-                    <Text style={{ color: 'white' }}>
-                        {cachedToast.content}
-                    </Text>
-                </View>
-            )}
-            <TouchableOpacity onPress={handleCloseToast}>
-                <Text style={{ color: 'white', paddingTop: 5 }}>Close</Text>
-            </TouchableOpacity>
+            style={[
+                style.toastOuter,
+                {
+                    transform: [
+                        {
+                            translateY: slideAnim,
+                        },
+                    ],
+                    maxWidth: dimensions.width - 80,
+                },
+            ]}>
+            <View style={[style.wrapper, style.toastShadow]}>
+                <LinearGradient
+                    style={style.wrapper}
+                    colors={[
+                        'rgba(255, 255, 255, 0.15)',
+                        'rgba(255, 255, 255, 0)',
+                    ]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}>
+                    <LinearGradient
+                        style={[style.wrapper, style.toast]}
+                        colors={nightGradient}
+                        start={{ x: 0, y: 0.75 }}
+                        end={{ x: 1, y: 0.95 }}>
+                        <View>
+                            <Text style={style.toastIcon}>
+                                {cachedToast?.status === 'success'
+                                    ? '👍'
+                                    : cachedToast?.status === 'info'
+                                    ? '👀'
+                                    : '⚠️'}
+                            </Text>
+                        </View>
+                        <View style={style.toastContent}>
+                            <Text style={style.toastText}>
+                                {cachedToast?.content}
+                            </Text>
+                        </View>
+                        <View>
+                            <Pressable onPress={() => handleCloseToast(false)}>
+                                <SvgImage
+                                    name="Close"
+                                    color={theme.colors.grey}
+                                />
+                            </Pressable>
+                        </View>
+                    </LinearGradient>
+                </LinearGradient>
+            </View>
         </Animated.View>
     )
 }
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        toastOuter: {
+            position: 'absolute',
+            top: 0,
+            left: 40,
+            width: '100%',
+            display: 'flex',
+            backgroundColor: theme.colors.black,
+            borderRadius: 16,
+            elevation: 4,
+            shadowColor: theme.colors.black,
+            shadowOffset: { width: 0, height: 7 },
+            shadowOpacity: 0.13,
+            shadowRadius: 7,
+        },
+        toastShadow: {
+            shadowColor: theme.colors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 4,
+            backgroundColor: theme.colors.black,
+        },
+        wrapper: {
+            flexGrow: 1,
+            display: 'flex',
+            borderRadius: 16,
+        },
+        toast: {
+            alignItems: 'center',
+            padding: 14,
+            flexDirection: 'row',
+            gap: 12,
+        },
+        toastIcon: {
+            fontSize: 20,
+        },
+        toastContent: {
+            flexGrow: 1,
+            flexBasis: 0,
+        },
+        toastText: {
+            color: theme.colors.white,
+        },
+    })

@@ -39,7 +39,6 @@ function PersonalRecoverPage() {
             push('/')
             toast.show({
                 content: t('feature.recovery.you-completed-personal-recovery'),
-                duration: 5000,
             })
         } catch (err) {
             toast.error(err, 'errors.unknown-error')

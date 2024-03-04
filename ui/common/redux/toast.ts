@@ -45,16 +45,10 @@ export const showToast = createAsyncThunk<
 >('toast/showToast', async (toastArgs, { dispatch }) => {
     const toast: Toast = {
         key: Date.now().toString(),
-        duration: 3000,
         status: 'info',
         ...toastArgs,
     }
 
     // Show toast immediately
     dispatch(setToast(toast))
-
-    // Hide toast after duration, if it's still the active toast.
-    setTimeout(() => {
-        dispatch(closeToast(toast.key))
-    }, toast.duration)
 })

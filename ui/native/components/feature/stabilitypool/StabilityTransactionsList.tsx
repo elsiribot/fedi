@@ -2,11 +2,11 @@ import { useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import { useTxnDisplayUtils } from '@fedi/common/hooks/transactions'
 import { selectActiveFederationId, selectCurrency } from '@fedi/common/redux'
 import { updateTransactionNotes } from '@fedi/common/redux/transactions'
 import type { Transaction } from '@fedi/common/types'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import {
     makeStabilityTxnDetailTitleText,
     makeStabilityTxnStatusSubtext,
@@ -14,7 +14,6 @@ import {
 } from '@fedi/common/utils/wallet'
 
 import { fedimint } from '../../../bridge'
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { HistoryIcon } from '../../ui/HistoryIcon'
 import { HistoryList } from '../../ui/HistoryList'
@@ -34,7 +33,7 @@ const StabilityTransactionsList = ({
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const selectedCurrency = useAppSelector(selectCurrency)
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const {
@@ -77,9 +76,7 @@ const StabilityTransactionsList = ({
                             }),
                         ).unwrap()
                     } catch (err) {
-                        toast?.show(
-                            formatErrorMessage(t, err, 'errors.unknown-error'),
-                        )
+                        toast.error(err)
                     }
                 },
             })}

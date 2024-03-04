@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 
 import { useIsStabilityPoolSupported } from '@fedi/common/hooks/federation'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     changeAuthenticatedGuardian,
     resetAuthenticatedMember,
@@ -32,13 +33,11 @@ import {
     SupportedCurrency,
 } from '@fedi/common/types'
 import { GuardianStatus } from '@fedi/common/types/bindings'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import CheckBox from '../components/ui/CheckBox'
 import { version } from '../package.json'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 import { shareLogsExport, shareReduxState } from '../utils/logs-export'
@@ -54,7 +53,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { listGateways, switchGateway, guardianStatus } = useBridge()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const [isLoadingGateways, setIsLoadingGateways] = useState<boolean>(false)
     const [gateways, setGateways] = useState<LightningGateway[]>([])
     const [isSharingLogs, setIsSharingLogs] = useState(false)
@@ -105,7 +104,10 @@ const DeveloperSettings: React.FC<Props> = () => {
                 const _gateways = await listGateways()
                 setGateways(_gateways)
             } catch (e) {
-                toast?.show(t('errors.failed-to-fetch-gateways'), 3000)
+                toast.show({
+                    content: t('errors.failed-to-fetch-gateways'),
+                    status: 'error',
+                })
             }
             setIsLoadingGateways(false)
         }
@@ -122,7 +124,10 @@ const DeveloperSettings: React.FC<Props> = () => {
         try {
             await switchGateway(gateway.gatewayId)
         } catch (e) {
-            toast?.show(t('errors.failed-to-switch-gateways'), 3000)
+            toast.show({
+                content: t('errors.failed-to-switch-gateways'),
+                status: 'error',
+            })
         }
         const updatedGateways = gateways.map((gw: LightningGateway) => {
             gw.active = gateway.nodePubKey === gw.nodePubKey
@@ -136,7 +141,7 @@ const DeveloperSettings: React.FC<Props> = () => {
         try {
             await shareLogsExport()
         } catch (e) {
-            toast?.show(formatErrorMessage(t, e, 'errors.unknown-error'))
+            toast.error(e)
         }
         setIsSharingLogs(false)
     }
@@ -146,7 +151,7 @@ const DeveloperSettings: React.FC<Props> = () => {
         try {
             await shareReduxState()
         } catch (e) {
-            toast?.show(formatErrorMessage(t, e, 'errors.unknown-error'))
+            toast.error(e)
         }
         setIsSharingState(false)
     }
@@ -399,7 +404,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     containerStyle={styles(theme).buttonContainer}
                     onPress={() => {
                         reduxDispatch(resetNuxSteps())
-                        toast?.show('NUX reset!')
+                        toast.show('NUX reset!')
                     }}
                 />
                 <Button

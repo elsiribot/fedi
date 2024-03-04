@@ -1,18 +1,17 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import { useTxnDisplayUtils } from '@fedi/common/hooks/transactions'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { updateTransactionNotes } from '@fedi/common/redux/transactions'
 import { Transaction } from '@fedi/common/types'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import {
     makeTxnDetailTitleText,
     makeTxnStatusText,
 } from '@fedi/common/utils/wallet'
 
 import { fedimint } from '../../../bridge'
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { HistoryList } from '../../ui/HistoryList'
 import { TransactionIcon } from './TransactionIcon'
@@ -30,7 +29,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
 }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const {
         preferredCurrency,
@@ -70,9 +69,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                             }),
                         ).unwrap()
                     } catch (err) {
-                        toast?.show(
-                            formatErrorMessage(t, err, 'errors.unknown-error'),
-                        )
+                        toast.error(err)
                     }
                 },
             })}

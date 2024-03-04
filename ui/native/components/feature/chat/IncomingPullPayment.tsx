@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederation,
     selectIsActiveFederationRecovering,
@@ -18,7 +19,6 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import { RecoveryInProgressOverlay } from '../recovery/RecoveryInProgressOverlay'
@@ -146,7 +146,7 @@ const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
     const { theme } = useTheme()
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
     const [paymentProcessing, setPaymentProcessing] = useState<boolean>(false)
     const [showOverlay, setShowOverlay] = useState(false)
@@ -166,7 +166,10 @@ const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
             ).unwrap()
         } catch (error) {
             log.error('rejectPaymentRequest', error)
-            toast?.show('errors.chat-payment-failed')
+            toast.show({
+                content: t('errors.chat-payment-failed'),
+                status: 'error',
+            })
         }
     }
 
@@ -179,16 +182,16 @@ const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
         }
 
         if (activeFederation.balance < message.payment.amount) {
-            toast?.show(
-                t('errors.insufficient-balance', {
+            toast.show({
+                content: t('errors.insufficient-balance', {
                     balance: `${amountUtils.formatNumber(
                         amountUtils.msatToSat(
                             activeFederation?.balance as MSats,
                         ),
                     )} SATS`,
                 }),
-                5000,
-            )
+                status: 'error',
+            })
         } else {
             setPaymentProcessing(true)
             try {
@@ -201,7 +204,10 @@ const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
                     }),
                 ).unwrap()
             } catch (err) {
-                toast?.show('errors.chat-payment-failed')
+                toast.show({
+                    content: t('errors.chat-payment-failed'),
+                    status: 'error',
+                })
             }
             setPaymentProcessing(false)
         }

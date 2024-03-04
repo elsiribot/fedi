@@ -13,9 +13,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -23,7 +23,6 @@ import { fedimint } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import RequestTypeSwitcher from '../components/feature/receive/RequestTypeSwitcher'
 import { AmountScreen } from '../components/ui/AmountScreen'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -51,7 +50,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
     } = useRequestForm({
         lnurlWithdrawal,
     })
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const [invoice, setInvoice] = useState<string>('')
     const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false)
@@ -73,7 +72,10 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
                 )
                 setInvoice(newInvoice)
             } catch (error) {
-                toast?.show(t('errors.failed-to-generate-invoice'), 3000)
+                toast.show({
+                    content: t('errors.failed-to-generate-invoice'),
+                    status: 'error',
+                })
             }
         }
         if (generatingInvoice) {
@@ -131,13 +133,13 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
             // TODO: Better UI for this? We want to show them the QR code in case
             // the payment doesn't go through, but we also want to let them know
             // that LNURL _should_ handle the payment.
-            toast?.show(
-                t('feature.receive.awaiting-withdrawal-from', {
+            toast.show({
+                content: t('feature.receive.awaiting-withdrawal-from', {
                     domain: lnurlWithdrawal.domain,
                 }),
-            )
+            })
         } catch (err) {
-            toast?.show(formatErrorMessage(t, err, 'error.unknown-error'))
+            toast.error(err)
         }
         setGeneratingInvoice(false)
     }

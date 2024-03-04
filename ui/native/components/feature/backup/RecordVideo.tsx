@@ -8,13 +8,13 @@ import type {
 } from 'react-native-vision-camera'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
 
 import {
     saveVideo,
     useBackupRecoveryContext,
 } from '../../../state/contexts/BackupRecoveryContext'
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 
 const log = makeLog('RecordVideo')
 
@@ -25,7 +25,7 @@ const RecordVideo = () => {
     const camera = useRef<Camera>(null)
     const devices = useCameraDevices()
     const device = devices.front
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const { dispatch } = useBackupRecoveryContext()
 
     function resolution(format: CameraDeviceFormat): number {
@@ -67,7 +67,10 @@ const RecordVideo = () => {
         camera.current?.startRecording({
             onRecordingFinished: video => {
                 if (video.size && video.size > 3000) {
-                    toast?.show(t('feature.backup.video-file-too-large'), 4000)
+                    toast.show({
+                        content: t('feature.backup.video-file-too-large'),
+                        status: 'error',
+                    })
                 } else {
                     dispatch(saveVideo(video))
                 }

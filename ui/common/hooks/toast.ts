@@ -23,7 +23,7 @@ export function useToast() {
     )
 
     const error = useCallback(
-        (err: unknown, defaultMsg: string) => {
+        (err: unknown, defaultMsg = 'errors.unknown-error') => {
             show({
                 content: formatErrorMessage(t, err, defaultMsg),
                 status: 'error',

@@ -10,6 +10,7 @@ import {
     View,
 } from 'react-native'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     leaveChatGroup,
     selectActiveFederationId,
@@ -17,13 +18,11 @@ import {
     selectChatGroup,
     selectChatGroupAffiliation,
 } from '@fedi/common/redux'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { Images } from '../assets/images'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { ChatAffiliation } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -36,7 +35,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const { groupId } = route.params
     const group = useAppSelector(s => selectChatGroup(s, groupId))
     const federationId = useAppSelector(selectActiveFederationId)
@@ -61,7 +60,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     leaveChatGroup({ federationId, groupId }),
                 ).unwrap()
             } catch (err) {
-                toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
+                toast.error(err)
             }
         }
 
@@ -123,9 +122,8 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     label={t('feature.chat.broadcast-only')}
                     action={<Switch value={broadcastOnly} disabled />}
                     onPress={() => {
-                        toast?.show(
+                        toast.show(
                             t('feature.chat.changing-broadcast-not-supported'),
-                            3000,
                         )
                     }}
                 />

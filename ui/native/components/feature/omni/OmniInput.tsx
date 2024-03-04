@@ -5,13 +5,12 @@ import { useTranslation } from 'react-i18next'
 import { View, StyleSheet } from 'react-native'
 
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
+import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectActiveFederationId } from '@fedi/common/redux'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { parseUserInput } from '@fedi/common/utils/parser'
 
 import { fedimint } from '../../../bridge'
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
 import {
     AnyParsedData,
@@ -49,8 +48,8 @@ export function OmniInput<
     const propsRef = useUpdatingRef(props)
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { toast } = useEnvironmentContext().state
     const activeFederationId = useAppSelector(selectActiveFederationId)
+    const toast = useToast()
     const canChat = useIsChatSupported()
     const [inputMethod, setInputMethod] = useState<'scan' | 'search'>('scan')
     const [isParsing, setIsParsing] = useState(false)
@@ -105,9 +104,9 @@ export function OmniInput<
             const input = await Clipboard.getString()
             await parseInput(input)
         } catch (err) {
-            toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
+            toast.error(err)
         }
-    }, [parseInput, toast, t])
+    }, [parseInput, toast])
 
     const actions: OmniInputAction[] = useMemo(() => {
         const contextualActions: OmniInputAction[] = []

@@ -1,10 +1,9 @@
 import { useNavigation } from '@react-navigation/native'
-import { Button, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet } from 'react-native'
 
-import { useToast } from '@fedi/common/hooks/toast'
 import { selectFederationMetadata } from '@fedi/common/redux'
 import { shouldShowOfflineWallet } from '@fedi/common/utils/FederationUtils'
 
@@ -25,17 +24,10 @@ const HomeHeader: React.FC = () => {
         shouldShowOfflineWallet(activeFederationMetadata)
 
     const style = styles(theme)
-    const toast = useToast()
 
     return (
         <>
             <NetworkBanner />
-            <Button
-                onPress={() =>
-                    toast.show('asdfasdf' + Math.random().toString(36).slice(2))
-                }>
-                Test
-            </Button>
             <Header
                 inline
                 containerStyle={style.container}

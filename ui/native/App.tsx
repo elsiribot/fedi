@@ -16,11 +16,9 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import Router from './Router'
 import { fedimint, initializeBridge } from './bridge'
-import CustomToast from './components/ui/CustomToast'
 import ToastManager from './components/ui/ToastManager'
 import { ErrorScreen } from './screens/ErrorScreen'
 import { BackupRecoveryProvider } from './state/contexts/BackupRecoveryContext'
-import { EnvironmentProvider } from './state/contexts/EnvironmentContext'
 import { OmniLinkContextProvider } from './state/contexts/OmniLinkContext'
 import ProviderComposer from './state/contexts/ProviderComposer'
 import { initializeNativeStore, store } from './state/store'
@@ -151,12 +149,10 @@ const App = () => {
                     <ReduxProvider store={store}>
                         <ProviderComposer
                             providers={[
-                                EnvironmentProvider,
                                 BackupRecoveryProvider,
                                 OmniLinkContextProvider,
                             ]}>
                             {bridgeIsReady && <Router />}
-                            <CustomToast />
                             <ToastManager />
                         </ProviderComposer>
                     </ReduxProvider>

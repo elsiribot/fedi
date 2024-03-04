@@ -3,13 +3,12 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederationId, updateChatPayment } from '@fedi/common/redux'
 import { ChatMessage, ChatPayment, ChatPaymentStatus } from '@fedi/common/types'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
@@ -149,8 +148,7 @@ const OutgoingPullPayment: React.FC<OutgoingPullPaymentProps> = ({
     const { theme } = useTheme()
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(selectActiveFederationId)
-    const { toast } = useEnvironmentContext().state
-    const { t } = useTranslation()
+    const toast = useToast()
 
     const cancelPayment = async () => {
         try {
@@ -165,10 +163,7 @@ const OutgoingPullPayment: React.FC<OutgoingPullPaymentProps> = ({
             ).unwrap()
         } catch (error) {
             log.error('cancelPayment', error)
-            toast?.show(
-                formatErrorMessage(t, error, 'errors.unknown-error'),
-                3000,
-            )
+            toast.error(error)
         }
     }
 

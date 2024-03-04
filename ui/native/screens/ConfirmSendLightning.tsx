@@ -7,18 +7,17 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context'
 
 import { useOmniPaymentState } from '@fedi/common/hooks/pay'
+import { useToast } from '@fedi/common/hooks/toast'
 import { FeeItem, useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { hexToRgba } from '@fedi/common/utils/color'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { fedimint } from '../bridge'
 import { FeeBreakdown } from '../components/feature/send/FeeBreakdown'
 import { AmountScreen } from '../components/ui/AmountScreen'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage from '../components/ui/SvgImage'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../state/hooks'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 
@@ -32,7 +31,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
     const { feeBreakdownTitle, makeLightningFeeContent } = useFeeDisplayUtils(t)
     const { parsedData } = route.params
@@ -74,7 +73,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                 unit,
             })
         } catch (err) {
-            toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
+            toast.error(err)
         }
         setIsPayingInvoice(false)
     }, [
@@ -85,7 +84,6 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
         unit,
         navigationReplace,
         toast,
-        t,
     ])
 
     if (!isReadyToPay) return <ActivityIndicator />

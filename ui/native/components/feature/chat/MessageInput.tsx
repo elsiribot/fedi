@@ -12,9 +12,8 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { formatErrorMessage } from '@fedi/common/utils/format'
+import { useToast } from '@fedi/common/hooks/toast'
 
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import ChatWalletButton from './ChatWalletButton'
 
@@ -31,7 +30,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
 
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const [messageText, setMessageText] = useState<string>('')
     const [inputHeight, setInputHeight] = useState<number>(
         theme.sizes.minMessageInputHeight,
@@ -66,10 +65,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
             await onMessageSubmitted(messageText)
             setMessageText('')
         } catch (err) {
-            toast?.show(
-                formatErrorMessage(t, err, 'errors.chat-unavailable'),
-                5000,
-            )
+            toast.error(err, 'errors.chat-unavailable')
         }
         setIsSending(false)
     }

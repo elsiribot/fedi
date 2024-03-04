@@ -4,13 +4,12 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import type { MSats, Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import FiatAmount from '../components/feature/wallet/FiatAmount'
 import SvgImage from '../components/ui/SvgImage'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 
@@ -26,7 +25,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { receiveEcash, validateEcash } = useBridge()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const { ecash } = route.params
     const [amount, setAmount] = useState(0 as MSats)
     const [error, setError] = useState<Error>()
@@ -43,9 +42,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
 
     useEffect(() => {
         if (error) {
-            toast?.show(
-                formatErrorMessage(t, error, 'errors.invalid-ecash-token'),
-            )
+            toast.error(error, 'errors.invalid-ecash-token')
         }
     }, [error, t, toast])
 
@@ -63,10 +60,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                     } as Transaction,
                 })
             } catch (e) {
-                toast?.show(
-                    formatErrorMessage(t, e, 'errors.unknown-error'),
-                    3000,
-                )
+                toast.error(e)
                 setReceiving(false)
             }
         }

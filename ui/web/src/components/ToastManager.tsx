@@ -14,7 +14,6 @@ export const ToastManager: React.FC = () => {
     const toastElRef = useRef<HTMLLIElement>(null)
     const [cachedToast, setCachedToast] = useState(toast)
     const [isToastOpen, setIsToastOpen] = useState(!!toast)
-    const [isPaused, setIsPaused] = useState(false)
     const { close } = useToast()
     const isMobile = useMediaQuery(config.media.sm)
 
@@ -30,10 +29,10 @@ export const ToastManager: React.FC = () => {
         if (toast) {
             setCachedToast(toast)
             setIsToastOpen(true)
-        } else if (!isPaused) {
+        } else {
             setIsToastOpen(false)
         }
-    }, [toast, isPaused])
+    }, [toast])
 
     return (
         <Portal.Root>
@@ -43,9 +42,7 @@ export const ToastManager: React.FC = () => {
                     ref={toastElRef}
                     open={isToastOpen}
                     onOpenChange={handleCloseToast}
-                    duration={cachedToast?.duration}
-                    onPause={() => setIsPaused(true)}
-                    onResume={() => setIsPaused(false)}>
+                    duration={Infinity}>
                     {cachedToast && (
                         <ToastInner>
                             <RadixToast.Description>

@@ -20,6 +20,7 @@ import {
     useIsStabilityPoolSupported,
     usePopupFederationInfo,
 } from '@fedi/common/hooks/federation'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     refreshActiveStabilityPool,
     refreshFederations,
@@ -36,7 +37,6 @@ import SvgImage, {
     SvgImageSize,
     getIconSizeMultiplier,
 } from '../components/ui/SvgImage'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import {
     RootStackParamList,
@@ -59,7 +59,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
     const isFocused = useIsFocused()
     const insets = useSafeAreaInsets()
     const [offline] = useState(false)
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const canChat = useIsChatSupported()
     const hasUnseenMessages = useAppSelector(selectHasUnseenMessages)
     const hasUnseenPaymentUpdates = useAppSelector(
@@ -139,12 +139,12 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                                                 style.disabledIcon,
                                             ]}
                                             onPress={() => {
-                                                toast?.show(
-                                                    t(
+                                                toast.show({
+                                                    content: t(
                                                         'errors.chat-unavailable',
                                                     ),
-                                                    3000,
-                                                )
+                                                    status: 'error',
+                                                })
                                             }}
                                         />
                                     )

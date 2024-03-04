@@ -8,10 +8,9 @@ import {
     launchImageLibrary,
 } from 'react-native-image-picker'
 
-import { formatErrorMessage } from '@fedi/common/utils/format'
+import { useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { useEnvironmentContext } from '../../state/contexts/EnvironmentContext'
 import SvgImage, { SvgImageSize } from './SvgImage'
 
 const log = makeLog('Attachments')
@@ -31,7 +30,7 @@ export const Attachments: React.FC<Props> = ({
 }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const style = styles(theme)
 
     const handleAddAttachment = async () => {
@@ -48,7 +47,7 @@ export const Attachments: React.FC<Props> = ({
             }
         } catch (err) {
             log.error('Failed to launch image library', err)
-            toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
+            toast.error(err)
         }
     }
 
