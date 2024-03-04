@@ -113,11 +113,9 @@ impl From<fedimint_core::core::OperationId> for RpcOperationId {
 }
 
 pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFederation {
-    let balance = RpcAmount(federation.get_balance().await);
     let id = RpcFederationId(federation.federation_id().to_string());
     let name = federation.federation_name();
     let network = federation.get_network();
-    let invite_code = federation.get_invite_code().await;
     let client_config = federation.client.get_config();
     let meta = federation.client.get_config().global.meta.clone();
     let nodes = client_config
@@ -128,8 +126,13 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
         .map(|(peer_id, peer_url)| (RpcPeerId(*peer_id), peer_url.clone()))
         .collect();
     let client_config_json = federation.client.get_config_json();
+    let (invite_code, fedi_fee_schedule, balance) = futures::join!(
+        federation.get_invite_code(),
+        federation.fedi_fee_schedule(),
+        federation.get_balance(),
+    );
     RpcFederation {
-        balance,
+        balance: RpcAmount(balance),
         id,
         network,
         name,
@@ -142,7 +145,7 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
             global: client_config_json.global,
             modules: client_config_json.modules,
         }),
-        fedi_fee_schedule: federation.fedi_fee_schedule().await.into(),
+        fedi_fee_schedule: fedi_fee_schedule.into(),
     }
 }
 
