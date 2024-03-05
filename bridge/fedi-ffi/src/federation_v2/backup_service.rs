@@ -162,6 +162,7 @@ impl BackupService {
                         error!(%failed_count, %error, "backup failed");
                         failed_count += 1;
                         let time = 1 << failed_count.min(9);
+                        // max = 17.1 minutes
                         let time = rand::thread_rng().gen_range(time..(2 * time));
                         Some(Duration::from_secs(time))
                     } else {
