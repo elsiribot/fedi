@@ -14,7 +14,10 @@ interface Props {
     item: unknown
 }
 
-export const HistoryRowError: React.FC<Props> = ({ error, item }) => {
+export const HistoryRowError: React.FC<Props> = ({
+    error,
+    item,
+}) => {
     const { t } = useTranslation()
     const [isShowingDetails, setIsShowingDetails] = useState(false)
 
