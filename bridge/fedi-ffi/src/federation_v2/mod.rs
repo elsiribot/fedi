@@ -4,7 +4,7 @@ mod dev;
 use std::any::Any;
 use std::collections::HashMap;
 use std::default::Default;
-use std::ops::Deref;
+use std::pin::pin;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -19,14 +19,16 @@ use fedi_social_client::{FediSocialClientInit, RecoveryId};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::backup::Metadata;
 use fedimint_client::db::ChronologicalOperationLogKey;
+use fedimint_client::module::recovery::RecoveryProgress;
+use fedimint_client::module::ClientModule;
 use fedimint_client::oplog::OperationLogEntry;
 use fedimint_client::secret::{
     get_default_client_secret, DeriveableSecretClientExt, RootSecretStrategy,
 };
 use fedimint_client::{Client, ClientBuilder, ClientHandle};
 use fedimint_core::api::{
-    DynGlobalApi, DynModuleApi, FederationApiExt, FederationResult, IGlobalFederationApi,
-    InviteCode, StatusResponse, WsFederationApi,
+    DynGlobalApi, DynModuleApi, FederationApiExt, FederationResult, InviteCode, StatusResponse,
+    WsFederationApi,
 };
 use fedimint_core::backup::ClientBackupSnapshot;
 use fedimint_core::config::{ClientConfig, FederationId};
@@ -51,7 +53,7 @@ use fedimint_wallet_client::{
     DepositState, PegOutFees, WalletClientInit, WalletClientModule, WalletOperationMeta,
     WalletOperationMetaVariant, WithdrawState,
 };
-use futures::StreamExt;
+use futures::{FutureExt, StreamExt};
 use lightning_invoice::{Bolt11Invoice, RoutingFees};
 use serde::de::DeserializeOwned;
 use stability_pool_client::{
@@ -83,13 +85,14 @@ use super::types::{
     RpcLightningGateway, RpcPayInvoiceResponse, RpcPublicKey, RpcXmppCredentials,
 };
 use crate::error::ErrorCode;
+use crate::event::RecoveryProgressEvent;
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
 use crate::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::storage::FediFeeSchedule;
 use crate::types::{
     EcashReceiveMetadata, GuardianStatus, LightningSendMetadata, OperationFediFeeStatus,
-    RpcBitcoinDetails, RpcEcashInfo, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningDetails,
-    RpcLnState, RpcOOBState, RpcOnchainState, RpcPayAddressResponse,
+    RpcBitcoinDetails, RpcEcashInfo, RpcFederationId, RpcFeeDetails, RpcGenerateEcashResponse,
+    RpcLightningDetails, RpcLnState, RpcOOBState, RpcOnchainState, RpcPayAddressResponse,
     RpcStabilityPoolTransactionState, RpcTransaction, RpcTransactionDirection, WithdrawalDetails,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
@@ -138,9 +141,9 @@ pub struct FederationV2 {
     // Helper object to retrieve the schedule used for charging Fedi's fee for different types of
     // transactions.
     pub fedi_fee_helper: Arc<FediFeeHelper>,
-    pub recovering: Arc<Mutex<bool>>,
     pub backup_service: OnceCell<BackupService>,
     pub fedi_fee_remittance_service: OnceCell<FediFeeRemittanceService>,
+    pub recovering: bool,
 }
 
 impl FederationV2 {
@@ -171,13 +174,11 @@ impl FederationV2 {
             operation_states: Default::default(),
             auxiliary_secret: secret,
             fedi_fee_helper,
-            recovering: Arc::new(Mutex::new(recovering)),
             backup_service: OnceCell::new(),
             fedi_fee_remittance_service: OnceCell::new(),
+            recovering,
         };
-        if recovering {
-            federation.subscribe_recovery().await;
-        } else {
+        if !recovering {
             federation.start_background_tasks().await;
         }
         federation
@@ -371,10 +372,16 @@ impl FederationV2 {
     }
 
     // Fetch which network we're using
-    pub fn get_network(&self) -> Network {
-        self.client
-            .get_first_module::<WalletClientModule>()
-            .get_network()
+    pub fn get_network(&self) -> Option<Network> {
+        if self.recovering() {
+            None
+        } else {
+            Some(
+                self.client
+                    .get_first_module::<WalletClientModule>()
+                    .get_network(),
+            )
+        }
     }
 
     /// Return federation name from meta, or take first 8 characters of
@@ -392,6 +399,9 @@ impl FederationV2 {
 
     /// Fetch balance
     pub async fn get_balance(&self) -> Amount {
+        if self.recovering() {
+            return Amount::ZERO;
+        }
         let mint_client = self.client.get_first_module::<MintClientModule>();
         let mut dbtx = mint_client.db.begin_transaction_nc().await;
         mint_client
@@ -747,10 +757,13 @@ impl FederationV2 {
         }
 
         // Same network
-        if self.get_network() != invoice.network() {
+        let federation_network = self
+            .get_network()
+            .context("federation is still recovering")?;
+        if federation_network != invoice.network() {
             bail!(format!(
                 "Invoice is for wrong network. Expected {}, got {}",
-                self.get_network(),
+                federation_network,
                 display_currency(invoice.currency())
             ))
         }
@@ -1196,25 +1209,50 @@ impl FederationV2 {
             .await;
     }
 
-    async fn subscribe_recovery(&mut self) {
-        let mut federation = self.clone();
-        self.task_group
-            .spawn("subscribe recovery", |_| async move {
-                info!("waiting for recovery to complete");
-                federation.client.wait_for_all_recoveries().await?;
-                info!("recovery completed");
-                *federation.recovering.lock().await = false;
-                federation.event_sink.typed_event(&Event::recovery_complete(
-                    federation.federation_id().to_string(),
-                ));
-                federation.start_background_tasks().await;
-                anyhow::Ok(())
-            })
-            .await;
+    pub fn recovering(&self) -> bool {
+        self.recovering
+    }
+
+    pub async fn wait_for_recovery(&self) -> Result<()> {
+        info!("waiting for recovering");
+        let mut recovery_complete = pin!(self.client.wait_for_all_recoveries().fuse());
+        let mint_instance_id = self
+            .client
+            .get_config()
+            .modules
+            .iter()
+            .find(|(_, config)| config.is_kind(&MintClientModule::kind()))
+            .map(|(id, _)| id);
+        let mut stream = pin!(self.client.subscribe_to_recovery_progress().fuse());
+        loop {
+            futures::select_biased! {
+                result = recovery_complete => {
+                    info!("recovery completed");
+                    return result;
+                }
+                value = stream.next() => {
+                    if let Some((instance_id, progress)) = value {
+                        info!("recover progress {instance_id:?} {progress}");
+                        if mint_instance_id == Some(&instance_id) {
+                            self.send_recovery_progress(progress);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     fn send_transaction_event(&self, transaction: RpcTransaction) {
         let event = Event::transaction(self.federation_id().to_string(), transaction);
+        self.event_sink.typed_event(&event);
+    }
+
+    fn send_recovery_progress(&self, progress: RecoveryProgress) {
+        let event = Event::RecoveryProgress(RecoveryProgressEvent {
+            federation_id: RpcFederationId(self.federation_id().to_string()),
+            complete: progress.complete,
+            total: progress.total,
+        });
         self.event_sink.typed_event(&event);
     }
 

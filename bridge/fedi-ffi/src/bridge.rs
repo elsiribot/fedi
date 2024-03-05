@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::Message;
@@ -9,7 +10,7 @@ use bitcoin::Address;
 use fedi_social_client::FediSocialCommonGen;
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
-use fedimint_core::api::{DynGlobalApi, InviteCode, WsFederationApi};
+use fedimint_core::api::{DynGlobalApi, InviteCode};
 use fedimint_core::config::ClientConfig;
 use fedimint_core::encoding::Decodable;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
@@ -20,7 +21,7 @@ use futures::future::join_all;
 use lightning_invoice::Bolt11Invoice;
 use rand::distributions::{Alphanumeric, DistString};
 use tokio::sync::Mutex;
-use tracing::{debug, error, info, info_span, Instrument};
+use tracing::{debug, error, info, info_span, warn, Instrument};
 
 use super::event::EventSink;
 use super::storage::Storage;
@@ -32,7 +33,7 @@ use super::types::{
 };
 use crate::api::IFediApi;
 use crate::error::{get_error_code, ErrorCode};
-use crate::event::SocialRecoveryEvent;
+use crate::event::{Event, SocialRecoveryEvent, TypedEventExt as _};
 use crate::federation_v2::{self, BackupServiceStatus, FederationV2};
 use crate::fedi_fee::FediFeeHelper;
 use crate::multi::MultiFederation;
@@ -51,6 +52,7 @@ pub const VERIFICATION_FILENAME: &str = "verification.mp4";
 /// This is instantiated once as a global. When RPC commands come in, this
 /// struct is used as a router to look up the federation and handle the RPC
 /// command using it.
+#[derive(Clone)]
 pub struct Bridge {
     pub storage: Storage,
     pub app_state: Arc<AppState>,
@@ -119,14 +121,19 @@ impl Bridge {
             futures::future::try_join_all(federations).await?,
         )));
 
-        Ok(Self {
+        let bridge = Self {
             storage,
             app_state,
             federations,
             event_sink,
             task_group,
             fedi_fee_helper,
-        })
+        };
+        let federations = bridge.federations.lock().await.clone();
+        for federation in federations.into_values() {
+            Self::restart_federation_on_recovery(bridge.clone(), federation).await;
+        }
+        Ok(bridge)
     }
 
     /// Dump the database for a given federation.
@@ -143,6 +150,97 @@ impl Bridge {
         Ok(self.storage.platform_path(db_dump_path.as_ref()))
     }
 
+    /// Wait until all clones of federation are dropped.
+    pub async fn wait_till_fully_dropped(federation: Arc<MultiFederation>) {
+        // RPC calls might clone the federation Arc before we acquire the lock.
+        for attempt in 0.. {
+            let reference_count = Arc::strong_count(&federation);
+            info!(
+                reference_count,
+                attempt, "waiting for RPCs to drop the federation object"
+            );
+            if reference_count == 1 {
+                break;
+            }
+            fedimint_core::task::sleep(Duration::from_millis(10)).await;
+        }
+    }
+
+    /// Restart the federation on recovery if the federation is recovering.
+    pub async fn restart_federation_on_recovery(this: Self, federation: Arc<MultiFederation>) {
+        if !matches!(&*federation, MultiFederation::V2(f) if f.recovering()) {
+            return;
+        }
+        this.task_group
+            .clone()
+            .spawn(
+                "waiting for recovery to replace federation",
+                move |_| async move {
+                    let MultiFederation::V2(inner_federation) = &*federation;
+                    if let Err(error) = inner_federation.wait_for_recovery().await {
+                        // this federation will stay as "recovering" till next restart.
+                        error!(%error, "recovery failed");
+                        return Ok(());
+                    }
+                    let tg = inner_federation.task_group.clone();
+                    let federation_id = inner_federation.federation_id().to_string();
+                    let client = inner_federation.client.clone();
+                    let mut federation_lock = this.federations.lock().await;
+                    let db = client.db().clone();
+                    drop(federation_lock.remove(&federation_id));
+                    info!(%federation_id, "removed from federation list");
+
+                    if let Err(error) = tg.shutdown_join_all(None).await {
+                        warn!(%error, "failed to shutdown task group cleanly");
+                    }
+                    // some slow RPCs may take ~10 seconds
+                    if fedimint_core::task::timeout(
+                        Duration::from_secs(20),
+                        Self::wait_till_fully_dropped(federation),
+                    )
+                    .await
+                    .is_err()
+                    {
+                        info!("failed to drop federation, not reinserting the federation");
+                        return Ok(());
+                    }
+                    info!("manually shuting down the client");
+                    // only Federation object stores the client handle, so this should always pass.
+                    if client.shutdown().await.is_ok() {
+                        info!("manually shut down client complete");
+                    } else {
+                        error!(
+                            "ClientHandle is not unique, not reinserting the federation in list"
+                        );
+                        return Ok(());
+                    }
+                    let root_mnemonic = this
+                        .app_state
+                        .with_read_lock(move |state| state.root_mnemonic.clone())
+                        .await;
+                    let federation_v2 = FederationV2::from_db(
+                        db,
+                        this.event_sink.clone(),
+                        this.task_group.make_subgroup().await,
+                        &root_mnemonic,
+                        this.fedi_fee_helper.clone(),
+                    )
+                    .await
+                    .with_context(|| format!("loading federation {}", federation_id.clone()))?;
+                    federation_lock.insert(
+                        federation_id.clone(),
+                        Arc::new(MultiFederation::V2(federation_v2)),
+                    );
+                    info!(%federation_id, "reinserted to federation list");
+                    drop(federation_lock);
+                    // send the event only after we reinsert the federation.
+                    this.event_sink
+                        .typed_event(&Event::recovery_complete(federation_id.clone()));
+                    anyhow::Ok(())
+                },
+            )
+            .await;
+    }
     /// Joins federation from invite code
     ///
     /// Federation ID saved to global database, new rocksdb database created for
@@ -216,6 +314,7 @@ impl Bridge {
         federations
             .entry(federation_id.to_string())
             .or_insert_with(|| multi.clone());
+        Self::restart_federation_on_recovery(self.clone(), multi.clone()).await;
 
         // Spawn a new task to asynchronously fetch the fee schedule and update app
         // state
@@ -261,7 +360,7 @@ impl Bridge {
     pub async fn get_multi(&self, federation_id: &str) -> Result<Arc<MultiFederation>> {
         let federation = self.get_multi_maybe_recovering(federation_id).await?;
         let recovering = match &*federation {
-            MultiFederation::V2(f) => *f.recovering.lock().await,
+            MultiFederation::V2(f) => f.recovering(),
         };
         anyhow::ensure!(!recovering, "client is still recovering");
         Ok(federation)

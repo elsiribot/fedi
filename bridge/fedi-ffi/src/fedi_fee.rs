@@ -176,7 +176,7 @@ pub struct FediFeeRemittanceService {
 impl FediFeeRemittanceService {
     pub async fn new(fed: FederationV2) -> Self {
         let (tx, rx) = tokio::sync::mpsc::channel(10);
-        let mut tg = fed.task_group.clone();
+        let tg = fed.task_group.clone();
         tg.spawn("fedi_fee_remittance_service", move |handle| {
             Self::task(fed, handle, rx)
         })

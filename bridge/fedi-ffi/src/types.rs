@@ -35,8 +35,8 @@ impl std::fmt::Display for RpcAmount {
 pub struct RpcFederation {
     pub balance: RpcAmount,
     pub id: RpcFederationId,
-    #[ts(type = "string")]
-    pub network: Network,
+    #[ts(type = "string | null")]
+    pub network: Option<Network>,
     pub name: String,
     pub invite_code: String,
     pub meta: BTreeMap<String, String>,
@@ -150,7 +150,7 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
         invite_code,
         meta,
         nodes,
-        recovering: *federation.recovering.lock().await,
+        recovering: federation.recovering(),
         version: 2,
         client_config: Some(RpcJsonClientConfig {
             global: client_config_json.global,
