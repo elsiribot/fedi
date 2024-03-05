@@ -302,6 +302,52 @@ rec {
     '';
   };
 
+  container =
+    let
+      entrypointScript =
+        pkgs.writeShellScriptBin "entrypoint" ''
+          exec bash "${../misc/fedimintd-container-entrypoint.sh}" "$@"
+        '';
+    in
+    {
+      fedi-fedimintd = pkgs.dockerTools.buildLayeredImage {
+        name = "fedi-fedimintd";
+        contents = [
+          fedi-fedimint-pkgs
+          pkgs.bash
+          pkgs.coreutils
+        ];
+        config = {
+          Cmd = [ ]; # entrypoint will handle empty vs non-empty cmd
+          Env = [
+            "FM_DATA_DIR=/data"
+          ];
+          Entrypoint = [
+            "${entrypointScript}/bin/entrypoint"
+          ];
+          WorkDir = "/data";
+          Volumes = {
+            "/data" = { };
+          };
+          ExposedPorts = {
+            "${builtins.toString 8173}/tcp" = { };
+            "${builtins.toString 8174}/tcp" = { };
+          };
+        };
+      };
+
+      fedi-fedimint-cli = pkgs.dockerTools.buildLayeredImage {
+        name = "fedi-fedimint-cli";
+        contents = [ fedi-fedimint-cli pkgs.bash pkgs.coreutils ];
+        config = {
+          Cmd = [
+            "${fedimint-pkgs}/bin/fedimint-cli"
+          ];
+        };
+      };
+    };
+
+
   inherit commonEnvsShell;
   inherit commonEnvsShellRocksdbLink;
 })
