@@ -69,6 +69,7 @@ export const NostrSignOverlay: React.FC<Props> = ({
 
     const display = nostrEvent ? getNostrEventDisplay(nostrEvent, t) : undefined
 
+    // 22242 specifies that the nostr event is an authentication challenge
     const isAuthEvent = nostrEvent?.kind === 22242
 
     return (
