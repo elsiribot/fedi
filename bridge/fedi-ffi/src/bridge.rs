@@ -33,7 +33,7 @@ use super::types::{
 use crate::api::IFediApi;
 use crate::error::{get_error_code, ErrorCode};
 use crate::event::SocialRecoveryEvent;
-use crate::federation_v2::{self, FederationV2};
+use crate::federation_v2::{self, BackupServiceStatus, FederationV2};
 use crate::fedi_fee::FediFeeHelper;
 use crate::multi::MultiFederation;
 use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
@@ -766,6 +766,16 @@ impl Bridge {
         let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         multi.save_xmpp_username(&username).await?;
         Ok(())
+    }
+
+    pub async fn backup_status(
+        &self,
+        federation_id: RpcFederationId,
+    ) -> Result<BackupServiceStatus> {
+        self.get_multi(&federation_id.0)
+            .await?
+            .backup_status()
+            .await
     }
 
     pub async fn get_nostr_pub_key(&self, federation_id: RpcFederationId) -> Result<String> {
