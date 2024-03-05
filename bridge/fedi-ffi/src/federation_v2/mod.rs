@@ -88,8 +88,8 @@ use crate::storage::FediFeeSchedule;
 use crate::types::{
     EcashReceiveMetadata, GuardianStatus, LightningSendMetadata, OperationFediFeeStatus,
     RpcBitcoinDetails, RpcEcashInfo, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningDetails,
-    RpcLnState, RpcOnchainState, RpcPayAddressResponse, RpcStabilityPoolTransactionState,
-    RpcTransaction, RpcTransactionDirection, WithdrawalDetails,
+    RpcLnState, RpcOOBState, RpcOnchainState, RpcPayAddressResponse,
+    RpcStabilityPoolTransactionState, RpcTransaction, RpcTransactionDirection, WithdrawalDetails,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
@@ -1290,8 +1290,7 @@ impl FederationV2 {
             .await?;
         self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
             .await?;
-        self.subscribe_to_ecash_reissue(operation_id, amount)
-            .await?;
+        self.subscribe_to_operation(operation_id).await?;
         Ok(amount)
     }
 
@@ -1332,6 +1331,16 @@ impl FederationV2 {
         operation_id: OperationId,
         amount: Amount,
     ) -> Result<()> {
+        let op = self
+            .client
+            .operation_log()
+            .get_operation(operation_id)
+            .await
+            .context("operation not found")?;
+        let meta = op.meta::<MintOperationMeta>();
+        let is_overissue_correction =
+            serde_json::from_value::<EcashReceiveMetadata>(meta.extra_meta)
+                .map_or(false, |x| x.internal);
         let mut updates = self
             .client
             .get_first_module::<MintClientModule>()
@@ -1345,14 +1354,43 @@ impl FederationV2 {
                 .await;
             match update {
                 ReissueExternalNotesState::Done => {
-                    let _ = self
-                        .write_success_receive_fedi_fee(operation_id, amount)
-                        .await;
+                    if !is_overissue_correction {
+                        let _ = self
+                            .write_success_receive_fedi_fee(operation_id, amount)
+                            .await;
+                    }
                 }
                 ReissueExternalNotesState::Failed(_) => {
-                    let _ = self.write_failed_receive_fedi_fee(operation_id).await;
+                    if !is_overissue_correction {
+                        let _ = self.write_failed_receive_fedi_fee(operation_id).await;
+                    }
                 }
                 _ => (),
+            }
+            if !is_overissue_correction {
+                let fedi_fee_status = self
+                    .client
+                    .db()
+                    .begin_transaction_nc()
+                    .await
+                    .get_value(&OperationFediFeeStatusKey(operation_id))
+                    .await
+                    .map(Into::into);
+                self.send_transaction_event(RpcTransaction {
+                    id: operation_id.to_string(),
+                    created_at: unix_now().expect("unix time should exist"),
+                    direction: RpcTransactionDirection::Receive,
+                    notes: "".into(),
+                    onchain_state: None,
+                    bitcoin: None,
+                    ln_state: None,
+                    amount: RpcAmount(meta.amount),
+                    lightning: None,
+                    oob_state: Some(RpcOOBState::from_reissue_v2(update.clone())),
+                    onchain_withdrawal_details: None,
+                    stability_pool_state: None,
+                    fedi_fee_status,
+                });
             }
             if let ReissueExternalNotesState::Failed(e) = update {
                 updates.next().await;
@@ -1392,7 +1430,13 @@ impl FederationV2 {
         let notes = if amount != notes.total_amount() {
             // try to make change (exempt this from fedi app fee)
             timeout(REISSUE_ECASH_TIMEOUT, async {
-                self.receive_ecash_with_meta(notes, EcashReceiveMetadata { internal: true }, 0)
+                let notes_amount = notes.total_amount();
+                let operation_id = self
+                    .client
+                    .get_first_module::<MintClientModule>()
+                    .reissue_external_notes(notes, EcashReceiveMetadata { internal: true })
+                    .await?;
+                self.subscribe_to_ecash_reissue(operation_id, notes_amount)
                     .await
             })
             .await
@@ -1935,7 +1979,10 @@ impl FederationV2 {
                                             amount: RpcAmount(mint_meta.amount),
                                             fedi_fee_status,
                                             lightning: None,
-                                            oob_state: None,
+                                            oob_state: self
+                                                .get_client_operation_outcome(op.0.operation_id, op.1)
+                                                .await
+                                                .map(RpcOOBState::from_reissue_v2),
                                             onchain_withdrawal_details: None,
                                             stability_pool_state: None,
                                         })
@@ -1960,7 +2007,7 @@ impl FederationV2 {
                                     oob_state: self
                                         .get_client_operation_outcome(op.0.operation_id, op.1)
                                         .await
-                                        .map(crate::types::RpcOOBState::from_spend_v2),
+                                        .map(RpcOOBState::from_spend_v2),
                                     onchain_withdrawal_details: None,
                                     stability_pool_state: None,
                                 }),

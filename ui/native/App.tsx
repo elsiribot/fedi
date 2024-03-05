@@ -81,9 +81,11 @@ const App = () => {
                 if (
                     event.transaction.direction === TransactionDirection.receive
                 ) {
-                    const { onchainState, amount } = event.transaction
+                    const { amount, onchainState, oobState } = event.transaction
                     // dont show notification for onchain txn until it is claimed
                     if (onchainState && onchainState.type !== 'claimed') return
+                    // dont show notification for ecash txn until it is done
+                    if (oobState && oobState.type !== 'done') return
 
                     const federations = selectFederations(store.getState())
                     const federation = federations.find(

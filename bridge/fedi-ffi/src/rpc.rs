@@ -699,6 +699,7 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
 #[cfg(test)]
 mod tests {
 
+    use std::ops::ControlFlow;
     use std::path::{Path, PathBuf};
     use std::str::FromStr;
     use std::sync::{Once, RwLock};
@@ -719,7 +720,9 @@ mod tests {
     use crate::ffi::PathBasedStorage;
     use crate::multi::MultiFederation;
     use crate::storage::{FediFeeSchedule, IStorage};
-    use crate::types::{RpcReturningMemberStatus, RpcTransactionDirection};
+    use crate::types::{
+        RpcOOBReissueState, RpcOOBState, RpcReturningMemberStatus, RpcTransactionDirection,
+    };
 
     struct FakeEventSink {
         pub events: Arc<RwLock<Vec<(String, String)>>>,
@@ -1134,6 +1137,7 @@ mod tests {
             (ecash_receive_amount.msats * fedi_fees_receive_ppm).div_ceil(MILLION),
         );
         receiveEcash(bridge.clone(), federation.federation_id(), ecash).await?;
+        wait_for_ecash_reissue(&bridge, &federation).await?;
 
         // check balance (sometimes fedimint-cli gives more than we ask for)
         assert_eq!(
@@ -1175,6 +1179,36 @@ mod tests {
         Ok(())
     }
 
+    async fn wait_for_ecash_reissue(
+        bridge: &Arc<Bridge>,
+        federation: &Arc<MultiFederation>,
+    ) -> Result<(), anyhow::Error> {
+        devimint::util::poll("waiting for ecash reissue", Some(30), || async {
+            let oob_state = bridge
+                .list_transactions(federation.federation_id(), None, None)
+                .await
+                .map_err(ControlFlow::Break)?
+                .first()
+                .context("transaction not found")
+                .map_err(ControlFlow::Continue)?
+                .oob_state
+                .clone();
+            match oob_state {
+                None => Err(ControlFlow::Continue(anyhow!(
+                    "oob state must be present on ecash reissue"
+                ))),
+                Some(RpcOOBState::Reissue(RpcOOBReissueState::Done)) => Ok(()),
+                Some(RpcOOBState::Reissue(_)) => {
+                    Err(ControlFlow::Continue(anyhow!("not done yet")))
+                }
+                Some(_) => Err(ControlFlow::Break(anyhow!(
+                    "oob state must have reissue state present on ecash reissue"
+                ))),
+            }
+        })
+        .await
+    }
+
     #[tokio::test(flavor = "multi_thread")]
     async fn test_ecash_overissue() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
@@ -1184,6 +1218,7 @@ mod tests {
         let ecash = cli_generate_ecash(ecash_requested_amount, &federation).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
         receiveEcash(bridge.clone(), federation.federation_id(), ecash).await?;
+        wait_for_ecash_reissue(&bridge, &federation).await?;
 
         // check balance
         assert_eq!(ecash_receive_amount, federation.get_balance().await,);
@@ -1269,6 +1304,7 @@ mod tests {
         let ecash = cli_generate_ecash(ecash_receive_amount, &federation).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
         receiveEcash(bridge.clone(), federation.federation_id(), ecash).await?;
+        wait_for_ecash_reissue(&bridge, &federation).await?;
 
         // check balance
         assert_eq!(ecash_receive_amount, federation.get_balance().await);
@@ -1297,6 +1333,7 @@ mod tests {
         let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
         federation.receive_ecash(ecash).await?;
+        wait_for_ecash_reissue(&backup_bridge, &federation).await?;
         assert_eq!(ecash_receive_amount, federation.get_balance().await);
 
         // Interact with stability pool
@@ -1394,6 +1431,7 @@ mod tests {
         let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
         federation.receive_ecash(ecash).await?;
+        wait_for_ecash_reissue(&original_bridge, &federation).await?;
         assert_eq!(ecash_receive_amount, federation.get_balance().await);
 
         // Interact with stability pool
@@ -1578,6 +1616,7 @@ mod tests {
         let initial_balance = Amount::from_msats(500_000);
         let ecash = cli_generate_ecash(initial_balance, &federation).await?;
         let receive_amount = federation.receive_ecash(ecash).await?;
+        wait_for_ecash_reissue(&bridge, &federation).await?;
 
         // Deposit to seek and verify account info
         let amount_to_deposit = Amount::from_msats(receive_amount.msats / 2);
@@ -1724,6 +1763,7 @@ mod tests {
         let ecash =
             cli_generate_ecash(fedimint_core::Amount::from_msats(10_000), &federation).await?;
         federation.receive_ecash(ecash).await?;
+        wait_for_ecash_reissue(&bridge, &federation).await?;
         let federation_id = federation.federation_id();
         let username = "satoshi".to_string();
         backupXmppUsername(bridge.clone(), federation_id.clone(), username.clone()).await?;
