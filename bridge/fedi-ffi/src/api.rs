@@ -1,14 +1,16 @@
 use std::collections::BTreeMap;
+use std::str::FromStr;
 use std::time::Duration;
 
 use anyhow::{bail, Context};
 use fedimint_core::core::ModuleKind;
 use fedimint_core::task::{MaybeSend, MaybeSync};
-use fedimint_core::{apply, async_trait_maybe_send};
+use fedimint_core::{apply, async_trait_maybe_send, Amount};
+use lightning_invoice::Bolt11Invoice;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
-use crate::constants::FEDI_FEE_API_URL;
+use crate::constants::{FEDI_FEE_API_URL, FEDI_INVOICE_API_URL};
 use crate::storage::{FediFeeSchedule, ModuleFediFeeSchedule};
 
 /// Trait that represents the API for communicating with Fedi-hosted services.
@@ -17,6 +19,10 @@ pub trait IFediApi: MaybeSend + MaybeSync + 'static {
     /// Fetches the fee schedule for transactions conducted within a federation
     /// through the Fedi app.
     async fn fetch_fedi_fee_schedule(&self) -> anyhow::Result<FediFeeSchedule>;
+
+    /// Fetches the lightning invoice for the given amount from Fedi's server to
+    /// remit the oustanding fees accrued so far
+    async fn fetch_fedi_fee_invoice(&self, amount: Amount) -> anyhow::Result<Bolt11Invoice>;
 }
 
 /// Live code implementation of the IFediApi trait that uses a real
@@ -77,6 +83,26 @@ impl IFediApi for LiveFediApi {
                 .collect(),
         })
     }
+
+    async fn fetch_fedi_fee_invoice(&self, amount: Amount) -> anyhow::Result<Bolt11Invoice> {
+        let fetch_invoice_response = fedimint_core::task::timeout(Duration::from_secs(15), async {
+            self.client
+                .post(FEDI_INVOICE_API_URL)
+                .json(&FetchInvoiceRequest {
+                    amount_msat: amount.msats,
+                })
+                .send()
+                .await
+        })
+        .await
+        .context("Request to fetch fee invoice took too long")?
+        .context("Fetch fee invoice response error")?
+        .json::<FetchInvoiceResponse>()
+        .await?;
+
+        Ok(Bolt11Invoice::from_str(&fetch_invoice_response.invoice)
+            .context("Failed to parse fee invoice")?)
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -108,4 +134,14 @@ pub struct ModuleFediFeeScheduleV0 {
     /// Represents the fee to charge on the amount in ppm whenever a module
     /// contributes an output to a transaction.
     pub receive_ppm: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FetchInvoiceRequest {
+    pub amount_msat: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FetchInvoiceResponse {
+    pub invoice: String,
 }

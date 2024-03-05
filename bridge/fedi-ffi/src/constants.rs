@@ -26,3 +26,7 @@ pub const STABILITY_POOL_OPERATION_TYPE: &str = "stability_pool";
 // URL for Fedi fee schedule API
 // TODO shaurya update URL post deployment
 pub const FEDI_FEE_API_URL: &str = "https://github.com/fedibtc/devops-automation";
+// URL for Fedi fee lightning invoice generator API
+// TODO shaurya update URL post deployment
+pub const FEDI_INVOICE_API_URL: &str =
+    "https://github.com/fedibtc/devops-automation/generate-invoice";

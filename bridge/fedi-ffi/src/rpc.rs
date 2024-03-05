@@ -539,6 +539,16 @@ async fn setStabilityPoolModuleFediFeeSchedule(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn getAccruedOutstandingFediFees(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+) -> anyhow::Result<RpcAmount> {
+    bridge
+        .get_accrued_outstanding_fedi_fees(federation_id)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn dumpDb(bridge: Arc<Bridge>, federation_id: String) -> anyhow::Result<PathBuf> {
     bridge.dump_db(&federation_id).await
 }
@@ -654,6 +664,7 @@ rpc_methods!(RpcMethods {
     setWalletModuleFediFeeSchedule,
     setLightningModuleFediFeeSchedule,
     setStabilityPoolModuleFediFeeSchedule,
+    getAccruedOutstandingFediFees,
     dumpDb,
 });
 
@@ -708,7 +719,7 @@ mod tests {
     use crate::ffi::PathBasedStorage;
     use crate::multi::MultiFederation;
     use crate::storage::{FediFeeSchedule, IStorage};
-    use crate::types::RpcReturningMemberStatus;
+    use crate::types::{RpcReturningMemberStatus, RpcTransactionDirection};
 
     struct FakeEventSink {
         pub events: Arc<RwLock<Vec<(String, String)>>>,
@@ -749,6 +760,10 @@ mod tests {
     impl IFediApi for MockFediApi {
         async fn fetch_fedi_fee_schedule(&self) -> anyhow::Result<FediFeeSchedule> {
             Ok(FediFeeSchedule::default())
+        }
+
+        async fn fetch_fedi_fee_invoice(&self, _amount: Amount) -> anyhow::Result<Bolt11Invoice> {
+            unimplemented!("TODO shaurya implement when testing");
         }
     }
 
@@ -1173,22 +1188,31 @@ mod tests {
         // check balance
         assert_eq!(ecash_receive_amount, federation.get_balance().await,);
 
-        let count = 100;
-        for _ in 0..count {
+        let fedi_fee_ppm = bridge
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                federation.federation_id().0,
+                fedimint_mint_client::KIND,
+                RpcTransactionDirection::Send,
+            )
+            .await?;
+        let iterations = 100;
+        let iteration_amount = Amount::from_msats(ecash_receive_amount.msats / (iterations * 2));
+        let iteration_expected_fee =
+            Amount::from_msats((fedi_fee_ppm * iteration_amount.msats).div_ceil(MILLION));
+
+        for _ in 0..iterations {
             generateEcash(
                 bridge.clone(),
                 federation.federation_id(),
-                RpcAmount(fedimint_core::Amount::from_msats(
-                    ecash_requested_amount.msats / count,
-                )),
+                RpcAmount(iteration_amount),
             )
             .await
             .context("generateEcash")?;
         }
         // check balance
         assert_eq!(
-            // this assertion is weird because sometimes fedimint-cli overissues ecash
-            ecash_receive_amount - ecash_requested_amount,
+            ecash_receive_amount - ((iteration_amount + iteration_expected_fee) * iterations),
             federation.get_balance().await,
         );
 
@@ -1249,11 +1273,11 @@ mod tests {
         // check balance
         assert_eq!(ecash_receive_amount, federation.get_balance().await);
 
-        // spend ecash
+        // spend half of received ecash
         let send_ecash = generateEcash(
             bridge.clone(),
             federation.federation_id(),
-            RpcAmount(ecash_receive_amount),
+            RpcAmount(Amount::from_msats(ecash_receive_amount.msats / 2)),
         )
         .await?
         .ecash;
@@ -1277,6 +1301,16 @@ mod tests {
 
         // Interact with stability pool
         let amount_to_deposit = Amount::from_msats(110_000);
+        let fedi_fee_ppm = backup_bridge
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                federation.federation_id().0,
+                stability_pool_client::common::KIND,
+                RpcTransactionDirection::Send,
+            )
+            .await?;
+        let expected_fedi_fee =
+            Amount::from_msats((fedi_fee_ppm * amount_to_deposit.msats).div_ceil(MILLION));
         backup_bridge
             .stability_pool_deposit_to_seek(
                 federation.federation_id(),
@@ -1322,8 +1356,9 @@ mod tests {
 
             fedimint_core::task::sleep(Duration::from_secs(2)).await;
         }
+        // Currently, accrued fedi fee is merged back into balance upon recovery
         assert_eq!(
-            ecash_balance_before,
+            ecash_balance_before + expected_fedi_fee,
             recovery_federation.get_balance().await
         );
         assert_eq!(
@@ -1363,6 +1398,16 @@ mod tests {
 
         // Interact with stability pool
         let amount_to_deposit = Amount::from_msats(110_000);
+        let fedi_fee_ppm = original_bridge
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                federation.federation_id().0,
+                stability_pool_client::common::KIND,
+                RpcTransactionDirection::Send,
+            )
+            .await?;
+        let expected_fedi_fee =
+            Amount::from_msats((fedi_fee_ppm * amount_to_deposit.msats).div_ceil(MILLION));
         original_bridge
             .stability_pool_deposit_to_seek(
                 federation.federation_id(),
@@ -1479,8 +1524,9 @@ mod tests {
 
             fedimint_core::task::sleep(Duration::from_secs(2)).await;
         }
+        // Currently, accrued fedi fee is merged back into balance upon recovery
         assert_eq!(
-            ecash_balance_before,
+            ecash_balance_before + expected_fedi_fee,
             recovery_federation.get_balance().await
         );
 

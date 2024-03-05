@@ -1,4 +1,4 @@
-mod db;
+pub mod db;
 mod dev;
 
 use std::any::Any;
@@ -82,14 +82,14 @@ use super::types::{
     RpcLightningGateway, RpcPayInvoiceResponse, RpcPublicKey, RpcXmppCredentials,
 };
 use crate::error::ErrorCode;
-use crate::fedi_fee::FediFeeHelper;
+use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
 use crate::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::storage::FediFeeSchedule;
 use crate::types::{
-    EcashReceiveMetadata, GuardianStatus, OperationFediFeeStatus, RpcBitcoinDetails, RpcEcashInfo,
-    RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOnchainState,
-    RpcPayAddressResponse, RpcStabilityPoolTransactionState, RpcTransaction,
-    RpcTransactionDirection, WithdrawalDetails,
+    EcashReceiveMetadata, GuardianStatus, LightningSendMetadata, OperationFediFeeStatus,
+    RpcBitcoinDetails, RpcEcashInfo, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningDetails,
+    RpcLnState, RpcOnchainState, RpcPayAddressResponse, RpcStabilityPoolTransactionState,
+    RpcTransaction, RpcTransactionDirection, WithdrawalDetails,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
@@ -135,6 +135,7 @@ pub struct FederationV2 {
     pub fedi_fee_helper: Arc<FediFeeHelper>,
     pub recovering: Arc<Mutex<bool>>,
     pub backup_service: OnceCell<BackupService>,
+    pub fedi_fee_remittance_service: OnceCell<FediFeeRemittanceService>,
 }
 
 impl FederationV2 {
@@ -174,6 +175,7 @@ impl FederationV2 {
             fedi_fee_helper,
             recovering: Arc::new(Mutex::new(recovering)),
             backup_service: OnceCell::new(),
+            fedi_fee_remittance_service: OnceCell::new(),
         };
         if recovering {
             federation.subscribe_recovery().await;
@@ -195,6 +197,14 @@ impl FederationV2 {
             panic!("backup service already initialized");
         }
         self.subscribe_to_all_operations().await;
+
+        if self
+            .fedi_fee_remittance_service
+            .set(FediFeeRemittanceService::new(self.clone()).await)
+            .is_err()
+        {
+            error!("fedi fee remittance service already initialized");
+        }
     }
 
     async fn client_from_db(
@@ -449,7 +459,7 @@ impl FederationV2 {
         Ok(guardians_status)
     }
 
-    async fn get_outstanding_fedi_fees(&self) -> Amount {
+    pub async fn get_outstanding_fedi_fees(&self) -> Amount {
         self.dbtx()
             .await
             .into_nc()
@@ -658,7 +668,7 @@ impl FederationV2 {
         Ok(())
     }
 
-    async fn override_active_gateway(&self) -> Result<()> {
+    pub async fn override_active_gateway(&self) -> Result<()> {
         let ln_module = self.client.get_first_module::<LightningClientModule>();
         let dbtx = ln_module.db.begin_transaction().await;
         let mut gateway = self
@@ -750,16 +760,19 @@ impl FederationV2 {
         }
 
         let _federation_id = self.federation_id();
+        let extra_meta = LightningSendMetadata {
+            is_fedi_fee_remittance: false,
+        };
         let OutgoingLightningPayment { payment_type, .. } = self
             .client
             .get_first_module::<LightningClientModule>()
-            .pay_bolt11_invoice(invoice.to_owned(), ())
+            .pay_bolt11_invoice(invoice.to_owned(), extra_meta.clone())
             .await?;
         self.write_pending_send_fedi_fee(payment_type.operation_id(), Amount::from_msats(fedi_fee))
             .await?;
 
         let response = self
-            .subscribe_to_ln_pay(payment_type, invoice.clone())
+            .subscribe_to_ln_pay(payment_type, extra_meta, invoice.clone())
             .await?;
 
         Ok(response)
@@ -922,9 +935,13 @@ impl FederationV2 {
             LIGHTNING_OPERATION_TYPE => match operation.meta() {
                 LightningOperationMeta {
                     variant: LightningOperationMetaVariant::Pay(pay_meta),
-                    ..
+                    extra_meta,
                 } => {
                     let fed = self.clone();
+                    let extra_meta = serde_json::from_value::<LightningSendMetadata>(extra_meta)
+                        .unwrap_or(LightningSendMetadata {
+                            is_fedi_fee_remittance: false,
+                        });
                     self.task_group
                         .clone()
                         .spawn("subscribe_to_ln_pay", move |_| async move {
@@ -932,6 +949,7 @@ impl FederationV2 {
                             if let Err(e) = fed
                                 .subscribe_to_ln_pay(
                                     PayType::Lightning(operation_id),
+                                    extra_meta,
                                     pay_meta.invoice,
                                 )
                                 .await
@@ -1043,6 +1061,7 @@ impl FederationV2 {
     pub async fn subscribe_to_ln_pay(
         &self,
         pay_type: PayType,
+        extra_meta: LightningSendMetadata,
         _invoice: Bolt11Invoice,
     ) -> Result<RpcPayInvoiceResponse> {
         let timeout_res = timeout(PAY_INVOICE_TIMEOUT, async {
@@ -1056,13 +1075,16 @@ impl FederationV2 {
                         .into_stream();
 
                     while let Some(update) = updates.next().await {
-                        match update {
-                            InternalPayState::Preimage(_) => {
-                                let _ = self.write_success_send_fedi_fee(operation_id).await;
-                            }
-                            InternalPayState::Funding => (),
-                            _ => {
-                                let _ = self.write_failed_send_fedi_fee(operation_id).await;
+                        // Skip updating fee status if payment is for fee remittance
+                        if !extra_meta.is_fedi_fee_remittance {
+                            match update {
+                                InternalPayState::Preimage(_) => {
+                                    let _ = self.write_success_send_fedi_fee(operation_id).await;
+                                }
+                                InternalPayState::Funding => (),
+                                _ => {
+                                    let _ = self.write_failed_send_fedi_fee(operation_id).await;
+                                }
                             }
                         }
                         match update {
@@ -1106,16 +1128,19 @@ impl FederationV2 {
                     while let Some(update) = updates.next().await {
                         self.update_operation_state(operation_id, update.clone())
                             .await;
-                        match update {
-                            LnPayState::Success { .. } => {
-                                let _ = self.write_success_send_fedi_fee(operation_id).await;
+                        // Skip updating fee status if payment is for fee remittance
+                        if !extra_meta.is_fedi_fee_remittance {
+                            match update {
+                                LnPayState::Success { .. } => {
+                                    let _ = self.write_success_send_fedi_fee(operation_id).await;
+                                }
+                                LnPayState::Refunded { .. }
+                                | LnPayState::Canceled
+                                | LnPayState::UnexpectedError { .. } => {
+                                    let _ = self.write_failed_send_fedi_fee(operation_id).await;
+                                }
+                                _ => (),
                             }
-                            LnPayState::Refunded { .. }
-                            | LnPayState::Canceled
-                            | LnPayState::UnexpectedError { .. } => {
-                                let _ = self.write_failed_send_fedi_fee(operation_id).await;
-                            }
-                            _ => (),
                         }
                         match update {
                             LnPayState::Success { preimage } => {
@@ -1148,7 +1173,8 @@ impl FederationV2 {
         .await
         .context("Lightning payment failed ... awaiting refund");
 
-        if timeout_res.is_err() {
+        // Skip updating fee status if payment is for fee remittance
+        if timeout_res.is_err() && !extra_meta.is_fedi_fee_remittance {
             let _ = self
                 .write_failed_send_fedi_fee(pay_type.operation_id())
                 .await;
@@ -1764,29 +1790,40 @@ impl FederationV2 {
                         LIGHTNING_OPERATION_TYPE => {
                             let lightning_meta: LightningOperationMeta = op.1.meta();
                             match lightning_meta.variant {
-                                LightningOperationMetaVariant::Pay(LightningOperationMetaPay{ invoice, .. }) => Some(RpcTransaction {
-                                    id: op.0.operation_id.to_string(),
-                                    created_at: to_unix_time(op.0.creation_time)
-                                        .expect("unix time should exist"),
-                                    amount: RpcAmount(Amount {
-                                        msats: invoice.amount_milli_satoshis().unwrap(),
-                                    }),
-                                    fedi_fee_status,
-                                    direction: RpcTransactionDirection::Send,
-                                    notes,
-                                    onchain_state: None,
-                                    bitcoin: None,
-                                    ln_state: RpcLnState::from_ln_pay_state(
-                                        self.get_ln_pay_outcome(op.0.operation_id, op.1).await,
-                                    ),
-                                    lightning: Some(RpcLightningDetails {
-                                        invoice: invoice.to_string(),
-                                        fee: None, // TODO: to be implemented on the fedimint side
-                                    }),
-                                    oob_state: None,
-                                    onchain_withdrawal_details: None,
-                                    stability_pool_state: None,
-                                }),
+                                LightningOperationMetaVariant::Pay(LightningOperationMetaPay{ invoice, .. }) => {
+                                    let extra_meta = serde_json::from_value::<LightningSendMetadata>(lightning_meta.extra_meta)
+                                        .unwrap_or(LightningSendMetadata {
+                                            is_fedi_fee_remittance: false,
+                                        });
+                                    // Exclude fee remittance transactions from TX list
+                                    if extra_meta.is_fedi_fee_remittance {
+                                        None
+                                    } else {
+                                        Some(RpcTransaction {
+                                            id: op.0.operation_id.to_string(),
+                                            created_at: to_unix_time(op.0.creation_time)
+                                                .expect("unix time should exist"),
+                                            amount: RpcAmount(Amount {
+                                                msats: invoice.amount_milli_satoshis().unwrap(),
+                                            }),
+                                            fedi_fee_status,
+                                            direction: RpcTransactionDirection::Send,
+                                            notes,
+                                            onchain_state: None,
+                                            bitcoin: None,
+                                            ln_state: RpcLnState::from_ln_pay_state(
+                                                self.get_ln_pay_outcome(op.0.operation_id, op.1).await,
+                                            ),
+                                            lightning: Some(RpcLightningDetails {
+                                                invoice: invoice.to_string(),
+                                                fee: None, // TODO: to be implemented on the fedimint side
+                                            }),
+                                            oob_state: None,
+                                            onchain_withdrawal_details: None,
+                                            stability_pool_state: None,
+                                        })
+                                    }
+                                }
                                 LightningOperationMetaVariant::Receive{ invoice, .. } => {
                                     let ln_state = RpcLnState::from_ln_recv_state(
                                         op.1.outcome::<LnReceiveState>(),
@@ -2365,10 +2402,15 @@ impl FederationV2 {
             });
 
         match res {
-            Ok((true, _)) => info!(
-                "Successfully wrote success send fedi fee for op ID {}",
-                operation_id
-            ),
+            Ok((true, _)) => {
+                info!(
+                    "Successfully wrote success send fedi fee for op ID {}",
+                    operation_id
+                );
+                if let Some(service) = self.fedi_fee_remittance_service.get() {
+                    let _ = service.trigger_fee_remittance().await;
+                }
+            }
             Ok((false, _)) => info!(
                 "Already recorded success send fedi fee for op ID {}, nothing overwritten",
                 operation_id
@@ -2550,10 +2592,15 @@ impl FederationV2 {
             });
 
         match res {
-            Ok((true, _)) => info!(
-                "Successfully wrote success receive fedi fee for op ID {}",
-                operation_id
-            ),
+            Ok((true, _)) => {
+                info!(
+                    "Successfully wrote success receive fedi fee for op ID {}",
+                    operation_id
+                );
+                if let Some(service) = self.fedi_fee_remittance_service.get() {
+                    let _ = service.trigger_fee_remittance().await;
+                }
+            }
             Ok((false, _)) => info!(
                 "Already recorded success receive fedi fee for op ID {}, nothing overwritten",
                 operation_id
