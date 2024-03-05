@@ -428,6 +428,12 @@ export const makeTxnDetailItems = (
         })
     }
     if (txn.onchainWithdrawalDetails) {
+        const {
+            formattedFiat: feeFormattedFiat,
+            formattedSats: feeFormattedSats,
+        } = makeFormattedAmountsFromMSats(
+            txn.onchainWithdrawalDetails.fee as MSats,
+        )
         items.push({
             label: t('words.address'),
             value: txn.onchainWithdrawalDetails.address,
@@ -444,9 +450,7 @@ export const makeTxnDetailItems = (
         })
         items.push({
             label: t('words.fees'),
-            value: `${amountUtils.formatNumber(
-                txn.onchainWithdrawalDetails.fee,
-            )} ${t('words.sats')}`,
+            value: `${feeFormattedSats} (${feeFormattedFiat})`,
         })
     }
 
