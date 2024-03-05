@@ -76,6 +76,7 @@ uniffi = { version = "0.25.3" }
 matrix-sdk = { version = "0.7.1", git = "https://github.com/maan2003/matrix-rust-sdk", branch = "hacks", default-features = false, features = [
     "sqlite",
 ] }
+rusqlite = { version = "*", features = ["bundled"] }
 
 [build-dependencies]
 uniffi = { version = "0.25.3", features = ["build"] }
