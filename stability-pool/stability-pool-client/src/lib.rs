@@ -599,6 +599,20 @@ impl StabilityPoolClientModule {
             .await
     }
 
+    /// Returns the average of the provider fee rate over the last #num_cycles
+    /// cycles, including the current ongoing cycle. So if num_cycles is 1, we
+    /// return the fee rate of the current ongoing cycle. If num_cycles is 2, we
+    /// average the current cycle and previous cycle. If num_cyces is n, we
+    /// average the current cycle and (n - 1) previous cycles.
+    pub async fn average_fee_rate(&self, num_cycles: u64) -> anyhow::Result<u64, FederationError> {
+        self.module_api
+            .request_current_consensus(
+                "average_fee_rate".to_string(),
+                ApiRequestErased::new(num_cycles),
+            )
+            .await
+    }
+
     /// Returns the start price of current cycle in cents.
     pub async fn cycle_start_price(&self) -> anyhow::Result<u64, FederationError> {
         self.module_api

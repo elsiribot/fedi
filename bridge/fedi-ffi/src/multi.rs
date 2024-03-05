@@ -337,6 +337,12 @@ impl MultiFederation {
         }
     }
 
+    pub async fn stability_pool_average_fee_rate(&self, num_cycles: u64) -> Result<u64> {
+        match self {
+            MultiFederation::V2(v2) => v2.stability_pool_average_fee_rate(num_cycles).await,
+        }
+    }
+
     pub async fn get_accrued_outstanding_fedi_fees(&self) -> Result<RpcAmount> {
         match self {
             MultiFederation::V2(v2) => Ok(RpcAmount(v2.get_outstanding_fedi_fees().await)),

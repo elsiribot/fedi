@@ -399,6 +399,10 @@ export interface RpcMethods {
         },
         string,
     ]
+    stabilityPoolAverageFeeRate: [
+        { federationId: RpcFederationId; numCycles: bigint },
+        bigint,
+    ]
     getSensitiveLog: [Record<string, never>, boolean]
     setSensitiveLog: [{ enable: boolean }, null]
     setMintModuleFediFeeSchedule: [
