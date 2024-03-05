@@ -424,21 +424,15 @@ export function useFeeDisplayUtils(t: TFunction) {
         }
     }
 
-    const ecashFeesTitle = t('phrases.ecash-fees')
+    const feeBreakdownTitle = t('phrases.fee-details')
     const ecashFeesGuidanceText = t('feature.fees.guidance-ecash')
-    const lightningFeesTitle = t('phrases.lightning-fees')
-    const onchainFeesTitle = t('phrases.onchain-fees')
-    const stabilityPoolFeesTitle = t('phrases.stable-balance-fees')
 
     return {
-        ecashFeesTitle,
+        feeBreakdownTitle,
         ecashFeesGuidanceText,
         makeEcashFeeContent,
-        lightningFeesTitle,
         makeLightningFeeContent,
-        onchainFeesTitle,
         makeOnchainFeeContent,
-        stabilityPoolFeesTitle,
         makeStabilityPoolFeeContent,
     }
 }

@@ -39,7 +39,7 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const { generateEcash } = useBridge()
     const balanceDisplay = useBalanceDisplay(t)
-    const { ecashFeesTitle, ecashFeesGuidanceText, makeEcashFeeContent } =
+    const { feeBreakdownTitle, ecashFeesGuidanceText, makeEcashFeeContent } =
         useFeeDisplayUtils(t)
     const { formattedTotalFee, feeItemsBreakdown } = makeEcashFeeContent(
         amountUtils.satToMsat(amount),
@@ -181,7 +181,7 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
                 overlayStyle={style.overlayContainer}
                 onBackdropPress={() => setShowFeeBreakdown(false)}>
                 <FeeBreakdown
-                    title={ecashFeesTitle}
+                    title={feeBreakdownTitle}
                     icon={
                         <SvgImage
                             name="Info"

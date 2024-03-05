@@ -47,7 +47,7 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
     const { makeFormattedAmountsFromSats } = useAmountFormatter()
     const { formattedFiat, formattedSats, formattedUsd } =
         makeFormattedAmountsFromSats(amount)
-    const { stabilityPoolFeesTitle, makeStabilityPoolFeeContent } =
+    const { feeBreakdownTitle, makeStabilityPoolFeeContent } =
         useFeeDisplayUtils(t)
 
     const handleSubmit = async () => {
@@ -181,7 +181,7 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
                     overlayStyle={style.overlayContainer}
                     onBackdropPress={() => setShowFeeBreakdown(false)}>
                     <FeeBreakdown
-                        title={stabilityPoolFeesTitle}
+                        title={feeBreakdownTitle}
                         icon={
                             <SvgImage
                                 name="Info"

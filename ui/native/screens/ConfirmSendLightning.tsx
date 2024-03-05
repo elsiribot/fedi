@@ -34,8 +34,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const navigation = useNavigation<NavigationHook>()
     const { toast } = useEnvironmentContext().state
     const activeFederation = useAppSelector(selectActiveFederation)
-    const { lightningFeesTitle, makeLightningFeeContent } =
-        useFeeDisplayUtils(t)
+    const { feeBreakdownTitle, makeLightningFeeContent } = useFeeDisplayUtils(t)
     const { parsedData } = route.params
     const {
         isReadyToPay,
@@ -166,12 +165,12 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                     overlayStyle={style.overlayContainer}
                     onBackdropPress={() => setShowFeeBreakdown(false)}>
                     <FeeBreakdown
-                        title={lightningFeesTitle}
+                        title={feeBreakdownTitle}
                         icon={
                             <SvgImage
                                 name="Info"
                                 size={32}
-                                color={theme.colors.black}
+                                color={theme.colors.orange}
                             />
                         }
                         feeItems={feeItemsBreakdown.map(

@@ -38,7 +38,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
     const activeFederation = useAppSelector(selectActiveFederation)
     const { parsedData } = route.params
     const [unit] = useState('sats')
-    const { onchainFeesTitle, makeOnchainFeeContent } = useFeeDisplayUtils(t)
+    const { feeBreakdownTitle, makeOnchainFeeContent } = useFeeDisplayUtils(t)
     const balanceDisplay = useBalanceDisplay(t)
     const {
         isReadyToPay,
@@ -135,12 +135,12 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                         overlayStyle={style.overlayContainer}
                         onBackdropPress={() => setShowFeeBreakdown(false)}>
                         <FeeBreakdown
-                            title={onchainFeesTitle}
+                            title={feeBreakdownTitle}
                             icon={
                                 <SvgImage
                                     name="Info"
                                     size={32}
-                                    color={theme.colors.blue}
+                                    color={theme.colors.orange}
                                 />
                             }
                             feeItems={feeItemsBreakdown.map(
