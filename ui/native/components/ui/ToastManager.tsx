@@ -80,44 +80,58 @@ export default function ToastManager() {
                     maxWidth: dimensions.width - 80,
                 },
             ]}>
-            <View style={[style.wrapper, style.toastShadow]}>
-                <LinearGradient
-                    style={style.wrapper}
-                    colors={[
-                        'rgba(255, 255, 255, 0.15)',
-                        'rgba(255, 255, 255, 0)',
-                    ]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}>
-                    <LinearGradient
-                        style={[style.wrapper, style.toast]}
-                        colors={nightGradient}
-                        start={{ x: 0, y: 0.75 }}
-                        end={{ x: 1, y: 0.95 }}>
-                        <View>
-                            <Text style={style.toastIcon}>
-                                {cachedToast?.status === 'success'
-                                    ? '👍'
-                                    : cachedToast?.status === 'info'
-                                    ? '👀'
-                                    : '⚠️'}
-                            </Text>
+            {/* Please forgive me Oscar 🙏😭. There were five shadows in the figma design I swear */}
+            <View style={[style.wrapper, style.toastShadow1]}>
+                <View style={[style.wrapper, style.toastShadow2]}>
+                    <View style={[style.wrapper, style.toastShadow3]}>
+                        <View style={[style.wrapper, style.toastShadow4]}>
+                            <View style={[style.wrapper, style.toastShadow5]}>
+                                <LinearGradient
+                                    style={style.wrapper}
+                                    colors={[
+                                        'rgba(255, 255, 255, 0.15)',
+                                        'rgba(255, 255, 255, 0)',
+                                    ]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 0, y: 1 }}>
+                                    <LinearGradient
+                                        style={[style.wrapper, style.toast]}
+                                        colors={nightGradient}
+                                        start={{ x: 0, y: 0.75 }}
+                                        end={{ x: 1, y: 0.95 }}>
+                                        <View>
+                                            <Text style={style.toastIcon}>
+                                                {cachedToast?.status ===
+                                                'success'
+                                                    ? '👍'
+                                                    : cachedToast?.status ===
+                                                      'info'
+                                                    ? '👀'
+                                                    : '⚠️'}
+                                            </Text>
+                                        </View>
+                                        <View style={style.toastContent}>
+                                            <Text style={style.toastText}>
+                                                {cachedToast?.content}
+                                            </Text>
+                                        </View>
+                                        <View>
+                                            <Pressable
+                                                onPress={() =>
+                                                    handleCloseToast(false)
+                                                }>
+                                                <SvgImage
+                                                    name="Close"
+                                                    color={theme.colors.grey}
+                                                />
+                                            </Pressable>
+                                        </View>
+                                    </LinearGradient>
+                                </LinearGradient>
+                            </View>
                         </View>
-                        <View style={style.toastContent}>
-                            <Text style={style.toastText}>
-                                {cachedToast?.content}
-                            </Text>
-                        </View>
-                        <View>
-                            <Pressable onPress={() => handleCloseToast(false)}>
-                                <SvgImage
-                                    name="Close"
-                                    color={theme.colors.grey}
-                                />
-                            </Pressable>
-                        </View>
-                    </LinearGradient>
-                </LinearGradient>
+                    </View>
+                </View>
             </View>
         </Animated.View>
     )
@@ -134,16 +148,40 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.black,
             borderRadius: 16,
             elevation: 4,
-            shadowColor: theme.colors.black,
-            shadowOffset: { width: 0, height: 7 },
-            shadowOpacity: 0.13,
-            shadowRadius: 7,
         },
-        toastShadow: {
+        toastShadow1: {
             shadowColor: theme.colors.black,
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.15,
             shadowRadius: 4,
+            backgroundColor: theme.colors.black,
+        },
+        toastShadow2: {
+            shadowColor: theme.colors.black,
+            shadowOffset: { width: 0, height: 7 },
+            shadowOpacity: 0.13,
+            shadowRadius: 7,
+            backgroundColor: theme.colors.black,
+        },
+        toastShadow3: {
+            shadowColor: theme.colors.black,
+            shadowOffset: { width: 0, height: 16 },
+            shadowOpacity: 0.08,
+            shadowRadius: 10,
+            backgroundColor: theme.colors.black,
+        },
+        toastShadow4: {
+            shadowColor: theme.colors.black,
+            shadowOffset: { width: 0, height: 29 },
+            shadowOpacity: 0.02,
+            shadowRadius: 12,
+            backgroundColor: theme.colors.black,
+        },
+        toastShadow5: {
+            shadowColor: theme.colors.black,
+            shadowOffset: { width: 0, height: 46 },
+            shadowOpacity: 0,
+            shadowRadius: 13,
             backgroundColor: theme.colors.black,
         },
         wrapper: {
@@ -166,5 +204,6 @@ const styles = (theme: Theme) =>
         },
         toastText: {
             color: theme.colors.white,
+            fontSize: 14,
         },
     })
