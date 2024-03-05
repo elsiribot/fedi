@@ -21,7 +21,7 @@ export function __wbindgen_malloc(a: number): number;
 export function __wbindgen_realloc(a: number, b: number, c: number): number;
 export const __wbindgen_export_2: WebAssembly.Table;
 export function __wbindgen_add_to_stack_pointer(a: number): number;
-export function wasm_bindgen__convert__closures__invoke1_mut__h3c37def074764752(a: number, b: number, c: number, d: number): void;
+export function wasm_bindgen__convert__closures__invoke1_mut__h6a259e20e2b64c60(a: number, b: number, c: number, d: number): void;
 export function wasm_bindgen__convert__closures__invoke1_mut__hbc4c5b1dabebcb54(a: number, b: number, c: number, d: number): void;
 export function wasm_bindgen__convert__closures__invoke1_mut__h182ca2b336c45f60(a: number, b: number, c: number): void;
 export function wasm_bindgen__convert__closures__invoke0_mut__h1edc0c0a311f8b6c(a: number, b: number): void;
