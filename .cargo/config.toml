@@ -1,42 +1,5 @@
-# uncomment this to use local fedimint dependencies
-# paths = ["../fedimint", "../fedimint/crypto", "../stabilitypool"]
-
-[build]
-rustflags = ["--cfg", "tokio_unstable"]
+# NOTE: Generally this file should be empty, and we should rely instead
+# on CARGO_x_y_z env vars set by Flakebox
 
 [target.wasm32-unknown-unkown]
 target-dir = "target/wasm32-unknown-unknown"
-
-[target.x86_64-unknown-linux-gnu]
-rustflags = ["-C", "link-arg=-fuse-ld=mold", "-C", "link-arg=-Wl,--compress-debug-sections=zlib", "--cfg", "tokio_unstable"]
-
-[target.armv7-linux-androideabi]
-rustflags = ["-C", "link-arg=--compress-debug-sections=zlib", "--cfg", "tokio_unstable"]
-
-[target.aarch64-linux-android]
-rustflags = ["-C", "link-arg=--compress-debug-sections=zlib", "--cfg", "tokio_unstable"]
-
-[target.x86_64-linux-android]
-rustflags = ["-C", "link-arg=--compress-debug-sections=zlib", "--cfg", "tokio_unstable"]
-
-[target.i686-linux-android]
-rustflags = ["-C", "link-arg=--compress-debug-sections=zlib", "--cfg", "tokio_unstable"]
-
-
-[target.x86_64-apple-ios]
-linker = "/usr/bin/cc"
-
-[target.x86_64-apple-ios-sim]
-linker = "/usr/bin/cc"
-
-[target.x86_64-apple-darwin]
-linker = "/usr/bin/cc"
-
-[target.aarch64-apple-ios]
-linker = "/usr/bin/cc"
-
-[target.aarch64-apple-ios-sim]
-linker = "/usr/bin/cc"
-
-[target.aarch64-apple-darwin]
-linker = "/usr/bin/cc"
