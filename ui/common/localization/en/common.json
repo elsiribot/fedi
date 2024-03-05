@@ -48,6 +48,7 @@
         "messages": "Messages",
         "next": "Next",
         "no": "No",
+        "nostr": "Nostr",
         "notes": "Notes",
         "okay": "Okay",
         "onchain": "On-chain",
@@ -385,7 +386,8 @@
             "kind-repost": "Repost",
             "kind-zap": "Zap",
             "kind-zap-request": "Zap request",
-            "wants-you-to-sign": "{{fediMod}} wants you to sign"
+            "wants-you-to-sign": "{{fediMod}} wants you to sign",
+            "log-in-to-mod": "Log in to <bold>{{fediMod}}</bold> with <bold>{{method}}</bold>"
         },
         "omni": {
             "action-enter-ln-address": "Enter lightning address",

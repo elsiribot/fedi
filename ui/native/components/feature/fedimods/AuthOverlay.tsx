@@ -1,5 +1,6 @@
+import { Text } from '@rneui/themed'
 import React, { useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { RejectionError } from 'webln'
 
 import { selectActiveFederationId } from '@fedi/common/redux'
@@ -58,16 +59,28 @@ export const AuthOverlay: React.FC<Props> = ({
                 onReject(new RejectionError(t('errors.webln-canceled')))
             }
             contents={{
-                title: t('feature.fedimods.login-to'),
-                message: fediMod.title,
+                icon: 'LockSquareRounded',
+                body: (
+                    <Text>
+                        <Trans
+                            t={t}
+                            i18nKey="feature.nostr.log-in-to-mod"
+                            values={{
+                                fediMod: fediMod.title,
+                                method: t('words.lightning'),
+                            }}
+                            components={{ bold: <Text caption bold /> }}
+                        />
+                    </Text>
+                ),
                 buttons: [
                     {
-                        text: t('words.no'),
+                        text: t('phrases.go-back'),
                         onPress: handleReject,
                     },
                     {
                         primary: true,
-                        text: t('words.yes'),
+                        text: t('words.continue'),
                         onPress: handleAccept,
                     },
                 ],
