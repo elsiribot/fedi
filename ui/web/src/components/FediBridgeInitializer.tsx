@@ -92,14 +92,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         return () => unsubscribe()
     }, [])
 
-    // Connect to chat of active federation after bridge initializes.
-    // TODO: Move this logic into redux initiailization when PWA and app both use it.
-    const hasActiveFederation = !!activeFederation
-    useEffect(() => {
-        if (!isInitialized || !hasActiveFederation) return
-        dispatch(startMatrixClient({ fedimint }))
-    }, [isInitialized, hasActiveFederation, dispatch])
-
     if (isInitialized && !error) {
         // If we're mid social recovery, force them to stay on the page
         if (socialRecoveryId && asPath !== '/onboarding/recover/social') {
