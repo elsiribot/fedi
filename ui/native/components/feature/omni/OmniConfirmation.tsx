@@ -161,6 +161,14 @@ export const OmniConfirmation: React.FC<Props> = ({
                     continueText: t('words.authorize'),
                     continueOnPress: handleAuth,
                 }
+            case ParserDataType.FediChatUser:
+                // TODO: Support me
+                return {
+                    contents: {
+                        icon: 'ScanSad',
+                        title: t('feature.omni.unsupported-unknown'),
+                    },
+                }
             case ParserDataType.FediChatGroup:
             case ParserDataType.FediChatMember:
                 return {
