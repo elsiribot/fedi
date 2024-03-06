@@ -668,6 +668,7 @@ mod tests {
         mk_matrix_login(&username, TEST_HOME_SERVER, TEST_SLIDING_SYNC).await
     }
 
+    #[ignore]
     #[tokio::test(flavor = "multi_thread")]
     async fn login() -> Result<()> {
         TracingSetup::default().init().unwrap();
@@ -675,6 +676,7 @@ mod tests {
         Ok(())
     }
 
+    #[ignore]
     #[tokio::test(flavor = "multi_thread")]
     async fn send_dm() -> Result<()> {
         TracingSetup::default().init().unwrap();
