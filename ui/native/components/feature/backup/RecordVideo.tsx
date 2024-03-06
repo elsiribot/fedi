@@ -2,10 +2,7 @@ import { Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
-import type {
-    CameraDevice,
-    CameraDeviceFormat,
-} from 'react-native-vision-camera'
+import type { CameraDeviceFormat } from 'react-native-vision-camera'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 
 import { makeLog } from '@fedi/common/utils/log'
@@ -24,7 +21,7 @@ const RecordVideo = () => {
     const [isRecording, setIsRecording] = useState(false)
     const camera = useRef<Camera>(null)
     const devices = useCameraDevices()
-    const device = devices.front
+    const device = useMemo(() => devices.front, [devices])
     const { toast } = useEnvironmentContext().state
     const { dispatch } = useBackupRecoveryContext()
 
@@ -40,7 +37,8 @@ const RecordVideo = () => {
     }
 
     const format = useMemo<CameraDeviceFormat | undefined>(() => {
-        return device?.formats.reduce(
+        if (device === undefined) return undefined
+        const _format = device.formats.reduce(
             (
                 prev: CameraDeviceFormat | undefined,
                 curr: CameraDeviceFormat,
@@ -58,9 +56,14 @@ const RecordVideo = () => {
             },
             undefined,
         )
-    }, [device?.formats])
+        if (_format === undefined) {
+            log.error('No suitable camera format found')
+            toast?.show(t('feature.backup.record-error'), 4000)
+        }
+        return _format
+    }, [device])
 
-    if (devices.front === undefined) return null
+    if (device === undefined || format === undefined) return null
 
     const startRecording = async () => {
         setIsRecording(true)
@@ -86,6 +89,11 @@ const RecordVideo = () => {
         camera.current?.stopRecording()
     }
 
+    const handleError = (e: Error) => {
+        log.error('Camera error', e)
+        toast?.show(t('feature.backup.record-error'), 4000)
+    }
+
     return (
         <View style={styles(theme).container}>
             <View
@@ -98,13 +106,14 @@ const RecordVideo = () => {
                 <Camera
                     style={styles(theme).camera}
                     ref={camera}
-                    device={device as CameraDevice}
+                    device={device}
                     isActive={true}
                     video={true}
                     audio={true}
                     format={format}
                     fps={15}
                     hdr={false}
+                    onError={handleError}
                 />
             </View>
             <Text
