@@ -7,6 +7,7 @@ import KeyboardIcon from '@fedi/common/assets/svgs/keyboard.svg'
 import QRIcon from '@fedi/common/assets/svgs/qr.svg'
 import ScanIcon from '@fedi/common/assets/svgs/scan.svg'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import {
     AnyParsedData,
     ParsedUnknownData,
@@ -14,7 +15,7 @@ import {
 } from '@fedi/common/types'
 import { parseUserInput } from '@fedi/common/utils/parser'
 
-import { useToast } from '../../hooks'
+import { useAppSelector, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { Icon } from '../Icon'
 import { Text } from '../Text'
@@ -50,6 +51,7 @@ export function OmniInput<
     const propsRef = useUpdatingRef(props)
     const { t } = useTranslation()
     const toast = useToast()
+    const federationId = useAppSelector(selectActiveFederationId)
     const [isScanning, setIsScanning] = useState(props.defaultToScan || false)
     const [isParsing, setIsParsing] = useState(false)
     const [unexpectedData, setUnexpectedData] = useState<AnyParsedData>()
@@ -66,7 +68,12 @@ export function OmniInput<
         async (input: string) => {
             if (!input || isLoadingRef.current) return
             setIsParsing(true)
-            const parsedData = await parseUserInput(input, fedimint, t)
+            const parsedData = await parseUserInput(
+                input,
+                fedimint,
+                t,
+                federationId,
+            )
             setIsParsing(false)
 
             const expectedTypes = propsRef.current
@@ -79,7 +86,7 @@ export function OmniInput<
                 setUnexpectedData(parsedData)
             }
         },
-        [propsRef, isLoadingRef, t],
+        [propsRef, isLoadingRef, t, federationId],
     )
 
     const handlePaste = useCallback(async () => {
