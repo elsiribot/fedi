@@ -33,6 +33,7 @@ const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
                             id={matrixAuth?.userId || ''}
                             name={matrixAuth?.displayName || '?'}
                             size={AvatarSize.lg}
+                            url={matrixAuth?.avatarUrl || undefined}
                         />
                     </View>
                     <Text h2 medium style={style.welcomeTitle}>
