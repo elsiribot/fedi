@@ -12,6 +12,7 @@ import { Text } from '../../components/Text'
 import { useAppDispatch, useToast } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
+import { Header, Title } from '../Layout'
 import {
     OnboardingActions,
     OnboardingContainer,
@@ -47,11 +48,13 @@ export const PersonalRecovery: React.FC = () => {
 
     return (
         <OnboardingContainer>
+            <Header back="/onboarding/recover">
+                <Title subheader>
+                    {t('feature.recovery.personal-recovery')}
+                </Title>
+            </Header>
             <OnboardingContent fullWidth>
                 <Content>
-                    <Text variant="h1">
-                        {t('feature.recovery.personal-recovery')}
-                    </Text>
                     <Text>
                         {t('feature.recovery.personal-recovery-instructions')}
                     </Text>

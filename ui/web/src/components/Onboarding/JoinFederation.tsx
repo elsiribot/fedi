@@ -18,11 +18,17 @@ import {
 import { makeLog } from '@fedi/common/utils/log'
 
 import { useRouteState } from '../../context/RouteStateContext'
-import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
+import {
+    useAppDispatch,
+    useAppSelector,
+    useMediaQuery,
+    useToast,
+} from '../../hooks'
 import { fedimint } from '../../lib/bridge'
-import { styled, theme } from '../../styles'
+import { config, styled, theme } from '../../styles'
 import { Button } from '../Button'
 import { FederationAvatar } from '../FederationAvatar'
+import { Header, Title } from '../Layout'
 import { OmniInput } from '../OmniInput'
 import { Text } from '../Text'
 import { TermsOfService } from './TermsOfService'
@@ -48,6 +54,7 @@ export const JoinFederation: React.FC = () => {
         useState<FederationPreview>()
     const isChatSupported = useIsChatSupported(federationPreview)
     const federationIds = useAppSelector(selectFederationIds)
+    const isSm = useMediaQuery(config.media.sm)
 
     const handleCode = useCallback(
         async (code: string) => {
@@ -232,6 +239,13 @@ export const JoinFederation: React.FC = () => {
 
     return (
         <OnboardingContainer>
+            {isSm && (
+                <Header back="/onboarding/welcome">
+                    <Title subheader>
+                        {t('feature.federations.join-federation')}
+                    </Title>
+                </Header>
+            )}
             <OnboardingContent fullWidth={!federationPreview}>
                 {content}
             </OnboardingContent>
