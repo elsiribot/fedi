@@ -1,90 +1,109 @@
-import { useNavigation } from '@react-navigation/native'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Overlay, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect, useState } from 'react'
+import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Overlay, Text, Theme } from '@rneui/themed'
+import { useTheme } from '@rneui/themed'
+import { Button } from '@rneui/themed'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
+import { Alert, Keyboard, Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
-    useAmountFormatter,
     useBalanceDisplay,
+    useAmountFormatter,
 } from '@fedi/common/hooks/amount'
-import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { FeeItem, useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
-import { selectActiveFederation } from '@fedi/common/redux'
+import { Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { hexToRgba } from '@fedi/common/utils/color'
-import { formatErrorMessage } from '@fedi/common/utils/format'
+import { makeLog } from '@fedi/common/utils/log'
 
-import { fedimint } from '../bridge'
 import { FeeBreakdown } from '../components/feature/send/FeeBreakdown'
 import SvgImage from '../components/ui/SvgImage'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppSelector } from '../state/hooks'
-import type { NavigationHook, RootStackParamList } from '../types/navigation'
+import { useBridge } from '../state/hooks'
+import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('ConfirmSendEcash')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
-    'ConfirmSendOnChain'
+    'ConfirmSendEcash'
 >
 
-const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
+const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
-    const navigation = useNavigation<NavigationHook>()
-    const { toast } = useEnvironmentContext().state
-    const activeFederation = useAppSelector(selectActiveFederation)
-    const { parsedData } = route.params
-    const [unit] = useState('sats')
-    const { feeBreakdownTitle, makeOnchainFeeContent } = useFeeDisplayUtils(t)
-    const balanceDisplay = useBalanceDisplay(t)
-    const {
-        isReadyToPay,
-        inputAmount,
-        feeDetails,
-        sendTo,
-        handleOmniInput,
-        handleOmniSend,
-    } = useOmniPaymentState(fedimint, activeFederation?.id)
-    const { makeFormattedAmountsFromSats } = useAmountFormatter()
-    const { formattedPrimaryAmount, formattedSecondaryAmount } =
-        makeFormattedAmountsFromSats(inputAmount)
-
-    useEffect(() => {
-        handleOmniInput(parsedData)
-    }, [handleOmniInput, parsedData])
-
+    const { amount } = route.params
     const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
     const [showDetails, setShowDetails] = useState<boolean>(false)
-    const [isPayingAddress, setIsPayingAddress] = useState<boolean>(false)
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const { generateEcash } = useBridge()
+    const balanceDisplay = useBalanceDisplay(t)
+    const { feeBreakdownTitle, ecashFeesGuidanceText, makeEcashFeeContent } =
+        useFeeDisplayUtils(t)
+    const { formattedTotalFee, feeItemsBreakdown } = makeEcashFeeContent(
+        amountUtils.satToMsat(amount),
+    )
+    const { makeFormattedAmountsFromSats } = useAmountFormatter()
+    const { formattedPrimaryAmount, formattedSecondaryAmount } =
+        makeFormattedAmountsFromSats(amount)
 
-    const navigationReplace = navigation.replace
-    const handleSend = useCallback(async () => {
-        setIsPayingAddress(true)
+    const onGenerateEcash = async () => {
+        setIsLoading(true)
         try {
-            await handleOmniSend(inputAmount)
-            navigationReplace('SendSuccess', {
-                amount: amountUtils.satToMsat(inputAmount),
-                unit,
-            })
-        } catch (err) {
-            toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
+            const millis = amountUtils.satToMsat(Number(amount) as Sats)
+            const { ecash } = await generateEcash(millis)
+            navigation.navigate('SendOfflineQr', { ecash, amount: millis })
+        } catch (error) {
+            log.error('onGenerateEcash', error)
         }
-        setIsPayingAddress(false)
-    }, [handleOmniSend, inputAmount, unit, navigationReplace, toast, t])
+        setIsLoading(false)
+    }
 
-    if (!isReadyToPay) return <ActivityIndicator />
+    const continueSend = () => {
+        Keyboard.dismiss()
+        onGenerateEcash()
+    }
 
-    const renderDetails = () => {
-        if (!feeDetails) return null
+    const onConfirm = () => {
+        Alert.alert(
+            t('phrases.please-confirm'),
+            t('feature.send.offline-send-warning'),
+            [
+                {
+                    text: t('phrases.go-back'),
+                },
+                {
+                    text: t('words.continue'),
+                    onPress: continueSend,
+                },
+            ],
+        )
+    }
 
-        const feeContent = makeOnchainFeeContent(feeDetails)
-        const { formattedTotalFee, feeItemsBreakdown } = feeContent
+    const style = styles(theme, insets)
 
-        return (
-            <>
+    return (
+        <View style={style.container}>
+            <Text
+                caption
+                style={style.balance}
+                numberOfLines={1}
+                adjustsFontSizeToFit>
+                {`${balanceDisplay} `}
+            </Text>
+            <View style={style.amountContainer}>
+                <Text h1 numberOfLines={1}>
+                    {formattedPrimaryAmount}
+                </Text>
+                <Text
+                    style={style.secondaryAmountText}
+                    medium
+                    numberOfLines={1}>
+                    {formattedSecondaryAmount}
+                </Text>
+            </View>
+            <View style={style.buttonsGroup}>
                 <View
                     style={[
                         showDetails
@@ -96,7 +115,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                             'feature.send.send-to',
                         )}`}</Text>
                         <Text caption style={style.darkGrey}>
-                            {sendTo}
+                            {`username`}
                         </Text>
                     </View>
                     <Pressable
@@ -122,65 +141,14 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                     </Pressable>
                     <View style={[style.detailItem]}>
                         <Text caption bold style={style.darkGrey}>{`${t(
-                            'feature.send.send-from',
+                            'feature.send.send-to',
                         )}`}</Text>
 
                         <Text caption style={style.darkGrey}>
                             {`${t('feature.stabilitypool.bitcoin-balance')}`}
                         </Text>
                     </View>
-
-                    <Overlay
-                        isVisible={showFeeBreakdown}
-                        overlayStyle={style.overlayContainer}
-                        onBackdropPress={() => setShowFeeBreakdown(false)}>
-                        <FeeBreakdown
-                            title={feeBreakdownTitle}
-                            icon={
-                                <SvgImage
-                                    name="Info"
-                                    size={32}
-                                    color={theme.colors.orange}
-                                />
-                            }
-                            feeItems={feeItemsBreakdown.map(
-                                ({ label, formattedAmount }: FeeItem) => ({
-                                    label: label,
-                                    value: formattedAmount,
-                                }),
-                            )}
-                            onClose={() => setShowFeeBreakdown(false)}
-                            guidanceText={t('feature.fees.guidance-onchain')}
-                        />
-                    </Overlay>
                 </View>
-            </>
-        )
-    }
-    const style = styles(theme, insets)
-
-    return (
-        <View style={style.container}>
-            <Text
-                caption
-                style={style.balance}
-                numberOfLines={1}
-                adjustsFontSizeToFit>
-                {balanceDisplay}
-            </Text>
-            <View style={style.amountContainer}>
-                <Text h1 numberOfLines={1}>
-                    {formattedPrimaryAmount}
-                </Text>
-                <Text
-                    style={style.secondaryAmountText}
-                    medium
-                    numberOfLines={1}>
-                    {formattedSecondaryAmount}
-                </Text>
-            </View>
-            <View style={style.buttonsGroup}>
-                {renderDetails()}
                 <Button
                     fullWidth
                     containerStyle={[style.button]}
@@ -197,9 +165,9 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                 <Button
                     fullWidth
                     containerStyle={[style.button]}
-                    onPress={handleSend}
-                    disabled={isPayingAddress}
-                    loading={isPayingAddress}
+                    onPress={onConfirm}
+                    disabled={isLoading}
+                    loading={isLoading}
                     title={
                         <Text medium caption style={style.buttonText}>
                             {t('words.send')}
@@ -207,6 +175,30 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                     }
                 />
             </View>
+
+            <Overlay
+                isVisible={showFeeBreakdown}
+                overlayStyle={style.overlayContainer}
+                onBackdropPress={() => setShowFeeBreakdown(false)}>
+                <FeeBreakdown
+                    title={feeBreakdownTitle}
+                    icon={
+                        <SvgImage
+                            name="Info"
+                            size={32}
+                            color={theme.colors.blue}
+                        />
+                    }
+                    feeItems={feeItemsBreakdown.map(
+                        ({ label, formattedAmount }: FeeItem) => ({
+                            label: label,
+                            value: formattedAmount,
+                        }),
+                    )}
+                    onClose={() => setShowFeeBreakdown(false)}
+                    guidanceText={ecashFeesGuidanceText}
+                />
+            </Overlay>
         </View>
     )
 }
@@ -283,25 +275,4 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
     })
 
-export default ConfirmSendOnChain
-
-// const styles = (theme: Theme) =>
-//     StyleSheet.create({
-//         container: {
-//             flex: 1,
-//             alignItems: 'center',
-//             justifyContent: 'space-between',
-//             padding: theme.spacing.xl,
-//         },
-//         button: {
-//             marginTop: 'auto',
-//         },
-//         detailsContainer: {
-//             alignItems: 'center',
-//             width: '100%',
-//         },
-//         textInput: {
-//             width: '90%',
-//             marginTop: 'auto',
-//         },
-//     })
+export default ConfirmSendEcash

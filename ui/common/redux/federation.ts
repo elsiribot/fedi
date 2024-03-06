@@ -299,6 +299,35 @@ export const selectFederationStabilityPoolConfig = createSelector(
     },
 )
 
+export const selectFederationFeeSchedule = createSelector(
+    selectActiveFederation,
+    activeFederation => {
+        return activeFederation ? activeFederation.fediFeeSchedule : null
+    },
+)
+
+export const selectEcashFeeSchedule = createSelector(
+    selectFederationFeeSchedule,
+    feeSchedule => {
+        if (!feeSchedule) return null
+        const { modules } = feeSchedule
+        if ('mint' in modules) {
+            return modules['mint']
+        }
+    },
+)
+
+export const selectStabilityPoolFeeSchedule = createSelector(
+    selectFederationFeeSchedule,
+    feeSchedule => {
+        if (!feeSchedule) return null
+        const { modules } = feeSchedule
+        if ('stability_pool' in modules) {
+            return modules['stability_pool']
+        }
+    },
+)
+
 export const selectFederationMetadata = createSelector(
     selectActiveFederation,
     activeFederation => {

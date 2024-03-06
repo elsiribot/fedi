@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Insets, StyleSheet, View, useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useBalance } from '@fedi/common/hooks/amount'
+import { useBalanceDisplay } from '@fedi/common/hooks/amount'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { hexToRgba } from '@fedi/common/utils/color'
 
@@ -15,6 +15,7 @@ import KeyboardAwareWrapper from './KeyboardAwareWrapper'
 interface Props extends AmountInputProps {
     showBalance?: boolean
     subHeader?: React.ReactNode | null
+    subContent?: React.ReactNode | null
     description?: string
     buttons: ButtonProps[]
 }
@@ -22,6 +23,7 @@ interface Props extends AmountInputProps {
 export const AmountScreen: React.FC<Props> = ({
     showBalance,
     subHeader = null,
+    subContent = null,
     buttons,
     ...amountInputProps
 }) => {
@@ -30,7 +32,7 @@ export const AmountScreen: React.FC<Props> = ({
     const { height } = useWindowDimensions()
     const insets = useSafeAreaInsets()
     const balance = useAppSelector(selectActiveFederation)?.balance
-    const { satsBalanceWithSymbol } = useBalance()
+    const balanceDisplay = useBalanceDisplay(t)
 
     const style = styles(theme, insets, height)
 
@@ -45,12 +47,12 @@ export const AmountScreen: React.FC<Props> = ({
                             style={style.balance}
                             numberOfLines={1}
                             adjustsFontSizeToFit>
-                            {`${t('words.balance')}: `}
-                            {`${satsBalanceWithSymbol} `}
+                            {`${balanceDisplay} `}
                         </Text>
                     )}
                 </View>
                 <AmountInput {...amountInputProps} />
+                {subContent && <View>{subContent}</View>}
                 <View style={style.buttonGroup}>
                     {buttons.map((button, index) => (
                         <Button

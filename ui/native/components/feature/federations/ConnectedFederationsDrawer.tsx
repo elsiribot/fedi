@@ -16,7 +16,7 @@ import {
 } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
+import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import {
     selectActiveFederationId,
     selectFederations,
@@ -24,7 +24,6 @@ import {
     selectHasUnseenPaymentUpdates,
 } from '@fedi/common/redux'
 import { Federation } from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
 
 import { Images } from '../../../assets/images'
@@ -38,18 +37,18 @@ type Props = {
 }
 
 const FederationDrawerItemLabel = ({ federation }: Props) => {
-    const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation()
-    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const hasNewMessages = useAppSelector(s =>
         selectHasUnseenMessages(s, federation.id),
     )
     const hasNewPaymentUpdates = useAppSelector(s =>
         selectHasUnseenPaymentUpdates(s, federation.id),
     )
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
-    const amountInSats = amountUtils.msatToSat(federation.balance)
+    const { formattedPrimaryAmount, formattedSecondaryAmount } =
+        makeFormattedAmountsFromMSats(federation.balance)
 
     const showInviteCode = shouldShowInviteCode(federation.meta)
 
@@ -70,9 +69,7 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                     {federation.name}
                 </Text>
                 <Text style={style.subText}>
-                    {`${amountUtils.formatNumber(amountInSats)} ${t(
-                        'words.sats',
-                    )} (${convertSatsToFormattedFiat(amountInSats)})`}
+                    {`${formattedPrimaryAmount} (${formattedSecondaryAmount})`}
                 </Text>
             </View>
 

@@ -7,7 +7,10 @@ import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
-import { decreaseStableBalance } from '@fedi/common/redux'
+import {
+    decreaseStableBalance,
+    selectFormattedDepositTime,
+} from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
@@ -16,7 +19,7 @@ import { fedimint } from '../bridge'
 import { CurrencyAvatar } from '../components/feature/stabilitypool/CurrencyAvatar'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
-import { useAppDispatch } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('StabilityConfirmWithdraw')
@@ -37,6 +40,7 @@ const StabilityConfirmWithdraw: React.FC<Props> = ({ route, navigation }) => {
     const [showDetails, setShowDetails] = useState<boolean>(false)
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const formattedFiat = convertSatsToFormattedFiat(amount)
+    const depositTime = useAppSelector(s => selectFormattedDepositTime(s, t))
 
     const handleSubmit = async () => {
         try {
@@ -110,11 +114,10 @@ const StabilityConfirmWithdraw: React.FC<Props> = ({ route, navigation }) => {
                     <Divider />
                     <View style={style.detailItem}>
                         <Text caption bold style={style.darkGrey}>{`${t(
-                            'feature.stabilitypool.deposit-time',
+                            'feature.stabilitypool.withdrawal-time',
                         )}`}</Text>
                         <Text caption style={style.darkGrey}>
-                            {/* TODO: Get deposit time from client config? */}
-                            {`10 min or less`}
+                            {depositTime}
                         </Text>
                     </View>
                 </View>

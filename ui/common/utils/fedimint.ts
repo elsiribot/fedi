@@ -9,6 +9,8 @@ import type {
 import {
     GuardianStatus,
     RpcAmount,
+    RpcFeeDetails,
+    RpcPayAddressResponse,
     RpcStabilityPoolAccountInfo,
 } from '../types/bindings'
 import { makeLog } from './log'
@@ -134,8 +136,8 @@ export class FedimintBridge {
         })
     }
 
-    async decodeInvoice(invoice: string) {
-        return this.rpcTyped('decodeInvoice', { invoice, federationId: null })
+    async decodeInvoice(invoice: string, federationId = '') {
+        return this.rpcTyped('decodeInvoice', { invoice, federationId })
     }
 
     async payInvoice(invoice: string, federationId: string) {
@@ -149,9 +151,18 @@ export class FedimintBridge {
         return this.rpcTyped('generateAddress', { federationId })
     }
 
+    async previewPayAddress(address: string, sats: Sats, federationId: string) {
+        // FIXME: sats must be bigint to use this.rpcTyped
+        return this.rpc<RpcFeeDetails>('previewPayAddress', {
+            address,
+            sats,
+            federationId,
+        })
+    }
+
     async payAddress(address: string, sats: Sats, federationId: string) {
-        // FIXME: sats must be bigint
-        return this.rpc<string>('payAddress', {
+        // FIXME: sats must be bigint to use this.rpcTyped
+        return this.rpc<RpcPayAddressResponse>('payAddress', {
             address,
             sats,
             federationId,

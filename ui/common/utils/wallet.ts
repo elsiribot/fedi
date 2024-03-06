@@ -1,6 +1,8 @@
 import { TFunction } from 'i18next'
 
+import { AmountSymbolPosition, FormattedAmounts } from '../hooks/amount'
 import {
+    MSats,
     SupportedCurrency,
     Transaction,
     TransactionDirection,
@@ -211,25 +213,25 @@ export const makeTxnNotesText = (
 export const makeTxnAmountText = (
     t: TFunction,
     txn: Transaction,
-    currency: SupportedCurrency | undefined = SupportedCurrency.USD,
-    btcUsdExchangeRate: number,
-    btcExchangeRate: number,
     showFiatTxnAmounts: boolean,
+    makeFormattedAmountsFromMSats: (
+        amt: MSats,
+        symbolPosition?: AmountSymbolPosition,
+    ) => FormattedAmounts,
+    convertCentsToFormattedFiat: (
+        amt: UsdCents,
+        symbolPosition?: AmountSymbolPosition,
+    ) => string,
 ): string => {
     const { amount, direction } = txn
 
     let sign = direction ? (direction === 'receive' ? `+` : `-`) : ''
-    let formattedAmount: string
-    if (showFiatTxnAmounts) {
-        const fiatAmount = amountUtils.msatToFiat(amount, btcExchangeRate)
-        formattedAmount = amountUtils.formatFiat(fiatAmount, currency, {
-            noSymbol: true,
-        })
-    } else {
-        formattedAmount = amountUtils.formatNumber(
-            amountUtils.msatToSat(amount),
-        )
-    }
+
+    const { formattedPrimaryAmount } = makeFormattedAmountsFromMSats(
+        amount,
+        'none',
+    )
+    let formattedAmount: string = formattedPrimaryAmount
 
     // amount may be zero for onchain pending receives or for pending stabilitypool withdrawals
     if (txn.bitcoin && txn.onchainState?.type === 'waitingForTransaction') {
@@ -246,33 +248,17 @@ export const makeTxnAmountText = (
             const estimatedWithdrawalCents = Number(
                 txn.stabilityPoolState.estimated_withdrawal_cents,
             ) as UsdCents
-            const convertedAmount = amountUtils.convertCentsToOtherFiat(
+            formattedAmount = convertCentsToFormattedFiat(
                 estimatedWithdrawalCents,
-                btcUsdExchangeRate,
-                btcExchangeRate,
-            )
-            formattedAmount = amountUtils.formatFiat(
-                convertedAmount,
-                currency,
-                {
-                    noSymbol: true,
-                },
+                'none',
             )
         } else if ('initial_amount_cents' in txn.stabilityPoolState) {
             const initialAmountCents = Number(
                 txn.stabilityPoolState.initial_amount_cents,
             ) as UsdCents
-            const convertedAmount = amountUtils.convertCentsToOtherFiat(
+            formattedAmount = convertCentsToFormattedFiat(
                 initialAmountCents,
-                btcUsdExchangeRate,
-                btcExchangeRate,
-            )
-            formattedAmount = amountUtils.formatFiat(
-                convertedAmount,
-                currency,
-                {
-                    noSymbol: true,
-                },
+                'none',
             )
         }
     }
@@ -354,19 +340,20 @@ export const makeTxnDetailItems = (
     t: TFunction,
     txn: Transaction,
     currency: SupportedCurrency | undefined = SupportedCurrency.USD,
-    btcUsdExchangeRate: number,
-    btcExchangeRate: number,
     showFiatTxnAmounts: boolean,
+    makeFormattedAmountsFromMSats: (amt: MSats) => FormattedAmounts,
+    convertCentsToFormattedFiat: (amt: UsdCents) => string,
 ) => {
     const items: DetailItem[] = []
+    const { formattedFiat, formattedSats } = makeFormattedAmountsFromMSats(
+        txn.amount,
+    )
 
     // Hide BTC Equivalent item when amount is zero or SATS-first setting is on
     if (txn.amount !== 0 && showFiatTxnAmounts) {
         items.push({
             label: t('phrases.bitcoin-equivalent'),
-            value: `${amountUtils.formatNumber(
-                amountUtils.msatToSat(txn.amount),
-            )} ${t('words.sats')}`,
+            value: formattedSats,
         })
     }
     items.push({
@@ -380,13 +367,9 @@ export const makeTxnDetailItems = (
         txn.stabilityPoolState &&
         txn.stabilityPoolState.type !== 'pendingWithdrawal'
     ) {
-        const currentValue = `${amountUtils.msatToFiatString(
-            txn.amount,
-            btcExchangeRate,
-        )} ${currency}`
         items.push({
             label: t('feature.stabilitypool.current-value'),
-            value: currentValue,
+            value: formattedFiat,
         })
         // Show additional item for historical deposit/withdrawal value if SATS-first setting is on
         if (showFiatTxnAmounts === false) {
@@ -394,39 +377,22 @@ export const makeTxnDetailItems = (
                 const estimatedWithdrawalCents = Number(
                     txn.stabilityPoolState.estimated_withdrawal_cents,
                 ) as UsdCents
-                const convertedAmount = amountUtils.convertCentsToOtherFiat(
+                const formattedAmount = convertCentsToFormattedFiat(
                     estimatedWithdrawalCents,
-                    btcUsdExchangeRate,
-                    btcExchangeRate,
                 )
                 items.push({
                     label: t('feature.stabilitypool.withdrawal-value'),
-                    value: `${amountUtils.formatFiat(
-                        convertedAmount,
-                        currency,
-                        {
-                            noSymbol: true,
-                        },
-                    )} ${currency}`,
+                    value: formattedAmount,
                 })
             } else if ('initial_amount_cents' in txn.stabilityPoolState) {
                 const initialAmountCents = Number(
                     txn.stabilityPoolState.initial_amount_cents,
                 ) as UsdCents
-                const convertedAmount = amountUtils.convertCentsToOtherFiat(
-                    initialAmountCents,
-                    btcUsdExchangeRate,
-                    btcExchangeRate,
-                )
+                const formattedAmount =
+                    convertCentsToFormattedFiat(initialAmountCents)
                 items.push({
-                    label: t('feature.stabilitypool.deposit-value'),
-                    value: `${amountUtils.formatFiat(
-                        convertedAmount,
-                        currency,
-                        {
-                            noSymbol: true,
-                        },
-                    )} ${currency}`,
+                    label: t('feature.stabilitypool.withdrawal-value'),
+                    value: formattedAmount,
                 })
             }
         }
@@ -539,10 +505,12 @@ export const makeStabilityTxnDetailTitleText = (
 export const makeStabilityTxnDetailItems = (
     t: TFunction,
     txn: Transaction,
-    currency: SupportedCurrency | undefined = SupportedCurrency.USD,
-    btcExchangeRate: number,
+    makeFormattedAmountsFromMSats: (amt: MSats) => FormattedAmounts,
 ) => {
     const items: DetailItem[] = []
+    const { formattedFiat, formattedSats } = makeFormattedAmountsFromMSats(
+        txn.amount,
+    )
 
     // Hide BTC Equivalent item when amount is zero or SATS-first setting is on
     if (txn.amount !== 0) {
@@ -551,9 +519,7 @@ export const makeStabilityTxnDetailItems = (
                 txn.direction === 'send'
                     ? t('feature.stabilitypool.deposit-amount')
                     : t('feature.stabilitypool.withdrawal-amount'),
-            value: `${amountUtils.formatNumber(
-                amountUtils.msatToSat(txn.amount),
-            )} ${t('words.sats')}`,
+            value: formattedSats,
         })
     }
 
@@ -563,13 +529,9 @@ export const makeStabilityTxnDetailItems = (
         txn.stabilityPoolState &&
         txn.stabilityPoolState.type !== 'pendingWithdrawal'
     ) {
-        const currentValue = `${amountUtils.msatToFiatString(
-            txn.amount,
-            btcExchangeRate,
-        )} ${currency}`
         items.push({
             label: t('feature.stabilitypool.current-value'),
-            value: currentValue,
+            value: formattedFiat,
         })
     }
 
@@ -583,12 +545,13 @@ export const makeStabilityTxnDetailItems = (
         txn.stabilityPoolState.type === 'completeDeposit' &&
         'fees_paid_so_far' in txn.stabilityPoolState
     ) {
+        const { formattedFiat: feeFormattedFiat } =
+            makeFormattedAmountsFromMSats(
+                txn.stabilityPoolState.fees_paid_so_far,
+            )
         items.push({
             label: t('feature.stabilitypool.fees-paid'),
-            value: `${amountUtils.msatToFiatString(
-                txn.stabilityPoolState.fees_paid_so_far,
-                btcExchangeRate,
-            )} ${currency}`,
+            value: feeFormattedFiat,
         })
     }
 
@@ -602,25 +565,25 @@ export const makeStabilityTxnDetailItems = (
 export const makeStabilityTxnAmountText = (
     t: TFunction,
     txn: Transaction,
-    currency: SupportedCurrency | undefined = SupportedCurrency.USD,
-    btcUsdExchangeRate: number,
-    btcExchangeRate: number,
     showFiatTxnAmounts: boolean,
+    makeFormattedAmountsFromMSats: (
+        amt: MSats,
+        symbolPosition?: AmountSymbolPosition,
+    ) => FormattedAmounts,
+    convertCentsToFormattedFiat: (
+        amt: UsdCents,
+        symbolPosition?: AmountSymbolPosition,
+    ) => string,
 ): string => {
     const { amount } = txn
 
     let sign = txn.direction ? (txn.direction === 'send' ? `+` : `-`) : ''
-    let formattedAmount: string
-    if (showFiatTxnAmounts) {
-        const fiatAmount = amountUtils.msatToFiat(amount, btcExchangeRate)
-        formattedAmount = amountUtils.formatFiat(fiatAmount, currency, {
-            noSymbol: true,
-        })
-    } else {
-        formattedAmount = amountUtils.formatNumber(
-            amountUtils.msatToSat(amount),
-        )
-    }
+
+    const { formattedPrimaryAmount } = makeFormattedAmountsFromMSats(
+        amount,
+        'none',
+    )
+    let formattedAmount: string = formattedPrimaryAmount
 
     // amount may be zero for onchain pending receives or for pending stabilitypool withdrawals
     if (txn.onchainState?.type === 'waitingForTransaction') {
@@ -636,33 +599,17 @@ export const makeStabilityTxnAmountText = (
             const estimatedWithdrawalCents = Number(
                 txn.stabilityPoolState.estimated_withdrawal_cents,
             ) as UsdCents
-            const convertedAmount = amountUtils.convertCentsToOtherFiat(
+            formattedAmount = convertCentsToFormattedFiat(
                 estimatedWithdrawalCents,
-                btcUsdExchangeRate,
-                btcExchangeRate,
-            )
-            formattedAmount = amountUtils.formatFiat(
-                convertedAmount,
-                currency,
-                {
-                    noSymbol: true,
-                },
+                'none',
             )
         } else if ('initial_amount_cents' in txn.stabilityPoolState) {
             const initialAmountCents = Number(
                 txn.stabilityPoolState.initial_amount_cents,
             ) as UsdCents
-            const convertedAmount = amountUtils.convertCentsToOtherFiat(
+            formattedAmount = convertCentsToFormattedFiat(
                 initialAmountCents,
-                btcUsdExchangeRate,
-                btcExchangeRate,
-            )
-            formattedAmount = amountUtils.formatFiat(
-                convertedAmount,
-                currency,
-                {
-                    noSymbol: true,
-                },
+                'none',
             )
         }
     }

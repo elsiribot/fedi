@@ -4,13 +4,12 @@ import { useTranslation } from 'react-i18next'
 import CheckIcon from '@fedi/common/assets/svgs/check.svg'
 import CloseIcon from '@fedi/common/assets/svgs/close.svg'
 import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
+import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import {
     updateChatPayment,
     selectActiveFederationId,
     selectAuthenticatedMember,
     selectChatClientStatus,
-    selectCurrency,
-    selectBtcExchangeRate,
 } from '@fedi/common/redux'
 import {
     ChatMessage as ChatMessageType,
@@ -38,8 +37,7 @@ export const ChatMessagePayment: React.FC<Props> = ({ message, payment }) => {
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const federationId = useAppSelector(selectActiveFederationId)
     const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'
-    const currency = useAppSelector(selectCurrency)
-    const exchangeRate = useAppSelector(selectBtcExchangeRate)
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
     const [didReceiveFail, setDidReceiveFail] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState(false)
 
@@ -110,15 +108,14 @@ export const ChatMessagePayment: React.FC<Props> = ({ message, payment }) => {
         return handleDispatchPaymentUpdate('reject')
     }, [handleDispatchPaymentUpdate])
 
-    let extra: React.ReactNode = null
     const messageText = makePaymentText(
         t,
         message,
         authenticatedMember,
-        currency,
-        exchangeRate,
+        makeFormattedAmountsFromMSats,
     )
 
+    let extra: React.ReactNode = null
     if (payment.status === ChatPaymentStatus.paid) {
         extra = (
             <PaymentResult>

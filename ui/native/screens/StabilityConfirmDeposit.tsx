@@ -1,20 +1,26 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Divider, Text, Theme } from '@rneui/themed'
+import { Overlay, Text, Theme } from '@rneui/themed'
 import { useTheme } from '@rneui/themed'
 import { Button } from '@rneui/themed'
 import React, { useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { Trans, useTranslation } from 'react-i18next'
+import { Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
-import { increaseStableBalance, selectMaximumAPR } from '@fedi/common/redux'
+import { useAmountFormatter } from '@fedi/common/hooks/amount'
+import { FeeItem, useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
+import {
+    increaseStableBalance,
+    selectFormattedDepositTime,
+} from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
+import { FeeBreakdown } from '../components/feature/send/FeeBreakdown'
 import { CurrencyAvatar } from '../components/feature/stabilitypool/CurrencyAvatar'
+import LineBreak from '../components/ui/LineBreak'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -35,15 +41,14 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
     const { amount } = route.params
     const { toast } = useEnvironmentContext().state
     const [processingDeposit, setProcessingDeposit] = useState<boolean>(false)
+    const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
     const [showDetails, setShowDetails] = useState<boolean>(false)
-    const { convertSatsToFormattedUsd, convertSatsToFormattedFiat } =
-        useBtcFiatPrice()
-    const maxFeeRate = useAppSelector(selectMaximumAPR)
-    const formattedFiat = convertSatsToFormattedFiat(amount)
-    const formattedUsd = convertSatsToFormattedUsd(amount)
-    const formattedSats = `${amountUtils.formatSats(amount)} ${t(
-        'words.sats',
-    ).toUpperCase()}`
+    const depositTime = useAppSelector(s => selectFormattedDepositTime(s, t))
+    const { makeFormattedAmountsFromSats } = useAmountFormatter()
+    const { formattedFiat, formattedSats, formattedUsd } =
+        makeFormattedAmountsFromSats(amount)
+    const { feeBreakdownTitle, makeStabilityPoolFeeContent } =
+        useFeeDisplayUtils(t)
 
     const handleSubmit = async () => {
         try {
@@ -70,6 +75,142 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
 
     const style = styles(theme, insets)
 
+    const renderDetails = () => {
+        const feeContent = makeStabilityPoolFeeContent(amount)
+        const { formattedTotalFee, feeItemsBreakdown } = feeContent
+
+        return (
+            <>
+                <View
+                    style={[
+                        showDetails
+                            ? style.detailsContainer
+                            : style.collapsedContainer,
+                    ]}>
+                    <View style={[style.detailItem, style.bottomBorder]}>
+                        <Text
+                            caption
+                            bold
+                            style={[
+                                style.darkGrey,
+                                style.detailItemTitle,
+                            ]}>{`${t(
+                            'feature.stabilitypool.deposit-from',
+                        )}`}</Text>
+                        <Text caption style={style.darkGrey}>
+                            {`${t('feature.stabilitypool.bitcoin-balance')}`}
+                        </Text>
+                    </View>
+                    <View style={[style.detailItem, style.bottomBorder]}>
+                        <Text
+                            caption
+                            bold
+                            style={[
+                                style.darkGrey,
+                                style.detailItemTitle,
+                            ]}>{`${t(
+                            'feature.stabilitypool.bitcoin-amount',
+                        )}`}</Text>
+                        <Text
+                            caption
+                            style={style.darkGrey}>{`${formattedSats}`}</Text>
+                    </View>
+                    <View style={[style.detailItem, style.bottomBorder]}>
+                        <Text
+                            caption
+                            bold
+                            style={[
+                                style.darkGrey,
+                                style.detailItemTitle,
+                            ]}>{`USD ${t('words.amount')}`}</Text>
+                        <Text
+                            caption
+                            style={style.darkGrey}>{`${formattedUsd}`}</Text>
+                    </View>
+                    <Pressable
+                        style={[style.detailItem, style.bottomBorder]}
+                        onPress={() => setShowFeeBreakdown(true)}>
+                        <Text
+                            caption
+                            bold
+                            style={[
+                                style.darkGrey,
+                                style.detailItemTitle,
+                            ]}>{`${t('words.fees')}`}</Text>
+                        <Text caption style={style.darkGrey}>
+                            {formattedTotalFee}
+                        </Text>
+                        <SvgImage
+                            name="Info"
+                            size={16}
+                            color={theme.colors.grey}
+                            containerStyle={style.feeIcon}
+                        />
+                    </Pressable>
+                    <View style={[style.detailItem]}>
+                        <Text
+                            caption
+                            bold
+                            style={[
+                                style.darkGrey,
+                                style.detailItemTitle,
+                            ]}>{`${t(
+                            'feature.stabilitypool.deposit-time',
+                        )}`}</Text>
+                        <Text caption style={style.darkGrey}>
+                            {depositTime}
+                        </Text>
+                    </View>
+                </View>
+                <Button
+                    fullWidth
+                    containerStyle={[style.button]}
+                    buttonStyle={[style.detailsButton]}
+                    onPress={() => setShowDetails(!showDetails)}
+                    title={
+                        <Text medium caption>
+                            {showDetails
+                                ? t('phrases.hide-details')
+                                : t('feature.stabilitypool.details-and-fee')}
+                        </Text>
+                    }
+                />
+
+                <Overlay
+                    isVisible={showFeeBreakdown}
+                    overlayStyle={style.overlayContainer}
+                    onBackdropPress={() => setShowFeeBreakdown(false)}>
+                    <FeeBreakdown
+                        title={feeBreakdownTitle}
+                        icon={
+                            <SvgImage
+                                name="Info"
+                                size={32}
+                                color={theme.colors.green}
+                            />
+                        }
+                        feeItems={feeItemsBreakdown.map(
+                            ({ label, formattedAmount }: FeeItem) => ({
+                                label: label,
+                                value: formattedAmount,
+                            }),
+                        )}
+                        onClose={() => setShowFeeBreakdown(false)}
+                        guidanceText={
+                            <Trans
+                                t={t}
+                                i18nKey="feature.fees.guidance-stable-balance"
+                                components={{
+                                    br: <LineBreak />,
+                                }}
+                            />
+                        }
+                    />
+                </Overlay>
+            </>
+        )
+    }
+
     return (
         <View style={style.container}>
             <View style={style.conversionIndicator}>
@@ -87,73 +228,7 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
                 </Text>
             </View>
             <View style={style.buttonsGroup}>
-                <View
-                    style={[
-                        showDetails
-                            ? style.detailsContainer
-                            : style.collapsedContainer,
-                    ]}>
-                    <View style={style.detailItem}>
-                        <Text caption bold style={style.darkGrey}>{`${t(
-                            'feature.stabilitypool.deposit-from',
-                        )}`}</Text>
-                        <Text caption style={style.darkGrey}>
-                            {`${t('feature.stabilitypool.bitcoin-balance')}`}
-                        </Text>
-                    </View>
-                    <Divider />
-                    <View style={style.detailItem}>
-                        <Text caption bold style={style.darkGrey}>{`${t(
-                            'feature.stabilitypool.bitcoin-amount',
-                        )}`}</Text>
-                        <Text
-                            caption
-                            style={style.darkGrey}>{`${formattedSats}`}</Text>
-                    </View>
-                    <Divider />
-                    <View style={style.detailItem}>
-                        <Text caption bold style={style.darkGrey}>{`USD ${t(
-                            'words.amount',
-                        )}`}</Text>
-                        <Text
-                            caption
-                            style={style.darkGrey}>{`${formattedUsd}`}</Text>
-                    </View>
-                    <Divider />
-                    <View style={style.detailItem}>
-                        <Text caption bold style={style.darkGrey}>{`${t(
-                            'words.fees',
-                        )}`}</Text>
-
-                        {/* TODO: Use real APR based on current/max fee rates... for now we just show 0% */}
-                        <Text caption style={style.darkGrey}>
-                            {`0%` || `${maxFeeRate}% APR or less`}
-                        </Text>
-                    </View>
-                    <Divider />
-                    <View style={style.detailItem}>
-                        <Text caption bold style={style.darkGrey}>{`${t(
-                            'feature.stabilitypool.deposit-time',
-                        )}`}</Text>
-                        <Text caption style={style.darkGrey}>
-                            {/* TODO: Get deposit time from client config? */}
-                            {`10 min or less`}
-                        </Text>
-                    </View>
-                </View>
-                <Button
-                    fullWidth
-                    containerStyle={[style.button]}
-                    buttonStyle={[style.detailsButton]}
-                    onPress={() => setShowDetails(!showDetails)}
-                    title={
-                        <Text medium caption>
-                            {showDetails
-                                ? t('phrases.hide-details')
-                                : t('feature.stabilitypool.details-and-fee')}
-                        </Text>
-                    }
-                />
+                {renderDetails()}
                 <Button
                     fullWidth
                     containerStyle={[style.button]}
@@ -184,6 +259,10 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         amountText: {
             marginTop: 'auto',
+        },
+        bottomBorder: {
+            borderBottomWidth: 1,
+            borderBottomColor: theme.colors.extraLightGrey,
         },
         buttonsGroup: {
             width: '100%',
@@ -216,11 +295,24 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             justifyContent: 'space-between',
             height: 52,
         },
+        detailItemTitle: {
+            marginRight: 'auto',
+        },
         darkGrey: {
             color: theme.colors.darkGrey,
         },
         detailsButton: {
             backgroundColor: theme.colors.offWhite,
+        },
+        feeIcon: {
+            marginLeft: theme.spacing.xxs,
+        },
+        overlayContainer: {
+            width: '90%',
+            maxWidth: 312,
+            padding: theme.spacing.xl,
+            borderRadius: theme.borders.defaultRadius,
+            alignItems: 'center',
         },
     })
 

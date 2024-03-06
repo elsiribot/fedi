@@ -6,11 +6,13 @@ import { View, StyleSheet } from 'react-native'
 
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { parseUserInput } from '@fedi/common/utils/parser'
 
 import { fedimint } from '../../../bridge'
 import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
+import { useAppSelector } from '../../../state/hooks'
 import {
     AnyParsedData,
     ParsedUnknownData,
@@ -48,6 +50,7 @@ export function OmniInput<
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { toast } = useEnvironmentContext().state
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const canChat = useIsChatSupported()
     const [inputMethod, setInputMethod] = useState<'scan' | 'search'>('scan')
     const [isParsing, setIsParsing] = useState(false)
@@ -75,7 +78,12 @@ export function OmniInput<
         async (input: string) => {
             if (!input || isParsingRef.current) return
             setIsParsing(true)
-            const parsedData = await parseUserInput(input, fedimint, t)
+            const parsedData = await parseUserInput(
+                input,
+                fedimint,
+                t,
+                activeFederationId,
+            )
             setIsParsing(false)
 
             const expectedTypes = propsRef.current
@@ -89,7 +97,7 @@ export function OmniInput<
                 setUnexpectedData(parsedData)
             }
         },
-        [propsRef, isParsingRef, t],
+        [propsRef, isParsingRef, t, activeFederationId],
     )
 
     const handlePaste = useCallback(async () => {

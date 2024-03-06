@@ -102,6 +102,10 @@ clear-remote-bridge:
 lint-ui:
   pushd ./ui && yarn lint && popd
 
+# run UI tests
+test-ui:
+  pushd ./ui && yarn test && popd
+
 fedimint-cli REF REV *ARGS:
   @nix run "git+https://github.com/fedimint/fedimint.git?ref={{REF}}&rev={{REV}}#ci.fedimint-cli" -- {{ARGS}}
 

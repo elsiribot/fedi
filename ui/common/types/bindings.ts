@@ -76,6 +76,11 @@ export interface RpcBitcoinDetails {
     expiresAt: number
 }
 
+export interface RpcDuration {
+    nanos: number
+    secs: number
+}
+
 export interface RpcEcashInfo {
     amount: RpcAmount
     federationId: RpcFederationId | null
@@ -507,6 +512,7 @@ export interface RpcStabilityPoolConfig {
     min_allowed_seek: RpcAmount
     max_allowed_provide_fee_rate_ppb: number | null
     min_allowed_cancellation_bps: number | null
+    cycle_duration: RpcDuration
 }
 
 export type RpcStabilityPoolTransactionState =

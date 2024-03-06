@@ -1,5 +1,6 @@
 import accounting from 'accounting'
 
+import { AmountSymbolPosition } from '../hooks/amount'
 import {
     Btc,
     BtcString,
@@ -132,14 +133,17 @@ class AmountUtils {
     /**
      * Given a fiat currency amount and the ISO code of the currency,
      * return a string formatted in the user's default locale of the
-     * amount.
+     * amount. Use symbolPosition to move or hide the currency code
      */
     formatFiat = (
         amount: number,
         currency: SupportedCurrency,
-        options: { noSymbol?: boolean; locale?: string | string[] } = {},
+        options: {
+            locale?: string | string[]
+            symbolPosition?: AmountSymbolPosition
+        } = {},
     ) => {
-        if (options.noSymbol) {
+        if (options.symbolPosition === 'none') {
             const fmtOptions = new Intl.NumberFormat(options.locale, {
                 style: 'currency',
                 currency,
@@ -151,11 +155,15 @@ class AmountUtils {
                 currencySign: undefined,
             })
         } else {
-            return Intl.NumberFormat(options.locale, {
+            const formatted = Intl.NumberFormat(options.locale, {
                 style: 'currency',
                 currency,
-                currencyDisplay: 'symbol',
+                currencyDisplay: 'code',
             }).format(amount)
+
+            return options.symbolPosition === 'end'
+                ? formatted.replace(/^(-)?([A-Z]{3})\s*(.+)$/, '$1$3 $2')
+                : formatted
         }
     }
     /**

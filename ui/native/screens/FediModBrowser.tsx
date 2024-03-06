@@ -227,12 +227,19 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 setShowRecoveryInProgress(true)
                 throw Error(t('errors.unknown-error'))
             }
+            if (activeFederation?.id === undefined) {
+                log.error('fedi.decodeInvoice', 'No active federation')
+                throw new Error('No active federation')
+            }
             // Check for an active gateway or throw error
             await getActiveGatewayOrThrow()
 
             let invoice: Invoice
             try {
-                invoice = await fedimint.decodeInvoice(data)
+                invoice = await fedimint.decodeInvoice(
+                    data,
+                    activeFederation.id,
+                )
             } catch (error) {
                 log.error('sendPayment', 'error', error)
                 toast?.show(t('phrases.failed-to-decode-invoice'), 3000)

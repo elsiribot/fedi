@@ -14,19 +14,24 @@ import {
     selectMinimumDepositAmount,
     selectWithdrawableStableBalanceMsats,
     selectMinimumWithdrawAmountMsats,
+    selectShowFiatTxnAmounts,
 } from '../redux'
 import {
     Btc,
     Invoice,
     MSats,
+    ParsedBip21,
+    ParsedBitcoinAddress,
     ParsedLnurlPay,
     ParsedLnurlWithdraw,
     Sats,
     SupportedCurrency,
+    UsdCents,
 } from '../types'
 import { EcashRequest } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'
+import stringUtils from '../utils/StringUtils'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useUpdatingRef } from './util'
 
@@ -37,9 +42,20 @@ interface RequestAmountArgs {
 }
 
 interface SendAmountArgs {
+    btcAddress?: ParsedBitcoinAddress['data'] | null
+    bip21Payment?: ParsedBip21['data'] | null
     invoice?: Invoice | null
     lnurlPayment?: ParsedLnurlPay['data'] | null
 }
+
+export type FormattedAmounts = {
+    formattedFiat: string
+    formattedSats: string
+    formattedUsd: string
+    formattedPrimaryAmount: string
+    formattedSecondaryAmount: string
+}
+export type AmountSymbolPosition = 'start' | 'end' | 'none'
 
 // prettier-ignore
 const numpadButtons = [
@@ -51,40 +67,6 @@ const numpadButtons = [
 
 export type NumpadButtonValue = (typeof numpadButtons)[number]
 
-/**
- * Provides state for rendering a balance amount in fiat and sats.
- */
-export function useBalance() {
-    const btcToFiatRate = useCommonSelector(selectBtcExchangeRate)
-    const currency = useCommonSelector(selectCurrency)
-    const balance = useCommonSelector(selectFederationBalance) as MSats
-
-    const satsBalance = amountUtils.formatSats(amountUtils.msatToSat(balance))
-    const fiatBalance = amountUtils.formatFiat(
-        amountUtils.msatToFiat(balance, btcToFiatRate),
-        currency,
-        { noSymbol: true },
-    )
-    const fiatBalanceWithSymbol = amountUtils.formatFiat(
-        amountUtils.msatToFiat(balance, btcToFiatRate),
-        currency,
-    )
-
-    const currencySymbol = useMemo(
-        () => amountUtils.getCurrencySymbol(currency),
-        [currency],
-    )
-
-    return {
-        satsBalance,
-        satsBalanceWithSymbol: `${satsBalance} SATS`,
-        fiatBalance,
-        fiatBalanceWithSymbol,
-        currency,
-        currencySymbol,
-    }
-}
-
 export const useBtcFiatPrice = () => {
     const selectedFiatCurrency = useCommonSelector(selectCurrency)
     const exchangeRate: number = useCommonSelector(selectBtcExchangeRate)
@@ -93,35 +75,124 @@ export const useBtcFiatPrice = () => {
     )
 
     return {
+        convertCentsToFormattedFiat: useCallback(
+            (cents: UsdCents, symbolPosition: AmountSymbolPosition = 'end') => {
+                const amount = amountUtils.convertCentsToOtherFiat(
+                    cents,
+                    btcUsdExchangeRate,
+                    exchangeRate,
+                )
+                return amountUtils.formatFiat(amount, selectedFiatCurrency, {
+                    symbolPosition,
+                })
+            },
+            [btcUsdExchangeRate, exchangeRate, selectedFiatCurrency],
+        ),
         convertSatsToFiat: useCallback(
             (sats: Sats) => {
                 return amountUtils.satToFiat(sats, exchangeRate)
             },
             [exchangeRate],
         ),
-        convertSatsToFiatString: useCallback(
-            (sats: Sats) => {
-                return amountUtils.satToFiatString(sats, exchangeRate)
-            },
-            [exchangeRate],
-        ),
         convertSatsToFormattedFiat: useCallback(
-            (sats: Sats) => {
+            (sats: Sats, symbolPosition: AmountSymbolPosition = 'end') => {
                 const amount = amountUtils.satToFiat(sats, exchangeRate)
-                return amountUtils.formatFiat(amount, selectedFiatCurrency)
+                return amountUtils.formatFiat(amount, selectedFiatCurrency, {
+                    symbolPosition,
+                })
             },
             [exchangeRate, selectedFiatCurrency],
         ),
         convertSatsToFormattedUsd: useCallback(
-            (sats: Sats) => {
+            (sats: Sats, symbolPosition: AmountSymbolPosition = 'end') => {
                 const amount = amountUtils.satToFiat(sats, btcUsdExchangeRate)
-                return amountUtils.formatFiat(amount, SupportedCurrency.USD)
+                return amountUtils.formatFiat(amount, SupportedCurrency.USD, {
+                    symbolPosition,
+                })
             },
             [btcUsdExchangeRate],
         ),
     }
 }
+export const useAmountFormatter = () => {
+    const { convertSatsToFormattedUsd, convertSatsToFormattedFiat } =
+        useBtcFiatPrice()
+    const showFiatTxnAmounts = useCommonSelector(selectShowFiatTxnAmounts)
 
+    const makeFormattedAmountsFromSats = useCallback(
+        (
+            amount: Sats,
+            symbolPosition: AmountSymbolPosition = 'end',
+        ): FormattedAmounts => {
+            const formattedFiat = convertSatsToFormattedFiat(
+                amount,
+                symbolPosition,
+            )
+            const formattedUsd = convertSatsToFormattedUsd(
+                amount,
+                symbolPosition,
+            )
+            const formattedSats =
+                symbolPosition === 'none'
+                    ? amountUtils.formatSats(amount)
+                    : `${amountUtils.formatSats(amount)} SATS`
+            return {
+                formattedFiat,
+                formattedSats,
+                formattedUsd,
+                formattedPrimaryAmount: showFiatTxnAmounts
+                    ? formattedFiat
+                    : formattedSats,
+                formattedSecondaryAmount: showFiatTxnAmounts
+                    ? formattedSats
+                    : formattedFiat,
+            }
+        },
+        [
+            convertSatsToFormattedFiat,
+            convertSatsToFormattedUsd,
+            showFiatTxnAmounts,
+        ],
+    )
+
+    const makeFormattedAmountsFromMSats = useCallback(
+        (
+            amount: MSats,
+            symbolPosition: AmountSymbolPosition = 'end',
+        ): FormattedAmounts => {
+            const sats = amountUtils.msatToSat(amount)
+            return makeFormattedAmountsFromSats(sats, symbolPosition)
+        },
+        [makeFormattedAmountsFromSats],
+    )
+
+    return {
+        makeFormattedAmountsFromMSats,
+        makeFormattedAmountsFromSats,
+    }
+}
+
+/**
+ * Provides state for rendering a balance amount in fiat and sats.
+ */
+export function useBalance() {
+    const balance = useCommonSelector(selectFederationBalance) as MSats
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
+
+    const {
+        formattedFiat,
+        formattedSats,
+        formattedPrimaryAmount,
+        formattedSecondaryAmount,
+    } = makeFormattedAmountsFromMSats(balance)
+
+    return {
+        satsBalance: amountUtils.msatToSat(balance),
+        formattedBalanceFiat: formattedFiat,
+        formattedBalanceSats: formattedSats,
+        formattedBalance: `${formattedPrimaryAmount} (${formattedSecondaryAmount})`,
+    }
+}
 /**
  * Provides state, callbacks, and misc information for rendering an amount
  * input that allows entry in both fiat and sats.
@@ -154,7 +225,7 @@ export function useAmountInput(
         amountUtils.formatFiat(
             amountUtils.satToFiat(amount, btcToFiatRate),
             currency,
-            { noSymbol: true },
+            { symbolPosition: 'none' },
         ),
     )
 
@@ -186,7 +257,9 @@ export function useAmountInput(
             onChangeAmount && onChangeAmount(sats)
             setSatsValue(Intl.NumberFormat().format(sats))
             setFiatValue(
-                amountUtils.formatFiat(fiat, currency, { noSymbol: true }),
+                amountUtils.formatFiat(fiat, currency, {
+                    symbolPosition: 'none',
+                }),
             )
         },
         [clampSats, onChangeAmount, currency, btcToFiatRateRef],
@@ -244,7 +317,9 @@ export function useAmountInput(
 
             onChangeAmount && onChangeAmount(sats)
             setFiatValue(
-                amountUtils.formatFiat(fiat, currency, { noSymbol: true }),
+                amountUtils.formatFiat(fiat, currency, {
+                    symbolPosition: 'none',
+                }),
             )
             setSatsValue(amountUtils.formatSats(sats))
         },
@@ -533,7 +608,12 @@ function getDefaultRequestMemo({
  * Provide all the state necessary to implement a pay form that generates
  * a Lightning invoice. Optionally provide an LNURL pay request.
  */
-export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
+export function useSendForm({
+    btcAddress,
+    bip21Payment,
+    invoice,
+    lnurlPayment,
+}: SendAmountArgs = {}) {
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount({
         invoice,
@@ -545,9 +625,11 @@ export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
     // amount is requested.
     let exactAmount: Sats | undefined = undefined
     let description: string | undefined
+    let sendTo: string | undefined
     if (invoice) {
         exactAmount = amountUtils.msatToSat(invoice.amount)
         description = invoice.description
+        sendTo = stringUtils.truncateMiddleOfString(invoice.invoice, 8)
     } else if (
         lnurlPayment &&
         lnurlPayment.minSendable &&
@@ -555,6 +637,12 @@ export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
     ) {
         exactAmount = amountUtils.msatToSat(lnurlPayment.minSendable)
         description = lnurlPayment.description
+    } else if (bip21Payment && bip21Payment.amount) {
+        exactAmount = amountUtils.btcToSat(bip21Payment.amount)
+        description = bip21Payment.message
+        sendTo = stringUtils.truncateMiddleOfString(bip21Payment.address, 8)
+    } else if (btcAddress) {
+        sendTo = stringUtils.truncateMiddleOfString(btcAddress.address, 8)
     }
 
     const reset = useCallback(() => {
@@ -565,6 +653,7 @@ export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
         inputAmount,
         setInputAmount,
         description,
+        sendTo,
         exactAmount,
         minimumAmount,
         maximumAmount,
@@ -577,15 +666,12 @@ export function useSendForm({ invoice, lnurlPayment }: SendAmountArgs = {}) {
  * that decreases the stable USD balance in the wallet
  */
 export function useWithdrawForm() {
-    const btcToFiatRate = useCommonSelector(selectBtcExchangeRate)
-    const currency = useCommonSelector(selectCurrency)
+    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
     const { minimumAmount, maximumAmount } = useMinMaxWithdrawAmount()
 
-    const maximumFiatAmount = amountUtils.formatFiat(
-        amountUtils.satToFiat(maximumAmount, btcToFiatRate),
-        currency,
-    )
+    const maximumFiatAmount = convertSatsToFormattedFiat(maximumAmount)
+
     return {
         inputAmount,
         setInputAmount,
@@ -600,15 +686,11 @@ export function useWithdrawForm() {
  * that increases the stable USD balance in the wallet
  */
 export function useDepositForm() {
-    const btcToFiatRate = useCommonSelector(selectBtcExchangeRate)
-    const currency = useCommonSelector(selectCurrency)
+    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
     const { minimumAmount, maximumAmount } = useMinMaxDepositAmount()
 
-    const maximumFiatAmount = amountUtils.formatFiat(
-        amountUtils.satToFiat(maximumAmount, btcToFiatRate),
-        currency,
-    )
+    const maximumFiatAmount = convertSatsToFormattedFiat(maximumAmount)
 
     return {
         inputAmount,
@@ -623,18 +705,7 @@ export function useDepositForm() {
  * Provides a string displaying the balance as both fiat and sat.
  */
 export function useBalanceDisplay(t: TFunction) {
-    const balance = useCommonSelector(selectFederationBalance)
-    const currency = useCommonSelector(selectCurrency)
-    const btcExchangeRate = useCommonSelector(selectBtcExchangeRate)
+    const { formattedBalance } = useBalance()
 
-    const fiatString = `${amountUtils.formatFiat(
-        amountUtils.msatToBtc(balance) * btcExchangeRate,
-        currency,
-        { noSymbol: true },
-    )} ${currency}`
-    const satString = `${amountUtils.formatNumber(
-        amountUtils.msatToSat(balance),
-    )} ${t('words.sats').toUpperCase()}`
-
-    return `${t('words.balance')}: ${fiatString} (${satString})`
+    return `${t('words.balance')}: ${formattedBalance}`
 }

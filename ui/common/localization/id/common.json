@@ -291,16 +291,16 @@
             "select-or-start": "Pilih obrolan, atau mulai obrolan baru",
             "send-a-message-to": "Kirim pesan ke {{name}}",
             "show-history-to-new-members": "Tampilkan riwayat kepada anggota baru",
-            "they-requested-payment": "{{nama}} meminta {{fiat}} ({{amount}} {{unit}}) {{memo}}",
-            "they-sent-payment": "{{name}} mengirimi Anda {{fiat}} ({{amount}} {{unit}}) {{memo}}",
+            "they-requested-payment": "{{nama}} meminta {{fiat}} ({{amount}}) {{memo}}",
+            "they-sent-payment": "{{name}} mengirimi Anda {{fiat}} ({{amount}}) {{memo}}",
             "try-inviting-someone": "Coba undang seseorang.",
             "type-to-search-members": "Ketik untuk mencari anggota di grup ini",
             "unknown-member": "Anggota tidak dikenal",
             "view-group": "Lihat grup",
             "view-shared-media": "Lihat media bersama",
             "waiting-for-network": "Menunggu jaringan...",
-            "you-requested-payment": "Kamu meminta {{fiat}} ({{amount}} {{unit}}) {{memo}}",
-            "you-sent-payment": "Kamu mengirimkan {{fiat}} ({{amount}} {{unit}}) {{memo}}"
+            "you-requested-payment": "Kamu meminta {{fiat}} ({{amount}}) {{memo}}",
+            "you-sent-payment": "Kamu mengirimkan {{fiat}} ({{amount}}) {{memo}}"
         },
         "developer": {
             "developer-mode-activated": "Anda sekarang adalah seorang pengembang!",

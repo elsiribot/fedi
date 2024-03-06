@@ -325,10 +325,12 @@ export const useStabilityPool = () => {
     const formattedStableBalance = amountUtils.formatFiat(
         stableBalance,
         selectedCurrency,
+        { symbolPosition: 'end' },
     )
     const formattedStableBalancePending = amountUtils.formatFiat(
         stableBalancePending,
         selectedCurrency,
+        { symbolPosition: 'end' },
     )
 
     return {

@@ -5,14 +5,8 @@ import { useTranslation } from 'react-i18next'
 
 import BitcoinIcon from '@fedi/common/assets/svgs/bitcoin.svg'
 import ListIcon from '@fedi/common/assets/svgs/list.svg'
-import {
-    selectActiveFederation,
-    selectBtcExchangeRate,
-    selectCurrency,
-} from '@fedi/common/redux'
-import amountUtils from '@fedi/common/utils/AmountUtils'
+import { useBalance } from '@fedi/common/hooks/amount'
 
-import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { Button } from './Button'
 import { Icon } from './Icon'
@@ -23,12 +17,7 @@ import { Text } from './Text'
 export const BitcoinWallet: React.FC = () => {
     const { t } = useTranslation()
     const { pathname, push } = useRouter()
-    const balance = useAppSelector(selectActiveFederation)?.balance
-    const btcToFiatRate = useAppSelector(selectBtcExchangeRate)
-    const currency = useAppSelector(selectCurrency)
-
-    const isBalanceLoading = typeof balance !== 'number'
-    const isPriceLoading = isBalanceLoading || !btcToFiatRate
+    const { formattedBalanceSats, formattedBalanceFiat } = useBalance()
 
     return (
         <Container>
@@ -44,20 +33,14 @@ export const BitcoinWallet: React.FC = () => {
                 </Link>
             </Header>
             <Balance>
-                {!isPriceLoading && (
+                {formattedBalanceFiat && (
                     <Text variant="h2" weight="normal">
-                        {amountUtils.formatFiat(
-                            amountUtils.msatToFiat(balance, btcToFiatRate),
-                            currency,
-                        )}
+                        {formattedBalanceFiat}
                     </Text>
                 )}
-                {!isBalanceLoading && (
+                {formattedBalanceSats && (
                     <Text variant="caption" weight="medium">
-                        {amountUtils.formatNumber(
-                            amountUtils.msatToSat(balance),
-                        )}{' '}
-                        {t('words.sats')}
+                        {formattedBalanceSats}
                     </Text>
                 )}
             </Balance>

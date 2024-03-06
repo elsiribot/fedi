@@ -10,19 +10,15 @@ import {
     View,
 } from 'react-native'
 
-import { selectBtcExchangeRate, selectCurrency } from '@fedi/common/redux'
-import { MSats } from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 import { hexToRgba } from '@fedi/common/utils/color'
 
-import { useAppSelector } from '../../state/hooks'
 import { HistoryDetailItem, HistoryDetailItemProps } from './HistoryDetailItem'
 import SvgImage, { SvgImageSize } from './SvgImage'
 
 export interface HistoryDetailProps {
     icon: React.ReactNode
     title: React.ReactNode
-    amount: MSats | string
+    amount: string
     items: HistoryDetailItemProps[]
     notes?: string
     onSaveNotes?: (notes: string) => void
@@ -41,8 +37,6 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
     const inputRef = useRef<TextInput | null>(null)
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const currency = useAppSelector(selectCurrency)
-    const btcExchangeRate = useAppSelector(selectBtcExchangeRate)
     const [notes, setNotes] = useState(propsNotes || '')
     const [isFocused, setIsFocused] = useState(false)
 
@@ -70,17 +64,6 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
 
     const style = styles(theme)
 
-    let amountText: string | undefined
-    if (typeof amount === 'string') {
-        amountText = amount
-    } else if (amount !== 0) {
-        amountText = `${amountUtils.formatFiat(
-            amountUtils.msatToFiat(amount, btcExchangeRate),
-            currency,
-            { noSymbol: true },
-        )} ${currency}`
-    }
-
     return (
         <Pressable style={style.container} onPress={Keyboard.dismiss}>
             <TouchableOpacity
@@ -90,9 +73,9 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
             </TouchableOpacity>
             {icon}
             <Text style={style.detailTitle}>{title}</Text>
-            {amountText && (
+            {amount && (
                 <Text h2 medium>
-                    {amountText}
+                    {amount}
                 </Text>
             )}
             <View style={style.detailItemsContainer}>

@@ -89,6 +89,16 @@ pub struct RpcJsonClientConfig {
     modules: BTreeMap<u16, JsonWithKind>,
 }
 
+#[derive(Clone, Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcDuration {
+    #[ts(type = "number")]
+    pub nanos: u64,
+    #[ts(type = "number")]
+    pub secs: u64,
+}
+
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcStabilityPoolConfig {
@@ -96,6 +106,7 @@ pub struct RpcStabilityPoolConfig {
     pub min_allowed_seek: RpcAmount,
     pub max_allowed_provide_fee_rate_ppb: Option<u32>,
     pub min_allowed_cancellation_bps: Option<u32>,
+    pub cycle_duration: RpcDuration,
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Clone, TS)]

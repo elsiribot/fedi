@@ -12,23 +12,27 @@ import {
 import {
     selectActiveFederation,
     selectActiveFederationId,
-    selectBtcExchangeRate,
-    selectBtcUsdExchangeRate,
     selectCurrency,
+    selectEcashFeeSchedule,
+    selectMaximumAPR,
     selectShowFiatTxnAmounts,
+    selectStabilityPoolFeeSchedule,
 } from '../redux'
 import {
     fetchTransactions as reduxFetchTransactions,
     selectTransactionHistory,
     selectStabilityTransactionHistory,
 } from '../redux/transactions'
-import { Transaction } from '../types'
+import { MSats, Sats, Transaction } from '../types'
+import { RpcFeeDetails } from '../types/bindings'
+import amountUtils from '../utils/AmountUtils'
 import {
     makeBase64CSVUri,
     makeCSVFilename,
     makeTransactionHistoryCSV,
 } from '../utils/csv'
 import { FedimintBridge } from '../utils/fedimint'
+import { useAmountFormatter, useBtcFiatPrice } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
 
 export function useTransactionHistory(fedimint: FedimintBridge) {
@@ -66,10 +70,10 @@ export function useTransactionHistory(fedimint: FedimintBridge) {
 }
 
 export function useTxnDisplayUtils(t: TFunction) {
+    const { convertCentsToFormattedFiat } = useBtcFiatPrice()
     const selectedCurrency = useCommonSelector(selectCurrency)
-    const btcUsdExchangeRate = useCommonSelector(selectBtcUsdExchangeRate)
-    const btcExchangeRate = useCommonSelector(selectBtcExchangeRate)
     const showFiatTxnAmounts = useCommonSelector(selectShowFiatTxnAmounts)
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
     const preferredCurrency = showFiatTxnAmounts
         ? selectedCurrency
         : t('words.sats').toUpperCase()
@@ -79,17 +83,15 @@ export function useTxnDisplayUtils(t: TFunction) {
             return `${makeTxnAmountTextUtil(
                 t,
                 txn,
-                selectedCurrency,
-                btcUsdExchangeRate,
-                btcExchangeRate,
                 showFiatTxnAmounts,
+                makeFormattedAmountsFromMSats,
+                convertCentsToFormattedFiat,
             )} ${preferredCurrency}`
         },
         [
-            btcExchangeRate,
-            btcUsdExchangeRate,
+            convertCentsToFormattedFiat,
+            makeFormattedAmountsFromMSats,
             preferredCurrency,
-            selectedCurrency,
             showFiatTxnAmounts,
             t,
         ],
@@ -101,14 +103,14 @@ export function useTxnDisplayUtils(t: TFunction) {
                 t,
                 txn,
                 selectedCurrency,
-                btcUsdExchangeRate,
-                btcExchangeRate,
                 showFiatTxnAmounts,
+                makeFormattedAmountsFromMSats,
+                convertCentsToFormattedFiat,
             )
         },
         [
-            btcExchangeRate,
-            btcUsdExchangeRate,
+            convertCentsToFormattedFiat,
+            makeFormattedAmountsFromMSats,
             selectedCurrency,
             showFiatTxnAmounts,
             t,
@@ -120,16 +122,14 @@ export function useTxnDisplayUtils(t: TFunction) {
             return makeTxnAmountTextUtil(
                 t,
                 txn,
-                selectedCurrency,
-                btcUsdExchangeRate,
-                btcExchangeRate,
                 showFiatTxnAmounts,
+                makeFormattedAmountsFromMSats,
+                convertCentsToFormattedFiat,
             )
         },
         [
-            btcExchangeRate,
-            btcUsdExchangeRate,
-            selectedCurrency,
+            convertCentsToFormattedFiat,
+            makeFormattedAmountsFromMSats,
             showFiatTxnAmounts,
             t,
         ],
@@ -147,13 +147,12 @@ export function useTxnDisplayUtils(t: TFunction) {
             return makeStabilityTxnAmountTextUtil(
                 t,
                 txn,
-                selectedCurrency,
-                btcUsdExchangeRate,
-                btcExchangeRate,
                 true,
+                makeFormattedAmountsFromMSats,
+                convertCentsToFormattedFiat,
             )
         },
-        [btcExchangeRate, btcUsdExchangeRate, selectedCurrency, t],
+        [convertCentsToFormattedFiat, makeFormattedAmountsFromMSats, t],
     )
 
     const makeStabilityTxnDetailAmountText = useCallback(
@@ -161,13 +160,17 @@ export function useTxnDisplayUtils(t: TFunction) {
             return `${makeStabilityTxnAmountTextUtil(
                 t,
                 txn,
-                selectedCurrency,
-                btcUsdExchangeRate,
-                btcExchangeRate,
                 true,
+                makeFormattedAmountsFromMSats,
+                convertCentsToFormattedFiat,
             )} ${selectedCurrency}`
         },
-        [btcExchangeRate, btcUsdExchangeRate, selectedCurrency, t],
+        [
+            convertCentsToFormattedFiat,
+            makeFormattedAmountsFromMSats,
+            selectedCurrency,
+            t,
+        ],
     )
 
     const makeStabilityTxnDetailItems = useCallback(
@@ -175,11 +178,10 @@ export function useTxnDisplayUtils(t: TFunction) {
             return makeStabilityTxnDetailItemsUtil(
                 t,
                 txn,
-                selectedCurrency,
-                btcExchangeRate,
+                makeFormattedAmountsFromMSats,
             )
         },
-        [btcExchangeRate, selectedCurrency, t],
+        [makeFormattedAmountsFromMSats, t],
     )
 
     return {
@@ -230,7 +232,207 @@ export function useExportTransactions(fedimint: FedimintBridge) {
                 message: (e as Error).message,
             }
         }
-    }, [])
+    }, [activeFederation, fetchTransactions])
 
     return exportTransactions
+}
+
+export type FeeItem = {
+    label: string
+    formattedAmount: string
+}
+
+// Ecash fees are ppm values specified in the federations feeSchedule so we calculate
+// the fee from the amount and provide all formatted UI display content
+export function useFeeDisplayUtils(t: TFunction) {
+    const maxFeeRate = useCommonSelector(selectMaximumAPR)
+    const ecashFeeSchedule = useCommonSelector(selectEcashFeeSchedule)
+    const stabilityPoolFeeSchedule = useCommonSelector(
+        selectStabilityPoolFeeSchedule,
+    )
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
+
+    const makeEcashFeeContent = (amount: MSats) => {
+        let fediFee: MSats = 0 as MSats
+        let federationFee: MSats = 0 as MSats
+        // Fedi fee for sending ecash is calculated from the federation fee schedule
+        if (ecashFeeSchedule) {
+            fediFee = (amount * (ecashFeeSchedule.sendPpm / 1000000)) as MSats
+            // Federation fee is hard-coded to 0 sats for now
+            // TODO: fetch this from bridge
+            federationFee = 0 as MSats
+        }
+        const totalFees: MSats = (fediFee + federationFee) as MSats
+
+        const {
+            formattedPrimaryAmount: formattedFediFee,
+            formattedSecondaryAmount: formattedFediFeeSecondary,
+        } = makeFormattedAmountsFromMSats(fediFee)
+        const {
+            formattedPrimaryAmount: formattedFederationFee,
+            formattedSecondaryAmount: formattedFederationFeeSecondary,
+        } = makeFormattedAmountsFromMSats(federationFee)
+        const { formattedPrimaryAmount: formattedTotalFee } =
+            makeFormattedAmountsFromMSats(totalFees)
+
+        const ecashFeeItems: FeeItem[] = [
+            {
+                label: t('phrases.fedi-fee'),
+                formattedAmount: `${formattedFediFee} (${formattedFediFeeSecondary})`,
+            },
+            {
+                label: t('phrases.federation-fee'),
+                formattedAmount: `${formattedFederationFee} (${formattedFederationFeeSecondary})`,
+            },
+        ]
+
+        return {
+            feeItemsBreakdown: ecashFeeItems,
+            formattedTotalFee: `${
+                totalFees > 0 ? '+' : ''
+            }${formattedTotalFee}`,
+        }
+    }
+
+    const makeLightningFeeContent = (feeDetails: RpcFeeDetails) => {
+        const { fediFee, federationFee, networkFee } = feeDetails
+        // prettier-ignore
+        const lightningSendTotalFeeMsats = (
+            fediFee + federationFee + networkFee
+        ) as MSats
+
+        // Format fedi fee
+        const {
+            formattedPrimaryAmount: formattedFediFee,
+            formattedSecondaryAmount: formattedFediFeeSecondary,
+        } = makeFormattedAmountsFromMSats(fediFee)
+        const {
+            formattedPrimaryAmount: formattedFederationFee,
+            formattedSecondaryAmount: formattedFederationFeeSecondary,
+        } = makeFormattedAmountsFromMSats(federationFee)
+        const {
+            formattedPrimaryAmount: formattedNetworkFee,
+            formattedSecondaryAmount: formattedNetworkFeeSecondary,
+        } = makeFormattedAmountsFromMSats(networkFee)
+        const { formattedPrimaryAmount: formattedTotalFee } =
+            makeFormattedAmountsFromMSats(lightningSendTotalFeeMsats)
+
+        const lightningFeeItems: FeeItem[] = [
+            {
+                label: t('phrases.lightning-network'),
+                formattedAmount: `${formattedNetworkFee} (${formattedNetworkFeeSecondary})`,
+            },
+            {
+                label: t('phrases.fedi-fee'),
+                formattedAmount: `${formattedFediFee} (${formattedFediFeeSecondary})`,
+            },
+            {
+                label: t('phrases.federation-fee'),
+                formattedAmount: `${formattedFederationFee} (${formattedFederationFeeSecondary})`,
+            },
+        ]
+
+        return {
+            feeItemsBreakdown: lightningFeeItems,
+            formattedTotalFee: `${
+                lightningSendTotalFeeMsats > 0 ? '+' : ''
+            }${formattedTotalFee}`,
+        }
+    }
+
+    const makeOnchainFeeContent = (feeDetails: RpcFeeDetails) => {
+        const { fediFee, federationFee, networkFee } = feeDetails
+        // prettier-ignore
+        const onchainSendTotalFeeMsats = (
+            fediFee + federationFee + networkFee
+        ) as MSats
+
+        // Format fedi fee
+        const {
+            formattedPrimaryAmount: formattedFediFee,
+            formattedSecondaryAmount: formattedFediFeeSecondary,
+        } = makeFormattedAmountsFromMSats(fediFee)
+        const {
+            formattedPrimaryAmount: formattedNetworkFee,
+            formattedSecondaryAmount: formattedNetworkFeeSecondary,
+        } = makeFormattedAmountsFromMSats(networkFee)
+        const { formattedPrimaryAmount: formattedTotalFee } =
+            makeFormattedAmountsFromMSats(onchainSendTotalFeeMsats)
+
+        const lightningFeeItems: FeeItem[] = [
+            {
+                label: t('phrases.network-fee'),
+                formattedAmount: `${formattedNetworkFee} (${formattedNetworkFeeSecondary})`,
+            },
+            {
+                label: t('phrases.fedi-fee'),
+                formattedAmount: `${formattedFediFee} (${formattedFediFeeSecondary})`,
+            },
+        ]
+
+        return {
+            feeItemsBreakdown: lightningFeeItems,
+            formattedTotalFee: `${
+                onchainSendTotalFeeMsats > 0 ? '+' : ''
+            }${formattedTotalFee}`,
+        }
+    }
+
+    const makeStabilityPoolFeeContent = (amount: Sats) => {
+        const amountMsats = amountUtils.satToMsat(amount)
+        let fediFee: MSats = 0 as MSats
+        let federationFee: MSats = 0 as MSats
+        // Fedi fee for sending ecash is calculated from the federation fee schedule
+        if (stabilityPoolFeeSchedule) {
+            fediFee = (amountMsats *
+                (stabilityPoolFeeSchedule.sendPpm / 1000000)) as MSats
+            // Federation fee is hard-coded to 0 sats for now
+            // TODO: fetch this from bridge
+            federationFee = 0 as MSats
+        }
+        const totalFees: MSats = (fediFee + federationFee) as MSats
+
+        const {
+            formattedPrimaryAmount: formattedFediFee,
+            formattedSecondaryAmount: formattedFediFeeSecondary,
+        } = makeFormattedAmountsFromMSats(fediFee)
+        const {
+            formattedPrimaryAmount: formattedFederationFee,
+            formattedSecondaryAmount: formattedFederationFeeSecondary,
+        } = makeFormattedAmountsFromMSats(federationFee)
+        const { formattedPrimaryAmount: formattedTotalFee } =
+            makeFormattedAmountsFromMSats(totalFees)
+
+        const ecashFeeItems: FeeItem[] = [
+            {
+                label: `${t('phrases.yearly-fee')}*`,
+                formattedAmount: `${maxFeeRate}% max`,
+            },
+            {
+                label: t('phrases.fedi-fee'),
+                formattedAmount: `${formattedFediFee} (${formattedFediFeeSecondary})`,
+            },
+            {
+                label: t('phrases.federation-fee'),
+                formattedAmount: `${formattedFederationFee} (${formattedFederationFeeSecondary})`,
+            },
+        ]
+
+        return {
+            feeItemsBreakdown: ecashFeeItems,
+            formattedTotalFee: `${formattedTotalFee} + ${maxFeeRate}% yearly`,
+        }
+    }
+
+    const feeBreakdownTitle = t('phrases.fee-details')
+    const ecashFeesGuidanceText = t('feature.fees.guidance-ecash')
+
+    return {
+        feeBreakdownTitle,
+        ecashFeesGuidanceText,
+        makeEcashFeeContent,
+        makeLightningFeeContent,
+        makeOnchainFeeContent,
+        makeStabilityPoolFeeContent,
+    }
 }

@@ -291,16 +291,16 @@
             "select-or-start": "Selecciona un chat o comienza uno nuevo",
             "send-a-message-to": "Enviar un mensaje a {{name}}",
             "show-history-to-new-members": "Mostrar historial a nuevos usuarios",
-            "they-requested-payment": "{{name}} ha solicitado {{fiat}} ({{amount}} {{unit}}) {{memo}}",
-            "they-sent-payment": "{{name}} te envió {{fiat}} ({{amount}} {{unit}}) {{memo}}",
+            "they-requested-payment": "{{name}} ha solicitado {{fiat}} ({{amount}}) {{memo}}",
+            "they-sent-payment": "{{name}} te envió {{fiat}} ({{amount}}) {{memo}}",
             "try-inviting-someone": "Intenta invitar a alguien.",
             "type-to-search-members": "Escribe para buscar usuarios en este grupo",
             "unknown-member": "Usuario desconocido",
             "view-group": "Ver grupo",
             "view-shared-media": "Ver archivos compartidos",
             "waiting-for-network": "Esperando conexión...",
-            "you-requested-payment": "Has solicitado {{fiat}} ({{amount}} {{unit}}) {{memo}}",
-            "you-sent-payment": "Enviaste {{fiat}} ({{amount}} {{unit}}) {{memo}}"
+            "you-requested-payment": "Has solicitado {{fiat}} ({{amount}}) {{memo}}",
+            "you-sent-payment": "Enviaste {{fiat}} ({{amount}}) {{memo}}"
         },
         "developer": {
             "developer-mode-activated": "¡Ahora eres desarrollador!",

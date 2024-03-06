@@ -59,10 +59,11 @@ export type RootStackParamList = {
     CompleteRecoveryAssist: { videoPath: string; recoveryId: string }
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined
+    ConfirmSendEcash: { amount: Sats }
     ConfirmRecoveryAssist: undefined
     ConfirmReceiveOffline: { ecash: string }
     ConfirmSendLightning: { parsedData: ParsedBolt11 | ParsedLnurlPay }
-    ConfirmSendOnChain: { bitcoinUri: ParsedBip21 | ParsedBitcoinAddress }
+    ConfirmSendOnChain: { parsedData: ParsedBip21 }
     ConnectedFederationsDrawer: undefined
     CurrencySettings: undefined
     CreateGroup: undefined
@@ -105,6 +106,7 @@ export type RootStackParamList = {
     Send: undefined
     SendOfflineAmount: undefined
     SendOfflineQr: { ecash: string; amount: MSats }
+    SendOnChainAmount: { parsedData: ParsedBip21 | ParsedBitcoinAddress }
     SendSuccess: { amount: MSats; unit: string }
     Settings: undefined
     FediModBrowser: { fediMod: FediMod }

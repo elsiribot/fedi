@@ -4,6 +4,7 @@ import {
     createAsyncThunk,
     createSelector,
 } from '@reduxjs/toolkit'
+import { TFunction } from 'i18next'
 
 import {
     CommonState,
@@ -653,22 +654,51 @@ export const selectMinimumDepositAmount = createSelector(
 )
 
 /**
+ * Get the deposit time from stabilitypool cycle duration in human-readable format
+ * */
+export const selectFormattedDepositTime = createSelector(
+    (s: CommonState) => selectFederationStabilityPoolConfig(s),
+    (_: CommonState, t: TFunction) => t,
+    (config, t) => {
+        if (!config) return 0
+        const { secs: seconds } = config.cycle_duration
+
+        if (seconds >= 3600) {
+            // Duration exceeds one hour
+            return t('feature.stabilitypool.more-than-an-hour')
+        } else if (seconds < 60) {
+            // Duration is less than a minute
+            return seconds > 1
+                ? `~${t('feature.stabilitypool.seconds', { seconds })}`
+                : `~${t('feature.stabilitypool.one-second')}`
+        } else {
+            // Convert seconds to nearest half-minute
+            const minutes = Math.round((seconds / 60) * 2) / 2
+            return minutes > 1
+                ? `~${t('feature.stabilitypool.minutes', { minutes })}`
+                : `~${t('feature.stabilitypool.one-minute')}`
+        }
+    },
+)
+/**
  * Get the max APR from the max allowed fee rate in parts per billion
  * This calculates what % of a deposit the user can expect to pay in fees
  * after 1 full year, deducting fees every 10 minutes compounding every cycle
- * TODO: Use the cycle_duration to dynamically calculate APR
  */
 export const selectMaximumAPR = createSelector(
     (s: CommonState) => selectFederationStabilityPoolConfig(s),
     config => {
-        const maxFeeRatePerCycle = config?.max_allowed_provide_fee_rate_ppb || 0
+        if (!config) return 0
+        const maxFeeRatePerCycle = config.max_allowed_provide_fee_rate_ppb || 0
         // convert parts per billion to decimal
         const periodicRate = maxFeeRatePerCycle / 1_000_000_000
         // Number of 10 minute cycles in a year
-        const cyclesPerYear = 365 * 24 * 6
+        const { secs: secondsPerCycle } = config.cycle_duration
+        const secondsInYear = 365 * 24 * 60 * 60
+        const cyclesPerYear = secondsInYear / secondsPerCycle
         const compoundedAnnualRate =
             1 - Math.pow(1 - periodicRate, cyclesPerYear)
-        const maxFeePercentage = (compoundedAnnualRate * 100).toFixed(4)
+        const maxFeePercentage = (compoundedAnnualRate * 100).toFixed(2)
         return Number(maxFeePercentage)
     },
 )

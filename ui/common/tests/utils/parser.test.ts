@@ -10,6 +10,7 @@ import { FedimintBridge } from '../../utils/fedimint'
 import { parseUserInput } from '../../utils/parser'
 
 // Constants
+const mockFedId = 'fed1'
 const simpleBolt11 =
     'lntbs1u1pj29m0mdqqpp5f3lrcsfe7m7x62k20k6x8l279s62ez38mhy2uc40f89x4va7r6zqsp5gqdp3kfkfefshgu3t7vplzztyyl79rfhk6kfvxe7dl0kgjxha7zq9qrsgqcqpjnp4q28uv5wxgqhmvqct7lp4kctp56awacjghpu0wxmnf4afgc58lda4wxqrrssrzjqftf3ny6cc3lt5d67433puh3kcklllhy8l7dktpqej65racyjl25qqqqqqqqqqqqqyqqqqqqqqqqqqqqrcjt2mnevzr9xwwldcnemhmpz5g5g4qf0p9drvtyan7c4aclf5uxnkk4tg2d2c59dyjd6t9t7zv39netdm7t28575e0hr3qne7czj98ecqkfy89d'
 const simpleBolt11Invoice: Invoice = {
@@ -345,7 +346,12 @@ describe('parseUserInput', () => {
         it(`parses ${testCase.type} from ${truncate(
             testCase.input,
         )}`, async () => {
-            const parsed = await parseUserInput(testCase.input, fedimint, t)
+            const parsed = await parseUserInput(
+                testCase.input,
+                fedimint,
+                t,
+                mockFedId,
+            )
             expect(parsed.type).toEqual(testCase.type)
             // expect(parsed.data).toEqual(testCase.data)
         })

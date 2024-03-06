@@ -6,6 +6,7 @@ import { ActivityIndicator, Insets, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -13,7 +14,7 @@ import { fedimint } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import RequestTypeSwitcher from '../components/feature/receive/RequestTypeSwitcher'
 import FiatAmount from '../components/feature/wallet/FiatAmount'
-import { useBridge } from '../state/hooks'
+import { useAppSelector, useBridge } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -26,6 +27,7 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const insets = useSafeAreaInsets()
     const { generateAddress } = useBridge()
+    const federationId = useAppSelector(selectActiveFederationId)
     const { uri } = route.params
     const isOnchainSupported = useIsOnchainDepositSupported()
 
@@ -81,6 +83,7 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
                 try {
                     const decoded = await fedimint.decodeInvoice(
                         decodedUri.body,
+                        federationId,
                     )
                     log.info('decoded invoice', decoded)
                     setRequestAmount(decoded.amount)
@@ -93,7 +96,7 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
             }
             getDecodedInvoice()
         }
-    }, [decodedUri])
+    }, [decodedUri, federationId])
 
     // Generate onchain address if needed
     useEffect(() => {
