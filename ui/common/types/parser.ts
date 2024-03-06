@@ -11,8 +11,10 @@ export enum ParserDataType {
     Bip21 = 'bitcoin:bip21',
     FedimintEcash = 'fedimint:ecash',
     FedimintInvite = 'fedimint:invite',
-    FediChatMember = 'fedi:chatmember',
-    FediChatGroup = 'fedi:chatgroup',
+    FediChatMember = 'fedi:chatmember', // TODO: remove after matrixification
+    FediChatGroup = 'fedi:chatgroup', // TODO: remove after matrixification
+    FediChatUser = 'fedi:chatuser',
+    FediChatRoom = 'fedi:chatroom',
     Website = 'website',
     Unknown = 'unknown',
 }
@@ -111,6 +113,11 @@ export type ParsedFediChatGroup = ParsedData<
     { id: string }
 >
 
+export type ParsedFediChatUser = ParsedData<
+    ParserDataType.FediChatUser,
+    { id: string }
+>
+
 export type ParsedWebsite = ParsedData<ParserDataType.Website, { url: string }>
 
 export type ParsedUnknownData = ParsedData<
@@ -130,5 +137,6 @@ export type AnyParsedData =
     | ParsedFederationInvite
     | ParsedFediChatMember
     | ParsedFediChatGroup
+    | ParsedFediChatUser
     | ParsedWebsite
     | ParsedUnknownData

@@ -12,6 +12,7 @@ import { Federation, StorageApi } from '../types'
 import { getMetaUrl } from '../utils/FederationUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
+import { getReceivablePaymentEvents } from '../utils/matrix'
 import { hasStorageStateChanged } from '../utils/storage'
 import { chatSlice } from './chat'
 import { currencySlice, fetchCurrencyPrices } from './currency'
@@ -22,6 +23,11 @@ import {
     updateFederation,
     updateFederationBalance,
 } from './federation'
+import {
+    claimMatrixPayment,
+    handleMatrixRoomTimelineObservableUpdates,
+    matrixSlice,
+} from './matrix'
 import { nuxSlice } from './nux'
 import { recoverySlice } from './recovery'
 import { loadFromStorage, saveToStorage, storageSlice } from './storage'
@@ -35,6 +41,7 @@ export * from './chat'
 export * from './currency'
 export * from './environment'
 export * from './federation'
+export * from './matrix'
 export * from './nux'
 export * from './recovery'
 export * from './toast'
@@ -45,6 +52,7 @@ export const commonReducers = {
     currency: currencySlice.reducer,
     environment: environmentSlice.reducer,
     federation: federationSlice.reducer,
+    matrix: matrixSlice.reducer,
     nux: nuxSlice.reducer,
     recovery: recoverySlice.reducer,
     storage: storageSlice.reducer,
@@ -148,6 +156,44 @@ export function initializeCommonStore({
         })
     })
 
+    // Listen for incoming payment events, and claim any we haven't attempted
+    // to claim yet.
+    const receivedPayments = new Set<string>()
+    const unsubscribeMatrixPayments = listenerMiddleware.startListening({
+        actionCreator: handleMatrixRoomTimelineObservableUpdates,
+        effect: (action, api) => {
+            const { roomId } = action.payload
+            const state = api.getState()
+            const myId = state.matrix.auth?.userId
+            const timeline = state.matrix.roomTimelines[roomId]
+            if (!myId || !timeline) return
+            const receivablePayments = getReceivablePaymentEvents(
+                timeline,
+                myId,
+            )
+            receivablePayments.forEach(event => {
+                if (receivedPayments.has(event.content.paymentId)) return
+                receivedPayments.add(event.content.paymentId)
+                log.info(
+                    'Unclaimed matrix payment event, attempting to claim',
+                    event,
+                )
+                api.dispatch(claimMatrixPayment({ fedimint, event }))
+                    .unwrap()
+                    .then(() => {
+                        log.info('Successfully claimed matrix payment', event)
+                    })
+                    .catch(err => {
+                        log.warn(
+                            'Failed to claim matrix payment, will try again later',
+                            err,
+                        )
+                        receivedPayments.delete(event.content.paymentId)
+                    })
+            })
+        },
+    })
+
     const unsubscribeInitialLang = subscribe(() => {
         const language = selectLanguage(getState())
 
@@ -167,5 +213,6 @@ export function initializeCommonStore({
         unsubscribeTransaction()
         unsubscribeRecovery()
         unsubscribeStorage()
+        unsubscribeMatrixPayments()
     }
 }
