@@ -385,7 +385,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         // be handled elsewhere in the app, pass it to the OmniLinkContext. If it
         // can't be parsed, pass it on to the OS to decide how to handle it.
         setIsParsingLink(true)
-        parseUserInput(req.url, fedimint, t)
+        parseUserInput(req.url, fedimint, t, activeFederation?.id)
             .then(parsed => {
                 const handled = handleParsedLink(parsed)
                 if (handled) return

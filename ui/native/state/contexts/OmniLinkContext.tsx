@@ -11,11 +11,13 @@ import { useTranslation } from 'react-i18next'
 import { Linking } from 'react-native'
 
 import { useUpdatingRef } from '@fedi/common/hooks/util'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 import { parseUserInput } from '@fedi/common/utils/parser'
 
 import { fedimint } from '../../bridge'
 import { AnyParsedData, ParserDataType } from '../../types'
+import { useAppSelector } from '../hooks'
 
 const log = makeLog('OmniLinkContext')
 
@@ -46,6 +48,7 @@ export const OmniLinkContextProvider: React.FC<{
     children: React.ReactNode
 }> = ({ children }) => {
     const { t } = useTranslation()
+    const federationId = useAppSelector(selectActiveFederationId)
     const [isParsingLink, setIsParsingLink] = useState(false)
     const [parsedLink, setParsedLink] = useState<AnyParsedData | null>(null)
     const interceptorsRef = useRef<OmniLinkInterceptFunction[]>([])
@@ -59,7 +62,12 @@ export const OmniLinkContextProvider: React.FC<{
             log.info('parsing link', url)
             setIsParsingLink(true)
             try {
-                const parsed = await parseUserInput(url, fedimint, tRef.current)
+                const parsed = await parseUserInput(
+                    url,
+                    fedimint,
+                    tRef.current,
+                    federationId,
+                )
                 const wasIntercepted = interceptorsRef.current.find(
                     interceptor => interceptor(parsed),
                 )
@@ -77,7 +85,7 @@ export const OmniLinkContextProvider: React.FC<{
 
         Linking.getInitialURL().then(url => parseUrl(url))
         Linking.addEventListener('url', event => parseUrl(event.url))
-    }, [tRef])
+    }, [tRef, federationId])
 
     const subscribeInterceptor: OmniLinkContextState['subscribeInterceptor'] =
         useCallback(interceptor => {
