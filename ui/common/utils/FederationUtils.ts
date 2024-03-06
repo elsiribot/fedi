@@ -310,6 +310,19 @@ export const shouldEnableOnchainDeposits = (metadata: ClientConfigMetadata) => {
         : onchainDepositsDisabled !== 'true'
 }
 
+export const shouldEnableFediInternalInjection = (
+    metadata: ClientConfigMetadata,
+) => {
+    const fediInternalInjectionDisabled = getMetaField(
+        SupportedMetaFields.fedi_internal_injection_disabled,
+        metadata,
+    )
+    // Disable fedi internal injection by default if not specified in meta
+    return fediInternalInjectionDisabled === null
+        ? true
+        : fediInternalInjectionDisabled !== 'true'
+}
+
 export const shouldEnableStabilityPool = (metadata: ClientConfigMetadata) => {
     const stabilityPoolDisabled = getMetaField(
         SupportedMetaFields.stability_pool_disabled,

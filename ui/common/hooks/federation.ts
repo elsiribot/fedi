@@ -17,6 +17,7 @@ import {
     getFederationChatServerDomain,
     getFederationPopupInfo,
     shouldEnableStabilityPool,
+    shouldEnableFediInternalInjection,
 } from '../utils/FederationUtils'
 import { useCommonSelector } from './redux'
 
@@ -99,6 +100,12 @@ export function useIsNostrEnabled() {
     const activeFederation = useCommonSelector(selectActiveFederation)
     if (!activeFederation) return false
     return shouldEnableNostr(activeFederation)
+}
+
+export function useIsFediInternalInjectionEnabled() {
+    const activeFederation = useCommonSelector(selectActiveFederation)
+    if (!activeFederation) return false
+    return shouldEnableFediInternalInjection(activeFederation.meta)
 }
 
 export function usePopupFederationInfo() {

@@ -8,6 +8,7 @@ The following meta fields are interpretable by the Fedi app (note the `fedi:` pr
 * [`fedi:default_currency`](default_currency.md): 3-letter ISO 4217 currency code
 * [`fedi:tos_url`](tos_url.md): A URL presented to the user before joining the federation
 * [`fedi:federation_icon_url`](federation_icon_url.md): A URL to a JPG or PNG file used as the federation icon
+* [`fedi:fedi_internal_injection_disabled`](fedi_internal_injection_disabled.md): Boolean value that disables the `fediInternal` injection
 * [`fedi:popup_end_timestamp`](popup_end_timestamp.md): A Unix timestamp after which the app will disable access to the federation
 * [`fedi:popup_countdown_message`](popup_countdown_message.md): A message presented to users before the `popup_end_timestamp` is reached
 * [`fedi:popup_ended_message`](popup_ended_message.md): A message presented to users after the `popup_end_timestamp` has passed
