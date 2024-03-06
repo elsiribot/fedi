@@ -4,15 +4,13 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-import {
-    useIsChatSupported,
-    useLatestPublicFederations,
-} from '@fedi/common/hooks/federation'
+import { useLatestPublicFederations } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     joinFederation,
     selectFederationIds,
+    selectMatrixAuth,
     setActiveFederationId,
 } from '@fedi/common/redux'
 import { getFederationPreview } from '@fedi/common/utils/FederationUtils'
@@ -46,7 +44,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     const [isJoining, setIsJoining] = useState<boolean>(false)
     const [federationPreview, setFederationPreview] =
         useState<FederationPreviewType>()
-    const isChatSupported = useIsChatSupported(federationPreview)
+    const hasMatrixAuth = useAppSelector(s => !!selectMatrixAuth(s))
     const federationIds = useAppSelector(selectFederationIds)
     const navigationRef = useUpdatingRef(navigation)
     const { publicFederations } = useLatestPublicFederations()
@@ -85,8 +83,8 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
 
     const goToNextScreen = useCallback(() => {
         if (!federationPreview) return
-        navigation.replace(isChatSupported ? 'CreateUsername' : 'TabsNavigator')
-    }, [federationPreview, isChatSupported, navigation])
+        navigation.replace(hasMatrixAuth ? 'TabsNavigator' : 'CreateUsername')
+    }, [federationPreview, hasMatrixAuth, navigation])
 
     const handleJoin = useCallback(async () => {
         setIsJoining(true)

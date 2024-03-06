@@ -7,13 +7,12 @@ import { StyleSheet, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useUpdateLastMessageSeen } from '@fedi/common/hooks/chat'
-import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
     fetchChatMembers,
     selectActiveFederationId,
     selectIsChatEmpty,
-    selectNeedsChatRegistration,
+    selectMatrixAuth,
     selectWebsocketIsHealthy,
 } from '@fedi/common/redux'
 
@@ -22,7 +21,6 @@ import ChatsList from '../components/feature/chat/ChatsList'
 import { NuxTooltip } from '../components/ui/NuxTooltip'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import { reset } from '../state/navigation'
 import {
     NavigationHook,
     RootStackParamList,
@@ -42,18 +40,11 @@ const ChatScreen: React.FC<Props> = () => {
     const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(selectActiveFederationId)
-    const isChatSupported = useIsChatSupported()
-    const needsChatRegistration = useAppSelector(selectNeedsChatRegistration)
+    const hasMatrixAuth = useAppSelector(s => !!selectMatrixAuth(s))
+    const needsChatRegistration = !hasMatrixAuth
     const isChatEmpty = useAppSelector(selectIsChatEmpty)
     const [hasOpenedNewChat, completeOpenedNewChat] =
         useNuxStep('hasOpenedNewChat')
-
-    // Navigate back to home screen if this federation doesn't support chat
-    useEffect(() => {
-        if (!isChatSupported) {
-            navigation.dispatch(reset('TabsNavigator'))
-        }
-    }, [isChatSupported, navigation])
 
     useEffect(() => {
         if (websocketIsHealthy && activeFederationId) {
