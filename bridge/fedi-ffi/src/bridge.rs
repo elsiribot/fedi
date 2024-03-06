@@ -70,9 +70,6 @@ impl Bridge {
     ) -> Result<Self> {
         let task_group = TaskGroup::new();
         let app_state = Arc::new(AppState::load(storage.clone()).await?);
-
-        // Note that instantiating FediFeeHelper spawns a new task to asynchronously
-        // fetch the fee schedule and update appstate
         let fedi_fee_helper = Arc::new(FediFeeHelper::new(fedi_api.clone(), app_state.clone()));
 
         let root_mnemonic = app_state
@@ -120,6 +117,17 @@ impl Bridge {
         let federations = Arc::new(Mutex::new(HashMap::from_iter(
             futures::future::try_join_all(federations).await?,
         )));
+
+        // Spawn a new task to asynchronously fetch the fee schedule and update app
+        // state
+        fedi_fee_helper.fetch_and_update_fedi_fee_schedule(
+            federations
+                .lock()
+                .await
+                .iter()
+                .map(|(id, fed)| (id.clone(), fed.federation_network()))
+                .collect(),
+        );
 
         let bridge = Self {
             storage,
@@ -318,7 +326,12 @@ impl Bridge {
 
         // Spawn a new task to asynchronously fetch the fee schedule and update app
         // state
-        self.fedi_fee_helper.fetch_and_update_fedi_fee_schedule();
+        self.fedi_fee_helper.fetch_and_update_fedi_fee_schedule(
+            federations
+                .iter()
+                .map(|(id, fed)| (id.clone(), fed.federation_network()))
+                .collect(),
+        );
 
         Ok(multi)
     }
