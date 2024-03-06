@@ -54,7 +54,7 @@ const AddFediMod: React.FC = () => {
                 }),
             )
 
-            navigation.navigate('FediModSettings')
+            navigation.navigate('TabsNavigator')
         } catch (e) {
             log.error('handleSubmit', e)
         }
