@@ -599,6 +599,7 @@ export interface TransactionEvent {
 }
 
 export interface WithdrawalDetails {
+    address: string
     txid: string
     fee: number
     feeRate: number
