@@ -863,6 +863,17 @@ impl Bridge {
             .await
     }
 
+    pub(crate) async fn stability_pool_average_fee_rate(
+        &self,
+        federation_id: RpcFederationId,
+        num_cycles: u64,
+    ) -> Result<u64> {
+        self.get_multi(&federation_id.0)
+            .await?
+            .stability_pool_average_fee_rate(num_cycles)
+            .await
+    }
+
     pub async fn set_mint_module_fedi_fee_schedule(
         &self,
         federation_id: RpcFederationId,

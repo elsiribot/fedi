@@ -3,13 +3,15 @@ use std::time::UNIX_EPOCH;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiError};
 use fedimint_core::Amount;
-use futures::StreamExt;
+use futures::{stream, StreamExt};
 use secp256k1_zkp::PublicKey;
+use serde_json::json;
 use stability_pool_common::AccountInfo;
 
 use crate::db::{
-    CurrentCycleKey, Cycle, IdleBalance, IdleBalanceKey, SeekMetadataAccountPrefix,
-    StagedCancellationKey, StagedProvidesKey, StagedSeeksKey,
+    CurrentCycleKey, Cycle, IdleBalance, IdleBalanceKey, PastCycleKeyPrefix,
+    SeekMetadataAccountPrefix, StagedCancellationKey, StagedProvidesKey, StagedProvidesKeyPrefix,
+    StagedSeeksKey, StagedSeeksKeyPrefix,
 };
 use crate::StabilityPool;
 
@@ -37,6 +39,18 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
             "wait_cancellation_processed",
             async |_module: &StabilityPool, context, request: PublicKey| -> Amount {
                 Ok(wait_cancellation_processed(context, request).await?)
+            }
+        },
+        api_endpoint! {
+            "liquidity_stats",
+            async |_module: &StabilityPool, context, _request: ()| -> serde_json::Value {
+                Ok(liquidity_stats(&mut context.dbtx().into_nc()).await?)
+            }
+        },
+        api_endpoint! {
+            "average_fee_rate",
+            async |_module: &StabilityPool, context, request: u64| -> u64 {
+                Ok(average_fee_rate(&mut context.dbtx().into_nc(), request).await?)
             }
         },
     ]
@@ -164,4 +178,101 @@ pub async fn wait_cancellation_processed(
             }
         }
     }
+}
+
+/// Return a snapshot of the current aggregate liquidity stats including
+/// - sum of currently locked seeks
+/// - sum of currently locked provides
+/// - sum of currently staged seeks
+/// - sum of currently staged provides
+pub async fn liquidity_stats(
+    dbtx: &mut DatabaseTransaction<'_>,
+) -> anyhow::Result<serde_json::Value, ApiError> {
+    let current_cycle = dbtx
+        .get_value(&CurrentCycleKey)
+        .await
+        .ok_or(ApiError::server_error(
+            "First cycle not yet started".to_owned(),
+        ))?;
+    let locked_seeks_sum_msat: u64 = current_cycle
+        .locked_seeks
+        .values()
+        .flatten()
+        .map(|s| s.amount.msats)
+        .sum();
+    let locked_provides_sum_msat: u64 = current_cycle
+        .locked_provides
+        .values()
+        .flatten()
+        .map(|p| p.amount.msats)
+        .sum();
+    let staged_seeks_sum_msat: u64 = dbtx
+        .find_by_prefix(&StagedSeeksKeyPrefix)
+        .await
+        .flat_map(|(_, seeks)| stream::iter(seeks))
+        .collect::<Vec<_>>()
+        .await
+        .iter()
+        .map(|s| s.seek.0.msats)
+        .sum();
+    let staged_provides_sum_msat: u64 = dbtx
+        .find_by_prefix(&StagedProvidesKeyPrefix)
+        .await
+        .flat_map(|(_, provides)| stream::iter(provides))
+        .collect::<Vec<_>>()
+        .await
+        .iter()
+        .map(|p| p.provide.amount.msats)
+        .sum();
+
+    Ok(json!({
+        "locked_seeks_sum_msat": locked_seeks_sum_msat,
+        "locked_provides_sum_msat": locked_provides_sum_msat,
+        "staged_seeks_sum_msat": staged_seeks_sum_msat,
+        "staged_provides_sum_msat": staged_provides_sum_msat,
+    }))
+}
+
+/// Returns the average of the provider fee rate over the last #num_cycles
+/// cycles, including the current ongoing cycle. So if num_cycles is 1, we
+/// return the fee rate of the current ongoing cycle. If num_cycles is 2, we
+/// average the current cycle and previous cycle. If num_cyces is n, we average
+/// the current cycle and (n - 1) previous cycles.
+pub async fn average_fee_rate(
+    dbtx: &mut DatabaseTransaction<'_>,
+    num_cycles: u64,
+) -> anyhow::Result<u64, ApiError> {
+    if num_cycles == 0 {
+        return Err(ApiError::bad_request("num_cycles must be non-0".to_owned()));
+    }
+
+    let current_cycle = dbtx
+        .get_value(&CurrentCycleKey)
+        .await
+        .ok_or(ApiError::server_error(
+            "First cycle not yet started".to_owned(),
+        ))?;
+
+    // Cycle indices are 0-based
+    if num_cycles > current_cycle.index + 1 {
+        return Err(ApiError::bad_request(format!(
+            "num_cycles cannot exceed {}",
+            current_cycle.index + 1
+        )));
+    }
+
+    // We take num_cycles - 1 previous cycles since current cycles counts for 1
+    // cycle
+    let num_prev_cycles = match usize::try_from(num_cycles) {
+        Ok(val) => val - 1,
+        Err(e) => return Err(ApiError::bad_request(format!("invalid num_cycles: {e:?}"))),
+    };
+    let fee_rate_sum = current_cycle.fee_rate
+        + dbtx
+            .find_by_prefix_sorted_descending(&PastCycleKeyPrefix)
+            .await
+            .take(num_prev_cycles)
+            .fold(0, |acc, (_, cycle)| async move { acc + cycle.fee_rate })
+            .await;
+    Ok(fee_rate_sum / num_cycles)
 }

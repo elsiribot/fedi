@@ -2210,6 +2210,14 @@ impl FederationV2 {
             .context("Error when fetching cycle start price")
     }
 
+    pub async fn stability_pool_average_fee_rate(&self, num_cycles: u64) -> Result<u64> {
+        self.client
+            .get_first_module::<StabilityPoolClientModule>()
+            .average_fee_rate(num_cycles)
+            .await
+            .context("Error when fetching average fee rate")
+    }
+
     /// Deposit the given amount of msats into the stability pool
     /// with the intention of seeking. Once the fedimint transaction
     /// is accepted, the deposit is staged (pending). When the next
