@@ -781,7 +781,11 @@ mod tests {
             Ok(FediFeeSchedule::default())
         }
 
-        async fn fetch_fedi_fee_invoice(&self, _amount: Amount) -> anyhow::Result<Bolt11Invoice> {
+        async fn fetch_fedi_fee_invoice(
+            &self,
+            _amount: Amount,
+            _network: Network,
+        ) -> anyhow::Result<Bolt11Invoice> {
             unimplemented!("TODO shaurya implement when testing");
         }
     }

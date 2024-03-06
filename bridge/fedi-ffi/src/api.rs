@@ -12,7 +12,8 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 use crate::constants::{
-    FEDI_FEE_API_URL_MAINNET, FEDI_FEE_API_URL_MUTINYNET, FEDI_INVOICE_API_URL,
+    FEDI_FEE_API_URL_MAINNET, FEDI_FEE_API_URL_MUTINYNET, FEDI_INVOICE_API_URL_MAINNET,
+    FEDI_INVOICE_API_URL_MUTINYNET,
 };
 use crate::storage::{FediFeeSchedule, ModuleFediFeeSchedule};
 
@@ -25,7 +26,11 @@ pub trait IFediApi: MaybeSend + MaybeSync + 'static {
 
     /// Fetches the lightning invoice for the given amount from Fedi's server to
     /// remit the oustanding fees accrued so far
-    async fn fetch_fedi_fee_invoice(&self, amount: Amount) -> anyhow::Result<Bolt11Invoice>;
+    async fn fetch_fedi_fee_invoice(
+        &self,
+        amount: Amount,
+        network: Network,
+    ) -> anyhow::Result<Bolt11Invoice>;
 }
 
 /// Live code implementation of the IFediApi trait that uses a real
@@ -92,10 +97,19 @@ impl IFediApi for LiveFediApi {
         })
     }
 
-    async fn fetch_fedi_fee_invoice(&self, amount: Amount) -> anyhow::Result<Bolt11Invoice> {
+    async fn fetch_fedi_fee_invoice(
+        &self,
+        amount: Amount,
+        network: Network,
+    ) -> anyhow::Result<Bolt11Invoice> {
+        let api_url = match network {
+            Network::Bitcoin => FEDI_INVOICE_API_URL_MAINNET,
+            _ => FEDI_INVOICE_API_URL_MUTINYNET,
+        };
+
         let fetch_invoice_response = fedimint_core::task::timeout(Duration::from_secs(15), async {
             self.client
-                .post(FEDI_INVOICE_API_URL)
+                .post(api_url)
                 .json(&FetchInvoiceRequest {
                     amount_msat: amount.msats,
                 })
@@ -105,11 +119,17 @@ impl IFediApi for LiveFediApi {
         .await
         .context("Request to fetch fee invoice took too long")?
         .context("Fetch fee invoice response error")?
-        .json::<FetchInvoiceResponse>()
+        .json::<Vec<FediFeeInvoiceItem>>()
         .await?;
 
-        Ok(Bolt11Invoice::from_str(&fetch_invoice_response.invoice)
-            .context("Failed to parse fee invoice")?)
+        let Some(invoice_v0) = fetch_invoice_response.iter().find_map(|item| match item {
+            FediFeeInvoiceItem::V0(v0) => Some(v0),
+            FediFeeInvoiceItem::Unknown => None,
+        }) else {
+            bail!("No known invoice items found");
+        };
+
+        Ok(Bolt11Invoice::from_str(&invoice_v0.invoice).context("Failed to parse fee invoice")?)
     }
 }
 
@@ -150,6 +170,14 @@ pub struct FetchInvoiceRequest {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct FetchInvoiceResponse {
+#[serde(tag = "type")]
+pub enum FediFeeInvoiceItem {
+    V0(FediFeeInvoiceV0),
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FediFeeInvoiceV0 {
     pub invoice: String,
 }

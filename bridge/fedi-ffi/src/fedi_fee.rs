@@ -179,8 +179,12 @@ impl FediFeeHelper {
     /// and remitted at the federation-level (and not at the bridge-level), even
     /// though this method is federation agnostic (because only an amount is
     /// needed to ask for an invoice).
-    pub async fn fetch_fedi_fee_invoice(&self, amount: Amount) -> anyhow::Result<Bolt11Invoice> {
-        self.fedi_api.fetch_fedi_fee_invoice(amount).await
+    pub async fn fetch_fedi_fee_invoice(
+        &self,
+        amount: Amount,
+        network: Network,
+    ) -> anyhow::Result<Bolt11Invoice> {
+        self.fedi_api.fetch_fedi_fee_invoice(amount, network).await
     }
 }
 
@@ -263,7 +267,7 @@ impl FediFeeRemittanceService {
 
         let invoice = fed
             .fedi_fee_helper
-            .fetch_fedi_fee_invoice(Amount::from_msats(invoice_amt))
+            .fetch_fedi_fee_invoice(Amount::from_msats(invoice_amt), fed.get_network())
             .await?;
 
         // If pay_bolt11_invoice() returns successfully, we optimistically zero out
