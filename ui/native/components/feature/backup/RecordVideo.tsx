@@ -61,7 +61,7 @@ const RecordVideo = () => {
             toast?.show(t('feature.backup.record-error'), 4000)
         }
         return _format
-    }, [device])
+    }, [device, t, toast])
 
     if (device === undefined || format === undefined) return null
 
