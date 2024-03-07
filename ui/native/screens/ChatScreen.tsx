@@ -11,7 +11,7 @@ import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
     fetchChatMembers,
     selectActiveFederationId,
-    selectIsChatEmpty,
+    selectIsMatrixChatEmpty,
     selectMatrixAuth,
     selectWebsocketIsHealthy,
 } from '@fedi/common/redux'
@@ -42,7 +42,7 @@ const ChatScreen: React.FC<Props> = () => {
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const hasMatrixAuth = useAppSelector(s => !!selectMatrixAuth(s))
     const needsChatRegistration = !hasMatrixAuth
-    const isChatEmpty = useAppSelector(selectIsChatEmpty)
+    const isChatEmpty = useAppSelector(selectIsMatrixChatEmpty)
     const [hasOpenedNewChat, completeOpenedNewChat] =
         useNuxStep('hasOpenedNewChat')
 

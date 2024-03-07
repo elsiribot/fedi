@@ -4,11 +4,15 @@ import React from 'react'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { selectOrderedChatList } from '@fedi/common/redux'
-import { ChatType, ChatWithLatestMessage } from '@fedi/common/types'
+import {
+    selectMatrixOrderedRoomsList,
+    selectMatrixStatus,
+} from '@fedi/common/redux'
+import { MatrixRoom, MatrixSyncStatus } from '@fedi/common/types'
 
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
+import HoloLoader from '../../ui/HoloLoader'
 import ChatTile from './ChatTile'
 
 const WINDOW_WIDTH = Dimensions.get('window').width
@@ -17,17 +21,18 @@ const ChatsList: React.FC = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
 
-    const chats = useAppSelector(selectOrderedChatList)
+    const rooms = useAppSelector(selectMatrixOrderedRoomsList)
+    const syncStatus = useAppSelector(selectMatrixStatus)
 
-    const renderChat: ListRenderItem<ChatWithLatestMessage> = ({ item }) => {
+    const renderChat: ListRenderItem<MatrixRoom> = ({ item }) => {
         return (
             <ErrorBoundary fallback={null}>
                 <ChatTile
-                    chat={item}
-                    selectChat={(chat: ChatWithLatestMessage) => {
-                        if (chat.type === ChatType.direct) {
+                    room={item}
+                    selectChat={(chat: MatrixRoom) => {
+                        if (chat.directUserId) {
                             navigation.navigate('DirectChat', {
-                                memberId: chat.id,
+                                memberId: chat.directUserId,
                             })
                         } else {
                             navigation.navigate('GroupChat', {
@@ -40,11 +45,15 @@ const ChatsList: React.FC = () => {
         )
     }
 
+    if (syncStatus === MatrixSyncStatus.initialSync) {
+        return <HoloLoader size={30} />
+    }
+
     return (
         <FlatList
             style={styles(theme).container}
             contentContainerStyle={styles(theme).content}
-            data={chats}
+            data={rooms}
             renderItem={renderChat}
             keyExtractor={item => `${item.id}`}
             // optimization that allows skipping the measurement of dynamic content

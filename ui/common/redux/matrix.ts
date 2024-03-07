@@ -658,6 +658,9 @@ export const selectMatrixOrderedRoomsList = createSelector(
     },
 )
 
+export const selectIsMatrixChatEmpty = (s: CommonState) =>
+    selectMatrixOrderedRoomsList(s).length === 0
+
 export const selectMatrixRoom = (s: CommonState, roomId: MatrixRoom['id']) =>
     selectMatrixRooms(s).find(room => room.id === roomId)
 
