@@ -15,9 +15,14 @@ import { Images } from '../../assets/images'
 export type Props = {
     size?: number
     label?: string
+    progress?: number
 }
 
-const HoloLoader: React.FC<Props> = ({ label, size = 200 }: Props) => {
+const HoloLoader: React.FC<Props> = ({
+    label,
+    size = 200,
+    progress = 0.35,
+}: Props) => {
     const { theme } = useTheme()
     const animatedSpin = useRef(new Animated.Value(0)).current
 
@@ -54,7 +59,7 @@ const HoloLoader: React.FC<Props> = ({ label, size = 200 }: Props) => {
             <Animated.View
                 style={[style.progressCircleContainer, transformedStyle]}>
                 <Progress.Circle
-                    progress={0.35}
+                    progress={1 - progress}
                     color={theme.colors.white}
                     thickness={theme.sizes.progressCircleThickness}
                     size={size}
