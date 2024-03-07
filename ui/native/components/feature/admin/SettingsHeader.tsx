@@ -4,7 +4,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet } from 'react-native'
 
-import { selectAuthenticatedMember } from '@fedi/common/redux'
+import { selectMatrixAuth } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
@@ -16,7 +16,7 @@ const SettingsHeader: React.FC = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
-    const hasChatMember = useAppSelector(s => !!selectAuthenticatedMember(s))
+    const matrixAuth = useAppSelector(selectMatrixAuth)
 
     return (
         <>
@@ -32,7 +32,7 @@ const SettingsHeader: React.FC = () => {
                 }
                 centerContainerStyle={{ flex: 2 }}
                 headerRight={
-                    hasChatMember && (
+                    matrixAuth && (
                         <Pressable
                             onPress={() => navigation.navigate('MemberQrCode')}
                             hitSlop={5}>
