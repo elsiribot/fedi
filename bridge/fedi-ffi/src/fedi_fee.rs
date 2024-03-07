@@ -5,7 +5,7 @@ use anyhow::{anyhow, bail, Context};
 use bitcoin::Network;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
-use fedimint_core::task::TaskHandle;
+use fedimint_core::task::{TaskGroup, TaskHandle};
 use fedimint_core::Amount;
 use fedimint_ln_client::{LightningClientModule, OutgoingLightningPayment};
 use futures::FutureExt;
@@ -26,6 +26,7 @@ use crate::types::{LightningSendMetadata, RpcTransactionDirection};
 pub struct FediFeeHelper {
     fedi_api: Arc<dyn IFediApi>,
     app_state: Arc<AppState>,
+    task_group: TaskGroup,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -37,66 +38,80 @@ pub enum FediFeeHelperError {
 }
 
 impl FediFeeHelper {
-    pub fn new(fedi_api: Arc<dyn IFediApi>, app_state: Arc<AppState>) -> Self {
+    pub fn new(
+        fedi_api: Arc<dyn IFediApi>,
+        app_state: Arc<AppState>,
+        task_group: TaskGroup,
+    ) -> Self {
         Self {
             fedi_api,
             app_state,
+            task_group,
         }
     }
 
     /// In a separate task, queries Fedi api to fetch the fee schedule and
     /// updates the AppState
-    pub fn fetch_and_update_fedi_fee_schedule(&self, fed_network_map: HashMap<String, Network>) {
+    pub async fn fetch_and_update_fedi_fee_schedule(
+        &self,
+        fed_network_map: HashMap<String, Network>,
+    ) {
         let fedi_api = self.fedi_api.clone();
         let app_state = self.app_state.clone();
-        fedimint_core::task::spawn("fetch and update fedi fee schedule", async move {
-            // Fetch fee schedule from Fedi API. Presently the endpoint is different per
-            // network (mainnet, mutinynet etc.). So we iterate through the mapping of
-            // federation => network and collect a set-union of all the networks. Then we
-            // make an API call for each network we need, and finally we update each
-            // federation's FederationInfo within AppState with the correct fee schedule.
-            let networks = fed_network_map.values().cloned().collect::<HashSet<_>>();
-            let api_calls = networks.iter().map(|network| {
-                let fedi_api = fedi_api.clone();
-                async move {
-                    match fedi_api.fetch_fedi_fee_schedule(*network).await {
-                        Ok(fedi_fee_schedule) => (*network, Some(fedi_fee_schedule)),
-                        Err(e) => {
-                            error!("Failed to fetch fedi fee schedule for {network} {e:?}");
-                            (*network, None)
+        self.task_group
+            .clone()
+            .spawn("fetch and update fedi fee schedule", move |_| async move {
+                // Fetch fee schedule from Fedi API. Presently the endpoint is different per
+                // network (mainnet, mutinynet etc.). So we iterate through the mapping of
+                // federation => network and collect a set-union of all the networks. Then we
+                // make an API call for each network we need, and finally we update each
+                // federation's FederationInfo within AppState with the correct fee schedule.
+                let networks = fed_network_map.values().cloned().collect::<HashSet<_>>();
+                let api_calls = networks.iter().map(|network| {
+                    let fedi_api = fedi_api.clone();
+                    async move {
+                        match fedi_api.fetch_fedi_fee_schedule(*network).await {
+                            Ok(fedi_fee_schedule) => (*network, Some(fedi_fee_schedule)),
+                            Err(error) => {
+                                error!(%network, ?error, "Failed to fetch fedi fee schedule");
+                                (*network, None)
+                            }
                         }
                     }
-                }
-            });
-            let network_fee_schedule_map = futures::future::join_all(api_calls)
-                .await
-                .into_iter()
-                .filter_map(|(network, schedule)| {
-                    schedule.map(|fedi_fee_schedule| (network, fedi_fee_schedule))
-                })
-                .collect::<HashMap<_, _>>();
-            let app_state_update_res = app_state
-                .with_write_lock(|state| {
-                    state.joined_federations.iter_mut().for_each(|(id, info)| {
-                        // Only proceed if this federation was provided in the input map
-                        let Some(network) = fed_network_map.get(id) else {
-                            return;
-                        };
+                });
+                let network_fee_schedule_map = futures::future::join_all(api_calls)
+                    .await
+                    .into_iter()
+                    .filter_map(|(network, schedule)| Some((network, schedule?)))
+                    .collect::<HashMap<_, _>>();
+                let app_state_update_res = app_state
+                    .with_write_lock(|state| {
+                        state.joined_federations.iter_mut().for_each(|(id, info)| {
+                            // Only proceed if this federation was provided in the input map
+                            let Some(network) = fed_network_map.get(id) else {
+                                warn!(%id, "Federation not provided as input to fee-fetch task");
+                                return;
+                            };
 
-                        // Only proceed if we have fetched a fee schedule for the fed's network
-                        let Some(fedi_fee_schedule) = network_fee_schedule_map.get(network) else {
-                            return;
-                        };
+                            // Only proceed if we have fetched a fee schedule for the fed's network
+                            let Some(fedi_fee_schedule) = network_fee_schedule_map.get(network)
+                            else {
+                                return;
+                            };
 
-                        info.fedi_fee_schedule = fedi_fee_schedule.clone();
+                            info.fedi_fee_schedule = fedi_fee_schedule.clone();
+                        })
                     })
-                })
-                .await;
+                    .await;
 
-            if let Err(e) = app_state_update_res {
-                error!("Failed to update app state with new fedi fee schedule {e:?}")
-            }
-        });
+                if let Err(error) = app_state_update_res {
+                    error!(
+                        ?error,
+                        "Failed to update app state with new fedi fee schedule"
+                    )
+                }
+            })
+            .await;
     }
 
     /// For the given federation ID returns the full Fedi fee schedule. If the

@@ -70,7 +70,11 @@ impl Bridge {
     ) -> Result<Self> {
         let task_group = TaskGroup::new();
         let app_state = Arc::new(AppState::load(storage.clone()).await?);
-        let fedi_fee_helper = Arc::new(FediFeeHelper::new(fedi_api.clone(), app_state.clone()));
+        let fedi_fee_helper = Arc::new(FediFeeHelper::new(
+            fedi_api.clone(),
+            app_state.clone(),
+            task_group.make_subgroup().await,
+        ));
 
         let root_mnemonic = app_state
             .with_read_lock(move |state| state.root_mnemonic.clone())
@@ -120,14 +124,16 @@ impl Bridge {
 
         // Spawn a new task to asynchronously fetch the fee schedule and update app
         // state
-        fedi_fee_helper.fetch_and_update_fedi_fee_schedule(
-            federations
-                .lock()
-                .await
-                .iter()
-                .filter_map(|(id, fed)| Some((id.clone(), fed.federation_network()?)))
-                .collect(),
-        );
+        fedi_fee_helper
+            .fetch_and_update_fedi_fee_schedule(
+                federations
+                    .lock()
+                    .await
+                    .iter()
+                    .filter_map(|(id, fed)| Some((id.clone(), fed.federation_network()?)))
+                    .collect(),
+            )
+            .await;
 
         let bridge = Self {
             storage,
@@ -326,12 +332,14 @@ impl Bridge {
 
         // Spawn a new task to asynchronously fetch the fee schedule and update app
         // state
-        self.fedi_fee_helper.fetch_and_update_fedi_fee_schedule(
-            federations
-                .iter()
-                .filter_map(|(id, fed)| Some((id.clone(), fed.federation_network()?)))
-                .collect(),
-        );
+        self.fedi_fee_helper
+            .fetch_and_update_fedi_fee_schedule(
+                federations
+                    .iter()
+                    .filter_map(|(id, fed)| Some((id.clone(), fed.federation_network()?)))
+                    .collect(),
+            )
+            .await;
 
         Ok(multi)
     }
