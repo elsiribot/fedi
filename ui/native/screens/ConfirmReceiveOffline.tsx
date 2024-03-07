@@ -42,7 +42,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
 
     useEffect(() => {
         if (error) {
-            toast.error(error, 'errors.invalid-ecash-token')
+            toast.error(t, error, 'errors.invalid-ecash-token')
         }
     }, [error, t, toast])
 
@@ -60,7 +60,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                     } as Transaction,
                 })
             } catch (e) {
-                toast.error(e)
+                toast.error(t, e)
                 setReceiving(false)
             }
         }

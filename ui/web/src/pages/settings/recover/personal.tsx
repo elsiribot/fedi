@@ -41,7 +41,7 @@ function PersonalRecoverPage() {
                 content: t('feature.recovery.you-completed-personal-recovery'),
             })
         } catch (err) {
-            toast.error(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
         setIsRecovering(false)
     }, [words, dispatch, toast, t, push])

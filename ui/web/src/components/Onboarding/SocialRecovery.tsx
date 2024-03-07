@@ -56,7 +56,7 @@ export const SocialRecovery: React.FC = () => {
             toast.show(t('feature.recovery.successfully-opened-fedi-file'))
         } catch (err) {
             log.warn('handleFileChange', err)
-            toast.error(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
         setIsCheckingFile(false)
         ev.target.value = ''
@@ -69,7 +69,7 @@ export const SocialRecovery: React.FC = () => {
             toast.show(t('feature.recovery.you-completed-social-recovery'))
         } catch (err) {
             log.warn('handleComplete', err)
-            toast.error(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
     }
 
@@ -79,7 +79,7 @@ export const SocialRecovery: React.FC = () => {
             replace('/onboarding')
         } catch (err) {
             log.warn('handleCancel', err)
-            toast.error(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
     }
 

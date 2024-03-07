@@ -54,7 +54,7 @@ export const HistoryDetailItem: React.FC<HistoryDetailItemProps> = props => {
                                     t('phrases.copied-to-clipboard'),
                             )
                         } catch (err) {
-                            toast.error(err, 'errors.unknown-error')
+                            toast.error(t, err, 'errors.unknown-error')
                         }
                     }}>
                     {valueEl}

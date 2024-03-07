@@ -76,7 +76,7 @@ const StabilityTransactionsList = ({
                             }),
                         ).unwrap()
                     } catch (err) {
-                        toast.error(err)
+                        toast.error(t, err)
                     }
                 },
             })}

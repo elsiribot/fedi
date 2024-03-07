@@ -47,7 +47,7 @@ export const Attachments: React.FC<Props> = ({
             }
         } catch (err) {
             log.error('Failed to launch image library', err)
-            toast.error(err)
+            toast.error(t, err)
         }
     }
 

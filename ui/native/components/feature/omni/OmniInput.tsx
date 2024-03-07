@@ -104,9 +104,9 @@ export function OmniInput<
             const input = await Clipboard.getString()
             await parseInput(input)
         } catch (err) {
-            toast.error(err)
+            toast.error(t, err)
         }
-    }, [parseInput, toast])
+    }, [parseInput, toast, t])
 
     const actions: OmniInputAction[] = useMemo(() => {
         const contextualActions: OmniInputAction[] = []

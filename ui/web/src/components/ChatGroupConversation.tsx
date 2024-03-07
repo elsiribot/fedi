@@ -90,7 +90,7 @@ export const ChatGroupConversation: React.FC<Props> = ({ groupId }) => {
                 }),
             ).unwrap()
         } catch (err) {
-            toast.error(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
     }, [t, dispatch, toast, federationId, group])
 

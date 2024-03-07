@@ -26,7 +26,7 @@ const Transactions: React.FC<Props> = () => {
         fetchTransactions()
             .catch(err => {
                 log.error('Error refreshing transactions', err)
-                toast.error(err)
+                toast.error(t, err)
             })
             .finally(() => setIsLoading(false))
     }, [fetchTransactions, t, toast])

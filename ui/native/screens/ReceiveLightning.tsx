@@ -139,7 +139,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
                 }),
             })
         } catch (err) {
-            toast.error(err)
+            toast.error(t, err)
         }
         setGeneratingInvoice(false)
     }

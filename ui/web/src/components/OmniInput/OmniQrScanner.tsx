@@ -49,9 +49,9 @@ export const OmniQrScanner: React.FC<Props> = ({ processing, onScan }) => {
                 setCameraPermission('granted')
             })
             .catch(err => {
-                toast.error(err, 'errors.camera-unavailable')
+                toast.error(t, err, 'errors.camera-unavailable')
             })
-    }, [toast])
+    }, [toast, t])
 
     if (cameraPermission === 'granted') {
         return <QRScanner onScan={handleScan} processing={processing} />

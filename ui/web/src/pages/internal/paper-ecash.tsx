@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederation } from '@fedi/common/redux'
@@ -26,6 +27,8 @@ export interface EcashPaper {
 const PaperEcash: React.FC = () => {
     const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
+
+    const { t } = useTranslation()
 
     const [ecashPapers, setEcashPapers] = useState<EcashPaper[]>([])
     const [isCanceling, setIsCanceling] = useState(false)
@@ -102,7 +105,7 @@ const PaperEcash: React.FC = () => {
             setEcashPapers([])
         } catch (err) {
             log.error('Failed to cancel', err)
-            toast.error(err, 'Failed to cancel, check logs')
+            toast.error(t, err, 'Failed to cancel, check logs')
         }
         setIsCanceling(false)
         setHasPrinted(false)

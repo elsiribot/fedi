@@ -60,7 +60,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
             } catch (error) {
                 const typedError = error as Error
                 log.error('handleGuardianApproval', typedError)
-                toast.error(error)
+                toast.error(t, error)
             }
             setApprovalInProgress(false)
         }
@@ -74,6 +74,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
         navigation,
         recoveryId,
         toast,
+        t,
     ])
 
     return (

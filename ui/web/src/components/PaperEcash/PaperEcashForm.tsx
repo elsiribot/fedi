@@ -20,6 +20,7 @@ import { useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { EcashPaper } from '../../pages/internal/paper-ecash'
 import { styled, theme } from '../../styles'
+import { useTranslation } from 'react-i18next'
 
 const log = makeLog('PaperEcashForm')
 
@@ -28,6 +29,7 @@ interface Props {
 }
 
 export const PaperEcashForm: React.FC<Props> = ({ onChangeEcashPapers }) => {
+    const { t } = useTranslation()
     const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
     const balance = useAppSelector(selectFederationBalance)
@@ -86,7 +88,7 @@ export const PaperEcashForm: React.FC<Props> = ({ onChangeEcashPapers }) => {
             }
         } catch (err) {
             log.error('Failed to generate', err)
-            toast.error(err, 'Failed to generate, check logs')
+            toast.error(t, err, 'Failed to generate, check logs')
         }
         onChangeEcashPapers(ecashPapers)
         setIsGenerating(false)

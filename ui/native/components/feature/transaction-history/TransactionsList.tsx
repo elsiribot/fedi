@@ -69,7 +69,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                             }),
                         ).unwrap()
                     } catch (err) {
-                        toast.error(err)
+                        toast.error(t, err)
                     }
                 },
             })}

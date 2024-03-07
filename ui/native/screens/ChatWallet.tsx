@@ -82,7 +82,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 backToChat()
             } catch (error) {
                 log.error('generateAndSendEcash', error)
-                toast.error(error)
+                toast.error(t, error)
             }
             setSendingEcash(false)
         }
@@ -131,7 +131,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
             backToChat()
         } catch (error) {
             log.error('requestEcash', error)
-            toast.error(error)
+            toast.error(t, error)
         }
         setIsLoading(false)
     }

@@ -54,7 +54,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                     }),
                 ).unwrap()
             } catch (error) {
-                toast.error(error)
+                toast.error(t, error)
             }
             setEditingGroupName(false)
         }

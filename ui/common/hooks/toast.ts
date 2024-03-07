@@ -1,5 +1,5 @@
+import { TFunction } from 'i18next'
 import { useCallback, useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import {
     showToast as reduxShowToast,
@@ -11,7 +11,6 @@ import { formatErrorMessage } from '@fedi/common/utils/format'
 import { useCommonDispatch } from './redux'
 
 export function useToast() {
-    const { t } = useTranslation()
     const dispatch = useCommonDispatch()
 
     const show = useCallback(
@@ -23,13 +22,13 @@ export function useToast() {
     )
 
     const error = useCallback(
-        (err: unknown, defaultMsg = 'errors.unknown-error') => {
+        (t: TFunction, err: unknown, defaultMsg = 'errors.unknown-error') => {
             show({
                 content: formatErrorMessage(t, err, defaultMsg),
                 status: 'error',
             })
         },
-        [t, show],
+        [show],
     )
 
     const close = useCallback(

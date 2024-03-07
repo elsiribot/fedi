@@ -146,6 +146,7 @@ const OutgoingPullPayment: React.FC<OutgoingPullPaymentProps> = ({
     text,
 }: OutgoingPullPaymentProps) => {
     const { theme } = useTheme()
+    const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const toast = useToast()
@@ -163,7 +164,7 @@ const OutgoingPullPayment: React.FC<OutgoingPullPaymentProps> = ({
             ).unwrap()
         } catch (error) {
             log.error('cancelPayment', error)
-            toast.error(error)
+            toast.error(t, error)
         }
     }
 

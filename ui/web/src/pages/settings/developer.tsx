@@ -55,9 +55,9 @@ function DeveloperPage() {
             hiddenElement.download = 'fedi.log'
             hiddenElement.click()
         } catch (err) {
-            toast.error(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
-    }, [toast])
+    }, [toast, t])
 
     /* TX history */
 
@@ -77,9 +77,9 @@ function DeveloperPage() {
             )
             hiddenElement.click()
         } catch (err) {
-            toast.error(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
-    }, [toast, activeFederation])
+    }, [toast, activeFederation, t])
 
     /* Lightning gateways */
 

@@ -60,7 +60,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     leaveChatGroup({ federationId, groupId }),
                 ).unwrap()
             } catch (err) {
-                toast.error(err)
+                toast.error(t, err)
             }
         }
 

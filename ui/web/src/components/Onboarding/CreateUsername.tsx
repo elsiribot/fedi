@@ -56,7 +56,7 @@ export const CreateUsername: React.FC = () => {
                 push('/onboarding/complete')
             } catch (err) {
                 log.error('failed to fetch xmpp credentials', err)
-                toast.error(err, 'errors.unknown-error')
+                toast.error(t, err, 'errors.unknown-error')
                 setIsRecoveringUsername(false)
             }
         }
@@ -80,7 +80,7 @@ export const CreateUsername: React.FC = () => {
             push('/onboarding/complete')
         } catch (err) {
             log.error('handleSubmit', err)
-            toast.error(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
         setIsSubmitting(false)
     }

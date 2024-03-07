@@ -59,7 +59,7 @@ export default function ChatBroadcastAdminAdd({
                 ).unwrap()
                 setDialogState('broadcast-admins')
             } catch (e) {
-                toast.error(e, t('errors.unknown-error'))
+                toast.error(t, e, t('errors.unknown-error'))
             }
         }
     }

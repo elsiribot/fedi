@@ -65,12 +65,12 @@ export const ChatMessagePayment: React.FC<Props> = ({ message, payment }) => {
                 if (action === 'receive') {
                     setDidReceiveFail(true)
                 } else {
-                    toast.error(err, 'errors.chat-payment-failed')
+                    toast.error(t, err, 'errors.chat-payment-failed')
                 }
             }
             setIsLoading(false)
         },
-        [dispatch, toast, federationId, messageId],
+        [dispatch, toast, federationId, messageId, t],
     )
 
     // Attempt to redeem payment right away

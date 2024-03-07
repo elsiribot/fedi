@@ -115,7 +115,7 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
             navigation.push('BugReportSuccess')
         } catch (err) {
             log.error('Failed to submit bug report', err)
-            toast.error(err)
+            toast.error(t, err)
             setStatus('idle')
         }
     }

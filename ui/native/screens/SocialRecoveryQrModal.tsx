@@ -42,12 +42,12 @@ const SocialRecoveryQrModal: React.FC<Props> = ({ navigation }: Props) => {
                 setRecoveryQrCode(JSON.stringify(recoveryAssistCode))
             } catch (error) {
                 log.error('getRecoveryAssistCode', error)
-                toast.error(error)
+                toast.error(t, error)
             }
         }
 
         getRecoveryAssistCode()
-    }, [navigation, toast])
+    }, [navigation, toast, t])
 
     return (
         <View style={styles(theme).container}>

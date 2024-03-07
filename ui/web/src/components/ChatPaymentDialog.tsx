@@ -81,7 +81,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
                 ).unwrap()
                 onOpenChangeRef.current(false)
             } catch (err) {
-                toast.error(err, 'errors.chat-unavailable')
+                toast.error(t, err, 'errors.chat-unavailable')
             }
         },
         [
@@ -92,6 +92,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
             amount,
             toast,
             onOpenChangeRef,
+            t,
         ],
     )
 
@@ -114,10 +115,10 @@ export const ChatPaymentDialog: React.FC<Props> = ({
             )
             await sendPaymentMessage(token.ecash)
         } catch (err) {
-            toast.error(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
         setSubmitAction(null)
-    }, [sendPaymentMessage, amount, sendMinMax, toast, federationId])
+    }, [sendPaymentMessage, amount, sendMinMax, toast, federationId, t])
 
     const handleRequest = useCallback(async () => {
         setSubmitType('request')

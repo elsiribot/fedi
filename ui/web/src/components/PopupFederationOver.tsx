@@ -40,7 +40,7 @@ export const PopupFederationOver: React.FC = () => {
                 }),
             )
         } catch (err) {
-            toast.error(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
             return
         }
         setIsLeavingFederation(false)

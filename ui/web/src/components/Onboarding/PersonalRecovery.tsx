@@ -42,10 +42,10 @@ export const PersonalRecovery: React.FC = () => {
             ).unwrap()
             push('/onboarding/join')
         } catch (err) {
-            toast.error(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
         setIsRecovering(false)
-    }, [words, dispatch, toast, push])
+    }, [words, dispatch, toast, push, t])
 
     return (
         <OnboardingContainer>

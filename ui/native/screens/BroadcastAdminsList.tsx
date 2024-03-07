@@ -76,7 +76,7 @@ const BroadcastAdminsList: React.FC<Props> = ({ navigation, route }: Props) => {
             }
         } catch (error) {
             log.error('confirmRemoveAdmin', error)
-            toast.error(error)
+            toast.error(t, error)
         }
     }
 

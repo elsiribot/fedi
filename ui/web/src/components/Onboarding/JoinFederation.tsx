@@ -66,7 +66,7 @@ export const JoinFederation: React.FC = () => {
                 }
             } catch (err) {
                 log.error('handleCode', err)
-                toast.error(err, 'errors.invalid-federation-code')
+                toast.error(t, err, 'errors.invalid-federation-code')
             }
             setIsFetchingPreview(false)
         },
@@ -92,7 +92,7 @@ export const JoinFederation: React.FC = () => {
             push(isChatSupported ? '/onboarding/username' : '/')
         } catch (err) {
             log.error('handleJoin', err)
-            toast.error(err, 'errors.invalid-federation-code')
+            toast.error(t, err, 'errors.invalid-federation-code')
             setIsJoining(false)
         }
     }, [federationPreview, isChatSupported, push, dispatch, toast])

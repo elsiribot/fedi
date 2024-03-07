@@ -90,7 +90,7 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
                 await requestMicrophonePermission()
             }
         } catch (err) {
-            toast.error(err)
+            toast.error(t, err)
         }
         setIsRequestingPermission(false)
     }

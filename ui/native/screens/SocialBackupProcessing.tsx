@@ -40,7 +40,7 @@ const SocialBackupProcessing: React.FC<Props> = ({
                 await uploadBackupFile(videoFilePath)
             } catch (error) {
                 log.error('startBackupFileUpload', error)
-                toast.error(error)
+                toast.error(t, error)
             }
         }
 

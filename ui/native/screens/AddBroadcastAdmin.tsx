@@ -78,7 +78,7 @@ const AddBroadcastAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
             }
         } catch (error) {
             log.error('confirmAddAdmin', error)
-            toast.error(error)
+            toast.error(t, error)
         }
     }
 

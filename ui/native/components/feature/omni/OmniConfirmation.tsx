@@ -63,7 +63,7 @@ export const OmniConfirmation: React.FC<Props> = ({
             await lnurlAuth(fedimint, activeFederationId, parsedData.data)
             onSuccess(parsedData)
         } catch (err) {
-            toast.error(err)
+            toast.error(t, err)
         }
         setIsLoading(false)
     }

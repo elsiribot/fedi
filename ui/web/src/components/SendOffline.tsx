@@ -64,7 +64,7 @@ export const SendOffline: React.FC<Props> = ({
             setOfflinePayment(ecash)
             setQrFrames(dataToFrames(Buffer.from(ecash, 'base64')))
         } catch (err) {
-            toast.error(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
         setIsGeneratingEcash(false)
     }, [
@@ -74,6 +74,7 @@ export const SendOffline: React.FC<Props> = ({
         maximumAmount,
         toast,
         onEcashGenerated,
+        t,
     ])
 
     if (offlinePayment && qrFrames) {

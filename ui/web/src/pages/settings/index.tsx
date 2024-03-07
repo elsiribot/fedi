@@ -59,12 +59,12 @@ function AdminPage() {
             try {
                 await dispatch(leaveFederation({ fedimint, federationId }))
             } catch (err) {
-                toast.error(err, 'errors.unknown-error')
+                toast.error(t, err, 'errors.unknown-error')
                 return
             }
         }
         setIsLeavingFederation(false)
-    }, [canLeaveFederation, federationId, dispatch, toast])
+    }, [canLeaveFederation, federationId, dispatch, toast, t])
 
     const tosUrl =
         (activeFederation && getFederationTosUrl(activeFederation.meta)) ||
@@ -84,7 +84,7 @@ function AdminPage() {
             element.click()
             document.body.removeChild(element)
         } else {
-            toast.error(res.message, 'errors.unknown-error')
+            toast.error(t, res.message, 'errors.unknown-error')
         }
 
         setIsExportingCSV(false)

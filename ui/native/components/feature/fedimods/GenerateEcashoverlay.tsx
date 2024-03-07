@@ -80,7 +80,7 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
             onAcceptRef.current(res.ecash)
         } catch (error) {
             log.error('Failed to generate ecash', error, ecashRequest)
-            toast.error(error)
+            toast.error(t, error)
             onRejectRef.current(error as Error)
         }
     }

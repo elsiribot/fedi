@@ -18,12 +18,12 @@ const TransactionsPage: React.FC = () => {
     useEffect(() => {
         fetchTransactions({ more: false })
             .catch(err => {
-                toast.error(err, 'errors.unknown-error')
+                toast.error(t, err, 'errors.unknown-error')
             })
             .finally(() => {
                 setIsLoading(false)
             })
-    }, [fetchTransactions, toast])
+    }, [fetchTransactions, toast, t])
 
     return (
         <ContentBlock>

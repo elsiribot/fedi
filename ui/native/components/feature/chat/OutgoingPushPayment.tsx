@@ -55,7 +55,7 @@ const OutgoingPushPayment: React.FC<OutgoingPushPaymentProps> = ({
                     ).unwrap()
                 } catch (error) {
                     log.error('updateChatPayment', error)
-                    toast.error(error)
+                    toast.error(t, error)
                 }
                 setIsCanceling(false)
             },

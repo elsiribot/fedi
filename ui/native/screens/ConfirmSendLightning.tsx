@@ -73,7 +73,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                 unit,
             })
         } catch (err) {
-            toast.error(err)
+            toast.error(t, err)
         }
         setIsPayingInvoice(false)
     }, [
@@ -84,6 +84,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
         unit,
         navigationReplace,
         toast,
+        t,
     ])
 
     if (!isReadyToPay) return <ActivityIndicator />

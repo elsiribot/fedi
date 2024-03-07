@@ -74,11 +74,11 @@ export const ChatConversation: React.FC<Props> = ({
                 await onSendMessage(value)
                 setValue('')
             } catch (err) {
-                toast.error(err, 'errors.chat-connection-unhealthy')
+                toast.error(t, err, 'errors.chat-connection-unhealthy')
             }
             setIsSending(false)
         },
-        [onSendMessage, value, toast],
+        [onSendMessage, value, toast, t],
     )
 
     const handleInputKeyDown = useCallback(

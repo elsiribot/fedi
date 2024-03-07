@@ -50,7 +50,7 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
             navigation.replace('GroupChat', { groupId })
         } catch (error) {
             log.error('group create failed', error)
-            toast.error(error)
+            toast.error(t, error)
         }
         setCreatingGroup(false)
     }, [
@@ -61,6 +61,7 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
         navigation,
         toast,
         xmppClient,
+        t,
     ])
 
     const handleSubmit = async () => {

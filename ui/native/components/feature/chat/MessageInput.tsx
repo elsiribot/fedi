@@ -65,7 +65,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
             await onMessageSubmitted(messageText)
             setMessageText('')
         } catch (err) {
-            toast.error(err, 'errors.chat-unavailable')
+            toast.error(t, err, 'errors.chat-unavailable')
         }
         setIsSending(false)
     }

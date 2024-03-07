@@ -88,7 +88,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
             onAcceptRef.current({ paymentRequest })
         } catch (error) {
             log.error('Failed to generate invoice', error, lnurlWithdrawal)
-            toast.error(error)
+            toast.error(t, error)
             onRejectRef.current(error as Error)
         }
     }

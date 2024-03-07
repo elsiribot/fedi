@@ -127,7 +127,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
 
         if (promise) {
             promise.catch(err => {
-                toast.error(err, 'error.unknown-error')
+                toast.error(t, err, 'error.unknown-error')
                 setWantsInvoice(false)
             })
             return () => {
@@ -143,6 +143,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         bitcoinUrl,
         activeFederationId,
         toast,
+        t,
     ])
 
     // Watch for incoming payments when we're rendering a lightning invoice
@@ -185,7 +186,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
             )
             setLightningInvoice(invoice)
         } catch (err) {
-            toast.error(err, 'error.unknown-error')
+            toast.error(t, err, 'error.unknown-error')
             setIsWithdrawing(false)
         }
     }

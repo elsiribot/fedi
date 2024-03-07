@@ -141,7 +141,7 @@ const DeveloperSettings: React.FC<Props> = () => {
         try {
             await shareLogsExport()
         } catch (e) {
-            toast.error(e)
+            toast.error(t, e)
         }
         setIsSharingLogs(false)
     }
@@ -151,7 +151,7 @@ const DeveloperSettings: React.FC<Props> = () => {
         try {
             await shareReduxState()
         } catch (e) {
-            toast.error(e)
+            toast.error(t, e)
         }
         setIsSharingState(false)
     }

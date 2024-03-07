@@ -67,7 +67,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                 })
             } catch (err) {
                 log.error('failed to fetch xmpp credentials', err)
-                toast.error(err)
+                toast.error(t, err)
             }
             setIsRecoveringUsername(false)
         }
@@ -137,7 +137,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     setXmppAuthInProgress(false)
                     const errorMessage = formatErrorMessage(t, error)
                     log.info(errorMessage)
-                    toast.error(error)
+                    toast.error(t, error)
                 } else {
                     log.error((error as Error).toString())
                 }

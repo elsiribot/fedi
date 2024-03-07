@@ -46,7 +46,7 @@ export const OmniConfirmation: React.FC<Props> = ({
             await lnurlAuth(fedimint, activeFederationId, parsedData.data)
             onSuccess(parsedData)
         } catch (err) {
-            toast.error(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
         setIsLoading(false)
     }
@@ -65,7 +65,7 @@ export const OmniConfirmation: React.FC<Props> = ({
             )
             onSuccess(parsedData)
         } catch (err) {
-            toast.error(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
         setIsLoading(false)
     }

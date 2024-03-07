@@ -86,7 +86,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({
             }
         } catch (error) {
             log.error('Failed to pay invoice', invoice, error)
-            toast.error(error)
+            toast.error(t, error)
             onRejectRef.current(error as Error)
         }
         setIsLoading(false)

@@ -62,7 +62,7 @@ export default function ChatBroadcastAdminSettings({
                 refreshAdminList()
             }
         } catch (error) {
-            toast.error(error, t('errors.unknown-error'))
+            toast.error(t, error, t('errors.unknown-error'))
         }
     }
 

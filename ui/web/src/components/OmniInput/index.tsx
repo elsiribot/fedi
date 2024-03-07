@@ -95,9 +95,9 @@ export function OmniInput<
             const input = await navigator.clipboard.readText()
             await parseInput(input)
         } catch (err) {
-            toast.error(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
-    }, [parseInput, toast])
+    }, [parseInput, toast, t])
 
     // Perform a QrScanner scan from an image file, rather than from the QRScanner component
     const handleImageFile = useCallback(
@@ -112,11 +112,11 @@ export function OmniInput<
                 })
                 parseInput(result.data)
             } catch (err) {
-                toast.error(err, 'errors.unknown-error')
+                toast.error(t, err, 'errors.unknown-error')
             }
             // Reset the input so they can re-select the same file if they wish
         },
-        [toast, parseInput],
+        [toast, parseInput, t],
     )
 
     const actions = useMemo(() => {

@@ -58,13 +58,13 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 log.info('recoveryAssistCode', recoveryAssistCode)
                 setRecoveryQrCode(JSON.stringify(recoveryAssistCode))
             } catch (error) {
-                toast.error(error)
+                toast.error(t, error)
                 navigation.dispatch(resetAfterFailedSocialRecovery())
             }
         }
 
         getRecoveryAssistCode()
-    }, [navigation, toast])
+    }, [navigation, toast, t])
 
     // ask bridge for social recovery status every second
     useEffect(() => {

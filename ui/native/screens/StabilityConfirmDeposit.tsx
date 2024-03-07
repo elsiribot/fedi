@@ -65,7 +65,7 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
         } catch (error) {
             setProcessingDeposit(false)
             log.error('increaseStableBalance error', error)
-            toast.error(error)
+            toast.error(t, error)
         }
     }
 

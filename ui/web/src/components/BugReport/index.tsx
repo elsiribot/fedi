@@ -127,7 +127,7 @@ export default function BugReport() {
             }, 2500)
         } catch (err) {
             log.error('Failed to submit bug report', err)
-            toast.error(err, formatErrorMessage(t, err, 'errors.unknown-error'))
+            toast.error(t, err, formatErrorMessage(t, err, 'errors.unknown-error'))
             setStatus('idle')
         }
     }

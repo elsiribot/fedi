@@ -61,7 +61,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
                 }
             } catch (err) {
                 log.error('handleCode', err)
-                toast.error(err, 'errors.invalid-federation-code')
+                toast.error(t, err, 'errors.invalid-federation-code')
             }
             setIsFetchingPreview(false)
         },
@@ -106,7 +106,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
                     status: 'error',
                 })
             } else {
-                toast.error(typedError, 'errors.failed-to-join-federation')
+                toast.error(t, typedError, 'errors.failed-to-join-federation')
             }
             setIsJoining(false)
         }
