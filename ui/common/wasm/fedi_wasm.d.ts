@@ -40,12 +40,12 @@ export interface InitOutput {
   readonly fedimint_read_file: (a: number, b: number) => number;
   readonly fedimint_write_file: (a: number, b: number, c: number) => number;
   readonly ring_core_0_17_5_bn_mul_mont: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
+  readonly rustsecp256k1zkp_v0_7_0_default_illegal_callback_fn: (a: number, b: number) => void;
+  readonly rustsecp256k1zkp_v0_7_0_default_error_callback_fn: (a: number, b: number) => void;
   readonly rustsecp256k1_v0_8_1_context_create: (a: number) => number;
   readonly rustsecp256k1_v0_8_1_context_destroy: (a: number) => void;
   readonly rustsecp256k1_v0_8_1_default_illegal_callback_fn: (a: number, b: number) => void;
   readonly rustsecp256k1_v0_8_1_default_error_callback_fn: (a: number, b: number) => void;
-  readonly rustsecp256k1zkp_v0_7_0_default_illegal_callback_fn: (a: number, b: number) => void;
-  readonly rustsecp256k1zkp_v0_7_0_default_error_callback_fn: (a: number, b: number) => void;
   readonly rustsecp256k1_v0_6_1_context_create: (a: number) => number;
   readonly rustsecp256k1_v0_6_1_context_destroy: (a: number) => void;
   readonly rustsecp256k1_v0_6_1_default_illegal_callback_fn: (a: number, b: number) => void;
@@ -54,10 +54,10 @@ export interface InitOutput {
   readonly __wbindgen_realloc: (a: number, b: number, c: number) => number;
   readonly __wbindgen_export_2: WebAssembly.Table;
   readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
-  readonly wasm_bindgen__convert__closures__invoke1_mut__h6a259e20e2b64c60: (a: number, b: number, c: number, d: number) => void;
+  readonly wasm_bindgen__convert__closures__invoke1_mut__h882872ca37c8dc40: (a: number, b: number, c: number, d: number) => void;
   readonly wasm_bindgen__convert__closures__invoke1_mut__hbc4c5b1dabebcb54: (a: number, b: number, c: number, d: number) => void;
-  readonly wasm_bindgen__convert__closures__invoke1_mut__h182ca2b336c45f60: (a: number, b: number, c: number) => void;
-  readonly wasm_bindgen__convert__closures__invoke0_mut__h1edc0c0a311f8b6c: (a: number, b: number) => void;
+  readonly wasm_bindgen__convert__closures__invoke0_mut__h8c2c9ebc2a4c22bd: (a: number, b: number) => void;
+  readonly wasm_bindgen__convert__closures__invoke1_mut__h05d182073cf7a734: (a: number, b: number, c: number) => void;
   readonly wasm_bindgen__convert__closures__invoke1_mut__h6170d54cc6be9bf0: (a: number, b: number, c: number) => void;
   readonly wasm_bindgen__convert__closures__invoke0_mut__h082ee8df3dcbab46: (a: number, b: number) => void;
   readonly __wbindgen_free: (a: number, b: number) => void;
