@@ -1200,6 +1200,8 @@ impl FederationV2 {
             .spawn(
                 format!("{:?} balance subscription", federation.federation_name()),
                 |_| async move {
+                    // always send an initial balance event
+                    federation.send_balance_event().await;
                     let mut updates = federation.client.subscribe_balance_changes().await;
                     while (updates.next().await).is_some() {
                         federation.send_balance_event().await;
