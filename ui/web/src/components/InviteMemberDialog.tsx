@@ -23,7 +23,6 @@ export const InviteMemberDialog: React.FC<Props> = props => {
             qrValue={inviteCode.toUpperCase()}
             copyValue={inviteCode}
             onCopyMessage={t('feature.federations.copied-federation-invite')}
-            notice={t('feature.federations.invite-link-notice')}
             {...props}
         />
     )
