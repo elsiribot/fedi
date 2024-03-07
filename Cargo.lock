@@ -794,6 +794,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-targets 0.48.5",
 ]
@@ -1293,6 +1294,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "25cbce373ec4653f1a01a31e8a5e5ec0c622dc27ff9c4e6606eefef5cbbed4a5"
 
 [[package]]
+name = "fedi-api-types"
+version = "0.1.0"
+source = "git+https://x-access-token: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@github.com/fedibtc/devops-automation?rev=64c5a7b6bffacf4fb2d62b8e0a4ac59900068bf7#64c5a7b6bffacf4fb2d62b8e0a4ac59900068bf7"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "hex",
+ "serde",
+]
+
+[[package]]
 name = "fedi-db-dump"
 version = "0.3.0"
 dependencies = [
@@ -1338,6 +1350,7 @@ dependencies = [
  "bip39",
  "bitcoin 0.29.2",
  "devimint",
+ "fedi-api-types",
  "fedi-db-dump",
  "fedi-social-client",
  "fedimint-aead",

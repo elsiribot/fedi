@@ -34,7 +34,9 @@ impl MultiFederation {
         }
     }
 
-    pub fn federation_network(&self) -> Network {
+    // Returns Option<Network> as the network is not available while the federation
+    // is recovering
+    pub fn federation_network(&self) -> Option<Network> {
         match self {
             Self::V2(v2) => v2.get_network(),
         }

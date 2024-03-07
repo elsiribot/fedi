@@ -125,7 +125,7 @@ impl Bridge {
                 .lock()
                 .await
                 .iter()
-                .map(|(id, fed)| (id.clone(), fed.federation_network()))
+                .filter_map(|(id, fed)| Some((id.clone(), fed.federation_network()?)))
                 .collect(),
         );
 
@@ -329,7 +329,7 @@ impl Bridge {
         self.fedi_fee_helper.fetch_and_update_fedi_fee_schedule(
             federations
                 .iter()
-                .map(|(id, fed)| (id.clone(), fed.federation_network()))
+                .filter_map(|(id, fed)| Some((id.clone(), fed.federation_network()?)))
                 .collect(),
         );
 

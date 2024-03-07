@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
-use anyhow::{bail, Context};
+use anyhow::{anyhow, bail, Context};
 use bitcoin::Network;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
@@ -267,7 +267,12 @@ impl FediFeeRemittanceService {
 
         let invoice = fed
             .fedi_fee_helper
-            .fetch_fedi_fee_invoice(Amount::from_msats(invoice_amt), fed.get_network())
+            .fetch_fedi_fee_invoice(
+                Amount::from_msats(invoice_amt),
+                fed.get_network().ok_or(anyhow!(
+                    "Federation recovering during fee remittance, unexpected!"
+                ))?,
+            )
             .await?;
 
         // If pay_bolt11_invoice() returns successfully, we optimistically zero out

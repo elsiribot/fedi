@@ -2,14 +2,14 @@ use std::collections::BTreeMap;
 use std::str::FromStr;
 use std::time::Duration;
 
-use anyhow::{bail, Context};
+use anyhow::Context;
 use bitcoin::Network;
-use fedimint_core::core::ModuleKind;
+use fedi_api_types::fee_schedule::FeesV0;
+use fedi_api_types::invoice_generator::{GenerateInvoiceRequestV0, GenerateInvoiceResponseV0};
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send, Amount};
 use lightning_invoice::Bolt11Invoice;
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
 
 use crate::constants::{
     FEDI_FEE_API_URL_MAINNET, FEDI_FEE_API_URL_MUTINYNET, FEDI_INVOICE_API_URL_MAINNET,
@@ -61,39 +61,49 @@ impl IFediApi for LiveFediApi {
             _ => FEDI_FEE_API_URL_MUTINYNET,
         };
 
-        // The response is a list of fee schedules. We pick the first one we can
-        // understand.
-        let fee_schedule_list = fedimint_core::task::timeout(Duration::from_secs(15), async {
+        let fee_schedule_v0 = fedimint_core::task::timeout(Duration::from_secs(15), async {
             self.client.get(api_url).send().await
         })
         .await
         .context("Request to fetch fee schedule took too long")?
         .context("Fetch fee schedule response error")?
-        .json::<Vec<FediFeeScheduleItem>>()
+        .json::<FeesV0>()
         .await?;
 
-        let Some(fee_schedule_v0) = fee_schedule_list.iter().find_map(|item| match item {
-            FediFeeScheduleItem::V0(v0) => Some(v0),
-            FediFeeScheduleItem::Unknown => None,
-        }) else {
-            bail!("No known fee schedules found");
-        };
+        let remittance_threshold_msat = fee_schedule_v0.remittance_threshold_msat;
+        let mut modules = BTreeMap::new();
+        modules.insert(
+            fedimint_mint_client::KIND,
+            ModuleFediFeeSchedule {
+                send_ppm: fee_schedule_v0.modules.mint.send_ppm,
+                receive_ppm: fee_schedule_v0.modules.mint.receive_ppm,
+            },
+        );
+        modules.insert(
+            fedimint_ln_common::KIND,
+            ModuleFediFeeSchedule {
+                send_ppm: fee_schedule_v0.modules.ln.send_ppm,
+                receive_ppm: fee_schedule_v0.modules.ln.receive_ppm,
+            },
+        );
+        modules.insert(
+            fedimint_wallet_client::KIND,
+            ModuleFediFeeSchedule {
+                send_ppm: fee_schedule_v0.modules.wallet.send_ppm,
+                receive_ppm: fee_schedule_v0.modules.wallet.receive_ppm,
+            },
+        );
+        modules.insert(
+            stability_pool_client::common::KIND,
+            ModuleFediFeeSchedule {
+                send_ppm: fee_schedule_v0.modules.stability_pool.send_ppm,
+                receive_ppm: fee_schedule_v0.modules.stability_pool.receive_ppm,
+            },
+        );
 
         Ok(FediFeeSchedule {
-            remittance_threshold_msat: fee_schedule_v0.remittance_threshold_msat,
-            modules: fee_schedule_v0
-                .modules
-                .iter()
-                .map(|(k, v)| {
-                    (
-                        ModuleKind::clone_from_str(k),
-                        ModuleFediFeeSchedule {
-                            send_ppm: v.send_ppm,
-                            receive_ppm: v.receive_ppm,
-                        },
-                    )
-                })
-                .collect(),
+            remittance_threshold_msat,
+            modules,
         })
     }
 
@@ -107,10 +117,10 @@ impl IFediApi for LiveFediApi {
             _ => FEDI_INVOICE_API_URL_MUTINYNET,
         };
 
-        let fetch_invoice_response = fedimint_core::task::timeout(Duration::from_secs(15), async {
+        let invoice_v0 = fedimint_core::task::timeout(Duration::from_secs(15), async {
             self.client
                 .post(api_url)
-                .json(&FetchInvoiceRequest {
+                .json(&GenerateInvoiceRequestV0 {
                     amount_msat: amount.msats,
                 })
                 .send()
@@ -119,65 +129,9 @@ impl IFediApi for LiveFediApi {
         .await
         .context("Request to fetch fee invoice took too long")?
         .context("Fetch fee invoice response error")?
-        .json::<Vec<FediFeeInvoiceItem>>()
+        .json::<GenerateInvoiceResponseV0>()
         .await?;
-
-        let Some(invoice_v0) = fetch_invoice_response.iter().find_map(|item| match item {
-            FediFeeInvoiceItem::V0(v0) => Some(v0),
-            FediFeeInvoiceItem::Unknown => None,
-        }) else {
-            bail!("No known invoice items found");
-        };
 
         Ok(Bolt11Invoice::from_str(&invoice_v0.invoice).context("Failed to parse fee invoice")?)
     }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(tag = "version", rename_all = "lowercase")]
-pub enum FediFeeScheduleItem {
-    V0(FediFeeScheduleV0),
-    #[serde(other)]
-    Unknown,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct FediFeeScheduleV0 {
-    /// The minimum amount of fee in msat that must be accrued before an attempt
-    /// is made to remit it to Fedi.
-    pub remittance_threshold_msat: u64,
-
-    /// Different types of transactions may have different fees. So each known
-    /// module (identified by ModuleKind) has its own fee schedule for its
-    /// transactions.
-    pub modules: BTreeMap<String, ModuleFediFeeScheduleV0>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ModuleFediFeeScheduleV0 {
-    /// Represents the fee to charge on the amount in ppm whenever a module
-    /// contributes an input to a transaction.
-    pub send_ppm: u64,
-
-    /// Represents the fee to charge on the amount in ppm whenever a module
-    /// contributes an output to a transaction.
-    pub receive_ppm: u64,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct FetchInvoiceRequest {
-    pub amount_msat: u64,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub enum FediFeeInvoiceItem {
-    V0(FediFeeInvoiceV0),
-    #[serde(other)]
-    Unknown,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct FediFeeInvoiceV0 {
-    pub invoice: String,
 }
