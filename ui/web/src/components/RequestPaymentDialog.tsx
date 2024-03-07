@@ -117,7 +117,9 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                 .then(addr => {
                     if (canceled) return
                     setBitcoinUrl(
-                        `bitcoin:${addr}?amount=${amount}&message=${note}`,
+                        `bitcoin:${addr}?amount=${amountUtils.satToBtc(
+                            amount,
+                        )}&message=${note}`,
                     )
                 })
         }
