@@ -136,7 +136,7 @@ const styles = (theme: Theme) =>
         },
         textInputInner: {
             borderBottomWidth: 0,
-            marginTop: theme.spacing.xs,
+            height: '100%',
         },
         textInputOuter: {
             width: '100%',

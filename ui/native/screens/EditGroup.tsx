@@ -142,7 +142,7 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         textInputInner: {
             borderBottomWidth: 0,
-            marginTop: theme.spacing.xs,
+            height: '100%',
         },
         textInputOuter: {
             width: '100%',
