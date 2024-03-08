@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme, Text } from '@rneui/themed'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Animated,
@@ -18,77 +18,119 @@ import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import {
     selectAuthenticatedMember,
     selectChatMemberMap,
+    selectMatrixRoom,
+    selectMatrixRoomIsReadOnly,
+    selectMatrixUser,
 } from '@fedi/common/redux'
-import { ChatMessage } from '@fedi/common/types'
+import { ChatMessage, ChatType, MatrixEvent } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import { jidToId } from '@fedi/common/utils/chat'
+import {
+    MatrixEventContent,
+    makeMatrixEventGroups,
+} from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../../../state/hooks'
 import Avatar from '../../ui/Avatar'
+import ChatEventCollection from './ChatEventCollection'
 import EmptyGroupNotice from './EmptyGroupNotice'
 import MessageItem from './MessageItem'
 import { MessageItemError } from './MessageItemError'
 
 type MessagesListProps = {
-    messages: ChatMessage[][][]
+    type: ChatType
+    id: string
+    name: string
+    events: MatrixEvent[]
+    onSendMessage?(message: string): Promise<void>
+    onPaginate?: () => Promise<{ end: boolean }>
+    messages?: ChatMessage[][][]
     multiUserChat?: boolean
 }
 
 const MessagesList: React.FC<MessagesListProps> = ({
+    type,
+    id,
+    name,
+    events,
+    onSendMessage,
+    onPaginate,
     messages,
     multiUserChat = false,
 }: MessagesListProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation()
+
+    const room = useAppSelector(s => selectMatrixRoom(s, id))
+    const user = useAppSelector(s => selectMatrixUser(s, id))
+    const isReadOnly = useAppSelector(s => selectMatrixRoomIsReadOnly(s, id))
+    const [hasPaginated, setHasPaginated] = useState(false)
+    const [isPaginating, setIsPaginating] = useState(false)
+    const [isAtEnd, setIsAtEnd] = useState(false)
+
+    const eventGroups = useMemo(
+        () => makeMatrixEventGroups(events, 'desc'),
+        [events],
+    )
+    console.info('room', room)
+    console.info('user', user)
+    console.info('eventGroups', eventGroups)
+
+    // Any time we get a change in the number of events, we reset hasPaginated
+    // so that the user will attempt pagination again.
+    useEffect(() => {
+        setHasPaginated(false)
+    }, [events.length])
+
     const listRef = useRef<FlatList>(null)
-    const lastScrolledMessageIdRef = useRef(messages[0]?.[0]?.[0].id)
+    // const lastScrolledMessageIdRef = useRef(messages[0]?.[0]?.[0].id)
     const isScrolledToBottomRef = useRef(true)
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const memberMap = useAppSelector(selectChatMemberMap)
+    // const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    // const memberMap = useAppSelector(selectChatMemberMap)
     const [hasNewMessage, setHasNewMessages] = useState(false)
     const animatedNewMessageBottom = useRef(new Animated.Value(0)).current
 
     const style = styles(theme)
-    const myId = authenticatedMember?.id || ''
+    // const myId = authenticatedMember?.id || ''
 
     // Animate new message button in and out
-    useEffect(() => {
-        Animated.timing(animatedNewMessageBottom, {
-            toValue: hasNewMessage ? 90 : -50,
-            duration: 100,
-            useNativeDriver: false,
-            easing: Easing.linear,
-        }).start()
-    }, [animatedNewMessageBottom, hasNewMessage])
+    // useEffect(() => {
+    //     Animated.timing(animatedNewMessageBottom, {
+    //         toValue: hasNewMessage ? 90 : -50,
+    //         duration: 100,
+    //         useNativeDriver: false,
+    //         easing: Easing.linear,
+    //     }).start()
+    // }, [animatedNewMessageBottom, hasNewMessage])
 
-    const scrollToEnd = useCallback(() => {
-        // Use scrollToOffset instead of scrollToEnd because the list is inverted
-        listRef.current?.scrollToOffset({ offset: 0, animated: true })
-        setHasNewMessages(false)
-    }, [])
+    // const scrollToEnd = useCallback(() => {
+    //     // Use scrollToOffset instead of scrollToEnd because the list is inverted
+    //     listRef.current?.scrollToOffset({ offset: 0, animated: true })
+    //     setHasNewMessages(false)
+    // }, [])
 
     // When new messages come in, either scroll to the bottom (if we sent)
     // or pop up a notice that we have new messages.
-    useEffect(() => {
-        // Bail out if we've already handled this message
-        const lastMessage = messages[0]?.[0]?.[0]
-        const shouldScroll =
-            lastMessage && lastMessage.id !== lastScrolledMessageIdRef.current
-        if (!shouldScroll) return
+    // useEffect(() => {
+    //     // Bail out if we've already handled this message
+    //     const lastMessage = messages[0]?.[0]?.[0]
+    //     const shouldScroll =
+    //         lastMessage && lastMessage.id !== lastScrolledMessageIdRef.current
+    //     if (!shouldScroll) return
 
-        // Update ref so we don't scroll again
-        lastScrolledMessageIdRef.current = lastMessage.id
+    //     // Update ref so we don't scroll again
+    //     lastScrolledMessageIdRef.current = lastMessage.id
 
-        // If we sent it, or we're already at the bottom, scroll without asking
-        if (lastMessage.sentBy === myId || isScrolledToBottomRef.current) {
-            scrollToEnd()
-        }
-        // Otherwise, mark that we have new messages
-        else {
-            setHasNewMessages(true)
-        }
-    }, [messages, myId, scrollToEnd])
+    //     // If we sent it, or we're already at the bottom, scroll without asking
+    //     if (lastMessage.sentBy === myId || isScrolledToBottomRef.current) {
+    //         scrollToEnd()
+    //     }
+    //     // Otherwise, mark that we have new messages
+    //     else {
+    //         setHasNewMessages(true)
+    //     }
+    // }, [messages, myId, scrollToEnd])
 
     // Mark hasNewMessages as false when we scroll to the bottom, and keep a ref up to date
     const handleScroll = useCallback(
@@ -98,103 +140,47 @@ const MessagesList: React.FC<MessagesListProps> = ({
             if (isAtBottom) {
                 setHasNewMessages(false)
             }
+            console.info(
+                'ev.nativeEvent.contentOffset',
+                ev.nativeEvent.contentOffset,
+            )
         },
         [],
     )
 
-    const renderTimeGroup: ListRenderItem<ChatMessage[][]> = ({ item }) => {
-        // Grab the earliest timestamp (last message in the last message group)
-        const sentAt =
-            item[item.length - 1][item[item.length - 1].length - 1]?.sentAt
+    const renderEventGroup: ListRenderItem<
+        MatrixEvent<MatrixEventContent>[][]
+    > = ({ item }) => {
+        console.info('item', item)
         return (
-            <View style={style.timeGroupContainer}>
-                {sentAt && (
-                    <View style={style.timestampContainer}>
-                        <Text tiny style={style.timestampText}>
-                            {dateUtils.formatMessageItemTimestamp(sentAt)}
-                        </Text>
-                    </View>
-                )}
-                <View style={style.sendersContainer}>
-                    {item.map(msgs => {
-                        if (!msgs.length) return null
-                        const sentBy = msgs[0].sentBy
-                        const sentByName =
-                            memberMap[sentBy]?.username ||
-                            t('feature.chat.unknown-member')
-                        const sentByMe = sentBy && sentBy === myId
-                        return (
-                            <View style={style.senderGroup} key={msgs[0].id}>
-                                {!sentByMe && multiUserChat && (
-                                    <View style={style.senderNameContainer}>
-                                        <Text tiny>{sentByName}</Text>
-                                    </View>
-                                )}
-                                <View style={style.senderGroupContent}>
-                                    {!sentByMe && multiUserChat && (
-                                        <Pressable
-                                            style={style.senderAvatar}
-                                            onPress={() => {
-                                                if (sentBy) {
-                                                    navigation.navigate(
-                                                        'DirectChat',
-                                                        {
-                                                            memberId: sentBy,
-                                                        },
-                                                    )
-                                                }
-                                            }}>
-                                            <Avatar
-                                                id={
-                                                    sentBy
-                                                        ? jidToId(sentBy)
-                                                        : ''
-                                                }
-                                                name={sentByName}
-                                            />
-                                        </Pressable>
-                                    )}
-                                    <View style={style.senderMessages}>
-                                        {msgs.map((msg, index) => (
-                                            <ErrorBoundary
-                                                key={msg.id || index}
-                                                fallback={() => (
-                                                    <MessageItemError />
-                                                )}>
-                                                <MessageItem
-                                                    message={msg}
-                                                    last={
-                                                        index ===
-                                                        msgs.length - 1
-                                                    }
-                                                />
-                                            </ErrorBoundary>
-                                        ))}
-                                    </View>
-                                </View>
-                            </View>
-                        )
-                    })}
-                </View>
-            </View>
+            <ChatEventCollection
+                key={item[0][0].id}
+                roomId={id}
+                collection={item}
+                showUsernames={type === ChatType.group}
+            />
         )
     }
 
     return (
         <>
             <FlatList
-                data={messages}
+                data={eventGroups}
                 ref={listRef}
-                renderItem={renderTimeGroup}
+                renderItem={renderEventGroup}
                 keyExtractor={item => `${item[0][0]?.id}`}
                 style={style.listContainer}
                 contentContainerStyle={style.contentContainer}
                 removeClippedSubviews={false}
                 ListEmptyComponent={multiUserChat ? <EmptyGroupNotice /> : null}
-                onScroll={handleScroll}
-                inverted={messages.length > 0}
+                onScroll={
+                    onPaginate && !hasPaginated && !isAtEnd
+                        ? handleScroll
+                        : undefined
+                }
+                inverted={eventGroups.length > 0}
             />
-            <Animated.View
+            {/* <Animated.View
                 style={[
                     style.newMessageButtonContainer,
                     { bottom: animatedNewMessageBottom },
@@ -204,7 +190,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
                         {t('feature.chat.new-messages')}
                     </Text>
                 </Pressable>
-            </Animated.View>
+            </Animated.View> */}
         </>
     )
 }
@@ -217,39 +203,6 @@ const styles = (theme: Theme) =>
         },
         contentContainer: {
             paddingTop: theme.spacing.md,
-        },
-        timeGroupContainer: {
-            marginBottom: theme.spacing.md,
-            color: theme.colors.darkGrey,
-        },
-        timestampContainer: {
-            alignItems: 'center',
-            width: '100%',
-            marginBottom: theme.spacing.md,
-        },
-        sendersContainer: {
-            flexDirection: 'column-reverse',
-        },
-        timestampText: {
-            color: theme.colors.darkGrey,
-        },
-        senderGroup: {
-            marginBottom: theme.spacing.md,
-        },
-        senderAvatar: {
-            flexDirection: 'row',
-            alignItems: 'flex-end',
-            marginRight: theme.spacing.sm,
-        },
-        senderGroupContent: {
-            flexDirection: 'row',
-            alignItems: 'flex-end',
-        },
-        senderNameContainer: {
-            paddingLeft: 42,
-        },
-        senderMessages: {
-            flexDirection: 'column-reverse',
         },
         newMessageButtonContainer: {
             position: 'absolute',

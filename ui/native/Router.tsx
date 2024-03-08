@@ -70,6 +70,8 @@ import BitcoinRequest from './screens/BitcoinRequest'
 import BroadcastAdminsList from './screens/BroadcastAdminsList'
 import BugReport from './screens/BugReport'
 import BugReportSuccess from './screens/BugReportSuccess'
+import ChatRoomConversation from './screens/ChatRoomConversation'
+import ChatUserConversation from './screens/ChatUserConversation'
 import ChatWallet from './screens/ChatWallet'
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
 import ChooseRecoveryMethod from './screens/ChooseRecoveryMethod'
@@ -299,6 +301,20 @@ const MainNavigator = () => {
                                 component={GroupChat}
                                 options={() => ({
                                     header: () => <GroupHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ChatRoomConversation"
+                                component={ChatRoomConversation}
+                                options={() => ({
+                                    header: () => <DirectChatHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ChatUserConversation"
+                                component={ChatUserConversation}
+                                options={() => ({
+                                    header: () => <DirectChatHeader />,
                                 })}
                             />
                             <Stack.Screen

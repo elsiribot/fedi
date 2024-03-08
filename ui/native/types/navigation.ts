@@ -53,6 +53,8 @@ export type RootStackParamList = {
     BugReport: undefined
     BugReportSuccess: undefined
     CameraPermission: { nextScreen: keyof RootStackParamList } | undefined
+    ChatRoomConversation: { roomId: string }
+    ChatUserConversation: { userId: string }
     ChatWallet: { recipientId: string }
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined

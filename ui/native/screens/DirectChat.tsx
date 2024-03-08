@@ -96,7 +96,8 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
     } else {
         content = (
             <>
-                <MessagesList messages={messageCollections} />
+                {/* TODO: Restore XMPP read-only chats */}
+                {/* <MessagesList messages={messageCollections} /> */}
                 <MessageInput
                     onMessageSubmitted={handleSend}
                     memberId={memberId}

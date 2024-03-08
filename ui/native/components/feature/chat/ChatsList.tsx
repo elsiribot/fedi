@@ -31,8 +31,8 @@ const ChatsList: React.FC = () => {
                     room={item}
                     selectChat={(chat: MatrixRoom) => {
                         if (chat.directUserId) {
-                            navigation.navigate('DirectChat', {
-                                memberId: chat.directUserId,
+                            navigation.navigate('ChatRoomConversation', {
+                                roomId: chat.id,
                             })
                         } else {
                             navigation.navigate('GroupChat', {

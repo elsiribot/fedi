@@ -19,12 +19,12 @@ import ChatWalletButton from './ChatWalletButton'
 
 type MessageInputProps = {
     onMessageSubmitted: (message: string) => Promise<void>
-    memberId?: string | undefined
+    directUserId?: string | undefined
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({
     onMessageSubmitted,
-    memberId, // should only defined for DirectChat
+    directUserId, // should only defined for direct chats
 }: MessageInputProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -80,7 +80,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     : {},
             ]}>
             {/* in-chat payments only available for DirectChat */}
-            {memberId && <ChatWalletButton memberId={memberId} />}
+            {/* {directUserId && <ChatWalletButton userId={directUserId} />} */}
             <Input
                 onChangeText={setMessageText}
                 value={messageText}

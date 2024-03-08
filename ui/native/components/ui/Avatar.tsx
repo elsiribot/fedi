@@ -23,7 +23,7 @@ const svgImageSizeMapping = {
     [AvatarSize.lg]: SvgImageSize.md,
 }
 
-type AvatarProps = {
+export type AvatarProps = {
     size?: AvatarSize
     id: string | number
     url?: string
