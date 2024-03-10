@@ -362,7 +362,7 @@ export class MatrixChatClient {
     private handleObservableUpdate(update: ObservableUpdate<unknown>) {
         const observer = this.observers[update.id]
         if (!observer) {
-            log.warn(
+            log.info(
                 'Received observable update without associated observer handler',
                 { update },
             )
