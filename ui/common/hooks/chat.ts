@@ -28,6 +28,7 @@ import { useCommonDispatch, useCommonSelector } from './redux'
 
 const log = makeLog('common/hooks/chat')
 
+/** @deprecated XMPP legacy code */
 export function useChatMemberSearch(members: ChatMember[]) {
     const [query, setQuery] = useState('')
 
@@ -78,6 +79,8 @@ export function useChatMemberSearch(members: ChatMember[]) {
  * the pauseUpdates param is used by the native app since components remain
  * mounted even when the screen is not in focus. the navigation library
  * returns isFocused = false for any screen using this hook and we can pause it
+ *
+ * @deprecated XMPP legacy code
  */
 export function useUpdateLastMessageSeen(pauseUpdates?: boolean) {
     const dispatch = useCommonDispatch()
@@ -135,6 +138,7 @@ export function useUpdateLastMessageSeen(pauseUpdates?: boolean) {
  * the pauseUpdates param is used by the native app since components remain
  * mounted even when the screen is not in focus. the navigation library
  * returns isFocused = false for any screen using this hook and we can pause it
+ * @deprecated XMPP legacy code
  */
 export function useUpdateLastMessageRead(
     chatId: string,
@@ -193,6 +197,7 @@ export function useUpdateLastMessageRead(
 
 // This hook sets a given device token to be published to the XMPP server
 // so it can receive push notifications for new messages
+/** @deprecated XMPP legacy code */
 export function usePublishNotificationToken(
     getToken: () => Promise<string>,
     needsPermission = false,

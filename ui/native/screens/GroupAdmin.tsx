@@ -31,6 +31,7 @@ const log = makeLog('GroupAdmin')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupAdmin'>
 
+/** @deprecated XMPP legacy code */
 const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()

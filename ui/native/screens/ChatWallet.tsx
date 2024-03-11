@@ -28,6 +28,7 @@ const log = makeLog('ChatWallet')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
 
+/** @deprecated XMPP legacy code */
 const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()

@@ -20,6 +20,7 @@ const log = makeLog('CreateGroup')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'CreateGroup'>
 
+/** @deprecated XMPP legacy code */
 const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
@@ -135,7 +136,7 @@ const styles = (theme: Theme) =>
         },
         textInputInner: {
             borderBottomWidth: 0,
-            height: '100%',
+            marginTop: theme.spacing.xs,
         },
         textInputOuter: {
             width: '100%',

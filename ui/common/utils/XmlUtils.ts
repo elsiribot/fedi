@@ -14,11 +14,15 @@ interface CommonXmppAttributes {
     from?: string
     to?: string
 }
+
+/** @deprecated XMPP legacy code */
 export enum XmppMemberAffiliation {
     none = 'none',
     member = 'member',
     owner = 'owner',
 }
+
+/** @deprecated XMPP legacy code */
 export enum XmppMemberRole {
     visitor = 'visitor',
     participant = 'participant',
@@ -48,6 +52,8 @@ class XmppMessage extends XmppStanza {
 class XmppPresence extends XmppStanza {
     tag = 'presence'
 }
+
+/** @deprecated XMPP legacy code */
 export class XmppQuery extends XmppStanza {
     tag = 'iq'
 }
@@ -186,6 +192,7 @@ export class EncryptedDirectChatMessage extends XmppMessage {
         return xml(this.tag, attributes, placeholderBodyXml, encryptedXml)
     }
 }
+/** @deprecated XMPP legacy code */
 export class GroupChatMessage extends XmppMessage {
     static id = 'sendGroupChat'
     args: GroupChatArgs
@@ -256,6 +263,8 @@ export class EnterMucRoomPresence extends XmppPresence {
 export interface LeaveMucRoomArgs extends CommonXmppAttributes {
     toGroup: string
 }
+
+/** @deprecated XMPP legacy code */
 export class LeaveMucRoomPresence extends XmppPresence {
     static id = 'leaveMucRoom'
     args: LeaveMucRoomArgs
@@ -314,6 +323,8 @@ interface SetRoomConfigArgs extends CommonXmppAttributes {
     moderatedRoom?: boolean
 }
 type UniqueRoomNameArgs = CommonXmppAttributes
+
+/** @deprecated XMPP legacy code */
 export class AddToRosterQuery extends XmppQuery {
     static id = 'addToRoster'
     args: AddToRosterArgs
@@ -343,6 +354,8 @@ export class AddToRosterQuery extends XmppQuery {
         return xml(this.tag, attributes, queryBodyXml)
     }
 }
+
+/** @deprecated XMPP legacy code */
 export class GetMembersListQuery extends XmppQuery {
     static id = 'getMembersList'
     args: GetMembersListArgs
@@ -374,6 +387,8 @@ export class GetMembersListQuery extends XmppQuery {
         )
     }
 }
+
+/** @deprecated XMPP legacy code */
 export class GetMessagesQuery extends XmppQuery {
     static id = 'getMessages'
     args: GetMessagesArgs
@@ -437,6 +452,8 @@ export class GetMessagesQuery extends XmppQuery {
         )
     }
 }
+
+/** @deprecated XMPP legacy code */
 export class GetRoomConfigQuery extends XmppQuery {
     static id = 'getRoomConfig'
     args: GetRoomConfigArgs
@@ -461,6 +478,8 @@ export class GetRoomConfigQuery extends XmppQuery {
         return xml(this.tag, attributes, queryBodyXml)
     }
 }
+
+/** @deprecated XMPP legacy code */
 export class GetRosterQuery extends XmppQuery {
     static id = 'getRoster'
     args: GetRosterArgs
@@ -483,6 +502,8 @@ export class GetRosterQuery extends XmppQuery {
         return xml(this.tag, attributes, queryBodyXml)
     }
 }
+
+/** @deprecated XMPP legacy code */
 export class GetPublicKeyQuery extends XmppQuery {
     // This subscribes to a given member's pubsub service that stores
     // their latest public key used for end-to-end encryption

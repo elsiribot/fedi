@@ -15,6 +15,7 @@ import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupInvite'>
 
+/** @deprecated XMPP legacy code */
 const GroupInvite: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { groupId } = route.params

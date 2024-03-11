@@ -12,7 +12,7 @@ import {
     sendMatrixDirectMessage,
 } from '@fedi/common/redux'
 
-import MessagesList from '../components/feature/chat/MessagesList'
+import ChatConversation from '../components/feature/chat/ChatConversation'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { ChatType } from '../types'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
@@ -69,7 +69,7 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
     return (
         <View style={styles(theme).container}>
             <>
-                <MessagesList
+                <ChatConversation
                     type={ChatType.direct}
                     id={userId}
                     name={user?.displayName || userId}

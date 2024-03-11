@@ -26,6 +26,7 @@ import type { NavigationHook, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'DirectChat'>
 
+/** @deprecated XMPP legacy code */
 const DirectChat: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()

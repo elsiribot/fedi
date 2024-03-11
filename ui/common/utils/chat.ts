@@ -12,6 +12,7 @@ import {
 
 import { FormattedAmounts } from '../hooks/amount'
 
+/** @deprecated XMPP legacy code */
 export const makePaymentText = (
     t: TFunction,
     message: ChatMessage,
@@ -61,6 +62,8 @@ export const jidToId = (jid: JID | string) => {
 }
 
 /**
+ * @deprecated XMPP legacy code
+ *
  * Given a list of messages, organize the messages in a nested list of "grouped"
  * messages. The groups are organized as follows:
  * - The outer-most list is split into groups of messages sent within a similar time-frame.

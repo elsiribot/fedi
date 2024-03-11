@@ -21,6 +21,7 @@ import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'EditGroup'>
 
+/** @deprecated XMPP legacy code */
 const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()

@@ -15,7 +15,7 @@ type MessageItemProps = {
     message: ChatMessage
     last?: boolean
 }
-
+/** @deprecated XMPP legacy code */
 const MessageItem: React.FC<MessageItemProps> = ({
     message,
     last = false,
