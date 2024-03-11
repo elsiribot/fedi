@@ -14,6 +14,7 @@ import {
 import Share from 'react-native-share'
 
 import { useFederationSupportsSingleSeed } from '@fedi/common/hooks/federation'
+import { useToast } from '@fedi/common/hooks/toast'
 import { useExportTransactions } from '@fedi/common/hooks/transactions'
 import {
     changeAuthenticatedGuardian,
@@ -39,7 +40,6 @@ import SettingsItem from '../components/feature/admin/SettingsItem'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import SvgImage from '../components/ui/SvgImage'
 import { version } from '../package.json'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -50,7 +50,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>
 const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const exportTransactions = useExportTransactions(fedimint)
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
     const [isExportingCSV, setIsExportingCSV] = useState(false)
@@ -108,7 +108,10 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                 navigation.replace('Initializing')
             }
         } catch (e) {
-            toast?.show('Failed to leave federation', 3000)
+            toast.show({
+                content: t('errors.failed-to-leave-federation'),
+                status: 'error',
+            })
             return
         }
     }, [
@@ -118,6 +121,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         resetChatState,
         resetGuardiansState,
         toast,
+        t,
     ])
 
     const confirmLeaveFederation = () => {
@@ -202,7 +206,10 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
             }
         } else {
             log.error('error', res.message)
-            toast?.show(t('errors.failed-to-fetch-transactions'))
+            toast.show({
+                content: t('errors.failed-to-fetch-transactions'),
+                status: 'error',
+            })
         }
 
         setIsExportingCSV(false)
@@ -289,33 +296,9 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                 </View>
             )}
             <View>
-                <Pressable
-                    onPress={() => {
-                        setUnlockDevModeCount(unlockDevModeCount + 1)
-                        if (unlockDevModeCount > 10) {
-                            if (developerMode) {
-                                toast?.show(
-                                    t(
-                                        'feature.developer.developer-mode-deactivated',
-                                    ),
-                                    5000,
-                                )
-                                dispatch(setDeveloperMode(false))
-                            } else {
-                                toast?.show(
-                                    t(
-                                        'feature.developer.developer-mode-activated',
-                                    ),
-                                    5000,
-                                )
-                                dispatch(setDeveloperMode(true))
-                            }
-                        }
-                    }}>
-                    <Text style={styles(theme).sectionTitle}>
-                        {t('words.general')}
-                    </Text>
-                </Pressable>
+                <Text style={styles(theme).sectionTitle}>
+                    {t('words.general')}
+                </Text>
                 {developerMode && (
                     <SettingsItem
                         image={<SvgImage name="FediLogoIcon" />}
@@ -349,7 +332,29 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     name="FediLogoIcon"
                     containerStyle={styles(theme).logo}
                 />
-                <Text>{t('phrases.app-version', { version })}</Text>
+                <Pressable
+                    onPress={() => {
+                        setUnlockDevModeCount(unlockDevModeCount + 1)
+                        if (unlockDevModeCount > 21) {
+                            if (developerMode) {
+                                toast.show(
+                                    t(
+                                        'feature.developer.developer-mode-deactivated',
+                                    ),
+                                )
+                                dispatch(setDeveloperMode(false))
+                            } else {
+                                toast.show(
+                                    t(
+                                        'feature.developer.developer-mode-activated',
+                                    ),
+                                )
+                                dispatch(setDeveloperMode(true))
+                            }
+                        }
+                    }}>
+                    <Text>{t('phrases.app-version', { version })}</Text>
+                </Pressable>
             </View>
         </ScrollView>
     )

@@ -6,13 +6,14 @@ import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
 import FederationIcon from '@fedi/common/assets/svgs/federation.svg'
 import GlobeIcon from '@fedi/common/assets/svgs/globe.svg'
 import ScanSadIcon from '@fedi/common/assets/svgs/scan-sad.svg'
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { AnyParsedData, ParserDataType } from '@fedi/common/types'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
 import { ALLOWED_PARSER_TYPES_BEFORE_FEDERATION } from '@fedi/common/utils/parser'
 
 import { useRouteStateContext } from '../../context/RouteStateContext'
-import { useAppSelector, useToast } from '../../hooks'
+import { useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { keyframes, styled } from '../../styles'
 import { theme } from '../../styles'
@@ -45,7 +46,7 @@ export const OmniConfirmation: React.FC<Props> = ({
             await lnurlAuth(fedimint, activeFederationId, parsedData.data)
             onSuccess(parsedData)
         } catch (err) {
-            toast.showErrorToast(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
         setIsLoading(false)
     }
@@ -64,7 +65,7 @@ export const OmniConfirmation: React.FC<Props> = ({
             )
             onSuccess(parsedData)
         } catch (err) {
-            toast.showErrorToast(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
         setIsLoading(false)
     }

@@ -11,8 +11,9 @@ import {
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
+import { useToast } from '@fedi/common/hooks/toast'
+
 import { Images } from '../../assets/images'
-import { useEnvironmentContext } from '../../state/contexts/EnvironmentContext'
 import SvgImage, { SvgImageSize } from './SvgImage'
 
 interface Props {
@@ -43,12 +44,12 @@ const QRScreen: React.FC<Props> = ({
 }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const { width } = useWindowDimensions()
 
     const copyToClipboard = () => {
         Clipboard.setString(copyValue)
-        toast?.show(copyMessage)
+        toast.show({ content: copyMessage, status: 'success' })
     }
 
     const style = styles(theme, width, dark)

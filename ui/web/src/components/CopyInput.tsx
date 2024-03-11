@@ -2,8 +2,8 @@ import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import CopyIcon from '@fedi/common/assets/svgs/copy.svg'
+import { useToast } from '@fedi/common/hooks/toast'
 
-import { useToast } from '../hooks'
 import { styled } from '../styles'
 import { Icon } from './Icon'
 import { Input } from './Input'
@@ -17,19 +17,19 @@ interface Props {
 
 export const CopyInput: React.FC<Props> = ({ value, label, onCopyMessage }) => {
     const { t } = useTranslation()
-    const { showToast, showErrorToast } = useToast()
+    const toast = useToast()
 
     const handleCopy = useCallback(async () => {
         try {
             navigator.clipboard.writeText(value)
             if (onCopyMessage) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                showToast({ content: t(onCopyMessage as any) })
+                toast.show({ content: t(onCopyMessage as any) })
             }
         } catch (err) {
-            showErrorToast(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
-    }, [value, showToast, onCopyMessage, t, showErrorToast])
+    }, [value, onCopyMessage, t, toast])
 
     return (
         <Input

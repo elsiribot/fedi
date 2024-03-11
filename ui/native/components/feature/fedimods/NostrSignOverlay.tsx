@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { RejectionError } from 'webln'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 import { getNostrEventDisplay } from '@fedi/common/utils/nostr'
@@ -13,7 +14,6 @@ import {
 import { eventHashFromEvent } from '@fedi/injections/src/injectables/nostr/utils'
 
 import { fedimint } from '../../../bridge'
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
 import { FediMod } from '../../../types'
 import CustomOverlay from '../../ui/CustomOverlay'
@@ -34,7 +34,7 @@ export const NostrSignOverlay: React.FC<Props> = ({
     onAccept,
 }) => {
     const { t } = useTranslation()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const { theme } = useTheme()
     const federationId = useAppSelector(selectActiveFederationId)
     const [isLoading, setIsLoading] = useState(false)
@@ -58,7 +58,10 @@ export const NostrSignOverlay: React.FC<Props> = ({
             })
         } catch (e) {
             log.error('Failed to sign Nostr event', e)
-            toast?.show(t('feature.fedimods.login-failed'), 3000)
+            toast.show({
+                content: t('feature.fedimods.login-failed'),
+                status: 'error',
+            })
         }
         setIsLoading(false)
     }

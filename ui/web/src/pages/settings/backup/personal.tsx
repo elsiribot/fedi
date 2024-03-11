@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import { SeedWords } from '@fedi/common/types'
 
 import { Button } from '../../../components/Button'
@@ -9,13 +10,12 @@ import { ContentBlock } from '../../../components/ContentBlock'
 import * as Layout from '../../../components/Layout'
 import { RecoverySeedWords } from '../../../components/RecoverySeedWords'
 import { Text } from '../../../components/Text'
-import { useToast } from '../../../hooks'
 import { fedimint } from '../../../lib/bridge'
 import { styled } from '../../../styles'
 
 function PersonalBackupPage() {
     const { t } = useTranslation()
-    const { showToast, showErrorToast } = useToast()
+    const { show, error } = useToast()
     const [words, setWords] = useState<SeedWords>([])
     const [isShowingWords, setIsShowingWords] = useState(false)
     const [hasCheckedGuidance1, setHasCheckedGuidance1] = useState(false)
@@ -26,14 +26,14 @@ function PersonalBackupPage() {
         fedimint
             .getMnemonic()
             .then(mnemonic => setWords(mnemonic))
-            .catch(err => showErrorToast(err, 'errors.unknown-error'))
-    }, [isShowingWords, showErrorToast])
+            .catch(err => error(err, 'errors.unknown-error'))
+    }, [isShowingWords, error])
 
     const handleFinish = useCallback(() => {
-        showToast({
+        show({
             content: t('feature.backup.backed-up-recovery-words'),
         })
-    }, [showToast, t])
+    }, [show, t])
 
     return (
         <ContentBlock>

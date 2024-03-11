@@ -5,6 +5,7 @@ import { Trans, useTranslation } from 'react-i18next'
 import { Alert, Linking, StyleSheet, View } from 'react-native'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     changeAuthenticatedGuardian,
     leaveFederation,
@@ -15,7 +16,6 @@ import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
 import { fedimint } from '../bridge'
 import { FederationLogo } from '../components/ui/FederationLogo'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -27,7 +27,7 @@ export type Props = NativeStackScreenProps<
 const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
     const popupInfo = usePopupFederationInfo()
     const [isLeavingFederation, setIsLeavingFederation] = useState(false)
@@ -78,7 +78,10 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
                 navigation.navigate('Initializing')
             }
         } catch (e) {
-            toast?.show('Failed to leave federation', 3000)
+            toast.show({
+                content: t('errors.failed-to-leave-federation'),
+                status: 'error',
+            })
         }
         setIsLeavingFederation(false)
     }, [
@@ -88,6 +91,7 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
         resetChatState,
         resetGuardiansState,
         toast,
+        t,
     ])
 
     const confirmLeaveFederation = () => {

@@ -5,17 +5,16 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     configureChatGroup,
     selectActiveFederationId,
     selectChatGroup,
 } from '@fedi/common/redux'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import { DEFAULT_GROUP_NAME } from '../constants'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector, usePrevious } from '../state/hooks'
 import { resetAfterGroupNameUpdate } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
@@ -34,7 +33,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
         group?.name || DEFAULT_GROUP_NAME,
     )
     const [editingGroupName, setEditingGroupName] = useState<boolean>(false)
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
 
     const currentGroup = group
     const previousGroup = usePrevious(currentGroup)
@@ -55,7 +54,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                     }),
                 ).unwrap()
             } catch (error) {
-                toast?.show(formatErrorMessage(t, error), 3000)
+                toast.error(t, error)
             }
             setEditingGroupName(false)
         }
@@ -142,7 +141,7 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         textInputInner: {
             borderBottomWidth: 0,
-            marginTop: theme.spacing.xs,
+            height: '100%',
         },
         textInputOuter: {
             width: '100%',

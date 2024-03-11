@@ -11,16 +11,15 @@ import {
     useBalanceDisplay,
 } from '@fedi/common/hooks/amount'
 import { useOmniPaymentState } from '@fedi/common/hooks/pay'
+import { useToast } from '@fedi/common/hooks/toast'
 import { FeeItem, useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { hexToRgba } from '@fedi/common/utils/color'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { fedimint } from '../bridge'
 import { FeeBreakdown } from '../components/feature/send/FeeBreakdown'
 import SvgImage from '../components/ui/SvgImage'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../state/hooks'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
 
@@ -34,7 +33,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
     const { parsedData } = route.params
     const [unit] = useState('sats')
@@ -70,7 +69,7 @@ const ConfirmSendOnChain: React.FC<Props> = ({ route }: Props) => {
                 unit,
             })
         } catch (err) {
-            toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
+            toast.error(t, err, 'errors.unknown-error')
         }
         setIsPayingAddress(false)
     }, [handleOmniSend, inputAmount, unit, navigationReplace, toast, t])

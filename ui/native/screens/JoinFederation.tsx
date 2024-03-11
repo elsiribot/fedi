@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
+import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     joinFederation,
@@ -12,14 +13,12 @@ import {
     setActiveFederationId,
 } from '@fedi/common/redux'
 import { getFederationPreview } from '@fedi/common/utils/FederationUtils'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import { OmniInput } from '../components/feature/omni/OmniInput'
 import FederationPreview from '../components/feature/onboarding/FederationPreview'
 import { CameraPermissionGate } from '../components/feature/permissions/CameraPermissionGate'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import {
     FederationPreview as FederationPreviewType,
@@ -33,7 +32,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'JoinFederation'>
 
 const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const dispatch = useAppDispatch()
     const invite = route?.params?.invite
     const isFocused = useIsFocused()
@@ -53,20 +52,16 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
                 if (federationIds.includes(fed.id)) {
                     dispatch(setActiveFederationId(fed.id))
                     navigationRef.current.replace('TabsNavigator')
-                    toast?.show(t('errors.you-have-already-joined'), 3000)
+                    toast.show({
+                        content: t('errors.you-have-already-joined'),
+                        status: 'error',
+                    })
                 } else {
                     setFederationPreview(fed)
                 }
             } catch (err) {
                 log.error('handleCode', err)
-                toast?.show(
-                    formatErrorMessage(
-                        t,
-                        err,
-                        'errors.invalid-federation-code',
-                    ),
-                    5000,
-                )
+                toast.error(t, err, 'errors.invalid-federation-code')
             }
             setIsFetchingPreview(false)
         },
@@ -106,16 +101,12 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
             // the user here
             // 2. scanning a federation code after you already joined
             if (typedError?.message?.includes('No record locks available')) {
-                toast?.show(t('errors.please-force-quit-the-app'), 5000)
+                toast.show({
+                    content: t('errors.please-force-quit-the-app'),
+                    status: 'error',
+                })
             } else {
-                toast?.show(
-                    formatErrorMessage(
-                        t,
-                        typedError,
-                        'errors.failed-to-join-federation',
-                    ),
-                    5000,
-                )
+                toast.error(t, typedError, 'errors.failed-to-join-federation')
             }
             setIsJoining(false)
         }

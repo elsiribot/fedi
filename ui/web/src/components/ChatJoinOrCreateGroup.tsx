@@ -2,6 +2,7 @@ import { useRouter } from 'next/router'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     createChatGroup,
     fetchChatMembers,
@@ -12,12 +13,7 @@ import {
 import { ChatType } from '@fedi/common/types'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
-import {
-    useAppDispatch,
-    useAppSelector,
-    useIsTouchScreen,
-    useToast,
-} from '../hooks'
+import { useAppDispatch, useAppSelector, useIsTouchScreen } from '../hooks'
 import { styled } from '../styles'
 import { Button } from './Button'
 import { ChatAvatar } from './ChatAvatar'
@@ -66,9 +62,9 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
             ).unwrap()
             push(`/chat/group/${res.id}`)
         } catch (err) {
-            toast.showErrorToast(err, 'errors.chat-unavailable')
+            toast.error(t, err, 'errors.chat-unavailable')
         }
-    }, [dispatch, toast, federationId, joinGroupLink, push])
+    }, [dispatch, toast, federationId, joinGroupLink, push, t])
 
     const handleSaveNewGroup = useCallback(async () => {
         setIsSavingGroup(true)
@@ -84,7 +80,7 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
             ).unwrap()
             push(`/chat/group/${newGroup.id}`)
         } catch (err) {
-            toast.showErrorToast(err, 'errors.chat-unavailable')
+            toast.error(t, err, 'errors.chat-unavailable')
         }
         setIsSavingGroup(false)
     }, [
@@ -95,6 +91,7 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
         push,
         toast,
         isBroadcastOnly,
+        t,
     ])
 
     // Automatically attempt to join group after changing value

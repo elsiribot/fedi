@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import { useTransactionHistory } from '@fedi/common/hooks/transactions'
 
 import { ContentBlock } from '../components/ContentBlock'
 import * as Layout from '../components/Layout'
 import TransactionsList from '../components/TransactionList'
-import { useToast } from '../hooks'
 import { fedimint } from '../lib/bridge'
 
 const TransactionsPage: React.FC = () => {
@@ -18,12 +18,12 @@ const TransactionsPage: React.FC = () => {
     useEffect(() => {
         fetchTransactions({ more: false })
             .catch(err => {
-                toast.showErrorToast(err, 'errors.unknown-error')
+                toast.error(t, err, 'errors.unknown-error')
             })
             .finally(() => {
                 setIsLoading(false)
             })
-    }, [fetchTransactions, toast])
+    }, [fetchTransactions, toast, t])
 
     return (
         <ContentBlock>

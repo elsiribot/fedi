@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     completeSocialRecovery,
     selectActiveFederationId,
@@ -21,7 +22,6 @@ import { makeLog } from '@fedi/common/utils/log'
 import { Images } from '../assets/images'
 import { fedimint } from '../bridge'
 import HoloCard from '../components/ui/HoloCard'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import {
     resetAfterFailedSocialRecovery,
@@ -41,7 +41,7 @@ const QR_CODE_SIZE = Dimensions.get('window').width * 0.7
 const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const dispatch = useAppDispatch()
     const [recovering, setRecovering] = useState(false)
@@ -58,14 +58,13 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 log.info('recoveryAssistCode', recoveryAssistCode)
                 setRecoveryQrCode(JSON.stringify(recoveryAssistCode))
             } catch (error) {
-                const typedError = error as Error
-                toast?.show(typedError?.message, 3000)
+                toast.error(t, error)
                 navigation.dispatch(resetAfterFailedSocialRecovery())
             }
         }
 
         getRecoveryAssistCode()
-    }, [navigation, toast])
+    }, [navigation, toast, t])
 
     // ask bridge for social recovery status every second
     useEffect(() => {
@@ -76,13 +75,16 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                     setApprovals(_approvals)
                 }
             } catch (e) {
-                toast?.show('Failed to fetch guardian approval', 3000)
+                toast.show({
+                    content: t('errors.failed-to-fetch-guardian-approval'),
+                    status: 'error',
+                })
                 log.error('failed to get approvals', e)
             }
         }, 1000)
 
         return () => clearInterval(interval)
-    }, [toast, recovering, recoveryQrCode, setApprovals])
+    }, [toast, recovering, recoveryQrCode, setApprovals, t])
 
     useEffect(() => {
         const completeRecovery = async () => {
@@ -97,7 +99,10 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
             } catch (error) {
                 setRecovering(false)
                 log.error('completeRecovery', error)
-                toast?.show(t('errors.recovery-failed'), 3000)
+                toast.show({
+                    content: t('errors.recovery-failed'),
+                    status: 'error',
+                })
             }
         }
         if (recovering) {

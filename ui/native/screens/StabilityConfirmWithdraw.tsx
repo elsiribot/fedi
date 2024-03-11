@@ -7,18 +7,17 @@ import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     decreaseStableBalance,
     selectFormattedDepositTime,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import { CurrencyAvatar } from '../components/feature/stabilitypool/CurrencyAvatar'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -35,7 +34,7 @@ const StabilityConfirmWithdraw: React.FC<Props> = ({ route, navigation }) => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const { amount } = route.params
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const [processingDeposit, setProcessingDeposit] = useState<boolean>(false)
     const [showDetails, setShowDetails] = useState<boolean>(false)
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
@@ -58,10 +57,7 @@ const StabilityConfirmWithdraw: React.FC<Props> = ({ route, navigation }) => {
         } catch (error) {
             setProcessingDeposit(false)
             log.error('decreaseStableBalance error', error)
-            toast?.show(
-                formatErrorMessage(t, error, 'errors.unknown-error'),
-                3000,
-            )
+            toast.error(t, error)
         }
     }
 

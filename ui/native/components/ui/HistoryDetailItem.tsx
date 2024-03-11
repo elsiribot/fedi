@@ -4,9 +4,9 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
-import { useEnvironmentContext } from '../../state/contexts/EnvironmentContext'
 import SvgImage, { SvgImageSize } from './SvgImage'
 
 interface BaseProps {
@@ -34,7 +34,7 @@ const isStringProps = (props: HistoryDetailItemProps): props is StringProps =>
 export const HistoryDetailItem: React.FC<HistoryDetailItemProps> = props => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
 
     const style = styles(theme)
 
@@ -54,10 +54,12 @@ export const HistoryDetailItem: React.FC<HistoryDetailItemProps> = props => {
                     style={style.copyPressable}
                     onPress={() => {
                         Clipboard.setString(props.value)
-                        toast?.show(
-                            props.copiedMessage ||
+                        toast.show({
+                            content:
+                                props.copiedMessage ||
                                 t('phrases.copied-to-clipboard'),
-                        )
+                            status: 'success',
+                        })
                     }}>
                     {valueEl}
                     <SvgImage name="Copy" size={SvgImageSize.xs} />

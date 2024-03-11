@@ -13,12 +13,12 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import { authenticateChat, selectActiveFederationId } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -32,7 +32,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const dispatch = useAppDispatch()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const [username, setUsername] = useState<string>('')
     const [isRecoveringUsername, setIsRecoveringUsername] = useState(true)
     const [xmppAuthInProgress, setXmppAuthInProgress] = useState<boolean>(false)
@@ -67,10 +67,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                 })
             } catch (err) {
                 log.error('failed to fetch xmpp credentials', err)
-                toast?.show(
-                    formatErrorMessage(t, err, 'errors.unknown-error'),
-                    5000,
-                )
+                toast.error(t, err)
             }
             setIsRecoveringUsername(false)
         }
@@ -140,7 +137,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     setXmppAuthInProgress(false)
                     const errorMessage = formatErrorMessage(t, error)
                     log.info(errorMessage)
-                    toast?.show(errorMessage, 3000)
+                    toast.error(t, error)
                 } else {
                     log.error((error as Error).toString())
                 }
@@ -162,7 +159,10 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const handleUsernameChange = (input: string) => {
         const isValid = /^[^"&'/:<>\s]+$|^$/.test(input)
         if (!isValid) {
-            toast?.show(t('errors.invalid-character'), 3000)
+            toast.show({
+                content: t('errors.invalid-character'),
+                status: 'error',
+            })
         } else {
             setUsername(input)
         }
@@ -273,7 +273,7 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         textInputInner: {
             borderBottomWidth: 0,
-            marginTop: theme.spacing.xs,
+            height: '100%',
         },
         textInputOuter: {
             width: '100%',

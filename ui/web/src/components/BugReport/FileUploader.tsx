@@ -3,9 +3,9 @@ import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import Plus from '@fedi/common/assets/svgs/plus.svg'
+import { useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { useToast } from '../../hooks'
 import { theme } from '../../styles'
 import { Icon } from '../Icon'
 import { Text } from '../Text'
@@ -61,7 +61,7 @@ export const FileUploader = ({
                 } else if (file.type.startsWith('video/')) {
                     applyVideo(file, reader.result as string)
                 } else {
-                    toast.showToast('Invalid file type provided')
+                    toast.show('Invalid file type provided')
                 }
             }
 

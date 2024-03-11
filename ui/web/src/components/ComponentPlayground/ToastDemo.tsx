@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 
+import { useToast } from '@fedi/common/hooks/toast'
+
 import { Button } from '../../components/Button'
-import { useToast } from '../../hooks'
 import { styled } from '../../styles'
 import { Input } from '../Input'
 
@@ -9,7 +10,7 @@ export const ToastDemo: React.FC = () => {
     const [content, setContent] = useState(
         'Failed to toast, requires at least one toaster to be available.',
     )
-    const { showToast } = useToast()
+    const toast = useToast()
 
     return (
         <Container>
@@ -18,7 +19,7 @@ export const ToastDemo: React.FC = () => {
                 value={content}
                 onChange={ev => setContent(ev.currentTarget.value)}
             />
-            <Button variant="primary" onClick={() => showToast({ content })}>
+            <Button variant="primary" onClick={() => toast.show({ content })}>
                 Open toast
             </Button>
         </Container>

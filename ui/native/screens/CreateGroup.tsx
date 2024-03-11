@@ -4,16 +4,15 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     createChatGroup,
     selectActiveFederationId,
     selectChatXmppClient,
 } from '@fedi/common/redux'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -30,7 +29,7 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
     const [groupName, setGroupName] = useState<string>('')
     const [creatingGroup, setCreatingGroup] = useState<boolean>(false)
     const [broadcastOnly, setBroadcastOnly] = useState<boolean>(false)
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
 
     const handleCreateGroup = useCallback(async () => {
         try {
@@ -51,7 +50,7 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
             navigation.replace('GroupChat', { groupId })
         } catch (error) {
             log.error('group create failed', error)
-            toast?.show(formatErrorMessage(t, error), 3000)
+            toast.error(t, error)
         }
         setCreatingGroup(false)
     }, [
@@ -136,7 +135,7 @@ const styles = (theme: Theme) =>
         },
         textInputInner: {
             borderBottomWidth: 0,
-            marginTop: theme.spacing.xs,
+            height: '100%',
         },
         textInputOuter: {
             width: '100%',

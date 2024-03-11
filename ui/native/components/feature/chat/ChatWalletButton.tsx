@@ -4,12 +4,12 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable } from 'react-native'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectChatMember,
     selectIsActiveFederationRecovering,
 } from '@fedi/common/redux'
 
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
@@ -26,7 +26,7 @@ const ChatWalletButton: React.FC<ChatWalletButtonProps> = ({
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const [showOverlay, setShowOverlay] = useState(false)
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const member = useAppSelector(s => selectChatMember(s, memberId))
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
@@ -37,7 +37,10 @@ const ChatWalletButton: React.FC<ChatWalletButtonProps> = ({
             <Pressable
                 onPress={() => {
                     if (!member) {
-                        toast?.show(t('errors.chat-member-not-found'), 4000)
+                        toast.show({
+                            content: t('errors.chat-member-not-found'),
+                            status: 'error',
+                        })
                         return
                     }
                     if (recoveryInProgress) {

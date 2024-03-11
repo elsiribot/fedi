@@ -16,6 +16,7 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { v4 as uuidv4 } from 'uuid'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
@@ -24,11 +25,9 @@ import {
     submitBugReport,
     uploadBugReportLogs,
 } from '@fedi/common/utils/bug-report'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { Attachments } from '../components/ui/Attachments'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 import {
@@ -50,7 +49,7 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const { fontScale } = useWindowDimensions()
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
@@ -116,7 +115,7 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
             navigation.push('BugReportSuccess')
         } catch (err) {
             log.error('Failed to submit bug report', err)
-            toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
+            toast.error(t, err)
             setStatus('idle')
         }
     }

@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { BIP39_WORD_LIST } from '@fedi/common/constants/bip39'
+import { useToast } from '@fedi/common/hooks/toast'
 import { recoverFromMnemonic } from '@fedi/common/redux'
 import { SeedWords } from '@fedi/common/types'
 
@@ -11,13 +12,13 @@ import { ContentBlock } from '../../../components/ContentBlock'
 import * as Layout from '../../../components/Layout'
 import { RecoverySeedWords } from '../../../components/RecoverySeedWords'
 import { Text } from '../../../components/Text'
-import { useAppDispatch, useToast } from '../../../hooks'
+import { useAppDispatch } from '../../../hooks'
 import { fedimint } from '../../../lib/bridge'
 import { styled } from '../../../styles'
 
 function PersonalRecoverPage() {
     const { t } = useTranslation()
-    const { showToast, showErrorToast } = useToast()
+    const toast = useToast()
     const { push } = useRouter()
     const dispatch = useAppDispatch()
     const [words, setWords] = useState<SeedWords>([])
@@ -36,15 +37,14 @@ function PersonalRecoverPage() {
                 }),
             ).unwrap()
             push('/')
-            showToast({
+            toast.show({
                 content: t('feature.recovery.you-completed-personal-recovery'),
-                duration: 5000,
             })
         } catch (err) {
-            showErrorToast(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
         setIsRecovering(false)
-    }, [words, dispatch, showToast, showErrorToast, t, push])
+    }, [words, dispatch, toast, t, push])
 
     return (
         <ContentBlock>
