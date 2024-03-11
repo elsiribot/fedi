@@ -18,11 +18,12 @@ import { parseUserInput } from '@fedi/common/utils/parser'
 
 import { useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
+import { Button } from '../Button'
 import { Icon } from '../Icon'
+import { Input } from '../Input'
 import { Text } from '../Text'
 import { OmniConfirmation } from './OmniConfirmation'
 import { OmniQrScanner } from './OmniQrScanner'
-import { OmniTextInput } from './OmniTextInput'
 
 interface OmniInputAction {
     label: React.ReactNode
@@ -43,6 +44,10 @@ interface Props<T extends ParserDataType, ExpectedData> {
     customActions?: OmniInputAction[]
     defaultToScan?: boolean
     loading?: boolean
+    children?: (props: { onSubmit: (value: string) => void }) => React.ReactNode
+    value?: string
+    onValueChange?: (value: string) => void
+    hideConfirmButton?: boolean
 }
 
 export function OmniInput<
@@ -57,6 +62,7 @@ export function OmniInput<
     const [isParsing, setIsParsing] = useState(false)
     const [unexpectedData, setUnexpectedData] = useState<AnyParsedData>()
     const [invalidData, setInvalidData] = useState<ParsedUnknownData>()
+    const [value, setValue] = useState(props.value || '')
     const fileInputRef = useRef<HTMLInputElement>(null)
     const isLoading = props.loading || isParsing
     const isLoadingRef = useUpdatingRef(isLoading)
@@ -154,6 +160,14 @@ export function OmniInput<
         t,
     ])
 
+    const inputOnChange = (val: string) => {
+        setValue(val)
+        if (typeof props.onValueChange === 'function') {
+            props.onValueChange(val)
+        }
+    }
+    const inputValue = props.value || value
+
     let confirmation: React.ReactNode | undefined
     if (invalidData || unexpectedData) {
         confirmation = (
@@ -174,14 +188,36 @@ export function OmniInput<
                 {isScanning ? (
                     <OmniQrScanner onScan={parseInput} processing={isLoading} />
                 ) : (
-                    <OmniTextInput
-                        onSubmit={parseInput}
-                        label={inputLabel}
-                        placeholder={inputPlaceholder}
-                        loading={isLoading}
-                    />
+                    <InputForm
+                        onSubmit={e => {
+                            e.preventDefault()
+                            parseInput(value)
+                        }}>
+                        <Input
+                            label={inputLabel}
+                            value={inputValue}
+                            placeholder={inputPlaceholder}
+                            onChange={ev =>
+                                inputOnChange(ev.currentTarget.value)
+                            }
+                            disabled={isLoading}
+                            autoFocus
+                        />
+                        {props.hideConfirmButton ? null : (
+                            <Button
+                                width="full"
+                                type="submit"
+                                disabled={!inputValue}
+                                loading={isLoading}>
+                                {t('words.confirm')}
+                            </Button>
+                        )}
+                    </InputForm>
                 )}
             </Main>
+            {typeof props.children === 'function'
+                ? props.children({ onSubmit: parseInput })
+                : null}
             <Actions>
                 {actions.map(({ label, icon, onClick }, idx) => (
                     <Action key={idx} onClick={onClick} disabled={isLoading}>
@@ -208,6 +244,7 @@ const Container = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
+    gap: 16,
 })
 
 const Main = styled('div', {
@@ -217,7 +254,6 @@ const Main = styled('div', {
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    marginBottom: 16,
 })
 
 const Actions = styled('div', {
@@ -242,4 +278,11 @@ const Action = styled('button', {
         opacity: 0.5,
         pointerEvents: 'none',
     },
+})
+
+const InputForm = styled('form', {
+    display: 'flex',
+    flexDirection: 'column',
+    width: '100%',
+    gap: 8,
 })
