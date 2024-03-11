@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import Delete from '@fedi/common/assets/svgs/delete.svg'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     fetchChatGroupMembersList,
     removeAdminFromChatGroup,
@@ -10,7 +11,7 @@ import {
 import { ChatMember } from '@fedi/common/types'
 import { XmppMemberRole } from '@fedi/common/utils/XmlUtils'
 
-import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { Avatar } from './Avatar'
 import { Button } from './Button'
@@ -61,7 +62,7 @@ export default function ChatBroadcastAdminSettings({
                 refreshAdminList()
             }
         } catch (error) {
-            toast?.showErrorToast(error, t('errors.unknown-error'))
+            toast.error(t, error, t('errors.unknown-error'))
         }
     }
 

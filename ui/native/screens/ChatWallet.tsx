@@ -9,6 +9,7 @@ import {
     useMinMaxSendAmount,
 } from '@fedi/common/hooks/amount'
 import { useChatMember } from '@fedi/common/hooks/chat'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
@@ -16,12 +17,10 @@ import {
 } from '@fedi/common/redux'
 import { ChatPayment, ChatPaymentStatus, MSats, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import { AmountScreen } from '../components/ui/AmountScreen'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -41,7 +40,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const [submitType, setSubmitType] = useState<'send' | 'request'>()
     const { generateEcash } = useBridge()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const { recipientId } = route.params
     const { member, isFetchingMember } = useChatMember(recipientId)
     const sendMinMax = useMinMaxSendAmount()
@@ -83,10 +82,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 backToChat()
             } catch (error) {
                 log.error('generateAndSendEcash', error)
-                toast?.show(
-                    formatErrorMessage(t, error, 'errors.unknown-error'),
-                    3000,
-                )
+                toast.error(t, error)
             }
             setSendingEcash(false)
         }
@@ -135,10 +131,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
             backToChat()
         } catch (error) {
             log.error('requestEcash', error)
-            toast?.show(
-                formatErrorMessage(t, error, 'errors.unknown-error'),
-                3000,
-            )
+            toast.error(t, error)
         }
         setIsLoading(false)
     }

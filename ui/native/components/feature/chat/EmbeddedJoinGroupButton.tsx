@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     joinChatGroup,
     selectActiveFederationId,
@@ -12,7 +13,6 @@ import {
 } from '@fedi/common/redux'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { ChatGroup } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
@@ -27,7 +27,7 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
     const dispatch = useAppDispatch()
     const federationId = useAppSelector(selectActiveFederationId)
     const xmppClient = useAppSelector(selectChatXmppClient)
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const { t } = useTranslation()
     const { theme } = useTheme()
     const [groupConfig, setGroupConfig] =
@@ -37,7 +37,10 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
     const copyToClipboard = () => {
         const invitationLink = encodeGroupInvitationLink(groupId)
         Clipboard.setString(invitationLink as string)
-        toast?.show(t('feature.chat.copied-group-invite-code'), 3000)
+        toast.show({
+            content: t('feature.chat.copied-group-invite-code'),
+            status: 'success',
+        })
     }
 
     const handleJoinGroup = useCallback(async () => {
@@ -54,7 +57,10 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
                 groupId: res.id,
             })
         } catch (error) {
-            toast?.show(t('errors.chat-unavailable'), 3000)
+            toast.show({
+                content: t('errors.chat-unavailable'),
+                status: 'error',
+            })
         }
         setIsJoiningGroup(false)
     }, [dispatch, federationId, groupId, navigation, t, toast])

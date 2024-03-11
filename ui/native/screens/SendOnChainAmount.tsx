@@ -5,13 +5,12 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator } from 'react-native'
 
 import { useOmniPaymentState } from '@fedi/common/hooks/pay'
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { fedimint } from '../bridge'
 import { AmountScreen } from '../components/ui/AmountScreen'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../state/hooks'
 import { ParserDataType } from '../types'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
@@ -24,7 +23,7 @@ export type Props = NativeStackScreenProps<
 const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
     const { parsedData } = route.params
 
@@ -59,7 +58,7 @@ const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
                 },
             })
         } catch (err) {
-            toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
+            toast.error(t, err, 'errors.unknown-error')
         }
     }, [
         inputAmount,

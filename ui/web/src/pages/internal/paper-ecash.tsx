@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -10,7 +12,7 @@ import { ContentBlock } from '../../components/ContentBlock'
 import { PaperEcashForm } from '../../components/PaperEcash/PaperEcashForm'
 import { PaperEcashPaper } from '../../components/PaperEcash/PaperEcashPaper'
 import { Text } from '../../components/Text'
-import { useAppSelector, useToast } from '../../hooks'
+import { useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 
@@ -23,8 +25,10 @@ export interface EcashPaper {
 }
 
 const PaperEcash: React.FC = () => {
-    const { showErrorToast } = useToast()
+    const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
+
+    const { t } = useTranslation()
 
     const [ecashPapers, setEcashPapers] = useState<EcashPaper[]>([])
     const [isCanceling, setIsCanceling] = useState(false)
@@ -101,7 +105,7 @@ const PaperEcash: React.FC = () => {
             setEcashPapers([])
         } catch (err) {
             log.error('Failed to cancel', err)
-            showErrorToast(err, 'Failed to cancel, check logs')
+            toast.error(t, err, 'Failed to cancel, check logs')
         }
         setIsCanceling(false)
         setHasPrinted(false)

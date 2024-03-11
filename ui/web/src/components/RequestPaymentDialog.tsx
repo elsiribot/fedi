@@ -8,6 +8,7 @@ import {
     useIsOfflineWalletSupported,
     useIsOnchainDepositSupported,
 } from '@fedi/common/hooks/federation'
+import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { Sats, Transaction } from '@fedi/common/types'
@@ -15,7 +16,7 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 
 import { useRouteState } from '../context/RouteStateContext'
-import { useAppSelector, useToast } from '../hooks'
+import { useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { config, styled, theme } from '../styles'
 import { AmountInput } from './AmountInput'
@@ -126,7 +127,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
 
         if (promise) {
             promise.catch(err => {
-                toast.showErrorToast(err, 'error.unknown-error')
+                toast.error(t, err, 'error.unknown-error')
                 setWantsInvoice(false)
             })
             return () => {
@@ -142,6 +143,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         bitcoinUrl,
         activeFederationId,
         toast,
+        t,
     ])
 
     // Watch for incoming payments when we're rendering a lightning invoice
@@ -184,7 +186,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
             )
             setLightningInvoice(invoice)
         } catch (err) {
-            toast.showErrorToast(err, 'error.unknown-error')
+            toast.error(t, err, 'error.unknown-error')
             setIsWithdrawing(false)
         }
     }

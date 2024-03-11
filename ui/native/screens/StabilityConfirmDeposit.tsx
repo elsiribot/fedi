@@ -8,13 +8,13 @@ import { Pressable, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
+import { useToast } from '@fedi/common/hooks/toast'
 import { FeeItem, useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import {
     increaseStableBalance,
     selectFormattedDepositTime,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
@@ -22,7 +22,6 @@ import { FeeBreakdown } from '../components/feature/send/FeeBreakdown'
 import { CurrencyAvatar } from '../components/feature/stabilitypool/CurrencyAvatar'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -39,7 +38,7 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const { amount } = route.params
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const [processingDeposit, setProcessingDeposit] = useState<boolean>(false)
     const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
     const [showDetails, setShowDetails] = useState<boolean>(false)
@@ -66,10 +65,7 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
         } catch (error) {
             setProcessingDeposit(false)
             log.error('increaseStableBalance error', error)
-            toast?.show(
-                formatErrorMessage(t, error, 'errors.unknown-error'),
-                3000,
-            )
+            toast.error(t, error)
         }
     }
 

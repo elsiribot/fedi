@@ -5,6 +5,7 @@ import CheckIcon from '@fedi/common/assets/svgs/check.svg'
 import CloseIcon from '@fedi/common/assets/svgs/close.svg'
 import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     updateChatPayment,
     selectActiveFederationId,
@@ -18,7 +19,7 @@ import {
 } from '@fedi/common/types'
 import { makePaymentText } from '@fedi/common/utils/chat'
 
-import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled } from '../styles'
 import { Button } from './Button'
@@ -64,12 +65,12 @@ export const ChatMessagePayment: React.FC<Props> = ({ message, payment }) => {
                 if (action === 'receive') {
                     setDidReceiveFail(true)
                 } else {
-                    toast.showErrorToast(err, 'errors.chat-payment-failed')
+                    toast.error(t, err, 'errors.chat-payment-failed')
                 }
             }
             setIsLoading(false)
         },
-        [dispatch, toast, federationId, messageId],
+        [dispatch, toast, federationId, messageId, t],
     )
 
     // Attempt to redeem payment right away

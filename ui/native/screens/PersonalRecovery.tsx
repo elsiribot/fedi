@@ -13,6 +13,7 @@ import {
     View,
 } from 'react-native'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import { recoverFromMnemonic, selectActiveFederation } from '@fedi/common/redux'
 import type { SeedWords } from '@fedi/common/types'
 import stringUtils from '@fedi/common/utils/StringUtils'
@@ -20,7 +21,6 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import { BIP39_WORD_LIST } from '../constants'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { resetAfterPersonalRecovery } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
@@ -90,7 +90,7 @@ const SeedWordInput = React.forwardRef<TextInput, SeedWordInputProps>(
 const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
     const dispatch = useAppDispatch()
     const [recoveryInProgress, setRecoveryInProgress] = useState<boolean>(false)
@@ -135,7 +135,10 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
                 navigation.dispatch(resetAfterPersonalRecovery())
             } catch (error) {
                 log.error('recoverFromSeed', error)
-                toast?.show(t('errors.recovery-failed'), 3000)
+                toast.show({
+                    content: t('errors.recovery-failed'),
+                    status: 'error',
+                })
             }
         }
 

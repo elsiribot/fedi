@@ -2,10 +2,13 @@ import * as Portal from '@radix-ui/react-portal'
 import * as RadixToast from '@radix-ui/react-toast'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
+import Close from '@fedi/common/assets/svgs/close.svg'
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectToast } from '@fedi/common/redux'
 
-import { useAppSelector, useMediaQuery, useToast } from '../hooks'
+import { useAppSelector, useMediaQuery } from '../hooks'
 import { config, keyframes, styled, theme } from '../styles'
+import { Icon } from './Icon'
 import { Text } from './Text'
 
 export const ToastManager: React.FC = () => {
@@ -13,26 +16,25 @@ export const ToastManager: React.FC = () => {
     const toastElRef = useRef<HTMLLIElement>(null)
     const [cachedToast, setCachedToast] = useState(toast)
     const [isToastOpen, setIsToastOpen] = useState(!!toast)
-    const [isPaused, setIsPaused] = useState(false)
-    const { closeToast } = useToast()
-    const isMobile = useMediaQuery(config.media.sm)
+    const { close } = useToast()
+    const isMobile = useMediaQuery(config.media.md)
 
     const handleCloseToast = useCallback(
         (open: boolean) => {
             setIsToastOpen(open)
-            if (!open) closeToast(toast?.key)
+            if (!open) close(toast?.key)
         },
-        [toast, closeToast],
+        [toast, close],
     )
 
     useEffect(() => {
         if (toast) {
             setCachedToast(toast)
             setIsToastOpen(true)
-        } else if (!isPaused) {
+        } else {
             setIsToastOpen(false)
         }
-    }, [toast, isPaused])
+    }, [toast])
 
     return (
         <Portal.Root>
@@ -42,16 +44,24 @@ export const ToastManager: React.FC = () => {
                     ref={toastElRef}
                     open={isToastOpen}
                     onOpenChange={handleCloseToast}
-                    duration={cachedToast?.duration}
-                    onPause={() => setIsPaused(true)}
-                    onResume={() => setIsPaused(false)}>
+                    duration={Infinity}>
                     {cachedToast && (
                         <ToastInner>
-                            <RadixToast.Description>
+                            <ToastIcon>
+                                {cachedToast?.status === 'success'
+                                    ? '👍'
+                                    : cachedToast?.status === 'info'
+                                    ? '👀'
+                                    : '⚠️'}
+                            </ToastIcon>
+                            <Description>
                                 <Text variant="caption">
                                     {cachedToast.content}
                                 </Text>
-                            </RadixToast.Description>
+                            </Description>
+                            <CloseIcon onClick={() => handleCloseToast(false)}>
+                                <Icon icon={Close} />
+                            </CloseIcon>
                         </ToastInner>
                     )}
                 </Toast>
@@ -86,12 +96,31 @@ const toastFadeOut = keyframes({
     '100%': { opacity: 0 },
 })
 
+const CloseIcon = styled('button', {
+    color: theme.colors.grey,
+    fontSize: 20,
+    width: 20,
+    height: 20,
+    flexShrink: 0,
+})
+
+const ToastIcon = styled(Text, {
+    fontSize: '20px !important',
+    flexShrink: 0,
+})
+
+const Description = styled(RadixToast.Description, {
+    flexGrow: 1,
+})
+
 const Toast = styled(RadixToast.Root, {
     width: '100%',
-    borderRadius: 20,
-    background: theme.colors.white,
+    borderRadius: 16,
+    backgroundColor: theme.colors.black,
+    backgroundImage:
+        'linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0))',
     textAlign: 'left',
-    boxShadow: `0 4px 24px 0 ${theme.colors.primary10}`,
+    boxShadow: `0px 2px 4px 0px #00000026, 0px 7px 7px 0px #00000021, 0px 16px 10px 0px #00000014, 0px 29px 12px 0px #00000005, 0px 46px 13px 0px #00000000`,
 
     '&[data-state="open"]': {
         animation: `${toastSlideLeft} 150ms ease-out`,
@@ -127,16 +156,18 @@ const Toast = styled(RadixToast.Root, {
 })
 
 const ToastInner = styled('div', {
-    width: '100%',
-    padding: 20,
-    borderRadius: 20,
-    border: `1px solid ${theme.colors.lightGrey}`,
+    display: 'flex',
+    gap: 12,
+    padding: 14,
+    borderRadius: 16,
     holoGradient: '400',
+    alignItems: 'center',
+    color: theme.colors.white,
 })
 
 const Viewport = styled(RadixToast.Viewport, {
     position: 'fixed',
-    bottom: 32,
+    top: 32,
     right: 20,
     width: '100%',
     maxWidth: 320,

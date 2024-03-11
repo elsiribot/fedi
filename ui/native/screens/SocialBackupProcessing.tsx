@@ -4,13 +4,12 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { formatErrorMessage } from '@fedi/common/utils/format'
+import { useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
 
 import HoloCard from '../components/ui/HoloCard'
 import HoloProgressCircle from '../components/ui/HoloProgressCircle'
 import LineBreak from '../components/ui/LineBreak'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -28,7 +27,7 @@ const SocialBackupProcessing: React.FC<Props> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { uploadBackupFile } = useBridge()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const { videoFilePath } = route.params
     const [percentComplete, setPercentComplete] = useState<number>(0)
     const [uploadStarted, setUploadStarted] = useState(false)
@@ -41,10 +40,7 @@ const SocialBackupProcessing: React.FC<Props> = ({
                 await uploadBackupFile(videoFilePath)
             } catch (error) {
                 log.error('startBackupFileUpload', error)
-                toast?.show(
-                    formatErrorMessage(t, error, 'errors.unknown-error'),
-                    3000,
-                )
+                toast.error(t, error)
             }
         }
 

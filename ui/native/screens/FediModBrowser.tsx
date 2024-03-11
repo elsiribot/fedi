@@ -16,6 +16,7 @@ import {
     useIsFediInternalInjectionEnabled,
     useIsNostrEnabled,
 } from '@fedi/common/hooks/federation'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
@@ -54,7 +55,6 @@ import { MakeInvoiceOverlay } from '../components/feature/fedimods/MakeInvoiceOv
 import { NostrSignOverlay } from '../components/feature/fedimods/NostrSignOverlay'
 import { SendPaymentOverlay } from '../components/feature/fedimods/SendPaymentOverlay'
 import { RecoveryInProgressOverlay } from '../components/feature/recovery/RecoveryInProgressOverlay'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import {
     useOmniLinkContext,
     useOmniLinkInterceptor,
@@ -101,7 +101,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
     const nostrEnabled = useIsNostrEnabled()
     const fediInternalEnabled = useIsFediInternalInjectionEnabled()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
     )
@@ -246,7 +246,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 )
             } catch (error) {
                 log.error('sendPayment', 'error', error)
-                toast?.show(t('phrases.failed-to-decode-invoice'), 3000)
+                toast.show({
+                    content: t('phrases.failed-to-decode-invoice'),
+                    status: 'error',
+                })
                 throw Error(t('phrases.failed-to-decode-invoice'))
             }
             // Wait for user to interact with alert
@@ -260,7 +263,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                             activeFederation?.balance as MSats,
                         )} SATS`,
                     })
-                    toast?.show(message, 5000)
+                    toast.show({ content: message, status: 'error' })
                     reject(new Error(message))
                 } else {
                     // Save these refs to we can resolve / reject elsewhere

@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import Video from 'react-native-video'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
 
 import CheckBox from '../components/ui/CheckBox'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -28,7 +28,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { approveSocialRecoveryRequest } = useBridge()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const { videoPath, recoveryId } = route.params
     const [isPaused, setIsPaused] = useState(true)
     const [approvalSelected, setApprovalSelected] = useState(false)
@@ -60,7 +60,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
             } catch (error) {
                 const typedError = error as Error
                 log.error('handleGuardianApproval', typedError)
-                toast?.show(typedError?.message, 3000)
+                toast.error(t, error)
             }
             setApprovalInProgress(false)
         }
@@ -74,6 +74,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
         navigation,
         recoveryId,
         toast,
+        t,
     ])
 
     return (

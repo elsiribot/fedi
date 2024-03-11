@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import ChevronLeftIcon from '@fedi/common/assets/svgs/chevron-left.svg'
 import SendArrowUpCircleIcon from '@fedi/common/assets/svgs/send-arrow-up-circle.svg'
 import { useUpdateLastMessageRead } from '@fedi/common/hooks/chat'
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectChat, selectChatGroupRole } from '@fedi/common/redux'
 import {
     ChatMessage as ChatMessageType,
@@ -13,12 +14,7 @@ import {
 } from '@fedi/common/types'
 import { makeMessageGroups } from '@fedi/common/utils/chat'
 
-import {
-    useToast,
-    useAutosizeTextArea,
-    useAppSelector,
-    useIsTouchScreen,
-} from '../hooks'
+import { useAutosizeTextArea, useAppSelector, useIsTouchScreen } from '../hooks'
 import { styled, theme } from '../styles'
 import { ChatAvatar } from './ChatAvatar'
 import { ChatMessageCollection } from './ChatMessageCollection'
@@ -78,11 +74,11 @@ export const ChatConversation: React.FC<Props> = ({
                 await onSendMessage(value)
                 setValue('')
             } catch (err) {
-                toast.showErrorToast(err, 'errors.chat-connection-unhealthy')
+                toast.error(t, err, 'errors.chat-connection-unhealthy')
             }
             setIsSending(false)
         },
-        [onSendMessage, value, toast],
+        [onSendMessage, value, toast, t],
     )
 
     const handleInputKeyDown = useCallback(

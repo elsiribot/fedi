@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     joinChatGroup,
     selectActiveFederationId,
@@ -15,7 +16,6 @@ import { decodeDirectChatLink } from '@fedi/common/utils/xmpp'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -27,7 +27,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const connectionOptions = useAppSelector(selectChatConnectionOptions)
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const dispatch = useAppDispatch()
@@ -39,7 +39,10 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
                 log.info('fedi chat member detected', input)
                 // TODO: show chat unavailable
                 if (!connectionOptions) {
-                    return toast?.show(t('errors.chat-unavailable'), 3000)
+                    return toast.show({
+                        content: t('errors.chat-unavailable'),
+                        status: 'error',
+                    })
                 }
                 const memberUsername = decodeDirectChatLink(input)
                 const { domain } = connectionOptions
@@ -60,10 +63,16 @@ const ScanMemberCode: React.FC<Props> = ({ navigation }: Props) => {
                         groupId: res.id,
                     })
                 } catch (error) {
-                    toast?.show(t('errors.chat-unavailable'), 3000)
+                    toast.show({
+                        content: t('errors.chat-unavailable'),
+                        status: 'error',
+                    })
                 }
             } else {
-                toast?.show(t('feature.chat.invalid-member'), 3000)
+                toast.show({
+                    content: t('feature.chat.invalid-member'),
+                    status: 'error',
+                })
             }
         },
         [activeFederationId, connectionOptions, dispatch, navigation, t, toast],

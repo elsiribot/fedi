@@ -3,10 +3,11 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
+import { useToast } from '@fedi/common/hooks/toast'
 import { authenticateChat, selectActiveFederationId } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { useAppDispatch, useAppSelector, useToast } from '../../hooks'
+import { useAppDispatch, useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 import { Button } from '../Button'
@@ -55,7 +56,7 @@ export const CreateUsername: React.FC = () => {
                 push('/onboarding/complete')
             } catch (err) {
                 log.error('failed to fetch xmpp credentials', err)
-                toast.showErrorToast(err, 'errors.unknown-error')
+                toast.error(t, err, 'errors.unknown-error')
                 setIsRecoveringUsername(false)
             }
         }
@@ -79,7 +80,7 @@ export const CreateUsername: React.FC = () => {
             push('/onboarding/complete')
         } catch (err) {
             log.error('handleSubmit', err)
-            toast.showErrorToast(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
         }
         setIsSubmitting(false)
     }

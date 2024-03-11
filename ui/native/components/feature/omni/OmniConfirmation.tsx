@@ -3,11 +3,11 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking } from 'react-native'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederationId,
     selectIsActiveFederationRecovering,
 } from '@fedi/common/redux'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
 import {
     ALLOWED_PARSER_TYPES_BEFORE_FEDERATION,
@@ -15,7 +15,6 @@ import {
 } from '@fedi/common/utils/parser'
 
 import { fedimint } from '../../../bridge'
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector } from '../../../state/hooks'
 import { AnyParsedData, ParserDataType } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
@@ -36,7 +35,7 @@ export const OmniConfirmation: React.FC<Props> = ({
     onSuccess,
 }) => {
     const { t } = useTranslation()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const navigation = useNavigation()
     const [isLoading, setIsLoading] = useState(false)
     const activeFederationId = useAppSelector(selectActiveFederationId)
@@ -64,7 +63,7 @@ export const OmniConfirmation: React.FC<Props> = ({
             await lnurlAuth(fedimint, activeFederationId, parsedData.data)
             onSuccess(parsedData)
         } catch (err) {
-            toast?.show(formatErrorMessage(t, err, 'errors.unknown-error'))
+            toast.error(t, err)
         }
         setIsLoading(false)
     }

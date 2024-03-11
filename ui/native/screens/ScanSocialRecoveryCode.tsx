@@ -5,12 +5,12 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import type { SocialRecoveryQrCode } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
 import QrCodeScanner from '../components/feature/scan/QrCodeScanner'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -25,7 +25,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { socialRecoveryDownloadVerificationDoc } = useBridge()
     const { t } = useTranslation()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const [downloading, setDownloading] = useState<boolean>(false)
 
     const handleUserInput = useCallback(
@@ -45,10 +45,7 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                             qr.recoveryId,
                         )
                     if (videoPath == null) {
-                        toast?.show(
-                            t('feature.recovery.nothing-to-download'),
-                            3000,
-                        )
+                        toast.show(t('feature.recovery.nothing-to-download'))
                     } else {
                         navigation.navigate('CompleteRecoveryAssist', {
                             videoPath: videoPath as string,
@@ -57,11 +54,17 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
                     }
                 } catch (e) {
                     log.error("couldn't download video", e)
-                    toast?.show(t('feature.recovery.download-failed'), 3000)
+                    toast.show({
+                        content: t('feature.recovery.download-failed'),
+                        status: 'error',
+                    })
                 }
             } catch (e) {
                 log.error("couldn't generate social recovery QR code", e)
-                toast?.show(t('feature.recovery.invalid-qr-code'), 3000)
+                toast.show({
+                    content: t('feature.recovery.invalid-qr-code'),
+                    status: 'error',
+                })
             }
             log.debug(input)
             setDownloading(false)

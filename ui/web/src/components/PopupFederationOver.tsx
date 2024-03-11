@@ -2,10 +2,11 @@ import React, { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
+import { useToast } from '@fedi/common/hooks/toast'
 import { leaveFederation, selectActiveFederation } from '@fedi/common/redux'
 import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
-import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 import { Button } from './Button'
@@ -18,7 +19,7 @@ import { Text } from './Text'
 export const PopupFederationOver: React.FC = () => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
-    const { showErrorToast } = useToast()
+    const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
     const popupInfo = usePopupFederationInfo()
     const [isLeavingFederation, setIsLeavingFederation] = useState(false)
@@ -39,7 +40,7 @@ export const PopupFederationOver: React.FC = () => {
                 }),
             )
         } catch (err) {
-            showErrorToast(err, 'errors.unknown-error')
+            toast.error(t, err, 'errors.unknown-error')
             return
         }
         setIsLeavingFederation(false)

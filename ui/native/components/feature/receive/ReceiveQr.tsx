@@ -6,12 +6,12 @@ import { useTranslation } from 'react-i18next'
 import { Dimensions, Share, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import stringUtils from '@fedi/common/utils/StringUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { Images } from '../../../assets/images'
 import { fedimint } from '../../../bridge'
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { BitcoinOrLightning, BtcLnUri, TransactionEvent } from '../../../types'
 
 const log = makeLog('ReceiveQr')
@@ -27,13 +27,16 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({ uri, type }: ReceiveQrProps) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
 
     const copyToClipboard = () => {
         if (!uri.fullString) return
 
         Clipboard.setString(uri.fullString)
-        toast?.show(t('feature.receive.copied-payment-code'))
+        toast.show({
+            content: t('feature.receive.copied-payment-code'),
+            status: 'success',
+        })
     }
 
     const openShareDialog = async () => {

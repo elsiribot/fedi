@@ -5,15 +5,14 @@ import { View } from 'react-native'
 import { RejectionError } from 'webln'
 
 import { useSendForm } from '@fedi/common/hooks/amount'
+import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlPay } from '@fedi/common/utils/lnurl'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
-import { useEnvironmentContext } from '../../../state/contexts/EnvironmentContext'
 import { useAppSelector, useBridge } from '../../../state/hooks'
 import { FediMod, Invoice, ParsedLnurlPay } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
@@ -38,7 +37,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({
 }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const { payInvoice } = useBridge()
     const federationId = useAppSelector(selectActiveFederationId)
     const [submitAttempts, setSubmitAttempts] = useState(0)
@@ -87,10 +86,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({
             }
         } catch (error) {
             log.error('Failed to pay invoice', invoice, error)
-            toast?.show(
-                formatErrorMessage(t, error, 'errors.unknown-error'),
-                3000,
-            )
+            toast.error(t, error)
             onRejectRef.current(error as Error)
         }
         setIsLoading(false)

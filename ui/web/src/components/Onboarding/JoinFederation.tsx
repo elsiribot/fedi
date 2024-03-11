@@ -3,6 +3,7 @@ import React, { useCallback, useState, useEffect } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
 import { useIsChatSupported } from '@fedi/common/hooks/federation'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     joinFederation,
     selectFederationIds,
@@ -18,12 +19,7 @@ import {
 import { makeLog } from '@fedi/common/utils/log'
 
 import { useRouteState } from '../../context/RouteStateContext'
-import {
-    useAppDispatch,
-    useAppSelector,
-    useMediaQuery,
-    useToast,
-} from '../../hooks'
+import { useAppDispatch, useAppSelector, useMediaQuery } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { config, styled, theme } from '../../styles'
 import { Button } from '../Button'
@@ -46,7 +42,7 @@ export const JoinFederation: React.FC = () => {
     const invite = routeState?.data.invite
     const { t } = useTranslation()
     const { push } = useRouter()
-    const { showErrorToast, showToast } = useToast()
+    const toast = useToast()
     const [isFetchingPreview, setIsFetchingPreview] = useState(false)
     const [isJoining, setIsJoining] = useState(false)
     const [isShowingTos, setIsShowingTos] = useState(false)
@@ -64,17 +60,17 @@ export const JoinFederation: React.FC = () => {
                 if (federationIds.includes(fed.id)) {
                     dispatch(setActiveFederationId(fed.id))
                     push('/')
-                    showToast(t('errors.you-have-already-joined'))
+                    toast.show(t('errors.you-have-already-joined'))
                 } else {
                     setFederationPreview(fed)
                 }
             } catch (err) {
                 log.error('handleCode', err)
-                showErrorToast(err, 'errors.invalid-federation-code')
+                toast.error(t, err, 'errors.invalid-federation-code')
             }
             setIsFetchingPreview(false)
         },
-        [federationIds, dispatch, push, showErrorToast, showToast, t],
+        [federationIds, dispatch, push, t, toast],
     )
 
     // If they came here with route state, paste the code for them
@@ -96,10 +92,10 @@ export const JoinFederation: React.FC = () => {
             push(isChatSupported ? '/onboarding/username' : '/')
         } catch (err) {
             log.error('handleJoin', err)
-            showErrorToast(err, 'errors.invalid-federation-code')
+            toast.error(t, err, 'errors.invalid-federation-code')
             setIsJoining(false)
         }
-    }, [federationPreview, isChatSupported, push, dispatch, showErrorToast])
+    }, [federationPreview, isChatSupported, push, dispatch, toast])
 
     const tosUrl = federationPreview
         ? getFederationTosUrl(federationPreview.meta)

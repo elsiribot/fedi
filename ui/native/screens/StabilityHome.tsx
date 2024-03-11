@@ -8,6 +8,7 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native'
 import * as Progress from 'react-native-progress'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectFederationBalance,
     selectStableBalance,
@@ -16,7 +17,6 @@ import {
 import { makePendingBalanceText } from '@fedi/common/utils/wallet'
 
 import { StabilityBitcoinBanner } from '../components/feature/wallet/StabilityBitcoinBanner'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppSelector, useStabilityPool } from '../state/hooks'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
 
@@ -26,7 +26,7 @@ const StabilityHome: React.FC<Props> = () => {
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const { width } = useWindowDimensions()
     const navigation = useNavigation<NavigationHook>()
     const stableBalance = useAppSelector(selectStableBalance)
@@ -75,12 +75,12 @@ const StabilityHome: React.FC<Props> = () => {
                         onPress={() => {
                             // Block deposits if pending balance is negative because we have to wait until pending withdrawals have processed
                             if (stableBalancePending < 0) {
-                                toast?.show(
-                                    t(
+                                toast.show({
+                                    content: t(
                                         'feature.stabilitypool.pending-withdrawal-blocking',
                                     ),
-                                    5000,
-                                )
+                                    status: 'error',
+                                })
                             } else {
                                 navigation.navigate('StabilityDeposit')
                             }
@@ -97,12 +97,12 @@ const StabilityHome: React.FC<Props> = () => {
                         onPress={() => {
                             // Block withdrawals if pending balance is negative because we have to wait until pending withdrawals have processed
                             if (stableBalancePending < 0) {
-                                toast?.show(
-                                    t(
+                                toast.show({
+                                    content: t(
                                         'feature.stabilitypool.pending-withdrawal-blocking',
                                     ),
-                                    5000,
-                                )
+                                    status: 'error',
+                                })
                             } else {
                                 navigation.navigate('StabilityWithdraw')
                             }

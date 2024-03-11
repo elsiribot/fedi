@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     addAdminToChatGroup,
     fetchChatGroupMembersList,
@@ -14,7 +15,6 @@ import { XmppMemberRole } from '@fedi/common/utils/XmlUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import MemberItem from '../components/feature/chat/MemberItem'
-import { useEnvironmentContext } from '../state/contexts/EnvironmentContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -31,7 +31,7 @@ const AddBroadcastAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(selectActiveFederationId)
-    const { toast } = useEnvironmentContext().state
+    const toast = useToast()
     const [usernameFilter, setUsernameFilter] = useState<string>('')
     const [visitors, setVisitors] = useState<ChatMember[]>([])
     const style = styles(theme)
@@ -68,17 +68,17 @@ const AddBroadcastAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                         memberId: member.id,
                     }),
                 ).unwrap()
-                toast?.show(
-                    t('feature.chat.added-admin-to-group', {
+                toast.show({
+                    content: t('feature.chat.added-admin-to-group', {
                         username: member.username,
                     }),
-                    3000,
-                )
+                    status: 'success',
+                })
                 navigation.goBack()
             }
         } catch (error) {
             log.error('confirmAddAdmin', error)
-            toast?.show(t('errors.unknown-error'), 3000)
+            toast.error(t, error)
         }
     }
 

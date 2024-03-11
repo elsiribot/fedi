@@ -1,5 +1,5 @@
+import { TFunction } from 'i18next'
 import { useCallback, useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import {
     showToast as reduxShowToast,
@@ -8,13 +8,12 @@ import {
 import { ToastArgs } from '@fedi/common/types'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
-import { useAppDispatch } from './store'
+import { useCommonDispatch } from './redux'
 
 export function useToast() {
-    const { t } = useTranslation()
-    const dispatch = useAppDispatch()
+    const dispatch = useCommonDispatch()
 
-    const showToast = useCallback(
+    const show = useCallback(
         (toast: string | ToastArgs) => {
             const args = typeof toast === 'string' ? { content: toast } : toast
             dispatch(reduxShowToast(args))
@@ -22,14 +21,17 @@ export function useToast() {
         [dispatch],
     )
 
-    const showErrorToast = useCallback(
-        (err: unknown, defaultMsg: string) => {
-            showToast({ content: formatErrorMessage(t, err, defaultMsg) })
+    const error = useCallback(
+        (t: TFunction, err: unknown, defaultMsg = 'errors.unknown-error') => {
+            show({
+                content: formatErrorMessage(t, err, defaultMsg),
+                status: 'error',
+            })
         },
-        [t, showToast],
+        [show],
     )
 
-    const closeToast = useCallback(
+    const close = useCallback(
         (key?: string) => {
             dispatch(reduxCloseToast(key))
         },
@@ -37,6 +39,6 @@ export function useToast() {
     )
 
     return useMemo(() => {
-        return { showToast, showErrorToast, closeToast }
-    }, [showToast, showErrorToast, closeToast])
+        return { show, error, close }
+    }, [show, error, close])
 }
