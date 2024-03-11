@@ -15,6 +15,7 @@ import { Button } from '../Button'
 import { ConfirmDialog } from '../ConfirmDialog'
 import { HoloLoader } from '../HoloLoader'
 import { IconButton } from '../IconButton'
+import { Header, Title } from '../Layout'
 import { QRCode } from '../QRCode'
 import { Text } from '../Text'
 import {
@@ -22,7 +23,6 @@ import {
     OnboardingContainer,
     OnboardingContent,
 } from './components'
-import { Header, Title } from '../Layout'
 
 const log = makeLog('SocialRecovery')
 
