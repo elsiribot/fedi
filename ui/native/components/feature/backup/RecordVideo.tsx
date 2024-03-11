@@ -59,7 +59,10 @@ const RecordVideo = () => {
         )
         if (deviceFormat === undefined) {
             log.error('No suitable camera format found')
-            toast?.show(t('feature.backup.record-error'), 4000)
+            toast.show({
+                content: t('feature.backup.record-error'),
+                status: 'error',
+            })
         }
         return deviceFormat
     }, [device, t, toast])
@@ -95,7 +98,10 @@ const RecordVideo = () => {
 
     const handleError = (e: Error) => {
         log.error('Camera error', e)
-        toast?.show(t('feature.backup.record-error'), 4000)
+        toast.show({
+            content: t('feature.backup.record-error'),
+            status: 'error',
+        })
     }
 
     return (
