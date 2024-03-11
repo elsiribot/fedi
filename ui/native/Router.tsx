@@ -886,13 +886,13 @@ const Router = () => {
     const toast = useToast()
 
     // Makes sure to check XMPP socket health when app is foregrounded
-    useXmppHealthCheck()
+    // useXmppHealthCheck()
 
     // Publishes an FCM push notification token if chat is available
-    useXmppPushNotifications()
+    // useXmppPushNotifications()
 
     // Make sure any available chat connections are always online
-    useMonitorChatConnections(fedimint)
+    // useMonitorChatConnections(fedimint)
 
     return (
         <NavigationContainer
