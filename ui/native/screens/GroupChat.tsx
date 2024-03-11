@@ -29,6 +29,7 @@ const log = makeLog('GroupChat')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
 
+/** @deprecated XMPP legacy code */
 const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()

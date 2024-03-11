@@ -3,6 +3,7 @@ import { LinkingOptions, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import {
+    ChatType,
     FederationPreview,
     ParsedBip21,
     ParsedBitcoinAddress,
@@ -53,7 +54,7 @@ export type RootStackParamList = {
     BugReport: undefined
     BugReportSuccess: undefined
     CameraPermission: { nextScreen: keyof RootStackParamList } | undefined
-    ChatRoomConversation: { roomId: string }
+    ChatRoomConversation: { roomId: string, chatType: ChatType }
     ChatUserConversation: { userId: string }
     ChatWallet: { recipientId: string }
     ChooseBackupMethod: undefined

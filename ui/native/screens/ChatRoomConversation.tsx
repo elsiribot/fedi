@@ -12,10 +12,12 @@ import {
     selectMatrixRoom,
     selectMatrixRoomEvents,
     sendMatrixMessage,
+    showToast,
 } from '@fedi/common/redux'
 import { ChatType } from '@fedi/common/types'
 import { makeMatrixEventGroups } from '@fedi/common/utils/matrix'
 
+import { useToast } from '../../web/src/hooks/toast'
 import ChatConversation from '../components/feature/chat/ChatConversation'
 import MessageInput from '../components/feature/chat/MessageInput'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -29,17 +31,17 @@ export type Props = NativeStackScreenProps<
 const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const navigation = useNavigation<NavigationHook>()
-    const matrixAuth = useAppSelector(selectMatrixAuth)
+    // const navigation = useNavigation<NavigationHook>()
+    // const matrixAuth = useAppSelector(selectMatrixAuth)
     const dispatch = useAppDispatch()
-    const { roomId } = route.params
-    console.debug('roomId', roomId)
+    const { roomId, chatType } = route.params
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
     const events = useAppSelector(s => selectMatrixRoomEvents(s, roomId))
-    const eventGroups = useMemo(
-        () => makeMatrixEventGroups(events, 'desc'),
-        [events],
-    )
+    const toast = useToast()
+    const isLoading = useMemo(() => {
+        return !room || !events
+    }, [room, events])
+
     useObserveMatrixRoom(roomId)
 
     const directUserId = room?.directUserId
@@ -51,9 +53,6 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const handleSend = useCallback(
         async (body: string) => {
             await dispatch(sendMatrixMessage({ roomId, body })).unwrap()
-            // await dispatch(
-            //     sendMatrixDirectMessage({ userId, body }),
-            // ).unwrap()
         },
         [dispatch, roomId],
     )
@@ -66,36 +65,48 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
             ).unwrap()
             end = res.end
         } catch (err) {
-            // TODO: use new toast manager
-            // showErrorToast(err, 'errors.unknown-error')
+            toast.showErrorToast(err, t('errors.unknown-error'))
         }
         return { end }
     }, [dispatch, roomId])
 
-    let content: React.ReactNode
-    if (!room) {
-        content = (
-            <Text style={styles(theme).centeredText}>
-                {t('feature.chat.member-not-found', { username: roomId })}
-            </Text>
-        )
-    } else {
-        content = (
-            <>
-                <ChatConversation
-                    type={ChatType.direct}
-                    id={room?.id || ''}
-                    name={room?.name || ''}
-                    events={events}
-                    onPaginate={handlePaginate}
-                />
-                <MessageInput
-                    onMessageSubmitted={handleSend}
-                    directUserId={directUserId}
-                />
-            </>
-        )
-    }
+    // let content: React.ReactNode
+    const content = useMemo(() => {
+        if (isLoading) {
+            return null
+        } else if (!room) {
+            return (
+                <Text style={styles(theme).centeredText}>
+                    {t('feature.chat.member-not-found', { username: roomId })}
+                </Text>
+            )
+        } else {
+            return (
+                <>
+                    <ChatConversation
+                        type={chatType}
+                        id={room?.id || ''}
+                        name={room?.name || ''}
+                        events={events}
+                        onPaginate={handlePaginate}
+                    />
+                    <MessageInput
+                        onMessageSubmitted={handleSend}
+                        directUserId={directUserId}
+                    />
+                </>
+            )
+        }
+    }, [
+        isLoading,
+        room,
+        chatType,
+        roomId,
+        events,
+        handlePaginate,
+        handleSend,
+        directUserId,
+    ])
 
     return <View style={styles(theme).container}>{content}</View>
 }

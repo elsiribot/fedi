@@ -8,7 +8,7 @@ import {
     selectMatrixOrderedRoomsList,
     selectMatrixStatus,
 } from '@fedi/common/redux'
-import { MatrixRoom, MatrixSyncStatus } from '@fedi/common/types'
+import { ChatType, MatrixRoom, MatrixSyncStatus } from '@fedi/common/types'
 
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
@@ -33,10 +33,12 @@ const ChatsList: React.FC = () => {
                         if (chat.directUserId) {
                             navigation.navigate('ChatRoomConversation', {
                                 roomId: chat.id,
+                                chatType: ChatType.direct,
                             })
                         } else {
-                            navigation.navigate('GroupChat', {
-                                groupId: chat.id,
+                            navigation.navigate('ChatRoomConversation', {
+                                roomId: chat.id,
+                                chatType: ChatType.group,
                             })
                         }
                     }}
