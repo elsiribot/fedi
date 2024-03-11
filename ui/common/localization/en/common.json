@@ -624,7 +624,26 @@
                 "uyu": "Uruguayan Peso",
                 "ars": "Argentinian Peso",
                 "pen": "Peruvian Nuevo Sol",
-                "brl": "Brazilian Real"
+                "brl": "Brazilian Real",
+                "cpb": "Cuban Peso",
+                "ves": "Bolivares",
+                "hnl": "Honduran Lempira",
+                "mmk": "Myanmar Kyat",
+                "lbp": "Lebanese Pound",
+                "aud": "Australian Dollar",
+                "hkd": "Hong Kong Dollar",
+                "bdt": "Bangladeshi Taka",
+                "bwp": "Botswana Pula",
+                "ngn": "Nigerian Naira",
+                "mwk": "Malawian Kwacha",
+                "zmw": "Zambian Kwacha",
+                "kes": "Kenyan Shilling",
+                "ghs": "Ghanaian Cedi",
+                "djf": "Djiboutian Franc",
+                "nad": "Namibian Dollar",
+                "xaf": "Cameroon",
+                "php": "Philippine Peso",
+                "gtq": "Guatemalan Quetzal"
             }
         },
         "stabilitypool": {
