@@ -31,9 +31,7 @@ use fedimint_core::config::{
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleInstanceId;
-use fedimint_core::db::{
-    DatabaseTransaction, DatabaseVersion, IDatabaseTransactionOpsCoreTyped, MigrationMap,
-};
+use fedimint_core::db::{DatabaseTransaction, DatabaseVersion, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
     ApiEndpoint, CoreConsensusVersion, InputMeta, ModuleConsensusVersion, ModuleInit, PeerHandle,
@@ -58,6 +56,7 @@ pub struct StabilityPoolInit;
 #[async_trait]
 impl ModuleInit for StabilityPoolInit {
     type Common = StabilityPoolCommonGen;
+    const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(2);
 
     // TODO shaurya handle stability pool DB dump
     async fn dump_database(
@@ -72,14 +71,13 @@ impl ModuleInit for StabilityPoolInit {
 #[async_trait]
 impl ServerModuleInit for StabilityPoolInit {
     type Params = StabilityPoolGenParams;
-    const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(2);
 
     fn versions(&self, _core: CoreConsensusVersion) -> &[ModuleConsensusVersion] {
         &[CONSENSUS_VERSION]
     }
 
     fn supported_api_versions(&self) -> SupportedModuleApiVersions {
-        SupportedModuleApiVersions::from_raw((2, 0), (2, 0), &[(0, 0)])
+        SupportedModuleApiVersions::from_raw((3, 0), (3, 0), &[(0, 0)])
     }
 
     async fn init(&self, args: &ServerModuleInitArgs<Self>) -> anyhow::Result<DynServerModule> {
@@ -173,8 +171,11 @@ impl ServerModuleInit for StabilityPoolInit {
         })
     }
 
-    fn get_database_migrations(&self) -> MigrationMap {
-        let mut migrations = MigrationMap::new();
+    fn get_database_migrations(
+        &self,
+    ) -> BTreeMap<DatabaseVersion, fedimint_core::db::ServerMigrationFn> {
+        let mut migrations =
+            BTreeMap::<DatabaseVersion, fedimint_core::db::ServerMigrationFn>::default();
         migrations.insert(DatabaseVersion(1), |dbtx| migrate_to_v2(dbtx).boxed());
         migrations
     }

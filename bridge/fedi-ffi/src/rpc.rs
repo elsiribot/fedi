@@ -828,9 +828,14 @@ mod tests {
         federation: &MultiFederation,
     ) -> anyhow::Result<String> {
         let ecash_string = match federation {
-            MultiFederation::V2(_) => cmd!(FedimintCli, "spend", amount.msats.to_string())
-                .out_json()
-                .await?["notes"]
+            MultiFederation::V2(_) => cmd!(
+                FedimintCli,
+                "spend",
+                "--allow-overpay",
+                amount.msats.to_string()
+            )
+            .out_json()
+            .await?["notes"]
                 .as_str()
                 .map(|s| s.to_owned())
                 .expect("'note' key not found generating ecash with fedimint-cli"),
@@ -970,6 +975,16 @@ mod tests {
         Ok(federation)
     }
 
+    async fn join_test_fed_recovery(
+        bridge: &Arc<Bridge>,
+    ) -> Result<Arc<MultiFederation>, anyhow::Error> {
+        let invite_code = std::env::var("FM_INVITE_CODE").unwrap();
+        let fedimint_federation = joinFederation(bridge.clone(), invite_code).await?;
+        let federation = bridge
+            .get_multi_maybe_recovering(&fedimint_federation.id.0)
+            .await?;
+        Ok(federation)
+    }
     #[tokio::test(flavor = "multi_thread")]
     async fn test_doesnt_overwrite_seed_in_invalid_fedi_file() -> anyhow::Result<()> {
         INIT_TRACING.call_once(|| {
@@ -1389,10 +1404,12 @@ mod tests {
         recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
 
         // Rejoin federation and assert that balances are correct
-        let recovery_federation = join_test_fed(&recovery_bridge).await?;
+        let recovery_federation = join_test_fed_recovery(&recovery_bridge).await?;
         match &*recovery_federation {
-            MultiFederation::V2(x) => assert!(*x.recovering.lock().await),
+            MultiFederation::V2(x) => assert!(x.recovering()),
         }
+        let id = recovery_federation.federation_id();
+        drop(recovery_federation);
         loop {
             // Wait until recovery complete
             if recovery_bridge
@@ -1405,6 +1422,7 @@ mod tests {
 
             fedimint_core::task::sleep(Duration::from_secs(2)).await;
         }
+        let recovery_federation = recovery_bridge.get_multi(&id.0).await?;
         // Currently, accrued fedi fee is merged back into balance upon recovery
         assert_eq!(
             ecash_balance_before + expected_fedi_fee,
@@ -1560,8 +1578,10 @@ mod tests {
             .next()
             .ok_or(anyhow!("Rejoined federation must exist"))?;
         match &*recovery_federation {
-            MultiFederation::V2(x) => assert!(*x.recovering.lock().await),
+            MultiFederation::V2(x) => assert!(x.recovering()),
         }
+        let id = recovery_federation.federation_id();
+        drop(recovery_federation);
         loop {
             // Wait until recovery complete
             if recovery_bridge
@@ -1574,6 +1594,7 @@ mod tests {
 
             fedimint_core::task::sleep(Duration::from_secs(2)).await;
         }
+        let recovery_federation = recovery_bridge.get_multi(&id.0).await?;
         // Currently, accrued fedi fee is merged back into balance upon recovery
         assert_eq!(
             ecash_balance_before + expected_fedi_fee,

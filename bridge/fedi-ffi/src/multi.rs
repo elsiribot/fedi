@@ -157,7 +157,7 @@ impl MultiFederation {
             Self::V2(v2) => {
                 v2.save_xmpp_username(username).await?;
                 // after recovering we will do backup always
-                if !*v2.recovering.lock().await {
+                if !v2.recovering() {
                     v2.backup().await?;
                 }
             }

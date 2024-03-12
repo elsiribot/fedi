@@ -177,7 +177,7 @@ impl DoubleEncryptedData {
     where
         T: Encodable,
     {
-        let plaintext = plain.consensus_encode_to_vec().expect("can't fail");
+        let plaintext = plain.consensus_encode_to_vec();
 
         let encrypted_to_self =
             fedimint_aead::encrypt(plaintext, &personal_key).expect("encryption here can't fail");

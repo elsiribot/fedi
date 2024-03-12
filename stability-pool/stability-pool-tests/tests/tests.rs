@@ -5,8 +5,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::anyhow;
+use devimint::external::Bitcoind;
 use devimint::util::{Command, ProcessManager};
-use devimint::{cmd, dev_fed, vars, Bitcoind, DevFed};
+use devimint::{cmd, dev_fed, vars, DevFed};
 use fedimint_core::task::TaskGroup;
 use fedimint_core::util::write_overwrite_async;
 use tokio::fs;
@@ -649,7 +650,7 @@ impl ForkedClient {
     }
 
     async fn get_sp_account_info(&self) -> anyhow::Result<AccountInfo> {
-        let cmd_out_json = cmd!(self, "module", "--module=stability_pool", "account-info",)
+        let cmd_out_json = cmd!(self, "module", "stability_pool", "account-info",)
             .out_json()
             .await?;
         info!("{cmd_out_json}");
@@ -741,15 +742,9 @@ impl ForkedClient {
     }
 
     async fn deposit_to_seek(&self, amount: u64) -> anyhow::Result<AccountInfo> {
-        cmd!(
-            self,
-            "module",
-            "--module=stability_pool",
-            "deposit-to-seek",
-            amount
-        )
-        .run()
-        .await?;
+        cmd!(self, "module", "stability_pool", "deposit-to-seek", amount)
+            .run()
+            .await?;
         self.get_sp_account_info().await
     }
 
@@ -757,7 +752,7 @@ impl ForkedClient {
         cmd!(
             self,
             "module",
-            "--module=stability_pool",
+            "stability_pool",
             "deposit-to-provide",
             amount,
             fee_rate
@@ -771,7 +766,7 @@ impl ForkedClient {
         cmd!(
             self,
             "module",
-            "--module=stability_pool",
+            "stability_pool",
             "withdraw",
             unlocked_amount,
             locked_bps
@@ -870,9 +865,11 @@ struct LockedProvide {
 }
 
 async fn setup() -> anyhow::Result<(ProcessManager, TaskGroup)> {
+    let offline_nodes = 0;
     let globals = vars::Global::new(
         Path::new(&env::var("FM_TEST_DIR")?),
         env::var("FM_FED_SIZE")?.parse::<usize>()?,
+        offline_nodes,
     )
     .await?;
     let log_file = fs::OpenOptions::new()

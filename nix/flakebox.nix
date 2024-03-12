@@ -1,4 +1,4 @@
-{ pkgs, pkgs-unstable, flakeboxLib, fedimint-pkgs, toolchains, pkgs-kitman, replaceGitHash }:
+{ pkgs, pkgs-unstable, flakeboxLib, fedimint-pkgs, toolchains, replaceGitHash }:
 let
   system = pkgs.system;
   lib = pkgs.lib;
@@ -240,8 +240,7 @@ rec {
         pkgs.lnd
         pkgs.bitcoind
         pkgs.electrs
-        # Get esplora from pkgs-kitman
-        pkgs-kitman.esplora
+        pkgs.esplora-electrs
         fedimint-pkgs.packages.${system}.devimint
         fedimint-pkgs.packages.${system}.gateway-pkgs
         # helpers
@@ -279,8 +278,7 @@ rec {
         pkgs.lnd
         pkgs.bitcoind
         pkgs.electrs
-        # Get esplora from pkgs-kitman
-        pkgs-kitman.esplora
+        pkgs.esplora-electrs
         fedimint-pkgs.packages.${system}.devimint
         fedimint-pkgs.packages.${system}.gateway-pkgs
         # helpers

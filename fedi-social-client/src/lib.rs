@@ -7,7 +7,7 @@ use fedimint_client::module::ClientModule;
 use fedimint_client::sm::{DynState, State, StateTransition};
 use fedimint_client::DynGlobalClientContext;
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId, OperationId};
-use fedimint_core::db::DatabaseTransaction;
+use fedimint_core::db::{DatabaseTransaction, DatabaseVersion};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::{ApiVersion, ModuleInit, MultiApiVersion};
 use fedimint_core::{apply, async_trait_maybe_send};
@@ -27,6 +27,8 @@ impl ModuleInit for FediSocialClientInit {
     ) -> Box<dyn Iterator<Item = (String, Box<dyn erased_serde::Serialize + Send>)> + '_> {
         Box::new(BTreeMap::new().into_iter())
     }
+
+    const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(0);
 }
 
 #[apply(async_trait_maybe_send!)]
@@ -70,11 +72,11 @@ impl ClientModule for FediSocialClientModule {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Decodable, Encodable)]
+#[derive(Debug, Clone, Eq, PartialEq, Decodable, Encodable, Hash)]
 pub enum FediSocialClientStates {}
 
 impl IntoDynInstance for FediSocialClientStates {
-    type DynType = DynState<DynGlobalClientContext>;
+    type DynType = DynState;
 
     fn into_dyn(self, instance_id: ModuleInstanceId) -> Self::DynType {
         DynState::from_typed(instance_id, self)
@@ -83,12 +85,11 @@ impl IntoDynInstance for FediSocialClientStates {
 
 impl State for FediSocialClientStates {
     type ModuleContext = ();
-    type GlobalContext = DynGlobalClientContext;
 
     fn transitions(
         &self,
         _context: &Self::ModuleContext,
-        _global_context: &Self::GlobalContext,
+        _global_context: &DynGlobalClientContext,
     ) -> Vec<StateTransition<Self>> {
         unimplemented!()
     }

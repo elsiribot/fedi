@@ -16,7 +16,7 @@ pub mod config;
 use config::StabilityPoolClientConfig;
 
 pub const KIND: ModuleKind = ModuleKind::from_static_str("stability_pool");
-pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::new(2, 0);
+pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::new(3, 0);
 
 /// BPS unit for cancellation-related calculations
 pub const BPS_UNIT: u128 = 10_000;

@@ -51,6 +51,7 @@ export type Event =
     | { stabilityPoolDeposit: StabilityPoolDepositEvent }
     | { stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent }
     | { recoveryComplete: RecoveryCompleteEvent }
+    | { recoveryProgress: RecoveryProgressEvent }
 
 export type GuardianStatus =
     | { online: { guardian: string } }
@@ -67,6 +68,12 @@ export interface PanicEvent {
 
 export interface RecoveryCompleteEvent {
     federationId: RpcFederationId
+}
+
+export interface RecoveryProgressEvent {
+    federationId: RpcFederationId
+    complete: number
+    total: number
 }
 
 export type RpcAmount = MSats
@@ -89,7 +96,7 @@ export interface RpcEcashInfo {
 export interface RpcFederation {
     balance: RpcAmount
     id: RpcFederationId
-    network: string
+    network: string | null
     name: string
     inviteCode: string
     meta: Record<string, string>
@@ -187,7 +194,7 @@ export interface RpcMethods {
         {
             balance: RpcAmount
             id: RpcFederationId
-            network: string
+            network: string | null
             name: string
             inviteCode: string
             meta: Record<string, string>
@@ -215,7 +222,7 @@ export interface RpcMethods {
         Array<{
             balance: RpcAmount
             id: RpcFederationId
-            network: string
+            network: string | null
             name: string
             inviteCode: string
             meta: Record<string, string>
@@ -334,7 +341,7 @@ export interface RpcMethods {
         {
             balance: RpcAmount
             id: RpcFederationId
-            network: string
+            network: string | null
             name: string
             inviteCode: string
             meta: Record<string, string>

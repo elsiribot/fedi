@@ -102,6 +102,23 @@ pub struct RecoveryCompleteEvent {
     pub federation_id: RpcFederationId,
 }
 
+/// Progress of the recovery
+///
+/// This includes "magic" value: if `total` is `0` the progress is "not started
+/// yet"/"empty"/"none"
+///
+/// total and complete are unitless.
+#[derive(Serialize, Debug, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RecoveryProgressEvent {
+    pub federation_id: RpcFederationId,
+    /// completed units of work
+    pub complete: u32,
+    /// total units of work that are to be completed
+    pub total: u32,
+}
+
 #[derive(Debug, TS)]
 #[ts(export, export_to = "target/bindings/")]
 #[ts(rename_all = "camelCase")]
@@ -114,6 +131,7 @@ pub enum Event {
     StabilityPoolDeposit(StabilityPoolDepositEvent),
     StabilityPoolWithdrawal(StabilityPoolWithdrawalEvent),
     RecoveryComplete(RecoveryCompleteEvent),
+    RecoveryProgress(RecoveryProgressEvent),
 }
 
 impl Event {
@@ -244,6 +262,10 @@ pub trait TypedEventExt: IEventSink {
             Event::RecoveryComplete(event) => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 IEventSink::event(self, "recoveryComplete".into(), body);
+            }
+            Event::RecoveryProgress(event) => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                IEventSink::event(self, "recoveryProgress".into(), body);
             }
         };
     }

@@ -1,13 +1,13 @@
 use std::ops::ControlFlow;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 use anyhow::Context;
 use clap::{Parser, Subcommand};
 use devimint::cli::{setup, CommonArgs};
-use devimint::tests::latency_tests;
+use devimint::tests::{latency_tests, LatencyTest};
 use devimint::util::poll;
-use devimint::{cmd, dev_fed};
+use devimint::{cmd, dev_fed, DevFed};
 
 #[derive(Parser)]
 struct Args {
@@ -55,6 +55,17 @@ async fn wait_session(client: &devimint::federation::Client) -> anyhow::Result<(
     Ok(())
 }
 
+async fn stress_test_fed(dev_fed: &DevFed) -> anyhow::Result<()> {
+    tokio::try_join!(
+        latency_tests(dev_fed.clone(), LatencyTest::Reissue),
+        latency_tests(dev_fed.clone(), LatencyTest::LnSend),
+        latency_tests(dev_fed.clone(), LatencyTest::LnReceive),
+        latency_tests(dev_fed.clone(), LatencyTest::FmPay),
+        latency_tests(dev_fed.clone(), LatencyTest::Restore),
+    )?;
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args: Args = Args::parse();
@@ -70,7 +81,7 @@ async fn main() -> anyhow::Result<()> {
             let mut dev_fed = dev_fed(&process_mgr).await?;
             let client = dev_fed.fed.new_joined_client("test-client").await?;
 
-            tokio::try_join!(latency_tests(dev_fed.clone()), wait_session(&client))?;
+            tokio::try_join!(stress_test_fed(&dev_fed), wait_session(&client))?;
 
             dev_fed.fed.terminate_server(3).await?;
             // wait for SP cycle
@@ -85,7 +96,8 @@ async fn main() -> anyhow::Result<()> {
             dev_fed.fed.start_server(&process_mgr, 0).await?;
             tokio::time::sleep(Duration::from_secs(30)).await;
             dev_fed.fed.start_server(&process_mgr, 3).await?;
-            latency_tests(dev_fed.clone()).await?;
+
+            stress_test_fed(&dev_fed).await?;
         }
         Cmd::TestUpgradeShutdownTogether {
             old_fedimintd,
@@ -98,7 +110,7 @@ async fn main() -> anyhow::Result<()> {
             let mut dev_fed = dev_fed(&process_mgr).await?;
             let client = dev_fed.fed.new_joined_client("test-client").await?;
 
-            latency_tests(dev_fed.clone()).await?;
+            stress_test_fed(&dev_fed).await?;
             wait_session(&client).await?;
             let futures = std::mem::take(&mut dev_fed.fed.members)
                 .into_values()
@@ -110,10 +122,10 @@ async fn main() -> anyhow::Result<()> {
             dev_fed.fed.start_server(&process_mgr, 1).await?;
             dev_fed.fed.start_server(&process_mgr, 0).await?;
             dev_fed.fed.start_server(&process_mgr, 3).await?;
-            latency_tests(dev_fed.clone()).await?;
+            stress_test_fed(&dev_fed).await?;
             wait_session(&client).await?;
             wait_session(&client).await?;
-            latency_tests(dev_fed.clone()).await?;
+            stress_test_fed(&dev_fed).await?;
         }
     }
     Ok(())

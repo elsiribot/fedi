@@ -13,7 +13,7 @@ use stability_pool_server::StabilityPoolInit;
 async fn main() -> anyhow::Result<()> {
     let include_stability_pool = std::env::var("INCLUDE_STABILITY_POOL").is_ok();
 
-    let mut fedimintd = Fedimintd::new()?
+    let mut fedimintd = Fedimintd::new(env!("FEDIMINT_BUILD_CODE_VERSION"))?
         .with_default_modules()
         .with_module(FediSocialInit)
         .with_extra_module_inits_params(3, fedi_social_common::KIND, FediSocialGenParams::new());

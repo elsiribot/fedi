@@ -13,6 +13,7 @@ import {
     StabilityPoolDepositEvent,
     RpcFederationPreview,
     RecoveryCompleteEvent,
+    RecoveryProgressEvent,
 } from './bindings'
 import { Usd, UsdCents } from './units'
 
@@ -157,6 +158,7 @@ export type FedimintBridgeEventMap = {
     stabilityPoolDeposit: StabilityPoolDepositEvent
     stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent
     recoveryComplete: RecoveryCompleteEvent
+    recoveryProgress: RecoveryProgressEvent
 }
 
 export type StabilityPoolTxn = {
