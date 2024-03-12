@@ -3,8 +3,8 @@ import Fedi
 @objc(FedimintFfi)
 class FedimintFfi: NSObject {
   @objc
-  func initialize(_ dataDir: NSString, logLevel: NSString, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
-    resolve(fedimintInitialize(dataDir: String(dataDir), logLevel: String(logLevel), eventSink: EventDispatcher()))
+  func initialize(_ dataDir: NSString, logLevel: NSString, deviceId: NSString, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
+    resolve(fedimintInitialize(dataDir: String(dataDir), logLevel: String(logLevel), eventSink: EventDispatcher(), deviceId: String(deviceId)))
   }
 
   @objc

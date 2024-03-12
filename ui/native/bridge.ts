@@ -3,6 +3,7 @@ import { NativeEventEmitter, NativeModules } from 'react-native'
 import { FedimintBridgeEventMap } from '@fedi/common/types'
 import { FedimintBridge } from '@fedi/common/utils/fedimint'
 import { makeLog } from '@fedi/common/utils/log'
+import { getDeviceId } from './utils/device-info'
 
 const { BridgeNativeEventEmitter, FedimintFfi } = NativeModules
 
@@ -39,7 +40,8 @@ export async function initializeBridge(dataDir: string) {
     )
 
     const logLevel = 'info'
-    const result = await FedimintFfi.initialize(dataDir, logLevel)
+    const deviceId = getDeviceId()
+    const result = await FedimintFfi.initialize(dataDir, logLevel, deviceId)
     const resultJson = JSON.parse(result)
     if (resultJson.error !== undefined) {
         log.error('FedimintFfi.initialize', resultJson)

@@ -75,3 +75,7 @@ export function getAllDeviceInfo() {
         return info
     })
 }
+
+export function getDeviceId() {
+    return RNDI.getDeviceId()
+}

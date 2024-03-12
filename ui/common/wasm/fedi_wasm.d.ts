@@ -7,9 +7,10 @@
 export function get_logs(): any;
 /**
 * @param {any} event_sink
+* @param {string} device_identifier
 * @returns {Promise<string>}
 */
-export function fedimint_initialize(event_sink: any): Promise<string>;
+export function fedimint_initialize(event_sink: any, device_identifier: string): Promise<string>;
 /**
 * @param {string} method
 * @param {string} payload
@@ -35,7 +36,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly get_logs: () => number;
-  readonly fedimint_initialize: (a: number) => number;
+  readonly fedimint_initialize: (a: number, b: number, c: number) => number;
   readonly fedimint_rpc: (a: number, b: number, c: number, d: number) => number;
   readonly fedimint_read_file: (a: number, b: number) => number;
   readonly fedimint_write_file: (a: number, b: number, c: number) => number;
