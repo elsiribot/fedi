@@ -1,4 +1,5 @@
 import { styled } from '@stitches/react'
+import { useRouter } from 'next/router'
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -8,7 +9,11 @@ import QRIcon from '@fedi/common/assets/svgs/qr.svg'
 import ScanIcon from '@fedi/common/assets/svgs/scan.svg'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import { selectActiveFederationId } from '@fedi/common/redux'
+import {
+    fetchChatMember,
+    selectActiveFederationId,
+    selectChatConnectionOptions,
+} from '@fedi/common/redux'
 import {
     AnyParsedData,
     ParsedUnknownData,
@@ -16,7 +21,7 @@ import {
 } from '@fedi/common/types'
 import { parseUserInput } from '@fedi/common/utils/parser'
 
-import { useAppSelector } from '../../hooks'
+import { useAppDispatch, useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
@@ -57,7 +62,9 @@ export function OmniInput<
     const propsRef = useUpdatingRef(props)
     const { t } = useTranslation()
     const toast = useToast()
+    const dispatch = useAppDispatch()
     const federationId = useAppSelector(selectActiveFederationId)
+    const connectionOptions = useAppSelector(selectChatConnectionOptions)
     const [isScanning, setIsScanning] = useState(props.defaultToScan || false)
     const [isParsing, setIsParsing] = useState(false)
     const [unexpectedData, setUnexpectedData] = useState<AnyParsedData>()
@@ -66,6 +73,7 @@ export function OmniInput<
     const fileInputRef = useRef<HTMLInputElement>(null)
     const isLoading = props.loading || isParsing
     const isLoadingRef = useUpdatingRef(isLoading)
+    const router = useRouter()
 
     const { customActions, inputPlaceholder, onUnexpectedSuccess } = props
     const inputLabel = props.inputLabel || 'Input data'
@@ -73,7 +81,13 @@ export function OmniInput<
 
     const parseInput = useCallback(
         async (input: string) => {
-            if (!input || isLoadingRef.current) return
+            if (
+                !input ||
+                isLoadingRef.current ||
+                !federationId ||
+                !connectionOptions?.domain
+            )
+                return
             setIsParsing(true)
             const parsedData = await parseUserInput(
                 input,
@@ -88,12 +102,42 @@ export function OmniInput<
             if (expectedTypes.includes(parsedData.type)) {
                 propsRef.current.onExpectedInput(parsedData as ExpectedData)
             } else if (parsedData.type === ParserDataType.Unknown) {
-                setInvalidData(parsedData)
+                if (
+                    props.expectedInputTypes.includes(
+                        ParserDataType.FediChatMember as T,
+                    )
+                ) {
+                    const fetchedMember = await dispatch(
+                        fetchChatMember({
+                            federationId,
+                            memberId: `${input}@${connectionOptions.domain}`,
+                        }),
+                    )
+                        .unwrap()
+                        .catch(() => setUnexpectedData(parsedData))
+
+                    if (fetchedMember) {
+                        router.push(
+                            `/chat/member/${fetchedMember.id}?action=send`,
+                        )
+                    } else {
+                        setUnexpectedData(parsedData)
+                    }
+                } else setInvalidData(parsedData)
             } else {
                 setUnexpectedData(parsedData)
             }
         },
-        [propsRef, isLoadingRef, t, federationId],
+        [
+            propsRef,
+            isLoadingRef,
+            t,
+            federationId,
+            connectionOptions,
+            dispatch,
+            props.expectedInputTypes,
+            router,
+        ],
     )
 
     const handlePaste = useCallback(async () => {
@@ -200,6 +244,11 @@ export function OmniInput<
                             onChange={ev =>
                                 inputOnChange(ev.currentTarget.value)
                             }
+                            onKeyDown={ev => {
+                                if (ev.key === 'Enter') {
+                                    ev.preventDefault()
+                                }
+                            }}
                             disabled={isLoading}
                             autoFocus
                         />

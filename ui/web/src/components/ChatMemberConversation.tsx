@@ -31,7 +31,7 @@ interface Props {
 
 export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
     const { t } = useTranslation()
-    const { back, replace } = useRouter()
+    const { back, replace, query } = useRouter()
     const dispatch = useAppDispatch()
     const federationId = useAppSelector(selectActiveFederationId)
     const member = useAppSelector(s => selectChatMember(s, memberId))
@@ -39,7 +39,7 @@ export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
     const messages = useAppSelector(s => selectChatMessages(s, memberId))
     const isChatOnline = useAppSelector(selectChatClientStatus) === 'online'
     const [isLoading, setIsLoading] = useState(!member)
-    const [isPaymentOpen, setIsPaymentOpen] = useState(false)
+    const [isPaymentOpen, setIsPaymentOpen] = useState(query.action === 'send')
 
     useEffect(() => {
         if (memberId === authenticatedMember?.id) {

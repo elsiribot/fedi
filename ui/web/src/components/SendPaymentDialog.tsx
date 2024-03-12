@@ -10,7 +10,7 @@ import { useIsOfflineWalletSupported } from '@fedi/common/hooks/federation'
 import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import {
     selectActiveFederation,
-    selectAllChatMembers,
+    selectChatConnectionOptions,
     selectChatMembersWithHistory,
 } from '@fedi/common/redux'
 import { ParserDataType, Sats } from '@fedi/common/types'
@@ -49,6 +49,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     const balance = activeFederation?.balance
     const activeFederationId = activeFederation?.id
     const sendRouteState = useRouteState('/send')
+    const connectionOptions = useAppSelector(selectChatConnectionOptions)
     const {
         isReadyToPay,
         exactAmount,
@@ -61,7 +62,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
         handleOmniSend,
         resetOmniPaymentState,
     } = useOmniPaymentState(fedimint, activeFederationId)
-    const { setQuery, searchedMembers, isExactMatch } =
+    const { setQuery, searchedMembers } =
         useChatMemberSearch(membersWithHistory)
 
     const [isSendingOffline, setIsSendingOffline] = useState(false)
@@ -79,9 +80,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
 
     const enteringLnAddress = value.includes('@')
     const enteringLnInvoice =
-        activeFederation?.network === 'signet'
-            ? value.startsWith('lntbs')
-            : value.startsWith('lnbc')
+        value.startsWith('lntbs') || value.startsWith('lnbc')
 
     const lnAddressValid =
         enteringLnAddress && z.string().email().safeParse(value).success
@@ -114,7 +113,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                 containerRef.current?.querySelector('input')?.focus(),
             )
         }
-    }, [open, resetOmniPaymentState])
+    }, [open, resetOmniPaymentState, setQuery])
 
     // If we were sent here with route state, feed it to the omni input
     useEffect(() => {
@@ -249,49 +248,35 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                     onValueChange={setValue}
                     hideConfirmButton>
                     {({ onSubmit }) =>
-                        enteringLnInvoice ? (
+                        (enteringLnAddress && !lnAddressValid) ||
+                        value.length === 0 ? null : enteringLnInvoice ? (
                             <Button
                                 onClick={() => onSubmit(value)}
                                 disabled={!lnInvoiceValid}
                                 width="full">
                                 {t('feature.send.confirm-send')}
                             </Button>
-                        ) : (enteringLnAddress && !lnAddressValid) ||
-                          value.length === 0 ? (
-                            <Button disabled width="full">
-                                {t('feature.send.confirm-send')}
-                            </Button>
                         ) : (
                             <MemberContainer>
-                                {lnAddressValid ||
-                                searchedMembers.length === 0 ? (
+                                {lnAddressValid ? (
                                     <MemberItem onClick={() => onSubmit(value)}>
                                         <Avatar
-                                            id={''}
-                                            name={
-                                                lnAddressValid
-                                                    ? value.split('@')[0]
-                                                    : value
-                                            }
+                                            id={value}
+                                            name={value.split('@')[0]}
                                         />
                                         <MemberName weight="bold">
                                             {value}
                                         </MemberName>
                                         <Icon size="sm" icon={ChevronRight} />
                                     </MemberItem>
-                                ) : isExactMatch ? (
-                                    <MemberItem
-                                        onClick={() =>
-                                            onSubmit(
-                                                searchedMembers[0].username,
-                                            )
-                                        }>
+                                ) : searchedMembers.length === 0 ? (
+                                    <MemberItem onClick={() => onSubmit(value)}>
                                         <Avatar
-                                            id={searchedMembers[0].id}
-                                            name={searchedMembers[0].username}
+                                            id={`${value}@${connectionOptions?.domain}`}
+                                            name={value}
                                         />
                                         <MemberName weight="bold">
-                                            {searchedMembers[0].username}
+                                            {value}
                                         </MemberName>
                                         <Icon size="sm" icon={ChevronRight} />
                                     </MemberItem>

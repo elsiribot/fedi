@@ -405,6 +405,7 @@
         "omni": {
             "action-enter-ln-address": "Enter lightning address",
             "action-enter-username": "Enter Username",
+            "action-enter-text": "Enter Text",
             "action-enter-username-or-ln": "Enter Username / Lightning Address",
             "action-paste": "Paste",
             "action-scan": "Scan QR",
