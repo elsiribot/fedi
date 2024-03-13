@@ -707,20 +707,35 @@ mod tests {
     async fn send_dm() -> Result<()> {
         TracingSetup::default().init().unwrap();
         let (matrix1, mut event_rx1, _temp_dir) = mk_matrix_new_user().await?;
-        let (matrix2, mut _event_rx2, _temp_dir) = mk_matrix_new_user().await?;
+        let (matrix2, mut event_rx2, _temp_dir) = mk_matrix_new_user().await?;
         let user2 = matrix2.client.user_id().unwrap();
         let room_id = matrix1.create_or_get_dm(user2).await?;
-        let items = matrix1.room_timeline_items(&room_id).await?;
-        info!("### {items:?}");
+        matrix2.room_join(&room_id).await?;
+        let items1 = matrix1.room_timeline_items(&room_id).await?;
+        let items2 = matrix2.room_timeline_items(&room_id).await?;
+        info!(?items1, ?items2, "### initial items");
         matrix1
             .send_message_text(&room_id, "hello from bridge".into())
             .await?;
         info!("waiting for server to echo back the message");
-        while let Some((ev, body)) = event_rx1.recv().await {
-            info!("### event: {ev} {body}");
+        while let Some((ev, body)) = event_rx2.recv().await {
+            info!("### event2: {ev} {body}");
             if ev == "observableUpdate"
                 && body.contains(r#""localEcho":false"#)
                 && body.contains("hello from bridge")
+            {
+                break;
+            }
+        }
+        matrix2
+            .send_message_text(&room_id, "hello from 2 bridge".into())
+            .await?;
+        info!("waiting for server to echo back the message");
+        while let Some((ev, body)) = event_rx1.recv().await {
+            info!("### event1: {ev} {body}");
+            if ev == "observableUpdate"
+                && body.contains(r#""localEcho":false"#)
+                && body.contains("hello from 2 bridge")
             {
                 break;
             }
