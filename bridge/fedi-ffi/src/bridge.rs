@@ -241,12 +241,22 @@ impl Bridge {
                     )
                     .await
                     .with_context(|| format!("loading federation {}", federation_id.clone()))?;
+                    let fed_network = federation_v2.get_network();
                     federation_lock.insert(
                         federation_id.clone(),
                         Arc::new(MultiFederation::V2(federation_v2)),
                     );
                     info!(%federation_id, "reinserted to federation list");
                     drop(federation_lock);
+
+                    // refetch fee schedule once recovery is complete
+                    if let Some(network) = fed_network {
+                        this.fedi_fee_helper
+                            .fetch_and_update_fedi_fee_schedule(
+                                vec![(federation_id.clone(), network)].into_iter().collect(),
+                            )
+                            .await;
+                    }
                     // send the event only after we reinsert the federation.
                     this.event_sink
                         .typed_event(&Event::recovery_complete(federation_id.clone()));
