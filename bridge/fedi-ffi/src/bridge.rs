@@ -952,13 +952,7 @@ impl Bridge {
     }
 
     pub async fn get_matrix_credentials(&self, home_server: String) -> Result<(String, String)> {
-        let global_root_secret = self
-            .app_state
-            .with_read_lock(move |state| {
-                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
-            })
-            .await;
-        let matrix_secret = global_root_secret.child_key(ChildId(MATRIX_CHILD_ID));
+        let matrix_secret = self.get_matrix_secret().await;
         let password_bytes: [u8; 16] = matrix_secret.to_random_bytes();
         let password_secret = DerivableSecret::new_root(&password_bytes, home_server.as_bytes());
         let password_secret_bytes: [u8; 16] = password_secret.to_random_bytes();
@@ -968,8 +962,8 @@ impl Bridge {
     }
 
     pub async fn get_matrix_media_file(&self, path: PathBuf) -> Result<Vec<u8>> {
-        let storage = self.storage.clone();
-        let media_file = storage
+        let media_file = self
+            .storage
             .read_file(&path)
             .await?
             .ok_or(anyhow!("media file not found"))?;

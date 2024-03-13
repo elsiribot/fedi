@@ -41,12 +41,16 @@ pub use types::*;
 
 #[derive(Clone)]
 pub struct Matrix {
+    /// matrix client
     client: Client,
     #[allow(dead_code)]
+    /// sync service to load new messages
     sync_service: Arc<SyncService>,
+    /// manages list of room visible to user.
     room_list_service: Arc<RoomListService>,
     event_sink: EventSink,
     task_group: TaskGroup,
+    /// list of active observables
     observables: Arc<Mutex<HashMap<u64, TaskGroup>>>,
 }
 
@@ -56,12 +60,11 @@ impl Matrix {
         home_server: String,
         passphrase: &str,
     ) -> Result<Client> {
-        // TODO: change this
         let builder = Client::builder().homeserver_url(home_server);
         #[cfg(not(target_family = "wasm"))]
         let builder = builder.sqlite_store(base_dir.join("db.sqlite"), Some(passphrase));
         #[cfg(target_family = "wasm")]
-        let builder = builder.indexeddb_store("db", Some(passphrase));
+        let builder = builder.indexeddb_store("matrix-db", Some(passphrase));
 
         let client = builder.build().await?;
         Ok(client)
@@ -72,6 +75,7 @@ impl Matrix {
         hex::encode(passphase_bytes)
     }
 
+    /// every home server gets different password
     fn home_server_password(matrix_secret: &DerivableSecret, home_server: &str) -> String {
         let password_bytes: [u8; 16] = matrix_secret.to_random_bytes();
         let password_secret = DerivableSecret::new_root(&password_bytes, home_server.as_bytes());
@@ -79,6 +83,7 @@ impl Matrix {
         hex::encode(password_secret_bytes)
     }
 
+    /// Start the matrix service.
     #[allow(clippy::too_many_arguments)]
     pub async fn init(
         event_sink: EventSink,
@@ -115,6 +120,7 @@ impl Matrix {
                     request.username = Some(user_name.to_owned());
                     request.password = Some(user_password.to_owned());
                     request.auth = Some(uiaa::AuthData::Dummy(uiaa::Dummy::new()));
+                    // FIXME: seed reuse
                     request.initial_device_display_name = Some("Fedi".to_owned()); // TODO: Make this user-agent specific?
                     let register_result = matrix_auth.register(request).await;
                     match register_result {
@@ -171,6 +177,8 @@ impl Matrix {
         })
     }
 
+    /// make observable with `initial` value and run `func` in a task group.
+    /// `func` can send observable updates.
     pub async fn make_observable<T, Fut>(
         &self,
         initial: T,
@@ -187,7 +195,7 @@ impl Matrix {
         self.observables.lock().await.insert(id, tg.clone());
         let this = self.clone();
         tg.spawn(
-            format!("observable kind={}", std::any::type_name::<T>()),
+            format!("observable type={}", std::any::type_name::<T>()),
             move |handle| async move {
                 let _ =
                     futures::future::select(handle.make_shutdown_rx().await, pin!(func(this, id)))
@@ -198,6 +206,7 @@ impl Matrix {
         Ok(observable)
     }
 
+    /// Convert eyeball::Subscriber to rpc Observable type.
     pub async fn make_observable_from_subscriber<T>(
         &self,
         mut sub: Subscriber<T>,
@@ -221,7 +230,7 @@ impl Matrix {
         let Some(tg) = self.observables.lock().await.remove(&id) else {
             bail!(ErrorCode::UnknownObservable);
         };
-        tg.shutdown();
+        tg.shutdown_join_all(None).await?;
         Ok(())
     }
 
@@ -232,6 +241,7 @@ impl Matrix {
         self.event_sink.observable_update(event);
     }
 
+    /// All chats in matrix are rooms, whether DM or group chats.
     pub async fn room_list(&self) -> Result<ObservableVec<RpcRoomListEntry>> {
         self.room_list_to_observable(self.room_list_service.all_rooms().await?)
             .await
@@ -278,6 +288,10 @@ impl Matrix {
         Ok(())
     }
 
+    /// Sync status is used to display "Waiting for network" indicator on
+    /// frontend.
+    ///
+    /// We delay the events by 2 seconds to avoid flickering.
     pub async fn observe_sync_status(&self) -> Result<Observable<RpcSyncIndicator>> {
         let mut stream = Box::pin(
             self.room_list_service
@@ -311,6 +325,7 @@ impl Matrix {
         Ok(self.room_list_service.room(room_id).await?)
     }
 
+    /// See [`matrix_sdk_ui::Timeline`].
     async fn timeline(&self, room_id: &RoomId) -> Result<Arc<matrix_sdk_ui::Timeline>> {
         let room = self.room(room_id).await?;
         if !room.is_timeline_initialized() {
@@ -429,6 +444,7 @@ impl Matrix {
         Ok(())
     }
 
+    /// After creating a room, it takes some time to show up in the list.
     pub async fn wait_for_room_id(&self, room_id: &RoomId) -> Result<()> {
         fedimint_core::task::timeout(Duration::from_secs(20), async {
             loop {
@@ -560,6 +576,7 @@ impl Matrix {
         Ok(members.into_iter().map(RpcRoomMember::from).collect())
     }
 
+    /// Read receipt upto `event_id`.
     pub async fn room_send_receipt(&self, room_id: &RoomId, event_id: &str) -> Result<bool> {
         Ok(self
             .timeline(room_id)
