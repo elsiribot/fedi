@@ -192,7 +192,16 @@ impl Matrix {
         let id = OBSERVABLE_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let observable = Observable::new(id, initial);
         let tg = self.task_group.make_subgroup().await;
-        self.observables.lock().await.insert(id, tg.clone());
+        {
+            let mut observables = self.observables.lock().await;
+            observables.insert(id, tg.clone());
+            // should be independent of number of rooms and number of messages
+            const OBSERVABLE_WARN_LIMIT: usize = 20;
+            let observable_counts = observables.len();
+            if OBSERVABLE_WARN_LIMIT < observable_counts {
+                warn!(%observable_counts, "frontend is using too many observabes, likely forgot to unsubscribe");
+            }
+        };
         let this = self.clone();
         tg.spawn(
             format!("observable type={}", std::any::type_name::<T>()),
