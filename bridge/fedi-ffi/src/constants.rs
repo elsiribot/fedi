@@ -24,9 +24,13 @@ pub const WALLET_OPERATION_TYPE: &str = "wallet";
 pub const STABILITY_POOL_OPERATION_TYPE: &str = "stability_pool";
 
 // URL for Fedi fee schedule API
-// TODO shaurya update URL post deployment
-pub const FEDI_FEE_API_URL: &str = "https://github.com/fedibtc/devops-automation";
+pub const FEDI_FEE_API_URL_MUTINYNET: &str =
+    "https://mutinynet-fedi-fee-schedule.dev.fedibtc.com/v0/fees";
+pub const FEDI_FEE_API_URL_MAINNET: &str =
+    "https://mainnet-fedi-fee-schedule.dev.fedibtc.com/v0/fees";
+
 // URL for Fedi fee lightning invoice generator API
-// TODO shaurya update URL post deployment
-pub const FEDI_INVOICE_API_URL: &str =
-    "https://github.com/fedibtc/devops-automation/generate-invoice";
+pub const FEDI_INVOICE_API_URL_MUTINYNET: &str =
+    "https://mutinynet-fedi-fee-collection.dev.fedibtc.com/v0/generate-invoice";
+pub const FEDI_INVOICE_API_URL_MAINNET: &str =
+    "https://mainnet-fedi-fee-collection.dev.fedibtc.com/v0/generate-invoice";

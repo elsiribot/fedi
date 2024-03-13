@@ -719,6 +719,7 @@ mod tests {
 
     use anyhow::{anyhow, bail};
     use bitcoin::secp256k1::PublicKey;
+    use bitcoin::Network;
     use devimint::cmd;
     use devimint::util::{ClnLightningCli, FedimintCli, LnCli};
     use fedi_social_client::common::VerificationDocument;
@@ -773,11 +774,18 @@ mod tests {
 
     #[apply(async_trait_maybe_send!)]
     impl IFediApi for MockFediApi {
-        async fn fetch_fedi_fee_schedule(&self) -> anyhow::Result<FediFeeSchedule> {
+        async fn fetch_fedi_fee_schedule(
+            &self,
+            _network: Network,
+        ) -> anyhow::Result<FediFeeSchedule> {
             Ok(FediFeeSchedule::default())
         }
 
-        async fn fetch_fedi_fee_invoice(&self, _amount: Amount) -> anyhow::Result<Bolt11Invoice> {
+        async fn fetch_fedi_fee_invoice(
+            &self,
+            _amount: Amount,
+            _network: Network,
+        ) -> anyhow::Result<Bolt11Invoice> {
             unimplemented!("TODO shaurya implement when testing");
         }
     }

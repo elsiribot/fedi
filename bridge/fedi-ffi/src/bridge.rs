@@ -70,10 +70,11 @@ impl Bridge {
     ) -> Result<Self> {
         let task_group = TaskGroup::new();
         let app_state = Arc::new(AppState::load(storage.clone()).await?);
-
-        // Note that instantiating FediFeeHelper spawns a new task to asynchronously
-        // fetch the fee schedule and update appstate
-        let fedi_fee_helper = Arc::new(FediFeeHelper::new(fedi_api.clone(), app_state.clone()));
+        let fedi_fee_helper = Arc::new(FediFeeHelper::new(
+            fedi_api.clone(),
+            app_state.clone(),
+            task_group.make_subgroup().await,
+        ));
 
         let root_mnemonic = app_state
             .with_read_lock(move |state| state.root_mnemonic.clone())
@@ -120,6 +121,19 @@ impl Bridge {
         let federations = Arc::new(Mutex::new(HashMap::from_iter(
             futures::future::try_join_all(federations).await?,
         )));
+
+        // Spawn a new task to asynchronously fetch the fee schedule and update app
+        // state
+        fedi_fee_helper
+            .fetch_and_update_fedi_fee_schedule(
+                federations
+                    .lock()
+                    .await
+                    .iter()
+                    .filter_map(|(id, fed)| Some((id.clone(), fed.federation_network()?)))
+                    .collect(),
+            )
+            .await;
 
         let bridge = Self {
             storage,
@@ -227,12 +241,22 @@ impl Bridge {
                     )
                     .await
                     .with_context(|| format!("loading federation {}", federation_id.clone()))?;
+                    let fed_network = federation_v2.get_network();
                     federation_lock.insert(
                         federation_id.clone(),
                         Arc::new(MultiFederation::V2(federation_v2)),
                     );
                     info!(%federation_id, "reinserted to federation list");
                     drop(federation_lock);
+
+                    // refetch fee schedule once recovery is complete
+                    if let Some(network) = fed_network {
+                        this.fedi_fee_helper
+                            .fetch_and_update_fedi_fee_schedule(
+                                vec![(federation_id.clone(), network)].into_iter().collect(),
+                            )
+                            .await;
+                    }
                     // send the event only after we reinsert the federation.
                     this.event_sink
                         .typed_event(&Event::recovery_complete(federation_id.clone()));
@@ -318,7 +342,14 @@ impl Bridge {
 
         // Spawn a new task to asynchronously fetch the fee schedule and update app
         // state
-        self.fedi_fee_helper.fetch_and_update_fedi_fee_schedule();
+        self.fedi_fee_helper
+            .fetch_and_update_fedi_fee_schedule(
+                federations
+                    .iter()
+                    .filter_map(|(id, fed)| Some((id.clone(), fed.federation_network()?)))
+                    .collect(),
+            )
+            .await;
 
         Ok(multi)
     }

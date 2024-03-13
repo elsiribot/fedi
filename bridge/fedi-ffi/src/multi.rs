@@ -2,7 +2,7 @@ use std::time::UNIX_EPOCH;
 
 use anyhow::{Context, Result};
 use bitcoin::secp256k1::{Message, PublicKey, Secp256k1};
-use bitcoin::{Address, XOnlyPublicKey};
+use bitcoin::{Address, Network, XOnlyPublicKey};
 use fedi_social_client::RecoveryId;
 use fedimint_core::core::OperationId;
 use fedimint_core::{Amount, PeerId};
@@ -31,6 +31,14 @@ impl MultiFederation {
     pub fn federation_id(&self) -> RpcFederationId {
         match self {
             Self::V2(multi) => RpcFederationId(multi.federation_id().to_string()),
+        }
+    }
+
+    // Returns Option<Network> as the network is not available while the federation
+    // is recovering
+    pub fn federation_network(&self) -> Option<Network> {
+        match self {
+            Self::V2(v2) => v2.get_network(),
         }
     }
 
