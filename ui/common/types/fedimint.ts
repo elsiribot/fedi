@@ -52,6 +52,7 @@ export interface FederationCredentials {
 }
 
 export enum SupportedCurrency {
+    USD = 'USD',
     ARS = 'ARS',
     AUD = 'AUD',
     BDT = 'BDT',
@@ -90,7 +91,6 @@ export enum SupportedCurrency {
     SSP = 'SSP',
     THB = 'THB',
     UGX = 'UGX',
-    USD = 'USD',
     UYU = 'UYU',
     VES = 'VES',
     VND = 'VND',

@@ -599,6 +599,7 @@
         },
         "settings": {
             "currency-names": {
+                "usd": "US Dollar",
                 "ars": "Argentinian Peso",
                 "aud": "Australian Dollar",
                 "bdt": "Bangladeshi Taka",
@@ -637,7 +638,6 @@
                 "ssp": "South Sudanese Pound",
                 "thb": "Thailand Baht",
                 "ugx": "Ugandan Shillings",
-                "usd": "US Dollar",
                 "uyu": "Uruguayan Peso",
                 "ves": "Bolivares",
                 "vnd": "Vietnam Dong",
