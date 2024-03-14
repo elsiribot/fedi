@@ -1401,6 +1401,8 @@ mod tests {
             username.clone(),
         )
         .await?;
+        // give some time for backup to complete before shutting down the bridge
+        fedimint_core::task::sleep(Duration::from_secs(1)).await;
 
         // get mnemonic and drop old federation / bridge so no background stuff runs
         let mnemonic = getMnemonic(backup_bridge.clone()).await?;

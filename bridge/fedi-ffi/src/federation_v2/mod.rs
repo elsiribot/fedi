@@ -1580,6 +1580,8 @@ impl FederationV2 {
             if let Some(username) = fedi_backup_metadata.username {
                 self.save_xmpp_username(&username).await?;
             }
+        } else {
+            warn!("failed to parse metadata");
         };
         Ok(())
     }
