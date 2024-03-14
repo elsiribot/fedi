@@ -27,6 +27,10 @@ pub enum ErrorCode {
     InvalidSocialRecoveryFile,
     #[error("Insufficient balance for spend amount plus fees, max spendable is {0}")]
     InsufficientBalance(RpcAmount),
+    #[error("Matrix not initialized")]
+    MatrixNotInitialized,
+    #[error("Unknown Observable")]
+    UnknownObservable,
 }
 
 pub fn get_error_code(err: &anyhow::Error) -> Option<ErrorCode> {

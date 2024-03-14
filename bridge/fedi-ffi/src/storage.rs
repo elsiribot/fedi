@@ -8,6 +8,7 @@ use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send};
+use matrix_sdk::matrix_auth::MatrixSession;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::error;
@@ -45,6 +46,7 @@ pub struct AppStateRaw {
     pub social_recovery_state: Option<SocialRecoveryState>,
 
     pub sensitive_log: Option<bool>,
+    pub matrix_session: Option<MatrixSession>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -177,6 +179,7 @@ impl AppState {
                 joined_federations: BTreeMap::new(),
                 social_recovery_state: None,
                 sensitive_log: None,
+                matrix_session: None,
             })),
             storage,
         }

@@ -10,6 +10,7 @@ pub const XMPP_PASSWORD: u64 = 0;
 pub const XMPP_KEYPAIR_SEED: u64 = 1;
 pub const NOSTR_CHILD_ID: u64 = 12;
 pub const MILLION: u64 = 1_000_000;
+pub const MATRIX_CHILD_ID: u64 = 13;
 
 // Backup twice per day
 pub const BACKUP_FREQUENCY: Duration = Duration::from_secs(12 * 60 * 60);
