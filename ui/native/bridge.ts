@@ -41,7 +41,7 @@ export async function initializeBridge(dataDir: string) {
     )
 
     const logLevel = 'info'
-    const deviceId = getDeviceId()
+    const deviceId = await getDeviceId()
     const result = FedimintFfi.initialize(dataDir, logLevel, deviceId)
     const resultJson = JSON.parse(result)
     if (resultJson.error !== undefined) {
