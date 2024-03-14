@@ -1,6 +1,8 @@
 import { FedimintBridge } from '@fedi/common/utils/fedimint'
 import { makeLog } from '@fedi/common/utils/log'
 
+import { getDeviceId } from '../../utils/browserInfo'
+
 const log = makeLog('web/lib/bridge')
 
 let worker: Worker
@@ -82,9 +84,11 @@ export async function initializeBridge() {
                 cb(e.data.result)
             }
         }
+        const deviceId = getDeviceId()
+        worker.postMessage({ method: 'initialize', data: { deviceId } })
     })
 
-    // After initiailizing, clear promise so subsequent calls re-initialize.
+    // After initializing, clear promise so subsequent calls re-initialize.
     return initializePromise.finally(() => {
         initializePromise = undefined
     })

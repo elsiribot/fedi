@@ -1,4 +1,7 @@
 import RNDI from 'react-native-device-info'
+import { v4 as uuidv4 } from 'uuid'
+
+import { storage } from './storage'
 
 /**
  * Single call to fetch all device info we want for debugging in parallel.
@@ -75,7 +78,31 @@ export function getAllDeviceInfo() {
         return info
     })
 }
+/**
+ * Generates the user's OS information for use as a deviceId.
+ *
+ * This id must be unique and contain a human-readable section.
+ * The human-readable section should help users to distinguish
+ * devices within a device list.
+ *
+ * @returns {string} [Operating System]:Mobile:[uuid]
+ * @example iPhone7,2:Mobile:3d8f8f3d-8f3d-3d8f-8f3d-3d8f8f3d8f3d
+ */
+function generateDeviceId() {
+    return `${RNDI.getDeviceId()}:Mobile:${uuidv4()}`
+}
 
-export function getDeviceId() {
-    return RNDI.getDeviceId()
+/**
+ * Checks if a deviceId has been generated and stored.
+ * If found, returns. Otherwise, generates a new deviceId and stores it.
+ */
+export async function getDeviceId() {
+    const key = 'deviceId'
+
+    const deviceId = await storage.getItem(key)
+    if (deviceId) return deviceId
+
+    const newDeviceId = generateDeviceId()
+    await storage.setItem(key, newDeviceId)
+    return newDeviceId
 }
