@@ -110,6 +110,20 @@ export const selectCurrency = (s: CommonState) => {
     return SupportedCurrency.USD
 }
 
+export const selectCurrencies = (s: CommonState) => {
+    const metadata = selectFederationMetadata(s)
+    const defaultCurrency =
+        getFederationDefaultCurrency(metadata) || SupportedCurrency.USD
+
+    const sortedCurrencies = Object.entries(SupportedCurrency)
+        .sort(([, a], [, b]) => a.localeCompare(b))
+        .sort(([, a], [, b]) =>
+            a === defaultCurrency ? -1 : b === defaultCurrency ? 1 : 0,
+        )
+
+    return Object.fromEntries(sortedCurrencies)
+}
+
 export const selectBtcUsdExchangeRate = (
     s: CommonState,
     federationId?: Federation['id'],
