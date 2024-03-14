@@ -71,6 +71,7 @@ impl Bridge {
         storage: Storage,
         event_sink: EventSink,
         fedi_api: Arc<dyn IFediApi>,
+        device_identifier: String,
     ) -> Result<Self> {
         let task_group = TaskGroup::new();
         let app_state = Arc::new(AppState::load(storage.clone()).await?);
@@ -80,13 +81,30 @@ impl Bridge {
             task_group.make_subgroup().await,
         ));
 
+        // Set device_identifier in AppState if not already set. Otherwise just log.
+        match app_state
+            .with_read_lock(|state| state.device_identifier.clone())
+            .await
+        {
+            Some(id) if id != device_identifier => warn!(
+                "New device identifier ({device_identifier}) doesn't match existing one ({id})"
+            ),
+            Some(_) => info!("Device identifier unchaged: {device_identifier}"),
+            None => {
+                info!("Device identifier absent, setting as: {device_identifier}");
+                app_state
+                    .with_write_lock(|state| state.device_identifier = Some(device_identifier))
+                    .await?
+            }
+        }
+
         let root_mnemonic = app_state
-            .with_read_lock(move |state| state.root_mnemonic.clone())
+            .with_read_lock(|state| state.root_mnemonic.clone())
             .await;
 
         // load joined federations
         let joined_federations = app_state
-            .with_read_lock(move |state| state.joined_federations.clone())
+            .with_read_lock(|state| state.joined_federations.clone())
             .await
             .into_iter()
             .collect::<Vec<_>>();
@@ -307,7 +325,7 @@ impl Bridge {
 
         let root_mnemonic = self
             .app_state
-            .with_read_lock(move |state| state.root_mnemonic.clone())
+            .with_read_lock(|state| state.root_mnemonic.clone())
             .await;
 
         let db_name = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
@@ -363,7 +381,7 @@ impl Bridge {
         let invite_code = invite_code.to_lowercase();
         let root_mnemonic = self
             .app_state
-            .with_read_lock(move |state| state.root_mnemonic.clone())
+            .with_read_lock(|state| state.root_mnemonic.clone())
             .await;
         let (v2,) = futures::join!(FederationV2::download_client_config(
             &invite_code,
@@ -562,7 +580,7 @@ impl Bridge {
     async fn get_social_recovery_state(&self) -> anyhow::Result<Option<SocialRecoveryState>> {
         Ok(self
             .app_state
-            .with_read_lock(move |state| state.social_recovery_state.clone())
+            .with_read_lock(|state| state.social_recovery_state.clone())
             .await)
     }
 
@@ -580,7 +598,7 @@ impl Bridge {
     pub async fn get_mnemonic_words(&self) -> anyhow::Result<Vec<String>> {
         Ok(self
             .app_state
-            .with_read_lock(move |state| state.root_mnemonic.clone())
+            .with_read_lock(|state| state.root_mnemonic.clone())
             .await
             .word_iter()
             .map(|x| x.to_owned())
@@ -875,7 +893,7 @@ impl Bridge {
         let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         let global_root_secret = self
             .app_state
-            .with_read_lock(move |state| {
+            .with_read_lock(|state| {
                 Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
             })
             .await;
@@ -915,7 +933,7 @@ impl Bridge {
     pub async fn get_nostr_pub_key(&self) -> Result<String> {
         let global_root_secret = self
             .app_state
-            .with_read_lock(move |state| {
+            .with_read_lock(|state| {
                 Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
             })
             .await;
@@ -934,7 +952,7 @@ impl Bridge {
         let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
         let global_root_secret = self
             .app_state
-            .with_read_lock(move |state| {
+            .with_read_lock(|state| {
                 Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
             })
             .await;

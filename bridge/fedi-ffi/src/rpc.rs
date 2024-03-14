@@ -54,9 +54,10 @@ pub async fn fedimint_initialize_async(
     storage: Storage,
     event_sink: EventSink,
     fedi_api: Arc<dyn IFediApi>,
+    device_identifier: String,
 ) -> anyhow::Result<Arc<Bridge>> {
     let _g = TimeReporter::new("fedimint_initialize").level(Level::INFO);
-    let bridge = Bridge::new(storage, event_sink, fedi_api)
+    let bridge = Bridge::new(storage, event_sink, fedi_api, device_identifier)
         .await
         .context("could not create a bridge")?;
     Ok(Arc::new(bridge))
@@ -1350,7 +1351,14 @@ mod tests {
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
         let fedi_api = Arc::new(MockFediApi);
-        let bridge = match fedimint_initialize_async(storage, event_sink, fedi_api).await {
+        let bridge = match fedimint_initialize_async(
+            storage,
+            event_sink,
+            fedi_api,
+            "Unknown (bridge tests)".to_owned(),
+        )
+        .await
+        {
             Ok(bridge) => bridge,
             Err(e) => {
                 let context_error = e.context("Failed to initialize Bridge");
@@ -1396,11 +1404,14 @@ mod tests {
         storage
             .write_file(FEDI_FILE_PATH.as_ref(), invalid_fedi_file.clone().into())
             .await?;
-        assert!(
-            fedimint_initialize_async(storage.clone(), event_sink, fedi_api)
-                .await
-                .is_err()
-        );
+        assert!(fedimint_initialize_async(
+            storage.clone(),
+            event_sink,
+            fedi_api,
+            "Unknown (bridge tests)".to_owned(),
+        )
+        .await
+        .is_err());
         assert_eq!(
             storage
                 .read_file(FEDI_FILE_PATH.as_ref())
@@ -1427,7 +1438,13 @@ mod tests {
         copy_recursively(fixture_dir, &data_dir)?;
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
         let fedi_api = Arc::new(MockFediApi);
-        let bridge = fedimint_initialize_async(storage, event_sink, fedi_api).await?;
+        let bridge = fedimint_initialize_async(
+            storage,
+            event_sink,
+            fedi_api,
+            "Unknown (bridge tests)".to_owned(),
+        )
+        .await?;
         let federations = listFederations(bridge.clone()).await?;
         // old federations are ignored
         assert_eq!(federations.len(), 0);
