@@ -26,8 +26,5 @@ let package = Package(
         .target(
             name: "Fedi",
             dependencies: ["fediFFI"]),
-        .testTarget(
-            name: "FediTests",
-            dependencies: ["Fedi"]),
     ]
 )
