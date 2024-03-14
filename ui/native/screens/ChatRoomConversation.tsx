@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { useObserveMatrixRoom } from '@fedi/common/hooks/matrix'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     paginateMatrixRoomTimeline,
     selectMatrixAuth,
@@ -17,7 +18,6 @@ import {
 import { ChatType } from '@fedi/common/types'
 import { makeMatrixEventGroups } from '@fedi/common/utils/matrix'
 
-import { useToast } from '../../web/src/hooks/toast'
 import ChatConversation from '../components/feature/chat/ChatConversation'
 import MessageInput from '../components/feature/chat/MessageInput'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -65,7 +65,7 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
             ).unwrap()
             end = res.end
         } catch (err) {
-            toast.showErrorToast(err, t('errors.unknown-error'))
+            toast.error(t, err)
         }
         return { end }
     }, [dispatch, roomId])
