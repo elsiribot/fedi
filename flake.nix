@@ -5,9 +5,8 @@
     };
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    # we pick upstream packages from here, so we want this to be compatible with our forks
     fedimint-pkgs = {
-      url = "git+https://x-access-token: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@github.com/fedibtc/fedimint-fedi.git?ref=refs/tags/v0.3.0-alpha.1&rev=bd9a93e0ab571ab513ece591d1d91d8ee9fb26b4";
+      url = "git+ssh://git@github.com/fedibtc/fedimint-fedi.git?ref=refs/tags/v0.3.0-alpha.1&rev=bd9a93e0ab571ab513ece591d1d91d8ee9fb26b4";
     };
 
     fenix = {
@@ -352,5 +351,8 @@
   nixConfig = {
     extra-substituters = [ "https://fedibtc.cachix.org" ];
     extra-trusted-public-keys = [ "fedibtc.cachix.org-1:KyG8I1663EYQm2ThciPUvjm1r9PHiZbOYz4goj+U76k=" ];
+    access-tokens = [
+      "github.com=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"
+    ];
   };
 }
