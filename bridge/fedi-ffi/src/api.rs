@@ -1,21 +1,53 @@
 use std::collections::BTreeMap;
 use std::str::FromStr;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 use anyhow::Context;
 use bitcoin::Network;
+use fedi_api_types::device_control::request::GetDevicesForSeedQueryV0;
+use fedi_api_types::device_control::response::DevicesForSeedResultV0;
+use fedi_api_types::device_control::SeedCommitmentV0;
 use fedi_api_types::fee_schedule::FeesV0;
 use fedi_api_types::invoice_generator::{GenerateInvoiceRequestV0, GenerateInvoiceResponseV0};
+use fedimint_bip39::Bip39RootSecretStrategy;
+use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send, Amount};
 use lightning_invoice::Bolt11Invoice;
 use reqwest::Client;
 
 use crate::constants::{
-    FEDI_FEE_API_URL_MAINNET, FEDI_FEE_API_URL_MUTINYNET, FEDI_INVOICE_API_URL_MAINNET,
-    FEDI_INVOICE_API_URL_MUTINYNET,
+    FEDI_DEVICE_REGISTRATION_URL, FEDI_FEE_API_URL_MAINNET, FEDI_FEE_API_URL_MUTINYNET,
+    FEDI_INVOICE_API_URL_MAINNET, FEDI_INVOICE_API_URL_MUTINYNET,
 };
 use crate::storage::{FediFeeSchedule, ModuleFediFeeSchedule};
+
+// TODO shaurya move to device_registration module when created
+/// Represents registration information of a device using our root seed as
+/// recorded with Fedi's servers.
+pub struct RegisteredDevice {
+    /// Index assigned to the device, starting with 0. This is a critical number
+    /// since it's used in the derivation path from the root mnemonic to the
+    /// fedimint-client secret. In a way this is an account index, whereby each
+    /// registered device mimics a different account of the user/seed. Note that
+    /// this index has no bearing on app features that are
+    /// fedimint-client/federation-agnostic such as global chat, since those
+    /// features only depend on the root seed which is the same across all of
+    /// the user's devices. The only reason we have to guard against reusing the
+    /// same fedimint-client secret by way of these "device indices" is to
+    /// prevent two devices from accidentally issuing the same ecash notes
+    /// when one of them may be offline.
+    pub index: u8,
+
+    /// Human-readable, unique, stable string identifier assigned to the device
+    pub identifier: String,
+
+    /// Timestamp of the last successful registration renewal made from the
+    /// device. The more recent, the better. We expect every device to
+    /// periodically keep renewing its registration so that it can confirm that
+    /// no other device has taken over the index assigned to it.
+    pub last_renewed: SystemTime,
+}
 
 /// Trait that represents the API for communicating with Fedi-hosted services.
 #[apply(async_trait_maybe_send!)]
@@ -31,6 +63,13 @@ pub trait IFediApi: MaybeSend + MaybeSync + 'static {
         amount: Amount,
         network: Network,
     ) -> anyhow::Result<Bolt11Invoice>;
+
+    /// Fetches a list of all registered devices (as recorded by Fedi's servers)
+    /// that are using the provided seed.
+    async fn fetch_registered_devices_for_seed(
+        &self,
+        seed: bip39::Mnemonic,
+    ) -> anyhow::Result<Vec<RegisteredDevice>>;
 }
 
 /// Live code implementation of the IFediApi trait that uses a real
@@ -133,5 +172,40 @@ impl IFediApi for LiveFediApi {
         .await?;
 
         Ok(Bolt11Invoice::from_str(&invoice_v0.invoice).context("Failed to parse fee invoice")?)
+    }
+
+    async fn fetch_registered_devices_for_seed(
+        &self,
+        seed: bip39::Mnemonic,
+    ) -> anyhow::Result<Vec<RegisteredDevice>> {
+        let seed_commitment = SeedCommitmentV0::new(
+            Bip39RootSecretStrategy::<12>::to_root_secret(&seed).to_random_bytes(),
+        );
+
+        // Timeout of 2 minutes here since this fetch will either be performed during
+        // onboarding and it's important for it to succeed, or it will be performed in a
+        // background task without blocking anything.
+        let registered_devices_v0 = fedimint_core::task::timeout(Duration::from_secs(120), async {
+            self.client
+                .get(FEDI_DEVICE_REGISTRATION_URL)
+                .query(&GetDevicesForSeedQueryV0 { seed_commitment })
+                .send()
+                .await
+        })
+        .await
+        .context("Request to fetch registered devices took too long")?
+        .context("Fetch registered devices for seed response error")?
+        .json::<DevicesForSeedResultV0>()
+        .await?;
+
+        Ok(registered_devices_v0
+            .devices
+            .into_iter()
+            .map(|info| RegisteredDevice {
+                index: info.device_index.0,
+                identifier: info.device_identifier.device_name,
+                last_renewed: info.timestamp.0.into(),
+            })
+            .collect())
     }
 }

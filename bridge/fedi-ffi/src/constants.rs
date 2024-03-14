@@ -35,3 +35,8 @@ pub const FEDI_INVOICE_API_URL_MUTINYNET: &str =
     "https://mutinynet-fedi-fee-collection.dev.fedibtc.com/v0/generate-invoice";
 pub const FEDI_INVOICE_API_URL_MAINNET: &str =
     "https://mainnet-fedi-fee-collection.dev.fedibtc.com/v0/generate-invoice";
+
+// URL for Fedi's device registration API
+// TODO shaurya replace with production URL when deployed (currently staging)
+pub const FEDI_DEVICE_REGISTRATION_URL: &str =
+    "https://staging-device-control.dev.fedibtc.com/v0/get_devices_for_seed";
