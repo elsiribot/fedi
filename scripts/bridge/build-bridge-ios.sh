@@ -56,14 +56,15 @@ echo "Copying binary files..."
 # since x86_64-apple-ios-sim is not supported as a rustc target we just use x86_64-apple-ios
 AARCH64_SIM_BINARY_PATH=$CARGO_BUILD_TARGET_DIR/pkg/fedi-ffi/aarch64-apple-ios-sim/${CARGO_PROFILE_DIR}/libfediffi.a
 X86_BINARY_PATH=$CARGO_BUILD_TARGET_DIR/pkg/fedi-ffi/x86_64-apple-ios/${CARGO_PROFILE_DIR}/libfediffi.a
-COMBINED_BINARY_PATH=$CARGO_BUILD_TARGET_DIR/pkg/fedi-ffi/lipo-ios-arm64_x86_64-simulator/${CARGO_PROFILE_DIR}
+COMBINED_BINARY_DIR=$CARGO_BUILD_TARGET_DIR/pkg/fedi-ffi/lipo-ios-arm64_x86_64-simulator/${CARGO_PROFILE_DIR}
+COMBINED_BINARY_PATH="$COMBINED_BINARY_DIR/libfediffi.a"
 if [[ -e "$AARCH64_SIM_BINARY_PATH" && -e "$X86_BINARY_PATH" ]]; then
   echo "Combining binaries for development..."
-  mkdir -p $COMBINED_BINARY_PATH
-  if [ "$AARCH64_SIM_BINARY_PATH" -nt "$COMBINED_BINARY_PATH/libfediffi.a" ] ||
-    [ "$X86_SIM_BINARY_PATH" -nt "$COMBINED_BINARY_PATH/libfediffi.a" ] ; then
+  mkdir -p "$COMBINED_BINARY_DIR"
+  if [ "$AARCH64_SIM_BINARY_PATH" -nt "$COMBINED_BINARY_PATH" ] ||
+    [ "$X86_SIM_BINARY_PATH" -nt "$COMBINED_BINARY_PATH" ] ; then
     lipo $AARCH64_SIM_BINARY_PATH $X86_BINARY_PATH \
-      -create -output $COMBINED_BINARY_PATH/libfediffi.a
+      -create -output "$COMBINED_BINARY_PATH"
   fi
   cp \
     $COMBINED_BINARY_PATH \
@@ -81,13 +82,5 @@ if [ -e "$AARCH64_BINARY_PATH" ]; then
 else
   echo "aarch64-apple-ios binary was not built..."
 fi
-
-# clean up unneeded files
-rm Sources/Fedi/fediFFI.h
-rm Sources/Fedi/fediFFI.modulemap
-# clean up binary files after copying to the fediFFI framework
-# but keep dependencies so we dont rebuild from scratch
-# shellcheck disable=SC2046
-rm -f $(find $CARGO_BUILD_TARGET_DIR/pkg/fedi-ffi -name libfediffi.a | grep -v '/deps/')
 
 echo -e "\x1B[32;1miOS bridge build complete.\x1B[0m"
