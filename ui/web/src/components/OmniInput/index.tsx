@@ -1,4 +1,5 @@
 import { styled } from '@stitches/react'
+import { useRouter } from 'next/router'
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -8,7 +9,11 @@ import QRIcon from '@fedi/common/assets/svgs/qr.svg'
 import ScanIcon from '@fedi/common/assets/svgs/scan.svg'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import { selectActiveFederationId } from '@fedi/common/redux'
+import {
+    fetchChatMember,
+    selectActiveFederationId,
+    selectChatConnectionOptions,
+} from '@fedi/common/redux'
 import {
     AnyParsedData,
     ParsedUnknownData,
@@ -16,13 +21,14 @@ import {
 } from '@fedi/common/types'
 import { parseUserInput } from '@fedi/common/utils/parser'
 
-import { useAppSelector } from '../../hooks'
+import { useAppDispatch, useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
+import { Button } from '../Button'
 import { Icon } from '../Icon'
+import { Input } from '../Input'
 import { Text } from '../Text'
 import { OmniConfirmation } from './OmniConfirmation'
 import { OmniQrScanner } from './OmniQrScanner'
-import { OmniTextInput } from './OmniTextInput'
 
 interface OmniInputAction {
     label: React.ReactNode
@@ -43,6 +49,10 @@ interface Props<T extends ParserDataType, ExpectedData> {
     customActions?: OmniInputAction[]
     defaultToScan?: boolean
     loading?: boolean
+    children?: (props: { onSubmit: (value: string) => void }) => React.ReactNode
+    value?: string
+    onValueChange?: (value: string) => void
+    hideConfirmButton?: boolean
 }
 
 export function OmniInput<
@@ -52,14 +62,18 @@ export function OmniInput<
     const propsRef = useUpdatingRef(props)
     const { t } = useTranslation()
     const toast = useToast()
+    const dispatch = useAppDispatch()
     const federationId = useAppSelector(selectActiveFederationId)
+    const connectionOptions = useAppSelector(selectChatConnectionOptions)
     const [isScanning, setIsScanning] = useState(props.defaultToScan || false)
     const [isParsing, setIsParsing] = useState(false)
     const [unexpectedData, setUnexpectedData] = useState<AnyParsedData>()
     const [invalidData, setInvalidData] = useState<ParsedUnknownData>()
+    const [value, setValue] = useState(props.value || '')
     const fileInputRef = useRef<HTMLInputElement>(null)
     const isLoading = props.loading || isParsing
     const isLoadingRef = useUpdatingRef(isLoading)
+    const router = useRouter()
 
     const { customActions, inputPlaceholder, onUnexpectedSuccess } = props
     const inputLabel = props.inputLabel || 'Input data'
@@ -67,7 +81,13 @@ export function OmniInput<
 
     const parseInput = useCallback(
         async (input: string) => {
-            if (!input || isLoadingRef.current) return
+            if (
+                !input ||
+                isLoadingRef.current ||
+                !federationId ||
+                !connectionOptions?.domain
+            )
+                return
             setIsParsing(true)
             const parsedData = await parseUserInput(
                 input,
@@ -82,12 +102,39 @@ export function OmniInput<
             if (expectedTypes.includes(parsedData.type)) {
                 propsRef.current.onExpectedInput(parsedData as ExpectedData)
             } else if (parsedData.type === ParserDataType.Unknown) {
-                setInvalidData(parsedData)
+                if (
+                    !props.expectedInputTypes.includes(
+                        ParserDataType.FediChatMember as T,
+                    )
+                )
+                    return setInvalidData(parsedData)
+
+                const fetchedMember = await dispatch(
+                    fetchChatMember({
+                        federationId,
+                        memberId: `${input}@${connectionOptions.domain}`,
+                    }),
+                )
+                    .unwrap()
+                    .catch(() => setUnexpectedData(parsedData))
+
+                if (!fetchedMember) return setUnexpectedData(parsedData)
+
+                router.push(`/chat/member/${fetchedMember.id}?action=send`)
             } else {
                 setUnexpectedData(parsedData)
             }
         },
-        [propsRef, isLoadingRef, t, federationId],
+        [
+            propsRef,
+            isLoadingRef,
+            t,
+            federationId,
+            connectionOptions,
+            dispatch,
+            props.expectedInputTypes,
+            router,
+        ],
     )
 
     const handlePaste = useCallback(async () => {
@@ -154,6 +201,14 @@ export function OmniInput<
         t,
     ])
 
+    const inputOnChange = (val: string) => {
+        setValue(val)
+        if (typeof props.onValueChange === 'function') {
+            props.onValueChange(val)
+        }
+    }
+    const inputValue = props.value || value
+
     let confirmation: React.ReactNode | undefined
     if (invalidData || unexpectedData) {
         confirmation = (
@@ -174,14 +229,41 @@ export function OmniInput<
                 {isScanning ? (
                     <OmniQrScanner onScan={parseInput} processing={isLoading} />
                 ) : (
-                    <OmniTextInput
-                        onSubmit={parseInput}
-                        label={inputLabel}
-                        placeholder={inputPlaceholder}
-                        loading={isLoading}
-                    />
+                    <InputForm
+                        onSubmit={e => {
+                            e.preventDefault()
+                            parseInput(value)
+                        }}>
+                        <Input
+                            label={inputLabel}
+                            value={inputValue}
+                            placeholder={inputPlaceholder}
+                            onChange={ev =>
+                                inputOnChange(ev.currentTarget.value)
+                            }
+                            onKeyDown={ev => {
+                                if (ev.key === 'Enter') {
+                                    ev.preventDefault()
+                                }
+                            }}
+                            disabled={isLoading}
+                            autoFocus
+                        />
+                        {props.hideConfirmButton ? null : (
+                            <Button
+                                width="full"
+                                type="submit"
+                                disabled={!inputValue}
+                                loading={isLoading}>
+                                {t('words.confirm')}
+                            </Button>
+                        )}
+                    </InputForm>
                 )}
             </Main>
+            {typeof props.children === 'function'
+                ? props.children({ onSubmit: parseInput })
+                : null}
             <Actions>
                 {actions.map(({ label, icon, onClick }, idx) => (
                     <Action key={idx} onClick={onClick} disabled={isLoading}>
@@ -208,6 +290,7 @@ const Container = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
+    gap: 16,
 })
 
 const Main = styled('div', {
@@ -217,7 +300,6 @@ const Main = styled('div', {
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    marginBottom: 16,
 })
 
 const Actions = styled('div', {
@@ -242,4 +324,11 @@ const Action = styled('button', {
         opacity: 0.5,
         pointerEvents: 'none',
     },
+})
+
+const InputForm = styled('form', {
+    display: 'flex',
+    flexDirection: 'column',
+    width: '100%',
+    gap: 8,
 })
