@@ -2,7 +2,6 @@ import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { View, StyleSheet } from 'react-native'
-import { Icon } from 'react-native-vector-icons/Icon'
 
 import { useMatrixPaymentEvent } from '@fedi/common/hooks/matrix'
 import { MatrixPaymentEvent } from '@fedi/common/types'
@@ -102,20 +101,21 @@ const styles = (theme: Theme) =>
         paymentResult: {
             flexDirection: 'row',
             alignItems: 'center',
+            marginTop: theme.spacing.sm,
         },
         paymentButtons: {
             flexDirection: 'row',
             justifyContent: 'flex-start',
             gap: 12,
             width: '100%',
-            paddingVertical: theme.spacing.xs,
+            marginTop: theme.spacing.sm,
         },
         statusText: {
             color: theme.colors.secondary,
+            marginLeft: theme.spacing.sm,
         },
         messageText: {
             color: theme.colors.secondary,
-            paddingBottom: theme.spacing.sm,
         },
     })
 
