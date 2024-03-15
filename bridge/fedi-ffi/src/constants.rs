@@ -38,5 +38,4 @@ pub const FEDI_INVOICE_API_URL_MAINNET: &str =
 
 // URL for Fedi's device registration API
 // TODO shaurya replace with production URL when deployed (currently staging)
-pub const FEDI_DEVICE_REGISTRATION_URL: &str =
-    "https://staging-device-control.dev.fedibtc.com/v0/get_devices_for_seed";
+pub const FEDI_DEVICE_REGISTRATION_URL: &str = "https://staging-device-control.dev.fedibtc.com/v0";

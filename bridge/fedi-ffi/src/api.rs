@@ -4,9 +4,9 @@ use std::time::{Duration, SystemTime};
 
 use anyhow::Context;
 use bitcoin::Network;
-use fedi_api_types::device_control::request::GetDevicesForSeedQueryV0;
+use fedi_api_types::device_control::request::{GetDevicesForSeedQueryV0, RegisterDeviceRequestV0};
 use fedi_api_types::device_control::response::DevicesForSeedResultV0;
-use fedi_api_types::device_control::SeedCommitmentV0;
+use fedi_api_types::device_control::{DeviceIdentifierV0, DeviceIndexV0, SeedCommitmentV0};
 use fedi_api_types::fee_schedule::FeesV0;
 use fedi_api_types::invoice_generator::{GenerateInvoiceRequestV0, GenerateInvoiceResponseV0};
 use fedimint_bip39::Bip39RootSecretStrategy;
@@ -14,7 +14,7 @@ use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send, Amount};
 use lightning_invoice::Bolt11Invoice;
-use reqwest::Client;
+use reqwest::{Client, StatusCode};
 
 use crate::constants::{
     FEDI_DEVICE_REGISTRATION_URL, FEDI_FEE_API_URL_MAINNET, FEDI_FEE_API_URL_MUTINYNET,
@@ -49,6 +49,36 @@ pub struct RegisteredDevice {
     pub last_renewed: SystemTime,
 }
 
+/// Represents the different errors we might encounter when attempting to
+/// register the current device with Fedi's servers using the root seed, the
+/// device identifier, and the device index. Optionally, we may also send along
+/// a "force" flag as true, which means that if another device currently owns
+/// the specified index, we wish to transfer that index to this device.
+pub enum RegisterDeviceError {
+    /// Variant representing a conflict on Fedi's servers, whereby we try to
+    /// register the current device with the specified index, but another device
+    /// (with a different identifier) already owns the specified index in Fedi's
+    /// records. Note that we should never expect this error if we pass in the
+    /// "force" flag as true, since "force" would just take over the ownership
+    /// to this device anyway.
+    AnotherDeviceOwnsIndex,
+
+    /// Variant representing any other server error besides a conflicting device
+    /// registration. We expect this error to be temporary so we will just retry
+    /// later.
+    OtherServerError,
+
+    /// Variant representing errors encountered while sending the request to the
+    /// server. We expect this error to be temporary so we will just retry
+    /// later.
+    ErrorSendingRequest,
+
+    /// Variant representing request timeout, meaning no response was received
+    /// from the server within the allotted time. We expect this error to be
+    /// temporary so we will just retry later.
+    RequestTimeout,
+}
+
 /// Trait that represents the API for communicating with Fedi-hosted services.
 #[apply(async_trait_maybe_send!)]
 pub trait IFediApi: MaybeSend + MaybeSync + 'static {
@@ -70,6 +100,21 @@ pub trait IFediApi: MaybeSend + MaybeSync + 'static {
         &self,
         seed: bip39::Mnemonic,
     ) -> anyhow::Result<Vec<RegisteredDevice>>;
+
+    /// Attempts to register the current device with Fedi's servers using the
+    /// root seed, index, and identifier. If the `force_overwrite` flag is
+    /// false, the server will return an error if another device (with a
+    /// different identifer) already owns the specified index. If the
+    /// `force_overwrite` flag is true, the server should always honor our
+    /// request, even if it means transferring ownership of the specified index
+    /// to this new device.
+    async fn register_device_for_seed(
+        &self,
+        seed: bip39::Mnemonic,
+        device_index: u8,
+        device_identifier: String,
+        force_overwrite: bool,
+    ) -> anyhow::Result<(), RegisterDeviceError>;
 }
 
 /// Live code implementation of the IFediApi trait that uses a real
@@ -187,7 +232,9 @@ impl IFediApi for LiveFediApi {
         // background task without blocking anything.
         let registered_devices_v0 = fedimint_core::task::timeout(Duration::from_secs(120), async {
             self.client
-                .get(FEDI_DEVICE_REGISTRATION_URL)
+                .get(format!(
+                    "{FEDI_DEVICE_REGISTRATION_URL}/get_devices_for_seed"
+                ))
                 .query(&GetDevicesForSeedQueryV0 { seed_commitment })
                 .send()
                 .await
@@ -207,5 +254,51 @@ impl IFediApi for LiveFediApi {
                 last_renewed: info.timestamp.0.into(),
             })
             .collect())
+    }
+
+    async fn register_device_for_seed(
+        &self,
+        seed: bip39::Mnemonic,
+        device_index: u8,
+        device_identifier: String,
+        force_overwrite: bool,
+    ) -> anyhow::Result<(), RegisterDeviceError> {
+        let seed_commitment = SeedCommitmentV0::new(
+            Bip39RootSecretStrategy::<12>::to_root_secret(&seed).to_random_bytes(),
+        );
+
+        // Timeout of 2 minutes here since this request will either be performed during
+        // onboarding and it's important for it to succeed, or it will be performed in a
+        // background task without blocking anything.
+        let timeout_res = fedimint_core::task::timeout(Duration::from_secs(120), async {
+            self.client
+                .post(format!(
+                    "{FEDI_DEVICE_REGISTRATION_URL}/register_device_for_seed"
+                ))
+                .json(&RegisterDeviceRequestV0 {
+                    seed_commitment,
+                    device_index: DeviceIndexV0(device_index),
+                    device_identifier: DeviceIdentifierV0 {
+                        device_name: device_identifier,
+                    },
+                    force: force_overwrite,
+                })
+                .send()
+                .await
+        })
+        .await;
+
+        let Ok(register_device_result_v0) = timeout_res else {
+            return Err(RegisterDeviceError::RequestTimeout);
+        };
+
+        match register_device_result_v0 {
+            Ok(resp) if resp.status().is_success() => Ok(()),
+            Ok(resp) if resp.status() == StatusCode::CONFLICT => {
+                Err(RegisterDeviceError::AnotherDeviceOwnsIndex)
+            }
+            Ok(_) => Err(RegisterDeviceError::OtherServerError),
+            Err(_) => Err(RegisterDeviceError::ErrorSendingRequest),
+        }
     }
 }
