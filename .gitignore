@@ -9,6 +9,8 @@ bridge/fedi-android/plugins/bin/
 /target/
 /target-nix
 /target-nix/
+/target-tidy
+/target-tidy/
 
 # Nix
 /result
