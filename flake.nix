@@ -278,6 +278,8 @@
 
           FEDI_CROSS_DEV_SHELL = "1";
           shellHook = ''
+            root="$(git rev-parse --show-toplevel)"
+
             export PATH=$PATH:''${ANDROID_SDK_ROOT}/../../bin
             alias create-avd="avdmanager create avd --force --name phone --package 'system-images;android-32;google_apis;arm64-v8a' --path $PWD/avd";
             alias emulator="emulator -avd phone"
@@ -287,6 +289,7 @@
             git_root="$(git rev-parse --show-toplevel)"
             export PATH="''${git_root}/nix/cargo-wrapper/:$PATH"
             export RUSTC_WRAPPER=${pkgs.sccache}/bin/sccache
+            export CARGO_BUILD_TARGET_DIR="''${CARGO_BUILD_TARGET_DIR:-''${root}/target-nix}"
           '';
         });
       in

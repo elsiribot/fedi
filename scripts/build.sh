@@ -31,7 +31,7 @@ SRC_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )/.." &> /dev/null && pwd )
 cd $SRC_DIR || exit 1
 
 # Compile binaries in a way that nix can cache
-cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}}
+cargo build --profile "${CARGO_PROFILE}"
 
 # Function for killing processes stored in FM_PID_FILE in reverse-order they were created in
 function kill_fedimint_processes {

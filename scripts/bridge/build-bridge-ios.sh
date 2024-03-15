@@ -3,21 +3,19 @@
 # exit on failure
 set -e
 
-REPO_ROOT=$(git rev-parse --show-toplevel)
-BRIDGE_ROOT=$REPO_ROOT/bridge
-TARGET_DIR="${TARGET_DIR:-${REPO_ROOT}/target}"
-
 # default to dev-ios profile instead of dev to fix opt-level issue
-CARGO_PROFILE=${CARGO_PROFILE:-dev-ios}
-CARGO_PROFILE_DIR=${CARGO_PROFILE}
-if [ "$CARGO_PROFILE" == "dev" ]; then
-  CARGO_PROFILE_DIR="debug"
+if [ -z "${CARGO_PROFILE:-}" ]; then
+  export CARGO_PROFILE=dev-ios
 fi
+
+source scripts/common.sh
+
+BRIDGE_ROOT=$REPO_ROOT/bridge
 
 # build Swift bindings
 cd $BRIDGE_ROOT/fedi-ffi
 # note: using '--target-dir' or otherwise this build will completely invalidate previous ones already in the ./target
-cargo run --target-dir "${TARGET_DIR}/pkg/ffi-bindgen/ffi-bindgen-run" --package ffi-bindgen -- generate --language swift --out-dir $BRIDGE_ROOT/fedi-swift/Sources/Fedi "$BRIDGE_ROOT/fedi-ffi/src/fedi.udl"
+cargo run --target-dir "${CARGO_BUILD_TARGET_DIR}/pkg/ffi-bindgen/ffi-bindgen-run" --package ffi-bindgen -- generate --language swift --out-dir $BRIDGE_ROOT/fedi-swift/Sources/Fedi "$BRIDGE_ROOT/fedi-ffi/src/fedi.udl"
 
 cd $BRIDGE_ROOT
 
@@ -31,11 +29,11 @@ echo "Building iOS bridge for targets: ${TARGETS[*]} with profile: ${CARGO_PROFI
 
 # clean any old binaries
 # shellcheck disable=SC2046
-rm -f $(find $TARGET_DIR/pkg/ffi-bindgen -name libfediffi.a | grep -v '/deps/')
+rm -f $(find $CARGO_BUILD_TARGET_DIR/pkg/ffi-bindgen -name libfediffi.a | grep -v '/deps/')
 
 # build binaries for each supported target
 for target in "${TARGETS[@]}"; do
-  cargo build --target-dir "${TARGET_DIR}/pkg/fedi-ffi" --package fedi-ffi ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} --target $target $CARGO_FLAGS
+  cargo build --target-dir "${CARGO_BUILD_TARGET_DIR}/pkg/fedi-ffi" --package fedi-ffi ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}} --target $target $CARGO_FLAGS
 done
 
 # make sure build artifacts are available to the fedi-swift Xcode package
@@ -56,9 +54,9 @@ cp Sources/Fedi/fediFFI.h fediFFI.xcframework/ios-arm64_x86_64-simulator/fediFFI
 echo "Copying binary files..."
 # for development, we combine both x86 and aarch64 binaries into 1
 # since x86_64-apple-ios-sim is not supported as a rustc target we just use x86_64-apple-ios
-AARCH64_SIM_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/aarch64-apple-ios-sim/${CARGO_PROFILE_DIR}/libfediffi.a
-X86_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/x86_64-apple-ios/${CARGO_PROFILE_DIR}/libfediffi.a
-COMBINED_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/lipo-ios-arm64_x86_64-simulator/${CARGO_PROFILE_DIR}
+AARCH64_SIM_BINARY_PATH=$CARGO_BUILD_TARGET_DIR/pkg/fedi-ffi/aarch64-apple-ios-sim/${CARGO_PROFILE_DIR}/libfediffi.a
+X86_BINARY_PATH=$CARGO_BUILD_TARGET_DIR/pkg/fedi-ffi/x86_64-apple-ios/${CARGO_PROFILE_DIR}/libfediffi.a
+COMBINED_BINARY_PATH=$CARGO_BUILD_TARGET_DIR/pkg/fedi-ffi/lipo-ios-arm64_x86_64-simulator/${CARGO_PROFILE_DIR}
 if [[ -e "$AARCH64_SIM_BINARY_PATH" && -e "$X86_BINARY_PATH" ]]; then
   echo "Combining binaries for development..."
   mkdir -p $COMBINED_BINARY_PATH
@@ -68,7 +66,7 @@ if [[ -e "$AARCH64_SIM_BINARY_PATH" && -e "$X86_BINARY_PATH" ]]; then
       -create -output $COMBINED_BINARY_PATH/libfediffi.a
   fi
   cp \
-    $COMBINED_BINARY_PATH/libfediffi.a \
+    $COMBINED_BINARY_PATH \
     fediFFI.xcframework/ios-arm64_x86_64-simulator/fediFFI.framework/fediFFI
 else
   # otherwise just use the aarch64 simulator binary
@@ -77,7 +75,7 @@ fi
 
 # ios-arm64
 # copy the aarch64 binary if it was built
-AARCH64_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/aarch64-apple-ios/${CARGO_PROFILE_DIR}/libfediffi.a
+AARCH64_BINARY_PATH=$CARGO_BUILD_TARGET_DIR/pkg/fedi-ffi/aarch64-apple-ios/${CARGO_PROFILE_DIR}/libfediffi.a
 if [ -e "$AARCH64_BINARY_PATH" ]; then
   cp $AARCH64_BINARY_PATH fediFFI.xcframework/ios-arm64/fediFFI.framework/fediFFI
 else
@@ -90,6 +88,6 @@ rm Sources/Fedi/fediFFI.modulemap
 # clean up binary files after copying to the fediFFI framework
 # but keep dependencies so we dont rebuild from scratch
 # shellcheck disable=SC2046
-rm -f $(find $TARGET_DIR/pkg/fedi-ffi -name libfediffi.a | grep -v '/deps/')
+rm -f $(find $CARGO_BUILD_TARGET_DIR/pkg/fedi-ffi -name libfediffi.a | grep -v '/deps/')
 
 echo -e "\x1B[32;1miOS bridge build complete.\x1B[0m"
