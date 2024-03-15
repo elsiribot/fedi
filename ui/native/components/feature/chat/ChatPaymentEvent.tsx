@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { View, StyleSheet } from 'react-native'
 
 import { useMatrixPaymentEvent } from '@fedi/common/hooks/matrix'
+import { useToast } from '@fedi/common/hooks/toast'
 import { MatrixPaymentEvent } from '@fedi/common/types'
 
 import { fedimint } from '../../../bridge'
@@ -16,6 +17,7 @@ type Props = {
 
 const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
     const { t } = useTranslation()
+    const toast = useToast()
     const { theme } = useTheme()
 
     const { messageText, statusIcon, statusText, buttons } =
@@ -23,7 +25,7 @@ const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
             event,
             fedimint,
             t,
-            onError: err => {},
+            onError: _ => toast.error(t, 'errors.chat-payment-failed'),
         })
 
     const style = styles(theme)
