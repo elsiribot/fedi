@@ -128,3 +128,6 @@ fedi-fedimint-cli-v0_2_2-rc8 *ARGS:
 
 fedi-fedimint-cli-master *ARGS:
   @just fedi-fedimint-cli "master" 38447bb77b28c95874fcb03d6e66dc2f357c1953 {{ARGS}}
+
+tidy-up:
+  @./scripts/tidy-up.sh
