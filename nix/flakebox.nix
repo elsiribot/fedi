@@ -241,7 +241,6 @@ rec {
         pkgs.bitcoind
         pkgs.electrs
         pkgs.esplora-electrs
-        fedimint-pkgs.packages.${system}.devimint
         fedimint-pkgs.packages.${system}.gateway-pkgs
         # helpers
         pkgs.jq
@@ -253,7 +252,7 @@ rec {
       export FM_CARGO_DENY_COMPILATION=1
 
       # check that all expected binaries are available
-      for i in lnd lightningd gatewayd devimint esplora electrs bitcoind faucet ; do
+      for i in lnd lightningd gatewayd esplora electrs bitcoind ; do
          which $i
       done
 
@@ -279,7 +278,6 @@ rec {
         pkgs.bitcoind
         pkgs.electrs
         pkgs.esplora-electrs
-        fedimint-pkgs.packages.${system}.devimint
         fedimint-pkgs.packages.${system}.gateway-pkgs
         # helpers
         pkgs.jq
@@ -291,7 +289,7 @@ rec {
       export FM_CARGO_DENY_COMPILATION=1
 
       # check that all expected binaries are available
-      for i in lnd lightningd gatewayd devimint esplora electrs bitcoind faucet ; do
+      for i in lnd lightningd gatewayd esplora electrs bitcoind ; do
          which $i
       done
 

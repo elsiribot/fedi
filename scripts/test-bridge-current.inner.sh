@@ -21,5 +21,5 @@ function run_tests() {
 export -f run_tests
 
 echo "## Running v2 bridge tests"
-devimint dev-fed --exec bash -c run_tests
+devi dev-fed --exec bash -c run_tests
 echo "## Tests Passed"

@@ -3,7 +3,7 @@ echo "Run with './scripts/provide-stable-liquidity.sh [amount_sats]"
 
 # wait for devimint to start
 echo "Waiting for fedimint start"
-STATUS="$(devimint wait)"
+STATUS="$(devi wait)"
 if [ "$STATUS" = "ERROR" ]
 then
     echo "fedimint didn't start correctly"
@@ -26,7 +26,7 @@ AMOUNT=${AMOUNT:-$1}
 echo "Pegging in $AMOUNT to deposit-to-provide in stability_pool"
 
 # HACK: fix bitcoin-cli invocation (fixed upstream)
-eval "$(devimint env)"
+eval "$(devi env)"
 FM_BTC_CLIENT="$FM_BTC_CLIENT -rpcport=$FM_PORT_BTC_RPC"
 
 # get a deposit address and save the operation ID

@@ -1,10 +1,10 @@
 # shellcheck shell=bash
 
-eval "$(devimint env)"
+eval "$(devi env)"
 
 echo Waiting for fedimint start
 
-STATUS="$(devimint wait)"
+STATUS="$(devi wait)"
 if [ "$STATUS" = "ERROR" ]
 then
     echo "fedimint didn't start correctly"

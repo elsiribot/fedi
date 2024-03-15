@@ -17,7 +17,7 @@ struct Args {
     cmd: Cmd,
 }
 
-#[derive(Clone, Subcommand)]
+#[derive(Subcommand)]
 enum Cmd {
     TestUpgrade {
         old_fedimintd: PathBuf,
@@ -27,6 +27,8 @@ enum Cmd {
         old_fedimintd: PathBuf,
         new_fedimintd: PathBuf,
     },
+    #[clap(flatten)]
+    Devimint(devimint::cli::Cmd),
 }
 
 use tracing::info;
@@ -70,6 +72,9 @@ async fn stress_test_fed(dev_fed: &DevFed) -> anyhow::Result<()> {
 async fn main() -> anyhow::Result<()> {
     let args: Args = Args::parse();
     match args.cmd {
+        Cmd::Devimint(cmd) => {
+            devimint::cli::handle_command(cmd, args.common).await?;
+        }
         Cmd::TestUpgrade {
             old_fedimintd,
             new_fedimintd,
