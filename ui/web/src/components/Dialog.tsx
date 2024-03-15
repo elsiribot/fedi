@@ -87,7 +87,7 @@ export const Dialog: React.FC<Props> = ({
                                     </>
                                 )}
                                 {description && (
-                                    <Description>
+                                    <Description asChild>
                                         <Text variant="caption" weight="medium">
                                             {description}
                                         </Text>
