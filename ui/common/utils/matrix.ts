@@ -3,6 +3,7 @@ import orderBy from 'lodash/orderBy'
 import { z } from 'zod'
 
 import { GLOBAL_MATRIX_SERVER } from '../constants/matrix'
+import { FormattedAmounts } from '../hooks/amount'
 import {
     MSats,
     MatrixEvent,
@@ -11,9 +12,7 @@ import {
     MatrixRoomPowerLevels,
     MatrixTimelineItem,
     MatrixUser,
-    SupportedCurrency,
 } from '../types'
-import amountUtils from './AmountUtils'
 import { makeLog } from './log'
 
 const log = makeLog('common/utils/matrix')
@@ -229,8 +228,7 @@ export const makeMatrixPaymentText = ({
     eventSender,
     paymentSender,
     paymentRecipient,
-    currency,
-    btcExchangeRate,
+    makeFormattedAmountsFromMSats,
 }: {
     t: TFunction
     event: MatrixPaymentEvent
@@ -238,8 +236,7 @@ export const makeMatrixPaymentText = ({
     eventSender: MatrixUser | null | undefined
     paymentSender: MatrixUser | null | undefined
     paymentRecipient: MatrixUser | null | undefined
-    currency: SupportedCurrency
-    btcExchangeRate: number
+    makeFormattedAmountsFromMSats: (amt: MSats) => FormattedAmounts
 }): string => {
     const {
         senderId: eventSenderId,
@@ -250,20 +247,16 @@ export const makeMatrixPaymentText = ({
         },
     } = event
 
+    const { formattedPrimaryAmount, formattedSecondaryAmount } =
+        makeFormattedAmountsFromMSats(amount as MSats)
+
     const previewStringParams = {
         name: eventSender?.displayName || matrixIdToUsername(eventSenderId),
         recipient:
             paymentRecipient?.displayName ||
             matrixIdToUsername(paymentRecipientId),
-        fiat: `${amountUtils.formatFiat(
-            amountUtils.msatToBtc(amount as MSats) * btcExchangeRate,
-            currency,
-            { symbolPosition: 'none' },
-        )} ${currency}`,
-        amount: amountUtils.formatNumber(
-            amountUtils.msatToSat(amount as MSats),
-        ),
-        unit: 'SATS',
+        fiat: formattedPrimaryAmount,
+        amount: formattedSecondaryAmount,
         memo: '',
     }
 

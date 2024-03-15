@@ -7,8 +7,6 @@ import {
     observeMatrixRoom,
     rejectMatrixPaymentRequest,
     searchMatrixUsers,
-    selectBtcExchangeRate,
-    selectCurrency,
     selectLatestMatrixRoomEventId,
     selectMatrixAuth,
     selectMatrixRoom,
@@ -31,6 +29,7 @@ import {
     makeMatrixPaymentText,
     matrixIdToUsername,
 } from '../utils/matrix'
+import { useAmountFormatter } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useUpdatingRef } from './util'
 
@@ -163,8 +162,7 @@ export function useMatrixPaymentEvent({
     const isDm = useCommonSelector(
         s => !!selectMatrixRoom(s, event.roomId)?.directUserId,
     )
-    const currency = useCommonSelector(selectCurrency)
-    const btcExchangeRate = useCommonSelector(selectBtcExchangeRate)
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
     const [isCanceling, setIsCanceling] = useState(false)
     const [isAccepting, setIsAccepting] = useState(false)
     const [isRejecting, setIsRejecting] = useState(false)
@@ -214,8 +212,7 @@ export function useMatrixPaymentEvent({
         eventSender,
         paymentSender,
         paymentRecipient,
-        currency,
-        btcExchangeRate,
+        makeFormattedAmountsFromMSats,
     })
     const paymentStatus = event.content.status
     const isSentByMe = event.content.senderId === matrixAuth?.userId

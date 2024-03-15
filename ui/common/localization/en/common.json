@@ -317,7 +317,7 @@
             "no-users-found": "No users found",
             "no-one-is-in-this-group": "No one is in this group yet.",
             "open-camera-scanner": "Open Camera Scanner",
-            "other-sent-payment": "{{name}} sent {{recipient}} {{amount}} {{unit}} {{memo}}",
+            "other-sent-payment": "{{name}} sent {{recipient}} {{fiat}} ({{amount}}) {{memo}}",
             "paid-by-name": "Paid by {{name}}",
             "paste-group-invite": "Paste group invite",
             "register-a-username": "Register a username",
