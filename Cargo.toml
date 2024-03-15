@@ -30,6 +30,7 @@ default-members = [
     "stability-pool/stability-pool-common",
     "stability-pool/stability-pool-server",
     "stability-pool/stability-pool-tests",
+    "devi",
 ]
 resolver = "2"
 

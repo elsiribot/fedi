@@ -22,8 +22,6 @@ procs:
     shell: tail -n +0 -F $FM_LOGS_DIR/bitcoind.log
   devimint:
     shell: tail -n +0 -F $FM_LOGS_DIR/devimint-outer.log
-  faucet:
-    shell: tail -n +0 -F $FM_LOGS_DIR/faucet.log
   provider:
     shell: bash scripts/provide-stable-liquidity.sh 1000000
     stop: SIGKILL

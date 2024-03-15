@@ -243,7 +243,6 @@
           nativeBuildInputs =
             [
               (lib.hiPrio toolchains.default.toolchain)
-              fedimint-pkgs.packages.${system}.devimint
               fedimint-pkgs.packages.${system}.gateway-pkgs
               pkgs.fs-dir-cache
               pkgs.cargo-nextest
