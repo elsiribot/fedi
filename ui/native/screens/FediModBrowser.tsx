@@ -491,7 +491,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 label={t('feature.recovery.recovery-in-progress-payments')}
             />
             <GenerateEcashOverlay
-                {...overlayProps}
+                onReject={overlayProps.onReject}
+                onAccept={overlayProps.onAccept}
                 ecashRequest={ecashRequest}
             />
         </View>

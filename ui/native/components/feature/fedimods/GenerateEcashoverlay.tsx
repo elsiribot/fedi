@@ -13,21 +13,19 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
-import { EcashRequest, FediMod, MSats } from '../../../types'
+import { EcashRequest, MSats } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
 
 const log = makeLog('MakeInvoiceOverlay')
 
 interface Props {
-    fediMod: FediMod
     ecashRequest?: EcashRequest | null
     onReject: (err: Error) => void
     onAccept: (ecash: string) => void
 }
 
 export const GenerateEcashOverlay: React.FC<Props> = ({
-    fediMod,
     ecashRequest,
     onReject,
     onAccept,
