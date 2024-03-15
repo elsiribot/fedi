@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-REPO_ROOT=$(git rev-parse --show-toplevel)
+source scripts/common.sh
 
 $REPO_ROOT/scripts/enforce-nix.sh
 
@@ -23,8 +23,8 @@ mkdir $FM_LOGS_DIR
 touch $FM_PID_FILE
 
 # FIXME: use build.sh???
-cargo build ${CARGO_PROFILE:+--profile ${CARGO_PROFILE}}
-export PATH=$PWD/target/debug:$PATH
+cargo build --profile ${CARGO_PROFILE}
+export PATH="${CARGO_BIN_DIR}:$PATH"
 
 # Flag to have devimint use binaries in specific folder, e.g. "../fedimint/target/debug"
 if [ -n "$DEVIMINT_BIN" ]; then

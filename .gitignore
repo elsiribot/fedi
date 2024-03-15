@@ -6,6 +6,9 @@ bridge/fedi-android/plugins/bin/
 
 # Rust
 /target
+/target/
+/target-nix
+/target-nix/
 
 # Nix
 /result

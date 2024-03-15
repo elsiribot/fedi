@@ -287,6 +287,7 @@
             git_root="$(git rev-parse --show-toplevel)"
             export PATH="''${git_root}/nix/cargo-wrapper/:$PATH"
             export RUSTC_WRAPPER=${pkgs.sccache}/bin/sccache
+            export CARGO_BUILD_TARGET_DIR="''${CARGO_BUILD_TARGET_DIR:-''${git_root}/target-nix}"
           '';
         });
       in
