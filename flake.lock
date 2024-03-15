@@ -257,17 +257,16 @@
       "locked": {
         "lastModified": 1710274133,
         "narHash": "sha256-KvsVoQXBpRNYOTMX0NTHpSC9yYUbvsxAyHJPgtAvxs0=",
-        "ref": "refs/tags/v0.3.0-alpha.1",
+        "owner": "fedibtc",
+        "repo": "fedimint-fedi",
         "rev": "bd9a93e0ab571ab513ece591d1d91d8ee9fb26b4",
-        "revCount": 6786,
-        "type": "git",
-        "url": "ssh://git@github.com/fedibtc/fedimint-fedi.git"
+        "type": "github"
       },
       "original": {
-        "ref": "refs/tags/v0.3.0-alpha.1",
+        "owner": "fedibtc",
+        "repo": "fedimint-fedi",
         "rev": "bd9a93e0ab571ab513ece591d1d91d8ee9fb26b4",
-        "type": "git",
-        "url": "ssh://git@github.com/fedibtc/fedimint-fedi.git"
+        "type": "github"
       }
     },
     "fenix": {
