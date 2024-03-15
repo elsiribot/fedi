@@ -99,9 +99,7 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
                 onReject(new RejectionError(t('errors.webln-canceled')))
             }
             contents={{
-                title: t('feature.fedimods.wants-you-to-pay', {
-                    fediMod: fediMod.title,
-                }),
+                title: t('feature.stabilitypool.enter-deposit-amount'),
                 body: (
                     <View style={{ flex: 1, paddingTop: theme.spacing.xl }}>
                         <AmountInput
@@ -122,12 +120,12 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
                 ),
                 buttons: [
                     {
-                        text: t('words.reject'),
+                        text: t('words.cancel'),
                         onPress: handleReject,
                     },
                     {
                         primary: true,
-                        text: t('words.accept'),
+                        text: t('words.confirm'),
                         onPress: handleAccept,
                     },
                 ],
