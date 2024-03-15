@@ -3,15 +3,14 @@ import React from 'react'
 import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from 'react-native'
 import type { LinearGradientProps } from 'react-native-linear-gradient'
 
-import { selectAuthenticatedMember, selectMatrixAuth } from '@fedi/common/redux'
-import { ChatMessage, ChatMessageStatus, MatrixEvent } from '@fedi/common/types'
+import { selectMatrixAuth } from '@fedi/common/redux'
+import { MatrixEvent } from '@fedi/common/types'
 import { isPaymentEvent } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../../../state/hooks'
 import { OptionalGradient } from '../../ui/OptionalGradient'
 import ChatPaymentEvent from './ChatPaymentEvent'
 import MessageContents from './MessageContents'
-import PaymentMessage from './PaymentMessage'
 
 type Props = {
     event: MatrixEvent
@@ -102,7 +101,6 @@ const styles = (theme: Theme) =>
             opacity: 0.5,
         },
         bubbleContainer: {
-            marginTop: theme.spacing.xxs,
             borderRadius: 16,
             maxWidth: theme.sizes.maxMessageWidth,
             overflow: 'hidden',

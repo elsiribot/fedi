@@ -1,22 +1,23 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme, Text } from '@rneui/themed'
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { useObserveMatrixRoom } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
-    paginateMatrixRoomTimeline,
     selectMatrixRoom,
     selectMatrixRoomEvents,
     sendMatrixMessage,
 } from '@fedi/common/redux'
+import { makeLog } from '@fedi/common/utils/log'
 
 import ChatConversation from '../components/feature/chat/ChatConversation'
 import MessageInput from '../components/feature/chat/MessageInput'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('ChatRoomConversation')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -26,18 +27,15 @@ export type Props = NativeStackScreenProps<
 const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    // const navigation = useNavigation<NavigationHook>()
-    // const matrixAuth = useAppSelector(selectMatrixAuth)
     const dispatch = useAppDispatch()
     const { roomId, chatType } = route.params
+    const [isSending, setIsSending] = useState(false)
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
     const events = useAppSelector(s => selectMatrixRoomEvents(s, roomId))
     const toast = useToast()
     const isLoading = useMemo(() => {
         return !room || !events
     }, [room, events])
-
-    useObserveMatrixRoom(roomId)
 
     const directUserId = room?.directUserId
 
@@ -47,25 +45,19 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
 
     const handleSend = useCallback(
         async (body: string) => {
-            await dispatch(sendMatrixMessage({ roomId, body })).unwrap()
+            if (!body || isSending) return
+            setIsSending(true)
+            try {
+                await dispatch(sendMatrixMessage({ roomId, body })).unwrap()
+            } catch (err) {
+                log.error('error sending message', err)
+                toast.error(t, 'errors.unknown-error')
+            }
+            setIsSending(false)
         },
-        [dispatch, roomId],
+        [dispatch, roomId, t],
     )
 
-    const handlePaginate = useCallback(async () => {
-        let end = false
-        try {
-            const res = await dispatch(
-                paginateMatrixRoomTimeline({ roomId }),
-            ).unwrap()
-            end = res.end
-        } catch (err) {
-            toast.error(t, err)
-        }
-        return { end }
-    }, [dispatch, roomId])
-
-    // let content: React.ReactNode
     const content = useMemo(() => {
         if (isLoading) {
             return null
@@ -81,27 +73,16 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
                     <ChatConversation
                         type={chatType}
                         id={room?.id || ''}
-                        name={room?.name || ''}
                         events={events}
-                        onPaginate={handlePaginate}
                     />
                     <MessageInput
                         onMessageSubmitted={handleSend}
-                        directUserId={directUserId}
+                        id={room?.id || directUserId || ''}
                     />
                 </>
             )
         }
-    }, [
-        isLoading,
-        room,
-        chatType,
-        roomId,
-        events,
-        handlePaginate,
-        handleSend,
-        directUserId,
-    ])
+    }, [isLoading, room, chatType, roomId, events, handleSend, directUserId])
 
     return <View style={styles(theme).container}>{content}</View>
 }

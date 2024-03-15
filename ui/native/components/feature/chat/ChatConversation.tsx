@@ -15,7 +15,10 @@ import {
 } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
+import { useObserveMatrixRoom } from '@fedi/common/hooks/matrix'
 import {
+    paginateMatrixRoomTimeline,
+    selectMatrixAuth,
     selectMatrixRoom,
     selectMatrixRoomIsReadOnly,
     selectMatrixUser,
@@ -28,7 +31,7 @@ import {
     makeMatrixEventGroups,
 } from '@fedi/common/utils/matrix'
 
-import { useAppSelector } from '../../../state/hooks'
+import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import Avatar from '../../ui/Avatar'
 import ChatEventCollection from './ChatEventCollection'
 import EmptyGroupNotice from './EmptyGroupNotice'
@@ -38,42 +41,36 @@ import { MessageItemError } from './MessageItemError'
 type MessagesListProps = {
     type: ChatType
     id: string
-    name: string
     events: MatrixEvent[]
-    onSendMessage?(message: string): Promise<void>
-    onPaginate?: () => Promise<{ end: boolean }>
-    messages?: ChatMessage[][][]
     multiUserChat?: boolean
 }
 
 const ChatConversation: React.FC<MessagesListProps> = ({
     type,
     id,
-    name,
     events,
-    onSendMessage,
-    onPaginate,
-    messages,
     multiUserChat = false,
 }: MessagesListProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const navigation = useNavigation()
-
-    const room = useAppSelector(s => selectMatrixRoom(s, id))
-    const user = useAppSelector(s => selectMatrixUser(s, id))
-    const isReadOnly = useAppSelector(s => selectMatrixRoomIsReadOnly(s, id))
     const [hasPaginated, setHasPaginated] = useState(false)
     const [isPaginating, setIsPaginating] = useState(false)
     const [isAtEnd, setIsAtEnd] = useState(false)
+    const matrixAuth = useAppSelector(selectMatrixAuth)
+    const listRef = useRef<FlatList>(null)
+    const lastScrolledMessageIdRef = useRef(events?.[0]?.id)
+    const isScrolledToBottomRef = useRef(true)
+    const myId = useMemo(() => matrixAuth?.userId, [matrixAuth])
+    const [hasNewMessage, setHasNewMessages] = useState(false)
+    const animatedNewMessageBottom = useRef(new Animated.Value(0)).current
+    const dispatch = useAppDispatch()
+
+    useObserveMatrixRoom(id)
 
     const eventGroups = useMemo(
         () => makeMatrixEventGroups(events, 'desc'),
         [events],
     )
-    console.info('room', room)
-    console.info('user', user)
-    console.info('eventGroups', eventGroups)
 
     // Any time we get a change in the number of events, we reset hasPaginated
     // so that the user will attempt pagination again.
@@ -81,54 +78,55 @@ const ChatConversation: React.FC<MessagesListProps> = ({
         setHasPaginated(false)
     }, [events.length])
 
-    const listRef = useRef<FlatList>(null)
-    // const lastScrolledMessageIdRef = useRef(messages[0]?.[0]?.[0].id)
-    const isScrolledToBottomRef = useRef(true)
-    // const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    // const memberMap = useAppSelector(selectChatMemberMap)
-    const [hasNewMessage, setHasNewMessages] = useState(false)
-    const animatedNewMessageBottom = useRef(new Animated.Value(0)).current
-
     const style = styles(theme)
-    // const myId = authenticatedMember?.id || ''
 
     // Animate new message button in and out
-    // useEffect(() => {
-    //     Animated.timing(animatedNewMessageBottom, {
-    //         toValue: hasNewMessage ? 90 : -50,
-    //         duration: 100,
-    //         useNativeDriver: false,
-    //         easing: Easing.linear,
-    //     }).start()
-    // }, [animatedNewMessageBottom, hasNewMessage])
+    useEffect(() => {
+        Animated.timing(animatedNewMessageBottom, {
+            toValue: hasNewMessage ? 90 : -50,
+            duration: 100,
+            useNativeDriver: false,
+            easing: Easing.linear,
+        }).start()
+    }, [animatedNewMessageBottom, hasNewMessage])
 
-    // const scrollToEnd = useCallback(() => {
-    //     // Use scrollToOffset instead of scrollToEnd because the list is inverted
-    //     listRef.current?.scrollToOffset({ offset: 0, animated: true })
-    //     setHasNewMessages(false)
-    // }, [])
+    const scrollToEnd = useCallback(() => {
+        // Use scrollToOffset instead of scrollToEnd because the list is inverted
+        listRef.current?.scrollToOffset({ offset: 0, animated: true })
+        setHasNewMessages(false)
+    }, [])
 
     // When new messages come in, either scroll to the bottom (if we sent)
     // or pop up a notice that we have new messages.
-    // useEffect(() => {
-    //     // Bail out if we've already handled this message
-    //     const lastMessage = messages[0]?.[0]?.[0]
-    //     const shouldScroll =
-    //         lastMessage && lastMessage.id !== lastScrolledMessageIdRef.current
-    //     if (!shouldScroll) return
+    useEffect(() => {
+        if (!myId || !eventGroups.length) return
+        // Bail out if we've already handled this message
+        const lastMessage = eventGroups[0]?.[0]?.[0]
+        const shouldScroll =
+            lastMessage && lastMessage.id !== lastScrolledMessageIdRef.current
+        if (!shouldScroll) return
+        // Update ref so we don't scroll again
+        lastScrolledMessageIdRef.current = lastMessage.id
+        // If we sent it, or we're already at the bottom, scroll without asking
+        if (lastMessage.senderId === myId || isScrolledToBottomRef.current) {
+            return
+        }
+        // Otherwise, mark that we have new messages
+        else {
+            setHasNewMessages(true)
+        }
+    }, [eventGroups, myId, scrollToEnd])
 
-    //     // Update ref so we don't scroll again
-    //     lastScrolledMessageIdRef.current = lastMessage.id
-
-    //     // If we sent it, or we're already at the bottom, scroll without asking
-    //     if (lastMessage.sentBy === myId || isScrolledToBottomRef.current) {
-    //         scrollToEnd()
-    //     }
-    //     // Otherwise, mark that we have new messages
-    //     else {
-    //         setHasNewMessages(true)
-    //     }
-    // }, [messages, myId, scrollToEnd])
+    const handlePaginate = useCallback(async () => {
+        if (isPaginating || hasPaginated || isAtEnd) return
+        setIsPaginating(true)
+        setHasPaginated(true)
+        dispatch(paginateMatrixRoomTimeline({ roomId: id, limit: 10 }))
+            .unwrap()
+            .then(({ end }) => setIsAtEnd(end))
+            .catch(() => console.error('error paginating'))
+            .finally(() => setIsPaginating(false))
+    }, [id, dispatch, isPaginating, hasPaginated, isAtEnd])
 
     // Mark hasNewMessages as false when we scroll to the bottom, and keep a ref up to date
     const handleScroll = useCallback(
@@ -138,27 +136,30 @@ const ChatConversation: React.FC<MessagesListProps> = ({
             if (isAtBottom) {
                 setHasNewMessages(false)
             }
-            console.info(
-                'ev.nativeEvent.contentOffset',
-                ev.nativeEvent.contentOffset,
-            )
         },
         [],
     )
 
+    const ChatEventCollectionMemo = React.memo(
+        ChatEventCollection,
+        (prevProps, nextProps) => {
+            return (
+                prevProps.collection[0][0].id === nextProps.collection[0][0].id
+            )
+        },
+    )
     const renderEventGroup: ListRenderItem<
         MatrixEvent<MatrixEventContent>[][]
-    > = ({ item }) => {
-        console.info('item', item)
+    > = useCallback(({ item }) => {
         return (
-            <ChatEventCollection
+            <ChatEventCollectionMemo
                 key={item[0][0].id}
                 roomId={id}
                 collection={item}
                 showUsernames={type === ChatType.group}
             />
         )
-    }
+    }, [])
 
     return (
         <>
@@ -167,18 +168,33 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                 ref={listRef}
                 renderItem={renderEventGroup}
                 keyExtractor={item => `${item[0][0]?.id}`}
-                style={style.listContainer}
+                style={[
+                    style.listContainer,
+                    {
+                        paddingHorizontal:
+                            type === 'group'
+                                ? theme.spacing.lg
+                                : theme.spacing.xl,
+                    },
+                ]}
                 contentContainerStyle={style.contentContainer}
                 removeClippedSubviews={false}
-                ListEmptyComponent={multiUserChat ? <EmptyGroupNotice /> : null}
-                onScroll={
-                    onPaginate && !hasPaginated && !isAtEnd
-                        ? handleScroll
-                        : undefined
+                ListEmptyComponent={
+                    type === ChatType.group ? <EmptyGroupNotice /> : null
                 }
-                inverted={eventGroups.length > 0}
+                onScroll={handleScroll}
+                // adjust this for more/less aggressive loading
+                onEndReachedThreshold={1}
+                inverted={events.length > 0}
+                onEndReached={handlePaginate}
+                refreshing={isPaginating}
+                maintainVisibleContentPosition={{
+                    minIndexForVisible: 1,
+                    autoscrollToTopThreshold: 100,
+                }}
+                scrollsToTop={false}
             />
-            {/* <Animated.View
+            <Animated.View
                 style={[
                     style.newMessageButtonContainer,
                     { bottom: animatedNewMessageBottom },
@@ -188,7 +204,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                         {t('feature.chat.new-messages')}
                     </Text>
                 </Pressable>
-            </Animated.View> */}
+            </Animated.View>
         </>
     )
 }

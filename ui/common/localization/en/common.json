@@ -278,7 +278,7 @@
             "broadcast-admin-settings": "Broadcast Admin settings",
             "broadcast-admins": "Broadcast Admins",
             "broadcast-only": "Broadcast only",
-            "broadcast-only-notice": "You cannot send messages in a broadcast-only room",
+            "broadcast-only-notice": "Psst, only admins can send messages here. 🤫",
             "camera-access-information": "To join a group, you will need to allow Fedi access to your camera to scan a group invite link",
             "change-group-name": "Change group name",
             "change-role": "Change role",

@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useCallback } from 'react'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
@@ -24,28 +24,31 @@ const ChatsList: React.FC = () => {
     const rooms = useAppSelector(selectMatrixOrderedRoomsList)
     const syncStatus = useAppSelector(selectMatrixStatus)
 
-    const renderChat: ListRenderItem<MatrixRoom> = ({ item }) => {
-        return (
-            <ErrorBoundary fallback={null}>
-                <ChatTile
-                    room={item}
-                    selectChat={(chat: MatrixRoom) => {
-                        if (chat.directUserId) {
-                            navigation.navigate('ChatRoomConversation', {
-                                roomId: chat.id,
-                                chatType: ChatType.direct,
-                            })
-                        } else {
-                            navigation.navigate('ChatRoomConversation', {
-                                roomId: chat.id,
-                                chatType: ChatType.group,
-                            })
-                        }
-                    }}
-                />
-            </ErrorBoundary>
-        )
-    }
+    const renderChat: ListRenderItem<MatrixRoom> = useCallback(
+        ({ item }) => {
+            return (
+                <ErrorBoundary fallback={null}>
+                    <ChatTile
+                        room={item}
+                        selectChat={(chat: MatrixRoom) => {
+                            if (chat.directUserId) {
+                                navigation.navigate('ChatRoomConversation', {
+                                    roomId: chat.id,
+                                    chatType: ChatType.direct,
+                                })
+                            } else {
+                                navigation.navigate('ChatRoomConversation', {
+                                    roomId: chat.id,
+                                    chatType: ChatType.group,
+                                })
+                            }
+                        }}
+                    />
+                </ErrorBoundary>
+            )
+        },
+        [navigation],
+    )
 
     if (syncStatus === MatrixSyncStatus.initialSync) {
         return <HoloLoader size={30} />

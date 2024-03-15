@@ -1,6 +1,6 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { MatrixRoom } from '@fedi/common/types'
@@ -19,9 +19,12 @@ type ChatTileProps = {
 const ChatTile = ({ room, selectChat }: ChatTileProps) => {
     const { theme } = useTheme()
 
-    const hasNewMessages = room.notificationCount > 0
-    const previewTextWeight = hasNewMessages ? { medium: true } : {}
-    const previewMessage = room.preview?.body
+    const hasNewMessages = useMemo(() => room.notificationCount > 0, [room])
+    const previewTextWeight = useMemo(
+        () => (hasNewMessages ? { medium: true } : {}),
+        [hasNewMessages],
+    )
+    const previewMessage = useMemo(() => room.preview?.body, [room.preview])
 
     return (
         <Pressable

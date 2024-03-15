@@ -113,7 +113,7 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: theme.spacing.xl,
+            padding: theme.spacing.lg,
         },
         button: {
             marginTop: 'auto',
@@ -133,16 +133,19 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
+            paddingHorizontal: 10,
         },
         textInputInner: {
-            borderBottomWidth: 0,
-            marginTop: theme.spacing.xs,
-        },
-        textInputOuter: {
-            width: '100%',
+            // borderBottomWidth: 0,
+            textAlignVertical: 'center',
             borderColor: theme.colors.primaryVeryLight,
             borderWidth: 1,
             borderRadius: theme.borders.defaultRadius,
+            padding: theme.spacing.sm,
+            paddingHorizontal: theme.spacing.md,
+        },
+        textInputOuter: {
+            width: '100%',
         },
     })
 

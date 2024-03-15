@@ -93,9 +93,7 @@ const ChatEventCollection: React.FC<Props> = ({
                                             )}>
                                             <ChatEvent
                                                 event={event}
-                                                last={
-                                                    index === events.length - 1
-                                                }
+                                                last={index === 0}
                                             />
                                         </ErrorBoundary>
                                     ))}
@@ -139,7 +137,7 @@ const styles = (theme: Theme) =>
             alignItems: 'flex-end',
         },
         senderNameContainer: {
-            paddingLeft: 42,
+            paddingLeft: 50,
         },
         senderMessages: {
             flexDirection: 'column-reverse',

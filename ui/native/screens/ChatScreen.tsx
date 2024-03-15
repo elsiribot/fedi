@@ -1,19 +1,18 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
-import { useIsFocused, useNavigation } from '@react-navigation/native'
+import { useNavigation } from '@react-navigation/native'
 import { Button, FAB, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { useUpdateLastMessageSeen } from '@fedi/common/hooks/chat'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
     fetchChatMembers,
     selectActiveFederationId,
     selectIsMatrixChatEmpty,
     selectMatrixAuth,
-    selectWebsocketIsHealthy,
+    selectMatrixStatus,
 } from '@fedi/common/redux'
 
 import { Images } from '../assets/images'
@@ -21,6 +20,7 @@ import ChatsList from '../components/feature/chat/ChatsList'
 import { NuxTooltip } from '../components/ui/NuxTooltip'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { MatrixSyncStatus } from '../types'
 import {
     NavigationHook,
     RootStackParamList,
@@ -36,10 +36,9 @@ const ChatScreen: React.FC<Props> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const isFocused = useIsFocused()
-    const websocketIsHealthy = useAppSelector(selectWebsocketIsHealthy)
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(selectActiveFederationId)
+    const syncStatus = useAppSelector(selectMatrixStatus)
     const hasMatrixAuth = useAppSelector(s => !!selectMatrixAuth(s))
     const needsChatRegistration = !hasMatrixAuth
     const isChatEmpty = useAppSelector(selectIsMatrixChatEmpty)
@@ -47,16 +46,36 @@ const ChatScreen: React.FC<Props> = () => {
         useNuxStep('hasOpenedNewChat')
 
     useEffect(() => {
-        if (websocketIsHealthy && activeFederationId) {
+        if (activeFederationId) {
             // Here we fetch the roster and store the results in local storage
             dispatch(fetchChatMembers({ federationId: activeFederationId }))
         }
-    }, [activeFederationId, dispatch, websocketIsHealthy])
+    }, [activeFederationId, dispatch])
 
+    // TODO: reimplement seen message hook for matrix
     // Use this hook only if the screen is in focus
-    useUpdateLastMessageSeen(isFocused !== true)
+    // const isFocused = useIsFocused()
+    // useUpdateLastMessageSeen(isFocused !== true)
 
     const style = styles(theme)
+
+    if (syncStatus === MatrixSyncStatus.initialSync) {
+        return (
+            <View style={style.centerContainer}>
+                <ActivityIndicator size={16} color={theme.colors.primary} />
+                <Text>{t('feature.chat.waiting-for-network')}</Text>
+            </View>
+        )
+    } else if (syncStatus === MatrixSyncStatus.stopped) {
+        return (
+            <View style={style.centerContainer}>
+                <Text style={style.errorText}>
+                    {t('errors.chat-connection-unhealthy')}
+                </Text>
+            </View>
+        )
+    }
+
     return (
         <View style={style.container}>
             {needsChatRegistration ? (
@@ -100,8 +119,8 @@ const ChatScreen: React.FC<Props> = () => {
             ) : (
                 <ErrorBoundary
                     fallback={() => (
-                        <View style={style.errorContainer}>
-                            <Text style={style.error}>
+                        <View style={style.centerContainer}>
+                            <Text style={style.errorText}>
                                 {t('errors.chat-list-render-error')}
                             </Text>
                         </View>
@@ -147,13 +166,13 @@ const styles = (theme: Theme) =>
             shadowRadius: 4,
             shadowColor: theme.colors.primary,
         },
-        errorContainer: {
+        centerContainer: {
             flex: 1,
             justifyContent: 'center',
             alignItems: 'center',
         },
-        error: {
-            color: theme.colors.red,
+        errorText: {
+            textAlign: 'center',
         },
         registration: {
             flex: 1,

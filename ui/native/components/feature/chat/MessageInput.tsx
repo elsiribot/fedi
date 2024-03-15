@@ -1,5 +1,5 @@
 import { Input, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Insets,
@@ -8,12 +8,17 @@ import {
     Platform,
     Pressable,
     StyleSheet,
+    TextInput,
     View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { useToast } from '@fedi/common/hooks/toast'
-import { selectMatrixDirectMessageRoom } from '@fedi/common/redux'
+import {
+    selectMatrixDirectMessageRoom,
+    selectMatrixRoomIsReadOnly,
+} from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
@@ -21,27 +26,29 @@ import ChatWalletButton from './ChatWalletButton'
 
 type MessageInputProps = {
     onMessageSubmitted: (message: string) => Promise<void>
-    directUserId?: string | undefined
+    id: string
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({
     onMessageSubmitted,
-    directUserId, // should only defined for direct chats
+    id,
 }: MessageInputProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const existingRoom = useAppSelector(s =>
-        selectMatrixDirectMessageRoom(s, directUserId || ''),
+        selectMatrixDirectMessageRoom(s, id || ''),
     )
 
     const toast = useToast()
+    const isReadOnly = useAppSelector(s => selectMatrixRoomIsReadOnly(s, id))
     const [messageText, setMessageText] = useState<string>('')
     const [inputHeight, setInputHeight] = useState<number>(
         theme.sizes.minMessageInputHeight,
     )
     const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
     const [isSending, setIsSending] = useState(false)
+    const inputRef = useRef<TextInput | null>(null)
 
     useEffect(() => {
         const keyboardShownListener = Keyboard.addListener(
@@ -75,7 +82,22 @@ const MessageInput: React.FC<MessageInputProps> = ({
         setIsSending(false)
     }
 
+    // Re-focus input after it had been disabled
+    const inputDisabled = isSending || isReadOnly
+    useEffect(() => {
+        if (!inputDisabled) {
+            inputRef.current?.focus()
+        }
+    }, [inputDisabled])
+
     const style = styles(theme, insets)
+    const placeholder = useMemo(
+        () =>
+            isReadOnly
+                ? t('feature.chat.broadcast-only-notice')
+                : t('words.message'),
+        [t],
+    )
     return (
         <View
             style={[
@@ -83,15 +105,17 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 keyboardHeight > 0 && Platform.OS === 'ios'
                     ? { paddingBottom: keyboardHeight + theme.spacing.lg }
                     : {},
+                inputDisabled ? { borderTopWidth: 0 } : {},
             ]}>
             {/* in-chat payments only available for DirectChat after a room has already been created with the user */}
-            {directUserId && existingRoom && (
-                <ChatWalletButton recipientId={directUserId} />
-            )}
+            {id && existingRoom && <ChatWalletButton recipientId={id} />}
             <Input
                 onChangeText={setMessageText}
                 value={messageText}
-                placeholder={`${t('words.message')}`}
+                ref={(ref: unknown) => {
+                    inputRef.current = ref as TextInput
+                }}
+                placeholder={`${placeholder}`}
                 onContentSizeChange={({
                     nativeEvent: {
                         contentSize: { height },
@@ -109,25 +133,32 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 }}
                 containerStyle={[style.textInputOuter, { height: inputHeight }]}
                 inputContainerStyle={style.textInputInner}
-                inputStyle={isSending ? style.textInputDisabled : undefined}
+                inputStyle={
+                    inputDisabled
+                        ? style.textInputDisabled
+                        : style.textInputStyle
+                }
                 multiline
                 numberOfLines={3}
                 blurOnSubmit={false}
+                disabled={inputDisabled}
             />
-            <Pressable
-                style={style.sendButton}
-                onPress={handleSend}
-                disabled={isSending}>
-                <SvgImage
-                    name="SendArrowUpCircle"
-                    size={SvgImageSize.md}
-                    color={
-                        !isSending
-                            ? theme.colors.blue
-                            : theme.colors.primaryVeryLight
-                    }
-                />
-            </Pressable>
+            {!inputDisabled && (
+                <Pressable
+                    style={style.sendButton}
+                    onPress={handleSend}
+                    disabled={inputDisabled}>
+                    <SvgImage
+                        name="SendArrowUpCircle"
+                        size={SvgImageSize.md}
+                        color={
+                            inputDisabled
+                                ? theme.colors.primaryVeryLight
+                                : theme.colors.blue
+                        }
+                    />
+                </Pressable>
+            )}
         </View>
     )
 }
@@ -161,8 +192,14 @@ const styles = (theme: Theme, insets: Insets) =>
             borderWidth: 0,
             backgroundColor: theme.colors.white,
         },
+        textInputStyle: {
+            fontSize: fediTheme.fontSizes.body,
+        },
         textInputDisabled: {
             color: theme.colors.grey,
+            fontSize: fediTheme.fontSizes.body,
+            textAlign: 'center',
+            paddingHorizontal: theme.spacing.xl,
         },
     })
 

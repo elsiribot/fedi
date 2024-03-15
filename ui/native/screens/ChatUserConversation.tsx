@@ -73,9 +73,7 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
                 <ChatConversation
                     type={ChatType.direct}
                     id={userId}
-                    name={user?.displayName || userId}
                     events={[]}
-                    onSendMessage={handleSend}
                 />
                 {/* <MessageInput
                     onMessageSubmitted={handleSend}
