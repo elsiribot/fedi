@@ -23,7 +23,6 @@ type MessageContentsProps = {
     textStyles: StyleProp<ViewStyle | TextStyle>[]
 }
 
-/** @deprecated XMPP legacy code */
 const MessageContents: React.FC<MessageContentsProps> = ({
     content,
     sentByMe,
