@@ -103,27 +103,24 @@ export function OmniInput<
                 propsRef.current.onExpectedInput(parsedData as ExpectedData)
             } else if (parsedData.type === ParserDataType.Unknown) {
                 if (
-                    props.expectedInputTypes.includes(
+                    !props.expectedInputTypes.includes(
                         ParserDataType.FediChatMember as T,
                     )
-                ) {
-                    const fetchedMember = await dispatch(
-                        fetchChatMember({
-                            federationId,
-                            memberId: `${input}@${connectionOptions.domain}`,
-                        }),
-                    )
-                        .unwrap()
-                        .catch(() => setUnexpectedData(parsedData))
+                )
+                    return setInvalidData(parsedData)
 
-                    if (fetchedMember) {
-                        router.push(
-                            `/chat/member/${fetchedMember.id}?action=send`,
-                        )
-                    } else {
-                        setUnexpectedData(parsedData)
-                    }
-                } else setInvalidData(parsedData)
+                const fetchedMember = await dispatch(
+                    fetchChatMember({
+                        federationId,
+                        memberId: `${input}@${connectionOptions.domain}`,
+                    }),
+                )
+                    .unwrap()
+                    .catch(() => setUnexpectedData(parsedData))
+
+                if (!fetchedMember) return setUnexpectedData(parsedData)
+
+                router.push(`/chat/member/${fetchedMember.id}?action=send`)
             } else {
                 setUnexpectedData(parsedData)
             }
