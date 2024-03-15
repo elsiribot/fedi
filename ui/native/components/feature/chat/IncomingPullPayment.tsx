@@ -139,6 +139,7 @@ type IncomingPullPaymentProps = {
     text: string
 }
 
+/** @deprecated XMPP legacy code */
 const IncomingPullPayment: React.FC<IncomingPullPaymentProps> = ({
     message,
     text,
