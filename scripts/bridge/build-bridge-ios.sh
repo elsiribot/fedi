@@ -62,9 +62,11 @@ COMBINED_BINARY_PATH=$TARGET_DIR/pkg/fedi-ffi/lipo-ios-arm64_x86_64-simulator/${
 if [[ -e "$AARCH64_SIM_BINARY_PATH" && -e "$X86_BINARY_PATH" ]]; then
   echo "Combining binaries for development..."
   mkdir -p $COMBINED_BINARY_PATH
-  lipo $AARCH64_SIM_BINARY_PATH $X86_BINARY_PATH \
-    -create -output $COMBINED_BINARY_PATH/libfediffi.a
-
+  if [ "$AARCH64_SIM_BINARY_PATH" -nt "$COMBINED_BINARY_PATH/libfediffi.a" ] ||
+    [ "$X86_SIM_BINARY_PATH" -nt "$COMBINED_BINARY_PATH/libfediffi.a" ] ; then
+    lipo $AARCH64_SIM_BINARY_PATH $X86_BINARY_PATH \
+      -create -output $COMBINED_BINARY_PATH/libfediffi.a
+  fi
   cp \
     $COMBINED_BINARY_PATH/libfediffi.a \
     fediFFI.xcframework/ios-arm64_x86_64-simulator/fediFFI.framework/fediFFI
