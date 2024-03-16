@@ -13,7 +13,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useToast } from '@fedi/common/hooks/toast'
+import { selectMatrixDirectMessageRoom } from '@fedi/common/redux'
 
+import { useAppSelector } from '../../../state/hooks'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import ChatWalletButton from './ChatWalletButton'
 
@@ -29,6 +31,9 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
+    const existingRoom = useAppSelector(s =>
+        selectMatrixDirectMessageRoom(s, directUserId || ''),
+    )
 
     const toast = useToast()
     const [messageText, setMessageText] = useState<string>('')
@@ -79,8 +84,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     ? { paddingBottom: keyboardHeight + theme.spacing.lg }
                     : {},
             ]}>
-            {/* in-chat payments only available for DirectChat */}
-            {/* {directUserId && <ChatWalletButton userId={directUserId} />} */}
+            {/* in-chat payments only available for DirectChat after a room has already been created with the user */}
+            {directUserId && existingRoom && (
+                <ChatWalletButton recipientId={directUserId} />
+            )}
             <Input
                 onChangeText={setMessageText}
                 value={messageText}
