@@ -1,4 +1,3 @@
-import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme, Text } from '@rneui/themed'
 import React, { useCallback, useMemo } from 'react'
@@ -9,19 +8,15 @@ import { useObserveMatrixRoom } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     paginateMatrixRoomTimeline,
-    selectMatrixAuth,
     selectMatrixRoom,
     selectMatrixRoomEvents,
     sendMatrixMessage,
-    showToast,
 } from '@fedi/common/redux'
-import { ChatType } from '@fedi/common/types'
-import { makeMatrixEventGroups } from '@fedi/common/utils/matrix'
 
 import ChatConversation from '../components/feature/chat/ChatConversation'
 import MessageInput from '../components/feature/chat/MessageInput'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import type { NavigationHook, RootStackParamList } from '../types/navigation'
+import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,

@@ -445,6 +445,7 @@ export const sendMatrixPaymentPush = createAsyncThunk<
     ) => {
         const matrixAuth = selectMatrixAuth(getState())
         if (!matrixAuth) throw new Error('Not authenticated')
+        log.info('sendMatrixPaymentPush', amount, 'msats')
 
         const client = getMatrixClient()
         const { ecash } = await fedimint.generateEcash(amount, federationId)
