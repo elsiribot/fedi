@@ -13,21 +13,19 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
-import { EcashRequest, FediMod, MSats } from '../../../types'
+import { EcashRequest, MSats } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
 
 const log = makeLog('MakeInvoiceOverlay')
 
 interface Props {
-    fediMod: FediMod
     ecashRequest?: EcashRequest | null
     onReject: (err: Error) => void
     onAccept: (ecash: string) => void
 }
 
 export const GenerateEcashOverlay: React.FC<Props> = ({
-    fediMod,
     ecashRequest,
     onReject,
     onAccept,
@@ -99,9 +97,7 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
                 onReject(new RejectionError(t('errors.webln-canceled')))
             }
             contents={{
-                title: t('feature.fedimods.wants-you-to-pay', {
-                    fediMod: fediMod.title,
-                }),
+                title: t('feature.stabilitypool.enter-deposit-amount'),
                 body: (
                     <View style={{ flex: 1, paddingTop: theme.spacing.xl }}>
                         <AmountInput
@@ -122,12 +118,12 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
                 ),
                 buttons: [
                     {
-                        text: t('words.reject'),
+                        text: t('words.cancel'),
                         onPress: handleReject,
                     },
                     {
                         primary: true,
-                        text: t('words.accept'),
+                        text: t('words.confirm'),
                         onPress: handleAccept,
                     },
                 ],

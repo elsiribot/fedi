@@ -1,4 +1,4 @@
-import { BalanceEvent, LogEvent, RpcFederation, RpcInvoice, RpcLightningGateway, RpcResponse, SocialRecoveryEvent, RpcTransaction, SocialRecoveryApproval, PanicEvent, StabilityPoolWithdrawalEvent, StabilityPoolDepositEvent, RpcFederationPreview, RecoveryCompleteEvent } from './bindings';
+import { BalanceEvent, LogEvent, RpcFederation, RpcInvoice, RpcLightningGateway, RpcResponse, SocialRecoveryEvent, RpcTransaction, SocialRecoveryApproval, PanicEvent, StabilityPoolWithdrawalEvent, StabilityPoolDepositEvent, RpcFederationPreview, RecoveryCompleteEvent, RecoveryProgressEvent } from './bindings';
 import { Usd, UsdCents } from './units';
 export type { SocialRecoveryEvent, SocialRecoveryApproval as GuardianApproval, RpcInvoice as Invoice, RpcLightningGateway as LightningGateway, };
 export type SocialRecoveryQrCode = RpcResponse<'recoveryQr'>;
@@ -113,6 +113,7 @@ export type FedimintBridgeEventMap = {
     stabilityPoolDeposit: StabilityPoolDepositEvent;
     stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent;
     recoveryComplete: RecoveryCompleteEvent;
+    recoveryProgress: RecoveryProgressEvent;
 };
 export type StabilityPoolTxn = {
     id: string;
