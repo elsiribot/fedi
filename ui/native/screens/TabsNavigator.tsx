@@ -53,7 +53,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'TabsNavigator'>
 
 const Tab = createBottomTabNavigator<TabsNavigatorParamList>()
 
-const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
+const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const isFocused = useIsFocused()
@@ -120,7 +120,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
         <>
             <SelectedFederationHeader />
             <Tab.Navigator
-                initialRouteName="Home"
+                initialRouteName={route.params?.initialRouteName || 'Home'}
                 id={TABS_NAVIGATOR_ID}
                 screenOptions={({ route }) => ({
                     tabBarButton: props => {

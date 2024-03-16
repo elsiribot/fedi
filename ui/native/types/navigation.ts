@@ -54,7 +54,7 @@ export type RootStackParamList = {
     BugReport: undefined
     BugReportSuccess: undefined
     CameraPermission: { nextScreen: keyof RootStackParamList } | undefined
-    ChatRoomConversation: { roomId: string, chatType: ChatType }
+    ChatRoomConversation: { roomId: string; chatType: ChatType }
     ChatUserConversation: { userId: string }
     ChatWallet: { recipientId: string }
     ChooseBackupMethod: undefined
@@ -130,7 +130,9 @@ export type RootStackParamList = {
     SocialRecoveryQrModal: undefined
     SocialRecoverySuccess: undefined
     SocialRecoveryFailure: undefined
-    TabsNavigator: undefined
+    TabsNavigator:
+        | { initialRouteName: keyof TabsNavigatorParamList }
+        | undefined
     Transactions: undefined
     DeveloperSettings: undefined
 }
