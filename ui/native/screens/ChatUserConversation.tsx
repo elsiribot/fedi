@@ -50,6 +50,7 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
         if (!existingRoom) return
         naivigationReplace('ChatRoomConversation', {
             roomId: existingRoom.id,
+            chatType: ChatType.direct,
         })
     }, [existingRoom, naivigationReplace])
 
