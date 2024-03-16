@@ -7,8 +7,8 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     changeSelectedFiatCurrency,
     selectCurrency,
+    selectCurrencies,
 } from '@fedi/common/redux/currency'
-import { SupportedCurrency } from '@fedi/common/types'
 import { formatCurrencyText } from '@fedi/common/utils/format'
 
 import CheckBox from '../components/ui/CheckBox'
@@ -21,6 +21,7 @@ const CurrencySettings: React.FC = () => {
     const insets = useSafeAreaInsets()
     const reduxDispatch = useAppDispatch()
     const selectedFiatCurrency = useAppSelector(selectCurrency)
+    const currencies = useAppSelector(selectCurrencies)
 
     const style = styles(theme, insets)
 
@@ -30,7 +31,7 @@ const CurrencySettings: React.FC = () => {
             contentContainerStyle={style.contentContainer}
             overScrollMode="auto">
             <View style={style.container}>
-                {Object.values(SupportedCurrency).map(currency => (
+                {Object.values(currencies).map(currency => (
                     <CheckBox
                         key={currency}
                         checkedIcon={<SvgImage name="RadioSelected" />}
