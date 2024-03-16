@@ -4,19 +4,13 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Keyboard, StyleSheet, View } from 'react-native'
 
-import {
-    useMinMaxRequestAmount,
-    useMinMaxSendAmount,
-} from '@fedi/common/hooks/amount'
+import { useChatPaymentUtils } from '@fedi/common/hooks/chat'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederationId,
     selectMatrixDirectMessageRoom,
-    sendMatrixPaymentPush,
-    sendMatrixPaymentRequest,
 } from '@fedi/common/redux'
-import { ChatType, Sats } from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
+import { ChatType } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
@@ -30,22 +24,24 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
 
 const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
-    const dispatch = useAppDispatch()
-    const federationId = useAppSelector(selectActiveFederationId)
-    const sendMinMax = useMinMaxSendAmount()
-    const requestMinMax = useMinMaxRequestAmount({ ecashRequest: {} })
-
-    const [confirmingSend, setConfirmingSend] = useState(false)
-    const [isLoading, setIsLoading] = useState(false)
-    const [amount, setAmount] = useState(0 as Sats)
-
-    const [submitAttempts, setSubmitAttempts] = useState(0)
-    const [submitType, setSubmitType] = useState<'send' | 'request'>()
-    const toast = useToast()
     const { recipientId } = route.params
     const existingRoom = useAppSelector(s =>
         selectMatrixDirectMessageRoom(s, recipientId),
     )
+    const [confirmingSend, setConfirmingSend] = useState(false)
+    const {
+        submitType,
+        setSubmitType,
+        submitAttempts,
+        setSubmitAttempts,
+        submitAction,
+        amount,
+        setAmount,
+        inputMinMax,
+        canSendAmount,
+        handleSendPayment,
+        handleRequestPayment,
+    } = useChatPaymentUtils(t, fedimint, existingRoom?.id, recipientId)
 
     // Reset navigation stack on going back to the chat to give better back
     // button behavior if directed here from Omni.
@@ -67,90 +63,26 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     }, [navigation, recipientId, existingRoom?.id])
 
     const handleRequest = useCallback(async () => {
-        // TODO: allow for on-the-fly room creation?
-        if (!federationId || !existingRoom) return
-        setSubmitType('request')
-        setSubmitAttempts(attempts => attempts + 1)
-        if (
-            amount < requestMinMax.minimumAmount ||
-            amount > requestMinMax.maximumAmount
-        ) {
-            return
-        }
-
-        setSubmitType('request')
-        try {
-            setIsLoading(true)
-            await dispatch(
-                sendMatrixPaymentRequest({
-                    fedimint,
-                    federationId,
-                    roomId: existingRoom?.id,
-                    amount: amountUtils.satToMsat(amount),
-                }),
-            ).unwrap()
+        handleRequestPayment(() => {
             // go back to DirectChat to show sent request
             backToChat()
-        } catch (error) {
-            log.error('requestEcash', error)
-            toast.error(t, error)
-        }
-        setIsLoading(false)
-    }, [
-        federationId,
-        amount,
-        requestMinMax.minimumAmount,
-        requestMinMax.maximumAmount,
-        dispatch,
-        existingRoom?.id,
-        toast,
-        t,
-    ])
+        })
+    }, [handleRequestPayment, backToChat])
 
     const handleConfirmSend = useCallback(async () => {
-        // TODO: allow for on-the-fly room creation?
-        if (!federationId || !existingRoom) return
-        try {
-            setIsLoading(true)
-            await dispatch(
-                sendMatrixPaymentPush({
-                    fedimint,
-                    federationId,
-                    roomId: existingRoom?.id,
-                    recipientId,
-                    amount: amountUtils.satToMsat(amount),
-                }),
-            ).unwrap()
+        handleSendPayment(() => {
             // go back to DirectChat to show sent payment
             backToChat()
-        } catch (error) {
-            log.error('generateAndSendEcash', error)
-            toast.error(t, error)
-        }
-        setIsLoading(false)
-    }, [federationId, amount, dispatch, existingRoom?.id, toast, t])
+        })
+    }, [handleSendPayment, backToChat])
 
     const handleSend = async () => {
         setSubmitType('send')
         setSubmitAttempts(attempts => attempts + 1)
-        if (
-            amount < sendMinMax.minimumAmount ||
-            amount > sendMinMax.maximumAmount
-        ) {
-            return
-        }
-
-        setSubmitType('send')
+        if (!canSendAmount) return
         setConfirmingSend(true)
         Keyboard.dismiss()
     }
-
-    const inputMinMax =
-        submitType === 'send'
-            ? sendMinMax
-            : submitType === 'request'
-            ? requestMinMax
-            : {}
 
     if (!existingRoom) {
         return (
@@ -168,7 +100,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
             amount={amount}
             onChangeAmount={setAmount}
             submitAttempts={submitAttempts}
-            isSubmitting={isLoading}
+            isSubmitting={submitAction !== null}
             verb={submitType === 'send' ? t('words.send') : t('words.request')}
             {...inputMinMax}
             buttons={
@@ -177,7 +109,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                           {
                               title: t('feature.send.hold-to-confirm-send'),
                               onLongPress: handleConfirmSend,
-                              disabled: isLoading,
+                              disabled: submitAction === 'send',
                           },
                       ]
                     : [
@@ -188,8 +120,8 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                                   numberOfLines: 1,
                               },
                               onPress: handleRequest,
-                              disabled: submitType === 'send',
-                              loading: isLoading && submitType === 'request',
+                              disabled: submitAction === 'send',
+                              loading: submitAction === 'request',
                           },
                           {
                               title: t('words.send'),
@@ -198,8 +130,8 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                                   numberOfLines: 1,
                               },
                               onPress: handleSend,
-                              disabled: submitType === 'request',
-                              loading: isLoading && submitType === 'send',
+                              disabled: submitAction === 'request',
+                              loading: submitAction === 'send',
                           },
                       ]
             }

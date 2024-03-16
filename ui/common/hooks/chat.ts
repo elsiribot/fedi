@@ -1,13 +1,20 @@
-import { useState, useMemo, useEffect } from 'react'
+import { TFunction } from 'i18next'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 
-import type { ChatMember, ChatMessage, Federation } from '@fedi/common/types'
+import type {
+    ChatMember,
+    ChatMessage,
+    Federation,
+    Sats,
+} from '@fedi/common/types'
 
 import {
     connectChat,
     fetchChatMember,
     publishPushNotificationToken,
     selectActiveFederation,
+    selectActiveFederationId,
     selectAuthenticatedMember,
     selectChatClientLastOnlineAt,
     selectChatClientStatus,
@@ -18,13 +25,17 @@ import {
     selectLatestChatMessageTimestamp,
     selectLatestPaymentUpdateTimestamp,
     selectPushNotificationToken,
+    sendMatrixPaymentPush,
+    sendMatrixPaymentRequest,
     setLastReadMessageTimestamp,
     setLastSeenMessageTimestamp,
 } from '../redux'
 import { getLatestMessage, getLatestPaymentUpdate } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
+import { useMinMaxSendAmount, useMinMaxRequestAmount } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
+import { useToast } from './toast'
 
 const log = makeLog('common/hooks/chat')
 
@@ -342,4 +353,123 @@ export const useIsChatConnected = () => {
     }, [isOffline, lastOnlineAt])
 
     return !showOffline
+}
+
+export const useChatPaymentUtils = (
+    t: TFunction,
+    fedimint: FedimintBridge,
+    roomId: string | undefined,
+    recipientId: string,
+) => {
+    const toast = useToast()
+    const dispatch = useCommonDispatch()
+    const activeFederationId = useCommonSelector(selectActiveFederationId)
+    const [federationId] = useState(activeFederationId)
+    const sendMinMax = useMinMaxSendAmount()
+    const requestMinMax = useMinMaxRequestAmount({ ecashRequest: {} })
+    const [amount, setAmount] = useState(0 as Sats)
+    const [submitAction, setSubmitAction] = useState<null | 'send' | 'request'>(
+        null,
+    )
+    const [submitAttempts, setSubmitAttempts] = useState(0)
+    const [submitType, setSubmitType] = useState<'send' | 'request'>()
+
+    const inputMinMax =
+        submitType === 'send'
+            ? sendMinMax
+            : submitType === 'request'
+            ? requestMinMax
+            : {}
+
+    const canRequestAmount =
+        amount >= requestMinMax.minimumAmount &&
+        amount <= requestMinMax.maximumAmount
+    const canSendAmount =
+        amount >= sendMinMax.minimumAmount && amount <= sendMinMax.maximumAmount
+
+    const handleSendPayment = useCallback(
+        async (onSuccess: () => void) => {
+            // TODO: allow for on-the-fly room creation?
+            if (!federationId || !roomId) return
+            try {
+                setSubmitAction('send')
+                await dispatch(
+                    sendMatrixPaymentPush({
+                        fedimint,
+                        federationId,
+                        roomId,
+                        recipientId,
+                        amount,
+                    }),
+                ).unwrap()
+                onSuccess()
+            } catch (err) {
+                toast.error(t, err, 'errors.unknown-error')
+            }
+            setSubmitAction(null)
+        },
+        [
+            amount,
+            dispatch,
+            federationId,
+            fedimint,
+            recipientId,
+            roomId,
+            t,
+            toast,
+        ],
+    )
+
+    const handleRequestPayment = useCallback(
+        async (onSuccess: () => void) => {
+            // TODO: allow for on-the-fly room creation?
+            if (!federationId || !roomId) return
+            setSubmitType('request')
+            setSubmitAttempts(attempt => attempt + 1)
+            if (!canRequestAmount) return
+
+            setSubmitAction('request')
+            try {
+                await dispatch(
+                    sendMatrixPaymentRequest({
+                        fedimint,
+                        federationId,
+                        roomId,
+                        amount,
+                    }),
+                ).unwrap()
+                onSuccess()
+            } catch (err) {
+                toast.error(t, 'errors.unknown-error')
+            }
+            setSubmitAction(null)
+        },
+        [
+            amount,
+            canRequestAmount,
+            dispatch,
+            federationId,
+            fedimint,
+            roomId,
+            t,
+            toast,
+        ],
+    )
+
+    return {
+        amount,
+        setAmount,
+        submitType,
+        setSubmitType,
+        submitAttempts,
+        setSubmitAttempts,
+        submitAction,
+        setSubmitAction,
+        sendMinMax,
+        requestMinMax,
+        inputMinMax,
+        canSendAmount,
+        handleRequestPayment,
+        handleSendPayment,
+    }
 }

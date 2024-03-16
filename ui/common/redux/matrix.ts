@@ -31,6 +31,7 @@ import {
     MatrixRoomPowerLevels,
     MatrixSyncStatus,
     MatrixCreateRoomOptions,
+    Sats,
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import { MatrixChatClient } from '../utils/MatrixChatClient'
@@ -434,7 +435,7 @@ export const sendMatrixPaymentPush = createAsyncThunk<
         federationId: string
         roomId: MatrixRoom['id']
         recipientId: MatrixUser['id']
-        amount: MSats
+        amount: Sats
     },
     { state: CommonState }
 >(
@@ -445,20 +446,21 @@ export const sendMatrixPaymentPush = createAsyncThunk<
     ) => {
         const matrixAuth = selectMatrixAuth(getState())
         if (!matrixAuth) throw new Error('Not authenticated')
-        log.info('sendMatrixPaymentPush', amount, 'msats')
+        log.info('sendMatrixPaymentPush', amount, 'sats')
+        const msats = amountUtils.satToMsat(amount)
 
         const client = getMatrixClient()
-        const { ecash } = await fedimint.generateEcash(amount, federationId)
+        const { ecash } = await fedimint.generateEcash(msats, federationId)
 
         await client.sendMessage(roomId, {
             msgtype: 'xyz.fedi.payment',
             body: `Sent payment of ${amountUtils.formatSats(
-                amountUtils.msatToSat(amount),
+                amount,
             )} SATS. Use the Fedi app to accept this payment.`, // TODO: i18n? this only shows to matrix clients, not Fedi users
             status: MatrixPaymentStatus.pushed,
             paymentId: uuidv4(),
             senderId: matrixAuth.userId,
-            amount,
+            amount: msats,
             recipientId,
             federationId,
             ecash,
@@ -472,7 +474,7 @@ export const sendMatrixPaymentRequest = createAsyncThunk<
         fedimint: FedimintBridge
         federationId: string
         roomId: MatrixRoom['id']
-        amount: MSats
+        amount: Sats
     },
     { state: CommonState }
 >(
@@ -480,18 +482,20 @@ export const sendMatrixPaymentRequest = createAsyncThunk<
     async ({ federationId, roomId, amount }, { getState }) => {
         const matrixAuth = selectMatrixAuth(getState())
         if (!matrixAuth) throw new Error('Not authenticated')
+        log.info('sendMatrixPaymentRequest', amount, 'sats')
+        const msats = amountUtils.satToMsat(amount)
 
         const client = getMatrixClient()
 
         await client.sendMessage(roomId, {
             msgtype: 'xyz.fedi.payment',
             body: `Requested payment of ${amountUtils.formatSats(
-                amountUtils.msatToSat(amount),
+                amount,
             )} SATS. Use the Fedi app to complete this request.`, // TODO: i18n?
             paymentId: uuidv4(),
             status: MatrixPaymentStatus.requested,
             recipientId: matrixAuth.userId,
-            amount,
+            amount: msats,
             federationId,
         })
     },
