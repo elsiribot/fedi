@@ -24,6 +24,7 @@ import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
 import BugReportHeader from './components/feature/bug/BugReportHeader'
 import AddBroadcastAdminHeader from './components/feature/chat/AddBroadcastAdminHeader'
 import BroadcastAdminsListHeader from './components/feature/chat/BroadcastAdminsListHeader'
+import ChatConversationHeader from './components/feature/chat/ChatConversationHeader'
 import ChatWalletHeader from './components/feature/chat/ChatWalletHeader'
 import CreateGroupHeader from './components/feature/chat/CreateGroupHeader'
 import DirectChatHeader from './components/feature/chat/DirectChatHeader'
@@ -307,14 +308,14 @@ const MainNavigator = () => {
                                 name="ChatRoomConversation"
                                 component={ChatRoomConversation}
                                 options={() => ({
-                                    header: () => <DirectChatHeader />,
+                                    header: () => <ChatConversationHeader />,
                                 })}
                             />
                             <Stack.Screen
                                 name="ChatUserConversation"
                                 component={ChatUserConversation}
                                 options={() => ({
-                                    header: () => <DirectChatHeader />,
+                                    header: () => <ChatConversationHeader />,
                                 })}
                             />
                             <Stack.Screen

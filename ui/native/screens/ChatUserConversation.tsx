@@ -13,6 +13,7 @@ import {
 } from '@fedi/common/redux'
 
 import ChatConversation from '../components/feature/chat/ChatConversation'
+import MessageInput from '../components/feature/chat/MessageInput'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { ChatType } from '../types'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
@@ -37,13 +38,12 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
     const dispatch = useAppDispatch()
 
     // If this is a chat with ourselves, redirect to main chat screen
-    const navigate = navigation.navigate
     const naivigationReplace = navigation.replace
     useEffect(() => {
         if (userId === matrixAuth?.userId) {
-            navigate('TabsNavigator')
+            naivigationReplace('TabsNavigator')
         }
-    }, [userId, matrixAuth, navigation])
+    }, [userId, matrixAuth, naivigationReplace])
 
     // If we already have a chat room with this user, redirect there
     useEffect(() => {
@@ -61,10 +61,15 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
 
     const handleSend = useCallback(
         async (body: string) => {
-            await dispatch(sendMatrixDirectMessage({ userId, body })).unwrap()
-            navigate('TabsNavigator')
+            const res = await dispatch(
+                sendMatrixDirectMessage({ userId, body }),
+            ).unwrap()
+            naivigationReplace('ChatRoomConversation', {
+                roomId: res.roomId,
+                chatType: ChatType.direct,
+            })
         },
-        [dispatch, userId],
+        [dispatch, naivigationReplace, userId],
     )
 
     return (
@@ -75,10 +80,10 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
                     id={userId}
                     events={[]}
                 />
-                {/* <MessageInput
+                <MessageInput
                     onMessageSubmitted={handleSend}
-                    memberId={memberId}
-                /> */}
+                    directUserId={userId}
+                />
             </>
         </View>
     )

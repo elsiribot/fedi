@@ -3,23 +3,38 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
-import { selectChatMember } from '@fedi/common/redux'
+import { selectMatrixRoom, selectMatrixUser } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import { RootStackParamList } from '../../../types/navigation'
-import Avatar from '../../ui/Avatar'
+import Avatar, { AvatarSize } from '../../ui/Avatar'
 import Header from '../../ui/Header'
+import ChatAvatar from './ChatAvatar'
 import { ChatConnectionBadge } from './ChatConnectionBadge'
 
-type ChatRouteProp = RouteProp<RootStackParamList, 'DirectChat'>
+type ChatRoomRouteProp = RouteProp<RootStackParamList, 'ChatRoomConversation'>
+type ChatUserRouteProp = RouteProp<RootStackParamList, 'ChatUserConversation'>
 
-/** @deprecated XMPP legacy code  */
-const DirectChatHeader: React.FC = () => {
+const ChatConversationHeader: React.FC = () => {
     const { theme } = useTheme()
-    const route = useRoute<ChatRouteProp>()
-    const memberId = route.params.memberId
-    const member = useAppSelector(s => selectChatMember(s, memberId))
-    const username = member?.username || memberId.split('@')[0] || ''
+    const roomRoute = useRoute<ChatRoomRouteProp>()
+    const userRoute = useRoute<ChatUserRouteProp>()
+    const { roomId } = roomRoute.params
+    const { userId } = userRoute.params
+    const room = useAppSelector(s => selectMatrixRoom(s, roomId))
+    const user = useAppSelector(s => selectMatrixUser(s, userId))
+
+    let avatar: React.ReactNode
+    let name: string = ''
+    if (room) {
+        name = room?.name
+        avatar = <ChatAvatar room={room} size={AvatarSize.sm} />
+    } else if (user) {
+        name = user?.displayName || user?.id
+        avatar = <ChatAvatar user={user} size={AvatarSize.sm} />
+    } else {
+        avatar = <Avatar size={AvatarSize.sm} id={''} name={name} />
+    }
 
     return (
         <>
@@ -36,12 +51,12 @@ const DirectChatHeader: React.FC = () => {
                             // TODO: implement admin settings for 1on1 chat
                             // navigation.navigate('GroupAdmin', { group })
                         }}>
-                        <Avatar id={member?.id || ''} name={username} />
+                        {avatar}
                         <Text
                             bold
                             numberOfLines={1}
                             style={styles(theme).memberText}>
-                            {username}
+                            {name}
                         </Text>
                     </Pressable>
                 }
@@ -76,4 +91,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default DirectChatHeader
+export default ChatConversationHeader
