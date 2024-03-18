@@ -251,7 +251,6 @@ pub struct RpcLightningGateway {
     pub node_pub_key: RpcPublicKey,
     pub gateway_id: RpcPublicKey,
     pub api: String, // TODO: url::Ur;
-    pub active: bool,
 }
 
 #[derive(Serialize, Deserialize)]

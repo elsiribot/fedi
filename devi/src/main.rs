@@ -41,16 +41,20 @@ async fn wait_session(client: &devimint::federation::Client) -> anyhow::Result<(
         .context("session count must be integer")?
         .to_owned();
     let start = Instant::now();
-    poll("Waiting for a new session", 6, || async {
-        info!("Awaiting session outcome {session_count}");
-        match cmd!(client, "dev", "api", "await_session_outcome", session_count)
-            .run()
-            .await
-        {
-            Err(e) => Err(ControlFlow::Continue(e)),
-            Ok(_) => Ok(()),
-        }
-    })
+    poll(
+        "Waiting for a new session",
+        Some(Duration::from_secs(180)),
+        || async {
+            info!("Awaiting session outcome {session_count}");
+            match cmd!(client, "dev", "api", "await_session_outcome", session_count)
+                .run()
+                .await
+            {
+                Err(e) => Err(ControlFlow::Continue(e)),
+                Ok(_) => Ok(()),
+            }
+        },
+    )
     .await?;
     let session_found_in = start.elapsed();
     info!("session found in {session_found_in:?}");
@@ -73,6 +77,8 @@ async fn main() -> anyhow::Result<()> {
     let args: Args = Args::parse();
     match args.cmd {
         Cmd::Devimint(cmd) => {
+            std::env::set_var("FM_DISBALE_META_MODULE", "1");
+            std::env::set_var("FM_USE_UNKNOWN_MODULE", "0");
             devimint::cli::handle_command(cmd, args.common).await?;
         }
         Cmd::TestUpgrade {

@@ -2,18 +2,14 @@
 /// possible to run devimint on host machine and connect to it from Android
 /// emulator
 use std::str::FromStr;
-use std::time::Duration;
 
 use fedimint_core::api::InviteCode;
 use fedimint_core::config::ClientConfig;
-use fedimint_core::db::{Committable, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::util::SafeUrl;
-use fedimint_ln_common::db::LightningGatewayKey;
-use fedimint_ln_common::{LightningGateway, LightningGatewayRegistration};
 use tracing::info;
 
 // FIXME: don't run this code in production
-fn override_localhost(url: &SafeUrl) -> SafeUrl {
+pub fn override_localhost(url: &SafeUrl) -> SafeUrl {
     let fedi_localhost_env_var: Option<&'static str> = option_env!("FEDI_LOCALHOST");
     let fedi_localhost = if cfg!(target_os = "android") {
         Some("10.0.2.2")
@@ -50,26 +46,4 @@ pub fn override_localhost_client_config(client_config: &mut ClientConfig) {
             (peer_id, peer_url)
         })
         .collect();
-}
-
-pub async fn override_localhost_gateway(
-    gateway: &mut LightningGateway,
-    mut dbtx: DatabaseTransaction<'_, Committable>,
-) {
-    gateway.api = override_localhost(&gateway.api);
-    // uncomment this hack to trigger outgoing payments in refund case
-    // gateway.api = Url::from_str(&gateway.api.to_string().replace("http",
-    // "https")).unwrap();
-    dbtx.insert_entry(
-        &LightningGatewayKey(gateway.node_pub_key),
-        &LightningGatewayRegistration {
-            info: gateway.clone(),
-            vetted: true,
-            valid_until: fedimint_core::time::now()
-                .checked_add(Duration::from_secs(86400))
-                .expect("now + 1 day should add"),
-        },
-    )
-    .await;
-    dbtx.commit_tx().await;
 }

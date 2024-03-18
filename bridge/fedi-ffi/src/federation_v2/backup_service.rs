@@ -3,7 +3,7 @@ use std::time::{Duration, SystemTime};
 
 use anyhow::Result;
 use fedimint_client::backup::Metadata;
-use fedimint_client::ClientHandle;
+use fedimint_client::ClientHandleArc;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::task::{TaskGroup, TaskHandle};
 use futures::lock::Mutex;
@@ -25,7 +25,7 @@ pub struct BackupService {
 }
 
 pub struct BackupServiceShared {
-    client: ClientHandle,
+    client: ClientHandleArc,
     backup_trigger: watch::Sender<()>,
     state: Mutex<BackupServiceState>,
 }
@@ -54,7 +54,7 @@ pub enum BackupServiceState {
 }
 
 impl BackupService {
-    pub async fn new(client: ClientHandle, tg: &mut TaskGroup) -> Self {
+    pub async fn new(client: ClientHandleArc, tg: &mut TaskGroup) -> Self {
         let shared = Arc::new(BackupServiceShared {
             client,
             backup_trigger: watch::Sender::new(()),
@@ -66,8 +66,7 @@ impl BackupService {
         let shared2 = shared.clone();
         tg.spawn("backup_service", move |handle| {
             Self::run_inner(handle, shared2)
-        })
-        .await;
+        });
         Self { shared }
     }
 
@@ -92,7 +91,7 @@ impl BackupService {
         }
     }
 
-    async fn backup(client: &ClientHandle) -> Result<()> {
+    async fn backup(client: &ClientHandleArc) -> Result<()> {
         let username = client
             .db()
             .begin_transaction_nc()

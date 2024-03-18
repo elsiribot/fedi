@@ -24,7 +24,7 @@ use fedimint_client::oplog::OperationLogEntry;
 use fedimint_client::secret::{
     get_default_client_secret, DeriveableSecretClientExt, RootSecretStrategy,
 };
-use fedimint_client::{Client, ClientBuilder, ClientHandle};
+use fedimint_client::{Client, ClientBuilder, ClientHandle, ClientHandleArc};
 use fedimint_core::api::{
     DynGlobalApi, DynModuleApi, FederationApiExt, FederationResult, InviteCode, StatusResponse,
     WsFederationApi,
@@ -44,6 +44,7 @@ use fedimint_ln_client::{
     LightningOperationMetaPay, LightningOperationMetaVariant, LnPayState, LnReceiveState,
     OutgoingLightningPayment, PayType,
 };
+use fedimint_ln_common::LightningGateway;
 use fedimint_mint_client::{
     spendable_notes_to_operation_id, MintClientInit, MintClientModule, MintOperationMeta,
     MintOperationMetaVariant, OOBNotes, ReissueExternalNotesState,
@@ -66,8 +67,9 @@ use self::backup_service::BackupService;
 pub use self::backup_service::BackupServiceStatus;
 use self::db::{OperationFediFeeStatusKey, OutstandingFediFeesKey};
 use self::dev::{
-    override_localhost_client_config, override_localhost_gateway, override_localhost_invite_code,
+    override_localhost, override_localhost_client_config, override_localhost_invite_code,
 };
+use self::ln_gateway_service::LnGatewayService;
 use super::constants::{
     LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE, ONE_WEEK, PAY_INVOICE_TIMEOUT,
     REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE, XMPP_CHILD_ID,
@@ -97,6 +99,7 @@ use crate::types::{
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
 mod backup_service;
+mod ln_gateway_service;
 
 pub const GUARDIAN_STATUS_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -130,7 +133,7 @@ pub fn invite_code_from_client_confing(config: &ClientConfig) -> InviteCode {
 /// Federation is a wrapper of "client ng" to assist with handling RPC commands
 #[derive(Clone)]
 pub struct FederationV2 {
-    pub client: ClientHandle,
+    pub client: ClientHandleArc,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
     pub operation_states:
@@ -143,6 +146,7 @@ pub struct FederationV2 {
     pub backup_service: OnceCell<BackupService>,
     pub fedi_fee_remittance_service: OnceCell<FediFeeRemittanceService>,
     pub recovering: bool,
+    pub gateway_service: LnGatewayService,
 }
 
 impl FederationV2 {
@@ -167,7 +171,7 @@ impl FederationV2 {
     ) -> Self {
         let recovering = ng.has_pending_recoveries().await;
         let mut federation = Self {
-            client: ng,
+            client: Arc::new(ng),
             event_sink,
             task_group,
             operation_states: Default::default(),
@@ -176,6 +180,7 @@ impl FederationV2 {
             backup_service: OnceCell::new(),
             fedi_fee_remittance_service: OnceCell::new(),
             recovering,
+            gateway_service: LnGatewayService::new(),
         };
         if !recovering {
             federation.start_background_tasks().await;
@@ -328,7 +333,7 @@ impl FederationV2 {
             // they will still see a spinner
             info!("backup found {:?}", backup);
             let client = client_builder
-                .recover(client_secret, client_config, invite_code, Some(backup))
+                .recover(client_secret, client_config, Some(backup))
                 .await?;
             let metadata = client.get_metadata().await;
             let this = Self::new(
@@ -343,9 +348,7 @@ impl FederationV2 {
             Ok(this)
         } else {
             info!("backup not found");
-            let client = client_builder
-                .join(client_secret, client_config, invite_code)
-                .await?;
+            let client = client_builder.join(client_secret, client_config).await?;
             Ok(Self::new(
                 client,
                 event_sink,
@@ -395,6 +398,14 @@ impl FederationV2 {
     /// Create database transaction
     pub async fn dbtx(&self) -> DatabaseTransaction<'_, Committable> {
         self.client.db().begin_transaction().await
+    }
+
+    pub async fn select_gateway(&self) -> anyhow::Result<Option<LightningGateway>> {
+        let gateway = self.gateway_service.select_gateway(&self.client).await?;
+        Ok(gateway.map(|mut g| {
+            g.api = override_localhost(&g.api);
+            g
+        }))
     }
 
     /// Fetch balance
@@ -514,10 +525,19 @@ impl FederationV2 {
                 RpcTransactionDirection::Receive,
             )
             .await?;
+        let gateway = self.select_gateway().await?;
         let (operation_id, invoice, _) = self
             .client
             .get_first_module::<LightningClientModule>()
-            .create_bolt11_invoice(amount.0, description, expiry_time, ())
+            .create_bolt11_invoice(
+                amount.0,
+                lightning_invoice::Bolt11InvoiceDescription::Direct(
+                    &lightning_invoice::Description::new(description)?,
+                ),
+                expiry_time,
+                (),
+                gateway,
+            )
             .await?;
 
         self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
@@ -606,8 +626,7 @@ impl FederationV2 {
                         _ => {}
                     }
                 }
-            })
-            .await;
+            });
         Ok(())
     }
 
@@ -669,20 +688,7 @@ impl FederationV2 {
                         _ => {}
                     }
                 }
-            })
-            .await;
-        Ok(())
-    }
-
-    pub async fn override_active_gateway(&self) -> Result<()> {
-        let ln_module = self.client.get_first_module::<LightningClientModule>();
-        let dbtx = ln_module.db.begin_transaction().await;
-        let mut gateway = self
-            .client
-            .get_first_module::<LightningClientModule>()
-            .select_active_gateway()
-            .await?;
-        override_localhost_gateway(&mut gateway, dbtx).await;
+            });
         Ok(())
     }
 
@@ -704,12 +710,10 @@ impl FederationV2 {
             .await?;
         let fedi_fee = (amount.msats * fedi_fee_ppm).div_ceil(MILLION);
 
-        self.override_active_gateway().await?;
         let gateway = self
-            .client
-            .get_first_module::<LightningClientModule>()
-            .select_active_gateway()
-            .await?;
+            .select_gateway()
+            .await?
+            .context("No gateway available")?;
         let gateway_fees = gateway.fees;
         let network_fee = gateway_fees.base_msat as u64
             + (amount.msats * gateway_fees.proportional_millionths as u64).div_ceil(MILLION);
@@ -730,13 +734,11 @@ impl FederationV2 {
             .ok_or(anyhow!("Invoice missing amount"))?;
         let amount = Amount::from_msats(amount_msat);
 
-        self.override_active_gateway().await?;
-        let gateway = self
-            .client
-            .get_first_module::<LightningClientModule>()
-            .select_active_gateway()
-            .await?;
-        let gateway_fees = gateway.fees;
+        let gateway = self.select_gateway().await?;
+        let gateway_fees = gateway
+            .as_ref()
+            .map(|g| g.fees)
+            .unwrap_or(zero_gateway_fees());
         let network_fee = gateway_fees.base_msat as u64
             + (amount.msats * gateway_fees.proportional_millionths as u64).div_ceil(MILLION);
 
@@ -773,9 +775,8 @@ impl FederationV2 {
             is_fedi_fee_remittance: false,
         };
         let ln = self.client.get_first_module::<LightningClientModule>();
-        let active_gw = ln.select_active_gateway_opt().await;
         let OutgoingLightningPayment { payment_type, .. } = ln
-            .pay_bolt11_invoice(active_gw, invoice.to_owned(), extra_meta.clone())
+            .pay_bolt11_invoice(gateway, invoice.to_owned(), extra_meta.clone())
             .await?;
         self.write_pending_send_fedi_fee(payment_type.operation_id(), Amount::from_msats(fedi_fee))
             .await?;
@@ -965,8 +966,7 @@ impl FederationV2 {
                             {
                                 warn!("subscribe_to_ln_pay error: {e:?}")
                             }
-                        })
-                        .await;
+                        });
                 }
                 LightningOperationMeta {
                     variant: LightningOperationMetaVariant::Receive { invoice, .. },
@@ -980,9 +980,12 @@ impl FederationV2 {
                             if let Err(e) = fed.subscribe_invoice(operation_id, invoice).await {
                                 warn!("subscribe_to_ln_receive error: {e:?}")
                             }
-                        })
-                        .await;
+                        });
                 }
+                LightningOperationMeta {
+                    variant: LightningOperationMetaVariant::Claim { .. },
+                    ..
+                } => unreachable!("claims are not supported"),
             },
             MINT_OPERATION_TYPE => {
                 let meta = operation.meta::<MintOperationMeta>();
@@ -994,19 +997,18 @@ impl FederationV2 {
                             .spawn("subscribe_oob_spend", move |_| async move {
                                 // FIXME: what happens if it fails?
                                 fed.subscribe_oob_spend(operation_id).await
-                            })
-                            .await;
+                            });
                     }
                     MintOperationMetaVariant::Reissuance { .. } => {
                         let fed = self.clone();
-                        self.task_group
-                            .clone()
-                            .spawn("subscribe_to_ecash_reissue", move |_| async move {
+                        self.task_group.clone().spawn(
+                            "subscribe_to_ecash_reissue",
+                            move |_| async move {
                                 // FIXME: what happens if it fails?
                                 fed.subscribe_to_ecash_reissue(operation_id, meta.amount)
                                     .await
-                            })
-                            .await;
+                            },
+                        );
                     }
                 }
             }
@@ -1036,22 +1038,22 @@ impl FederationV2 {
                 let fed = self.clone();
                 match operation.meta::<StabilityPoolMeta>() {
                     StabilityPoolMeta::Deposit { .. } => {
-                        self.task_group
-                            .clone()
-                            .spawn("subscribe_stability_pool_deposit", move |_| async move {
+                        self.task_group.clone().spawn(
+                            "subscribe_stability_pool_deposit",
+                            move |_| async move {
                                 fed.subscribe_stability_pool_deposit_to_seek(operation_id)
                                     .await
-                            })
-                            .await;
+                            },
+                        );
                     }
                     StabilityPoolMeta::CancelRenewal { .. }
                     | StabilityPoolMeta::Withdrawal { .. } => {
-                        self.task_group
-                            .clone()
-                            .spawn("subscribe_stability_pool_withdraw", move |_| async move {
+                        self.task_group.clone().spawn(
+                            "subscribe_stability_pool_withdraw",
+                            move |_| async move {
                                 fed.subscribe_stability_pool_withdraw(operation_id).await
-                            })
-                            .await;
+                            },
+                        );
                     }
                 }
             }
@@ -1196,19 +1198,17 @@ impl FederationV2 {
     /// "federation" events when one is observed
     async fn subscribe_balance_updates(&mut self) {
         let federation = self.clone();
-        self.task_group
-            .spawn(
-                format!("{:?} balance subscription", federation.federation_name()),
-                |_| async move {
-                    // always send an initial balance event
+        self.task_group.spawn(
+            format!("{:?} balance subscription", federation.federation_name()),
+            |_| async move {
+                // always send an initial balance event
+                federation.send_balance_event().await;
+                let mut updates = federation.client.subscribe_balance_changes().await;
+                while (updates.next().await).is_some() {
                     federation.send_balance_event().await;
-                    let mut updates = federation.client.subscribe_balance_changes().await;
-                    while (updates.next().await).is_some() {
-                        federation.send_balance_event().await;
-                    }
-                },
-            )
-            .await;
+                }
+            },
+        );
     }
 
     pub fn recovering(&self) -> bool {
@@ -1275,35 +1275,27 @@ impl FederationV2 {
 
     /// List all lightning gateways registered with the federation
     pub async fn list_gateways(&self) -> anyhow::Result<Vec<RpcLightningGateway>> {
+        self.gateway_service.update(&self.client).await?;
         let gateways = self
             .client
             .get_first_module::<LightningClientModule>()
-            .fetch_registered_gateways()
-            .await?;
-        let active_gateway = self
-            .client
-            .get_first_module::<LightningClientModule>()
-            .select_active_gateway()
-            .await
-            .ok();
+            .list_gateways()
+            .await;
         let bridge_gateways: Vec<RpcLightningGateway> = gateways
             .into_iter()
             .map(|gw| RpcLightningGateway {
                 api: gw.info.api.to_string(),
                 node_pub_key: RpcPublicKey(gw.info.node_pub_key),
                 gateway_id: RpcPublicKey(gw.info.gateway_id),
-                active: active_gateway == Some(gw.info),
             })
             .collect();
         Ok(bridge_gateways)
     }
 
     /// Switch active lightning gateway
-    pub async fn switch_gateway(&self, gateway_id: &PublicKey) -> Result<()> {
-        self.client
-            .get_first_module::<LightningClientModule>()
-            .set_active_gateway(gateway_id)
-            .await?;
+    pub async fn switch_gateway(&self, _gateway_id: &PublicKey) -> Result<()> {
+        // TODO
+        error!("switch gateway is not implemented");
         Ok(())
     }
 
@@ -1929,6 +1921,7 @@ impl FederationV2 {
                                         stability_pool_state: None,
                                     })
                                 }
+                                LightningOperationMetaVariant::Claim { .. } => unreachable!("claims are not supported"),
                             }
                         },
                         STABILITY_POOL_OPERATION_TYPE => match op.1.meta() {
@@ -2287,8 +2280,7 @@ impl FederationV2 {
             .spawn("subscribe_stability_pool_deposit", move |_| async move {
                 fed.subscribe_stability_pool_deposit_to_seek(operation_id)
                     .await
-            })
-            .await;
+            });
         Ok(operation_id)
     }
 
@@ -2325,8 +2317,7 @@ impl FederationV2 {
             .clone()
             .spawn("subscribe_stability_pool_withdraw", move |_| async move {
                 fed.subscribe_stability_pool_withdraw(operation_id).await
-            })
-            .await;
+            });
         Ok(operation_id)
     }
 
@@ -2761,6 +2752,14 @@ impl FederationV2 {
         }
 
         res
+    }
+}
+
+#[inline(always)]
+pub fn zero_gateway_fees() -> RoutingFees {
+    RoutingFees {
+        base_msat: 0,
+        proportional_millionths: 0,
     }
 }
 

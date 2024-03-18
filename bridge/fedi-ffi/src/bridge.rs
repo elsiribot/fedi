@@ -208,85 +208,82 @@ impl Bridge {
         if !matches!(&*federation, MultiFederation::V2(f) if f.recovering()) {
             return;
         }
-        this.task_group
-            .clone()
-            .spawn(
-                "waiting for recovery to replace federation",
-                move |_| async move {
-                    let MultiFederation::V2(inner_federation) = &*federation;
-                    if let Err(error) = inner_federation.wait_for_recovery().await {
-                        // this federation will stay as "recovering" till next restart.
-                        error!(%error, "recovery failed");
-                        return Ok(());
-                    }
-                    let tg = inner_federation.task_group.clone();
-                    let federation_id = inner_federation.federation_id().to_string();
-                    let client = inner_federation.client.clone();
-                    let mut federation_lock = this.federations.lock().await;
-                    let db = client.db().clone();
-                    drop(federation_lock.remove(&federation_id));
-                    info!(%federation_id, "removed from federation list");
+        this.task_group.clone().spawn(
+            "waiting for recovery to replace federation",
+            move |_| async move {
+                let MultiFederation::V2(inner_federation) = &*federation;
+                if let Err(error) = inner_federation.wait_for_recovery().await {
+                    // this federation will stay as "recovering" till next restart.
+                    error!(%error, "recovery failed");
+                    return Ok(());
+                }
+                let tg = inner_federation.task_group.clone();
+                let federation_id = inner_federation.federation_id().to_string();
+                let client = inner_federation.client.clone();
+                let mut federation_lock = this.federations.lock().await;
+                let db = client.db().clone();
+                drop(federation_lock.remove(&federation_id));
+                info!(%federation_id, "removed from federation list");
 
-                    if let Err(error) = tg.shutdown_join_all(None).await {
-                        warn!(%error, "failed to shutdown task group cleanly");
-                    }
-                    // some slow RPCs may take ~10 seconds
-                    if fedimint_core::task::timeout(
-                        Duration::from_secs(20),
-                        Self::wait_till_fully_dropped(federation),
-                    )
-                    .await
-                    .is_err()
-                    {
-                        info!("failed to drop federation, not reinserting the federation");
-                        return Ok(());
-                    }
-                    info!("manually shuting down the client");
-                    // only Federation object stores the client handle, so this should always pass.
-                    if client.shutdown().await.is_ok() {
-                        info!("manually shut down client complete");
-                    } else {
-                        error!(
-                            "ClientHandle is not unique, not reinserting the federation in list"
-                        );
-                        return Ok(());
-                    }
-                    let root_mnemonic = this
-                        .app_state
-                        .with_read_lock(move |state| state.root_mnemonic.clone())
+                if let Err(error) = tg.shutdown_join_all(None).await {
+                    warn!(%error, "failed to shutdown task group cleanly");
+                }
+                // some slow RPCs may take ~10 seconds
+                if fedimint_core::task::timeout(
+                    Duration::from_secs(20),
+                    Self::wait_till_fully_dropped(federation),
+                )
+                .await
+                .is_err()
+                {
+                    info!("failed to drop federation, not reinserting the federation");
+                    return Ok(());
+                }
+                info!("manually shuting down the client");
+                if let Some(client) = Arc::into_inner(client) {
+                    // only Federation object stores the client handle, so this should always
+                    // pass.
+                    client.shutdown().await;
+                    info!("manually shut down client complete");
+                } else {
+                    error!("ClientHandleArc is not unique, not reinserting the federation in list");
+                    return Ok(());
+                }
+                let root_mnemonic = this
+                    .app_state
+                    .with_read_lock(move |state| state.root_mnemonic.clone())
+                    .await;
+                let federation_v2 = FederationV2::from_db(
+                    db,
+                    this.event_sink.clone(),
+                    this.task_group.make_subgroup().await,
+                    &root_mnemonic,
+                    this.fedi_fee_helper.clone(),
+                )
+                .await
+                .with_context(|| format!("loading federation {}", federation_id.clone()))?;
+                let fed_network = federation_v2.get_network();
+                federation_lock.insert(
+                    federation_id.clone(),
+                    Arc::new(MultiFederation::V2(federation_v2)),
+                );
+                info!(%federation_id, "reinserted to federation list");
+                drop(federation_lock);
+
+                // refetch fee schedule once recovery is complete
+                if let Some(network) = fed_network {
+                    this.fedi_fee_helper
+                        .fetch_and_update_fedi_fee_schedule(
+                            vec![(federation_id.clone(), network)].into_iter().collect(),
+                        )
                         .await;
-                    let federation_v2 = FederationV2::from_db(
-                        db,
-                        this.event_sink.clone(),
-                        this.task_group.make_subgroup().await,
-                        &root_mnemonic,
-                        this.fedi_fee_helper.clone(),
-                    )
-                    .await
-                    .with_context(|| format!("loading federation {}", federation_id.clone()))?;
-                    let fed_network = federation_v2.get_network();
-                    federation_lock.insert(
-                        federation_id.clone(),
-                        Arc::new(MultiFederation::V2(federation_v2)),
-                    );
-                    info!(%federation_id, "reinserted to federation list");
-                    drop(federation_lock);
-
-                    // refetch fee schedule once recovery is complete
-                    if let Some(network) = fed_network {
-                        this.fedi_fee_helper
-                            .fetch_and_update_fedi_fee_schedule(
-                                vec![(federation_id.clone(), network)].into_iter().collect(),
-                            )
-                            .await;
-                    }
-                    // send the event only after we reinsert the federation.
-                    this.event_sink
-                        .typed_event(&Event::recovery_complete(federation_id.clone()));
-                    anyhow::Ok(())
-                },
-            )
-            .await;
+                }
+                // send the event only after we reinsert the federation.
+                this.event_sink
+                    .typed_event(&Event::recovery_complete(federation_id.clone()));
+                anyhow::Ok(())
+            },
+        );
     }
     /// Joins federation from invite code
     ///

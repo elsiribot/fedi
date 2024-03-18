@@ -16,7 +16,7 @@ use tracing::{error, info, warn};
 use crate::api::IFediApi;
 use crate::constants::MILLION;
 use crate::federation_v2::db::OutstandingFediFeesKey;
-use crate::federation_v2::FederationV2;
+use crate::federation_v2::{zero_gateway_fees, FederationV2};
 use crate::storage::{AppState, FediFeeSchedule, ModuleFediFeeSchedule};
 use crate::types::{LightningSendMetadata, RpcTransactionDirection};
 
@@ -110,8 +110,7 @@ impl FediFeeHelper {
                         "Failed to update app state with new fedi fee schedule"
                     )
                 }
-            })
-            .await;
+            });
     }
 
     /// For the given federation ID returns the full Fedi fee schedule. If the
@@ -220,8 +219,7 @@ impl FediFeeRemittanceService {
         let tg = fed.task_group.clone();
         tg.spawn("fedi_fee_remittance_service", move |handle| {
             Self::task(fed, handle, rx)
-        })
-        .await;
+        });
         Self { tx }
     }
 
@@ -246,13 +244,11 @@ impl FediFeeRemittanceService {
             return Ok(false);
         }
 
-        fed.override_active_gateway().await?;
-        let gateway = fed
-            .client
-            .get_first_module::<LightningClientModule>()
-            .select_active_gateway()
-            .await?;
-        let gateway_fees = gateway.fees;
+        let gateway = fed.select_gateway().await?;
+        let gateway_fees = gateway
+            .as_ref()
+            .map(|g| g.fees)
+            .unwrap_or(zero_gateway_fees());
 
         // We want to ensure that any gateway fees is debited from the accrued
         // outstanding fees. This means that the invoice amount for remitting fees will
@@ -302,9 +298,8 @@ impl FediFeeRemittanceService {
             is_fedi_fee_remittance: true,
         };
         let ln = fed.client.get_first_module::<LightningClientModule>();
-        let active_gw = ln.select_active_gateway_opt().await;
         let OutgoingLightningPayment { payment_type, .. } = ln
-            .pay_bolt11_invoice(active_gw, invoice.to_owned(), extra_meta.clone())
+            .pay_bolt11_invoice(gateway, invoice.to_owned(), extra_meta.clone())
             .await?;
         fed.client
             .db()

@@ -38,7 +38,7 @@ use fedimint_core::module::{
     ServerModuleInit, ServerModuleInitArgs, SupportedModuleApiVersions, TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
-use fedimint_core::{Amount, NumPeers, OutPoint, PeerId, ServerModule, TransactionId};
+use fedimint_core::{Amount, NumPeersExt, OutPoint, PeerId, ServerModule, TransactionId};
 use futures::{stream, FutureExt, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
@@ -77,7 +77,7 @@ impl ServerModuleInit for StabilityPoolInit {
     }
 
     fn supported_api_versions(&self) -> SupportedModuleApiVersions {
-        SupportedModuleApiVersions::from_raw((3, 0), (3, 0), &[(0, 0)])
+        SupportedModuleApiVersions::from_raw((2, 0), (2, 0), &[(0, 0)])
     }
 
     async fn init(&self, args: &ServerModuleInitArgs<Self>) -> anyhow::Result<DynServerModule> {
