@@ -31,6 +31,10 @@ const navRoutes: Array<PrefixRoute | AbsoluteRoute> = [
         prefix: '/onboarding',
     },
     {
+        prefix: '/chat/new',
+        showWhen: 'desktop',
+    },
+    {
         path: '/bug-report',
         showWhen: 'desktop',
     },
@@ -48,10 +52,6 @@ const navRoutes: Array<PrefixRoute | AbsoluteRoute> = [
     },
     {
         path: '/settings/currency',
-        showWhen: 'desktop',
-    },
-    {
-        path: '/chat/new',
         showWhen: 'desktop',
     },
 ]

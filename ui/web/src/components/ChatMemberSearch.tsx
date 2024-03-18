@@ -31,11 +31,7 @@ import { OmniQrScanner } from './OmniInput/OmniQrScanner'
 import { ShadowScroller } from './ShadowScroller'
 import { Text } from './Text'
 
-interface Props {
-    createNewGroup(): void
-}
-
-export const ChatMemberSearch: React.FC<Props> = ({ createNewGroup }) => {
+export const ChatMemberSearch = () => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const federationId = useAppSelector(selectActiveFederationId)
@@ -262,7 +258,7 @@ export const ChatMemberSearch: React.FC<Props> = ({ createNewGroup }) => {
                             {t('feature.omni.action-upload')}
                         </Text>
                     </SearchButton>
-                    <SearchButton onClick={createNewGroup}>
+                    <SearchButton as={Link} href="/chat/new/group">
                         <Icon icon={SocialPeopleIcon} />
                         <Text weight="medium">
                             {t('feature.chat.create-a-group')}

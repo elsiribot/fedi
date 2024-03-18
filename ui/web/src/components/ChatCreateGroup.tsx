@@ -12,12 +12,13 @@ import {
 import { ChatType } from '@fedi/common/types'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
-import { useAppDispatch, useAppSelector } from '../hooks'
-import { styled } from '../styles'
+import { useAppDispatch, useAppSelector, useMediaQuery } from '../hooks'
+import { config, styled } from '../styles'
 import { Button } from './Button'
 import { ChatAvatar } from './ChatAvatar'
 import { CopyInput } from './CopyInput'
 import { Input } from './Input'
+import * as Layout from './Layout'
 import { Switch } from './Switch'
 import { Text } from './Text'
 
@@ -34,6 +35,7 @@ export const ChatCreateGroup: React.FC = () => {
     )
     const [isSavingGroup, setIsSavingGroup] = useState(false)
     const [isBroadcastOnly, setIsBroadcastOnly] = useState(false)
+    const isSm = useMediaQuery(config.media.sm)
 
     useEffect(() => {
         if (!federationId) return
@@ -88,6 +90,13 @@ export const ChatCreateGroup: React.FC = () => {
 
     return (
         <Container>
+            {isSm && (
+                <Layout.Header back="/chat/new">
+                    <Layout.Title subheader>
+                        {t('feature.chat.create-a-group')}
+                    </Layout.Title>
+                </Layout.Header>
+            )}
             <Inner>
                 <ChatAvatar
                     size="lg"
@@ -113,35 +122,36 @@ export const ChatCreateGroup: React.FC = () => {
                         onCheckedChange={setIsBroadcastOnly}
                     />
                 </BroadcastSwitchContainer>
-                <Buttons>
-                    <Button
-                        width="full"
-                        disabled={!newGroupId}
-                        loading={isSavingGroup}
-                        onClick={handleSaveNewGroup}>
-                        {t('feature.chat.view-group')}
-                    </Button>
-                </Buttons>
             </Inner>
+            <Buttons>
+                <Button
+                    width="full"
+                    disabled={!newGroupId}
+                    loading={isSavingGroup}
+                    onClick={handleSaveNewGroup}>
+                    {t('feature.chat.view-group')}
+                </Button>
+            </Buttons>
         </Container>
     )
 }
 
 const Container = styled('div', {
     display: 'flex',
-    alignItems: 'center',
+    flexDirection: 'column',
     justifyContent: 'center',
     height: '100%',
-    padding: 24,
+    width: '100%',
 })
 
 const Inner = styled('div', {
     display: 'flex',
+    flex: 1,
     flexDirection: 'column',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 320,
     gap: 16,
+    padding: 24,
 })
 
 const Buttons = styled('div', {
@@ -149,6 +159,7 @@ const Buttons = styled('div', {
     flexDirection: 'column',
     width: '100%',
     gap: 8,
+    padding: 24,
 })
 
 const BroadcastSwitchContainer = styled('div', {
