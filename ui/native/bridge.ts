@@ -42,8 +42,8 @@ export async function initializeBridge(dataDir: string) {
 
     const logLevel = 'info'
     const deviceId = await getDeviceId()
-    const result = FedimintFfi.initialize(dataDir, logLevel, deviceId)
-    const resultJson = typeof result === 'string' ? JSON.parse(result) : result
+    const result = await FedimintFfi.initialize(dataDir, logLevel, deviceId)
+    const resultJson = JSON.parse(result)
     if (resultJson.error !== undefined) {
         log.error('FedimintFfi.initialize', resultJson)
         throw new Error(resultJson.error)
