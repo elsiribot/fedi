@@ -1116,7 +1116,7 @@ mod tests {
     use tracing::{error, info};
 
     use super::*;
-    use crate::api::{IFediApi, RegisterDeviceError, RegisteredDevice};
+    use crate::api::{RegisterDeviceError, RegisteredDevice};
     use crate::constants::{FEDI_FILE_PATH, MILLION};
     use crate::ffi::PathBasedStorage;
     use crate::multi::MultiFederation;

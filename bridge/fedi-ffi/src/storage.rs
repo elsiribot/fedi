@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::SystemTime;
 
 use anyhow::bail;
 use fedimint_bip39::Bip39RootSecretStrategy;
@@ -51,6 +52,18 @@ pub struct AppStateRaw {
     // Device identifier is used to give this device a name that Fedi's device registration service
     // can store.
     pub device_identifier: Option<String>,
+
+    // Device index identifies which device number this is under the same root seed as registered
+    // with Fedi's device registration service. This index is used in the derivation path for the
+    // fedimint-client root secret. So in a way, it's a way of ensuring that a user's/seed's
+    // different per-federation "accounts" (across multiple devices) don't conflict with each
+    // other.
+    pub device_index: Option<u8>,
+
+    // Every so often, we renew this device's registration against the given seed + device
+    // identifier + device index with Fedi's device registration service. Here we store the
+    // timestamp of the last successful registration renewal.
+    pub last_device_registration_timestamp: Option<SystemTime>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -185,6 +198,8 @@ impl AppState {
                 sensitive_log: None,
                 matrix_session: None,
                 device_identifier: None,
+                device_index: None,
+                last_device_registration_timestamp: None,
             })),
             storage,
         }

@@ -54,6 +54,7 @@ pub struct RegisteredDevice {
 /// device identifier, and the device index. Optionally, we may also send along
 /// a "force" flag as true, which means that if another device currently owns
 /// the specified index, we wish to transfer that index to this device.
+#[derive(Debug)]
 pub enum RegisterDeviceError {
     /// Variant representing a conflict on Fedi's servers, whereby we try to
     /// register the current device with the specified index, but another device
@@ -61,17 +62,17 @@ pub enum RegisterDeviceError {
     /// records. Note that we should never expect this error if we pass in the
     /// "force" flag as true, since "force" would just take over the ownership
     /// to this device anyway.
-    AnotherDeviceOwnsIndex,
+    AnotherDeviceOwnsIndex(String),
 
     /// Variant representing any other server error besides a conflicting device
     /// registration. We expect this error to be temporary so we will just retry
     /// later.
-    OtherServerError,
+    OtherServerError(String),
 
     /// Variant representing errors encountered while sending the request to the
     /// server. We expect this error to be temporary so we will just retry
     /// later.
-    ErrorSendingRequest,
+    ErrorSendingRequest(String),
 
     /// Variant representing request timeout, meaning no response was received
     /// from the server within the allotted time. We expect this error to be
@@ -294,11 +295,13 @@ impl IFediApi for LiveFediApi {
 
         match register_device_result_v0 {
             Ok(resp) if resp.status().is_success() => Ok(()),
-            Ok(resp) if resp.status() == StatusCode::CONFLICT => {
-                Err(RegisterDeviceError::AnotherDeviceOwnsIndex)
-            }
-            Ok(_) => Err(RegisterDeviceError::OtherServerError),
-            Err(_) => Err(RegisterDeviceError::ErrorSendingRequest),
+            Ok(resp) if resp.status() == StatusCode::CONFLICT => Err(
+                RegisterDeviceError::AnotherDeviceOwnsIndex(resp.text().await.unwrap_or_default()),
+            ),
+            Ok(resp) => Err(RegisterDeviceError::OtherServerError(
+                resp.text().await.unwrap_or_default(),
+            )),
+            Err(e) => Err(RegisterDeviceError::ErrorSendingRequest(e.to_string())),
         }
     }
 }
