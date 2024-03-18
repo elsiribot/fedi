@@ -50,6 +50,10 @@ const navRoutes: Array<PrefixRoute | AbsoluteRoute> = [
         path: '/settings/currency',
         showWhen: 'desktop',
     },
+    {
+        path: '/chat/new',
+        showWhen: 'desktop',
+    },
 ]
 
 /**
