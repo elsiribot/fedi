@@ -1,4 +1,4 @@
-{ pkgs, pkgs-unstable, flakeboxLib, fedimint-pkgs, toolchains, replaceGitHash }:
+{ pkgs, flakeboxLib, fedimint-pkgs, toolchains, replaceGitHash, profiles }:
 let
   system = pkgs.system;
   lib = pkgs.lib;
@@ -45,7 +45,7 @@ let
       ];
     };
 in
-(flakeboxLib.craneMultiBuild { inherit toolchains; }) (craneLib':
+(flakeboxLib.craneMultiBuild { inherit toolchains profiles; }) (craneLib':
 let
   # placeholder we use to avoid actually needing to detect hash via runnning `git`
   # 012345... for easy recognizability (in case something went wrong),

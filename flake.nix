@@ -10,12 +10,12 @@
     };
 
     fenix = {
-      url = "github:nix-community/fenix?rev=15c95e2adbe285c82ce347a31110b83d13aad586";
+      url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
     flakebox = {
-      url = "github:rustshop/flakebox?rev=b141d3c7640a7f6fff8da2dec50a72bcbed15056";
+      url = "github:dpc/flakebox?rev=84347061440e4c504b4280d87f93a7e6718ccd11";
+      inputs.nixpkgs.follows = "nixpkgs";
       inputs.fenix.follows = "fenix";
     };
 
@@ -132,11 +132,11 @@
         flakeboxLib = flakebox.lib.${system} {
           # customizations will go here in the future
           config = {
-            toolchain.channel.default = "latest";
+            toolchain.channel = "latest";
 
             # we have our own weird CI workflows
             github.ci.enable = false;
-            just.includePaths = [
+            just.importPaths = [
               "justfile.fedi"
             ];
             typos.pre-commit.enable = false;
@@ -167,8 +167,6 @@
         };
 
         toolchainArgs = let llvmPackages = pkgs.llvmPackages_11; in {
-          inherit androidSdk;
-          componentTargetsChannelName = "latest";
           extraRustFlags = "--cfg tokio_unstable -Z threads=8 --cfg=curve25519_dalek_backend=\"serial\"";
 
           components = [
@@ -176,9 +174,7 @@
             "cargo"
             "clippy"
             "rust-analyzer"
-            "rust-analysis"
             "rust-src"
-            "llvm-tools-preview"
           ];
         } // lib.optionalAttrs pkgs.stdenv.isDarwin {
           # on Darwin newest stdenv doesn't seem to work
@@ -189,28 +185,39 @@
           clang-unwrapped = llvmPackages.clang-unwrapped;
         };
 
-        toolchains = (pkgs.lib.getAttrs
-          ([
-            "default"
-            "aarch64-android"
-            "x86_64-android"
-            "arm-android"
-            "armv7-android"
-            "wasm32-unknown"
-          ] ++ lib.optionals pkgs.stdenv.isDarwin [
-            "aarch64-ios"
-            "aarch64-ios-sim"
-            "x86_64-ios"
-          ])
-          (flakeboxLib.mkStdFenixToolchains toolchainArgs)
-        );
-        toolchain = flakeboxLib.mkFenixMultiToolchain {
-          inherit toolchains;
-          componentTargetsChannelName = "latest";
+        stdTargets = flakeboxLib.mkStdTargets {
+          inherit androidSdk;
         };
+        stdToolchains = flakeboxLib.mkStdToolchains toolchainArgs;
+
+        toolchainAll = flakeboxLib.mkFenixToolchain (toolchainArgs
+          // {
+          targets = (pkgs.lib.getAttrs
+            ([
+              "default"
+              "aarch64-android"
+              "x86_64-android"
+              "arm-android"
+              "armv7-android"
+              "wasm32-unknown"
+            ] ++ lib.optionals pkgs.stdenv.isDarwin [
+              "aarch64-ios"
+              "aarch64-ios-sim"
+              "x86_64-ios"
+            ])
+
+            stdTargets
+          );
+
+          args = {
+            nativeBuildInputs = [ pkgs.firefox pkgs.wasm-bindgen-cli pkgs.geckodriver pkgs.wasm-pack ];
+          };
+        });
 
         craneMultiBuild = import nix/flakebox.nix {
-          inherit pkgs pkgs-unstable flakeboxLib fedimint-pkgs toolchains replaceGitHash;
+          inherit pkgs flakeboxLib fedimint-pkgs replaceGitHash;
+          toolchains = stdToolchains // { "default" = toolchainAll; };
+          profiles = [ "ci" "release" ];
         };
 
         lib = pkgs.lib;
@@ -239,10 +246,9 @@
         };
 
         crossDevShell = flakeboxLib.mkDevShell (craneMultiBuild.commonEnvsShell // craneMultiBuild.commonEnvsShellRocksdbLink // {
-          inherit toolchain;
+          toolchain = toolchainAll;
           nativeBuildInputs =
             [
-              (lib.hiPrio toolchains.default.toolchain)
               fedimint-pkgs.packages.${system}.gateway-pkgs
               pkgs.fs-dir-cache
               pkgs.cargo-nextest
