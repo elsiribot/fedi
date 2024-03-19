@@ -80,7 +80,6 @@ use super::social::{
     RecoveryFile, SocialBackup, SocialRecoveryClient, SocialRecoveryState, SocialVerification,
     UserSeedPhrase,
 };
-use super::storage::Storage;
 use super::types::{
     federation_v2_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
     RpcLightningGateway, RpcPayInvoiceResponse, RpcPublicKey, RpcXmppCredentials,
@@ -290,10 +289,9 @@ impl FederationV2 {
     /// correct database with Storage.
     pub async fn join(
         invite_code_string: String,
-        storage: &Storage,
         event_sink: EventSink,
         task_group: TaskGroup,
-        db_name: &str,
+        db: Database,
         root_mnemonic: &bip39::Mnemonic,
         fedi_fee_helper: Arc<FediFeeHelper>,
     ) -> Result<Self> {
@@ -304,8 +302,6 @@ impl FederationV2 {
             ClientConfig::download_from_invite_code(&invite_code).await?;
         override_localhost_client_config(&mut client_config);
 
-        // Save client config and invite code
-        let db = storage.federation_database_v2(db_name).await?;
         // fedimint-client will add decoders
         let mut dbtx = db.begin_transaction().await;
         let fedi_config = FediConfig {
