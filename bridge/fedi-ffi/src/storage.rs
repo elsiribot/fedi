@@ -47,6 +47,10 @@ pub struct AppStateRaw {
 
     pub sensitive_log: Option<bool>,
     pub matrix_session: Option<MatrixSession>,
+
+    // Device identifier is used to give this device a name that Fedi's device registration service
+    // can store.
+    pub device_identifier: Option<String>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -180,6 +184,7 @@ impl AppState {
                 social_recovery_state: None,
                 sensitive_log: None,
                 matrix_session: None,
+                device_identifier: None,
             })),
             storage,
         }

@@ -39,8 +39,8 @@ thread_local! {
 }
 
 #[wasm_bindgen]
-pub async fn fedimint_initialize(event_sink: EventSink) -> String {
-    let value = AssertUnwindSafe(fedimint_initialize_inner(event_sink))
+pub async fn fedimint_initialize(event_sink: EventSink, device_identifier: String) -> String {
+    let value = AssertUnwindSafe(fedimint_initialize_inner(event_sink, device_identifier))
         .catch_unwind()
         .await;
     match value {
@@ -50,7 +50,10 @@ pub async fn fedimint_initialize(event_sink: EventSink) -> String {
     }
 }
 
-pub async fn fedimint_initialize_inner(event_sink: EventSink) -> anyhow::Result<()> {
+pub async fn fedimint_initialize_inner(
+    event_sink: EventSink,
+    device_identifier: String,
+) -> anyhow::Result<()> {
     let event_sink = Arc::new(event_sink);
     logging::init(event_sink.clone());
     if BRIDGE.with(|b| b.borrow().is_some()) {
@@ -62,10 +65,14 @@ pub async fn fedimint_initialize_inner(event_sink: EventSink) -> anyhow::Result<
         .context("Failed to initialize storage")?;
     let fedi_api = Arc::new(LiveFediApi::new());
 
-    let bridge =
-        fediffi::rpc::fedimint_initialize_async(Arc::new(storage), event_sink.clone(), fedi_api)
-            .await
-            .context("Failed to initialize the bridge")?;
+    let bridge = fediffi::rpc::fedimint_initialize_async(
+        Arc::new(storage),
+        event_sink.clone(),
+        fedi_api,
+        device_identifier,
+    )
+    .await
+    .context("Failed to initialize the bridge")?;
 
     BRIDGE.with(|bridge_cell| bridge_cell.replace(Some(bridge)));
     Ok(())

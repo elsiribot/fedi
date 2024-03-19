@@ -35,9 +35,15 @@ pub fn fedimint_initialize(
     data_dir: String,
     log_level: String,
     event_sink: Box<dyn EventSink>,
+    device_identifier: String,
 ) -> String {
     let value = std::panic::catch_unwind(AssertUnwindSafe(|| {
-        RUNTIME.block_on(fedimint_initialize_inner(data_dir, log_level, event_sink))
+        RUNTIME.block_on(fedimint_initialize_inner(
+            data_dir,
+            log_level,
+            event_sink,
+            device_identifier,
+        ))
     }));
     match value {
         Ok(Ok(())) => String::from("{}"),
@@ -55,6 +61,7 @@ pub async fn fedimint_initialize_inner(
     data_dir: String,
     log_level: String,
     event_sink: Box<dyn EventSink>,
+    device_identifier: String,
 ) -> anyhow::Result<()> {
     if option_env!("FEDI_BRIDGE_REMOTE").is_some() {
         return fedimint_remote_initialize(event_sink).await;
@@ -88,6 +95,7 @@ pub async fn fedimint_initialize_inner(
         Arc::new(storage),
         event_sink,
         Arc::new(LiveFediApi::new()),
+        device_identifier,
     )
     .await
     {

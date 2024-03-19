@@ -5,6 +5,7 @@
 
 RCT_EXTERN_METHOD(initialize:(NSString*)dataDir
                   logLevel:(NSString*)logLevel
+                  deviceId:(NSString*)deviceId
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 

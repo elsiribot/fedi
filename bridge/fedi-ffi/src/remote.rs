@@ -170,6 +170,7 @@ pub async fn init(data_dir: PathBuf) -> anyhow::Result<()> {
         Arc::new(storage),
         Arc::new(response_tx.clone()),
         Arc::new(LiveFediApi::new()),
+        "Unknown (remote bridge)".to_owned(),
     )
     .await
     .context("fedimint initalize")?;

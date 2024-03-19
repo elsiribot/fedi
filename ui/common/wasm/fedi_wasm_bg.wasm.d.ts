@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
 export function get_logs(): number;
-export function fedimint_initialize(a: number): number;
+export function fedimint_initialize(a: number, b: number, c: number): number;
 export function fedimint_rpc(a: number, b: number, c: number, d: number): number;
 export function fedimint_read_file(a: number, b: number): number;
 export function fedimint_write_file(a: number, b: number, c: number): number;

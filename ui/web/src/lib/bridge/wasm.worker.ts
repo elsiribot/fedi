@@ -12,13 +12,22 @@ import init, {
 
 const log = makeLog('web/lib/bridge/wasm.worker')
 
+let deviceId: string
+
 async function workerInit() {
     await init(new URL('@fedi/common/wasm/fedi_wasm_bg.wasm', import.meta.url))
-    const result = await fedimint_initialize({
-        event(event_name: string, data: string) {
-            postMessage({ event: event_name, data })
+    if (!deviceId) {
+        log.error('fedimint_initialize - deviceId not set')
+        throw new Error('Failed to initialize bridge')
+    }
+    const result = await fedimint_initialize(
+        {
+            event(event_name: string, data: string) {
+                postMessage({ event: event_name, data })
+            },
         },
-    })
+        deviceId,
+    )
 
     try {
         const parsedJson = JSON.parse(result)
@@ -45,6 +54,10 @@ async function rpcRequest(method: string, data: string): Promise<string> {
 // Handles worker.postMessage calls
 addEventListener('message', e => {
     const { token, method, data } = e.data
+    if (method === 'initialize') {
+        // Store deviceId for bridge initialization later
+        deviceId = data.deviceId
+    }
     if (method == 'getLogs') {
         ;(async () => {
             const file = await get_logs()
