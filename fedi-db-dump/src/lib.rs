@@ -4,7 +4,7 @@ use fedimint_core::db::{Database, DatabaseTransaction, IDatabaseTransactionOpsCo
 use fedimint_core::encoding::{Decodable, Encodable};
 use futures::StreamExt;
 
-pub const MAGIC_PREFIX_V0: &'static [u8; 8] = b"\xFE\xD1DBDMP\x00";
+pub const MAGIC_PREFIX_V0: &[u8; 8] = b"\xFE\xD1DBDMP\x00";
 
 /// Dump the database into single buffer.
 pub async fn dump_db(db: &Database, buffer: &mut Vec<u8>) -> anyhow::Result<()> {

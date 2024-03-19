@@ -3,7 +3,6 @@ mod dev;
 
 use std::any::Any;
 use std::collections::HashMap;
-use std::default::Default;
 use std::pin::pin;
 use std::str::FromStr;
 use std::sync::Arc;

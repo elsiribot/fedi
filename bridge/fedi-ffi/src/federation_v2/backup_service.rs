@@ -4,7 +4,6 @@ use std::time::{Duration, SystemTime};
 use anyhow::Result;
 use fedimint_client::backup::Metadata;
 use fedimint_client::ClientHandle;
-use fedimint_core;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::task::{TaskGroup, TaskHandle};
 use futures::lock::Mutex;
