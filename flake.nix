@@ -145,12 +145,12 @@
             # we must not use --workspace anywhere
             just.rules.clippy.content = lib.mkForce ''
               # run `cargo clippy` on everything
-              clippy *ARGS="--locked --offline --all-targets":
+              clippy *ARGS="--locked --all-targets":
                 cargo clippy {{ARGS}}
                 cargo clippy --package fedi-wasm --target wasm32-unknown-unknown {{ARGS}}
 
               # run `cargo clippy --fix` on everything
-              clippy-fix *ARGS="--locked --offline --all-targets":
+              clippy-fix *ARGS="--locked --all-targets":
                 just clippy {{ARGS}} --fix
             '';
             just.rules.build.content = lib.mkForce ''
