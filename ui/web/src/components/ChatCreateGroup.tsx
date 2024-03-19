@@ -1,7 +1,9 @@
+import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import ChevronLeft from '@fedi/common/assets/svgs/chevron-left.svg'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     createChatGroup,
@@ -17,6 +19,7 @@ import { config, styled } from '../styles'
 import { Button } from './Button'
 import { ChatAvatar } from './ChatAvatar'
 import { CopyInput } from './CopyInput'
+import { Icon } from './Icon'
 import { Input } from './Input'
 import * as Layout from './Layout'
 import { Switch } from './Switch'
@@ -90,12 +93,16 @@ export const ChatCreateGroup: React.FC = () => {
 
     return (
         <Container>
-            {isSm && (
+            {isSm ? (
                 <Layout.Header back="/chat/new">
                     <Layout.Title subheader>
                         {t('feature.chat.create-a-group')}
                     </Layout.Title>
                 </Layout.Header>
+            ) : (
+                <DesktopBackButton as={Link} href="/chat/new">
+                    <Icon icon={ChevronLeft} size="sm" />
+                </DesktopBackButton>
             )}
             <Inner>
                 <ChatAvatar
@@ -142,6 +149,7 @@ const Container = styled('div', {
     justifyContent: 'center',
     height: '100%',
     width: '100%',
+    position: 'relative',
 })
 
 const Inner = styled('div', {
@@ -168,4 +176,10 @@ const BroadcastSwitchContainer = styled('div', {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 16,
+})
+
+const DesktopBackButton = styled('button', {
+    position: 'absolute',
+    top: 24,
+    left: 24,
 })
