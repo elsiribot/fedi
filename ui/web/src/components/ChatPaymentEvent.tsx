@@ -5,9 +5,9 @@ import CheckIcon from '@fedi/common/assets/svgs/check.svg'
 import CloseIcon from '@fedi/common/assets/svgs/close.svg'
 import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
 import { useMatrixPaymentEvent } from '@fedi/common/hooks/matrix'
+import { useToast } from '@fedi/common/hooks/toast'
 import { MatrixPaymentEvent } from '@fedi/common/types'
 
-import { useToast } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled } from '../styles'
 import { Button } from './Button'
@@ -20,14 +20,14 @@ interface Props {
 
 export const ChatPaymentEvent: React.FC<Props> = ({ event }) => {
     const { t } = useTranslation()
-    const { showErrorToast } = useToast()
+    const toast = useToast()
 
     const { messageText, statusIcon, statusText, buttons } =
         useMatrixPaymentEvent({
             event,
             fedimint,
             t,
-            onError: err => showErrorToast(err, 'errors.chat-payment-failed'),
+            onError: _ => toast.error(t, 'errors.chat-payment-failed'),
         })
 
     let extra: React.ReactNode = null
