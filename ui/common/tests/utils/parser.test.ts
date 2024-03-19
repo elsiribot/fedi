@@ -311,6 +311,11 @@ describe('parseUserInput', () => {
         type: ParserDataType.FediChatGroup,
         data: { id: '12345' },
     })
+    testCases.push({
+        input: `fedi:user:@user:example.com`,
+        type: ParserDataType.FediChatUser,
+        data: { id: '@user:example.com' },
+    })
 
     // --- Unknown ---
 

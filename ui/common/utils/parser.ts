@@ -20,9 +20,11 @@ import {
     ParsedLnurlWithdraw,
     ParsedUnknownData,
     ParsedWebsite,
+    ParsedFediChatUser,
 } from '../types/parser'
 import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
+import { decodeFediMatrixUserUri } from './matrix'
 import { isValidInternetIdentifier } from './validation'
 import { decodeGroupInvitationLink, decodeDirectChatLink } from './xmpp'
 
@@ -385,9 +387,20 @@ async function parseBip21(
 
 function parseFediUri(
     raw: string,
-): ParsedFediChatGroup | ParsedFediChatMember | undefined {
+): ParsedFediChatGroup | ParsedFediChatMember | ParsedFediChatUser | undefined {
     if (!raw.toLowerCase().startsWith('fedi:')) {
         return
+    }
+
+    // Chat user
+    try {
+        const id = decodeFediMatrixUserUri(raw)
+        return {
+            type: ParserDataType.FediChatUser,
+            data: { id },
+        }
+    } catch {
+        // no-op
     }
 
     // Chat member

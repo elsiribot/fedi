@@ -325,14 +325,22 @@ export class FedimintBridge {
         return this.rpcTyped('matrixInit', args)
     }
 
-    async matrixRoomList(args: bindings.RpcPayload<'matrixRoomList'>) {
-        return this.rpcTyped('matrixRoomList', args)
+    async matrixGetAccountSession() {
+        return this.rpcTyped('matrixGetAccountSession', {})
+    }
+
+    async matrixRoomList() {
+        return this.rpcTyped('matrixRoomList', {})
     }
 
     async matrixRoomListUpdateRanges(
         args: bindings.RpcPayload<'matrixRoomListUpdateRanges'>,
     ) {
         return this.rpcTyped('matrixRoomListUpdateRanges', args)
+    }
+
+    async matrixRoomListInvites() {
+        return this.rpcTyped('matrixRoomListInvites', {})
     }
 
     async matrixRoomTimelineItems(
@@ -356,8 +364,15 @@ export class FedimintBridge {
         )
     }
 
+    /** @deprecated */
     async matrixSendMessage(args: bindings.RpcPayload<'matrixSendMessage'>) {
         return this.rpcTyped('matrixSendMessage', args)
+    }
+
+    async matrixSendMessageJson(
+        args: bindings.RpcPayload<'matrixSendMessageJson'>,
+    ) {
+        return this.rpcTyped('matrixSendMessageJson', args)
     }
 
     async matrixRoomCreate(args: bindings.RpcPayload<'matrixRoomCreate'>) {
@@ -404,10 +419,58 @@ export class FedimintBridge {
         return this.rpcTyped('matrixRoomSetTopic', args)
     }
 
+    async matrixRoomGetMembers(
+        args: bindings.RpcPayload<'matrixRoomGetMembers'>,
+    ) {
+        return this.rpcTyped('matrixRoomGetMembers', args)
+    }
+
+    async matrixRoomGetPowerLevels(
+        args: bindings.RpcPayload<'matrixRoomGetPowerLevels'>,
+    ) {
+        return this.rpcTyped('matrixRoomGetPowerLevels', args)
+    }
+
+    async matrixRoomSetPowerLevels(
+        args: bindings.RpcPayload<'matrixRoomSetPowerLevels'>,
+    ) {
+        return this.rpcTyped('matrixRoomSetPowerLevels', args)
+    }
+
     async matrixUserDirectorySearch(
         args: bindings.RpcPayload<'matrixUserDirectorySearch'>,
     ) {
         return this.rpcTyped('matrixUserDirectorySearch', args)
+    }
+
+    async matrixSetDisplayName(
+        args: bindings.RpcPayload<'matrixSetDisplayName'>,
+    ) {
+        return this.rpcTyped('matrixSetDisplayName', args)
+    }
+
+    async matrixSetAvatarUrl(args: bindings.RpcPayload<'matrixSetAvatarUrl'>) {
+        return this.rpcTyped('matrixSetAvatarUrl', args)
+    }
+
+    async matrixUploadMedia(args: bindings.RpcPayload<'matrixUploadMedia'>) {
+        return this.rpcTyped('matrixUploadMedia', args)
+    }
+
+    async matrixObserveSyncIndicator() {
+        return this.rpcTyped('matrixObserveSyncIndicator', {})
+    }
+
+    async matrixRoomSendReceipt(
+        args: bindings.RpcPayload<'matrixRoomSendReceipt'>,
+    ) {
+        return this.rpcTyped('matrixRoomSendReceipt', args)
+    }
+
+    async matrixObserverCancel(
+        args: bindings.RpcPayload<'matrixObserverCancel'>,
+    ) {
+        return this.rpcTyped('matrixObserverCancel', args)
     }
 
     /*** BRIDGE EVENTS ***/

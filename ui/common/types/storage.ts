@@ -155,6 +155,14 @@ export interface StoredStateV14
     >
 }
 
+export interface StoredStateV15 extends Omit<StoredStateV14, 'version'> {
+    version: 15
+    matrixAuth: null | {
+        userId: string
+        deviceId: string
+    }
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -172,9 +180,10 @@ export type AnyStoredState =
     | StoredStateV12
     | StoredStateV13
     | StoredStateV14
+    | StoredStateV15
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV14
+export type LatestStoredState = StoredStateV15
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>
