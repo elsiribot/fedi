@@ -40,10 +40,3 @@ export const FEDI_GENERAL_CHANNEL_GROUP = new Group({
     pinned: true,
     messagePreview: i18n.t('feature.chat.fedi-community-message-preview'),
 })
-export const FEDI_RECOVERY_SUPPORT_GROUP = new Group({
-    id: 'fedi-recovery-support-group',
-    icon: 'Cash',
-    name: i18n.t('feature.chat.money-changing'),
-    pinned: true,
-    messagePreview: i18n.t('feature.chat.money-changing-message-preview'),
-})
