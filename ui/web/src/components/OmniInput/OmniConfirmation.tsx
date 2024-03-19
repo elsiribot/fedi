@@ -170,6 +170,10 @@ export const OmniConfirmation: React.FC<Props> = ({
                         t('feature.omni.unsupported-unknown'),
                 }
         }
+        return {
+            icon: ScanSadIcon,
+            text: t('feature.omni.unsupported-unknown'),
+        }
     })()
 
     const hasContinue = Boolean(continueOnClick || continueHref)

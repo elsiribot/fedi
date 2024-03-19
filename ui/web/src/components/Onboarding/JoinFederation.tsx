@@ -95,7 +95,7 @@ export const JoinFederation: React.FC = () => {
             toast.error(t, err, 'errors.invalid-federation-code')
             setIsJoining(false)
         }
-    }, [federationPreview, isChatSupported, push, dispatch, toast])
+    }, [federationPreview, dispatch, push, isChatSupported, toast, t])
 
     const tosUrl = federationPreview
         ? getFederationTosUrl(federationPreview.meta)

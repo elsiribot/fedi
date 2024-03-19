@@ -258,7 +258,7 @@ export const makeMatrixPaymentText = ({
         fiat: `${amountUtils.formatFiat(
             amountUtils.msatToBtc(amount as MSats) * btcExchangeRate,
             currency,
-            { noSymbol: true },
+            { symbolPosition: 'none' },
         )} ${currency}`,
         amount: amountUtils.formatNumber(
             amountUtils.msatToSat(amount as MSats),
