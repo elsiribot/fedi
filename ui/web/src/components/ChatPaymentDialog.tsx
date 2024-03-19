@@ -9,23 +9,25 @@ import {
 import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
-    selectActiveFederation,
-    sendDirectMessage,
-    selectAuthenticatedMember,
+    selectActiveFederationId,
+    sendMatrixPaymentPush,
+    sendMatrixPaymentRequest,
+    selectMatrixUser,
 } from '@fedi/common/redux'
-import { ChatPaymentStatus, Sats } from '@fedi/common/types'
+import { Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 import { AmountInput } from './AmountInput'
-import { Avatar } from './Avatar'
 import { Button } from './Button'
+import { ChatAvatar } from './ChatAvatar'
 import { Dialog } from './Dialog'
 import { Text } from './Text'
 
 interface Props {
+    roomId: string
     recipientId: string
     recipientName: string
     open: boolean
@@ -33,18 +35,18 @@ interface Props {
 }
 
 export const ChatPaymentDialog: React.FC<Props> = ({
-    open,
+    roomId,
     recipientId,
-    recipientName,
+    open,
     onOpenChange,
 }) => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const toast = useToast()
-    const activeFederation = useAppSelector(selectActiveFederation)
-    const myId = useAppSelector(selectAuthenticatedMember)?.id
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const sendMinMax = useMinMaxSendAmount()
     const requestMinMax = useMinMaxRequestAmount({ ecashRequest: {} })
+    const [federationId] = useState(activeFederationId)
     const [amount, setAmount] = useState(0 as Sats)
     const [submitAction, setSubmitAction] = useState<null | 'send' | 'request'>(
         null,
@@ -53,8 +55,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
     const [submitType, setSubmitType] = useState<'send' | 'request'>()
     const onOpenChangeRef = useUpdatingRef(onOpenChange)
     const balanceDisplay = useBalanceDisplay(t)
-
-    const federationId = activeFederation?.id
+    const recipient = useAppSelector(s => selectMatrixUser(s, recipientId))
 
     useEffect(() => {
         if (open) return
@@ -63,42 +64,6 @@ export const ChatPaymentDialog: React.FC<Props> = ({
         setSubmitAttempts(0)
         setSubmitType(undefined)
     }, [open])
-
-    const sendPaymentMessage = useCallback(
-        async (token?: string) => {
-            if (!federationId || !myId) return
-            try {
-                await dispatch(
-                    sendDirectMessage({
-                        fedimint,
-                        federationId,
-                        recipientId,
-                        payment: {
-                            status: token
-                                ? ChatPaymentStatus.accepted
-                                : ChatPaymentStatus.requested,
-                            amount: amountUtils.satToMsat(amount),
-                            recipient: token ? recipientId : myId,
-                            token,
-                        },
-                    }),
-                ).unwrap()
-                onOpenChangeRef.current(false)
-            } catch (err) {
-                toast.error(t, err, 'errors.chat-unavailable')
-            }
-        },
-        [
-            dispatch,
-            federationId,
-            recipientId,
-            myId,
-            amount,
-            toast,
-            onOpenChangeRef,
-            t,
-        ],
-    )
 
     const handleSend = useCallback(async () => {
         if (!federationId) return
@@ -113,18 +78,35 @@ export const ChatPaymentDialog: React.FC<Props> = ({
 
         setSubmitAction('send')
         try {
-            const token = await fedimint.generateEcash(
-                amountUtils.satToMsat(amount),
-                federationId,
-            )
-            await sendPaymentMessage(token.ecash)
+            await dispatch(
+                sendMatrixPaymentPush({
+                    fedimint,
+                    federationId,
+                    roomId,
+                    recipientId,
+                    amount: amountUtils.satToMsat(amount),
+                }),
+            ).unwrap()
+            onOpenChangeRef.current(false)
         } catch (err) {
             toast.error(t, err, 'errors.unknown-error')
         }
         setSubmitAction(null)
-    }, [sendPaymentMessage, amount, sendMinMax, toast, federationId, t])
+    }, [
+        federationId,
+        amount,
+        sendMinMax.minimumAmount,
+        sendMinMax.maximumAmount,
+        dispatch,
+        roomId,
+        recipientId,
+        onOpenChangeRef,
+        toast,
+        t,
+    ])
 
     const handleRequest = useCallback(async () => {
+        if (!federationId) return
         setSubmitType('request')
         setSubmitAttempts(attempt => attempt + 1)
         if (
@@ -136,9 +118,31 @@ export const ChatPaymentDialog: React.FC<Props> = ({
 
         setSubmitAction('request')
         setSubmitType('request')
-        await sendPaymentMessage()
+        try {
+            await dispatch(
+                sendMatrixPaymentRequest({
+                    fedimint,
+                    federationId,
+                    roomId,
+                    amount: amountUtils.satToMsat(amount),
+                }),
+            ).unwrap()
+            onOpenChangeRef.current(false)
+        } catch (err) {
+            toast.error(t, 'errors.unknown-error')
+        }
         setSubmitAction(null)
-    }, [sendPaymentMessage, amount, requestMinMax])
+    }, [
+        federationId,
+        amount,
+        requestMinMax.minimumAmount,
+        requestMinMax.maximumAmount,
+        dispatch,
+        roomId,
+        onOpenChangeRef,
+        toast,
+        t,
+    ])
 
     const inputMinMax =
         submitType === 'send'
@@ -150,8 +154,12 @@ export const ChatPaymentDialog: React.FC<Props> = ({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <MemberContainer>
-                <Avatar size="sm" id={recipientId} name={recipientName} />
-                <Text weight="bold">{recipientName}</Text>
+                {recipient && (
+                    <>
+                        <ChatAvatar size="sm" user={recipient} />
+                        <Text weight="medium">{recipient.displayName}</Text>
+                    </>
+                )}
             </MemberContainer>
             <Balance>{balanceDisplay}</Balance>
             <AmountContainer>

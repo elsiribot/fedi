@@ -7,6 +7,7 @@ import ChatModeratorIcon from '@fedi/common/assets/svgs/chat-moderator.svg'
 import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
 import CheckIcon from '@fedi/common/assets/svgs/check.svg'
 import UserIcon from '@fedi/common/assets/svgs/user.svg'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectMatrixAuth,
     selectMatrixRoomMembers,
@@ -15,7 +16,7 @@ import {
 } from '@fedi/common/redux'
 import { MatrixPowerLevel, MatrixRoomMember } from '@fedi/common/types'
 
-import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { ChatAvatar } from './ChatAvatar'
 import {
@@ -38,7 +39,7 @@ export const ChatRoomMembersList: React.FC<Props> = ({ roomId }) => {
     const myPowerLevel = useAppSelector(s =>
         selectMatrixRoomSelfPowerLevel(s, roomId),
     )
-    const { showErrorToast } = useToast()
+    const { error } = useToast()
 
     const handleChangePowerLevel = async (
         userId: string,
@@ -49,7 +50,7 @@ export const ChatRoomMembersList: React.FC<Props> = ({ roomId }) => {
                 setMatrixRoomMemberPowerLevel({ roomId, userId, powerLevel }),
             ).unwrap()
         } catch (err) {
-            showErrorToast(err, 'errors.unknown-error')
+            error(t, 'errors.unknown-error')
         }
     }
 

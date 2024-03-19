@@ -2,13 +2,15 @@ import { useRouter } from 'next/router'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useIsChatSupported } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
-import { authenticateChat, selectActiveFederationId } from '@fedi/common/redux'
+import {
+    selectActiveFederationId,
+    selectMatrixAuth,
+    setMatrixDisplayName,
+} from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { useAppDispatch, useAppSelector } from '../../hooks'
-import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 import { Button } from '../Button'
 import { HoloLoader } from '../HoloLoader'
@@ -28,46 +30,23 @@ export const CreateUsername: React.FC = () => {
     const { t } = useTranslation()
     const { push } = useRouter()
     const toast = useToast()
-    const [isRecoveringUsername, setIsRecoveringUsername] = useState(true)
-    const [username, setUsername] = useState('')
+    const matrixAuth = useAppSelector(selectMatrixAuth)
+    const [username, setUsername] = useState(matrixAuth?.displayName || '')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const federationId = useAppSelector(selectActiveFederationId)
-    const isChatSupported = useIsChatSupported()
 
-    // Attempt to fetch username from the bridge in case they were previously
-    // a member.
     useEffect(() => {
-        async function fetchCreds() {
-            if (!federationId) return
-            const creds = await fedimint.getXmppCredentials(federationId)
-            if (!creds.username) {
-                setIsRecoveringUsername(false)
-                return
-            }
-            try {
-                setUsername(creds.username)
-                await dispatch(
-                    authenticateChat({
-                        fedimint,
-                        federationId,
-                        username: creds.username.toLowerCase(),
-                    }),
-                ).unwrap()
-                push('/onboarding/complete')
-            } catch (err) {
-                log.error('failed to fetch xmpp credentials', err)
-                toast.error(t, err, 'errors.unknown-error')
-                setIsRecoveringUsername(false)
-            }
+        if (!matrixAuth) return
+        const { displayName, userId } = matrixAuth
+        if (!userId.includes(displayName)) {
+            setUsername(displayName)
         }
-        fetchCreds()
-    }, [federationId, dispatch, t, toast, push])
+    }, [matrixAuth])
 
+    // TODO: Allow username registration before joining a federation, chat does
+    // not require federation membership.
     if (!federationId) {
         return <Redirect path="/onboarding" />
-    }
-    if (!isChatSupported) {
-        return <Redirect path="/onboarding/welcome" />
     }
 
     const handleSubmit = async (ev: React.FormEvent) => {
@@ -75,7 +54,7 @@ export const CreateUsername: React.FC = () => {
         setIsSubmitting(true)
         try {
             await dispatch(
-                authenticateChat({ fedimint, federationId, username }),
+                setMatrixDisplayName({ displayName: username }),
             ).unwrap()
             push('/onboarding/complete')
         } catch (err) {
@@ -86,7 +65,7 @@ export const CreateUsername: React.FC = () => {
     }
 
     let content: React.ReactNode
-    if (isRecoveringUsername) {
+    if (!matrixAuth) {
         content = (
             <OnboardingContent>
                 <HoloLoader size="xl" />
@@ -108,6 +87,7 @@ export const CreateUsername: React.FC = () => {
                             )}...`}
                             value={username}
                             onChange={ev => setUsername(ev.currentTarget.value)}
+                            disabled={isSubmitting}
                             autoFocus
                             autoCapitalize="off"
                         />

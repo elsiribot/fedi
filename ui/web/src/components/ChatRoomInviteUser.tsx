@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useMatrixUserSearch } from '@fedi/common/hooks/matrix'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     inviteUserToMatrixRoom,
     selectMatrixRoomMemberMap,
@@ -9,7 +10,7 @@ import {
 import { MatrixRoom } from '@fedi/common/types'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
-import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { ChatAvatar } from './ChatAvatar'
 import { CircularLoader } from './CircularLoader'
@@ -25,7 +26,7 @@ interface Props {
 export const ChatRoomInviteUser: React.FC<Props> = ({ roomId }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
-    const { showErrorToast } = useToast()
+    const { error } = useToast()
     const { query, setQuery, searchedUsers, isSearching, searchError } =
         useMatrixUserSearch()
     const [invitingUsers, setInvitingUsers] = useState<string[]>([])
@@ -36,7 +37,7 @@ export const ChatRoomInviteUser: React.FC<Props> = ({ roomId }) => {
         try {
             await dispatch(inviteUserToMatrixRoom({ roomId, userId })).unwrap()
         } catch (err) {
-            showErrorToast(err, 'errors.unknown-error')
+            error(t, 'errors.unknown-error')
         }
         setInvitingUsers(users => users.filter(id => id !== userId))
     }

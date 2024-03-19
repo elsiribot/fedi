@@ -7,6 +7,7 @@ import LeaveRoomIcon from '@fedi/common/assets/svgs/leave-room.svg'
 import RoomIcon from '@fedi/common/assets/svgs/room.svg'
 import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import SpeakerPhoneIcon from '@fedi/common/assets/svgs/speakerphone.svg'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     leaveMatrixRoom,
     selectMatrixRoomSelfPowerLevel,
@@ -15,7 +16,7 @@ import {
 } from '@fedi/common/redux'
 import { MatrixPowerLevel, MatrixRoom } from '@fedi/common/types'
 
-import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import { styled } from '../styles'
 import { ChatAvatar } from './ChatAvatar'
 import { ChatRoomInviteUser } from './ChatRoomInviteUser'
@@ -47,7 +48,7 @@ export const ChatRoomSettingsDialog: React.FC<Props> = ({
     >('index') // TODO: Use router instead of state
     const [isTogglingBroadcastOnly, setIsTogglingBroadcastOnly] =
         useState(false)
-    const { showErrorToast } = useToast()
+    const { error } = useToast()
 
     const isAdmin = myPowerLevel >= MatrixPowerLevel.Admin
 
@@ -68,9 +69,9 @@ export const ChatRoomSettingsDialog: React.FC<Props> = ({
             ).unwrap()
             onOpenChange(false)
         } catch (err) {
-            showErrorToast(err, 'errors.unknown-error')
+            error(t, 'errors.unknown-error')
         }
-    }, [t, dispatch, room.id, onOpenChange, showErrorToast])
+    }, [t, dispatch, room.id, onOpenChange, error])
 
     const handleLeaveRoom = useCallback(async () => {
         const shouldLeave = confirm(t('feature.chat.leave-group-confirmation'))
@@ -79,9 +80,9 @@ export const ChatRoomSettingsDialog: React.FC<Props> = ({
             await dispatch(leaveMatrixRoom({ roomId: room.id })).unwrap()
             replace('/chat')
         } catch (err) {
-            showErrorToast(err, 'errors.unknown-error')
+            error(t, 'errors.unknown-error')
         }
-    }, [t, dispatch, room.id, replace, showErrorToast])
+    }, [t, dispatch, room.id, replace, error])
 
     const handleToggleBroadcastOnly = useCallback(async () => {
         if (isTogglingBroadcastOnly) return
@@ -94,15 +95,16 @@ export const ChatRoomSettingsDialog: React.FC<Props> = ({
                 }),
             ).unwrap()
         } catch (err) {
-            showErrorToast(err, 'errors.unknown-error')
+            error(t, 'errors.unknown-error')
         }
         setIsTogglingBroadcastOnly(false)
     }, [
-        dispatch,
         isTogglingBroadcastOnly,
-        room.broadcastOnly,
+        dispatch,
         room.id,
-        showErrorToast,
+        room.broadcastOnly,
+        error,
+        t,
     ])
 
     let content: React.ReactNode

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import CogIcon from '@fedi/common/assets/svgs/cog.svg'
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import { useObserveMatrixRoom } from '@fedi/common/hooks/matrix'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     paginateMatrixRoomTimeline,
     selectMatrixRoom,
@@ -13,7 +14,7 @@ import {
 } from '@fedi/common/redux'
 import { ChatType } from '@fedi/common/types'
 
-import { useAppDispatch, useAppSelector, useToast } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import { styled } from '../styles'
 import { Button } from './Button'
 import { ChatConversation } from './ChatConversation'
@@ -32,7 +33,7 @@ export const ChatRoomConversation: React.FC<Props> = ({ roomId }) => {
     const { t } = useTranslation()
     const { back } = useRouter()
     const dispatch = useAppDispatch()
-    const { showErrorToast } = useToast()
+    const { error } = useToast()
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
     const events = useAppSelector(s => selectMatrixRoomEvents(s, roomId))
     const [isLoading, setIsLoading] = useState(!room)
@@ -64,10 +65,10 @@ export const ChatRoomConversation: React.FC<Props> = ({ roomId }) => {
             ).unwrap()
             end = res.end
         } catch (err) {
-            showErrorToast(err, 'errors.unknown-error')
+            error(t, 'errors.unknown-error')
         }
         return { end }
-    }, [dispatch, roomId, showErrorToast])
+    }, [dispatch, roomId, error, t])
 
     if (isLoading) {
         return (

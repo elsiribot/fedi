@@ -1,54 +1,32 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 
-import { useAmountFormatter } from '@fedi/common/hooks/amount'
-import { selectAuthenticatedMember } from '@fedi/common/redux'
-import { ChatType, ChatWithLatestMessage } from '@fedi/common/types'
+import { MatrixRoom } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
-import { makePaymentText } from '@fedi/common/utils/chat'
 
-import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { ChatAvatar } from './ChatAvatar'
 import { NotificationDot } from './NotificationDot'
 import { Text } from './Text'
 
 interface Props {
-    chat: ChatWithLatestMessage
+    room: MatrixRoom
 }
 
-export const ChatListItem: React.FC<Props> = ({ chat }) => {
-    const { t } = useTranslation()
+export const ChatListItem: React.FC<Props> = ({ room }) => {
     const { query } = useRouter()
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
-    const isActive = chat.id === query?.path?.[1]
-    const { latestMessage, hasNewMessages } = chat
-
-    let previewMessage = latestMessage?.content
-    if (latestMessage?.payment) {
-        previewMessage = makePaymentText(
-            t,
-            latestMessage,
-            authenticatedMember,
-            makeFormattedAmountsFromMSats,
-        )
-    }
+    const isActive = room.id === query?.path?.[1]
+    const hasNewMessages = !isActive && room.notificationCount > 0
 
     return (
         <Container
-            key={chat.id}
+            key={room.id}
             active={isActive}
-            href={
-                chat.type === ChatType.group
-                    ? `/chat/group/${chat.id}`
-                    : `/chat/member/${chat.id}`
-            }>
+            href={`/chat/room/${room.id}`}>
             <NotificationDot visible={hasNewMessages}>
-                <ChatAvatar chat={chat} css={{ flexShrink: 0 }} />
+                <ChatAvatar room={room} css={{ flexShrink: 0 }} />
             </NotificationDot>
             <Content>
                 <TopContent>
@@ -56,12 +34,12 @@ export const ChatListItem: React.FC<Props> = ({ chat }) => {
                         weight="bold"
                         ellipsize
                         css={{ flex: 1, minWidth: 0 }}>
-                        {chat.name}
+                        {room.name}
                     </Text>
-                    {latestMessage?.sentAt && (
+                    {room.preview?.timestamp && (
                         <Text variant="small" css={{ flexShrink: 0 }}>
                             {dateUtils.formatChatTileTimestamp(
-                                latestMessage?.sentAt,
+                                room.preview.timestamp / 1000,
                             )}
                         </Text>
                     )}
@@ -75,7 +53,7 @@ export const ChatListItem: React.FC<Props> = ({ chat }) => {
                             ? theme.colors.primary
                             : theme.colors.darkGrey,
                     }}>
-                    {previewMessage}
+                    {room.preview?.body}
                 </Text>
             </Content>
         </Container>

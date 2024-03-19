@@ -2,14 +2,12 @@ import { useRouter } from 'next/router'
 import React, { useCallback, useState, useEffect } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
-import {
-    useIsChatSupported,
-    usePopupFederationInfo,
-} from '@fedi/common/hooks/federation'
+import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     joinFederation,
     selectFederationIds,
+    selectMatrixAuth,
     setActiveFederationId,
 } from '@fedi/common/redux'
 import { FederationPreview, ParserDataType } from '@fedi/common/types'
@@ -52,10 +50,10 @@ export const JoinFederation: React.FC = () => {
     const [isShowingTos, setIsShowingTos] = useState(false)
     const [federationPreview, setFederationPreview] =
         useState<FederationPreview>()
-    const isChatSupported = useIsChatSupported(federationPreview)
     const federationIds = useAppSelector(selectFederationIds)
     const isSm = useMediaQuery(config.media.sm)
     const popupInfo = usePopupFederationInfo(federationPreview?.meta)
+    const hasMatrixAuth = useAppSelector(s => !!selectMatrixAuth(s))
 
     const handleCode = useCallback(
         async (code: string) => {
@@ -94,13 +92,15 @@ export const JoinFederation: React.FC = () => {
                     code: federationPreview.inviteCode,
                 }),
             ).unwrap()
-            push(isChatSupported ? '/onboarding/username' : '/')
+            push(
+                hasMatrixAuth ? '/onboarding/complete' : '/onboarding/username',
+            )
         } catch (err) {
             log.error('handleJoin', err)
             toast.error(t, err, 'errors.invalid-federation-code')
             setIsJoining(false)
         }
-    }, [federationPreview, dispatch, push, isChatSupported, toast, t])
+    }, [dispatch, federationPreview, hasMatrixAuth, push, t, toast])
 
     const tosUrl = federationPreview
         ? getFederationTosUrl(federationPreview.meta)

@@ -1,13 +1,18 @@
+import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import ChevronLeft from '@fedi/common/assets/svgs/chevron-left.svg'
+import { useToast } from '@fedi/common/hooks/toast'
 import { createMatrixRoom } from '@fedi/common/redux'
 
-import { useAppDispatch, useToast } from '../hooks'
-import { styled } from '../styles'
+import { useAppDispatch, useMediaQuery } from '../hooks'
+import { config, styled } from '../styles'
 import { Button } from './Button'
+import { Icon } from './Icon'
 import { Input } from './Input'
+import * as Layout from './Layout'
 import { Switch } from './Switch'
 import { Text } from './Text'
 
@@ -15,12 +20,13 @@ export const ChatCreateRoom: React.FC = () => {
     const { t } = useTranslation()
     const { push } = useRouter()
     const dispatch = useAppDispatch()
-    const { showErrorToast } = useToast()
+    const toast = useToast()
     const [newGroupName, setNewGroupName] = useState(
         t('feature.chat.new-group'),
     )
     const [isSavingGroup, setIsSavingGroup] = useState(false)
     const [isBroadcastOnly, setIsBroadcastOnly] = useState(false)
+    const isSm = useMediaQuery(config.media.sm)
 
     const handleCreateRoom = useCallback(async () => {
         setIsSavingGroup(true)
@@ -33,13 +39,24 @@ export const ChatCreateRoom: React.FC = () => {
             ).unwrap()
             push(`/chat/room/${roomId}`)
         } catch (err) {
-            showErrorToast(err, 'errors.chat-unavailable')
+            toast.error(t, 'errors.chat-unavailable')
         }
         setIsSavingGroup(false)
-    }, [newGroupName, dispatch, push, showErrorToast, isBroadcastOnly])
+    }, [dispatch, newGroupName, isBroadcastOnly, push, toast, t])
 
     return (
         <Container>
+            {isSm ? (
+                <Layout.Header back="/chat/new">
+                    <Layout.Title subheader>
+                        {t('feature.chat.create-a-group')}
+                    </Layout.Title>
+                </Layout.Header>
+            ) : (
+                <DesktopBackButton as={Link} href="/chat/new">
+                    <Icon icon={ChevronLeft} size="sm" />
+                </DesktopBackButton>
+            )}
             <Inner>
                 <Input
                     label={t('feature.chat.group-name')}
@@ -62,25 +79,35 @@ export const ChatCreateRoom: React.FC = () => {
                     </Button>
                 </Buttons>
             </Inner>
+            <Buttons>
+                <Button
+                    width="full"
+                    loading={isSavingGroup}
+                    onClick={handleCreateRoom}>
+                    {t('feature.chat.view-group')}
+                </Button>
+            </Buttons>
         </Container>
     )
 }
 
 const Container = styled('div', {
     display: 'flex',
-    alignItems: 'center',
+    flexDirection: 'column',
     justifyContent: 'center',
     height: '100%',
-    padding: 24,
+    width: '100%',
+    position: 'relative',
 })
 
 const Inner = styled('div', {
     display: 'flex',
+    flex: 1,
     flexDirection: 'column',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 320,
     gap: 16,
+    padding: 24,
 })
 
 const Buttons = styled('div', {
@@ -88,6 +115,7 @@ const Buttons = styled('div', {
     flexDirection: 'column',
     width: '100%',
     gap: 8,
+    padding: 24,
 })
 
 const BroadcastSwitchContainer = styled('div', {
@@ -96,4 +124,10 @@ const BroadcastSwitchContainer = styled('div', {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 16,
+})
+
+const DesktopBackButton = styled('button', {
+    position: 'absolute',
+    top: 24,
+    left: 24,
 })
