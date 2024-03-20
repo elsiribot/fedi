@@ -259,24 +259,25 @@ impl FederationV2 {
         let mut invite_code: InviteCode = InviteCode::from_str(invite_code_string)?;
         override_localhost_invite_code(&mut invite_code);
         let api = DynGlobalApi::from_invite_code(&[invite_code.clone()]);
-        let client_config: ClientConfig =
-            ClientConfig::download_from_invite_code(&invite_code).await?;
+        let backup_id_pub_key = {
+            let federation_id = invite_code.federation_id();
+            // We do an additional derivation using `DerivableSecret::federation_key` since
+            // that is what fedimint-client does internally
+            let client_root_secret =
+                Self::client_root_secret_from_root_mnemonic(root_mnemonic, &federation_id)
+                    .federation_key(&federation_id);
+            client_root_secret
+                .derive_backup_secret()
+                .to_secp_key(&Secp256k1::<secp256k1::SignOnly>::gen_new())
+                .public_key()
+        };
 
-        // Check if a backup exists
-        let federation_id = client_config.global.calculate_federation_id();
-        // We do an additional derivation using `DerivableSecret::federation_key` since
-        // that is what fedimint-client does internally
-        let client_root_secret =
-            Self::client_root_secret_from_root_mnemonic(root_mnemonic, &federation_id)
-                .federation_key(&federation_id);
-        let backup_id = client_root_secret
-            .derive_backup_secret()
-            .to_secp_key(&Secp256k1::<secp256k1::SignOnly>::gen_new());
+        let (client_config, backup) = tokio::join!(
+            ClientConfig::download_from_invite_code(&invite_code),
+            api.download_backup(&backup_id_pub_key)
+        );
 
-        Ok((
-            client_config,
-            api.download_backup(&backup_id.public_key()).await,
-        ))
+        Ok((client_config?, backup))
     }
 
     /// Download federation configs using an invite code. Save client config to

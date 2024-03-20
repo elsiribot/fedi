@@ -406,7 +406,7 @@ impl Bridge {
                     Err(_) => RpcReturningMemberStatus::Unknown,
                 },
             }),
-            (Err(e),) => anyhow::bail!("failed to connect {e:?}"),
+            (Err(e),) => Err(e.context("Failed to connect")),
         }
     }
 
