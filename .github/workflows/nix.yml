@@ -133,6 +133,12 @@ jobs:
               if: matrix.build-wasm
               run: nix build -L .#wasm32-unknown.ci.fedi-wasm-pack
 
+            - name: Cleanup build folder
+              run: |
+                pwd
+                rm -Rf "$(pwd)"
+                mkdir -p "$(pwd)"
+
     build-linux:
         name: 'Build - linux'
         needs: precheck
@@ -333,7 +339,6 @@ jobs:
           run: |
             nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${GITHUB_REF_NAME}" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
             nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${GITHUB_REF_NAME}" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
-
 
     status:
       name: Status
