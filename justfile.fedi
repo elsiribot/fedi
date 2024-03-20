@@ -135,3 +135,6 @@ fedi-fedimint-cli-master *ARGS:
 
 tidy-up:
   @./scripts/tidy-up.sh
+
+prefetch REMOTE="upstream" BRANCH="master":
+  @./scripts/prefetch.sh "{{REMOTE}}" "{{BRANCH}}"
