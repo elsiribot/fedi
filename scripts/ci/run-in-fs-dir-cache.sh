@@ -20,9 +20,10 @@ log_file="$FS_DIR_CACHE_ROOT/log"
 fs-dir-cache gc unused --seconds "$((5 * 24 * 60 * 60))" # delete caches not used in more than a 5 days
 
 # create/reuse cache (sub-directory) and lock it (wait if already locked)
-cache_dir=$(fs-dir-cache lock --key-file Cargo.lock --key-str "${CARGO_PROFILE-:dev}" --key-str "2" --key-file flake.lock)
+cache_dir=$(fs-dir-cache lock --key-file Cargo.lock --key-str "${CARGO_PROFILE-:dev}" --key-file flake.lock)
 
 export TARGET_DIR="$cache_dir/target"
+export CARGO_BUILD_TARGET_DIR="$TARGET_DIR"
 
 >&2 echo "Starting a job=$job_name in cache_dir=$cache_dir"
 
