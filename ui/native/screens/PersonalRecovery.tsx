@@ -287,6 +287,7 @@ const styles = (theme: Theme) =>
         wordInput: {
             fontSize: 16,
             minHeight: 24,
+            padding: 0,
         },
         focusedInputInnerContainer: {
             borderBottomColor: theme.colors.primary,
