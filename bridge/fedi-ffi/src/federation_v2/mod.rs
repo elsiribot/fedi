@@ -170,17 +170,18 @@ impl FederationV2 {
         fedi_fee_helper: Arc<FediFeeHelper>,
     ) -> Self {
         let recovering = ng.has_pending_recoveries().await;
+        let client = Arc::new(ng);
         let mut federation = Self {
-            client: Arc::new(ng),
             event_sink,
-            task_group,
+            task_group: task_group.clone(),
             operation_states: Default::default(),
             auxiliary_secret: secret,
             fedi_fee_helper,
             backup_service: OnceCell::new(),
             fedi_fee_remittance_service: OnceCell::new(),
             recovering,
-            gateway_service: LnGatewayService::new(),
+            gateway_service: LnGatewayService::new(Arc::downgrade(&client), task_group).await,
+            client,
         };
         if !recovering {
             federation.start_background_tasks().await;
