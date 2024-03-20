@@ -8,7 +8,7 @@ if [ -z "${CARGO_PROFILE:-}" ]; then
   export CARGO_PROFILE=dev-ios
 fi
 
-source scripts/common.sh
+source $REPO_ROOT/scripts/common.sh
 
 BRIDGE_ROOT=$REPO_ROOT/bridge
 

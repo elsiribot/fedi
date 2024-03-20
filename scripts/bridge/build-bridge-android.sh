@@ -4,7 +4,7 @@
 set -e
 
 
-source "scripts/common.sh"
+source $REPO_ROOT/scripts/common.sh
 
 $REPO_ROOT/scripts/enforce-nix.sh
 
