@@ -39,6 +39,8 @@
         pkgs = import nixpkgs {
           inherit system;
           overlays = [
+            fedimint-pkgs.overlays.all
+
             (final: prev: {
               fs-dir-cache = fs-dir-cache.packages.${system}.default;
               fastlane = pkgs-unstable.fastlane;
@@ -167,7 +169,7 @@
         };
 
         toolchainArgs = let llvmPackages = pkgs.llvmPackages_11; in {
-          extraRustFlags = "--cfg tokio_unstable -Z threads=8 --cfg=curve25519_dalek_backend=\"serial\"";
+          extraRustFlags = "--cfg tokio_unstable -Z threads=0 --cfg=curve25519_dalek_backend=\"serial\"";
 
           components = [
             "rustc"
