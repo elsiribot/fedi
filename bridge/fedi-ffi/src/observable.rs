@@ -21,6 +21,7 @@ pub type ObservableVec<T> = Observable<Vector<T>>;
 pub type ObservableVecUpdate<T> =
     ObservableUpdate<SerdeAs<Vec<VectorDiff<T>>, Vec<SerdeVectorDiff<T>>>>;
 
+#[allow(dead_code)]
 // hack for typescript exporting
 mod __hidden {
     use super::*;

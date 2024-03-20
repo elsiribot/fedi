@@ -1099,9 +1099,8 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
 
 #[cfg(test)]
 mod tests {
-
     use std::ops::ControlFlow;
-    use std::path::{Path, PathBuf};
+    use std::path::Path;
     use std::str::FromStr;
     use std::sync::{Once, RwLock};
     use std::time::{Duration, UNIX_EPOCH};
@@ -1114,11 +1113,10 @@ mod tests {
     use fedi_social_client::common::VerificationDocument;
     use fedimint_core::{apply, async_trait_maybe_send, Amount};
     use fedimint_logging::TracingSetup;
+    use tracing::{error, info};
 
     use super::*;
-    use crate::api::IFediApi;
     use crate::constants::{FEDI_FILE_PATH, MILLION};
-    use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
     use crate::multi::MultiFederation;
     use crate::storage::{FediFeeSchedule, IStorage};
