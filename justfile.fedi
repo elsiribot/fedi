@@ -11,6 +11,10 @@ build-wasm:
   >&2 echo '⚠️ This is a development build of the wasm bundle, do not commit the output from this '
   ./scripts/build-wasm.sh
 
+build-wasm-nix:
+  # mostly for reference
+  nix build -L .#wasm32-unknown.ci.fedi-wasm-pack
+
 release-wasm:
   env CARGO_PROFILE=release ./scripts/build-wasm.sh
 
