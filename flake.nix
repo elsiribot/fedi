@@ -294,10 +294,10 @@
 
             # hijack cargo for our evil purposes
             export CARGO_ORIG_BIN="$(${pkgs.which}/bin/which cargo)"
-            git_root="$(git rev-parse --show-toplevel)"
-            export PATH="''${git_root}/nix/cargo-wrapper/:$PATH"
+            export REPO_ROOT="$(git rev-parse --show-toplevel)"
+            export PATH="''${REPO_ROOT}/nix/cargo-wrapper/:$PATH"
             export RUSTC_WRAPPER=${pkgs.sccache}/bin/sccache
-            export CARGO_BUILD_TARGET_DIR="''${CARGO_BUILD_TARGET_DIR:-''${git_root}/target-nix}"
+            export CARGO_BUILD_TARGET_DIR="''${CARGO_BUILD_TARGET_DIR:-''${REPO_ROOT}/target-nix}"
           '';
         });
       in
