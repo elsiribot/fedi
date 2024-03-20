@@ -178,6 +178,13 @@
             "rust-analyzer"
             "rust-src"
           ];
+
+          args = {
+            nativeBuildInputs = [ pkgs.wasm-bindgen-cli pkgs.geckodriver pkgs.wasm-pack ]
+              ++ lib.optionals (!pkgs.stdenv.isDarwin) [
+              pkgs.firefox
+            ];
+          };
         } // lib.optionalAttrs pkgs.stdenv.isDarwin {
           # on Darwin newest stdenv doesn't seem to work
           # linking rocksdb
@@ -191,6 +198,30 @@
           inherit androidSdk;
         };
         stdToolchains = flakeboxLib.mkStdToolchains toolchainArgs;
+
+        toolchainDefault = flakeboxLib.mkFenixToolchain (toolchainArgs
+          // {
+          targets = (pkgs.lib.getAttrs
+            ([
+              "default"
+              "wasm32-unknown"
+            ])
+            stdTargets
+          );
+        });
+
+
+        toolchainWasm = flakeboxLib.mkFenixToolchain (toolchainArgs
+          // {
+          defaultBuildTarget = "wasm32-unknown-unknown";
+          targets = (pkgs.lib.getAttrs
+            ([
+              "default"
+              "wasm32-unknown"
+            ])
+            stdTargets
+          );
+        });
 
         toolchainAll = flakeboxLib.mkFenixToolchain (toolchainArgs
           // {
@@ -210,19 +241,15 @@
 
             stdTargets
           );
-
-          args = {
-            nativeBuildInputs = [ pkgs.wasm-bindgen-cli pkgs.geckodriver pkgs.wasm-pack ]
-              ++ lib.optionals (!pkgs.stdenv.isDarwin) [
-              pkgs.firefox
-            ];
-          };
         });
 
         craneMultiBuild = import nix/flakebox.nix {
-          inherit pkgs flakeboxLib fedimint-pkgs replaceGitHash;
-          toolchains = stdToolchains // { "default" = toolchainAll; };
-          profiles = [ "ci" "release" ];
+          inherit pkgs flakeboxLib fedimint-pkgs replaceGitHash craneMultiBuild;
+          toolchains = stdToolchains // {
+            "default" = toolchainDefault;
+            "wasm32-unknown-unkown" = toolchainWasm;
+          };
+          profiles = [ "dev" "ci" "release" ];
         };
 
         lib = pkgs.lib;

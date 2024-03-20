@@ -90,6 +90,7 @@ jobs:
                 runs-on: [self-hosted, linux]
                 test-bridge: testBridgeCurrent
                 run-tests: true
+                build-wasm: true
               - host: macos
                 runs-on: [self-hosted, macos, arm64]
                 # only current on macos, slow and hitting irrelevant issues
@@ -126,6 +127,11 @@ jobs:
               timeout-minutes: 10
               if: matrix.run-tests
               run: nix build -L .#ci.testStabilityPool
+
+            - name: Build wasm
+              timeout-minutes: 10
+              if: matrix.build-wasm
+              run: nix build -L .#wasm32-unknown.ci.fedi-wasm-pack
 
     build-linux:
         name: 'Build - linux'
