@@ -106,7 +106,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     if (error) {
         message = error
     } else if (isShowingLoading) {
-        message = 'Initializing federation bridge...'
+        message = 'Running Fedi...'
     }
 
     return (
