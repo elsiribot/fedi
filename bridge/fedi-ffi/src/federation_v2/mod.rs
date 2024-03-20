@@ -1281,22 +1281,24 @@ impl FederationV2 {
             .get_first_module::<LightningClientModule>()
             .list_gateways()
             .await;
+        let active_gw = self.gateway_service.get_active_gateway(&self.client).await;
         let bridge_gateways: Vec<RpcLightningGateway> = gateways
             .into_iter()
             .map(|gw| RpcLightningGateway {
                 api: gw.info.api.to_string(),
                 node_pub_key: RpcPublicKey(gw.info.node_pub_key),
                 gateway_id: RpcPublicKey(gw.info.gateway_id),
+                active: Some(gw.info.gateway_id) == active_gw,
             })
             .collect();
         Ok(bridge_gateways)
     }
 
     /// Switch active lightning gateway
-    pub async fn switch_gateway(&self, _gateway_id: &PublicKey) -> Result<()> {
-        // TODO
-        error!("switch gateway is not implemented");
-        Ok(())
+    pub async fn switch_gateway(&self, gateway_id: &PublicKey) -> Result<()> {
+        self.gateway_service
+            .set_active_gateway(&self.client, gateway_id)
+            .await
     }
 
     pub async fn receive_ecash_with_meta(

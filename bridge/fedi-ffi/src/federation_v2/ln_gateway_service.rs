@@ -1,12 +1,16 @@
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
+use bitcoin::secp256k1;
 use fedimint_client::Client;
+use fedimint_core::db::{AutocommitError, IDatabaseTransactionOpsCoreTyped};
 use fedimint_ln_client::LightningClientModule;
 use fedimint_ln_common::{LightningGateway, LightningGatewayAnnouncement};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use tokio::sync::{Mutex, RwLock};
+
+use super::db::LastActiveGatewayKey;
 
 #[derive(Debug, Clone)]
 pub struct LnGatewayService {
@@ -93,16 +97,57 @@ impl LnGatewayService {
         Ok(())
     }
 
+    pub async fn set_active_gateway(
+        &self,
+        client: &Client,
+        gw_id: &secp256k1::PublicKey,
+    ) -> anyhow::Result<()> {
+        client
+            .db()
+            .autocommit(
+                |dbtx, _| {
+                    Box::pin(async {
+                        dbtx.insert_entry(&LastActiveGatewayKey, gw_id).await;
+                        Ok(())
+                    })
+                },
+                None,
+            )
+            .await
+            .map_err(|e| match e {
+                AutocommitError::CommitFailed { last_error, .. } => last_error,
+                AutocommitError::ClosureError { error, .. } => error,
+            })
+    }
+
+    pub async fn get_active_gateway(&self, client: &Client) -> Option<secp256k1::PublicKey> {
+        let mut dbtx = client.db().begin_transaction_nc().await;
+        dbtx.get_value(&LastActiveGatewayKey).await
+    }
+
     pub async fn select_gateway(
         &self,
         client: &Client,
     ) -> anyhow::Result<Option<LightningGateway>> {
+        let last_active_gateway_id = self.get_active_gateway(client).await;
         self.update_if_needed(client).await?;
         let gws = client
             .get_first_module::<LightningClientModule>()
             .list_gateways()
             .await
             .maybe_filter_vetted();
-        Ok(gws.choose(&mut thread_rng()).map(|g| g.info.clone()))
+        if let Some(gw) = gws
+            .iter()
+            .find(|g| Some(g.info.gateway_id) == last_active_gateway_id)
+        {
+            Ok(Some(gw.info.clone()))
+        } else {
+            // select a new random gateway
+            let Some(gw) = gws.choose(&mut thread_rng()) else {
+                return Ok(None);
+            };
+            self.set_active_gateway(client, &gw.info.gateway_id).await?;
+            Ok(Some(gw.info.clone()))
+        }
     }
 }

@@ -1,5 +1,6 @@
 use std::time::SystemTime;
 
+use bitcoin::secp256k1;
 use fedimint_core::core::OperationId;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_record, Amount};
@@ -20,6 +21,7 @@ pub enum BridgeDbPrefix {
     TransactionNote = 0xb7,
     OutstandingFediFees = 0xb8,
     OperationFediFeeStatus = 0xb9,
+    LastActiveGateway = 0xba,
 
     // Do not use anything after this key (inclusive)
     // see https://github.com/fedimint/fedimint/pull/4445
@@ -88,4 +90,13 @@ impl_db_record!(
     key = OperationFediFeeStatusKey,
     value = OperationFediFeeStatus,
     db_prefix = BridgeDbPrefix::OperationFediFeeStatus,
+);
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct LastActiveGatewayKey;
+
+impl_db_record!(
+    key = LastActiveGatewayKey,
+    value = secp256k1::PublicKey,
+    db_prefix = BridgeDbPrefix::LastActiveGateway,
 );
