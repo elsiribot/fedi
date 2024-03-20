@@ -1,4 +1,4 @@
-{ pkgs, flakeboxLib, fedimint-pkgs, toolchains, replaceGitHash, profiles }:
+{ pkgs, flakeboxLib, fedimint-pkgs, toolchains, replaceGitHash, profiles, craneMultiBuild }:
 let
   system = pkgs.system;
   lib = pkgs.lib;
@@ -163,51 +163,37 @@ rec {
     buildPhaseCargoCommand = "cargoWithProfile build --locked --lib --package fedi-wasm";
   };
 
-  fedi-wasm-pack = craneLib.buildCommand {
+  fedi-wasm-pack = craneLib.mkCargoDerivation {
     pname = "fedi-wasm-pack";
-    cargoArtifacts = workspaceWasmBuild;
+    cargoArtifacts = null;
+
     doInstallCargoArtifacts = false;
     # need './scripts'
     src = rustTestSrc;
 
     nativeBuildInputs = [ pkgs.wasm-pack pkgs.wasm-bindgen-cli pkgs.binaryen ];
+    buildPhaseCargoCommand =
+      let
+        # wasm-pack can't do custom profiles, so default to dev
+        packProfile =
+          if craneLib.cargoProfile or "release" == "release" then
+            "release"
+          else
+            "dev"
+        ;
+      in
+      ''
+        inheritCargoArtifacts \
+          ${craneMultiBuild.wasm32-unknown.${packProfile}.workspaceWasmBuild} \
+          "target/pkgs/wasm-pack"
 
-    # nativeBuildInputs = craneLib.args.nativeBuildInputs ++ [];
-    cmd = ''
-      patchShebangs ./scripts
-      args=()
+        CARGO_PROFILE=${packProfile}
 
-      case $CARGO_PROFILE in
-        release)
-          args+=("--release")
-          ;;
-        dev)
-          args+=("--dev")
-          ;;
-        *)
-          >&2 "Cargo profile: $CARGO_PROFILE not supported"
-          exit 1
-      esac
-
-      # wasm-pack/cargo doesn't like being homeless
-      export HOME=/tmp
-
-      # note: --out-dir is relative, so this doesn't control anything
-      pack_out="bridge/fedi-wasm/out"
-
-      wasm-pack build --target web --out-dir out bridge/fedi-wasm "''${args[@]}"
-
-      # replace broken import
-      sed 's:import \*:// import \*:g' -i  $pack_out/fedi_wasm.js
-      sed "s|imports\['env'\] \= \_\_wbg_star0;|imports['env'] = { GFp_poly1305_init: () => { throw Error('Ring library not available') }, GFp_poly1305_update: () => { throw Error('Ring library not available') }, GFp_poly1305_finish: () => { throw Error('Ring library not available') }, GFp_memcmp: () => { throw Error('Ring library not available') } };|g" -i $pack_out/fedi_wasm.js
-
-      mkdir -p $out/public
-      mkdir -p $out/src/wasm
-      mkdir -p $out/ui/common/wasm
-      cp "$pack_out/fedi_wasm_bg.wasm" $out/public/fedi.wasm
-      cp $pack_out/*.{ts,js} $out/src/wasm
-      cp $pack_out/*.{ts,js,wasm} $out/ui/common/wasm
-    '';
+        patchShebangs ./scripts
+        export REPO_ROOT="$(pwd)"
+        export IN_NIX_SHELL=ci
+        ./scripts/build-wasm.sh
+      '';
   };
 
   fedi-fedimint-pkgs = fediBuildPackageGroup {

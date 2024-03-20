@@ -1,18 +1,49 @@
 #!/usr/bin/env bash
 
-REPO_ROOT=$(git rev-parse --show-toplevel)
+set -euo pipefail
 
-$REPO_ROOT/scripts/enforce-nix.sh
+source "scripts/common.sh"
 
-pushd $REPO_ROOT/bridge/fedi-wasm || exit
-env CARGO_TARGET_DIR=$REPO_ROOT/target/wasm-pack wasm-pack build --target web --out-dir out "$@"
-popd || exit
+"$REPO_ROOT/scripts/enforce-nix.sh"
 
-WASM_OUT="$REPO_ROOT/bridge/fedi-wasm/out"
+args=()
+
+case $CARGO_PROFILE in
+  release)
+    args+=("--release")
+    ;;
+  *)
+    args+=("--dev")
+    ;;
+esac
+
+# needs to go into sub-target, otherwise it would invalidate everyting in main target
+export CARGO_BUILD_TARGET_DIR=$CARGO_BUILD_TARGET_DIR/pkgs/wasm-pack
+
+# wasm-pack/cargo doesn't like being homeless
+if [ -z "$HOME" ] || [ ! -e "$HOME" ]; then
+  export HOME=/tmp
+fi
+
+# note: --out-dir is relative, so this doesn't control anything
+pack_out="$CARGO_BUILD_TARGET_DIR/wasm-pack-out"
+
+(
+  cd "$REPO_ROOT/bridge/fedi-wasm"
+  wasm-pack build --target web --out-dir "$pack_out" "${args[@]}" "$@"
+)
+
+if [ -z "${out:-}" ]; then
+  out="$REPO_ROOT"
+fi
 
 # replace broken import
-sed 's:import \*:// import \*:g' -i  $WASM_OUT/fedi_wasm.js
-sed "s|imports\['env'\] \= \_\_wbg_star0;|imports['env'] = { GFp_poly1305_init: () => { throw Error('Ring library not available') }, GFp_poly1305_update: () => { throw Error('Ring library not available') }, GFp_poly1305_finish: () => { throw Error('Ring library not available') }, GFp_memcmp: () => { throw Error('Ring library not available') } };|g" -i  $WASM_OUT/fedi_wasm.js
+sed 's:import \*:// import \*:g' -i  $pack_out/fedi_wasm.js
+sed "s|imports\['env'\] \= \_\_wbg_star0;|imports['env'] = { GFp_poly1305_init: () => { throw Error('Ring library not available') }, GFp_poly1305_update: () => { throw Error('Ring library not available') }, GFp_poly1305_finish: () => { throw Error('Ring library not available') }, GFp_memcmp: () => { throw Error('Ring library not available') } };|g" -i $pack_out/fedi_wasm.js
 
-# ui/common
-cp $WASM_OUT/*.{ts,js,wasm} $REPO_ROOT/ui/common/wasm
+mkdir -p $out/public
+mkdir -p $out/src/wasm
+mkdir -p $out/ui/common/wasm
+cp "$pack_out/fedi_wasm_bg.wasm" $out/public/fedi.wasm
+cp $pack_out/*.{ts,js} $out/src/wasm
+cp $pack_out/*.{ts,js,wasm} $out/ui/common/wasm

@@ -9,10 +9,10 @@ check-wasm:
 
 build-wasm:
   >&2 echo '⚠️ This is a development build of the wasm bundle, do not commit the output from this '
-  ./scripts/build-wasm.sh --dev
+  ./scripts/build-wasm.sh
 
 release-wasm:
-  ./scripts/build-wasm.sh --release
+  env CARGO_PROFILE=release ./scripts/build-wasm.sh
 
 test-bridge-current testcase="":
    ./scripts/test-bridge-current.sh "{{testcase}}"
