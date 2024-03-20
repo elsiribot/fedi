@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Platform } from 'react-native'
 import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import SplashScreen from 'react-native-splash-screen'
 import { Provider as ReduxProvider } from 'react-redux'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
@@ -49,7 +50,7 @@ const App = () => {
             const stop = Date.now()
             log.info('initialized:', stop - start, 'ms OS:', Platform.OS)
         }
-        onInitializeBridge()
+        onInitializeBridge().then(() => SplashScreen.hide())
     }, [])
 
     // Initialize redux store

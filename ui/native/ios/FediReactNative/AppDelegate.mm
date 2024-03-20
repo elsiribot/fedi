@@ -2,6 +2,8 @@
 // for push notifications
 #import <Firebase.h>
 
+#import <react-native-splash-screen/RNSplashScreen.h>
+
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTLinkingManager.h>
 
@@ -16,6 +18,9 @@
 
   //  for push notifications
   [FIRApp configure];
+
+  // for splash screen
+  [RNSplashScreen show];
 
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
