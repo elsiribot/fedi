@@ -24,6 +24,7 @@ const LanguageSettings: React.FC = () => {
         es: 'Español',
         fr: 'Français',
         id: 'Bahasa Indonesia',
+        pt: 'Português',
     }
 
     return (
