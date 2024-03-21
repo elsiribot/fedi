@@ -1,3 +1,4 @@
+// TODO: rename fedi-alpha to fedi-bravo after renaming the github repo to fedi-bravo
 module.exports = async ({ github, context, core }) => {
     const { RELEASE_ID } = process.env;
 
@@ -35,10 +36,10 @@ module.exports = async ({ github, context, core }) => {
 
         // Prepare new release details
         const newTagName = `v${version}`;
-        const newTitle = `Fedi Alpha v${version.split('.').slice(0, 2).join('.')} - APK Download`;
+        const newTitle = `Fedi Bravo v${version.split('.').slice(0, 2).join('.')} - APK Download`;
         const truncatedCommitHash = commitHash.substring(0, 6);
         const newFileName = `app-production-release-${version}-${truncatedCommitHash}.apk`;
-        const newDescription = `Download & Test Fedi Alpha <br><br> Download: [${newFileName}](https://github.com/${context.repo.owner}/fedi-alpha/releases/download/${newTagName}/${newFileName})`;
+        const newDescription = `Download & Test Fedi Bravo <br><br> Download: [${newFileName}](https://github.com/${context.repo.owner}/fedi-alpha/releases/download/${newTagName}/${newFileName})`;
 
         console.log(`New release details prepared. Tag: ${newTagName}, Title: ${newTitle}`);
 
