@@ -15,6 +15,7 @@ rm -Rf "CARGO_BUILD_TARGET_DIR/"
 
 # build stuff we want ready
 nice -n 20 just build
+nice -n 20 just build-wasm
 
 # do a quick switcharoo
 rm -Rf "${default_target:?}"/*
