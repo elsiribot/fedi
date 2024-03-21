@@ -137,6 +137,7 @@
         "how-it-works": "How it works",
         "i-understand": "I understand",
         "invalid-federation-code": "Invalid federation code",
+        "join-another-federation": "Join another federation",
         "lightning-address": "Lightning address",
         "lightning-network": "Lightning Network",
         "lightning-request": "Lightning request",
@@ -157,6 +158,7 @@
         "terms-and-conditions": "Terms & Conditions",
         "transaction-id": "Transaction ID",
         "transaction-received": "Transaction received",
+        "view-public-federations": "View public federations",
         "yearly-fee": "Yearly fee",
         "you-are-offline": "You are currently in offline mode"
     },
@@ -457,6 +459,7 @@
             "guidance-2": "Fedi uses your community to make it easy to backup and secure your money, change to local money or get help.",
             "guidance-3": "With Fedi you have private balances, payments and communication by default, without the effort.",
             "guidance-4": "Fedi uses bitcoin and lightning network to connect you to global opportunities to earn money online on your own terms.",
+            "guidance-public-federations": "Try a community from the Awesome Fedimint list",
             "i-accept": "I accept",
             "i-do-not-accept": "I do not accept",
             "join-new-member": "Join as a new member",

@@ -8,7 +8,15 @@ import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
 
 import { CommonState } from '.'
-import { Federation, Guardian, MSats, Sats, SeedWords, FediMod } from '../types'
+import {
+    Federation,
+    Guardian,
+    MSats,
+    PublicFederation,
+    Sats,
+    SeedWords,
+    FediMod,
+} from '../types'
 import { RpcJsonClientConfig, RpcStabilityPoolConfig } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import {
@@ -27,6 +35,7 @@ import { loadFromStorage } from './storage'
 
 const initialState = {
     federations: [] as Federation[],
+    publicFederations: [] as PublicFederation[],
     activeFederationId: null as string | null,
     authenticatedGuardian: null as Guardian | null,
     externalMeta: {} as Record<
@@ -46,6 +55,9 @@ export const federationSlice = createSlice({
     reducers: {
         setFederations(state, action: PayloadAction<Federation[]>) {
             state.federations = action.payload
+        },
+        setPublicFederations(state, action: PayloadAction<PublicFederation[]>) {
+            state.publicFederations = action.payload
         },
         updateFederation(state, action: PayloadAction<Partial<Federation>>) {
             // Only update the array if there were meaningful changes to the federation
@@ -169,6 +181,7 @@ export const federationSlice = createSlice({
 
 export const {
     setFederations,
+    setPublicFederations,
     updateFederation,
     updateFederationBalance,
     setActiveFederationId,
