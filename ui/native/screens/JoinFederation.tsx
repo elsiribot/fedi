@@ -79,8 +79,10 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     // If they came here with route state, paste the code for them
     useEffect(() => {
         if (!invite || !isFocused) return
+        // skip handling the code if we already have a preview
+        if (federationPreview) return
         handleCode(invite)
-    }, [invite, handleCode, isFocused])
+    }, [federationPreview, invite, handleCode, isFocused])
 
     const goToNextScreen = useCallback(() => {
         if (!federationPreview) return
