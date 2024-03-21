@@ -8,15 +8,23 @@ check-wasm:
   nix develop -c cargo check --target wasm32-unknown-unknown --package fedi-wasm
 
 build-wasm:
-  >&2 echo '⚠️ This is a development build of the wasm bundle, do not commit the output from this '
   ./scripts/build-wasm.sh
+
+build-wasm-release:
+  env CARGO_PROFILE=release just build-wasm
+
+install-wasm:
+  #!/usr/bin/env bash
+  just build-wasm
+  cp -f "$CARGO_BUILD_TARGET_DIR/pkgs/wasm-pack/wasm-pack-out/"* "$REPO_ROOT/ui/common/wasm/"
+  >&2 echo "Installed in $REPO_ROOT/ui/common/wasm/"
+
+install-wasm-release:
+  env CARGO_PROFILE=release just install-wasm
 
 build-wasm-nix:
   # mostly for reference
   nix build -L .#wasm32-unknown.ci.fedi-wasm-pack
-
-release-wasm:
-  env CARGO_PROFILE=release ./scripts/build-wasm.sh
 
 test-bridge-current testcase="":
    ./scripts/test-bridge-current.sh "{{testcase}}"
