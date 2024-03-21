@@ -50,3 +50,8 @@ jobs:
                   FLAVOR: 'nightly'
               run: |
                   ./scripts/ui/deploy-to-testflight.sh
+
+            - name: Cleanup archives
+              run: |
+                # this accumulates data for no good reason
+                rm -Rf $HOME/Library/Developer/Xcode/Archives
