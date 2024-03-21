@@ -66,7 +66,14 @@ const PublicFederations: React.FC<Props> = ({ navigation }: Props) => {
                                     })
                                 }
                                 title={
-                                    <Text small style={style.joinButtonText}>
+                                    <Text
+                                        small
+                                        style={[
+                                            style.joinButtonText,
+                                            hasJoined
+                                                ? { color: theme.colors.night }
+                                                : {},
+                                        ]}>
                                         {hasJoined
                                             ? t('words.joined')
                                             : t('words.join')}
