@@ -35,24 +35,16 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const style = styles(theme, fontScale)
     return (
         <SafeAreaView style={style.container}>
-            <View style={style.illustrationContainer}>
-                <ImageBackground
-                    resizeMode="contain"
-                    style={style.illustrationImageBlurred}
-                    source={Images.IllustrationWorld}
-                    blurRadius={20}
-                />
-                <ImageBackground
-                    resizeMode="contain"
-                    style={style.illustrationImage}
-                    source={Images.IllustrationWorld}
-                />
-            </View>
+            <ImageBackground
+                resizeMode="cover"
+                style={style.backgroundImage}
+                source={Images.GradientBackground}
+            />
             <View style={style.welcomeContainer}>
                 <SvgImage
                     containerStyle={style.welcomeIcon}
                     size={SvgImageSize.md}
-                    name="FediLogoIcon"
+                    name="FediLogoWhite"
                 />
                 <Text h2 medium style={style.welcomeText}>
                     {t('feature.onboarding.welcome-to-fedi')}
@@ -101,9 +93,8 @@ const styles = (theme: Theme, fontScale: number) =>
         container: {
             flex: 1,
             alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: theme.spacing.lg,
-            padding: theme.spacing.lg,
+            justifyContent: 'flex-end',
+            padding: theme.spacing.xl,
         },
         buttonsContainer: {
             width: '100%',
@@ -111,37 +102,16 @@ const styles = (theme: Theme, fontScale: number) =>
             justifyContent: 'space-evenly',
             gap: theme.spacing.xl,
         },
-        illustrationContainer: {
-            position: 'relative',
-            flex: 1,
-            flexShrink: 1,
-            maxHeight: theme.sizes.splashImageSize,
-            alignItem: 'center',
-            justifyContent: 'center',
-            width: '100%',
-        },
-        illustrationImage: {
+        backgroundImage: {
             position: 'absolute',
-            height: '100%',
-            width: '100%',
-            transform: [
-                {
-                    scale: 1,
-                },
-            ],
-        },
-        illustrationImageBlurred: {
-            position: 'absolute',
-            height: '100%',
-            width: '100%',
-            opacity: 0.5,
-            transform: [
-                {
-                    scale: 1.05,
-                },
-            ],
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
         },
         welcomeContainer: {
+            position: 'absolute',
+            top: '40%',
             width: '100%',
             maxWidth: 320 * Math.max(fontScale, 1),
             alignItems: 'center',
@@ -154,6 +124,7 @@ const styles = (theme: Theme, fontScale: number) =>
         },
         welcomeText: {
             textAlign: 'center',
+            color: theme.colors.white,
         },
         agreementLink: {
             color: theme.colors.link,
@@ -161,7 +132,6 @@ const styles = (theme: Theme, fontScale: number) =>
         agreementText: {
             textAlign: 'center',
             width: '70%',
-            color: theme.colors.grey,
         },
     })
 
