@@ -4,6 +4,8 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Image, ScrollView, StyleSheet, View } from 'react-native'
 
+import { selectFederationIds } from '@fedi/common/redux'
+
 import { Images } from '../assets/images'
 import { FederationLogo } from '../components/ui/FederationLogo'
 import { useAppSelector } from '../state/hooks'
@@ -17,6 +19,7 @@ export type Props = NativeStackScreenProps<
 const PublicFederations: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const joinedFederationIds = useAppSelector(selectFederationIds)
     const publicFederations = useAppSelector(
         s => s.federation.publicFederations,
     )
@@ -35,6 +38,8 @@ const PublicFederations: React.FC<Props> = ({ navigation }: Props) => {
             </View>
             <View style={style.contentContainer}>
                 {publicFederations.map(f => {
+                    const hasJoined = joinedFederationIds.includes(f.id)
+
                     return (
                         <View key={f.id} style={style.tileContainer}>
                             <View style={{}}>
@@ -54,6 +59,7 @@ const PublicFederations: React.FC<Props> = ({ navigation }: Props) => {
                             </View>
                             <Button
                                 size="sm"
+                                disabled={hasJoined}
                                 onPress={() =>
                                     navigation.navigate('JoinFederation', {
                                         invite: f.meta.invite_code,
@@ -61,7 +67,9 @@ const PublicFederations: React.FC<Props> = ({ navigation }: Props) => {
                                 }
                                 title={
                                     <Text small style={style.joinButtonText}>
-                                        {t('words.join')}
+                                        {hasJoined
+                                            ? t('words.joined')
+                                            : t('words.join')}
                                     </Text>
                                 }
                             />
