@@ -4,7 +4,10 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
-import { useIsChatSupported } from '@fedi/common/hooks/federation'
+import {
+    useIsChatSupported,
+    useLatestPublicFederations,
+} from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
@@ -16,7 +19,10 @@ import { getFederationPreview } from '@fedi/common/utils/FederationUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
-import { OmniInput } from '../components/feature/omni/OmniInput'
+import {
+    OmniInput,
+    OmniInputAction,
+} from '../components/feature/omni/OmniInput'
 import FederationPreview from '../components/feature/onboarding/FederationPreview'
 import { CameraPermissionGate } from '../components/feature/permissions/CameraPermissionGate'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -43,6 +49,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     const isChatSupported = useIsChatSupported(federationPreview)
     const federationIds = useAppSelector(selectFederationIds)
     const navigationRef = useUpdatingRef(navigation)
+    const { publicFederations } = useLatestPublicFederations()
 
     const handleCode = useCallback(
         async (code: string) => {
@@ -71,8 +78,10 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     // If they came here with route state, paste the code for them
     useEffect(() => {
         if (!invite || !isFocused) return
+        // skip handling the code if we already have a preview
+        if (federationPreview) return
         handleCode(invite)
-    }, [invite, handleCode, isFocused])
+    }, [federationPreview, invite, handleCode, isFocused])
 
     const goToNextScreen = useCallback(() => {
         if (!federationPreview) return
@@ -116,6 +125,17 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
         if (isJoining || isFetchingPreview) {
             return <ActivityIndicator />
         } else {
+            const customActions: OmniInputAction[] =
+                publicFederations.length > 0
+                    ? [
+                          {
+                              label: t('phrases.view-public-federations'),
+                              icon: 'FedimintLogo',
+                              onPress: () =>
+                                  navigation.navigate('PublicFederations'),
+                          },
+                      ]
+                    : []
             return (
                 <CameraPermissionGate>
                     <OmniInput
@@ -125,6 +145,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
                         pasteLabel={t(
                             'feature.federations.paste-federation-code',
                         )}
+                        customActions={customActions}
                     />
                 </CameraPermissionGate>
             )

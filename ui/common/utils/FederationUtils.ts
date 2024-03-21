@@ -12,6 +12,7 @@ import {
     SupportedMetaFields,
     XmppConnectionOptions,
     FederationPreview,
+    PublicFederation,
 } from '../types'
 import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
@@ -163,6 +164,42 @@ export const fetchFederationsExternalMetadata = (
             return prev
         }, {}),
     )
+}
+
+/**
+ * Fetches any public federations from meta.json
+ */
+const FEDIBTC_META_JSON_URL = 'https://meta.dev.fedibtc.com/meta.json'
+export const fetchPublicFederations = async (): Promise<PublicFederation[]> => {
+    const publicFederations: PublicFederation[] = []
+    try {
+        const externalMetaJson = await fetchExternalMetadata(
+            FEDIBTC_META_JSON_URL,
+        )
+        if (!externalMetaJson) throw new Error('No meta JSON to read from')
+        Object.entries<Federation['meta'] | undefined>(
+            externalMetaJson,
+        ).forEach(([key, value]) => {
+            if (!value) return
+            // federation meta must have all of these fields to be displayed as public
+            // Note these are not techincally supported meta fields... just the quickest
+            // hack to be able to display public federations using the meta.json
+            if (value.public && value.invite_code && value.preview_message) {
+                publicFederations.push({
+                    id: key,
+                    name:
+                        getMetaField(
+                            SupportedMetaFields.federation_name,
+                            value,
+                        ) || '',
+                    meta: value,
+                })
+            }
+        })
+    } catch (error) {
+        log.error('Failed to fetch public federations', error)
+    }
+    return publicFederations
 }
 
 const getMetaField = (

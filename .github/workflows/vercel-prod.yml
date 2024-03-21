@@ -32,4 +32,4 @@ jobs:
 
             - name: Build & Deploy with Vercel (Production)
               id: deploy
-              run: nix develop .#vercel -c env VERCEL_TOKEN=${{ secrets.VERCEL_TOKEN }} ./scripts/ci/vercel-prod.sh
+              run: nix develop .#vercel -c env INSTALL_WASM_FROM_NIX=release VERCEL_TOKEN=${{ secrets.VERCEL_TOKEN }} ./scripts/ci/vercel-prod.sh

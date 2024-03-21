@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import {
     selectActiveFederation,
     selectFederationMetadata,
     selectOnchainDepositsEnabled,
     selectStableBalanceEnabled,
+    setPublicFederations,
 } from '../redux'
 import { Federation } from '../types'
 import dateUtils from '../utils/DateUtils'
@@ -18,8 +19,9 @@ import {
     getFederationPopupInfo,
     shouldEnableStabilityPool,
     shouldEnableFediInternalInjection,
+    fetchPublicFederations,
 } from '../utils/FederationUtils'
-import { useCommonSelector } from './redux'
+import { useCommonDispatch, useCommonSelector } from './redux'
 
 export function useIsChatSupported(federation?: Pick<Federation, 'meta'>) {
     const activeFederation = useCommonSelector(selectActiveFederation)
@@ -192,4 +194,29 @@ export function useFederationSupportsSingleSeed() {
     const activeFederation = useCommonSelector(selectActiveFederation)
     if (!activeFederation) return false
     return activeFederation.version >= 2
+}
+
+export function useLatestPublicFederations() {
+    const publicFederations = useCommonSelector(
+        s => s.federation.publicFederations,
+    )
+    const dispatch = useCommonDispatch()
+    const [isFetching, setIsFetching] = useState(false)
+
+    const findPublicFederations = useCallback(async () => {
+        setIsFetching(true)
+        const federations = await fetchPublicFederations()
+        setIsFetching(false)
+        dispatch(setPublicFederations(federations))
+    }, [dispatch])
+
+    useEffect(() => {
+        findPublicFederations()
+    }, [findPublicFederations])
+
+    return {
+        publicFederations,
+        findPublicFederations,
+        isFetchingPublicFederations: isFetching,
+    }
 }

@@ -137,6 +137,7 @@ export type Federation = Omit<RpcFederation, 'network'> & {
     meta: ClientConfigMetadata
     network: Network
 }
+export type PublicFederation = Pick<Federation, 'id' | 'name' | 'meta'>
 
 export type SeedWords = RpcResponse<'getMnemonic'>
 
