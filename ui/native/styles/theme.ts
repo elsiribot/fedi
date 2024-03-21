@@ -225,7 +225,7 @@ const theme = createTheme({
         Switch: {
             trackColor: {
                 false: colors.lightGrey,
-                true: colors.lightGrey,
+                true: colors.primary,
             },
         },
         Header: {
