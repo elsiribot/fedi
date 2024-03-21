@@ -510,6 +510,8 @@ PODS:
     - RCTTypeSafety
     - React-Core
     - ReactCommon/turbomodule/core
+  - react-native-splash-screen (3.3.0):
+    - React-Core
   - react-native-video (5.2.1):
     - React-Core
     - react-native-video/Video (= 5.2.1)
@@ -770,6 +772,7 @@ DEPENDENCIES:
   - react-native-quick-base64 (from `../../node_modules/react-native-quick-base64`)
   - react-native-quick-crypto (from `../../node_modules/react-native-quick-crypto`)
   - react-native-safe-area-context (from `../../node_modules/react-native-safe-area-context`)
+  - react-native-splash-screen (from `../../node_modules/react-native-splash-screen`)
   - react-native-video (from `../../node_modules/react-native-video`)
   - react-native-webview (from `../../node_modules/react-native-webview`)
   - react-native-worklets (from `../../node_modules/react-native-worklets`)
@@ -908,6 +911,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native-quick-crypto"
   react-native-safe-area-context:
     :path: "../../node_modules/react-native-safe-area-context"
+  react-native-splash-screen:
+    :path: "../../node_modules/react-native-splash-screen"
   react-native-video:
     :path: "../../node_modules/react-native-video"
   react-native-webview:
@@ -1051,6 +1056,7 @@ SPEC CHECKSUMS:
   react-native-quick-base64: e657e9197e61b60a9dec49807843052b830da254
   react-native-quick-crypto: 455c1b411db006dba1026a30681ececb19180187
   react-native-safe-area-context: 36cc67648134e89465663b8172336a19eeda493d
+  react-native-splash-screen: 4312f786b13a81b5169ef346d76d33bc0c6dc457
   react-native-video: c26780b224543c62d5e1b2a7244a5cd1b50e8253
   react-native-webview: b8ec89966713985111a14d6e4bf98d8b54bced0d
   react-native-worklets: c7576ad4ad0f030ff41e8d74ad0077c96054a6c1
