@@ -50,6 +50,7 @@ const App = () => {
             const stop = Date.now()
             log.info('initialized:', stop - start, 'ms OS:', Platform.OS)
         }
+
         onInitializeBridge().then(() => SplashScreen.hide())
     }, [])
 

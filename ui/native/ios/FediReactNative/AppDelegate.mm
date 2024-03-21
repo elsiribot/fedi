@@ -2,10 +2,10 @@
 // for push notifications
 #import <Firebase.h>
 
-#import <react-native-splash-screen/RNSplashScreen.h>
-
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTLinkingManager.h>
+
+#import "RNSplashScreen.h"
 
 @implementation AppDelegate
 
@@ -19,10 +19,12 @@
   //  for push notifications
   [FIRApp configure];
 
+  [super application:application didFinishLaunchingWithOptions:launchOptions];
+
   // for splash screen
   [RNSplashScreen show];
 
-  return [super application:application didFinishLaunchingWithOptions:launchOptions];
+  return YES;
 }
 
 - (NSURL *)sourceURLForBridge:(RCTBridge *)bridge
