@@ -49,8 +49,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     const isChatSupported = useIsChatSupported(federationPreview)
     const federationIds = useAppSelector(selectFederationIds)
     const navigationRef = useUpdatingRef(navigation)
-    const { isFetchingPublicFederations, publicFederations } =
-        useLatestPublicFederations()
+    const { publicFederations } = useLatestPublicFederations()
 
     const handleCode = useCallback(
         async (code: string) => {
@@ -123,7 +122,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     }, [dispatch, federationPreview, goToNextScreen, t, toast])
 
     const renderQrCodeScanner = () => {
-        if (isJoining || isFetchingPreview || isFetchingPublicFederations) {
+        if (isJoining || isFetchingPreview) {
             return <ActivityIndicator />
         } else {
             const customActions: OmniInputAction[] =
