@@ -222,6 +222,12 @@ const theme = createTheme({
                 fontFamily: 'AlbertSans-Regular',
             },
         },
+        Switch: {
+            trackColor: {
+                false: colors.lightGrey,
+                true: colors.lightGrey,
+            },
+        },
         Header: {
             containerStyle: {
                 paddingHorizontal: 16,
