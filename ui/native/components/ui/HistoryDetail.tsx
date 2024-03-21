@@ -112,11 +112,15 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
                                         ? style.focusedInputInnerContainer
                                         : {},
                                 ]}
+                                onSubmitEditing={() => {
+                                    handleSaveNotes()
+                                }}
                                 inputStyle={style.input}
                                 placeholderTextColor={hexToRgba(
                                     theme.colors.night,
                                     0.2,
                                 )}
+                                blurOnSubmit
                                 multiline
                             />
                         }
