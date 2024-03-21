@@ -3,6 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { ImageBackground, StyleSheet } from 'react-native'
+import SplashScreen from 'react-native-splash-screen'
 
 import {
     refreshFederations,
@@ -48,7 +49,7 @@ const Initializing: React.FC<Props> = () => {
                 setBridgeError(err)
             }
         }
-        initializeFederations()
+        initializeFederations().then(() => SplashScreen.hide())
     }, [dispatch])
 
     // once everything has loaded, determine where to navigate
@@ -84,16 +85,19 @@ const Initializing: React.FC<Props> = () => {
         <ImageBackground
             resizeMode="cover"
             style={styles(theme).imageBackground}
-            source={Images.HoloBackground}
+            source={Images.GradientBackground}
         />
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = (_: Theme) =>
     StyleSheet.create({
         imageBackground: {
-            ...theme.styles.h100w100,
-            justifyContent: 'space-evenly',
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
         },
     })
 

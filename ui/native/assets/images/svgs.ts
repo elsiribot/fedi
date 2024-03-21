@@ -36,6 +36,7 @@ export { default as FederationxIcon } from '@fedi/common/assets/svgs/federationx
 export { default as FediFile } from '@fedi/common/assets/svgs/fedi-file.svg'
 export { default as FediLogoIcon } from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
 export { default as FediLogo } from '@fedi/common/assets/svgs/fedi-logo.svg'
+export { default as FediLogoWhite } from '@fedi/common/assets/svgs/fedi-logo-white.svg'
 export { default as FediQrLogo } from '@fedi/common/assets/svgs/fedi-qr-logo.svg'
 export { default as Globe } from '@fedi/common/assets/svgs/globe.svg'
 export { default as GoogleDrive } from '@fedi/common/assets/svgs/google-drive.svg'
