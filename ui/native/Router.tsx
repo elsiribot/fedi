@@ -105,6 +105,7 @@ import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import PersonalRecovery from './screens/PersonalRecovery'
 import PersonalRecoverySuccess from './screens/PersonalRecoverySuccess'
 import PopupFederationEnded from './screens/PopupFederationEnded'
+import PublicFederations from './screens/PublicFederations'
 import Receive from './screens/Receive'
 import ReceiveLightning from './screens/ReceiveLightning'
 import ReceiveSuccess from './screens/ReceiveSuccess'
@@ -197,6 +198,13 @@ const MainNavigator = () => {
                         component={JoinFederation}
                         options={() => ({
                             header: () => <JoinFederationHeader />,
+                        })}
+                    />
+                    <Stack.Screen
+                        name="PublicFederations"
+                        component={PublicFederations}
+                        options={() => ({
+                            header: () => <Header backButton />,
                         })}
                     />
                     <Stack.Screen
