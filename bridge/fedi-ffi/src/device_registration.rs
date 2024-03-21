@@ -1,9 +1,8 @@
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use anyhow::bail;
+use anyhow::{bail, Context};
 use fedimint_core::task::{TaskGroup, TaskHandle};
-use futures::FutureExt;
 use tracing::{error, info};
 
 use crate::api::{IFediApi, RegisterDeviceError, RegisteredDevice};
@@ -41,7 +40,31 @@ impl DeviceRegistrationService {
         event_sink: EventSink,
         fedi_api: Arc<dyn IFediApi>,
     ) {
-        let mut shutdown = handle.make_shutdown_rx().await.fuse();
+        let shutdown = handle.make_shutdown_rx().await;
+        let task_inner = Self::task_inner(device_identifier, app_state, event_sink, fedi_api);
+        let res = tokio::select! {
+            biased;
+            _ = shutdown => {
+                info!("device_registration_service shutting down");
+                return;
+            }
+            res = task_inner => res
+        };
+
+        if let Err(error) = res {
+            error!(
+                ?error,
+                "inner error, device_registration_service shutting down"
+            );
+        }
+    }
+
+    async fn task_inner(
+        device_identifier: String,
+        app_state: Arc<AppState>,
+        event_sink: EventSink,
+        fedi_api: Arc<dyn IFediApi>,
+    ) -> anyhow::Result<()> {
         let (seed, device_index) = app_state
             .with_read_lock(|state| (state.root_mnemonic.clone(), state.device_index))
             .await;
@@ -51,45 +74,25 @@ impl DeviceRegistrationService {
         // safely register the current device as index 0. This would be the
         // happy path and would handle the overwhelming majority of cases.
         if device_index.is_none() {
-            let registered_devices_fut =
-                Self::get_registered_devices_with_backoff(fedi_api.clone(), seed.clone());
-            let registered_devices = tokio::select! {
-                biased;
-                _ = &mut shutdown => {
-                    info!("device_registration_service shutting down");
-                    return;
-                }
-                devices = registered_devices_fut => devices
-            };
+            let registered_devices =
+                Self::get_registered_devices_with_backoff(fedi_api.clone(), seed.clone()).await;
 
             if registered_devices.is_empty() {
-                if let Err(error) = app_state
+                app_state
                     .with_write_lock(|state| state.device_index = Some(0))
                     .await
-                {
-                    error!(%error, "error updating app state, device_registration_service shutting down");
-                    return;
-                }
+                    .context("error updating app state")?;
 
-                let register_device_fut = Self::register_device_with_backoff(
+                Self::register_device_with_backoff(
                     app_state.clone(),
                     fedi_api.clone(),
                     event_sink.clone(),
                     seed.clone(),
                     0,
                     device_identifier.clone(),
-                );
-                let register_device_res = tokio::select! {
-                    biased;
-                    _ = &mut shutdown => {
-                        info!("device_registration_service shutting down");
-                        return;
-                    }
-                    res = register_device_fut => res
-                };
-                if register_device_res.is_err() {
-                    return;
-                }
+                )
+                .await
+                .context("error registering device with index 0")?;
             } else {
                 // However, if the list does not come back as empty, we check if an existing
                 // device matches the current device identifier. If there is a match, we assign
@@ -102,19 +105,16 @@ impl DeviceRegistrationService {
                     .iter()
                     .find(|device_info| device_info.identifier == device_identifier)
                 {
-                    if let Err(error) = app_state
+                    app_state
                         .with_write_lock(|state| state.device_index = Some(device_match.index))
                         .await
-                    {
-                        error!(%error, "error updating app state, device_registration_service shutting down");
-                        return;
-                    }
+                        .context("error updating app state")?;
                 } else {
-                    error!("user action required to register device, service shutting down");
+                    error!("no matching registered device found");
                     event_sink.typed_event(&Event::device_registration(
                         crate::event::DeviceRegistrationState::NewDeviceNeedsAssignment,
                     ));
-                    return;
+                    bail!("user action required to register device");
                 }
             }
         }
@@ -142,38 +142,24 @@ impl DeviceRegistrationService {
                         .duration_since(now)
                         .unwrap_or(Duration::ZERO)
                 };
-                let sleep_timer = fedimint_core::task::sleep(sleep_duration);
 
-                tokio::select! {
-                    biased;
-                    _ = &mut shutdown => {
-                        info!("device_registration_service shutting down");
-                        return;
-                    }
-                    _ = sleep_timer => ()
-                }
-
-                let register_device_fut = Self::register_device_with_backoff(
+                fedimint_core::task::sleep(sleep_duration).await;
+                Self::register_device_with_backoff(
                     app_state.clone(),
                     fedi_api.clone(),
                     event_sink.clone(),
                     seed.clone(),
                     device_index,
                     device_identifier.clone(),
-                );
-                let register_device_res = tokio::select! {
-                    biased;
-                    _ = &mut shutdown => {
-                        info!("device_registration_service shutting down");
-                        return;
-                    }
-                    res = register_device_fut => res
-                };
-                if register_device_res.is_err() {
-                    return;
-                }
+                )
+                .await
+                .context(format!(
+                    "error registering device with index {device_index}"
+                ))?;
             }
         }
+
+        bail!("unexpected return from task_inner, device_index must have been set!");
     }
 
     async fn get_registered_devices_with_backoff(
@@ -233,7 +219,7 @@ impl DeviceRegistrationService {
                     return Ok(());
                 }
                 Err(RegisterDeviceError::AnotherDeviceOwnsIndex(error)) => {
-                    error!(%error, "unexpected device registration conflict, service shutting down");
+                    error!(%error, "unexpected device registration conflict");
                     event_sink.typed_event(&Event::device_registration(
                         crate::event::DeviceRegistrationState::Conflict,
                     ));
