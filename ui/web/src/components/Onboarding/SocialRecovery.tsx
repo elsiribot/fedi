@@ -210,9 +210,7 @@ export const SocialRecovery: React.FC = () => {
                                     'feature.recovery.locate-social-recovery-instructions-3',
                                 )}
                             </Text>
-                            <Text weight="bold">
-                                {t('feature.recovery.default-fedi-file-format')}
-                            </Text>
+                            <Text weight="bold">backup.fedi</Text>
                         </CardTextContainer>
                     }
                     action={

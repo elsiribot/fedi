@@ -65,9 +65,7 @@ const LocateSocialRecovery: React.FC<Props> = () => {
                                     'feature.recovery.locate-social-recovery-instructions-3',
                                 )}
                             </Text>
-                            <Text bold>
-                                {t('feature.recovery.default-fedi-file-format')}
-                            </Text>
+                            <Text bold>backup.fedi</Text>
                             <LineBreak />
                         </View>
                         <SelectRecoveryFileButton />
