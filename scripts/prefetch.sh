@@ -12,3 +12,4 @@ git fetch "$remote" "$branch"
 
 repo="git+file:${REPO_ROOT}?ref=refs/remotes/$remote/$branch"
 nix build "$repo#devShells.${nix_system}.default"
+nix build "$repo#wasm32-unknown.ci.fedi-wasm-pack"
