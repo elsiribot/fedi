@@ -2,18 +2,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import {
-    ImageBackground,
-    StyleSheet,
-    View,
-    useWindowDimensions,
-} from 'react-native'
+import { StyleSheet, View, useWindowDimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { selectFederations } from '@fedi/common/redux'
 
-import { Images } from '../assets/images'
-import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
+import CircleLogo from '../components/ui/CircleLogo'
 import { useAppSelector } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 
@@ -35,17 +29,10 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const style = styles(theme, fontScale)
     return (
         <SafeAreaView style={style.container}>
-            <ImageBackground
-                resizeMode="cover"
-                style={style.backgroundImage}
-                source={Images.GradientBackground}
-            />
             <View style={style.welcomeContainer}>
-                <SvgImage
-                    containerStyle={style.welcomeIcon}
-                    size={SvgImageSize.md}
-                    name="FediLogoWhite"
-                />
+                <View style={style.iconContainer}>
+                    <CircleLogo />
+                </View>
                 <Text h2 medium style={style.welcomeText}>
                     {t('feature.onboarding.welcome-to-fedi')}
                 </Text>
@@ -58,7 +45,8 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                 {!hasFederations && (
                     <Button
                         fullWidth
-                        type="clear"
+                        type="outline"
+                        buttonStyle={style.returnButton}
                         title={t('feature.onboarding.join-returning-member')}
                         onPress={handleReturningUser}
                     />
@@ -97,6 +85,8 @@ const styles = (theme: Theme, fontScale: number) =>
             padding: theme.spacing.xl,
         },
         buttonsContainer: {
+            flexGrow: 0,
+            flexShrink: 1,
             width: '100%',
             alignItems: 'center',
             justifyContent: 'space-evenly',
@@ -110,21 +100,25 @@ const styles = (theme: Theme, fontScale: number) =>
             bottom: 0,
         },
         welcomeContainer: {
-            position: 'absolute',
-            top: '40%',
+            flexGrow: 1,
+            flexShrink: 1,
+            flexBasis: 'auto',
             width: '100%',
             maxWidth: 320 * Math.max(fontScale, 1),
             alignItems: 'center',
-            justifyContent: 'space-evenly',
+            justifyContent: 'center',
             gap: theme.spacing.sm,
             paddingHorizontal: theme.spacing.xl,
         },
-        welcomeIcon: {
-            marginBottom: theme.spacing.sm,
+        returnButton: {
+            backgroundColor: theme.colors.offWhite100,
+            borderWidth: 0,
+        },
+        iconContainer: {
+            marginBottom: theme.spacing.lg,
         },
         welcomeText: {
             textAlign: 'center',
-            color: theme.colors.white,
         },
         agreementLink: {
             color: theme.colors.link,

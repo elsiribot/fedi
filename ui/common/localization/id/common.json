@@ -407,7 +407,7 @@
             "welcome-instructions-returning": "Sebagai anggota federasi yang kembali, dompet Anda akan dipulihkan. Ini mungkin memakan waktu beberapa menit.",
             "welcome-instructions-unknown": "Anggota baru menerima dompet baru. Anggota yang kembali akan diminta untuk memulihkan dompet mereka.",
             "welcome-to-federation": "Selamat datang di {{federation}}",
-            "welcome-to-fedi": "Selamat datang di Fedi"
+            "welcome-to-fedi": "Selamat datang di Fedi Bravo"
         },
         "parser": {
             "unrecognized": "Format data tidak dikenal",

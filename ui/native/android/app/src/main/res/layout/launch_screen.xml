@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="@color/white"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_gravity="center"
@@ -8,15 +9,8 @@
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="centerCrop"
-        android:contentDescription="@string/gradient_background"
-        android:src="@drawable/gradient" />
-
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
         android:layout_gravity="center"
-        android:contentDescription="@string/icon_name"
         android:scaleType="center"
-        android:src="@mipmap/fedi_icon_white" />
-</RelativeLayout>
+        android:src="@mipmap/fedi_icon"
+        android:contentDescription="@string/icon_name"/>
+</LinearLayout>

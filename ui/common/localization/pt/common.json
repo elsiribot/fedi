@@ -457,7 +457,7 @@
             "welcome-instructions-returning": "Como membro que regressa à federação, a sua carteira será restaurada. Isto pode demorar alguns minutos.",
             "welcome-instructions-unknown": "Os novos membros recebem uma carteira nova. Os membros que regressam terão a sua carteira antiga recuperada automaticamente.",
             "welcome-to-federation": "Bem-vindo à {{federation}}",
-            "welcome-to-fedi": "Bem-vindo à Fedi"
+            "welcome-to-fedi": "Bem-vindo à Fedi Bravo"
         },
         "parser": {
             "unrecognized": "Formato de dados não reconhecido",
