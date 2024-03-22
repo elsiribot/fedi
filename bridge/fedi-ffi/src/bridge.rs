@@ -442,6 +442,8 @@ impl Bridge {
     }
 
     pub async fn leave_federation(&self, federation_id_str: &str) -> Result<()> {
+        // check if federation exists and not recoverying
+        self.get_multi(federation_id_str).await?;
         // delete federation from app state (global DB)
         let federation_id = federation_id_str.to_owned();
         let removed_federation_info = self
