@@ -2,7 +2,10 @@
 
 set -euo pipefail
 
-source "scripts/common.sh"
+# this is needed to be able to use this script from both nix develop and nix build
+REPO_ROOT=${REPO_ROOT:-$(pwd)}
+
+source "$REPO_ROOT/scripts/common.sh"
 
 "$REPO_ROOT/scripts/enforce-nix.sh"
 
@@ -33,17 +36,13 @@ pack_out="$CARGO_BUILD_TARGET_DIR/wasm-pack-out"
   wasm-pack build --target web --out-dir "$pack_out" "${args[@]}" "$@"
 )
 
-if [ -z "${out:-}" ]; then
-  out="$REPO_ROOT"
-fi
-
 # replace broken import
 sed 's:import \*:// import \*:g' -i  $pack_out/fedi_wasm.js
 sed "s|imports\['env'\] \= \_\_wbg_star0;|imports['env'] = { GFp_poly1305_init: () => { throw Error('Ring library not available') }, GFp_poly1305_update: () => { throw Error('Ring library not available') }, GFp_poly1305_finish: () => { throw Error('Ring library not available') }, GFp_memcmp: () => { throw Error('Ring library not available') } };|g" -i $pack_out/fedi_wasm.js
 
-mkdir -p $out/public
-mkdir -p $out/src/wasm
+if [ -z "${out:-}" ]; then
+  out="$REPO_ROOT"
+fi
+# copy artifacts to $out so the UI code can find them
 mkdir -p $out/ui/common/wasm
-cp "$pack_out/fedi_wasm_bg.wasm" $out/public/fedi.wasm
-cp $pack_out/*.{ts,js} $out/src/wasm
 cp $pack_out/*.{ts,js,wasm} $out/ui/common/wasm

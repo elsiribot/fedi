@@ -23,7 +23,7 @@ jobs:
                   authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
             - name: Run test suite
-              run: nix develop -c env  INSTALL_WASM_FROM_NIX=ci ./scripts/ci/test-ui.sh
+              run: nix develop -c ./scripts/ci/test-ui.sh
 
             # TODO: These steps depend on the bridge so to avoid waiting too
             # long for this CI check we skip them for now

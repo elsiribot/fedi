@@ -7,8 +7,6 @@ $REPO_ROOT/scripts/enforce-nix.sh
 
 echo "Starting dev-ui setup"
 
-pushd $REPO_ROOT/ui
-
 # install node modules and build ui dependencies
 if [[ "$REINSTALL_UI_DEPS" == "1" ]]; then
     $REPO_ROOT/scripts/ui/build-deps.sh
@@ -29,5 +27,3 @@ if [[ "$REINSTALL_PODS" == "1" ]]; then
 fi
 
 echo "Finished dev-ui setup"
-
-popd
