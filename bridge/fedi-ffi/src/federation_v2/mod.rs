@@ -21,9 +21,7 @@ use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_client::module::recovery::RecoveryProgress;
 use fedimint_client::module::ClientModule;
 use fedimint_client::oplog::OperationLogEntry;
-use fedimint_client::secret::{
-    get_default_client_secret, DeriveableSecretClientExt, RootSecretStrategy,
-};
+use fedimint_client::secret::{DeriveableSecretClientExt, RootSecretStrategy};
 use fedimint_client::{Client, ClientBuilder, ClientHandle, ClientHandleArc};
 use fedimint_core::api::{
     DynGlobalApi, DynModuleApi, FederationApiExt, FederationResult, InviteCode, StatusResponse,
@@ -220,17 +218,19 @@ impl FederationV2 {
     pub fn client_root_secret_from_root_mnemonic(
         root_mnemonic: &bip39::Mnemonic,
         federation_id: &FederationId,
+        device_index: u8,
     ) -> DerivableSecret {
         let global_root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(root_mnemonic);
-        get_default_client_secret(&global_root_secret, federation_id)
+        get_default_client_secret(&global_root_secret, federation_id, device_index.into())
     }
 
     pub fn auxiliary_secret_from_root_mnemonic(
         root_mnemonic: &bip39::Mnemonic,
         federation_id: &FederationId,
+        device_index: u8,
     ) -> DerivableSecret {
         let global_root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(root_mnemonic);
-        get_default_auxiliary_secret(&global_root_secret, federation_id)
+        get_default_auxiliary_secret(&global_root_secret, federation_id, device_index.into())
     }
 
     /// Instantiate Federation from FediConfig
@@ -239,6 +239,7 @@ impl FederationV2 {
         event_sink: EventSink,
         task_group: TaskGroup,
         root_mnemonic: &bip39::Mnemonic,
+        device_index: u8,
         fedi_fee_helper: Arc<FediFeeHelper>,
     ) -> anyhow::Result<Self> {
         let client_builder = Self::build_client_builder(db.clone()).await?;
@@ -250,10 +251,11 @@ impl FederationV2 {
             .open(Self::client_root_secret_from_root_mnemonic(
                 root_mnemonic,
                 &federation_id,
+                device_index,
             ))
             .await?;
         let auxiliary_secret =
-            Self::auxiliary_secret_from_root_mnemonic(root_mnemonic, &federation_id);
+            Self::auxiliary_secret_from_root_mnemonic(root_mnemonic, &federation_id, device_index);
         Ok(Self::new(
             client,
             event_sink,
@@ -267,6 +269,7 @@ impl FederationV2 {
     pub async fn download_client_config(
         invite_code_string: &str,
         root_mnemonic: &bip39::Mnemonic,
+        device_index: u8,
     ) -> anyhow::Result<(ClientConfig, FederationResult<Vec<ClientBackupSnapshot>>)> {
         let mut invite_code: InviteCode = InviteCode::from_str(invite_code_string)?;
         override_localhost_invite_code(&mut invite_code);
@@ -275,9 +278,12 @@ impl FederationV2 {
             let federation_id = invite_code.federation_id();
             // We do an additional derivation using `DerivableSecret::federation_key` since
             // that is what fedimint-client does internally
-            let client_root_secret =
-                Self::client_root_secret_from_root_mnemonic(root_mnemonic, &federation_id)
-                    .federation_key(&federation_id);
+            let client_root_secret = Self::client_root_secret_from_root_mnemonic(
+                root_mnemonic,
+                &federation_id,
+                device_index,
+            )
+            .federation_key(&federation_id);
             client_root_secret
                 .derive_backup_secret()
                 .to_secp_key(&Secp256k1::<secp256k1::SignOnly>::gen_new())
@@ -294,12 +300,14 @@ impl FederationV2 {
 
     /// Download federation configs using an invite code. Save client config to
     /// correct database with Storage.
+    #[allow(clippy::too_many_arguments)]
     pub async fn join(
         invite_code_string: String,
         event_sink: EventSink,
         task_group: TaskGroup,
         db: Database,
         root_mnemonic: &bip39::Mnemonic,
+        device_index: u8,
         fedi_fee_helper: Arc<FediFeeHelper>,
     ) -> Result<Self> {
         let mut invite_code =
@@ -324,10 +332,13 @@ impl FederationV2 {
 
         let client_builder = Self::build_client_builder(db).await?;
         let federation_id = client_config.calculate_federation_id();
-        let client_secret =
-            Self::client_root_secret_from_root_mnemonic(root_mnemonic, &federation_id);
+        let client_secret = Self::client_root_secret_from_root_mnemonic(
+            root_mnemonic,
+            &federation_id,
+            device_index,
+        );
         let auxiliary_secret =
-            Self::auxiliary_secret_from_root_mnemonic(root_mnemonic, &federation_id);
+            Self::auxiliary_secret_from_root_mnemonic(root_mnemonic, &federation_id, device_index);
         // restore from scratch is not used because it takes too much time.
         if let Some(backup) = client_builder
             .download_backup_from_federation(&client_secret, &client_config)
@@ -2765,13 +2776,24 @@ pub fn zero_gateway_fees() -> RoutingFees {
     }
 }
 
-// root/<key-type=per-federation=0>/<federation-id>/<wallet-number=0>/
+// root/<key-type=per-federation=0>/<federation-id>/<wallet-number>/
+// <key-type=fedimint-client=0>
+fn get_default_client_secret(
+    global_root_secret: &DerivableSecret,
+    federation_id: &FederationId,
+    wallet_number: u64,
+) -> DerivableSecret {
+    get_per_federation_secret(global_root_secret, federation_id, wallet_number, 0)
+}
+
+// root/<key-type=per-federation=0>/<federation-id>/<wallet-number>/
 // <key-type=aux=1>
 fn get_default_auxiliary_secret(
     global_root_secret: &DerivableSecret,
     federation_id: &FederationId,
+    wallet_number: u64,
 ) -> DerivableSecret {
-    get_per_federation_secret(global_root_secret, federation_id, 0, 1)
+    get_per_federation_secret(global_root_secret, federation_id, wallet_number, 1)
 }
 
 // Based on derivation scheme used by fedimint-client

@@ -99,6 +99,23 @@ impl Bridge {
 
         let root_mnemonic = app_state.root_mnemonic().await;
 
+        // If a joined federation exists in the DB, then one of the following two
+        // conditions will virtually always be the case:
+        //
+        // 1. A device index exists because at least one device registration request was
+        //    successful in the past
+        // 2. We are yet to successfully call the device registration service for the
+        //    first time for the given seed, and so we will try to register the device
+        //    with index 0 anyway.
+        //
+        // We cannot make bridge initialization fail, and we must pass a device index to
+        // the FederationV2 constructor, so here we use `unwrap_or_default()` instead of
+        // `app_state.ensure_device_index()`.
+        let device_index = app_state
+            .with_read_lock(|state| state.device_index)
+            .await
+            .unwrap_or_default();
+
         // load joined federations
         let joined_federations = app_state
             .with_read_lock(|state| state.joined_federations.clone())
@@ -134,6 +151,7 @@ impl Bridge {
                                         event_sink.clone(),
                                         task_group.make_subgroup().await,
                                         &root_mnemonic,
+                                        device_index,
                                         fedi_fee_helper.clone(),
                                     )
                                     .await
@@ -261,11 +279,13 @@ impl Bridge {
                     return Ok(());
                 }
                 let root_mnemonic = this.app_state.root_mnemonic().await;
+                let device_index = this.app_state.ensure_device_index().await?;
                 let federation_v2 = FederationV2::from_db(
                     db,
                     this.event_sink.clone(),
                     this.task_group.make_subgroup().await,
                     &root_mnemonic,
+                    device_index,
                     this.fedi_fee_helper.clone(),
                 )
                 .await
@@ -329,6 +349,7 @@ impl Bridge {
         }
 
         let root_mnemonic = self.app_state.root_mnemonic().await;
+        let device_index = self.app_state.ensure_device_index().await?;
 
         let db_prefix = self
             .app_state
@@ -344,6 +365,7 @@ impl Bridge {
             TaskGroup::new(),
             db,
             &root_mnemonic,
+            device_index,
             self.fedi_fee_helper.clone(),
         )
         .await?;
@@ -388,9 +410,11 @@ impl Bridge {
     pub async fn federation_preview(&self, invite_code: &str) -> Result<RpcFederationPreview> {
         let invite_code = invite_code.to_lowercase();
         let root_mnemonic = self.app_state.root_mnemonic().await;
+        let device_index = self.app_state.ensure_device_index().await?;
         let (v2,) = futures::join!(FederationV2::download_client_config(
             &invite_code,
-            &root_mnemonic
+            &root_mnemonic,
+            device_index,
         ));
         match (v2,) {
             (Ok((config, backup_snapshots_result)),) => Ok(RpcFederationPreview {

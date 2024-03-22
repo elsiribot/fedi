@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::SystemTime;
 
-use anyhow::bail;
+use anyhow::{anyhow, bail};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::core::ModuleKind;
@@ -299,6 +299,12 @@ impl AppState {
                 Ok(new_identifier)
             }
         }
+    }
+
+    pub async fn ensure_device_index(&self) -> anyhow::Result<u8> {
+        self.with_read_lock(|state| state.device_index)
+            .await
+            .ok_or(anyhow!("device_index not set"))
     }
 
     pub async fn root_mnemonic(&self) -> bip39::Mnemonic {
