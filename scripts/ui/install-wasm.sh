@@ -8,7 +8,11 @@ WASM_BUILD_PROFILE=${WASM_BUILD_PROFILE:-dev}
 
 echo "Installing wasm UI dependencies..."
 
+# make sure we are in the repo root when we build fedi-wasm-pack so /result
+# gets copied in the correct directory
+pushd $REPO_ROOT
 nix build -L ".#wasm32-unknown.${WASM_BUILD_PROFILE}.fedi-wasm-pack"
-cp "$REPO_ROOT/result/ui/common/wasm/"* "$REPO_ROOT/ui/common/wasm/"
+cp -f "$REPO_ROOT/result/ui/common/wasm/"* "$REPO_ROOT/ui/common/wasm/"
+popd
 
 echo "Installed wasm UI dependencies in $REPO_ROOT/ui/common/wasm/"
