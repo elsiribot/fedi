@@ -665,9 +665,15 @@ impl Bridge {
         &self,
         recovery_file: social::RecoveryFile,
     ) -> anyhow::Result<()> {
-        // FIXME: hacks!!!
+        let social_instance_id = *recovery_file
+            .client_config
+            .modules
+            .iter()
+            .find(|(_, module_config)| module_config.is_kind(&fedi_social_client::KIND))
+            .context("social module not available in recovery config")?
+            .0;
         let decoders = ModuleDecoderRegistry::from_iter(vec![(
-            3,
+            social_instance_id,
             fedi_social_client::KIND,
             FediSocialCommonGen::decoder(),
         )]);
@@ -747,15 +753,10 @@ impl Bridge {
         self.set_social_recovery_state(None).await?;
         tracing::info!("social recovery complete");
         tracing::info!("auto joining federation");
-        let decoders = ModuleDecoderRegistry::from_iter(vec![(
-            3,
-            fedi_social_client::KIND,
-            FediSocialCommonGen::decoder(),
-        )]);
         self.join_federation(
             federation_v2::invite_code_from_client_confing(&ClientConfig::consensus_decode_hex(
                 &recovery_client.state().client_config,
-                &decoders,
+                &Default::default(),
             )?)
             .to_string(),
         )
@@ -767,12 +768,20 @@ impl Bridge {
             .get_social_recovery_state()
             .await?
             .context(ErrorCode::BadRequest)?;
+        let config: ClientConfig =
+            ClientConfig::consensus_decode_hex(&social_state.client_config, &Default::default())?;
+        let social_instance_id = *config
+            .modules
+            .iter()
+            .find(|(_, module_config)| module_config.is_kind(&fedi_social_client::KIND))
+            .context("social module not available in recovery config")?
+            .0;
         let decoders = ModuleDecoderRegistry::from_iter(vec![(
-            3,
+            social_instance_id,
             fedi_social_client::KIND,
             FediSocialCommonGen::decoder(),
         )]);
-        let config = ClientConfig::consensus_decode_hex(&social_state.client_config, &decoders)?;
+        let config = config.redecode_raw(&decoders)?;
         let (social_module_id, social_cfg) = config
             .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
                 "fedi-social",
