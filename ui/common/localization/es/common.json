@@ -407,7 +407,7 @@
             "welcome-instructions-returning": "Como usuario que regresa a la federación, su billetera será restaurada. Esto puede tardar unos minutos.",
             "welcome-instructions-unknown": "Los nuevos usuarios reciben una cartera nueva. A los usuarios que regresen se les pedirá que recuperen su cartera.",
             "welcome-to-federation": "Te damos la bienvenida a {{federation}}",
-            "welcome-to-fedi": "Te damos la bienvenida a Fedi"
+            "welcome-to-fedi": "Te damos la bienvenida a Fedi Bravo"
         },
         "parser": {
             "unrecognized": "Formato de datos no reconocido",
