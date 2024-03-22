@@ -16,7 +16,7 @@ export FM_ADMIN_PASSWORD=p
 function run_tests() {
     FM_INVITE_CODE=$(cat $FM_CLIENT_DIR/invite-code)
     export FM_INVITE_CODE
-    cargo nextest run -v --locked --cargo-profile "${CARGO_PROFILE}" --profile "${CARGO_PROFILE}" -E 'package(fedi-ffi)' -- "$@"
+    cargo nextest run -v --locked --cargo-profile "${CARGO_PROFILE}" -E 'package(fedi-ffi)' -- "$@"
 }
 export -f run_tests
 

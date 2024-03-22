@@ -16,7 +16,7 @@ pub mod common;
 pub mod db;
 
 pub const KIND: ModuleKind = ModuleKind::from_static_str("fedi-social");
-pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::new(3, 0);
+pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::new(2, 0);
 
 #[derive(
     Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize, Encodable, Decodable, Default,

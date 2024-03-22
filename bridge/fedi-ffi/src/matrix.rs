@@ -211,8 +211,7 @@ impl Matrix {
                     futures::future::select(handle.make_shutdown_rx().await, pin!(func(this, id)))
                         .await;
             },
-        )
-        .await;
+        );
         Ok(observable)
     }
 

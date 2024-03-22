@@ -16,14 +16,14 @@ async fn main() -> anyhow::Result<()> {
     let mut fedimintd = Fedimintd::new(env!("FEDIMINT_BUILD_CODE_VERSION"))?
         .with_default_modules()
         .with_module(FediSocialInit)
-        .with_extra_module_inits_params(3, fedi_social_common::KIND, FediSocialGenParams::new());
+        .with_extra_module_inits_params(4, fedi_social_common::KIND, FediSocialGenParams::new());
 
     if include_stability_pool {
         let use_test_params = std::env::var("USE_STABILITY_POOL_TEST_PARAMS").is_ok();
         fedimintd = fedimintd
             .with_module(StabilityPoolInit)
             .with_extra_module_inits_params(
-                4,
+                5,
                 stability_pool_server::common::KIND,
                 StabilityPoolGenParams {
                     local: Default::default(),

@@ -28,7 +28,7 @@ use fedimint_core::module::{
     SupportedModuleApiVersions, TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
-use fedimint_core::{push_db_pair_items, NumPeers, OutPoint, PeerId, ServerModule};
+use fedimint_core::{push_db_pair_items, NumPeersExt, OutPoint, PeerId, ServerModule};
 use fedimint_server::config::distributedgen::{PeerHandleOps, ThresholdKeys};
 use futures::stream::StreamExt;
 use rand::rngs::OsRng;
@@ -117,7 +117,7 @@ impl ServerModuleInit for FediSocialInit {
     }
 
     fn supported_api_versions(&self) -> SupportedModuleApiVersions {
-        SupportedModuleApiVersions::from_raw((3, 0), (3, 0), &[(0, 0)])
+        SupportedModuleApiVersions::from_raw((2, 0), (2, 0), &[(0, 0)])
     }
 
     async fn init(&self, args: &ServerModuleInitArgs<Self>) -> anyhow::Result<DynServerModule> {

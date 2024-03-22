@@ -1621,29 +1621,33 @@ mod tests {
         bridge: &Arc<Bridge>,
         federation: &Arc<MultiFederation>,
     ) -> Result<(), anyhow::Error> {
-        devimint::util::poll("waiting for ecash reissue", Some(30), || async {
-            let oob_state = bridge
-                .list_transactions(federation.federation_id(), None, None)
-                .await
-                .map_err(ControlFlow::Break)?
-                .first()
-                .context("transaction not found")
-                .map_err(ControlFlow::Continue)?
-                .oob_state
-                .clone();
-            match oob_state {
-                None => Err(ControlFlow::Continue(anyhow!(
-                    "oob state must be present on ecash reissue"
-                ))),
-                Some(RpcOOBState::Reissue(RpcOOBReissueState::Done)) => Ok(()),
-                Some(RpcOOBState::Reissue(_)) => {
-                    Err(ControlFlow::Continue(anyhow!("not done yet")))
+        devimint::util::poll(
+            "waiting for ecash reissue",
+            Some(Duration::from_secs(30)),
+            || async {
+                let oob_state = bridge
+                    .list_transactions(federation.federation_id(), None, None)
+                    .await
+                    .map_err(ControlFlow::Break)?
+                    .first()
+                    .context("transaction not found")
+                    .map_err(ControlFlow::Continue)?
+                    .oob_state
+                    .clone();
+                match oob_state {
+                    None => Err(ControlFlow::Continue(anyhow!(
+                        "oob state must be present on ecash reissue"
+                    ))),
+                    Some(RpcOOBState::Reissue(RpcOOBReissueState::Done)) => Ok(()),
+                    Some(RpcOOBState::Reissue(_)) => {
+                        Err(ControlFlow::Continue(anyhow!("not done yet")))
+                    }
+                    Some(_) => Err(ControlFlow::Break(anyhow!(
+                        "oob state must have reissue state present on ecash reissue"
+                    ))),
                 }
-                Some(_) => Err(ControlFlow::Break(anyhow!(
-                    "oob state must have reissue state present on ecash reissue"
-                ))),
-            }
-        })
+            },
+        )
         .await
     }
 
