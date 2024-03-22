@@ -14,6 +14,7 @@ const HEX_COLORS = {
     red: '#E00A00',
     white: '#FFFFFF',
     offWhite: '#E6F7FF',
+    offWhite100: '#ECF7F7',
     black: '#000000',
     night: '#0B1013',
     blue: '#0277F2',

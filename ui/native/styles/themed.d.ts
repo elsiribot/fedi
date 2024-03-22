@@ -27,6 +27,7 @@ declare module '@rneui/themed' {
             red: string
             white: string
             offWhite: string
+            offWhite100: string
             black: string
             blue: string
             blue100: string

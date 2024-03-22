@@ -455,7 +455,7 @@
             "earn-and-save": "Earn and Save",
             "enter-username": "Enter username",
             "greeting-instructions": "Now you will be able to send money, communicate with your community, and more with Fedi.",
-            "guidance-1": "Home for your community's money, chat, data, and more",
+            "guidance-1": "Chat, earn, save, and spend money privately with your community",
             "guidance-2": "Fedi uses your community to make it easy to backup and secure your money, change to local money or get help.",
             "guidance-3": "With Fedi you have private balances, payments and communication by default, without the effort.",
             "guidance-4": "Fedi uses bitcoin and lightning network to connect you to global opportunities to earn money online on your own terms.",
@@ -463,7 +463,7 @@
             "i-accept": "I accept",
             "i-do-not-accept": "I do not accept",
             "join-new-member": "Join as a new member",
-            "join-returning-member": "I am a returning member",
+            "join-returning-member": "I'm a returning member",
             "new-users-disabled-notice": "Sorry, this federation is not accepting new users",
             "nice-to-meet-you": "Nice to meet you, {{username}}",
             "simple-and-private": "Simple and private",
@@ -476,7 +476,7 @@
             "welcome-instructions-returning": "As a returning member of the federation, your wallet will be restored. This may take a few minutes.",
             "welcome-instructions-unknown": "New members receive a fresh wallet. Returning members will have their old wallet recovered automatically.",
             "welcome-to-federation": "Welcome to {{federation}}",
-            "welcome-to-fedi": "Welcome to Fedi"
+            "welcome-to-fedi": "Welcome to Fedi Bravo"
         },
         "parser": {
             "unrecognized": "Unrecognized data format",

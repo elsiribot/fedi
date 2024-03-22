@@ -44,6 +44,7 @@ const themeDefaults = {
         defaultHoloGradient: 32,
         holoGuidanceCircle: 180,
         holoCircleSize: 328,
+        logoRingSize: 100,
         progressBarHeight: 6,
         progressCircleThickness: 5,
         progressCircle: dimensions.height * 0.25,

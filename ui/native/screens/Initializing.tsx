@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
-import { ImageBackground, StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import SplashScreen from 'react-native-splash-screen'
 
 import {
@@ -13,8 +13,8 @@ import {
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { Images } from '../assets/images'
 import { fedimint } from '../bridge'
+import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 import { ErrorScreen } from './ErrorScreen'
@@ -82,16 +82,20 @@ const Initializing: React.FC<Props> = () => {
     }
 
     return (
-        <ImageBackground
-            resizeMode="cover"
-            style={styles(theme).imageBackground}
-            source={Images.GradientBackground}
-        />
+        <View style={styles(theme).container}>
+            <SvgImage size={SvgImageSize.lg} name="FediLogoIcon" />
+        </View>
     )
 }
 
 const styles = (_: Theme) =>
     StyleSheet.create({
+        container: {
+            height: '100%',
+            width: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
         imageBackground: {
             position: 'absolute',
             left: 0,
