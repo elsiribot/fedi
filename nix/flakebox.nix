@@ -190,7 +190,6 @@ rec {
         CARGO_PROFILE=${packProfile}
 
         patchShebangs ./scripts
-        export REPO_ROOT="$(pwd)"
         export IN_NIX_SHELL=ci
         ./scripts/build-wasm.sh
       '';

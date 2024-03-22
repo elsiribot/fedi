@@ -13,6 +13,7 @@ bridge/fedi-android/plugins/bin/
 /target-tidy/
 
 # Nix
+/out
 /result
 /.direnv
 

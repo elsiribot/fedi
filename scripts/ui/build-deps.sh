@@ -7,6 +7,10 @@ $REPO_ROOT/scripts/enforce-nix.sh
 
 pushd $REPO_ROOT/ui
 
+# Install wasm dependencies
+$REPO_ROOT/scripts/ui/install-wasm.sh
+
+# Install NPM dependencies
 if [[ -n "$CI" ]]; then
   echo "Reinstalling node modules from lockfile (yarn.lock)"
   rm -rf $REPO_ROOT/ui/node_modules
