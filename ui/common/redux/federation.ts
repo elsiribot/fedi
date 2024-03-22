@@ -231,10 +231,17 @@ export const joinFederation = createAsyncThunk<
 
 export const leaveFederation = createAsyncThunk<
     void,
-    { fedimint: FedimintBridge; federationId: string }
->('federation/leaveFederation', async ({ fedimint, federationId }) => {
-    await fedimint.leaveFederation(federationId)
-})
+    { fedimint: FedimintBridge; federationId: string },
+    { state: CommonState }
+>(
+    'federation/leaveFederation',
+    async ({ fedimint, federationId }, { getState }) => {
+        // Fixes https://github.com/fedibtc/fedi/issues/3754
+        const isRecovering = selectIsActiveFederationRecovering(getState())
+        if (isRecovering) throw new Error('failed-to-leave-federation')
+        await fedimint.leaveFederation(federationId)
+    },
+)
 
 export const recoverFromMnemonic = createAsyncThunk<
     void,
@@ -362,6 +369,13 @@ export const selectIsActiveFederationRecovering = createSelector(
     selectActiveFederation,
     activeFederation => {
         return activeFederation ? activeFederation.recovering : false
+    },
+)
+
+export const selectIsAnyFederationRecovering = createSelector(
+    selectFederations,
+    federations => {
+        return federations.some(f => f.recovering)
     },
 )
 
