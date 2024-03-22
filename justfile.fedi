@@ -14,10 +14,7 @@ build-wasm-release:
   env CARGO_PROFILE=release just build-wasm
 
 install-wasm:
-  #!/usr/bin/env bash
-  just build-wasm
-  cp -f "$CARGO_BUILD_TARGET_DIR/pkgs/wasm-pack/wasm-pack-out/"* "$REPO_ROOT/ui/common/wasm/"
-  >&2 echo "Installed in $REPO_ROOT/ui/common/wasm/"
+  ./scripts/ui/install-wasm.sh
 
 install-wasm-release:
   env CARGO_PROFILE=release just install-wasm
