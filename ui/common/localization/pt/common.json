@@ -64,7 +64,7 @@
         "refund": "Reembolso",
         "reject": "Rejeitar",
         "rejected": "Rejeitado",
-        "remaining": "remanescente",
+        "remaining": "restante",
         "request": "Pedir",
         "required": "Pedido",
         "retry": "Tentar novamente",
@@ -91,13 +91,13 @@
         "URL": "URL",
         "username": "Nome de utilizador",
         "wallet": "Carteira",
-        "withdraw": "Levantar",
-        "withdrawal": "Levantado",
+        "withdraw": "Sacar",
+        "withdrawal": "Saques",
         "yes": "Sim"
     },
     "phrases": {
         "add-note": "Adicionar nota",
-        "allow-camera-access": "Permitir o acesso à câmara",
+        "allow-camera-access": "Permitir acesso à câmara",
         "app-settings-security": "Definições e segurança da aplicação",
         "app-version": "Versão Fedi Alpha: {{version}}",
         "back-to-app": "Voltar à aplicação",
@@ -141,7 +141,7 @@
         "paste-from-clipboard": "Colar a partir da área de transferência",
         "please-confirm": "Confirme por favor",
         "receive-pending": "Recebimento pendente",
-        "received-bitcoin": "Recebeu bitcoin",
+        "received-bitcoin": "Bitcoin recebido",
         "refund-pending": "Reembolso pendente",
         "reload-app": "Recarregar a aplicação",
         "return-to-home": "Voltar à página inicial",
@@ -151,7 +151,7 @@
         "transaction-id": "ID da transação",
         "transaction-received": "Transação recebida",
         "yearly-fee": "Taxa anual",
-        "you-are-offline": "Está atualmente no modo offline"
+        "you-are-offline": "Você está no modo offline"
     },
     "errors": {
         "bad-connection": "A sua ligação à rede pode estar instável. Tente novamente mais tarde ou conecte-se a outra rede.",
@@ -168,7 +168,7 @@
         "failed-to-fetch-transactions": "Falha ao encontrar transações",
         "failed-to-generate-invoice": "Falha ao gerar fatura",
         "failed-to-join-federation": "Falha ao aderir à federação",
-        "failed-to-load-tos": "Falha ao carregar os termos do serviço",
+        "failed-to-load-tos": "Falha ao carregar os termos de serviço",
         "failed-to-pay-invoice": "Falha ao pagar a fatura",
         "failed-to-switch-gateways": "Falha ao mudar de gateways",
         "get-nostr-pubkey-failed": "Falha ao obter a chave pública de nostr",
@@ -194,7 +194,7 @@
         "webln-method-not-supported": "{{method}} não é suportado",
         "webln-payment-rejected": "Pagamento rejeitado",
         "webln-payment-request-rejected": "Pedido de pagamento recusado",
-        "you-have-already-joined": "Já aderiu a esta federação"
+        "you-have-already-joined": "Pedido de pagamento rejeitado"
     },
     "feature": {
         "backup": {
