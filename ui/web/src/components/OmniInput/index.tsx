@@ -100,7 +100,8 @@ export function OmniInput<
                     !props.expectedInputTypes.includes(
                         ParserDataType.FediChatMember as T,
                     ) ||
-                    !federationId
+                    !federationId ||
+                    !connectionOptions?.domain
                 )
                     return setInvalidData(parsedData)
 
