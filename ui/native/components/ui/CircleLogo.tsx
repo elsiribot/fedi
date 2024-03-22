@@ -14,10 +14,7 @@ const CircleLogo: React.FC = () => {
                 source={Images.HoloRing}
                 style={styles(theme).holoCircle}
             />
-            <SvgImage
-                size={SvgImageSize.lg}
-                name="FediLogoIcon"
-            />
+            <SvgImage size={SvgImageSize.lg} name="FediLogoIcon" />
         </View>
     )
 }
