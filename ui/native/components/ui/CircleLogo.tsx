@@ -37,12 +37,6 @@ const styles = (theme: Theme) =>
             width: theme.sizes.logoRingSize,
             opacity: 1,
         },
-        welcomeIcon: {
-            borderWidth: 1,
-            position: 'absolute',
-            top: 0,
-            left: 0,
-        },
     })
 
 export default CircleLogo
