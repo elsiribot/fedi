@@ -81,13 +81,7 @@ export function OmniInput<
 
     const parseInput = useCallback(
         async (input: string) => {
-            if (
-                !input ||
-                isLoadingRef.current ||
-                !federationId ||
-                !connectionOptions?.domain
-            )
-                return
+            if (!input || isLoadingRef.current) return
             setIsParsing(true)
             const parsedData = await parseUserInput(
                 input,
@@ -105,7 +99,9 @@ export function OmniInput<
                 if (
                     !props.expectedInputTypes.includes(
                         ParserDataType.FediChatMember as T,
-                    )
+                    ) ||
+                    !federationId ||
+                    !connectionOptions?.domain
                 )
                     return setInvalidData(parsedData)
 
