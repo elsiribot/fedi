@@ -15,7 +15,6 @@ const CircleLogo: React.FC = () => {
                 style={styles(theme).holoCircle}
             />
             <SvgImage
-                // containerStyle={styles(theme).welcomeIcon}
                 size={SvgImageSize.lg}
                 name="FediLogoIcon"
             />
