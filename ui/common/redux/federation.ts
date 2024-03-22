@@ -237,7 +237,7 @@ export const leaveFederation = createAsyncThunk<
     'federation/leaveFederation',
     async ({ fedimint, federationId }, { getState }) => {
         // Fixes https://github.com/fedibtc/fedi/issues/3754
-        const isRecovering = selectIsActiveFederationRecovering(getState())
+        const isRecovering = selectIsAnyFederationRecovering(getState())
         if (isRecovering) throw new Error('failed-to-leave-federation')
         await fedimint.leaveFederation(federationId)
     },
