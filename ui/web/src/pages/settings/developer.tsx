@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     changeAuthenticatedGuardian,
@@ -42,6 +43,8 @@ function DeveloperPage() {
     const federationId = activeFederation?.id
     const federationNodes = activeFederation?.nodes
 
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
+
     /* Logs */
 
     const handleDownloadLogs = useCallback(async () => {
@@ -70,7 +73,10 @@ function DeveloperPage() {
             // To download a CSV, create a fake link and click it
             const hiddenElement = document.createElement('a')
             hiddenElement.href = makeBase64CSVUri(
-                makeTransactionHistoryCSV(transactions),
+                makeTransactionHistoryCSV(
+                    transactions,
+                    makeFormattedAmountsFromMSats,
+                ),
             )
             hiddenElement.download = makeCSVFilename(
                 `transactions-${activeFederation.name}`,
@@ -79,7 +85,7 @@ function DeveloperPage() {
         } catch (err) {
             toast.error(t, err, 'errors.unknown-error')
         }
-    }, [toast, activeFederation, t])
+    }, [toast, activeFederation, t, makeFormattedAmountsFromMSats])
 
     /* Lightning gateways */
 

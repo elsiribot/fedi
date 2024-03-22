@@ -200,6 +200,8 @@ export function useExportTransactions(fedimint: FedimintBridge) {
     const { fetchTransactions } = useTransactionHistory(fedimint)
     const activeFederation = useCommonSelector(selectActiveFederation)
 
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
+
     const exportTransactions = useCallback(async (): Promise<
         | { success: true; uri: string; fileName: string }
         | { success: false; message: string }
@@ -218,7 +220,10 @@ export function useExportTransactions(fedimint: FedimintBridge) {
                     : 'transactions',
             )
             const uri = makeBase64CSVUri(
-                makeTransactionHistoryCSV(transactions),
+                makeTransactionHistoryCSV(
+                    transactions,
+                    makeFormattedAmountsFromMSats,
+                ),
             )
 
             return {
@@ -232,7 +237,7 @@ export function useExportTransactions(fedimint: FedimintBridge) {
                 message: (e as Error).message,
             }
         }
-    }, [activeFederation, fetchTransactions])
+    }, [activeFederation, fetchTransactions, makeFormattedAmountsFromMSats])
 
     return exportTransactions
 }

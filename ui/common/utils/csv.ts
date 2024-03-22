@@ -1,8 +1,15 @@
-import { Transaction } from '../types'
+import { AmountSymbolPosition, FormattedAmounts } from '../hooks/amount'
+import { MSats, Transaction } from '../types'
 
 type CSVColumns<T> = { name: string; getValue: (item: T) => string | number }[]
 
-export function makeTransactionHistoryCSV(txs: Transaction[]) {
+export function makeTransactionHistoryCSV(
+    txs: Transaction[],
+    makeFormattedAmountsFromMSats: (
+        amount: MSats,
+        symbolPosition: AmountSymbolPosition,
+    ) => FormattedAmounts,
+) {
     const sortedTxs = txs
         .sort((a, b) => a.createdAt - b.createdAt)
         .filter(txn => {
@@ -54,6 +61,11 @@ export function makeTransactionHistoryCSV(txs: Transaction[]) {
             name: 'Type',
             getValue: tx =>
                 tx.bitcoin ? 'on-chain' : tx.lightning ? 'lightning' : 'ecash',
+        },
+        {
+            name: 'Amount (fiat)',
+            getValue: tx =>
+                makeFormattedAmountsFromMSats(tx.amount, 'end').formattedFiat,
         },
         {
             name: 'Amount (sats)',
