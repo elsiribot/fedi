@@ -16,6 +16,7 @@ use ts_rs::TS;
 
 use super::federation_v2::FederationV2;
 use super::utils::to_unix_time;
+use crate::api::RegisteredDevice;
 use crate::multi::MultiFederation;
 use crate::storage::FediFeeSchedule;
 
@@ -814,6 +815,27 @@ impl From<FediFeeSchedule> for RpcFediFeeSchedule {
                     )
                 })
                 .collect(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcRegisteredDevice {
+    pub device_index: u8,
+    pub device_identifier: String,
+    #[ts(type = "number")]
+    pub last_registration_timestamp: u64,
+}
+
+impl From<RegisteredDevice> for RpcRegisteredDevice {
+    fn from(value: RegisteredDevice) -> Self {
+        Self {
+            device_index: value.index,
+            device_identifier: value.identifier,
+            last_registration_timestamp: to_unix_time(value.last_renewed)
+                .expect("Registration timestamp must be valid"),
         }
     }
 }

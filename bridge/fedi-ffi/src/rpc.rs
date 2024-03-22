@@ -41,7 +41,7 @@ use crate::matrix::{
 use crate::observable::{Observable, ObservableVec};
 use crate::types::{
     GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
-    RpcLightningGateway, RpcPayAddressResponse,
+    RpcLightningGateway, RpcPayAddressResponse, RpcRegisteredDevice,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -311,7 +311,10 @@ async fn getMnemonic(bridge: Arc<Bridge>) -> anyhow::Result<Vec<String>> {
 
 // TODO: maybe call this "loadMnemonic" or something?
 #[macro_rules_derive(rpc_method!)]
-async fn recoverFromMnemonic(bridge: Arc<Bridge>, mnemonic: Vec<String>) -> anyhow::Result<()> {
+async fn recoverFromMnemonic(
+    bridge: Arc<Bridge>,
+    mnemonic: Vec<String>,
+) -> anyhow::Result<Vec<RpcRegisteredDevice>> {
     bridge
         .recover_from_mnemonic(mnemonic.join(" ").parse()?)
         .await
@@ -384,7 +387,7 @@ async fn approveSocialRecoveryRequest(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn completeSocialRecovery(bridge: Arc<Bridge>) -> anyhow::Result<RpcFederation> {
+async fn completeSocialRecovery(bridge: Arc<Bridge>) -> anyhow::Result<Vec<RpcRegisteredDevice>> {
     bridge.complete_social_recovery().await
 }
 
@@ -606,6 +609,22 @@ async fn matrixInit(
         .map_err(|_| anyhow::anyhow!("matrix already initialized"))?;
     let matrix = get_matrix(&bridge).await?;
     matrix.get_account_session().await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn fetchRegisteredDevices(bridge: Arc<Bridge>) -> anyhow::Result<Vec<RpcRegisteredDevice>> {
+    bridge.fetch_registered_devices().await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn registerDeviceWithIndex(
+    bridge: Arc<Bridge>,
+    index: u8,
+    force_overwrite: bool,
+) -> anyhow::Result<Option<RpcFederation>> {
+    bridge
+        .register_device_with_index(index, force_overwrite)
+        .await
 }
 
 async fn get_matrix(bridge: &Bridge) -> anyhow::Result<&Matrix> {
@@ -1040,6 +1059,10 @@ rpc_methods!(RpcMethods {
     setStabilityPoolModuleFediFeeSchedule,
     getAccruedOutstandingFediFees,
     dumpDb,
+
+    // Device Registration
+    fetchRegisteredDevices,
+    registerDeviceWithIndex,
 
     matrixObserverCancel,
 
