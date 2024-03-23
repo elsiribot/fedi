@@ -191,6 +191,7 @@ rec {
 
         patchShebangs ./scripts
         export IN_NIX_SHELL=ci
+        export FEDI_INSTALL_IN_NIX_OUT=1
         ./scripts/build-wasm.sh
       '';
   };
