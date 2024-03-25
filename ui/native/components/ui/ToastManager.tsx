@@ -205,5 +205,6 @@ const styles = (theme: Theme) =>
         toastText: {
             color: theme.colors.white,
             fontSize: 14,
+            fontFamily: 'AlbertSans-Regular',
         },
     })
