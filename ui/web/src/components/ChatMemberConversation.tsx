@@ -114,7 +114,7 @@ export const ChatMemberConversation: React.FC<Props> = ({ memberId }) => {
                 }
             />
             <ChatPaymentDialog
-                recipientId={memberId}
+                recipient={member}
                 open={isPaymentOpen}
                 onOpenChange={setIsPaymentOpen}
             />

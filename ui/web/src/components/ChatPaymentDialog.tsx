@@ -13,25 +13,27 @@ import {
     sendDirectMessage,
     selectAuthenticatedMember,
 } from '@fedi/common/redux'
-import { ChatPaymentStatus, Sats } from '@fedi/common/types'
+import { ChatMember, ChatPaymentStatus, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 import { AmountInput } from './AmountInput'
+import { Avatar } from './Avatar'
 import { Button } from './Button'
 import { Dialog } from './Dialog'
+import { Text } from './Text'
 
 interface Props {
-    recipientId: string
+    recipient: ChatMember
     open: boolean
     onOpenChange(open: boolean): void
 }
 
 export const ChatPaymentDialog: React.FC<Props> = ({
     open,
-    recipientId,
+    recipient,
     onOpenChange,
 }) => {
     const { t } = useTranslation()
@@ -68,13 +70,13 @@ export const ChatPaymentDialog: React.FC<Props> = ({
                     sendDirectMessage({
                         fedimint,
                         federationId,
-                        recipientId,
+                        recipientId: recipient.id,
                         payment: {
                             status: token
                                 ? ChatPaymentStatus.accepted
                                 : ChatPaymentStatus.requested,
                             amount: amountUtils.satToMsat(amount),
-                            recipient: token ? recipientId : myId,
+                            recipient: token ? recipient.id : myId,
                             token,
                         },
                     }),
@@ -87,7 +89,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
         [
             dispatch,
             federationId,
-            recipientId,
+            recipient.id,
             myId,
             amount,
             toast,
@@ -145,6 +147,10 @@ export const ChatPaymentDialog: React.FC<Props> = ({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
+            <MemberContainer>
+                <Avatar size="sm" id={recipient.id} name={recipient.username} />
+                <Text weight="bold">{recipient.username}</Text>
+            </MemberContainer>
             <Balance>{balanceDisplay}</Balance>
             <AmountContainer>
                 {open && (
@@ -183,6 +189,14 @@ const Balance = styled('div', {
     fontSize: theme.fontSizes.caption,
     textAlign: 'center',
     color: theme.colors.darkGrey,
+})
+
+const MemberContainer = styled('div', {
+    display: 'flex',
+    gap: theme.space.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.space.xl,
 })
 
 const AmountContainer = styled('div', {
