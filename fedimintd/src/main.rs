@@ -2,8 +2,9 @@ use std::time::Duration;
 
 use fedi_social_common::config::FediSocialGenParams;
 use fedi_social_server::FediSocialInit;
+use fedimint_core::module::ServerModuleInit;
 use fedimint_core::Amount;
-use fedimintd::fedimintd::Fedimintd;
+use fedimintd::Fedimintd;
 use stability_pool_server::common::config::{
     CollateralRatio, OracleConfig, StabilityPoolGenParams, StabilityPoolGenParamsConsensus,
 };
@@ -15,15 +16,14 @@ async fn main() -> anyhow::Result<()> {
 
     let mut fedimintd = Fedimintd::new(env!("FEDIMINT_BUILD_CODE_VERSION"))?
         .with_default_modules()
-        .with_module(FediSocialInit)
-        .with_extra_module_inits_params(4, fedi_social_common::KIND, FediSocialGenParams::new());
+        .with_module_kind(FediSocialInit)
+        .with_module_instance(FediSocialInit::kind(), FediSocialGenParams::new());
 
     if include_stability_pool {
         let use_test_params = std::env::var("USE_STABILITY_POOL_TEST_PARAMS").is_ok();
         fedimintd = fedimintd
-            .with_module(StabilityPoolInit)
-            .with_extra_module_inits_params(
-                5,
+            .with_module_kind(StabilityPoolInit)
+            .with_module_instance(
                 stability_pool_server::common::KIND,
                 StabilityPoolGenParams {
                     local: Default::default(),
