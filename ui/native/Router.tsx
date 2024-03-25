@@ -8,6 +8,7 @@ import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 
 import { useMonitorChatConnections } from '@fedi/common/hooks/chat'
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederation } from '@fedi/common/redux'
 
 import { fedimint } from './bridge'
@@ -891,6 +892,8 @@ const Router = () => {
     const { theme } = useTheme()
     const navigation = useNavigationContainerRef()
 
+    const toast = useToast()
+
     // Makes sure to check XMPP socket health when app is foregrounded
     useXmppHealthCheck()
 
@@ -901,7 +904,13 @@ const Router = () => {
     useMonitorChatConnections(fedimint)
 
     return (
-        <NavigationContainer ref={navigation} theme={theme} linking={linking}>
+        <NavigationContainer
+            ref={navigation}
+            theme={theme}
+            linking={linking}
+            onStateChange={() => {
+                toast.close()
+            }}>
             <Drawer.Navigator
                 id={DRAWER_NAVIGATION_ID}
                 drawerContent={ConnectedFederationsDrawer}>
