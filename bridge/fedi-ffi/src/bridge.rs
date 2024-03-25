@@ -453,9 +453,37 @@ impl Bridge {
         // DB file.
 
         // Remove from bridge state
+        let Some(federation) = self
+            .federations
+            .lock()
+            .await
+            .remove(&federation_id_str.to_string())
+        else {
+            bail!("federation must be present in state");
+        };
+
+        match &*federation {
+            MultiFederation::V2(f) => {
+                if let Err(error) = f
+                    .task_group
+                    .clone()
+                    .shutdown_join_all(Some(Duration::from_secs(20)))
+                    .await
+                {
+                    warn!(%error, "failed to shutdown task group cleanly");
+                }
+            }
+        }
+
+        if fedimint_core::task::timeout(
+            Duration::from_secs(20),
+            Self::wait_till_fully_dropped(federation),
+        )
+        .await
+        .is_err()
         {
-            let mut lock = self.federations.lock().await;
-            lock.remove(&federation_id_str.to_string());
+            info!("failed to drop federation, not deleting the database");
+            return Ok(());
         }
 
         // delete federation db
