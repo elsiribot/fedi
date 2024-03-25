@@ -32,13 +32,13 @@ const FediModBrowserHeader: React.FC<FediModBrowserHeaderProps> = ({
                         onPress={() => webViewRef.current.goBack()}
                         hitSlop={10}
                         style={style.arrow}>
-                        <SvgImage size={SvgImageSize.sm} name="ChevronLeft" />
+                        <SvgImage size={SvgImageSize.md} name="ChevronLeft" />
                     </Pressable>
                     <Pressable
                         onPress={() => webViewRef.current.goForward()}
                         hitSlop={10}
                         style={[style.arrow, style.rightArrow]}>
-                        <SvgImage size={SvgImageSize.sm} name="ChevronRight" />
+                        <SvgImage size={SvgImageSize.md} name="ChevronRight" />
                     </Pressable>
                 </View>
             }
