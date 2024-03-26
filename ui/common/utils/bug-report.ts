@@ -3,10 +3,9 @@ import { makeLog } from './log'
 // When working on the API endpoints locally, comment out which one you want to
 // use. Otherwise it'll default to the production endpoint.
 // eslint-disable-next-line prefer-const
-let API_ORIGIN = 'https://app.v0.fedi.xyz'
+let API_ORIGIN = 'https://fedi-ashen.vercel.app'
 if (process.env.NODE_ENV === 'development') {
-    API_ORIGIN = 'https://fedi-ashen.vercel.app'
-    // API_ORIGIN = '' // Local PWA (relative path)
+    API_ORIGIN = '' // Local PWA (relative path)
     // API_ORIGIN = 'http://localhost:3000' // Local iOS
     // API_ORIGIN = 'http://10.0.2.2:3000' // Local Android
 }
