@@ -296,6 +296,10 @@ jobs:
             authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
           continue-on-error: true
 
+        - name: Clean up old images
+          run: |
+            docker image prune -a --filter "until=24h" -f
+
         - name: Build fedi-fedimintd container
           run: |
             if [ "$GITHUB_EVENT_NAME" == "pull_request" ] || [ "$GITHUB_EVENT_NAME" == "merge_group" ]; then
