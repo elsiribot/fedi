@@ -64,6 +64,7 @@ eyeball-im = "0.4.2"
 tempfile = "3.3.0"
 slab = "0.4.9"
 eyeball = "0.8.7"
+async-recursion = "1.1.0"
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.17.5", features = ["wasm32_unknown_unknown_js"] }

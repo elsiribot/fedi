@@ -1829,6 +1829,7 @@ name = "fedi-ffi"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "async-recursion",
  "async-trait",
  "base64 0.20.0",
  "bip39",
