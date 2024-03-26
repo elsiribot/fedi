@@ -34,6 +34,7 @@ use super::types::{
 };
 use crate::api::IFediApi;
 use crate::constants::{MATRIX_CHILD_ID, NOSTR_CHILD_ID};
+use crate::device_registration::DeviceRegistrationService;
 use crate::error::{get_error_code, ErrorCode};
 use crate::event::{Event, SocialRecoveryEvent, TypedEventExt as _};
 use crate::federation_v2::{self, BackupServiceStatus, FederationV2};
@@ -64,6 +65,7 @@ pub struct Bridge {
     pub task_group: TaskGroup,
     pub fedi_fee_helper: Arc<FediFeeHelper>,
     pub matrix: OnceCell<Matrix>,
+    pub device_registration_service: Arc<DeviceRegistrationService>,
 }
 
 impl Bridge {
@@ -81,22 +83,18 @@ impl Bridge {
             task_group.make_subgroup().await,
         ));
 
-        // Set device_identifier in AppState if not already set. Otherwise just log.
-        match app_state
-            .with_read_lock(|state| state.device_identifier.clone())
-            .await
-        {
-            Some(id) if id != device_identifier => warn!(
-                "New device identifier ({device_identifier}) doesn't match existing one ({id})"
-            ),
-            Some(_) => info!("Device identifier unchaged: {device_identifier}"),
-            None => {
-                info!("Device identifier absent, setting as: {device_identifier}");
-                app_state
-                    .with_write_lock(|state| state.device_identifier = Some(device_identifier))
-                    .await?
-            }
-        }
+        let device_identifier = app_state
+            .verify_and_return_device_identifier(device_identifier)
+            .await?;
+        let device_registration_service = DeviceRegistrationService::new(
+            device_identifier,
+            app_state.clone(),
+            event_sink.clone(),
+            task_group.make_subgroup().await,
+            fedi_api.clone(),
+        )
+        .await
+        .into();
 
         let root_mnemonic = app_state
             .with_read_lock(|state| state.root_mnemonic.clone())
@@ -165,6 +163,7 @@ impl Bridge {
             task_group,
             fedi_fee_helper,
             matrix: OnceCell::default(),
+            device_registration_service,
         };
         let federations = bridge.federations.lock().await.clone();
         for federation in federations.into_values() {

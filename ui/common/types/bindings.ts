@@ -38,6 +38,16 @@ export type CreateRoomRequest = any
 
 export type CustomMessageData = Record<string, any>
 
+export interface DeviceRegistrationEvent {
+    state: DeviceRegistrationState
+}
+
+export type DeviceRegistrationState =
+    | 'newDeviceNeedsAssignment'
+    | 'conflict'
+    | 'success'
+    | 'overdue'
+
 export type ErrorCode =
     | 'initializationFailed'
     | 'notInialized'
@@ -62,6 +72,7 @@ export type Event =
     | { stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent }
     | { recoveryComplete: RecoveryCompleteEvent }
     | { recoveryProgress: RecoveryProgressEvent }
+    | { deviceRegistration: DeviceRegistrationEvent }
 
 export type GuardianStatus =
     | { online: { guardian: string } }

@@ -1,21 +1,88 @@
 use std::collections::BTreeMap;
 use std::str::FromStr;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 use anyhow::Context;
 use bitcoin::Network;
+use fedi_api_types::device_control::request::{GetDevicesForSeedQueryV0, RegisterDeviceRequestV0};
+use fedi_api_types::device_control::response::DevicesForSeedResultV0;
+use fedi_api_types::device_control::{DeviceIdentifierV0, DeviceIndexV0, SeedCommitmentV0};
 use fedi_api_types::fee_schedule::FeesV0;
 use fedi_api_types::invoice_generator::{GenerateInvoiceRequestV0, GenerateInvoiceResponseV0};
+use fedimint_bip39::Bip39RootSecretStrategy;
+use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send, Amount};
 use lightning_invoice::Bolt11Invoice;
-use reqwest::Client;
+use reqwest::{Client, StatusCode};
 
 use crate::constants::{
-    FEDI_FEE_API_URL_MAINNET, FEDI_FEE_API_URL_MUTINYNET, FEDI_INVOICE_API_URL_MAINNET,
-    FEDI_INVOICE_API_URL_MUTINYNET,
+    FEDI_DEVICE_REGISTRATION_URL, FEDI_FEE_API_URL_MAINNET, FEDI_FEE_API_URL_MUTINYNET,
+    FEDI_INVOICE_API_URL_MAINNET, FEDI_INVOICE_API_URL_MUTINYNET,
 };
 use crate::storage::{FediFeeSchedule, ModuleFediFeeSchedule};
+
+// TODO shaurya move to device_registration module when created
+/// Represents registration information of a device using our root seed as
+/// recorded with Fedi's servers.
+pub struct RegisteredDevice {
+    /// Index assigned to the device, starting with 0. This is a critical number
+    /// since it's used in the derivation path from the root mnemonic to the
+    /// fedimint-client secret. In a way this is an account index, whereby each
+    /// registered device mimics a different account of the user/seed. Note that
+    /// this index has no bearing on app features that are
+    /// fedimint-client/federation-agnostic such as global chat, since those
+    /// features only depend on the root seed which is the same across all of
+    /// the user's devices. The only reason we have to guard against reusing the
+    /// same fedimint-client secret by way of these "device indices" is to
+    /// prevent two devices from accidentally issuing the same ecash notes
+    /// when one of them may be offline.
+    pub index: u8,
+
+    /// Human-readable, unique, stable string identifier assigned to the device
+    pub identifier: String,
+
+    /// Timestamp of the last successful registration renewal made from the
+    /// device. The more recent, the better. We expect every device to
+    /// periodically keep renewing its registration so that it can confirm that
+    /// no other device has taken over the index assigned to it.
+    pub last_renewed: SystemTime,
+}
+
+/// Represents the different errors we might encounter when attempting to
+/// register the current device with Fedi's servers using the root seed, the
+/// device identifier, and the device index. Optionally, we may also send along
+/// a "force" flag as true, which means that if another device currently owns
+/// the specified index, we wish to transfer that index to this device.
+#[derive(Debug, thiserror::Error)]
+pub enum RegisterDeviceError {
+    /// Variant representing a conflict on Fedi's servers, whereby we try to
+    /// register the current device with the specified index, but another device
+    /// (with a different identifier) already owns the specified index in Fedi's
+    /// records. Note that we should never expect this error if we pass in the
+    /// "force" flag as true, since "force" would just take over the ownership
+    /// to this device anyway.
+    #[error("Registration conflicts with another device {0}")]
+    AnotherDeviceOwnsIndex(String),
+
+    /// Variant representing any other server error besides a conflicting device
+    /// registration. We expect this error to be temporary so we will just retry
+    /// later.
+    #[error("Retryable server error {0}")]
+    OtherServerError(String),
+
+    /// Variant representing errors encountered while sending the request to the
+    /// server. We expect this error to be temporary so we will just retry
+    /// later.
+    #[error("Retryable client error when attempting to send request {0}")]
+    ErrorSendingRequest(String),
+
+    /// Variant representing request timeout, meaning no response was received
+    /// from the server within the allotted time. We expect this error to be
+    /// temporary so we will just retry later.
+    #[error("Request timed out")]
+    RequestTimeout,
+}
 
 /// Trait that represents the API for communicating with Fedi-hosted services.
 #[apply(async_trait_maybe_send!)]
@@ -31,6 +98,28 @@ pub trait IFediApi: MaybeSend + MaybeSync + 'static {
         amount: Amount,
         network: Network,
     ) -> anyhow::Result<Bolt11Invoice>;
+
+    /// Fetches a list of all registered devices (as recorded by Fedi's servers)
+    /// that are using the provided seed.
+    async fn fetch_registered_devices_for_seed(
+        &self,
+        seed: bip39::Mnemonic,
+    ) -> anyhow::Result<Vec<RegisteredDevice>>;
+
+    /// Attempts to register the current device with Fedi's servers using the
+    /// root seed, index, and identifier. If the `force_overwrite` flag is
+    /// false, the server will return an error if another device (with a
+    /// different identifer) already owns the specified index. If the
+    /// `force_overwrite` flag is true, the server should always honor our
+    /// request, even if it means transferring ownership of the specified index
+    /// to this new device.
+    async fn register_device_for_seed(
+        &self,
+        seed: bip39::Mnemonic,
+        device_index: u8,
+        device_identifier: String,
+        force_overwrite: bool,
+    ) -> anyhow::Result<(), RegisterDeviceError>;
 }
 
 /// Live code implementation of the IFediApi trait that uses a real
@@ -133,5 +222,90 @@ impl IFediApi for LiveFediApi {
         .await?;
 
         Ok(Bolt11Invoice::from_str(&invoice_v0.invoice).context("Failed to parse fee invoice")?)
+    }
+
+    async fn fetch_registered_devices_for_seed(
+        &self,
+        seed: bip39::Mnemonic,
+    ) -> anyhow::Result<Vec<RegisteredDevice>> {
+        let seed_commitment = SeedCommitmentV0::new(
+            Bip39RootSecretStrategy::<12>::to_root_secret(&seed).to_random_bytes(),
+        );
+
+        // Timeout of 2 minutes here since this fetch will either be performed during
+        // onboarding and it's important for it to succeed, or it will be performed in a
+        // background task without blocking anything.
+        let registered_devices_v0 = fedimint_core::task::timeout(Duration::from_secs(120), async {
+            self.client
+                .get(format!(
+                    "{FEDI_DEVICE_REGISTRATION_URL}/get_devices_for_seed"
+                ))
+                .query(&GetDevicesForSeedQueryV0 { seed_commitment })
+                .send()
+                .await
+        })
+        .await
+        .context("Request to fetch registered devices took too long")?
+        .context("Fetch registered devices for seed response error")?
+        .json::<DevicesForSeedResultV0>()
+        .await?;
+
+        Ok(registered_devices_v0
+            .devices
+            .into_iter()
+            .map(|info| RegisteredDevice {
+                index: info.device_index.0,
+                identifier: info.device_identifier.device_name,
+                last_renewed: info.timestamp.0.into(),
+            })
+            .collect())
+    }
+
+    async fn register_device_for_seed(
+        &self,
+        seed: bip39::Mnemonic,
+        device_index: u8,
+        device_identifier: String,
+        force_overwrite: bool,
+    ) -> Result<(), RegisterDeviceError> {
+        let seed_commitment = SeedCommitmentV0::new(
+            Bip39RootSecretStrategy::<12>::to_root_secret(&seed).to_random_bytes(),
+        );
+
+        // Timeout of 2 minutes here since this request will either be performed during
+        // onboarding and it's important for it to succeed, or it will be performed in a
+        // background task without blocking anything.
+        let timeout_res = fedimint_core::task::timeout(Duration::from_secs(120), async {
+            self.client
+                .post(format!(
+                    "{FEDI_DEVICE_REGISTRATION_URL}/register_device_for_seed"
+                ))
+                .json(&RegisterDeviceRequestV0 {
+                    seed_commitment,
+                    device_index: DeviceIndexV0(device_index),
+                    device_identifier: DeviceIdentifierV0 {
+                        device_name: device_identifier,
+                    },
+                    force: force_overwrite,
+                })
+                .send()
+                .await
+        })
+        .await;
+
+        let Ok(register_device_result_v0) = timeout_res else {
+            return Err(RegisterDeviceError::RequestTimeout);
+        };
+
+        match register_device_result_v0 {
+            Ok(resp) if resp.status().is_success() => Ok(()),
+            Ok(resp) if resp.status() == StatusCode::CONFLICT => Err(
+                RegisterDeviceError::AnotherDeviceOwnsIndex(resp.text().await.unwrap_or_default()),
+            ),
+            Ok(resp) => Err(RegisterDeviceError::OtherServerError(
+                resp.text().await.unwrap_or_default(),
+            )),
+            Err(e) => Err(RegisterDeviceError::ErrorSendingRequest(e.to_string())),
+        }
     }
 }

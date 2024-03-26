@@ -120,6 +120,47 @@ pub struct RecoveryProgressEvent {
     pub total: u32,
 }
 
+/// Status of device registration with Fedi's server
+#[derive(Serialize, Debug, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct DeviceRegistrationEvent {
+    pub state: DeviceRegistrationState,
+}
+
+/// States representing the different outcomes for device registration requests
+/// sent to Fedi's servers
+#[derive(Serialize, Debug, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum DeviceRegistrationState {
+    /// This is a fresh device because we do not have a device index set within
+    /// AppState. Moreover, the list of registered devices per Fedi's servers is
+    /// non-empty, and this device's identifier is not to be found in that
+    /// list. So in order to proceed using the app, user action is required to
+    /// either register this device as a new device with a particular index, or
+    /// to transfer an existing device's registration to it.
+    NewDeviceNeedsAssignment,
+
+    /// Another device has taken over the index which was previously registered
+    /// to this device. Normal app usage is no longer recommended/supported on
+    /// this device.
+    Conflict,
+
+    /// We were able to successfully register/renew this device against its
+    /// original device index, and won't need to talk to Fedi's server until a
+    /// later time, when we will attempt to renew the registration.
+    Success,
+
+    /// We need to imminently talk to Fedi's servers to renew this device's
+    /// registration against th device index assigned to it. But we just tried
+    /// and were not able to due to network errors or other temporary server
+    /// errors. We will keep retrying and we eventually expect this to resolve,
+    /// at which time we would either get back a success or a conflict as
+    /// response.
+    Overdue,
+}
+
 #[derive(Debug, TS)]
 #[ts(export, export_to = "target/bindings/")]
 #[ts(rename_all = "camelCase")]
@@ -133,6 +174,7 @@ pub enum Event {
     StabilityPoolWithdrawal(StabilityPoolWithdrawalEvent),
     RecoveryComplete(RecoveryCompleteEvent),
     RecoveryProgress(RecoveryProgressEvent),
+    DeviceRegistration(DeviceRegistrationEvent),
 }
 
 impl Event {
@@ -213,6 +255,10 @@ impl Event {
             },
         })
     }
+
+    pub fn device_registration(state: DeviceRegistrationState) -> Self {
+        Self::DeviceRegistration(DeviceRegistrationEvent { state })
+    }
 }
 
 /// Sends events to iOS / Android layer
@@ -275,6 +321,10 @@ pub trait TypedEventExt: IEventSink {
             Event::RecoveryProgress(event) => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 IEventSink::event(self, "recoveryProgress".into(), body);
+            }
+            Event::DeviceRegistration(event) => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                IEventSink::event(self, "deviceRegistration".into(), body);
             }
         };
     }
