@@ -203,7 +203,7 @@ impl FederationV2 {
 
         if self
             .fedi_fee_remittance_service
-            .set(FediFeeRemittanceService::new(self.clone()).await)
+            .set(FediFeeRemittanceService::default())
             .is_err()
         {
             error!("fedi fee remittance service already initialized");
@@ -2481,7 +2481,7 @@ impl FederationV2 {
                     operation_id
                 );
                 if let Some(service) = self.fedi_fee_remittance_service.get() {
-                    let _ = service.trigger_fee_remittance().await;
+                    service.remit_fedi_fee_if_threshold_met(self).await;
                 }
             }
             Ok((false, _)) => info!(
@@ -2671,7 +2671,7 @@ impl FederationV2 {
                     operation_id
                 );
                 if let Some(service) = self.fedi_fee_remittance_service.get() {
-                    let _ = service.trigger_fee_remittance().await;
+                    service.remit_fedi_fee_if_threshold_met(self).await;
                 }
             }
             Ok((false, _)) => info!(
