@@ -208,7 +208,7 @@ impl AppState {
                 sensitive_log: None,
                 matrix_session: None,
                 device_identifier: None,
-                device_index: None,
+                device_index: Some(0),
                 last_device_registration_timestamp: None,
             })),
             storage,
