@@ -781,9 +781,12 @@ impl FederationV2 {
         self.write_pending_send_fedi_fee(payment_type.operation_id(), Amount::from_msats(fedi_fee))
             .await?;
 
-        let response = self
-            .subscribe_to_ln_pay(payment_type, extra_meta, invoice.clone())
-            .await?;
+        let response = timeout(
+            PAY_INVOICE_TIMEOUT,
+            self.subscribe_to_ln_pay(payment_type, extra_meta, invoice.clone()),
+        )
+        .await
+        .context(ErrorCode::Timeout)??;
 
         Ok(response)
     }
@@ -1075,123 +1078,110 @@ impl FederationV2 {
         extra_meta: LightningSendMetadata,
         _invoice: Bolt11Invoice,
     ) -> Result<RpcPayInvoiceResponse> {
-        let timeout_res = timeout(PAY_INVOICE_TIMEOUT, async {
-            match pay_type {
-                PayType::Internal(operation_id) => {
-                    let mut updates = self
-                        .client
-                        .get_first_module::<LightningClientModule>()
-                        .subscribe_internal_pay(operation_id)
-                        .await?
-                        .into_stream();
+        match pay_type {
+            PayType::Internal(operation_id) => {
+                let mut updates = self
+                    .client
+                    .get_first_module::<LightningClientModule>()
+                    .subscribe_internal_pay(operation_id)
+                    .await?
+                    .into_stream();
 
-                    while let Some(update) = updates.next().await {
-                        // Skip updating fee status if payment is for fee remittance
-                        if !extra_meta.is_fedi_fee_remittance {
-                            match update {
-                                InternalPayState::Preimage(_) => {
-                                    let _ = self.write_success_send_fedi_fee(operation_id).await;
-                                }
-                                InternalPayState::Funding => (),
-                                _ => {
-                                    let _ = self.write_failed_send_fedi_fee(operation_id).await;
-                                }
-                            }
-                        }
+                while let Some(update) = updates.next().await {
+                    // Skip updating fee status if payment is for fee remittance
+                    if !extra_meta.is_fedi_fee_remittance {
                         match update {
-                            InternalPayState::Preimage(preimage) => {
-                                updates.next().await;
-                                return Ok(RpcPayInvoiceResponse {
-                                    // FIXME: is this correct serialization?
-                                    preimage: hex::encode(preimage.0),
-                                });
+                            InternalPayState::Preimage(_) => {
+                                let _ = self.write_success_send_fedi_fee(operation_id).await;
                             }
-                            InternalPayState::RefundSuccess { .. } => {
-                                updates.next().await;
-                                bail!("Internal lightning payment failed, got refund");
+                            InternalPayState::Funding => (),
+                            _ => {
+                                let _ = self.write_failed_send_fedi_fee(operation_id).await;
                             }
-                            InternalPayState::RefundError { .. } => {
-                                updates.next().await;
-                                bail!("Internal lightning payment failed, didn't get refund");
-                            }
-                            InternalPayState::FundingFailed { .. } => {
-                                updates.next().await;
-                                bail!("Failed to fund internal lightning payment");
-                            }
-                            InternalPayState::UnexpectedError(e) => {
-                                updates.next().await;
-                                bail!(e);
-                            }
-                            _ => {}
                         }
-
-                        info!("Update: {:?}", update);
                     }
-                    Err(anyhow!("Internal lightning payment failed"))
-                }
-                PayType::Lightning(operation_id) => {
-                    let mut updates = self
-                        .client
-                        .get_first_module::<LightningClientModule>()
-                        .subscribe_ln_pay(operation_id)
-                        .await?
-                        .into_stream();
-                    while let Some(update) = updates.next().await {
-                        self.update_operation_state(operation_id, update.clone())
-                            .await;
-                        // Skip updating fee status if payment is for fee remittance
-                        if !extra_meta.is_fedi_fee_remittance {
-                            match update {
-                                LnPayState::Success { .. } => {
-                                    let _ = self.write_success_send_fedi_fee(operation_id).await;
-                                }
-                                LnPayState::Refunded { .. }
-                                | LnPayState::Canceled
-                                | LnPayState::UnexpectedError { .. } => {
-                                    let _ = self.write_failed_send_fedi_fee(operation_id).await;
-                                }
-                                _ => (),
-                            }
+                    match update {
+                        InternalPayState::Preimage(preimage) => {
+                            updates.next().await;
+                            return Ok(RpcPayInvoiceResponse {
+                                // FIXME: is this correct serialization?
+                                preimage: hex::encode(preimage.0),
+                            });
                         }
-                        match update {
-                            LnPayState::Success { preimage } => {
-                                updates.next().await;
-                                return Ok(RpcPayInvoiceResponse { preimage });
-                            }
-                            LnPayState::Refunded { .. } => {
-                                // TODO: better error message
-                                updates.next().await;
-                                bail!("Lightning payment failed, got refund")
-                            }
-                            LnPayState::Canceled { .. } => {
-                                updates.next().await;
-                                // FIXME: is this right?
-                                bail!("Lightning payment failed, got refund")
-                            }
-                            LnPayState::UnexpectedError { error_message } => {
-                                updates.next().await;
-                                bail!(error_message)
-                            }
-                            _ => {}
+                        InternalPayState::RefundSuccess { .. } => {
+                            updates.next().await;
+                            bail!("Internal lightning payment failed, got refund");
                         }
-
-                        info!("lightning update: {:?}", update);
+                        InternalPayState::RefundError { .. } => {
+                            updates.next().await;
+                            bail!("Internal lightning payment failed, didn't get refund");
+                        }
+                        InternalPayState::FundingFailed { .. } => {
+                            updates.next().await;
+                            bail!("Failed to fund internal lightning payment");
+                        }
+                        InternalPayState::UnexpectedError(e) => {
+                            updates.next().await;
+                            bail!(e);
+                        }
+                        _ => {}
                     }
-                    Err(anyhow!("lightning payment failed"))
+
+                    info!("Update: {:?}", update);
                 }
+                Err(anyhow!("Internal lightning payment failed"))
             }
-        })
-        .await
-        .context("Lightning payment failed ... awaiting refund");
+            PayType::Lightning(operation_id) => {
+                let mut updates = self
+                    .client
+                    .get_first_module::<LightningClientModule>()
+                    .subscribe_ln_pay(operation_id)
+                    .await?
+                    .into_stream();
+                while let Some(update) = updates.next().await {
+                    self.update_operation_state(operation_id, update.clone())
+                        .await;
+                    // Skip updating fee status if payment is for fee remittance
+                    if !extra_meta.is_fedi_fee_remittance {
+                        match update {
+                            LnPayState::Success { .. } => {
+                                let _ = self.write_success_send_fedi_fee(operation_id).await;
+                            }
+                            LnPayState::Refunded { .. }
+                            | LnPayState::Canceled
+                            | LnPayState::UnexpectedError { .. } => {
+                                let _ = self.write_failed_send_fedi_fee(operation_id).await;
+                            }
+                            _ => (),
+                        }
+                    }
+                    match update {
+                        LnPayState::Success { preimage } => {
+                            updates.next().await;
+                            return Ok(RpcPayInvoiceResponse { preimage });
+                        }
+                        LnPayState::Refunded { .. } => {
+                            // TODO: better error message
+                            updates.next().await;
+                            bail!("Lightning payment failed, got refund")
+                        }
+                        LnPayState::Canceled { .. } => {
+                            updates.next().await;
+                            // FIXME: is this right?
+                            bail!("Lightning payment failed, got refund")
+                        }
+                        LnPayState::UnexpectedError { error_message } => {
+                            updates.next().await;
+                            bail!(error_message)
+                        }
+                        _ => {}
+                    }
 
-        // Skip updating fee status if payment is for fee remittance
-        if timeout_res.is_err() && !extra_meta.is_fedi_fee_remittance {
-            let _ = self
-                .write_failed_send_fedi_fee(pay_type.operation_id())
-                .await;
+                    info!("lightning update: {:?}", update);
+                }
+                Err(anyhow!("lightning payment failed"))
+            }
         }
-
-        timeout_res?
     }
 
     /// Start background task to listen for balance updates and emit
