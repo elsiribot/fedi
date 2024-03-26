@@ -54,7 +54,7 @@ pub struct RegisteredDevice {
 /// device identifier, and the device index. Optionally, we may also send along
 /// a "force" flag as true, which means that if another device currently owns
 /// the specified index, we wish to transfer that index to this device.
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum RegisterDeviceError {
     /// Variant representing a conflict on Fedi's servers, whereby we try to
     /// register the current device with the specified index, but another device
@@ -62,21 +62,25 @@ pub enum RegisterDeviceError {
     /// records. Note that we should never expect this error if we pass in the
     /// "force" flag as true, since "force" would just take over the ownership
     /// to this device anyway.
+    #[error("Registration conflicts with another device {0}")]
     AnotherDeviceOwnsIndex(String),
 
     /// Variant representing any other server error besides a conflicting device
     /// registration. We expect this error to be temporary so we will just retry
     /// later.
+    #[error("Retryable server error {0}")]
     OtherServerError(String),
 
     /// Variant representing errors encountered while sending the request to the
     /// server. We expect this error to be temporary so we will just retry
     /// later.
+    #[error("Retryable client error when attempting to send request {0}")]
     ErrorSendingRequest(String),
 
     /// Variant representing request timeout, meaning no response was received
     /// from the server within the allotted time. We expect this error to be
     /// temporary so we will just retry later.
+    #[error("Request timed out")]
     RequestTimeout,
 }
 
@@ -263,7 +267,7 @@ impl IFediApi for LiveFediApi {
         device_index: u8,
         device_identifier: String,
         force_overwrite: bool,
-    ) -> anyhow::Result<(), RegisterDeviceError> {
+    ) -> Result<(), RegisterDeviceError> {
         let seed_commitment = SeedCommitmentV0::new(
             Bip39RootSecretStrategy::<12>::to_root_secret(&seed).to_random_bytes(),
         );

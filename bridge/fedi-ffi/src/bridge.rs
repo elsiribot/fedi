@@ -83,42 +83,18 @@ impl Bridge {
             task_group.make_subgroup().await,
         ));
 
-        // Set device_identifier in AppState if not already set. Otherwise just log.
-        let device_identifier = match app_state
-            .with_read_lock(|state| state.device_identifier.clone())
-            .await
-        {
-            Some(id) if id != device_identifier => {
-                warn!(
-                    "New device identifier ({device_identifier}) doesn't match existing one ({id})"
-                );
-                id
-            }
-            Some(_) => {
-                info!("Device identifier unchaged: {device_identifier}");
-                device_identifier
-            }
-            None => {
-                info!("Device identifier absent, setting as: {device_identifier}");
-                app_state
-                    .with_write_lock(|state| {
-                        state.device_identifier = Some(device_identifier.clone())
-                    })
-                    .await?;
-                device_identifier
-            }
-        };
-
-        let device_registration_service = Arc::new(
-            DeviceRegistrationService::new(
-                device_identifier,
-                app_state.clone(),
-                event_sink.clone(),
-                task_group.make_subgroup().await,
-                fedi_api.clone(),
-            )
-            .await,
-        );
+        let device_identifier = app_state
+            .verify_and_return_device_identifier(device_identifier)
+            .await?;
+        let device_registration_service = DeviceRegistrationService::new(
+            device_identifier,
+            app_state.clone(),
+            event_sink.clone(),
+            task_group.make_subgroup().await,
+            fedi_api.clone(),
+        )
+        .await
+        .into();
 
         let root_mnemonic = app_state
             .with_read_lock(|state| state.root_mnemonic.clone())

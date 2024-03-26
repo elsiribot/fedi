@@ -12,7 +12,7 @@ use fedimint_core::{apply, async_trait_maybe_send};
 use matrix_sdk::matrix_auth::MatrixSession;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
-use tracing::error;
+use tracing::{error, info, warn};
 
 use crate::constants::FEDI_FILE_PATH;
 use crate::social::SocialRecoveryState;
@@ -58,12 +58,22 @@ pub struct AppStateRaw {
     // fedimint-client root secret. So in a way, it's a way of ensuring that a user's/seed's
     // different per-federation "accounts" (across multiple devices) don't conflict with each
     // other.
+    //
+    // The default value for existing users, as well as for new users with fresh seed is 0. But
+    // this value is an Option because in the case of recovery, we need to guide the user
+    // through the flow of setting up a device index before they can continue using the app as
+    // usual.
+    #[serde(default = "default_device_index")]
     pub device_index: Option<u8>,
 
     // Every so often, we renew this device's registration against the given seed + device
     // identifier + device index with Fedi's device registration service. Here we store the
     // timestamp of the last successful registration renewal.
     pub last_device_registration_timestamp: Option<SystemTime>,
+}
+
+fn default_device_index() -> Option<u8> {
+    Some(0)
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -242,6 +252,37 @@ impl AppState {
             .await?;
         *app_state_in_memory = Arc::new(app_state_raw_new);
         Ok(result)
+    }
+
+    /// Compares the given new device identifier with the existing device
+    /// identifier. If no existing device identifier, sets is as the new
+    /// device identifier. Otherwise, logs the comparison and returns the
+    /// existing device identifier.
+    pub async fn verify_and_return_device_identifier(
+        &self,
+        new_identifier: String,
+    ) -> anyhow::Result<String> {
+        match self
+            .with_read_lock(|state| state.device_identifier.clone())
+            .await
+        {
+            Some(id) if id != new_identifier => {
+                warn!("New device identifier ({new_identifier}) doesn't match existing one ({id})");
+                Ok(id)
+            }
+            Some(id) => {
+                info!("Device identifier unchaged: {id}");
+                Ok(id)
+            }
+            None => {
+                info!("Device identifier absent, setting as: {new_identifier}");
+                self.with_write_lock(|state| {
+                    state.device_identifier = Some(new_identifier.clone())
+                })
+                .await?;
+                Ok(new_identifier)
+            }
+        }
     }
 }
 
