@@ -13,6 +13,7 @@ use lightning_invoice::Bolt11Invoice;
 use macro_rules_attribute::macro_rules_derive;
 use matrix_sdk::ruma::api::client::profile::get_profile;
 use matrix_sdk::ruma::api::client::push::Pusher;
+use matrix_sdk::ruma::directory::PublicRoomsChunk;
 use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
 use matrix_sdk::sliding_sync::Ranges;
 use matrix_sdk::RoomInfo;
@@ -1051,6 +1052,17 @@ async fn matrixUserDirectorySearch(
         .await
 }
 
+ts_type_ser!(RpcPublicRoomChunk: PublicRoomsChunk = "any");
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixPublicRoomInfo(
+    bridge: Arc<Bridge>,
+    room_id: String,
+) -> anyhow::Result<RpcPublicRoomChunk> {
+    let matrix = get_matrix(&bridge).await?;
+    Ok(RpcPublicRoomChunk(matrix.public_room_info(&room_id).await?))
+}
+
 #[macro_rules_derive(rpc_method!)]
 async fn matrixSetDisplayName(bridge: Arc<Bridge>, display_name: String) -> anyhow::Result<()> {
     let matrix = get_matrix(&bridge).await?;
@@ -1321,6 +1333,7 @@ rpc_methods!(RpcMethods {
     matrixIgnoreUser,
     matrixUnignoreUser,
     matrixRoomPreviewContent,
+    matrixPublicRoomInfo,
 
     // Communities
     communityPreview,

@@ -21,6 +21,7 @@ pub use matrix_sdk::ruma::api::client::room::create_room::v3 as create_room;
 use matrix_sdk::ruma::api::client::room::Visibility;
 use matrix_sdk::ruma::api::client::state::send_state_event;
 use matrix_sdk::ruma::api::client::uiaa;
+use matrix_sdk::ruma::directory::PublicRoomsChunk;
 use matrix_sdk::ruma::events::receipt::ReceiptThread;
 use matrix_sdk::ruma::events::room::encryption::RoomEncryptionEventContent;
 use matrix_sdk::ruma::events::room::message::{MessageType, RoomMessageEventContent};
@@ -745,6 +746,26 @@ impl Matrix {
                 event_id.parse().context(ErrorCode::BadRequest)?,
             )
             .await?)
+    }
+
+    pub async fn public_room_info(&self, room_id: &str) -> Result<PublicRoomsChunk> {
+        let response = self
+            .client
+            .public_rooms_filtered(assign!(get_public_rooms_filtered::Request::default(), {
+                server: None,
+                limit: None,
+                since: None,
+                filter: assign!(matrix_sdk::ruma::directory::Filter::new(), {
+                    generic_search_term: Some(room_id.to_string())
+                }),
+                room_network: Default::default(),
+            }))
+            .await?;
+        response
+            .chunk
+            .first()
+            .context("public room not found")
+            .cloned()
     }
 
     pub async fn get_public_rooms_filtered(

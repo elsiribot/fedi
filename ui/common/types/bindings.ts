@@ -705,6 +705,7 @@ export interface RpcMethods {
             | { kind: 'unknown' }
         >,
     ]
+    matrixPublicRoomInfo: [{ roomId: string }, any]
     communityPreview: [
         { inviteCode: string },
         {
@@ -797,6 +798,8 @@ export interface RpcPayInvoiceResponse {
 export type RpcPeerId = number
 
 export type RpcPublicKey = string
+
+export type RpcPublicRoomChunk = any
 
 export type RpcPusher = any
 
