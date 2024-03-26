@@ -1,8 +1,10 @@
+import { useNavigation } from '@react-navigation/native'
 import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
+import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { FederationPreview as FederationPreviewType } from '@fedi/common/types'
 import {
     getFederationTosUrl,
@@ -30,8 +32,49 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
     const tosUrl = getFederationTosUrl(federation.meta)
     const welcomeMessage = getFederationWelcomeMessage(federation.meta)
     const isSupported = getIsFederationSupported(federation)
+    const popupInfo = usePopupFederationInfo(federation.meta)
+    const navigation = useNavigation()
 
     const style = styles(theme)
+
+    if (popupInfo?.ended) {
+        return (
+            <View style={style.container}>
+                <View style={style.endedContent}>
+                    <View style={style.endedContentSpacing}>
+                        <FederationLogo federation={federation} size={72} />
+                    </View>
+                    <Text h2 style={style.endedContentSpacing}>
+                        {federation?.name}
+                    </Text>
+                    <View style={[style.ended, style.endedContentSpacing]}>
+                        <Text caption bold>
+                            {t('feature.popup.ended')}
+                        </Text>
+                    </View>
+                    <Text caption style={{ textAlign: 'center' }}>
+                        {popupInfo?.endedMessage || (
+                            <Trans
+                                t={t}
+                                i18nKey="feature.popup.ended-description"
+                                values={{ date: popupInfo?.endsAtText }}
+                                components={{ bold: <Text caption bold /> }}
+                            />
+                        )}
+                    </Text>
+                </View>
+
+                <View style={style.buttonsContainer}>
+                    <Button
+                        fullWidth
+                        title={t('phrases.go-back')}
+                        onPress={navigation.goBack}
+                        containerStyle={styles(theme).button}
+                    />
+                </View>
+            </View>
+        )
+    }
 
     if (!isSupported) {
         return (
@@ -223,6 +266,25 @@ const styles = (theme: Theme) =>
         },
         unsupportedBadgeLabel: {
             color: theme.colors.white,
+        },
+        endedContent: {
+            flex: 1,
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '90%',
+            maxWidth: 280,
+            margin: 'auto',
+        },
+        endedContentSpacing: {
+            marginBottom: theme.spacing.lg,
+        },
+        ended: {
+            paddingVertical: theme.spacing.xxs,
+            paddingHorizontal: theme.spacing.sm,
+            backgroundColor: theme.colors.lightGrey,
+            color: theme.colors.primary,
+            borderRadius: 30,
         },
     })
 
