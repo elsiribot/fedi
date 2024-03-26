@@ -234,7 +234,7 @@ impl FediFeeRemittanceService {
     #[instrument(skip_all, fields(federation_id = %fed.federation_id()) , err, ret)]
     #[cfg_attr(target_family = "wasm", async_recursion(?Send))]
     #[cfg_attr(not(target_family = "wasm"), async_recursion)]
-    async fn remit_fedi_fee(_guard: OwnedMutexGuard<()>, fed: &FederationV2) -> anyhow::Result<()> {
+    async fn remit_fedi_fee(guard: OwnedMutexGuard<()>, fed: &FederationV2) -> anyhow::Result<()> {
         let outstanding_fees = fed.get_outstanding_fedi_fees().await;
         info!("fedi fee threshold exceeded, remitting");
         let gateway = fed.select_gateway().await?;
@@ -318,11 +318,14 @@ impl FediFeeRemittanceService {
                 fedimint_core::db::AutocommitError::ClosureError { error, .. } => error,
             })?;
 
+        let mutex = OwnedMutexGuard::mutex(&guard).clone();
+        drop(guard);
         // If payment fails, un-zero the oustanding fee before returning the error.
         if let Err(e) = fed
             .subscribe_to_ln_pay(payment_type, extra_meta, invoice.clone())
             .await
         {
+            let _guard = mutex.lock().await;
             fed.client
                 .db()
                 .autocommit(
