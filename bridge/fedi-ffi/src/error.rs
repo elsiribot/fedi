@@ -31,6 +31,8 @@ pub enum ErrorCode {
     MatrixNotInitialized,
     #[error("Unknown Observable")]
     UnknownObservable,
+    #[error("Operation timed out")]
+    Timeout,
 }
 
 pub fn get_error_code(err: &anyhow::Error) -> Option<ErrorCode> {
