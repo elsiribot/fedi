@@ -56,7 +56,12 @@ pub async fn fedimint_initialize_async(
     fedi_api: Arc<dyn IFediApi>,
     device_identifier: String,
 ) -> anyhow::Result<Arc<Bridge>> {
+    info!(
+        "bridge version hash={}",
+        env!("FEDIMINT_BUILD_CODE_VERSION")
+    );
     let _g = TimeReporter::new("fedimint_initialize").level(Level::INFO);
+
     let bridge = Bridge::new(storage, event_sink, fedi_api, device_identifier)
         .await
         .context("could not create a bridge")?;
