@@ -5,11 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import {
-    createChatGroup,
-    selectActiveFederationId,
-    selectChatXmppClient,
-} from '@fedi/common/redux'
+import { createMatrixRoom } from '@fedi/common/redux'
+import { ChatType } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
@@ -20,50 +17,37 @@ const log = makeLog('CreateGroup')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'CreateGroup'>
 
-/** @deprecated XMPP legacy code */
 const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(selectActiveFederationId)
-    const xmppClient = useAppSelector(selectChatXmppClient)
-    const [groupName, setGroupName] = useState<string>('')
+    const [groupName, setGroupName] = useState<string>(
+        t('feature.chat.new-group'),
+    )
     const [creatingGroup, setCreatingGroup] = useState<boolean>(false)
     const [broadcastOnly, setBroadcastOnly] = useState<boolean>(false)
     const toast = useToast()
 
     const handleCreateGroup = useCallback(async () => {
+        setCreatingGroup(true)
         try {
-            if (!activeFederationId || !xmppClient)
-                throw new Error('errors.chat-unavailable')
-            setCreatingGroup(true)
-            const groupId = await xmppClient.generateUniqueGroupId()
-
-            const newGroup = await dispatch(
-                createChatGroup({
-                    federationId: activeFederationId,
-                    id: groupId,
+            const { roomId } = await dispatch(
+                createMatrixRoom({
                     name: groupName,
                     broadcastOnly,
                 }),
             ).unwrap()
-            log.info('group created', newGroup)
-            navigation.replace('GroupChat', { groupId })
+            log.info('group created', roomId)
+            navigation.replace('ChatRoomConversation', {
+                roomId,
+                chatType: ChatType.group,
+            })
         } catch (error) {
             log.error('group create failed', error)
             toast.error(t, error)
         }
         setCreatingGroup(false)
-    }, [
-        activeFederationId,
-        broadcastOnly,
-        dispatch,
-        groupName,
-        navigation,
-        toast,
-        xmppClient,
-        t,
-    ])
+    }, [broadcastOnly, dispatch, groupName, navigation, toast, t])
 
     const handleSubmit = async () => {
         if (groupName) {
