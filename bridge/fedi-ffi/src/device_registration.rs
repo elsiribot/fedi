@@ -61,9 +61,7 @@ async fn renew_registration_periodically(
     event_sink: EventSink,
     fedi_api: Arc<dyn IFediApi>,
 ) {
-    let seed = app_state
-        .with_read_lock(|state| state.root_mnemonic.clone())
-        .await;
+    let seed = app_state.root_mnemonic().await;
 
     // Start the periodic activity of renewing this device's
     // registration every so often. Should this renewal ever fail because of

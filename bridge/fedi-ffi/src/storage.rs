@@ -9,6 +9,7 @@ use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send};
+use fedimint_derive_secret::DerivableSecret;
 use matrix_sdk::matrix_auth::MatrixSession;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
@@ -38,7 +39,7 @@ pub struct AppStateRaw {
     pub format_version: u32,
 
     /// Root mnemonic that's used to derive all secrets in the app
-    pub root_mnemonic: bip39::Mnemonic,
+    root_mnemonic: bip39::Mnemonic,
 
     /// Mapping of federation ID => FederationInfo
     pub joined_federations: BTreeMap<String, FederationInfo>,
@@ -232,20 +233,8 @@ impl AppState {
     {
         let mut app_state_in_memory = self.raw.write().await;
 
-        // Ensure root mnemonic cannot be overwritten while a joined V2 federation
-        // exists
-        let v2_federation_exists = app_state_in_memory
-            .joined_federations
-            .iter()
-            .any(|(_, FederationInfo { version, .. })| *version >= 2);
         let mut app_state_raw_new = app_state_in_memory.as_ref().clone();
         let result = closure(&mut app_state_raw_new);
-
-        if v2_federation_exists
-            && app_state_raw_new.root_mnemonic != app_state_in_memory.root_mnemonic
-        {
-            bail!("Root mnemonic cannot be overwritten while joined v2 federations are present");
-        }
 
         self.storage
             .write_file(
@@ -286,6 +275,31 @@ impl AppState {
                 Ok(new_identifier)
             }
         }
+    }
+
+    pub async fn root_mnemonic(&self) -> bip39::Mnemonic {
+        self.with_read_lock(|state| state.root_mnemonic.clone())
+            .await
+    }
+
+    pub async fn root_secret(&self) -> DerivableSecret {
+        self.with_read_lock(|state| {
+            Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
+        })
+        .await
+    }
+
+    /// Recover to a seed, fails if state has joined any federation.
+    pub async fn recover_mnemonic(&self, mnemonic: bip39::Mnemonic) -> anyhow::Result<()> {
+        self.with_write_lock(|state| {
+            if !state.joined_federations.is_empty() {
+                bail!("Cannot recover while joined federations exist");
+            }
+            state.root_mnemonic = mnemonic;
+            Ok(())
+        })
+        .await??;
+        Ok(())
     }
 }
 

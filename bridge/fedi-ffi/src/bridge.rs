@@ -8,8 +8,6 @@ use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, Secp256k1};
 use bitcoin::Address;
 use fedi_social_client::FediSocialCommonGen;
-use fedimint_bip39::Bip39RootSecretStrategy;
-use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::api::{DynGlobalApi, InviteCode};
 use fedimint_core::config::ClientConfig;
 use fedimint_core::encoding::Decodable;
@@ -96,9 +94,7 @@ impl Bridge {
         .await
         .into();
 
-        let root_mnemonic = app_state
-            .with_read_lock(|state| state.root_mnemonic.clone())
-            .await;
+        let root_mnemonic = app_state.root_mnemonic().await;
 
         // load joined federations
         let joined_federations = app_state
@@ -248,10 +244,7 @@ impl Bridge {
                     error!("ClientHandleArc is not unique, not reinserting the federation in list");
                     return Ok(());
                 }
-                let root_mnemonic = this
-                    .app_state
-                    .with_read_lock(move |state| state.root_mnemonic.clone())
-                    .await;
+                let root_mnemonic = this.app_state.root_mnemonic().await;
                 let federation_v2 = FederationV2::from_db(
                     db,
                     this.event_sink.clone(),
@@ -319,10 +312,7 @@ impl Bridge {
             bail!(ErrorCode::AlreadyJoined)
         }
 
-        let root_mnemonic = self
-            .app_state
-            .with_read_lock(|state| state.root_mnemonic.clone())
-            .await;
+        let root_mnemonic = self.app_state.root_mnemonic().await;
 
         let db_name = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
         let federation = FederationV2::join(
@@ -375,10 +365,7 @@ impl Bridge {
 
     pub async fn federation_preview(&self, invite_code: &str) -> Result<RpcFederationPreview> {
         let invite_code = invite_code.to_lowercase();
-        let root_mnemonic = self
-            .app_state
-            .with_read_lock(|state| state.root_mnemonic.clone())
-            .await;
+        let root_mnemonic = self.app_state.root_mnemonic().await;
         let (v2,) = futures::join!(FederationV2::download_client_config(
             &invite_code,
             &root_mnemonic
@@ -624,7 +611,7 @@ impl Bridge {
     pub async fn get_mnemonic_words(&self) -> anyhow::Result<Vec<String>> {
         Ok(self
             .app_state
-            .with_read_lock(|state| state.root_mnemonic.clone())
+            .root_mnemonic()
             .await
             .word_iter()
             .map(|x| x.to_owned())
@@ -649,16 +636,7 @@ impl Bridge {
 
     // FIXME: this function has weird name now that it doesn't do any recovery
     pub async fn recover_from_mnemonic(&self, mnemonic: bip39::Mnemonic) -> Result<()> {
-        // Only allow recovery when there are no joined federations
-        if !self.federations.lock().await.is_empty() {
-            bail!("Cannot recover while joined federations exist");
-        }
-
-        self.app_state
-            .with_write_lock(|state| {
-                state.root_mnemonic = mnemonic;
-            })
-            .await?;
+        self.app_state.recover_mnemonic(mnemonic).await?;
         Ok(())
     }
 
@@ -674,10 +652,7 @@ impl Bridge {
             .read_file(&video_file_path)
             .await?
             .ok_or(anyhow!("video file not found"))?;
-        let root_mnemonic = self
-            .app_state
-            .with_read_lock(|state| state.root_mnemonic.clone())
-            .await;
+        let root_mnemonic = self.app_state.root_mnemonic().await;
         let recovery_file = multi.upload_backup_file(video_file, root_mnemonic).await?;
         storage
             .write_file(RECOVERY_FILENAME.as_ref(), recovery_file)
@@ -926,12 +901,7 @@ impl Bridge {
         domain: String,
     ) -> Result<RpcSignedLnurlMessage> {
         let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
-        let global_root_secret = self
-            .app_state
-            .with_read_lock(|state| {
-                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
-            })
-            .await;
+        let global_root_secret = self.app_state.root_secret().await;
         Ok(multi
             .sign_lnurl_message(&message, domain, global_root_secret)
             .await)
@@ -966,12 +936,7 @@ impl Bridge {
     }
 
     pub async fn get_nostr_pub_key(&self) -> Result<String> {
-        let global_root_secret = self
-            .app_state
-            .with_read_lock(|state| {
-                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
-            })
-            .await;
+        let global_root_secret = self.app_state.root_secret().await;
         let secp = Secp256k1::new();
         let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
         let nostr_keypair = nostr_secret.to_secp_key(&secp);
@@ -985,22 +950,12 @@ impl Bridge {
         event_hash: String,
     ) -> Result<String> {
         let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
-        let global_root_secret = self
-            .app_state
-            .with_read_lock(|state| {
-                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
-            })
-            .await;
+        let global_root_secret = self.app_state.root_secret().await;
         multi.sign_nostr_event(event_hash, global_root_secret).await
     }
 
     pub async fn get_matrix_secret(&self) -> DerivableSecret {
-        let global_root_secret = self
-            .app_state
-            .with_read_lock(move |state| {
-                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
-            })
-            .await;
+        let global_root_secret = self.app_state.root_secret().await;
         global_root_secret.child_key(ChildId(MATRIX_CHILD_ID))
     }
 
