@@ -38,21 +38,21 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
     const dispatch = useAppDispatch()
 
     // If this is a chat with ourselves, redirect to main chat screen
-    const naivigationReplace = navigation.replace
+    const navigationReplace = navigation.replace
     useEffect(() => {
         if (userId === matrixAuth?.userId) {
-            naivigationReplace('TabsNavigator')
+            navigationReplace('TabsNavigator')
         }
-    }, [userId, matrixAuth, naivigationReplace])
+    }, [userId, matrixAuth, navigationReplace])
 
     // If we already have a chat room with this user, redirect there
     useEffect(() => {
         if (!existingRoom) return
-        naivigationReplace('ChatRoomConversation', {
+        navigationReplace('ChatRoomConversation', {
             roomId: existingRoom.id,
             chatType: ChatType.direct,
         })
-    }, [existingRoom, naivigationReplace])
+    }, [existingRoom, navigationReplace])
 
     // TODO: reimplement read message hook for matrix
     // Use these hooks only if the screen is in focus, otherwise use pauseUpdates
@@ -64,12 +64,12 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
             const res = await dispatch(
                 sendMatrixDirectMessage({ userId, body }),
             ).unwrap()
-            naivigationReplace('ChatRoomConversation', {
+            navigationReplace('ChatRoomConversation', {
                 roomId: res.roomId,
                 chatType: ChatType.direct,
             })
         },
-        [dispatch, naivigationReplace, userId],
+        [dispatch, navigationReplace, userId],
     )
 
     return (
@@ -80,10 +80,7 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
                     id={userId}
                     events={[]}
                 />
-                <MessageInput
-                    onMessageSubmitted={handleSend}
-                    directUserId={userId}
-                />
+                <MessageInput onMessageSubmitted={handleSend} id={userId} />
             </>
         </View>
     )
