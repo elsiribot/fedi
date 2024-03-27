@@ -166,7 +166,10 @@ impl AppState {
         if let Some(state) = AppState::existing_from_storage(storage.clone()).await? {
             Ok(state)
         } else {
-            Ok(Self::default_with_storage(storage).await)
+            let app_state = Self::default_with_storage(storage).await;
+            // write the app state to storage
+            app_state.with_write_lock(|_| ()).await?;
+            Ok(app_state)
         }
     }
 
