@@ -81,6 +81,7 @@ rusqlite = { version = "*", features = ["bundled"] }
 
 [build-dependencies]
 uniffi = { version = "0.25.3", features = ["build"] }
+fedimint-build = { workspace = true }
 
 [dev-dependencies]
 tempfile = "3.3.0"

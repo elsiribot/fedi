@@ -1842,6 +1842,7 @@ dependencies = [
  "fedi-social-client",
  "fedimint-aead",
  "fedimint-bip39",
+ "fedimint-build",
  "fedimint-client",
  "fedimint-core",
  "fedimint-derive-secret",
