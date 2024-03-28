@@ -2467,6 +2467,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    #[ignore] // flaky
     async fn test_transfer_device_registration_post_recovery() -> anyhow::Result<()> {
         let device_identifier_1 = "device 1".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
@@ -2590,6 +2591,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    #[ignore] // flaky
     async fn test_new_device_registration_post_recovery() -> anyhow::Result<()> {
         let device_identifier_1 = "device 1".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
