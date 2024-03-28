@@ -44,8 +44,9 @@ use crate::storage::{
     AppState, DatabaseInfo, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule,
 };
 use crate::types::{
-    GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
-    RpcLightningGateway, RpcPayAddressResponse, RpcRegisteredDevice, RpcReturningMemberStatus,
+    GuardianStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederationPreview,
+    RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway, RpcPayAddressResponse,
+    RpcRegisteredDevice, RpcReturningMemberStatus,
 };
 use crate::utils::required_threashold_of;
 
@@ -768,6 +769,15 @@ impl Bridge {
         } else {
             Ok(None)
         }
+    }
+
+    pub async fn device_index_assignment_status(
+        &self,
+    ) -> anyhow::Result<RpcDeviceIndexAssignmentStatus> {
+        Ok(match self.app_state.ensure_device_index().await {
+            Ok(index) => RpcDeviceIndexAssignmentStatus::Assigned(index),
+            Err(_) => RpcDeviceIndexAssignmentStatus::Unassigned,
+        })
     }
 
     // FIXME: this function has weird name now that it doesn't do any recovery

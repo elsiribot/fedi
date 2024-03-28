@@ -40,8 +40,9 @@ use crate::matrix::{
 };
 use crate::observable::{Observable, ObservableVec};
 use crate::types::{
-    GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
-    RpcLightningGateway, RpcPayAddressResponse, RpcRegisteredDevice,
+    GuardianStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederationPreview,
+    RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway, RpcPayAddressResponse,
+    RpcRegisteredDevice,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -627,6 +628,13 @@ async fn registerDeviceWithIndex(
         .await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn deviceIndexAssignmentStatus(
+    bridge: Arc<Bridge>,
+) -> anyhow::Result<RpcDeviceIndexAssignmentStatus> {
+    bridge.device_index_assignment_status().await
+}
+
 async fn get_matrix(bridge: &Bridge) -> anyhow::Result<&Matrix> {
     bridge.matrix.get().context(ErrorCode::MatrixNotInitialized)
 }
@@ -1063,6 +1071,7 @@ rpc_methods!(RpcMethods {
     // Device Registration
     fetchRegisteredDevices,
     registerDeviceWithIndex,
+    deviceIndexAssignmentStatus,
 
     matrixObserverCancel,
 

@@ -135,6 +135,8 @@ export interface RpcBitcoinDetails {
     expiresAt: number
 }
 
+export type RpcDeviceIndexAssignmentStatus = { assigned: number } | 'unassigned'
+
 export interface RpcDuration {
     nanos: number
     secs: number
@@ -539,6 +541,10 @@ export interface RpcMethods {
             clientConfig: RpcJsonClientConfig | null
             fediFeeSchedule: RpcFediFeeSchedule
         } | null,
+    ]
+    deviceIndexAssignmentStatus: [
+        Record<string, never>,
+        { assigned: number } | 'unassigned',
     ]
     matrixObserverCancel: [{ id: bigint }, null]
     matrixInit: [

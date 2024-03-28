@@ -839,3 +839,11 @@ impl From<RegisteredDevice> for RpcRegisteredDevice {
         }
     }
 }
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcDeviceIndexAssignmentStatus {
+    Assigned(u8),
+    Unassigned,
+}
