@@ -1127,11 +1127,12 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::ops::ControlFlow;
     use std::path::Path;
     use std::str::FromStr;
     use std::sync::{Once, RwLock};
-    use std::time::{Duration, UNIX_EPOCH};
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
     use anyhow::{anyhow, bail};
     use bitcoin::secp256k1::PublicKey;
@@ -1141,6 +1142,7 @@ mod tests {
     use fedi_social_client::common::VerificationDocument;
     use fedimint_core::{apply, async_trait_maybe_send, Amount};
     use fedimint_logging::TracingSetup;
+    use tokio::sync::Mutex;
     use tracing::{error, info};
 
     use super::*;
@@ -1186,7 +1188,18 @@ mod tests {
         }
     }
 
-    struct MockFediApi;
+    struct MockFediApi {
+        // (seed, index) => (device identifier, last registration timestamp)
+        registry: Mutex<HashMap<(bip39::Mnemonic, u8), (String, SystemTime)>>,
+    }
+
+    impl MockFediApi {
+        fn new() -> Self {
+            Self {
+                registry: Mutex::new(HashMap::new()),
+            }
+        }
+    }
 
     #[apply(async_trait_maybe_send!)]
     impl IFediApi for MockFediApi {
@@ -1205,22 +1218,57 @@ mod tests {
             unimplemented!("TODO shaurya implement when testing");
         }
 
-        // TODO shaurya make fetch return "test device" after register called
         async fn fetch_registered_devices_for_seed(
             &self,
-            _seed: bip39::Mnemonic,
+            seed: bip39::Mnemonic,
         ) -> anyhow::Result<Vec<RegisteredDevice>> {
-            Ok(vec![])
+            let mut devices = self
+                .registry
+                .lock()
+                .await
+                .iter()
+                .filter_map(|(k, v)| {
+                    if k.0 == seed {
+                        Some(RegisteredDevice {
+                            index: k.1,
+                            identifier: v.0.clone(),
+                            last_renewed: v.1,
+                        })
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            devices.sort_by_key(|r| r.index);
+            Ok(devices)
         }
 
         async fn register_device_for_seed(
             &self,
-            _seed: bip39::Mnemonic,
-            _device_index: u8,
-            _device_identifier: String,
-            _force_overwrite: bool,
+            seed: bip39::Mnemonic,
+            device_index: u8,
+            device_identifier: String,
+            force_overwrite: bool,
         ) -> anyhow::Result<(), RegisterDeviceError> {
-            Ok(())
+            let mut registry = self.registry.lock().await;
+            if let Some(value) = registry.get_mut(&(seed.clone(), device_index)) {
+                if value.0 == device_identifier || force_overwrite {
+                    value.1 = fedimint_core::time::now();
+                    Ok(())
+                } else {
+                    Err(RegisterDeviceError::AnotherDeviceOwnsIndex(format!(
+                        "{} already owned by {}, not overwriting",
+                        device_index, value.0
+                    )))
+                }
+            } else {
+                registry.insert(
+                    (seed, device_index),
+                    (device_identifier, fedimint_core::time::now()),
+                );
+                Ok(())
+            }
         }
     }
 
@@ -1395,7 +1443,7 @@ mod tests {
         let event_sink = Arc::new(FakeEventSink::new());
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
-        let fedi_api = Arc::new(MockFediApi);
+        let fedi_api = Arc::new(MockFediApi::new());
         let bridge = match fedimint_initialize_async(
             storage,
             event_sink,
@@ -1444,7 +1492,7 @@ mod tests {
         let event_sink = Arc::new(FakeEventSink::new());
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
-        let fedi_api = Arc::new(MockFediApi);
+        let fedi_api = Arc::new(MockFediApi::new());
         let invalid_fedi_file = String::from(r#"{"format_version": 0, "root_seed": "abcd"}"#);
         storage
             .write_file(FEDI_FILE_PATH.as_ref(), invalid_fedi_file.clone().into())
@@ -1482,7 +1530,7 @@ mod tests {
         let fixture_dir = get_fixture_dir().join("v0_db");
         copy_recursively(fixture_dir, &data_dir)?;
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
-        let fedi_api = Arc::new(MockFediApi);
+        let fedi_api = Arc::new(MockFediApi::new());
         let bridge = fedimint_initialize_async(
             storage,
             event_sink,
@@ -1867,6 +1915,10 @@ mod tests {
         let recovery_bridge = setup_bridge().await?;
         recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
 
+        // Register device as index 0 since it's the same device
+        // No need to force an overwrite since device identifier remains the same
+        registerDeviceWithIndex(recovery_bridge.clone(), 0, false).await?;
+
         // Rejoin federation and assert that balances are correct
         let recovery_federation = join_test_fed_recovery(&recovery_bridge).await?;
         match &*recovery_federation {
@@ -2026,6 +2078,10 @@ mod tests {
         // Member combines decryption shares, loading recovered mnemonic back into their
         // db
         completeSocialRecovery(recovery_bridge.clone()).await?;
+
+        // Register device as index 0 since it's the same device
+        // No need to force an overwrite since device identifier remains the same
+        registerDeviceWithIndex(recovery_bridge.clone(), 0, false).await?;
 
         // Check backups match (TODO: how can I make sure that they're equal b/c nothing
         // happened?)
@@ -2274,6 +2330,11 @@ mod tests {
         // "returning"
         let bridge = setup_bridge().await?;
         recoverFromMnemonic(bridge.clone(), mnemonic).await?;
+
+        // Register device as index 0 since it's the same device
+        // No need to force an overwrite since device identifier remains the same
+        registerDeviceWithIndex(bridge.clone(), 0, false).await?;
+
         assert!(matches!(
             federationPreview(bridge.clone(), invite_code.clone())
                 .await?
