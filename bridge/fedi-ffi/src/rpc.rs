@@ -1443,7 +1443,28 @@ mod tests {
         Ok((bridge, federation))
     }
 
+    async fn setup_custom(
+        device_identifier: String,
+        mock_fedi_api: Arc<dyn IFediApi>,
+    ) -> anyhow::Result<(Arc<Bridge>, Arc<MultiFederation>)> {
+        let bridge = setup_bridge_custom(device_identifier, mock_fedi_api).await?;
+
+        let federation = join_test_fed(&bridge).await?;
+        Ok((bridge, federation))
+    }
+
     async fn setup_bridge() -> anyhow::Result<Arc<Bridge>> {
+        setup_bridge_custom(
+            "Unknown (bridge tests)".to_owned(),
+            Arc::new(MockFediApi::new()),
+        )
+        .await
+    }
+
+    async fn setup_bridge_custom(
+        device_identifier: String,
+        fedi_api: Arc<dyn IFediApi>,
+    ) -> anyhow::Result<Arc<Bridge>> {
         INIT_TRACING.call_once(|| {
             TracingSetup::default()
                 .init()
@@ -1452,22 +1473,16 @@ mod tests {
         let event_sink = Arc::new(FakeEventSink::new());
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
-        let fedi_api = Arc::new(MockFediApi::new());
-        let bridge = match fedimint_initialize_async(
-            storage,
-            event_sink,
-            fedi_api,
-            "Unknown (bridge tests)".to_owned(),
-        )
-        .await
-        {
-            Ok(bridge) => bridge,
-            Err(e) => {
-                let context_error = e.context("Failed to initialize Bridge");
-                error!("{}", context_error);
-                return Err(context_error);
-            }
-        };
+        let bridge =
+            match fedimint_initialize_async(storage, event_sink, fedi_api, device_identifier).await
+            {
+                Ok(bridge) => bridge,
+                Err(e) => {
+                    let context_error = e.context("Failed to initialize Bridge");
+                    error!("{}", context_error);
+                    return Err(context_error);
+                }
+            };
         Ok(bridge)
     }
 
@@ -2351,6 +2366,222 @@ mod tests {
             RpcReturningMemberStatus::ReturningMember
         ));
 
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_join_fails_post_recovery_index_unassigned() -> anyhow::Result<()> {
+        let device_identifier = "device 1".to_string();
+        let mock_fedi_api = Arc::new(MockFediApi::new());
+        let (backup_bridge, federation) =
+            setup_custom(device_identifier.clone(), mock_fedi_api.clone()).await?;
+
+        // Device index should be 0 since it's a fresh seed
+        assert!(matches!(
+            deviceIndexAssignmentStatus(backup_bridge.clone()).await?,
+            RpcDeviceIndexAssignmentStatus::Assigned(0)
+        ));
+
+        // set username and do a backup
+        let federation_id = federation.federation_id();
+        let username = "satoshi".to_string();
+        backupXmppUsername(
+            backup_bridge.clone(),
+            federation_id.clone(),
+            username.clone(),
+        )
+        .await?;
+        // give some time for backup to complete before shutting down the bridge
+        fedimint_core::task::sleep(Duration::from_secs(1)).await;
+
+        // get mnemonic and drop old federation / bridge so no background stuff runs
+        let mnemonic = getMnemonic(backup_bridge.clone()).await?;
+        drop(federation);
+        drop(backup_bridge);
+
+        // create new bridge which hasn't joined federation yet and recover mnemnonic
+        let recovery_bridge = setup_bridge_custom(device_identifier, mock_fedi_api).await?;
+        recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
+
+        // Device index should be unassigned since it's a recovery
+        assert!(matches!(
+            deviceIndexAssignmentStatus(recovery_bridge.clone()).await?,
+            RpcDeviceIndexAssignmentStatus::Unassigned
+        ));
+
+        // Rejoining federation should fail since device index wasn't assigned
+        assert!(join_test_fed_recovery(&recovery_bridge).await.is_err());
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_transfer_device_registration_post_recovery() -> anyhow::Result<()> {
+        let device_identifier_1 = "device 1".to_string();
+        let mock_fedi_api = Arc::new(MockFediApi::new());
+        let (backup_bridge, federation) =
+            setup_custom(device_identifier_1, mock_fedi_api.clone()).await?;
+
+        // receive ecash
+        let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
+        let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
+        federation.receive_ecash(ecash).await?;
+        wait_for_ecash_reissue(&backup_bridge, &federation).await?;
+        assert_eq!(ecash_receive_amount, federation.get_balance().await);
+
+        // Interact with stability pool
+        let amount_to_deposit = Amount::from_msats(110_000);
+        let fedi_fee_ppm = backup_bridge
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                federation.federation_id().0,
+                stability_pool_client::common::KIND,
+                RpcTransactionDirection::Send,
+            )
+            .await?;
+        let expected_fedi_fee =
+            Amount::from_msats((fedi_fee_ppm * amount_to_deposit.msats).div_ceil(MILLION));
+        backup_bridge
+            .stability_pool_deposit_to_seek(
+                federation.federation_id(),
+                RpcAmount(amount_to_deposit),
+            )
+            .await?;
+
+        let ecash_balance_before = federation.get_balance().await;
+
+        // set username and do a backup
+        let federation_id = federation.federation_id();
+        let username = "satoshi".to_string();
+        backupXmppUsername(
+            backup_bridge.clone(),
+            federation_id.clone(),
+            username.clone(),
+        )
+        .await?;
+        // give some time for backup to complete before shutting down the bridge
+        fedimint_core::task::sleep(Duration::from_secs(1)).await;
+
+        // get mnemonic and drop old federation / bridge so no background stuff runs
+        let mnemonic = getMnemonic(backup_bridge.clone()).await?;
+        drop(federation);
+        drop(backup_bridge);
+
+        // create new bridge which hasn't joined federation yet and recover mnemnonic
+        let device_identifier_2 = "device_2".to_string();
+        let recovery_bridge = setup_bridge_custom(device_identifier_2, mock_fedi_api).await?;
+        recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
+
+        // Register device as index 0 since it's a transfer
+        // It should fail first without force_overwrite=true since identifier changed
+        assert!(registerDeviceWithIndex(recovery_bridge.clone(), 0, false)
+            .await
+            .is_err());
+        registerDeviceWithIndex(recovery_bridge.clone(), 0, true).await?;
+
+        // Rejoin federation and assert that balances are correct
+        let recovery_federation = join_test_fed_recovery(&recovery_bridge).await?;
+        match &*recovery_federation {
+            MultiFederation::V2(x) => assert!(x.recovering()),
+        }
+        let id = recovery_federation.federation_id();
+        drop(recovery_federation);
+        loop {
+            // Wait until recovery complete
+            if recovery_bridge
+                .event_sink
+                .num_events_of_type("recoveryComplete".into())
+                == 1
+            {
+                break;
+            }
+
+            fedimint_core::task::sleep(Duration::from_secs(2)).await;
+        }
+        let recovery_federation = recovery_bridge.get_multi(&id.0).await?;
+        // Currently, accrued fedi fee is merged back into balance upon recovery
+        assert_eq!(
+            ecash_balance_before + expected_fedi_fee,
+            recovery_federation.get_balance().await
+        );
+        assert_eq!(
+            Some(username),
+            recovery_federation.get_xmpp_username().await
+        );
+
+        let account_info = recovery_bridge
+            .stability_pool_account_info(recovery_federation.federation_id(), true)
+            .await?;
+        assert_eq!(account_info.idle_balance.0, Amount::ZERO);
+        assert_eq!(account_info.staged_seeks[0].0, amount_to_deposit);
+        assert!(account_info.staged_cancellation.is_none());
+        assert!(account_info.locked_seeks.is_empty());
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_new_device_registration_post_recovery() -> anyhow::Result<()> {
+        let device_identifier_1 = "device 1".to_string();
+        let mock_fedi_api = Arc::new(MockFediApi::new());
+        let (backup_bridge, federation) =
+            setup_custom(device_identifier_1, mock_fedi_api.clone()).await?;
+
+        // receive ecash
+        let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
+        let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
+        federation.receive_ecash(ecash).await?;
+        wait_for_ecash_reissue(&backup_bridge, &federation).await?;
+        assert_eq!(ecash_receive_amount, federation.get_balance().await);
+
+        // Interact with stability pool
+        let amount_to_deposit = Amount::from_msats(110_000);
+        backup_bridge
+            .stability_pool_deposit_to_seek(
+                federation.federation_id(),
+                RpcAmount(amount_to_deposit),
+            )
+            .await?;
+
+        // set username and do a backup
+        let federation_id = federation.federation_id();
+        let username = "satoshi".to_string();
+        backupXmppUsername(
+            backup_bridge.clone(),
+            federation_id.clone(),
+            username.clone(),
+        )
+        .await?;
+        // give some time for backup to complete before shutting down the bridge
+        fedimint_core::task::sleep(Duration::from_secs(1)).await;
+
+        // get mnemonic and drop old federation / bridge so no background stuff runs
+        let mnemonic = getMnemonic(backup_bridge.clone()).await?;
+        drop(federation);
+        drop(backup_bridge);
+
+        // create new bridge which hasn't joined federation yet and recover mnemnonic
+        let device_identifier_2 = "device_2".to_string();
+        let recovery_bridge = setup_bridge_custom(device_identifier_2, mock_fedi_api).await?;
+        recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
+
+        // Register device as index 1 since it's a new device
+        registerDeviceWithIndex(recovery_bridge.clone(), 1, false).await?;
+
+        // Rejoin federation and assert that balances don't carry over (and there is no
+        // backup)
+        let recovery_federation = join_test_fed_recovery(&recovery_bridge).await?;
+        match &*recovery_federation {
+            MultiFederation::V2(x) => assert!(!x.recovering()),
+        }
+        assert_eq!(Amount::ZERO, recovery_federation.get_balance().await);
+        assert_eq!(None, recovery_federation.get_xmpp_username().await);
+
+        let account_info = recovery_bridge
+            .stability_pool_account_info(recovery_federation.federation_id(), true)
+            .await?;
+        assert_eq!(account_info.idle_balance.0, Amount::ZERO);
+        assert!(account_info.staged_seeks.is_empty());
+        assert!(account_info.staged_cancellation.is_none());
+        assert!(account_info.locked_seeks.is_empty());
         Ok(())
     }
 }
