@@ -14,7 +14,7 @@ const GroupAdminHeader: React.FC = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<GroupAdminRouteProp>()
-    const { groupId } = route.params
+    const { roomId } = route.params
 
     return (
         <Header
@@ -25,7 +25,7 @@ const GroupAdminHeader: React.FC = () => {
                     <Pressable
                         onPress={() =>
                             navigation.navigate('EditGroup', {
-                                groupId,
+                                roomId,
                             })
                         }
                         style={styles(theme).headerIconContainer}>

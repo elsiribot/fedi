@@ -15,6 +15,7 @@ import GroupIcon from './GroupIcon'
 
 type GroupChatRouteProp = RouteProp<RootStackParamList, 'GroupChat'>
 
+/** @deprecated XMPP legacy code */
 const GroupHeader: React.FC = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()

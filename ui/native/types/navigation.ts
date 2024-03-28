@@ -72,7 +72,7 @@ export type RootStackParamList = {
     CreateGroup: undefined
     CreateUsername: undefined
     DirectChat: { memberId: string }
-    EditGroup: { groupId: string }
+    EditGroup: { roomId: string }
     Eula: undefined
     FederationInvite: { inviteLink: string }
     FederationGreeting: undefined
@@ -99,7 +99,7 @@ export type RootStackParamList = {
     RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
     GroupChat: { groupId: string }
-    GroupAdmin: { groupId: string }
+    GroupAdmin: { roomId: string }
     GroupInvite: { groupId: string }
     ScanMemberCode: undefined
     ScanSocialRecoveryCode: undefined

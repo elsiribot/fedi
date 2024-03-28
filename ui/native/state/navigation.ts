@@ -46,16 +46,16 @@ export function resetAfterSocialRecovery() {
     }
 }
 
-export function resetAfterGroupNameUpdate(groupId: string) {
+export function resetAfterGroupNameUpdate(roomId: string) {
     return {
         ...CommonActions.reset({
             index: 2,
             routes: [
                 { name: 'TabsNavigator', params: { screen: 'Chat' } },
-                { name: 'GroupChat', params: { groupId } },
+                { name: 'ChatRoomConversation', params: { roomId } },
                 {
                     name: 'GroupAdmin',
-                    params: { groupId },
+                    params: { roomId },
                 },
             ],
         }),

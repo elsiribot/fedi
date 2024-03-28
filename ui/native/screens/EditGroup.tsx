@@ -1,95 +1,57 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import {
-    configureChatGroup,
-    selectActiveFederationId,
-    selectChatGroup,
-} from '@fedi/common/redux'
+import { selectMatrixRoom, setMatrixRoomName } from '@fedi/common/redux'
 
 import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
-import { DEFAULT_GROUP_NAME } from '../constants'
-import { useAppDispatch, useAppSelector, usePrevious } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { resetAfterGroupNameUpdate } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'EditGroup'>
 
-/** @deprecated XMPP legacy code */
 const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(selectActiveFederationId)
-    const { groupId } = route.params
-    const group = useAppSelector(s => selectChatGroup(s, groupId))
-    const [groupName, setGroupName] = useState<string>(
-        group?.name || DEFAULT_GROUP_NAME,
-    )
+    const { roomId } = route.params
+    const room = useAppSelector(s => selectMatrixRoom(s, roomId))
+    const [groupName, setGroupName] = useState<string>(room?.name || '')
     const [editingGroupName, setEditingGroupName] = useState<boolean>(false)
     const toast = useToast()
 
-    const currentGroup = group
-    const previousGroup = usePrevious(currentGroup)
+    const style = styles(theme, insets)
 
-    const handleSubmit = async () => {
+    const handleEditRoomName = useCallback(async () => {
+        if (!room || !groupName) return
         setEditingGroupName(true)
-    }
-
-    useEffect(() => {
-        const handleEditGroupName = async () => {
-            try {
-                if (!activeFederationId || !group) return
-                await dispatch(
-                    configureChatGroup({
-                        federationId: activeFederationId as string,
-                        groupId,
-                        groupName: groupName,
-                    }),
-                ).unwrap()
-            } catch (error) {
-                toast.error(t, error)
-            }
-            setEditingGroupName(false)
+        try {
+            await dispatch(
+                setMatrixRoomName({
+                    roomId: room.id,
+                    name: groupName,
+                }),
+            ).unwrap()
+            navigation.dispatch(resetAfterGroupNameUpdate(room.id))
+        } catch (err) {
+            toast.error(t, 'errors.unknown-error')
         }
-        if (editingGroupName === true) {
-            handleEditGroupName()
-        }
-    }, [
-        activeFederationId,
-        dispatch,
-        editingGroupName,
-        group,
-        groupId,
-        groupName,
-        toast,
-        t,
-    ])
-
-    useEffect(() => {
-        if (
-            currentGroup?.name &&
-            previousGroup?.name &&
-            currentGroup?.name !== previousGroup?.name
-        ) {
-            setEditingGroupName(false)
-            navigation.dispatch(resetAfterGroupNameUpdate(currentGroup.id))
-        }
-    }, [currentGroup, previousGroup, navigation])
+        setEditingGroupName(false)
+    }, [dispatch, groupName, navigation, room?.id, toast, t])
 
     return (
         <KeyboardAwareWrapper>
-            <View style={styles(theme, insets).container}>
+            <View style={style.container}>
                 <HoloAvatar title={groupName[0]} size={AvatarSize.md} />
-                <View style={styles(theme, insets).inputWrapper}>
-                    <Text caption style={styles(theme, insets).inputLabel}>
+                <View style={style.inputWrapper}>
+                    <Text caption style={style.inputLabel}>
                         {t('feature.chat.group-name')}
                     </Text>
                     <Input
@@ -97,10 +59,8 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                         value={groupName}
                         placeholder={`${t('feature.chat.group-name')}`}
                         returnKeyType="done"
-                        containerStyle={styles(theme, insets).textInputOuter}
-                        inputContainerStyle={
-                            styles(theme, insets).textInputInner
-                        }
+                        containerStyle={style.textInputOuter}
+                        inputContainerStyle={style.textInputInner}
                         autoCapitalize={'none'}
                         autoCorrect={false}
                     />
@@ -108,10 +68,10 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                 <Button
                     fullWidth
                     title={t('phrases.save-changes')}
-                    onPress={handleSubmit}
+                    onPress={handleEditRoomName}
                     loading={editingGroupName}
                     disabled={!groupName || editingGroupName}
-                    containerStyle={styles(theme, insets).button}
+                    containerStyle={style.button}
                 />
             </View>
         </KeyboardAwareWrapper>

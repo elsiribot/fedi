@@ -1,4 +1,4 @@
-import { RouteProp, useRoute } from '@react-navigation/native'
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
@@ -17,12 +17,14 @@ type ChatUserRouteProp = RouteProp<RootStackParamList, 'ChatUserConversation'>
 
 const ChatConversationHeader: React.FC = () => {
     const { theme } = useTheme()
+    const navigation = useNavigation()
     const roomRoute = useRoute<ChatRoomRouteProp>()
     const userRoute = useRoute<ChatUserRouteProp>()
     const { roomId } = roomRoute.params
     const { userId } = userRoute.params
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
     const user = useAppSelector(s => selectMatrixUser(s, userId))
+    const isGroupChat = room?.directUserId === undefined
 
     let avatar: React.ReactNode
     let name: string = ''
@@ -45,11 +47,13 @@ const ChatConversationHeader: React.FC = () => {
                 centerContainerStyle={styles(theme).headerCenterContainer}
                 headerCenter={
                     <Pressable
-                        disabled
+                        disabled={!isGroupChat}
                         style={styles(theme).memberContainer}
                         onPress={() => {
                             // TODO: implement admin settings for 1on1 chat
-                            // navigation.navigate('GroupAdmin', { group })
+                            if (isGroupChat) {
+                                navigation.navigate('GroupAdmin', { roomId })
+                            }
                         }}>
                         {avatar}
                         <Text
