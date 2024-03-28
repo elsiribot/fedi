@@ -283,24 +283,3 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
     })
 
 export default ConfirmSendOnChain
-
-// const styles = (theme: Theme) =>
-//     StyleSheet.create({
-//         container: {
-//             flex: 1,
-//             alignItems: 'center',
-//             justifyContent: 'space-between',
-//             padding: theme.spacing.xl,
-//         },
-//         button: {
-//             marginTop: 'auto',
-//         },
-//         detailsContainer: {
-//             alignItems: 'center',
-//             width: '100%',
-//         },
-//         textInput: {
-//             width: '90%',
-//             marginTop: 'auto',
-//         },
-//     })
