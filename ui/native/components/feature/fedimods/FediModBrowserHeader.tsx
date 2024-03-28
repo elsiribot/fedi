@@ -1,7 +1,8 @@
 import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { MutableRefObject } from 'react'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { useTranslation } from 'react-i18next'
+import { Alert, Pressable, StyleSheet, View } from 'react-native'
 import WebView from 'react-native-webview'
 
 import { FediMod } from '@fedi/common/types'
@@ -20,6 +21,7 @@ const FediModBrowserHeader: React.FC<FediModBrowserHeaderProps> = ({
     fediMod,
 }) => {
     const { theme } = useTheme()
+    const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
     const style = styles(theme)
 
@@ -57,7 +59,25 @@ const FediModBrowserHeader: React.FC<FediModBrowserHeaderProps> = ({
                 <Pressable
                     style={style.close}
                     hitSlop={10}
-                    onPress={() => navigation.goBack()}>
+                    onPress={() => {
+                        Alert.alert(
+                            t('feature.fedimods.leave-page'),
+                            t('feature.fedimods.leave-page-confirmation'),
+                            [
+                                {
+                                    text: t('words.stay'),
+                                    onPress: () => null,
+                                    style: 'cancel',
+                                },
+                                {
+                                    text: t('words.leave'),
+                                    onPress: () => {
+                                        navigation.goBack()
+                                    },
+                                },
+                            ],
+                        )
+                    }}>
                     <SvgImage size={SvgImageSize.md} name="Close" />
                 </Pressable>
             }

@@ -1,7 +1,15 @@
+import { useNavigation } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { MutableRefObject, useRef, useState } from 'react'
+import React, { MutableRefObject, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native'
+import {
+    ActivityIndicator,
+    Alert,
+    BackHandler,
+    Linking,
+    StyleSheet,
+    View,
+} from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { WebView } from 'react-native-webview'
 import { OnShouldStartLoadWithRequest } from 'react-native-webview/lib/WebViewTypes'
@@ -133,6 +141,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const [showRecoveryInProgress, setShowRecoveryInProgress] =
         useState<boolean>(false)
     const { setParsedLink } = useOmniLinkContext()
+    const navigation = useNavigation()
 
     const handleParsedLink = (parsedLink: AnyParsedData) => {
         switch (parsedLink.type) {
@@ -442,6 +451,38 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     }
 
     const style = styles(insets)
+
+    // Handle back button press on Android
+    useEffect(() => {
+        const backAction = () => {
+            Alert.alert(
+                t('feature.fedimods.leave-page'),
+                t('feature.fedimods.leave-page-confirmation'),
+                [
+                    {
+                        text: t('words.stay'),
+                        onPress: () => null,
+                        style: 'cancel',
+                    },
+                    {
+                        text: t('words.leave'),
+                        onPress: () => {
+                            navigation.goBack()
+                        },
+                    },
+                ],
+            )
+
+            return true
+        }
+
+        const backHandler = BackHandler.addEventListener(
+            'hardwareBackPress',
+            backAction,
+        )
+
+        return () => backHandler.remove()
+    }, [navigation, t])
 
     return (
         <View style={style.container}>
