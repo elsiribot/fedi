@@ -6,6 +6,7 @@ on:
     push:
         branches:
             - master
+            - vercel/production
         paths:
             - .github/workflows/vercel-prod.yml
             - scripts/ci/vercel-prod.sh
