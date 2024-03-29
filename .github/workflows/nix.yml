@@ -41,6 +41,7 @@ jobs:
               with:
                   fetch-depth: 20
             - name: Check for changes outside 'ui/**'
+              if: github.event_name == 'pull_request'
               id: check-changes
               run: |
                   set -x
