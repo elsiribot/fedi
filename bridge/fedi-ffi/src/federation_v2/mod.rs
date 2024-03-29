@@ -146,7 +146,7 @@ pub struct FederationV2 {
     pub backup_service: OnceCell<BackupService>,
     pub fedi_fee_remittance_service: OnceCell<FediFeeRemittanceService>,
     pub recovering: bool,
-    pub gateway_service: LnGatewayService,
+    pub gateway_service: OnceCell<LnGatewayService>,
 }
 
 impl FederationV2 {
@@ -180,7 +180,7 @@ impl FederationV2 {
             backup_service: OnceCell::new(),
             fedi_fee_remittance_service: OnceCell::new(),
             recovering,
-            gateway_service: LnGatewayService::new(Arc::downgrade(&client), task_group).await,
+            gateway_service: OnceCell::new(),
             client,
         };
         if !recovering {
@@ -208,6 +208,13 @@ impl FederationV2 {
             .is_err()
         {
             error!("fedi fee remittance service already initialized");
+        }
+        if self
+            .gateway_service
+            .set(LnGatewayService::new(Arc::downgrade(&self.client), &self.task_group).await)
+            .is_err()
+        {
+            error!("ln gateway service already initialized");
         }
     }
 
@@ -402,7 +409,7 @@ impl FederationV2 {
     }
 
     pub async fn select_gateway(&self) -> anyhow::Result<Option<LightningGateway>> {
-        let gateway = self.gateway_service.select_gateway(&self.client).await?;
+        let gateway = self.gateway_service()?.select_gateway(&self.client).await?;
         Ok(gateway.map(|mut g| {
             g.api = override_localhost(&g.api);
             g
@@ -1264,15 +1271,22 @@ impl FederationV2 {
         self.event_sink.typed_event(&event);
     }
 
+    fn gateway_service(&self) -> anyhow::Result<&LnGatewayService> {
+        self.gateway_service.get().context(ErrorCode::Recovery)
+    }
+
     /// List all lightning gateways registered with the federation
     pub async fn list_gateways(&self) -> anyhow::Result<Vec<RpcLightningGateway>> {
-        self.gateway_service.update(&self.client).await?;
+        self.gateway_service()?.update(&self.client).await?;
         let gateways = self
             .client
             .get_first_module::<LightningClientModule>()
             .list_gateways()
             .await;
-        let active_gw = self.gateway_service.get_active_gateway(&self.client).await;
+        let active_gw = self
+            .gateway_service()?
+            .get_active_gateway(&self.client)
+            .await;
         let bridge_gateways: Vec<RpcLightningGateway> = gateways
             .into_iter()
             .map(|gw| RpcLightningGateway {
@@ -1284,10 +1298,9 @@ impl FederationV2 {
             .collect();
         Ok(bridge_gateways)
     }
-
     /// Switch active lightning gateway
     pub async fn switch_gateway(&self, gateway_id: &PublicKey) -> Result<()> {
-        self.gateway_service
+        self.gateway_service()?
             .set_active_gateway(&self.client, gateway_id)
             .await
     }

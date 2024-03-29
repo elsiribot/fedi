@@ -33,6 +33,8 @@ pub enum ErrorCode {
     UnknownObservable,
     #[error("Operation timed out")]
     Timeout,
+    #[error("Not allowed while recovering")]
+    Recovery,
 }
 
 pub fn get_error_code(err: &anyhow::Error) -> Option<ErrorCode> {
