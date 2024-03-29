@@ -51,4 +51,10 @@ export const showToast = createAsyncThunk<
 
     // Show toast immediately
     dispatch(setToast(toast))
+
+    if (toast.status === 'success') {
+        setTimeout(() => {
+            dispatch(closeToast(toast.key))
+        }, 6000)
+    }
 })
