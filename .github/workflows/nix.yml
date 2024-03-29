@@ -43,6 +43,7 @@ jobs:
             - name: Check for changes outside 'ui/**'
               id: check-changes
               run: |
+                  set -x
                   git fetch --depth=20 origin ${{ github.event.pull_request.base.sha }}
                   LAST_COMMON_COMMIT_SHA="$(git merge-base HEAD ${{ github.event.pull_request.base.sha }})"
                   FILES_CHANGED=$(git diff --name-only HEAD $LAST_COMMON_COMMIT_SHA)
