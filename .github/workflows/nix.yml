@@ -325,7 +325,7 @@ jobs:
           if: github.ref == 'refs/heads/master' || github.ref_type == 'tag'
           uses: docker/login-action@v3
           with:
-            username: fedibtc
+            username: justinmoon
             password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
         - name: Publish
