@@ -50,7 +50,7 @@ const ABOUT_TO_EXPIRE_DURATION: Duration = Duration::from_secs(30);
 
 impl LnGatewayService {
     // TODO: expose and use ClientWeak from fedimint
-    pub async fn new(client: Weak<ClientHandle>, task_group: TaskGroup) -> Self {
+    pub async fn new(client: Weak<ClientHandle>, task_group: &TaskGroup) -> Self {
         let this = Self {
             state: Arc::new(State {
                 last_updated: RwLock::new(SystemTime::UNIX_EPOCH),
