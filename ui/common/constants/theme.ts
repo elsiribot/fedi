@@ -27,6 +27,7 @@ export const theme = {
     colors: {
         link: HEX_COLORS.blue,
         primary: HEX_COLORS.night,
+        primary05: alphaHex(HEX_COLORS.night, 5),
         primaryLight: HEX_COLORS.darkGrey,
         primaryVeryLight: HEX_COLORS.lightGrey,
         success: HEX_COLORS.green,
@@ -100,4 +101,10 @@ function makeHoloGradientRgbas(alphaMultiplier: number) {
         [98, 54, 255, 0.3],
         [182, 32, 224, 0.3],
     ].map(([r, g, b, a]) => `rgba(${r}, ${g}, ${b}, ${a * alphaMultiplier})`)
+}
+
+function alphaHex(hex: string, alpha: number) {
+    return `${hex}${Math.floor(255 * (alpha / 100))
+        .toString(16)
+        .padStart(2, '0')}`
 }

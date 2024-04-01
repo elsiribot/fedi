@@ -27,7 +27,7 @@ const ChatConversationHeader: React.FC = () => {
     const isGroupChat = room?.directUserId === undefined
 
     let avatar: React.ReactNode
-    let name: string = ''
+    let name = ''
     if (room) {
         name = room?.name
         avatar = <ChatAvatar room={room} size={AvatarSize.sm} />

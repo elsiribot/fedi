@@ -25,9 +25,9 @@ import { jidToId } from '@fedi/common/utils/chat'
 
 import { useAppSelector } from '../../../state/hooks'
 import Avatar from '../../ui/Avatar'
-import EmptyGroupNotice from './EmptyGroupNotice'
 import MessageItem from './MessageItem'
 import { MessageItemError } from './MessageItemError'
+import EmptyGroupNotice from './NoMembersNotice'
 
 type MessagesListProps = {
     messages: ChatMessage[][][]

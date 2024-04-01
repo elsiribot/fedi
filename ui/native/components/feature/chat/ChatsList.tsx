@@ -23,31 +23,25 @@ const ChatsList: React.FC = () => {
 
     const rooms = useAppSelector(selectMatrixOrderedRoomsList)
     const syncStatus = useAppSelector(selectMatrixStatus)
+    const handleSelectChat = useCallback(
+        (chat: MatrixRoom) => {
+            navigation.navigate('ChatRoomConversation', {
+                roomId: chat.id,
+                chatType: chat.directUserId ? ChatType.direct : ChatType.group,
+            })
+        },
+        [navigation],
+    )
 
     const renderChat: ListRenderItem<MatrixRoom> = useCallback(
         ({ item }) => {
             return (
                 <ErrorBoundary fallback={null}>
-                    <ChatTile
-                        room={item}
-                        selectChat={(chat: MatrixRoom) => {
-                            if (chat.directUserId) {
-                                navigation.navigate('ChatRoomConversation', {
-                                    roomId: chat.id,
-                                    chatType: ChatType.direct,
-                                })
-                            } else {
-                                navigation.navigate('ChatRoomConversation', {
-                                    roomId: chat.id,
-                                    chatType: ChatType.group,
-                                })
-                            }
-                        }}
-                    />
+                    <ChatTile room={item} selectChat={handleSelectChat} />
                 </ErrorBoundary>
             )
         },
-        [navigation],
+        [handleSelectChat],
     )
 
     if (syncStatus === MatrixSyncStatus.initialSync) {
@@ -77,10 +71,10 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             width: '100%',
-            paddingRight: theme.spacing.md,
         },
         content: {
             paddingBottom: theme.spacing.sm,
+            paddingHorizontal: theme.spacing.sm,
         },
     })
 

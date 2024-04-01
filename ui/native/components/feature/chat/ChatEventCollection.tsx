@@ -18,12 +18,14 @@ import { MessageItemError } from './MessageItemError'
 interface Props {
     roomId: string
     collection: MatrixEvent[][]
+    onSelect: (userId: string) => void
     showUsernames?: boolean
 }
 
 const ChatEventCollection: React.FC<Props> = ({
     roomId,
     collection,
+    onSelect,
     showUsernames,
 }: Props) => {
     const { theme } = useTheme()
@@ -49,7 +51,6 @@ const ChatEventCollection: React.FC<Props> = ({
             )}
             <View style={style.sendersContainer}>
                 {collection.map((events, index) => {
-                    console.debug('events.length', events.length)
                     if (!events.length) return null
                     const sentBy = events[0].senderId || ''
 
@@ -70,16 +71,10 @@ const ChatEventCollection: React.FC<Props> = ({
                                 {!isMe && showUsernames && (
                                     <Pressable
                                         style={style.senderAvatar}
-                                        onPress={() => {
-                                            if (sentBy) {
-                                                navigation.navigate(
-                                                    'DirectChat',
-                                                    {
-                                                        memberId: sentBy,
-                                                    },
-                                                )
-                                            }
-                                        }}>
+                                        onPress={() =>
+                                            roomMember &&
+                                            onSelect(roomMember.id)
+                                        }>
                                         <ChatAvatar
                                             user={roomMember || { id: sentBy }}
                                         />
@@ -145,4 +140,8 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default ChatEventCollection
+const areEqual = (prev: Props, curr: Props) => {
+    return prev.collection[0][0].id === curr.collection[0][0].id
+}
+
+export default React.memo(ChatEventCollection, areEqual)

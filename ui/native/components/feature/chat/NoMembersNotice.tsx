@@ -6,11 +6,14 @@ import { StyleSheet, View } from 'react-native'
 
 import { Props as GroupChatProps } from '../../../screens/GroupChat'
 import { NavigationHook } from '../../../types/navigation'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type GroupChatRouteProp = GroupChatProps['route']
 
-const EmptyGroupNotice: React.FC = () => {
+type Props = {
+    isBroadcast?: boolean
+}
+
+const NoMembersNotice: React.FC = ({ isBroadcast = false }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
@@ -19,22 +22,17 @@ const EmptyGroupNotice: React.FC = () => {
 
     return (
         <View style={styles(theme).container}>
-            <SvgImage
-                name="Search"
-                size={SvgImageSize.lg}
-                color={theme.colors.primaryLight}
-                containerStyle={{
-                    marginTop: theme.spacing.xl,
-                    paddingTop: theme.spacing.xl,
-                    paddingBottom: theme.spacing.md,
-                }}
-            />
-            <Text medium style={styles(theme).text}>
-                {t('feature.chat.no-one-is-in-this-group')}
-            </Text>
-            <Text medium style={styles(theme).text}>
-                {t('feature.chat.try-inviting-someone')}
-            </Text>
+            {isBroadcast ? (
+                <Text medium style={styles(theme).text}>
+                    {t('feature.chat.broadcast-no-message')}
+                </Text>
+            ) : (
+                <Text medium style={styles(theme).text}>
+                    {t('feature.chat.no-one-is-in-this-group')}
+                    {'\r'}
+                    {t('feature.chat.try-inviting-someone')}
+                </Text>
+            )}
             <Button
                 containerStyle={styles(theme).button}
                 title={t('feature.chat.invite-to-group')}
@@ -50,8 +48,6 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            paddingTop: theme.spacing.xxl,
-            marginTop: theme.spacing.xxl,
         },
         icon: {
             height: theme.sizes.lg,
@@ -61,9 +57,13 @@ const styles = (theme: Theme) =>
             marginBottom: theme.spacing.md,
         },
         text: {
-            color: theme.colors.primaryLight,
+            maxWidth: 320,
+            color: theme.colors.grey,
             textAlign: 'center',
-            marginVertical: theme.spacing.xs,
+            lineHeight: 20,
+            fontFamily: 'AlbertSans',
+            letterSpacing: 0.5,
+            paddingHorizontal: theme.spacing.xl,
         },
         button: {
             marginTop: theme.spacing.lg,
@@ -71,4 +71,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default EmptyGroupNotice
+export default NoMembersNotice

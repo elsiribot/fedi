@@ -199,6 +199,9 @@ export class MatrixChatClient {
     async inviteUserToRoom(roomId: string, userId: string) {
         await this.fedimint.matrixRoomInviteUserById({ roomId, userId })
         // TODO: remove me when new members are actually observed
+
+        // TODO: Remove timeouts, inviting new members is kinda racey.
+        await new Promise(resolve => setTimeout(resolve, 500))
         await this.observeRoomMembers(roomId)
     }
 
@@ -420,13 +423,13 @@ export class MatrixChatClient {
                     log.warn('Failed to observe room info', {
                         roomId,
                         err,
-                    })
+                    }),
                 )
                 this.observeRoomPowerLevels(roomId).catch(err =>
                     log.warn('Failed to observe room power levels', {
                         roomId,
                         err,
-                    })
+                    }),
                 )
             })
         })

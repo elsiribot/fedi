@@ -2,6 +2,7 @@ import { Theme, useTheme, Text } from '@rneui/themed'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+    ActivityIndicator,
     Animated,
     Easing,
     FlatList,
@@ -10,13 +11,17 @@ import {
     NativeSyntheticEvent,
     Pressable,
     StyleSheet,
+    View,
 } from 'react-native'
 
 import { useObserveMatrixRoom } from '@fedi/common/hooks/matrix'
 import {
     paginateMatrixRoomTimeline,
     selectMatrixAuth,
+    selectMatrixRoom,
     selectMatrixRoomEvents,
+    selectMatrixRoomEventsHaveLoaded,
+    selectMatrixRoomMembersCount,
 } from '@fedi/common/redux'
 import { ChatType, MatrixEvent } from '@fedi/common/types'
 import {
@@ -26,7 +31,9 @@ import {
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import ChatEventCollection from './ChatEventCollection'
-import EmptyGroupNotice from './EmptyGroupNotice'
+import { ChatUserActionsOverlay } from './ChatUserActionsOverlay'
+import NoMembersNotice from './NoMembersNotice'
+import NoMessagesNotice from './NoMessagesNotice'
 
 type MessagesListProps = {
     type: ChatType
@@ -45,13 +52,27 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     const [isAtEnd, setIsAtEnd] = useState(false)
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const myId = useMemo(() => matrixAuth?.userId, [matrixAuth])
+    const isBroadcast = !!useAppSelector(s => selectMatrixRoom(s, id))
+        ?.broadcastOnly
     const [hasNewMessage, setHasNewMessages] = useState(false)
     const animatedNewMessageBottom = useRef(new Animated.Value(0)).current
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
     const dispatch = useAppDispatch()
+
+    const handleSelectMember = useCallback((userId: string) => {
+        setSelectedUserId(userId)
+    }, [])
+
+    // Room is empty if we're the only member
+    const isAlone =
+        useAppSelector(s => selectMatrixRoomMembersCount(s, id)) === 1
 
     useObserveMatrixRoom(id)
 
     const events = useAppSelector(s => selectMatrixRoomEvents(s, id))
+    const hasLoadedEvents = useAppSelector(s =>
+        selectMatrixRoomEventsHaveLoaded(s, id),
+    )
     const listRef = useRef<FlatList>(null)
     const lastScrolledMessageIdRef = useRef(events?.[0]?.id)
     const isScrolledToBottomRef = useRef(true)
@@ -128,63 +149,72 @@ const ChatConversation: React.FC<MessagesListProps> = ({
         [],
     )
 
-    const ChatEventCollectionMemo = React.memo(
-        ChatEventCollection,
-        (prevProps, nextProps) => {
-            return (
-                prevProps.collection[0][0].id === nextProps.collection[0][0].id
-            )
-        },
-    )
     const renderEventGroup: ListRenderItem<
         MatrixEvent<MatrixEventContent>[][]
     > = useCallback(
         ({ item }) => {
-            const collection = item[0][0]
-            // console.debug('item[0][0]', item[0][0])
             return (
                 <ChatEventCollection
+                    key={item[0][0].id}
                     roomId={id}
                     collection={item}
                     showUsernames={type === ChatType.group}
+                    onSelect={handleSelectMember}
                 />
             )
         },
-        [ChatEventCollectionMemo, id, type],
+        [handleSelectMember, id, type],
     )
 
     return (
         <>
-            <FlatList
-                data={eventGroups}
-                ref={listRef}
-                renderItem={renderEventGroup}
-                keyExtractor={item => `cc-fl-${item[0][0]?.id}`}
-                style={[
-                    style.listContainer,
-                    {
-                        paddingHorizontal:
-                            type === 'group'
-                                ? theme.spacing.lg
-                                : theme.spacing.xl,
-                    },
-                ]}
-                contentContainerStyle={style.contentContainer}
-                removeClippedSubviews={false}
-                ListEmptyComponent={
-                    type === ChatType.group ? <EmptyGroupNotice /> : null
-                }
-                onScroll={handleScroll}
-                // adjust this for more/less aggressive loading
-                onEndReachedThreshold={1}
-                inverted={events.length > 0}
-                onEndReached={handlePaginate}
-                refreshing={isPaginating}
-                maintainVisibleContentPosition={{
-                    minIndexForVisible: 1,
-                    autoscrollToTopThreshold: 100,
-                }}
-                scrollsToTop={false}
+            {hasLoadedEvents ? (
+                <FlatList
+                    data={eventGroups}
+                    ref={listRef}
+                    renderItem={renderEventGroup}
+                    keyExtractor={item => `cc-fl-${item[0][0]?.id}`}
+                    style={[
+                        style.listContainer,
+                        {
+                            paddingHorizontal:
+                                type === 'group'
+                                    ? theme.spacing.lg
+                                    : theme.spacing.xl,
+                        },
+                    ]}
+                    contentContainerStyle={style.contentContainer}
+                    removeClippedSubviews={false}
+                    ListEmptyComponent={
+                        isAlone ? (
+                            <NoMembersNotice />
+                        ) : (
+                            <NoMessagesNotice isBroadcast={isBroadcast} />
+                        )
+                    }
+                    onScroll={handleScroll}
+                    // adjust this for more/less aggressive loading
+                    onEndReachedThreshold={1}
+                    inverted={events.length > 0}
+                    onEndReached={handlePaginate}
+                    refreshing={isPaginating}
+                    maintainVisibleContentPosition={{
+                        minIndexForVisible: 1,
+                        autoscrollToTopThreshold: 100,
+                    }}
+                    scrollsToTop={false}
+                />
+            ) : (
+                <View style={style.center}>
+                    <ActivityIndicator size="large" />
+                </View>
+            )}
+            <ChatUserActionsOverlay
+                show={selectedUserId !== null}
+                onDismiss={() => setSelectedUserId(null)}
+                label={selectedUserId ?? ''}
+                selectedUserId={selectedUserId}
+                roomId={id}
             />
             <Animated.View
                 style={[
@@ -209,6 +239,7 @@ const styles = (theme: Theme) =>
         },
         contentContainer: {
             paddingTop: theme.spacing.md,
+            flex: 1,
         },
         newMessageButtonContainer: {
             position: 'absolute',
@@ -224,6 +255,10 @@ const styles = (theme: Theme) =>
         },
         newMessageButtonText: {
             color: theme.colors.secondary,
+        },
+        center: {
+            flex: 1,
+            justifyContent: 'center',
         },
     })
 

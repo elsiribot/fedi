@@ -677,7 +677,12 @@ export const selectMatrixRoomPowerLevels = (
 export const selectMatrixRoomMembers = (
     s: CommonState,
     roomId: MatrixRoom['id'],
-) => s.matrix.roomMembers[roomId] || []
+) => s.matrix.roomMembers[roomId] || ([] as MatrixRoomMember[])
+
+export const selectMatrixRoomMembersCount = (
+    s: CommonState,
+    roomId: MatrixRoom['id'],
+) => selectMatrixRoomMembers(s, roomId).length ?? 0
 
 export const selectMatrixRoomMemberMap = createSelector(
     selectMatrixRoomMembers,
@@ -688,11 +693,19 @@ export const selectMatrixRoomMemberMap = createSelector(
         }, {} as Record<MatrixRoomMember['id'], MatrixRoomMember | undefined>),
 )
 
-export const selectMatrixRoomMember = (
+export const selectMatrixRoomMember = createSelector(
+    (s: CommonState, roomId: MatrixRoom['id']): MatrixRoomMember[] =>
+        selectMatrixRoomMembers(s, roomId),
+    (_s: CommonState, _roomId: MatrixRoom['id'], userId: MatrixUser['id']) =>
+        userId,
+    (members, userId): MatrixRoomMember | undefined =>
+        members.find(m => m.id === userId),
+)
+
+export const selectMatrixRoomEventsHaveLoaded = (
     s: CommonState,
-    roomId: string,
-    userId: string,
-) => selectMatrixRoomMembers(s, roomId).find(m => m.id === userId)
+    roomId: MatrixRoom['id'],
+) => s.matrix.roomTimelines[roomId] !== undefined
 
 export const selectMatrixRoomEvents = createSelector(
     (s: CommonState) => s.matrix.roomTimelines,
@@ -785,8 +798,10 @@ export const selectMatrixDirectMessageRoom = createSelector(
     (userId, rooms) => rooms.find(room => room.directUserId === userId),
 )
 
-export const selectMatrixHasNotifications = (s: CommonState) =>
-    selectMatrixRooms(s).some(room => room.notificationCount > 0)
+export const selectMatrixHasNotifications = createSelector(
+    selectMatrixRooms,
+    rooms => rooms.some(room => room.notificationCount > 0),
+)
 
 /**
  * Returns users who we have DM'd with most recently. Optionally

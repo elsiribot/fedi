@@ -14,7 +14,6 @@ import { ChatMember } from '@fedi/common/types'
 import { XmppMemberRole } from '@fedi/common/utils/XmlUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
-import MemberItem from '../components/feature/chat/MemberItem'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -25,6 +24,7 @@ export type Props = NativeStackScreenProps<
     'AddBroadcastAdmin'
 >
 
+/** @deprecated XMPP legacy code */
 const AddBroadcastAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { groupId } = route.params
@@ -101,7 +101,8 @@ const AddBroadcastAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     const renderMember: ListRenderItem<ChatMember> = ({ item }) => {
-        return <MemberItem member={item} selectMember={handleAddAdmin} />
+        // return <MemberItem member={item} selectMember={handleAddAdmin} />
+        return <></>
     }
 
     return (

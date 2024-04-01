@@ -51,16 +51,6 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
         [dispatch, isSending, roomId, t, toast],
     )
 
-    const style = styles(theme)
-
-    if (!room) {
-        return (
-            <View style={style.loader}>
-                <HoloLoader size={28} />
-            </View>
-        )
-    }
-
     const content = useMemo(() => {
         return (
             <>
@@ -72,6 +62,16 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
             </>
         )
     }, [roomId, directUserId, chatType, handleSend])
+
+    const style = styles(theme)
+
+    if (!room) {
+        return (
+            <View style={style.loader}>
+                <HoloLoader size={28} />
+            </View>
+        )
+    }
 
     return <View style={style.container}>{content}</View>
 }

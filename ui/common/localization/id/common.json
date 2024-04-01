@@ -88,7 +88,8 @@
         "wallet": "Dompet",
         "withdraw": "Menarik",
         "withdrawal": "Penarikan",
-        "yes": "Ya"
+        "yes": "Ya",
+        "you": "Kamu"
     },
     "phrases": {
         "add-note": "Tambah catatan",

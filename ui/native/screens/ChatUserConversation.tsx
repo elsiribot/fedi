@@ -14,6 +14,7 @@ import {
 
 import ChatConversation from '../components/feature/chat/ChatConversation'
 import MessageInput from '../components/feature/chat/MessageInput'
+import NoMessagesNotice from '../components/feature/chat/NoMessagesNotice'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { ChatType } from '../types'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
@@ -75,7 +76,11 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
     return (
         <View style={styles(theme).container}>
             <>
-                <ChatConversation type={ChatType.direct} id={userId} />
+                {existingRoom ? (
+                    <ChatConversation type={ChatType.direct} id={userId} />
+                ) : (
+                    <NoMessagesNotice />
+                )}
                 <MessageInput onMessageSubmitted={handleSend} id={userId} />
             </>
         </View>

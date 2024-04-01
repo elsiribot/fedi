@@ -93,7 +93,8 @@
         "wallet": "Carteira",
         "withdraw": "Levantar",
         "withdrawal": "Levantado",
-        "yes": "Sim"
+        "yes": "Sim",
+        "you": "Tu"
     },
     "phrases": {
         "add-note": "Adicionar nota",

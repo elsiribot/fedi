@@ -25,6 +25,8 @@ import BugReportHeader from './components/feature/bug/BugReportHeader'
 import AddBroadcastAdminHeader from './components/feature/chat/AddBroadcastAdminHeader'
 import BroadcastAdminsListHeader from './components/feature/chat/BroadcastAdminsListHeader'
 import ChatConversationHeader from './components/feature/chat/ChatConversationHeader'
+import ChatRoomInviteHeader from './components/feature/chat/ChatRoomInviteHeader'
+import ChatRoomMembersHeader from './components/feature/chat/ChatRoomMembersHeader'
 import ChatWalletHeader from './components/feature/chat/ChatWalletHeader'
 import CreateGroupHeader from './components/feature/chat/CreateGroupHeader'
 import DirectChatHeader from './components/feature/chat/DirectChatHeader'
@@ -72,6 +74,8 @@ import BroadcastAdminsList from './screens/BroadcastAdminsList'
 import BugReport from './screens/BugReport'
 import BugReportSuccess from './screens/BugReportSuccess'
 import ChatRoomConversation from './screens/ChatRoomConversation'
+import ChatRoomInvite from './screens/ChatRoomInvite'
+import ChatRoomMembers from './screens/ChatRoomMembers'
 import ChatUserConversation from './screens/ChatUserConversation'
 import ChatWallet from './screens/ChatWallet'
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
@@ -309,6 +313,20 @@ const MainNavigator = () => {
                                 component={ChatRoomConversation}
                                 options={() => ({
                                     header: () => <ChatConversationHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ChatRoomMembers"
+                                component={ChatRoomMembers}
+                                options={() => ({
+                                    header: () => <ChatRoomMembersHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ChatRoomInvite"
+                                component={ChatRoomInvite}
+                                options={() => ({
+                                    header: () => <ChatRoomInviteHeader />,
                                 })}
                             />
                             <Stack.Screen

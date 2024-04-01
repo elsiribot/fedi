@@ -578,6 +578,7 @@ export const {
 
 /*** Async thunk actions ***/
 
+/** @deprecated XMPP legacy code */
 export const refreshChatCredentials = createAsyncThunk<
     { credentials: XmppCredentials; encryptionKeys: Keypair },
     { fedimint: FedimintBridge; federationId: string }
@@ -589,6 +590,7 @@ export const refreshChatCredentials = createAsyncThunk<
     return { credentials, encryptionKeys }
 })
 
+/** @deprecated XMPP legacy code */
 export const authenticateChat = createAsyncThunk<
     ChatMember,
     {
@@ -865,6 +867,7 @@ export const connectChat = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const disconnectChat = createAsyncThunk<
     void,
     { federationId: string },
@@ -879,6 +882,7 @@ export const disconnectChat = createAsyncThunk<
     await xmppChatClientManager.destroyClient(federationId)
 })
 
+/** @deprecated XMPP legacy code */
 export const ensureHealthyXmppStream = createAsyncThunk<
     void,
     { fedimint: FedimintBridge; federationId: string },
@@ -932,6 +936,7 @@ export const ensureHealthyXmppStream = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const fetchChatHistory = createAsyncThunk<
     string | null,
     { federationId: string },
@@ -985,6 +990,7 @@ export const fetchChatHistory = createAsyncThunk<
     return lastFetchedMessageId
 })
 
+/** @deprecated XMPP legacy code */
 export const fetchChatMembers = createAsyncThunk<
     ChatMember[],
     { federationId: string }
@@ -993,6 +999,7 @@ export const fetchChatMembers = createAsyncThunk<
     return client.fetchMembers()
 })
 
+/** @deprecated XMPP legacy code */
 export const fetchChatMember = createAsyncThunk<
     ChatMember,
     { federationId: string; memberId: string },
@@ -1011,6 +1018,7 @@ export const fetchChatMember = createAsyncThunk<
     }
 })
 
+/** @deprecated XMPP legacy code */
 export const refreshChatGroup = createAsyncThunk<
     ChatGroup,
     { federationId: string; group: ChatGroup }
@@ -1027,6 +1035,7 @@ export const refreshChatGroup = createAsyncThunk<
     }
 })
 
+/** @deprecated XMPP legacy code */
 export const joinChatGroup = createAsyncThunk<
     ChatGroup,
     { federationId: string; link: string }
@@ -1037,6 +1046,7 @@ export const joinChatGroup = createAsyncThunk<
     return group
 })
 
+/** @deprecated XMPP legacy code */
 export const createChatGroup = createAsyncThunk<
     ChatGroup,
     { federationId: string; id: string; name: string; broadcastOnly?: boolean }
@@ -1046,6 +1056,7 @@ export const createChatGroup = createAsyncThunk<
     return group
 })
 
+/** @deprecated XMPP legacy code */
 export const leaveChatGroup = createAsyncThunk<
     void,
     { federationId: string; groupId: string },
@@ -1055,6 +1066,7 @@ export const leaveChatGroup = createAsyncThunk<
     await client.leaveGroup(groupId)
 })
 
+/** @deprecated XMPP legacy code */
 export const configureChatGroup = createAsyncThunk<
     ChatGroup,
     { federationId: string; groupId: string; groupName: string },
@@ -1077,6 +1089,7 @@ export const configureChatGroup = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const addAdminToChatGroup = createAsyncThunk<
     void,
     { federationId: string; groupId: string; memberId: string },
@@ -1096,6 +1109,7 @@ export const addAdminToChatGroup = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const fetchChatGroupMembersList = createAsyncThunk<
     ChatMember[],
     { federationId: string; groupId: string; role: XmppMemberRole },
@@ -1112,6 +1126,7 @@ export const fetchChatGroupMembersList = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const removeAdminFromChatGroup = createAsyncThunk<
     void,
     { federationId: string; groupId: string; memberId: string },
@@ -1131,6 +1146,7 @@ export const removeAdminFromChatGroup = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const sendDirectMessage = createAsyncThunk<
     ChatMessage,
     | {
@@ -1207,6 +1223,7 @@ export const sendDirectMessage = createAsyncThunk<
     return { ...message, status }
 })
 
+/** @deprecated XMPP legacy code */
 export const sendGroupMessage = createAsyncThunk<
     ChatMessage,
     { federationId: string; groupId: string; content: string },
@@ -1252,6 +1269,7 @@ export const sendGroupMessage = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const updateChatPayment = createAsyncThunk<
     ChatMessage,
     {
@@ -1391,6 +1409,7 @@ export const updateChatPayment = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const sendQueuedMessages = createAsyncThunk<
     void,
     {
@@ -1478,6 +1497,7 @@ export const sendQueuedMessages = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const publishPushNotificationToken = createAsyncThunk<
     string,
     { federationId: string; getToken: () => Promise<string> },
@@ -1799,7 +1819,7 @@ export const selectIsChatEmpty = (s: CommonState) =>
 /**
  * Returns whether or not the user needs to register a username on the chat server
  * @deprecated XMPP legacy code
-*/
+ */
 export const selectNeedsChatRegistration = (s: CommonState) =>
     !!selectChatConnectionOptions(s) && !selectAuthenticatedMember(s)
 

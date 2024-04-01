@@ -14,10 +14,12 @@ import { useToast } from '@fedi/common/hooks/toast'
 import {
     leaveMatrixRoom,
     selectMatrixRoom,
+    selectMatrixRoomMembersCount,
     selectMatrixRoomSelfPowerLevel,
     setMatrixRoomBroadcastOnly,
 } from '@fedi/common/redux'
 import { MatrixPowerLevel } from '@fedi/common/types'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { Images } from '../assets/images'
@@ -37,6 +39,9 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const toast = useToast()
     const { roomId } = route.params
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
+    const memberCount = useAppSelector(s =>
+        selectMatrixRoomMembersCount(s, roomId),
+    )
     const myPowerLevel = useAppSelector(s =>
         selectMatrixRoomSelfPowerLevel(s, room?.id || ''),
     )
@@ -52,20 +57,20 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const [isTogglingBroadcastOnly, setIsTogglingBroadcastOnly] =
         useState(false)
 
-    const handleLeaveGroup = useCallback(() => {
-        const leaveGroup = async () => {
-            // Immediately navigate and replace navigation stack on leave
-            // attempt, otherwise pressing the back button or useEffects in
-            // backgrounded screens may attempt to re-join the group right
-            // after we leave it.
-            try {
-                navigation.replace('TabsNavigator')
-                await dispatch(leaveMatrixRoom({ roomId })).unwrap()
-            } catch (err) {
-                toast.error(t, err)
-            }
+    const leaveGroup = useCallback(async () => {
+        // Immediately navigate and replace navigation stack on leave
+        // attempt, otherwise pressing the back button or useEffects in
+        // backgrounded screens may attempt to re-join the group right
+        // after we leave it.
+        try {
+            navigation.replace('TabsNavigator')
+            await dispatch(leaveMatrixRoom({ roomId })).unwrap()
+        } catch (err) {
+            toast.error(t, err)
         }
+    }, [dispatch, navigation, roomId, t, toast])
 
+    const handleLeaveGroup = useCallback(() => {
         Alert.alert(
             t('feature.chat.leave-group'),
             t('feature.chat.leave-group-confirmation'),
@@ -79,11 +84,19 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 },
             ],
         )
-    }, [])
+    }, [leaveGroup, t])
 
     const handleChangeGroupName = useCallback(() => {
         navigation.navigate('EditGroup', { roomId })
-    }, [navigation])
+    }, [navigation, roomId])
+
+    const handleViewMembers = useCallback(() => {
+        navigation.navigate('ChatRoomMembers', { roomId })
+    }, [navigation, roomId])
+
+    const handleInviteMember = useCallback(() => {
+        navigation.navigate('ChatRoomInvite', { roomId })
+    }, [navigation, roomId])
 
     const handleToggleBroadcastOnly = useCallback(async () => {
         if (isTogglingBroadcastOnly || !room) return
@@ -99,14 +112,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
             toast.error(t, 'errors.unknown-error')
         }
         setIsTogglingBroadcastOnly(false)
-    }, [
-        isTogglingBroadcastOnly,
-        dispatch,
-        room?.id,
-        room?.broadcastOnly,
-        toast,
-        t,
-    ])
+    }, [isTogglingBroadcastOnly, room, dispatch, toast, t])
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
@@ -129,20 +135,17 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     {t('words.group')}
                 </Text>
                 <SettingsItem
-                    disabled
                     image={<SvgImage name="SocialPeople" />}
-                    label={t('words.members')}
-                    onPress={() => log.info('not implemented')}
+                    label={`${amountUtils.formatNumber(memberCount)} ${t(
+                        'words.members',
+                    )}`}
+                    onPress={handleViewMembers}
                 />
                 <SettingsItem
                     image={<SvgImage name="Room" />}
                     label={t('feature.chat.invite-to-group')}
-                    onPress={() => {
-                        // TODO: member search to invite users
-                        // navigation.navigate('GroupInvite', {
-                        //     groupId,
-                        // })
-                    }}
+                    onPress={handleInviteMember}
+                    disabled={!isAdmin}
                 />
                 <SettingsItem
                     image={<SvgImage name="LeaveRoom" />}

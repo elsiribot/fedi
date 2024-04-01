@@ -102,7 +102,8 @@
         "wallet": "Wallet",
         "withdraw": "Withdraw",
         "withdrawal": "Withdrawal",
-        "yes": "Yes"
+        "yes": "Yes",
+        "you": "You"
     },
     "phrases": {
         "add-note": "Add note",
@@ -282,6 +283,8 @@
             "camera-access-information": "To join a group, you will need to allow Fedi access to your camera to scan a group invite link",
             "change-group-name": "Change group name",
             "change-role": "Change role",
+            "change-role-failure": "Failed to change role",
+            "change-role-success": "Successfully changed role",
             "changing-broadcast-not-supported": "Changing the broadcast setting is not yet supported. Please create a new group.",
             "chat-invite": "Chat invite",
             "click-to-join-group": "Click to join this group",
@@ -315,7 +318,10 @@
             "new-messages": "New messages",
             "no-admins": "No broadcast admins yet",
             "no-users-found": "No users found",
-            "no-one-is-in-this-group": "No one is in this group yet.",
+            "no-one-is-in-this-group": "No member in this room yet.",
+            "no-messages": "No conversation in this room yet.",
+            "start-the-conversation": "Start the conversation.",
+            "broadcast-no-message": "The admins have not broadcasted a message yet. Stay tuned.",
             "open-camera-scanner": "Open Camera Scanner",
             "other-sent-payment": "{{name}} sent {{recipient}} {{fiat}} ({{amount}}) {{memo}}",
             "paid-by-name": "Paid by {{name}}",

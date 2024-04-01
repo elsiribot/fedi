@@ -3,10 +3,10 @@ import { t } from 'i18next'
 import React, { useMemo } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { MatrixRoom } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
 
 import { DEFAULT_GROUP_NAME } from '../../../constants'
+import { MatrixRoom } from '../../../types'
 import Avatar from '../../ui/Avatar'
 import { AvatarSize } from '../../ui/Avatar'
 import GroupIcon from './GroupIcon'
@@ -24,11 +24,17 @@ const ChatTile = ({ room, selectChat }: ChatTileProps) => {
         () => (hasNewMessages ? { medium: true } : {}),
         [hasNewMessages],
     )
-    const previewMessage = useMemo(() => room.preview?.body, [room.preview])
+    const previewMessage = useMemo(() => room?.preview?.body, [room?.preview])
 
     return (
         <Pressable
-            style={styles(theme).container}
+            style={({ pressed }) => [
+                styles(theme).container,
+                pressed && room
+                    ? { backgroundColor: theme.colors.primary05 }
+                    : {},
+            ]}
+            disabled={!room}
             onPress={() => selectChat(room)}>
             <View style={styles(theme).iconContainer}>
                 <View
@@ -76,7 +82,7 @@ const ChatTile = ({ room, selectChat }: ChatTileProps) => {
                             style={styles(theme).emptyMessagePreview}
                             numberOfLines={1}
                             {...previewTextWeight}>
-                            {t('feature.chat.no-one-is-in-this-group')}
+                            {t('feature.chat.no-messages')}
                         </Text>
                     )}
                 </View>
@@ -106,9 +112,12 @@ const ChatTile = ({ room, selectChat }: ChatTileProps) => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flex: 1,
             flexDirection: 'row',
             alignItems: 'center',
             paddingVertical: theme.spacing.md,
+            width: '100%',
+            borderRadius: theme.borders.defaultRadius,
         },
         iconContainer: {
             flexDirection: 'row',
@@ -157,7 +166,7 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.red,
             height: theme.sizes.unreadIndicatorSize,
             width: theme.sizes.unreadIndicatorSize,
-            marginHorizontal: theme.spacing.xs,
+            paddingHorizontal: theme.spacing.xs,
             borderRadius: theme.sizes.unreadIndicatorSize * 0.5,
         },
         namePreview: {
@@ -165,6 +174,7 @@ const styles = (theme: Theme) =>
         },
         timestamp: {
             color: theme.colors.grey,
+            paddingRight: theme.spacing.md,
         },
     })
 

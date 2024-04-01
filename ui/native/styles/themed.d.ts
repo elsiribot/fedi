@@ -12,6 +12,7 @@ declare module '@rneui/themed' {
             // Add new color labels here
             link: string
             primary: string
+            primary05: string
             primaryLight: string
             primaryVeryLight: string
             secondary: string

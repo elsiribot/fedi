@@ -1,59 +1,51 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import { t } from 'i18next'
 import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { MatrixPowerLevel, MatrixRoomMember } from '@fedi/common/types'
+import { MatrixUser } from '@fedi/common/types'
 
 import Avatar, { AvatarSize } from '../../ui/Avatar'
+import ChatAvatar from './ChatAvatar'
 
-type MemberItemProps = {
-    member: MatrixRoomMember
-    selectMember: (member: MatrixRoomMember) => void
-    actionIcon?: React.ReactNode
+type UserItemProps = {
+    user: MatrixUser
+    selectUser: (userId: string) => void
     disabled?: boolean
-    isCurrentUser?: boolean
+    actionIcon?: React.ReactNode
+    rightIcon?: React.ReactNode
 }
 
-/** @deprecated replaced by the reusable ChatUserTIle */
-const MemberItem: React.FC<MemberItemProps> = ({
-    member,
-    selectMember,
+const ChatUserTile: React.FC<UserItemProps> = ({
+    user,
+    selectUser,
     actionIcon = null,
+    rightIcon = null,
     disabled = false,
-    isCurrentUser = false,
-}: MemberItemProps) => {
+}: UserItemProps) => {
     const { theme } = useTheme()
-
-    const memberName = isCurrentUser ? t('words.you') : member.displayName
 
     return (
         <Pressable
-            style={[styles(theme).container]}
+            style={({ pressed }) => [
+                styles(theme).container,
+                pressed && !disabled
+                    ? { backgroundColor: theme.colors.primary05 }
+                    : {},
+            ]}
             onPress={() => {
-                !disabled && selectMember(member)
+                !disabled && selectUser(user.id)
             }}>
             <View style={styles(theme).usernameContainer}>
-                <Avatar
-                    id={member.id}
-                    name={member.displayName}
-                    size={AvatarSize.md}
-                />
+                <ChatAvatar user={user} size={AvatarSize.md} />
                 <Text
                     numberOfLines={1}
                     bold
                     style={[styles(theme).usernameText]}>
-                    {memberName}
+                    {user.displayName}
                 </Text>
-                <Text>
-                    {member.powerLevel >= MatrixPowerLevel.Admin
-                        ? t('words.admin')
-                        : member.powerLevel >= MatrixPowerLevel.Moderator
-                        ? t('words.moderator')
-                        : t('words.member')}
-                </Text>
+                {rightIcon && <>{rightIcon}</>}
                 {actionIcon && (
-                    <View style={styles(theme).checkboxContainer}>
+                    <View style={styles(theme).iconContainer}>
                         <>{actionIcon}</>
                     </View>
                 )}
@@ -65,12 +57,15 @@ const MemberItem: React.FC<MemberItemProps> = ({
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flex: 1,
             flexDirection: 'row',
             alignItems: 'center',
-            paddingVertical: theme.spacing.sm,
+            padding: theme.spacing.sm,
             width: '100%',
+            borderRadius: theme.borders.defaultRadius,
         },
         usernameContainer: {
+            flex: 1,
             flexDirection: 'row',
             alignItems: 'center',
             width: '100%',
@@ -79,7 +74,7 @@ const styles = (theme: Theme) =>
             marginHorizontal: theme.spacing.md,
             flex: 1,
         },
-        checkboxContainer: {
+        iconContainer: {
             marginLeft: 'auto',
         },
         roleText: {
@@ -87,4 +82,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default MemberItem
+export default ChatUserTile
