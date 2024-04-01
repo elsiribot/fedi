@@ -13,7 +13,7 @@ import {
     sendDirectMessage,
     selectAuthenticatedMember,
 } from '@fedi/common/redux'
-import { ChatMember, ChatPaymentStatus, Sats } from '@fedi/common/types'
+import { ChatPaymentStatus, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
@@ -26,14 +26,16 @@ import { Dialog } from './Dialog'
 import { Text } from './Text'
 
 interface Props {
-    recipient: ChatMember
+    recipientId: string
+    recipientName: string
     open: boolean
     onOpenChange(open: boolean): void
 }
 
 export const ChatPaymentDialog: React.FC<Props> = ({
     open,
-    recipient,
+    recipientId,
+    recipientName,
     onOpenChange,
 }) => {
     const { t } = useTranslation()
@@ -70,13 +72,13 @@ export const ChatPaymentDialog: React.FC<Props> = ({
                     sendDirectMessage({
                         fedimint,
                         federationId,
-                        recipientId: recipient.id,
+                        recipientId,
                         payment: {
                             status: token
                                 ? ChatPaymentStatus.accepted
                                 : ChatPaymentStatus.requested,
                             amount: amountUtils.satToMsat(amount),
-                            recipient: token ? recipient.id : myId,
+                            recipient: token ? recipientId : myId,
                             token,
                         },
                     }),
@@ -89,7 +91,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
         [
             dispatch,
             federationId,
-            recipient.id,
+            recipientId,
             myId,
             amount,
             toast,
@@ -148,8 +150,8 @@ export const ChatPaymentDialog: React.FC<Props> = ({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <MemberContainer>
-                <Avatar size="sm" id={recipient.id} name={recipient.username} />
-                <Text weight="bold">{recipient.username}</Text>
+                <Avatar size="sm" id={recipientId} name={recipientName} />
+                <Text weight="bold">{recipientName}</Text>
             </MemberContainer>
             <Balance>{balanceDisplay}</Balance>
             <AmountContainer>
