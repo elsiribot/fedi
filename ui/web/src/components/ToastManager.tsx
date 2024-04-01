@@ -43,6 +43,14 @@ export const ToastManager: React.FC = () => {
         close()
     }, [router.asPath, close])
 
+    useEffect(() => {
+        router.events.on('routeChangeComplete', close)
+
+        return () => {
+            router.events.off('routeChangeComplete', close)
+        }
+    }, [router, close])
+
     return (
         <Portal.Root>
             <RadixToast.Provider swipeDirection={isMobile ? 'up' : 'right'}>
