@@ -57,6 +57,7 @@ import {
 
 import { fedimint } from '../bridge'
 import { AuthOverlay } from '../components/feature/fedimods/AuthOverlay'
+import ExitFedimodOverlay from '../components/feature/fedimods/ExitFedimodOverlay'
 import FediModBrowserHeader from '../components/feature/fedimods/FediModBrowserHeader'
 import { GenerateEcashOverlay } from '../components/feature/fedimods/GenerateEcashoverlay'
 import { MakeInvoiceOverlay } from '../components/feature/fedimods/MakeInvoiceOverlay'
@@ -135,6 +136,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         useState<UnsignedNostrEvent | null>(null)
     const [isParsingLink, setIsParsingLink] = useState(false)
     const [ecashRequest, setEcashRequest] = useState<EcashRequest | null>(null)
+    const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false)
 
     const getActiveGatewayPromiseRef =
         useRef<Promise<RpcLightningGateway> | null>(null)
@@ -455,23 +457,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     // Handle back button press on Android
     useEffect(() => {
         const backAction = () => {
-            Alert.alert(
-                t('feature.fedimods.leave-page'),
-                t('feature.fedimods.leave-page-confirmation'),
-                [
-                    {
-                        text: t('words.stay'),
-                        onPress: () => null,
-                        style: 'cancel',
-                    },
-                    {
-                        text: t('words.leave'),
-                        onPress: () => {
-                            navigation.goBack()
-                        },
-                    },
-                ],
-            )
+            setConfirmLeaveOpen(true)
 
             return true
         }
@@ -535,6 +521,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 onReject={overlayProps.onReject}
                 onAccept={overlayProps.onAccept}
                 ecashRequest={ecashRequest}
+            />
+            <ExitFedimodOverlay
+                open={confirmLeaveOpen}
+                onOpenChange={setConfirmLeaveOpen}
             />
         </View>
     )
