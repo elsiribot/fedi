@@ -15,6 +15,7 @@ import {
 
 import { FederationLogo } from '../../ui/FederationLogo'
 import HoloGradient from '../../ui/HoloGradient'
+import EndedFederationPreview from '../federations/EndedPreview'
 import AcceptTermsOfService from './AcceptTermsOfService'
 
 type Props = {
@@ -40,30 +41,10 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
     if (popupInfo?.ended) {
         return (
             <View style={style.container}>
-                <View style={style.endedContent}>
-                    <View style={style.endedContentSpacing}>
-                        <FederationLogo federation={federation} size={72} />
-                    </View>
-                    <Text h2 style={style.endedContentSpacing}>
-                        {federation?.name}
-                    </Text>
-                    <View style={[style.ended, style.endedContentSpacing]}>
-                        <Text caption bold>
-                            {t('feature.popup.ended')}
-                        </Text>
-                    </View>
-                    <Text caption style={{ textAlign: 'center' }}>
-                        {popupInfo?.endedMessage || (
-                            <Trans
-                                t={t}
-                                i18nKey="feature.popup.ended-description"
-                                values={{ date: popupInfo?.endsAtText }}
-                                components={{ bold: <Text caption bold /> }}
-                            />
-                        )}
-                    </Text>
-                </View>
-
+                <EndedFederationPreview
+                    popupInfo={popupInfo}
+                    federation={federation}
+                />
                 <View style={style.buttonsContainer}>
                     <Button
                         fullWidth
@@ -266,25 +247,6 @@ const styles = (theme: Theme) =>
         },
         unsupportedBadgeLabel: {
             color: theme.colors.white,
-        },
-        endedContent: {
-            flex: 1,
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '90%',
-            maxWidth: 280,
-            margin: 'auto',
-        },
-        endedContentSpacing: {
-            marginBottom: theme.spacing.lg,
-        },
-        ended: {
-            paddingVertical: theme.spacing.xxs,
-            paddingHorizontal: theme.spacing.sm,
-            backgroundColor: theme.colors.lightGrey,
-            color: theme.colors.primary,
-            borderRadius: 30,
         },
     })
 
