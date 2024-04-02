@@ -483,5 +483,13 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
         }
     }
 
+    if (migrationState.version === 15) {
+        migrationState = {
+            ...migrationState,
+            version: 16,
+            hasPerformedPersonalBackup: false,
+        }
+    }
+
     return migrationState
 }

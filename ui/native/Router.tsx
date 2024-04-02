@@ -121,7 +121,6 @@ import SendOnChainAmount from './screens/SendOnChainAmount'
 import SendSuccess from './screens/SendSuccess'
 import Settings from './screens/Settings'
 import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
-import SocialBackupGuidance from './screens/SocialBackupGuidance'
 import SocialBackupProcessing from './screens/SocialBackupProcessing'
 import SocialBackupSuccess from './screens/SocialBackupSuccess'
 import SocialRecoveryFailure from './screens/SocialRecoveryFailure'
@@ -487,15 +486,6 @@ const MainNavigator = () => {
                             <Stack.Screen
                                 name="StartSocialBackup"
                                 component={StartSocialBackup}
-                                options={() => ({
-                                    header: () => (
-                                        <SocialBackupHeader backButton />
-                                    ),
-                                })}
-                            />
-                            <Stack.Screen
-                                name="SocialBackupGuidance"
-                                component={SocialBackupGuidance}
                                 options={() => ({
                                     header: () => (
                                         <SocialBackupHeader backButton />
