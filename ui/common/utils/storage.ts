@@ -28,7 +28,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
-        version: 15,
+        version: 16,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
@@ -42,6 +42,7 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         authenticatedGuardian: state.federation.authenticatedGuardian,
         externalMeta: state.federation.externalMeta,
         customFediMods: state.federation.customFediMods,
+        hasPerformedPersonalBackup: state.recovery.hasPerformedPersonalBackup,
         nuxSteps: state.nux.steps,
         chat: Object.entries(state.chat).reduce<LatestStoredState['chat']>(
             (stored, [federationId, chatState]) => {
@@ -108,6 +109,7 @@ export function hasStorageStateChanged(
         ['federation', 'customFediMods'],
         ['matrix', 'auth'],
         ['nux', 'steps'],
+        ['recovery', 'hasPerformedPersonalBackup'],
     ]
 
     // Check all federation's chat states, including old and new.

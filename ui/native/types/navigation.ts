@@ -83,8 +83,6 @@ export type RootStackParamList = {
     NotificationsPermission:
         | { nextScreen: keyof RootStackParamList }
         | undefined
-    PersonalBackupGuidance: undefined
-    PersonalBackupSuccess: undefined
     PersonalRecovery: undefined
     PersonalRecoverySuccess: undefined
     PopupFederationEnded: undefined

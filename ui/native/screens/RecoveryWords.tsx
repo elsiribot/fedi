@@ -4,9 +4,14 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
+import {
+    selectHasPerformedPersonalBackup,
+    setHasPerformedPersonalBackup,
+} from '@fedi/common/redux'
 import type { SeedWords } from '@fedi/common/types'
 
 import { fedimint } from '../bridge'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'RecoveryWords'>
@@ -36,6 +41,12 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const [seedWords, setSeedWords] = useState<SeedWords>([])
 
+    const dispatch = useAppDispatch()
+
+    const hasPerformedPersonalBackup = useAppSelector(
+        selectHasPerformedPersonalBackup,
+    )
+
     useEffect(() => {
         const getMnemonicWrapper = async () => {
             const seed = await fedimint.getMnemonic()
@@ -60,6 +71,15 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
             ))
     }
 
+    const handleContinueOrDone = () => {
+        if (hasPerformedPersonalBackup) {
+            navigation.navigate('Settings')
+        } else {
+            dispatch(setHasPerformedPersonalBackup(true))
+            navigation.navigate('TabsNavigator')
+        }
+    }
+
     return (
         <View style={styles(theme).container}>
             <ScrollView contentContainerStyle={styles(theme).scrollView}>
@@ -81,11 +101,9 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
                 </Card>
             </ScrollView>
             <Button
-                title={t('words.continue')}
+                title={t('words.done')}
                 containerStyle={styles(theme).continueButton}
-                onPress={() => {
-                    navigation.navigate('PersonalBackupSuccess')
-                }}
+                onPress={handleContinueOrDone}
             />
         </View>
     )

@@ -4,7 +4,10 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet } from 'react-native'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    selectActiveFederation,
+    selectHasPerformedPersonalBackup,
+} from '@fedi/common/redux'
 import { shouldShowSocialRecovery } from '@fedi/common/utils/FederationUtils'
 
 import HoloCard from '../components/ui/HoloCard'
@@ -22,6 +25,9 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const hasPerformedPersonalBackup = useAppSelector(
+        selectHasPerformedPersonalBackup,
+    )
     // TODO: Uncomment when bridge function is ready
     // const { locateRecoveryFile } = useBridge()
     //
@@ -44,6 +50,14 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
             navigation.navigate('CompleteSocialBackup')
         } else {
             navigation.navigate('StartSocialBackup')
+        }
+    }
+
+    const handleStartPersonalBackup = () => {
+        if (hasPerformedPersonalBackup) {
+            navigation.navigate('RecoveryWords')
+        } else {
+            navigation.navigate('StartPersonalBackup')
         }
     }
 
@@ -89,9 +103,7 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
                         <Button
                             title={t('feature.backup.start-personal-backup')}
                             containerStyle={styles(theme).backupMethodButton}
-                            onPress={() => {
-                                navigation.navigate('StartPersonalBackup')
-                            }}
+                            onPress={handleStartPersonalBackup}
                         />
                     </>
                 }

@@ -3,6 +3,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { CommonState, refreshFederations } from '.'
 import { SocialRecoveryEvent } from '../types'
 import { FedimintBridge } from '../utils/fedimint'
+import { loadFromStorage } from './storage'
 
 /*** Initial State ***/
 
@@ -10,6 +11,7 @@ const initialState = {
     hasCheckedForSocialRecovery: false,
     socialRecoveryQr: null as string | null,
     socialRecoveryState: null as SocialRecoveryEvent | null,
+    hasPerformedPersonalBackup: false,
 }
 
 export type RecoveryState = typeof initialState
@@ -25,6 +27,12 @@ export const recoverySlice = createSlice({
             action: PayloadAction<RecoveryState['socialRecoveryState']>,
         ) {
             state.socialRecoveryState = action.payload
+        },
+        setHasPerformedPersonalBackup(
+            state,
+            action: PayloadAction<RecoveryState['hasPerformedPersonalBackup']>,
+        ) {
+            state.hasPerformedPersonalBackup = action.payload
         },
     },
     extraReducers: builder => {
@@ -55,12 +63,22 @@ export const recoverySlice = createSlice({
             state.socialRecoveryQr = null
             state.socialRecoveryState = null
         })
+
+        builder.addCase(loadFromStorage.fulfilled, (state, action) => {
+            if (!action.payload) return
+
+            if (action.payload.hasPerformedPersonalBackup) {
+                state.hasPerformedPersonalBackup =
+                    action.payload.hasPerformedPersonalBackup
+            }
+        })
     },
 })
 
 /*** Basic actions ***/
 
-export const { setSocialRecoveryState } = recoverySlice.actions
+export const { setSocialRecoveryState, setHasPerformedPersonalBackup } =
+    recoverySlice.actions
 
 /*** Async thunk actions ***/
 
@@ -107,3 +125,6 @@ export const selectSocialRecoveryQr = (s: CommonState) =>
 
 export const selectSocialRecoveryState = (s: CommonState) =>
     s.recovery.socialRecoveryState
+
+export const selectHasPerformedPersonalBackup = (s: CommonState) =>
+    s.recovery.hasPerformedPersonalBackup
