@@ -48,14 +48,15 @@ const ChatEventCollection: React.FC<Props> = ({
                 </View>
             )}
             <View style={style.sendersContainer}>
-                {collection.map(events => {
+                {collection.map((events, index) => {
+                    console.debug('events.length', events.length)
                     if (!events.length) return null
                     const sentBy = events[0].senderId || ''
 
                     const roomMember = roomMembers.find(m => m.id === sentBy)
                     const isMe = sentBy === matrixAuth?.userId
                     return (
-                        <View style={style.senderGroup} key={events[0].id}>
+                        <View style={style.senderGroup} key={`ceci-${index}`}>
                             {showUsernames && !isMe && (
                                 <View style={style.senderNameContainer}>
                                     <Text tiny>
@@ -87,7 +88,7 @@ const ChatEventCollection: React.FC<Props> = ({
                                 <View style={style.senderMessages}>
                                     {events.map((event, index) => (
                                         <ErrorBoundary
-                                            key={event.id || index}
+                                            key={`ceci-eb-${event.id}-${index}`}
                                             fallback={() => (
                                                 <MessageItemError />
                                             )}>

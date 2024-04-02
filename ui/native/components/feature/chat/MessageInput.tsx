@@ -1,5 +1,5 @@
 import { Input, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Insets,
@@ -27,11 +27,13 @@ import ChatWalletButton from './ChatWalletButton'
 type MessageInputProps = {
     onMessageSubmitted: (message: string) => Promise<void>
     id: string
+    isSending?: boolean
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({
     onMessageSubmitted,
     id,
+    isSending,
 }: MessageInputProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -47,7 +49,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
         theme.sizes.minMessageInputHeight,
     )
     const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
-    const [isSending, setIsSending] = useState(false)
     const inputRef = useRef<TextInput | null>(null)
 
     useEffect(() => {
@@ -70,17 +71,15 @@ const MessageInput: React.FC<MessageInputProps> = ({
         }
     }, [])
 
-    const handleSend = async () => {
-        if (!messageText) return
-        setIsSending(true)
+    const handleSend = useCallback(async () => {
+        if (!messageText || isSending) return
         try {
             await onMessageSubmitted(messageText)
             setMessageText('')
         } catch (err) {
             toast.error(t, err, 'errors.chat-unavailable')
         }
-        setIsSending(false)
-    }
+    }, [isSending, messageText, onMessageSubmitted, toast, t])
 
     // Re-focus input after it had been disabled
     const inputDisabled = isSending || isReadOnly
@@ -96,7 +95,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
             isReadOnly
                 ? t('feature.chat.broadcast-only-notice')
                 : t('words.message'),
-        [t],
+        [isReadOnly, t],
     )
     return (
         <View

@@ -75,11 +75,7 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
     return (
         <View style={styles(theme).container}>
             <>
-                <ChatConversation
-                    type={ChatType.direct}
-                    id={userId}
-                    events={[]}
-                />
+                <ChatConversation type={ChatType.direct} id={userId} />
                 <MessageInput onMessageSubmitted={handleSend} id={userId} />
             </>
         </View>

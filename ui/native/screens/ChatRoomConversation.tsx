@@ -1,19 +1,16 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Theme, useTheme, Text } from '@rneui/themed'
+import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import {
-    selectMatrixRoom,
-    selectMatrixRoomEvents,
-    sendMatrixMessage,
-} from '@fedi/common/redux'
+import { selectMatrixRoom, sendMatrixMessage } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
 import ChatConversation from '../components/feature/chat/ChatConversation'
 import MessageInput from '../components/feature/chat/MessageInput'
+import HoloLoader from '../components/ui/HoloLoader'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -31,11 +28,7 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const { roomId, chatType } = route.params
     const [isSending, setIsSending] = useState(false)
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
-    const events = useAppSelector(s => selectMatrixRoomEvents(s, roomId))
     const toast = useToast()
-    const isLoading = useMemo(() => {
-        return !room || !events
-    }, [room, events])
 
     const directUserId = room?.directUserId
 
@@ -55,36 +48,32 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
             }
             setIsSending(false)
         },
-        [dispatch, roomId, t],
+        [dispatch, isSending, roomId, t, toast],
     )
 
-    const content = useMemo(() => {
-        if (isLoading) {
-            return null
-        } else if (!room) {
-            return (
-                <Text style={styles(theme).centeredText}>
-                    {t('feature.chat.member-not-found', { username: roomId })}
-                </Text>
-            )
-        } else {
-            return (
-                <>
-                    <ChatConversation
-                        type={chatType}
-                        id={room?.id || ''}
-                        events={events}
-                    />
-                    <MessageInput
-                        onMessageSubmitted={handleSend}
-                        id={room?.id || directUserId || ''}
-                    />
-                </>
-            )
-        }
-    }, [isLoading, room, chatType, roomId, events, handleSend, directUserId])
+    const style = styles(theme)
 
-    return <View style={styles(theme).container}>{content}</View>
+    if (!room) {
+        return (
+            <View style={style.loader}>
+                <HoloLoader size={28} />
+            </View>
+        )
+    }
+
+    const content = useMemo(() => {
+        return (
+            <>
+                <ChatConversation type={chatType} id={roomId || ''} />
+                <MessageInput
+                    onMessageSubmitted={handleSend}
+                    id={roomId || directUserId || ''}
+                />
+            </>
+        )
+    }, [roomId, directUserId, chatType, handleSend])
+
+    return <View style={style.container}>{content}</View>
 }
 
 const styles = (_: Theme) =>
@@ -94,8 +83,8 @@ const styles = (_: Theme) =>
             alignItems: 'center',
             justifyContent: 'center',
         },
-        centeredText: {
-            textAlign: 'center',
+        loader: {
+            alignItems: 'center',
         },
     })
 

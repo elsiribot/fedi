@@ -1,4 +1,3 @@
-import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme, Text } from '@rneui/themed'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -11,45 +10,33 @@ import {
     NativeSyntheticEvent,
     Pressable,
     StyleSheet,
-    View,
 } from 'react-native'
 
-import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useObserveMatrixRoom } from '@fedi/common/hooks/matrix'
 import {
     paginateMatrixRoomTimeline,
     selectMatrixAuth,
-    selectMatrixRoom,
-    selectMatrixRoomIsReadOnly,
-    selectMatrixUser,
+    selectMatrixRoomEvents,
 } from '@fedi/common/redux'
-import { ChatMessage, ChatType, MatrixEvent } from '@fedi/common/types'
-import dateUtils from '@fedi/common/utils/DateUtils'
-import { jidToId } from '@fedi/common/utils/chat'
+import { ChatType, MatrixEvent } from '@fedi/common/types'
 import {
     MatrixEventContent,
     makeMatrixEventGroups,
 } from '@fedi/common/utils/matrix'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
-import Avatar from '../../ui/Avatar'
 import ChatEventCollection from './ChatEventCollection'
 import EmptyGroupNotice from './EmptyGroupNotice'
-import MessageItem from './MessageItem'
-import { MessageItemError } from './MessageItemError'
 
 type MessagesListProps = {
     type: ChatType
     id: string
-    events: MatrixEvent[]
     multiUserChat?: boolean
 }
 
 const ChatConversation: React.FC<MessagesListProps> = ({
     type,
     id,
-    events,
-    multiUserChat = false,
 }: MessagesListProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -57,9 +44,6 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     const [isPaginating, setIsPaginating] = useState(false)
     const [isAtEnd, setIsAtEnd] = useState(false)
     const matrixAuth = useAppSelector(selectMatrixAuth)
-    const listRef = useRef<FlatList>(null)
-    const lastScrolledMessageIdRef = useRef(events?.[0]?.id)
-    const isScrolledToBottomRef = useRef(true)
     const myId = useMemo(() => matrixAuth?.userId, [matrixAuth])
     const [hasNewMessage, setHasNewMessages] = useState(false)
     const animatedNewMessageBottom = useRef(new Animated.Value(0)).current
@@ -67,6 +51,10 @@ const ChatConversation: React.FC<MessagesListProps> = ({
 
     useObserveMatrixRoom(id)
 
+    const events = useAppSelector(s => selectMatrixRoomEvents(s, id))
+    const listRef = useRef<FlatList>(null)
+    const lastScrolledMessageIdRef = useRef(events?.[0]?.id)
+    const isScrolledToBottomRef = useRef(true)
     const eventGroups = useMemo(
         () => makeMatrixEventGroups(events, 'desc'),
         [events],
@@ -118,15 +106,15 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     }, [eventGroups, myId, scrollToEnd])
 
     const handlePaginate = useCallback(async () => {
-        if (isPaginating || hasPaginated || isAtEnd) return
+        if (events.length === 0 || isPaginating || hasPaginated || isAtEnd)
+            return
         setIsPaginating(true)
         setHasPaginated(true)
         dispatch(paginateMatrixRoomTimeline({ roomId: id, limit: 10 }))
             .unwrap()
             .then(({ end }) => setIsAtEnd(end))
-            .catch(() => console.error('error paginating'))
             .finally(() => setIsPaginating(false))
-    }, [id, dispatch, isPaginating, hasPaginated, isAtEnd])
+    }, [id, events.length, dispatch, isPaginating, hasPaginated, isAtEnd])
 
     // Mark hasNewMessages as false when we scroll to the bottom, and keep a ref up to date
     const handleScroll = useCallback(
@@ -150,16 +138,20 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     )
     const renderEventGroup: ListRenderItem<
         MatrixEvent<MatrixEventContent>[][]
-    > = useCallback(({ item }) => {
-        return (
-            <ChatEventCollectionMemo
-                key={item[0][0].id}
-                roomId={id}
-                collection={item}
-                showUsernames={type === ChatType.group}
-            />
-        )
-    }, [])
+    > = useCallback(
+        ({ item }) => {
+            const collection = item[0][0]
+            // console.debug('item[0][0]', item[0][0])
+            return (
+                <ChatEventCollection
+                    roomId={id}
+                    collection={item}
+                    showUsernames={type === ChatType.group}
+                />
+            )
+        },
+        [ChatEventCollectionMemo, id, type],
+    )
 
     return (
         <>
@@ -167,7 +159,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                 data={eventGroups}
                 ref={listRef}
                 renderItem={renderEventGroup}
-                keyExtractor={item => `${item[0][0]?.id}`}
+                keyExtractor={item => `cc-fl-${item[0][0]?.id}`}
                 style={[
                     style.listContainer,
                     {
