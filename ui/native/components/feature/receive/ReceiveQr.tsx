@@ -30,9 +30,9 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({ uri, type }: ReceiveQrProps) => {
     const toast = useToast()
 
     const copyToClipboard = () => {
-        if (!uri.fullString) return
+        if (!uri.body) return
 
-        Clipboard.setString(uri.fullString)
+        Clipboard.setString(uri.body)
         toast.show({
             content: t('feature.receive.copied-payment-code'),
             status: 'success',

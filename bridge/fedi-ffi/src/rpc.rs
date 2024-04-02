@@ -56,7 +56,12 @@ pub async fn fedimint_initialize_async(
     fedi_api: Arc<dyn IFediApi>,
     device_identifier: String,
 ) -> anyhow::Result<Arc<Bridge>> {
+    info!(
+        "bridge version hash={}",
+        env!("FEDIMINT_BUILD_CODE_VERSION")
+    );
     let _g = TimeReporter::new("fedimint_initialize").level(Level::INFO);
+
     let bridge = Bridge::new(storage, event_sink, fedi_api, device_identifier)
         .await
         .context("could not create a bridge")?;
@@ -1116,6 +1121,7 @@ mod tests {
     use tracing::{error, info};
 
     use super::*;
+    use crate::api::{RegisterDeviceError, RegisteredDevice};
     use crate::constants::{FEDI_FILE_PATH, MILLION};
     use crate::ffi::PathBasedStorage;
     use crate::multi::MultiFederation;
@@ -1174,6 +1180,24 @@ mod tests {
             _network: Network,
         ) -> anyhow::Result<Bolt11Invoice> {
             unimplemented!("TODO shaurya implement when testing");
+        }
+
+        // TODO shaurya make fetch return "test device" after register called
+        async fn fetch_registered_devices_for_seed(
+            &self,
+            _seed: bip39::Mnemonic,
+        ) -> anyhow::Result<Vec<RegisteredDevice>> {
+            Ok(vec![])
+        }
+
+        async fn register_device_for_seed(
+            &self,
+            _seed: bip39::Mnemonic,
+            _device_index: u8,
+            _device_identifier: String,
+            _force_overwrite: bool,
+        ) -> anyhow::Result<(), RegisterDeviceError> {
+            Ok(())
         }
     }
 

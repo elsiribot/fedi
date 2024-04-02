@@ -213,8 +213,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     }
 
     const qrData = isLightning ? lightningInvoice?.toUpperCase() : bitcoinUrl
-    const lightningUrl = lightningInvoice ? `lightning:${lightningInvoice}` : ''
-    const copyData = isLightning ? lightningUrl : bitcoinUrl
+    const copyData = isLightning ? lightningInvoice : bitcoinUrl
     const showNote = !!note || !wantsInvoice
     const showOfflineReceive = isOfflineWalletSupported && !lnurlw
     const amountSats = amountUtils.formatSats(amount)

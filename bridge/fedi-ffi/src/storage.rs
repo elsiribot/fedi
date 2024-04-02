@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::SystemTime;
 
 use anyhow::bail;
 use fedimint_bip39::Bip39RootSecretStrategy;
@@ -8,10 +9,11 @@ use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send};
+use fedimint_derive_secret::DerivableSecret;
 use matrix_sdk::matrix_auth::MatrixSession;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
-use tracing::error;
+use tracing::{error, info, warn};
 
 use crate::constants::FEDI_FILE_PATH;
 use crate::social::SocialRecoveryState;
@@ -37,7 +39,7 @@ pub struct AppStateRaw {
     pub format_version: u32,
 
     /// Root mnemonic that's used to derive all secrets in the app
-    pub root_mnemonic: bip39::Mnemonic,
+    root_mnemonic: bip39::Mnemonic,
 
     /// Mapping of federation ID => FederationInfo
     pub joined_federations: BTreeMap<String, FederationInfo>,
@@ -51,6 +53,38 @@ pub struct AppStateRaw {
     // Device identifier is used to give this device a name that Fedi's device registration service
     // can store.
     pub device_identifier: Option<String>,
+
+    // Device index identifies which device number this is under the same root seed as registered
+    // with Fedi's device registration service. This index is used in the derivation path for the
+    // fedimint-client root secret. So in a way, it's a way of ensuring that a user's/seed's
+    // different per-federation "accounts" (across multiple devices) don't conflict with each
+    // other.
+    //
+    // The default value for existing users, as well as for new users with fresh seed is 0. But
+    // this value is an Option because in the case of recovery, we need to guide the user
+    // through the flow of setting up a device index before they can continue using the app as
+    // usual.
+    #[serde(default = "default_device_index")]
+    pub device_index: Option<u8>,
+
+    // Every so often, we renew this device's registration against the given seed + device
+    // identifier + device index with Fedi's device registration service. Here we store the
+    // timestamp of the last successful registration renewal.
+    pub last_device_registration_timestamp: Option<SystemTime>,
+
+    /// Always incrementing counter for [`DatabaseInfo::DatabasePrefix`].
+    /// See [`AppState::new_federation_db_prefix`].
+    #[serde(default = "default_next_federation_prefix")]
+    next_federation_db_prefix: u64,
+}
+
+fn default_device_index() -> Option<u8> {
+    Some(0)
+}
+
+fn default_next_federation_prefix() -> u64 {
+    // zero is reserved for future
+    1
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -58,14 +92,27 @@ pub struct FederationInfo {
     /// The version of the federation, mostly characterized by consensus version
     pub version: u32,
 
-    /// The name used for the database file for the federation's fedimint-client
-    /// instance on disk
-    pub database_name: String,
+    #[serde(flatten)]
+    pub database: DatabaseInfo,
 
     /// The Fedi fee schedule to use for transactions made by the user within
     /// this federation.
     #[serde(default)]
     pub fedi_fee_schedule: FediFeeSchedule,
+}
+
+/// { database_name: String } | { database_prefix: u64 }
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DatabaseInfo {
+    /// The name used for the database file for the federation's fedimint-client
+    /// instance on disk.
+    /// Used for previously joined federations before prefix based database was
+    /// introduced.
+    DatabaseName(String),
+    /// All fedimint clients shares the same global database using db prefixes
+    /// for isolation.
+    DatabasePrefix(u64),
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -143,7 +190,10 @@ impl AppState {
         if let Some(state) = AppState::existing_from_storage(storage.clone()).await? {
             Ok(state)
         } else {
-            Ok(Self::default_with_storage(storage).await)
+            let app_state = Self::default_with_storage(storage).await;
+            // write the app state to storage
+            app_state.with_write_lock(|_| ()).await?;
+            Ok(app_state)
         }
     }
 
@@ -185,6 +235,9 @@ impl AppState {
                 sensitive_log: None,
                 matrix_session: None,
                 device_identifier: None,
+                device_index: default_device_index(),
+                last_device_registration_timestamp: None,
+                next_federation_db_prefix: default_next_federation_prefix(),
             })),
             storage,
         }
@@ -204,20 +257,8 @@ impl AppState {
     {
         let mut app_state_in_memory = self.raw.write().await;
 
-        // Ensure root mnemonic cannot be overwritten while a joined V2 federation
-        // exists
-        let v2_federation_exists = app_state_in_memory
-            .joined_federations
-            .iter()
-            .any(|(_, FederationInfo { version, .. })| *version >= 2);
         let mut app_state_raw_new = app_state_in_memory.as_ref().clone();
         let result = closure(&mut app_state_raw_new);
-
-        if v2_federation_exists
-            && app_state_raw_new.root_mnemonic != app_state_in_memory.root_mnemonic
-        {
-            bail!("Root mnemonic cannot be overwritten while joined v2 federations are present");
-        }
 
         self.storage
             .write_file(
@@ -227,6 +268,72 @@ impl AppState {
             .await?;
         *app_state_in_memory = Arc::new(app_state_raw_new);
         Ok(result)
+    }
+
+    /// Compares the given new device identifier with the existing device
+    /// identifier. If no existing device identifier, sets is as the new
+    /// device identifier. Otherwise, logs the comparison and returns the
+    /// existing device identifier.
+    pub async fn verify_and_return_device_identifier(
+        &self,
+        new_identifier: String,
+    ) -> anyhow::Result<String> {
+        match self
+            .with_read_lock(|state| state.device_identifier.clone())
+            .await
+        {
+            Some(id) if id != new_identifier => {
+                warn!("New device identifier ({new_identifier}) doesn't match existing one ({id})");
+                Ok(id)
+            }
+            Some(id) => {
+                info!("Device identifier unchaged: {id}");
+                Ok(id)
+            }
+            None => {
+                info!("Device identifier absent, setting as: {new_identifier}");
+                self.with_write_lock(|state| {
+                    state.device_identifier = Some(new_identifier.clone())
+                })
+                .await?;
+                Ok(new_identifier)
+            }
+        }
+    }
+
+    pub async fn root_mnemonic(&self) -> bip39::Mnemonic {
+        self.with_read_lock(|state| state.root_mnemonic.clone())
+            .await
+    }
+
+    pub async fn root_secret(&self) -> DerivableSecret {
+        self.with_read_lock(|state| {
+            Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
+        })
+        .await
+    }
+
+    /// Recover to a seed, fails if state has joined any federation.
+    pub async fn recover_mnemonic(&self, mnemonic: bip39::Mnemonic) -> anyhow::Result<()> {
+        self.with_write_lock(|state| {
+            if !state.joined_federations.is_empty() {
+                bail!("Cannot recover while joined federations exist");
+            }
+            state.root_mnemonic = mnemonic;
+            Ok(())
+        })
+        .await??;
+        Ok(())
+    }
+
+    /// Get a new prefix for joining a federation.
+    pub async fn new_federation_db_prefix(&self) -> anyhow::Result<u64> {
+        self.with_write_lock(|x| {
+            let value = x.next_federation_db_prefix;
+            x.next_federation_db_prefix += 1;
+            value
+        })
+        .await
     }
 }
 

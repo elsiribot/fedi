@@ -49,7 +49,7 @@ const Initializing: React.FC<Props> = () => {
                 setBridgeError(err)
             }
         }
-        initializeFederations().then(() => SplashScreen.hide())
+        initializeFederations().finally(() => SplashScreen.hide())
     }, [dispatch])
 
     // once everything has loaded, determine where to navigate

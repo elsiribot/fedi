@@ -3,6 +3,7 @@ pub mod bridge;
 pub mod federation_v2;
 // FIXME: kinda feels like this should just be it's own crate ...
 pub mod constants;
+pub mod device_registration;
 pub mod error;
 pub mod event;
 pub mod fedi_fee;

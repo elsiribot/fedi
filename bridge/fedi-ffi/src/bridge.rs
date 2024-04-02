@@ -8,11 +8,10 @@ use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::secp256k1::{Message, Secp256k1};
 use bitcoin::Address;
 use fedi_social_client::FediSocialCommonGen;
-use fedimint_bip39::Bip39RootSecretStrategy;
-use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::api::{DynGlobalApi, InviteCode};
 use fedimint_core::config::ClientConfig;
-use fedimint_core::encoding::Decodable;
+use fedimint_core::db::{Database, IDatabaseTransactionOpsCore};
+use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::CommonModuleInit;
 use fedimint_core::task::TaskGroup;
@@ -20,7 +19,6 @@ use fedimint_core::PeerId;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use futures::future::join_all;
 use lightning_invoice::Bolt11Invoice;
-use rand::distributions::{Alphanumeric, DistString};
 use tokio::sync::{Mutex, OnceCell};
 use tracing::{debug, error, info, info_span, warn, Instrument};
 
@@ -34,6 +32,7 @@ use super::types::{
 };
 use crate::api::IFediApi;
 use crate::constants::{MATRIX_CHILD_ID, NOSTR_CHILD_ID};
+use crate::device_registration::DeviceRegistrationService;
 use crate::error::{get_error_code, ErrorCode};
 use crate::event::{Event, SocialRecoveryEvent, TypedEventExt as _};
 use crate::federation_v2::{self, BackupServiceStatus, FederationV2};
@@ -41,7 +40,9 @@ use crate::fedi_fee::FediFeeHelper;
 use crate::matrix::Matrix;
 use crate::multi::MultiFederation;
 use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
-use crate::storage::{AppState, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule};
+use crate::storage::{
+    AppState, DatabaseInfo, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule,
+};
 use crate::types::{
     GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
     RpcLightningGateway, RpcPayAddressResponse, RpcReturningMemberStatus,
@@ -64,6 +65,8 @@ pub struct Bridge {
     pub task_group: TaskGroup,
     pub fedi_fee_helper: Arc<FediFeeHelper>,
     pub matrix: OnceCell<Matrix>,
+    pub device_registration_service: Arc<DeviceRegistrationService>,
+    pub global_db: Database,
 }
 
 impl Bridge {
@@ -81,26 +84,20 @@ impl Bridge {
             task_group.make_subgroup().await,
         ));
 
-        // Set device_identifier in AppState if not already set. Otherwise just log.
-        match app_state
-            .with_read_lock(|state| state.device_identifier.clone())
-            .await
-        {
-            Some(id) if id != device_identifier => warn!(
-                "New device identifier ({device_identifier}) doesn't match existing one ({id})"
-            ),
-            Some(_) => info!("Device identifier unchaged: {device_identifier}"),
-            None => {
-                info!("Device identifier absent, setting as: {device_identifier}");
-                app_state
-                    .with_write_lock(|state| state.device_identifier = Some(device_identifier))
-                    .await?
-            }
-        }
+        let device_identifier = app_state
+            .verify_and_return_device_identifier(device_identifier)
+            .await?;
+        let device_registration_service = DeviceRegistrationService::new(
+            device_identifier,
+            app_state.clone(),
+            event_sink.clone(),
+            task_group.make_subgroup().await,
+            fedi_api.clone(),
+        )
+        .await
+        .into();
 
-        let root_mnemonic = app_state
-            .with_read_lock(|state| state.root_mnemonic.clone())
-            .await;
+        let root_mnemonic = app_state.root_mnemonic().await;
 
         // load joined federations
         let joined_federations = app_state
@@ -108,6 +105,8 @@ impl Bridge {
             .await
             .into_iter()
             .collect::<Vec<_>>();
+
+        let global_db = storage.federation_database_v2("global").await?;
 
         let federations = joined_federations
             .iter()
@@ -118,21 +117,31 @@ impl Bridge {
                     Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
                         federation_id_str.clone(),
                         match federation_info.version {
-                            2 => Arc::new(MultiFederation::V2(
-                                FederationV2::from_db(
-                                    storage
-                                        .federation_database_v2(&federation_info.database_name)
-                                        .await?,
-                                    event_sink.clone(),
-                                    task_group.make_subgroup().await,
-                                    &root_mnemonic,
-                                    fedi_fee_helper.clone(),
-                                )
-                                .await
-                                .with_context(|| {
-                                    format!("loading federation {}", federation_id_str.clone())
-                                })?,
-                            )),
+                            2 => {
+                                let db = match &federation_info.database {
+                                    DatabaseInfo::DatabaseName(db_name) => {
+                                        storage.federation_database_v2(db_name).await?
+                                    }
+                                    DatabaseInfo::DatabasePrefix(prefix) => {
+                                        // use varint encoding so most of prefixes serialize to
+                                        // single byte
+                                        global_db.with_prefix(prefix.consensus_encode_to_vec())
+                                    }
+                                };
+                                Arc::new(MultiFederation::V2(
+                                    FederationV2::from_db(
+                                        db,
+                                        event_sink.clone(),
+                                        task_group.make_subgroup().await,
+                                        &root_mnemonic,
+                                        fedi_fee_helper.clone(),
+                                    )
+                                    .await
+                                    .with_context(|| {
+                                        format!("loading federation {}", federation_id_str.clone())
+                                    })?,
+                                ))
+                            }
                             n => bail!("Invalid federation version {n}"),
                         },
                     ))
@@ -165,6 +174,8 @@ impl Bridge {
             task_group,
             fedi_fee_helper,
             matrix: OnceCell::default(),
+            device_registration_service,
+            global_db,
         };
         let federations = bridge.federations.lock().await.clone();
         for federation in federations.into_values() {
@@ -249,10 +260,7 @@ impl Bridge {
                     error!("ClientHandleArc is not unique, not reinserting the federation in list");
                     return Ok(());
                 }
-                let root_mnemonic = this
-                    .app_state
-                    .with_read_lock(move |state| state.root_mnemonic.clone())
-                    .await;
+                let root_mnemonic = this.app_state.root_mnemonic().await;
                 let federation_v2 = FederationV2::from_db(
                     db,
                     this.event_sink.clone(),
@@ -320,18 +328,21 @@ impl Bridge {
             bail!(ErrorCode::AlreadyJoined)
         }
 
-        let root_mnemonic = self
-            .app_state
-            .with_read_lock(|state| state.root_mnemonic.clone())
-            .await;
+        let root_mnemonic = self.app_state.root_mnemonic().await;
 
-        let db_name = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
+        let db_prefix = self
+            .app_state
+            .new_federation_db_prefix()
+            .await
+            .context("failed to write AppState")?;
+        let db = self
+            .global_db
+            .with_prefix(db_prefix.consensus_encode_to_vec());
         let federation = FederationV2::join(
             invite_code_string,
-            &self.storage,
             self.event_sink.clone(),
             TaskGroup::new(),
-            &db_name,
+            db,
             &root_mnemonic,
             self.fedi_fee_helper.clone(),
         )
@@ -348,7 +359,7 @@ impl Bridge {
                     federation_id.to_string(),
                     FederationInfo {
                         version: 2,
-                        database_name: db_name,
+                        database: DatabaseInfo::DatabasePrefix(db_prefix),
                         fedi_fee_schedule: FediFeeSchedule::default(),
                     },
                 );
@@ -376,10 +387,7 @@ impl Bridge {
 
     pub async fn federation_preview(&self, invite_code: &str) -> Result<RpcFederationPreview> {
         let invite_code = invite_code.to_lowercase();
-        let root_mnemonic = self
-            .app_state
-            .with_read_lock(|state| state.root_mnemonic.clone())
-            .await;
+        let root_mnemonic = self.app_state.root_mnemonic().await;
         let (v2,) = futures::join!(FederationV2::download_client_config(
             &invite_code,
             &root_mnemonic
@@ -448,19 +456,57 @@ impl Bridge {
             .with_write_lock(|state| state.joined_federations.remove(&federation_id))
             .await?;
 
+        let Some(removed_federation_info) = removed_federation_info else {
+            bail!("federation must be present in state");
+        };
         // If the phone dies here, it's still ok because the federation would be removed
         // from the app_state and in the worst case we'd just be leaving behind a stale
         // DB file.
 
         // Remove from bridge state
-        {
-            let mut lock = self.federations.lock().await;
-            lock.remove(&federation_id_str.to_string());
+        let Some(federation) = self
+            .federations
+            .lock()
+            .await
+            .remove(&federation_id_str.to_string())
+        else {
+            bail!("federation must be present in state");
+        };
+
+        match &*federation {
+            MultiFederation::V2(f) => {
+                if let Err(error) = f
+                    .task_group
+                    .clone()
+                    .shutdown_join_all(Some(Duration::from_secs(20)))
+                    .await
+                {
+                    warn!(%error, "failed to shutdown task group cleanly");
+                }
+            }
         }
 
-        // delete federation db
-        if let Some(FederationInfo { database_name, .. }) = removed_federation_info {
-            self.storage.delete_federation_db(&database_name).await?;
+        if fedimint_core::task::timeout(
+            Duration::from_secs(20),
+            Self::wait_till_fully_dropped(federation),
+        )
+        .await
+        .is_err()
+        {
+            info!("failed to drop federation, not deleting the database");
+            return Ok(());
+        }
+
+        match removed_federation_info.database {
+            DatabaseInfo::DatabaseName(name) => {
+                self.storage.delete_federation_db(&name).await?;
+            }
+            DatabaseInfo::DatabasePrefix(prefix) => {
+                let mut dbtx = self.global_db.begin_transaction().await;
+                dbtx.raw_remove_by_prefix(&prefix.consensus_encode_to_vec())
+                    .await?;
+                dbtx.commit_tx().await;
+            }
         }
 
         Ok(())
@@ -597,7 +643,7 @@ impl Bridge {
     pub async fn get_mnemonic_words(&self) -> anyhow::Result<Vec<String>> {
         Ok(self
             .app_state
-            .with_read_lock(|state| state.root_mnemonic.clone())
+            .root_mnemonic()
             .await
             .word_iter()
             .map(|x| x.to_owned())
@@ -622,16 +668,7 @@ impl Bridge {
 
     // FIXME: this function has weird name now that it doesn't do any recovery
     pub async fn recover_from_mnemonic(&self, mnemonic: bip39::Mnemonic) -> Result<()> {
-        // Only allow recovery when there are no joined federations
-        if !self.federations.lock().await.is_empty() {
-            bail!("Cannot recover while joined federations exist");
-        }
-
-        self.app_state
-            .with_write_lock(|state| {
-                state.root_mnemonic = mnemonic;
-            })
-            .await?;
+        self.app_state.recover_mnemonic(mnemonic).await?;
         Ok(())
     }
 
@@ -647,10 +684,7 @@ impl Bridge {
             .read_file(&video_file_path)
             .await?
             .ok_or(anyhow!("video file not found"))?;
-        let root_mnemonic = self
-            .app_state
-            .with_read_lock(|state| state.root_mnemonic.clone())
-            .await;
+        let root_mnemonic = self.app_state.root_mnemonic().await;
         let recovery_file = multi.upload_backup_file(video_file, root_mnemonic).await?;
         storage
             .write_file(RECOVERY_FILENAME.as_ref(), recovery_file)
@@ -899,12 +933,7 @@ impl Bridge {
         domain: String,
     ) -> Result<RpcSignedLnurlMessage> {
         let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
-        let global_root_secret = self
-            .app_state
-            .with_read_lock(|state| {
-                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
-            })
-            .await;
+        let global_root_secret = self.app_state.root_secret().await;
         Ok(multi
             .sign_lnurl_message(&message, domain, global_root_secret)
             .await)
@@ -939,12 +968,7 @@ impl Bridge {
     }
 
     pub async fn get_nostr_pub_key(&self) -> Result<String> {
-        let global_root_secret = self
-            .app_state
-            .with_read_lock(|state| {
-                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
-            })
-            .await;
+        let global_root_secret = self.app_state.root_secret().await;
         let secp = Secp256k1::new();
         let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
         let nostr_keypair = nostr_secret.to_secp_key(&secp);
@@ -958,22 +982,12 @@ impl Bridge {
         event_hash: String,
     ) -> Result<String> {
         let multi = self.get_multi_maybe_recovering(&federation_id.0).await?;
-        let global_root_secret = self
-            .app_state
-            .with_read_lock(|state| {
-                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
-            })
-            .await;
+        let global_root_secret = self.app_state.root_secret().await;
         multi.sign_nostr_event(event_hash, global_root_secret).await
     }
 
     pub async fn get_matrix_secret(&self) -> DerivableSecret {
-        let global_root_secret = self
-            .app_state
-            .with_read_lock(move |state| {
-                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
-            })
-            .await;
+        let global_root_secret = self.app_state.root_secret().await;
         global_root_secret.child_key(ChildId(MATRIX_CHILD_ID))
     }
 

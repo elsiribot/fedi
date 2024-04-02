@@ -12,10 +12,14 @@ import init, {
 
 const log = makeLog('web/lib/bridge/wasm.worker')
 
-let deviceId: string
+let deviceIdResolve: (_: string | PromiseLike<string>) => void
+const deviceIdPromise = new Promise<string>(resolve => {
+    deviceIdResolve = resolve
+})
 
 async function workerInit() {
     await init(new URL('@fedi/common/wasm/fedi_wasm_bg.wasm', import.meta.url))
+    const deviceId = await deviceIdPromise
     if (!deviceId) {
         log.error('fedimint_initialize - deviceId not set')
         throw new Error('Failed to initialize bridge')
@@ -56,7 +60,11 @@ addEventListener('message', e => {
     const { token, method, data } = e.data
     if (method === 'initialize') {
         // Store deviceId for bridge initialization later
-        deviceId = data.deviceId
+        if (!data.deviceId) {
+            throw new Error('deviceId not provided')
+        }
+        deviceIdResolve(data.deviceId)
+        return
     }
     if (method == 'getLogs') {
         ;(async () => {

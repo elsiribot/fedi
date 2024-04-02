@@ -1,17 +1,17 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::{anyhow, bail};
+use async_recursion::async_recursion;
 use bitcoin::Network;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
-use fedimint_core::task::{TaskGroup, TaskHandle};
+use fedimint_core::task::TaskGroup;
 use fedimint_core::Amount;
 use fedimint_ln_client::{LightningClientModule, OutgoingLightningPayment};
-use futures::FutureExt;
 use lightning_invoice::Bolt11Invoice;
-use tokio::sync::mpsc::{Receiver, Sender};
-use tracing::{error, info, warn};
+use tokio::sync::{Mutex, OwnedMutexGuard};
+use tracing::{error, info, instrument, warn};
 
 use crate::api::IFediApi;
 use crate::constants::MILLION;
@@ -59,8 +59,7 @@ impl FediFeeHelper {
         let fedi_api = self.fedi_api.clone();
         let app_state = self.app_state.clone();
         self.task_group
-            .clone()
-            .spawn("fetch and update fedi fee schedule", move |_| async move {
+            .spawn_cancellable("fetch and update fedi fee schedule", async move {
                 // Fetch fee schedule from Fedi API. Presently the endpoint is different per
                 // network (mainnet, mutinynet etc.). So we iterate through the mapping of
                 // federation => network and collect a set-union of all the networks. Then we
@@ -202,48 +201,42 @@ impl FediFeeHelper {
     }
 }
 
-pub struct FeeRemittanceRequest {}
-
-// Service that spawns a task to remit accrued oustanding fedi fee. We use a
-// channel to communicate with the task. Whenever the channel sends through a
-// request, the task checks whether enough fee has been accrued, and if so, it
-// attempts to remit the fee to fedi.
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct FediFeeRemittanceService {
-    tx: Sender<FeeRemittanceRequest>,
+    // held while remit the fees
+    lock: Arc<Mutex<()>>,
 }
 
 impl FediFeeRemittanceService {
-    pub async fn new(fed: FederationV2) -> Self {
-        let (tx, rx) = tokio::sync::mpsc::channel(10);
-        let tg = fed.task_group.clone();
-        tg.spawn("fedi_fee_remittance_service", move |handle| {
-            Self::task(fed, handle, rx)
-        });
-        Self { tx }
-    }
-
-    pub async fn trigger_fee_remittance(&self) -> anyhow::Result<()> {
-        self.tx
-            .send(FeeRemittanceRequest {})
-            .await
-            .context("fee remittance service died")
-    }
-
     /// Checks whether the accrued outstanding fedi fees has surpassed the
     /// remittance threshold. If yes, queries the fee helper to obtain a
-    /// lightning invoice to remit the fees. If the accrued outstanding fees has
-    /// not surpassed the threshold, returns Ok(false). If the fees HAS
-    /// surpassed the threshold, and we were able to successfully obtain a
-    /// lightning invoice and initiate payment, returns Ok(true). Otherwise,
-    /// returns any error we may have encountered in the remittance process.
-    async fn remit_fedi_fee_if_threshold_met(fed: &FederationV2) -> anyhow::Result<bool> {
+    /// lightning invoice to remit the fees. If the fees HAS surpassed
+    /// the threshold, and spawns a task in background to remit fees.
+    pub async fn remit_fedi_fee_if_threshold_met(&self, fed: &FederationV2) {
+        // remit task is already running
+        let Ok(guard) = self.lock.clone().try_lock_owned() else {
+            info!("Fedi fee remittance already running");
+            return;
+        };
         let outstanding_fees = fed.get_outstanding_fedi_fees().await;
         let remittance_threshold = fed.fedi_fee_schedule().await.remittance_threshold_msat;
         if outstanding_fees.msats < remittance_threshold {
-            return Ok(false);
+            info!("Fedi fee remittance not initiated, accrued fee doesn't exceed threshold");
+            return;
         }
+        let fed2 = fed.clone();
+        fed.task_group
+            .spawn_cancellable("remit_fedi_fee", async move {
+                let _ = Self::remit_fedi_fee(guard, &fed2).await;
+            });
+    }
 
+    #[instrument(skip_all, fields(federation_id = %fed.federation_id()) , err, ret)]
+    #[cfg_attr(target_family = "wasm", async_recursion(?Send))]
+    #[cfg_attr(not(target_family = "wasm"), async_recursion)]
+    async fn remit_fedi_fee(guard: OwnedMutexGuard<()>, fed: &FederationV2) -> anyhow::Result<()> {
+        let outstanding_fees = fed.get_outstanding_fedi_fees().await;
+        info!("fedi fee threshold exceeded, remitting");
         let gateway = fed.select_gateway().await?;
         let gateway_fees = gateway
             .as_ref()
@@ -325,11 +318,14 @@ impl FediFeeRemittanceService {
                 fedimint_core::db::AutocommitError::ClosureError { error, .. } => error,
             })?;
 
+        let mutex = OwnedMutexGuard::mutex(&guard).clone();
+        drop(guard);
         // If payment fails, un-zero the oustanding fee before returning the error.
         if let Err(e) = fed
             .subscribe_to_ln_pay(payment_type, extra_meta, invoice.clone())
             .await
         {
+            let _guard = mutex.lock().await;
             fed.client
                 .db()
                 .autocommit(
@@ -357,44 +353,6 @@ impl FediFeeRemittanceService {
             return Err(e);
         }
 
-        Ok(true)
-    }
-
-    async fn task(
-        fed: FederationV2,
-        handle: TaskHandle,
-        mut request_rx: Receiver<FeeRemittanceRequest>,
-    ) {
-        let mut shutdown = handle.make_shutdown_rx().await.fuse();
-        loop {
-            let result = tokio::select! {
-                biased;
-                _ = &mut shutdown => {
-                    info!("fedi_fee_remittance_service shutting down");
-                    break;
-                }
-                msg = request_rx.recv() => {
-                    match msg {
-                        Some(_) => {
-                            Self::remit_fedi_fee_if_threshold_met(&fed).await
-                        }
-                        None => {
-                            info!("fedi_fee_remittance_service shutting down on drop");
-                            break;
-                        }
-                    }
-                }
-            };
-
-            match result {
-                Ok(true) => info!(
-                    "Successfully initiated fedi fee remittance, accrued fee exceeds threshold"
-                ),
-                Ok(false) => {
-                    info!("Fedi fee remittance not initiated, accrued fee doesn't exceed threshold")
-                }
-                Err(e) => warn!("Error initiating fedi fee remittance {e:?}"),
-            }
-        }
+        Ok(())
     }
 }
