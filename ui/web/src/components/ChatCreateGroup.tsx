@@ -1,45 +1,44 @@
+import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import ChevronLeft from '@fedi/common/assets/svgs/chevron-left.svg'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     createChatGroup,
     fetchChatMembers,
-    joinChatGroup,
     selectActiveFederationId,
     selectChatXmppClient,
 } from '@fedi/common/redux'
 import { ChatType } from '@fedi/common/types'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
-import { useAppDispatch, useAppSelector, useIsTouchScreen } from '../hooks'
-import { styled } from '../styles'
+import { useAppDispatch, useAppSelector, useMediaQuery } from '../hooks'
+import { config, styled } from '../styles'
 import { Button } from './Button'
 import { ChatAvatar } from './ChatAvatar'
 import { CopyInput } from './CopyInput'
+import { Icon } from './Icon'
 import { Input } from './Input'
-import { QRScanner } from './QRScanner'
+import * as Layout from './Layout'
 import { Switch } from './Switch'
 import { Text } from './Text'
 
-export const ChatJoinOrCreateGroup: React.FC = () => {
+export const ChatCreateGroup: React.FC = () => {
     const { t } = useTranslation()
     const { push } = useRouter()
     const dispatch = useAppDispatch()
     const toast = useToast()
     const federationId = useAppSelector(selectActiveFederationId)
     const xmppClient = useAppSelector(selectChatXmppClient)
-    const [joinGroupLink, setJoinGroupLink] = useState('')
-    const [isCreatingGroup, setIsCreatingGroup] = useState(false)
-    const [isScanning, setIsScanning] = useState(false)
     const [newGroupId, setNewGroupId] = useState<string>('')
     const [newGroupName, setNewGroupName] = useState(
         t('feature.chat.new-group'),
     )
     const [isSavingGroup, setIsSavingGroup] = useState(false)
     const [isBroadcastOnly, setIsBroadcastOnly] = useState(false)
-    const isTouchScreen = useIsTouchScreen()
+    const isSm = useMediaQuery(config.media.sm)
 
     useEffect(() => {
         if (!federationId) return
@@ -48,23 +47,11 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
 
     // Generate a new group when we go to create one
     useEffect(() => {
-        if (!isCreatingGroup || !xmppClient || newGroupId) return
+        if (!xmppClient || newGroupId) return
         xmppClient.generateUniqueGroupId().then(id => {
             setNewGroupId(id)
         })
-    }, [dispatch, isCreatingGroup, xmppClient, newGroupId])
-
-    const handleJoinGroup = useCallback(async () => {
-        if (!federationId) return
-        try {
-            const res = await dispatch(
-                joinChatGroup({ federationId, link: joinGroupLink }),
-            ).unwrap()
-            push(`/chat/group/${res.id}`)
-        } catch (err) {
-            toast.error(t, err, 'errors.chat-unavailable')
-        }
-    }, [dispatch, toast, federationId, joinGroupLink, push, t])
+    }, [dispatch, xmppClient, newGroupId])
 
     const handleSaveNewGroup = useCallback(async () => {
         setIsSavingGroup(true)
@@ -94,15 +81,6 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
         t,
     ])
 
-    // Automatically attempt to join group after changing value
-    useEffect(() => {
-        if (!joinGroupLink) return
-        const timeout = setTimeout(() => {
-            handleJoinGroup()
-        }, 500)
-        return () => clearTimeout(timeout)
-    }, [joinGroupLink, handleJoinGroup])
-
     // The chat doesn't actually exist yet, so we need to create a fake one
     const chat = useMemo(() => {
         return {
@@ -113,9 +91,19 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
         }
     }, [newGroupId, newGroupName, isBroadcastOnly])
 
-    let content: React.ReactNode
-    if (isCreatingGroup) {
-        content = (
+    return (
+        <Container>
+            {isSm ? (
+                <Layout.Header back="/chat/new">
+                    <Layout.Title subheader>
+                        {t('feature.chat.create-a-group')}
+                    </Layout.Title>
+                </Layout.Header>
+            ) : (
+                <DesktopBackButton as={Link} href="/chat/new">
+                    <Icon icon={ChevronLeft} size="sm" />
+                </DesktopBackButton>
+            )}
             <Inner>
                 <ChatAvatar
                     size="lg"
@@ -141,82 +129,37 @@ export const ChatJoinOrCreateGroup: React.FC = () => {
                         onCheckedChange={setIsBroadcastOnly}
                     />
                 </BroadcastSwitchContainer>
-                <Buttons>
-                    <Button
-                        width="full"
-                        disabled={!newGroupId}
-                        loading={isSavingGroup}
-                        onClick={handleSaveNewGroup}>
-                        {t('feature.chat.view-group')}
-                    </Button>
-                </Buttons>
             </Inner>
-        )
-    } else {
-        content = (
-            <Inner>
-                {isScanning ? (
-                    <ScanWrap>
-                        <QRScanner onScan={res => setJoinGroupLink(res.data)} />
-                    </ScanWrap>
-                ) : (
-                    <Input
-                        label={t('feature.chat.paste-group-invite')}
-                        placeholder="fedi:group..."
-                        value={joinGroupLink}
-                        onChange={ev =>
-                            setJoinGroupLink(ev.currentTarget.value)
-                        }
-                        autoFocus={!isTouchScreen}
-                    />
-                )}
-                <Buttons>
-                    {isScanning ? (
-                        <Button
-                            width="full"
-                            onClick={() => setIsScanning(false)}>
-                            {t('feature.chat.paste-group-invite')}
-                        </Button>
-                    ) : (
-                        <Button
-                            width="full"
-                            onClick={() => setIsScanning(true)}>
-                            {t('feature.chat.scan-group-invite')}
-                        </Button>
-                    )}
-                    <Button
-                        width="full"
-                        onClick={() => setIsCreatingGroup(true)}>
-                        {t('feature.chat.create-a-group')}
-                    </Button>
-                </Buttons>
-            </Inner>
-        )
-    }
-
-    return <Container>{content}</Container>
+            <Buttons>
+                <Button
+                    width="full"
+                    disabled={!newGroupId}
+                    loading={isSavingGroup}
+                    onClick={handleSaveNewGroup}>
+                    {t('feature.chat.view-group')}
+                </Button>
+            </Buttons>
+        </Container>
+    )
 }
 
 const Container = styled('div', {
     display: 'flex',
-    alignItems: 'center',
+    flexDirection: 'column',
     justifyContent: 'center',
     height: '100%',
-    padding: 24,
+    width: '100%',
+    position: 'relative',
 })
 
 const Inner = styled('div', {
     display: 'flex',
+    flex: 1,
     flexDirection: 'column',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 320,
     gap: 16,
-})
-
-const ScanWrap = styled('div', {
-    maxWidth: 280,
-    width: '100%',
+    padding: 24,
 })
 
 const Buttons = styled('div', {
@@ -224,6 +167,7 @@ const Buttons = styled('div', {
     flexDirection: 'column',
     width: '100%',
     gap: 8,
+    padding: 24,
 })
 
 const BroadcastSwitchContainer = styled('div', {
@@ -232,4 +176,10 @@ const BroadcastSwitchContainer = styled('div', {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 16,
+})
+
+const DesktopBackButton = styled('button', {
+    position: 'absolute',
+    top: 24,
+    left: 24,
 })

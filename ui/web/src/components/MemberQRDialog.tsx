@@ -24,7 +24,7 @@ export const MemberQRDialog: React.FC<Props> = props => {
         <QRDialog
             title={member.username}
             qrValue={directChatLink}
-            onCopyMessage={t('feature.federations.copied-federation-invite')}
+            onCopyMessage={t('phrases.copied-to-clipboard')}
             notice={t('feature.chat.scan-member-code-notice')}
             {...props}
         />

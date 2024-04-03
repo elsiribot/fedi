@@ -6,10 +6,11 @@ import { useUpdateLastMessageSeen } from '@fedi/common/hooks/chat'
 import { selectNeedsChatRegistration } from '@fedi/common/redux'
 
 import { ChatBlock } from '../../components/ChatBlock'
+import { ChatCreateGroup } from '../../components/ChatCreateGroup'
 import { ChatGroupConversation } from '../../components/ChatGroupConversation'
 import { ChatMemberConversation } from '../../components/ChatMemberConversation'
+import { ChatMemberSearch } from '../../components/ChatMemberSearch'
 import { ChatNeedRegistration } from '../../components/ChatNeedRegistration'
-import { ChatNew } from '../../components/ChatNew'
 import { ContentBlock } from '../../components/ContentBlock'
 import { Redirect } from '../../components/Redirect'
 import { useAppSelector } from '../../hooks'
@@ -41,7 +42,8 @@ function ChatPage() {
     let content: React.ReactNode
     let isShowingContent = true
     if (chatType === 'new') {
-        content = <ChatNew />
+        content =
+            chatId === 'group' ? <ChatCreateGroup /> : <ChatMemberSearch />
     } else if (chatType === 'member' && chatId) {
         content = <ChatMemberConversation memberId={chatId} />
     } else if (chatType === 'group' && chatId) {

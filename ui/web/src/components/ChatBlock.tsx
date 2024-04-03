@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
+import QRIcon from '@fedi/common/assets/svgs/qr.svg'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectOrderedChatList } from '@fedi/common/redux'
 
@@ -12,6 +13,8 @@ import { Button } from './Button'
 import { ChatListItem } from './ChatListItem'
 import { ContentBlock } from './ContentBlock'
 import { Icon } from './Icon'
+import { IconButton } from './IconButton'
+import { MemberQRDialog } from './MemberQRDialog'
 import { Text } from './Text'
 
 interface Props {
@@ -23,6 +26,8 @@ export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
     const { t } = useTranslation()
     const chats = useAppSelector(selectOrderedChatList)
 
+    const [isMemberQrOpen, setIsMemberQrOpen] = useState(false)
+
     return (
         <ContentBlock css={{ maxWidth: 840, padding: 0 }}>
             <Container>
@@ -30,12 +35,11 @@ export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
                     <Layout.Root>
                         <SidebarHeader>
                             <Layout.Title small>{t('words.chat')}</Layout.Title>
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                href="/chat/new">
-                                {t('feature.chat.new-chat')}
-                            </Button>
+                            <IconButton
+                                icon={QRIcon}
+                                onClick={() => setIsMemberQrOpen(true)}
+                                size="md"
+                            />
                         </SidebarHeader>
                         <Layout.Content fullWidth>
                             <SidebarList>
@@ -47,6 +51,11 @@ export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
                                     </ErrorBoundary>
                                 ))}
                             </SidebarList>
+                            <NewChatAction>
+                                <Button href="/chat/new" width="full">
+                                    {t('feature.chat.new-chat')}
+                                </Button>
+                            </NewChatAction>
                         </Layout.Content>
                     </Layout.Root>
                 </Sidebar>
@@ -64,6 +73,10 @@ export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
                     </ErrorBoundary>
                 </Content>
             </Container>
+            <MemberQRDialog
+                open={isMemberQrOpen}
+                onOpenChange={setIsMemberQrOpen}
+            />
         </ContentBlock>
     )
 }
@@ -162,4 +175,8 @@ const Error = styled('div', {
     textAlign: 'center',
     gap: 8,
     color: theme.colors.red,
+})
+
+const NewChatAction = styled('div', {
+    padding: 12,
 })
