@@ -40,10 +40,6 @@ export const ToastManager: React.FC = () => {
     }, [toast])
 
     useEffect(() => {
-        close()
-    }, [router.asPath, close])
-
-    useEffect(() => {
         router.events.on('routeChangeComplete', close)
 
         return () => {
