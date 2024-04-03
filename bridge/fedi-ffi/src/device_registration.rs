@@ -67,20 +67,16 @@ impl DeviceRegistrationService {
 
     async fn start_periodic_registration_inner(&mut self, device_index: u8) {
         let subgroup = self.task_group.make_subgroup().await;
-        let device_identifier = self.device_identifier.clone();
-        let app_state = self.app_state.clone();
-        let event_sink = self.event_sink.clone();
-        let fedi_api = self.fedi_api.clone();
-        subgroup.spawn_cancellable("device_registration_service", async move {
+        subgroup.spawn_cancellable(
+            "device_registration_service",
             renew_registration_periodically(
-                device_identifier,
+                self.device_identifier.clone(),
                 device_index,
-                app_state,
-                event_sink,
-                fedi_api,
-            )
-            .await
-        });
+                self.app_state.clone(),
+                self.event_sink.clone(),
+                self.fedi_api.clone(),
+            ),
+        );
         self.active_task_subgroup = Some(subgroup);
     }
 }
