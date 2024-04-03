@@ -3,11 +3,8 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import WordListIcon from '@fedi/common/assets/svgs/word-list.svg'
+import { useNuxStep } from '@fedi/common/hooks/nux'
 import { useToast } from '@fedi/common/hooks/toast'
-import {
-    selectHasPerformedPersonalBackup,
-    setHasPerformedPersonalBackup,
-} from '@fedi/common/redux'
 import { SeedWords } from '@fedi/common/types'
 
 import { Avatar } from '../../../components/Avatar'
@@ -16,7 +13,7 @@ import { ContentBlock } from '../../../components/ContentBlock'
 import * as Layout from '../../../components/Layout'
 import { RecoverySeedWords } from '../../../components/RecoverySeedWords'
 import { Text } from '../../../components/Text'
-import { useAppDispatch, useAppSelector, useMediaQuery } from '../../../hooks'
+import { useMediaQuery } from '../../../hooks'
 import { fedimint } from '../../../lib/bridge'
 import { config, styled } from '../../../styles'
 
@@ -26,10 +23,9 @@ function PersonalBackupPage() {
     const [words, setWords] = useState<SeedWords>([])
 
     const router = useRouter()
-    const dispatch = useAppDispatch()
     const isSm = useMediaQuery(config.media.sm)
-    const hasPerformedPersonalBackup = useAppSelector(
-        selectHasPerformedPersonalBackup,
+    const [hasPerformedPersonalBackup, completePersonalBackup] = useNuxStep(
+        'hasPerformedPersonalBackup',
     )
 
     const [isShowingWords, setIsShowingWords] = useState(
@@ -45,9 +41,9 @@ function PersonalBackupPage() {
     }, [isShowingWords, error])
 
     const handleFinish = useCallback(() => {
-        dispatch(setHasPerformedPersonalBackup(true))
+        completePersonalBackup()
         router.push('/')
-    }, [dispatch, router])
+    }, [completePersonalBackup, router])
 
     return (
         <ContentBlock>

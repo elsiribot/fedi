@@ -4,14 +4,10 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
-import {
-    selectHasPerformedPersonalBackup,
-    setHasPerformedPersonalBackup,
-} from '@fedi/common/redux'
+import { useNuxStep } from '@fedi/common/hooks/nux'
 import type { SeedWords } from '@fedi/common/types'
 
 import { fedimint } from '../bridge'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'RecoveryWords'>
@@ -41,10 +37,8 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const [seedWords, setSeedWords] = useState<SeedWords>([])
 
-    const dispatch = useAppDispatch()
-
-    const hasPerformedPersonalBackup = useAppSelector(
-        selectHasPerformedPersonalBackup,
+    const [hasPerformedPersonalBackup, completePersonalBackup] = useNuxStep(
+        'hasPerformedPersonalBackup',
     )
 
     useEffect(() => {
@@ -75,7 +69,7 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
         if (hasPerformedPersonalBackup) {
             navigation.navigate('Settings')
         } else {
-            dispatch(setHasPerformedPersonalBackup(true))
+            completePersonalBackup()
             navigation.navigate('TabsNavigator')
         }
     }

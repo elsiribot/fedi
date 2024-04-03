@@ -28,7 +28,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
-        version: 16,
+        version: 15,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
@@ -42,7 +42,6 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         authenticatedGuardian: state.federation.authenticatedGuardian,
         externalMeta: state.federation.externalMeta,
         customFediMods: state.federation.customFediMods,
-        hasPerformedPersonalBackup: state.recovery.hasPerformedPersonalBackup,
         nuxSteps: state.nux.steps,
         chat: Object.entries(state.chat).reduce<LatestStoredState['chat']>(
             (stored, [federationId, chatState]) => {
@@ -480,14 +479,6 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
             ...migrationState,
             version: 15,
             matrixAuth: null,
-        }
-    }
-
-    if (migrationState.version === 15) {
-        migrationState = {
-            ...migrationState,
-            version: 16,
-            hasPerformedPersonalBackup: false,
         }
     }
 

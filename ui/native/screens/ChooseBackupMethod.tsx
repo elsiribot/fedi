@@ -4,10 +4,8 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet } from 'react-native'
 
-import {
-    selectActiveFederation,
-    selectHasPerformedPersonalBackup,
-} from '@fedi/common/redux'
+import { useNuxStep } from '@fedi/common/hooks/nux'
+import { selectActiveFederation } from '@fedi/common/redux'
 import { shouldShowSocialRecovery } from '@fedi/common/utils/FederationUtils'
 
 import HoloCard from '../components/ui/HoloCard'
@@ -25,8 +23,8 @@ const ChooseBackupMethod: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const activeFederation = useAppSelector(selectActiveFederation)
-    const hasPerformedPersonalBackup = useAppSelector(
-        selectHasPerformedPersonalBackup,
+    const [hasPerformedPersonalBackup] = useNuxStep(
+        'hasPerformedPersonalBackup',
     )
     // TODO: Uncomment when bridge function is ready
     // const { locateRecoveryFile } = useBridge()
