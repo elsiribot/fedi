@@ -101,8 +101,6 @@ import LanguageSettings from './screens/LanguageSettings'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
 import MemberQrCode from './screens/MemberQrCode'
 import NewMessage from './screens/NewMessage'
-import PersonalBackupGuidance from './screens/PersonalBackupGuidance'
-import PersonalBackupSuccess from './screens/PersonalBackupSuccess'
 import PersonalRecovery from './screens/PersonalRecovery'
 import PersonalRecoverySuccess from './screens/PersonalRecoverySuccess'
 import PopupFederationEnded from './screens/PopupFederationEnded'
@@ -124,7 +122,6 @@ import SendOnChainAmount from './screens/SendOnChainAmount'
 import SendSuccess from './screens/SendSuccess'
 import Settings from './screens/Settings'
 import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
-import SocialBackupGuidance from './screens/SocialBackupGuidance'
 import SocialBackupProcessing from './screens/SocialBackupProcessing'
 import SocialBackupSuccess from './screens/SocialBackupSuccess'
 import SocialRecoveryFailure from './screens/SocialRecoveryFailure'
@@ -497,15 +494,6 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="SocialBackupGuidance"
-                                component={SocialBackupGuidance}
-                                options={() => ({
-                                    header: () => (
-                                        <SocialBackupHeader backButton />
-                                    ),
-                                })}
-                            />
-                            <Stack.Screen
                                 name="SocialBackupProcessing"
                                 component={SocialBackupProcessing}
                                 options={() => ({
@@ -630,23 +618,11 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="PersonalBackupGuidance"
-                                component={PersonalBackupGuidance}
-                                options={() => ({
-                                    header: () => <PersonalBackupHeader />,
-                                })}
-                            />
-                            <Stack.Screen
                                 name="RecoveryWords"
                                 component={RecoveryWords}
                                 options={() => ({
                                     header: () => <RecoveryWordsHeader />,
                                 })}
-                            />
-                            <Stack.Screen
-                                name="PersonalBackupSuccess"
-                                component={PersonalBackupSuccess}
-                                options={{ headerShown: false }}
                             />
                             {/* Personal Recovery */}
                             <Stack.Screen
@@ -870,7 +846,6 @@ const linking: NavigationLinkingConfig = {
                     // Personal Backup
                     StartPersonalBackup: 'start-personal-backup',
                     RecoveryWords: 'recovery-words',
-                    PersonalBackupSuccess: 'personal-backup-success',
                     // Personal Recovery
                     PersonalRecovery: 'personal-recovery',
                     PersonalRecoverySuccess: 'personal-recovery-success',

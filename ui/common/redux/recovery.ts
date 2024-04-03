@@ -55,12 +55,14 @@ export const recoverySlice = createSlice({
             state.socialRecoveryQr = null
             state.socialRecoveryState = null
         })
+
     },
 })
 
 /*** Basic actions ***/
 
-export const { setSocialRecoveryState } = recoverySlice.actions
+export const { setSocialRecoveryState } =
+    recoverySlice.actions
 
 /*** Async thunk actions ***/
 

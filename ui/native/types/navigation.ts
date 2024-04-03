@@ -83,8 +83,6 @@ export type RootStackParamList = {
     NotificationsPermission:
         | { nextScreen: keyof RootStackParamList }
         | undefined
-    PersonalBackupGuidance: undefined
-    PersonalBackupSuccess: undefined
     PersonalRecovery: undefined
     PersonalRecoverySuccess: undefined
     PopupFederationEnded: undefined
@@ -124,7 +122,6 @@ export type RootStackParamList = {
     StartRecoveryAssist: undefined
     StartSocialBackup: undefined
     SocialBackupCloudUpload: undefined
-    SocialBackupGuidance: undefined
     SocialBackupProcessing: { videoFilePath: string }
     SocialBackupSuccess: undefined
     SocialRecoveryQrModal: undefined

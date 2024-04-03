@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
+import { useNuxStep } from '@fedi/common/hooks/nux'
 import type { SeedWords } from '@fedi/common/types'
 
 import { fedimint } from '../bridge'
@@ -36,6 +37,10 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const [seedWords, setSeedWords] = useState<SeedWords>([])
 
+    const [hasPerformedPersonalBackup, completePersonalBackup] = useNuxStep(
+        'hasPerformedPersonalBackup',
+    )
+
     useEffect(() => {
         const getMnemonicWrapper = async () => {
             const seed = await fedimint.getMnemonic()
@@ -60,6 +65,15 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
             ))
     }
 
+    const handleContinueOrDone = () => {
+        if (hasPerformedPersonalBackup) {
+            navigation.navigate('Settings')
+        } else {
+            completePersonalBackup()
+            navigation.navigate('TabsNavigator')
+        }
+    }
+
     return (
         <View style={styles(theme).container}>
             <ScrollView contentContainerStyle={styles(theme).scrollView}>
@@ -81,11 +95,9 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
                 </Card>
             </ScrollView>
             <Button
-                title={t('words.continue')}
+                title={t('words.done')}
                 containerStyle={styles(theme).continueButton}
-                onPress={() => {
-                    navigation.navigate('PersonalBackupSuccess')
-                }}
+                onPress={handleContinueOrDone}
             />
         </View>
     )
