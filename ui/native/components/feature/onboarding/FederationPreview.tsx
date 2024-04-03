@@ -1,8 +1,10 @@
+import { useNavigation } from '@react-navigation/native'
 import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
+import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { FederationPreview as FederationPreviewType } from '@fedi/common/types'
 import {
     getFederationTosUrl,
@@ -13,6 +15,7 @@ import {
 
 import { FederationLogo } from '../../ui/FederationLogo'
 import HoloGradient from '../../ui/HoloGradient'
+import EndedFederationPreview from '../federations/EndedPreview'
 import AcceptTermsOfService from './AcceptTermsOfService'
 
 type Props = {
@@ -30,8 +33,29 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
     const tosUrl = getFederationTosUrl(federation.meta)
     const welcomeMessage = getFederationWelcomeMessage(federation.meta)
     const isSupported = getIsFederationSupported(federation)
+    const popupInfo = usePopupFederationInfo(federation.meta)
+    const navigation = useNavigation()
 
     const style = styles(theme)
+
+    if (popupInfo?.ended) {
+        return (
+            <View style={style.container}>
+                <EndedFederationPreview
+                    popupInfo={popupInfo}
+                    federation={federation}
+                />
+                <View style={style.buttonsContainer}>
+                    <Button
+                        fullWidth
+                        title={t('phrases.go-back')}
+                        onPress={navigation.goBack}
+                        containerStyle={styles(theme).button}
+                    />
+                </View>
+            </View>
+        )
+    }
 
     if (!isSupported) {
         return (

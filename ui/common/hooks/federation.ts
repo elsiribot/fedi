@@ -110,12 +110,14 @@ export function useIsFediInternalInjectionEnabled() {
     return shouldEnableFediInternalInjection(activeFederation.meta)
 }
 
-export function usePopupFederationInfo() {
+export function usePopupFederationInfo(metadata?: Record<string, string>) {
     const activeFederationMetadata = useCommonSelector(selectFederationMetadata)
+    const meta = metadata || activeFederationMetadata
+
     const [secondsLeft, setTimeLeft] = useState(0)
     const [endsInText, setShutdownTime] = useState('')
 
-    const popupInfo = getFederationPopupInfo(activeFederationMetadata)
+    const popupInfo = getFederationPopupInfo(meta)
 
     const countdownMessage = popupInfo?.countdownMessage
     const endedMessage = popupInfo?.endedMessage

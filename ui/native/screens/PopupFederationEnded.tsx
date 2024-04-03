@@ -1,7 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
-import { Trans, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import { Alert, Linking, StyleSheet, View } from 'react-native'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
@@ -15,7 +15,7 @@ import {
 import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
 import { fedimint } from '../bridge'
-import { FederationLogo } from '../components/ui/FederationLogo'
+import FederationEndedPreview from '../components/feature/federations/EndedPreview'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -36,7 +36,6 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
         : null
 
     const dispatch = useAppDispatch()
-    const style = styles(theme)
     const activeFederationId = activeFederation?.id
 
     const resetChatState = useCallback(() => {
@@ -112,30 +111,12 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
 
     return (
         <View style={styles(theme).container}>
-            <View style={style.content}>
-                <View style={style.contentSpacing}>
-                    <FederationLogo federation={activeFederation} size={72} />
-                </View>
-                <Text h2 style={style.contentSpacing}>
-                    {activeFederation?.name}
-                </Text>
-                <View style={[style.ended, style.contentSpacing]}>
-                    <Text caption bold>
-                        {t('feature.popup.ended')}
-                    </Text>
-                </View>
-                <Text caption style={{ textAlign: 'center' }}>
-                    {popupInfo?.endedMessage || (
-                        <Trans
-                            t={t}
-                            i18nKey="feature.popup.ended-description"
-                            values={{ date: popupInfo?.endsAtText }}
-                            components={{ bold: <Text caption bold /> }}
-                        />
-                    )}
-                </Text>
-            </View>
-
+            {activeFederation && (
+                <FederationEndedPreview
+                    popupInfo={popupInfo}
+                    federation={activeFederation}
+                />
+            )}
             <View style={styles(theme).buttonsContainer}>
                 {tosUrl && (
                     <Button
@@ -167,25 +148,6 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'center',
             padding: theme.spacing.xl,
-        },
-        content: {
-            flex: 1,
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '90%',
-            maxWidth: 280,
-            margin: 'auto',
-        },
-        contentSpacing: {
-            marginBottom: theme.spacing.lg,
-        },
-        ended: {
-            paddingVertical: theme.spacing.xxs,
-            paddingHorizontal: theme.spacing.sm,
-            backgroundColor: theme.colors.lightGrey,
-            color: theme.colors.primary,
-            borderRadius: 30,
         },
         button: {
             marginVertical: theme.sizes.xxs,

@@ -2,7 +2,10 @@ import { useRouter } from 'next/router'
 import React, { useCallback, useState, useEffect } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
-import { useIsChatSupported } from '@fedi/common/hooks/federation'
+import {
+    useIsChatSupported,
+    usePopupFederationInfo,
+} from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     joinFederation,
@@ -24,6 +27,7 @@ import { fedimint } from '../../lib/bridge'
 import { config, styled, theme } from '../../styles'
 import { Button } from '../Button'
 import { FederationAvatar } from '../FederationAvatar'
+import FederationEndedPreview from '../FederationEndedPreview'
 import { Header, Title } from '../Layout'
 import { OmniInput } from '../OmniInput'
 import { Text } from '../Text'
@@ -51,6 +55,7 @@ export const JoinFederation: React.FC = () => {
     const isChatSupported = useIsChatSupported(federationPreview)
     const federationIds = useAppSelector(selectFederationIds)
     const isSm = useMediaQuery(config.media.sm)
+    const popupInfo = usePopupFederationInfo(federationPreview?.meta)
 
     const handleCode = useCallback(
         async (code: string) => {
@@ -167,6 +172,30 @@ export const JoinFederation: React.FC = () => {
         )
     } else if (tosUrl && isShowingTos) {
         return <TermsOfService tosUrl={tosUrl} onAccept={handleJoin} />
+    } else if (popupInfo?.ended) {
+        content = (
+            <FederationPreviewOuter>
+                <FederationPreviewInner>
+                    <FederationEndedPreview
+                        popupInfo={popupInfo}
+                        federation={federationPreview}
+                    />
+                </FederationPreviewInner>
+            </FederationPreviewOuter>
+        )
+
+        actions = (
+            <>
+                <Button
+                    width="full"
+                    onClick={() => {
+                        setIsJoining(false)
+                        setFederationPreview(undefined)
+                    }}>
+                    {t('phrases.go-back')}
+                </Button>
+            </>
+        )
     } else {
         const welcomeMessage = getFederationWelcomeMessage(
             federationPreview.meta,
