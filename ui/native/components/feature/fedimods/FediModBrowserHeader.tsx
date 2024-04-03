@@ -1,14 +1,13 @@
-import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { MutableRefObject } from 'react'
+import React, { MutableRefObject, useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 import WebView from 'react-native-webview'
 
 import { FediMod } from '@fedi/common/types'
 
-import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import ExitFedimodOverlay from './ExitFedimodOverlay'
 
 type FediModBrowserHeaderProps = {
     webViewRef: MutableRefObject<WebView>
@@ -19,49 +18,61 @@ const FediModBrowserHeader: React.FC<FediModBrowserHeaderProps> = ({
     webViewRef,
     fediMod,
 }) => {
+    const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false)
     const { theme } = useTheme()
-    const navigation = useNavigation<NavigationHook>()
     const style = styles(theme)
 
     return (
-        <Header
-            containerStyle={{ borderBottomColor: theme.colors.lightGrey }}
-            headerLeft={
-                <View style={style.horizontalContainer}>
+        <>
+            <Header
+                containerStyle={{ borderBottomColor: theme.colors.lightGrey }}
+                headerLeft={
+                    <View style={style.horizontalContainer}>
+                        <Pressable
+                            onPress={() => webViewRef.current.goBack()}
+                            hitSlop={10}
+                            style={style.arrow}>
+                            <SvgImage
+                                size={SvgImageSize.sm}
+                                name="ChevronLeft"
+                            />
+                        </Pressable>
+                        <Pressable
+                            onPress={() => webViewRef.current.goForward()}
+                            hitSlop={10}
+                            style={[style.arrow, style.rightArrow]}>
+                            <SvgImage
+                                size={SvgImageSize.sm}
+                                name="ChevronRight"
+                            />
+                        </Pressable>
+                    </View>
+                }
+                headerCenter={
+                    <View style={style.titleContainer}>
+                        <Text
+                            caption
+                            medium
+                            numberOfLines={1}
+                            style={style.titleText}>
+                            {fediMod.title}
+                        </Text>
+                    </View>
+                }
+                headerRight={
                     <Pressable
-                        onPress={() => webViewRef.current.goBack()}
+                        style={style.close}
                         hitSlop={10}
-                        style={style.arrow}>
-                        <SvgImage size={SvgImageSize.md} name="ChevronLeft" />
+                        onPress={() => setConfirmLeaveOpen(true)}>
+                        <SvgImage size={SvgImageSize.md} name="Close" />
                     </Pressable>
-                    <Pressable
-                        onPress={() => webViewRef.current.goForward()}
-                        hitSlop={10}
-                        style={[style.arrow, style.rightArrow]}>
-                        <SvgImage size={SvgImageSize.md} name="ChevronRight" />
-                    </Pressable>
-                </View>
-            }
-            headerCenter={
-                <View style={style.titleContainer}>
-                    <Text
-                        caption
-                        medium
-                        numberOfLines={1}
-                        style={style.titleText}>
-                        {fediMod.title}
-                    </Text>
-                </View>
-            }
-            headerRight={
-                <Pressable
-                    style={style.close}
-                    hitSlop={10}
-                    onPress={() => navigation.goBack()}>
-                    <SvgImage size={SvgImageSize.md} name="Close" />
-                </Pressable>
-            }
-        />
+                }
+            />
+            <ExitFedimodOverlay
+                open={confirmLeaveOpen}
+                onOpenChange={setConfirmLeaveOpen}
+            />
+        </>
     )
 }
 
