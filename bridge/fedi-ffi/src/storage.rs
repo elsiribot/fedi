@@ -71,10 +71,20 @@ pub struct AppStateRaw {
     // identifier + device index with Fedi's device registration service. Here we store the
     // timestamp of the last successful registration renewal.
     pub last_device_registration_timestamp: Option<SystemTime>,
+
+    /// Always incrementing counter for [`DatabaseInfo::DatabasePrefix`].
+    /// See [`AppState::new_federation_db_prefix`].
+    #[serde(default = "default_next_federation_prefix")]
+    next_federation_db_prefix: u64,
 }
 
 fn default_device_index() -> Option<u8> {
     Some(0)
+}
+
+fn default_next_federation_prefix() -> u64 {
+    // zero is reserved for future
+    1
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -82,14 +92,27 @@ pub struct FederationInfo {
     /// The version of the federation, mostly characterized by consensus version
     pub version: u32,
 
-    /// The name used for the database file for the federation's fedimint-client
-    /// instance on disk
-    pub database_name: String,
+    #[serde(flatten)]
+    pub database: DatabaseInfo,
 
     /// The Fedi fee schedule to use for transactions made by the user within
     /// this federation.
     #[serde(default)]
     pub fedi_fee_schedule: FediFeeSchedule,
+}
+
+/// { database_name: String } | { database_prefix: u64 }
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DatabaseInfo {
+    /// The name used for the database file for the federation's fedimint-client
+    /// instance on disk.
+    /// Used for previously joined federations before prefix based database was
+    /// introduced.
+    DatabaseName(String),
+    /// All fedimint clients shares the same global database using db prefixes
+    /// for isolation.
+    DatabasePrefix(u64),
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -212,8 +235,9 @@ impl AppState {
                 sensitive_log: None,
                 matrix_session: None,
                 device_identifier: None,
-                device_index: Some(0),
+                device_index: default_device_index(),
                 last_device_registration_timestamp: None,
+                next_federation_db_prefix: default_next_federation_prefix(),
             })),
             storage,
         }
@@ -300,6 +324,16 @@ impl AppState {
         })
         .await??;
         Ok(())
+    }
+
+    /// Get a new prefix for joining a federation.
+    pub async fn new_federation_db_prefix(&self) -> anyhow::Result<u64> {
+        self.with_write_lock(|x| {
+            let value = x.next_federation_db_prefix;
+            x.next_federation_db_prefix += 1;
+            value
+        })
+        .await
     }
 }
 

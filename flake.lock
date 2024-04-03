@@ -259,13 +259,13 @@
         "narHash": "sha256-I8uUhpqN5oGDkT+sN4jztzun/wD/mN/CtzCxlV3pdjY=",
         "owner": "fedibtc",
         "repo": "fedimint-fedi",
-        "rev": "c32bbe8ed8d95ae420b5879e92dda6ce48f5c914",
+        "rev": "0307c3a3373b1b6f537f2854c89d0171f41d6cf7",
         "type": "github"
       },
       "original": {
         "owner": "fedibtc",
         "repo": "fedimint-fedi",
-        "rev": "c32bbe8ed8d95ae420b5879e92dda6ce48f5c914",
+        "rev": "0307c3a3373b1b6f537f2854c89d0171f41d6cf7",
         "type": "github"
       }
     },

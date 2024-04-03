@@ -10,7 +10,8 @@ use bitcoin::Address;
 use fedi_social_client::FediSocialCommonGen;
 use fedimint_core::api::{DynGlobalApi, InviteCode};
 use fedimint_core::config::ClientConfig;
-use fedimint_core::encoding::Decodable;
+use fedimint_core::db::{Database, IDatabaseTransactionOpsCore};
+use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::CommonModuleInit;
 use fedimint_core::task::TaskGroup;
@@ -18,7 +19,6 @@ use fedimint_core::PeerId;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use futures::future::join_all;
 use lightning_invoice::Bolt11Invoice;
-use rand::distributions::{Alphanumeric, DistString};
 use tokio::sync::{Mutex, OnceCell};
 use tracing::{debug, error, info, info_span, warn, Instrument};
 
@@ -40,7 +40,9 @@ use crate::fedi_fee::FediFeeHelper;
 use crate::matrix::Matrix;
 use crate::multi::MultiFederation;
 use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
-use crate::storage::{AppState, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule};
+use crate::storage::{
+    AppState, DatabaseInfo, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule,
+};
 use crate::types::{
     GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
     RpcLightningGateway, RpcPayAddressResponse, RpcReturningMemberStatus,
@@ -64,6 +66,7 @@ pub struct Bridge {
     pub fedi_fee_helper: Arc<FediFeeHelper>,
     pub matrix: OnceCell<Matrix>,
     pub device_registration_service: Arc<DeviceRegistrationService>,
+    pub global_db: Database,
 }
 
 impl Bridge {
@@ -103,6 +106,8 @@ impl Bridge {
             .into_iter()
             .collect::<Vec<_>>();
 
+        let global_db = storage.federation_database_v2("global").await?;
+
         let federations = joined_federations
             .iter()
             // Ignore older version
@@ -112,21 +117,31 @@ impl Bridge {
                     Ok::<(String, Arc<MultiFederation>), anyhow::Error>((
                         federation_id_str.clone(),
                         match federation_info.version {
-                            2 => Arc::new(MultiFederation::V2(
-                                FederationV2::from_db(
-                                    storage
-                                        .federation_database_v2(&federation_info.database_name)
-                                        .await?,
-                                    event_sink.clone(),
-                                    task_group.make_subgroup().await,
-                                    &root_mnemonic,
-                                    fedi_fee_helper.clone(),
-                                )
-                                .await
-                                .with_context(|| {
-                                    format!("loading federation {}", federation_id_str.clone())
-                                })?,
-                            )),
+                            2 => {
+                                let db = match &federation_info.database {
+                                    DatabaseInfo::DatabaseName(db_name) => {
+                                        storage.federation_database_v2(db_name).await?
+                                    }
+                                    DatabaseInfo::DatabasePrefix(prefix) => {
+                                        // use varint encoding so most of prefixes serialize to
+                                        // single byte
+                                        global_db.with_prefix(prefix.consensus_encode_to_vec())
+                                    }
+                                };
+                                Arc::new(MultiFederation::V2(
+                                    FederationV2::from_db(
+                                        db,
+                                        event_sink.clone(),
+                                        task_group.make_subgroup().await,
+                                        &root_mnemonic,
+                                        fedi_fee_helper.clone(),
+                                    )
+                                    .await
+                                    .with_context(|| {
+                                        format!("loading federation {}", federation_id_str.clone())
+                                    })?,
+                                ))
+                            }
                             n => bail!("Invalid federation version {n}"),
                         },
                     ))
@@ -160,6 +175,7 @@ impl Bridge {
             fedi_fee_helper,
             matrix: OnceCell::default(),
             device_registration_service,
+            global_db,
         };
         let federations = bridge.federations.lock().await.clone();
         for federation in federations.into_values() {
@@ -314,13 +330,19 @@ impl Bridge {
 
         let root_mnemonic = self.app_state.root_mnemonic().await;
 
-        let db_name = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
+        let db_prefix = self
+            .app_state
+            .new_federation_db_prefix()
+            .await
+            .context("failed to write AppState")?;
+        let db = self
+            .global_db
+            .with_prefix(db_prefix.consensus_encode_to_vec());
         let federation = FederationV2::join(
             invite_code_string,
-            &self.storage,
             self.event_sink.clone(),
             TaskGroup::new(),
-            &db_name,
+            db,
             &root_mnemonic,
             self.fedi_fee_helper.clone(),
         )
@@ -337,7 +359,7 @@ impl Bridge {
                     federation_id.to_string(),
                     FederationInfo {
                         version: 2,
-                        database_name: db_name,
+                        database: DatabaseInfo::DatabasePrefix(db_prefix),
                         fedi_fee_schedule: FediFeeSchedule::default(),
                     },
                 );
@@ -434,6 +456,9 @@ impl Bridge {
             .with_write_lock(|state| state.joined_federations.remove(&federation_id))
             .await?;
 
+        let Some(removed_federation_info) = removed_federation_info else {
+            bail!("federation must be present in state");
+        };
         // If the phone dies here, it's still ok because the federation would be removed
         // from the app_state and in the worst case we'd just be leaving behind a stale
         // DB file.
@@ -472,9 +497,16 @@ impl Bridge {
             return Ok(());
         }
 
-        // delete federation db
-        if let Some(FederationInfo { database_name, .. }) = removed_federation_info {
-            self.storage.delete_federation_db(&database_name).await?;
+        match removed_federation_info.database {
+            DatabaseInfo::DatabaseName(name) => {
+                self.storage.delete_federation_db(&name).await?;
+            }
+            DatabaseInfo::DatabasePrefix(prefix) => {
+                let mut dbtx = self.global_db.begin_transaction().await;
+                dbtx.raw_remove_by_prefix(&prefix.consensus_encode_to_vec())
+                    .await?;
+                dbtx.commit_tx().await;
+            }
         }
 
         Ok(())

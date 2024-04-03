@@ -41,8 +41,10 @@ jobs:
               with:
                   fetch-depth: 20
             - name: Check for changes outside 'ui/**'
+              if: github.event_name == 'pull_request'
               id: check-changes
               run: |
+                  set -x
                   git fetch --depth=20 origin ${{ github.event.pull_request.base.sha }}
                   LAST_COMMON_COMMIT_SHA="$(git merge-base HEAD ${{ github.event.pull_request.base.sha }})"
                   FILES_CHANGED=$(git diff --name-only HEAD $LAST_COMMON_COMMIT_SHA)
@@ -323,7 +325,7 @@ jobs:
           if: github.ref == 'refs/heads/master' || github.ref_type == 'tag'
           uses: docker/login-action@v3
           with:
-            username: fedibtc
+            username: justinmoon
             password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
         - name: Publish
