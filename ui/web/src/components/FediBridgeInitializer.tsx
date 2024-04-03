@@ -12,12 +12,14 @@ import {
     selectActiveFederation,
     selectAuthenticatedMember,
     selectSocialRecoveryQr,
+    setDeviceId,
 } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint, initializeBridge } from '../lib/bridge'
 import { keyframes, styled, theme } from '../styles'
+import { generateDeviceId } from '../utils/browserInfo'
 import { Redirect } from './Redirect'
 import { Text } from './Text'
 
@@ -31,6 +33,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const { asPath } = useRouter()
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const deviceId = useAppSelector(s => s.environment.deviceId)
     const socialRecoveryId = useAppSelector(selectSocialRecoveryQr)
     const [isInitialized, setIsInitialized] = useState(false)
     const [isShowingLoading, setIsShowingLoading] = useState(false)
@@ -40,11 +43,19 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const federationId = activeFederation?.id
 
     useEffect(() => {
+        if (!deviceId) {
+            const newDeviceId = generateDeviceId()
+            dispatch(setDeviceId(newDeviceId))
+        }
+    }, [deviceId, dispatch])
+
+    useEffect(() => {
+        if (!deviceId) return
         const loadingTimeout = setTimeout(() => {
             setIsShowingLoading(true)
         }, 1000)
 
-        initializeBridge()
+        initializeBridge(deviceId)
             .then(() =>
                 // Fetch federations and social recovery in parallel after bridge.
                 // is initialized. Only throw (via unwrap) for refreshFederations.
@@ -69,7 +80,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             })
 
         return () => clearTimeout(loadingTimeout)
-    }, [dispatchRef, tRef])
+    }, [deviceId, dispatchRef, tRef])
 
     // Show an error message if the bridge panics while running.
     useEffect(() => {

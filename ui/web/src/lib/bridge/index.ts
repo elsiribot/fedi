@@ -51,7 +51,8 @@ async function fedimintRpc<Type = void>(
 export const fedimint = new FedimintBridge(fedimintRpc)
 
 let initializePromise: Promise<void> | undefined
-export async function initializeBridge() {
+export async function initializeBridge(deviceId: string) {
+    console.debug('initializeBridge function deviceId', deviceId)
     // Only initialize once at a time.
     if (initializePromise) {
         await initializePromise
@@ -84,7 +85,7 @@ export async function initializeBridge() {
                 cb(e.data.result)
             }
         }
-        const deviceId = getDeviceId()
+        console.debug('initializeBridge worker deviceId', deviceId)
         worker.postMessage({ method: 'initialize', data: { deviceId } })
     })
 

@@ -28,13 +28,14 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
-        version: 15,
+        version: 16,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
         language: state.environment.language,
         amountInputType: state.environment.amountInputType,
         showFiatTxnAmounts: state.environment.showFiatTxnAmounts,
+        deviceId: state.environment.deviceId,
         currency: state.currency.selectedFiatCurrency,
         btcUsdRate: state.currency.btcUsdRate,
         fiatUsdRates: state.currency.fiatUsdRates,
@@ -478,6 +479,14 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
             ...migrationState,
             version: 15,
             matrixAuth: null,
+        }
+    }
+
+    if (migrationState.version === 15) {
+        migrationState = {
+            ...migrationState,
+            version: 16,
+            deviceId: undefined,
         }
     }
 

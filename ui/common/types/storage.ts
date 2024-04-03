@@ -163,6 +163,11 @@ export interface StoredStateV15 extends Omit<StoredStateV14, 'version'> {
     }
 }
 
+export interface StoredStateV16 extends Omit<StoredStateV15, 'version'> {
+    version: 16
+    deviceId: string | undefined
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -181,9 +186,10 @@ export type AnyStoredState =
     | StoredStateV13
     | StoredStateV14
     | StoredStateV15
+    | StoredStateV16
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV15
+export type LatestStoredState = StoredStateV16
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>
