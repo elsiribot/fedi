@@ -108,7 +108,6 @@ export function hasStorageStateChanged(
         ['federation', 'customFediMods'],
         ['matrix', 'auth'],
         ['nux', 'steps'],
-        ['recovery', 'hasPerformedPersonalBackup'],
     ]
 
     // Check all federation's chat states, including old and new.
