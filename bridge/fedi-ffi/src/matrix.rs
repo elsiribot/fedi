@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::path::Path;
-use std::pin::pin;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 use std::time::Duration;
@@ -204,13 +203,9 @@ impl Matrix {
             }
         };
         let this = self.clone();
-        tg.spawn(
+        tg.spawn_cancellable(
             format!("observable type={}", std::any::type_name::<T>()),
-            move |handle| async move {
-                let _ =
-                    futures::future::select(handle.make_shutdown_rx().await, pin!(func(this, id)))
-                        .await;
-            },
+            func(this, id),
         );
         Ok(observable)
     }
