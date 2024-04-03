@@ -20,11 +20,14 @@ import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 import { AmountInput } from './AmountInput'
+import { Avatar } from './Avatar'
 import { Button } from './Button'
 import { Dialog } from './Dialog'
+import { Text } from './Text'
 
 interface Props {
     recipientId: string
+    recipientName: string
     open: boolean
     onOpenChange(open: boolean): void
 }
@@ -32,6 +35,7 @@ interface Props {
 export const ChatPaymentDialog: React.FC<Props> = ({
     open,
     recipientId,
+    recipientName,
     onOpenChange,
 }) => {
     const { t } = useTranslation()
@@ -145,6 +149,10 @@ export const ChatPaymentDialog: React.FC<Props> = ({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
+            <MemberContainer>
+                <Avatar size="sm" id={recipientId} name={recipientName} />
+                <Text weight="bold">{recipientName}</Text>
+            </MemberContainer>
             <Balance>{balanceDisplay}</Balance>
             <AmountContainer>
                 {open && (
@@ -183,6 +191,14 @@ const Balance = styled('div', {
     fontSize: theme.fontSizes.caption,
     textAlign: 'center',
     color: theme.colors.darkGrey,
+})
+
+const MemberContainer = styled('div', {
+    display: 'flex',
+    gap: theme.space.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.space.xl,
 })
 
 const AmountContainer = styled('div', {
