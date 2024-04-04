@@ -7,7 +7,12 @@ import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import SplashScreen from 'react-native-splash-screen'
 
-import { selectFederations } from '@fedi/common/redux'
+import {
+    generateDeviceId,
+    selectDeviceId,
+    selectFederations,
+} from '@fedi/common/redux'
+import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { TransactionDirection, TransactionEvent } from '@fedi/common/types'
 import { LogEvent, PanicEvent } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -15,9 +20,10 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint, initializeBridge } from '../bridge'
 import { ErrorScreen } from '../screens/ErrorScreen'
-import { useAppSelector } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { store } from '../state/store'
 import theme from '../styles/theme'
+import { generateDeviceIdNative } from '../utils/device-info'
 
 const log = makeLog('FediBridgeInitializer')
 
@@ -26,17 +32,22 @@ interface Props {
 }
 
 export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
+    const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(false)
     const [bridgeError, setBridgeError] = useState<unknown>()
-    const deviceId = useAppSelector(s => s.environment.deviceId)
+    const deviceId = useAppSelector(selectDeviceId)
+    const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
 
-    // useEffect(() => {
-    //     if (!deviceId) {
-    //         const newDeviceId = generateDeviceId()
-    //         dispatch(setDeviceId(newDeviceId))
-    //     }
-    // }, [deviceId, dispatch])
+    // Initialize device ID
+    useEffect(() => {
+        const handleDeviceId = async () => {
+            await dispatch(
+                generateDeviceId({ getDeviceId: generateDeviceIdNative }),
+            ).unwrap()
+        }
+        if (!deviceId && hasLoadedStorage) handleDeviceId()
+    }, [deviceId, dispatch, hasLoadedStorage])
 
     // Initialize redux store and bridge
     useEffect(() => {

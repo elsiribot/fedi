@@ -12,14 +12,16 @@ import {
     selectActiveFederation,
     selectAuthenticatedMember,
     selectSocialRecoveryQr,
-    setDeviceId,
+    generateDeviceId,
+    selectDeviceId,
 } from '@fedi/common/redux'
+import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint, initializeBridge } from '../lib/bridge'
 import { keyframes, styled, theme } from '../styles'
-import { generateDeviceId } from '../utils/browserInfo'
+import { generateDeviceIdWeb } from '../utils/browserInfo'
 import { Redirect } from './Redirect'
 import { Text } from './Text'
 
@@ -33,7 +35,8 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const { asPath } = useRouter()
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const deviceId = useAppSelector(s => s.environment.deviceId)
+    const deviceId = useAppSelector(selectDeviceId)
+    const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const socialRecoveryId = useAppSelector(selectSocialRecoveryQr)
     const [isInitialized, setIsInitialized] = useState(false)
     const [isShowingLoading, setIsShowingLoading] = useState(false)
@@ -42,12 +45,15 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const dispatchRef = useUpdatingRef(dispatch)
     const federationId = activeFederation?.id
 
+    // Initialize device ID
     useEffect(() => {
-        if (!deviceId) {
-            const newDeviceId = generateDeviceId()
-            dispatch(setDeviceId(newDeviceId))
+        const handleDeviceId = async () => {
+            await dispatchRef
+                .current(generateDeviceId({ getDeviceId: generateDeviceIdWeb }))
+                .unwrap()
         }
-    }, [deviceId, dispatch])
+        if (!deviceId && hasLoadedStorage) handleDeviceId()
+    }, [deviceId, dispatchRef, hasLoadedStorage])
 
     useEffect(() => {
         if (!deviceId) return

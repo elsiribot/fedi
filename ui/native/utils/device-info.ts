@@ -88,21 +88,6 @@ export function getAllDeviceInfo() {
  * @returns {string} [Operating System]:Mobile:[uuid]
  * @example iPhone7,2:Mobile:3d8f8f3d-8f3d-3d8f-8f3d-3d8f8f3d8f3d
  */
-function generateDeviceId() {
+export function generateDeviceIdNative() {
     return `${RNDI.getDeviceId()}:Mobile:${uuidv4()}`
-}
-
-/**
- * Checks if a deviceId has been generated and stored.
- * If found, returns. Otherwise, generates a new deviceId and stores it.
- */
-export async function getDeviceId() {
-    const key = 'deviceId'
-
-    const deviceId = await storage.getItem(key)
-    if (deviceId) return deviceId
-
-    const newDeviceId = generateDeviceId()
-    await storage.setItem(key, newDeviceId)
-    return newDeviceId
 }

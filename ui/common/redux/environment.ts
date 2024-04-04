@@ -102,6 +102,15 @@ export const changeLanguage = createAsyncThunk<
     i18n.changeLanguage(language)
 })
 
+export const generateDeviceId = createAsyncThunk<
+    void,
+    { getDeviceId: () => string },
+    { state: CommonState }
+>('environment/generateDeviceId', ({ getDeviceId }, { getState, dispatch }) => {
+    if (getState().environment.deviceId) return
+    dispatch(setDeviceId(getDeviceId()))
+})
+
 /*** Selectors ***/
 
 export const selectDeveloperMode = (s: CommonState) =>
@@ -123,3 +132,5 @@ export const selectStableBalanceEnabled = (s: CommonState) =>
 
 export const selectShowFiatTxnAmounts = (s: CommonState) =>
     s.environment.showFiatTxnAmounts
+
+export const selectDeviceId = (s: CommonState) => s.environment.deviceId

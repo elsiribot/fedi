@@ -101,6 +101,7 @@ export function hasStorageStateChanged(
         ['environment', 'developerMode'],
         ['environment', 'stableBalanceEnabled'],
         ['environment', 'showFiatTxnAmounts'],
+        ['environment', 'deviceId'],
         ['currency', 'selectedFiatCurrency'],
         ['currency', 'prices'],
         ['federation', 'activeFederationId'],
@@ -474,6 +475,7 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
         }
     }
 
+    // Version 14 -> 15
     if (migrationState.version === 14) {
         migrationState = {
             ...migrationState,
@@ -482,6 +484,7 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
         }
     }
 
+    // Version 15 -> 16
     if (migrationState.version === 15) {
         migrationState = {
             ...migrationState,
