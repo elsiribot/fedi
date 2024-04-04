@@ -155,6 +155,7 @@ pub fn fedimint_get_supported_events() -> Vec<String> {
         String::from("recoveryComplete"),
         String::from("recoveryProgress"),
         String::from("observableUpdate"),
+        String::from("deviceRegistration"),
     ]
 }
 
