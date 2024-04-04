@@ -102,14 +102,17 @@ export const changeLanguage = createAsyncThunk<
     i18n.changeLanguage(language)
 })
 
-export const generateDeviceId = createAsyncThunk<
+export const initializeDeviceId = createAsyncThunk<
     void,
     { getDeviceId: () => string },
     { state: CommonState }
->('environment/generateDeviceId', ({ getDeviceId }, { getState, dispatch }) => {
-    if (getState().environment.deviceId) return
-    dispatch(setDeviceId(getDeviceId()))
-})
+>(
+    'environment/initializeDeviceId',
+    ({ getDeviceId }, { getState, dispatch }) => {
+        if (getState().environment.deviceId) return
+        dispatch(setDeviceId(getDeviceId()))
+    },
+)
 
 /*** Selectors ***/
 

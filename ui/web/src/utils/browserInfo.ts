@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from 'uuid'
  * @returns {string} [Operating System]:Web:[uuid]
  * @example MacOS:Web:3d8f8f3d-8f3d-3d8f-8f3d-3d8f8f3d8f3d
  */
-export function generateDeviceIdWeb() {
+export function generateDeviceId() {
     let os = 'Unknown OS'
     if (navigator.userAgent.indexOf('Win') != -1) os = 'Windows'
     else if (navigator.userAgent.indexOf('Mac') != -1) os = 'MacOS'

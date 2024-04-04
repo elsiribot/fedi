@@ -1,8 +1,6 @@
 import RNDI from 'react-native-device-info'
 import { v4 as uuidv4 } from 'uuid'
 
-import { storage } from './storage'
-
 /**
  * Single call to fetch all device info we want for debugging in parallel.
  */
@@ -88,6 +86,6 @@ export function getAllDeviceInfo() {
  * @returns {string} [Operating System]:Mobile:[uuid]
  * @example iPhone7,2:Mobile:3d8f8f3d-8f3d-3d8f-8f3d-3d8f8f3d8f3d
  */
-export function generateDeviceIdNative() {
+export function generateDeviceId() {
     return `${RNDI.getDeviceId()}:Mobile:${uuidv4()}`
 }

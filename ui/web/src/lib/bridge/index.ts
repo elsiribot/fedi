@@ -1,8 +1,6 @@
 import { FedimintBridge } from '@fedi/common/utils/fedimint'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { getDeviceId } from '../../utils/browserInfo'
-
 const log = makeLog('web/lib/bridge')
 
 let worker: Worker
@@ -52,7 +50,6 @@ export const fedimint = new FedimintBridge(fedimintRpc)
 
 let initializePromise: Promise<void> | undefined
 export async function initializeBridge(deviceId: string) {
-    console.debug('initializeBridge function deviceId', deviceId)
     // Only initialize once at a time.
     if (initializePromise) {
         await initializePromise
@@ -85,7 +82,6 @@ export async function initializeBridge(deviceId: string) {
                 cb(e.data.result)
             }
         }
-        console.debug('initializeBridge worker deviceId', deviceId)
         worker.postMessage({ method: 'initialize', data: { deviceId } })
     })
 

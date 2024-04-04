@@ -8,7 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import SplashScreen from 'react-native-splash-screen'
 
 import {
-    generateDeviceId,
+    initializeDeviceId,
     selectDeviceId,
     selectFederations,
 } from '@fedi/common/redux'
@@ -23,7 +23,7 @@ import { ErrorScreen } from '../screens/ErrorScreen'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { store } from '../state/store'
 import theme from '../styles/theme'
-import { generateDeviceIdNative } from '../utils/device-info'
+import { generateDeviceId } from '../utils/device-info'
 
 const log = makeLog('FediBridgeInitializer')
 
@@ -43,7 +43,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     useEffect(() => {
         const handleDeviceId = async () => {
             await dispatch(
-                generateDeviceId({ getDeviceId: generateDeviceIdNative }),
+                initializeDeviceId({ getDeviceId: generateDeviceId }),
             ).unwrap()
         }
         if (!deviceId && hasLoadedStorage) handleDeviceId()

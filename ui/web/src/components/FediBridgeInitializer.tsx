@@ -12,8 +12,8 @@ import {
     selectActiveFederation,
     selectAuthenticatedMember,
     selectSocialRecoveryQr,
-    generateDeviceId,
     selectDeviceId,
+    initializeDeviceId,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -21,7 +21,7 @@ import { formatErrorMessage } from '@fedi/common/utils/format'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint, initializeBridge } from '../lib/bridge'
 import { keyframes, styled, theme } from '../styles'
-import { generateDeviceIdWeb } from '../utils/browserInfo'
+import { generateDeviceId } from '../utils/browserInfo'
 import { Redirect } from './Redirect'
 import { Text } from './Text'
 
@@ -49,7 +49,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     useEffect(() => {
         const handleDeviceId = async () => {
             await dispatchRef
-                .current(generateDeviceId({ getDeviceId: generateDeviceIdWeb }))
+                .current(initializeDeviceId({ getDeviceId: generateDeviceId }))
                 .unwrap()
         }
         if (!deviceId && hasLoadedStorage) handleDeviceId()

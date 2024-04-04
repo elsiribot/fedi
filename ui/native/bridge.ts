@@ -4,8 +4,6 @@ import { FedimintBridgeEventMap } from '@fedi/common/types'
 import { FedimintBridge } from '@fedi/common/utils/fedimint'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { getDeviceId } from './utils/device-info'
-
 const { BridgeNativeEventEmitter, FedimintFfi } = NativeModules
 
 const log = makeLog('native/bridge')
