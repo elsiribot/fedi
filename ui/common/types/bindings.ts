@@ -62,6 +62,7 @@ export type ErrorCode =
     | 'matrixNotInitialized'
     | 'unknownObservable'
     | 'timeout'
+    | 'recovery'
 
 export type Event =
     | { transaction: TransactionEvent }
@@ -526,8 +527,24 @@ export interface RpcMethods {
             lastRegistrationTimestamp: number
         }>,
     ]
-    registerDeviceWithIndex: [
-        { index: number; forceOverwrite: boolean },
+    registerAsNewDevice: [
+        Record<string, never>,
+        {
+            balance: RpcAmount
+            id: RpcFederationId
+            network: string | null
+            name: string
+            inviteCode: string
+            meta: Record<string, string>
+            recovering: boolean
+            nodes: Record<string, { url: string; name: string }>
+            version: number
+            clientConfig: RpcJsonClientConfig | null
+            fediFeeSchedule: RpcFediFeeSchedule
+        } | null,
+    ]
+    transferExistingDeviceRegistration: [
+        { index: number },
         {
             balance: RpcAmount
             id: RpcFederationId

@@ -618,14 +618,21 @@ async fn fetchRegisteredDevices(bridge: Arc<Bridge>) -> anyhow::Result<Vec<RpcRe
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn registerDeviceWithIndex(
+async fn registerAsNewDevice(bridge: Arc<Bridge>) -> anyhow::Result<Option<RpcFederation>> {
+    bridge
+        .register_device_with_index(
+            bridge.fetch_registered_devices().await?.len().try_into()?,
+            false,
+        )
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn transferExistingDeviceRegistration(
     bridge: Arc<Bridge>,
     index: u8,
-    force_overwrite: bool,
 ) -> anyhow::Result<Option<RpcFederation>> {
-    bridge
-        .register_device_with_index(index, force_overwrite)
-        .await
+    bridge.register_device_with_index(index, true).await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1070,7 +1077,8 @@ rpc_methods!(RpcMethods {
 
     // Device Registration
     fetchRegisteredDevices,
-    registerDeviceWithIndex,
+    registerAsNewDevice,
+    transferExistingDeviceRegistration,
     deviceIndexAssignmentStatus,
 
     matrixObserverCancel,
@@ -1939,9 +1947,8 @@ mod tests {
         let recovery_bridge = setup_bridge().await?;
         recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
 
-        // Register device as index 0 since it's the same device
-        // No need to force an overwrite since device identifier remains the same
-        registerDeviceWithIndex(recovery_bridge.clone(), 0, false).await?;
+        // Re-register device as index 0 since it's the same device
+        transferExistingDeviceRegistration(recovery_bridge.clone(), 0).await?;
 
         // Rejoin federation and assert that balances are correct
         let recovery_federation = join_test_fed_recovery(&recovery_bridge).await?;
@@ -2103,9 +2110,8 @@ mod tests {
         // db
         completeSocialRecovery(recovery_bridge.clone()).await?;
 
-        // Register device as index 0 since it's the same device
-        // No need to force an overwrite since device identifier remains the same
-        registerDeviceWithIndex(recovery_bridge.clone(), 0, false).await?;
+        // Re-register device as index 0 since it's the same device
+        transferExistingDeviceRegistration(recovery_bridge.clone(), 0).await?;
 
         // Check backups match (TODO: how can I make sure that they're equal b/c nothing
         // happened?)
@@ -2355,9 +2361,8 @@ mod tests {
         let bridge = setup_bridge().await?;
         recoverFromMnemonic(bridge.clone(), mnemonic).await?;
 
-        // Register device as index 0 since it's the same device
-        // No need to force an overwrite since device identifier remains the same
-        registerDeviceWithIndex(bridge.clone(), 0, false).await?;
+        // Re-register device as index 0 since it's the same device
+        transferExistingDeviceRegistration(bridge.clone(), 0).await?;
 
         assert!(matches!(
             federationPreview(bridge.clone(), invite_code.clone())
@@ -2472,11 +2477,7 @@ mod tests {
         recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
 
         // Register device as index 0 since it's a transfer
-        // It should fail first without force_overwrite=true since identifier changed
-        assert!(registerDeviceWithIndex(recovery_bridge.clone(), 0, false)
-            .await
-            .is_err());
-        registerDeviceWithIndex(recovery_bridge.clone(), 0, true).await?;
+        transferExistingDeviceRegistration(recovery_bridge.clone(), 0).await?;
 
         // Rejoin federation and assert that balances are correct
         let recovery_federation = join_test_fed_recovery(&recovery_bridge).await?;
@@ -2564,7 +2565,7 @@ mod tests {
         recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
 
         // Register device as index 1 since it's a new device
-        registerDeviceWithIndex(recovery_bridge.clone(), 1, false).await?;
+        registerAsNewDevice(recovery_bridge.clone()).await?;
 
         // Rejoin federation and assert that balances don't carry over (and there is no
         // backup)
