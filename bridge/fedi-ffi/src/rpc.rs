@@ -1165,6 +1165,7 @@ mod tests {
     use super::*;
     use crate::api::{RegisterDeviceError, RegisteredDevice};
     use crate::constants::{FEDI_FILE_PATH, MILLION};
+    use crate::event::DeviceRegistrationEvent;
     use crate::ffi::PathBasedStorage;
     use crate::multi::MultiFederation;
     use crate::storage::{FediFeeSchedule, IStorage};
@@ -1270,7 +1271,8 @@ mod tests {
         ) -> anyhow::Result<(), RegisterDeviceError> {
             let mut registry = self.registry.lock().await;
             if let Some(value) = registry.get_mut(&(seed.clone(), device_index)) {
-                if value.0 == device_identifier || force_overwrite {
+                if force_overwrite {
+                    value.0 = device_identifier;
                     value.1 = fedimint_core::time::now();
                     Ok(())
                 } else {
@@ -2466,10 +2468,9 @@ mod tests {
         // give some time for backup to complete before shutting down the bridge
         fedimint_core::task::sleep(Duration::from_secs(1)).await;
 
-        // get mnemonic and drop old federation / bridge so no background stuff runs
+        // get mnemonic (not dropping old federation / bridge so we can assert device
+        // index being stolen)
         let mnemonic = getMnemonic(backup_bridge.clone()).await?;
-        drop(federation);
-        drop(backup_bridge);
 
         // create new bridge which hasn't joined federation yet and recover mnemnonic
         let device_identifier_2 = "device_2".to_string();
@@ -2516,6 +2517,30 @@ mod tests {
         assert_eq!(account_info.staged_seeks[0].0, amount_to_deposit);
         assert!(account_info.staged_cancellation.is_none());
         assert!(account_info.locked_seeks.is_empty());
+
+        // Verify that original device would see the conflict whenever its background
+        // service would try to renew registration. The conflict event is what the
+        // front-end uses to block further user action.
+        let registration_conflict_body = serde_json::to_string(&DeviceRegistrationEvent {
+            state: crate::event::DeviceRegistrationState::Conflict,
+        })
+        .expect("failed to json serialize");
+        assert!(!backup_bridge
+            .event_sink
+            .events()
+            .iter()
+            .any(|(ev_type, ev_body)| ev_type == "deviceRegistration"
+                && *ev_body == registration_conflict_body));
+        assert!(backup_bridge
+            .register_device_with_index(0, false)
+            .await
+            .is_err());
+        assert!(backup_bridge
+            .event_sink
+            .events()
+            .iter()
+            .any(|(ev_type, ev_body)| ev_type == "deviceRegistration"
+                && *ev_body == registration_conflict_body));
         Ok(())
     }
 
