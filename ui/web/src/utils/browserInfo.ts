@@ -1,13 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
 
 /**
- * Attempts to recover a legacy deviceId from localStorage.
- */
-function recoverLegacyDeviceId() {
-    return localStorage.getItem('deviceId')
-}
-
-/**
  * Gets the user's OS information for use as a deviceId.
  *
  * This id must be unique and contain a human-readable section.
@@ -18,10 +11,6 @@ function recoverLegacyDeviceId() {
  * @example MacOS:Web:3d8f8f3d-8f3d-3d8f-8f3d-3d8f8f3d8f3d
  */
 export function generateDeviceId() {
-    // Attempts to recover a legacy deviceId from localStorage
-    const legacyDeviceId = recoverLegacyDeviceId()
-    if (legacyDeviceId) return legacyDeviceId
-
     let os = 'Unknown OS'
     if (navigator.userAgent.indexOf('Win') != -1) os = 'Windows'
     else if (navigator.userAgent.indexOf('Mac') != -1) os = 'MacOS'

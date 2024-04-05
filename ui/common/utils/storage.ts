@@ -79,7 +79,7 @@ export async function getStoredState(
     const serializedState = await storage.getItem(STATE_STORAGE_KEY)
     if (!serializedState) return null
     const storedState = JSON.parse(serializedState)
-    return migrateStoredState(storedState)
+    return await migrateStoredState(storedState, storage)
 }
 
 /**
@@ -140,7 +140,10 @@ export function hasStorageStateChanged(
  * Runs any version of stored state through a series of transformations that
  * migrates it to the latest version of stored state.
  */
-function migrateStoredState(state: AnyStoredState): LatestStoredState {
+async function migrateStoredState(
+    state: AnyStoredState,
+    storage: StorageApi,
+): LatestStoredState {
     let migrationState = { ...state }
 
     // Version 0 -> 1
@@ -486,10 +489,12 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
 
     // Version 15 -> 16
     if (migrationState.version === 15) {
+        // Attempts to migrate the legacy deviceId
+        const legacyDeviceId = await storage.getItem('deviceId')
         migrationState = {
             ...migrationState,
             version: 16,
-            deviceId: undefined,
+            deviceId: legacyDeviceId ?? undefined,
         }
     }
 
