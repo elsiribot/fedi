@@ -28,13 +28,14 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
-        version: 15,
+        version: 16,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
         language: state.environment.language,
         amountInputType: state.environment.amountInputType,
         showFiatTxnAmounts: state.environment.showFiatTxnAmounts,
+        deviceId: state.environment.deviceId,
         currency: state.currency.selectedFiatCurrency,
         btcUsdRate: state.currency.btcUsdRate,
         fiatUsdRates: state.currency.fiatUsdRates,
@@ -78,7 +79,7 @@ export async function getStoredState(
     const serializedState = await storage.getItem(STATE_STORAGE_KEY)
     if (!serializedState) return null
     const storedState = JSON.parse(serializedState)
-    return migrateStoredState(storedState)
+    return migrateStoredState(storedState, storage)
 }
 
 /**
@@ -100,6 +101,7 @@ export function hasStorageStateChanged(
         ['environment', 'developerMode'],
         ['environment', 'stableBalanceEnabled'],
         ['environment', 'showFiatTxnAmounts'],
+        ['environment', 'deviceId'],
         ['currency', 'selectedFiatCurrency'],
         ['currency', 'prices'],
         ['federation', 'activeFederationId'],
@@ -138,7 +140,10 @@ export function hasStorageStateChanged(
  * Runs any version of stored state through a series of transformations that
  * migrates it to the latest version of stored state.
  */
-function migrateStoredState(state: AnyStoredState): LatestStoredState {
+async function migrateStoredState(
+    state: AnyStoredState,
+    storage: StorageApi,
+): Promise<LatestStoredState> {
     let migrationState = { ...state }
 
     // Version 0 -> 1
@@ -473,12 +478,26 @@ function migrateStoredState(state: AnyStoredState): LatestStoredState {
         }
     }
 
+    // Version 14 -> 15
     if (migrationState.version === 14) {
         migrationState = {
             ...migrationState,
             version: 15,
             matrixAuth: null,
         }
+    }
+
+    // Version 15 -> 16
+    if (migrationState.version === 15) {
+        // Attempts to migrate the legacy deviceId
+        const legacyDeviceId = await storage.getItem('deviceId')
+        migrationState = {
+            ...migrationState,
+            version: 16,
+            deviceId: legacyDeviceId || undefined,
+        }
+        // TODO: run this line in a future migration to clean up the key
+        // storage.removeItem('deviceId')
     }
 
     return migrationState

@@ -4,8 +4,6 @@ import { FedimintBridgeEventMap } from '@fedi/common/types'
 import { FedimintBridge } from '@fedi/common/utils/fedimint'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { getDeviceId } from './utils/device-info'
-
 const { BridgeNativeEventEmitter, FedimintFfi } = NativeModules
 
 const log = makeLog('native/bridge')
@@ -29,7 +27,7 @@ async function fedimintRpc<Type = void>(
 
 export const fedimint = new FedimintBridge(fedimintRpc)
 
-export async function initializeBridge(dataDir: string) {
+export async function initializeBridge(dataDir: string, deviceId: string) {
     // Pass through all native bridge events to the FedimintBridge class instance
     const emitter = new NativeEventEmitter(BridgeNativeEventEmitter)
     const eventTypes: (keyof FedimintBridgeEventMap)[] =
@@ -41,7 +39,6 @@ export async function initializeBridge(dataDir: string) {
     )
 
     const logLevel = 'info'
-    const deviceId = await getDeviceId()
     const result = await FedimintFfi.initialize(dataDir, logLevel, deviceId)
     const resultJson = JSON.parse(result)
     if (resultJson.error !== undefined) {

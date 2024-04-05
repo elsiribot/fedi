@@ -18,21 +18,3 @@ export function generateDeviceId() {
     else if (navigator.userAgent.indexOf('Linux') != -1) os = 'Linux'
     return `${os}:Web:${uuidv4()}`
 }
-
-/**
- * Checks if a deviceId has been generated and stored.
- * If found, returns. Otherwise, generates a new deviceId and stores it.
- *
- * @returns {string} [Operating System]:Web:[uuid]
- * @example MacOS:Web:3d8f8f3d-8f3d-3d8f-8f3d-3d8f8f3d8f3d
- */
-export function getDeviceId() {
-    const key = 'deviceId'
-
-    const deviceId = localStorage.getItem(key)
-    if (deviceId) return deviceId
-
-    const newDeviceId = generateDeviceId()
-    localStorage.setItem(key, newDeviceId)
-    return newDeviceId
-}

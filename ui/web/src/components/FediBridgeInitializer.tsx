@@ -12,12 +12,16 @@ import {
     selectActiveFederation,
     selectAuthenticatedMember,
     selectSocialRecoveryQr,
+    selectDeviceId,
+    initializeDeviceId,
 } from '@fedi/common/redux'
+import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint, initializeBridge } from '../lib/bridge'
 import { keyframes, styled, theme } from '../styles'
+import { generateDeviceId } from '../utils/browserInfo'
 import { Redirect } from './Redirect'
 import { Text } from './Text'
 
@@ -31,6 +35,8 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const { asPath } = useRouter()
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const deviceId = useAppSelector(selectDeviceId)
+    const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const socialRecoveryId = useAppSelector(selectSocialRecoveryQr)
     const [isInitialized, setIsInitialized] = useState(false)
     const [isShowingLoading, setIsShowingLoading] = useState(false)
@@ -39,12 +45,23 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const dispatchRef = useUpdatingRef(dispatch)
     const federationId = activeFederation?.id
 
+    // Initialize device ID
     useEffect(() => {
+        const handleDeviceId = async () => {
+            await dispatchRef
+                .current(initializeDeviceId({ getDeviceId: generateDeviceId }))
+                .unwrap()
+        }
+        if (!deviceId && hasLoadedStorage) handleDeviceId()
+    }, [deviceId, dispatchRef, hasLoadedStorage])
+
+    useEffect(() => {
+        if (!deviceId) return
         const loadingTimeout = setTimeout(() => {
             setIsShowingLoading(true)
         }, 1000)
 
-        initializeBridge()
+        initializeBridge(deviceId)
             .then(() =>
                 // Fetch federations and social recovery in parallel after bridge.
                 // is initialized. Only throw (via unwrap) for refreshFederations.
@@ -69,7 +86,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             })
 
         return () => clearTimeout(loadingTimeout)
-    }, [dispatchRef, tRef])
+    }, [deviceId, dispatchRef, tRef])
 
     // Show an error message if the bridge panics while running.
     useEffect(() => {

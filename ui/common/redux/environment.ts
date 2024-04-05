@@ -14,6 +14,7 @@ const initialState = {
     language: null as string | null,
     amountInputType: undefined as 'sats' | 'fiat' | undefined,
     showFiatTxnAmounts: true,
+    deviceId: undefined as string | undefined,
 }
 
 export type EnvironmentState = typeof initialState
@@ -45,6 +46,9 @@ export const environmentSlice = createSlice({
         setShowFiatTxnAmounts(state, action: PayloadAction<boolean>) {
             state.showFiatTxnAmounts = action.payload
         },
+        setDeviceId(state, action: PayloadAction<string>) {
+            state.deviceId = action.payload
+        },
     },
     extraReducers: builder => {
         builder.addCase(changeLanguage.fulfilled, (state, action) => {
@@ -70,6 +74,9 @@ export const environmentSlice = createSlice({
             if (action.payload.showFiatTxnAmounts !== undefined) {
                 state.showFiatTxnAmounts = action.payload.showFiatTxnAmounts
             }
+            if (action.payload.deviceId !== undefined) {
+                state.deviceId = action.payload.deviceId
+            }
         })
     },
 })
@@ -83,6 +90,7 @@ export const {
     setOnchainDepositsEnabled,
     setStableBalanceEnabled,
     setShowFiatTxnAmounts,
+    setDeviceId,
 } = environmentSlice.actions
 
 /*** Async thunk actions ***/
@@ -93,6 +101,18 @@ export const changeLanguage = createAsyncThunk<
 >('environment/changeLanguage', ({ language, i18n }) => {
     i18n.changeLanguage(language)
 })
+
+export const initializeDeviceId = createAsyncThunk<
+    void,
+    { getDeviceId: () => string },
+    { state: CommonState }
+>(
+    'environment/initializeDeviceId',
+    ({ getDeviceId }, { getState, dispatch }) => {
+        if (getState().environment.deviceId) return
+        dispatch(setDeviceId(getDeviceId()))
+    },
+)
 
 /*** Selectors ***/
 
@@ -115,3 +135,5 @@ export const selectStableBalanceEnabled = (s: CommonState) =>
 
 export const selectShowFiatTxnAmounts = (s: CommonState) =>
     s.environment.showFiatTxnAmounts
+
+export const selectDeviceId = (s: CommonState) => s.environment.deviceId
