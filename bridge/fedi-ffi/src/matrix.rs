@@ -9,8 +9,10 @@ use eyeball::Subscriber;
 use fedimint_core::task::{MaybeSend, MaybeSync, TaskGroup};
 use fedimint_derive_secret::DerivableSecret;
 use futures::{Future, StreamExt};
+use matrix_sdk::notification_settings::NotificationSettings;
 pub use matrix_sdk::ruma::api::client::account::register::v3 as register;
 use matrix_sdk::ruma::api::client::directory::get_public_rooms_filtered::v3 as get_public_rooms_filtered;
+use matrix_sdk::ruma::api::client::push::Pusher;
 use matrix_sdk::ruma::api::client::receipt::create_receipt::v3::ReceiptType;
 pub use matrix_sdk::ruma::api::client::room::create_room::v3 as create_room;
 use matrix_sdk::ruma::api::client::state::send_state_event;
@@ -49,6 +51,7 @@ pub struct Matrix {
     room_list_service: Arc<RoomListService>,
     event_sink: EventSink,
     task_group: TaskGroup,
+    notification_settings: NotificationSettings,
     /// list of active observables
     observables: Arc<Mutex<HashMap<u64, TaskGroup>>>,
 }
@@ -152,6 +155,7 @@ impl Matrix {
         let sync_service = SyncService::builder(client.clone()).build().await?;
         sync_service.start().await;
         Ok(Self {
+            notification_settings: client.notification_settings().await,
             client,
             room_list_service: sync_service.room_list_service(),
             sync_service: Arc::new(sync_service),
@@ -632,6 +636,33 @@ impl Matrix {
         Ok(RpcMatrixUploadResult {
             content_uri: result.content_uri.to_string(),
         })
+    }
+
+    pub async fn set_pusher(&self, pusher: Pusher) -> Result<()> {
+        self.client.set_pusher(pusher).await?;
+        Ok(())
+    }
+
+    pub async fn room_set_notification_mode(
+        &self,
+        room_id: &RoomId,
+        mode: RpcRoomNotificationMode,
+    ) -> Result<()> {
+        self.notification_settings
+            .set_room_notification_mode(room_id, mode.into())
+            .await?;
+        Ok(())
+    }
+
+    pub async fn room_get_notification_mode(
+        &self,
+        room_id: &RoomId,
+    ) -> Result<Option<RpcRoomNotificationMode>> {
+        Ok(self
+            .notification_settings
+            .get_user_defined_room_notification_mode(room_id)
+            .await
+            .map(From::from))
     }
 }
 

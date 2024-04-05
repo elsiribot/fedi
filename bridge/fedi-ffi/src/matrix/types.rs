@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
+use matrix_sdk::notification_settings::RoomNotificationMode;
 use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::api::client::user_directory::search_users::v3 as search_user_directory;
 use matrix_sdk::ruma::events::room::member::MembershipState;
@@ -341,6 +342,39 @@ impl From<SyncIndicator> for RpcSyncIndicator {
         match value {
             SyncIndicator::Show => Self::Show,
             SyncIndicator::Hide => Self::Hide,
+        }
+    }
+}
+
+/// Enum representing the push notification modes for a room.
+#[derive(Clone, ts_rs::TS, Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcRoomNotificationMode {
+    /// Receive notifications for all messages.
+    AllMessages,
+    /// Receive notifications for mentions and keywords only.
+    MentionsAndKeywordsOnly,
+    /// Do not receive any notifications.
+    Mute,
+}
+
+impl From<RoomNotificationMode> for RpcRoomNotificationMode {
+    fn from(value: RoomNotificationMode) -> Self {
+        match value {
+            RoomNotificationMode::AllMessages => Self::AllMessages,
+            RoomNotificationMode::MentionsAndKeywordsOnly => Self::MentionsAndKeywordsOnly,
+            RoomNotificationMode::Mute => Self::Mute,
+        }
+    }
+}
+
+impl From<RpcRoomNotificationMode> for RoomNotificationMode {
+    fn from(value: RpcRoomNotificationMode) -> Self {
+        match value {
+            RpcRoomNotificationMode::AllMessages => Self::AllMessages,
+            RpcRoomNotificationMode::MentionsAndKeywordsOnly => Self::MentionsAndKeywordsOnly,
+            RpcRoomNotificationMode::Mute => Self::Mute,
         }
     }
 }

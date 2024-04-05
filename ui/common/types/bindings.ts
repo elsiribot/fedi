@@ -61,6 +61,8 @@ export type ErrorCode =
     | { insufficientBalance: RpcAmount }
     | 'matrixNotInitialized'
     | 'unknownObservable'
+    | 'timeout'
+    | 'recovery'
 
 export type Event =
     | { transaction: TransactionEvent }
@@ -602,6 +604,15 @@ export interface RpcMethods {
         null,
     ]
     matrixRoomSendReceipt: [{ roomId: RpcRoomId; eventId: string }, boolean]
+    matrixRoomSetNotificationMode: [
+        { roomId: RpcRoomId; mode: RpcRoomNotificationMode },
+        null,
+    ]
+    matrixRoomGetNotificationMode: [
+        { roomId: RpcRoomId },
+        'allMessages' | 'mentionsAndKeywordsOnly' | 'mute' | null,
+    ]
+    matrixSetPusher: [{ pusher: RpcPusher }, null]
 }
 
 export interface RpcModuleFediFeeSchedule {
@@ -664,6 +675,8 @@ export type RpcPeerId = number
 
 export type RpcPublicKey = string
 
+export type RpcPusher = any
+
 export type RpcRanges = Array<{ start: number; end: number }>
 
 export type RpcRecoveryId = string
@@ -687,6 +700,11 @@ export interface RpcRoomMember {
     powerLevel: number
     membership: RpcMatrixMembership
 }
+
+export type RpcRoomNotificationMode =
+    | 'allMessages'
+    | 'mentionsAndKeywordsOnly'
+    | 'mute'
 
 export type RpcRoomPowerLevelsEventContent = any
 
