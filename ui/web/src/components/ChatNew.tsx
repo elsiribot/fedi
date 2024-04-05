@@ -13,5 +13,5 @@ export const ChatNew: React.FC = () => {
 
     if (!isReady) return null
 
-    return chatType === 'group' ? <ChatCreateRoom /> : <ChatUserSearch />
+    return chatType === 'room' ? <ChatCreateRoom /> : <ChatUserSearch />
 }

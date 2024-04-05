@@ -11,10 +11,10 @@ import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { Button } from './Button'
 import { ChatListItem } from './ChatListItem'
+import { ChatUserQRDialog } from './ChatUserQRDialog'
 import { ContentBlock } from './ContentBlock'
 import { Icon } from './Icon'
 import { IconButton } from './IconButton'
-import { MemberQRDialog } from './MemberQRDialog'
 import { Text } from './Text'
 
 interface Props {
@@ -73,7 +73,7 @@ export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
                     </ErrorBoundary>
                 </Content>
             </Container>
-            <MemberQRDialog
+            <ChatUserQRDialog
                 open={isMemberQrOpen}
                 onOpenChange={setIsMemberQrOpen}
             />

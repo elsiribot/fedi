@@ -29,7 +29,6 @@ import { Text } from './Text'
 interface Props {
     roomId: string
     recipientId: string
-    recipientName: string
     open: boolean
     onOpenChange(open: boolean): void
 }

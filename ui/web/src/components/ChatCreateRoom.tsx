@@ -10,6 +10,7 @@ import { createMatrixRoom } from '@fedi/common/redux'
 import { useAppDispatch, useMediaQuery } from '../hooks'
 import { config, styled } from '../styles'
 import { Button } from './Button'
+import { ChatAvatar } from './ChatAvatar'
 import { Icon } from './Icon'
 import { Input } from './Input'
 import * as Layout from './Layout'
@@ -58,6 +59,14 @@ export const ChatCreateRoom: React.FC = () => {
                 </DesktopBackButton>
             )}
             <Inner>
+                <ChatAvatar
+                    size="lg"
+                    room={{
+                        id: 'fake-room-id',
+                        name: newGroupName,
+                        broadcastOnly: isBroadcastOnly,
+                    }}
+                />
                 <Input
                     label={t('feature.chat.group-name')}
                     value={newGroupName}
@@ -70,21 +79,13 @@ export const ChatCreateRoom: React.FC = () => {
                         onCheckedChange={setIsBroadcastOnly}
                     />
                 </BroadcastSwitchContainer>
-                <Buttons>
-                    <Button
-                        width="full"
-                        loading={isSavingGroup}
-                        onClick={handleCreateRoom}>
-                        {t('feature.chat.create-group')}
-                    </Button>
-                </Buttons>
             </Inner>
             <Buttons>
                 <Button
                     width="full"
                     loading={isSavingGroup}
                     onClick={handleCreateRoom}>
-                    {t('feature.chat.view-group')}
+                    {t('feature.chat.create-group')}
                 </Button>
             </Buttons>
         </Container>
