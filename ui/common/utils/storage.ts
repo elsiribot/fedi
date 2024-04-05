@@ -79,7 +79,7 @@ export async function getStoredState(
     const serializedState = await storage.getItem(STATE_STORAGE_KEY)
     if (!serializedState) return null
     const storedState = JSON.parse(serializedState)
-    return await migrateStoredState(storedState, storage)
+    return migrateStoredState(storedState, storage)
 }
 
 /**
@@ -143,7 +143,7 @@ export function hasStorageStateChanged(
 async function migrateStoredState(
     state: AnyStoredState,
     storage: StorageApi,
-): LatestStoredState {
+): Promise<LatestStoredState> {
     let migrationState = { ...state }
 
     // Version 0 -> 1
