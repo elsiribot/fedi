@@ -494,7 +494,7 @@ async function migrateStoredState(
         migrationState = {
             ...migrationState,
             version: 16,
-            deviceId: legacyDeviceId ?? undefined,
+            deviceId: legacyDeviceId || undefined,
         }
     }
 
