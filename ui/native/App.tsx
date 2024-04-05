@@ -26,6 +26,8 @@ const App = () => {
         return unsubscribe
     }, [])
 
+    // TODO: Remove this? Do we need this to handle incoming push notifications
+    // while the app is open?
     useEffect(() => {
         const unsubscribe = messaging().onMessage(async remoteMessage => {
             log.info('push notification received', remoteMessage)

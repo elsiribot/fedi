@@ -496,6 +496,8 @@ async function migrateStoredState(
             version: 16,
             deviceId: legacyDeviceId || undefined,
         }
+        // TODO: run this line in a future migration to clean up the key
+        // storage.removeItem('deviceId')
     }
 
     return migrationState
