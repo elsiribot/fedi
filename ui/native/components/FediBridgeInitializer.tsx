@@ -61,7 +61,9 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             try {
                 await initializeBridge(RNFS.DocumentDirectoryPath, deviceId)
             } catch (err) {
+                log.error('bridge failed to initialize', err)
                 setBridgeError(err)
+                SplashScreen.hide()
                 return
             }
             setBridgeIsReady(true)
