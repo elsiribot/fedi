@@ -149,9 +149,19 @@ impl Bridge {
                 .instrument(info_span!("federation", federation_id = federation_id_str))
             });
 
-        let federations = Arc::new(Mutex::new(HashMap::from_iter(
-            futures::future::try_join_all(federations).await?,
-        )));
+        let federations = Arc::new(Mutex::new(
+            futures::future::join_all(federations)
+                .await
+                .into_iter()
+                .filter_map(|federation_res| match federation_res {
+                    Ok(federation) => Some(federation),
+                    Err(e) => {
+                        error!("Could not initialize federation client: {e:?}");
+                        None
+                    }
+                })
+                .collect::<HashMap<_, _>>(),
+        ));
 
         // Spawn a new task to asynchronously fetch the fee schedule and update app
         // state
