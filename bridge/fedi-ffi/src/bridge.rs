@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -60,7 +60,7 @@ pub const VERIFICATION_FILENAME: &str = "verification.mp4";
 pub struct Bridge {
     pub storage: Storage,
     pub app_state: Arc<AppState>,
-    pub federations: Arc<Mutex<HashMap<String, Arc<MultiFederation>>>>,
+    pub federations: Arc<Mutex<BTreeMap<String, Arc<MultiFederation>>>>,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
     pub fedi_fee_helper: Arc<FediFeeHelper>,
@@ -149,9 +149,19 @@ impl Bridge {
                 .instrument(info_span!("federation", federation_id = federation_id_str))
             });
 
-        let federations = Arc::new(Mutex::new(HashMap::from_iter(
-            futures::future::try_join_all(federations).await?,
-        )));
+        let federations = Arc::new(Mutex::new(
+            futures::future::join_all(federations)
+                .await
+                .into_iter()
+                .filter_map(|federation_res| match federation_res {
+                    Ok(federation) => Some(federation),
+                    Err(e) => {
+                        error!("Could not initialize federation client: {e:?}");
+                        None
+                    }
+                })
+                .collect::<BTreeMap<_, _>>(),
+        ));
 
         // Spawn a new task to asynchronously fetch the fee schedule and update app
         // state
