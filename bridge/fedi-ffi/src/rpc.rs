@@ -1127,6 +1127,8 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
     let sensitive_log = bridge.sensitive_log().await;
     if sensitive_log {
         tracing::info!(%payload);
+    } else {
+        info!("rpc call");
     }
 
     let result = RpcMethods::handle(bridge, &method, payload).await;
