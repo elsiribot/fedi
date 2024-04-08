@@ -11,6 +11,7 @@ use fedimint_core::timing::TimeReporter;
 use futures::Future;
 use lightning_invoice::Bolt11Invoice;
 use macro_rules_attribute::macro_rules_derive;
+use matrix_sdk::ruma::api::client::push::Pusher;
 use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
 use matrix_sdk::sliding_sync::Ranges;
 use matrix_sdk::RoomInfo;
@@ -36,7 +37,7 @@ use crate::federation_v2::BackupServiceStatus;
 use crate::matrix::{
     self, Matrix, RpcBackPaginationStatus, RpcMatrixAccountSession, RpcMatrixUploadResult,
     RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomListEntry, RpcRoomMember,
-    RpcSyncIndicator, RpcTimelineItem, RpcUserId,
+    RpcRoomNotificationMode, RpcSyncIndicator, RpcTimelineItem, RpcUserId,
 };
 use crate::observable::{Observable, ObservableVec};
 use crate::types::{
@@ -926,6 +927,36 @@ async fn matrixRoomSendReceipt(
         .await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomSetNotificationMode(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    mode: RpcRoomNotificationMode,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .room_set_notification_mode(&room_id.into_typed()?, mode)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomGetNotificationMode(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+) -> anyhow::Result<Option<RpcRoomNotificationMode>> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .room_get_notification_mode(&room_id.into_typed()?)
+        .await
+}
+
+ts_type_de!(RpcPusher: Pusher = "any");
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixSetPusher(bridge: Arc<Bridge>, pusher: RpcPusher) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.set_pusher(pusher.0).await
+}
 // converts from a typed handler into untyped handler
 async fn handle_wrapper<Args, F, Fut, R>(
     f: F,
@@ -1072,6 +1103,9 @@ rpc_methods!(RpcMethods {
     matrixRoomGetPowerLevels,
     matrixRoomSetPowerLevels,
     matrixRoomSendReceipt,
+    matrixRoomSetNotificationMode,
+    matrixRoomGetNotificationMode,
+    matrixSetPusher,
 });
 
 #[instrument(
