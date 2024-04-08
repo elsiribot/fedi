@@ -13,12 +13,14 @@ import ChatUserTile from '../components/feature/chat/ChatUserTile'
 import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
-export type Props = NativeStackScreenProps<
+export type ChatRoomMembersProps = NativeStackScreenProps<
     RootStackParamList,
     'ChatRoomMembers'
 >
 
-const ChatRoomMembers: React.FC<Props> = ({ route }: Props) => {
+const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
+    route,
+}: ChatRoomMembersProps) => {
     const { t } = useTranslation()
     const { roomId } = route.params
     const { theme } = useTheme()
