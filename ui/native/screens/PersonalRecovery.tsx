@@ -44,7 +44,7 @@ type SeedWordInputProps = {
 }
 
 const SeedWordInput = React.forwardRef<TextInput, SeedWordInputProps>(
-    ({ number, word, onInputUpdated, selectNext }, ref) => {
+    ({ number, word, onInputUpdated, selectNext }, inputRef) => {
         const { theme } = useTheme()
         const [isFocused, setIsFocused] = useState(false)
         const valid = isValidSeedWord(word)
@@ -53,13 +53,19 @@ const SeedWordInput = React.forwardRef<TextInput, SeedWordInputProps>(
             <Pressable
                 style={styles(theme).wordContainer}
                 onPress={() => {
-                    if (typeof ref !== 'object' || !ref?.current) return
+                    if (typeof inputRef !== 'object' || !inputRef?.current)
+                        return
 
-                    ref.current.focus()
+                    inputRef.current.focus()
                 }}>
                 <Text style={styles(theme).wordNumber}>{`${number}`}</Text>
                 <Input
-                    ref={ref}
+                    ref={(ref: unknown) => {
+                        if (typeof inputRef !== 'object' || !inputRef?.current)
+                            return
+
+                        inputRef.current = ref as TextInput
+                    }}
                     value={word}
                     onChangeText={onInputUpdated}
                     autoCorrect={false}

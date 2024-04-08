@@ -67,11 +67,14 @@ type FederationPayloadAction<T = object> = PayloadAction<
 >
 
 const log = makeLog('redux/chat')
+
+/** @deprecated XMPP legacy code */
 const xmppChatClientManager = new XmppChatClientManager()
 const MAX_MESSAGE_HISTORY = 1000
 
 /*** Initial State ***/
 
+/** @deprecated XMPP legacy code */
 const initialFederationChatState = {
     clientStatus: 'offline' as XmppClientStatus,
     clientLastOnlineAt: 0,
@@ -90,6 +93,7 @@ const initialFederationChatState = {
     pushNotificationToken: null as string | null,
     websocketIsHealthy: false as boolean,
 }
+/** @deprecated XMPP legacy code */
 type FederationChatState = typeof initialFederationChatState
 
 // All chat state is keyed by federation id to keep federation chats separate, so it starts as an empty object.
@@ -98,15 +102,18 @@ const initialState = {} as Record<
     FederationChatState | undefined
 >
 
+/** @deprecated XMPP legacy code */
 export type ChatState = typeof initialState
 
 /*** Slice definition ***/
 
+/** @deprecated XMPP legacy code */
 const getFederationChatState = (state: ChatState, federationId: string) =>
     state[federationId] || {
         ...initialFederationChatState,
     }
 
+/** @deprecated XMPP legacy code */
 const upsertEntityToChatState = <
     K extends 'messages' | 'groups' | 'membersSeen',
     T extends FederationChatState[K][0],
@@ -174,6 +181,7 @@ const upsertEntityToChatState = <
     }
 }
 
+/** @deprecated XMPP legacy code */
 export const chatSlice = createSlice({
     name: 'chat',
     initialState,
@@ -545,6 +553,7 @@ export const chatSlice = createSlice({
 
 /*** Basic actions ***/
 
+/** @deprecated XMPP legacy code */
 export const {
     setChatClientStatus,
     setChatClientError,
@@ -569,6 +578,7 @@ export const {
 
 /*** Async thunk actions ***/
 
+/** @deprecated XMPP legacy code */
 export const refreshChatCredentials = createAsyncThunk<
     { credentials: XmppCredentials; encryptionKeys: Keypair },
     { fedimint: FedimintBridge; federationId: string }
@@ -580,6 +590,7 @@ export const refreshChatCredentials = createAsyncThunk<
     return { credentials, encryptionKeys }
 })
 
+/** @deprecated XMPP legacy code */
 export const authenticateChat = createAsyncThunk<
     ChatMember,
     {
@@ -641,6 +652,7 @@ export const authenticateChat = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const connectChat = createAsyncThunk<
     void,
     { fedimint: FedimintBridge; federationId: string },
@@ -855,6 +867,7 @@ export const connectChat = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const disconnectChat = createAsyncThunk<
     void,
     { federationId: string },
@@ -869,6 +882,7 @@ export const disconnectChat = createAsyncThunk<
     await xmppChatClientManager.destroyClient(federationId)
 })
 
+/** @deprecated XMPP legacy code */
 export const ensureHealthyXmppStream = createAsyncThunk<
     void,
     { fedimint: FedimintBridge; federationId: string },
@@ -922,6 +936,7 @@ export const ensureHealthyXmppStream = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const fetchChatHistory = createAsyncThunk<
     string | null,
     { federationId: string },
@@ -975,6 +990,7 @@ export const fetchChatHistory = createAsyncThunk<
     return lastFetchedMessageId
 })
 
+/** @deprecated XMPP legacy code */
 export const fetchChatMembers = createAsyncThunk<
     ChatMember[],
     { federationId: string }
@@ -983,6 +999,7 @@ export const fetchChatMembers = createAsyncThunk<
     return client.fetchMembers()
 })
 
+/** @deprecated XMPP legacy code */
 export const fetchChatMember = createAsyncThunk<
     ChatMember,
     { federationId: string; memberId: string },
@@ -1001,6 +1018,7 @@ export const fetchChatMember = createAsyncThunk<
     }
 })
 
+/** @deprecated XMPP legacy code */
 export const refreshChatGroup = createAsyncThunk<
     ChatGroup,
     { federationId: string; group: ChatGroup }
@@ -1017,6 +1035,7 @@ export const refreshChatGroup = createAsyncThunk<
     }
 })
 
+/** @deprecated XMPP legacy code */
 export const joinChatGroup = createAsyncThunk<
     ChatGroup,
     { federationId: string; link: string }
@@ -1027,6 +1046,7 @@ export const joinChatGroup = createAsyncThunk<
     return group
 })
 
+/** @deprecated XMPP legacy code */
 export const createChatGroup = createAsyncThunk<
     ChatGroup,
     { federationId: string; id: string; name: string; broadcastOnly?: boolean }
@@ -1036,6 +1056,7 @@ export const createChatGroup = createAsyncThunk<
     return group
 })
 
+/** @deprecated XMPP legacy code */
 export const leaveChatGroup = createAsyncThunk<
     void,
     { federationId: string; groupId: string },
@@ -1045,6 +1066,7 @@ export const leaveChatGroup = createAsyncThunk<
     await client.leaveGroup(groupId)
 })
 
+/** @deprecated XMPP legacy code */
 export const configureChatGroup = createAsyncThunk<
     ChatGroup,
     { federationId: string; groupId: string; groupName: string },
@@ -1067,6 +1089,7 @@ export const configureChatGroup = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const addAdminToChatGroup = createAsyncThunk<
     void,
     { federationId: string; groupId: string; memberId: string },
@@ -1086,6 +1109,7 @@ export const addAdminToChatGroup = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const fetchChatGroupMembersList = createAsyncThunk<
     ChatMember[],
     { federationId: string; groupId: string; role: XmppMemberRole },
@@ -1102,6 +1126,7 @@ export const fetchChatGroupMembersList = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const removeAdminFromChatGroup = createAsyncThunk<
     void,
     { federationId: string; groupId: string; memberId: string },
@@ -1121,6 +1146,7 @@ export const removeAdminFromChatGroup = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const sendDirectMessage = createAsyncThunk<
     ChatMessage,
     | {
@@ -1197,6 +1223,7 @@ export const sendDirectMessage = createAsyncThunk<
     return { ...message, status }
 })
 
+/** @deprecated XMPP legacy code */
 export const sendGroupMessage = createAsyncThunk<
     ChatMessage,
     { federationId: string; groupId: string; content: string },
@@ -1242,6 +1269,7 @@ export const sendGroupMessage = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const updateChatPayment = createAsyncThunk<
     ChatMessage,
     {
@@ -1381,6 +1409,7 @@ export const updateChatPayment = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const sendQueuedMessages = createAsyncThunk<
     void,
     {
@@ -1468,6 +1497,7 @@ export const sendQueuedMessages = createAsyncThunk<
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const publishPushNotificationToken = createAsyncThunk<
     string,
     { federationId: string; getToken: () => Promise<string> },
@@ -1486,6 +1516,7 @@ export const publishPushNotificationToken = createAsyncThunk<
 
 // Async thunk utility functions
 
+/** @deprecated XMPP legacy code */
 async function getOrFetchCredentials(
     fedimint: FedimintBridge,
     federationId: string,
@@ -1508,6 +1539,7 @@ async function getOrFetchCredentials(
     return { credentials, encryptionKeys }
 }
 
+/** @deprecated XMPP legacy code */
 async function getOrFetchMemberPubkey(
     chatState: FederationChatState | undefined,
     client: XmppChatClient,
@@ -1523,6 +1555,7 @@ async function getOrFetchMemberPubkey(
 
 /*** Selectors ***/
 
+/** @deprecated XMPP legacy code */
 const selectFederationChatState = (
     s: CommonState,
     federationId?: Federation['id'] | undefined,
@@ -1532,54 +1565,69 @@ const selectFederationChatState = (
         federationId || selectActiveFederation(s)?.id || '',
     )
 
+/** @deprecated XMPP legacy code */
 export const selectChatCredentials = (s: CommonState) =>
     selectFederationChatState(s).credentials
 
+/** @deprecated XMPP legacy code */
 export const selectChatEncryptionKeys = (s: CommonState) =>
     selectFederationChatState(s).encryptionKeys
 
+/** @deprecated XMPP legacy code */
 export const selectAuthenticatedMember = (s: CommonState) =>
     selectFederationChatState(s).authenticatedMember
 
+/** @deprecated XMPP legacy code */
 export const selectAllChatMessages = (
     s: CommonState,
     federationId?: Federation['id'],
 ) => selectFederationChatState(s, federationId).messages
 
+/** @deprecated XMPP legacy code */
 export const selectAllChatMembers = (s: CommonState) =>
     selectFederationChatState(s).membersSeen
 
+/** @deprecated XMPP legacy code */
 export const selectAllChatGroups = (s: CommonState) =>
     selectFederationChatState(s).groups
 
+/** @deprecated XMPP legacy code */
 export const selectAllChatGroupRoles = (s: CommonState) =>
     selectFederationChatState(s).groupRoles
 
+/** @deprecated XMPP legacy code */
 export const selectAllChatGroupAffiliations = (s: CommonState) =>
     selectFederationChatState(s).groupAffiliations
 
+/** @deprecated XMPP legacy code */
 export const selectChatClientStatus = (s: CommonState) =>
     selectFederationChatState(s).clientStatus
 
+/** @deprecated XMPP legacy code */
 export const selectChatClientLastOnlineAt = (s: CommonState) =>
     selectFederationChatState(s).clientLastOnlineAt
 
+/** @deprecated XMPP legacy code */
 export const selectChatLastReadMessageTimestamps = (
     s: CommonState,
     federationId?: Federation['id'],
 ) => selectFederationChatState(s, federationId).lastReadMessageTimestamps
 
+/** @deprecated XMPP legacy code */
 export const selectChatLastSeenMessageTimestamp = (
     s: CommonState,
     federationId?: Federation['id'],
 ) => selectFederationChatState(s, federationId).lastSeenMessageTimestamp
 
+/** @deprecated XMPP legacy code */
 export const selectPushNotificationToken = (s: CommonState) =>
     selectFederationChatState(s).pushNotificationToken
 
+/** @deprecated XMPP legacy code */
 export const selectWebsocketIsHealthy = (s: CommonState) =>
     selectFederationChatState(s).websocketIsHealthy
 
+/** @deprecated XMPP legacy code */
 export const selectChatConnectionOptions = createSelector(
     (s: CommonState) => {
         const activeFederationMetadata = selectFederationMetadata(s)
@@ -1593,6 +1641,7 @@ export const selectChatConnectionOptions = createSelector(
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const selectChatMemberMap = createSelector(
     selectAllChatMembers,
     members => {
@@ -1606,6 +1655,7 @@ export const selectChatMemberMap = createSelector(
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const selectChatGroupMap = createSelector(
     selectAllChatGroups,
     groups => {
@@ -1619,31 +1669,37 @@ export const selectChatGroupMap = createSelector(
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const selectLatestChatMessage = createSelector(
     selectAllChatMessages,
     messages => getLatestMessage(messages),
 )
 
+/** @deprecated XMPP legacy code */
 export const selectLatestPaymentUpdate = createSelector(
     selectAllChatMessages,
     messages => getLatestPaymentUpdate(messages),
 )
 
+/** @deprecated XMPP legacy code */
 export const selectLatestChatMessageTimestamp = createSelector(
     selectLatestChatMessage,
     latestMessage => latestMessage?.sentAt,
 )
 
+/** @deprecated XMPP legacy code */
 export const selectLatestPaymentUpdateTimestamp = createSelector(
     selectLatestPaymentUpdate,
     latestPaymentUpdate => latestPaymentUpdate?.payment?.updatedAt,
 )
 
+/** @deprecated XMPP legacy code */
 export const selectOrderedChatMessages = createSelector(
     selectAllChatMessages,
     messages => orderBy(messages, 'sentAt', 'desc'),
 )
 
+/** @deprecated XMPP legacy code */
 export const selectOrderedChatList = createSelector(
     selectOrderedChatMessages,
     selectChatMemberMap,
@@ -1756,16 +1812,21 @@ export const selectOrderedChatList = createSelector(
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const selectIsChatEmpty = (s: CommonState) =>
     selectOrderedChatList(s).length === 0
 
-/** Returns whether or not the user needs to register a username on the chat server */
+/**
+ * Returns whether or not the user needs to register a username on the chat server
+ * @deprecated XMPP legacy code
+ */
 export const selectNeedsChatRegistration = (s: CommonState) =>
     !!selectChatConnectionOptions(s) && !selectAuthenticatedMember(s)
 
 /**
  * Returns members who have sent us messages recently. Optionally
  * takes in an argument of the number to return, defaults to 4.
+ * @deprecated XMPP legacy code
  */
 export const selectRecentChatMembers = createSelector(
     (s: CommonState) => selectOrderedChatMessages(s),
@@ -1798,6 +1859,7 @@ export const selectRecentChatMembers = createSelector(
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const selectChat = createSelector(
     (s: CommonState) => selectOrderedChatList(s),
     (_: CommonState, chatId: Chat['id']) => chatId,
@@ -1806,6 +1868,7 @@ export const selectChat = createSelector(
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const selectChatMessages = createSelector(
     selectAuthenticatedMember,
     (s: CommonState) => selectAllChatMessages(s),
@@ -1819,6 +1882,7 @@ export const selectChatMessages = createSelector(
         ),
 )
 
+/** @deprecated XMPP legacy code */
 export const selectChatMember = createSelector(
     selectAllChatMembers,
     (_: CommonState, memberId: string) => memberId,
@@ -1827,6 +1891,7 @@ export const selectChatMember = createSelector(
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const selectChatMembersWithHistory = createSelector(
     selectAllChatMembers,
     selectAllChatMessages,
@@ -1846,6 +1911,7 @@ export const selectChatMembersWithHistory = createSelector(
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const selectChatGroup = createSelector(
     selectAllChatGroups,
     (_: CommonState, groupId: string) => groupId,
@@ -1854,6 +1920,7 @@ export const selectChatGroup = createSelector(
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const selectHasUnseenMessages = createSelector(
     selectLatestChatMessageTimestamp,
     selectChatLastSeenMessageTimestamp,
@@ -1862,6 +1929,7 @@ export const selectHasUnseenMessages = createSelector(
         (lastSeenMessageTimestamp || 0) < latestMessageTimestamp,
 )
 
+/** @deprecated XMPP legacy code */
 export const selectHasUnseenPaymentUpdates = createSelector(
     selectLatestPaymentUpdateTimestamp,
     selectChatLastSeenMessageTimestamp,
@@ -1870,6 +1938,7 @@ export const selectHasUnseenPaymentUpdates = createSelector(
         (lastSeenMessageTimestamp || 0) < (latestPaymentUpdateTimestamp || 0),
 )
 
+/** @deprecated XMPP legacy code */
 export const selectHasNewChatActivityInOtherFeds = createSelector(
     (s: CommonState) => s,
     (s: CommonState) => selectFederations(s),
@@ -1887,6 +1956,7 @@ export const selectHasNewChatActivityInOtherFeds = createSelector(
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const selectChatGroupRole = createSelector(
     selectAllChatGroupRoles,
     (_: CommonState, chatId: Chat['id']) => chatId,
@@ -1899,6 +1969,7 @@ export const selectChatGroupRole = createSelector(
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const selectChatGroupAffiliation = createSelector(
     selectAllChatGroupAffiliations,
     (_: CommonState, chatId: Chat['id']) => chatId,
@@ -1911,6 +1982,7 @@ export const selectChatGroupAffiliation = createSelector(
     },
 )
 
+/** @deprecated XMPP legacy code */
 export const selectChatDefaultGroupIds = createSelector(
     (s: CommonState) => selectActiveFederation(s),
     activeFederation =>
@@ -1921,6 +1993,7 @@ export const selectChatDefaultGroupIds = createSelector(
  * Selects the XmppChatClient for the currently active federation.
  * Only returns the client if it is online and ready to send and receive
  * XMPP messages, otherwise return null.
+ * @deprecated XMPP legacy code
  */
 export const selectChatXmppClient = (s: CommonState) => {
     const activeFederationId = selectActiveFederation(s)?.id

@@ -4,8 +4,8 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
 
-import { selectAuthenticatedMember } from '@fedi/common/redux'
-import { encodeDirectChatLink } from '@fedi/common/utils/xmpp'
+import { selectMatrixAuth } from '@fedi/common/redux'
+import { encodeFediMatrixUserUri } from '@fedi/common/utils/matrix'
 
 import QRScreen from '../components/ui/QRScreen'
 import SvgImage from '../components/ui/SvgImage'
@@ -17,11 +17,11 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'MemberQrCode'>
 const MemberQrCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const member = useAppSelector(selectAuthenticatedMember)
+    const matrixAuth = useAppSelector(selectMatrixAuth)
 
-    if (!member) return null
+    if (!matrixAuth) return null
 
-    const directChatLink = encodeDirectChatLink(member.username)
+    const directChatLink = encodeFediMatrixUserUri(matrixAuth.userId)
 
     const goToScanMemberCode = () => {
         navigation.navigate('ScanMemberCode')
@@ -29,7 +29,7 @@ const MemberQrCode: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <QRScreen
-            title={member.username}
+            title={matrixAuth.displayName}
             subtitle={t('feature.chat.scan-member-code-notice')}
             qrValue={directChatLink}
             copyValue={directChatLink}

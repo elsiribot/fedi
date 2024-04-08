@@ -31,6 +31,7 @@ import {
     MatrixRoomPowerLevels,
     MatrixSyncStatus,
     MatrixCreateRoomOptions,
+    Sats,
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import { MatrixChatClient } from '../utils/MatrixChatClient'
@@ -434,7 +435,7 @@ export const sendMatrixPaymentPush = createAsyncThunk<
         federationId: string
         roomId: MatrixRoom['id']
         recipientId: MatrixUser['id']
-        amount: MSats
+        amount: Sats
     },
     { state: CommonState }
 >(
@@ -445,19 +446,21 @@ export const sendMatrixPaymentPush = createAsyncThunk<
     ) => {
         const matrixAuth = selectMatrixAuth(getState())
         if (!matrixAuth) throw new Error('Not authenticated')
+        log.info('sendMatrixPaymentPush', amount, 'sats')
+        const msats = amountUtils.satToMsat(amount)
 
         const client = getMatrixClient()
-        const { ecash } = await fedimint.generateEcash(amount, federationId)
+        const { ecash } = await fedimint.generateEcash(msats, federationId)
 
         await client.sendMessage(roomId, {
             msgtype: 'xyz.fedi.payment',
             body: `Sent payment of ${amountUtils.formatSats(
-                amountUtils.msatToSat(amount),
+                amount,
             )} SATS. Use the Fedi app to accept this payment.`, // TODO: i18n? this only shows to matrix clients, not Fedi users
             status: MatrixPaymentStatus.pushed,
             paymentId: uuidv4(),
             senderId: matrixAuth.userId,
-            amount,
+            amount: msats,
             recipientId,
             federationId,
             ecash,
@@ -471,7 +474,7 @@ export const sendMatrixPaymentRequest = createAsyncThunk<
         fedimint: FedimintBridge
         federationId: string
         roomId: MatrixRoom['id']
-        amount: MSats
+        amount: Sats
     },
     { state: CommonState }
 >(
@@ -479,18 +482,20 @@ export const sendMatrixPaymentRequest = createAsyncThunk<
     async ({ federationId, roomId, amount }, { getState }) => {
         const matrixAuth = selectMatrixAuth(getState())
         if (!matrixAuth) throw new Error('Not authenticated')
+        log.info('sendMatrixPaymentRequest', amount, 'sats')
+        const msats = amountUtils.satToMsat(amount)
 
         const client = getMatrixClient()
 
         await client.sendMessage(roomId, {
             msgtype: 'xyz.fedi.payment',
             body: `Requested payment of ${amountUtils.formatSats(
-                amountUtils.msatToSat(amount),
+                amount,
             )} SATS. Use the Fedi app to complete this request.`, // TODO: i18n?
             paymentId: uuidv4(),
             status: MatrixPaymentStatus.requested,
             recipientId: matrixAuth.userId,
-            amount,
+            amount: msats,
             federationId,
         })
     },
@@ -658,6 +663,9 @@ export const selectMatrixOrderedRoomsList = createSelector(
     },
 )
 
+export const selectIsMatrixChatEmpty = (s: CommonState) =>
+    selectMatrixOrderedRoomsList(s).length === 0
+
 export const selectMatrixRoom = (s: CommonState, roomId: MatrixRoom['id']) =>
     selectMatrixRooms(s).find(room => room.id === roomId)
 
@@ -669,7 +677,12 @@ export const selectMatrixRoomPowerLevels = (
 export const selectMatrixRoomMembers = (
     s: CommonState,
     roomId: MatrixRoom['id'],
-) => s.matrix.roomMembers[roomId] || []
+) => s.matrix.roomMembers[roomId] || ([] as MatrixRoomMember[])
+
+export const selectMatrixRoomMembersCount = (
+    s: CommonState,
+    roomId: MatrixRoom['id'],
+) => selectMatrixRoomMembers(s, roomId).length ?? 0
 
 export const selectMatrixRoomMemberMap = createSelector(
     selectMatrixRoomMembers,
@@ -680,11 +693,19 @@ export const selectMatrixRoomMemberMap = createSelector(
         }, {} as Record<MatrixRoomMember['id'], MatrixRoomMember | undefined>),
 )
 
-export const selectMatrixRoomMember = (
+export const selectMatrixRoomMember = createSelector(
+    (s: CommonState, roomId: MatrixRoom['id']): MatrixRoomMember[] =>
+        selectMatrixRoomMembers(s, roomId),
+    (_s: CommonState, _roomId: MatrixRoom['id'], userId: MatrixUser['id']) =>
+        userId,
+    (members, userId): MatrixRoomMember | undefined =>
+        members.find(m => m.id === userId),
+)
+
+export const selectMatrixRoomEventsHaveLoaded = (
     s: CommonState,
-    roomId: string,
-    userId: string,
-) => selectMatrixRoomMembers(s, roomId).find(m => m.id === userId)
+    roomId: MatrixRoom['id'],
+) => s.matrix.roomTimelines[roomId] !== undefined
 
 export const selectMatrixRoomEvents = createSelector(
     (s: CommonState) => s.matrix.roomTimelines,
@@ -777,8 +798,10 @@ export const selectMatrixDirectMessageRoom = createSelector(
     (userId, rooms) => rooms.find(room => room.directUserId === userId),
 )
 
-export const selectMatrixHasNotifications = (s: CommonState) =>
-    selectMatrixRooms(s).some(room => room.notificationCount > 0)
+export const selectMatrixHasNotifications = createSelector(
+    selectMatrixRooms,
+    rooms => rooms.some(room => room.notificationCount > 0),
+)
 
 /**
  * Returns users who we have DM'd with most recently. Optionally

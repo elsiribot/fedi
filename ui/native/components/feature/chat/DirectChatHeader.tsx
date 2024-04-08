@@ -13,6 +13,7 @@ import { ChatConnectionBadge } from './ChatConnectionBadge'
 
 type ChatRouteProp = RouteProp<RootStackParamList, 'DirectChat'>
 
+/** @deprecated XMPP legacy code  */
 const DirectChatHeader: React.FC = () => {
     const { theme } = useTheme()
     const route = useRoute<ChatRouteProp>()

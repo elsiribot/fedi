@@ -3,6 +3,7 @@ import { LinkingOptions, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import {
+    ChatType,
     FederationPreview,
     ParsedBip21,
     ParsedBitcoinAddress,
@@ -46,13 +47,15 @@ export type TabsNavigatorParamList = {
     OmniScanner: undefined
 }
 export type RootStackParamList = {
-    AddBroadcastAdmin: { groupId: string }
     AddFediMod: undefined
-    BroadcastAdminsList: { groupId: string }
     BitcoinRequest: { uri: string }
     BugReport: undefined
     BugReportSuccess: undefined
     CameraPermission: { nextScreen: keyof RootStackParamList } | undefined
+    ChatRoomConversation: { roomId: string; chatType: ChatType }
+    ChatRoomMembers: { roomId: string }
+    ChatRoomInvite: { roomId: string }
+    ChatUserConversation: { userId: string }
     ChatWallet: { recipientId: string }
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined
@@ -69,7 +72,7 @@ export type RootStackParamList = {
     CreateGroup: undefined
     CreateUsername: undefined
     DirectChat: { memberId: string }
-    EditGroup: { groupId: string }
+    EditGroup: { roomId: string }
     Eula: undefined
     FederationInvite: { inviteLink: string }
     FederationGreeting: undefined
@@ -96,7 +99,7 @@ export type RootStackParamList = {
     RecoveryAssistSuccess: undefined
     RecordBackupVideo: undefined
     GroupChat: { groupId: string }
-    GroupAdmin: { groupId: string }
+    GroupAdmin: { roomId: string }
     GroupInvite: { groupId: string }
     ScanMemberCode: undefined
     ScanSocialRecoveryCode: undefined
@@ -127,7 +130,9 @@ export type RootStackParamList = {
     SocialRecoveryQrModal: undefined
     SocialRecoverySuccess: undefined
     SocialRecoveryFailure: undefined
-    TabsNavigator: undefined
+    TabsNavigator:
+        | { initialRouteName: keyof TabsNavigatorParamList }
+        | undefined
     Transactions: undefined
     DeveloperSettings: undefined
 }

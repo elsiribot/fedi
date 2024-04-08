@@ -53,7 +53,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'TabsNavigator'>
 
 const Tab = createBottomTabNavigator<TabsNavigatorParamList>()
 
-const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
+const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const isFocused = useIsFocused()
@@ -120,11 +120,11 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
         <>
             <SelectedFederationHeader />
             <Tab.Navigator
-                initialRouteName="Home"
+                initialRouteName={route.params?.initialRouteName || 'Home'}
                 id={TABS_NAVIGATOR_ID}
-                screenOptions={({ route }) => ({
+                screenOptions={({ route: screenRoute }) => ({
                     tabBarButton: props => {
-                        switch (route.name) {
+                        switch (screenRoute.name) {
                             case 'Home':
                                 return <Pressable {...props} />
                             case 'Chat':
@@ -163,7 +163,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation }: Props) => {
                                 ? theme.colors.primary
                                 : theme.colors.primaryLight,
                         }
-                        switch (route.name) {
+                        switch (screenRoute.name) {
                             case 'Home':
                                 return (
                                     <SvgImage

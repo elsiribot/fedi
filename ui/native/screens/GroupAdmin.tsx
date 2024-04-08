@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Switch, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Alert,
@@ -12,22 +12,20 @@ import {
 
 import { useToast } from '@fedi/common/hooks/toast'
 import {
-    leaveChatGroup,
-    selectActiveFederationId,
-    selectChatDefaultGroupIds,
-    selectChatGroup,
-    selectChatGroupAffiliation,
+    leaveMatrixRoom,
+    selectMatrixRoom,
+    selectMatrixRoomMembersCount,
+    selectMatrixRoomSelfPowerLevel,
+    setMatrixRoomBroadcastOnly,
 } from '@fedi/common/redux'
-import { makeLog } from '@fedi/common/utils/log'
+import { MatrixPowerLevel } from '@fedi/common/types'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { Images } from '../assets/images'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import { ChatAffiliation } from '../types'
 import type { RootStackParamList } from '../types/navigation'
-
-const log = makeLog('GroupAdmin')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupAdmin'>
 
@@ -36,34 +34,40 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const toast = useToast()
-    const { groupId } = route.params
-    const group = useAppSelector(s => selectChatGroup(s, groupId))
-    const federationId = useAppSelector(selectActiveFederationId)
-    const myAffiliation = useAppSelector(s =>
-        selectChatGroupAffiliation(s, groupId),
+    const { roomId } = route.params
+    const room = useAppSelector(s => selectMatrixRoom(s, roomId))
+    const memberCount = useAppSelector(s =>
+        selectMatrixRoomMembersCount(s, roomId),
     )
-    const isDefaultGroup = useAppSelector(s =>
-        selectChatDefaultGroupIds(s).includes(groupId),
+    const myPowerLevel = useAppSelector(s =>
+        selectMatrixRoomSelfPowerLevel(s, room?.id || ''),
     )
-    const [broadcastOnly] = useState<boolean>(group?.broadcastOnly || false)
+    const isAdmin = myPowerLevel >= MatrixPowerLevel.Admin
+    // const myAffiliation = useAppSelector(s =>
+    //     selectChatGroupAffiliation(s, groupId),
+    // )
+    // TODO: Reimplement with matrix
+    const isDefaultGroup = false
+    // const isDefaultGroup = useAppSelector(s =>
+    //     selectChatDefaultGroupIds(s).includes(groupId),
+    // )
+    const [isTogglingBroadcastOnly, setIsTogglingBroadcastOnly] =
+        useState(false)
 
-    const askLeaveGroup = () => {
-        const leaveGroup = async () => {
-            // Immediately navigate and replace navigation stack on leave
-            // attempt, otherwise pressing the back button or useEffects in
-            // backgrounded screens may attempt to re-join the group right
-            // after we leave it.
-            try {
-                if (!federationId) throw new Error()
-                navigation.replace('TabsNavigator')
-                await dispatch(
-                    leaveChatGroup({ federationId, groupId }),
-                ).unwrap()
-            } catch (err) {
-                toast.error(t, err)
-            }
+    const leaveGroup = useCallback(async () => {
+        // Immediately navigate and replace navigation stack on leave
+        // attempt, otherwise pressing the back button or useEffects in
+        // backgrounded screens may attempt to re-join the group right
+        // after we leave it.
+        try {
+            navigation.replace('TabsNavigator')
+            await dispatch(leaveMatrixRoom({ roomId })).unwrap()
+        } catch (err) {
+            toast.error(t, err)
         }
+    }, [dispatch, navigation, roomId, t, toast])
 
+    const handleLeaveGroup = useCallback(() => {
         Alert.alert(
             t('feature.chat.leave-group'),
             t('feature.chat.leave-group-confirmation'),
@@ -77,7 +81,35 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 },
             ],
         )
-    }
+    }, [leaveGroup, t])
+
+    const handleChangeGroupName = useCallback(() => {
+        navigation.navigate('EditGroup', { roomId })
+    }, [navigation, roomId])
+
+    const handleViewMembers = useCallback(() => {
+        navigation.navigate('ChatRoomMembers', { roomId })
+    }, [navigation, roomId])
+
+    const handleInviteMember = useCallback(() => {
+        navigation.navigate('ChatRoomInvite', { roomId })
+    }, [navigation, roomId])
+
+    const handleToggleBroadcastOnly = useCallback(async () => {
+        if (isTogglingBroadcastOnly || !room) return
+        setIsTogglingBroadcastOnly(true)
+        try {
+            await dispatch(
+                setMatrixRoomBroadcastOnly({
+                    roomId: room.id,
+                    broadcastOnly: !room.broadcastOnly,
+                }),
+            ).unwrap()
+        } catch (err) {
+            toast.error(t, 'errors.unknown-error')
+        }
+        setIsTogglingBroadcastOnly(false)
+    }, [isTogglingBroadcastOnly, room, dispatch, toast, t])
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
@@ -86,10 +118,13 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     source={Images.HoloBackground}
                     style={styles(theme).profileCircle}
                     imageStyle={styles(theme).circleBorder}>
-                    <SvgImage name="Room" size={SvgImageSize.md} />
+                    <SvgImage
+                        name={room?.broadcastOnly ? 'SpeakerPhone' : 'Room'}
+                        size={SvgImageSize.md}
+                    />
                 </ImageBackground>
                 <Text h2 style={styles(theme).groupNameText}>
-                    {group?.name || ''}
+                    {room?.name || ''}
                 </Text>
             </View>
             <View style={styles(theme).sectionContainer}>
@@ -97,48 +132,45 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     {t('words.group')}
                 </Text>
                 <SettingsItem
-                    disabled
                     image={<SvgImage name="SocialPeople" />}
-                    label={t('words.members')}
-                    onPress={() => log.info('not implemented')}
+                    label={`${amountUtils.formatNumber(memberCount)} ${t(
+                        'words.members',
+                    )}`}
+                    onPress={handleViewMembers}
                 />
                 <SettingsItem
                     image={<SvgImage name="Room" />}
                     label={t('feature.chat.invite-to-group')}
-                    onPress={() => {
-                        navigation.navigate('GroupInvite', {
-                            groupId,
-                        })
-                    }}
+                    onPress={handleInviteMember}
+                    disabled={!isAdmin}
                 />
                 <SettingsItem
                     image={<SvgImage name="LeaveRoom" />}
                     label={t('feature.chat.leave-group')}
-                    onPress={askLeaveGroup}
+                    onPress={handleLeaveGroup}
                     disabled={isDefaultGroup}
+                />
+                <SettingsItem
+                    image={<SvgImage name="Edit" />}
+                    label={t('feature.chat.change-group-name')}
+                    onPress={handleChangeGroupName}
+                    disabled={!isAdmin}
                 />
                 <SettingsItem
                     image={<SvgImage name="SpeakerPhone" />}
                     label={t('feature.chat.broadcast-only')}
-                    action={<Switch value={broadcastOnly} disabled />}
-                    onPress={() => {
-                        toast.show(
-                            t('feature.chat.changing-broadcast-not-supported'),
-                        )
-                    }}
+                    action={
+                        <Switch
+                            value={room?.broadcastOnly}
+                            disabled={isTogglingBroadcastOnly || !isAdmin}
+                            onValueChange={_ => {
+                                handleToggleBroadcastOnly()
+                            }}
+                        />
+                    }
+                    disabled={!isAdmin}
+                    onPress={handleToggleBroadcastOnly}
                 />
-                {broadcastOnly && (
-                    <SettingsItem
-                        image={<SvgImage name="SpeakerPhone" />}
-                        label={t('feature.chat.broadcast-admin-settings')}
-                        disabled={myAffiliation !== ChatAffiliation.owner}
-                        onPress={() => {
-                            navigation.navigate('BroadcastAdminsList', {
-                                groupId,
-                            })
-                        }}
-                    />
-                )}
             </View>
         </ScrollView>
     )

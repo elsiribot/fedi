@@ -587,6 +587,10 @@ async fn matrixInit(
     home_server: String,
     sliding_sync_proxy: String,
 ) -> anyhow::Result<RpcMatrixAccountSession> {
+    if bridge.matrix.initialized() {
+        let matrix = get_matrix(&bridge).await?;
+        return matrix.get_account_session().await;
+    }
     let nostr_pubkey = bridge.get_nostr_pub_key().await?;
     let matrix_secret = bridge.get_matrix_secret().await;
     bridge

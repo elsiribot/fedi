@@ -3,7 +3,6 @@ import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-    ActivityIndicator,
     Keyboard,
     KeyboardEvent,
     Platform,
@@ -14,11 +13,10 @@ import {
 import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import { authenticateChat, selectActiveFederationId } from '@fedi/common/redux'
+import { selectMatrixAuth, setMatrixDisplayName } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { fedimint } from '../bridge'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -30,49 +28,25 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const activeFederationId = useAppSelector(selectActiveFederationId)
     const dispatch = useAppDispatch()
     const toast = useToast()
     const [username, setUsername] = useState<string>('')
-    const [isRecoveringUsername, setIsRecoveringUsername] = useState(true)
-    const [xmppAuthInProgress, setXmppAuthInProgress] = useState<boolean>(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const [buttonIsOverlapping, setButtonIsOverlapping] =
         useState<boolean>(false)
     const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
     const [buttonYPosition, setButtonYPosition] = useState<number>(0)
     const [overlapThreshold, setOverlapThreshold] = useState<number>(0)
 
-    // Attempt to fetch username from the bridge in case they were previously
-    // a member.
+    const matrixAuth = useAppSelector(selectMatrixAuth)
+
     useEffect(() => {
-        async function fetchCreds() {
-            if (!activeFederationId) return
-            const creds = await fedimint.getXmppCredentials(activeFederationId)
-            if (!creds.username) {
-                setIsRecoveringUsername(false)
-                return
-            }
-            try {
-                setUsername(creds.username)
-                await dispatch(
-                    authenticateChat({
-                        fedimint,
-                        federationId: activeFederationId,
-                        username: creds.username.toLowerCase(),
-                    }),
-                ).unwrap()
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'FederationGreeting' }],
-                })
-            } catch (err) {
-                log.error('failed to fetch xmpp credentials', err)
-                toast.error(t, err)
-            }
-            setIsRecoveringUsername(false)
+        if (!matrixAuth) return
+        const { displayName, userId } = matrixAuth
+        if (!userId.includes(displayName)) {
+            setUsername(displayName)
         }
-        fetchCreds()
-    }, [activeFederationId, dispatch, navigation, t, toast])
+    }, [matrixAuth])
 
     // when the keyboard is opened and content layouts change, this effect
     // determines whether the Create username button is overlapping with
@@ -114,47 +88,22 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     }, [])
 
     const handleSubmit = async () => {
-        setXmppAuthInProgress(true)
+        setIsSubmitting(true)
+        try {
+            await dispatch(
+                setMatrixDisplayName({ displayName: username }),
+            ).unwrap()
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'FederationGreeting' }],
+            })
+        } catch (err) {
+            log.error('handleSubmit', err)
+            const errorMessage = formatErrorMessage(t, err)
+            toast?.show(errorMessage)
+        }
+        setIsSubmitting(false)
     }
-
-    useEffect(() => {
-        const handleXmppRegistration = async () => {
-            try {
-                await dispatch(
-                    authenticateChat({
-                        fedimint,
-                        federationId: activeFederationId as string,
-                        username: username.toLowerCase(),
-                    }),
-                ).unwrap()
-                setXmppAuthInProgress(false)
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'FederationGreeting' }],
-                })
-            } catch (error: unknown) {
-                if ((error as Error).message) {
-                    setXmppAuthInProgress(false)
-                    const errorMessage = formatErrorMessage(t, error)
-                    log.info(errorMessage)
-                    toast.error(t, error)
-                } else {
-                    log.error((error as Error).toString())
-                }
-            }
-        }
-        if (xmppAuthInProgress === true) {
-            handleXmppRegistration()
-        }
-    }, [
-        dispatch,
-        navigation,
-        toast,
-        t,
-        username,
-        xmppAuthInProgress,
-        activeFederationId,
-    ])
 
     const handleUsernameChange = (input: string) => {
         const isValid = /^[^"&'/:<>\s]+$|^$/.test(input)
@@ -169,14 +118,6 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     const style = styles(theme, insets)
-
-    if (isRecoveringUsername) {
-        return (
-            <View style={style.loadingContainer}>
-                <ActivityIndicator />
-            </View>
-        )
-    }
 
     return (
         <ScrollView
@@ -216,7 +157,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     inputContainerStyle={style.textInputInner}
                     autoCapitalize={'none'}
                     autoCorrect={false}
-                    disabled={xmppAuthInProgress}
+                    disabled={isSubmitting}
                 />
                 <Text caption style={style.inputGuidance}>
                     {t('feature.onboarding.username-guidance')}
@@ -234,8 +175,8 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     fullWidth
                     title={t('feature.onboarding.create-username')}
                     onPress={handleSubmit}
-                    disabled={!username || xmppAuthInProgress}
-                    loading={xmppAuthInProgress}
+                    disabled={!username || isSubmitting}
+                    loading={isSubmitting}
                 />
             </View>
         </ScrollView>

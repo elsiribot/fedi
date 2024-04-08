@@ -2,7 +2,7 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { ActivityIndicator, Pressable, StyleSheet } from 'react-native'
 
-import { encodeDirectChatLink } from '@fedi/common/utils/xmpp'
+import { encodeFediMatrixUserUri } from '@fedi/common/utils/matrix'
 
 import Avatar, { AvatarSize } from '../../ui/Avatar'
 import SvgImage from '../../ui/SvgImage'
@@ -29,12 +29,12 @@ export const OmniMemberSearchItem: React.FC<Props> = ({ item, onInput }) => {
                 onInput(
                     item.inputData
                         ? item.inputData
-                        : encodeDirectChatLink(item.id),
+                        : encodeFediMatrixUserUri(item.id),
                 )
             }>
-            <Avatar id={item.id} name={item.username} size={AvatarSize.md} />
+            <Avatar id={item.id} name={item.displayName} size={AvatarSize.md} />
             <Text numberOfLines={1} style={style.searchMemberText}>
-                {item.username}
+                {item.displayName}
             </Text>
             <SvgImage name="ChevronRight" />
         </Pressable>

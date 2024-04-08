@@ -1,5 +1,5 @@
-import { Text, useTheme } from '@rneui/themed'
-import React from 'react'
+import { Image, Text, useTheme } from '@rneui/themed'
+import React, { useState } from 'react'
 import { StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import stringUtils from '@fedi/common/utils/StringUtils'
@@ -23,21 +23,24 @@ const svgImageSizeMapping = {
     [AvatarSize.lg]: SvgImageSize.md,
 }
 
-type HoloAvatarProps = {
+export type AvatarProps = {
     size?: AvatarSize
     id: string | number
-    name: string
+    url?: string
+    name?: string
     icon?: SvgImageName
 }
 
-const Avatar: React.FC<HoloAvatarProps> = ({
+const Avatar: React.FC<AvatarProps> = ({
     size = AvatarSize.sm,
     id,
     name,
     icon,
-}: HoloAvatarProps) => {
+    url,
+}: AvatarProps) => {
     const { theme } = useTheme()
     const [bgColor, textColor] = getIdentityColors(id)
+    const [isFallback, setIsFallback] = useState(!url)
     const { fontScale } = useWindowDimensions()
 
     const customSize =
@@ -57,23 +60,36 @@ const Avatar: React.FC<HoloAvatarProps> = ({
         { backgroundColor: bgColor },
     ]
     const mergedTextStyle = [styles.text, { color: textColor }]
+    const imageStyle = [styles.image, { borderRadius: pxSize * 0.5 }]
 
     return (
         <View style={mergedContainerStyle}>
-            {icon ? (
-                <SvgImage
-                    name={icon}
-                    size={svgImageSizeMapping[size]}
-                    color={textColor}
+            {url && (
+                <Image
+                    containerStyle={imageStyle}
+                    resizeMode="cover"
+                    source={{ uri: url }}
+                    onError={() => setIsFallback(true)}
                 />
-            ) : (
-                <Text
-                    bold
-                    tiny={size === AvatarSize.sm}
-                    h2={size === AvatarSize.lg}
-                    style={mergedTextStyle}>
-                    {stringUtils.getInitialsFromName(name)}
-                </Text>
+            )}
+            {name && isFallback && (
+                <>
+                    {icon ? (
+                        <SvgImage
+                            name={icon}
+                            size={svgImageSizeMapping[size]}
+                            color={textColor}
+                        />
+                    ) : (
+                        <Text
+                            bold
+                            tiny={size === AvatarSize.sm}
+                            h2={size === AvatarSize.lg}
+                            style={mergedTextStyle}>
+                            {stringUtils.getInitialsFromName(name)}
+                        </Text>
+                    )}
+                </>
             )}
         </View>
     )
@@ -88,6 +104,11 @@ const styles = StyleSheet.create({
     text: {
         position: 'absolute',
     },
+    image: {
+        height: '100%',
+        width: '100%',
+    },
+    fallback: {},
 })
 
 export default Avatar

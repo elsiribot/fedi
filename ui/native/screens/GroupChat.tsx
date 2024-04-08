@@ -10,16 +10,12 @@ import {
     joinChatGroup,
     selectActiveFederationId,
     selectChatGroup,
-    selectChatGroupAffiliation,
     selectChatMessages,
-    sendGroupMessage,
 } from '@fedi/common/redux'
-import { ChatAffiliation } from '@fedi/common/types'
 import { makeMessageGroups } from '@fedi/common/utils/chat'
 import { makeLog } from '@fedi/common/utils/log'
 import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
 
-import MessageInput from '../components/feature/chat/MessageInput'
 import MessagesList from '../components/feature/chat/MessagesList'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -29,6 +25,7 @@ const log = makeLog('GroupChat')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupChat'>
 
+/** @deprecated XMPP legacy code */
 const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
@@ -37,9 +34,6 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     const isFocused = useIsFocused()
     const federationId = useAppSelector(selectActiveFederationId)
     const group = useAppSelector(s => selectChatGroup(s, groupId))
-    const myAffiliation = useAppSelector(s =>
-        selectChatGroupAffiliation(s, groupId),
-    )
     const messages = useAppSelector(s => selectChatMessages(s, groupId))
     const [failedToJoin, setFailedToJoin] = useState(false)
 
@@ -71,17 +65,6 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
     // Use this hook only if the screen is in focus
     useUpdateLastMessageRead(groupId, messages, isFocused !== true)
 
-    const handleSend = async (messageText: string) => {
-        if (!federationId) return
-        await dispatch(
-            sendGroupMessage({
-                federationId,
-                groupId,
-                content: messageText,
-            }),
-        ).unwrap()
-    }
-
     // Render a spinner while attempting join, error message if it fails
     if (!group) {
         return (
@@ -101,21 +84,9 @@ const GroupChat: React.FC<Props> = ({ navigation, route }: Props) => {
         )
     }
 
-    // In a broadcast-only group, members cannot send messages if they have a
-    // affiliation of 'none'. The creator of the group has the affiliation of 'owner'
-    const blockMessageInput =
-        group?.broadcastOnly && myAffiliation === ChatAffiliation.none
-
     return (
         <View style={styles(theme).container}>
             <MessagesList messages={messageCollections} multiUserChat />
-            {blockMessageInput ? (
-                <Text style={styles(theme).noticeText}>
-                    {t('feature.chat.broadcast-only-notice')}
-                </Text>
-            ) : (
-                <MessageInput onMessageSubmitted={handleSend} />
-            )}
         </View>
     )
 }

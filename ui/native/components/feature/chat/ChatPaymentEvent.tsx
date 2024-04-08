@@ -1,0 +1,124 @@
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
+import React from 'react'
+import { useTranslation } from 'react-i18next'
+import { View, StyleSheet } from 'react-native'
+
+import { useMatrixPaymentEvent } from '@fedi/common/hooks/matrix'
+import { useToast } from '@fedi/common/hooks/toast'
+import { MatrixPaymentEvent } from '@fedi/common/types'
+
+import { fedimint } from '../../../bridge'
+import HoloLoader from '../../ui/HoloLoader'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+
+type Props = {
+    event: MatrixPaymentEvent
+}
+
+const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
+    const { t } = useTranslation()
+    const toast = useToast()
+    const { theme } = useTheme()
+
+    const { messageText, statusIcon, statusText, buttons } =
+        useMatrixPaymentEvent({
+            event,
+            fedimint,
+            t,
+            onError: _ => toast.error(t, 'errors.chat-payment-failed'),
+        })
+
+    const style = styles(theme)
+
+    let extra: React.ReactNode = null
+    if (statusText || statusIcon || buttons.length > 0) {
+        const iconProps = {
+            size: SvgImageSize.xs,
+            color: theme.colors.secondary,
+        }
+        const icon =
+            statusIcon === 'x' ? (
+                <SvgImage {...iconProps} name={'Close'} />
+            ) : statusIcon === 'check' ? (
+                <SvgImage {...iconProps} name={'Check'} />
+            ) : statusIcon === 'error' ? (
+                <SvgImage {...iconProps} name={'Error'} />
+            ) : statusIcon === 'loading' ? (
+                <HoloLoader size={4} />
+            ) : null
+        extra = (
+            <>
+                {statusText && (
+                    <View style={style.paymentResult}>
+                        {icon}
+                        <Text style={style.statusText}>{statusText}</Text>
+                    </View>
+                )}
+                {buttons.length > 0 && (
+                    <View style={style.paymentButtons}>
+                        {buttons.map(button => (
+                            <Button
+                                key={button.label}
+                                color={theme.colors.secondary}
+                                size="sm"
+                                onPress={button.handler}
+                                loading={button.loading}
+                                disabled={button.disabled}
+                                title={
+                                    <Text
+                                        medium
+                                        caption
+                                        style={style.buttonText}>
+                                        {button.label}
+                                    </Text>
+                                }
+                            />
+                        ))}
+                    </View>
+                )}
+            </>
+        )
+    }
+
+    return (
+        <>
+            <Text style={style.messageText}>{messageText}</Text>
+            {extra || null}
+        </>
+    )
+}
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            alignItems: 'flex-start',
+        },
+        buttonContainer: {
+            flex: 1,
+            maxWidth: '50%',
+        },
+        buttonText: {
+            paddingHorizontal: theme.spacing.lg,
+        },
+        paymentResult: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginTop: theme.spacing.sm,
+        },
+        paymentButtons: {
+            flexDirection: 'row',
+            justifyContent: 'flex-start',
+            gap: 12,
+            width: '100%',
+            marginTop: theme.spacing.sm,
+        },
+        statusText: {
+            color: theme.colors.secondary,
+            marginLeft: theme.spacing.sm,
+        },
+        messageText: {
+            color: theme.colors.secondary,
+        },
+    })
+
+export default ChatPaymentEvent

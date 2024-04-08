@@ -18,6 +18,7 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                 expectedInputTypes={[
                     ParserDataType.FediChatMember,
                     ParserDataType.FediChatGroup,
+                    ParserDataType.FediChatUser,
                 ]}
                 onExpectedInput={parsedData => {
                     if (parsedData.type === ParserDataType.FediChatMember) {
@@ -28,6 +29,11 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                     if (parsedData.type === ParserDataType.FediChatGroup) {
                         navigation.replace('GroupChat', {
                             groupId: parsedData.data.id,
+                        })
+                    }
+                    if (parsedData.type === ParserDataType.FediChatUser) {
+                        navigation.replace('ChatUserConversation', {
+                            userId: parsedData.data.id,
                         })
                     }
                 }}

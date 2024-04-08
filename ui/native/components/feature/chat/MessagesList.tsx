@@ -25,15 +25,16 @@ import { jidToId } from '@fedi/common/utils/chat'
 
 import { useAppSelector } from '../../../state/hooks'
 import Avatar from '../../ui/Avatar'
-import EmptyGroupNotice from './EmptyGroupNotice'
 import MessageItem from './MessageItem'
 import { MessageItemError } from './MessageItemError'
+import EmptyGroupNotice from './NoMembersNotice'
 
 type MessagesListProps = {
     messages: ChatMessage[][][]
     multiUserChat?: boolean
 }
 
+/** @deprecated XMPP legacy code */
 const MessagesList: React.FC<MessagesListProps> = ({
     messages,
     multiUserChat = false,

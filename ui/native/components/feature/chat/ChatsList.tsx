@@ -1,14 +1,18 @@
 import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useCallback } from 'react'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { selectOrderedChatList } from '@fedi/common/redux'
-import { ChatType, ChatWithLatestMessage } from '@fedi/common/types'
+import {
+    selectMatrixOrderedRoomsList,
+    selectMatrixStatus,
+} from '@fedi/common/redux'
+import { ChatType, MatrixRoom, MatrixSyncStatus } from '@fedi/common/types'
 
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
+import HoloLoader from '../../ui/HoloLoader'
 import ChatTile from './ChatTile'
 
 const WINDOW_WIDTH = Dimensions.get('window').width
@@ -17,34 +21,38 @@ const ChatsList: React.FC = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
 
-    const chats = useAppSelector(selectOrderedChatList)
+    const rooms = useAppSelector(selectMatrixOrderedRoomsList)
+    const syncStatus = useAppSelector(selectMatrixStatus)
+    const handleSelectChat = useCallback(
+        (chat: MatrixRoom) => {
+            navigation.navigate('ChatRoomConversation', {
+                roomId: chat.id,
+                chatType: chat.directUserId ? ChatType.direct : ChatType.group,
+            })
+        },
+        [navigation],
+    )
 
-    const renderChat: ListRenderItem<ChatWithLatestMessage> = ({ item }) => {
-        return (
-            <ErrorBoundary fallback={null}>
-                <ChatTile
-                    chat={item}
-                    selectChat={(chat: ChatWithLatestMessage) => {
-                        if (chat.type === ChatType.direct) {
-                            navigation.navigate('DirectChat', {
-                                memberId: chat.id,
-                            })
-                        } else {
-                            navigation.navigate('GroupChat', {
-                                groupId: chat.id,
-                            })
-                        }
-                    }}
-                />
-            </ErrorBoundary>
-        )
+    const renderChat: ListRenderItem<MatrixRoom> = useCallback(
+        ({ item }) => {
+            return (
+                <ErrorBoundary fallback={null}>
+                    <ChatTile room={item} selectChat={handleSelectChat} />
+                </ErrorBoundary>
+            )
+        },
+        [handleSelectChat],
+    )
+
+    if (syncStatus === MatrixSyncStatus.initialSync) {
+        return <HoloLoader size={30} />
     }
 
     return (
         <FlatList
             style={styles(theme).container}
             contentContainerStyle={styles(theme).content}
-            data={chats}
+            data={rooms}
             renderItem={renderChat}
             keyExtractor={item => `${item.id}`}
             // optimization that allows skipping the measurement of dynamic content
@@ -63,10 +71,10 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             width: '100%',
-            paddingRight: theme.spacing.md,
         },
         content: {
             paddingBottom: theme.spacing.sm,
+            paddingHorizontal: theme.spacing.sm,
         },
     })
 

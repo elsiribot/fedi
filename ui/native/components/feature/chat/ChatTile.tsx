@@ -1,47 +1,41 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { useAmountFormatter } from '@fedi/common/hooks/amount'
-import { selectAuthenticatedMember } from '@fedi/common/redux'
-import { ChatType, ChatWithLatestMessage } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
-import { makePaymentText } from '@fedi/common/utils/chat'
 
 import { DEFAULT_GROUP_NAME } from '../../../constants'
-import { useAppSelector } from '../../../state/hooks'
+import { MatrixRoom } from '../../../types'
 import Avatar from '../../ui/Avatar'
 import { AvatarSize } from '../../ui/Avatar'
 import GroupIcon from './GroupIcon'
 
 type ChatTileProps = {
-    chat: ChatWithLatestMessage
-    selectChat: (chat: ChatWithLatestMessage) => void
+    room: MatrixRoom
+    selectChat: (chat: MatrixRoom) => void
 }
 
-const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
+const ChatTile = ({ room, selectChat }: ChatTileProps) => {
     const { theme } = useTheme()
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
-    const { latestMessage, hasNewMessages } = chat
-    const previewTextWeight = hasNewMessages ? { medium: true } : {}
-
-    let previewMessage = latestMessage?.content
-    if (latestMessage?.payment) {
-        previewMessage = makePaymentText(
-            t,
-            latestMessage,
-            authenticatedMember,
-            makeFormattedAmountsFromMSats,
-        )
-    }
+    const hasNewMessages = useMemo(() => room.notificationCount > 0, [room])
+    const previewTextWeight = useMemo(
+        () => (hasNewMessages ? { medium: true } : {}),
+        [hasNewMessages],
+    )
+    const previewMessage = useMemo(() => room?.preview?.body, [room?.preview])
 
     return (
         <Pressable
-            style={styles(theme).container}
-            onPress={() => selectChat(chat)}>
+            style={({ pressed }) => [
+                styles(theme).container,
+                pressed && room
+                    ? { backgroundColor: theme.colors.primary05 }
+                    : {},
+            ]}
+            disabled={!room}
+            onPress={() => selectChat(room)}>
             <View style={styles(theme).iconContainer}>
                 <View
                     style={[
@@ -50,14 +44,14 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                     ]}
                 />
                 <View style={styles(theme).chatTypeIconContainer}>
-                    {chat.type === ChatType.direct ? (
+                    {room.directUserId ? (
                         <Avatar
-                            id={chat.id || ''}
-                            name={chat.name || '?'}
+                            id={room.directUserId || ''}
+                            name={room.name || '?'}
                             size={AvatarSize.md}
                         />
                     ) : (
-                        <GroupIcon chat={chat} />
+                        <GroupIcon chat={room} />
                     )}
                 </View>
             </View>
@@ -67,7 +61,7 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                         style={styles(theme).namePreview}
                         numberOfLines={1}
                         bold>
-                        {chat.name || DEFAULT_GROUP_NAME}
+                        {room.name || DEFAULT_GROUP_NAME}
                     </Text>
                     {previewMessage ? (
                         <Text
@@ -88,15 +82,15 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
                             style={styles(theme).emptyMessagePreview}
                             numberOfLines={1}
                             {...previewTextWeight}>
-                            {t('feature.chat.no-one-is-in-this-group')}
+                            {t('feature.chat.no-messages')}
                         </Text>
                     )}
                 </View>
                 <View style={styles(theme).metadata}>
-                    {latestMessage?.sentAt && (
+                    {room.preview?.timestamp && (
                         <Text small style={styles(theme).timestamp}>
                             {dateUtils.formatChatTileTimestamp(
-                                latestMessage?.sentAt,
+                                room.preview.timestamp / 1000,
                             )}
                         </Text>
                     )}
@@ -118,9 +112,12 @@ const ChatTile = ({ chat, selectChat }: ChatTileProps) => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flex: 1,
             flexDirection: 'row',
             alignItems: 'center',
             paddingVertical: theme.spacing.md,
+            width: '100%',
+            borderRadius: theme.borders.defaultRadius,
         },
         iconContainer: {
             flexDirection: 'row',
@@ -169,7 +166,7 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.red,
             height: theme.sizes.unreadIndicatorSize,
             width: theme.sizes.unreadIndicatorSize,
-            marginHorizontal: theme.spacing.xs,
+            paddingHorizontal: theme.spacing.xs,
             borderRadius: theme.sizes.unreadIndicatorSize * 0.5,
         },
         namePreview: {
@@ -177,6 +174,7 @@ const styles = (theme: Theme) =>
         },
         timestamp: {
             color: theme.colors.grey,
+            paddingRight: theme.spacing.md,
         },
     })
 

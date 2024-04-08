@@ -21,9 +21,9 @@ import {
     leaveFederation,
     resetFederationChatState,
     selectActiveFederation,
-    selectAuthenticatedMember,
     selectCurrency,
     selectDeveloperMode,
+    selectMatrixAuth,
     selectStableBalance,
     selectStableBalancePending,
     setDeveloperMode,
@@ -57,7 +57,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
 
     const dispatch = useAppDispatch()
     const activeFederation = useAppSelector(selectActiveFederation)
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const matrixAuth = useAppSelector(selectMatrixAuth)
     const authenticatedGuardian = useAppSelector(
         s => s.federation.authenticatedGuardian,
     )
@@ -223,17 +223,18 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
-            {authenticatedMember && (
+            {matrixAuth && (
                 <View style={styles(theme).profileHeader}>
                     <View style={styles(theme).avatarContainer}>
                         <Avatar
-                            id={authenticatedMember?.id || ''}
+                            id={matrixAuth.userId || ''}
+                            name={matrixAuth.displayName || '?'}
                             size={AvatarSize.lg}
-                            name={authenticatedMember?.username || ''}
+                            url={matrixAuth.avatarUrl || undefined}
                         />
                     </View>
                     <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
-                        {authenticatedMember?.username || 'satoshi'}
+                        {matrixAuth.displayName}
                     </Text>
                 </View>
             )}

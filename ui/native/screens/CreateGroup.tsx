@@ -5,15 +5,12 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import {
-    createChatGroup,
-    selectActiveFederationId,
-    selectChatXmppClient,
-} from '@fedi/common/redux'
+import { createMatrixRoom } from '@fedi/common/redux'
+import { ChatType } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { useAppDispatch } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('CreateGroup')
@@ -24,45 +21,33 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(selectActiveFederationId)
-    const xmppClient = useAppSelector(selectChatXmppClient)
-    const [groupName, setGroupName] = useState<string>('')
+    const [groupName, setGroupName] = useState<string>(
+        t('feature.chat.new-group'),
+    )
     const [creatingGroup, setCreatingGroup] = useState<boolean>(false)
     const [broadcastOnly, setBroadcastOnly] = useState<boolean>(false)
     const toast = useToast()
 
     const handleCreateGroup = useCallback(async () => {
+        setCreatingGroup(true)
         try {
-            if (!activeFederationId || !xmppClient)
-                throw new Error('errors.chat-unavailable')
-            setCreatingGroup(true)
-            const groupId = await xmppClient.generateUniqueGroupId()
-
-            const newGroup = await dispatch(
-                createChatGroup({
-                    federationId: activeFederationId,
-                    id: groupId,
+            const { roomId } = await dispatch(
+                createMatrixRoom({
                     name: groupName,
                     broadcastOnly,
                 }),
             ).unwrap()
-            log.info('group created', newGroup)
-            navigation.replace('GroupChat', { groupId })
+            log.info('group created', roomId)
+            navigation.replace('ChatRoomConversation', {
+                roomId,
+                chatType: ChatType.group,
+            })
         } catch (error) {
             log.error('group create failed', error)
             toast.error(t, error)
         }
         setCreatingGroup(false)
-    }, [
-        activeFederationId,
-        broadcastOnly,
-        dispatch,
-        groupName,
-        navigation,
-        toast,
-        xmppClient,
-        t,
-    ])
+    }, [broadcastOnly, dispatch, groupName, navigation, toast, t])
 
     const handleSubmit = async () => {
         if (groupName) {
@@ -112,7 +97,7 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: theme.spacing.xl,
+            padding: theme.spacing.lg,
         },
         button: {
             marginTop: 'auto',
@@ -132,16 +117,19 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
+            paddingHorizontal: 10,
         },
         textInputInner: {
-            borderBottomWidth: 0,
-            height: '100%',
-        },
-        textInputOuter: {
-            width: '100%',
+            // borderBottomWidth: 0,
+            textAlignVertical: 'center',
             borderColor: theme.colors.primaryVeryLight,
             borderWidth: 1,
             borderRadius: theme.borders.defaultRadius,
+            padding: theme.spacing.sm,
+            paddingHorizontal: theme.spacing.md,
+        },
+        textInputOuter: {
+            width: '100%',
         },
     })
 

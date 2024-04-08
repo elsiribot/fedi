@@ -50,6 +50,7 @@ import { makeLog } from './log'
 
 const log = makeLog('common/utils/XmppChatClient')
 
+/** @deprecated XMPP legacy code */
 interface XmppChatClientEventMap {
     status: XmppStatus
     online: JID

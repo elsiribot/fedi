@@ -19,6 +19,7 @@ type IncomingPushPaymentProps = {
     text: string
 }
 
+/** @deprecated XMPP legacy code */
 const IncomingPushPayment: React.FC<IncomingPushPaymentProps> = ({
     message,
     text,

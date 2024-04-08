@@ -7,11 +7,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 
-import { useMonitorChatConnections } from '@fedi/common/hooks/chat'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederation } from '@fedi/common/redux'
 
-import { fedimint } from './bridge'
 import AddFediModHeader from './components/feature/admin/AddFediModHeader'
 import CurrencySettingsHeader from './components/feature/admin/CurrencySettingsHeader'
 import FediModSettingsHeader from './components/feature/admin/FediModSettingsHeader'
@@ -22,8 +20,9 @@ import PersonalBackupHeader from './components/feature/backup/PersonalBackupHead
 import RecoveryWordsHeader from './components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from './components/feature/backup/SocialBackupHeader'
 import BugReportHeader from './components/feature/bug/BugReportHeader'
-import AddBroadcastAdminHeader from './components/feature/chat/AddBroadcastAdminHeader'
-import BroadcastAdminsListHeader from './components/feature/chat/BroadcastAdminsListHeader'
+import ChatConversationHeader from './components/feature/chat/ChatConversationHeader'
+import ChatRoomInviteHeader from './components/feature/chat/ChatRoomInviteHeader'
+import ChatRoomMembersHeader from './components/feature/chat/ChatRoomMembersHeader'
 import ChatWalletHeader from './components/feature/chat/ChatWalletHeader'
 import CreateGroupHeader from './components/feature/chat/CreateGroupHeader'
 import DirectChatHeader from './components/feature/chat/DirectChatHeader'
@@ -64,12 +63,14 @@ import StabilityWithdrawHeader from './components/feature/stabilitypool/Stabilit
 import WithdrawInitiatedHeader from './components/feature/stabilitypool/WithdrawInitiatedHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 import Header from './components/ui/Header'
-import AddBroadcastAdmin from './screens/AddBroadcastAdmin'
 import AddFediMod from './screens/AddFediMod'
 import BitcoinRequest from './screens/BitcoinRequest'
-import BroadcastAdminsList from './screens/BroadcastAdminsList'
 import BugReport from './screens/BugReport'
 import BugReportSuccess from './screens/BugReportSuccess'
+import ChatRoomConversation from './screens/ChatRoomConversation'
+import ChatRoomInvite from './screens/ChatRoomInvite'
+import ChatRoomMembers from './screens/ChatRoomMembers'
+import ChatUserConversation from './screens/ChatUserConversation'
 import ChatWallet from './screens/ChatWallet'
 import ChooseBackupMethod from './screens/ChooseBackupMethod'
 import ChooseRecoveryMethod from './screens/ChooseRecoveryMethod'
@@ -142,11 +143,7 @@ import StartSocialBackup from './screens/StartSocialBackup'
 import SwitchingFederations from './screens/SwitchingFederations'
 import TabsNavigator from './screens/TabsNavigator'
 import Transactions from './screens/Transactions'
-import {
-    useAppSelector,
-    useXmppHealthCheck,
-    useXmppPushNotifications,
-} from './state/hooks'
+import { useAppSelector } from './state/hooks'
 import { MSats } from './types'
 import {
     MainNavigatorDrawerParamList,
@@ -302,6 +299,34 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
+                                name="ChatRoomConversation"
+                                component={ChatRoomConversation}
+                                options={() => ({
+                                    header: () => <ChatConversationHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ChatRoomMembers"
+                                component={ChatRoomMembers}
+                                options={() => ({
+                                    header: () => <ChatRoomMembersHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ChatRoomInvite"
+                                component={ChatRoomInvite}
+                                options={() => ({
+                                    header: () => <ChatRoomInviteHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ChatUserConversation"
+                                component={ChatUserConversation}
+                                options={() => ({
+                                    header: () => <ChatConversationHeader />,
+                                })}
+                            />
+                            <Stack.Screen
                                 name="CreateGroup"
                                 component={CreateGroup}
                                 options={() => ({
@@ -320,20 +345,6 @@ const MainNavigator = () => {
                                 component={GroupAdmin}
                                 options={() => ({
                                     header: () => <GroupAdminHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="BroadcastAdminsList"
-                                component={BroadcastAdminsList}
-                                options={() => ({
-                                    header: () => <BroadcastAdminsListHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="AddBroadcastAdmin"
-                                component={AddBroadcastAdmin}
-                                options={() => ({
-                                    header: () => <AddBroadcastAdminHeader />,
                                 })}
                             />
                             <Stack.Screen
@@ -870,13 +881,13 @@ const Router = () => {
     const toast = useToast()
 
     // Makes sure to check XMPP socket health when app is foregrounded
-    useXmppHealthCheck()
+    // useXmppHealthCheck()
 
     // Publishes an FCM push notification token if chat is available
-    useXmppPushNotifications()
+    // useXmppPushNotifications()
 
     // Make sure any available chat connections are always online
-    useMonitorChatConnections(fedimint)
+    // useMonitorChatConnections(fedimint)
 
     return (
         <NavigationContainer

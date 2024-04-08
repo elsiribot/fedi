@@ -10,11 +10,6 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useIsChatConnected } from '@fedi/common/hooks/chat'
-import { selectChatClientStatus } from '@fedi/common/redux'
-
-import { useAppSelector } from '../../../state/hooks'
-
 interface Props {
     offset?: number
     noSafeArea?: boolean
@@ -29,12 +24,14 @@ export const ChatConnectionBadge: React.FC<Props> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
-    const chatStatus = useAppSelector(selectChatClientStatus)
-
-    const isOffline = chatStatus !== 'online'
-    const isConnected = useIsChatConnected()
+    // TODO: implement "waiting for network" indicator for matrix
+    // const chatStatus = useAppSelector(selectChatClientStatus)
+    // const isOffline = chatStatus !== 'online'
+    const isOffline = false
+    // const isConnected = useIsChatConnected()
     const [isDisplayNone, setIsDisplayNone] = useState(!isOffline)
-    const isVisible = !isConnected && !hide
+    // const isVisible = !isConnected && !hide
+    const isVisible = false || hide
     const visibleAnimation = useRef(
         new Animated.Value(isVisible ? 1 : 0),
     ).current
