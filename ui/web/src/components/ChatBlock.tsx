@@ -4,17 +4,17 @@ import { useTranslation } from 'react-i18next'
 import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
 import QRIcon from '@fedi/common/assets/svgs/qr.svg'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { selectOrderedChatList } from '@fedi/common/redux'
+import { selectMatrixOrderedRoomsList } from '@fedi/common/redux'
 
 import * as Layout from '../components/Layout'
 import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { Button } from './Button'
 import { ChatListItem } from './ChatListItem'
+import { ChatUserQRDialog } from './ChatUserQRDialog'
 import { ContentBlock } from './ContentBlock'
 import { Icon } from './Icon'
 import { IconButton } from './IconButton'
-import { MemberQRDialog } from './MemberQRDialog'
 import { Text } from './Text'
 
 interface Props {
@@ -24,7 +24,7 @@ interface Props {
 
 export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
     const { t } = useTranslation()
-    const chats = useAppSelector(selectOrderedChatList)
+    const rooms = useAppSelector(selectMatrixOrderedRoomsList)
 
     const [isMemberQrOpen, setIsMemberQrOpen] = useState(false)
 
@@ -43,11 +43,11 @@ export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
                         </SidebarHeader>
                         <Layout.Content fullWidth>
                             <SidebarList>
-                                {chats.map(chat => (
+                                {rooms.map(room => (
                                     <ErrorBoundary
-                                        key={chat.id}
+                                        key={room.id}
                                         fallback={null}>
-                                        <ChatListItem chat={chat} />
+                                        <ChatListItem room={room} />
                                     </ErrorBoundary>
                                 ))}
                             </SidebarList>
@@ -73,7 +73,7 @@ export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
                     </ErrorBoundary>
                 </Content>
             </Container>
-            <MemberQRDialog
+            <ChatUserQRDialog
                 open={isMemberQrOpen}
                 onOpenChange={setIsMemberQrOpen}
             />

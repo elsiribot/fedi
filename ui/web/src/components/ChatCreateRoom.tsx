@@ -1,38 +1,27 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import ChevronLeft from '@fedi/common/assets/svgs/chevron-left.svg'
 import { useToast } from '@fedi/common/hooks/toast'
-import {
-    createChatGroup,
-    fetchChatMembers,
-    selectActiveFederationId,
-    selectChatXmppClient,
-} from '@fedi/common/redux'
-import { ChatType } from '@fedi/common/types'
-import { encodeGroupInvitationLink } from '@fedi/common/utils/xmpp'
+import { createMatrixRoom } from '@fedi/common/redux'
 
-import { useAppDispatch, useAppSelector, useMediaQuery } from '../hooks'
+import { useAppDispatch, useMediaQuery } from '../hooks'
 import { config, styled } from '../styles'
 import { Button } from './Button'
 import { ChatAvatar } from './ChatAvatar'
-import { CopyInput } from './CopyInput'
 import { Icon } from './Icon'
 import { Input } from './Input'
 import * as Layout from './Layout'
 import { Switch } from './Switch'
 import { Text } from './Text'
 
-export const ChatCreateGroup: React.FC = () => {
+export const ChatCreateRoom: React.FC = () => {
     const { t } = useTranslation()
     const { push } = useRouter()
     const dispatch = useAppDispatch()
     const toast = useToast()
-    const federationId = useAppSelector(selectActiveFederationId)
-    const xmppClient = useAppSelector(selectChatXmppClient)
-    const [newGroupId, setNewGroupId] = useState<string>('')
     const [newGroupName, setNewGroupName] = useState(
         t('feature.chat.new-group'),
     )
@@ -40,56 +29,21 @@ export const ChatCreateGroup: React.FC = () => {
     const [isBroadcastOnly, setIsBroadcastOnly] = useState(false)
     const isSm = useMediaQuery(config.media.sm)
 
-    useEffect(() => {
-        if (!federationId) return
-        dispatch(fetchChatMembers({ federationId }))
-    }, [dispatch, federationId])
-
-    // Generate a new group when we go to create one
-    useEffect(() => {
-        if (!xmppClient || newGroupId) return
-        xmppClient.generateUniqueGroupId().then(id => {
-            setNewGroupId(id)
-        })
-    }, [dispatch, xmppClient, newGroupId])
-
-    const handleSaveNewGroup = useCallback(async () => {
+    const handleCreateRoom = useCallback(async () => {
         setIsSavingGroup(true)
         try {
-            if (!federationId) throw new Error('errors.chat-unavailable')
-            const newGroup = await dispatch(
-                createChatGroup({
-                    federationId,
-                    id: newGroupId,
+            const { roomId } = await dispatch(
+                createMatrixRoom({
                     name: newGroupName,
                     broadcastOnly: isBroadcastOnly,
                 }),
             ).unwrap()
-            push(`/chat/group/${newGroup.id}`)
+            push(`/chat/room/${roomId}`)
         } catch (err) {
-            toast.error(t, err, 'errors.chat-unavailable')
+            toast.error(t, 'errors.chat-unavailable')
         }
         setIsSavingGroup(false)
-    }, [
-        federationId,
-        newGroupId,
-        newGroupName,
-        dispatch,
-        push,
-        toast,
-        isBroadcastOnly,
-        t,
-    ])
-
-    // The chat doesn't actually exist yet, so we need to create a fake one
-    const chat = useMemo(() => {
-        return {
-            id: newGroupId,
-            name: newGroupName,
-            type: ChatType.group,
-            broadcastOnly: isBroadcastOnly,
-        }
-    }, [newGroupId, newGroupName, isBroadcastOnly])
+    }, [dispatch, newGroupName, isBroadcastOnly, push, toast, t])
 
     return (
         <Container>
@@ -107,20 +61,16 @@ export const ChatCreateGroup: React.FC = () => {
             <Inner>
                 <ChatAvatar
                     size="lg"
-                    chat={chat}
-                    css={{ opacity: chat.id ? 1 : 0 }}
+                    room={{
+                        id: 'fake-room-id',
+                        name: newGroupName,
+                        broadcastOnly: isBroadcastOnly,
+                    }}
                 />
                 <Input
                     label={t('feature.chat.group-name')}
                     value={newGroupName}
                     onChange={ev => setNewGroupName(ev.currentTarget.value)}
-                />
-                <CopyInput
-                    label={t('feature.chat.group-invite')}
-                    value={
-                        newGroupId ? encodeGroupInvitationLink(newGroupId) : ''
-                    }
-                    onCopyMessage={t('feature.chat.copied-group-invite-code')}
                 />
                 <BroadcastSwitchContainer>
                     <Text>{t('feature.chat.broadcast-only')}</Text>
@@ -133,10 +83,9 @@ export const ChatCreateGroup: React.FC = () => {
             <Buttons>
                 <Button
                     width="full"
-                    disabled={!newGroupId}
                     loading={isSavingGroup}
-                    onClick={handleSaveNewGroup}>
-                    {t('feature.chat.view-group')}
+                    onClick={handleCreateRoom}>
+                    {t('feature.chat.create-group')}
                 </Button>
             </Buttons>
         </Container>

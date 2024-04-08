@@ -7,15 +7,11 @@ import { v4 as uuidv4 } from 'uuid'
 
 import Info from '@fedi/common/assets/svgs/info.svg'
 import { useToast } from '@fedi/common/hooks/toast'
-import {
-    selectActiveFederation,
-    selectAuthenticatedMember,
-} from '@fedi/common/redux'
+import { selectActiveFederation, selectMatrixAuth } from '@fedi/common/redux'
 import {
     submitBugReport,
     uploadBugReportLogs,
 } from '@fedi/common/utils/bug-report'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog, exportLogs } from '@fedi/common/utils/log'
 import { makeTarGz } from '@fedi/common/utils/targz'
 
@@ -46,7 +42,7 @@ export default function BugReport() {
     const [email, setEmail] = useState('')
     const [files, setFiles] = useState<Array<FileData>>([])
 
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const matrixAuth = useAppSelector(selectMatrixAuth)
     const activeFederation = useAppSelector(selectActiveFederation)
     const textAreaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -112,7 +108,7 @@ export default function BugReport() {
                 federationName: sendInfo
                     ? activeFederation?.name || activeFederation?.id
                     : undefined,
-                username: sendInfo ? authenticatedMember?.username : undefined,
+                username: sendInfo ? matrixAuth?.userId : undefined,
                 version:
                     process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(
                         0,
@@ -127,7 +123,7 @@ export default function BugReport() {
             }, 2500)
         } catch (err) {
             log.error('Failed to submit bug report', err)
-            toast.error(t, err, formatErrorMessage(t, err, 'errors.unknown-error'))
+            toast.error(t, 'errors.unknown-error')
             setStatus('idle')
         }
     }

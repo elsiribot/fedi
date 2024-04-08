@@ -1,63 +1,64 @@
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import {
-    selectAuthenticatedMember,
-    selectChatMemberMap,
-} from '@fedi/common/redux'
-import { ChatMessage as ChatMessageType } from '@fedi/common/types'
+import { selectMatrixAuth, selectMatrixRoomMembers } from '@fedi/common/redux'
+import { MatrixEvent } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
+import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
-import { Avatar } from './Avatar'
-import { ChatMessage } from './ChatMessage'
-import { ChatMessageError } from './ChatMessageError'
+import { ChatAvatar } from './ChatAvatar'
+import { ChatEvent } from './ChatEvent'
+import { ChatEventError } from './ChatEventError'
 
 interface Props {
-    collection: ChatMessageType[][]
+    roomId: string
+    collection: MatrixEvent[][]
     showUsernames?: boolean
 }
 
-export const ChatMessageCollection: React.FC<Props> = ({
+export const ChatEventCollection: React.FC<Props> = ({
+    roomId,
     collection,
     showUsernames,
 }) => {
-    const { t } = useTranslation()
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const memberMap = useAppSelector(selectChatMemberMap)
+    const matrixAuth = useAppSelector(selectMatrixAuth)
+    const roomMembers = useAppSelector(s => selectMatrixRoomMembers(s, roomId))
 
-    const earliestMessage = collection.slice(-1)[0].slice(-1)[0]
+    const earliestEvent = collection.slice(-1)[0].slice(-1)[0]
 
     return (
         <Container>
             <MessageTimestamp>
-                {dateUtils.formatMessageItemTimestamp(earliestMessage.sentAt)}
+                {dateUtils.formatMessageItemTimestamp(
+                    earliestEvent.timestamp / 1000,
+                )}
             </MessageTimestamp>
             <MessageCollection>
-                {collection.map(messages => {
-                    const sentBy = messages[0].sentBy
-                    const member = memberMap[sentBy]
-                    const isMe = sentBy === authenticatedMember?.id
+                {collection.map(events => {
+                    const sentBy = events[0].senderId || ''
+                    const roomMember = roomMembers.find(m => m.id === sentBy)
+                    const isMe = sentBy === matrixAuth?.userId
                     return (
-                        <div key={messages[0].id}>
+                        <div key={events[0].id}>
                             {showUsernames && !isMe && (
                                 <Username>
-                                    {member?.username ||
-                                        t('feature.chat.unknown-member')}
+                                    {roomMember?.displayName ||
+                                        matrixIdToUsername(sentBy)}
                                 </Username>
                             )}
                             <MessageAvatarWrap isMe={isMe}>
-                                <Avatar id={sentBy} name={sentBy} size="sm" />
+                                <ChatAvatar
+                                    user={roomMember || { id: sentBy }}
+                                    size="sm"
+                                />
                                 <Messages isMe={isMe}>
-                                    {messages.map(msg => (
+                                    {events.map(event => (
                                         <ErrorBoundary
-                                            key={msg.id}
-                                            fallback={() => (
-                                                <ChatMessageError />
-                                            )}>
-                                            <ChatMessage message={msg} />
+                                            key={event.id}
+                                            fallback={() => <ChatEventError />}>
+                                            <ChatEvent event={event} />
                                         </ErrorBoundary>
                                     ))}
                                 </Messages>

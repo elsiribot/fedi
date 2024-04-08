@@ -5,15 +5,13 @@ import { useTranslation } from 'react-i18next'
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
-    connectChat,
-    disconnectChat,
     fetchSocialRecovery,
     refreshFederations,
     selectActiveFederation,
-    selectAuthenticatedMember,
     selectSocialRecoveryQr,
     selectDeviceId,
     initializeDeviceId,
+    startMatrixClient,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -34,7 +32,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const { t } = useTranslation()
     const { asPath } = useRouter()
     const activeFederation = useAppSelector(selectActiveFederation)
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const deviceId = useAppSelector(selectDeviceId)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const socialRecoveryId = useAppSelector(selectSocialRecoveryQr)
@@ -43,7 +40,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const [error, setError] = useState<string>()
     const tRef = useUpdatingRef(t)
     const dispatchRef = useUpdatingRef(dispatch)
-    const federationId = activeFederation?.id
 
     // Initialize device ID
     useEffect(() => {
@@ -98,13 +94,11 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
 
     // Connect to chat of active federation after bridge initializes.
     // TODO: Move this logic into redux initiailization when PWA and app both use it.
+    const hasActiveFederation = !!activeFederation
     useEffect(() => {
-        if (!federationId || !isInitialized || !authenticatedMember?.id) return
-        dispatch(connectChat({ fedimint, federationId }))
-        return () => {
-            dispatch(disconnectChat({ federationId }))
-        }
-    }, [federationId, isInitialized, authenticatedMember?.id, dispatch])
+        if (!isInitialized || !hasActiveFederation) return
+        dispatch(startMatrixClient({ fedimint }))
+    }, [isInitialized, hasActiveFederation, dispatch])
 
     if (isInitialized && !error) {
         // If we're mid social recovery, force them to stay on the page
