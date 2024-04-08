@@ -11,7 +11,6 @@ import {
     selectSocialRecoveryQr,
     selectDeviceId,
     initializeDeviceId,
-    startMatrixClient,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { formatErrorMessage } from '@fedi/common/utils/format'

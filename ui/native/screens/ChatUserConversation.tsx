@@ -2,13 +2,11 @@ import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import {
     selectMatrixAuth,
     selectMatrixDirectMessageRoom,
-    selectMatrixUser,
     sendMatrixDirectMessage,
 } from '@fedi/common/redux'
 
@@ -25,13 +23,11 @@ export type Props = NativeStackScreenProps<
 >
 
 const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
-    const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
 
     const { userId } = route.params
     const matrixAuth = useAppSelector(selectMatrixAuth)
-    const user = useAppSelector(s => selectMatrixUser(s, userId))
     const existingRoom = useAppSelector(s =>
         selectMatrixDirectMessageRoom(s, userId),
     )

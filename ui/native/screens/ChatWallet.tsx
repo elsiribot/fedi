@@ -5,20 +5,13 @@ import { useTranslation } from 'react-i18next'
 import { Keyboard, StyleSheet, View } from 'react-native'
 
 import { useChatPaymentUtils } from '@fedi/common/hooks/chat'
-import { useToast } from '@fedi/common/hooks/toast'
-import {
-    selectActiveFederationId,
-    selectMatrixDirectMessageRoom,
-} from '@fedi/common/redux'
+import { selectMatrixDirectMessageRoom } from '@fedi/common/redux'
 import { ChatType } from '@fedi/common/types'
-import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import { AmountScreen } from '../components/ui/AmountScreen'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
-
-const log = makeLog('ChatWallet')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
 
@@ -60,7 +53,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
                 },
             ],
         })
-    }, [navigation, recipientId, existingRoom?.id])
+    }, [existingRoom, navigation])
 
     const handleRequest = useCallback(async () => {
         handleRequestPayment(() => {

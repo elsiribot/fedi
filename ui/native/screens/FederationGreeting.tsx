@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Insets, StyleSheet, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { selectAuthenticatedMember, selectMatrixAuth } from '@fedi/common/redux'
+import { selectMatrixAuth } from '@fedi/common/redux'
 
 import { NotificationsPermissionGate } from '../components/feature/permissions/NotificationsPermissionGate'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'

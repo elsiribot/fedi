@@ -1,6 +1,6 @@
 import { Image, Text, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
-import { StyleSheet, View, ViewStyle, useWindowDimensions } from 'react-native'
+import { StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import stringUtils from '@fedi/common/utils/StringUtils'
 import { getIdentityColors } from '@fedi/common/utils/color'

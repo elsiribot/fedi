@@ -47,9 +47,7 @@ export type TabsNavigatorParamList = {
     OmniScanner: undefined
 }
 export type RootStackParamList = {
-    AddBroadcastAdmin: { groupId: string }
     AddFediMod: undefined
-    BroadcastAdminsList: { groupId: string }
     BitcoinRequest: { uri: string }
     BugReport: undefined
     BugReportSuccess: undefined

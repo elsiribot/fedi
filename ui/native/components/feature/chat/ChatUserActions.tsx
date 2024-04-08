@@ -75,18 +75,18 @@ const ChatUserActions: React.FC<Props> = ({
     }
 
     const getRoleDisabled = (
-        member: MatrixRoomMember,
+        roomMember: MatrixRoomMember,
         powerLevel: MatrixPowerLevel,
     ) => {
         if (!myUserId) return true
         // Cannot change your own role
-        if (member.id === myUserId) return true
+        if (roomMember.id === myUserId) return true
         // Cannot assign a role higher than your role
         if (myPowerLevel < powerLevel) return true
         // Cannot lower the role of a member with the same or greater role
-        if (myPowerLevel <= member.powerLevel) return true
+        if (myPowerLevel <= roomMember.powerLevel) return true
         // Cannot set the role to the current role
-        if (member.powerLevel === powerLevel) return true
+        if (roomMember.powerLevel === powerLevel) return true
         return false
     }
 

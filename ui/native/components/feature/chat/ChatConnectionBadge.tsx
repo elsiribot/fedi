@@ -10,11 +10,6 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useIsChatConnected } from '@fedi/common/hooks/chat'
-import { selectChatClientStatus } from '@fedi/common/redux'
-
-import { useAppSelector } from '../../../state/hooks'
-
 interface Props {
     offset?: number
     noSafeArea?: boolean
@@ -36,7 +31,7 @@ export const ChatConnectionBadge: React.FC<Props> = ({
     // const isConnected = useIsChatConnected()
     const [isDisplayNone, setIsDisplayNone] = useState(!isOffline)
     // const isVisible = !isConnected && !hide
-    const isVisible = false
+    const isVisible = false || hide
     const visibleAnimation = useRef(
         new Animated.Value(isVisible ? 1 : 0),
     ).current

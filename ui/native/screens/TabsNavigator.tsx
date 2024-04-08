@@ -122,9 +122,9 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
             <Tab.Navigator
                 initialRouteName={route.params?.initialRouteName || 'Home'}
                 id={TABS_NAVIGATOR_ID}
-                screenOptions={({ route }) => ({
+                screenOptions={({ route: screenRoute }) => ({
                     tabBarButton: props => {
-                        switch (route.name) {
+                        switch (screenRoute.name) {
                             case 'Home':
                                 return <Pressable {...props} />
                             case 'Chat':
@@ -163,7 +163,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                                 ? theme.colors.primary
                                 : theme.colors.primaryLight,
                         }
-                        switch (route.name) {
+                        switch (screenRoute.name) {
                             case 'Home':
                                 return (
                                     <SvgImage

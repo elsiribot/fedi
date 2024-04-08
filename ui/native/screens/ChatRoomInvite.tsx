@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -18,7 +18,7 @@ import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import ChatAvatar from '../components/feature/chat/ChatAvatar'
 import ChatUserTile from '../components/feature/chat/ChatUserTile'
-import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
+import { AvatarSize } from '../components/ui/HoloAvatar'
 import HoloLoader from '../components/ui/HoloLoader'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -27,7 +27,7 @@ import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatRoomInvite'>
 
-const ChatRoomInvite: React.FC<Props> = ({ navigation, route }: Props) => {
+const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
     const { roomId } = route.params
     const dispatch = useAppDispatch()
     const insets = useSafeAreaInsets()
@@ -41,7 +41,6 @@ const ChatRoomInvite: React.FC<Props> = ({ navigation, route }: Props) => {
     const [invitingUsers, setInvitingUsers] = useState<string[]>([])
     const roomName = useMemo(() => room?.name ?? '', [room])
     const matrixAuth = useAppSelector(selectMatrixAuth)
-    const isEmpty = useMemo(() => query?.length === 0, [query])
 
     const inviteUser = useCallback(
         async (userId: string) => {
@@ -90,7 +89,7 @@ const ChatRoomInvite: React.FC<Props> = ({ navigation, route }: Props) => {
                 </Text>
             </View>
         )
-    }, [isEmpty, isSearching, searchError, theme, insets, t])
+    }, [query, isSearching, searchError, theme, insets, t])
 
     if (!matrixAuth || !room) return null
 

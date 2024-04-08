@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native'
 
 import { MatrixUser } from '@fedi/common/types'
 
-import Avatar, { AvatarSize } from '../../ui/Avatar'
+import { AvatarSize } from '../../ui/Avatar'
 import ChatAvatar from './ChatAvatar'
 
 type UserItemProps = {

@@ -20,15 +20,12 @@ import {
 } from '@fedi/common/redux'
 import { MatrixPowerLevel } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { makeLog } from '@fedi/common/utils/log'
 
 import { Images } from '../assets/images'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
-
-const log = makeLog('GroupAdmin')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GroupAdmin'>
 
@@ -174,18 +171,6 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                     disabled={!isAdmin}
                     onPress={handleToggleBroadcastOnly}
                 />
-                {/* {broadcastOnly && (
-                    <SettingsItem
-                        image={<SvgImage name="SpeakerPhone" />}
-                        label={t('feature.chat.broadcast-admin-settings')}
-                        disabled={myAffiliation !== ChatAffiliation.owner}
-                        onPress={() => {
-                            navigation.navigate('BroadcastAdminsList', {
-                                groupId,
-                            })
-                        }}
-                    />
-                )} */}
             </View>
         </ScrollView>
     )

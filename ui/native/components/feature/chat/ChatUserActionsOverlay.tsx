@@ -45,7 +45,7 @@ export const ChatUserActionsOverlay: React.FC<Props> = ({
                 avatarUrl: member.avatarUrl,
             }),
         )
-    }, [member, hasStoredUser])
+    }, [dispatch, member, hasStoredUser])
 
     if (!selectedUserId) return <></>
 

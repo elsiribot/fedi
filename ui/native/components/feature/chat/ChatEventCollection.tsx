@@ -1,4 +1,3 @@
-import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
@@ -7,9 +6,8 @@ import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectMatrixAuth, selectMatrixRoomMembers } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
-import { jidToId } from '@fedi/common/utils/chat'
-import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 
+// import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 import { useAppSelector } from '../../../state/hooks'
 import ChatAvatar from './ChatAvatar'
 import ChatEvent from './ChatEvent'
@@ -29,7 +27,6 @@ const ChatEventCollection: React.FC<Props> = ({
     showUsernames,
 }: Props) => {
     const { theme } = useTheme()
-    const navigation = useNavigation()
 
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const roomMembers = useAppSelector(s => selectMatrixRoomMembers(s, roomId))
@@ -81,15 +78,15 @@ const ChatEventCollection: React.FC<Props> = ({
                                     </Pressable>
                                 )}
                                 <View style={style.senderMessages}>
-                                    {events.map((event, index) => (
+                                    {events.map((event, eindex) => (
                                         <ErrorBoundary
-                                            key={`ceci-eb-${event.id}-${index}`}
+                                            key={`ceci-eb-${event.id}-${eindex}`}
                                             fallback={() => (
                                                 <MessageItemError />
                                             )}>
                                             <ChatEvent
                                                 event={event}
-                                                last={index === 0}
+                                                last={eindex === 0}
                                             />
                                         </ErrorBoundary>
                                     ))}

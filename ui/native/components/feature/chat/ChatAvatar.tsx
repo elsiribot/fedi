@@ -21,7 +21,7 @@ const ChatAvatar: React.FC<Props> = props => {
     let id: string | undefined
     let name: string | undefined
     let icon: AvatarProps['icon'] | undefined
-    let src: string | undefined
+    // let src: string | undefined
     let avatarProps: BaseProps
     if ('room' in props) {
         const { room, ...rest } = props
@@ -32,13 +32,13 @@ const ChatAvatar: React.FC<Props> = props => {
             : room.broadcastOnly
             ? 'SpeakerPhone'
             : 'SocialPeople'
-        src = room.avatarUrl
+        // src = room.avatarUrl
         avatarProps = rest
     } else {
         const { user, ...rest } = props
         id = user.id
         name = user.displayName || matrixIdToUsername(user.id)
-        src = user.avatarUrl
+        // src = user.avatarUrl
         avatarProps = rest
     }
 
