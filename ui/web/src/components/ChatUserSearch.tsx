@@ -2,6 +2,7 @@ import Link from 'next/link'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import { useMatrixUserSearch } from '@fedi/common/hooks/matrix'
 import { selectRecentMatrixRoomMembers } from '@fedi/common/redux'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -126,6 +127,12 @@ export const ChatUserSearch: React.FC<Props> = ({ action }) => {
                             <div>{searchContent}</div>
                         </>
                     )}
+                    <SearchButton as={Link} href="/chat/new/group">
+                        <Icon icon={SocialPeopleIcon} />
+                        <Text weight="medium">
+                            {t('feature.chat.create-a-group')}
+                        </Text>
+                    </SearchButton>
                 </SearchResults>
             </ShadowScroller>
         </Container>
