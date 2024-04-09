@@ -27,7 +27,7 @@ async function fedimintRpc<Type = void>(
 
 export const fedimint = new FedimintBridge(fedimintRpc)
 
-export async function initializeListeners() {
+export async function subscribeToBridgeEvents() {
     // Pass through all native bridge events to the FedimintBridge class instance
     const emitter = new NativeEventEmitter(BridgeNativeEventEmitter)
     const eventTypes: (keyof FedimintBridgeEventMap)[] =
