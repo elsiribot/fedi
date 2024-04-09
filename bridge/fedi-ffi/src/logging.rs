@@ -69,9 +69,9 @@ pub fn init_logging(
             .with_filter(EnvFilter::from_str(log_filter).unwrap_or_default()),
     );
 
-    let reg = reg.with(
-        log_file_layer.with_filter(EnvFilter::new("info,fedimint_client=debug,fediffi=trace")),
-    );
+    let reg = reg.with(log_file_layer.with_filter(EnvFilter::new(
+        "info,fedimint_client=debug,fediffi=trace,client::reactor=trace",
+    )));
 
     let res = if cfg!(target_os = "android") && option_env!("FEDI_DEV_LOGS").is_some() {
         let time = fedimint_core::time::now()
