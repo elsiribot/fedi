@@ -38,6 +38,14 @@ export function useIsMatrixSynced() {
     return status === MatrixSyncStatus.synced
 }
 
+export function useIsMatrixReady() {
+    const status = useCommonSelector(selectMatrixStatus)
+    return (
+        status === MatrixSyncStatus.synced ||
+        status === MatrixSyncStatus.syncing
+    )
+}
+
 export function useMatrixUserSearch() {
     const dispatch = useCommonDispatch()
     const [query, setQuery] = useState('')
@@ -104,14 +112,11 @@ export function useObserveMatrixRoom(
     paused = false,
 ) {
     const dispatch = useCommonDispatch()
-    const syncStatus = useCommonSelector(selectMatrixStatus)
     const latestEventId = useCommonSelector(s =>
         roomId ? selectLatestMatrixRoomEventId(s, roomId) : undefined,
     )
 
-    const isReady =
-        syncStatus === MatrixSyncStatus.syncing ||
-        syncStatus === MatrixSyncStatus.synced
+    const isReady = useIsMatrixReady()
 
     useEffect(() => {
         if (!isReady || !roomId || paused) return

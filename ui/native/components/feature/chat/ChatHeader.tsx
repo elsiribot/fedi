@@ -71,9 +71,7 @@ const ChatHeader: React.FC = () => {
                 }
                 rightContainerStyle={styles(theme).rightContainer}
             />
-            {!needsChatRegistration && (
-                <ChatConnectionBadge offset={14} noSafeArea />
-            )}
+            <ChatConnectionBadge offset={14} noSafeArea />
         </>
     )
 }

@@ -10,6 +10,8 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useIsMatrixReady } from '@fedi/common/hooks/matrix'
+
 interface Props {
     offset?: number
     noSafeArea?: boolean
@@ -24,43 +26,33 @@ export const ChatConnectionBadge: React.FC<Props> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
-    // TODO: implement "waiting for network" indicator for matrix
-    // const chatStatus = useAppSelector(selectChatClientStatus)
-    // const isOffline = chatStatus !== 'online'
-    const isOffline = false
-    // const isConnected = useIsChatConnected()
-    const [isDisplayNone, setIsDisplayNone] = useState(!isOffline)
-    // const isVisible = !isConnected && !hide
-    const isVisible = false || hide
+    const isReady = useIsMatrixReady()
+
+    const [isVisible, setIsVisible] = useState(!isReady || hide)
+
     const visibleAnimation = useRef(
         new Animated.Value(isVisible ? 1 : 0),
     ).current
 
+    useEffect(() => {
+        if (isReady) setIsVisible(false)
+    }, [isReady])
+
     // Animate container in and out when visible
     useEffect(() => {
-        if (isVisible) {
-            setIsDisplayNone(false)
-        }
-        let canceled = false
         Animated.timing(visibleAnimation, {
             toValue: isVisible ? 1 : 0,
             duration: 150,
             useNativeDriver: false,
             easing: Easing.ease,
-        }).start(() => {
-            if (!isVisible && !canceled) {
-                setIsDisplayNone(true)
-            }
-        })
-        return () => {
-            canceled = true
-        }
+        }).start()
     }, [visibleAnimation, isVisible])
 
     const containerStyle: ViewStyle = {
-        display: isDisplayNone ? 'none' : 'flex',
+        display: 'flex',
         top: offset + (noSafeArea ? 0 : insets.top),
     }
+
     const badgeStyle: ViewStyle = {
         opacity: visibleAnimation,
         transform: [
