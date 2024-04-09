@@ -18,7 +18,7 @@ import { LogEvent, PanicEvent } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { fedimint, initializeBridge } from '../bridge'
+import { fedimint, initializeBridge, subscribeToBridgeEvents } from '../bridge'
 import { ErrorScreen } from '../screens/ErrorScreen'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { store } from '../state/store'
@@ -48,6 +48,21 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         }
         if (!deviceId && hasLoadedStorage) handleDeviceId()
     }, [deviceId, dispatch, hasLoadedStorage])
+
+    // Initialize Native Event Listeners
+    useEffect(() => {
+        const subscribe = async () => {
+            const subscriptions = await subscribeToBridgeEvents()
+            log.info('initialized bridge listeners')
+            return subscriptions
+        }
+        const listeners = subscribe()
+
+        // Cleanup native event listeners
+        return () => {
+            listeners.then(subs => subs.map(s => s.remove()))
+        }
+    }, [])
 
     // Initialize redux store and bridge
     useEffect(() => {

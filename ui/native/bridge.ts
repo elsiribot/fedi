@@ -27,17 +27,21 @@ async function fedimintRpc<Type = void>(
 
 export const fedimint = new FedimintBridge(fedimintRpc)
 
-export async function initializeBridge(dataDir: string, deviceId: string) {
+export async function subscribeToBridgeEvents() {
     // Pass through all native bridge events to the FedimintBridge class instance
     const emitter = new NativeEventEmitter(BridgeNativeEventEmitter)
     const eventTypes: (keyof FedimintBridgeEventMap)[] =
         await FedimintFfi.getSupportedEvents()
-    eventTypes.forEach(eventType =>
+
+    // returns an array of subscriptions to unsubscribe later
+    return eventTypes.map(eventType =>
         emitter.addListener(eventType, (serializedEvent: string) => {
             fedimint.emit(eventType, JSON.parse(serializedEvent))
         }),
     )
+}
 
+export async function initializeBridge(dataDir: string, deviceId: string) {
     const logLevel = 'info'
     const result = await FedimintFfi.initialize(dataDir, logLevel, deviceId)
     const resultJson = JSON.parse(result)
