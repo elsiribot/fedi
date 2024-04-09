@@ -54,7 +54,7 @@ export const ChatUserActionsOverlay: React.FC<Props> = ({
             show={show}
             onBackdropPress={() => onDismiss()}
             contents={{
-                title: label,
+                title: member?.displayName ?? '',
                 body: !member ? (
                     <HoloLoader size={48} />
                 ) : (
