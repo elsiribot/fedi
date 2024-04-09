@@ -313,6 +313,8 @@
 
           buildInputs = [ pkgs.openssl ];
 
+          # Use old ESLINT config format
+          ESLINT_USE_FLAT_CONFIG = false;
           FEDI_CROSS_DEV_SHELL = "1";
           shellHook = ''
             export PATH=$PATH:''${ANDROID_SDK_ROOT}/../../bin
