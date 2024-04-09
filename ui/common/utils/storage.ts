@@ -66,8 +66,8 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
             {},
         ),
         matrixAuth: state.matrix.auth,
-        pinDigits: state.pin.digits,
-        protectedFeatures: state.pin.protectedFeatures,
+        pinDigits: state.security.pinDigits,
+        protectedFeatures: state.security.protectedFeatures,
     }
 }
 
@@ -112,8 +112,8 @@ export function hasStorageStateChanged(
         ['federation', 'customFediMods'],
         ['matrix', 'auth'],
         ['nux', 'steps'],
-        ['pin', 'digits'],
-        ['pin', 'protectedFeatures'],
+        ['security', 'pinDigits'],
+        ['security', 'protectedFeatures'],
     ]
 
     // Check all federation's chat states, including old and new.

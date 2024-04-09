@@ -6,7 +6,7 @@ import { loadFromStorage } from './storage'
 /*** Initial State ***/
 
 const initialState: PinState = {
-    digits: null,
+    pinDigits: null,
     protectedFeatures: {
         app: true,
     },
@@ -21,7 +21,7 @@ export interface ProtectedFeatures {
 }
 
 export type PinState = {
-    digits: Array<number> | null
+    pinDigits: Array<number> | null
     protectedFeatures: ProtectedFeatures
     unlockedFeatures: ProtectedFeatures
     isBackingUpBeforePin: boolean
@@ -29,17 +29,17 @@ export type PinState = {
 
 /*** Slice definition ***/
 
-export const pinSlice = createSlice({
+export const securitySlice = createSlice({
     name: 'nux',
     initialState,
     reducers: {
-        setPin(state, action: PayloadAction<PinState['digits']>) {
-            state.digits = action.payload
+        setPin(state, action: PayloadAction<PinState['pinDigits']>) {
+            state.pinDigits = action.payload
         },
         setFeatureUnlocked(
             state,
             action: PayloadAction<{
-                key: keyof PinState['unlockedFeatures']
+                key: keyof ProtectedFeatures
                 unlocked: boolean
             }>,
         ) {
@@ -48,7 +48,7 @@ export const pinSlice = createSlice({
         setProtectedFeature(
             state,
             action: PayloadAction<{
-                key: keyof PinState['protectedFeatures']
+                key: keyof ProtectedFeatures
                 enabled: boolean
             }>,
         ) {
@@ -63,7 +63,7 @@ export const pinSlice = createSlice({
             if (!action.payload) return
 
             if (action.payload.pinDigits) {
-                state.digits = action.payload.pinDigits
+                state.pinDigits = action.payload.pinDigits
             }
 
             if (action.payload.protectedFeatures) {
@@ -76,8 +76,7 @@ export const pinSlice = createSlice({
                         key in state.protectedFeatures &&
                         typeof value !== 'undefined'
                     ) {
-                        actions[key as keyof PinState['protectedFeatures']] =
-                            value
+                        actions[key as keyof ProtectedFeatures] = value
                     }
                 })
                 state.protectedFeatures = actions
@@ -93,21 +92,21 @@ export const {
     setIsBackingUpBeforePin,
     setFeatureUnlocked,
     setProtectedFeature,
-} = pinSlice.actions
+} = securitySlice.actions
 
 /*** Selectors ***/
 
-export const selectPinDigits = (s: CommonState) => s.pin.digits
+export const selectPinDigits = (s: CommonState) => s.security.pinDigits
 
 export const selectIsFeatureUnlocked = (
     s: CommonState,
     feature: keyof ProtectedFeatures,
-) => s.pin.unlockedFeatures[feature]
+) => s.security.unlockedFeatures[feature]
 
 export const selectProtectedFeatures = (s: CommonState) =>
-    s.pin.protectedFeatures
+    s.security.protectedFeatures
 
 export const selectIsRecoveringBeforePin = (s: CommonState) =>
-    s.pin.isBackingUpBeforePin
+    s.security.isBackingUpBeforePin
 
-export const selectHasSetPin = (s: CommonState) => s.pin.digits !== null
+export const selectHasSetPin = (s: CommonState) => s.security.pinDigits !== null
