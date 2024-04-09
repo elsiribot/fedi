@@ -3,7 +3,11 @@ import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
+import { selectMatrixRoomSelfPowerLevel } from '@fedi/common/redux'
+import { MatrixPowerLevel } from '@fedi/common/types'
+
 import { Props as GroupAdminProps } from '../../../screens/GroupAdmin'
+import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
@@ -15,6 +19,10 @@ const GroupAdminHeader: React.FC = () => {
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<GroupAdminRouteProp>()
     const { roomId } = route.params
+    const myPowerLevel = useAppSelector(s =>
+        selectMatrixRoomSelfPowerLevel(s, roomId || ''),
+    )
+    const isAdmin = myPowerLevel >= MatrixPowerLevel.Admin
 
     return (
         <Header
@@ -22,15 +30,17 @@ const GroupAdminHeader: React.FC = () => {
             rightContainerStyle={styles(theme).headerRightContainer}
             headerRight={
                 <>
-                    <Pressable
-                        onPress={() =>
-                            navigation.navigate('EditGroup', {
-                                roomId,
-                            })
-                        }
-                        style={styles(theme).headerIconContainer}>
-                        <SvgImage name="Edit" />
-                    </Pressable>
+                    {isAdmin && (
+                        <Pressable
+                            onPress={() =>
+                                navigation.navigate('EditGroup', {
+                                    roomId,
+                                })
+                            }
+                            style={styles(theme).headerIconContainer}>
+                            <SvgImage name="Edit" />
+                        </Pressable>
+                    )}
                 </>
             }
         />
