@@ -1,7 +1,12 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useState } from 'react'
-import { StyleSheet, View, useWindowDimensions } from 'react-native'
+import React, { useCallback, useEffect, useState } from 'react'
+import {
+    BackHandler,
+    StyleSheet,
+    View,
+    useWindowDimensions,
+} from 'react-native'
 
 import { numpadButtons } from '@fedi/common/hooks/amount'
 import { selectPinDigits, setFeatureUnlocked } from '@fedi/common/redux'
@@ -74,6 +79,19 @@ const LockScreen: React.FC<Props> = ({ navigation, route }: Props) => {
         },
         [pinDigits, dispatch, navigation, existingPinDigits, feature],
     )
+
+    useEffect(() => {
+        const backAction = () => {
+            return true
+        }
+
+        const backHandler = BackHandler.addEventListener(
+            'hardwareBackPress',
+            backAction,
+        )
+
+        return () => backHandler.remove()
+    }, [])
 
     return (
         <View style={style.container}>
