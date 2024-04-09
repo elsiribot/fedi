@@ -7,7 +7,7 @@ import { ScrollView, StyleSheet, View } from 'react-native'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
     selectIsRecoveringBeforePin,
-    setIsRecoveringBeforePin,
+    setIsBackingUpBeforePin,
 } from '@fedi/common/redux'
 import type { SeedWords } from '@fedi/common/types'
 
@@ -46,7 +46,7 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
         'hasPerformedPersonalBackup',
     )
 
-    const isRecoveringBeforePin = useAppSelector(selectIsRecoveringBeforePin)
+    const isBackingUpBeforePin = useAppSelector(selectIsRecoveringBeforePin)
     const dispatch = useAppDispatch()
 
     useEffect(() => {
@@ -78,8 +78,8 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
             navigation.navigate('Settings')
         } else {
             completePersonalBackup()
-            if (isRecoveringBeforePin) {
-                dispatch(setIsRecoveringBeforePin(false))
+            if (isBackingUpBeforePin) {
+                dispatch(setIsBackingUpBeforePin(false))
                 navigation.navigate('CreatePin')
             } else {
                 navigation.navigate('TabsNavigator')

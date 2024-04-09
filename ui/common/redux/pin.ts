@@ -13,7 +13,7 @@ const initialState: PinState = {
     unlockedFeatures: {
         app: false,
     },
-    isRecoveringBeforePin: false,
+    isBackingUpBeforePin: false,
 }
 
 export interface ProtectedFeatures {
@@ -24,7 +24,7 @@ export type PinState = {
     digits: Array<number> | null
     protectedFeatures: ProtectedFeatures
     unlockedFeatures: ProtectedFeatures
-    isRecoveringBeforePin: boolean
+    isBackingUpBeforePin: boolean
 }
 
 /*** Slice definition ***/
@@ -54,8 +54,8 @@ export const pinSlice = createSlice({
         ) {
             state.protectedFeatures[action.payload.key] = action.payload.enabled
         },
-        setIsRecoveringBeforePin(state, action: PayloadAction<boolean>) {
-            state.isRecoveringBeforePin = action.payload
+        setIsBackingUpBeforePin(state, action: PayloadAction<boolean>) {
+            state.isBackingUpBeforePin = action.payload
         },
     },
     extraReducers: builder => {
@@ -88,8 +88,12 @@ export const pinSlice = createSlice({
 
 /*** Basic actions ***/
 
-export const { setPin, setIsRecoveringBeforePin, setFeatureUnlocked, setProtectedFeature } =
-    pinSlice.actions
+export const {
+    setPin,
+    setIsBackingUpBeforePin,
+    setFeatureUnlocked,
+    setProtectedFeature,
+} = pinSlice.actions
 
 /*** Selectors ***/
 
@@ -104,6 +108,6 @@ export const selectProtectedFeatures = (s: CommonState) =>
     s.pin.protectedFeatures
 
 export const selectIsRecoveringBeforePin = (s: CommonState) =>
-    s.pin.isRecoveringBeforePin
+    s.pin.isBackingUpBeforePin
 
 export const selectHasSetPin = (s: CommonState) => s.pin.digits !== null

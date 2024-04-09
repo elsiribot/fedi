@@ -4,7 +4,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Image, StyleSheet, View } from 'react-native'
 
-import { setIsRecoveringBeforePin } from '@fedi/common/redux'
+import { setIsBackingUpBeforePin } from '@fedi/common/redux'
 
 import { Images } from '../assets/images'
 import { useAppDispatch } from '../state/hooks'
@@ -38,7 +38,7 @@ const CreatePinInstructions: React.FC<Props> = ({ navigation }: Props) => {
             <Button
                 style={style.containerButton}
                 onPress={() => {
-                    dispatch(setIsRecoveringBeforePin(true))
+                    dispatch(setIsBackingUpBeforePin(true))
                     navigation.navigate('ChooseBackupMethod')
                 }}>
                 Continue
