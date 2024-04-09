@@ -1,7 +1,7 @@
 import { createDrawerNavigator } from '@react-navigation/drawer'
 import {
-  NavigationContainer,
-  useNavigationContainerRef,
+    NavigationContainer,
+    useNavigationContainerRef,
 } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text, useTheme } from '@rneui/themed'
@@ -54,9 +54,6 @@ import ReceiveLightningHeader from './components/feature/receive/ReceiveLightnin
 import ChooseRecoveryMethodHeader from './components/feature/recovery/ChooseRecoveryMethodHeader'
 import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
 import RecoveryAssistHeader from './components/feature/recovery/RecoveryAssistHeader'
-import RecoveryDeviceSelectionHeader from './components/feature/recovery/RecoveryDeviceSelectionHeader'
-import RecoveryNewWalletHeader from './components/feature/recovery/RecoveryNewWalletHeader'
-import RecoveryWalletTransferHeader from './components/feature/recovery/RecoveryWalletTransferHeader'
 import SocialRecoveryHeader from './components/feature/recovery/SocialRecoveryHeader'
 import ConfirmSendEcashHeader from './components/feature/send/ConfirmSendEcashHeader'
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
@@ -114,7 +111,6 @@ import Initializing from './screens/Initializing'
 import JoinFederation from './screens/JoinFederation'
 import LanguageSettings from './screens/LanguageSettings'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
-import LockedDevice from './screens/LockedDevice'
 import LockScreen from './screens/LockScreen'
 import MemberQrCode from './screens/MemberQrCode'
 import NewMessage from './screens/NewMessage'
@@ -128,10 +124,6 @@ import ReceiveLightning from './screens/ReceiveLightning'
 import ReceiveSuccess from './screens/ReceiveSuccess'
 import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
-import RecoveryDeviceSelection from './screens/RecoveryDeviceSelection'
-import RecoveryNewWallet from './screens/RecoveryNewWallet'
-import RecoveryWalletOptions from './screens/RecoveryWalletOptions'
-import RecoveryWalletTransfer from './screens/RecoveryWalletTransfer'
 import RecoveryWords from './screens/RecoveryWords'
 import ScanMemberCode from './screens/ScanMemberCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
@@ -168,859 +160,825 @@ import { useAppSelector } from './state/hooks'
 import { resetToLockedDevice } from './state/navigation'
 import { MSats } from './types'
 import {
-  MainNavigatorDrawerParamList,
-  MAIN_NAVIGATOR_ID,
-  NavigationLinkingConfig,
-  RootStackParamList,
-  DRAWER_NAVIGATION_ID,
+    MainNavigatorDrawerParamList,
+    MAIN_NAVIGATOR_ID,
+    NavigationLinkingConfig,
+    RootStackParamList,
+    DRAWER_NAVIGATION_ID,
 } from './types/navigation'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator<MainNavigatorDrawerParamList>()
 
 const MainNavigator = () => {
-  const activeFederation = useAppSelector(selectActiveFederation)
+    const activeFederation = useAppSelector(selectActiveFederation)
 
-  return (
-    <Stack.Navigator
-      screenOptions={{
-        orientation: 'portrait',
-      }}
-      initialRouteName={'Initializing'}
-      id={MAIN_NAVIGATOR_ID}>
-      <>
-        {/* This group of screens may render regardless of the value of
+    return (
+        <Stack.Navigator
+            screenOptions={{
+                orientation: 'portrait',
+            }}
+            initialRouteName={'Initializing'}
+            id={MAIN_NAVIGATOR_ID}>
+            <>
+                {/* This group of screens may render regardless of the value of
                  activeFederation */}
-        <Stack.Group
-          screenOptions={{
-            animation: 'fade',
-            animationDuration: 250,
-          }}>
-          <Stack.Screen
-            name="Splash"
-            component={Splash}
-            options={{
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen
-            name="Initializing"
-            component={Initializing}
-            options={{
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen
-            name="JoinFederation"
-            component={JoinFederation}
-            options={() => ({
-              header: () => <JoinFederationHeader />,
-            })}
-          />
-          <Stack.Screen
-            name="PublicFederations"
-            component={PublicFederations}
-            options={() => ({
-              header: () => <Header backButton />,
-            })}
-          />
-          <Stack.Screen
-            name="Eula"
-            component={Eula}
-            options={{
-              header: () => <EulaHeader />,
-            }}
-          />
-        </Stack.Group>
-        {/*
+                <Stack.Group
+                    screenOptions={{
+                        animation: 'fade',
+                        animationDuration: 250,
+                    }}>
+                    <Stack.Screen
+                        name="Splash"
+                        component={Splash}
+                        options={{
+                            headerShown: false,
+                        }}
+                    />
+                    <Stack.Screen
+                        name="Initializing"
+                        component={Initializing}
+                        options={{
+                            headerShown: false,
+                        }}
+                    />
+                    <Stack.Screen
+                        name="JoinFederation"
+                        component={JoinFederation}
+                        options={() => ({
+                            header: () => <JoinFederationHeader />,
+                        })}
+                    />
+                    <Stack.Screen
+                        name="PublicFederations"
+                        component={PublicFederations}
+                        options={() => ({
+                            header: () => <Header backButton />,
+                        })}
+                    />
+                    <Stack.Screen
+                        name="Eula"
+                        component={Eula}
+                        options={{
+                            header: () => <EulaHeader />,
+                        }}
+                    />
+                </Stack.Group>
+                {/*
                     This group of screens relies on a non-null activeFederation
                     in the federation reducer because they contain API calls to
                     the FFI NativeModule. Since it is possible to store multiple
                     federation connections in-app, each call requires a
                     Federation to be specified
                 */}
-        {activeFederation !== null && (
-          <Stack.Group>
-            <Stack.Group
-              screenOptions={{
-                animation: 'fade',
-                animationDuration: 250,
-              }}>
-              <Stack.Screen
-                name="TabsNavigator"
-                component={TabsNavigator}
-                options={() => ({
-                  headerShown: false,
-                })}
-              />
-              {/* FediMods */}
-              <Stack.Screen
-                name="FediModBrowser"
-                component={FediModBrowser}
-                options={{
-                  headerShown: false,
-                }}
-              />
+                {activeFederation !== null && (
+                    <Stack.Group>
+                        <Stack.Group
+                            screenOptions={{
+                                animation: 'fade',
+                                animationDuration: 250,
+                            }}>
+                            <Stack.Screen
+                                name="TabsNavigator"
+                                component={TabsNavigator}
+                                options={() => ({
+                                    headerShown: false,
+                                })}
+                            />
+                            {/* FediMods */}
+                            <Stack.Screen
+                                name="FediModBrowser"
+                                component={FediModBrowser}
+                                options={{
+                                    headerShown: false,
+                                }}
+                            />
 
-              {/* Federation Onboarding */}
-              <Stack.Screen
-                name="EnterDisplayName"
-                component={EnterDisplayName}
-                options={() => ({
-                  header: () => <NewMemberHeader />,
-                  animation: 'fade',
-                  animationDuration: 300,
-                })}
-              />
-              <Stack.Screen
-                name="FederationGreeting"
-                component={FederationGreeting}
-                options={{ headerShown: false }}
-              />
-              {/* Chat */}
-              <Stack.Screen
-                name="NewMessage"
-                component={NewMessage}
-                options={() => ({
-                  header: () => <NewMessageHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="GroupInvite"
-                component={GroupInvite}
-                options={() => ({
-                  header: () => <GroupInviteHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="MemberQrCode"
-                component={MemberQrCode}
-                options={() => ({
-                  header: () => <MemberQrCodeHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="ScanMemberCode"
-                component={ScanMemberCode}
-                options={() => ({
-                  header: () => <ScanMemberCodeHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="DirectChat"
-                component={DirectChat}
-                options={() => ({
-                  header: () => <DirectChatHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="GroupChat"
-                component={GroupChat}
-                options={() => ({
-                  header: () => <GroupHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="ChatRoomConversation"
-                component={ChatRoomConversation}
-                options={() => ({
-                  header: () => <ChatConversationHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="ChatRoomMembers"
-                component={ChatRoomMembers}
-                options={() => ({
-                  header: () => <ChatRoomMembersHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="ChatRoomInvite"
-                component={ChatRoomInvite}
-                options={() => ({
-                  header: () => <ChatRoomInviteHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="ChatUserConversation"
-                component={ChatUserConversation}
-                options={() => ({
-                  header: () => <ChatConversationHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="CreateGroup"
-                component={CreateGroup}
-                options={() => ({
-                  header: () => <CreateGroupHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="EditGroup"
-                component={EditGroup}
-                options={() => ({
-                  header: () => <EditGroupHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="GroupAdmin"
-                component={GroupAdmin}
-                options={() => ({
-                  header: () => <GroupAdminHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="ChatWallet"
-                component={ChatWallet}
-                options={() => ({
-                  header: () => <ChatWalletHeader />,
-                })}
-              />
-              {/* Wallet (Send) */}
-              <Stack.Screen
-                name="Send"
-                component={Send}
-                options={() => ({
-                  header: () => <SendHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="ConfirmSendLightning"
-                component={ConfirmSendLightning}
-                options={() => ({
-                  header: () => <SendBitcoinHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="SendOnChainAmount"
-                component={SendOnChainAmount}
-                options={() => ({
-                  header: () => <SendBitcoinHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="ConfirmSendOnChain"
-                component={ConfirmSendOnChain}
-                options={() => ({
-                  header: () => <SendBitcoinHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="SendSuccess"
-                component={SendSuccess}
-                initialParams={{
-                  amount: 0 as MSats,
-                  unit: 'sats',
-                }}
-                options={{ headerShown: false }}
-              />
-              {/* Wallet (Send Offline) */}
-              <Stack.Screen
-                name="SendOfflineAmount"
-                component={SendOfflineAmount}
-                options={() => ({
-                  header: () => <SendBitcoinOfflineHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="ConfirmSendEcash"
-                component={ConfirmSendEcash}
-                options={() => ({
-                  header: () => <ConfirmSendEcashHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="SendOfflineQr"
-                component={SendOfflineQr}
-                options={() => ({
-                  header: () => (
-                    <SendBitcoinOfflineQrHeader />
-                  ),
-                })}
-              />
-              {/* Wallet (Receive) */}
-              <Stack.Screen
-                name="Receive"
-                component={Receive}
-                options={() => ({
-                  header: () => <ReceiveBitcoinHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="BitcoinRequest"
-                component={BitcoinRequest}
-                options={() => ({
-                  header: () => <BitcoinRequestHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="ReceiveLightning"
-                component={ReceiveLightning}
-                options={() => ({
-                  header: () => <ReceiveLightningHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="ConfirmReceiveOffline"
-                component={ConfirmReceiveOffline}
-                options={() => ({
-                  header: () => (
-                    <ReceiveBitcoinOfflineHeader />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="ReceiveSuccess"
-                component={ReceiveSuccess}
-                options={{ headerShown: false }}
-              />
-              {/* Transaction history */}
-              <Stack.Screen
-                name="Transactions"
-                component={Transactions}
-                options={() => ({
-                  header: () => <TransactionsHeader />,
-                })}
-              />
-              {/* Federations */}
-              <Stack.Screen
-                name="FederationInvite"
-                component={FederationInvite}
-                options={() => ({
-                  header: () => <FederationInviteHeader />,
-                })}
-              />
-              {/* Backup & Recovery */}
-              <Stack.Screen
-                name="ChooseBackupMethod"
-                component={ChooseBackupMethod}
-                options={() => ({
-                  header: () => <ChooseBackupMethodHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="ChooseRecoveryMethod"
-                component={ChooseRecoveryMethod}
-                options={() => ({
-                  header: () => (
-                    <ChooseRecoveryMethodHeader />
-                  ),
-                })}
-              />
-              {/* Social Backup */}
-              <Stack.Screen
-                name="RecordBackupVideo"
-                component={RecordBackupVideo}
-                options={() => ({
-                  header: () => (
-                    <SocialBackupHeader backButton />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="StartSocialBackup"
-                component={StartSocialBackup}
-                options={() => ({
-                  header: () => (
-                    <SocialBackupHeader backButton />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="SocialBackupProcessing"
-                component={SocialBackupProcessing}
-                options={() => ({
-                  header: () => (
-                    <SocialBackupHeader closeButton />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="SocialBackupCloudUpload"
-                component={SocialBackupCloudUpload}
-                options={() => ({
-                  header: () => (
-                    <SocialBackupHeader closeButton />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="CompleteSocialBackup"
-                component={CompleteSocialBackup}
-                options={() => ({
-                  header: () => (
-                    <SocialBackupHeader closeButton />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="SocialBackupSuccess"
-                component={SocialBackupSuccess}
-                options={{ headerShown: false }}
-              />
-              {/* Social Recovery */}
-              <Stack.Screen
-                name="LocateSocialRecovery"
-                component={LocateSocialRecovery}
-                options={() => ({
-                  header: () => (
-                    <SocialRecoveryHeader backButton />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="SelectRecoveryFileSuccess"
-                component={SelectRecoveryFileSuccess}
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen
-                name="SelectRecoveryFileFailure"
-                component={SelectRecoveryFileFailure}
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen
-                name="CompleteSocialRecovery"
-                component={CompleteSocialRecovery}
-                options={() => ({
-                  header: () => (
-                    <SocialRecoveryHeader cancelButton />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="SocialRecoveryFailure"
-                component={SocialRecoveryFailure}
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen
-                name="SocialRecoverySuccess"
-                component={SocialRecoverySuccess}
-                options={{ headerShown: false }}
-              />
-              {/* Recovery Assist (Guardians) */}
-              <Stack.Screen
-                name="StartRecoveryAssist"
-                component={StartRecoveryAssist}
-                options={() => ({
-                  header: () => (
-                    <RecoveryAssistHeader backButton />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="ConfirmRecoveryAssist"
-                component={ConfirmRecoveryAssist}
-                options={() => ({
-                  header: () => (
-                    <RecoveryAssistHeader backButton />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="ScanSocialRecoveryCode"
-                component={ScanSocialRecoveryCode}
-                options={() => ({
-                  header: () => (
-                    <RecoveryAssistHeader
-                      backButton
-                      closeButton
-                    />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="CompleteRecoveryAssist"
-                component={CompleteRecoveryAssist}
-                options={() => ({
-                  header: () => (
-                    <RecoveryAssistHeader backButton />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="RecoveryAssistSuccess"
-                component={RecoveryAssistSuccess}
-                options={{ headerShown: false }}
-              />
-              {/* Personal Backup */}
-              <Stack.Screen
-                name="StartPersonalBackup"
-                component={StartPersonalBackup}
-                options={() => ({
-                  header: () => <PersonalBackupHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="RecoveryWords"
-                component={RecoveryWords}
-                options={() => ({
-                  header: () => <RecoveryWordsHeader />,
-                })}
-              />
-              {/* Personal Recovery */}
-              <Stack.Screen
-                name="PersonalRecovery"
-                component={PersonalRecovery}
-                options={() => ({
-                  header: () => (
-                    <PersonalRecoveryHeader backButton />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="PersonalRecoverySuccess"
-                component={PersonalRecoverySuccess}
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen
-                name="RecoveryWalletOptions"
-                component={RecoveryWalletOptions}
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen
-                name="RecoveryWalletTransfer"
-                component={RecoveryWalletTransfer}
-                options={() => ({
-                  header: () => (
-                    <RecoveryWalletTransferHeader />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="RecoveryNewWallet"
-                component={RecoveryNewWallet}
-                options={() => ({
-                  header: () => <RecoveryNewWalletHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="RecoveryDeviceSelection"
-                component={RecoveryDeviceSelection}
-                options={() => ({
-                  header: () => (
-                    <RecoveryDeviceSelectionHeader />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="LockedDevice"
-                component={LockedDevice}
-                options={{ headerShown: false }}
-              />
-              {/* Popup federations */}
-              <Stack.Screen
-                name="PopupFederationEnded"
-                component={PopupFederationEnded}
-                options={() => ({
-                  header: () => <SelectedFederationHeader />,
-                })}
-              />
-              {/* Settings */}
-              <Stack.Screen
-                name="Settings"
-                component={Settings}
-                options={() => ({
-                  header: () => <SettingsHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="FediModSettings"
-                component={FediModSettings}
-                options={() => ({
-                  header: () => <FediModSettingsHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="AddFediMod"
-                component={AddFediMod}
-                options={() => ({
-                  header: () => <AddFediModHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="LanguageSettings"
-                component={LanguageSettings}
-                options={() => ({
-                  header: () => <LanguageSettingsHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="CurrencySettings"
-                component={CurrencySettings}
-                options={() => ({
-                  header: () => <CurrencySettingsHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="ChangePin"
-                component={ChangePin}
-                options={() => ({
-                  header: () => <ChangePinHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="CreatePin"
-                component={CreatePin}
-                options={() => ({
-                  header: () => <CreatePinHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="CreatedPin"
-                component={CreatedPin}
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen
-                name="CreatePinInstructions"
-                component={CreatePinInstructions}
-                options={() => ({
-                  header: () => (
-                    <CreatePinInstructionsHeader />
-                  ),
-                })}
-              />
-              <Stack.Screen
-                name="PinAccess"
-                component={PinAccess}
-                options={() => ({
-                  header: () => <PinAccessHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="LockScreen"
-                component={LockScreen}
-                options={() => ({
-                  header: () => <LockScreenHeader />,
-                })}
-              />
-              {/* Stability Pools */}
-              <Stack.Screen
-                name="StabilityHome"
-                component={StabilityHome}
-                options={() => ({
-                  header: () => <StabilityHomeHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="StabilityHistory"
-                component={StabilityHistory}
-                options={() => ({
-                  header: () => <StabilityHistoryHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="StabilityDeposit"
-                component={StabilityDeposit}
-                options={() => ({
-                  header: () => <StabilityDepositHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="StabilityWithdraw"
-                component={StabilityWithdraw}
-                options={() => ({
-                  header: () => <StabilityWithdrawHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="StabilityConfirmDeposit"
-                component={StabilityConfirmDeposit}
-                options={() => ({
-                  header: () => <ConfirmDepositHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="StabilityConfirmWithdraw"
-                component={StabilityConfirmWithdraw}
-                options={() => ({
-                  header: () => <ConfirmWithdrawHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="StabilityDepositInitiated"
-                component={StabilityDepositInitiated}
-                options={() => ({
-                  header: () => <DepositInitiatedHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="StabilityWithdrawInitiated"
-                component={StabilityWithdrawInitiated}
-                options={() => ({
-                  header: () => <WithdrawInitiatedHeader />,
-                })}
-              />
-              {/* Bug report */}
-              <Stack.Screen
-                name="BugReport"
-                component={BugReport}
-                options={() => ({
-                  header: () => <BugReportHeader />,
-                })}
-              />
-              <Stack.Screen
-                name="BugReportSuccess"
-                component={BugReportSuccess}
-                options={{ headerShown: false }}
-              />
-              {/* Developer-only */}
-              <Stack.Screen
-                name="DeveloperSettings"
-                component={DeveloperSettings}
-                options={() => ({
-                  header: () => (
-                    <Header
-                      backButton
-                      headerCenter={
-                        <Text
-                          bold
-                          numberOfLines={1}
-                          adjustsFontSizeToFit>
-                          {'Developer Settings'}
-                        </Text>
-                      }
-                    />
-                  ),
-                })}
-              />
-            </Stack.Group>
-            {/* Put all Overlay/Modal screens here */}
-            <Stack.Group>
-              <Stack.Screen
-                name="SocialRecoveryQrModal"
-                component={SocialRecoveryQrModal}
-                options={{
-                  presentation: 'transparentModal',
-                  headerShown: false,
-                }}
-              />
-            </Stack.Group>
-          </Stack.Group>
-        )}
-      </>
-    </Stack.Navigator>
-  )
+                            {/* Federation Onboarding */}
+                            <Stack.Screen
+                                name="EnterDisplayName"
+                                component={EnterDisplayName}
+                                options={() => ({
+                                    header: () => <NewMemberHeader />,
+                                    animation: 'fade',
+                                    animationDuration: 300,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="FederationGreeting"
+                                component={FederationGreeting}
+                                options={{ headerShown: false }}
+                            />
+                            {/* Chat */}
+                            <Stack.Screen
+                                name="NewMessage"
+                                component={NewMessage}
+                                options={() => ({
+                                    header: () => <NewMessageHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="GroupInvite"
+                                component={GroupInvite}
+                                options={() => ({
+                                    header: () => <GroupInviteHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="MemberQrCode"
+                                component={MemberQrCode}
+                                options={() => ({
+                                    header: () => <MemberQrCodeHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ScanMemberCode"
+                                component={ScanMemberCode}
+                                options={() => ({
+                                    header: () => <ScanMemberCodeHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="DirectChat"
+                                component={DirectChat}
+                                options={() => ({
+                                    header: () => <DirectChatHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="GroupChat"
+                                component={GroupChat}
+                                options={() => ({
+                                    header: () => <GroupHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ChatRoomConversation"
+                                component={ChatRoomConversation}
+                                options={() => ({
+                                    header: () => <ChatConversationHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ChatRoomMembers"
+                                component={ChatRoomMembers}
+                                options={() => ({
+                                    header: () => <ChatRoomMembersHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ChatRoomInvite"
+                                component={ChatRoomInvite}
+                                options={() => ({
+                                    header: () => <ChatRoomInviteHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ChatUserConversation"
+                                component={ChatUserConversation}
+                                options={() => ({
+                                    header: () => <ChatConversationHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="CreateGroup"
+                                component={CreateGroup}
+                                options={() => ({
+                                    header: () => <CreateGroupHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="EditGroup"
+                                component={EditGroup}
+                                options={() => ({
+                                    header: () => <EditGroupHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="GroupAdmin"
+                                component={GroupAdmin}
+                                options={() => ({
+                                    header: () => <GroupAdminHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ChatWallet"
+                                component={ChatWallet}
+                                options={() => ({
+                                    header: () => <ChatWalletHeader />,
+                                })}
+                            />
+                            {/* Wallet (Send) */}
+                            <Stack.Screen
+                                name="Send"
+                                component={Send}
+                                options={() => ({
+                                    header: () => <SendHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ConfirmSendLightning"
+                                component={ConfirmSendLightning}
+                                options={() => ({
+                                    header: () => <SendBitcoinHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SendOnChainAmount"
+                                component={SendOnChainAmount}
+                                options={() => ({
+                                    header: () => <SendBitcoinHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ConfirmSendOnChain"
+                                component={ConfirmSendOnChain}
+                                options={() => ({
+                                    header: () => <SendBitcoinHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SendSuccess"
+                                component={SendSuccess}
+                                initialParams={{
+                                    amount: 0 as MSats,
+                                    unit: 'sats',
+                                }}
+                                options={{ headerShown: false }}
+                            />
+                            {/* Wallet (Send Offline) */}
+                            <Stack.Screen
+                                name="SendOfflineAmount"
+                                component={SendOfflineAmount}
+                                options={() => ({
+                                    header: () => <SendBitcoinOfflineHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ConfirmSendEcash"
+                                component={ConfirmSendEcash}
+                                options={() => ({
+                                    header: () => <ConfirmSendEcashHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SendOfflineQr"
+                                component={SendOfflineQr}
+                                options={() => ({
+                                    header: () => (
+                                        <SendBitcoinOfflineQrHeader />
+                                    ),
+                                })}
+                            />
+                            {/* Wallet (Receive) */}
+                            <Stack.Screen
+                                name="Receive"
+                                component={Receive}
+                                options={() => ({
+                                    header: () => <ReceiveBitcoinHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="BitcoinRequest"
+                                component={BitcoinRequest}
+                                options={() => ({
+                                    header: () => <BitcoinRequestHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ReceiveLightning"
+                                component={ReceiveLightning}
+                                options={() => ({
+                                    header: () => <ReceiveLightningHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ConfirmReceiveOffline"
+                                component={ConfirmReceiveOffline}
+                                options={() => ({
+                                    header: () => (
+                                        <ReceiveBitcoinOfflineHeader />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ReceiveSuccess"
+                                component={ReceiveSuccess}
+                                options={{ headerShown: false }}
+                            />
+                            {/* Transaction history */}
+                            <Stack.Screen
+                                name="Transactions"
+                                component={Transactions}
+                                options={() => ({
+                                    header: () => <TransactionsHeader />,
+                                })}
+                            />
+                            {/* Federations */}
+                            <Stack.Screen
+                                name="FederationInvite"
+                                component={FederationInvite}
+                                options={() => ({
+                                    header: () => <FederationInviteHeader />,
+                                })}
+                            />
+                            {/* Backup & Recovery */}
+                            <Stack.Screen
+                                name="ChooseBackupMethod"
+                                component={ChooseBackupMethod}
+                                options={() => ({
+                                    header: () => <ChooseBackupMethodHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ChooseRecoveryMethod"
+                                component={ChooseRecoveryMethod}
+                                options={() => ({
+                                    header: () => (
+                                        <ChooseRecoveryMethodHeader />
+                                    ),
+                                })}
+                            />
+                            {/* Social Backup */}
+                            <Stack.Screen
+                                name="RecordBackupVideo"
+                                component={RecordBackupVideo}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialBackupHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StartSocialBackup"
+                                component={StartSocialBackup}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialBackupHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SocialBackupProcessing"
+                                component={SocialBackupProcessing}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialBackupHeader closeButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SocialBackupCloudUpload"
+                                component={SocialBackupCloudUpload}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialBackupHeader closeButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="CompleteSocialBackup"
+                                component={CompleteSocialBackup}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialBackupHeader closeButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SocialBackupSuccess"
+                                component={SocialBackupSuccess}
+                                options={{ headerShown: false }}
+                            />
+                            {/* Social Recovery */}
+                            <Stack.Screen
+                                name="LocateSocialRecovery"
+                                component={LocateSocialRecovery}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialRecoveryHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SelectRecoveryFileSuccess"
+                                component={SelectRecoveryFileSuccess}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="SelectRecoveryFileFailure"
+                                component={SelectRecoveryFileFailure}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="CompleteSocialRecovery"
+                                component={CompleteSocialRecovery}
+                                options={() => ({
+                                    header: () => (
+                                        <SocialRecoveryHeader cancelButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="SocialRecoveryFailure"
+                                component={SocialRecoveryFailure}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="SocialRecoverySuccess"
+                                component={SocialRecoverySuccess}
+                                options={{ headerShown: false }}
+                            />
+                            {/* Recovery Assist (Guardians) */}
+                            <Stack.Screen
+                                name="StartRecoveryAssist"
+                                component={StartRecoveryAssist}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryAssistHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ConfirmRecoveryAssist"
+                                component={ConfirmRecoveryAssist}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryAssistHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ScanSocialRecoveryCode"
+                                component={ScanSocialRecoveryCode}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryAssistHeader
+                                            backButton
+                                            closeButton
+                                        />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="CompleteRecoveryAssist"
+                                component={CompleteRecoveryAssist}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryAssistHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RecoveryAssistSuccess"
+                                component={RecoveryAssistSuccess}
+                                options={{ headerShown: false }}
+                            />
+                            {/* Personal Backup */}
+                            <Stack.Screen
+                                name="StartPersonalBackup"
+                                component={StartPersonalBackup}
+                                options={() => ({
+                                    header: () => <PersonalBackupHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RecoveryWords"
+                                component={RecoveryWords}
+                                options={() => ({
+                                    header: () => <RecoveryWordsHeader />,
+                                })}
+                            />
+                            {/* Personal Recovery */}
+                            <Stack.Screen
+                                name="PersonalRecovery"
+                                component={PersonalRecovery}
+                                options={() => ({
+                                    header: () => (
+                                        <PersonalRecoveryHeader backButton />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="PersonalRecoverySuccess"
+                                component={PersonalRecoverySuccess}
+                                options={{ headerShown: false }}
+                            />
+                            {/* Popup federations */}
+                            <Stack.Screen
+                                name="PopupFederationEnded"
+                                component={PopupFederationEnded}
+                                options={() => ({
+                                    header: () => <SelectedFederationHeader />,
+                                })}
+                            />
+                            {/* Settings */}
+                            <Stack.Screen
+                                name="Settings"
+                                component={Settings}
+                                options={() => ({
+                                    header: () => <SettingsHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="FediModSettings"
+                                component={FediModSettings}
+                                options={() => ({
+                                    header: () => <FediModSettingsHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="AddFediMod"
+                                component={AddFediMod}
+                                options={() => ({
+                                    header: () => <AddFediModHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="LanguageSettings"
+                                component={LanguageSettings}
+                                options={() => ({
+                                    header: () => <LanguageSettingsHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="CurrencySettings"
+                                component={CurrencySettings}
+                                options={() => ({
+                                    header: () => <CurrencySettingsHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ChangePin"
+                                component={ChangePin}
+                                options={() => ({
+                                    header: () => <ChangePinHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="CreatePin"
+                                component={CreatePin}
+                                options={() => ({
+                                    header: () => <CreatePinHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="CreatedPin"
+                                component={CreatedPin}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="CreatePinInstructions"
+                                component={CreatePinInstructions}
+                                options={() => ({
+                                    header: () => (
+                                        <CreatePinInstructionsHeader />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="PinAccess"
+                                component={PinAccess}
+                                options={() => ({
+                                    header: () => <PinAccessHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="LockScreen"
+                                component={LockScreen}
+                                options={() => ({
+                                    header: () => <LockScreenHeader />,
+                                    presentation: 'fullScreenModal',
+                                })}
+                            />
+                            {/* Stability Pools */}
+                            <Stack.Screen
+                                name="StabilityHome"
+                                component={StabilityHome}
+                                options={() => ({
+                                    header: () => <StabilityHomeHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityHistory"
+                                component={StabilityHistory}
+                                options={() => ({
+                                    header: () => <StabilityHistoryHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityDeposit"
+                                component={StabilityDeposit}
+                                options={() => ({
+                                    header: () => <StabilityDepositHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityWithdraw"
+                                component={StabilityWithdraw}
+                                options={() => ({
+                                    header: () => <StabilityWithdrawHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityConfirmDeposit"
+                                component={StabilityConfirmDeposit}
+                                options={() => ({
+                                    header: () => <ConfirmDepositHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityConfirmWithdraw"
+                                component={StabilityConfirmWithdraw}
+                                options={() => ({
+                                    header: () => <ConfirmWithdrawHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityDepositInitiated"
+                                component={StabilityDepositInitiated}
+                                options={() => ({
+                                    header: () => <DepositInitiatedHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityWithdrawInitiated"
+                                component={StabilityWithdrawInitiated}
+                                options={() => ({
+                                    header: () => <WithdrawInitiatedHeader />,
+                                })}
+                            />
+                            {/* Bug report */}
+                            <Stack.Screen
+                                name="BugReport"
+                                component={BugReport}
+                                options={() => ({
+                                    header: () => <BugReportHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="BugReportSuccess"
+                                component={BugReportSuccess}
+                                options={{ headerShown: false }}
+                            />
+                            {/* Developer-only */}
+                            <Stack.Screen
+                                name="DeveloperSettings"
+                                component={DeveloperSettings}
+                                options={() => ({
+                                    header: () => (
+                                        <Header
+                                            backButton
+                                            headerCenter={
+                                                <Text
+                                                    bold
+                                                    numberOfLines={1}
+                                                    adjustsFontSizeToFit>
+                                                    {'Developer Settings'}
+                                                </Text>
+                                            }
+                                        />
+                                    ),
+                                })}
+                            />
+                        </Stack.Group>
+                        {/* Put all Overlay/Modal screens here */}
+                        <Stack.Group>
+                            <Stack.Screen
+                                name="SocialRecoveryQrModal"
+                                component={SocialRecoveryQrModal}
+                                options={{
+                                    presentation: 'transparentModal',
+                                    headerShown: false,
+                                }}
+                            />
+                        </Stack.Group>
+                    </Stack.Group>
+                )}
+            </>
+        </Stack.Navigator>
+    )
 }
 
 const linking: NavigationLinkingConfig = {
-  prefixes: [
-    'fedi:',
-    'lightning:',
-    'bitcoin:',
-    'lnurlw://',
-    'lnurlp://',
-    'keyauth://',
-  ],
-  config: {
-    screens: {
-      MainNavigator: {
+    prefixes: [
+        'fedi:',
+        'lightning:',
+        'bitcoin:',
+        'lnurlw://',
+        'lnurlp://',
+        'keyauth://',
+    ],
+    config: {
         screens: {
-          TabsNavigator: 'tabs-navigator',
-          // Wallet (Send)
-          Send: 'send',
-          ConfirmSendLightning: 'confirm-send-lightning',
-          ConfirmSendOnChain: 'confirm-send-on-chain',
-          ConfirmReceiveOnChain: 'confirm-receive-on-chain',
-          SendSuccess: 'send-success',
-          SendOfflineAmount: 'send-offline-amount',
-          SendOfflineQr: 'send-offline-qr',
-          ConfirmSendOfflineAmount: 'confirm-send-offline-amount',
-          // Wallet (Receive)
-          Receive: 'receive',
-          BitcoinRequest: 'bitcoin-request',
-          ReceiveSuccess: 'receive-success',
-          // Federations
-          FederationInvite: 'federation-invite',
-          JoinFederation: 'join-federation',
-          // Backup & Recovery
-          ChooseBackupMethod: 'choose-backup-method',
-          ChooseRecoveryMethod: 'choose-recovery-method',
-          // Social Backup
-          RecordBackupVideo: 'record-backup-video',
-          StartSocialBackup: 'start-social-backup',
-          SocialBackupProcessing: 'social-backup-processing',
-          SocialBackupCloudUpload: 'social-backup-cloud-upload',
-          CompleteSocialBackup: 'complete-social-backup',
-          SocialBackupSuccess: 'social-backup-success',
-          // Social Recovery
-          LocateSocialRecovery: 'locate-social-recovery',
-          SelectRecoveryFileSuccess: 'select-recovery-file-success',
-          SelectRecoveryFileFailure: 'select-recovery-file-failure',
-          CompleteSocialRecovery: 'complete-social-recovery',
-          SocialRecoveryFailure: 'social-recovery-failure',
-          SocialRecoverySuccess: 'social-recovery-success',
-          SocialRecoveryAssist: 'social-recovery-assist',
-          ScanSocialRecoveryCode: 'scan-social-recovery-code',
-          CompleteRecoveryAssist: 'recovery-assist-confirmation',
-          RecoveryAssistSuccess: 'recovery-assist-success',
-          // Personal Backup
-          StartPersonalBackup: 'start-personal-backup',
-          RecoveryWords: 'recovery-words',
-          // Personal Recovery
-          PersonalRecovery: 'personal-recovery',
-          PersonalRecoverySuccess: 'personal-recovery-success',
-          RequestCameraAccess: 'request-camera-access',
-          // Modals
-          Transactions: 'transactions',
-          SocialRecoveryQrModal: 'social-recovery-qr-modal',
-          // No federation
-          Splash: 'splash',
-          // Omni scanner
-          OmniScanner: 'omni-scanner',
+            MainNavigator: {
+                screens: {
+                    TabsNavigator: 'tabs-navigator',
+                    // Wallet (Send)
+                    Send: 'send',
+                    ConfirmSendLightning: 'confirm-send-lightning',
+                    ConfirmSendOnChain: 'confirm-send-on-chain',
+                    ConfirmReceiveOnChain: 'confirm-receive-on-chain',
+                    SendSuccess: 'send-success',
+                    SendOfflineAmount: 'send-offline-amount',
+                    SendOfflineQr: 'send-offline-qr',
+                    ConfirmSendOfflineAmount: 'confirm-send-offline-amount',
+                    // Wallet (Receive)
+                    Receive: 'receive',
+                    BitcoinRequest: 'bitcoin-request',
+                    ReceiveSuccess: 'receive-success',
+                    // Federations
+                    FederationInvite: 'federation-invite',
+                    JoinFederation: 'join-federation',
+                    // Backup & Recovery
+                    ChooseBackupMethod: 'choose-backup-method',
+                    ChooseRecoveryMethod: 'choose-recovery-method',
+                    // Social Backup
+                    RecordBackupVideo: 'record-backup-video',
+                    StartSocialBackup: 'start-social-backup',
+                    SocialBackupProcessing: 'social-backup-processing',
+                    SocialBackupCloudUpload: 'social-backup-cloud-upload',
+                    CompleteSocialBackup: 'complete-social-backup',
+                    SocialBackupSuccess: 'social-backup-success',
+                    // Social Recovery
+                    LocateSocialRecovery: 'locate-social-recovery',
+                    SelectRecoveryFileSuccess: 'select-recovery-file-success',
+                    SelectRecoveryFileFailure: 'select-recovery-file-failure',
+                    CompleteSocialRecovery: 'complete-social-recovery',
+                    SocialRecoveryFailure: 'social-recovery-failure',
+                    SocialRecoverySuccess: 'social-recovery-success',
+                    SocialRecoveryAssist: 'social-recovery-assist',
+                    ScanSocialRecoveryCode: 'scan-social-recovery-code',
+                    CompleteRecoveryAssist: 'recovery-assist-confirmation',
+                    RecoveryAssistSuccess: 'recovery-assist-success',
+                    // Personal Backup
+                    StartPersonalBackup: 'start-personal-backup',
+                    RecoveryWords: 'recovery-words',
+                    // Personal Recovery
+                    PersonalRecovery: 'personal-recovery',
+                    PersonalRecoverySuccess: 'personal-recovery-success',
+                    RequestCameraAccess: 'request-camera-access',
+                    // Modals
+                    Transactions: 'transactions',
+                    SocialRecoveryQrModal: 'social-recovery-qr-modal',
+                    // No federation
+                    Splash: 'splash',
+                    // Omni scanner
+                    OmniScanner: 'omni-scanner',
+                },
+            },
         },
-      },
     },
-  },
 }
 
 const Router = () => {
-  const { theme } = useTheme()
-  const navigation = useNavigationContainerRef()
+    const { theme } = useTheme()
+    const navigation = useNavigationContainerRef()
 
-  const toast = useToast()
+    const toast = useToast()
 
-  // Makes sure to check XMPP socket health when app is foregrounded
-  // useXmppHealthCheck()
+    // Makes sure to check XMPP socket health when app is foregrounded
+    // useXmppHealthCheck()
 
-  // Publishes an FCM push notification token if chat is available
-  // useXmppPushNotifications()
+    // Publishes an FCM push notification token if chat is available
+    // useXmppPushNotifications()
 
-  // Make sure any available chat connections are always online
-  // useMonitorChatConnections(fedimint)
+    // Make sure any available chat connections are always online
+    // useMonitorChatConnections(fedimint)
 
-  // Navigates to locked device screen if we detect a device conflict
-  useLockedDeviceDetection(fedimint, () => {
-    navigation.dispatch(resetToLockedDevice())
-  })
+    // Navigates to locked device screen if we detect a device conflict
+    useLockedDeviceDetection(fedimint, () => {
+        navigation.dispatch(resetToLockedDevice())
+    })
 
-  return (
-    <NavigationContainer
-      ref={navigation}
-      theme={theme}
-      linking={linking}
-      onStateChange={() => {
-        toast.close()
-      }}>
-      <Drawer.Navigator
-        id={DRAWER_NAVIGATION_ID}
-        drawerContent={ConnectedFederationsDrawer}>
-        <Drawer.Screen
-          name="MainNavigator"
-          component={MainNavigator}
-          options={{ headerShown: false }}
-        />
-        <Drawer.Screen
-          name="SwitchingFederations"
-          component={SwitchingFederations}
-          initialParams={{ federationId: null }}
-          options={{
-            headerShown: false,
-          }}
-        />
-      </Drawer.Navigator>
-      <OmniLinkHandler />
-    </NavigationContainer>
-  )
+    return (
+        <NavigationContainer
+            ref={navigation}
+            theme={theme}
+            linking={linking}
+            onStateChange={() => {
+                toast.close()
+            }}>
+            <Drawer.Navigator
+                id={DRAWER_NAVIGATION_ID}
+                drawerContent={ConnectedFederationsDrawer}>
+                <Drawer.Screen
+                    name="MainNavigator"
+                    component={MainNavigator}
+                    options={{ headerShown: false }}
+                />
+                <Drawer.Screen
+                    name="SwitchingFederations"
+                    component={SwitchingFederations}
+                    initialParams={{ federationId: null }}
+                    options={{
+                        headerShown: false,
+                    }}
+                />
+            </Drawer.Navigator>
+            <OmniLinkHandler />
+        </NavigationContainer>
+    )
 }
 
 export default Router
