@@ -127,7 +127,7 @@ export const ChatUserSearch: React.FC<Props> = ({ action }) => {
                             <div>{searchContent}</div>
                         </>
                     )}
-                    <SearchButton as={Link} href="/chat/new/group">
+                    <SearchButton as={Link} href="/chat/new/room">
                         <Icon icon={SocialPeopleIcon} />
                         <Text weight="medium">
                             {t('feature.chat.create-a-group')}
