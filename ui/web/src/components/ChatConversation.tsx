@@ -88,6 +88,17 @@ export const ChatConversation: React.FC<Props> = ({
         [onPaginate],
     )
 
+    // Handle loading initial messages
+    useEffect(() => {
+        if (!onPaginate) return
+        setIsPaginating(true)
+        setHasPaginated(true)
+        onPaginate()
+            .then(({ end }) => setIsAtEnd(end))
+            .catch(() => null)
+            .finally(() => setIsPaginating(false))
+    }, [onPaginate])
+
     const handleSend = useCallback(
         async (ev?: React.FormEvent) => {
             if (ev) {
