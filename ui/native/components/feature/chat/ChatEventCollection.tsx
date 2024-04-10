@@ -53,15 +53,18 @@ const ChatEventCollection: React.FC<Props> = ({
 
                     const roomMember = roomMembers.find(m => m.id === sentBy)
                     const isMe = sentBy === matrixAuth?.userId
+                    const hasLeft = roomMember?.membership !== 'join'
+                    const isBanned = roomMember?.membership === 'ban'
+                    const displayName = isBanned
+                        ? 'Kicked Member'
+                        : hasLeft
+                        ? 'Former Member'
+                        : roomMember?.displayName || '...'
                     return (
                         <View style={style.senderGroup} key={`ceci-${index}`}>
                             {showUsernames && !isMe && (
                                 <View style={style.senderNameContainer}>
-                                    <Text tiny>
-                                        {roomMember?.displayName || '...'}
-                                        {/* {roomMember?.displayName ||
-                                            matrixIdToUsername(sentBy)} */}
-                                    </Text>
+                                    <Text tiny>{displayName}</Text>
                                 </View>
                             )}
                             <View style={style.senderGroupContent}>
@@ -70,6 +73,7 @@ const ChatEventCollection: React.FC<Props> = ({
                                         style={style.senderAvatar}
                                         onPress={() =>
                                             roomMember &&
+                                            !hasLeft &&
                                             onSelect(roomMember.id)
                                         }>
                                         <ChatAvatar
@@ -130,7 +134,7 @@ const styles = (theme: Theme) =>
             alignItems: 'flex-end',
         },
         senderNameContainer: {
-            paddingLeft: 50,
+            paddingLeft: 43,
         },
         senderMessages: {
             flexDirection: 'column-reverse',

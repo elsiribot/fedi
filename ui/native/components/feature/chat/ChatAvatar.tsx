@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { MatrixRoom, MatrixUser } from '@fedi/common/types'
+import { MatrixRoom, MatrixRoomMember, MatrixUser } from '@fedi/common/types'
 import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 
 import Avatar, { AvatarProps } from '../../ui/Avatar'
@@ -13,7 +13,9 @@ type RoomProps = BaseProps & {
     >
 }
 type UserProps = BaseProps & {
-    user: Pick<MatrixUser, 'id' | 'displayName' | 'avatarUrl'>
+    user: Pick<MatrixUser, 'id' | 'displayName' | 'avatarUrl'> & {
+        membership?: MatrixRoomMember['membership']
+    }
 }
 type Props = RoomProps | UserProps
 
@@ -38,6 +40,9 @@ const ChatAvatar: React.FC<Props> = props => {
         const { user, ...rest } = props
         id = user.id
         name = user.displayName || matrixIdToUsername(user.id)
+        if (user.membership) {
+            icon = user.membership === 'join' ? undefined : 'User'
+        }
         // src = user.avatarUrl
         avatarProps = rest
     }
