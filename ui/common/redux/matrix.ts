@@ -679,6 +679,25 @@ export const selectMatrixRoomMembers = (
     roomId: MatrixRoom['id'],
 ) => s.matrix.roomMembers[roomId] || ([] as MatrixRoomMember[])
 
+/**
+ * Get the list of members in a room.
+ * Make the first member the current user.
+ * Leave the rest of the list as is.
+ */
+export const selectMatrixRoomMembersByMe = createSelector(
+    selectMatrixRoomMembers,
+    selectMatrixAuth,
+    (members, auth) => {
+        const index = members.findIndex(({ id }) => id === auth?.userId)
+        if (index === -1) return members
+        return [
+            members[index],
+            ...members.slice(0, index),
+            ...members.slice(index + 1),
+        ]
+    },
+)
+
 export const selectMatrixRoomMembersCount = (
     s: CommonState,
     roomId: MatrixRoom['id'],

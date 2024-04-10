@@ -4,9 +4,11 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
 
-import { selectMatrixAuth, selectMatrixRoomMembers } from '@fedi/common/redux'
+import {
+    selectMatrixAuth,
+    selectMatrixRoomMembersByMe,
+} from '@fedi/common/redux'
 import { MatrixPowerLevel, MatrixRoomMember } from '@fedi/common/types'
-import { sortMembersByMe } from '@fedi/common/utils/matrix'
 
 import { ChatUserActionsOverlay } from '../components/feature/chat/ChatUserActionsOverlay'
 import ChatUserTile from '../components/feature/chat/ChatUserTile'
@@ -27,19 +29,8 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
 
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
     const myUserId = useAppSelector(selectMatrixAuth)?.userId
-    const unsortedMembers = useAppSelector(s =>
-        selectMatrixRoomMembers(s, roomId),
-    )
+    const members = useAppSelector(s => selectMatrixRoomMembersByMe(s, roomId))
     const [isRefetching, setIsRefetching] = useState(false)
-    // Make the current user appear at the top
-    const members = useMemo(
-        () =>
-            myUserId === undefined
-                ? unsortedMembers
-                : sortMembersByMe(myUserId, unsortedMembers),
-        [myUserId, unsortedMembers],
-    )
-
     const handleSelectMember = useCallback((userId: string) => {
         setSelectedUserId(userId)
     }, [])
