@@ -5,17 +5,17 @@ use anyhow::bail;
 use fedimint_core::task::TaskGroup;
 use tracing::{error, info};
 
-use crate::api::{IFediApi, RegisterDeviceError};
+use crate::api::{IFediApi, RegisterDeviceError, RegisteredDevice};
 use crate::constants::BACKUP_FREQUENCY;
 use crate::event::{Event, EventSink, TypedEventExt};
 use crate::storage::AppState;
 
 pub struct DeviceRegistrationService {
-    _device_identifier: String,
-    _app_state: Arc<AppState>,
-    _event_sink: EventSink,
-    _task_group: TaskGroup,
-    _fedi_api: Arc<dyn IFediApi>,
+    device_identifier: String,
+    app_state: Arc<AppState>,
+    event_sink: EventSink,
+    task_group: TaskGroup,
+    fedi_api: Arc<dyn IFediApi>,
     active_task_subgroup: Option<TaskGroup>,
 }
 
@@ -28,29 +28,56 @@ impl DeviceRegistrationService {
         fedi_api: Arc<dyn IFediApi>,
     ) -> Self {
         let mut service = Self {
-            _device_identifier: device_identifier.clone(),
-            _app_state: app_state.clone(),
-            _event_sink: event_sink.clone(),
-            _task_group: task_group.clone(),
-            _fedi_api: fedi_api.clone(),
+            device_identifier: device_identifier.clone(),
+            app_state: app_state.clone(),
+            event_sink: event_sink.clone(),
+            task_group: task_group.clone(),
+            fedi_api: fedi_api.clone(),
             active_task_subgroup: None,
         };
 
         if let Some(device_index) = app_state.with_read_lock(|state| state.device_index).await {
-            let subgroup = task_group.make_subgroup().await;
-            subgroup.spawn_cancellable("device_registration_service", async move {
-                renew_registration_periodically(
-                    device_identifier,
-                    device_index,
-                    app_state,
-                    event_sink,
-                    fedi_api,
-                )
-                .await
-            });
-            service.active_task_subgroup = Some(subgroup);
+            service
+                .start_periodic_registration_inner(device_index)
+                .await;
         }
         service
+    }
+
+    pub async fn stop_ongoing_periodic_registration(&mut self) -> anyhow::Result<()> {
+        if let Some(subgroup) = self.active_task_subgroup.take() {
+            subgroup
+                .shutdown_join_all(Some(Duration::from_secs(20)))
+                .await?;
+        }
+        Ok(())
+    }
+
+    pub async fn start_ongoing_periodic_registration(
+        &mut self,
+        device_index: u8,
+    ) -> anyhow::Result<()> {
+        if self.active_task_subgroup.is_some() {
+            bail!("Stop currently ongoing device registration task first");
+        }
+
+        self.start_periodic_registration_inner(device_index).await;
+        Ok(())
+    }
+
+    async fn start_periodic_registration_inner(&mut self, device_index: u8) {
+        let subgroup = self.task_group.make_subgroup().await;
+        subgroup.spawn_cancellable(
+            "device_registration_service",
+            renew_registration_periodically(
+                self.device_identifier.clone(),
+                device_index,
+                self.app_state.clone(),
+                self.event_sink.clone(),
+                self.fedi_api.clone(),
+            ),
+        );
+        self.active_task_subgroup = Some(subgroup);
     }
 }
 
@@ -88,6 +115,7 @@ async fn renew_registration_periodically(
             seed.clone(),
             device_index,
             device_identifier.clone(),
+            false,
         )
         .await
         .is_err()
@@ -97,17 +125,44 @@ async fn renew_registration_periodically(
     }
 }
 
-async fn register_device_with_backoff(
+pub async fn get_registered_devices_with_backoff(
+    fedi_api: Arc<dyn IFediApi>,
+    seed: bip39::Mnemonic,
+) -> Vec<RegisteredDevice> {
+    for attempt in 1u64.. {
+        match fedi_api
+            .fetch_registered_devices_for_seed(seed.clone())
+            .await
+        {
+            Ok(devices) => return devices,
+            Err(error) => {
+                error!(%attempt, %error, "fetch registered devices failed");
+            }
+        }
+
+        let sleep_time = 1 << attempt.min(9);
+        fedimint_core::task::sleep(Duration::from_secs(sleep_time)).await;
+    }
+    vec![]
+}
+
+pub async fn register_device_with_backoff(
     app_state: Arc<AppState>,
     fedi_api: Arc<dyn IFediApi>,
     event_sink: EventSink,
     seed: bip39::Mnemonic,
     device_index: u8,
     device_identifier: String,
+    force_overwrite: bool,
 ) -> anyhow::Result<()> {
     for attempt in 1u64.. {
         match fedi_api
-            .register_device_for_seed(seed.clone(), device_index, device_identifier.clone(), false)
+            .register_device_for_seed(
+                seed.clone(),
+                device_index,
+                device_identifier.clone(),
+                force_overwrite,
+            )
             .await
         {
             Ok(_) => {

@@ -43,8 +43,9 @@ use crate::matrix::{
 };
 use crate::observable::{Observable, ObservableVec};
 use crate::types::{
-    GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
-    RpcLightningGateway, RpcPayAddressResponse,
+    GuardianStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederationPreview,
+    RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway, RpcPayAddressResponse,
+    RpcRegisteredDevice,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -314,7 +315,10 @@ async fn getMnemonic(bridge: Arc<Bridge>) -> anyhow::Result<Vec<String>> {
 
 // TODO: maybe call this "loadMnemonic" or something?
 #[macro_rules_derive(rpc_method!)]
-async fn recoverFromMnemonic(bridge: Arc<Bridge>, mnemonic: Vec<String>) -> anyhow::Result<()> {
+async fn recoverFromMnemonic(
+    bridge: Arc<Bridge>,
+    mnemonic: Vec<String>,
+) -> anyhow::Result<Vec<RpcRegisteredDevice>> {
     bridge
         .recover_from_mnemonic(mnemonic.join(" ").parse()?)
         .await
@@ -387,7 +391,7 @@ async fn approveSocialRecoveryRequest(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn completeSocialRecovery(bridge: Arc<Bridge>) -> anyhow::Result<RpcFederation> {
+async fn completeSocialRecovery(bridge: Arc<Bridge>) -> anyhow::Result<Vec<RpcRegisteredDevice>> {
     bridge.complete_social_recovery().await
 }
 
@@ -609,6 +613,36 @@ async fn matrixInit(bridge: Arc<Bridge>) -> anyhow::Result<RpcMatrixAccountSessi
         .map_err(|_| anyhow::anyhow!("matrix already initialized"))?;
     let matrix = get_matrix(&bridge).await?;
     matrix.get_account_session().await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn fetchRegisteredDevices(bridge: Arc<Bridge>) -> anyhow::Result<Vec<RpcRegisteredDevice>> {
+    bridge.fetch_registered_devices().await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn registerAsNewDevice(bridge: Arc<Bridge>) -> anyhow::Result<Option<RpcFederation>> {
+    bridge
+        .register_device_with_index(
+            bridge.fetch_registered_devices().await?.len().try_into()?,
+            false,
+        )
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn transferExistingDeviceRegistration(
+    bridge: Arc<Bridge>,
+    index: u8,
+) -> anyhow::Result<Option<RpcFederation>> {
+    bridge.register_device_with_index(index, true).await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn deviceIndexAssignmentStatus(
+    bridge: Arc<Bridge>,
+) -> anyhow::Result<RpcDeviceIndexAssignmentStatus> {
+    bridge.device_index_assignment_status().await
 }
 
 async fn get_matrix(bridge: &Bridge) -> anyhow::Result<&Matrix> {
@@ -1084,6 +1118,12 @@ rpc_methods!(RpcMethods {
     getAccruedOutstandingFediFees,
     dumpDb,
 
+    // Device Registration
+    fetchRegisteredDevices,
+    registerAsNewDevice,
+    transferExistingDeviceRegistration,
+    deviceIndexAssignmentStatus,
+
     matrixObserverCancel,
 
     // Matrix
@@ -1153,11 +1193,12 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::ops::ControlFlow;
     use std::path::Path;
     use std::str::FromStr;
     use std::sync::{Once, RwLock};
-    use std::time::{Duration, UNIX_EPOCH};
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
     use anyhow::{anyhow, bail};
     use bitcoin::secp256k1::PublicKey;
@@ -1167,11 +1208,13 @@ mod tests {
     use fedi_social_client::common::VerificationDocument;
     use fedimint_core::{apply, async_trait_maybe_send, Amount};
     use fedimint_logging::TracingSetup;
+    use tokio::sync::Mutex;
     use tracing::{error, info};
 
     use super::*;
     use crate::api::{RegisterDeviceError, RegisteredDevice};
     use crate::constants::{FEDI_FILE_PATH, MILLION};
+    use crate::event::DeviceRegistrationEvent;
     use crate::ffi::PathBasedStorage;
     use crate::multi::MultiFederation;
     use crate::storage::{FediFeeSchedule, IStorage};
@@ -1212,7 +1255,18 @@ mod tests {
         }
     }
 
-    struct MockFediApi;
+    struct MockFediApi {
+        // (seed, index) => (device identifier, last registration timestamp)
+        registry: Mutex<HashMap<(bip39::Mnemonic, u8), (String, SystemTime)>>,
+    }
+
+    impl MockFediApi {
+        fn new() -> Self {
+            Self {
+                registry: Mutex::new(HashMap::new()),
+            }
+        }
+    }
 
     #[apply(async_trait_maybe_send!)]
     impl IFediApi for MockFediApi {
@@ -1231,22 +1285,58 @@ mod tests {
             unimplemented!("TODO shaurya implement when testing");
         }
 
-        // TODO shaurya make fetch return "test device" after register called
         async fn fetch_registered_devices_for_seed(
             &self,
-            _seed: bip39::Mnemonic,
+            seed: bip39::Mnemonic,
         ) -> anyhow::Result<Vec<RegisteredDevice>> {
-            Ok(vec![])
+            let mut devices = self
+                .registry
+                .lock()
+                .await
+                .iter()
+                .filter_map(|(k, v)| {
+                    if k.0 == seed {
+                        Some(RegisteredDevice {
+                            index: k.1,
+                            identifier: v.0.clone(),
+                            last_renewed: v.1,
+                        })
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            devices.sort_by_key(|r| r.index);
+            Ok(devices)
         }
 
         async fn register_device_for_seed(
             &self,
-            _seed: bip39::Mnemonic,
-            _device_index: u8,
-            _device_identifier: String,
-            _force_overwrite: bool,
+            seed: bip39::Mnemonic,
+            device_index: u8,
+            device_identifier: String,
+            force_overwrite: bool,
         ) -> anyhow::Result<(), RegisterDeviceError> {
-            Ok(())
+            let mut registry = self.registry.lock().await;
+            if let Some(value) = registry.get_mut(&(seed.clone(), device_index)) {
+                if force_overwrite {
+                    value.0 = device_identifier;
+                    value.1 = fedimint_core::time::now();
+                    Ok(())
+                } else {
+                    Err(RegisterDeviceError::AnotherDeviceOwnsIndex(format!(
+                        "{} already owned by {}, not overwriting",
+                        device_index, value.0
+                    )))
+                }
+            } else {
+                registry.insert(
+                    (seed, device_index),
+                    (device_identifier, fedimint_core::time::now()),
+                );
+                Ok(())
+            }
         }
     }
 
@@ -1412,7 +1502,28 @@ mod tests {
         Ok((bridge, federation))
     }
 
+    async fn setup_custom(
+        device_identifier: String,
+        mock_fedi_api: Arc<dyn IFediApi>,
+    ) -> anyhow::Result<(Arc<Bridge>, Arc<MultiFederation>)> {
+        let bridge = setup_bridge_custom(device_identifier, mock_fedi_api).await?;
+
+        let federation = join_test_fed(&bridge).await?;
+        Ok((bridge, federation))
+    }
+
     async fn setup_bridge() -> anyhow::Result<Arc<Bridge>> {
+        setup_bridge_custom(
+            "Unknown (bridge tests)".to_owned(),
+            Arc::new(MockFediApi::new()),
+        )
+        .await
+    }
+
+    async fn setup_bridge_custom(
+        device_identifier: String,
+        fedi_api: Arc<dyn IFediApi>,
+    ) -> anyhow::Result<Arc<Bridge>> {
         INIT_TRACING.call_once(|| {
             TracingSetup::default()
                 .init()
@@ -1421,22 +1532,16 @@ mod tests {
         let event_sink = Arc::new(FakeEventSink::new());
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
-        let fedi_api = Arc::new(MockFediApi);
-        let bridge = match fedimint_initialize_async(
-            storage,
-            event_sink,
-            fedi_api,
-            "Unknown (bridge tests)".to_owned(),
-        )
-        .await
-        {
-            Ok(bridge) => bridge,
-            Err(e) => {
-                let context_error = e.context("Failed to initialize Bridge");
-                error!("{}", context_error);
-                return Err(context_error);
-            }
-        };
+        let bridge =
+            match fedimint_initialize_async(storage, event_sink, fedi_api, device_identifier).await
+            {
+                Ok(bridge) => bridge,
+                Err(e) => {
+                    let context_error = e.context("Failed to initialize Bridge");
+                    error!("{}", context_error);
+                    return Err(context_error);
+                }
+            };
         Ok(bridge)
     }
 
@@ -1470,7 +1575,7 @@ mod tests {
         let event_sink = Arc::new(FakeEventSink::new());
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
-        let fedi_api = Arc::new(MockFediApi);
+        let fedi_api = Arc::new(MockFediApi::new());
         let invalid_fedi_file = String::from(r#"{"format_version": 0, "root_seed": "abcd"}"#);
         storage
             .write_file(FEDI_FILE_PATH.as_ref(), invalid_fedi_file.clone().into())
@@ -1508,7 +1613,7 @@ mod tests {
         let fixture_dir = get_fixture_dir().join("v0_db");
         copy_recursively(fixture_dir, &data_dir)?;
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
-        let fedi_api = Arc::new(MockFediApi);
+        let fedi_api = Arc::new(MockFediApi::new());
         let bridge = fedimint_initialize_async(
             storage,
             event_sink,
@@ -1889,6 +1994,11 @@ mod tests {
         let recovery_bridge = setup_bridge().await?;
         recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
 
+        // FIXME: uncomment below lines once hack in bridge.recover_from_mnemonic is
+        // removed
+        // // Re-register device as index 0 since it's the same device
+        // transferExistingDeviceRegistration(recovery_bridge.clone(), 0).await?;
+
         // Rejoin federation and assert that balances are correct
         let recovery_federation = join_test_fed_recovery(&recovery_bridge).await?;
         match &*recovery_federation {
@@ -2048,6 +2158,11 @@ mod tests {
         // Member combines decryption shares, loading recovered mnemonic back into their
         // db
         completeSocialRecovery(recovery_bridge.clone()).await?;
+
+        // FIXME: uncomment below lines once hack in bridge.recover_from_mnemonic is
+        // removed
+        // // Re-register device as index 0 since it's the same device
+        // transferExistingDeviceRegistration(recovery_bridge.clone(), 0).await?;
 
         // Check backups match (TODO: how can I make sure that they're equal b/c nothing
         // happened?)
@@ -2296,6 +2411,12 @@ mod tests {
         // "returning"
         let bridge = setup_bridge().await?;
         recoverFromMnemonic(bridge.clone(), mnemonic).await?;
+
+        // FIXME: uncomment below lines once hack in bridge.recover_from_mnemonic is
+        // removed
+        // // Re-register device as index 0 since it's the same device
+        // transferExistingDeviceRegistration(bridge.clone(), 0).await?;
+
         assert!(matches!(
             federationPreview(bridge.clone(), invite_code.clone())
                 .await?
@@ -2303,6 +2424,250 @@ mod tests {
             RpcReturningMemberStatus::ReturningMember
         ));
 
+        Ok(())
+    }
+
+    // FIXME: uncomment below lines once hack in bridge.recover_from_mnemonic is
+    // removed
+    // #[tokio::test(flavor = "multi_thread")]
+    #[allow(dead_code)]
+    async fn test_join_fails_post_recovery_index_unassigned() -> anyhow::Result<()> {
+        let device_identifier = "device 1".to_string();
+        let mock_fedi_api = Arc::new(MockFediApi::new());
+        let (backup_bridge, federation) =
+            setup_custom(device_identifier.clone(), mock_fedi_api.clone()).await?;
+
+        // Device index should be 0 since it's a fresh seed
+        assert!(matches!(
+            deviceIndexAssignmentStatus(backup_bridge.clone()).await?,
+            RpcDeviceIndexAssignmentStatus::Assigned(0)
+        ));
+
+        // set username and do a backup
+        let federation_id = federation.federation_id();
+        let username = "satoshi".to_string();
+        backupXmppUsername(
+            backup_bridge.clone(),
+            federation_id.clone(),
+            username.clone(),
+        )
+        .await?;
+        // give some time for backup to complete before shutting down the bridge
+        fedimint_core::task::sleep(Duration::from_secs(1)).await;
+
+        // get mnemonic and drop old federation / bridge so no background stuff runs
+        let mnemonic = getMnemonic(backup_bridge.clone()).await?;
+        drop(federation);
+        drop(backup_bridge);
+
+        // create new bridge which hasn't joined federation yet and recover mnemnonic
+        let recovery_bridge = setup_bridge_custom(device_identifier, mock_fedi_api).await?;
+        recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
+
+        // Device index should be unassigned since it's a recovery
+        assert!(matches!(
+            deviceIndexAssignmentStatus(recovery_bridge.clone()).await?,
+            RpcDeviceIndexAssignmentStatus::Unassigned
+        ));
+
+        // Rejoining federation should fail since device index wasn't assigned
+        assert!(join_test_fed_recovery(&recovery_bridge).await.is_err());
+        Ok(())
+    }
+
+    // FIXME: uncomment below lines once hack in bridge.recover_from_mnemonic is
+    // removed
+    // #[tokio::test(flavor = "multi_thread")]
+    #[allow(dead_code)]
+    async fn test_transfer_device_registration_post_recovery() -> anyhow::Result<()> {
+        let device_identifier_1 = "device 1".to_string();
+        let mock_fedi_api = Arc::new(MockFediApi::new());
+        let (backup_bridge, federation) =
+            setup_custom(device_identifier_1, mock_fedi_api.clone()).await?;
+
+        // receive ecash
+        let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
+        let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
+        federation.receive_ecash(ecash).await?;
+        wait_for_ecash_reissue(&backup_bridge, &federation).await?;
+        assert_eq!(ecash_receive_amount, federation.get_balance().await);
+
+        // Interact with stability pool
+        let amount_to_deposit = Amount::from_msats(110_000);
+        let fedi_fee_ppm = backup_bridge
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                federation.federation_id().0,
+                stability_pool_client::common::KIND,
+                RpcTransactionDirection::Send,
+            )
+            .await?;
+        let expected_fedi_fee =
+            Amount::from_msats((fedi_fee_ppm * amount_to_deposit.msats).div_ceil(MILLION));
+        backup_bridge
+            .stability_pool_deposit_to_seek(
+                federation.federation_id(),
+                RpcAmount(amount_to_deposit),
+            )
+            .await?;
+
+        let ecash_balance_before = federation.get_balance().await;
+
+        // set username and do a backup
+        let federation_id = federation.federation_id();
+        let username = "satoshi".to_string();
+        backupXmppUsername(
+            backup_bridge.clone(),
+            federation_id.clone(),
+            username.clone(),
+        )
+        .await?;
+        // give some time for backup to complete before shutting down the bridge
+        fedimint_core::task::sleep(Duration::from_secs(1)).await;
+
+        // get mnemonic (not dropping old federation / bridge so we can assert device
+        // index being stolen)
+        let mnemonic = getMnemonic(backup_bridge.clone()).await?;
+
+        // create new bridge which hasn't joined federation yet and recover mnemnonic
+        let device_identifier_2 = "device_2".to_string();
+        let recovery_bridge = setup_bridge_custom(device_identifier_2, mock_fedi_api).await?;
+        recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
+
+        // Register device as index 0 since it's a transfer
+        transferExistingDeviceRegistration(recovery_bridge.clone(), 0).await?;
+
+        // Rejoin federation and assert that balances are correct
+        let recovery_federation = join_test_fed_recovery(&recovery_bridge).await?;
+        match &*recovery_federation {
+            MultiFederation::V2(x) => assert!(x.recovering()),
+        }
+        let id = recovery_federation.federation_id();
+        drop(recovery_federation);
+        loop {
+            // Wait until recovery complete
+            if recovery_bridge
+                .event_sink
+                .num_events_of_type("recoveryComplete".into())
+                == 1
+            {
+                break;
+            }
+
+            fedimint_core::task::sleep(Duration::from_secs(2)).await;
+        }
+        let recovery_federation = recovery_bridge.get_multi(&id.0).await?;
+        // Currently, accrued fedi fee is merged back into balance upon recovery
+        assert_eq!(
+            ecash_balance_before + expected_fedi_fee,
+            recovery_federation.get_balance().await
+        );
+        assert_eq!(
+            Some(username),
+            recovery_federation.get_xmpp_username().await
+        );
+
+        let account_info = recovery_bridge
+            .stability_pool_account_info(recovery_federation.federation_id(), true)
+            .await?;
+        assert_eq!(account_info.idle_balance.0, Amount::ZERO);
+        assert_eq!(account_info.staged_seeks[0].0, amount_to_deposit);
+        assert!(account_info.staged_cancellation.is_none());
+        assert!(account_info.locked_seeks.is_empty());
+
+        // Verify that original device would see the conflict whenever its background
+        // service would try to renew registration. The conflict event is what the
+        // front-end uses to block further user action.
+        let registration_conflict_body = serde_json::to_string(&DeviceRegistrationEvent {
+            state: crate::event::DeviceRegistrationState::Conflict,
+        })
+        .expect("failed to json serialize");
+        assert!(!backup_bridge
+            .event_sink
+            .events()
+            .iter()
+            .any(|(ev_type, ev_body)| ev_type == "deviceRegistration"
+                && *ev_body == registration_conflict_body));
+        assert!(backup_bridge
+            .register_device_with_index(0, false)
+            .await
+            .is_err());
+        assert!(backup_bridge
+            .event_sink
+            .events()
+            .iter()
+            .any(|(ev_type, ev_body)| ev_type == "deviceRegistration"
+                && *ev_body == registration_conflict_body));
+        Ok(())
+    }
+
+    // FIXME: uncomment below lines once hack in bridge.recover_from_mnemonic is
+    // removed
+    // #[tokio::test(flavor = "multi_thread")]
+    #[allow(dead_code)]
+    async fn test_new_device_registration_post_recovery() -> anyhow::Result<()> {
+        let device_identifier_1 = "device 1".to_string();
+        let mock_fedi_api = Arc::new(MockFediApi::new());
+        let (backup_bridge, federation) =
+            setup_custom(device_identifier_1, mock_fedi_api.clone()).await?;
+
+        // receive ecash
+        let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
+        let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
+        federation.receive_ecash(ecash).await?;
+        wait_for_ecash_reissue(&backup_bridge, &federation).await?;
+        assert_eq!(ecash_receive_amount, federation.get_balance().await);
+
+        // Interact with stability pool
+        let amount_to_deposit = Amount::from_msats(110_000);
+        backup_bridge
+            .stability_pool_deposit_to_seek(
+                federation.federation_id(),
+                RpcAmount(amount_to_deposit),
+            )
+            .await?;
+
+        // set username and do a backup
+        let federation_id = federation.federation_id();
+        let username = "satoshi".to_string();
+        backupXmppUsername(
+            backup_bridge.clone(),
+            federation_id.clone(),
+            username.clone(),
+        )
+        .await?;
+        // give some time for backup to complete before shutting down the bridge
+        fedimint_core::task::sleep(Duration::from_secs(1)).await;
+
+        // get mnemonic and drop old federation / bridge so no background stuff runs
+        let mnemonic = getMnemonic(backup_bridge.clone()).await?;
+        drop(federation);
+        drop(backup_bridge);
+
+        // create new bridge which hasn't joined federation yet and recover mnemnonic
+        let device_identifier_2 = "device_2".to_string();
+        let recovery_bridge = setup_bridge_custom(device_identifier_2, mock_fedi_api).await?;
+        recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
+
+        // Register device as index 1 since it's a new device
+        registerAsNewDevice(recovery_bridge.clone()).await?;
+
+        // Rejoin federation and assert that balances don't carry over (and there is no
+        // backup)
+        let recovery_federation = join_test_fed_recovery(&recovery_bridge).await?;
+        match &*recovery_federation {
+            MultiFederation::V2(x) => assert!(!x.recovering()),
+        }
+        assert_eq!(Amount::ZERO, recovery_federation.get_balance().await);
+        assert_eq!(None, recovery_federation.get_xmpp_username().await);
+
+        let account_info = recovery_bridge
+            .stability_pool_account_info(recovery_federation.federation_id(), true)
+            .await?;
+        assert_eq!(account_info.idle_balance.0, Amount::ZERO);
+        assert!(account_info.staged_seeks.is_empty());
+        assert!(account_info.staged_cancellation.is_none());
+        assert!(account_info.locked_seeks.is_empty());
         Ok(())
     }
 }

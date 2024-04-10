@@ -32,7 +32,7 @@ use super::types::{
 };
 use crate::api::IFediApi;
 use crate::constants::{MATRIX_CHILD_ID, NOSTR_CHILD_ID};
-use crate::device_registration::DeviceRegistrationService;
+use crate::device_registration::{self, DeviceRegistrationService};
 use crate::error::{get_error_code, ErrorCode};
 use crate::event::{Event, SocialRecoveryEvent, TypedEventExt as _};
 use crate::federation_v2::{self, BackupServiceStatus, FederationV2};
@@ -44,8 +44,9 @@ use crate::storage::{
     AppState, DatabaseInfo, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule,
 };
 use crate::types::{
-    GuardianStatus, RpcEcashInfo, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
-    RpcLightningGateway, RpcPayAddressResponse, RpcReturningMemberStatus,
+    GuardianStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederationPreview,
+    RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway, RpcPayAddressResponse,
+    RpcRegisteredDevice, RpcReturningMemberStatus,
 };
 use crate::utils::required_threashold_of;
 
@@ -63,9 +64,10 @@ pub struct Bridge {
     pub federations: Arc<Mutex<BTreeMap<String, Arc<MultiFederation>>>>,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
+    pub fedi_api: Arc<dyn IFediApi>,
     pub fedi_fee_helper: Arc<FediFeeHelper>,
     pub matrix: OnceCell<Matrix>,
-    pub device_registration_service: Arc<DeviceRegistrationService>,
+    pub device_registration_service: Arc<Mutex<DeviceRegistrationService>>,
     pub global_db: Database,
 }
 
@@ -87,17 +89,36 @@ impl Bridge {
         let device_identifier = app_state
             .verify_and_return_device_identifier(device_identifier)
             .await?;
-        let device_registration_service = DeviceRegistrationService::new(
-            device_identifier,
-            app_state.clone(),
-            event_sink.clone(),
-            task_group.make_subgroup().await,
-            fedi_api.clone(),
+        let device_registration_service = Mutex::new(
+            DeviceRegistrationService::new(
+                device_identifier,
+                app_state.clone(),
+                event_sink.clone(),
+                task_group.make_subgroup().await,
+                fedi_api.clone(),
+            )
+            .await,
         )
-        .await
         .into();
 
         let root_mnemonic = app_state.root_mnemonic().await;
+
+        // If a joined federation exists in the DB, then one of the following two
+        // conditions will virtually always be the case:
+        //
+        // 1. A device index exists because at least one device registration request was
+        //    successful in the past
+        // 2. We are yet to successfully call the device registration service for the
+        //    first time for the given seed, and so we will try to register the device
+        //    with index 0 anyway.
+        //
+        // We cannot make bridge initialization fail, and we must pass a device index to
+        // the FederationV2 constructor, so here we use `unwrap_or_default()` instead of
+        // `app_state.ensure_device_index()`.
+        let device_index = app_state
+            .with_read_lock(|state| state.device_index)
+            .await
+            .unwrap_or_default();
 
         // load joined federations
         let joined_federations = app_state
@@ -134,6 +155,7 @@ impl Bridge {
                                         event_sink.clone(),
                                         task_group.make_subgroup().await,
                                         &root_mnemonic,
+                                        device_index,
                                         fedi_fee_helper.clone(),
                                     )
                                     .await
@@ -182,6 +204,7 @@ impl Bridge {
             federations,
             event_sink,
             task_group,
+            fedi_api,
             fedi_fee_helper,
             matrix: OnceCell::default(),
             device_registration_service,
@@ -271,11 +294,13 @@ impl Bridge {
                     return Ok(());
                 }
                 let root_mnemonic = this.app_state.root_mnemonic().await;
+                let device_index = this.app_state.ensure_device_index().await?;
                 let federation_v2 = FederationV2::from_db(
                     db,
                     this.event_sink.clone(),
                     this.task_group.make_subgroup().await,
                     &root_mnemonic,
+                    device_index,
                     this.fedi_fee_helper.clone(),
                 )
                 .await
@@ -339,6 +364,7 @@ impl Bridge {
         }
 
         let root_mnemonic = self.app_state.root_mnemonic().await;
+        let device_index = self.app_state.ensure_device_index().await?;
 
         let db_prefix = self
             .app_state
@@ -354,6 +380,7 @@ impl Bridge {
             TaskGroup::new(),
             db,
             &root_mnemonic,
+            device_index,
             self.fedi_fee_helper.clone(),
         )
         .await?;
@@ -398,9 +425,11 @@ impl Bridge {
     pub async fn federation_preview(&self, invite_code: &str) -> Result<RpcFederationPreview> {
         let invite_code = invite_code.to_lowercase();
         let root_mnemonic = self.app_state.root_mnemonic().await;
+        let device_index = self.app_state.ensure_device_index().await?;
         let (v2,) = futures::join!(FederationV2::download_client_config(
             &invite_code,
-            &root_mnemonic
+            &root_mnemonic,
+            device_index,
         ));
         match (v2,) {
             (Ok((config, backup_snapshots_result)),) => Ok(RpcFederationPreview {
@@ -676,10 +705,112 @@ impl Bridge {
         Ok(())
     }
 
+    pub async fn fetch_registered_devices(&self) -> anyhow::Result<Vec<RpcRegisteredDevice>> {
+        let mnemonic = self.app_state.root_mnemonic().await;
+        let registered_devices_fut = device_registration::get_registered_devices_with_backoff(
+            self.fedi_api.clone(),
+            mnemonic,
+        );
+        let registered_devices =
+            fedimint_core::task::timeout(Duration::from_secs(120), registered_devices_fut)
+                .await
+                .context("fetching registered devices timed out")?
+                .into_iter()
+                .map(Into::into)
+                .collect();
+        Ok(registered_devices)
+    }
+
+    pub async fn register_device_with_index(
+        &self,
+        index: u8,
+        force_overwrite: bool,
+    ) -> anyhow::Result<Option<RpcFederation>> {
+        let seed = self.app_state.root_mnemonic().await;
+        let identifier = self
+            .app_state
+            .with_read_lock(|state| state.device_identifier.clone())
+            .await;
+        let identifier = identifier.ok_or(anyhow!("device identifier must be present"))?;
+        let register_device_fut = device_registration::register_device_with_backoff(
+            self.app_state.clone(),
+            self.fedi_api.clone(),
+            self.event_sink.clone(),
+            seed,
+            index,
+            identifier,
+            force_overwrite,
+        );
+        fedimint_core::task::timeout(Duration::from_secs(120), register_device_fut)
+            .await
+            .context("registering device timed out")??;
+
+        self.app_state
+            .with_write_lock(|state| state.device_index = Some(index))
+            .await?;
+        self.device_registration_service
+            .lock()
+            .await
+            .start_ongoing_periodic_registration(index)
+            .await?;
+
+        if self
+            .app_state
+            .with_read_lock(|state| state.social_recovery_state.clone())
+            .await
+            .is_some()
+        {
+            let recovery_client = self.social_recovery_client_continue().await?;
+
+            self.set_social_recovery_state(None).await?;
+            tracing::info!("social recovery complete");
+            tracing::info!("auto joining federation");
+            self.join_federation(
+                federation_v2::invite_code_from_client_confing(
+                    &ClientConfig::consensus_decode_hex(
+                        &recovery_client.state().client_config,
+                        &Default::default(),
+                    )?,
+                )
+                .to_string(),
+            )
+            .await
+            .map(Some)
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub async fn device_index_assignment_status(
+        &self,
+    ) -> anyhow::Result<RpcDeviceIndexAssignmentStatus> {
+        Ok(match self.app_state.ensure_device_index().await {
+            Ok(index) => RpcDeviceIndexAssignmentStatus::Assigned(index),
+            Err(_) => RpcDeviceIndexAssignmentStatus::Unassigned,
+        })
+    }
+
     // FIXME: this function has weird name now that it doesn't do any recovery
-    pub async fn recover_from_mnemonic(&self, mnemonic: bip39::Mnemonic) -> Result<()> {
+    pub async fn recover_from_mnemonic(
+        &self,
+        mnemonic: bip39::Mnemonic,
+    ) -> Result<Vec<RpcRegisteredDevice>> {
+        self.device_registration_service
+            .lock()
+            .await
+            .stop_ongoing_periodic_registration()
+            .await?;
         self.app_state.recover_mnemonic(mnemonic).await?;
-        Ok(())
+        self.app_state
+            .with_write_lock(|state| {
+                state.device_index = None;
+            })
+            .await?;
+
+        // REMOVE: temporary hack for seed reuse feature until front-end is built
+        self.register_device_with_index(0, true).await?;
+
+        self.fetch_registered_devices().await
     }
 
     pub async fn upload_backup_file(
@@ -786,22 +917,11 @@ impl Bridge {
         Ok(())
     }
 
-    pub async fn complete_social_recovery(&self) -> Result<RpcFederation> {
+    pub async fn complete_social_recovery(&self) -> Result<Vec<RpcRegisteredDevice>> {
         let recovery_client = self.social_recovery_client_continue().await?;
         let seed_phrase = recovery_client.combine_recovered_user_phrase()?;
         let root_mnemonic = bip39::Mnemonic::parse(seed_phrase.0)?;
-        self.recover_from_mnemonic(root_mnemonic).await?;
-        self.set_social_recovery_state(None).await?;
-        tracing::info!("social recovery complete");
-        tracing::info!("auto joining federation");
-        self.join_federation(
-            federation_v2::invite_code_from_client_confing(&ClientConfig::consensus_decode_hex(
-                &recovery_client.state().client_config,
-                &Default::default(),
-            )?)
-            .to_string(),
-        )
-        .await
+        self.recover_from_mnemonic(root_mnemonic).await
     }
 
     async fn social_recovery_client_continue(&self) -> anyhow::Result<SocialRecoveryClient> {

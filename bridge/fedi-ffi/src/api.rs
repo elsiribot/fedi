@@ -22,7 +22,6 @@ use crate::constants::{
 };
 use crate::storage::{FediFeeSchedule, ModuleFediFeeSchedule};
 
-// TODO shaurya move to device_registration module when created
 /// Represents registration information of a device using our root seed as
 /// recorded with Fedi's servers.
 pub struct RegisteredDevice {

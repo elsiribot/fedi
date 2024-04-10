@@ -136,6 +136,8 @@ export interface RpcBitcoinDetails {
     expiresAt: number
 }
 
+export type RpcDeviceIndexAssignmentStatus = { assigned: number } | 'unassigned'
+
 export interface RpcDuration {
     nanos: number
     secs: number
@@ -406,7 +408,14 @@ export interface RpcMethods {
         null,
     ]
     getMnemonic: [Record<string, never>, Array<string>]
-    recoverFromMnemonic: [{ mnemonic: Array<string> }, null]
+    recoverFromMnemonic: [
+        { mnemonic: Array<string> },
+        Array<{
+            deviceIndex: number
+            deviceIdentifier: string
+            lastRegistrationTimestamp: number
+        }>,
+    ]
     uploadBackupFile: [
         { federationId: RpcFederationId; videoFilePath: string },
         string,
@@ -421,19 +430,11 @@ export interface RpcMethods {
     ]
     completeSocialRecovery: [
         Record<string, never>,
-        {
-            balance: RpcAmount
-            id: RpcFederationId
-            network: string | null
-            name: string
-            inviteCode: string
-            meta: Record<string, string>
-            recovering: boolean
-            nodes: Record<string, { url: string; name: string }>
-            version: number
-            clientConfig: RpcJsonClientConfig | null
-            fediFeeSchedule: RpcFediFeeSchedule
-        },
+        Array<{
+            deviceIndex: number
+            deviceIdentifier: string
+            lastRegistrationTimestamp: number
+        }>,
     ]
     socialRecoveryDownloadVerificationDoc: [
         { federationId: RpcFederationId; recoveryId: RpcRecoveryId },
@@ -518,6 +519,50 @@ export interface RpcMethods {
     ]
     getAccruedOutstandingFediFees: [{ federationId: RpcFederationId }, MSats]
     dumpDb: [{ federationId: string }, string]
+    fetchRegisteredDevices: [
+        Record<string, never>,
+        Array<{
+            deviceIndex: number
+            deviceIdentifier: string
+            lastRegistrationTimestamp: number
+        }>,
+    ]
+    registerAsNewDevice: [
+        Record<string, never>,
+        {
+            balance: RpcAmount
+            id: RpcFederationId
+            network: string | null
+            name: string
+            inviteCode: string
+            meta: Record<string, string>
+            recovering: boolean
+            nodes: Record<string, { url: string; name: string }>
+            version: number
+            clientConfig: RpcJsonClientConfig | null
+            fediFeeSchedule: RpcFediFeeSchedule
+        } | null,
+    ]
+    transferExistingDeviceRegistration: [
+        { index: number },
+        {
+            balance: RpcAmount
+            id: RpcFederationId
+            network: string | null
+            name: string
+            inviteCode: string
+            meta: Record<string, string>
+            recovering: boolean
+            nodes: Record<string, { url: string; name: string }>
+            version: number
+            clientConfig: RpcJsonClientConfig | null
+            fediFeeSchedule: RpcFediFeeSchedule
+        } | null,
+    ]
+    deviceIndexAssignmentStatus: [
+        Record<string, never>,
+        { assigned: number } | 'unassigned',
+    ]
     matrixObserverCancel: [{ id: bigint }, null]
     matrixInit: [
         Record<string, never>,
@@ -681,6 +726,12 @@ export type RpcPusher = any
 export type RpcRanges = Array<{ start: number; end: number }>
 
 export type RpcRecoveryId = string
+
+export interface RpcRegisteredDevice {
+    deviceIndex: number
+    deviceIdentifier: string
+    lastRegistrationTimestamp: number
+}
 
 export type RpcReturningMemberStatus =
     | { type: 'unknown' }
