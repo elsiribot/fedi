@@ -1,8 +1,11 @@
+use std::collections::HashSet;
+use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 
-use bitcoin::secp256k1;
+use bitcoin::secp256k1::{self, PublicKey};
 use fedimint_client::{Client, ClientHandle, ClientModuleInstance};
+use fedimint_core::config::META_VETTED_GATEWAYS_KEY;
 use fedimint_core::db::{AutocommitError, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::task::TaskGroup;
 use fedimint_ln_client::LightningClientModule;
@@ -66,13 +69,28 @@ impl LnGatewayService {
     }
 
     async fn selectable_gateways(&self, client: &Client) -> Vec<LightningGatewayAnnouncement> {
-        client
+        let meta_service = client.meta_service();
+        let vetted_gws = meta_service
+            .get_field::<Vec<String>>(client.db(), META_VETTED_GATEWAYS_KEY)
+            .await
+            .map_or(Vec::new(), |v| v.value.unwrap_or_default())
+            .into_iter()
+            .filter_map(|str| {
+                PublicKey::from_str(&str)
+                    .inspect_err(|err| warn!(?err, %str, "failed to parse vetted gateway"))
+                    .ok()
+            })
+            .collect::<HashSet<_>>();
+
+        let (vetted, unvetted) = client
             .ln()
             .list_gateways()
             .await
-            // TODO: filter vetted gateways
-            // .maybe_filter_vetted()
             .into_iter()
+            .partition::<Vec<_>, _>(|g| vetted_gws.contains(&g.info.gateway_id));
+
+        let gws = if !vetted.is_empty() { vetted } else { unvetted };
+        gws.into_iter()
             // filter out all gateways are about to expire
             .filter(|g| ABOUT_TO_EXPIRE_DURATION < g.ttl)
             .collect()
