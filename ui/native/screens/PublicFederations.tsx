@@ -105,7 +105,6 @@ const PublicFederations: React.FC<Props> = ({ navigation }: Props) => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
             alignItems: 'center',
             gap: 32,
             padding: theme.spacing.lg,
