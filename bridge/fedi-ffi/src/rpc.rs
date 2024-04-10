@@ -11,6 +11,7 @@ use fedimint_core::timing::TimeReporter;
 use futures::Future;
 use lightning_invoice::Bolt11Invoice;
 use macro_rules_attribute::macro_rules_derive;
+use matrix_sdk::ruma::api::client::profile::get_profile;
 use matrix_sdk::ruma::api::client::push::Pusher;
 use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
 use matrix_sdk::sliding_sync::Ranges;
@@ -31,6 +32,7 @@ use super::types::{
     RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
 };
 use crate::api::IFediApi;
+use crate::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
 use crate::error::get_error_code;
 use crate::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use crate::federation_v2::BackupServiceStatus;
@@ -582,11 +584,7 @@ async fn dumpDb(bridge: Arc<Bridge>, federation_id: String) -> anyhow::Result<Pa
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixInit(
-    bridge: Arc<Bridge>,
-    home_server: String,
-    sliding_sync_proxy: String,
-) -> anyhow::Result<RpcMatrixAccountSession> {
+async fn matrixInit(bridge: Arc<Bridge>) -> anyhow::Result<RpcMatrixAccountSession> {
     if bridge.matrix.initialized() {
         let matrix = get_matrix(&bridge).await?;
         return matrix.get_account_session().await;
@@ -602,8 +600,8 @@ async fn matrixInit(
                 &bridge.storage.platform_path("matrix".as_ref()),
                 &matrix_secret,
                 &nostr_pubkey,
-                home_server,
-                sliding_sync_proxy,
+                GLOBAL_MATRIX_SERVER.to_owned(),
+                GLOBAL_MATRIX_SLIDING_SYNC_PROXY.to_owned(),
                 &bridge.app_state,
             )
             .await?,
@@ -954,6 +952,16 @@ async fn matrixRoomGetNotificationMode(
         .await
 }
 
+ts_type_ser!(UserProfile: get_profile::v3::Response = "any");
+#[macro_rules_derive(rpc_method!)]
+async fn matrixUserProfile(bridge: Arc<Bridge>, user_id: RpcUserId) -> anyhow::Result<UserProfile> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .user_profile(&user_id.into_typed()?)
+        .await
+        .map(UserProfile)
+}
+
 ts_type_de!(RpcPusher: Pusher = "any");
 
 #[macro_rules_derive(rpc_method!)]
@@ -1110,6 +1118,7 @@ rpc_methods!(RpcMethods {
     matrixRoomSetNotificationMode,
     matrixRoomGetNotificationMode,
     matrixSetPusher,
+    matrixUserProfile,
 });
 
 #[instrument(

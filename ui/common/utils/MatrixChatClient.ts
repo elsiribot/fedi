@@ -86,15 +86,7 @@ export class MatrixChatClient {
 
     /*** Public methods ***/
 
-    async start({
-        fedimint,
-        homeServer,
-        slidingSyncProxy,
-    }: {
-        fedimint: FedimintBridge
-        homeServer: string
-        slidingSyncProxy: string
-    }) {
+    async start(fedimint: FedimintBridge) {
         if (this.startPromise) {
             return this.startPromise
         }
@@ -108,10 +100,7 @@ export class MatrixChatClient {
 
         this.startPromise = new Promise((resolve, reject) => {
             fedimint
-                .matrixInit({
-                    homeServer,
-                    slidingSyncProxy,
-                })
+                .matrixInit()
                 .then(auth => {
                     this.observeRoomList()
                         .then(() => {
