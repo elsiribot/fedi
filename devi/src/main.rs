@@ -6,7 +6,7 @@ use anyhow::Context;
 use clap::{Parser, Subcommand};
 use devimint::cli::{setup, CommonArgs};
 use devimint::tests::{latency_tests, LatencyTest};
-use devimint::util::poll;
+use devimint::util::poll_with_timeout;
 use devimint::{cmd, dev_fed, DevFed};
 
 #[derive(Parser)]
@@ -41,9 +41,9 @@ async fn wait_session(client: &devimint::federation::Client) -> anyhow::Result<(
         .context("session count must be integer")?
         .to_owned();
     let start = Instant::now();
-    poll(
+    poll_with_timeout(
         "Waiting for a new session",
-        Some(Duration::from_secs(180)),
+        Duration::from_secs(180),
         || async {
             info!("Awaiting session outcome {session_count}");
             match cmd!(client, "dev", "api", "await_session_outcome", session_count)

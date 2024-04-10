@@ -210,7 +210,7 @@ impl FederationV2 {
         }
         if self
             .gateway_service
-            .set(LnGatewayService::new(Arc::downgrade(&self.client), &self.task_group).await)
+            .set(LnGatewayService::new(self.client.clone(), &self.task_group))
             .is_err()
         {
             error!("ln gateway service already initialized");
@@ -1273,7 +1273,6 @@ impl FederationV2 {
 
     /// List all lightning gateways registered with the federation
     pub async fn list_gateways(&self) -> anyhow::Result<Vec<RpcLightningGateway>> {
-        self.gateway_service()?.update(&self.client).await?;
         let gateways = self
             .client
             .get_first_module::<LightningClientModule>()

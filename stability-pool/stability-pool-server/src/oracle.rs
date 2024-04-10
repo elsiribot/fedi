@@ -160,6 +160,7 @@ impl Oracle for AggregateOracle {
         let source_prices = join_all(self.sources.iter().map(|source| {
             let client = self.client.clone();
             let url = source.get_url();
+            // FIXME: why are we using a task here?
             task::spawn("oracle get price", async move {
                 Ok::<_, anyhow::Error>(
                     client
@@ -171,7 +172,6 @@ impl Oracle for AggregateOracle {
                         .await?,
                 )
             })
-            .expect("code doesn't rust on wasm")
         }))
         .await
         .into_iter()
