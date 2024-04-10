@@ -321,8 +321,8 @@ export class FedimintBridge {
 
     /*** MATRIX ***/
 
-    async matrixInit(args: bindings.RpcPayload<'matrixInit'>) {
-        return this.rpcTyped('matrixInit', args)
+    async matrixInit() {
+        return this.rpcTyped('matrixInit', {})
     }
 
     async matrixGetAccountSession() {

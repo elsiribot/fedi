@@ -291,11 +291,7 @@ export const startMatrixClient = createAsyncThunk<
     })
 
     // Start the client
-    return client.start({
-        fedimint,
-        homeServer: GLOBAL_MATRIX_SERVER,
-        slidingSyncProxy: GLOBAL_MATRIX_SLIDING_SYNC_PROXY,
-    })
+    return client.start(fedimint)
 })
 
 export const setMatrixDisplayName = createAsyncThunk<

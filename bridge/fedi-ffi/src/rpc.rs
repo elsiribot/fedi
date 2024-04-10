@@ -32,6 +32,7 @@ use super::types::{
     RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
 };
 use crate::api::IFediApi;
+use crate::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
 use crate::error::get_error_code;
 use crate::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use crate::federation_v2::BackupServiceStatus;
@@ -583,11 +584,7 @@ async fn dumpDb(bridge: Arc<Bridge>, federation_id: String) -> anyhow::Result<Pa
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixInit(
-    bridge: Arc<Bridge>,
-    home_server: String,
-    sliding_sync_proxy: String,
-) -> anyhow::Result<RpcMatrixAccountSession> {
+async fn matrixInit(bridge: Arc<Bridge>) -> anyhow::Result<RpcMatrixAccountSession> {
     if bridge.matrix.initialized() {
         let matrix = get_matrix(&bridge).await?;
         return matrix.get_account_session().await;
@@ -603,8 +600,8 @@ async fn matrixInit(
                 &bridge.storage.platform_path("matrix".as_ref()),
                 &matrix_secret,
                 &nostr_pubkey,
-                home_server,
-                sliding_sync_proxy,
+                GLOBAL_MATRIX_SERVER.to_owned(),
+                GLOBAL_MATRIX_SLIDING_SYNC_PROXY.to_owned(),
                 &bridge.app_state,
             )
             .await?,

@@ -520,7 +520,7 @@ export interface RpcMethods {
     dumpDb: [{ federationId: string }, string]
     matrixObserverCancel: [{ id: bigint }, null]
     matrixInit: [
-        { homeServer: string; slidingSyncProxy: string },
+        Record<string, never>,
         {
             userId: string
             deviceId: string
