@@ -22,13 +22,16 @@ import {
     selectChatLastSeenMessageTimestamp,
     selectChatMember,
     selectFederationsWithChatConnections,
+    selectHasSetMatrixDisplayName,
     selectLatestChatMessageTimestamp,
     selectLatestPaymentUpdateTimestamp,
+    selectMatrixAuth,
     selectPushNotificationToken,
     sendMatrixPaymentPush,
     sendMatrixPaymentRequest,
     setLastReadMessageTimestamp,
     setLastSeenMessageTimestamp,
+    setMatrixDisplayName,
 } from '../redux'
 import { getLatestMessage, getLatestPaymentUpdate } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
@@ -471,5 +474,62 @@ export const useChatPaymentUtils = (
         canSendAmount,
         handleRequestPayment,
         handleSendPayment,
+    }
+}
+
+export const useDisplayNameForm = (t: TFunction) => {
+    const [username, setUsername] = useState<string>('')
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const toast = useToast()
+    const dispatch = useCommonDispatch()
+    const matrixAuth = useCommonSelector(selectMatrixAuth)
+    const hasSetDisplayName = useCommonSelector(selectHasSetMatrixDisplayName)
+
+    useEffect(() => {
+        if (!matrixAuth) return
+        const { displayName } = matrixAuth
+        if (hasSetDisplayName) {
+            setUsername(displayName)
+        }
+    }, [hasSetDisplayName, matrixAuth])
+
+    const handleChangeUsername = useCallback(
+        (input: string) => {
+            const isValid =
+                // Don't allow uppercase letters
+                !/[A-Z]/.test(input) &&
+                // Don't allow usernames greater than 21 characters
+                input.length <= 21
+            if (!isValid) {
+                toast.error(t, 'errors.invalid-username')
+                return
+            }
+            setUsername(input)
+        },
+        [t, toast],
+    )
+
+    const handleSubmitDisplayName = useCallback(
+        async (onSuccess: () => void) => {
+            setIsSubmitting(true)
+            try {
+                await dispatch(
+                    setMatrixDisplayName({ displayName: username }),
+                ).unwrap()
+                onSuccess()
+            } catch (err) {
+                log.error('handleSubmit', err)
+                toast.error(t, err)
+            }
+            setIsSubmitting(false)
+        },
+        [dispatch, t, toast, username],
+    )
+
+    return {
+        username,
+        isSubmitting,
+        handleChangeUsername,
+        handleSubmitDisplayName,
     }
 }

@@ -36,7 +36,6 @@ const ChatScreen: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const syncStatus = useAppSelector(selectMatrixStatus)
     const needsChatRegistration = useAppSelector(selectNeedsMatrixRegistration)
-    console.debug('needsChatRegistration', needsChatRegistration)
 
     const isChatEmpty = useAppSelector(selectIsMatrixChatEmpty)
     const [hasOpenedNewChat, completeOpenedNewChat] =

@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Keyboard,
@@ -12,15 +12,9 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context'
 
-import { useToast } from '@fedi/common/hooks/toast'
-import { selectMatrixAuth, setMatrixDisplayName } from '@fedi/common/redux'
-import { formatErrorMessage } from '@fedi/common/utils/format'
-import { makeLog } from '@fedi/common/utils/log'
+import { useDisplayNameForm } from '@fedi/common/hooks/chat'
 
-import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
-
-const log = makeLog('CreateUsername')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'CreateUsername'>
 
@@ -28,25 +22,17 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const dispatch = useAppDispatch()
-    const toast = useToast()
-    const [username, setUsername] = useState<string>('')
-    const [isSubmitting, setIsSubmitting] = useState(false)
     const [buttonIsOverlapping, setButtonIsOverlapping] =
         useState<boolean>(false)
     const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
     const [buttonYPosition, setButtonYPosition] = useState<number>(0)
     const [overlapThreshold, setOverlapThreshold] = useState<number>(0)
-
-    const matrixAuth = useAppSelector(selectMatrixAuth)
-
-    useEffect(() => {
-        if (!matrixAuth) return
-        const { displayName, userId } = matrixAuth
-        if (!userId.includes(displayName)) {
-            setUsername(displayName)
-        }
-    }, [matrixAuth])
+    const {
+        username,
+        isSubmitting,
+        handleChangeUsername,
+        handleSubmitDisplayName,
+    } = useDisplayNameForm(t)
 
     // when the keyboard is opened and content layouts change, this effect
     // determines whether the Create username button is overlapping with
@@ -87,35 +73,14 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
         }
     }, [])
 
-    const handleSubmit = async () => {
-        setIsSubmitting(true)
-        try {
-            await dispatch(
-                setMatrixDisplayName({ displayName: username }),
-            ).unwrap()
+    const handleSubmit = useCallback(() => {
+        handleSubmitDisplayName(() => {
             navigation.reset({
                 index: 0,
                 routes: [{ name: 'FederationGreeting' }],
             })
-        } catch (err) {
-            log.error('handleSubmit', err)
-            const errorMessage = formatErrorMessage(t, err)
-            toast?.show(errorMessage)
-        }
-        setIsSubmitting(false)
-    }
-
-    const handleUsernameChange = (input: string) => {
-        const isValid = /^[^"&'/:<>\s]+$|^$/.test(input)
-        if (!isValid) {
-            toast.show({
-                content: t('errors.invalid-character'),
-                status: 'error',
-            })
-        } else {
-            setUsername(input)
-        }
-    }
+        })
+    }, [handleSubmitDisplayName, navigation])
 
     const style = styles(theme, insets)
 
@@ -148,7 +113,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                 </Text>
                 <Input
                     onChangeText={input => {
-                        handleUsernameChange(input)
+                        handleChangeUsername(input)
                     }}
                     value={username}
                     placeholder={`${t('feature.onboarding.enter-username')}...`}

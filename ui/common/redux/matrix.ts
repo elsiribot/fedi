@@ -643,14 +643,23 @@ export const selectMatrixAuth = createSelector(
     },
 )
 
-export const selectNeedsMatrixRegistration = createSelector(
+export const selectHasSetMatrixDisplayName = createSelector(
     (s: CommonState) => s.matrix.auth,
     auth => {
-        if (!auth) return true
-        if (!auth.displayName) return true
         // upon registration, displayName will be the 65-character userId by default
         // so use this as a proxy for detecting if the user has set a display name yet
-        if (auth.displayName.length > 21) return true
+        if (auth && auth.displayName && auth.displayName.length <= 21)
+            return true
+        return false
+    },
+)
+
+export const selectNeedsMatrixRegistration = createSelector(
+    (s: CommonState) => s.matrix.auth,
+    selectHasSetMatrixDisplayName,
+    (auth, hasSetMatrixDisplayName) => {
+        if (!auth) return true
+        if (!hasSetMatrixDisplayName) return true
         return false
     },
 )
