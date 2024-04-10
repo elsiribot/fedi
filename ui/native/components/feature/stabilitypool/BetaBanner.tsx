@@ -1,7 +1,6 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
 import { ImageBackground, StyleSheet, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Images } from '../../../assets/images'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
