@@ -3,23 +3,21 @@ import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { StyleSheet, View, useWindowDimensions } from 'react-native'
 
+import { maxPinLength, pinNumbers } from '@fedi/common/constants/security'
 import { numpadButtons } from '@fedi/common/hooks/amount'
-import { selectPinDigits, setPin } from '@fedi/common/redux'
+import { selectPinDigits } from '@fedi/common/redux'
 
 import PinDot from '../components/feature/pin/PinDot'
 import { NumpadButton } from '../components/ui/NumpadButton'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChangePin'>
-
-const maxPinLength = 4
 
 const ChangePin: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { width } = useWindowDimensions()
     const [pinDigits, setPinDigits] = useState<Array<number>>([])
-    const dispatch = useAppDispatch()
     const existingPinDigits = useAppSelector(selectPinDigits)
 
     const isPinValid =
@@ -39,39 +37,34 @@ const ChangePin: React.FC<Props> = ({ navigation }: Props) => {
 
                 setPinDigits(updatedDigits)
 
-                if (updatedDigits.length === maxPinLength) {
-                    setTimeout(() => {
-                        // Get the value at the 3000ms point in time without re-rendering
-                        setPinDigits(digits => {
-                            if (digits.length === maxPinLength) {
-                                if (
-                                    existingPinDigits &&
-                                    existingPinDigits.every(
-                                        (d, i) => d === digits[i],
-                                    )
-                                ) {
-                                    dispatch(setPin(null))
-                                    navigation.navigate('CreatePin')
-                                    return digits
-                                } else {
-                                    return []
-                                }
-                            }
+                if (updatedDigits.length !== maxPinLength) return
 
+                setTimeout(() => {
+                    // Get the value at the 3000ms point in time without re-rendering
+                    setPinDigits(digits => {
+                        if (digits.length !== maxPinLength) return digits
+
+                        if (
+                            existingPinDigits &&
+                            existingPinDigits.every((d, i) => d === digits[i])
+                        ) {
+                            navigation.navigate('CreatePin')
                             return digits
-                        })
-                    }, 1000)
-                }
+                        }
+
+                        return []
+                    })
+                }, 1000)
             }
         },
-        [pinDigits, dispatch, navigation, existingPinDigits],
+        [pinDigits, navigation, existingPinDigits],
     )
 
     return (
         <View style={style.container}>
             <View style={style.content}>
                 <View style={style.dots}>
-                    {new Array(maxPinLength).fill(null).map((_, i) => (
+                    {pinNumbers.map(i => (
                         <PinDot
                             key={i}
                             status={
@@ -79,11 +72,11 @@ const ChangePin: React.FC<Props> = ({ navigation }: Props) => {
                                     ? isPinValid
                                         ? 'correct'
                                         : 'incorrect'
-                                    : i >= pinDigits.length
+                                    : i > pinDigits.length
                                     ? 'empty'
                                     : 'active'
                             }
-                            isLast={i === maxPinLength - 1}
+                            isLast={i === maxPinLength}
                         />
                     ))}
                 </View>

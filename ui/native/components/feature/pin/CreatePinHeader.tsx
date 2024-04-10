@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const ChangePinHeader: React.FC = () => {
+const CreatePinHeader: React.FC = () => {
     const { t } = useTranslation()
 
     return (
@@ -19,4 +19,4 @@ const ChangePinHeader: React.FC = () => {
     )
 }
 
-export default ChangePinHeader
+export default CreatePinHeader

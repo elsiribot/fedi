@@ -30,7 +30,7 @@ export type PinState = {
 /*** Slice definition ***/
 
 export const securitySlice = createSlice({
-    name: 'nux',
+    name: 'security',
     initialState,
     reducers: {
         setPin(state, action: PayloadAction<PinState['pinDigits']>) {
