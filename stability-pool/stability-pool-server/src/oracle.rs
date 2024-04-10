@@ -3,7 +3,6 @@ use std::time::Duration;
 
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
-use fedimint_core::task;
 use futures::future::join_all;
 use itertools::Itertools;
 use reqwest::{Client, Url};
@@ -157,39 +156,31 @@ impl AggregateOracle {
 impl Oracle for AggregateOracle {
     async fn get_price(&self) -> anyhow::Result<u64> {
         info!("began fetching prices from oracle sources");
-        let source_prices = join_all(self.sources.iter().map(|source| {
-            let client = self.client.clone();
-            let url = source.get_url();
-            // FIXME: why are we using a task here?
-            task::spawn("oracle get price", async move {
-                Ok::<_, anyhow::Error>(
-                    client
-                        .get(url)
-                        .timeout(Duration::from_secs(15))
-                        .send()
-                        .await?
-                        .json::<serde_json::Value>()
-                        .await?,
-                )
-            })
+        let source_prices = join_all(self.sources.iter().map(|source| async {
+            Ok::<_, anyhow::Error>(
+                self.client
+                    .clone()
+                    .get(source.get_url())
+                    .timeout(Duration::from_secs(15))
+                    .send()
+                    .await?
+                    .json::<serde_json::Value>()
+                    .await?,
+            )
         }))
         .await
         .into_iter()
         .enumerate()
-        .filter_map(|(i, join_result)| match join_result {
-            Ok(Ok(json_value)) => match self.sources[i].extract_price_from_json_value(json_value) {
+        .filter_map(|(i, oracle_result)| match oracle_result {
+            Ok(json_value) => match self.sources[i].extract_price_from_json_value(json_value) {
                 Ok(price) => Some(price),
                 Err(e) => {
                     warn!("oracle source extract price from json value error: {e}");
                     None
                 }
             },
-            Ok(Err(e)) => {
-                warn!("oracle source request error: {e}");
-                None
-            }
             Err(e) => {
-                warn!("oracle source join error: {e}");
+                warn!("oracle source request error: {e}");
                 None
             }
         })
