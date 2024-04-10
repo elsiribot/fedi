@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Overlay, Text, Theme } from '@rneui/themed'
+import { Text, Theme } from '@rneui/themed'
 import { useTheme } from '@rneui/themed'
 import { Button } from '@rneui/themed'
 import React, { useState } from 'react'

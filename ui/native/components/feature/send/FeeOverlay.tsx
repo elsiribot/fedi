@@ -12,7 +12,7 @@ type FeeOverlayProps = {
     show?: boolean
     title: string
     feeItems: FeeItem[]
-    description: string
+    description: string | React.ReactNode
     icon?: React.ReactNode
 }
 

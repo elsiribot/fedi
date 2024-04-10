@@ -19,6 +19,7 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import { FeeBreakdown } from '../components/feature/send/FeeBreakdown'
+import FeeOverlay from '../components/feature/send/FeeOverlay'
 import { CurrencyAvatar } from '../components/feature/stabilitypool/CurrencyAvatar'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
@@ -172,37 +173,28 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
                     }
                 />
 
-                <Overlay
-                    isVisible={showFeeBreakdown}
-                    overlayStyle={style.overlayContainer}
-                    onBackdropPress={() => setShowFeeBreakdown(false)}>
-                    <FeeBreakdown
-                        title={feeBreakdownTitle}
-                        icon={
-                            <SvgImage
-                                name="Info"
-                                size={32}
-                                color={theme.colors.green}
-                            />
-                        }
-                        feeItems={feeItemsBreakdown.map(
-                            ({ label, formattedAmount }: FeeItem) => ({
-                                label: label,
-                                value: formattedAmount,
-                            }),
-                        )}
-                        onClose={() => setShowFeeBreakdown(false)}
-                        guidanceText={
-                            <Trans
-                                t={t}
-                                i18nKey="feature.fees.guidance-stable-balance"
-                                components={{
-                                    br: <LineBreak />,
-                                }}
-                            />
-                        }
-                    />
-                </Overlay>
+                <FeeOverlay
+                    show={showFeeBreakdown}
+                    onDismiss={() => setShowFeeBreakdown(false)}
+                    title={feeBreakdownTitle}
+                    feeItems={feeItemsBreakdown}
+                    description={
+                        <Trans
+                            t={t}
+                            i18nKey="feature.fees.guidance-stable-balance"
+                            components={{
+                                br: <LineBreak />,
+                            }}
+                        />
+                    }
+                    icon={
+                        <SvgImage
+                            name="Info"
+                            size={32}
+                            color={theme.colors.green}
+                        />
+                    }
+                />
             </>
         )
     }

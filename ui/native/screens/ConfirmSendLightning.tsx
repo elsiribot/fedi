@@ -15,6 +15,7 @@ import { hexToRgba } from '@fedi/common/utils/color'
 
 import { fedimint } from '../bridge'
 import { FeeBreakdown } from '../components/feature/send/FeeBreakdown'
+import FeeOverlay from '../components/feature/send/FeeOverlay'
 import { AmountScreen } from '../components/ui/AmountScreen'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage from '../components/ui/SvgImage'
@@ -159,37 +160,28 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                     }
                 />
 
-                <Overlay
-                    isVisible={showFeeBreakdown}
-                    overlayStyle={style.overlayContainer}
-                    onBackdropPress={() => setShowFeeBreakdown(false)}>
-                    <FeeBreakdown
-                        title={feeBreakdownTitle}
-                        icon={
-                            <SvgImage
-                                name="Info"
-                                size={32}
-                                color={theme.colors.orange}
-                            />
-                        }
-                        feeItems={feeItemsBreakdown.map(
-                            ({ label, formattedAmount }: FeeItem) => ({
-                                label: label,
-                                value: formattedAmount,
-                            }),
-                        )}
-                        onClose={() => setShowFeeBreakdown(false)}
-                        guidanceText={
-                            <Trans
-                                t={t}
-                                i18nKey="feature.fees.guidance-lightning"
-                                components={{
-                                    br: <LineBreak />,
-                                }}
-                            />
-                        }
-                    />
-                </Overlay>
+                <FeeOverlay
+                    show={showFeeBreakdown}
+                    onDismiss={() => setShowFeeBreakdown(false)}
+                    title={feeBreakdownTitle}
+                    feeItems={feeItemsBreakdown}
+                    description={
+                        <Trans
+                            t={t}
+                            i18nKey="feature.fees.guidance-lightning"
+                            components={{
+                                br: <LineBreak />,
+                            }}
+                        />
+                    }
+                    icon={
+                        <SvgImage
+                            name="Info"
+                            size={32}
+                            color={theme.colors.orange}
+                        />
+                    }
+                />
             </>
         )
     }
@@ -280,13 +272,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         feeIcon: {
             marginLeft: theme.spacing.xxs,
-        },
-        overlayContainer: {
-            width: '90%',
-            maxWidth: 312,
-            padding: theme.spacing.xl,
-            borderRadius: theme.borders.defaultRadius,
-            alignItems: 'center',
         },
     })
 
