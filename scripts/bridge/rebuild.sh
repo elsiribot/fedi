@@ -64,7 +64,7 @@ while true; do
             ;;
         w)
             echo "Building wasm bundle"
-            $REPO_ROOT/scripts/install-wasm.sh
+            $REPO_ROOT/scripts/ui/install-wasm.sh
             ;;
         t)
             echo "Building Rust-Typescript bindings"
