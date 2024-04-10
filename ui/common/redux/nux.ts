@@ -14,6 +14,7 @@ const initialState = {
         hasViewedMemberQr: false,
         hasOpenedNewChat: false,
         hasPerformedPersonalBackup: false,
+        hasOpenedStabilityPool: false,
     },
 }
 

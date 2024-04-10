@@ -5,6 +5,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
+import { useNuxStep } from '@fedi/common/hooks/nux'
 import { useMonitorStabilityPool } from '@fedi/common/hooks/stabilitypool'
 import { selectCurrency, selectStableBalancePending } from '@fedi/common/redux'
 
@@ -24,6 +25,8 @@ const StabilityWallet: React.FC = () => {
     const { formattedStableBalance, formattedStableBalancePending } =
         useStabilityPool()
 
+    const [hasOpenedStabilityPool] = useNuxStep('hasOpenedStabilityPool')
+
     // React Navigation should keep this mounted even when clicking into the StabilityHome screen so the monitor will continue to run
     useMonitorStabilityPool(fedimint)
 
@@ -31,7 +34,13 @@ const StabilityWallet: React.FC = () => {
     return (
         <Pressable
             style={style.container}
-            onPress={() => navigation.navigate('StabilityHome')}>
+            onPress={() =>
+                navigation.navigate(
+                    hasOpenedStabilityPool
+                        ? 'StabilityHome'
+                        : 'StableBalanceIntro',
+                )
+            }>
             <Card
                 containerStyle={style.cardContainer}
                 wrapperStyle={style.cardWrapper}>

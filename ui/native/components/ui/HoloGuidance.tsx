@@ -10,6 +10,7 @@ type HoloGuidanceProps = {
     titleProps?: TextProps | null
     message?: string | null
     body?: React.ReactNode | null
+    size?: 'default' | 'small'
 }
 
 const DEFAULT_TITLE_PROPS = {
@@ -23,6 +24,7 @@ const HoloGuidance: React.FC<HoloGuidanceProps> = ({
     titleProps = DEFAULT_TITLE_PROPS,
     message,
     body,
+    size = 'default',
 }: HoloGuidanceProps) => {
     const { theme } = useTheme()
 
@@ -47,8 +49,17 @@ const HoloGuidance: React.FC<HoloGuidanceProps> = ({
         <View style={styles(theme).container}>
             <ImageBackground
                 source={Images.HoloBackground}
-                style={styles(theme).holoCircle}
-                imageStyle={styles(theme).circleBorder}>
+                style={[
+                    styles(theme).holoCircle,
+                    size === 'default'
+                        ? styles(theme).holoDefault
+                        : styles(theme).holoSmall,
+                ]}
+                imageStyle={
+                    size === 'default'
+                        ? styles(theme).circleBorderDefault
+                        : styles(theme).circleBorderSmall
+                }>
                 {iconImage}
             </ImageBackground>
             {body ? (
@@ -85,8 +96,19 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'center',
         },
-        circleBorder: {
+        holoDefault: {
+            height: theme.sizes.holoGuidanceCircle,
+            width: theme.sizes.holoGuidanceCircle,
+        },
+        circleBorderDefault: {
             borderRadius: theme.sizes.holoGuidanceCircle * 0.5,
+        },
+        holoSmall: {
+            height: 64,
+            width: 64,
+        },
+        circleBorderSmall: {
+            borderRadius: 32,
         },
         iconImage: {
             height: theme.sizes.lg,

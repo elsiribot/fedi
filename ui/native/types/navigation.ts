@@ -126,6 +126,7 @@ export type RootStackParamList = {
     StabilityHome: undefined
     StabilityWithdraw: undefined
     StabilityWithdrawInitiated: { amount: Sats }
+    StableBalanceIntro: undefined
     StartPersonalBackup: undefined
     StartRecoveryAssist: undefined
     StartSocialBackup: undefined
