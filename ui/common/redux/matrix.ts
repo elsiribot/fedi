@@ -679,13 +679,18 @@ export const selectMatrixRoomMembers = (
     roomId: MatrixRoom['id'],
 ) => s.matrix.roomMembers[roomId] || ([] as MatrixRoomMember[])
 
+export const selectActiveMatrixRoomMembers = createSelector(
+    selectMatrixRoomMembers,
+    members => members.filter(m => m.membership === 'join'),
+)
+
 /**
  * Get the list of members in a room.
  * Make the first member the current user.
  * Leave the rest of the list as is.
  */
 export const selectMatrixRoomMembersByMe = createSelector(
-    selectMatrixRoomMembers,
+    selectActiveMatrixRoomMembers,
     selectMatrixAuth,
     (members, auth) => {
         const index = members.findIndex(({ id }) => id === auth?.userId)
@@ -698,10 +703,15 @@ export const selectMatrixRoomMembersByMe = createSelector(
     },
 )
 
+/**
+ * Returns count of active room members.
+ * Doesn't include members who left or
+ * have been invited but have not joined.
+ */
 export const selectMatrixRoomMembersCount = (
     s: CommonState,
     roomId: MatrixRoom['id'],
-) => selectMatrixRoomMembers(s, roomId).length ?? 0
+) => selectActiveMatrixRoomMembers(s, roomId).length ?? 0
 
 export const selectMatrixRoomMemberMap = createSelector(
     selectMatrixRoomMembers,
