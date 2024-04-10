@@ -35,6 +35,7 @@ use fedimint_core::db::{
 };
 use fedimint_core::module::ApiRequestErased;
 use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
+use fedimint_core::util::FibonacciBackoff;
 use fedimint_core::{maybe_add_send_sync, Amount, PeerId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
@@ -140,7 +141,7 @@ pub struct FederationV2 {
     // Helper object to retrieve the schedule used for charging Fedi's fee for different types of
     // transactions.
     pub fedi_fee_helper: Arc<FediFeeHelper>,
-    pub backup_service: OnceCell<BackupService>,
+    pub backup_service: Arc<BackupService>,
     pub fedi_fee_remittance_service: OnceCell<FediFeeRemittanceService>,
     pub recovering: bool,
     pub gateway_service: OnceCell<LnGatewayService>,
@@ -174,7 +175,7 @@ impl FederationV2 {
             operation_states: Default::default(),
             auxiliary_secret: secret,
             fedi_fee_helper,
-            backup_service: OnceCell::new(),
+            backup_service: BackupService::default().into(),
             fedi_fee_remittance_service: OnceCell::new(),
             recovering,
             gateway_service: OnceCell::new(),
@@ -190,13 +191,12 @@ impl FederationV2 {
     /// saved to db (e.g. after recovery)
     async fn start_background_tasks(&mut self) {
         self.subscribe_balance_updates().await;
-        if self
-            .backup_service
-            .set(BackupService::new(self.client.clone(), &mut self.task_group).await)
-            .is_err()
-        {
-            panic!("backup service already initialized");
-        }
+        let backup_service = self.backup_service.clone();
+        let client = self.client.clone();
+        self.task_group
+            .spawn_cancellable("backup_service", async move {
+                backup_service.run_continuously(&client).await;
+            });
         self.subscribe_to_all_operations().await;
 
         if self
@@ -1560,21 +1560,26 @@ impl FederationV2 {
 
     /// Backup all ecash and username with the federation
     pub async fn backup(&self) -> Result<()> {
-        self.backup_service
-            .get()
-            .context("backup not intialized")?
-            .trigger_manual_backup()
-            .await;
+        // not block ui for too long, just return error. background service will
+        // continue retry.
+        fedimint_core::task::timeout(
+            Duration::from_secs(60),
+            self.backup_service.backup(
+                &self.client,
+                FibonacciBackoff::default()
+                    .with_min_delay(Duration::from_millis(200))
+                    .with_max_delay(Duration::from_secs(5))
+                    .with_max_times(10)
+                    .with_jitter(),
+            ),
+        )
+        .await
+        .context(ErrorCode::Timeout)??;
         Ok(())
     }
 
     pub async fn backup_status(&self) -> Result<BackupServiceStatus> {
-        Ok(self
-            .backup_service
-            .get()
-            .context("backup not intialized")?
-            .status()
-            .await)
+        Ok(self.backup_service.status(&self.client).await)
     }
 
     /// Extract username (and potentially more in future) from recovered
