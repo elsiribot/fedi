@@ -2,14 +2,19 @@ import { useRouter } from 'next/router'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { selectMatrixStatus } from '@fedi/common/redux'
+import {
+    selectMatrixStatus,
+    selectNeedsMatrixRegistration,
+} from '@fedi/common/redux'
 import { MatrixSyncStatus } from '@fedi/common/types'
 
 import { ChatBlock } from '../../components/ChatBlock'
+import { ChatNeedRegistration } from '../../components/ChatNeedRegistration'
 import { ChatNew } from '../../components/ChatNew'
 import { ChatRoomConversation } from '../../components/ChatRoomConversation'
 import { ChatUserConversation } from '../../components/ChatUserConversation'
 import { CircularLoader } from '../../components/CircularLoader'
+import { ContentBlock } from '../../components/ContentBlock'
 import { Redirect } from '../../components/Redirect'
 import { useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
@@ -18,6 +23,7 @@ function ChatPage() {
     const { t } = useTranslation()
     const { query, isReady } = useRouter()
     const syncStatus = useAppSelector(selectMatrixStatus)
+    const needsChatRegistration = useAppSelector(selectNeedsMatrixRegistration)
 
     const [chatType, chatId] = Array.isArray(query.path)
         ? [query.path[0], query.path[1]]
@@ -28,6 +34,15 @@ function ChatPage() {
     // useUpdateLastMessageSeen()
 
     if (!isReady) return null
+
+    // Regardless of which page they're on, if they need to register a username then show them this screen.
+    if (needsChatRegistration) {
+        return (
+            <ContentBlock>
+                <ChatNeedRegistration />
+            </ContentBlock>
+        )
+    }
 
     let content: React.ReactNode
     let isShowingContent = true
