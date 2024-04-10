@@ -8,10 +8,6 @@ import { v4 as uuidv4 } from 'uuid'
 
 import { CommonState } from '.'
 import {
-    GLOBAL_MATRIX_SERVER,
-    GLOBAL_MATRIX_SLIDING_SYNC_PROXY,
-} from '../constants/matrix'
-import {
     MatrixUser,
     MatrixRoom,
     MatrixAuth,
