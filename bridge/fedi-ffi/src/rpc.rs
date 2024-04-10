@@ -11,6 +11,7 @@ use fedimint_core::timing::TimeReporter;
 use futures::Future;
 use lightning_invoice::Bolt11Invoice;
 use macro_rules_attribute::macro_rules_derive;
+use matrix_sdk::ruma::api::client::profile::get_profile;
 use matrix_sdk::ruma::api::client::push::Pusher;
 use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
 use matrix_sdk::sliding_sync::Ranges;
@@ -954,6 +955,16 @@ async fn matrixRoomGetNotificationMode(
         .await
 }
 
+ts_type_ser!(UserProfile: get_profile::v3::Response = "any");
+#[macro_rules_derive(rpc_method!)]
+async fn matrixUserProfile(bridge: Arc<Bridge>, user_id: RpcUserId) -> anyhow::Result<UserProfile> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .user_profile(&user_id.into_typed()?)
+        .await
+        .map(UserProfile)
+}
+
 ts_type_de!(RpcPusher: Pusher = "any");
 
 #[macro_rules_derive(rpc_method!)]
@@ -1110,6 +1121,7 @@ rpc_methods!(RpcMethods {
     matrixRoomSetNotificationMode,
     matrixRoomGetNotificationMode,
     matrixSetPusher,
+    matrixUserProfile,
 });
 
 #[instrument(

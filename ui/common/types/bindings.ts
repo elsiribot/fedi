@@ -613,6 +613,7 @@ export interface RpcMethods {
         'allMessages' | 'mentionsAndKeywordsOnly' | 'mute' | null,
     ]
     matrixSetPusher: [{ pusher: RpcPusher }, null]
+    matrixUserProfile: [{ userId: RpcUserId }, any]
 }
 
 export interface RpcModuleFediFeeSchedule {
@@ -860,6 +861,8 @@ export interface TransactionEvent {
 }
 
 export type TsAny = any
+
+export type UserProfile = any
 
 export interface WithdrawalDetails {
     address: string

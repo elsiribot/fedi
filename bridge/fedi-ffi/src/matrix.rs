@@ -12,6 +12,7 @@ use futures::{Future, StreamExt};
 use matrix_sdk::notification_settings::NotificationSettings;
 pub use matrix_sdk::ruma::api::client::account::register::v3 as register;
 use matrix_sdk::ruma::api::client::directory::get_public_rooms_filtered::v3 as get_public_rooms_filtered;
+use matrix_sdk::ruma::api::client::profile::get_profile;
 use matrix_sdk::ruma::api::client::push::Pusher;
 use matrix_sdk::ruma::api::client::receipt::create_receipt::v3::ReceiptType;
 pub use matrix_sdk::ruma::api::client::room::create_room::v3 as create_room;
@@ -663,6 +664,10 @@ impl Matrix {
             .get_user_defined_room_notification_mode(room_id)
             .await
             .map(From::from))
+    }
+
+    pub async fn user_profile(&self, user_id: &UserId) -> Result<get_profile::v3::Response> {
+        Ok(self.client.get_profile(user_id).await?)
     }
 }
 
