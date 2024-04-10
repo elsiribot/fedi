@@ -1,25 +1,23 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { useNavigation } from '@react-navigation/native'
 import { Button, FAB, Image, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
-    fetchChatMembers,
-    selectActiveFederationId,
     selectIsMatrixChatEmpty,
-    selectMatrixAuth,
     selectMatrixStatus,
+    selectNeedsMatrixRegistration,
 } from '@fedi/common/redux'
 
 import { Images } from '../assets/images'
 import ChatsList from '../components/feature/chat/ChatsList'
 import { NuxTooltip } from '../components/ui/NuxTooltip'
 import SvgImage from '../components/ui/SvgImage'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { useAppSelector } from '../state/hooks'
 import { MatrixSyncStatus } from '../types'
 import {
     NavigationHook,
@@ -36,21 +34,13 @@ const ChatScreen: React.FC<Props> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(selectActiveFederationId)
     const syncStatus = useAppSelector(selectMatrixStatus)
-    const hasMatrixAuth = useAppSelector(s => !!selectMatrixAuth(s))
-    const needsChatRegistration = !hasMatrixAuth
+    const needsChatRegistration = useAppSelector(selectNeedsMatrixRegistration)
+    console.debug('needsChatRegistration', needsChatRegistration)
+
     const isChatEmpty = useAppSelector(selectIsMatrixChatEmpty)
     const [hasOpenedNewChat, completeOpenedNewChat] =
         useNuxStep('hasOpenedNewChat')
-
-    useEffect(() => {
-        if (activeFederationId) {
-            // Here we fetch the roster and store the results in local storage
-            dispatch(fetchChatMembers({ federationId: activeFederationId }))
-        }
-    }, [activeFederationId, dispatch])
 
     // TODO: reimplement seen message hook for matrix
     // Use this hook only if the screen is in focus
