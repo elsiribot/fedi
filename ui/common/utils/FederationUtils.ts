@@ -184,7 +184,12 @@ export const fetchPublicFederations = async (): Promise<PublicFederation[]> => {
             // federation meta must have all of these fields to be displayed as public
             // Note these are not techincally supported meta fields... just the quickest
             // hack to be able to display public federations using the meta.json
-            if (value.public && value.invite_code && value.preview_message) {
+            if (
+                value.public &&
+                value.public === 'true' &&
+                value.invite_code &&
+                value.preview_message
+            ) {
                 publicFederations.push({
                     id: key,
                     name:
