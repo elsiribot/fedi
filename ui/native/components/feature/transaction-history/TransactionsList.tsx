@@ -27,6 +27,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
     loading,
     loadMoreTransactions,
 }) => {
+    console.error('transactions', transactions)
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const toast = useToast()

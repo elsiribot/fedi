@@ -11,13 +11,13 @@ import {
     useBalanceDisplay,
     useAmountFormatter,
 } from '@fedi/common/hooks/amount'
-import { FeeItem, useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
+import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import { Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { hexToRgba } from '@fedi/common/utils/color'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { FeeBreakdown } from '../components/feature/send/FeeBreakdown'
+import FeeOverlay from '../components/feature/send/FeeOverlay'
 import SvgImage from '../components/ui/SvgImage'
 import { useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -175,30 +175,13 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
                     }
                 />
             </View>
-
-            <Overlay
-                isVisible={showFeeBreakdown}
-                overlayStyle={style.overlayContainer}
-                onBackdropPress={() => setShowFeeBreakdown(false)}>
-                <FeeBreakdown
-                    title={feeBreakdownTitle}
-                    icon={
-                        <SvgImage
-                            name="Info"
-                            size={32}
-                            color={theme.colors.blue}
-                        />
-                    }
-                    feeItems={feeItemsBreakdown.map(
-                        ({ label, formattedAmount }: FeeItem) => ({
-                            label: label,
-                            value: formattedAmount,
-                        }),
-                    )}
-                    onClose={() => setShowFeeBreakdown(false)}
-                    guidanceText={ecashFeesGuidanceText}
-                />
-            </Overlay>
+            <FeeOverlay
+                show={showFeeBreakdown}
+                onDismiss={() => setShowFeeBreakdown(false)}
+                title={feeBreakdownTitle}
+                feeItems={feeItemsBreakdown}
+                description={ecashFeesGuidanceText}
+            />
         </View>
     )
 }
