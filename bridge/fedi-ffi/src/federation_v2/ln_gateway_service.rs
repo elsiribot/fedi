@@ -1,3 +1,4 @@
+// FIXME: remove this service
 use std::sync::{Arc, Weak};
 use std::time::{Duration, SystemTime};
 
@@ -70,7 +71,7 @@ impl LnGatewayService {
 
         client
             .get_first_module::<LightningClientModule>()
-            .update_gateway_cache(/* apply_meta= */ true)
+            .update_gateway_cache()
             .await?;
 
         *self.state.last_updated.write().await = fedimint_core::time::now();
