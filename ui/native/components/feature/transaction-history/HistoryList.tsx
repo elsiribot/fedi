@@ -124,23 +124,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             paddingRight: insets.right,
             paddingBottom: Math.min(insets.bottom, theme.spacing.lg),
         },
-        overlayContainer: {
-            width: '90%',
-            maxWidth: 340,
-            padding: theme.spacing.xl,
-            borderRadius: theme.borders.defaultRadius,
-            alignItems: 'center',
-        },
-        overlayErrorContainer: {
-            paddingVertical: theme.spacing.xl,
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        overlayErrorText: {
-            marginTop: theme.spacing.lg,
-            textAlign: 'center',
-        },
         emptyContainer: {
             flex: 1,
             width: '100%',
