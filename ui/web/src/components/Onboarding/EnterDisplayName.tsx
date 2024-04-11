@@ -18,7 +18,7 @@ import {
     OnboardingContent,
 } from './components'
 
-export const CreateUsername: React.FC = () => {
+export const EnterDisplayName: React.FC = () => {
     const { t } = useTranslation()
     const { push } = useRouter()
     const matrixAuth = useAppSelector(selectMatrixAuth)
@@ -59,15 +59,12 @@ export const CreateUsername: React.FC = () => {
             <>
                 <OnboardingContent>
                     <Text variant="h2" weight="medium">
-                        {t('feature.onboarding.create-your-username')}
+                        {t('feature.chat.enter-display-name')}
                     </Text>
                     <Text>{t('feature.onboarding.username-instructions')}</Text>
                     <InputWrapper>
                         <Input
-                            label={t('words.username')}
-                            placeholder={`${t(
-                                'feature.onboarding.enter-username',
-                            )}...`}
+                            label={t('feature.chat.display-name')}
                             value={username}
                             onChange={ev =>
                                 handleChangeUsername(ev.currentTarget.value)
@@ -84,7 +81,7 @@ export const CreateUsername: React.FC = () => {
                         type="submit"
                         disabled={!username}
                         loading={isSubmitting}>
-                        {t('feature.onboarding.create-username')}
+                        {t('words.continue')}
                     </Button>
                 </OnboardingActions>
             </>

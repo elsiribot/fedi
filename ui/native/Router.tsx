@@ -83,11 +83,11 @@ import ConfirmSendEcash from './screens/ConfirmSendEcash'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import CreateGroup from './screens/CreateGroup'
-import CreateUsername from './screens/CreateUsername'
 import CurrencySettings from './screens/CurrencySettings'
 import DeveloperSettings from './screens/DeveloperSettings'
 import DirectChat from './screens/DirectChat'
 import EditGroup from './screens/EditGroup'
+import EnterDisplayName from './screens/EnterDisplayName'
 import Eula from './screens/Eula'
 import FederationGreeting from './screens/FederationGreeting'
 import FederationInvite from './screens/FederationInvite'
@@ -242,8 +242,8 @@ const MainNavigator = () => {
 
                             {/* Federation Onboarding */}
                             <Stack.Screen
-                                name="CreateUsername"
-                                component={CreateUsername}
+                                name="EnterDisplayName"
+                                component={EnterDisplayName}
                                 options={() => ({
                                     header: () => <NewMemberHeader />,
                                     animation: 'fade',

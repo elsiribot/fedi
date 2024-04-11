@@ -82,7 +82,7 @@ const UpgradeChat: React.FC = () => {
             <Button
                 fullWidth
                 title={t('words.continue')}
-                onPress={() => navigation.navigate('CreateUsername')}
+                onPress={() => navigation.navigate('EnterDisplayName')}
             />
         </HoloGradient>
     )

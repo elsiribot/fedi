@@ -94,8 +94,8 @@ const ChatScreen: React.FC<Props> = () => {
                         </Text>
                         <Button
                             fullWidth
-                            title={t('feature.chat.register-a-username')}
-                            onPress={() => navigation.push('CreateUsername')}
+                            title={t('words.continue')}
+                            onPress={() => navigation.push('EnterDisplayName')}
                         />
                     </View>
                 </>

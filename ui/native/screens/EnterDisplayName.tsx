@@ -16,9 +16,12 @@ import { useDisplayNameForm } from '@fedi/common/hooks/chat'
 
 import type { RootStackParamList } from '../types/navigation'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'CreateUsername'>
+export type Props = NativeStackScreenProps<
+    RootStackParamList,
+    'EnterDisplayName'
+>
 
-const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
+const EnterDisplayName: React.FC<Props> = ({ navigation }: Props) => {
     const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { t } = useTranslation()
@@ -94,12 +97,6 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     : {},
                 buttonIsOverlapping ? { flex: 0 } : {},
             ]}>
-            <Text h2 medium style={style.titleText}>
-                {t('feature.onboarding.create-your-username')}
-            </Text>
-            <Text caption style={style.instructionsText}>
-                {t('feature.onboarding.username-instructions')}
-            </Text>
             <View
                 style={style.inputWrapper}
                 onLayout={event => {
@@ -109,14 +106,13 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                     )
                 }}>
                 <Text caption style={style.inputLabel}>
-                    {t('words.username')}
+                    {t('feature.chat.display-name')}
                 </Text>
                 <Input
                     onChangeText={input => {
                         handleChangeUsername(input)
                     }}
                     value={username}
-                    placeholder={`${t('feature.onboarding.enter-username')}...`}
                     returnKeyType="done"
                     containerStyle={style.textInputOuter}
                     inputContainerStyle={style.textInputInner}
@@ -138,7 +134,7 @@ const CreateUsername: React.FC<Props> = ({ navigation }: Props) => {
                 }}>
                 <Button
                     fullWidth
-                    title={t('feature.onboarding.create-username')}
+                    title={t('words.continue')}
                     onPress={handleSubmit}
                     disabled={!username || isSubmitting}
                     loading={isSubmitting}
@@ -200,4 +196,4 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
     })
 
-export default CreateUsername
+export default EnterDisplayName
