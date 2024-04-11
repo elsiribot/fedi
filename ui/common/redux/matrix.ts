@@ -6,7 +6,7 @@ import {
 } from '@reduxjs/toolkit'
 import { v4 as uuidv4 } from 'uuid'
 
-import { CommonState } from '.'
+import { CommonState, selectAuthenticatedMember } from '.'
 import {
     MatrixUser,
     MatrixRoom,
@@ -661,6 +661,15 @@ export const selectNeedsMatrixRegistration = createSelector(
         if (!auth) return true
         if (!hasSetMatrixDisplayName) return true
         return false
+    },
+)
+
+// TODO: Consider deprecating this after a long enough time has passed and no users exist with old legacy XMPP state
+export const selectShouldShowUpgradeChat = createSelector(
+    selectNeedsMatrixRegistration,
+    (s: CommonState) => selectAuthenticatedMember(s),
+    (needsChatRegistration, xmppAuth) => {
+        return needsChatRegistration && xmppAuth !== null
     },
 )
 
