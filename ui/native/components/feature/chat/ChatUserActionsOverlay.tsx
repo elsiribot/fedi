@@ -15,7 +15,6 @@ interface Props {
     roomId: string
     selectedUserId: string | null
     show: boolean
-    label: string
     onDismiss: () => void
 }
 
@@ -23,7 +22,6 @@ export const ChatUserActionsOverlay: React.FC<Props> = ({
     roomId,
     selectedUserId,
     show,
-    label = '',
     onDismiss,
 }) => {
     const dispatch = useAppDispatch()

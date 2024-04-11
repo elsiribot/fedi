@@ -82,7 +82,6 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
             <ChatUserActionsOverlay
                 show={selectedUserId !== null}
                 onDismiss={() => setSelectedUserId(null)}
-                label={selectedUserId ?? ''}
                 selectedUserId={selectedUserId}
                 roomId={roomId}
             />
