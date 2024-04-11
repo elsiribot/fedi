@@ -15,7 +15,7 @@ import { hexToRgba } from '@fedi/common/utils/color'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import { HistoryDetailItem, HistoryDetailItemProps } from './HistoryDetailItem'
 
-export interface HistoryDetailProps {
+export type HistoryDetailProps = {
     icon: React.ReactNode
     title: React.ReactNode
     amount: string

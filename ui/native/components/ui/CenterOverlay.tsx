@@ -1,11 +1,18 @@
 import { Overlay, Theme, useTheme } from '@rneui/themed'
 import React, { useRef } from 'react'
-import { Animated, StyleSheet, LayoutChangeEvent } from 'react-native'
+import {
+    Animated,
+    StyleSheet,
+    LayoutChangeEvent,
+    ViewStyle,
+    StyleProp,
+} from 'react-native'
 
 type CenterOverlayProps = {
     onBackdropPress?: () => void
     show?: boolean
     loading?: boolean
+    overlayStyle?: StyleProp<ViewStyle>
     children: React.ReactNode
 }
 
@@ -13,6 +20,7 @@ const CenterOverlay: React.FC<CenterOverlayProps> = ({
     onBackdropPress,
     show = false,
     loading,
+    overlayStyle,
     children,
 }) => {
     const { theme } = useTheme()
@@ -34,7 +42,7 @@ const CenterOverlay: React.FC<CenterOverlayProps> = ({
         <Overlay
             isVisible={show}
             onBackdropPress={onBackdropPress}
-            overlayStyle={style.overlayContainer}
+            overlayStyle={[style.overlayContainer, overlayStyle]}
             animationType="fade">
             <Animated.View
                 onLayout={handleOverlayLayout}

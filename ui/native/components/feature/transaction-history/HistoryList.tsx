@@ -1,5 +1,5 @@
 import { Overlay, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     ActivityIndicator,
@@ -14,6 +14,7 @@ import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import { HistoryDetail, HistoryDetailProps } from './HistoryDetail'
+import HistoryDetailOverlay from './HistoryDetailOverlay'
 import { HistoryRow, HistoryRowProps } from './HistoryRow'
 import { HistoryRowError } from './HistoryRowError'
 
@@ -38,9 +39,13 @@ export function HistoryList<T extends { id: string }>({
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
-    const selectedItem = selectedItemId
-        ? rows.find(item => item.id === selectedItemId)
-        : undefined
+    const selectedItem = useMemo(
+        () =>
+            selectedItemId
+                ? rows.find(item => item.id === selectedItemId)
+                : undefined,
+        [selectedItemId],
+    )
 
     const renderRow: ListRenderItem<T> = ({ item }) => {
         const rowProps = makeRowProps(item)
@@ -93,32 +98,16 @@ export function HistoryList<T extends { id: string }>({
                 onEndReached={() => onEndReached && onEndReached()}
                 onEndReachedThreshold={0.9}
             />
-            <Overlay
-                isVisible={!!selectedItem}
-                overlayStyle={style.overlayContainer}
-                onBackdropPress={() => setSelectedItemId(null)}>
-                {selectedItem && (
-                    <ErrorBoundary
-                        fallback={
-                            <View style={style.overlayErrorContainer}>
-                                <SvgImage
-                                    name="Error"
-                                    color={theme.colors.red}
-                                    size={SvgImageSize.lg}
-                                />
-                                <Text style={style.overlayErrorText}>
-                                    {t('errors.history-render-error')}
-                                </Text>
-                            </View>
-                        }>
-                        <HistoryDetail
-                            {...makeDetailProps(selectedItem)}
-                            icon={makeIcon(selectedItem)}
-                            onClose={() => setSelectedItemId(null)}
-                        />
-                    </ErrorBoundary>
-                )}
-            </Overlay>
+            <HistoryDetailOverlay
+                show={!!selectedItemId}
+                itemDetails={
+                    selectedItem && {
+                        ...makeDetailProps(selectedItem),
+                        icon: makeIcon(selectedItem),
+                        onClose: () => setSelectedItemId(null),
+                    }
+                }
+            />
         </View>
     )
 }
