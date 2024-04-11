@@ -8,29 +8,27 @@ import {
     useWindowDimensions,
 } from 'react-native'
 
+import { maxPinLength, pinNumbers } from '@fedi/common/constants/security'
 import { numpadButtons } from '@fedi/common/hooks/amount'
-import { selectPinDigits, setFeatureUnlocked } from '@fedi/common/redux'
+import { usePin } from '@fedi/common/hooks/security'
+import { useDebounce } from '@fedi/common/hooks/util'
+import { setFeatureUnlocked } from '@fedi/common/redux'
 
 import PinDot from '../components/feature/pin/PinDot'
 import { NumpadButton } from '../components/ui/NumpadButton'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { useAppDispatch } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'LockScreen'>
-
-const maxPinLength = 4
 
 const LockScreen: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { width } = useWindowDimensions()
     const { feature } = route.params
+    const { check } = usePin()
     const [pinDigits, setPinDigits] = useState<Array<number>>([])
     const dispatch = useAppDispatch()
-    const existingPinDigits = useAppSelector(selectPinDigits)
-
-    const isPinValid =
-        existingPinDigits === null ||
-        existingPinDigits.every((d, i) => d === pinDigits[i])
+    const debouncedPin = useDebounce(pinDigits, 500)
 
     const style = styles(theme, width)
 
@@ -44,40 +42,28 @@ const LockScreen: React.FC<Props> = ({ navigation, route }: Props) => {
                 const updatedDigits = [...pinDigits, btn]
 
                 setPinDigits(updatedDigits)
-
-                if (updatedDigits.length === maxPinLength) {
-                    setTimeout(() => {
-                        // Get the value at the 3000ms point in time without re-rendering
-                        setPinDigits(digits => {
-                            if (digits.length === maxPinLength) {
-                                if (
-                                    existingPinDigits &&
-                                    existingPinDigits.every(
-                                        (d, i) => d === digits[i],
-                                    )
-                                ) {
-                                    dispatch(
-                                        setFeatureUnlocked({
-                                            key: feature,
-                                            unlocked: true,
-                                        }),
-                                    )
-                                    if (navigation.canGoBack())
-                                        navigation.goBack()
-                                    else navigation.navigate('TabsNavigator')
-                                    return digits
-                                } else {
-                                    return []
-                                }
-                            }
-
-                            return digits
-                        })
-                    }, 500)
-                }
             }
         },
-        [pinDigits, dispatch, navigation, existingPinDigits, feature],
+        [pinDigits],
+    )
+
+    const dotStatus = useCallback(
+        (index: number) => {
+            if (pinDigits.length === maxPinLength) {
+                if (check && check(pinDigits)) {
+                    return 'correct'
+                }
+
+                return 'incorrect'
+            }
+
+            if (index >= pinDigits.length) {
+                return 'empty'
+            }
+
+            return 'active'
+        },
+        [check, pinDigits],
     )
 
     useEffect(() => {
@@ -93,23 +79,32 @@ const LockScreen: React.FC<Props> = ({ navigation, route }: Props) => {
         return () => backHandler.remove()
     }, [])
 
+    useEffect(() => {
+        if (debouncedPin?.length !== maxPinLength || !check) return
+
+        if (check(debouncedPin)) {
+            dispatch(
+                setFeatureUnlocked({
+                    key: feature,
+                    unlocked: true,
+                }),
+            )
+            if (navigation.canGoBack()) navigation.goBack()
+            else navigation.navigate('TabsNavigator')
+        } else {
+            setPinDigits([])
+        }
+    }, [debouncedPin, feature, navigation, dispatch, check])
+
     return (
         <View style={style.container}>
             <View style={style.content}>
                 <View style={style.dots}>
-                    {new Array(maxPinLength).fill(null).map((_, i) => (
+                    {pinNumbers.map(i => (
                         <PinDot
                             key={i}
-                            status={
-                                pinDigits.length === maxPinLength
-                                    ? isPinValid
-                                        ? 'correct'
-                                        : 'incorrect'
-                                    : i >= pinDigits.length
-                                    ? 'empty'
-                                    : 'active'
-                            }
-                            isLast={i === maxPinLength - 1}
+                            status={dotStatus(i)}
+                            isLast={i === maxPinLength}
                         />
                     ))}
                 </View>

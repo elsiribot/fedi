@@ -66,7 +66,6 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
             {},
         ),
         matrixAuth: state.matrix.auth,
-        pinDigits: state.security.pinDigits,
         protectedFeatures: state.security.protectedFeatures,
     }
 }
@@ -112,7 +111,6 @@ export function hasStorageStateChanged(
         ['federation', 'customFediMods'],
         ['matrix', 'auth'],
         ['nux', 'steps'],
-        ['security', 'pinDigits'],
         ['security', 'protectedFeatures'],
     ]
 
@@ -508,7 +506,6 @@ async function migrateStoredState(
         migrationState = {
             ...migrationState,
             version: 17,
-            pinDigits: null,
             protectedFeatures: {
                 app: true,
             },

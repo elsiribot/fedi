@@ -6,7 +6,6 @@ import { loadFromStorage } from './storage'
 /*** Initial State ***/
 
 const initialState: PinState = {
-    pinDigits: null,
     protectedFeatures: {
         app: true,
     },
@@ -21,7 +20,6 @@ export interface ProtectedFeatures {
 }
 
 export type PinState = {
-    pinDigits: Array<number> | null
     protectedFeatures: ProtectedFeatures
     unlockedFeatures: ProtectedFeatures
     isBackingUpBeforePin: boolean
@@ -33,9 +31,6 @@ export const securitySlice = createSlice({
     name: 'security',
     initialState,
     reducers: {
-        setPin(state, action: PayloadAction<PinState['pinDigits']>) {
-            state.pinDigits = action.payload
-        },
         setFeatureUnlocked(
             state,
             action: PayloadAction<{
@@ -62,10 +57,6 @@ export const securitySlice = createSlice({
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
 
-            if (action.payload.pinDigits) {
-                state.pinDigits = action.payload.pinDigits
-            }
-
             if (action.payload.protectedFeatures) {
                 const { protectedFeatures } = action.payload
                 const actions = {
@@ -88,15 +79,12 @@ export const securitySlice = createSlice({
 /*** Basic actions ***/
 
 export const {
-    setPin,
     setIsBackingUpBeforePin,
     setFeatureUnlocked,
     setProtectedFeature,
 } = securitySlice.actions
 
 /*** Selectors ***/
-
-export const selectPinDigits = (s: CommonState) => s.security.pinDigits
 
 export const selectIsFeatureUnlocked = (
     s: CommonState,
@@ -108,5 +96,3 @@ export const selectProtectedFeatures = (s: CommonState) =>
 
 export const selectIsRecoveringBeforePin = (s: CommonState) =>
     s.security.isBackingUpBeforePin
-
-export const selectHasSetPin = (s: CommonState) => s.security.pinDigits !== null

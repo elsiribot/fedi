@@ -1,6 +1,7 @@
 import { createDrawerNavigator } from '@react-navigation/drawer'
 import {
     NavigationContainer,
+    StackActions,
     useNavigationContainerRef,
 } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
@@ -743,14 +744,6 @@ const MainNavigator = () => {
                                     header: () => <PinAccessHeader />,
                                 })}
                             />
-                            <Stack.Screen
-                                name="LockScreen"
-                                component={LockScreen}
-                                options={() => ({
-                                    header: () => <LockScreenHeader />,
-                                    presentation: 'fullScreenModal',
-                                })}
-                            />
                             {/* Stability Pools */}
                             <Stack.Screen
                                 name="StabilityHome"
@@ -851,6 +844,14 @@ const MainNavigator = () => {
                                     presentation: 'transparentModal',
                                     headerShown: false,
                                 }}
+                            />
+                            <Stack.Screen
+                                name="LockScreen"
+                                component={LockScreen}
+                                options={() => ({
+                                    header: () => <LockScreenHeader />,
+                                    presentation: 'fullScreenModal',
+                                })}
                             />
                         </Stack.Group>
                     </Stack.Group>
@@ -956,7 +957,10 @@ const Router = () => {
             ref={navigation}
             theme={theme}
             linking={linking}
-            onStateChange={() => {
+            onStateChange={state => {
+                if (state?.routes[state?.index].name === 'PinAccess') {
+                    navigation.dispatch(StackActions.replace('TabsNavigator'))
+                }
                 toast.close()
             }}>
             <Drawer.Navigator

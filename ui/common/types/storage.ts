@@ -171,7 +171,6 @@ export interface StoredStateV16 extends Omit<StoredStateV15, 'version'> {
 
 export interface StoredStateV17 extends Omit<StoredStateV16, 'version'> {
     version: 17
-    pinDigits: Array<number> | null
     protectedFeatures: ProtectedFeatures
 }
 

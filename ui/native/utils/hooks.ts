@@ -12,7 +12,6 @@ import {
 
 import {
     ProtectedFeatures,
-    selectHasSetPin,
     selectIsFeatureUnlocked,
     selectProtectedFeatures,
 } from '@fedi/common/redux'
@@ -81,34 +80,4 @@ export function useNotificationsPermission() {
     }, [])
 
     return { notificationsPermission, requestNotificationsPermission }
-}
-
-export function useProtectedFeature(
-    feature: keyof ProtectedFeatures,
-    condition = true,
-) {
-    const navigation = useNavigation()
-    const isFeatureUnlocked = useAppSelector(s =>
-        selectIsFeatureUnlocked(s, feature),
-    )
-    const isFeatureProtected = useAppSelector(selectProtectedFeatures)[feature]
-    const hasSetPin = useAppSelector(selectHasSetPin)
-
-    useEffect(() => {
-        if (
-            isFeatureProtected &&
-            !isFeatureUnlocked &&
-            hasSetPin &&
-            condition
-        ) {
-            navigation.navigate('LockScreen', { feature })
-        }
-    }, [
-        isFeatureProtected,
-        feature,
-        navigation,
-        isFeatureUnlocked,
-        hasSetPin,
-        condition,
-    ])
 }

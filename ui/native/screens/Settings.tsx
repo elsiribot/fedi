@@ -15,6 +15,7 @@ import Share from 'react-native-share'
 
 import { useFederationSupportsSingleSeed } from '@fedi/common/hooks/federation'
 import { useNuxStep } from '@fedi/common/hooks/nux'
+import { usePin } from '@fedi/common/hooks/security'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useExportTransactions } from '@fedi/common/hooks/transactions'
 import {
@@ -25,7 +26,6 @@ import {
     selectCurrency,
     selectDeveloperMode,
     selectMatrixAuth,
-    selectHasSetPin,
     selectStableBalance,
     selectStableBalancePending,
     setDeveloperMode,
@@ -68,7 +68,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const pendingStableBalance = useAppSelector(selectStableBalancePending)
     const currency = useAppSelector(selectCurrency)
     const supportsSingleSeed = useFederationSupportsSingleSeed()
-    const hasSetPin = useAppSelector(selectHasSetPin)
+    const { hasSetPin } = usePin()
     const [hasPerformedPersonalBackup] = useNuxStep(
         'hasPerformedPersonalBackup',
     )

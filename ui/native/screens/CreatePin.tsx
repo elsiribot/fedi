@@ -1,11 +1,14 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View, useWindowDimensions } from 'react-native'
 
+import { maxPinLength, pinNumbers } from '@fedi/common/constants/security'
 import { numpadButtons } from '@fedi/common/hooks/amount'
-import { setFeatureUnlocked, setPin } from '@fedi/common/redux'
+import { usePin } from '@fedi/common/hooks/security'
+import { useDebounce } from '@fedi/common/hooks/util'
+import { setFeatureUnlocked } from '@fedi/common/redux'
 
 import PinDot from '../components/feature/pin/PinDot'
 import { NumpadButton } from '../components/ui/NumpadButton'
@@ -14,15 +17,16 @@ import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'CreatePin'>
 
-const maxPinLength = 4
-
 const CreatePin: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { width } = useWindowDimensions()
+    const { set } = usePin()
     const [pinDigits, setPinDigits] = useState<Array<number>>([])
     const [confirmPinDigits, setConfirmPinDigits] = useState<Array<number>>([])
     const [isReEnteringPin, setIsReEnteringPin] = useState(false)
+    const debouncedPin = useDebounce(pinDigits)
+    const debouncedConfirmPin = useDebounce(confirmPinDigits)
     const dispatch = useAppDispatch()
 
     const matchesInitialPin = useCallback(
@@ -50,28 +54,6 @@ const CreatePin: React.FC<Props> = ({ navigation }: Props) => {
                     const updatedDigits = [...confirmPinDigits, btn]
 
                     setConfirmPinDigits(updatedDigits)
-
-                    if (updatedDigits.length === maxPinLength) {
-                        setTimeout(() => {
-                            setConfirmPinDigits(digits => {
-                                if (
-                                    digits.length === maxPinLength &&
-                                    matchesInitialPin(digits)
-                                ) {
-                                    dispatch(setPin(updatedDigits))
-                                    dispatch(
-                                        setFeatureUnlocked({
-                                            key: 'app',
-                                            unlocked: true,
-                                        }),
-                                    )
-                                    navigation.navigate('CreatedPin')
-                                }
-
-                                return digits
-                            })
-                        }, 1000)
-                    }
                 }
             } else {
                 if (btn === 'backspace') {
@@ -80,31 +62,63 @@ const CreatePin: React.FC<Props> = ({ navigation }: Props) => {
                     const updatedDigits = [...pinDigits, btn]
 
                     setPinDigits(updatedDigits)
-
-                    if (updatedDigits.length === maxPinLength) {
-                        setTimeout(() => {
-                            // Get the value at the 3000ms point in time without re-rendering
-                            setPinDigits(digits => {
-                                if (digits.length === maxPinLength) {
-                                    setIsReEnteringPin(true)
-                                }
-
-                                return digits
-                            })
-                        }, 1000)
-                    }
                 }
             }
+        },
+        [isReEnteringPin, confirmPinDigits, pinDigits],
+    )
+
+    const dotStatus = useCallback(
+        (index: number) => {
+            if (isReEnteringPin) {
+                if (isConfirmationReady) {
+                    if (isConfirmationCorrect) return 'correct'
+
+                    return 'incorrect'
+                }
+
+                if (index > confirmPinDigits.length) return 'empty'
+
+                return 'active'
+            }
+
+            if (pinDigits.length === maxPinLength) {
+                return 'correct'
+            }
+
+            if (index > pinDigits.length) {
+                return 'empty'
+            }
+
+            return 'active'
         },
         [
             isReEnteringPin,
             confirmPinDigits,
+            isConfirmationCorrect,
+            isConfirmationReady,
             pinDigits,
-            matchesInitialPin,
-            navigation,
-            dispatch,
         ],
     )
+
+    useEffect(() => {
+        if (debouncedConfirmPin?.length !== maxPinLength) return
+
+        if (matchesInitialPin(debouncedConfirmPin)) {
+            set(debouncedConfirmPin)
+            dispatch(
+                setFeatureUnlocked({
+                    key: 'app',
+                    unlocked: true,
+                }),
+            )
+            navigation.navigate('CreatedPin')
+        }
+    }, [debouncedConfirmPin, dispatch, matchesInitialPin, navigation, set])
+
+    useEffect(() => {
+        if (debouncedPin?.length === maxPinLength) setIsReEnteringPin(true)
+    }, [debouncedPin])
 
     return (
         <View style={style.container}>
@@ -126,39 +140,13 @@ const CreatePin: React.FC<Props> = ({ navigation }: Props) => {
                         </Text>
                     ) : null}
 
-                    {isReEnteringPin
-                        ? new Array(maxPinLength)
-                              .fill(null)
-                              .map((_, i) => (
-                                  <PinDot
-                                      key={i}
-                                      status={
-                                          isConfirmationReady
-                                              ? isConfirmationCorrect
-                                                  ? 'correct'
-                                                  : 'incorrect'
-                                              : i >= confirmPinDigits.length
-                                              ? 'empty'
-                                              : 'active'
-                                      }
-                                      isLast={i === maxPinLength - 1}
-                                  />
-                              ))
-                        : new Array(maxPinLength)
-                              .fill(null)
-                              .map((_, i) => (
-                                  <PinDot
-                                      key={i}
-                                      status={
-                                          pinDigits.length === maxPinLength
-                                              ? 'correct'
-                                              : i >= pinDigits.length
-                                              ? 'empty'
-                                              : 'active'
-                                      }
-                                      isLast={i === maxPinLength - 1}
-                                  />
-                              ))}
+                    {pinNumbers.map(i => (
+                        <PinDot
+                            key={i}
+                            status={dotStatus(i)}
+                            isLast={i === maxPinLength}
+                        />
+                    ))}
                     {isConfirmationReady && !isConfirmationCorrect && (
                         <View style={style.startOver}>
                             <Button

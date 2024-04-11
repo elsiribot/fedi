@@ -43,7 +43,6 @@ import {
     TabsNavigatorParamList,
     TABS_NAVIGATOR_ID,
 } from '../types/navigation'
-import { useProtectedFeature } from '../utils/hooks'
 import ChatScreen from './ChatScreen'
 import Home from './Home'
 import OmniScanner from './OmniScanner'
@@ -104,8 +103,6 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
         )
         return () => subscription.remove()
     }, [dispatch, isStabilityPoolSupported])
-
-    useProtectedFeature('app')
 
     // If we don't have a selected federation, there's nothing to display here
     // Redirect user to splash screen and render nothing.
