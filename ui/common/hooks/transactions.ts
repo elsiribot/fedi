@@ -81,22 +81,9 @@ export function useTxnDisplayUtils(t: TFunction) {
 
     const makeTxnFeeDetailItems = useCallback(
         (txn: Transaction) => {
-            return makeTxnFeeDetailsUtil(
-                t,
-                txn,
-                selectedCurrency,
-                showFiatTxnAmounts,
-                makeFormattedAmountsFromMSats,
-                convertCentsToFormattedFiat,
-            )
+            return makeTxnFeeDetailsUtil(t, txn, makeFormattedAmountsFromMSats)
         },
-        [
-            convertCentsToFormattedFiat,
-            makeFormattedAmountsFromMSats,
-            selectedCurrency,
-            showFiatTxnAmounts,
-            t,
-        ],
+        [makeFormattedAmountsFromMSats, t],
     )
 
     const makeTxnDetailAmountText = useCallback(

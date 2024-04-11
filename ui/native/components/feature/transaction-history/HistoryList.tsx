@@ -109,7 +109,7 @@ export function HistoryList<T extends { id: string }>({
                         onClose: () => setSelectedItemId(null),
                     }
                 }
-                feeItems={selectedItem && makeFeeItems(selectedItem)}
+                feeItems={selectedItem ? makeFeeItems(selectedItem) : []}
             />
         </View>
     )

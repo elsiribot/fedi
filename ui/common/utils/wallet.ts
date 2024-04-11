@@ -339,26 +339,56 @@ export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
 export const makeTxnFeeDetails = (
     t: TFunction,
     txn: Transaction,
-    currency: SupportedCurrency | undefined = SupportedCurrency.USD,
-    showFiatTxnAmounts: boolean,
     makeFormattedAmountsFromMSats: (amt: MSats) => FormattedAmounts,
-    convertCentsToFormattedFiat: (amt: UsdCents) => string,
 ): FeeItem[] => {
-    // if (currency)
-    const items: FeeItem[] = [
-        {
-            label: 'label',
-            formattedAmount: 'formatted amount',
-        },
-    ]
-    const { formattedFiat, formattedSats } = makeFormattedAmountsFromMSats(
-        txn?.fediFeeStatus?.type === 'success'
-            ? txn.fediFeeStatus.fedi_fee
-            : (0 as MSats),
-    )
-    console.warn('FEDI FEES', txn.fediFeeStatus)
-    console.warn('FEDI FEES fiat', formattedFiat, formattedSats)
-    console.warn('LN FEES', txn.lightning?.fee)
+    const items: FeeItem[] = []
+    let totalFee = 0
+    // Handle Fedi Fee
+    if (txn.fediFeeStatus?.type === 'success') {
+        const fediFee = txn.fediFeeStatus.fedi_fee ?? (0 as MSats)
+        const { formattedPrimaryAmount, formattedSecondaryAmount } =
+            makeFormattedAmountsFromMSats(fediFee)
+        items.push({
+            label: t('phrases.fedi-fee'),
+            formattedAmount: `${formattedPrimaryAmount} (${formattedSecondaryAmount})`,
+        })
+        totalFee += fediFee
+    }
+
+    // Handle Lightning Fee
+    if (txn.lightning) {
+        const lnFee = txn.lightning.fee ?? (0 as MSats)
+        const { formattedPrimaryAmount, formattedSecondaryAmount } =
+            makeFormattedAmountsFromMSats(lnFee)
+        items.push({
+            label: t('phrases.lightning-network'),
+            formattedAmount: `${formattedPrimaryAmount} (${formattedSecondaryAmount})`,
+        })
+        totalFee += lnFee
+    }
+
+    // Handle Onchain Fee
+    if (txn.onchainWithdrawalDetails) {
+        const onchainFee = txn.onchainWithdrawalDetails.fee ?? (0 as MSats)
+        const { formattedPrimaryAmount, formattedSecondaryAmount } =
+            makeFormattedAmountsFromMSats(onchainFee as MSats)
+        items.push({
+            label: t('phrases.lightning-network'),
+            formattedAmount: `${formattedPrimaryAmount} (${formattedSecondaryAmount})`,
+        })
+        totalFee += onchainFee
+    }
+    // TODO - Add Federation Fee once RPC supports it
+    //  t('phrases.federation-fee'),
+
+    const { formattedPrimaryAmount, formattedSecondaryAmount } =
+        makeFormattedAmountsFromMSats(totalFee as MSats)
+    const fediFee = {
+        label: t('phrases.total-fees'),
+        formattedAmount: `${formattedPrimaryAmount} (${formattedSecondaryAmount})`,
+    }
+    items.push(fediFee)
+
     return items
 }
 

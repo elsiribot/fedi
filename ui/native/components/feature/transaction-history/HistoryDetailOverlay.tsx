@@ -22,43 +22,39 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
     itemDetails,
     feeItems,
 }) => {
-    if (!itemDetails) return <></>
     const { theme } = useTheme()
     const { t } = useTranslation()
     const [showFeeBreakdown, setShowFeeBreakdown] = useState(false)
 
     const style = styles(theme)
 
-    const content = useMemo(
-        () =>
-            !showFeeBreakdown ? (
-                <HistoryDetail
-                    {...itemDetails}
-                    onPressFees={() => setShowFeeBreakdown(true)}
-                />
-            ) : (
-                <FeeBreakdown
-                    showBack
-                    onPressBack={() => setShowFeeBreakdown(false)}
-                    title={t('words.fees')}
-                    icon={
-                        <SvgImage
-                            name="Info"
-                            size={32}
-                            color={theme.colors.blue}
-                        />
-                    }
-                    feeItems={feeItems.map(
-                        ({ label, formattedAmount }: FeeItem) => ({
-                            label: label,
-                            value: formattedAmount,
-                        }),
-                    )}
-                    onClose={() => setShowFeeBreakdown(false)}
-                />
-            ),
-        [itemDetails, showFeeBreakdown, setShowFeeBreakdown, feeItems],
-    )
+    const content = useMemo(() => {
+        if (!itemDetails) return <></>
+        return !showFeeBreakdown ? (
+            <HistoryDetail
+                {...itemDetails}
+                onPressFees={() => setShowFeeBreakdown(true)}
+            />
+        ) : (
+            <FeeBreakdown
+                showBack
+                onPressBack={() => setShowFeeBreakdown(false)}
+                title={t('phrases.fee-details')}
+                icon={
+                    <SvgImage name="Info" size={32} color={theme.colors.blue} />
+                }
+                feeItems={feeItems.map(
+                    ({ label, formattedAmount }: FeeItem) => ({
+                        label: label,
+                        value: formattedAmount,
+                    }),
+                )}
+                onClose={() => setShowFeeBreakdown(false)}
+            />
+        )
+    }, [itemDetails, showFeeBreakdown, setShowFeeBreakdown, feeItems])
+
+    if (!itemDetails) return <></>
 
     return (
         <CenterOverlay
