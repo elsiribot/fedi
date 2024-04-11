@@ -3,7 +3,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Button, FAB, Image, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useNuxStep } from '@fedi/common/hooks/nux'
@@ -11,10 +11,12 @@ import {
     selectIsMatrixChatEmpty,
     selectMatrixStatus,
     selectNeedsMatrixRegistration,
+    selectShouldShowUpgradeChat,
 } from '@fedi/common/redux'
 
 import { Images } from '../assets/images'
 import ChatsList from '../components/feature/chat/ChatsList'
+import UpgradeChat from '../components/feature/chat/UpgradeChat'
 import { NuxTooltip } from '../components/ui/NuxTooltip'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
@@ -36,6 +38,7 @@ const ChatScreen: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const syncStatus = useAppSelector(selectMatrixStatus)
     const needsChatRegistration = useAppSelector(selectNeedsMatrixRegistration)
+    const shouldShowUpgradeChat = useAppSelector(selectShouldShowUpgradeChat)
 
     const isChatEmpty = useAppSelector(selectIsMatrixChatEmpty)
     const [hasOpenedNewChat, completeOpenedNewChat] =
@@ -67,7 +70,15 @@ const ChatScreen: React.FC<Props> = () => {
 
     return (
         <View style={style.container}>
-            {needsChatRegistration ? (
+            {shouldShowUpgradeChat ? (
+                <ScrollView
+                    style={{
+                        width: '100%',
+                        paddingHorizontal: theme.spacing.lg,
+                    }}>
+                    <UpgradeChat />
+                </ScrollView>
+            ) : needsChatRegistration ? (
                 <>
                     <View style={style.registration}>
                         <Image

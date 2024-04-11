@@ -487,7 +487,7 @@
             "simple-and-private": "Simple and private",
             "terms-and-conditions": "Terms & Conditions",
             "unsupported-notice": "This federation is no longer supported. It cannot be joined.",
-            "username-guidance": "Enter a username containing lowercase letters without spaces",
+            "username-guidance": "You can change this later",
             "username-instructions": "Your username will be how other members will identify you.",
             "welcome-back-to-federation": "Welcome back to {{federation}}",
             "welcome-instructions-new": "As a new member of the federation, you will receive a fresh wallet.",

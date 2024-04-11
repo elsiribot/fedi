@@ -8,6 +8,7 @@ import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
     selectIsChatEmpty,
     selectNeedsChatRegistration,
+    selectShouldShowUpgradeChat,
 } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
@@ -23,8 +24,11 @@ const ChatHeader: React.FC = () => {
     const navigation = useNavigation<NavigationHook>()
     const isChatEmpty = useAppSelector(selectIsChatEmpty)
     const needsChatRegistration = useAppSelector(selectNeedsChatRegistration)
+    const shouldShowUpgradeChat = useAppSelector(selectShouldShowUpgradeChat)
     const [hasViewedMemberQr, completeViewedMemberQr] =
         useNuxStep('hasViewedMemberQr')
+
+    if (shouldShowUpgradeChat) return null
 
     return (
         <>

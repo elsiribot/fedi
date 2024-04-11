@@ -10,6 +10,7 @@ import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import {
     selectActiveFederation,
     selectHasNewChatActivityInOtherFeds,
+    selectShouldShowUpgradeChat,
 } from '@fedi/common/redux'
 
 import { useAppSelector, usePrevious } from '../../../state/hooks'
@@ -27,6 +28,7 @@ const SelectedFederationHeader: React.FC = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const shouldShowUpgradeChat = useAppSelector(selectShouldShowUpgradeChat)
     const previousActiveFederation = usePrevious(activeFederation)
     const popupInfo = usePopupFederationInfo()
     const drawerNavigator = navigation.getParent(
@@ -53,7 +55,10 @@ const SelectedFederationHeader: React.FC = () => {
     return (
         <SafeAreaView
             edges={['top', 'left', 'right']}
-            style={styles(theme).container}>
+            style={[
+                styles(theme).container,
+                shouldShowUpgradeChat ? { opacity: 0 } : {},
+            ]}>
             <Pressable
                 style={[
                     style.federation,
