@@ -60,6 +60,22 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
         setIsLoading(false)
     }, [amount, generateEcash, navigation])
 
+    const handleConfirm = useCallback(() => {
+        Alert.alert(
+            t('phrases.please-confirm'),
+            t('feature.send.offline-send-warning'),
+            [
+                {
+                    text: t('phrases.go-back'),
+                },
+                {
+                    text: t('words.continue'),
+                    onPress: handleSend,
+                },
+            ],
+        )
+    }, [handleSend, t])
+
     const style = styles(theme, insets)
 
     return (
@@ -72,7 +88,7 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
             <SendPreviewDetails
                 onPressFees={() => setShowFeeBreakdown(true)}
                 formattedTotalFee={formattedTotalFee}
-                onSend={handleSend}
+                onSend={handleConfirm}
                 isLoading={isLoading}
                 senderText={t('feature.stabilitypool.bitcoin-balance')}
                 receiverText={'username'}

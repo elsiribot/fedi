@@ -4,28 +4,37 @@ import { StyleSheet, View } from 'react-native'
 import { hexToRgba } from '@fedi/common/utils/color'
 
 export type Props = {
+    showBalance?: boolean
+    subHeader?: React.ReactNode
     balanceDisplay: string
     formattedPrimaryAmount: string
     formattedSecondaryAmount: string
 }
 
 const SendAmounts: React.FC<Props> = ({
+    showBalance = false,
     balanceDisplay,
     formattedPrimaryAmount,
     formattedSecondaryAmount,
+    subHeader = null,
 }) => {
     const { theme } = useTheme()
 
     const style = styles(theme)
     return (
         <>
-            <Text
-                caption
-                style={style.balance}
-                numberOfLines={1}
-                adjustsFontSizeToFit>
-                {`${balanceDisplay} `}
-            </Text>
+            <View style={style.header}>
+                {subHeader}
+                {showBalance && (
+                    <Text
+                        caption
+                        style={style.balance}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit>
+                        {`${balanceDisplay} `}
+                    </Text>
+                )}
+            </View>
             <View style={style.amountContainer}>
                 <Text h1 numberOfLines={1}>
                     {formattedPrimaryAmount}
@@ -43,6 +52,9 @@ const SendAmounts: React.FC<Props> = ({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        header: {
+            paddingTop: theme.spacing.sm,
+        },
         amountContainer: {
             marginTop: 'auto',
         },

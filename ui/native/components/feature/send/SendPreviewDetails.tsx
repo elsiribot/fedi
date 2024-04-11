@@ -11,7 +11,7 @@ export type Props = {
     formattedTotalFee: string
     receiverText: string
     senderText: string
-    isLoading: boolean
+    isLoading?: boolean
 }
 
 const SendPreviewDetails: React.FC<Props> = ({
@@ -20,26 +20,11 @@ const SendPreviewDetails: React.FC<Props> = ({
     formattedTotalFee,
     receiverText,
     senderText,
-    isLoading,
+    isLoading = false,
 }) => {
     const { theme } = useTheme()
     const [showDetails, setShowDetails] = useState<boolean>(false)
     const { t } = useTranslation()
-    const handleConfirm = useCallback(() => {
-        Alert.alert(
-            t('phrases.please-confirm'),
-            t('feature.send.offline-send-warning'),
-            [
-                {
-                    text: t('phrases.go-back'),
-                },
-                {
-                    text: t('words.continue'),
-                    onPress: onSend,
-                },
-            ],
-        )
-    }, [onSend, t])
 
     const style = styles(theme)
     return (
@@ -98,7 +83,7 @@ const SendPreviewDetails: React.FC<Props> = ({
             <Button
                 fullWidth
                 containerStyle={[style.button]}
-                onPress={handleConfirm}
+                onPress={onSend}
                 disabled={isLoading}
                 loading={isLoading}
                 title={
