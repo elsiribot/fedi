@@ -15,8 +15,8 @@ import {
 
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
-import { HistoryIcon } from '../../ui/HistoryIcon'
-import { HistoryList } from '../../ui/HistoryList'
+import { HistoryIcon } from '../transaction-history/HistoryIcon'
+import { HistoryList } from '../transaction-history/HistoryList'
 import { CurrencyAvatar } from './CurrencyAvatar'
 
 type StabilityTransactionsListProps = {

@@ -13,7 +13,7 @@ import {
 
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
-import { HistoryList } from '../../ui/HistoryList'
+import { HistoryList } from './HistoryList'
 import { TransactionIcon } from './TransactionIcon'
 
 type TransactionsListProps = {

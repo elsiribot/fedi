@@ -12,10 +12,10 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import { HistoryDetail, HistoryDetailProps } from './HistoryDetail'
 import { HistoryRow, HistoryRowProps } from './HistoryRow'
 import { HistoryRowError } from './HistoryRowError'
-import SvgImage, { SvgImageSize } from './SvgImage'
 
 interface Props<T extends { id: string }> {
     rows: T[]

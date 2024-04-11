@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, View } from 'react-native'
 import { useToast } from '@fedi/common/hooks/toast'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
-import SvgImage, { SvgImageSize } from './SvgImage'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 interface BaseProps {
     label: React.ReactNode
