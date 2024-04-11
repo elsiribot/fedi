@@ -11,9 +11,9 @@ import {
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
+import { FeeItem } from '@fedi/common/hooks/transactions'
 
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
-import { HistoryDetail, HistoryDetailProps } from './HistoryDetail'
+import { HistoryDetailProps } from './HistoryDetail'
 import HistoryDetailOverlay from './HistoryDetailOverlay'
 import { HistoryRow, HistoryRowProps } from './HistoryRow'
 import { HistoryRowError } from './HistoryRowError'
@@ -23,6 +23,7 @@ interface Props<T extends { id: string }> {
     loading?: boolean
     makeRowProps: (item: T) => Omit<HistoryRowProps, 'icon' | 'onSelect'>
     makeDetailProps: (item: T) => Omit<HistoryDetailProps, 'icon' | 'onClose'>
+    makeFeeItems: (item: T) => FeeItem[]
     makeIcon: (item: T) => React.ReactNode
     onEndReached?: () => void
 }
@@ -32,6 +33,7 @@ export function HistoryList<T extends { id: string }>({
     loading,
     makeRowProps,
     makeDetailProps,
+    makeFeeItems,
     makeIcon,
     onEndReached,
 }: Props<T>): React.ReactElement {
@@ -107,6 +109,7 @@ export function HistoryList<T extends { id: string }>({
                         onClose: () => setSelectedItemId(null),
                     }
                 }
+                feeItems={selectedItem && makeFeeItems(selectedItem)}
             />
         </View>
     )

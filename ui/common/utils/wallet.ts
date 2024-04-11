@@ -1,6 +1,7 @@
 import { TFunction } from 'i18next'
 
 import { AmountSymbolPosition, FormattedAmounts } from '../hooks/amount'
+import { FeeItem } from '../hooks/transactions'
 import {
     MSats,
     SupportedCurrency,
@@ -334,6 +335,31 @@ export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
         default:
             return ''
     }
+}
+export const makeTxnFeeDetails = (
+    t: TFunction,
+    txn: Transaction,
+    currency: SupportedCurrency | undefined = SupportedCurrency.USD,
+    showFiatTxnAmounts: boolean,
+    makeFormattedAmountsFromMSats: (amt: MSats) => FormattedAmounts,
+    convertCentsToFormattedFiat: (amt: UsdCents) => string,
+): FeeItem[] => {
+    // if (currency)
+    const items: FeeItem[] = [
+        {
+            label: 'label',
+            formattedAmount: 'formatted amount',
+        },
+    ]
+    const { formattedFiat, formattedSats } = makeFormattedAmountsFromMSats(
+        txn?.fediFeeStatus?.type === 'success'
+            ? txn.fediFeeStatus.fedi_fee
+            : (0 as MSats),
+    )
+    console.warn('FEDI FEES', txn.fediFeeStatus)
+    console.warn('FEDI FEES fiat', formattedFiat, formattedSats)
+    console.warn('LN FEES', txn.lightning?.fee)
+    return items
 }
 
 export const makeTxnDetailItems = (

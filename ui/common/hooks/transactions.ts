@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 import {
     makeTxnAmountText as makeTxnAmountTextUtil,
     makeTxnDetailItems as makeTxnDetailItemsUtil,
+    makeTxnFeeDetails as makeTxnFeeDetailsUtil,
     makeTxnNotesText as makeTxnNotesTextUtil,
     makeStabilityTxnAmountText as makeStabilityTxnAmountTextUtil,
     makeStabilityTxnDetailItems as makeStabilityTxnDetailItemsUtil,
@@ -77,6 +78,26 @@ export function useTxnDisplayUtils(t: TFunction) {
     const preferredCurrency = showFiatTxnAmounts
         ? selectedCurrency
         : t('words.sats').toUpperCase()
+
+    const makeTxnFeeDetailItems = useCallback(
+        (txn: Transaction) => {
+            return makeTxnFeeDetailsUtil(
+                t,
+                txn,
+                selectedCurrency,
+                showFiatTxnAmounts,
+                makeFormattedAmountsFromMSats,
+                convertCentsToFormattedFiat,
+            )
+        },
+        [
+            convertCentsToFormattedFiat,
+            makeFormattedAmountsFromMSats,
+            selectedCurrency,
+            showFiatTxnAmounts,
+            t,
+        ],
+    )
 
     const makeTxnDetailAmountText = useCallback(
         (txn: Transaction) => {
@@ -188,6 +209,7 @@ export function useTxnDisplayUtils(t: TFunction) {
         preferredCurrency,
         makeTxnDetailAmountText,
         makeTxnDetailItems,
+        makeTxnFeeDetailItems,
         makeTxnAmountText,
         makeTxnNotesText,
         makeStabilityTxnAmountText,

@@ -13,12 +13,14 @@ import { DetailItem } from '@fedi/common/utils/wallet'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import { FeeBreakdownItem } from './FeeBreakdownItem'
 
-export interface FeeBreakdownProps {
+export type FeeBreakdownProps = {
     icon: React.ReactNode
     title: React.ReactNode
-    guidanceText: string | React.ReactNode
+    guidanceText?: string | React.ReactNode
     feeItems: DetailItem[]
     onClose: () => void
+    showBack?: boolean
+    onPressBack?: () => void
 }
 
 export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
@@ -27,6 +29,8 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
     guidanceText,
     feeItems,
     onClose,
+    showBack = false,
+    onPressBack = () => null,
 }) => {
     const { theme } = useTheme()
 
@@ -34,11 +38,20 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
 
     return (
         <Pressable style={style.container} onPress={Keyboard.dismiss}>
-            <TouchableOpacity
-                style={style.closeIconContainer}
-                onPress={() => onClose()}>
-                <SvgImage name="Close" size={SvgImageSize.md} />
-            </TouchableOpacity>
+            <View style={style.headerButtons}>
+                {showBack && (
+                    <TouchableOpacity
+                        style={style.backIconContainer}
+                        onPress={() => onPressBack()}>
+                        <SvgImage name="ChevronLeft" size={SvgImageSize.md} />
+                    </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                    style={style.closeIconContainer}
+                    onPress={() => onClose()}>
+                    <SvgImage name="Close" size={SvgImageSize.md} />
+                </TouchableOpacity>
+            </View>
             {icon}
             <Text h2 h2Style={style.detailTitle}>
                 {title}
@@ -53,9 +66,11 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
                         noBorder={idx === feeItems.length - 1}
                     />
                 ))}
-                <Text caption medium style={style.feesGuidance}>
-                    {guidanceText}
-                </Text>
+                {guidanceText && (
+                    <Text caption medium style={style.feesGuidance}>
+                        {guidanceText}
+                    </Text>
+                )}
             </View>
         </Pressable>
     )
@@ -68,7 +83,14 @@ const styles = (theme: Theme) =>
             width: '100%',
         },
         closeIconContainer: {
-            alignSelf: 'flex-end',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+        },
+        backIconContainer: {
+            position: 'absolute',
+            top: 0,
+            left: 0,
         },
         detailItemsContainer: {
             marginTop: theme.spacing.xl,
@@ -86,5 +108,9 @@ const styles = (theme: Theme) =>
             borderRadius: theme.borders.defaultRadius,
             borderColor: theme.colors.extraLightGrey,
             borderWidth: 1,
+        },
+        headerButtons: {
+            width: '100%',
+            height: theme.spacing.lg,
         },
     })

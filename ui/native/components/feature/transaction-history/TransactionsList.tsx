@@ -36,6 +36,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
         makeTxnNotesText,
         makeTxnAmountText,
         makeTxnDetailAmountText,
+        makeTxnFeeDetailItems,
         makeTxnDetailItems,
     } = useTxnDisplayUtils(t)
 
@@ -73,6 +74,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                     }
                 },
             })}
+            makeFeeItems={txn => makeTxnFeeDetailItems(txn)}
             onEndReached={loadMoreTransactions}
         />
     )

@@ -1,31 +1,68 @@
 import { Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
+import { FeeItem } from '@fedi/common/hooks/transactions'
 
 import CenterOverlay from '../../ui/CenterOverlay'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import { FeeBreakdown } from '../send/FeeBreakdown'
 import { HistoryDetail, HistoryDetailProps } from './HistoryDetail'
 
 type HistoryDetailOverlayProps = {
     show: boolean
     itemDetails?: HistoryDetailProps
+    feeItems: FeeItem[]
 }
 
 const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
     show,
     itemDetails,
+    feeItems,
 }) => {
     if (!itemDetails) return <></>
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const [showFeeBreakdown, setShowFeeBreakdown] = useState(false)
 
     const style = styles(theme)
 
+    const content = useMemo(
+        () =>
+            !showFeeBreakdown ? (
+                <HistoryDetail
+                    {...itemDetails}
+                    onPressFees={() => setShowFeeBreakdown(true)}
+                />
+            ) : (
+                <FeeBreakdown
+                    showBack
+                    onPressBack={() => setShowFeeBreakdown(false)}
+                    title={t('words.fees')}
+                    icon={
+                        <SvgImage
+                            name="Info"
+                            size={32}
+                            color={theme.colors.blue}
+                        />
+                    }
+                    feeItems={feeItems.map(
+                        ({ label, formattedAmount }: FeeItem) => ({
+                            label: label,
+                            value: formattedAmount,
+                        }),
+                    )}
+                    onClose={() => setShowFeeBreakdown(false)}
+                />
+            ),
+        [itemDetails, showFeeBreakdown, setShowFeeBreakdown, feeItems],
+    )
+
     return (
         <CenterOverlay
+            key={'detail-overlay'}
             show={show}
             onBackdropPress={itemDetails.onClose}
             overlayStyle={style.overlayStyle}>
@@ -42,7 +79,7 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
                         </Text>
                     </View>
                 }>
-                <HistoryDetail {...itemDetails} />
+                {content}
             </ErrorBoundary>
         </CenterOverlay>
     )
