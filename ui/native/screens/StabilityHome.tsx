@@ -12,6 +12,7 @@ import { useIsStabilityPoolEnabledByFederation } from '@fedi/common/hooks/federa
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectFederationBalance,
+    selectFederationMaxStableBalanceSats,
     selectStableBalance,
     selectStableBalancePending,
 } from '@fedi/common/redux'
@@ -34,6 +35,9 @@ const StabilityHome: React.FC<Props> = () => {
     const stableBalancePending = useAppSelector(selectStableBalancePending)
     const stabilityPoolDisabledByFederation =
         !useIsStabilityPoolEnabledByFederation()
+    const maxStableBalanceSats = useAppSelector(
+        selectFederationMaxStableBalanceSats,
+    )
     const balance = useAppSelector(selectFederationBalance)
 
     const { formattedStableBalance, formattedStableBalancePending } =
@@ -81,6 +85,18 @@ const StabilityHome: React.FC<Props> = () => {
                                 toast.show({
                                     content: t(
                                         'feature.stabilitypool.deposits-disabled-by-federation',
+                                    ),
+                                    status: 'error',
+                                })
+                            }
+                            // Block deposits if the max stable balance amount is reached
+                            else if (
+                                maxStableBalanceSats &&
+                                stableBalance > maxStableBalanceSats
+                            ) {
+                                toast.show({
+                                    content: t(
+                                        'feature.stabilitypool.max-stable-balance-amount',
                                     ),
                                     status: 'error',
                                 })

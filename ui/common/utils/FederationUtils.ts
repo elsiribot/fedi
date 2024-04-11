@@ -300,6 +300,19 @@ export const getFederationMaxInvoiceMsats = (
         : (Number(maxInvoiceMsats) as MSats)
 }
 
+export const getFederationMaxStableBalanceMsats = (
+    metadata: ClientConfigMetadata,
+) => {
+    const maxStableBalanceMsats = getMetaField(
+        SupportedMetaFields.max_stable_balance_msats,
+        metadata,
+    )
+
+    return typeof maxStableBalanceMsats !== 'string'
+        ? undefined
+        : (Number(maxStableBalanceMsats) as MSats)
+}
+
 // The utils below all involve the same inverse default logic where they
 // should return true unless explicitly disabled via feature flag
 export const shouldShowInviteCode = (metadata: ClientConfigMetadata) => {

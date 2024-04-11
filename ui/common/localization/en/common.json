@@ -691,6 +691,7 @@
             "enter-deposit-amount": "Enter deposit amount",
             "enter-withdrawal-amount": "Enter withdrawal amount",
             "fees-paid": "Fees paid",
+            "max-stable-balance-amount": "Maximum stable balance amount reached",
             "more-than-an-hour": "1+ hr",
             "minutes": "{{minutes}} minutes",
             "one-minute": "1 minute",

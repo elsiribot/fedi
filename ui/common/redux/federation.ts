@@ -27,6 +27,7 @@ import {
     fetchFederationsExternalMetadata,
     getFederationChatServerDomain,
     getFederationName,
+    getFederationMaxStableBalanceMsats,
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
 import { loadFromStorage } from './storage'
@@ -385,6 +386,20 @@ export const selectFederationCustomFediMods = (s: CommonState) => {
         ? s.federation.customFediMods[activeFederation?.id] || []
         : []
 }
+
+export const selectFederationMaxStableBalanceSats = createSelector(
+    selectFederationMetadata,
+    metadata => {
+        const maxStableBalanceMsats =
+            metadata && getFederationMaxStableBalanceMsats(metadata)
+
+        if (maxStableBalanceMsats === 0) return 0 as MSats
+
+        return maxStableBalanceMsats
+            ? amountUtils.msatToSat(maxStableBalanceMsats)
+            : (0 as MSats)
+    },
+)
 
 // For now we are setting a high default of 10 BTC unless otherwise
 // specified by the federation feature flags. At some points we probably
