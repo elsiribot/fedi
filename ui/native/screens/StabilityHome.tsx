@@ -8,6 +8,7 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native'
 import * as Progress from 'react-native-progress'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useIsStabilityPoolEnabledByFederation } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectFederationBalance,
@@ -31,6 +32,8 @@ const StabilityHome: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const stableBalance = useAppSelector(selectStableBalance)
     const stableBalancePending = useAppSelector(selectStableBalancePending)
+    const stabilityPoolDisabledByFederation =
+        !useIsStabilityPoolEnabledByFederation()
     const balance = useAppSelector(selectFederationBalance)
 
     const { formattedStableBalance, formattedStableBalancePending } =
@@ -73,8 +76,17 @@ const StabilityHome: React.FC<Props> = () => {
                     <Button
                         containerStyle={style.button}
                         onPress={() => {
+                            // Block deposits if the stability pool is disabled by the federation
+                            if (stabilityPoolDisabledByFederation) {
+                                toast.show({
+                                    content: t(
+                                        'feature.stabilitypool.deposits-disabled-by-federation',
+                                    ),
+                                    status: 'error',
+                                })
+                            }
                             // Block deposits if pending balance is negative because we have to wait until pending withdrawals have processed
-                            if (stableBalancePending < 0) {
+                            else if (stableBalancePending < 0) {
                                 toast.show({
                                     content: t(
                                         'feature.stabilitypool.pending-withdrawal-blocking',

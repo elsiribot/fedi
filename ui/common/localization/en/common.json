@@ -686,6 +686,7 @@
             "deposit-to": "Deposit to",
             "deposit-to-balance": "Deposit to {{currency}} balance",
             "deposit-value": "Deposit value",
+            "deposits-disabled-by-federation": "Stability Pool Deposits have been disabled by the Federation",
             "details-and-fee": "Details & Fee",
             "enter-deposit-amount": "Enter deposit amount",
             "enter-withdrawal-amount": "Enter withdrawal amount",
