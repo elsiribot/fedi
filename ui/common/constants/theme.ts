@@ -21,6 +21,7 @@ const HEX_COLORS = {
     fuschia: '#EF5DA8',
     // TODO: Move these into maps instead of properties, e.g. blue[100] instead of blue100
     blue100: '#BAE0FE',
+    blueDropShadow: '#7099B0',
 }
 
 export const theme = {
