@@ -5,6 +5,7 @@ import LinearGradient from 'react-native-linear-gradient'
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 
 type HoloGradientProps = {
+    // if size is not provided, the gradient should grow to the size of its children
     size?: number
     level?: keyof typeof fediTheme.holoGradient
     rounded?: boolean
@@ -24,8 +25,7 @@ const HoloGradient: React.FC<HoloGradientProps> = ({
     const height = size
     const width = size
     const style = {
-        height,
-        width,
+        ...(size ? { height, width } : {}),
         ...(rounded && size ? { borderRadius: size * 0.5 } : {}),
     }
     return (
