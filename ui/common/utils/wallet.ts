@@ -1,7 +1,7 @@
 import { TFunction } from 'i18next'
 
 import { AmountSymbolPosition, FormattedAmounts } from '../hooks/amount'
-import { FeeItem } from '../hooks/transactions'
+import { FeeDetails, FeeItem } from '../hooks/transactions'
 import {
     MSats,
     SupportedCurrency,
@@ -484,12 +484,6 @@ export const makeTxnDetailItems = (
         })
     }
     if (txn.onchainWithdrawalDetails) {
-        const {
-            formattedFiat: feeFormattedFiat,
-            formattedSats: feeFormattedSats,
-        } = makeFormattedAmountsFromMSats(
-            txn.onchainWithdrawalDetails.fee as MSats,
-        )
         items.push({
             label: t('words.address'),
             value: txn.onchainWithdrawalDetails.address,
@@ -503,18 +497,6 @@ export const makeTxnDetailItems = (
             copiedMessage: t('phrases.copied-transaction-id'),
             copyable: true,
             truncated: true,
-        })
-        items.push({
-            label: t('words.fees'),
-            value: `${feeFormattedSats} (${feeFormattedFiat})`,
-        })
-    }
-
-    const txnFee = txn.lightning?.fee
-    if (typeof txnFee === 'number') {
-        items.push({
-            label: t('words.fee'),
-            value: `${amountUtils.msatToSat(txnFee)} ${t('words.sats')}`,
         })
     }
 

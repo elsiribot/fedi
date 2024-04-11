@@ -74,7 +74,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                     }
                 },
             })}
-            makeFeeItems={txn => makeTxnFeeDetailItems(txn)}
+            makeFeeItems={makeTxnFeeDetailItems}
             onEndReached={loadMoreTransactions}
         />
     )

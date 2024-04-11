@@ -250,6 +250,10 @@ export function useExportTransactions(fedimint: FedimintBridge) {
 
     return exportTransactions
 }
+export type FeeDetails = {
+    items: FeeItem[]
+    totalFee: MSats
+}
 
 export type FeeItem = {
     label: string

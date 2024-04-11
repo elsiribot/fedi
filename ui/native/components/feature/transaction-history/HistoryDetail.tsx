@@ -21,6 +21,7 @@ export type HistoryDetailProps = {
     icon: React.ReactNode
     title: React.ReactNode
     amount: string
+    fees?: string
     items: HistoryDetailItemProps[]
     onPressFees?: () => void
     notes?: string
@@ -33,6 +34,7 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
     title,
     amount,
     items,
+    fees,
     onPressFees = () => null,
     notes: propsNotes,
     onSaveNotes,
@@ -95,11 +97,19 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
                         noBorder={!onSaveNotes && idx === items.length - 1}
                     />
                 ))}
-                <HistoryDetailItem
-                    label={t('words.fees')}
-                    onPress={() => onPressFees()}
-                    value={'test'}
-                />
+                {fees && (
+                    <HistoryDetailItem
+                        label={t('words.fees')}
+                        onPress={() => onPressFees()}
+                        value={
+                            <View style={style.inlineFee}>
+                                <Text caption>{`${fees}`}</Text>
+                                <SvgImage name="Info" size={16} />
+                            </View>
+                        }
+                    />
+                )}
+
                 {onSaveNotes && (
                     <HistoryDetailItem
                         label={`${t('phrases.add-note')} +`}
@@ -187,5 +197,9 @@ const styles = (theme: Theme) =>
             textAlign: 'right',
             minHeight: 0,
             paddingTop: 0,
+        },
+        inlineFee: {
+            flexDirection: 'row',
+            gap: 5,
         },
     })

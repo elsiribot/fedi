@@ -11,7 +11,7 @@ import {
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { FeeItem } from '@fedi/common/hooks/transactions'
+import { FeeDetails, FeeItem } from '@fedi/common/hooks/transactions'
 
 import { HistoryDetailProps } from './HistoryDetail'
 import HistoryDetailOverlay from './HistoryDetailOverlay'
@@ -47,6 +47,10 @@ export function HistoryList<T extends { id: string }>({
                 ? rows.find(item => item.id === selectedItemId)
                 : undefined,
         [selectedItemId],
+    )
+    const feeItems = useMemo(
+        () => (selectedItem ? makeFeeItems(selectedItem) : []),
+        [selectedItem, makeFeeItems],
     )
 
     const renderRow: ListRenderItem<T> = ({ item }) => {
@@ -109,7 +113,7 @@ export function HistoryList<T extends { id: string }>({
                         onClose: () => setSelectedItemId(null),
                     }
                 }
-                feeItems={selectedItem ? makeFeeItems(selectedItem) : []}
+                feeItems={feeItems}
             />
         </View>
     )
