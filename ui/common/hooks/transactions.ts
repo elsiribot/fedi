@@ -8,6 +8,7 @@ import {
     makeTxnNotesText as makeTxnNotesTextUtil,
     makeStabilityTxnAmountText as makeStabilityTxnAmountTextUtil,
     makeStabilityTxnDetailItems as makeStabilityTxnDetailItemsUtil,
+    makeStabilityTxnFeeDetails as makeStabilityTxnFeeDetailsUtil,
 } from '@fedi/common/utils/wallet'
 
 import {
@@ -181,6 +182,17 @@ export function useTxnDisplayUtils(t: TFunction) {
         ],
     )
 
+    const makeStabilityTxnFeeDetailItems = useCallback(
+        (txn: Transaction) => {
+            return makeStabilityTxnFeeDetailsUtil(
+                t,
+                txn,
+                makeFormattedAmountsFromMSats,
+            )
+        },
+        [makeFormattedAmountsFromMSats, t],
+    )
+
     const makeStabilityTxnDetailItems = useCallback(
         (txn: Transaction) => {
             return makeStabilityTxnDetailItemsUtil(
@@ -201,6 +213,7 @@ export function useTxnDisplayUtils(t: TFunction) {
         makeTxnNotesText,
         makeStabilityTxnAmountText,
         makeStabilityTxnDetailAmountText,
+        makeStabilityTxnFeeDetailItems,
         makeStabilityTxnDetailItems,
     }
 }

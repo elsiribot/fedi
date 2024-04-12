@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Overlay, Text, Theme } from '@rneui/themed'
+import { Text, Theme } from '@rneui/themed'
 import { useTheme } from '@rneui/themed'
 import { Button } from '@rneui/themed'
 import React, { useState } from 'react'
@@ -9,7 +9,7 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import { useToast } from '@fedi/common/hooks/toast'
-import { FeeItem, useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
+import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import {
     increaseStableBalance,
     selectFormattedDepositTime,
@@ -18,7 +18,6 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
-import { FeeBreakdown } from '../components/feature/send/FeeBreakdown'
 import FeeOverlay from '../components/feature/send/FeeOverlay'
 import { CurrencyAvatar } from '../components/feature/stabilitypool/CurrencyAvatar'
 import LineBreak from '../components/ui/LineBreak'

@@ -11,7 +11,6 @@ import {
 type CenterOverlayProps = {
     onBackdropPress?: () => void
     show?: boolean
-    loading?: boolean
     overlayStyle?: StyleProp<ViewStyle>
     children: React.ReactNode
 }
@@ -19,7 +18,6 @@ type CenterOverlayProps = {
 const CenterOverlay: React.FC<CenterOverlayProps> = ({
     onBackdropPress,
     show = false,
-    loading,
     overlayStyle,
     children,
 }) => {

@@ -40,6 +40,7 @@ const StabilityTransactionsList = ({
         makeStabilityTxnDetailAmountText,
         makeStabilityTxnAmountText,
         makeStabilityTxnDetailItems,
+        makeStabilityTxnFeeDetailItems,
     } = useTxnDisplayUtils(t)
 
     return (
@@ -81,6 +82,7 @@ const StabilityTransactionsList = ({
                 },
             })}
             onEndReached={loadMoreTransactions}
+            makeFeeItems={makeStabilityTxnFeeDetailItems}
         />
     )
 }

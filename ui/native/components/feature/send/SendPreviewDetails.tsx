@@ -1,7 +1,7 @@
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 
 import SvgImage from '../../ui/SvgImage'
 

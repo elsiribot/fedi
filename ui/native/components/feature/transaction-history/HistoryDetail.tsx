@@ -10,11 +10,9 @@ import {
     View,
 } from 'react-native'
 
-import { FeeItem } from '@fedi/common/hooks/transactions'
 import { hexToRgba } from '@fedi/common/utils/color'
 
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
-import FeeOverlay from '../send/FeeOverlay'
 import { HistoryDetailItem, HistoryDetailItemProps } from './HistoryDetailItem'
 
 export type HistoryDetailProps = {

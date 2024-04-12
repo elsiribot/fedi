@@ -1,4 +1,4 @@
-import { Overlay, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -11,7 +11,7 @@ import {
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { FeeDetails, FeeItem } from '@fedi/common/hooks/transactions'
+import { FeeItem } from '@fedi/common/hooks/transactions'
 
 import { HistoryDetailProps } from './HistoryDetail'
 import HistoryDetailOverlay from './HistoryDetailOverlay'
@@ -46,7 +46,7 @@ export function HistoryList<T extends { id: string }>({
             selectedItemId
                 ? rows.find(item => item.id === selectedItemId)
                 : undefined,
-        [selectedItemId],
+        [selectedItemId, rows],
     )
     const feeItems = useMemo(
         () => (selectedItem ? makeFeeItems(selectedItem) : []),

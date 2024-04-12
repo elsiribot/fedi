@@ -28,10 +28,6 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
 
     const style = styles(theme)
 
-    const createTotalFeeItem = () => ({
-        value: <></>,
-    })
-
     const content = useMemo(() => {
         if (!itemDetails) return <></>
         const totalFeeItem = feeItems.find(
@@ -60,7 +56,7 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
                 onClose={() => setShowFeeBreakdown(false)}
             />
         )
-    }, [itemDetails, showFeeBreakdown, setShowFeeBreakdown, feeItems])
+    }, [t, theme, itemDetails, showFeeBreakdown, setShowFeeBreakdown, feeItems])
 
     if (!itemDetails) return <></>
 
