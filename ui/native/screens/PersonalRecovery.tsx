@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Card, Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Keyboard,
@@ -13,19 +13,14 @@ import {
     View,
 } from 'react-native'
 
-import { useToast } from '@fedi/common/hooks/toast'
-import { recoverFromMnemonic, selectActiveFederation } from '@fedi/common/redux'
+import { usePersonalRecovery } from '@fedi/common/hooks/recovery'
 import type { SeedWords } from '@fedi/common/types'
 import stringUtils from '@fedi/common/utils/StringUtils'
-import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import { BIP39_WORD_LIST } from '../constants'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { resetAfterPersonalRecovery } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
-
-const log = makeLog('SeedWordInput')
 
 const isValidSeedWord = (word: string) => {
     return word.length > 0 && BIP39_WORD_LIST.indexOf(word.toLowerCase()) >= 0
@@ -96,17 +91,15 @@ const SeedWordInput = React.forwardRef<TextInput, SeedWordInputProps>(
 const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const toast = useToast()
-    const activeFederation = useAppSelector(selectActiveFederation)
-    const dispatch = useAppDispatch()
-    const [recoveryInProgress, setRecoveryInProgress] = useState<boolean>(false)
+    const { recoveryInProgress, attemptRecovery } = usePersonalRecovery(
+        t,
+        fedimint,
+    )
     const [seedWords, setSeedWords] = useState<SeedWords>(
         new Array(12).fill(''),
     )
     const inputRefs = useRef<Array<TextInput | null>>([])
     const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
-
-    const activeFederationId = activeFederation?.id
 
     useEffect(() => {
         const keyboardShownListener = Keyboard.addListener(
@@ -128,38 +121,11 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
         }
     }, [])
 
-    useEffect(() => {
-        const recoverFromSeed = async () => {
-            try {
-                await dispatch(
-                    recoverFromMnemonic({
-                        fedimint,
-                        mnemonic: seedWords,
-                    }),
-                ).unwrap()
-                setRecoveryInProgress(false)
-                navigation.dispatch(resetAfterPersonalRecovery())
-            } catch (error) {
-                log.error('recoverFromSeed', error)
-                toast.show({
-                    content: t('errors.recovery-failed'),
-                    status: 'error',
-                })
-            }
-        }
-
-        if (recoveryInProgress) {
-            recoverFromSeed()
-        }
-    }, [
-        activeFederationId,
-        dispatch,
-        navigation,
-        recoveryInProgress,
-        seedWords,
-        toast,
-        t,
-    ])
+    const handleRecovery = useCallback(() => {
+        attemptRecovery(seedWords, () => {
+            navigation.dispatch(resetAfterPersonalRecovery())
+        })
+    }, [attemptRecovery, navigation, seedWords])
 
     const handleInputUpdate = (inputValue: string, index: number) => {
         const validatedInput = stringUtils.keepOnlyLowercaseLetters(inputValue)
@@ -230,8 +196,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
             <Button
                 title={t('feature.recovery.recover-wallet')}
                 containerStyle={styles(theme).continueButton}
-                // TODO: separate loading screen as per designs
-                onPress={() => setRecoveryInProgress(true)}
+                onPress={handleRecovery}
                 loading={recoveryInProgress}
                 disabled={
                     recoveryInProgress ||

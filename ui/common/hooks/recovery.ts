@@ -1,3 +1,4 @@
+import { TFunction } from 'i18next'
 import { useCallback, useEffect, useState } from 'react'
 
 import {
@@ -8,9 +9,12 @@ import {
     selectHasCheckedForSocialRecovery,
     selectSocialRecoveryQr,
     selectSocialRecoveryState,
+    recoverFromMnemonic,
 } from '../redux'
+import { SeedWords } from '../types'
 import { FedimintBridge } from '../utils/fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
+import { useToast } from './toast'
 
 export function useSocialRecovery(fedimint: FedimintBridge) {
     const dispatch = useCommonDispatch()
@@ -66,5 +70,36 @@ export function useSocialRecovery(fedimint: FedimintBridge) {
         fetchSocialRecovery,
         completeSocialRecovery,
         cancelSocialRecovery,
+    }
+}
+
+export function usePersonalRecovery(t: TFunction, fedimint: FedimintBridge) {
+    const [recoveryInProgress, setRecoveryInProgress] = useState<boolean>(false)
+    const dispatch = useCommonDispatch()
+    const toast = useToast()
+
+    const attemptRecovery = useCallback(
+        async (seedWords: SeedWords, onSuccess: () => void) => {
+            setRecoveryInProgress(true)
+            try {
+                await dispatch(
+                    recoverFromMnemonic({
+                        fedimint,
+                        mnemonic: seedWords,
+                    }),
+                ).unwrap()
+                onSuccess()
+            } catch (err) {
+                toast.error(t, 'errors.recovery-failed')
+            } finally {
+                setRecoveryInProgress(false)
+            }
+        },
+        [dispatch, fedimint, t, toast],
+    )
+
+    return {
+        recoveryInProgress,
+        attemptRecovery,
     }
 }
