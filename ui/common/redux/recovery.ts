@@ -1,7 +1,8 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import { CommonState, refreshFederations } from '.'
-import { SocialRecoveryEvent } from '../types'
+import { SeedWords, SocialRecoveryEvent } from '../types'
+import { RpcRegisteredDevice } from '../types/bindings'
 import { FedimintBridge } from '../utils/fedimint'
 
 /*** Initial State ***/
@@ -10,6 +11,7 @@ const initialState = {
     hasCheckedForSocialRecovery: false,
     socialRecoveryQr: null as string | null,
     socialRecoveryState: null as SocialRecoveryEvent | null,
+    registeredDevices: [] as RpcRegisteredDevice[],
 }
 
 export type RecoveryState = typeof initialState
@@ -56,13 +58,15 @@ export const recoverySlice = createSlice({
             state.socialRecoveryState = null
         })
 
+        builder.addCase(recoverFromMnemonic.fulfilled, (state, action) => {
+            state.registeredDevices = action.payload
+        })
     },
 })
 
 /*** Basic actions ***/
 
-export const { setSocialRecoveryState } =
-    recoverySlice.actions
+export const { setSocialRecoveryState } = recoverySlice.actions
 
 /*** Async thunk actions ***/
 
@@ -99,6 +103,14 @@ export const cancelSocialRecovery = createAsyncThunk<void, FedimintBridge>(
     },
 )
 
+export const recoverFromMnemonic = createAsyncThunk<
+    RpcRegisteredDevice[],
+    { fedimint: FedimintBridge; mnemonic: SeedWords },
+    { state: CommonState }
+>('recovery/recoverFromMnemonic', async ({ fedimint, mnemonic }) => {
+    return fedimint.recoverFromMnemonic(mnemonic)
+})
+
 /*** Selectors ***/
 
 export const selectHasCheckedForSocialRecovery = (s: CommonState) =>
@@ -109,3 +121,6 @@ export const selectSocialRecoveryQr = (s: CommonState) =>
 
 export const selectSocialRecoveryState = (s: CommonState) =>
     s.recovery.socialRecoveryState
+
+export const selectRegisteredDevices = (s: CommonState) =>
+    s.recovery.registeredDevices

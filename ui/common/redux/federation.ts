@@ -14,14 +14,9 @@ import {
     MSats,
     PublicFederation,
     Sats,
-    SeedWords,
     FediMod,
 } from '../types'
-import {
-    RpcJsonClientConfig,
-    RpcRegisteredDevice,
-    RpcStabilityPoolConfig,
-} from '../types/bindings'
+import { RpcJsonClientConfig, RpcStabilityPoolConfig } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import {
     getFederationGroupChats,
@@ -48,7 +43,6 @@ const initialState = {
         Federation['meta'] | undefined
     >,
     customFediMods: {} as Record<Federation['id'], FediMod[] | undefined>,
-    registeredDevices: [] as RpcRegisteredDevice[],
 }
 
 export type FederationState = typeof initialState
@@ -172,9 +166,6 @@ export const federationSlice = createSlice({
                 state.externalMeta = omit(state.externalMeta, federationId)
             }
         })
-        builder.addCase(recoverFromMnemonic.fulfilled, (state, action) => {
-            state.registeredDevices = action.payload
-        })
 
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
@@ -251,14 +242,6 @@ export const leaveFederation = createAsyncThunk<
         await fedimint.leaveFederation(federationId)
     },
 )
-
-export const recoverFromMnemonic = createAsyncThunk<
-    RpcRegisteredDevice[],
-    { fedimint: FedimintBridge; mnemonic: SeedWords },
-    { state: CommonState }
->('federation/recoverFromMnemonic', async ({ fedimint, mnemonic }) => {
-    return fedimint.recoverFromMnemonic(mnemonic)
-})
 
 /*** Selectors ***/
 
@@ -497,6 +480,3 @@ export const selectFederationsWithChatConnections = createSelector(
         }, [])
     },
 )
-
-export const selectRegisteredDevices = (s: CommonState) =>
-    s.federation.registeredDevices
