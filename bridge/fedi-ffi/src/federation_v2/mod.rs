@@ -145,6 +145,11 @@ pub struct FederationV2 {
     pub fedi_fee_remittance_service: OnceCell<FediFeeRemittanceService>,
     pub recovering: bool,
     pub gateway_service: OnceCell<LnGatewayService>,
+    // Mutex that is held within spending functions to ensure that virtual balance doesn't become
+    // negative. That is, two concurrent spends don't accidentally spend more than the virtual
+    // balance would allow. We hold the mutex over a span that covers the time of check (recording
+    // virtual balance) and the time of use (spending ecash and recording fee).
+    pub spend_guard: Arc<Mutex<()>>,
 }
 
 impl FederationV2 {
@@ -180,6 +185,7 @@ impl FederationV2 {
             recovering,
             gateway_service: OnceCell::new(),
             client,
+            spend_guard: Default::default(),
         };
         if !recovering {
             federation.start_background_tasks().await;
@@ -749,6 +755,18 @@ impl FederationV2 {
             .ok_or(anyhow!("Invoice missing amount"))?;
         let amount = Amount::from_msats(amount_msat);
 
+        // Same network
+        let federation_network = self
+            .get_network()
+            .context("federation is still recovering")?;
+        if federation_network != invoice.network() {
+            bail!(format!(
+                "Invoice is for wrong network. Expected {}, got {}",
+                federation_network,
+                display_currency(invoice.currency())
+            ))
+        }
+
         let gateway = self.select_gateway().await?;
         let gateway_fees = gateway
             .as_ref()
@@ -766,23 +784,13 @@ impl FederationV2 {
             )
             .await?;
         let fedi_fee = (amount.msats * fedi_fee_ppm).div_ceil(MILLION);
+
+        let spend_guard = self.spend_guard.lock().await;
         let virtual_balance = self.get_balance().await;
         if amount.msats + fedi_fee + network_fee > virtual_balance.msats {
             bail!(ErrorCode::InsufficientBalance(RpcAmount(
                 get_max_spendable_amount(virtual_balance, fedi_fee_ppm, None, Some(gateway_fees))
             )));
-        }
-
-        // Same network
-        let federation_network = self
-            .get_network()
-            .context("federation is still recovering")?;
-        if federation_network != invoice.network() {
-            bail!(format!(
-                "Invoice is for wrong network. Expected {}, got {}",
-                federation_network,
-                display_currency(invoice.currency())
-            ))
         }
 
         let _federation_id = self.federation_id();
@@ -795,6 +803,7 @@ impl FederationV2 {
             .await?;
         self.write_pending_send_fedi_fee(payment_type.operation_id(), Amount::from_msats(fedi_fee))
             .await?;
+        drop(spend_guard);
 
         let response = timeout(
             PAY_INVOICE_TIMEOUT,
@@ -851,20 +860,41 @@ impl FederationV2 {
         address: Address,
         amount: bitcoin::Amount,
     ) -> Result<RpcPayAddressResponse> {
-        let fee_details = self.preview_pay_address(address.clone(), amount).await?;
+        let fedi_fee_ppm = self
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                fedimint_wallet_client::KIND,
+                RpcTransactionDirection::Send,
+            )
+            .await?;
         let network_fees = self
             .client
             .get_first_module::<WalletClientModule>()
             .get_withdraw_fees(address.clone(), amount)
             .await?;
 
+        let amount_msat = amount.to_sat() * 1000;
+        let fedi_fee = (amount_msat * fedi_fee_ppm).div_ceil(MILLION);
+        let network_fees_msat = network_fees.amount().to_sat() * 1000;
+        let est_total_spend = amount_msat + fedi_fee + network_fees_msat;
+
+        let spend_guard = self.spend_guard.lock().await;
+        let virtual_balance = self.get_balance().await;
+        if est_total_spend > virtual_balance.msats {
+            bail!(ErrorCode::InsufficientBalance(RpcAmount(
+                get_max_spendable_amount(virtual_balance, fedi_fee_ppm, Some(network_fees), None)
+            )));
+        }
+
         let operation_id = self
             .client
             .get_first_module::<WalletClientModule>()
             .withdraw(address, amount, network_fees, ())
             .await?;
-        self.write_pending_send_fedi_fee(operation_id, fee_details.fedi_fee.0)
+        self.write_pending_send_fedi_fee(operation_id, Amount::from_msats(fedi_fee))
             .await?;
+        drop(spend_guard);
         let mut updates = self
             .client
             .get_first_module::<WalletClientModule>()
@@ -1447,6 +1477,7 @@ impl FederationV2 {
             )
             .await?;
         let fedi_fee = Amount::from_msats((amount.msats * fedi_fee_ppm).div_ceil(MILLION));
+        let spend_guard = self.spend_guard.lock().await;
         let virtual_balance = self.get_balance().await;
         if amount + fedi_fee > virtual_balance {
             bail!(ErrorCode::InsufficientBalance(RpcAmount(
@@ -1462,6 +1493,7 @@ impl FederationV2 {
             .await?;
         self.write_pending_send_fedi_fee(operation_id, fedi_fee)
             .await?;
+        drop(spend_guard);
         self.subscribe_to_operation(operation_id).await?;
         let notes = if amount != notes.total_amount() {
             // try to make change (exempt this from fedi app fee)
@@ -1477,11 +1509,20 @@ impl FederationV2 {
             })
             .await
             .context("Failed to select notes with correct amount")??;
+            let spend_guard = self.spend_guard.lock().await;
+            let virtual_balance = self.get_balance().await;
+            if amount > virtual_balance {
+                self.write_failed_send_fedi_fee(operation_id).await?;
+                bail!(ErrorCode::InsufficientBalance(RpcAmount(
+                    get_max_spendable_amount(virtual_balance, fedi_fee_ppm, None, None)
+                )));
+            }
             let (operation_id, new_notes) = self
                 .client
                 .get_first_module::<MintClientModule>()
                 .spend_notes(amount, ONE_WEEK, false, ())
                 .await?;
+            drop(spend_guard);
             self.subscribe_to_operation(operation_id).await?;
             new_notes
         } else {
@@ -2277,6 +2318,7 @@ impl FederationV2 {
             )
             .await?;
         let fedi_fee = Amount::from_msats((amount.msats * fedi_fee_ppm).div_ceil(MILLION));
+        let spend_guard = self.spend_guard.lock().await;
         let virtual_balance = self.get_balance().await;
         if amount + fedi_fee > virtual_balance {
             bail!(ErrorCode::InsufficientBalance(RpcAmount(
@@ -2291,6 +2333,7 @@ impl FederationV2 {
             .await?;
         self.write_pending_send_fedi_fee(operation_id, fedi_fee)
             .await?;
+        drop(spend_guard);
         let fed = self.clone();
         self.task_group
             .clone()
