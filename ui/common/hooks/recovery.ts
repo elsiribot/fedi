@@ -16,7 +16,7 @@ import {
     createNewWallet,
 } from '../redux'
 import { SeedWords } from '../types'
-import { RpcRegisteredDevice } from '../types/bindings'
+import { DeviceRegistrationEvent, RpcRegisteredDevice } from '../types/bindings'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { useCommonDispatch, useCommonSelector } from './redux'
@@ -175,4 +175,27 @@ export function useDeviceRegistration(t: TFunction, fedimint: FedimintBridge) {
         handleTransfer,
         handleNewWallet,
     }
+}
+
+export function useLockedDeviceDetection(
+    fedimint: FedimintBridge,
+    onDeviceLocked: () => void,
+) {
+    // Initialize locked device listener
+    useEffect(() => {
+        log.debug('useLockedDeviceDetection listening...')
+        const unsubscribeDeviceRegistration = fedimint.addListener(
+            'deviceRegistration',
+            (event: DeviceRegistrationEvent) => {
+                log.info('DeviceRegistrationEvent', event)
+                if (event.state === 'conflict') {
+                    onDeviceLocked()
+                }
+            },
+        )
+
+        return () => {
+            unsubscribeDeviceRegistration()
+        }
+    }, [fedimint, onDeviceLocked])
 }

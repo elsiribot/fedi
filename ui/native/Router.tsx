@@ -7,9 +7,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 
+import { useLockedDeviceDetection } from '@fedi/common/hooks/recovery'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederation } from '@fedi/common/redux'
 
+import { fedimint } from './bridge'
 import AddFediModHeader from './components/feature/admin/AddFediModHeader'
 import CurrencySettingsHeader from './components/feature/admin/CurrencySettingsHeader'
 import FediModSettingsHeader from './components/feature/admin/FediModSettingsHeader'
@@ -152,6 +154,7 @@ import SwitchingFederations from './screens/SwitchingFederations'
 import TabsNavigator from './screens/TabsNavigator'
 import Transactions from './screens/Transactions'
 import { useAppSelector } from './state/hooks'
+import { resetToLockedDevice } from './state/navigation'
 import { MSats } from './types'
 import {
     MainNavigatorDrawerParamList,
@@ -931,6 +934,11 @@ const Router = () => {
 
     // Make sure any available chat connections are always online
     // useMonitorChatConnections(fedimint)
+
+    // Navigates to locked device screen if we detect a device conflict
+    useLockedDeviceDetection(fedimint, () => {
+        navigation.dispatch(resetToLockedDevice())
+    })
 
     return (
         <NavigationContainer
