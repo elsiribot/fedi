@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import DeviceInfo from 'react-native-device-info'
@@ -36,6 +36,20 @@ const SelectedFederationHeader: React.FC = () => {
         DRAWER_NAVIGATION_ID as any,
     ) as DrawerNavigationHook
 
+    // Checks to see if we are on the Chat screen within the TabsNavigator
+    const navState = navigation.getState()
+    const isOnChatScreen = useMemo(() => {
+        const currentScreen = navState.routes[navState.index]
+        if (currentScreen.state && currentScreen.state.index) {
+            const currentTab =
+                currentScreen.state.routes[currentScreen.state.index]
+            if (currentTab.name === 'Chat') {
+                return true
+            }
+        }
+        return false
+    }, [navState])
+
     const hasNewChatActivityInOtherFeds = useAppSelector(
         selectHasNewChatActivityInOtherFeds,
     )
@@ -57,7 +71,8 @@ const SelectedFederationHeader: React.FC = () => {
             edges={['top', 'left', 'right']}
             style={[
                 styles(theme).container,
-                shouldShowUpgradeChat ? { opacity: 0 } : {},
+                // hide the header if showing the upgrade chat screen
+                isOnChatScreen && shouldShowUpgradeChat ? { opacity: 0 } : {},
             ]}>
             <Pressable
                 style={[
