@@ -248,6 +248,16 @@ export class FedimintBridge {
         })
     }
 
+    async registerAsNewDevice() {
+        return this.rpcTyped('registerAsNewDevice', {})
+    }
+
+    async transferExistingDeviceRegistration(index: number) {
+        return this.rpcTyped('transferExistingDeviceRegistration', {
+            index,
+        })
+    }
+
     /*
      * Mocked-out social backup and recovery methods
      */

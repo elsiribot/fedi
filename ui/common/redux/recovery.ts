@@ -2,8 +2,11 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import { CommonState, refreshFederations } from '.'
 import { SeedWords, SocialRecoveryEvent } from '../types'
-import { RpcRegisteredDevice } from '../types/bindings'
+import { RpcFederation, RpcRegisteredDevice } from '../types/bindings'
 import { FedimintBridge } from '../utils/fedimint'
+import { makeLog } from '../utils/log'
+
+const log = makeLog('common/redux/recovery')
 
 /*** Initial State ***/
 
@@ -60,6 +63,8 @@ export const recoverySlice = createSlice({
 
         builder.addCase(recoverFromMnemonic.fulfilled, (state, action) => {
             state.registeredDevices = action.payload
+            // TODO: remove this for privacy reasons after we know seed reuse is stable... will be useful for debugging any problems
+            log.debug('registeredDevices', state.registeredDevices)
         })
     },
 })
@@ -109,6 +114,22 @@ export const recoverFromMnemonic = createAsyncThunk<
     { state: CommonState }
 >('recovery/recoverFromMnemonic', async ({ fedimint, mnemonic }) => {
     return fedimint.recoverFromMnemonic(mnemonic)
+})
+
+export const createNewWallet = createAsyncThunk<
+    RpcFederation | null,
+    { fedimint: FedimintBridge },
+    { state: CommonState }
+>('recovery/createNewWallet', async ({ fedimint }) => {
+    return fedimint.registerAsNewDevice()
+})
+
+export const transferExistingWallet = createAsyncThunk<
+    RpcFederation | null,
+    { fedimint: FedimintBridge; device: RpcRegisteredDevice },
+    { state: CommonState }
+>('recovery/transferExistingWallet', async ({ fedimint, device }) => {
+    return fedimint.transferExistingDeviceRegistration(device.deviceIndex)
 })
 
 /*** Selectors ***/

@@ -4,6 +4,9 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { useDeviceRegistration } from '@fedi/common/hooks/recovery'
+
+import { fedimint } from '../bridge'
 import HoloCircle from '../components/ui/HoloCircle'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import type { RootStackParamList } from '../types/navigation'
@@ -16,8 +19,15 @@ export type Props = NativeStackScreenProps<
 const RecoveryNewWallet: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const { handleNewWallet } = useDeviceRegistration(t, fedimint)
 
     const style = styles(theme)
+
+    const handleContinue = async () => {
+        handleNewWallet(() => {
+            navigation.navigate('JoinFederation', { invite: undefined })
+        })
+    }
 
     return (
         <View style={style.container}>
@@ -40,7 +50,7 @@ const RecoveryNewWallet: React.FC<Props> = ({ navigation }: Props) => {
             <Button
                 fullWidth
                 title={t('words.continue')}
-                onPress={() => navigation.navigate('Initializing')}
+                onPress={handleContinue}
             />
         </View>
     )

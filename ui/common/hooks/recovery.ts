@@ -1,5 +1,6 @@
 import { TFunction } from 'i18next'
-import { useCallback, useEffect, useState } from 'react'
+import orderBy from 'lodash/orderBy'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
     fetchSocialRecovery as reduxFetchSocialRecovery,
@@ -10,11 +11,18 @@ import {
     selectSocialRecoveryQr,
     selectSocialRecoveryState,
     recoverFromMnemonic,
+    selectRegisteredDevices,
+    transferExistingWallet,
+    createNewWallet,
 } from '../redux'
 import { SeedWords } from '../types'
+import { RpcRegisteredDevice } from '../types/bindings'
 import { FedimintBridge } from '../utils/fedimint'
+import { makeLog } from '../utils/log'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
+
+const log = makeLog('common/hooks/recovery')
 
 export function useSocialRecovery(fedimint: FedimintBridge) {
     const dispatch = useCommonDispatch()
@@ -101,5 +109,70 @@ export function usePersonalRecovery(t: TFunction, fedimint: FedimintBridge) {
     return {
         recoveryInProgress,
         attemptRecovery,
+    }
+}
+
+export function useDeviceRegistration(t: TFunction, fedimint: FedimintBridge) {
+    const toast = useToast()
+    const dispatch = useCommonDispatch()
+    const registeredDevices = useCommonSelector(selectRegisteredDevices)
+    const [isProcessing, setIsProcessing] = useState<boolean>(false)
+
+    const handleNewWallet = useCallback(
+        async (onSuccess: () => void) => {
+            setIsProcessing(true)
+            try {
+                const federation = await dispatch(
+                    createNewWallet({ fedimint }),
+                ).unwrap()
+
+                log.debug('createNewWallet federation:', federation)
+                // federation is non-null for social recovery only
+                if (federation) {
+                    // TODO: go to federation preview? or auto-join
+                }
+                onSuccess()
+            } catch (error) {
+                log.error('handleNewWallet', error)
+                toast.error(t, error)
+            }
+            setIsProcessing(false)
+        },
+        [dispatch, fedimint, t, toast],
+    )
+
+    const handleTransfer = useCallback(
+        async (device: RpcRegisteredDevice, onSuccess: () => void) => {
+            setIsProcessing(true)
+            try {
+                const federation = await dispatch(
+                    transferExistingWallet({ fedimint, device }),
+                ).unwrap()
+
+                log.debug('transferExistingWallet federation:', federation)
+                // federation is non-null for social recovery only
+                if (federation) {
+                    // TODO: go to federation preview? or auto-join
+                }
+
+                onSuccess()
+            } catch (error) {
+                log.error('transferExistingWallet', error)
+                toast.error(t, error)
+            }
+            setIsProcessing(false)
+        },
+        [dispatch, fedimint, t, toast],
+    )
+
+    const devicesSortedByTimestamp = useMemo(() => {
+        return orderBy(registeredDevices, 'lastRegistrationTimestamp', 'desc')
+    }, [registeredDevices])
+
+    return {
+        registeredDevices: devicesSortedByTimestamp,
+        isProcessing,
+        handleTransfer,
+        handleNewWallet,
     }
 }

@@ -2,15 +2,15 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 
-import { selectRegisteredDevices } from '@fedi/common/redux'
+import { useDeviceRegistration } from '@fedi/common/hooks/recovery'
 import { RpcRegisteredDevice } from '@fedi/common/types/bindings'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import { hexToRgba } from '@fedi/common/utils/color'
 
+import { fedimint } from '../bridge'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
-import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -21,9 +21,18 @@ export type Props = NativeStackScreenProps<
 const RecoveryDeviceSelection: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const registeredDevices = useAppSelector(selectRegisteredDevices)
+    const { registeredDevices, handleTransfer } = useDeviceRegistration(
+        t,
+        fedimint,
+    )
 
     const style = styles(theme)
+
+    const selectDevice = async (device: RpcRegisteredDevice) => {
+        handleTransfer(device, () => {
+            navigation.navigate('JoinFederation', { invite: undefined })
+        })
+    }
 
     const renderDevice = (device: RpcRegisteredDevice, index: number) => {
         // TODO: make device name more human-readable
@@ -42,10 +51,7 @@ const RecoveryDeviceSelection: React.FC<Props> = ({ navigation }: Props) => {
             <Pressable
                 key={`di-${index}`}
                 style={style.actionCardContainer}
-                onPress={() => {
-                    console.debug('device', device)
-                    // TODO: call transferDevice RPC after confirmation from user
-                }}>
+                onPress={() => selectDevice(device)}>
                 <View style={style.roundIconContainer}>
                     <SvgImage name={iconName} size={SvgImageSize.sm} />
                 </View>
