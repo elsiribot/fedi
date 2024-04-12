@@ -6,12 +6,12 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 
 import { useDeviceRegistration } from '@fedi/common/hooks/recovery'
 import { RpcRegisteredDevice } from '@fedi/common/types/bindings'
-import dateUtils from '@fedi/common/utils/DateUtils'
 import { hexToRgba } from '@fedi/common/utils/color'
 
 import { fedimint } from '../bridge'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import type { RootStackParamList } from '../types/navigation'
+import { getFormattedDeviceInfo } from '../utils/device-info'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -35,18 +35,10 @@ const RecoveryDeviceSelection: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     const renderDevice = (device: RpcRegisteredDevice, index: number) => {
-        // TODO: make device name more human-readable
-        const deviceName = device.deviceIdentifier
-        const iconName = device.deviceIdentifier.includes(':Web:')
-            ? 'DeviceBrowser'
-            : device.deviceIdentifier.includes('iPhone')
-            ? 'DeviceIos'
-            : 'DeviceAndroid'
-        const lastSeen = `${t(
-            'phrases.last-seen',
-        )}: ${dateUtils.formatDeviceRegistrationTimestamp(
-            device.lastRegistrationTimestamp,
-        )}`
+        const { deviceName, iconName, lastSeenAt } =
+            getFormattedDeviceInfo(device)
+        const lastSeen = `${t('phrases.last-seen')}: ${lastSeenAt}`
+
         return (
             <Pressable
                 key={`di-${index}`}
