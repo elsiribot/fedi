@@ -68,7 +68,7 @@ const RecoveryDeviceSelection: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={style.container}>
+        <ScrollView contentContainerStyle={style.container}>
             <View style={style.contentContainer}>
                 <Text caption>
                     {t('feature.recovery.select-a-device-guidance')}
@@ -83,7 +83,7 @@ const RecoveryDeviceSelection: React.FC<Props> = ({ navigation }: Props) => {
                 onPress={() => navigation.navigate('RecoveryNewWallet')}
             />
             {/* TODO: build confirmation overlay */}
-        </View>
+        </ScrollView>
     )
 }
 
