@@ -15,6 +15,13 @@ pub const MATRIX_CHILD_ID: u64 = 13;
 // Backup twice per day
 pub const BACKUP_FREQUENCY: Duration = Duration::from_secs(12 * 60 * 60);
 
+// Attempt to renew device registration every 15 minutes
+pub const DEVICE_REGISTRATION_FREQUENCY: Duration = Duration::from_secs(15 * 60);
+
+// If no device registration renewal has happened in 12 hours, emit event for
+// front-end
+pub const DEVICE_REGISTRATION_OVERDUE: Duration = Duration::from_secs(12 * 60 * 60);
+
 // Fedi file path
 pub const FEDI_FILE_PATH: &str = "./fedi_file.json";
 
