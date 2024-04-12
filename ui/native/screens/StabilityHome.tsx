@@ -12,7 +12,7 @@ import { useIsStabilityPoolEnabledByFederation } from '@fedi/common/hooks/federa
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectFederationBalance,
-    selectFederationMaxStableBalanceSats,
+    selectMaxStableBalanceSats,
     selectStableBalance,
     selectStableBalancePending,
 } from '@fedi/common/redux'
@@ -35,9 +35,7 @@ const StabilityHome: React.FC<Props> = () => {
     const stableBalancePending = useAppSelector(selectStableBalancePending)
     const stabilityPoolDisabledByFederation =
         !useIsStabilityPoolEnabledByFederation()
-    const maxStableBalanceSats = useAppSelector(
-        selectFederationMaxStableBalanceSats,
-    )
+    const maxStableBalanceSats = useAppSelector(selectMaxStableBalanceSats)
     const balance = useAppSelector(selectFederationBalance)
 
     const { formattedStableBalance, formattedStableBalancePending } =

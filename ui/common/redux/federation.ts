@@ -387,17 +387,17 @@ export const selectFederationCustomFediMods = (s: CommonState) => {
         : []
 }
 
-export const selectFederationMaxStableBalanceSats = createSelector(
+export const selectMaxStableBalanceSats = createSelector(
     selectFederationMetadata,
     metadata => {
         const maxStableBalanceMsats =
             metadata && getFederationMaxStableBalanceMsats(metadata)
 
-        if (maxStableBalanceMsats === 0) return 0 as MSats
+        if (maxStableBalanceMsats === 0) return 0 as Sats
 
         return maxStableBalanceMsats
             ? amountUtils.msatToSat(maxStableBalanceMsats)
-            : (0 as MSats)
+            : (0 as Sats)
     },
 )
 
