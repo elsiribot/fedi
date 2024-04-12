@@ -103,6 +103,7 @@ import Initializing from './screens/Initializing'
 import JoinFederation from './screens/JoinFederation'
 import LanguageSettings from './screens/LanguageSettings'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
+import LockedDevice from './screens/LockedDevice'
 import MemberQrCode from './screens/MemberQrCode'
 import NewMessage from './screens/NewMessage'
 import PersonalRecovery from './screens/PersonalRecovery'
@@ -686,6 +687,11 @@ const MainNavigator = () => {
                                         <RecoveryDeviceSelectionHeader />
                                     ),
                                 })}
+                            />
+                            <Stack.Screen
+                                name="LockedDevice"
+                                component={LockedDevice}
+                                options={{ headerShown: false }}
                             />
                             {/* Popup federations */}
                             <Stack.Screen

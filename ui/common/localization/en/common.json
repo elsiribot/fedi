@@ -571,6 +571,9 @@
             "locate-social-recovery-instructions-check-2": "Cloud storage",
             "locate-social-recovery-instructions-check-3": "Messages",
             "locate-social-recovery-instructions-check-4": "etc",
+            "locked-device-guidance-1": "The wallet on this device has been transferred to another device.",
+            "locked-device-guidance-2": "This <bold>{{deviceName}}</bold> device is now locked. ❌",
+            "locked-device-guidance-3": "If you want to set up another wallet on this device, please delete and reinstall Fedi. 👍",
             "new-wallet": "New wallet",
             "nothing-to-download": "Nothing to download from guardian",
             "guardians-remaining": "{{guardians}} remaining",
@@ -622,6 +625,7 @@
             "try-social-recovery-again": "Try social recovery again",
             "you-completed-personal-recovery": "You completed Personal Recovery",
             "you-completed-social-recovery": "You completed Social Recovery",
+            "wallet-was-transferred": "Wallet was transferred",
             "wallet-transfer": "Wallet transfer"
         },
         "send": {

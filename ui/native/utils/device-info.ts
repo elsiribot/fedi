@@ -89,3 +89,7 @@ export function getAllDeviceInfo() {
 export function generateDeviceId() {
     return `${RNDI.getDeviceId()}:Mobile:${uuidv4()}`
 }
+
+export function getOsFromDeviceId() {
+    return RNDI.getDeviceId().includes('iPhone') ? 'iOS' : 'Android'
+}
