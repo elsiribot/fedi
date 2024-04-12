@@ -75,16 +75,17 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
 
     const handleContinueOrDone = () => {
         if (hasPerformedPersonalBackup) {
-            navigation.navigate('Settings')
-        } else {
-            completePersonalBackup()
-            if (isBackingUpBeforePin) {
-                dispatch(setIsBackingUpBeforePin(false))
-                navigation.navigate('CreatePin')
-            } else {
-                navigation.navigate('TabsNavigator')
-            }
+            return navigation.navigate('Settings')
         }
+
+        completePersonalBackup()
+
+        if (isBackingUpBeforePin) {
+            dispatch(setIsBackingUpBeforePin(false))
+            return navigation.navigate('SetPin')
+        }
+
+        navigation.navigate('TabsNavigator')
     }
 
     return (

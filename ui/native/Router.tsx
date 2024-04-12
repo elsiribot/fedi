@@ -41,11 +41,10 @@ import SelectedFederationHeader from './components/feature/federations/SelectedF
 import { OmniLinkHandler } from './components/feature/omni/OmniLinkHandler'
 import EulaHeader from './components/feature/onboarding/EulaHeader'
 import NewMemberHeader from './components/feature/onboarding/NewMemberHeader'
-import ChangePinHeader from './components/feature/pin/ChangePinHeader'
-import CreatePinHeader from './components/feature/pin/CreatePinHeader'
 import CreatePinInstructionsHeader from './components/feature/pin/CreatePinInstructionsHeader'
 import LockScreenHeader from './components/feature/pin/LockScreenHeader'
 import PinAccessHeader from './components/feature/pin/PinAccessHeader'
+import SetPinHeader from './components/feature/pin/SetPinHeader'
 import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHeader'
 import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
 import ReceiveBitcoinOfflineHeader from './components/feature/receive/ReceiveBitcoinOfflineHeader'
@@ -73,7 +72,6 @@ import AddFediMod from './screens/AddFediMod'
 import BitcoinRequest from './screens/BitcoinRequest'
 import BugReport from './screens/BugReport'
 import BugReportSuccess from './screens/BugReportSuccess'
-import ChangePin from './screens/ChangePin'
 import ChatRoomConversation from './screens/ChatRoomConversation'
 import ChatRoomInvite from './screens/ChatRoomInvite'
 import ChatRoomMembers from './screens/ChatRoomMembers'
@@ -90,7 +88,6 @@ import ConfirmSendEcash from './screens/ConfirmSendEcash'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
 import CreateGroup from './screens/CreateGroup'
-import CreatePin from './screens/CreatePin'
 import CreatePinInstructions from './screens/CreatePinInstructions'
 import CreatedPin from './screens/CreatedPin'
 import CurrencySettings from './screens/CurrencySettings'
@@ -133,6 +130,7 @@ import SendOfflineAmount from './screens/SendOfflineAmount'
 import SendOfflineQr from './screens/SendOfflineQr'
 import SendOnChainAmount from './screens/SendOnChainAmount'
 import SendSuccess from './screens/SendSuccess'
+import SetPin from './screens/SetPin'
 import Settings from './screens/Settings'
 import SocialBackupCloudUpload from './screens/SocialBackupCloudUpload'
 import SocialBackupProcessing from './screens/SocialBackupProcessing'
@@ -708,17 +706,10 @@ const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="ChangePin"
-                                component={ChangePin}
+                                name="SetPin"
+                                component={SetPin}
                                 options={() => ({
-                                    header: () => <ChangePinHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="CreatePin"
-                                component={CreatePin}
-                                options={() => ({
-                                    header: () => <CreatePinHeader />,
+                                    header: () => <SetPinHeader />,
                                 })}
                             />
                             <Stack.Screen

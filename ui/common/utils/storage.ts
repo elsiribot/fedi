@@ -508,6 +508,7 @@ async function migrateStoredState(
             version: 17,
             protectedFeatures: {
                 app: true,
+                changePin: true,
             },
         }
     }

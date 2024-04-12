@@ -225,7 +225,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         if (hasPerformedPersonalBackup && status === 'set') {
             navigation.navigate('PinAccess')
         } else if (hasPerformedPersonalBackup) {
-            navigation.navigate('CreatePin')
+            navigation.navigate('SetPin')
         } else {
             navigation.navigate('CreatePinInstructions')
         }

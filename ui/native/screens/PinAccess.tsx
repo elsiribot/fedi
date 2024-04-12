@@ -16,8 +16,9 @@ import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'PinAccess'>
 
-const protectedFeatureToi18nKey = {
+const protectedFeatureToi18nKey: Record<keyof ProtectedFeatures, string> = {
     app: 'feature.pin.unlocking-fedi-app',
+    changePin: 'feature.pin.change-pin',
 } as const
 
 const PinAccess: React.FC<Props> = ({ navigation }) => {
@@ -30,32 +31,35 @@ const PinAccess: React.FC<Props> = ({ navigation }) => {
 
     return (
         <ScrollView contentContainerStyle={style.container}>
-            {Object.entries(protectedFeatures).map(([key, value]) => (
-                <View style={style.item} key={key}>
-                    <Text>
-                        {t(
-                            protectedFeatureToi18nKey[
-                                key as keyof ProtectedFeatures
-                            ],
-                        )}
-                    </Text>
-                    <Switch
-                        value={value}
-                        onChange={() => {
-                            dispatch(
-                                setProtectedFeature({
-                                    key: key as keyof ProtectedFeatures,
-                                    enabled: !value,
-                                }),
-                            )
-                        }}
-                    />
-                </View>
-            ))}
+            {Object.entries(protectedFeatures)
+                // The user is always required to enter their current PIN before changing it
+                .filter(([key]) => key !== 'changePin')
+                .map(([key, value]) => (
+                    <View style={style.item} key={key}>
+                        <Text>
+                            {t(
+                                protectedFeatureToi18nKey[
+                                    key as keyof ProtectedFeatures
+                                ] as Parameters<typeof t>[0],
+                            )}
+                        </Text>
+                        <Switch
+                            value={value}
+                            onChange={() => {
+                                dispatch(
+                                    setProtectedFeature({
+                                        key: key as keyof ProtectedFeatures,
+                                        enabled: !value,
+                                    }),
+                                )
+                            }}
+                        />
+                    </View>
+                ))}
             <Pressable
                 style={style.item}
                 onPress={() => {
-                    navigation.navigate('ChangePin')
+                    navigation.navigate('SetPin')
                 }}>
                 <Text>{t('feature.pin.change-pin')}</Text>
                 <SvgImage name="ChevronRight" color={theme.colors.darkGrey} />

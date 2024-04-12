@@ -8,15 +8,18 @@ import { loadFromStorage } from './storage'
 const initialState: PinState = {
     protectedFeatures: {
         app: true,
+        changePin: true,
     },
     unlockedFeatures: {
         app: false,
+        changePin: false,
     },
     isBackingUpBeforePin: false,
 }
 
 export interface ProtectedFeatures {
     app: boolean
+    changePin: boolean
 }
 
 export type PinState = {

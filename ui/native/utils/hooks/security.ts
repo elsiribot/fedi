@@ -29,6 +29,11 @@ interface UsePinSet {
 
 type UsePinReturn = UsePinLoading | UsePinUnset | UsePinSet
 
+/**
+ * Returns a `set` function if no pin has been set.
+ * Returns both a `set` and `check` function if a pin has been set.
+ * Always returns a `status`
+ */
 export function usePin(): UsePinReturn {
     const [hasSetPin, setHasSetPin] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
@@ -83,6 +88,10 @@ export function usePin(): UsePinReturn {
     return { status: 'unset', set } as UsePinUnset
 }
 
+/**
+ * Immediately opens the lock screen if `feature` is locked and `condition` is met.
+ * Returns whether the feature is unlocked and if the condition is met.
+ */
 export function useProtectedFeature(
     feature: keyof ProtectedFeatures,
     condition = true,
@@ -111,4 +120,6 @@ export function useProtectedFeature(
         status,
         condition,
     ])
+
+    return isFeatureUnlocked && condition
 }

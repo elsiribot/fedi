@@ -141,8 +141,7 @@ export type RootStackParamList = {
         | undefined
     Transactions: undefined
     DeveloperSettings: undefined
-    ChangePin: undefined
-    CreatePin: undefined
+    SetPin: undefined
     CreatedPin: undefined
     CreatePinInstructions: undefined
     PinAccess: undefined

@@ -13,21 +13,23 @@ import PinDot from '../components/feature/pin/PinDot'
 import { NumpadButton } from '../components/ui/NumpadButton'
 import { useAppDispatch } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
-import { usePin } from '../utils/hooks/security'
+import { usePin, useProtectedFeature } from '../utils/hooks/security'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'CreatePin'>
+export type Props = NativeStackScreenProps<RootStackParamList, 'SetPin'>
 
-const CreatePin: React.FC<Props> = ({ navigation }: Props) => {
+const SetPin: React.FC<Props> = ({ navigation }: Props) => {
+    const { width } = useWindowDimensions()
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { width } = useWindowDimensions()
-    const pin = usePin()
-    const [pinDigits, setPinDigits] = useState<Array<number>>([])
     const [confirmPinDigits, setConfirmPinDigits] = useState<Array<number>>([])
     const [isReEnteringPin, setIsReEnteringPin] = useState(false)
-    const debouncedPin = useDebounce(pinDigits)
+    const [pinDigits, setPinDigits] = useState<Array<number>>([])
     const debouncedConfirmPin = useDebounce(confirmPinDigits)
+    const debouncedPin = useDebounce(pinDigits)
     const dispatch = useAppDispatch()
+    const pin = usePin()
+
+    const isUnlocked = useProtectedFeature('changePin', pin.status === 'set')
 
     const matchesInitialPin = useCallback(
         (digits: Array<number>) =>
@@ -127,62 +129,65 @@ const CreatePin: React.FC<Props> = ({ navigation }: Props) => {
     }, [debouncedPin])
 
     return (
-        <View style={style.container}>
-            <View style={style.content}>
-                <View style={style.dots}>
-                    {isReEnteringPin &&
-                    isConfirmationReady &&
-                    !isConfirmationCorrect ? (
-                        <Text
-                            style={[
-                                style.reEnterIndicator,
-                                style.incorrectPin,
-                            ]}>
-                            {t('feature.pin.pin-doesnt-match')}
-                        </Text>
-                    ) : isReEnteringPin ? (
-                        <Text style={style.reEnterIndicator}>
-                            {t('feature.pin.re-enter-pin')}
-                        </Text>
-                    ) : null}
+        // Renders `null` if not unlocked (or pin unset) to prevent flickering
+        isUnlocked || pin.status === 'unset' ? (
+            <View style={style.container}>
+                <View style={style.content}>
+                    <View style={style.dots}>
+                        {isReEnteringPin &&
+                        isConfirmationReady &&
+                        !isConfirmationCorrect ? (
+                            <Text
+                                style={[
+                                    style.reEnterIndicator,
+                                    style.incorrectPin,
+                                ]}>
+                                {t('feature.pin.pin-doesnt-match')}
+                            </Text>
+                        ) : isReEnteringPin ? (
+                            <Text style={style.reEnterIndicator}>
+                                {t('feature.pin.re-enter-pin')}
+                            </Text>
+                        ) : null}
 
-                    {pinNumbers.map(i => (
-                        <PinDot
-                            key={i}
-                            status={dotStatus(i)}
-                            isLast={i === maxPinLength}
+                        {pinNumbers.map(i => (
+                            <PinDot
+                                key={i}
+                                status={dotStatus(i)}
+                                isLast={i === maxPinLength}
+                            />
+                        ))}
+                        {isConfirmationReady && !isConfirmationCorrect && (
+                            <View style={style.startOver}>
+                                <Button
+                                    day
+                                    title={
+                                        <Text caption>
+                                            {t('phrases.start-over')}
+                                        </Text>
+                                    }
+                                    buttonStyle={style.startOverButtonStyle}
+                                    onPress={() => {
+                                        setPinDigits([])
+                                        setConfirmPinDigits([])
+                                        setIsReEnteringPin(false)
+                                    }}
+                                />
+                            </View>
+                        )}
+                    </View>
+                </View>
+                <View style={style.numpad}>
+                    {numpadButtons.map(btn => (
+                        <NumpadButton
+                            key={btn}
+                            btn={btn}
+                            onPress={() => handleNumpadPress(btn)}
                         />
                     ))}
-                    {isConfirmationReady && !isConfirmationCorrect && (
-                        <View style={style.startOver}>
-                            <Button
-                                day
-                                title={
-                                    <Text caption>
-                                        {t('phrases.start-over')}
-                                    </Text>
-                                }
-                                buttonStyle={style.startOverButtonStyle}
-                                onPress={() => {
-                                    setPinDigits([])
-                                    setConfirmPinDigits([])
-                                    setIsReEnteringPin(false)
-                                }}
-                            />
-                        </View>
-                    )}
                 </View>
             </View>
-            <View style={style.numpad}>
-                {numpadButtons.map(btn => (
-                    <NumpadButton
-                        key={btn}
-                        btn={btn}
-                        onPress={() => handleNumpadPress(btn)}
-                    />
-                ))}
-            </View>
-        </View>
+        ) : null
     )
 }
 
@@ -233,4 +238,4 @@ const styles = (theme: Theme, width: number) =>
         },
     })
 
-export default CreatePin
+export default SetPin

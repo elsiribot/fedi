@@ -34,7 +34,7 @@ const LockScreen: React.FC<Props> = ({ navigation, route }: Props) => {
 
     const handleNumpadPress = useCallback(
         (btn: (typeof numpadButtons)[number]) => {
-            if (btn === null) return
+            if (btn === null || pin.status !== 'set') return
 
             if (btn === 'backspace') {
                 setPinDigits(pinDigits.slice(0, pinDigits.length - 1))
@@ -42,9 +42,11 @@ const LockScreen: React.FC<Props> = ({ navigation, route }: Props) => {
                 const updatedDigits = [...pinDigits, btn]
 
                 setPinDigits(updatedDigits)
+            } else if (!pin.check(pinDigits)) {
+                setPinDigits([btn])
             }
         },
-        [pinDigits],
+        [pinDigits, pin],
     )
 
     const dotStatus = useCallback(
@@ -90,10 +92,11 @@ const LockScreen: React.FC<Props> = ({ navigation, route }: Props) => {
                     unlocked: true,
                 }),
             )
-            if (navigation.canGoBack()) navigation.goBack()
-            else navigation.navigate('TabsNavigator')
-        } else {
-            setPinDigits([])
+            if (navigation.canGoBack()) {
+                navigation.goBack()
+            } else {
+                navigation.navigate('TabsNavigator')
+            }
         }
     }, [debouncedPin, feature, navigation, dispatch, pin])
 
