@@ -393,7 +393,7 @@ export const selectMaxStableBalanceSats = createSelector(
         const maxStableBalanceMsats =
             metadata && getFederationMaxStableBalanceMsats(metadata)
 
-        if (maxStableBalanceMsats === 0) return 0 as Sats
+        if (maxStableBalanceMsats === 0) return 0 as MSats
 
         return maxStableBalanceMsats
             ? amountUtils.msatToSat(maxStableBalanceMsats)

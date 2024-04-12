@@ -15,6 +15,7 @@ import {
     selectMaxStableBalanceSats,
     selectStableBalance,
     selectStableBalancePending,
+    selectStableBalanceSats,
 } from '@fedi/common/redux'
 import { makePendingBalanceText } from '@fedi/common/utils/wallet'
 
@@ -32,6 +33,7 @@ const StabilityHome: React.FC<Props> = () => {
     const { width } = useWindowDimensions()
     const navigation = useNavigation<NavigationHook>()
     const stableBalance = useAppSelector(selectStableBalance)
+    const stableBalanceSats = useAppSelector(selectStableBalanceSats)
     const stableBalancePending = useAppSelector(selectStableBalancePending)
     const stabilityPoolDisabledByFederation =
         !useIsStabilityPoolEnabledByFederation()
@@ -90,7 +92,7 @@ const StabilityHome: React.FC<Props> = () => {
                             // Block deposits if the max stable balance amount is reached
                             else if (
                                 maxStableBalanceSats &&
-                                stableBalance > maxStableBalanceSats
+                                stableBalanceSats > maxStableBalanceSats
                             ) {
                                 toast.show({
                                     content: t(
