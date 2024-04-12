@@ -97,6 +97,10 @@ export type RootStackParamList = {
     ReceiveOffline: undefined
     RecoveryWords: undefined
     RecoveryAssistSuccess: undefined
+    RecoveryWalletOptions: undefined
+    RecoveryWalletTransfer: undefined
+    RecoveryNewWallet: undefined
+    RecoveryDeviceSelection: undefined
     RecordBackupVideo: undefined
     GroupChat: { groupId: string }
     GroupAdmin: { roomId: string }
