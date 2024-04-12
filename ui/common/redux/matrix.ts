@@ -6,7 +6,7 @@ import {
 } from '@reduxjs/toolkit'
 import { v4 as uuidv4 } from 'uuid'
 
-import { CommonState } from '.'
+import { CommonState, selectAuthenticatedMember } from '.'
 import {
     MatrixUser,
     MatrixRoom,
@@ -640,6 +640,36 @@ export const selectMatrixAuth = createSelector(
             ...auth,
             displayName: auth.displayName || matrixIdToUsername(auth.userId),
         }
+    },
+)
+
+export const selectHasSetMatrixDisplayName = createSelector(
+    (s: CommonState) => s.matrix.auth,
+    auth => {
+        // upon registration, displayName will be the 65-character userId by default
+        // so use this as a proxy for detecting if the user has set a display name yet
+        if (auth && auth.displayName && auth.displayName.length <= 21)
+            return true
+        return false
+    },
+)
+
+export const selectNeedsMatrixRegistration = createSelector(
+    (s: CommonState) => s.matrix.auth,
+    selectHasSetMatrixDisplayName,
+    (auth, hasSetMatrixDisplayName) => {
+        if (!auth) return true
+        if (!hasSetMatrixDisplayName) return true
+        return false
+    },
+)
+
+// TODO: Consider deprecating this after a long enough time has passed and no users exist with old legacy XMPP state
+export const selectShouldShowUpgradeChat = createSelector(
+    selectNeedsMatrixRegistration,
+    (s: CommonState) => selectAuthenticatedMember(s),
+    (needsChatRegistration, xmppAuth) => {
+        return needsChatRegistration && xmppAuth !== null
     },
 )
 

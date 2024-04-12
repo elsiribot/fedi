@@ -32,6 +32,7 @@ declare module '@rneui/themed' {
             black: string
             blue: string
             blue100: string
+            blueDropShadow: string
             night: string
             fuschia: string
             // @react-navigation requires these properties

@@ -70,7 +70,7 @@ export type RootStackParamList = {
     ConnectedFederationsDrawer: undefined
     CurrencySettings: undefined
     CreateGroup: undefined
-    CreateUsername: undefined
+    EnterDisplayName: undefined
     DirectChat: { memberId: string }
     EditGroup: { roomId: string }
     Eula: undefined

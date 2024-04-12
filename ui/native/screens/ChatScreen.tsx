@@ -1,25 +1,25 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { useNavigation } from '@react-navigation/native'
 import { Button, FAB, Image, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
-    fetchChatMembers,
-    selectActiveFederationId,
     selectIsMatrixChatEmpty,
-    selectMatrixAuth,
     selectMatrixStatus,
+    selectNeedsMatrixRegistration,
+    selectShouldShowUpgradeChat,
 } from '@fedi/common/redux'
 
 import { Images } from '../assets/images'
 import ChatsList from '../components/feature/chat/ChatsList'
+import UpgradeChat from '../components/feature/chat/UpgradeChat'
 import { NuxTooltip } from '../components/ui/NuxTooltip'
 import SvgImage from '../components/ui/SvgImage'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { useAppSelector } from '../state/hooks'
 import { MatrixSyncStatus } from '../types'
 import {
     NavigationHook,
@@ -36,21 +36,13 @@ const ChatScreen: React.FC<Props> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(selectActiveFederationId)
     const syncStatus = useAppSelector(selectMatrixStatus)
-    const hasMatrixAuth = useAppSelector(s => !!selectMatrixAuth(s))
-    const needsChatRegistration = !hasMatrixAuth
+    const needsChatRegistration = useAppSelector(selectNeedsMatrixRegistration)
+    const shouldShowUpgradeChat = useAppSelector(selectShouldShowUpgradeChat)
+
     const isChatEmpty = useAppSelector(selectIsMatrixChatEmpty)
     const [hasOpenedNewChat, completeOpenedNewChat] =
         useNuxStep('hasOpenedNewChat')
-
-    useEffect(() => {
-        if (activeFederationId) {
-            // Here we fetch the roster and store the results in local storage
-            dispatch(fetchChatMembers({ federationId: activeFederationId }))
-        }
-    }, [activeFederationId, dispatch])
 
     // TODO: reimplement seen message hook for matrix
     // Use this hook only if the screen is in focus
@@ -78,7 +70,15 @@ const ChatScreen: React.FC<Props> = () => {
 
     return (
         <View style={style.container}>
-            {needsChatRegistration ? (
+            {shouldShowUpgradeChat ? (
+                <ScrollView
+                    style={{
+                        width: '100%',
+                        paddingHorizontal: theme.spacing.lg,
+                    }}>
+                    <UpgradeChat />
+                </ScrollView>
+            ) : needsChatRegistration ? (
                 <>
                     <View style={style.registration}>
                         <Image
@@ -94,8 +94,8 @@ const ChatScreen: React.FC<Props> = () => {
                         </Text>
                         <Button
                             fullWidth
-                            title={t('feature.chat.register-a-username')}
-                            onPress={() => navigation.push('CreateUsername')}
+                            title={t('words.continue')}
+                            onPress={() => navigation.push('EnterDisplayName')}
                         />
                     </View>
                 </>

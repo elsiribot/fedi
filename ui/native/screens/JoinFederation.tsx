@@ -83,7 +83,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
 
     const goToNextScreen = useCallback(() => {
         if (!federationPreview) return
-        navigation.replace(hasMatrixAuth ? 'TabsNavigator' : 'CreateUsername')
+        navigation.replace(hasMatrixAuth ? 'TabsNavigator' : 'EnterDisplayName')
     }, [federationPreview, hasMatrixAuth, navigation])
 
     const handleJoin = useCallback(async () => {
