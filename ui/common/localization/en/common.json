@@ -159,6 +159,7 @@
         "return-to-home": "Return to home",
         "save-changes": "Save changes",
         "sent-bitcoin": "Sent bitcoin",
+        "start-over": "Start over",
         "terms-and-conditions": "Terms & Conditions",
         "transaction-id": "Transaction ID",
         "transaction-received": "Transaction received",
@@ -510,6 +511,20 @@
             "allow-notifications-description": "New chat messages, payments, and announcements",
             "allow-notifications-title": "Allow notifications to see",
             "update-later-disclaimer": "This can be updated later"
+        },
+        "pin": {
+            "back-up-your-account": "Back up your account",
+            "backup-notice": "If you forget your PIN, your backup is the only way to recover your account.",
+            "change-pin": "Change PIN",
+            "create-a-pin": "Create a PIN",
+            "create-new-pin": "Create new PIN",
+            "enter-current-pin": "Enter current PIN",
+            "enter-pin": "Enter PIN",
+            "pin-access": "PIN Access",
+            "pin-doesnt-match": "PIN doesn't match",
+            "pin-setup-successful": "PIN setup successfully!",
+            "re-enter-pin": "Re-enter PIN",
+            "unlocking-fedi-app": "Unlocking Fedi app"
         },
         "popup": {
             "ended": "Ended",

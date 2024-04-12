@@ -31,6 +31,7 @@ import {
     startMatrixClient,
 } from './matrix'
 import { nuxSlice } from './nux'
+import { pinSlice } from './pin'
 import { recoverySlice } from './recovery'
 import { loadFromStorage, saveToStorage, storageSlice } from './storage'
 import { toastSlice } from './toast'
@@ -48,6 +49,7 @@ export * from './nux'
 export * from './recovery'
 export * from './toast'
 export * from './wallet'
+export * from './pin'
 
 export const commonReducers = {
     chat: chatSlice.reducer,
@@ -61,6 +63,7 @@ export const commonReducers = {
     toast: toastSlice.reducer,
     transactions: transactionsSlice.reducer,
     wallet: walletSlice.reducer,
+    pin: pinSlice.reducer,
 }
 
 type CommonReducers = typeof commonReducers

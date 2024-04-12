@@ -5,9 +5,14 @@ import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
 import { useNuxStep } from '@fedi/common/hooks/nux'
+import {
+    selectIsRecoveringBeforePin,
+    setIsRecoveringBeforePin,
+} from '@fedi/common/redux'
 import type { SeedWords } from '@fedi/common/types'
 
 import { fedimint } from '../bridge'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'RecoveryWords'>
@@ -41,6 +46,9 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
         'hasPerformedPersonalBackup',
     )
 
+    const isRecoveringBeforePin = useAppSelector(selectIsRecoveringBeforePin)
+    const dispatch = useAppDispatch()
+
     useEffect(() => {
         const getMnemonicWrapper = async () => {
             const seed = await fedimint.getMnemonic()
@@ -70,7 +78,12 @@ const RecoveryWords: React.FC<Props> = ({ navigation }: Props) => {
             navigation.navigate('Settings')
         } else {
             completePersonalBackup()
-            navigation.navigate('TabsNavigator')
+            if (isRecoveringBeforePin) {
+                dispatch(setIsRecoveringBeforePin(false))
+                navigation.navigate('CreatePin')
+            } else {
+                navigation.navigate('TabsNavigator')
+            }
         }
     }
 

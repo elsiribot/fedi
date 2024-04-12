@@ -2,6 +2,7 @@ import { DrawerNavigationProp } from '@react-navigation/drawer'
 import { LinkingOptions, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
+import { ProtectedFeatures } from '@fedi/common/redux'
 import {
     ChatType,
     FederationPreview,
@@ -140,4 +141,12 @@ export type RootStackParamList = {
         | undefined
     Transactions: undefined
     DeveloperSettings: undefined
+    ChangePin: undefined
+    CreatePin: undefined
+    CreatedPin: undefined
+    CreatePinInstructions: undefined
+    PinAccess: undefined
+    LockScreen: {
+        feature: keyof ProtectedFeatures
+    }
 }

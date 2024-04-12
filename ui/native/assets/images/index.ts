@@ -14,6 +14,7 @@ export const Images: ImagesMap = {
     HoloBackgroundStrong: require('./holo-background-strong-900.png'),
     IllustrationChat: require('@fedi/common/assets/images/illustration-chat.png'),
     IllustrationWorld: require('@fedi/common/assets/images/illustration-world.png'),
+    IllustrationPin: require('@fedi/common/assets/images/illustration-pin.png'),
     FallbackInset: require('@fedi/common/assets/images/fallback-inset.png'),
     AwesomeFedimint: require('@fedi/common/assets/images/awesome-fedimint.png'),
 }

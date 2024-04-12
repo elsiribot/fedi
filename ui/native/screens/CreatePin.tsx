@@ -1,0 +1,242 @@
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
+import React, { useCallback, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { StyleSheet, View, useWindowDimensions } from 'react-native'
+
+import { numpadButtons } from '@fedi/common/hooks/amount'
+import { setFeatureUnlocked, setPin } from '@fedi/common/redux'
+
+import PinDot from '../components/feature/pin/PinDot'
+import { NumpadButton } from '../components/ui/NumpadButton'
+import { useAppDispatch } from '../state/hooks'
+import type { RootStackParamList } from '../types/navigation'
+
+export type Props = NativeStackScreenProps<RootStackParamList, 'CreatePin'>
+
+const maxPinLength = 4
+
+const CreatePin: React.FC<Props> = ({ navigation }: Props) => {
+    const { t } = useTranslation()
+    const { theme } = useTheme()
+    const { width } = useWindowDimensions()
+    const [pinDigits, setPinDigits] = useState<Array<number>>([])
+    const [confirmPinDigits, setConfirmPinDigits] = useState<Array<number>>([])
+    const [isReEnteringPin, setIsReEnteringPin] = useState(false)
+    const dispatch = useAppDispatch()
+
+    const matchesInitialPin = useCallback(
+        (digits: Array<number>) =>
+            pinDigits.length === digits.length &&
+            pinDigits.every((_, i) => pinDigits[i] === digits[i]),
+        [pinDigits],
+    )
+    const isConfirmationReady = confirmPinDigits.length === maxPinLength
+    const isConfirmationCorrect =
+        isConfirmationReady && matchesInitialPin(confirmPinDigits)
+
+    const style = styles(theme, width)
+
+    const handleNumpadPress = useCallback(
+        (btn: (typeof numpadButtons)[number]) => {
+            if (btn === null) return
+
+            if (isReEnteringPin) {
+                if (btn === 'backspace') {
+                    setConfirmPinDigits(
+                        confirmPinDigits.slice(0, confirmPinDigits.length - 1),
+                    )
+                } else if (confirmPinDigits.length < maxPinLength) {
+                    const updatedDigits = [...confirmPinDigits, btn]
+
+                    setConfirmPinDigits(updatedDigits)
+
+                    if (updatedDigits.length === maxPinLength) {
+                        setTimeout(() => {
+                            setConfirmPinDigits(digits => {
+                                if (
+                                    digits.length === maxPinLength &&
+                                    matchesInitialPin(digits)
+                                ) {
+                                    dispatch(setPin(updatedDigits))
+                                    dispatch(
+                                        setFeatureUnlocked({
+                                            key: 'app',
+                                            unlocked: true,
+                                        }),
+                                    )
+                                    navigation.navigate('CreatedPin')
+                                }
+
+                                return digits
+                            })
+                        }, 1000)
+                    }
+                }
+            } else {
+                if (btn === 'backspace') {
+                    setPinDigits(pinDigits.slice(0, pinDigits.length - 1))
+                } else if (pinDigits.length < maxPinLength) {
+                    const updatedDigits = [...pinDigits, btn]
+
+                    setPinDigits(updatedDigits)
+
+                    if (updatedDigits.length === maxPinLength) {
+                        setTimeout(() => {
+                            // Get the value at the 3000ms point in time without re-rendering
+                            setPinDigits(digits => {
+                                if (digits.length === maxPinLength) {
+                                    setIsReEnteringPin(true)
+                                }
+
+                                return digits
+                            })
+                        }, 1000)
+                    }
+                }
+            }
+        },
+        [
+            isReEnteringPin,
+            confirmPinDigits,
+            pinDigits,
+            matchesInitialPin,
+            navigation,
+            dispatch,
+        ],
+    )
+
+    return (
+        <View style={style.container}>
+            <View style={style.content}>
+                <View style={style.dots}>
+                    {isReEnteringPin &&
+                    isConfirmationReady &&
+                    !isConfirmationCorrect ? (
+                        <Text
+                            style={[
+                                style.reEnterIndicator,
+                                style.incorrectPin,
+                            ]}>
+                            {t('feature.pin.pin-doesnt-match')}
+                        </Text>
+                    ) : isReEnteringPin ? (
+                        <Text style={style.reEnterIndicator}>
+                            {t('feature.pin.re-enter-pin')}
+                        </Text>
+                    ) : null}
+
+                    {isReEnteringPin
+                        ? new Array(maxPinLength)
+                              .fill(null)
+                              .map((_, i) => (
+                                  <PinDot
+                                      key={i}
+                                      status={
+                                          isConfirmationReady
+                                              ? isConfirmationCorrect
+                                                  ? 'correct'
+                                                  : 'incorrect'
+                                              : i >= confirmPinDigits.length
+                                              ? 'empty'
+                                              : 'active'
+                                      }
+                                      isLast={i === maxPinLength - 1}
+                                  />
+                              ))
+                        : new Array(maxPinLength)
+                              .fill(null)
+                              .map((_, i) => (
+                                  <PinDot
+                                      key={i}
+                                      status={
+                                          pinDigits.length === maxPinLength
+                                              ? 'correct'
+                                              : i >= pinDigits.length
+                                              ? 'empty'
+                                              : 'active'
+                                      }
+                                      isLast={i === maxPinLength - 1}
+                                  />
+                              ))}
+                    {isConfirmationReady && !isConfirmationCorrect && (
+                        <View style={style.startOver}>
+                            <Button
+                                day
+                                title={
+                                    <Text caption>
+                                        {t('phrases.start-over')}
+                                    </Text>
+                                }
+                                buttonStyle={style.startOverButtonStyle}
+                                onPress={() => {
+                                    setPinDigits([])
+                                    setConfirmPinDigits([])
+                                    setIsReEnteringPin(false)
+                                }}
+                            />
+                        </View>
+                    )}
+                </View>
+            </View>
+            <View style={style.numpad}>
+                {numpadButtons.map(btn => (
+                    <NumpadButton
+                        key={btn}
+                        btn={btn}
+                        onPress={() => handleNumpadPress(btn)}
+                    />
+                ))}
+            </View>
+        </View>
+    )
+}
+
+const styles = (theme: Theme, width: number) =>
+    StyleSheet.create({
+        reEnterIndicator: {
+            position: 'absolute',
+            bottom: 54,
+        },
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: theme.spacing.xl,
+        },
+        dots: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+        },
+        content: {
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 32,
+        },
+        numpad: {
+            width: '100%',
+            maxWidth: Math.min(400, width),
+            paddingHorizontal: theme.spacing.lg,
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+        },
+        startOver: {
+            position: 'absolute',
+            display: 'flex',
+            top: 54,
+        },
+        startOverButtonStyle: {
+            borderColor: theme.colors.lightGrey,
+            borderWidth: 0.25,
+            paddingHorizontal: 50,
+        },
+        incorrectPin: {
+            color: theme.colors.red,
+        },
+    })
+
+export default CreatePin

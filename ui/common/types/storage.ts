@@ -1,6 +1,7 @@
 // Maintain all versions of stored state below. Stored state versions should
 // be fairly immutable, but if you simply want to add a new key, just make
 // it optional?: value.
+import { ProtectedFeatures } from '../redux'
 import { Chat, ChatGroup, ChatMember, ChatMessage } from './chat'
 import { Federation, Guardian, FediMod, SupportedCurrency } from './fedimint'
 
@@ -168,6 +169,12 @@ export interface StoredStateV16 extends Omit<StoredStateV15, 'version'> {
     deviceId: string | undefined
 }
 
+export interface StoredStateV17 extends Omit<StoredStateV16, 'version'> {
+    version: 17
+    pinDigits: Array<number> | null
+    protectedFeatures: ProtectedFeatures
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -187,9 +194,10 @@ export type AnyStoredState =
     | StoredStateV14
     | StoredStateV15
     | StoredStateV16
+    | StoredStateV17
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV16
+export type LatestStoredState = StoredStateV17
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

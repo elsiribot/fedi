@@ -1,4 +1,4 @@
-import { useRoute } from '@react-navigation/native'
+import { useNavigation, useRoute } from '@react-navigation/native'
 import { useCallback, useEffect, useState } from 'react'
 import { Platform } from 'react-native'
 import {
@@ -10,7 +10,15 @@ import {
     PERMISSIONS,
 } from 'react-native-permissions'
 
+import {
+    ProtectedFeatures,
+    selectHasSetPin,
+    selectIsFeatureUnlocked,
+    selectProtectedFeatures,
+} from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
+
+import { useAppSelector } from '../state/hooks'
 
 const log = makeLog('native/util/hooks')
 
@@ -73,4 +81,19 @@ export function useNotificationsPermission() {
     }, [])
 
     return { notificationsPermission, requestNotificationsPermission }
+}
+
+export function useProtectedFeature(feature: keyof ProtectedFeatures) {
+    const navigation = useNavigation()
+    const isFeatureUnlocked = useAppSelector(s =>
+        selectIsFeatureUnlocked(s, feature),
+    )
+    const isFeatureProtected = useAppSelector(selectProtectedFeatures)[feature]
+    const hasSetPin = useAppSelector(selectHasSetPin)
+
+    useEffect(() => {
+        if (isFeatureProtected && !isFeatureUnlocked && hasSetPin) {
+            navigation.navigate('LockScreen', { feature })
+        }
+    }, [isFeatureProtected, feature, navigation, isFeatureUnlocked, hasSetPin])
 }
