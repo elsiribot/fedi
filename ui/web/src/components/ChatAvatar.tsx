@@ -2,7 +2,8 @@ import React from 'react'
 
 import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import SpeakerphoneIcon from '@fedi/common/assets/svgs/speakerphone.svg'
-import { MatrixRoom, MatrixUser } from '@fedi/common/types'
+import UserIcon from '@fedi/common/assets/svgs/user.svg'
+import { MatrixRoom, MatrixRoomMember, MatrixUser } from '@fedi/common/types'
 import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 
 import { Avatar, AvatarProps } from './Avatar'
@@ -15,7 +16,9 @@ type RoomProps = BaseProps & {
     >
 }
 type UserProps = BaseProps & {
-    user: Pick<MatrixUser, 'id' | 'displayName' | 'avatarUrl'>
+    user: Pick<MatrixUser, 'id' | 'displayName' | 'avatarUrl'> & {
+        membership?: MatrixRoomMember['membership']
+    }
 }
 type Props = RoomProps | UserProps
 
@@ -40,7 +43,7 @@ export const ChatAvatar: React.FC<Props> = props => {
         const { user, ...rest } = props
         id = user.id
         name = user.displayName || matrixIdToUsername(user.id)
-        src = user.avatarUrl
+        icon = user.membership === 'join' ? undefined : UserIcon
         avatarProps = rest
     }
 

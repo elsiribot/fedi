@@ -9,7 +9,6 @@ import {
     MatrixEvent,
     MatrixPaymentEvent,
     MatrixPaymentStatus,
-    MatrixRoomMember,
     MatrixRoomPowerLevels,
     MatrixTimelineItem,
     MatrixUser,
@@ -329,24 +328,4 @@ export function decodeFediMatrixUserUri(uri: string) {
 
 export function isValidMatrixUserId(id: string) {
     return /^@[^:]+:.+$/.test(id)
-}
-
-/**
- * Make the first member the current user.
- * Leave the rest of the list as is.
- *
- * @param {string} userId userId of current user
- * @param {MatrixRoomMember[]} members list of room members
- * @returns {MatrixRoomMember[]}
- */
-export function sortMembersByMe(userId: string, members: MatrixRoomMember[]) {
-    // find the index of the current user
-    const index = members.findIndex(({ id }) => id === userId)
-    if (index === -1) return members
-
-    return [
-        members[index],
-        ...members.slice(0, index),
-        ...members.slice(index + 1),
-    ]
 }

@@ -4,7 +4,6 @@ import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectMatrixAuth, selectMatrixRoomMembers } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
-import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
@@ -40,13 +39,17 @@ export const ChatEventCollection: React.FC<Props> = ({
                     const sentBy = events[0].senderId || ''
                     const roomMember = roomMembers.find(m => m.id === sentBy)
                     const isMe = sentBy === matrixAuth?.userId
+                    const hasLeft = roomMember?.membership !== 'join'
+                    const isBanned = roomMember?.membership === 'ban'
+                    const displayName = isBanned
+                        ? 'Kicked Member'
+                        : hasLeft
+                        ? 'Former Member'
+                        : roomMember?.displayName || '...'
                     return (
                         <div key={events[0].id}>
                             {showUsernames && !isMe && (
-                                <Username>
-                                    {roomMember?.displayName ||
-                                        matrixIdToUsername(sentBy)}
-                                </Username>
+                                <Username>{displayName}</Username>
                             )}
                             <MessageAvatarWrap isMe={isMe}>
                                 <ChatAvatar
