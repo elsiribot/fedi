@@ -18,6 +18,7 @@ import type {
     RootStackParamList,
     TabsNavigatorParamList,
 } from '../types/navigation'
+import { useProtectedFeature } from '../utils/hooks/security'
 
 export type Props =
     | BottomTabScreenProps<
@@ -34,6 +35,8 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
         selectIsActiveFederationRecovering,
     )
     const showStabilityWallet = useShouldShowStabilityPool()
+
+    useProtectedFeature('app')
 
     return (
         <ScrollView

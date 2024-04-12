@@ -1,4 +1,4 @@
-import { useNavigation, useRoute } from '@react-navigation/native'
+import { useRoute } from '@react-navigation/native'
 import { useCallback, useEffect, useState } from 'react'
 import { Platform } from 'react-native'
 import {
@@ -10,14 +10,7 @@ import {
     PERMISSIONS,
 } from 'react-native-permissions'
 
-import {
-    ProtectedFeatures,
-    selectIsFeatureUnlocked,
-    selectProtectedFeatures,
-} from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
-
-import { useAppSelector } from '../state/hooks'
 
 const log = makeLog('native/util/hooks')
 

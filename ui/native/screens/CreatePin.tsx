@@ -6,7 +6,6 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import { maxPinLength, pinNumbers } from '@fedi/common/constants/security'
 import { numpadButtons } from '@fedi/common/hooks/amount'
-import { usePin } from '@fedi/common/hooks/security'
 import { useDebounce } from '@fedi/common/hooks/util'
 import { setFeatureUnlocked } from '@fedi/common/redux'
 
@@ -14,6 +13,7 @@ import PinDot from '../components/feature/pin/PinDot'
 import { NumpadButton } from '../components/ui/NumpadButton'
 import { useAppDispatch } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+import { usePin } from '../utils/hooks/security'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'CreatePin'>
 
@@ -21,7 +21,7 @@ const CreatePin: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { width } = useWindowDimensions()
-    const { set } = usePin()
+    const pin = usePin()
     const [pinDigits, setPinDigits] = useState<Array<number>>([])
     const [confirmPinDigits, setConfirmPinDigits] = useState<Array<number>>([])
     const [isReEnteringPin, setIsReEnteringPin] = useState(false)
@@ -54,6 +54,8 @@ const CreatePin: React.FC<Props> = ({ navigation }: Props) => {
                     const updatedDigits = [...confirmPinDigits, btn]
 
                     setConfirmPinDigits(updatedDigits)
+                } else if (!matchesInitialPin(confirmPinDigits)) {
+                    setConfirmPinDigits([btn])
                 }
             } else {
                 if (btn === 'backspace') {
@@ -65,7 +67,7 @@ const CreatePin: React.FC<Props> = ({ navigation }: Props) => {
                 }
             }
         },
-        [isReEnteringPin, confirmPinDigits, pinDigits],
+        [isReEnteringPin, confirmPinDigits, pinDigits, matchesInitialPin],
     )
 
     const dotStatus = useCallback(
@@ -102,10 +104,14 @@ const CreatePin: React.FC<Props> = ({ navigation }: Props) => {
     )
 
     useEffect(() => {
-        if (debouncedConfirmPin?.length !== maxPinLength) return
+        if (
+            debouncedConfirmPin?.length !== maxPinLength ||
+            pin.status === 'loading'
+        )
+            return
 
         if (matchesInitialPin(debouncedConfirmPin)) {
-            set(debouncedConfirmPin)
+            pin.set(debouncedConfirmPin)
             dispatch(
                 setFeatureUnlocked({
                     key: 'app',
@@ -114,7 +120,7 @@ const CreatePin: React.FC<Props> = ({ navigation }: Props) => {
             )
             navigation.navigate('CreatedPin')
         }
-    }, [debouncedConfirmPin, dispatch, matchesInitialPin, navigation, set])
+    }, [debouncedConfirmPin, dispatch, matchesInitialPin, navigation, pin])
 
     useEffect(() => {
         if (debouncedPin?.length === maxPinLength) setIsReEnteringPin(true)

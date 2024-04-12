@@ -15,7 +15,6 @@ import Share from 'react-native-share'
 
 import { useFederationSupportsSingleSeed } from '@fedi/common/hooks/federation'
 import { useNuxStep } from '@fedi/common/hooks/nux'
-import { usePin } from '@fedi/common/hooks/security'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useExportTransactions } from '@fedi/common/hooks/transactions'
 import {
@@ -44,6 +43,7 @@ import SvgImage from '../components/ui/SvgImage'
 import { version } from '../package.json'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+import { usePin } from '../utils/hooks/security'
 
 const log = makeLog('Settings')
 
@@ -68,7 +68,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const pendingStableBalance = useAppSelector(selectStableBalancePending)
     const currency = useAppSelector(selectCurrency)
     const supportsSingleSeed = useFederationSupportsSingleSeed()
-    const { hasSetPin } = usePin()
+    const { status } = usePin()
     const [hasPerformedPersonalBackup] = useNuxStep(
         'hasPerformedPersonalBackup',
     )
@@ -222,7 +222,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     const createOrManagePin = () => {
-        if (hasPerformedPersonalBackup && hasSetPin) {
+        if (hasPerformedPersonalBackup && status === 'set') {
             navigation.navigate('PinAccess')
         } else if (hasPerformedPersonalBackup) {
             navigation.navigate('CreatePin')

@@ -5,27 +5,25 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import { maxPinLength, pinNumbers } from '@fedi/common/constants/security'
 import { numpadButtons } from '@fedi/common/hooks/amount'
-import { usePin } from '@fedi/common/hooks/security'
 import { useDebounce } from '@fedi/common/hooks/util'
 
 import PinDot from '../components/feature/pin/PinDot'
 import { NumpadButton } from '../components/ui/NumpadButton'
 import type { RootStackParamList } from '../types/navigation'
+import { usePin } from '../utils/hooks/security'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChangePin'>
 
 const ChangePin: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { width } = useWindowDimensions()
-    const { check } = usePin()
     const [pinDigits, setPinDigits] = useState<Array<number>>([])
     const debouncedPin = useDebounce(pinDigits)
-
-    const style = styles(theme, width)
+    const pin = usePin()
 
     const handleNumpadPress = useCallback(
         (btn: (typeof numpadButtons)[number]) => {
-            if (btn === null || !check) return
+            if (btn === null || pin.status !== 'set') return
 
             if (btn === 'backspace') {
                 setPinDigits(pinDigits.slice(0, pinDigits.length - 1))
@@ -33,16 +31,18 @@ const ChangePin: React.FC<Props> = ({ navigation }: Props) => {
                 const updatedDigits = [...pinDigits, btn]
 
                 setPinDigits(updatedDigits)
-            } else if (!check(pinDigits)) {
+            } else if (!pin.check(pinDigits)) {
                 setPinDigits([btn])
             }
         },
-        [pinDigits, check],
+        [pinDigits, pin],
     )
 
     const pinDigitStatus = (index: number) => {
         if (pinDigits.length === maxPinLength) {
-            return check && check(pinDigits) ? 'correct' : 'incorrect'
+            return pin.status === 'set' && pin.check(pinDigits)
+                ? 'correct'
+                : 'incorrect'
         }
 
         if (index > pinDigits.length) return 'empty'
@@ -51,14 +51,17 @@ const ChangePin: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     useEffect(() => {
-        if (debouncedPin?.length !== maxPinLength || !check) return
+        if (debouncedPin?.length !== maxPinLength || pin.status !== 'set')
+            return
 
-        if (check(debouncedPin)) {
+        if (pin.check(debouncedPin)) {
             navigation.navigate('CreatePin')
         } else {
             setPinDigits([])
         }
-    }, [debouncedPin, navigation, check])
+    }, [debouncedPin, navigation, pin])
+
+    const style = styles(theme, width)
 
     return (
         <View style={style.container}>

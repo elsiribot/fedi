@@ -10,7 +10,6 @@ import {
 
 import { maxPinLength, pinNumbers } from '@fedi/common/constants/security'
 import { numpadButtons } from '@fedi/common/hooks/amount'
-import { usePin } from '@fedi/common/hooks/security'
 import { useDebounce } from '@fedi/common/hooks/util'
 import { setFeatureUnlocked } from '@fedi/common/redux'
 
@@ -18,6 +17,7 @@ import PinDot from '../components/feature/pin/PinDot'
 import { NumpadButton } from '../components/ui/NumpadButton'
 import { useAppDispatch } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+import { usePin } from '../utils/hooks/security'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'LockScreen'>
 
@@ -25,7 +25,7 @@ const LockScreen: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { width } = useWindowDimensions()
     const { feature } = route.params
-    const { check } = usePin()
+    const pin = usePin()
     const [pinDigits, setPinDigits] = useState<Array<number>>([])
     const dispatch = useAppDispatch()
     const debouncedPin = useDebounce(pinDigits, 500)
@@ -50,20 +50,20 @@ const LockScreen: React.FC<Props> = ({ navigation, route }: Props) => {
     const dotStatus = useCallback(
         (index: number) => {
             if (pinDigits.length === maxPinLength) {
-                if (check && check(pinDigits)) {
+                if (pin.status === 'set' && pin.check(pinDigits)) {
                     return 'correct'
                 }
 
                 return 'incorrect'
             }
 
-            if (index >= pinDigits.length) {
+            if (index > pinDigits.length) {
                 return 'empty'
             }
 
             return 'active'
         },
-        [check, pinDigits],
+        [pinDigits, pin],
     )
 
     useEffect(() => {
@@ -80,9 +80,10 @@ const LockScreen: React.FC<Props> = ({ navigation, route }: Props) => {
     }, [])
 
     useEffect(() => {
-        if (debouncedPin?.length !== maxPinLength || !check) return
+        if (debouncedPin?.length !== maxPinLength || pin.status !== 'set')
+            return
 
-        if (check(debouncedPin)) {
+        if (pin.check(debouncedPin)) {
             dispatch(
                 setFeatureUnlocked({
                     key: feature,
@@ -94,7 +95,7 @@ const LockScreen: React.FC<Props> = ({ navigation, route }: Props) => {
         } else {
             setPinDigits([])
         }
-    }, [debouncedPin, feature, navigation, dispatch, check])
+    }, [debouncedPin, feature, navigation, dispatch, pin])
 
     return (
         <View style={style.container}>

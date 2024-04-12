@@ -1,6 +1,7 @@
 import { createDrawerNavigator } from '@react-navigation/drawer'
 import {
     NavigationContainer,
+    NavigationState,
     StackActions,
     useNavigationContainerRef,
 } from '@react-navigation/native'
@@ -10,7 +11,7 @@ import React from 'react'
 
 import { useLockedDeviceDetection } from '@fedi/common/hooks/recovery'
 import { useToast } from '@fedi/common/hooks/toast'
-import { selectActiveFederation } from '@fedi/common/redux'
+import { ProtectedFeatures, selectActiveFederation } from '@fedi/common/redux'
 
 import { fedimint } from './bridge'
 import AddFediModHeader from './components/feature/admin/AddFediModHeader'
@@ -938,6 +939,10 @@ const Router = () => {
 
     const toast = useToast()
 
+    const protectedRoutesMap: Record<keyof ProtectedFeatures, string> = {
+        app: 'Home',
+    }
+
     // Makes sure to check XMPP socket health when app is foregrounded
     // useXmppHealthCheck()
 
@@ -953,16 +958,7 @@ const Router = () => {
     })
 
     return (
-        <NavigationContainer
-            ref={navigation}
-            theme={theme}
-            linking={linking}
-            onStateChange={state => {
-                if (state?.routes[state?.index].name === 'PinAccess') {
-                    navigation.dispatch(StackActions.replace('TabsNavigator'))
-                }
-                toast.close()
-            }}>
+        <NavigationContainer ref={navigation} theme={theme} linking={linking}>
             <Drawer.Navigator
                 id={DRAWER_NAVIGATION_ID}
                 drawerContent={ConnectedFederationsDrawer}>
