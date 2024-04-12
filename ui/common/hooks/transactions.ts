@@ -81,7 +81,6 @@ export function useTxnDisplayUtils(t: TFunction) {
     const makeTxnDetailAmountText = useCallback(
         (txn: Transaction) => {
             return `${makeTxnAmountTextUtil(
-                t,
                 txn,
                 showFiatTxnAmounts,
                 makeFormattedAmountsFromMSats,
@@ -93,7 +92,6 @@ export function useTxnDisplayUtils(t: TFunction) {
             makeFormattedAmountsFromMSats,
             preferredCurrency,
             showFiatTxnAmounts,
-            t,
         ],
     )
 
@@ -120,7 +118,6 @@ export function useTxnDisplayUtils(t: TFunction) {
     const makeTxnAmountText = useCallback(
         (txn: Transaction) => {
             return makeTxnAmountTextUtil(
-                t,
                 txn,
                 showFiatTxnAmounts,
                 makeFormattedAmountsFromMSats,
@@ -131,7 +128,6 @@ export function useTxnDisplayUtils(t: TFunction) {
             convertCentsToFormattedFiat,
             makeFormattedAmountsFromMSats,
             showFiatTxnAmounts,
-            t,
         ],
     )
 

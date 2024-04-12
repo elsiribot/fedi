@@ -211,7 +211,6 @@ export const makeTxnNotesText = (
 }
 
 export const makeTxnAmountText = (
-    t: TFunction,
     txn: Transaction,
     showFiatTxnAmounts: boolean,
     makeFormattedAmountsFromMSats: (
@@ -534,9 +533,7 @@ export const makeStabilityTxnDetailItems = (
     makeFormattedAmountsFromMSats: (amt: MSats) => FormattedAmounts,
 ) => {
     const items: DetailItem[] = []
-    const { formattedFiat, formattedSats } = makeFormattedAmountsFromMSats(
-        txn.amount,
-    )
+    const { formattedSats } = makeFormattedAmountsFromMSats(txn.amount)
 
     // Hide BTC Equivalent item when amount is zero or SATS-first setting is on
     if (txn.amount !== 0) {
@@ -546,18 +543,6 @@ export const makeStabilityTxnDetailItems = (
                     ? t('feature.stabilitypool.deposit-amount')
                     : t('feature.stabilitypool.withdrawal-amount'),
             value: formattedSats,
-        })
-    }
-
-    // shows the value of ecash sent in/out of stabilitypool at today's price
-    // in local currency (historical value at time of txn shows elsewhere)
-    if (
-        txn.stabilityPoolState &&
-        txn.stabilityPoolState.type !== 'pendingWithdrawal'
-    ) {
-        items.push({
-            label: t('feature.stabilitypool.current-value'),
-            value: formattedFiat,
         })
     }
 
