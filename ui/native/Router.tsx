@@ -47,6 +47,9 @@ import ReceiveLightningHeader from './components/feature/receive/ReceiveLightnin
 import ChooseRecoveryMethodHeader from './components/feature/recovery/ChooseRecoveryMethodHeader'
 import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
 import RecoveryAssistHeader from './components/feature/recovery/RecoveryAssistHeader'
+import RecoveryDeviceSelectionHeader from './components/feature/recovery/RecoveryDeviceSelectionHeader'
+import RecoveryNewWalletHeader from './components/feature/recovery/RecoveryNewWalletHeader'
+import RecoveryWalletTransferHeader from './components/feature/recovery/RecoveryWalletTransferHeader'
 import SocialRecoveryHeader from './components/feature/recovery/SocialRecoveryHeader'
 import ConfirmSendEcashHeader from './components/feature/send/ConfirmSendEcashHeader'
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
@@ -111,6 +114,10 @@ import ReceiveLightning from './screens/ReceiveLightning'
 import ReceiveSuccess from './screens/ReceiveSuccess'
 import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
+import RecoveryDeviceSelection from './screens/RecoveryDeviceSelection'
+import RecoveryNewWallet from './screens/RecoveryNewWallet'
+import RecoveryWalletOptions from './screens/RecoveryWalletOptions'
+import RecoveryWalletTransfer from './screens/RecoveryWalletTransfer'
 import RecoveryWords from './screens/RecoveryWords'
 import ScanMemberCode from './screens/ScanMemberCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
@@ -649,6 +656,36 @@ const MainNavigator = () => {
                                 name="PersonalRecoverySuccess"
                                 component={PersonalRecoverySuccess}
                                 options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="RecoveryWalletOptions"
+                                component={RecoveryWalletOptions}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="RecoveryWalletTransfer"
+                                component={RecoveryWalletTransfer}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryWalletTransferHeader />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RecoveryNewWallet"
+                                component={RecoveryNewWallet}
+                                options={() => ({
+                                    header: () => <RecoveryNewWalletHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RecoveryDeviceSelection"
+                                component={RecoveryDeviceSelection}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryDeviceSelectionHeader />
+                                    ),
+                                })}
                             />
                             {/* Popup federations */}
                             <Stack.Screen
