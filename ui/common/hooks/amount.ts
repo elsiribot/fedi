@@ -15,6 +15,8 @@ import {
     selectWithdrawableStableBalanceMsats,
     selectMinimumWithdrawAmountMsats,
     selectShowFiatTxnAmounts,
+    selectMaxStableBalanceSats,
+    selectStableBalanceSats,
 } from '../redux'
 import {
     Btc,
@@ -509,7 +511,17 @@ export function useMinMaxWithdrawAmount() {
 export function useMinMaxDepositAmount() {
     const minimumAmount = useCommonSelector(selectMinimumDepositAmount)
     const balanceMSats = useCommonSelector(selectFederationBalance)
-    const maximumAmount = amountUtils.msatToSat(balanceMSats)
+    const balanceSats = amountUtils.msatToSat(balanceMSats)
+    const stableBalanceSats = useCommonSelector(selectStableBalanceSats)
+    const maxStableBalanceSats = useCommonSelector(selectMaxStableBalanceSats)
+
+    const maximumAmount =
+        maxStableBalanceSats === 0
+            ? balanceSats
+            : (Math.min(
+                  balanceSats,
+                  Math.max(0, maxStableBalanceSats - stableBalanceSats),
+              ) as Sats)
 
     return { minimumAmount, maximumAmount }
 }
@@ -689,7 +701,6 @@ export function useDepositForm() {
     const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
     const { minimumAmount, maximumAmount } = useMinMaxDepositAmount()
-
     const maximumFiatAmount = convertSatsToFormattedFiat(maximumAmount)
 
     return {

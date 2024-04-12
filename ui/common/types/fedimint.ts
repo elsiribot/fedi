@@ -112,6 +112,7 @@ export enum SupportedMetaFields {
     onchain_deposits_disabled = 'onchain_deposits_disabled',
     fedi_internal_injection_disabled = 'fedi_internal_injection_disabled',
     stability_pool_disabled = 'stability_pool_disabled',
+    max_stable_balance_msats = 'max_stable_balance_msats',
     max_balance_msats = 'max_balance_msats',
     max_invoice_msats = 'max_invoice_msats',
     nostr_enabled = 'nostr_enabled',

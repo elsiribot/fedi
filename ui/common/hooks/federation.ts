@@ -4,6 +4,7 @@ import {
     selectActiveFederation,
     selectFederationMetadata,
     selectOnchainDepositsEnabled,
+    selectStableBalance,
     selectStableBalanceEnabled,
     setPublicFederations,
 } from '../redux'
@@ -59,19 +60,27 @@ export function useIsStabilityPoolSupported() {
     return supported
 }
 
+export function useIsStabilityPoolEnabledByFederation() {
+    const activeFederation = useCommonSelector(selectActiveFederation)
+    if (!activeFederation) return false
+    return shouldEnableStabilityPool(activeFederation.meta)
+}
+
 export function useShouldShowStabilityPool() {
     const stabilityPoolSupported = useIsStabilityPoolSupported()
     const stabilityPoolEnabledByUser = useCommonSelector(
         selectStableBalanceEnabled,
     )
-    const activeFederation = useCommonSelector(selectActiveFederation)
-    if (!activeFederation) return false
-    const stabilityPoolEnabledByFederation = shouldEnableStabilityPool(
-        activeFederation.meta,
-    )
+    const stabilityPoolEnabledByFederation =
+        useIsStabilityPoolEnabledByFederation()
+    const stableBalance = useCommonSelector(selectStableBalance)
     return (
         stabilityPoolSupported &&
-        (stabilityPoolEnabledByUser || stabilityPoolEnabledByFederation)
+        // Always show if there's a balance
+        (stableBalance > 0 ||
+            // Otherwise, show if the user or federation has enabled it
+            stabilityPoolEnabledByUser ||
+            stabilityPoolEnabledByFederation)
     )
 }
 

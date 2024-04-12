@@ -549,6 +549,15 @@ export const selectStableBalance = createSelector(
     },
 )
 
+export const selectStableBalanceSats = createSelector(
+    selectStableBalanceCents,
+    (s: CommonState) => selectBtcUsdExchangeRate(s),
+    (stableBalanceCents, btcUsdExchangeRate) => {
+        const stableBalanceDollars = stableBalanceCents / 100
+        return amountUtils.fiatToSat(stableBalanceDollars, btcUsdExchangeRate)
+    },
+)
+
 /**
  * Calculates the pending stable balance using:
  * 1. total locked seeks in cents to calculate pending withdrawals
