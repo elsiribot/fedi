@@ -9,6 +9,7 @@ import { selectMatrixDirectMessageRoom } from '@fedi/common/redux'
 import { ChatType } from '@fedi/common/types'
 
 import { fedimint } from '../bridge'
+import FederationWalletSelector from '../components/feature/send/FederationWalletSelector'
 import { AmountScreen } from '../components/ui/AmountScreen'
 import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -89,12 +90,13 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
 
     return (
         <AmountScreen
-            showBalance
+            showBalance={false}
             amount={amount}
             onChangeAmount={setAmount}
             submitAttempts={submitAttempts}
             isSubmitting={submitAction !== null}
             verb={submitType === 'send' ? t('words.send') : t('words.request')}
+            subHeader={<FederationWalletSelector />}
             {...inputMinMax}
             buttons={
                 confirmingSend
