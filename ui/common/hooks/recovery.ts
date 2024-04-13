@@ -200,7 +200,7 @@ export function useLockedDeviceDetection(
                         } catch (error) {
                             log.error('Error locking device:', error)
                             // Retry after 1 second
-                            setTimeout(attemptLock, 5000)
+                            setTimeout(attemptLock, 1000)
                         }
                     }
                     attemptLock()
