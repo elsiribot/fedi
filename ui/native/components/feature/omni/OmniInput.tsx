@@ -68,7 +68,10 @@ export function OmniInput<
         ParserDataType.LnurlWithdraw as T,
     )
     const canMemberSearch = expectedInputTypes.includes(
-        ParserDataType.FediChatMember as T,
+        ParserDataType.FediChatUser as T,
+    )
+    const canRoomSearch = expectedInputTypes.includes(
+        ParserDataType.FediChatRoom as T,
     )
 
     const parseInput = useCallback(

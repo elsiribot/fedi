@@ -37,12 +37,14 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                 expectedInputTypes={[
                     ParserDataType.Bolt11,
                     ParserDataType.LnurlPay,
-                    ParserDataType.FediChatMember,
+                    ParserDataType.LegacyFediChatMember,
                     ParserDataType.Bip21,
                     ParserDataType.BitcoinAddress,
                 ]}
                 onExpectedInput={parsedData => {
-                    if (parsedData.type === ParserDataType.FediChatMember) {
+                    if (
+                        parsedData.type === ParserDataType.LegacyFediChatMember
+                    ) {
                         navigate('ChatWallet', {
                             recipientId: parsedData.data.id,
                         })

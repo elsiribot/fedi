@@ -29,6 +29,7 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const [isSending, setIsSending] = useState(false)
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
     const toast = useToast()
+    console.error('room', room)
 
     const directUserId = room?.directUserId
 

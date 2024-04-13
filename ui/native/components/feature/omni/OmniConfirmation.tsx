@@ -169,15 +169,18 @@ export const OmniConfirmation: React.FC<Props> = ({
                         title: t('feature.omni.unsupported-unknown'),
                     },
                 }
-            case ParserDataType.FediChatGroup:
-            case ParserDataType.FediChatMember:
+            case ParserDataType.LegacyFediChatGroup:
+            case ParserDataType.LegacyFediChatMember:
                 return {
                     contents: {
                         icon: 'Chat',
                         title: t('feature.omni.confirm-fedi-chat'),
                     },
                     continueOnPress: () => {
-                        if (parsedData.type === ParserDataType.FediChatGroup) {
+                        if (
+                            parsedData.type ===
+                            ParserDataType.LegacyFediChatGroup
+                        ) {
                             handleNavigate('GroupChat', {
                                 groupId: parsedData.data.id,
                             })

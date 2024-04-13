@@ -303,12 +303,12 @@ describe('parseUserInput', () => {
 
     testCases.push({
         input: `fedi:member:user@xmpp.com:::`,
-        type: ParserDataType.FediChatMember,
+        type: ParserDataType.LegacyFediChatMember,
         data: { id: 'user@xmpp.com' },
     })
     testCases.push({
         input: `fedi:group:12345:::`,
-        type: ParserDataType.FediChatGroup,
+        type: ParserDataType.LegacyFediChatGroup,
         data: { id: '12345' },
     })
     testCases.push({

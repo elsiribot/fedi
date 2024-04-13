@@ -16,17 +16,21 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
         <View style={styles().container}>
             <OmniInput
                 expectedInputTypes={[
-                    ParserDataType.FediChatMember,
-                    ParserDataType.FediChatGroup,
+                    ParserDataType.LegacyFediChatMember,
+                    ParserDataType.LegacyFediChatGroup,
                     ParserDataType.FediChatUser,
                 ]}
                 onExpectedInput={parsedData => {
-                    if (parsedData.type === ParserDataType.FediChatMember) {
+                    if (
+                        parsedData.type === ParserDataType.LegacyFediChatMember
+                    ) {
                         navigation.replace('DirectChat', {
                             memberId: parsedData.data.id,
                         })
                     }
-                    if (parsedData.type === ParserDataType.FediChatGroup) {
+                    if (
+                        parsedData.type === ParserDataType.LegacyFediChatGroup
+                    ) {
                         navigation.replace('GroupChat', {
                             groupId: parsedData.data.id,
                         })

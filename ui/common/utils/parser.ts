@@ -12,8 +12,7 @@ import {
     ParsedBolt11,
     ParsedBolt12,
     ParsedFederationInvite,
-    ParsedFediChatGroup,
-    ParsedFediChatMember,
+    ParsedLegacyFediChatMember,
     ParsedFedimintEcash,
     ParsedLnurlAuth,
     ParsedLnurlPay,
@@ -21,10 +20,12 @@ import {
     ParsedUnknownData,
     ParsedWebsite,
     ParsedFediChatUser,
+    ParsedLegacyFediChatGroup,
+    ParsedFediChatRoom,
 } from '../types/parser'
 import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
-import { decodeFediMatrixUserUri } from './matrix'
+import { decodeFediMatrixRoomUri, decodeFediMatrixUserUri } from './matrix'
 import { isValidInternetIdentifier } from './validation'
 import { decodeGroupInvitationLink, decodeDirectChatLink } from './xmpp'
 
@@ -387,9 +388,25 @@ async function parseBip21(
 
 function parseFediUri(
     raw: string,
-): ParsedFediChatGroup | ParsedFediChatMember | ParsedFediChatUser | undefined {
+):
+    | ParsedLegacyFediChatGroup
+    | ParsedLegacyFediChatMember
+    | ParsedFediChatUser
+    | ParsedFediChatRoom
+    | undefined {
     if (!raw.toLowerCase().startsWith('fedi:')) {
         return
+    }
+
+    // Chat room
+    try {
+        const id = decodeFediMatrixRoomUri(raw)
+        return {
+            type: ParserDataType.FediChatRoom,
+            data: { id },
+        }
+    } catch {
+        // no-op
     }
 
     // Chat user
@@ -403,22 +420,22 @@ function parseFediUri(
         // no-op
     }
 
-    // Chat member
+    // Legacy Chat member
     try {
         const id = decodeDirectChatLink(raw)
         return {
-            type: ParserDataType.FediChatMember,
+            type: ParserDataType.LegacyFediChatMember,
             data: { id },
         }
     } catch {
         // no-op
     }
 
-    // Chat group
+    // Legacy Chat group
     try {
         const id = decodeGroupInvitationLink(raw)
         return {
-            type: ParserDataType.FediChatGroup,
+            type: ParserDataType.LegacyFediChatGroup,
             data: { id },
         }
     } catch {

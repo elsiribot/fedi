@@ -311,13 +311,56 @@ export function getReceivablePaymentEvents(
     }, [] as MatrixPaymentEvent[])
 }
 
+// Ref: https://github.com/matrix-org/matrix-android-sdk/blob/develop/matrix-sdk-core/src/main/java/org/matrix/androidsdk/core/MXPatterns.java
+//
+// TODO Implement more sophisticated parsing
+// const MATRIX_DOMAIN = new RegExp(/:[A-Z0-9.-]+(:[0-9]{2,5})?/i)
+// const MATRIX_USER_NAME = new RegExp(/@[A-Z0-9\\x21-\\x39\\x3B-\\x7F]+/i)
+// const FULL_MATRIX_USER_ID = new RegExp(
+//     MATRIX_USER_NAME.source + MATRIX_DOMAIN.source,
+// )
+
+// const MATRIX_LOCAL_ROOM = new RegExp(/![A-Z0-9]+/i)
+// const FULL_MATRIX_ROOM = new RegExp(
+//     MATRIX_LOCAL_ROOM.source + MATRIX_DOMAIN.source,
+// )
+
+const FEDI_USER = new RegExp(/^fedi(?::|:\/\/)user:(.+)$/i)
+const FEDI_ROOM = new RegExp(/^fedi(?::|:\/\/)room:(.+)$/i)
+
+// TODO Implement more sophisticated parsing
+// const FEDI_USER_PREFIX = new RegExp(/^fedi(?::|:\/\/)user:/i)
+// const FEDI_ROOM_PREFIX = new RegExp(/^fedi(?::|:\/\/)room:/i)
+
+// const FULL_FEDI_MATRIX_USER = new RegExp(
+//     FEDI_USER_PREFIX.source + MATRIX_DOMAIN.source,
+// )
+// const FULL_FEDI_MATRIX_ROOM = new RegExp(
+//     FEDI_ROOM_PREFIX.source + MATRIX_DOMAIN.source,
+// )
+
 export function encodeFediMatrixUserUri(id: string) {
     return `fedi:user:${id}`
 }
 
+export function encodeFediMatrixRoomUri(id: string) {
+    return `fedi:room:${id}`
+}
+
+export function decodeFediMatrixRoomUri(uri: string) {
+    // Decode both fedi:room:{id} and fedi://room:{id}
+    const match = uri.match(FEDI_ROOM)
+    if (!match) throw new Error('feature.chat.invalid-room')
+
+    const id = match[1]
+    if (!isValidMatrixUserId(id)) throw new Error('feature.chat.invalid-room')
+
+    return id
+}
+
 export function decodeFediMatrixUserUri(uri: string) {
     // Decode both fedi:user:{id} and fedi://user:{id}
-    const match = uri.match(/^fedi(?::|:\/\/)user:(.+)$/i)
+    const match = uri.match(FEDI_USER)
     if (!match) throw new Error('feature.chat.invalid-member')
 
     // Validate that it's a valid matrix user id
