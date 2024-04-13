@@ -189,7 +189,21 @@ export function useLockedDeviceDetection(
             (event: DeviceRegistrationEvent) => {
                 log.info('DeviceRegistrationEvent', event)
                 if (event.state === 'conflict') {
-                    onDeviceLocked()
+                    // hack: retry this every 1 second until it succeeds because there is a race condition
+                    // where the navigator using this hook may not ready yet so onDeviceLock fails
+                    // this way we make sure the lock screen appears as soon as possible provided
+                    // the event fired from the bridge is received and emitted
+                    const attemptLock = () => {
+                        try {
+                            log.info('attemptLock')
+                            onDeviceLocked()
+                        } catch (error) {
+                            log.error('Error locking device:', error)
+                            // Retry after 1 second
+                            setTimeout(attemptLock, 5000)
+                        }
+                    }
+                    attemptLock()
                 }
             },
         )
