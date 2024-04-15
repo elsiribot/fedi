@@ -9,6 +9,7 @@ use eyeball::Subscriber;
 use fedimint_core::task::{MaybeSend, MaybeSync, TaskGroup};
 use fedimint_derive_secret::DerivableSecret;
 use futures::{Future, StreamExt};
+use matrix_sdk::encryption::BackupDownloadStrategy;
 use matrix_sdk::notification_settings::NotificationSettings;
 pub use matrix_sdk::ruma::api::client::account::register::v3 as register;
 use matrix_sdk::ruma::api::client::directory::get_public_rooms_filtered::v3 as get_public_rooms_filtered;
@@ -31,7 +32,7 @@ use matrix_sdk_ui::{room_list_service, RoomListService};
 use mime::Mime;
 use serde::Serialize;
 use tokio::sync::Mutex;
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 
 use crate::error::ErrorCode;
 use crate::event::{EventSink, TypedEventExt};
@@ -63,7 +64,14 @@ impl Matrix {
         home_server: String,
         passphrase: &str,
     ) -> Result<Client> {
-        let builder = Client::builder().homeserver_url(home_server);
+        let builder = Client::builder()
+            .homeserver_url(home_server)
+            // make backup and recovery automagically work.
+            .with_encryption_settings(matrix_sdk::encryption::EncryptionSettings {
+                auto_enable_cross_signing: true,
+                backup_download_strategy: BackupDownloadStrategy::OneShot,
+                auto_enable_backups: true,
+            });
         #[cfg(not(target_family = "wasm"))]
         let builder = builder.sqlite_store(base_dir.join("db.sqlite"), Some(passphrase));
         #[cfg(target_family = "wasm")]
@@ -73,7 +81,8 @@ impl Matrix {
         Ok(client)
     }
 
-    fn db_passphrase(matrix_secret: &DerivableSecret) -> String {
+    // Used for db encryption and matrix server encrypted key value store.
+    fn encryption_passphrase(matrix_secret: &DerivableSecret) -> String {
         let passphase_bytes: [u8; 16] = matrix_secret.to_random_bytes();
         hex::encode(passphase_bytes)
     }
@@ -100,8 +109,8 @@ impl Matrix {
     ) -> Result<Self> {
         let matrix_session = app_state.with_read_lock(|r| r.matrix_session.clone()).await;
         let user_password = &Self::home_server_password(matrix_secret, &home_server);
-        let db_passphrase = Self::db_passphrase(matrix_secret);
-        let client = Self::build_client(base_dir, home_server, &db_passphrase).await?;
+        let encryption_passphrase = Self::encryption_passphrase(matrix_secret);
+        let client = Self::build_client(base_dir, home_server, &encryption_passphrase).await?;
 
         if let Some(session) = matrix_session {
             client
@@ -113,7 +122,19 @@ impl Matrix {
         if !matrix_auth.logged_in() {
             let login_result = matrix_auth.login_username(user_name, user_password).await;
             match login_result {
-                Ok(_) => (),
+                Ok(_) => {
+                    // on every login, try to recover e2e keys
+                    // this is idempotent.
+                    // TODO: subscribe to recovery progress
+                    // TODO: what happens if app dies here
+                    let _ = client
+                        .encryption()
+                        .recovery()
+                        .recover(&Self::encryption_passphrase(matrix_secret))
+                        .await
+                        .inspect_err(|err| error!(%err, "unable to recover"))
+                        .inspect(|_| info!("matrix recovery completed"));
+                }
                 Err(login_error) => {
                     // TODO: only attempt registration if it was M_FORBIDDEN
                     info!("login failed, attempting registration");
@@ -153,6 +174,32 @@ impl Matrix {
             None => warn!("session not found after login"),
         }
 
+        let encryption_passphrase = Self::encryption_passphrase(matrix_secret);
+        task_group.spawn_cancellable("matrix::Recovery::enable", {
+            let client = client.clone();
+            async move {
+                // if there are no backups on server, enable backups
+                if client
+                    .encryption()
+                    .backups()
+                    .exists_on_server()
+                    .await
+                    .is_ok_and(|x| x)
+                {
+                    return;
+                }
+                // enable auto backups with passphrase for e2e keys.
+                // TODO: subscribe to backup progress
+                client
+                    .encryption()
+                    .recovery()
+                    .enable()
+                    .with_passphrase(&encryption_passphrase)
+                    .await
+                    .inspect_err(|err| error!(%err, "unable to enable recovery (start backup)"))
+                    .ok();
+            }
+        });
         client.set_sliding_sync_proxy(Some(url::Url::parse(&sliding_sync_proxy)?));
         let sync_service = SyncService::builder(client.clone()).build().await?;
         sync_service.start().await;
@@ -726,8 +773,7 @@ mod tests {
 
     async fn mk_matrix_login(
         user_name: &str,
-        home_server: &str,
-        sliding_sync_proxy: &str,
+        secret: &DerivableSecret,
     ) -> Result<(Matrix, mpsc::Receiver<(String, String)>, TempDir)> {
         struct TestEventSink(mpsc::Sender<(String, String)>);
         impl IEventSink for TestEventSink {
@@ -736,8 +782,6 @@ mod tests {
             }
         }
 
-        let (key, salt): ([u8; 32], [u8; 32]) = thread_rng().gen();
-        let secret = DerivableSecret::new_root(&key, &salt);
         let (event_tx, event_rx) = mpsc::channel(1000);
         let event_sink = Arc::new(TestEventSink(event_tx));
         let tg = TaskGroup::new();
@@ -747,20 +791,29 @@ mod tests {
             event_sink,
             tg,
             tmp_dir.as_ref(),
-            &secret,
+            secret,
             user_name,
-            format!("https://{home_server}"),
-            sliding_sync_proxy.to_string(),
+            format!("https://{TEST_HOME_SERVER}"),
+            TEST_SLIDING_SYNC.to_string(),
             &AppState::load(Arc::new(storage)).await?,
         )
         .await?;
         Ok((matrix, event_rx, tmp_dir))
     }
 
-    async fn mk_matrix_new_user() -> Result<(Matrix, mpsc::Receiver<(String, String)>, TempDir)> {
+    fn mk_secret() -> DerivableSecret {
+        let (key, salt): ([u8; 32], [u8; 32]) = thread_rng().gen();
+        DerivableSecret::new_root(&key, &salt)
+    }
+
+    fn mk_username() -> String {
         let username = format!("tester{id}", id = rand::random::<u64>());
         info!(%username, "creating a new user for testing");
-        mk_matrix_login(&username, TEST_HOME_SERVER, TEST_SLIDING_SYNC).await
+        username
+    }
+
+    async fn mk_matrix_new_user() -> Result<(Matrix, mpsc::Receiver<(String, String)>, TempDir)> {
+        mk_matrix_login(&mk_username(), &mk_secret()).await
     }
 
     #[ignore]
@@ -810,6 +863,64 @@ mod tests {
             }
         }
 
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    #[ignore]
+    async fn test_recovery() -> Result<()> {
+        TracingSetup::default().init().unwrap();
+        let username = mk_username();
+        let secret = mk_secret();
+        info!("### creating users");
+        let (matrix1, _, _temp_dir) = mk_matrix_login(&username, &secret).await?;
+        let (matrix2, _, _temp_dir) = mk_matrix_new_user().await?;
+
+        info!("### creating room");
+        // make room
+        let user2 = matrix2.client.user_id().unwrap();
+        let room_id = matrix1.create_or_get_dm(user2).await?;
+        matrix2.room_join(&room_id).await?;
+
+        info!("### sending message between two users");
+        matrix1
+            .send_message_text(&room_id, "hello from user1".to_owned())
+            .await?;
+        matrix2
+            .send_message_text(&room_id, "hello from user2".to_owned())
+            .await?;
+
+        info!("### recover user 1");
+        let (matrix1_new, mut event_rx1_new, _temp_dir) =
+            mk_matrix_login(&username, &secret).await?;
+
+        matrix1_new.wait_for_room_id(&room_id).await?;
+        let initial_item = matrix1_new.room_timeline_items(&room_id).await?;
+        info!("### waiting for user 2 message");
+        if !serde_json::to_string(&initial_item)?.contains("hello from user2") {
+            while let Some((ev, body)) = event_rx1_new.recv().await {
+                info!("### event1_new: {ev} {body}");
+                if ev == "observableUpdate"
+                    && body.contains(r#""localEcho":false"#)
+                    && body.contains("hello from user2")
+                {
+                    break;
+                }
+            }
+        }
+        info!("### waiting for user 1 message");
+        if !serde_json::to_string(&initial_item)?.contains("hello from user1") {
+            while let Some((ev, body)) = event_rx1_new.recv().await {
+                info!("### event1_new: {ev} {body}");
+                if ev == "observableUpdate"
+                    && body.contains(r#""localEcho":false"#)
+                    && body.contains("hello from user1")
+                {
+                    break;
+                }
+            }
+        }
+        info!("### got all messages");
         Ok(())
     }
 }
