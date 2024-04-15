@@ -3,28 +3,28 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyDV_uleuGKxd8X2wNRaM0tA2KzZTjgBdOw</string>
+	<string>AIzaSyCU6KjuRLR7WVVbnM7mr_XxlaMc2h3D7IM</string>
 	<key>GCM_SENDER_ID</key>
-	<string>472796529807</string>
+	<string>1089468211130</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>org.fedi.alpha</string>
 	<key>PROJECT_ID</key>
-	<string>fedi-xmpp-chat-notifications</string>
+	<string>fedi-matrix-push-notifications</string>
 	<key>STORAGE_BUCKET</key>
-	<string>fedi-xmpp-chat-notifications.appspot.com</string>
+	<string>fedi-matrix-push-notifications.appspot.com</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
 	<false></false>
 	<key>IS_APPINVITE_ENABLED</key>
-	<false></false>
+	<true></true>
 	<key>IS_GCM_ENABLED</key>
 	<true></true>
 	<key>IS_SIGNIN_ENABLED</key>
-	<false></false>
+	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:472796529807:ios:5affcf8986c77e7a789cfa</string>
+	<string>1:1089468211130:ios:a6cb2229ec5911158d8783</string>
 </dict>
 </plist>
