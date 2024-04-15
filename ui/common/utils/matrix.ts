@@ -92,7 +92,7 @@ const contentSchemas = {
         /**
          * The matrix id of the user who will receive this payment.
          */
-        recipientId: z.string(),
+        recipientId: z.string().optional(),
         /**
          * The amount of the payment, either requested or sent.
          */
@@ -117,11 +117,11 @@ const contentSchemas = {
          * TODO: Potentially make this optional, allow anyone to pay to using any
          * federation they have in common, or via bolt11 (see more below.)
          */
-        federationId: z.string(),
+        federationId: z.string().optional(),
 
         // TODO: Attach bolt11 to payment requests, and allow to pay that way
         // if no federations in common?
-        // bolt11: z.string().optional(),
+        bolt11: z.string().optional(),
 
         // TODO: Attach invite code for federations you belong to that have
         // invites enabled, and allow people to join to accept ecash?

@@ -40,6 +40,7 @@ import {
 } from '../utils/matrix'
 import { getRoomEventPowerLevel } from '../utils/matrix'
 import { applyObservableUpdates } from '../utils/observable'
+import { isBolt11 } from '../utils/parser'
 import { upsertListItem, upsertRecordEntity } from '../utils/redux'
 import { loadFromStorage } from './storage'
 
@@ -408,14 +409,57 @@ export const setMatrixRoomMemberPowerLevel = createAsyncThunk<
 
 export const sendMatrixMessage = createAsyncThunk<
     void,
-    { roomId: MatrixRoom['id']; body: string }
->('matrix/sendMatrixDirectMessage', async ({ roomId, body }) => {
-    const client = getMatrixClient()
-    await client.sendMessage(roomId, {
-        msgtype: 'm.text',
+    {
+        fedimint: FedimintBridge
+        roomId: MatrixRoom['id']
+        body: string
+        // this allows us to convert a copy-pasted bolt11 invoice
+        // into a custom message for smoother payments UX
+        // TODO: add support for copy-pasting bolt11 invoices in a groupchat
+        options?: { interceptBolt11: boolean }
+    }
+>(
+    'matrix/sendMatrixMessage',
+    async ({
+        fedimint,
+        roomId,
         body,
-    })
-})
+        options = { interceptBolt11: false },
+    }) => {
+        const client = getMatrixClient()
+        if (options.interceptBolt11) {
+            try {
+                if (isBolt11(body)) {
+                    const decoded = await fedimint.decodeInvoice(body)
+                    log.info(
+                        'Intercepted a Bolt 11 invoice in m.text msgtype, sending as xyz.fedi.payment msgtype instead',
+                    )
+                    // make sure to do this only if we have an amount
+                    // TODO: support amount-less invoices
+                    if (decoded.amount) {
+                        const sats = amountUtils.msatToSat(decoded.amount)
+                        return client.sendMessage(roomId, {
+                            msgtype: 'xyz.fedi.payment',
+                            body: `Requested payment of ${amountUtils.formatSats(
+                                sats,
+                            )} SATS. Use the Fedi app to complete this request.`, // TODO: i18n?
+                            paymentId: uuidv4(),
+                            status: MatrixPaymentStatus.requested,
+                            amount: decoded.amount,
+                            bolt11: decoded.invoice,
+                        })
+                    }
+                }
+            } catch (error) {
+                log.info('not a bolt11 invoice... send as m.text')
+            }
+        }
+        await client.sendMessage(roomId, {
+            msgtype: 'm.text',
+            body,
+        })
+    },
+)
 
 export const sendMatrixDirectMessage = createAsyncThunk<
     { roomId: string },
@@ -509,6 +553,8 @@ export const claimMatrixPayment = createAsyncThunk<
 
     const { ecash, federationId } = event.content
     if (!ecash) throw new Error('Payment message is missing ecash token')
+    if (!federationId)
+        throw new Error('Payment message is missing federationId')
 
     await fedimint.receiveEcash(ecash, federationId)
     await client.sendMessage(event.roomId, {
@@ -524,7 +570,7 @@ export const cancelMatrixPayment = createAsyncThunk<
 >('matrix/cancelMatrixPayment', async ({ fedimint, event }) => {
     const client = getMatrixClient()
 
-    if (event.content.ecash) {
+    if (event.content.ecash && event.content.federationId) {
         await fedimint.cancelEcash(
             event.content.ecash,
             event.content.federationId,
@@ -550,6 +596,8 @@ export const acceptMatrixPaymentRequest = createAsyncThunk<
 
         const client = getMatrixClient()
         const { federationId, amount } = event.content
+        if (!federationId)
+            throw new Error('Need federation id to generate ecash')
         const { ecash } = await fedimint.generateEcash(
             amount as MSats,
             federationId,

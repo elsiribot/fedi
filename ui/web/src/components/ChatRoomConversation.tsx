@@ -15,6 +15,7 @@ import {
 import { ChatType } from '@fedi/common/types'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
+import { fedimint } from '../lib/bridge'
 import { styled } from '../styles'
 import { Button } from './Button'
 import { ChatConversation } from './ChatConversation'
@@ -52,7 +53,9 @@ export const ChatRoomConversation: React.FC<Props> = ({ roomId }) => {
 
     const handleSend = useCallback(
         async (body: string) => {
-            await dispatch(sendMatrixMessage({ roomId, body })).unwrap()
+            await dispatch(
+                sendMatrixMessage({ fedimint, roomId, body }),
+            ).unwrap()
         },
         [dispatch, roomId],
     )

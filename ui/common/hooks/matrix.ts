@@ -143,7 +143,11 @@ export function useMatrixPaymentEvent({
         selectMatrixRoomMember(s, event.roomId, event.content.senderId || ''),
     )
     const paymentRecipient = useCommonSelector(s =>
-        selectMatrixRoomMember(s, event.roomId, event.content.recipientId),
+        selectMatrixRoomMember(
+            s,
+            event.roomId,
+            event.content.recipientId || '',
+        ),
     )
     const isDm = useCommonSelector(
         s => !!selectMatrixRoom(s, event.roomId)?.directUserId,

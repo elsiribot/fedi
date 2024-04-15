@@ -8,6 +8,7 @@ import { useToast } from '@fedi/common/hooks/toast'
 import { selectMatrixRoom, sendMatrixMessage } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
+import { fedimint } from '../bridge'
 import ChatConversation from '../components/feature/chat/ChatConversation'
 import MessageInput from '../components/feature/chat/MessageInput'
 import HoloLoader from '../components/ui/HoloLoader'
@@ -41,14 +42,22 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
             if (!body || isSending) return
             setIsSending(true)
             try {
-                await dispatch(sendMatrixMessage({ roomId, body })).unwrap()
+                await dispatch(
+                    sendMatrixMessage({
+                        fedimint,
+                        roomId,
+                        body,
+                        // TODO: support intercepting bolt11 for group chats
+                        options: { interceptBolt11: chatType === 'direct' },
+                    }),
+                ).unwrap()
             } catch (err) {
                 log.error('error sending message', err)
                 toast.error(t, 'errors.unknown-error')
             }
             setIsSending(false)
         },
-        [dispatch, isSending, roomId, t, toast],
+        [chatType, dispatch, isSending, roomId, t, toast],
     )
 
     const content = useMemo(() => {
