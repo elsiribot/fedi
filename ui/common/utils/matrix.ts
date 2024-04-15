@@ -325,8 +325,8 @@ const FULL_MATRIX_USER_ID = new RegExp(
 //     MATRIX_LOCAL_ROOM.source + MATRIX_DOMAIN.source,
 // )
 
-const FEDI_USER = new RegExp(/^fedi(?::|:\/\/)user:(.+)$/i)
-const FEDI_ROOM = new RegExp(/^fedi(?::|:\/\/)room:(.+)$/i)
+// const FEDI_USER = new RegExp(/^fedi(?::|:\/\/)user:(.+)$/i)
+// const FEDI_ROOM = new RegExp(/^fedi(?::|:\/\/)room:(.+)$/i)
 
 // TODO Implement more sophisticated parsing
 // const FEDI_USER_PREFIX = new RegExp(/^fedi(?::|:\/\/)user:/i)
@@ -349,7 +349,8 @@ export function encodeFediMatrixRoomUri(id: string) {
 
 export function decodeFediMatrixRoomUri(uri: string) {
     // Decode both fedi:room:{id} and fedi://room:{id}
-    const match = uri.match(FEDI_ROOM)
+    // const match = uri.match(FEDI_ROOM)
+    const match = uri.match(/^fedi(?::|:\/\/)room:(.+)$/i)
     if (!match) throw new Error('feature.chat.invalid-room')
 
     const id = match[1]
@@ -360,7 +361,8 @@ export function decodeFediMatrixRoomUri(uri: string) {
 
 export function decodeFediMatrixUserUri(uri: string) {
     // Decode both fedi:user:{id} and fedi://user:{id}
-    const match = uri.match(FEDI_USER)
+    // const match = uri.match(FEDI_USER)
+    const match = uri.match(/^fedi(?::|:\/\/)user:(.+)$/i)
     if (!match) throw new Error('feature.chat.invalid-member')
 
     // Validate that it's a valid matrix user id

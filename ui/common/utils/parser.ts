@@ -406,10 +406,10 @@ function parseFediUri(
 
     // Chat room
     try {
-        const roomId = decodeFediMatrixRoomUri(raw)
+        const id = decodeFediMatrixRoomUri(raw)
         return {
             type: ParserDataType.FediChatRoom,
-            data: { roomId },
+            data: { id },
         }
     } catch {
         // no-op
@@ -417,10 +417,10 @@ function parseFediUri(
 
     // Chat user
     try {
-        const userId = decodeFediMatrixUserUri(raw)
+        const id = decodeFediMatrixUserUri(raw)
         return {
             type: ParserDataType.FediChatUser,
-            data: { userId },
+            data: { id },
         }
     } catch {
         // no-op

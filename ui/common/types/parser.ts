@@ -117,12 +117,12 @@ export type ParsedLegacyFediChatGroup = ParsedData<
 
 export type ParsedFediChatUser = ParsedData<
     ParserDataType.FediChatUser,
-    { userId: string }
+    { id: string }
 >
 
 export type ParsedFediChatRoom = ParsedData<
     ParserDataType.FediChatRoom,
-    { roomId: string }
+    { id: string }
 >
 
 export type ParsedWebsite = ParsedData<ParserDataType.Website, { url: string }>
