@@ -726,6 +726,7 @@ impl Bridge {
         index: u8,
         force_overwrite: bool,
     ) -> anyhow::Result<Option<RpcFederation>> {
+        self.check_device_index_unassigned().await?;
         let seed = self.app_state.root_mnemonic().await;
         let identifier = self
             .app_state
@@ -779,6 +780,16 @@ impl Bridge {
         } else {
             Ok(None)
         }
+    }
+
+    async fn check_device_index_unassigned(&self) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            self.app_state
+                .with_read_lock(|state| state.device_index.is_none())
+                .await,
+            "device index is already assigned"
+        );
+        Ok(())
     }
 
     pub async fn device_index_assignment_status(
