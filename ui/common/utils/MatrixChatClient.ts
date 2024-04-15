@@ -314,6 +314,27 @@ export class MatrixChatClient {
         await this.observeRoomMembers(roomId)
     }
 
+    async configureNotificationsPusher(token: string) {
+        return this.fedimint.matrixSetPusher({
+            pusher: {
+                kind: 'http',
+                // TODO: get app name from react native?
+                app_display_name: 'Fedi Bravo',
+                // TODO: get device name from device ID?
+                device_display_name: 'Device',
+                // TODO: get locale from device?
+                lang: 'en',
+                // TODO: how to pass the URL to bridge? or should this be hard-coded bridge-side?
+                data: {
+                    format: 'event_id_only',
+                    url: 'https://matrix-sygnal.dev.fedibtc.com/_matrix/push/v1/notify',
+                },
+                app_id: 'com.fedi',
+                pushkey: token,
+            },
+        })
+    }
+
     emit<TEventName extends keyof MatrixChatClientEventMap>(
         eventName: TEventName,
         argument: MatrixChatClientEventMap[TEventName],

@@ -165,7 +165,7 @@ import StartSocialBackup from './screens/StartSocialBackup'
 import SwitchingFederations from './screens/SwitchingFederations'
 import TabsNavigator from './screens/TabsNavigator'
 import Transactions from './screens/Transactions'
-import { useAppSelector } from './state/hooks'
+import { useAppSelector, useMatrixPushNotifications } from './state/hooks'
 import { resetToLockedDevice } from './state/navigation'
 import { MSats } from './types'
 import {
@@ -1095,10 +1095,7 @@ const Router = () => {
     // useXmppHealthCheck()
 
     // Publishes an FCM push notification token if chat is available
-    // useXmppPushNotifications()
-
-    // Make sure any available chat connections are always online
-    // useMonitorChatConnections(fedimint)
+    useMatrixPushNotifications()
 
     // Navigates to locked device screen if we detect a device conflict
     useLockedDeviceDetection(fedimint, () => {
