@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use fedimint_derive_secret::ChildId;
+
 pub const PAY_INVOICE_TIMEOUT: Duration = Duration::from_secs(90);
 pub const REISSUE_ECASH_TIMEOUT: Duration = Duration::from_secs(60);
 pub const ONE_WEEK: Duration = Duration::from_secs(604800);
@@ -11,7 +13,12 @@ pub const XMPP_KEYPAIR_SEED: u64 = 1;
 pub const NOSTR_CHILD_ID: u64 = 12;
 pub const MILLION: u64 = 1_000_000;
 pub const MATRIX_CHILD_ID: u64 = 13;
-pub const DEVICE_REGISTRATION_CHILD_ID: u64 = 14;
+pub const DEVICE_REGISTRATION_CHILD_ID: ChildId = ChildId(14);
+
+// Desired length for device identifier string before encrypting and uploading
+// to Fedi's device registration servers. We add padding as desired. Having a
+// fixed length pre-encryption enhances user privacy.
+pub const DEVICE_IDENTIFIER_FIXED_LENGTH: usize = 128;
 
 // Backup twice per day
 pub const BACKUP_FREQUENCY: Duration = Duration::from_secs(12 * 60 * 60);

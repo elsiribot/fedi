@@ -14,13 +14,14 @@ use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send, Amount};
-use fedimint_derive_secret::{ChildId, DerivableSecret};
+use fedimint_derive_secret::DerivableSecret;
 use lightning_invoice::Bolt11Invoice;
 use reqwest::{Client, StatusCode};
 
 use crate::constants::{
-    DEVICE_REGISTRATION_CHILD_ID, FEDI_DEVICE_REGISTRATION_URL, FEDI_FEE_API_URL_MAINNET,
-    FEDI_FEE_API_URL_MUTINYNET, FEDI_INVOICE_API_URL_MAINNET, FEDI_INVOICE_API_URL_MUTINYNET,
+    DEVICE_IDENTIFIER_FIXED_LENGTH, DEVICE_REGISTRATION_CHILD_ID, FEDI_DEVICE_REGISTRATION_URL,
+    FEDI_FEE_API_URL_MAINNET, FEDI_FEE_API_URL_MUTINYNET, FEDI_INVOICE_API_URL_MAINNET,
+    FEDI_INVOICE_API_URL_MUTINYNET,
 };
 use crate::storage::{FediFeeSchedule, ModuleFediFeeSchedule};
 
@@ -319,24 +320,32 @@ fn encrypt_device_identifier(
     root_secret: &DerivableSecret,
     device_identifier: String,
 ) -> Result<String, RegisterDeviceError> {
-    let device_id_encryption_secret = root_secret.child_key(ChildId(DEVICE_REGISTRATION_CHILD_ID));
+    let device_id_encryption_secret = root_secret.child_key(DEVICE_REGISTRATION_CHILD_ID);
+    // Pad if necessary -> encrypt -> hex-encode
     let device_identifier = encrypt(
-        device_identifier.into(),
+        format!(
+            "{:width$}",
+            device_identifier,
+            width = DEVICE_IDENTIFIER_FIXED_LENGTH
+        )
+        .into(),
         &LessSafeKey::new(device_id_encryption_secret.to_chacha20_poly1305_key()),
     )
     .map_err(|e| RegisterDeviceError::ErrorSendingRequest(e.to_string()))?;
-    String::from_utf8(device_identifier)
-        .map_err(|e| RegisterDeviceError::ErrorSendingRequest(e.to_string()))
+    Ok(hex::encode(device_identifier))
 }
 
 fn decrypt_device_identifier(
     root_secret: &DerivableSecret,
     encrypted_device_identifier: String,
 ) -> anyhow::Result<String> {
-    let device_id_encryption_secret = root_secret.child_key(ChildId(DEVICE_REGISTRATION_CHILD_ID));
+    let device_id_encryption_secret = root_secret.child_key(DEVICE_REGISTRATION_CHILD_ID);
+    // Hex-decode -> decrypt -> trim padding
     Ok(decrypt(
-        &mut encrypted_device_identifier.into_bytes(),
+        &mut hex::decode(encrypted_device_identifier)?,
         &LessSafeKey::new(device_id_encryption_secret.to_chacha20_poly1305_key()),
     )
-    .map(|bytes| String::from_utf8(bytes.to_vec()))??)
+    .map(|bytes| String::from_utf8(bytes.to_vec()))??
+    .trim_end()
+    .to_string())
 }
