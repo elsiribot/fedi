@@ -17,6 +17,7 @@ members = [
     "stability-pool/stability-pool-tests",
     "fedi-db-dump",
     "devi",
+    "fedi-db-tool",
 ]
 default-members = [
     "fedimintd",
