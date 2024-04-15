@@ -172,13 +172,12 @@ impl Matrix {
             .session()
             .ok_or_else(|| anyhow::anyhow!("session not found, requires login"))?;
         let meta = session_meta.meta().clone();
-        let display_name = self.client.account().get_display_name().await?;
-        let avatar_url = self.client.account().get_avatar_url().await?;
+        let profile = self.client.account().fetch_user_profile().await?;
         Ok(RpcMatrixAccountSession {
             user_id: meta.user_id,
             device_id: meta.device_id,
-            avatar_url: avatar_url.map(|uri| uri.to_string()),
-            display_name,
+            avatar_url: profile.avatar_url.map(|uri| uri.to_string()),
+            display_name: profile.displayname,
         })
     }
 
@@ -339,8 +338,9 @@ impl Matrix {
         let room = self.room(room_id).await?;
         if !room.is_timeline_initialized() {
             room.init_timeline_with_builder(
-                room.default_room_timeline_builder().await.event_filter(
-                    |event, version| match event {
+                room.default_room_timeline_builder()
+                    .await?
+                    .event_filter(|event, version| match event {
                         AnySyncTimelineEvent::MessageLike(
                             matrix_sdk::ruma::events::AnySyncMessageLikeEvent::RoomMessage(msg),
                         ) if msg.as_original().map_or(false, |o| {
@@ -350,8 +350,7 @@ impl Matrix {
                             true
                         }
                         _ => default_event_filter(event, version),
-                    },
-                ),
+                    }),
             )
             .await?;
         }
@@ -640,7 +639,7 @@ impl Matrix {
     }
 
     pub async fn set_pusher(&self, pusher: Pusher) -> Result<()> {
-        self.client.set_pusher(pusher).await?;
+        self.client.pusher().set(pusher).await?;
         Ok(())
     }
 
@@ -667,7 +666,7 @@ impl Matrix {
     }
 
     pub async fn user_profile(&self, user_id: &UserId) -> Result<get_profile::v3::Response> {
-        Ok(self.client.get_profile(user_id).await?)
+        Ok(self.client.account().fetch_user_profile_of(user_id).await?)
     }
 }
 
