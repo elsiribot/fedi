@@ -54,9 +54,7 @@ const QRScreen: React.FC<Props> = ({
 
     const style = styles(theme, width, dark)
     return (
-        <ScrollView
-            style={style.scrollContainer}
-            contentContainerStyle={style.contentContainer}>
+        <View style={style.container}>
             <View style={style.topContainer}>
                 {title && (
                     <Text
@@ -101,16 +99,13 @@ const QRScreen: React.FC<Props> = ({
                 </View>
             </View>
             <View style={style.bottomContainer}>{bottom}</View>
-        </ScrollView>
+        </View>
     )
 }
 
 const styles = (theme: Theme, width: number, dark?: boolean) =>
     StyleSheet.create({
-        scrollContainer: {
-            flex: 1,
-        },
-        contentContainer: {
+        container: {
             flexGrow: 1,
             alignItems: 'center',
             justifyContent: 'space-between',
