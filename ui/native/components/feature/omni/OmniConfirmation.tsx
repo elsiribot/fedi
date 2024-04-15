@@ -162,33 +162,31 @@ export const OmniConfirmation: React.FC<Props> = ({
                     continueOnPress: handleAuth,
                 }
             case ParserDataType.FediChatUser:
-                // TODO: Support me
-                return {
-                    contents: {
-                        icon: 'ScanSad',
-                        title: t('feature.omni.unsupported-unknown'),
-                    },
-                }
-            case ParserDataType.LegacyFediChatGroup:
-            case ParserDataType.LegacyFediChatMember:
                 return {
                     contents: {
                         icon: 'Chat',
                         title: t('feature.omni.confirm-fedi-chat'),
                     },
                     continueOnPress: () => {
-                        if (
-                            parsedData.type ===
-                            ParserDataType.LegacyFediChatGroup
-                        ) {
-                            handleNavigate('GroupChat', {
-                                groupId: parsedData.data.id,
-                            })
-                        } else {
-                            handleNavigate('DirectChat', {
-                                memberId: parsedData.data.id,
-                            })
-                        }
+                        handleNavigate('ChatUserConversation', {
+                            userId: parsedData.data.userId,
+                        })
+                    },
+                }
+            case ParserDataType.FediChatRoom:
+                // TODO: Implement join room by link for matrix (knocking)
+                return {
+                    contents: {
+                        icon: 'ScanSad',
+                        title: t('fedi.omni.unsupported-chat-invite'),
+                    },
+                }
+            case ParserDataType.LegacyFediChatGroup:
+            case ParserDataType.LegacyFediChatMember:
+                return {
+                    contents: {
+                        icon: 'ScanSad',
+                        title: t('feature.omni.unsupported-legacy-chat'),
                     },
                 }
             case ParserDataType.Website:

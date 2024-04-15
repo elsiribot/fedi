@@ -465,6 +465,7 @@
             "search-placeholder-username-or-ln": "Enter a username or lightning address",
             "unsupported-bolt12": "BOLT 12 offers aren’t supported yet. Sorry!",
             "unsupported-legacy-chat": "This chat QR is from a version of the app that is no longer supported. Sorry!",
+            "unsupported-chat-invite": "This is a chat room code. Your username must be invited to a chat room before joining.",
             "unsupported-no-federation": "You can’t use that before joining a federation. Try scanning a federation invite instead.",
             "unsupported-on-chain": "On-chain bitcoin addresses aren’t supported yet. Sorry!",
             "unsupported-unknown": "Hmm, that's not a format we recognize. Sorry!"

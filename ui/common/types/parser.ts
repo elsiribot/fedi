@@ -117,12 +117,12 @@ export type ParsedLegacyFediChatGroup = ParsedData<
 
 export type ParsedFediChatUser = ParsedData<
     ParserDataType.FediChatUser,
-    { id: string }
+    { userId: string }
 >
 
 export type ParsedFediChatRoom = ParsedData<
     ParserDataType.FediChatRoom,
-    { id: string }
+    { roomId: string }
 >
 
 export type ParsedWebsite = ParsedData<ParserDataType.Website, { url: string }>
@@ -143,7 +143,8 @@ export type AnyParsedData =
     | ParsedFedimintEcash
     | ParsedFederationInvite
     | ParsedLegacyFediChatMember
-    | ParsedFediChatGroup
+    | ParsedLegacyFediChatGroup
     | ParsedFediChatUser
+    | ParsedFediChatRoom
     | ParsedWebsite
     | ParsedUnknownData

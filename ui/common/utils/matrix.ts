@@ -314,11 +314,11 @@ export function getReceivablePaymentEvents(
 // Ref: https://github.com/matrix-org/matrix-android-sdk/blob/develop/matrix-sdk-core/src/main/java/org/matrix/androidsdk/core/MXPatterns.java
 //
 // TODO Implement more sophisticated parsing
-// const MATRIX_DOMAIN = new RegExp(/:[A-Z0-9.-]+(:[0-9]{2,5})?/i)
-// const MATRIX_USER_NAME = new RegExp(/@[A-Z0-9\\x21-\\x39\\x3B-\\x7F]+/i)
-// const FULL_MATRIX_USER_ID = new RegExp(
-//     MATRIX_USER_NAME.source + MATRIX_DOMAIN.source,
-// )
+const MATRIX_DOMAIN = new RegExp(/:[A-Z0-9.-]+(:[0-9]{2,5})?/i)
+const MATRIX_USER_NAME = new RegExp(/@[A-Z0-9\x21-\x39\x3B-\x7F]+/i)
+const FULL_MATRIX_USER_ID = new RegExp(
+    MATRIX_USER_NAME.source + MATRIX_DOMAIN.source,
+)
 
 // const MATRIX_LOCAL_ROOM = new RegExp(/![A-Z0-9]+/i)
 // const FULL_MATRIX_ROOM = new RegExp(
@@ -371,4 +371,8 @@ export function decodeFediMatrixUserUri(uri: string) {
 
 export function isValidMatrixUserId(id: string) {
     return /^@[^:]+:.+$/.test(id)
+}
+
+export function isValidMatrixFullUserId(id: string) {
+    return FULL_MATRIX_USER_ID.test(id)
 }

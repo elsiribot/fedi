@@ -6,7 +6,7 @@ import { StyleSheet, View } from 'react-native'
 import { useToast } from '@fedi/common/hooks/toast'
 
 import { OmniInput } from '../components/feature/omni/OmniInput'
-import { ChatType, ParserDataType } from '../types'
+import { ParserDataType } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'NewMessage'>
@@ -22,7 +22,8 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                     ParserDataType.LegacyFediChatMember,
                     ParserDataType.LegacyFediChatGroup,
                     ParserDataType.FediChatUser,
-                    ParserDataType.FediChatRoom,
+                    // TODO: Implement room search for matrix (knocking)
+                    // ParserDataType.FediChatRoom,
                 ]}
                 onExpectedInput={parsedData => {
                     if (
@@ -37,16 +38,18 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                     }
                     if (parsedData.type === ParserDataType.FediChatUser) {
                         navigation.replace('ChatUserConversation', {
-                            userId: parsedData.data.id,
-                        })
-                    } else if (
-                        parsedData.type === ParserDataType.FediChatRoom
-                    ) {
-                        navigation.replace('ChatRoomConversation', {
-                            roomId: parsedData.data.id,
-                            chatType: ChatType.group,
+                            userId: parsedData.data.userId,
                         })
                     }
+                    // TODO: Implement room search for matrix (knocking)
+                    // else if (
+                    //     parsedData.type === ParserDataType.FediChatRoom
+                    // ) {
+                    //     navigation.replace('ChatRoomConversation', {
+                    //         roomId: parsedData.data.id,
+                    //         chatType: ChatType.group,
+                    //     })
+                    // }
                 }}
                 onUnexpectedSuccess={() =>
                     navigation.canGoBack()

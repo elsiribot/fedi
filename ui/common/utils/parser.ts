@@ -51,10 +51,6 @@ export const LEGACY_CODE_TYPES = [
     ParserDataType.LegacyFediChatMember,
 ]
 
-// export const isLegacyCode = () => {
-
-// }
-
 /**
  * Parses any data that would the user would input via QR code, copy / paste etc.
  * Returns a structured object that identifies the type of data, and formatted
@@ -410,10 +406,10 @@ function parseFediUri(
 
     // Chat room
     try {
-        const id = decodeFediMatrixRoomUri(raw)
+        const roomId = decodeFediMatrixRoomUri(raw)
         return {
             type: ParserDataType.FediChatRoom,
-            data: { id },
+            data: { roomId },
         }
     } catch {
         // no-op
@@ -421,10 +417,10 @@ function parseFediUri(
 
     // Chat user
     try {
-        const id = decodeFediMatrixUserUri(raw)
+        const userId = decodeFediMatrixUserUri(raw)
         return {
             type: ParserDataType.FediChatUser,
-            data: { id },
+            data: { userId },
         }
     } catch {
         // no-op
