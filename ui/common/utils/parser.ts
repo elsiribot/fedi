@@ -45,6 +45,16 @@ export const BLOCKED_PARSER_TYPES_DURING_RECOVERY = [
     ParserDataType.LnurlWithdraw,
 ]
 
+/** List of Legacy Code kinds **/
+export const LEGACY_CODE_TYPES = [
+    ParserDataType.LegacyFediChatGroup,
+    ParserDataType.LegacyFediChatMember,
+]
+
+// export const isLegacyCode = () => {
+
+// }
+
 /**
  * Parses any data that would the user would input via QR code, copy / paste etc.
  * Returns a structured object that identifies the type of data, and formatted

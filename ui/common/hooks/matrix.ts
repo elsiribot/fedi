@@ -20,7 +20,6 @@ import {
     MatrixPaymentEvent,
     MatrixPaymentStatus,
     MatrixSyncStatus,
-    MatrixUser,
 } from '../types'
 import { FedimintBridge } from '../utils/fedimint'
 import {
