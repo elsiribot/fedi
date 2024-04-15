@@ -14,7 +14,6 @@ import {
     MSats,
     PublicFederation,
     Sats,
-    SeedWords,
     FediMod,
 } from '../types'
 import { RpcJsonClientConfig, RpcStabilityPoolConfig } from '../types/bindings'
@@ -241,18 +240,6 @@ export const leaveFederation = createAsyncThunk<
         const isRecovering = selectIsAnyFederationRecovering(getState())
         if (isRecovering) throw new Error('failed-to-leave-federation')
         await fedimint.leaveFederation(federationId)
-    },
-)
-
-export const recoverFromMnemonic = createAsyncThunk<
-    void,
-    { fedimint: FedimintBridge; mnemonic: SeedWords },
-    { state: CommonState }
->(
-    'federation/recoverFromMnemonic',
-    async ({ fedimint, mnemonic }, { dispatch }) => {
-        await fedimint.recoverFromMnemonic(mnemonic)
-        await dispatch(refreshFederations(fedimint))
     },
 )
 

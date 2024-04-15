@@ -7,7 +7,7 @@ use fedimint_core::util::{retry, FibonacciBackoff};
 use tracing::{error, info};
 
 use crate::api::{IFediApi, RegisterDeviceError, RegisteredDevice};
-use crate::constants::BACKUP_FREQUENCY;
+use crate::constants::{DEVICE_REGISTRATION_FREQUENCY, DEVICE_REGISTRATION_OVERDUE};
 use crate::event::{Event, EventSink, TypedEventExt};
 use crate::storage::AppState;
 
@@ -97,18 +97,6 @@ async fn renew_registration_periodically(
     // same device index, we emit an event to let the UI know that
     // this device should no longer be used.
     loop {
-        let last_registration_timestamp = app_state
-            .with_read_lock(|state| state.last_device_registration_timestamp)
-            .await
-            .unwrap_or(SystemTime::UNIX_EPOCH);
-
-        let now = fedimint_core::time::now();
-        let next_registration_timestamp = last_registration_timestamp + BACKUP_FREQUENCY;
-        let sleep_duration = next_registration_timestamp
-            .duration_since(now)
-            .unwrap_or_default();
-
-        fedimint_core::task::sleep(sleep_duration).await;
         if register_device_with_backoff(
             app_state.clone(),
             fedi_api.clone(),
@@ -123,6 +111,20 @@ async fn renew_registration_periodically(
         {
             break;
         }
+
+        let last_registration_timestamp = app_state
+            .with_read_lock(|state| state.last_device_registration_timestamp)
+            .await
+            .unwrap_or(SystemTime::UNIX_EPOCH);
+
+        let now = fedimint_core::time::now();
+        let next_registration_timestamp =
+            last_registration_timestamp + DEVICE_REGISTRATION_FREQUENCY;
+        let sleep_duration = next_registration_timestamp
+            .duration_since(now)
+            .unwrap_or_default();
+
+        fedimint_core::task::sleep(sleep_duration).await;
     }
 }
 
@@ -197,9 +199,20 @@ pub async fn register_device_with_backoff(
                 }
                 Err(error) => {
                     error!(?error, "register device failed, retrying");
-                    event_sink.typed_event(&Event::device_registration(
-                        crate::event::DeviceRegistrationState::Overdue,
-                    ));
+                    // If more than 12 hours since last successful registration renewal, emit
+                    // Overdue event
+                    if let Some(last_registration_timestamp) = app_state
+                        .with_read_lock(|state| state.last_device_registration_timestamp)
+                        .await
+                    {
+                        if last_registration_timestamp + DEVICE_REGISTRATION_OVERDUE
+                            < fedimint_core::time::now()
+                        {
+                            event_sink.typed_event(&Event::device_registration(
+                                crate::event::DeviceRegistrationState::Overdue,
+                            ));
+                        }
+                    }
                     // Return an Err to indicate error is retryable
                     Err(anyhow!("register device failed, retrying"))
                 }

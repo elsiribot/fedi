@@ -15,6 +15,7 @@ import {
     RecoveryCompleteEvent,
     RecoveryProgressEvent,
     ObservableUpdate,
+    DeviceRegistrationEvent,
 } from './bindings'
 import { Usd, UsdCents } from './units'
 
@@ -182,6 +183,7 @@ export type FedimintBridgeEventMap = {
     recoveryComplete: RecoveryCompleteEvent
     recoveryProgress: RecoveryProgressEvent
     observableUpdate: ObservableUpdate<unknown>
+    deviceRegistration: DeviceRegistrationEvent
 }
 
 export type StabilityPoolTxn = {

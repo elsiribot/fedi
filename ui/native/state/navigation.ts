@@ -61,3 +61,12 @@ export function resetAfterGroupNameUpdate(roomId: string) {
         }),
     }
 }
+
+export function resetToLockedDevice() {
+    return {
+        ...CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'LockedDevice' }],
+        }),
+    }
+}

@@ -1994,10 +1994,8 @@ mod tests {
         let recovery_bridge = setup_bridge().await?;
         recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
 
-        // FIXME: uncomment below lines once hack in bridge.recover_from_mnemonic is
-        // removed
-        // // Re-register device as index 0 since it's the same device
-        // transferExistingDeviceRegistration(recovery_bridge.clone(), 0).await?;
+        // Re-register device as index 0 since it's the same device
+        transferExistingDeviceRegistration(recovery_bridge.clone(), 0).await?;
 
         // Rejoin federation and assert that balances are correct
         let recovery_federation = join_test_fed_recovery(&recovery_bridge).await?;
@@ -2159,10 +2157,8 @@ mod tests {
         // db
         completeSocialRecovery(recovery_bridge.clone()).await?;
 
-        // FIXME: uncomment below lines once hack in bridge.recover_from_mnemonic is
-        // removed
-        // // Re-register device as index 0 since it's the same device
-        // transferExistingDeviceRegistration(recovery_bridge.clone(), 0).await?;
+        // Re-register device as index 0 since it's the same device
+        transferExistingDeviceRegistration(recovery_bridge.clone(), 0).await?;
 
         // Check backups match (TODO: how can I make sure that they're equal b/c nothing
         // happened?)
@@ -2412,10 +2408,8 @@ mod tests {
         let bridge = setup_bridge().await?;
         recoverFromMnemonic(bridge.clone(), mnemonic).await?;
 
-        // FIXME: uncomment below lines once hack in bridge.recover_from_mnemonic is
-        // removed
-        // // Re-register device as index 0 since it's the same device
-        // transferExistingDeviceRegistration(bridge.clone(), 0).await?;
+        // Re-register device as index 0 since it's the same device
+        transferExistingDeviceRegistration(bridge.clone(), 0).await?;
 
         assert!(matches!(
             federationPreview(bridge.clone(), invite_code.clone())
@@ -2427,10 +2421,7 @@ mod tests {
         Ok(())
     }
 
-    // FIXME: uncomment below lines once hack in bridge.recover_from_mnemonic is
-    // removed
-    // #[tokio::test(flavor = "multi_thread")]
-    #[allow(dead_code)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_join_fails_post_recovery_index_unassigned() -> anyhow::Result<()> {
         let device_identifier = "device 1".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
@@ -2475,10 +2466,7 @@ mod tests {
         Ok(())
     }
 
-    // FIXME: uncomment below lines once hack in bridge.recover_from_mnemonic is
-    // removed
-    // #[tokio::test(flavor = "multi_thread")]
-    #[allow(dead_code)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_transfer_device_registration_post_recovery() -> anyhow::Result<()> {
         let device_identifier_1 = "device 1".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
@@ -2601,10 +2589,7 @@ mod tests {
         Ok(())
     }
 
-    // FIXME: uncomment below lines once hack in bridge.recover_from_mnemonic is
-    // removed
-    // #[tokio::test(flavor = "multi_thread")]
-    #[allow(dead_code)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_new_device_registration_post_recovery() -> anyhow::Result<()> {
         let device_identifier_1 = "device 1".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());

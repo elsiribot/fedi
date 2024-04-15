@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { TFunction } from 'i18next'
+import orderBy from 'lodash/orderBy'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
     fetchSocialRecovery as reduxFetchSocialRecovery,
@@ -8,9 +10,19 @@ import {
     selectHasCheckedForSocialRecovery,
     selectSocialRecoveryQr,
     selectSocialRecoveryState,
+    recoverFromMnemonic,
+    selectRegisteredDevices,
+    transferExistingWallet,
+    createNewWallet,
 } from '../redux'
+import { SeedWords } from '../types'
+import { DeviceRegistrationEvent, RpcRegisteredDevice } from '../types/bindings'
 import { FedimintBridge } from '../utils/fedimint'
+import { makeLog } from '../utils/log'
 import { useCommonDispatch, useCommonSelector } from './redux'
+import { useToast } from './toast'
+
+const log = makeLog('common/hooks/recovery')
 
 export function useSocialRecovery(fedimint: FedimintBridge) {
     const dispatch = useCommonDispatch()
@@ -67,4 +79,137 @@ export function useSocialRecovery(fedimint: FedimintBridge) {
         completeSocialRecovery,
         cancelSocialRecovery,
     }
+}
+
+export function usePersonalRecovery(t: TFunction, fedimint: FedimintBridge) {
+    const [recoveryInProgress, setRecoveryInProgress] = useState<boolean>(false)
+    const dispatch = useCommonDispatch()
+    const toast = useToast()
+
+    const attemptRecovery = useCallback(
+        async (seedWords: SeedWords, onSuccess: () => void) => {
+            setRecoveryInProgress(true)
+            try {
+                await dispatch(
+                    recoverFromMnemonic({
+                        fedimint,
+                        mnemonic: seedWords,
+                    }),
+                ).unwrap()
+                onSuccess()
+            } catch (err) {
+                toast.error(t, 'errors.recovery-failed')
+            } finally {
+                setRecoveryInProgress(false)
+            }
+        },
+        [dispatch, fedimint, t, toast],
+    )
+
+    return {
+        recoveryInProgress,
+        attemptRecovery,
+    }
+}
+
+export function useDeviceRegistration(t: TFunction, fedimint: FedimintBridge) {
+    const toast = useToast()
+    const dispatch = useCommonDispatch()
+    const registeredDevices = useCommonSelector(selectRegisteredDevices)
+    const [isProcessing, setIsProcessing] = useState<boolean>(false)
+
+    const handleNewWallet = useCallback(
+        async (onSuccess: () => void) => {
+            setIsProcessing(true)
+            try {
+                const federation = await dispatch(
+                    createNewWallet({ fedimint }),
+                ).unwrap()
+
+                log.debug('createNewWallet federation:', federation)
+                // federation is non-null for social recovery only
+                if (federation) {
+                    // TODO: go to federation preview? or auto-join
+                }
+                onSuccess()
+            } catch (error) {
+                log.error('handleNewWallet', error)
+                toast.error(t, error)
+            }
+            setIsProcessing(false)
+        },
+        [dispatch, fedimint, t, toast],
+    )
+
+    const handleTransfer = useCallback(
+        async (device: RpcRegisteredDevice, onSuccess: () => void) => {
+            setIsProcessing(true)
+            try {
+                const federation = await dispatch(
+                    transferExistingWallet({ fedimint, device }),
+                ).unwrap()
+
+                log.debug('transferExistingWallet federation:', federation)
+                // federation is non-null for social recovery only
+                if (federation) {
+                    // TODO: go to federation preview? or auto-join
+                }
+
+                onSuccess()
+            } catch (error) {
+                log.error('transferExistingWallet', error)
+                toast.error(t, error)
+            }
+            setIsProcessing(false)
+        },
+        [dispatch, fedimint, t, toast],
+    )
+
+    const devicesSortedByTimestamp = useMemo(() => {
+        return orderBy(registeredDevices, 'lastRegistrationTimestamp', 'desc')
+    }, [registeredDevices])
+
+    return {
+        registeredDevices: devicesSortedByTimestamp,
+        isProcessing,
+        handleTransfer,
+        handleNewWallet,
+    }
+}
+
+export function useLockedDeviceDetection(
+    fedimint: FedimintBridge,
+    onDeviceLocked: () => void,
+) {
+    // Initialize locked device listener
+    useEffect(() => {
+        log.debug('useLockedDeviceDetection listening...')
+        const unsubscribeDeviceRegistration = fedimint.addListener(
+            'deviceRegistration',
+            (event: DeviceRegistrationEvent) => {
+                log.info('DeviceRegistrationEvent', event)
+                if (event.state === 'conflict') {
+                    // hack: retry this every 1 second until it succeeds because there is a race condition
+                    // where the navigator using this hook may not ready yet so onDeviceLock fails
+                    // this way we make sure the lock screen appears as soon as possible provided
+                    // the event fired from the bridge is received and emitted
+                    const attemptLock = () => {
+                        try {
+                            log.info('attemptLock')
+                            onDeviceLocked()
+                        } catch (error) {
+                            log.error('Error locking device:', error)
+                            // Retry after 1 second
+                            setTimeout(attemptLock, 1000)
+                        }
+                    }
+                    attemptLock()
+                }
+            },
+        )
+
+        return () => {
+            unsubscribeDeviceRegistration()
+        }
+    }, [fedimint, onDeviceLocked])
 }

@@ -807,9 +807,6 @@ impl Bridge {
             })
             .await?;
 
-        // REMOVE: temporary hack for seed reuse feature until front-end is built
-        self.register_device_with_index(0, true).await?;
-
         self.fetch_registered_devices().await
     }
 

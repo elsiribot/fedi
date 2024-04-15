@@ -7,9 +7,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 
+import { useLockedDeviceDetection } from '@fedi/common/hooks/recovery'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederation } from '@fedi/common/redux'
 
+import { fedimint } from './bridge'
 import AddFediModHeader from './components/feature/admin/AddFediModHeader'
 import CurrencySettingsHeader from './components/feature/admin/CurrencySettingsHeader'
 import FediModSettingsHeader from './components/feature/admin/FediModSettingsHeader'
@@ -47,6 +49,9 @@ import ReceiveLightningHeader from './components/feature/receive/ReceiveLightnin
 import ChooseRecoveryMethodHeader from './components/feature/recovery/ChooseRecoveryMethodHeader'
 import PersonalRecoveryHeader from './components/feature/recovery/PersonalRecoveryHeader'
 import RecoveryAssistHeader from './components/feature/recovery/RecoveryAssistHeader'
+import RecoveryDeviceSelectionHeader from './components/feature/recovery/RecoveryDeviceSelectionHeader'
+import RecoveryNewWalletHeader from './components/feature/recovery/RecoveryNewWalletHeader'
+import RecoveryWalletTransferHeader from './components/feature/recovery/RecoveryWalletTransferHeader'
 import SocialRecoveryHeader from './components/feature/recovery/SocialRecoveryHeader'
 import ConfirmSendEcashHeader from './components/feature/send/ConfirmSendEcashHeader'
 import SendBitcoinHeader from './components/feature/send/SendBitcoinHeader'
@@ -100,6 +105,7 @@ import Initializing from './screens/Initializing'
 import JoinFederation from './screens/JoinFederation'
 import LanguageSettings from './screens/LanguageSettings'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
+import LockedDevice from './screens/LockedDevice'
 import MemberQrCode from './screens/MemberQrCode'
 import NewMessage from './screens/NewMessage'
 import PersonalRecovery from './screens/PersonalRecovery'
@@ -111,6 +117,10 @@ import ReceiveLightning from './screens/ReceiveLightning'
 import ReceiveSuccess from './screens/ReceiveSuccess'
 import RecordBackupVideo from './screens/RecordBackupVideo'
 import RecoveryAssistSuccess from './screens/RecoveryAssistSuccess'
+import RecoveryDeviceSelection from './screens/RecoveryDeviceSelection'
+import RecoveryNewWallet from './screens/RecoveryNewWallet'
+import RecoveryWalletOptions from './screens/RecoveryWalletOptions'
+import RecoveryWalletTransfer from './screens/RecoveryWalletTransfer'
 import RecoveryWords from './screens/RecoveryWords'
 import ScanMemberCode from './screens/ScanMemberCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
@@ -144,6 +154,7 @@ import SwitchingFederations from './screens/SwitchingFederations'
 import TabsNavigator from './screens/TabsNavigator'
 import Transactions from './screens/Transactions'
 import { useAppSelector } from './state/hooks'
+import { resetToLockedDevice } from './state/navigation'
 import { MSats } from './types'
 import {
     MainNavigatorDrawerParamList,
@@ -650,6 +661,41 @@ const MainNavigator = () => {
                                 component={PersonalRecoverySuccess}
                                 options={{ headerShown: false }}
                             />
+                            <Stack.Screen
+                                name="RecoveryWalletOptions"
+                                component={RecoveryWalletOptions}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="RecoveryWalletTransfer"
+                                component={RecoveryWalletTransfer}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryWalletTransferHeader />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RecoveryNewWallet"
+                                component={RecoveryNewWallet}
+                                options={() => ({
+                                    header: () => <RecoveryNewWalletHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RecoveryDeviceSelection"
+                                component={RecoveryDeviceSelection}
+                                options={() => ({
+                                    header: () => (
+                                        <RecoveryDeviceSelectionHeader />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="LockedDevice"
+                                component={LockedDevice}
+                                options={{ headerShown: false }}
+                            />
                             {/* Popup federations */}
                             <Stack.Screen
                                 name="PopupFederationEnded"
@@ -888,6 +934,11 @@ const Router = () => {
 
     // Make sure any available chat connections are always online
     // useMonitorChatConnections(fedimint)
+
+    // Navigates to locked device screen if we detect a device conflict
+    useLockedDeviceDetection(fedimint, () => {
+        navigation.dispatch(resetToLockedDevice())
+    })
 
     return (
         <NavigationContainer
