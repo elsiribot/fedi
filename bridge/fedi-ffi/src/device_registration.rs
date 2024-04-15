@@ -1,8 +1,9 @@
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use anyhow::bail;
+use anyhow::{anyhow, bail};
 use fedimint_core::task::TaskGroup;
+use fedimint_core::util::{retry, FibonacciBackoff};
 use tracing::{error, info};
 
 use crate::api::{IFediApi, RegisterDeviceError, RegisteredDevice};
@@ -128,22 +129,17 @@ async fn renew_registration_periodically(
 pub async fn get_registered_devices_with_backoff(
     fedi_api: Arc<dyn IFediApi>,
     seed: bip39::Mnemonic,
-) -> Vec<RegisteredDevice> {
-    for attempt in 1u64.. {
-        match fedi_api
-            .fetch_registered_devices_for_seed(seed.clone())
-            .await
-        {
-            Ok(devices) => return devices,
-            Err(error) => {
-                error!(%attempt, %error, "fetch registered devices failed");
-            }
-        }
-
-        let sleep_time = 1 << attempt.min(9);
-        fedimint_core::task::sleep(Duration::from_secs(sleep_time)).await;
-    }
-    vec![]
+) -> anyhow::Result<Vec<RegisteredDevice>> {
+    retry(
+        "fetch_registered_devices",
+        FibonacciBackoff::default()
+            .with_min_delay(Duration::from_secs(1))
+            .with_max_delay(Duration::from_secs(20 * 60))
+            .with_max_times(usize::MAX)
+            .with_jitter(),
+        || fedi_api.fetch_registered_devices_for_seed(seed.clone()),
+    )
+    .await
 }
 
 pub async fn register_device_with_backoff(
@@ -155,46 +151,66 @@ pub async fn register_device_with_backoff(
     device_identifier: String,
     force_overwrite: bool,
 ) -> anyhow::Result<()> {
-    for attempt in 1u64.. {
-        match fedi_api
-            .register_device_for_seed(
-                seed.clone(),
-                device_index,
-                device_identifier.clone(),
-                force_overwrite,
-            )
-            .await
-        {
-            Ok(_) => {
-                info!("successfully registered device with index {device_index}");
-                // AppState write shouldn't fail, but timestamp update is not critical anyway
-                let _ = app_state
-                    .with_write_lock(|state| {
-                        state.last_device_registration_timestamp = Some(fedimint_core::time::now());
-                    })
-                    .await;
-                event_sink.typed_event(&Event::device_registration(
-                    crate::event::DeviceRegistrationState::Success,
-                ));
-                return Ok(());
-            }
-            Err(RegisterDeviceError::AnotherDeviceOwnsIndex(error)) => {
-                error!(%error, "unexpected device registration conflict");
-                event_sink.typed_event(&Event::device_registration(
-                    crate::event::DeviceRegistrationState::Conflict,
-                ));
-                bail!(error);
-            }
-            Err(error) => {
-                error!(%attempt, ?error, "register device failed");
-                event_sink.typed_event(&Event::device_registration(
-                    crate::event::DeviceRegistrationState::Overdue,
-                ));
-            }
-        }
-
-        let sleep_time = 1 << attempt.min(9);
-        fedimint_core::task::sleep(Duration::from_secs(sleep_time)).await;
+    enum RegisterDeviceRetryOk {
+        Success,
+        Conflict(String),
     }
-    Ok(())
+
+    let retry_res = retry(
+        "register_device",
+        FibonacciBackoff::default()
+            .with_min_delay(Duration::from_secs(1))
+            .with_max_delay(Duration::from_secs(20 * 60))
+            .with_max_times(usize::MAX)
+            .with_jitter(),
+        || async {
+            match fedi_api
+                .register_device_for_seed(
+                    seed.clone(),
+                    device_index,
+                    device_identifier.clone(),
+                    force_overwrite,
+                )
+                .await
+            {
+                Ok(_) => {
+                    info!("successfully registered device with index {device_index}");
+                    // AppState write shouldn't fail, but timestamp update is not critical anyway
+                    let _ = app_state
+                        .with_write_lock(|state| {
+                            state.last_device_registration_timestamp =
+                                Some(fedimint_core::time::now());
+                        })
+                        .await;
+                    event_sink.typed_event(&Event::device_registration(
+                        crate::event::DeviceRegistrationState::Success,
+                    ));
+                    Ok(RegisterDeviceRetryOk::Success)
+                }
+                Err(RegisterDeviceError::AnotherDeviceOwnsIndex(error)) => {
+                    error!(%error, "unexpected device registration conflict");
+                    event_sink.typed_event(&Event::device_registration(
+                        crate::event::DeviceRegistrationState::Conflict,
+                    ));
+                    // Return an Ok to indicate the error is non-retryable
+                    Ok(RegisterDeviceRetryOk::Conflict(error))
+                }
+                Err(error) => {
+                    error!(?error, "register device failed, retrying");
+                    event_sink.typed_event(&Event::device_registration(
+                        crate::event::DeviceRegistrationState::Overdue,
+                    ));
+                    // Return an Err to indicate error is retryable
+                    Err(anyhow!("register device failed, retrying"))
+                }
+            }
+        },
+    )
+    .await;
+
+    match retry_res {
+        Ok(RegisterDeviceRetryOk::Success) => Ok(()),
+        Ok(RegisterDeviceRetryOk::Conflict(error)) => Err(anyhow!(error)),
+        Err(error) => Err(error),
+    }
 }

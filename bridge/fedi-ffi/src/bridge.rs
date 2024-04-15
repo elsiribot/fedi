@@ -714,7 +714,7 @@ impl Bridge {
         let registered_devices =
             fedimint_core::task::timeout(Duration::from_secs(120), registered_devices_fut)
                 .await
-                .context("fetching registered devices timed out")?
+                .context("fetching registered devices timed out")??
                 .into_iter()
                 .map(Into::into)
                 .collect();
