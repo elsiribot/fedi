@@ -885,6 +885,74 @@ async fn matrixRoomSetTopic(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn matrixIgnoreUser(bridge: Arc<Bridge>, user_id: RpcUserId) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.ignore_user(&user_id.into_typed()?).await?;
+    Ok(())
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixUnignoreUser(bridge: Arc<Bridge>, user_id: RpcUserId) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.unignore_user(&user_id.into_typed()?).await?;
+    Ok(())
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomKickUser(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    user_id: RpcUserId,
+    reason: Option<String>,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .room_kick_user(
+            &room_id.into_typed()?,
+            &user_id.into_typed()?,
+            reason.as_deref(),
+        )
+        .await?;
+    Ok(())
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomBanUser(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    user_id: RpcUserId,
+    reason: Option<String>,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .room_ban_user(
+            &room_id.into_typed()?,
+            &user_id.into_typed()?,
+            reason.as_deref(),
+        )
+        .await?;
+    Ok(())
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomUnbanUser(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    user_id: RpcUserId,
+    reason: Option<String>,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .room_unban_user(
+            &room_id.into_typed()?,
+            &user_id.into_typed()?,
+            reason.as_deref(),
+        )
+        .await?;
+    Ok(())
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn matrixRoomGetMembers(
     bridge: Arc<Bridge>,
     room_id: RpcRoomId,
@@ -1162,6 +1230,11 @@ rpc_methods!(RpcMethods {
     matrixRoomGetNotificationMode,
     matrixSetPusher,
     matrixUserProfile,
+    matrixRoomKickUser,
+    matrixRoomBanUser,
+    matrixRoomUnbanUser,
+    matrixIgnoreUser,
+    matrixUnignoreUser,
 });
 
 #[instrument(

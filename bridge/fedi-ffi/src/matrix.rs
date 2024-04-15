@@ -576,6 +576,44 @@ impl Matrix {
             .await?)
     }
 
+    pub async fn ignore_user(&self, user_id: &UserId) -> Result<()> {
+        Ok(self.client.account().ignore_user(user_id).await?)
+    }
+
+    pub async fn unignore_user(&self, user_id: &UserId) -> Result<()> {
+        Ok(self.client.account().unignore_user(user_id).await?)
+    }
+
+    pub async fn room_kick_user(
+        &self,
+        room_id: &RoomId,
+        user_id: &UserId,
+        reason: Option<&str>,
+    ) -> Result<()> {
+        Ok(self.room(room_id).await?.kick_user(user_id, reason).await?)
+    }
+    pub async fn room_ban_user(
+        &self,
+        room_id: &RoomId,
+        user_id: &UserId,
+        reason: Option<&str>,
+    ) -> Result<()> {
+        Ok(self.room(room_id).await?.ban_user(user_id, reason).await?)
+    }
+
+    pub async fn room_unban_user(
+        &self,
+        room_id: &RoomId,
+        user_id: &UserId,
+        reason: Option<&str>,
+    ) -> Result<()> {
+        Ok(self
+            .room(room_id)
+            .await?
+            .unban_user(user_id, reason)
+            .await?)
+    }
+
     pub async fn room_get_members(&self, room_id: &RoomId) -> Result<Vec<RpcRoomMember>> {
         let members = self
             .room(room_id)

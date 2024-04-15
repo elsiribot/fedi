@@ -657,6 +657,20 @@ export interface RpcMethods {
     ]
     matrixSetPusher: [{ pusher: RpcPusher }, null]
     matrixUserProfile: [{ userId: RpcUserId }, any]
+    matrixRoomKickUser: [
+        { roomId: RpcRoomId; userId: RpcUserId; reason: string | null },
+        null,
+    ]
+    matrixRoomBanUser: [
+        { roomId: RpcRoomId; userId: RpcUserId; reason: string | null },
+        null,
+    ]
+    matrixRoomUnbanUser: [
+        { roomId: RpcRoomId; userId: RpcUserId; reason: string | null },
+        null,
+    ]
+    matrixIgnoreUser: [{ userId: RpcUserId }, null]
+    matrixUnignoreUser: [{ userId: RpcUserId }, null]
 }
 
 export interface RpcModuleFediFeeSchedule {
