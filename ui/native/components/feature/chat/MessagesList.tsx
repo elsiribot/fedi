@@ -27,7 +27,6 @@ import { useAppSelector } from '../../../state/hooks'
 import Avatar from '../../ui/Avatar'
 import MessageItem from './MessageItem'
 import { MessageItemError } from './MessageItemError'
-import EmptyGroupNotice from './NoMembersNotice'
 
 type MessagesListProps = {
     messages: ChatMessage[][][]
@@ -191,7 +190,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
                 style={style.listContainer}
                 contentContainerStyle={style.contentContainer}
                 removeClippedSubviews={false}
-                ListEmptyComponent={multiUserChat ? <EmptyGroupNotice /> : null}
+                ListEmptyComponent={null}
                 onScroll={handleScroll}
                 inverted={messages.length > 0}
             />

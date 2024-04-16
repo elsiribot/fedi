@@ -12,15 +12,15 @@ import {
     ParsedBolt11,
     ParsedBolt12,
     ParsedFederationInvite,
-    ParsedLegacyFediChatMember,
     ParsedFedimintEcash,
     ParsedLnurlAuth,
     ParsedLnurlPay,
     ParsedLnurlWithdraw,
     ParsedUnknownData,
     ParsedWebsite,
-    ParsedFediChatUser,
     ParsedLegacyFediChatGroup,
+    ParsedLegacyFediChatMember,
+    ParsedFediChatUser,
     ParsedFediChatRoom,
 } from '../types/parser'
 import { FedimintBridge } from './fedimint'

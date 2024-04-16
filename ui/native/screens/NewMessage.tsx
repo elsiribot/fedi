@@ -1,7 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 
@@ -38,7 +38,7 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                     }
                     if (parsedData.type === ParserDataType.FediChatUser) {
                         navigation.replace('ChatUserConversation', {
-                            userId: parsedData.data.userId,
+                            userId: parsedData.data.id,
                         })
                     }
                     // TODO: Implement room search for matrix (knocking)

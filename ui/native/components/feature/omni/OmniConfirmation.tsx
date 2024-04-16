@@ -169,7 +169,7 @@ export const OmniConfirmation: React.FC<Props> = ({
                     },
                     continueOnPress: () => {
                         handleNavigate('ChatUserConversation', {
-                            userId: parsedData.data.userId,
+                            userId: parsedData.data.id,
                         })
                     },
                 }
@@ -178,7 +178,8 @@ export const OmniConfirmation: React.FC<Props> = ({
                 return {
                     contents: {
                         icon: 'ScanSad',
-                        title: t('fedi.omni.unsupported-chat-invite'),
+                        // title: t('feature.omni.unsupported-chat-invite'),
+                        title: t('feature.omni.unsupported-legacy-chat'),
                     },
                 }
             case ParserDataType.LegacyFediChatGroup:

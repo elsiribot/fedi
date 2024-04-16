@@ -70,6 +70,7 @@ export function OmniInput<
     const canMemberSearch = expectedInputTypes.includes(
         ParserDataType.FediChatUser as T,
     )
+
     // TODO: Implement Room search for matrix (knocking)
     // const canRoomSearch = expectedInputTypes.includes(
     //     ParserDataType.FediChatRoom as T,
