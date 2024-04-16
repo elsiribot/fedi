@@ -60,7 +60,7 @@ export type FormattedAmounts = {
 export type AmountSymbolPosition = 'start' | 'end' | 'none'
 
 // prettier-ignore
-const numpadButtons = [
+export const numpadButtons = [
     1, 2, 3,
     4, 5, 6,
     7, 8, 9,

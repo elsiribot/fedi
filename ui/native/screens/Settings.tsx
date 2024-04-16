@@ -14,6 +14,7 @@ import {
 import Share from 'react-native-share'
 
 import { useFederationSupportsSingleSeed } from '@fedi/common/hooks/federation'
+import { useNuxStep } from '@fedi/common/hooks/nux'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useExportTransactions } from '@fedi/common/hooks/transactions'
 import {
@@ -42,6 +43,7 @@ import SvgImage from '../components/ui/SvgImage'
 import { version } from '../package.json'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+import { usePin } from '../utils/hooks/security'
 
 const log = makeLog('Settings')
 
@@ -66,6 +68,10 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const pendingStableBalance = useAppSelector(selectStableBalancePending)
     const currency = useAppSelector(selectCurrency)
     const supportsSingleSeed = useFederationSupportsSingleSeed()
+    const { status } = usePin()
+    const [hasPerformedPersonalBackup] = useNuxStep(
+        'hasPerformedPersonalBackup',
+    )
 
     const federationId = activeFederation?.id
 
@@ -215,6 +221,16 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         setIsExportingCSV(false)
     }
 
+    const createOrManagePin = () => {
+        if (hasPerformedPersonalBackup && status === 'set') {
+            navigation.navigate('PinAccess')
+        } else if (hasPerformedPersonalBackup) {
+            navigation.navigate('SetPin')
+        } else {
+            navigation.navigate('CreatePinInstructions')
+        }
+    }
+
     const showInviteCode =
         activeFederation && shouldShowInviteCode(activeFederation.meta)
 
@@ -293,6 +309,11 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         label={t('feature.backup.export-transactions-to-csv')}
                         onPress={exportTransactionsAsCsv}
                         disabled={isExportingCSV}
+                    />
+                    <SettingsItem
+                        image={<SvgImage name="LockSecurity" />}
+                        label={t('feature.pin.pin-access')}
+                        onPress={createOrManagePin}
                     />
                 </View>
             )}

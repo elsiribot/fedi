@@ -32,6 +32,7 @@ import {
 } from './matrix'
 import { nuxSlice } from './nux'
 import { recoverySlice } from './recovery'
+import { securitySlice } from './security'
 import { loadFromStorage, saveToStorage, storageSlice } from './storage'
 import { toastSlice } from './toast'
 import { addTransaction, transactionsSlice } from './transactions'
@@ -48,6 +49,7 @@ export * from './nux'
 export * from './recovery'
 export * from './toast'
 export * from './wallet'
+export * from './security'
 
 export const commonReducers = {
     chat: chatSlice.reducer,
@@ -61,6 +63,7 @@ export const commonReducers = {
     toast: toastSlice.reducer,
     transactions: transactionsSlice.reducer,
     wallet: walletSlice.reducer,
+    security: securitySlice.reducer,
 }
 
 type CommonReducers = typeof commonReducers
