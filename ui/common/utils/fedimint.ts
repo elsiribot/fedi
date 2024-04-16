@@ -205,8 +205,8 @@ export class FedimintBridge {
         })
     }
 
-    async getNostrPubKey(federationId: string) {
-        return this.rpcTyped('getNostrPubKey', { })
+    async getNostrPubKey(_federationId: string) {
+        return this.rpcTyped('getNostrPubKey', {})
     }
 
     async signNostrEvent(eventHash: string, federationId: string) {
