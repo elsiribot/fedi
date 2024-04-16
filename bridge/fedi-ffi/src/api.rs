@@ -23,7 +23,7 @@ use crate::constants::{
     FEDI_FEE_API_URL_MAINNET, FEDI_FEE_API_URL_MUTINYNET, FEDI_INVOICE_API_URL_MAINNET,
     FEDI_INVOICE_API_URL_MUTINYNET,
 };
-use crate::storage::{FediFeeSchedule, ModuleFediFeeSchedule};
+use crate::storage::{DeviceIdentifier, FediFeeSchedule, ModuleFediFeeSchedule};
 
 /// Represents registration information of a device using our root seed as
 /// recorded with Fedi's servers.
@@ -42,7 +42,7 @@ pub struct RegisteredDevice {
     pub index: u8,
 
     /// Human-readable, unique, stable string identifier assigned to the device
-    pub identifier: String,
+    pub identifier: DeviceIdentifier,
 
     /// Timestamp of the last successful registration renewal made from the
     /// device. The more recent, the better. We expect every device to
@@ -119,7 +119,7 @@ pub trait IFediApi: MaybeSend + MaybeSync + 'static {
         &self,
         seed: bip39::Mnemonic,
         device_index: u8,
-        device_identifier: String,
+        device_identifier: DeviceIdentifier,
         force_overwrite: bool,
     ) -> anyhow::Result<(), RegisterDeviceError>;
 }
@@ -271,7 +271,7 @@ impl IFediApi for LiveFediApi {
         &self,
         seed: bip39::Mnemonic,
         device_index: u8,
-        device_identifier: String,
+        device_identifier: DeviceIdentifier,
         force_overwrite: bool,
     ) -> Result<(), RegisterDeviceError> {
         let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&seed);
@@ -318,34 +318,35 @@ impl IFediApi for LiveFediApi {
 
 fn encrypt_device_identifier(
     root_secret: &DerivableSecret,
-    device_identifier: String,
+    device_identifier: DeviceIdentifier,
 ) -> Result<String, RegisterDeviceError> {
     let device_id_encryption_secret = root_secret.child_key(DEVICE_REGISTRATION_CHILD_ID);
     // Pad if necessary -> encrypt -> hex-encode
-    let device_identifier = encrypt(
-        format!(
-            "{:width$}",
-            device_identifier,
-            width = DEVICE_IDENTIFIER_FIXED_LENGTH
-        )
-        .into(),
+    let padded = format!(
+        "{:width$}",
+        device_identifier,
+        width = DEVICE_IDENTIFIER_FIXED_LENGTH
+    );
+    let encrypted = encrypt(
+        padded.into(),
         &LessSafeKey::new(device_id_encryption_secret.to_chacha20_poly1305_key()),
     )
     .map_err(|e| RegisterDeviceError::ErrorSendingRequest(e.to_string()))?;
-    Ok(hex::encode(device_identifier))
+    Ok(hex::encode(encrypted))
 }
 
 fn decrypt_device_identifier(
     root_secret: &DerivableSecret,
     encrypted_device_identifier: String,
-) -> anyhow::Result<String> {
+) -> anyhow::Result<DeviceIdentifier> {
     let device_id_encryption_secret = root_secret.child_key(DEVICE_REGISTRATION_CHILD_ID);
     // Hex-decode -> decrypt -> trim padding
-    Ok(decrypt(
-        &mut hex::decode(encrypted_device_identifier)?,
+    let mut decoded = hex::decode(encrypted_device_identifier)?;
+    let decrypted_bytes = decrypt(
+        &mut decoded,
         &LessSafeKey::new(device_id_encryption_secret.to_chacha20_poly1305_key()),
-    )
-    .map(|bytes| String::from_utf8(bytes.to_vec()))??
-    .trim_end()
-    .to_string())
+    )?;
+    let decrypted_string = String::from_utf8(decrypted_bytes.to_vec())?;
+    let unpadded_string = decrypted_string.trim_end();
+    FromStr::from_str(unpadded_string)
 }

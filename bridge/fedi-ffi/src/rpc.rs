@@ -1305,7 +1305,7 @@ mod tests {
     use crate::event::DeviceRegistrationEvent;
     use crate::ffi::PathBasedStorage;
     use crate::multi::MultiFederation;
-    use crate::storage::{FediFeeSchedule, IStorage};
+    use crate::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
     use crate::types::{
         RpcOOBReissueState, RpcOOBState, RpcReturningMemberStatus, RpcTransactionDirection,
     };
@@ -1345,7 +1345,7 @@ mod tests {
 
     struct MockFediApi {
         // (seed, index) => (device identifier, last registration timestamp)
-        registry: Mutex<HashMap<(bip39::Mnemonic, u8), (String, SystemTime)>>,
+        registry: Mutex<HashMap<(bip39::Mnemonic, u8), (DeviceIdentifier, SystemTime)>>,
     }
 
     impl MockFediApi {
@@ -1403,7 +1403,7 @@ mod tests {
             &self,
             seed: bip39::Mnemonic,
             device_index: u8,
-            device_identifier: String,
+            device_identifier: DeviceIdentifier,
             force_overwrite: bool,
         ) -> anyhow::Result<(), RegisterDeviceError> {
             let mut registry = self.registry.lock().await;
@@ -1602,7 +1602,7 @@ mod tests {
 
     async fn setup_bridge() -> anyhow::Result<Arc<Bridge>> {
         setup_bridge_custom(
-            "Unknown (bridge tests)".to_owned(),
+            "default_bridge:test:d4d743a7-b343-48e3-a5f9-90d032af3e98".to_owned(),
             Arc::new(MockFediApi::new()),
         )
         .await
@@ -1706,7 +1706,7 @@ mod tests {
             storage,
             event_sink,
             fedi_api,
-            "Unknown (bridge tests)".to_owned(),
+            "default_bridge:test:d4d743a7-b343-48e3-a5f9-90d032af3e98".to_owned(),
         )
         .await?;
         let federations = listFederations(bridge.clone()).await?;
@@ -2511,7 +2511,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_join_fails_post_recovery_index_unassigned() -> anyhow::Result<()> {
-        let device_identifier = "device 1".to_string();
+        let device_identifier = "bridge:test:fd3e4705-f453-45ee-9e84-4bd4fdc6c22a".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
         let (backup_bridge, federation) =
             setup_custom(device_identifier.clone(), mock_fedi_api.clone()).await?;
@@ -2556,7 +2556,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_transfer_device_registration_post_recovery() -> anyhow::Result<()> {
-        let device_identifier_1 = "device 1".to_string();
+        let device_identifier_1 = "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
         let (backup_bridge, federation) =
             setup_custom(device_identifier_1, mock_fedi_api.clone()).await?;
@@ -2606,7 +2606,7 @@ mod tests {
         let mnemonic = getMnemonic(backup_bridge.clone()).await?;
 
         // create new bridge which hasn't joined federation yet and recover mnemnonic
-        let device_identifier_2 = "device_2".to_string();
+        let device_identifier_2 = "bridge_2:test:70c25d23-bfac-4aa2-81c3-d6f5e79ae724".to_string();
         let recovery_bridge = setup_bridge_custom(device_identifier_2, mock_fedi_api).await?;
         recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
 

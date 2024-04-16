@@ -833,7 +833,7 @@ impl From<RegisteredDevice> for RpcRegisteredDevice {
     fn from(value: RegisteredDevice) -> Self {
         Self {
             device_index: value.index,
-            device_identifier: value.identifier,
+            device_identifier: value.identifier.to_string(),
             last_registration_timestamp: to_unix_time(value.last_renewed)
                 .expect("Registration timestamp must be valid"),
         }
