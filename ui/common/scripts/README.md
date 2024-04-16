@@ -11,9 +11,9 @@ Automatically sorts and translates keys in languages based on the `localization/
 5. Run `GOOGLE_TRANSLATE_API_KEY=[key] yarn autotranslate`
     - You can add a single language as a parameter if you only want to run against one, e.g. `yarn autotranslate es`
 
-# `yarn run i18n:export-csv`
+# `yarn run i18n:export-csv <languageCode>`
 
-Exports a CSV meant to be handed off to translators. The CSV is generated from `localization/en/common.json`, and is output at `localization/export.csv`. This file can then be imported via `yarn run i18n:import-csv`.
+Exports a CSV meant to be handed off to translators. The CSV is generated from one of the translation files, and is output at `localization/export.csv`. This file can then be imported via `yarn run i18n:import-csv`.
 
 # `yarn run i18n:import-csv <languageCode> <pathToCsv>`
 
