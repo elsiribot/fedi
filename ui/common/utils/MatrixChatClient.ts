@@ -302,6 +302,10 @@ export class MatrixChatClient {
         return this.fedimint.matrixRoomSendReceipt({ roomId, eventId })
     }
 
+    async refetchRoomMembers(roomId: string) {
+        await this.observeRoomMembers(roomId)
+    }
+
     emit<TEventName extends keyof MatrixChatClientEventMap>(
         eventName: TEventName,
         argument: MatrixChatClientEventMap[TEventName],
@@ -507,6 +511,15 @@ export class MatrixChatClient {
 
     private async observeRoomMembers(roomId: string) {
         // TODO: Listen for new room member events, re-fetch.
+        // // Only observe room members once, subsequent calls are no-ops.
+        // if (this.roomObserverMap[roomId]?.members !== undefined) return
+
+        // // Immediately add to the map with a fake id to prevent additional calls.
+        // this.roomObserverMap[roomId] = {
+        //     ...this.roomObserverMap[roomId],
+        //     members: Number.MAX_SAFE_INTEGER,
+        // }
+
         const members = await this.fedimint.matrixRoomGetMembers({ roomId })
         members.forEach(member => {
             this.emit('roomMember', this.serializeRoomMember(member, roomId))

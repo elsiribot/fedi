@@ -56,6 +56,7 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
     // const isFocused = useIsFocused()
     // useUpdateLastMessageRead(memberId, messages, isFocused !== true)
 
+    // add another check before creating another room
     const handleSend = useCallback(
         async (body: string) => {
             const res = await dispatch(
