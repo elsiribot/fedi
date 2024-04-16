@@ -21,19 +21,19 @@ import { NavigationHook } from '../../../types/navigation'
 import CustomOverlay, { CustomOverlayContents } from '../../ui/CustomOverlay'
 import RecoveryInProgress from '../recovery/RecoveryInProgress'
 
-interface Props {
-    parsedData: AnyParsedData
+interface Props<T extends AnyParsedData> {
+    parsedData: T
     goBackText?: string
     onGoBack: () => void
-    onSuccess: (parsedData: AnyParsedData) => void
+    onSuccess: (parsedData: T) => void
 }
 
-export const OmniConfirmation: React.FC<Props> = ({
+export const OmniConfirmation = <T extends AnyParsedData>({
     parsedData,
     goBackText: propsGoBackText,
     onGoBack,
     onSuccess,
-}) => {
+}: Props<T>) => {
     const { t } = useTranslation()
     const toast = useToast()
     const navigation = useNavigation()
