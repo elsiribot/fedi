@@ -11,10 +11,10 @@ export enum ParserDataType {
     Bip21 = 'bitcoin:bip21',
     FedimintEcash = 'fedimint:ecash',
     FedimintInvite = 'fedimint:invite',
-    LegacyFediChatMember = 'fedi:chatmember', // TODO: remove after matrixification
-    LegacyFediChatGroup = 'fedi:chatgroup', // TODO: remove after matrixification
-    FediChatUser = 'fedi:chatuser',
-    FediChatRoom = 'fedi:chatroom',
+    LegacyFediChatMember = 'fedi:member', // TODO: remove after matrixification
+    LegacyFediChatGroup = 'fedi:group', // TODO: remove after matrixification
+    FediChatUser = 'fedi:user',
+    FediChatRoom = 'fedi:room',
     Website = 'website',
     Unknown = 'unknown',
 }

@@ -178,8 +178,7 @@ export const OmniConfirmation: React.FC<Props> = ({
                 return {
                     contents: {
                         icon: 'ScanSad',
-                        // title: t('feature.omni.unsupported-chat-invite'),
-                        title: t('feature.omni.unsupported-legacy-chat'),
+                        title: t('feature.omni.unsupported-chat-invite'),
                     },
                 }
             case ParserDataType.LegacyFediChatGroup:

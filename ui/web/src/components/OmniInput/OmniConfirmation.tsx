@@ -143,8 +143,7 @@ export const OmniConfirmation: React.FC<Props> = ({
                 // TODO: Implement join room by link for matrix (knocking)
                 return {
                     icon: ScanSadIcon,
-                    // text: t('feature.omni.unsupported-chat-invite'),
-                    text: t('feature.omni.unsupported-legacy-chat'),
+                    text: t('feature.omni.unsupported-chat-invite'),
                 }
             case ParserDataType.LegacyFediChatGroup:
             case ParserDataType.LegacyFediChatMember:
