@@ -435,10 +435,12 @@ async fn backupStatus(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn getNostrPubKey(
-    bridge: Arc<Bridge>,
-    _federation_id: RpcFederationId, // TODO: Remove me
-) -> anyhow::Result<String> {
+async fn getNostrPubKey(bridge: Arc<Bridge>) -> anyhow::Result<String> {
+    bridge.get_nostr_pub_key_hex().await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn getNostrPubKeyBech32(bridge: Arc<Bridge>) -> anyhow::Result<String> {
     bridge.get_nostr_pub_key().await
 }
 
@@ -1100,6 +1102,7 @@ rpc_methods!(RpcMethods {
     backupXmppUsername,
     // Nostr
     getNostrPubKey,
+    getNostrPubKeyBech32,
     signNostrEvent,
     // Stability Pool
     stabilityPoolAccountInfo,

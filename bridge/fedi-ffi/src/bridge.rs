@@ -5,6 +5,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, bail, Context, Result};
+use bitcoin::bech32::{self, ToBase32};
 use bitcoin::secp256k1::{Message, Secp256k1};
 use bitcoin::Address;
 use fedi_social_client::FediSocialCommonGen;
@@ -1105,13 +1106,23 @@ impl Bridge {
             .await
     }
 
+    pub async fn get_nostr_pub_key_hex(&self) -> Result<String> {
+        Ok(self.nostr_pubkey().await.to_string())
+    }
+
     pub async fn get_nostr_pub_key(&self) -> Result<String> {
+        let nostr_pubkey = self.nostr_pubkey().await;
+        let data = nostr_pubkey.serialize().to_base32();
+        Ok(bech32::encode("npub", data, bech32::Variant::Bech32)?)
+    }
+
+    async fn nostr_pubkey(&self) -> bitcoin::XOnlyPublicKey {
         let global_root_secret = self.app_state.root_secret().await;
         let secp = Secp256k1::new();
         let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
         let nostr_keypair = nostr_secret.to_secp_key(&secp);
-        let nostr_pubkey = nostr_keypair.x_only_public_key();
-        Ok(nostr_pubkey.0.to_string())
+
+        nostr_keypair.x_only_public_key().0
     }
 
     pub async fn sign_nostr_event(
