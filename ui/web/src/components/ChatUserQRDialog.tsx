@@ -25,7 +25,7 @@ export const ChatUserQRDialog: React.FC<Props> = props => {
             title={t('feature.chat.chat-invite')}
             qrValue={directChatLink}
             onCopyMessage={t('phrases.copied-to-clipboard')}
-            notice={t('feature.chats.scan-member-code-notice')}
+            notice={t('feature.chat.scan-member-code-notice')}
             {...props}
         />
     )

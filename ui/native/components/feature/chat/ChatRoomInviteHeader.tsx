@@ -19,17 +19,13 @@ const ChatRoomInviteHeader: React.FC = () => {
             backButton
             headerRight={
                 <Pressable
+                    style={{ padding: theme.spacing.sm }}
                     onPress={() => {
                         navigation.navigate('ScanMemberCode', {
                             inviteToRoomId: route.params.roomId,
                         })
                     }}>
-                    <SvgImage
-                        containerStyle={{
-                            marginTop: 'auto',
-                        }}
-                        name={'Scan'}
-                    />
+                    <SvgImage name={'Scan'} />
                 </Pressable>
             }
         />

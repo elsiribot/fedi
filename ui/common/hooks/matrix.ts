@@ -41,8 +41,9 @@ export function useIsMatrixSynced() {
 export function useIsMatrixReady() {
     const status = useCommonSelector(selectMatrixStatus)
     return (
-        status === MatrixSyncStatus.synced ||
-        status === MatrixSyncStatus.syncing
+        status === MatrixSyncStatus.synced
+        // status === MatrixSyncStatus.synced ||
+        // status === MatrixSyncStatus.syncing
     )
 }
 
