@@ -15,6 +15,7 @@ const languages = {
 
 async function run() {
     const lang = process.argv[2] ?? 'en'
+    const isForTranslator = process.argv[3] === 'no' ? false : true
 
     if (!Object.keys(languages).includes(lang)) {
         console.log(
@@ -33,7 +34,9 @@ async function run() {
     )
 
     // Convert JSON to CSV
-    let csv = `Key,Text (${lang}),Text (Translated)`
+    let csv = `Key,Text (${languages[lang as keyof typeof languages]})${
+        isForTranslator ? ',Text (Translated)' : ''
+    }`
     function appendKeysToCsv(json: LanguageJson, root?: string) {
         Object.entries(json).forEach(([key, value]) => {
             const keyPath = root ? `${root}.${key}` : key
@@ -42,7 +45,7 @@ async function run() {
             }
             if (!get(json, keyPath)) {
                 const escaped = `"${value.replace(/"/g, '""')}"`
-                csv += `\r\n${keyPath},${escaped},`
+                csv += `\r\n${keyPath},${escaped}${isForTranslator ? ',' : ''}`
             }
         })
     }
