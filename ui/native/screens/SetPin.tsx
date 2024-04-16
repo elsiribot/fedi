@@ -57,14 +57,14 @@ const SetPin: React.FC<Props> = ({ navigation }: Props) => {
                 } else if (!matchesInitialPin(confirmPinDigits)) {
                     setConfirmPinDigits([btn])
                 }
-            } else {
-                if (btn === 'backspace') {
-                    setPinDigits(pinDigits.slice(0, pinDigits.length - 1))
-                } else if (pinDigits.length < maxPinLength) {
-                    const updatedDigits = [...pinDigits, btn]
+            }
 
-                    setPinDigits(updatedDigits)
-                }
+            if (btn === 'backspace') {
+                setPinDigits(pinDigits.slice(0, pinDigits.length - 1))
+            } else if (pinDigits.length < maxPinLength) {
+                const updatedDigits = [...pinDigits, btn]
+
+                setPinDigits(updatedDigits)
             }
         },
         [isReEnteringPin, confirmPinDigits, pinDigits, matchesInitialPin],

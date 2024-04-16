@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import * as Keychain from 'react-native-keychain'
 import { z } from 'zod'
 
@@ -39,17 +39,20 @@ export function usePin(): UsePinReturn {
     const checkRef = useRef<(digits: Array<number>) => boolean>(() => true)
     const deviceId = useAppSelector(selectDeviceId)
 
-    const set = async (digits: Array<number>) => {
-        if (!deviceId) return
+    const set = useCallback(
+        async (digits: Array<number>) => {
+            if (!deviceId) return
 
-        const parsedDigits = z
-            .array(z.number().nonnegative().int().lte(9))
-            .parse(digits)
+            const parsedDigits = z
+                .array(z.number().nonnegative().int().lte(9))
+                .parse(digits)
 
-        await Keychain.setGenericPassword(deviceId, parsedDigits.join(''), {
-            service: 'pin',
-        })
-    }
+            await Keychain.setGenericPassword(deviceId, parsedDigits.join(''), {
+                service: 'pin',
+            })
+        },
+        [deviceId],
+    )
 
     useEffect(() => {
         const loadPinCheck = async () => {
