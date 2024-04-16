@@ -335,6 +335,38 @@ export class MatrixChatClient {
         })
     }
 
+    async ignoreUser(userId: string) {
+        return this.fedimint.matrixIgnoreUser({ userId })
+    }
+
+    async unIgnoreUser(userId: string) {
+        return this.fedimint.matrixUnignoreUser({ userId })
+    }
+
+    async roomKickUser(roomId: string, userId: string, reason?: string) {
+        return this.fedimint.matrixRoomKickUser({
+            roomId,
+            userId,
+            reason: reason ?? null,
+        })
+    }
+
+    async roomBanUser(roomId: string, userId: string, reason?: string) {
+        return this.fedimint.matrixRoomBanUser({
+            roomId,
+            userId,
+            reason: reason ?? null,
+        })
+    }
+
+    async roomUnbanUser(roomId: string, userId: string, reason?: string) {
+        return this.fedimint.matrixRoomUnbanUser({
+            roomId,
+            userId,
+            reason: reason ?? null,
+        })
+    }
+
     emit<TEventName extends keyof MatrixChatClientEventMap>(
         eventName: TEventName,
         argument: MatrixChatClientEventMap[TEventName],
