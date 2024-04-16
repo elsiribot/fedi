@@ -47,9 +47,9 @@ dependencies = [
 
 [[package]]
 name = "aes"
-version = "0.8.3"
+version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac1f845298e95f983ff1944b728ae08b8cebab80d684f0a832ed0fc74dfa27e2"
+checksum = "b169f7a6d4742236a0a00c541b845991d0ac43e546831af1249753ab4c3aa3a0"
 dependencies = [
  "cfg-if",
  "cipher",
@@ -760,6 +760,9 @@ name = "bitflags"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4682ae6287fcf752ecaabbfcc7b6f9b72aa33933dc23a554d853aea8eea8635"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "bitmaps"
@@ -1906,7 +1909,7 @@ dependencies = [
  "tracing-serde",
  "tracing-subscriber",
  "ts-rs",
- "uniffi 0.25.3",
+ "uniffi",
  "url",
 ]
 
@@ -3019,7 +3022,7 @@ dependencies = [
 name = "ffi-bindgen"
 version = "0.3.0"
 dependencies = [
- "uniffi 0.25.3",
+ "uniffi",
 ]
 
 [[package]]
@@ -3359,18 +3362,7 @@ checksum = "0d6b4de4a8eb6c46a8c77e1d3be942cb9a8bf073c22374578e5ba4b08ed0ff68"
 dependencies = [
  "log",
  "plain",
- "scroll 0.11.0",
-]
-
-[[package]]
-name = "goblin"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb07a4ffed2093b118a525b1d8f5204ae274faed5604537caf7135d0f18d9887"
-dependencies = [
- "log",
- "plain",
- "scroll 0.12.0",
+ "scroll",
 ]
 
 [[package]]
@@ -4478,7 +4470,7 @@ dependencies = [
 [[package]]
 name = "matrix-sdk"
 version = "0.7.1"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?branch=hacks#390d2917422749634fd995bdb7c115b411412b64"
+source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=f4195079dd4930aca540e4123a666e81deee8265#f4195079dd4930aca540e4123a666e81deee8265"
 dependencies = [
  "anymap2",
  "aquamarine",
@@ -4526,7 +4518,7 @@ dependencies = [
 [[package]]
 name = "matrix-sdk-base"
 version = "0.7.0"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?branch=hacks#390d2917422749634fd995bdb7c115b411412b64"
+source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=f4195079dd4930aca540e4123a666e81deee8265#f4195079dd4930aca540e4123a666e81deee8265"
 dependencies = [
  "as_variant",
  "async-trait",
@@ -4544,13 +4536,12 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "uniffi 0.26.1",
 ]
 
 [[package]]
 name = "matrix-sdk-common"
 version = "0.7.0"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?branch=hacks#390d2917422749634fd995bdb7c115b411412b64"
+source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=f4195079dd4930aca540e4123a666e81deee8265#f4195079dd4930aca540e4123a666e81deee8265"
 dependencies = [
  "async-trait",
  "futures-core",
@@ -4572,7 +4563,7 @@ dependencies = [
 [[package]]
 name = "matrix-sdk-crypto"
 version = "0.7.0"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?branch=hacks#390d2917422749634fd995bdb7c115b411412b64"
+source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=f4195079dd4930aca540e4123a666e81deee8265#f4195079dd4930aca540e4123a666e81deee8265"
 dependencies = [
  "aes",
  "as_variant",
@@ -4588,6 +4579,7 @@ dependencies = [
  "hkdf",
  "hmac",
  "itertools 0.12.1",
+ "js_option",
  "matrix-sdk-common",
  "pbkdf2",
  "rand",
@@ -4598,6 +4590,7 @@ dependencies = [
  "sha2",
  "subtle",
  "thiserror",
+ "time",
  "tokio",
  "tokio-stream",
  "tracing",
@@ -4609,7 +4602,7 @@ dependencies = [
 [[package]]
 name = "matrix-sdk-indexeddb"
 version = "0.7.0"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?branch=hacks#390d2917422749634fd995bdb7c115b411412b64"
+source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=f4195079dd4930aca540e4123a666e81deee8265#f4195079dd4930aca540e4123a666e81deee8265"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4635,7 +4628,7 @@ dependencies = [
 [[package]]
 name = "matrix-sdk-sqlite"
 version = "0.7.0"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?branch=hacks#390d2917422749634fd995bdb7c115b411412b64"
+source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=f4195079dd4930aca540e4123a666e81deee8265#f4195079dd4930aca540e4123a666e81deee8265"
 dependencies = [
  "async-trait",
  "deadpool-sqlite",
@@ -4657,7 +4650,7 @@ dependencies = [
 [[package]]
 name = "matrix-sdk-store-encryption"
 version = "0.7.0"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?branch=hacks#390d2917422749634fd995bdb7c115b411412b64"
+source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=f4195079dd4930aca540e4123a666e81deee8265#f4195079dd4930aca540e4123a666e81deee8265"
 dependencies = [
  "base64 0.21.7",
  "blake3",
@@ -4678,7 +4671,7 @@ dependencies = [
 [[package]]
 name = "matrix-sdk-ui"
 version = "0.7.0"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?branch=hacks#390d2917422749634fd995bdb7c115b411412b64"
+source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=f4195079dd4930aca540e4123a666e81deee8265#f4195079dd4930aca540e4123a666e81deee8265"
 dependencies = [
  "as_variant",
  "async-once-cell",
@@ -5742,7 +5735,7 @@ checksum = "afab94fb28594581f62d981211a9a4d53cc8130bbcbbb89a0440d9b8e81a7746"
 [[package]]
 name = "ruma"
 version = "0.9.4"
-source = "git+https://github.com/maan2003/ruma?branch=add-serde-derive#5bcf76f77511d51dfed5affd6d03a847729953e3"
+source = "git+https://github.com/maan2003/ruma?rev=ffd4dff770176304959f7401a4c4d427ff42d429#ffd4dff770176304959f7401a4c4d427ff42d429"
 dependencies = [
  "assign",
  "js_int",
@@ -5757,7 +5750,7 @@ dependencies = [
 [[package]]
 name = "ruma-client-api"
 version = "0.17.4"
-source = "git+https://github.com/maan2003/ruma?branch=add-serde-derive#5bcf76f77511d51dfed5affd6d03a847729953e3"
+source = "git+https://github.com/maan2003/ruma?rev=ffd4dff770176304959f7401a4c4d427ff42d429#ffd4dff770176304959f7401a4c4d427ff42d429"
 dependencies = [
  "as_variant",
  "assign",
@@ -5776,7 +5769,7 @@ dependencies = [
 [[package]]
 name = "ruma-common"
 version = "0.12.1"
-source = "git+https://github.com/maan2003/ruma?branch=add-serde-derive#5bcf76f77511d51dfed5affd6d03a847729953e3"
+source = "git+https://github.com/maan2003/ruma?rev=ffd4dff770176304959f7401a4c4d427ff42d429#ffd4dff770176304959f7401a4c4d427ff42d429"
 dependencies = [
  "as_variant",
  "base64 0.21.7",
@@ -5797,16 +5790,18 @@ dependencies = [
  "serde_html_form",
  "serde_json",
  "thiserror",
+ "time",
  "tracing",
  "url",
  "uuid",
+ "web-time",
  "wildmatch",
 ]
 
 [[package]]
 name = "ruma-events"
 version = "0.27.11"
-source = "git+https://github.com/maan2003/ruma?branch=add-serde-derive#5bcf76f77511d51dfed5affd6d03a847729953e3"
+source = "git+https://github.com/maan2003/ruma?rev=ffd4dff770176304959f7401a4c4d427ff42d429#ffd4dff770176304959f7401a4c4d427ff42d429"
 dependencies = [
  "as_variant",
  "indexmap 2.2.5",
@@ -5829,7 +5824,7 @@ dependencies = [
 [[package]]
 name = "ruma-federation-api"
 version = "0.8.0"
-source = "git+https://github.com/maan2003/ruma?branch=add-serde-derive#5bcf76f77511d51dfed5affd6d03a847729953e3"
+source = "git+https://github.com/maan2003/ruma?rev=ffd4dff770176304959f7401a4c4d427ff42d429#ffd4dff770176304959f7401a4c4d427ff42d429"
 dependencies = [
  "js_int",
  "ruma-common",
@@ -5841,7 +5836,7 @@ dependencies = [
 [[package]]
 name = "ruma-html"
 version = "0.1.0"
-source = "git+https://github.com/maan2003/ruma?branch=add-serde-derive#5bcf76f77511d51dfed5affd6d03a847729953e3"
+source = "git+https://github.com/maan2003/ruma?rev=ffd4dff770176304959f7401a4c4d427ff42d429#ffd4dff770176304959f7401a4c4d427ff42d429"
 dependencies = [
  "as_variant",
  "html5ever",
@@ -5853,7 +5848,7 @@ dependencies = [
 [[package]]
 name = "ruma-identifiers-validation"
 version = "0.9.3"
-source = "git+https://github.com/maan2003/ruma?branch=add-serde-derive#5bcf76f77511d51dfed5affd6d03a847729953e3"
+source = "git+https://github.com/maan2003/ruma?rev=ffd4dff770176304959f7401a4c4d427ff42d429#ffd4dff770176304959f7401a4c4d427ff42d429"
 dependencies = [
  "js_int",
  "thiserror",
@@ -5862,7 +5857,7 @@ dependencies = [
 [[package]]
 name = "ruma-macros"
 version = "0.12.0"
-source = "git+https://github.com/maan2003/ruma?branch=add-serde-derive#5bcf76f77511d51dfed5affd6d03a847729953e3"
+source = "git+https://github.com/maan2003/ruma?rev=ffd4dff770176304959f7401a4c4d427ff42d429#ffd4dff770176304959f7401a4c4d427ff42d429"
 dependencies = [
  "once_cell",
  "proc-macro-crate 2.0.2",
@@ -6036,16 +6031,7 @@ version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04c565b551bafbef4157586fa379538366e4385d42082f255bfd96e4fe8519da"
 dependencies = [
- "scroll_derive 0.11.1",
-]
-
-[[package]]
-name = "scroll"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ab8598aa408498679922eff7fa985c25d58a90771bd6be794434c5277eab1a6"
-dependencies = [
- "scroll_derive 0.12.0",
+ "scroll_derive",
 ]
 
 [[package]]
@@ -6053,17 +6039,6 @@ name = "scroll_derive"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1db149f81d46d2deba7cd3c50772474707729550221e69588478ebf9ada425ae"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.51",
-]
-
-[[package]]
-name = "scroll_derive"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f81c2fde025af7e69b1d1420531c8a8811ca898919db177141a85313b1cb932"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7368,21 +7343,10 @@ dependencies = [
  "anyhow",
  "camino",
  "clap",
- "uniffi_bindgen 0.25.3",
- "uniffi_build 0.25.3",
- "uniffi_core 0.25.3",
- "uniffi_macros 0.25.3",
-]
-
-[[package]]
-name = "uniffi"
-version = "0.26.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ad0be8bba6c242d2d16922de4a9c8f167b9491729fda552e70f8626bf7302cb"
-dependencies = [
- "anyhow",
- "uniffi_core 0.26.1",
- "uniffi_macros 0.26.1",
+ "uniffi_bindgen",
+ "uniffi_build",
+ "uniffi_core",
+ "uniffi_macros",
 ]
 
 [[package]]
@@ -7397,40 +7361,16 @@ dependencies = [
  "clap",
  "fs-err",
  "glob",
- "goblin 0.6.1",
+ "goblin",
  "heck 0.4.1",
  "once_cell",
  "paste",
  "serde",
  "textwrap",
  "toml 0.5.11",
- "uniffi_meta 0.25.3",
- "uniffi_testing 0.25.3",
- "uniffi_udl 0.25.3",
-]
-
-[[package]]
-name = "uniffi_bindgen"
-version = "0.26.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab31006ab9c9c6870739f0e74235729d1478d82e73571b8f53c25aa176d67535"
-dependencies = [
- "anyhow",
- "askama",
- "camino",
- "cargo_metadata",
- "fs-err",
- "glob",
- "goblin 0.8.0",
- "heck 0.4.1",
- "once_cell",
- "paste",
- "serde",
- "textwrap",
- "toml 0.5.11",
- "uniffi_meta 0.26.1",
- "uniffi_testing 0.26.1",
- "uniffi_udl 0.26.1",
+ "uniffi_meta",
+ "uniffi_testing",
+ "uniffi_udl",
 ]
 
 [[package]]
@@ -7440,18 +7380,7 @@ source = "git+https://github.com/mozilla/uniffi-rs?rev=f5fc9d7e9aa08889aedc45dd8
 dependencies = [
  "anyhow",
  "camino",
- "uniffi_bindgen 0.25.3",
-]
-
-[[package]]
-name = "uniffi_build"
-version = "0.26.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4aa3a7608c6872dc1ce53199d816a24d2e19af952d82ce557ecc8692a4ae9cba"
-dependencies = [
- "anyhow",
- "camino",
- "uniffi_bindgen 0.26.1",
+ "uniffi_bindgen",
 ]
 
 [[package]]
@@ -7464,35 +7393,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "uniffi_checksum_derive"
-version = "0.26.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72775b3afa6adb30e0c92b3107858d2fcb0ff1a417ac242db1f648b0e2dd0ef2"
-dependencies = [
- "quote",
- "syn 2.0.51",
-]
-
-[[package]]
 name = "uniffi_core"
 version = "0.25.3"
 source = "git+https://github.com/mozilla/uniffi-rs?rev=f5fc9d7e9aa08889aedc45dd81ae9b4d3ec4cbe8#f5fc9d7e9aa08889aedc45dd81ae9b4d3ec4cbe8"
-dependencies = [
- "anyhow",
- "bytes",
- "camino",
- "log",
- "once_cell",
- "oneshot-uniffi",
- "paste",
- "static_assertions",
-]
-
-[[package]]
-name = "uniffi_core"
-version = "0.26.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d6e8db3f4e558faf0e25ac4b5bd775567973a4e18809f1123e74de52a853692"
 dependencies = [
  "anyhow",
  "bytes",
@@ -7518,27 +7421,8 @@ dependencies = [
  "serde",
  "syn 2.0.51",
  "toml 0.5.11",
- "uniffi_build 0.25.3",
- "uniffi_meta 0.25.3",
-]
-
-[[package]]
-name = "uniffi_macros"
-version = "0.26.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a126650799f97d97d8e38e3f10f15c65f5bc5a76b021bec21823efe9dd831a02"
-dependencies = [
- "bincode",
- "camino",
- "fs-err",
- "once_cell",
- "proc-macro2",
- "quote",
- "serde",
- "syn 2.0.51",
- "toml 0.5.11",
- "uniffi_build 0.26.1",
- "uniffi_meta 0.26.1",
+ "uniffi_build",
+ "uniffi_meta",
 ]
 
 [[package]]
@@ -7549,19 +7433,7 @@ dependencies = [
  "anyhow",
  "bytes",
  "siphasher",
- "uniffi_checksum_derive 0.25.3",
-]
-
-[[package]]
-name = "uniffi_meta"
-version = "0.26.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f64a99e905671738d9d293f9cce58708ce1af8e13ea29f9d6b6925114fc2e85"
-dependencies = [
- "anyhow",
- "bytes",
- "siphasher",
- "uniffi_checksum_derive 0.26.1",
+ "uniffi_checksum_derive",
 ]
 
 [[package]]
@@ -7577,41 +7449,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "uniffi_testing"
-version = "0.26.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cdca5719a22edf34c8239cc6ac9e3906d7ebc2a3e8a5e6ece4c3dffc312a4251"
-dependencies = [
- "anyhow",
- "camino",
- "cargo_metadata",
- "fs-err",
- "once_cell",
-]
-
-[[package]]
 name = "uniffi_udl"
 version = "0.25.3"
 source = "git+https://github.com/mozilla/uniffi-rs?rev=f5fc9d7e9aa08889aedc45dd81ae9b4d3ec4cbe8#f5fc9d7e9aa08889aedc45dd81ae9b4d3ec4cbe8"
 dependencies = [
  "anyhow",
  "textwrap",
- "uniffi_meta 0.25.3",
- "uniffi_testing 0.25.3",
- "weedle2 4.0.0",
-]
-
-[[package]]
-name = "uniffi_udl"
-version = "0.26.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f6817c15714acccd0d0459f99b524cabebfdd622376464a2c6466a6485bdb4b"
-dependencies = [
- "anyhow",
- "textwrap",
- "uniffi_meta 0.26.1",
- "uniffi_testing 0.26.1",
- "weedle2 5.0.0",
+ "uniffi_meta",
+ "uniffi_testing",
+ "weedle2",
 ]
 
 [[package]]
@@ -7727,12 +7573,11 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 [[package]]
 name = "vodozemac"
 version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2790dffeecc522299d72d9a855c43adb0c23ba1dc1112d79a651fdf3beb2a356"
+source = "git+https://github.com/matrix-org/vodozemac?rev=0c75746fc8a5eda4a0e490d345d1798b4c6cbd67#0c75746fc8a5eda4a0e490d345d1798b4c6cbd67"
 dependencies = [
  "aes",
  "arrayvec",
- "base64 0.21.7",
+ "base64 0.22.0",
  "cbc",
  "curve25519-dalek",
  "ed25519-dalek",
@@ -7929,15 +7774,6 @@ dependencies = [
 name = "weedle2"
 version = "4.0.0"
 source = "git+https://github.com/mozilla/uniffi-rs?rev=f5fc9d7e9aa08889aedc45dd81ae9b4d3ec4cbe8#f5fc9d7e9aa08889aedc45dd81ae9b4d3ec4cbe8"
-dependencies = [
- "nom",
-]
-
-[[package]]
-name = "weedle2"
-version = "5.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "998d2c24ec099a87daf9467808859f9d82b61f1d9c9701251aea037f514eae0e"
 dependencies = [
  "nom",
 ]
