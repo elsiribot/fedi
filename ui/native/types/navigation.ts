@@ -106,7 +106,7 @@ export type RootStackParamList = {
     GroupChat: { groupId: string }
     GroupAdmin: { roomId: string }
     GroupInvite: { groupId: string }
-    ScanMemberCode: { inviteToRoomId?: string }
+    ScanMemberCode: { inviteToRoomId?: string } | undefined
     ScanSocialRecoveryCode: undefined
     SelectRecoveryFileSuccess: { fileName: string }
     SelectRecoveryFileFailure: { fileName: string }

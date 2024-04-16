@@ -87,12 +87,14 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
         }
     }, [
         dispatch,
-        inviteUserToMatrixRoom,
         toast,
         t,
         scannedUser,
         setIsLoading,
         setScannedUser,
+        handleNavigate,
+        inviteToRoomId,
+        isInvitation,
     ])
 
     const handleScannedData = useCallback(
@@ -114,7 +116,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
                 setScannedUser(parsedData)
             }
         },
-        [navigation, setScannedUser, toast],
+        [navigation, setScannedUser, toast, t, isInvitation],
     )
 
     const confirmationContent: CustomOverlayContents = useMemo(
@@ -134,7 +136,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
                 },
             ],
         }),
-        [setScannedUser, t, handleConfirmation],
+        [setScannedUser, t, handleConfirmation, roomName],
     )
 
     const style = styles()

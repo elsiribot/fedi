@@ -41,11 +41,13 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
         setIsRefetching(true)
         dispatch(refetchMatrixRoomMembers(roomId))
             .unwrap()
-            .catch(() => {})
+            .catch(() => {
+                // no-op
+            })
 
         setTimeout(() => setIsRefetching(false), 500)
         // Dismissing any sooner looks weird
-    }, [dispatch, refetchMatrixRoomMembers])
+    }, [dispatch, roomId])
 
     const renderMember: ListRenderItem<MatrixRoomMember> = ({ item }) => {
         const isMe = item.id === myUserId
