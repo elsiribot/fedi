@@ -1,9 +1,39 @@
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
+import { useTheme } from '@rneui/themed'
 import React from 'react'
+import { Pressable } from 'react-native'
 
+import { NavigationHook, RootStackParamList } from '../../../types/navigation'
 import Header from '../../ui/Header'
+import SvgImage from '../../ui/SvgImage'
+
+type ChatRouteProp = RouteProp<RootStackParamList, 'ChatRoomInvite'>
 
 const ChatRoomInviteHeader: React.FC = () => {
-    return <Header backButton />
+    const { theme } = useTheme()
+    const navigation = useNavigation<NavigationHook>()
+    const route = useRoute<ChatRouteProp>()
+
+    return (
+        <Header
+            backButton
+            headerRight={
+                <Pressable
+                    onPress={() => {
+                        navigation.navigate('ScanMemberCode', {
+                            inviteToRoomId: route.params.roomId,
+                        })
+                    }}>
+                    <SvgImage
+                        containerStyle={{
+                            marginTop: 'auto',
+                        }}
+                        name={'Scan'}
+                    />
+                </Pressable>
+            }
+        />
+    )
 }
 
 export default ChatRoomInviteHeader
