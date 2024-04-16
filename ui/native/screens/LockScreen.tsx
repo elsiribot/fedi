@@ -1,17 +1,12 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
-import {
-    BackHandler,
-    StyleSheet,
-    View,
-    useWindowDimensions,
-} from 'react-native'
+import { StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import { maxPinLength, pinNumbers } from '@fedi/common/constants/security'
 import { numpadButtons } from '@fedi/common/hooks/amount'
 import { useDebounce } from '@fedi/common/hooks/util'
-import { setFeatureUnlocked } from '@fedi/common/redux'
+import { ProtectedFeatures, setFeatureUnlocked } from '@fedi/common/redux'
 
 import PinDot from '../components/feature/pin/PinDot'
 import { NumpadButton } from '../components/ui/NumpadButton'
@@ -19,12 +14,27 @@ import { useAppDispatch } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 import { usePin } from '../utils/hooks/security'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'LockScreen'>
+export type Props = NativeStackScreenProps<
+    RootStackParamList,
+    keyof RootStackParamList
+>
 
-const LockScreen: React.FC<Props> = ({ navigation, route }: Props) => {
+const LockScreen = <T extends keyof RootStackParamList>({
+    navigation,
+    feature,
+    screen,
+}: Props & {
+    feature: keyof ProtectedFeatures
+    screen: [
+        ...(T extends unknown
+            ? undefined extends RootStackParamList[T]
+                ? [screen: T] | [screen: T, params: RootStackParamList[T]]
+                : [screen: T, params: RootStackParamList[T]]
+            : never),
+    ]
+}) => {
     const { theme } = useTheme()
     const { width } = useWindowDimensions()
-    const { feature } = route.params
     const pin = usePin()
     const [pinDigits, setPinDigits] = useState<Array<number>>([])
     const dispatch = useAppDispatch()
@@ -69,36 +79,22 @@ const LockScreen: React.FC<Props> = ({ navigation, route }: Props) => {
     )
 
     useEffect(() => {
-        const backAction = () => {
-            return true
-        }
-
-        const backHandler = BackHandler.addEventListener(
-            'hardwareBackPress',
-            backAction,
+        if (
+            debouncedPin?.length !== maxPinLength ||
+            pin.status !== 'set' ||
+            !pin.check(debouncedPin)
         )
-
-        return () => backHandler.remove()
-    }, [])
-
-    useEffect(() => {
-        if (debouncedPin?.length !== maxPinLength || pin.status !== 'set')
             return
 
-        if (pin.check(debouncedPin)) {
-            dispatch(
-                setFeatureUnlocked({
-                    key: feature,
-                    unlocked: true,
-                }),
-            )
-            if (navigation.canGoBack()) {
-                navigation.goBack()
-            } else {
-                navigation.navigate('TabsNavigator')
-            }
-        }
-    }, [debouncedPin, feature, navigation, dispatch, pin])
+        dispatch(
+            setFeatureUnlocked({
+                key: feature,
+                unlocked: true,
+            }),
+        )
+
+        navigation.navigate(...screen)
+    }, [debouncedPin, feature, navigation, dispatch, pin, screen])
 
     return (
         <View style={style.container}>

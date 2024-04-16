@@ -1,5 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Switch, Text, Theme, useTheme } from '@rneui/themed'
+import { ResourceKey } from 'i18next'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
@@ -7,6 +8,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import {
     ProtectedFeatures,
     selectProtectedFeatures,
+    setFeatureUnlocked,
     setProtectedFeature,
 } from '@fedi/common/redux'
 
@@ -16,10 +18,11 @@ import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'PinAccess'>
 
-const protectedFeatureToi18nKey: Record<keyof ProtectedFeatures, string> = {
-    app: 'feature.pin.unlocking-fedi-app',
-    changePin: 'feature.pin.change-pin',
-} as const
+const protectedFeatureToi18nKey: Record<keyof ProtectedFeatures, ResourceKey> =
+    {
+        app: 'feature.pin.unlocking-fedi-app',
+        changePin: 'feature.pin.change-pin',
+    } as const
 
 const PinAccess: React.FC<Props> = ({ navigation }) => {
     const { t } = useTranslation()
@@ -40,7 +43,7 @@ const PinAccess: React.FC<Props> = ({ navigation }) => {
                             {t(
                                 protectedFeatureToi18nKey[
                                     key as keyof ProtectedFeatures
-                                ] as Parameters<typeof t>[0],
+                                ],
                             )}
                         </Text>
                         <Switch
@@ -50,6 +53,12 @@ const PinAccess: React.FC<Props> = ({ navigation }) => {
                                     setProtectedFeature({
                                         key: key as keyof ProtectedFeatures,
                                         enabled: !value,
+                                    }),
+                                )
+                                dispatch(
+                                    setFeatureUnlocked({
+                                        key: key as keyof ProtectedFeatures,
+                                        unlocked: true,
                                     }),
                                 )
                             }}

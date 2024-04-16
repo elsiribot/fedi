@@ -1,4 +1,3 @@
-import { useNavigation } from '@react-navigation/native'
 import { useEffect, useRef, useState } from 'react'
 import * as Keychain from 'react-native-keychain'
 import { z } from 'zod'
@@ -88,38 +87,20 @@ export function usePin(): UsePinReturn {
     return { status: 'unset', set } as UsePinUnset
 }
 
-/**
- * Immediately opens the lock screen if `feature` is locked and `condition` is met.
- * Returns whether the feature is unlocked and if the condition is met.
- */
-export function useProtectedFeature(
-    feature: keyof ProtectedFeatures,
-    condition = true,
-) {
-    const navigation = useNavigation()
+/** Returns whether a pin-protected feature is unlocked or not. If a pin is not set or the feature is not pin-protected,
+ * returns true */
+export const useIsFeatureUnlocked = (feature: keyof ProtectedFeatures) => {
     const isFeatureUnlocked = useAppSelector(s =>
         selectIsFeatureUnlocked(s, feature),
     )
     const isFeatureProtected = useAppSelector(selectProtectedFeatures)[feature]
     const { status } = usePin()
 
-    useEffect(() => {
-        if (
-            isFeatureProtected &&
-            !isFeatureUnlocked &&
-            status === 'set' &&
-            condition
-        ) {
-            navigation.navigate('LockScreen', { feature })
-        }
-    }, [
-        isFeatureProtected,
-        feature,
-        navigation,
-        isFeatureUnlocked,
-        status,
-        condition,
-    ])
+    if (status === 'loading') return false
 
-    return isFeatureUnlocked && condition
+    if (status === 'unset') return true
+
+    if (!isFeatureProtected) return true
+
+    return isFeatureUnlocked
 }

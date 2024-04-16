@@ -94,6 +94,9 @@ export const selectIsFeatureUnlocked = (
     feature: keyof ProtectedFeatures,
 ) => s.security.unlockedFeatures[feature]
 
+export const selectUnlockedFeatures = (s: CommonState) =>
+    s.security.unlockedFeatures
+
 export const selectProtectedFeatures = (s: CommonState) =>
     s.security.protectedFeatures
 
