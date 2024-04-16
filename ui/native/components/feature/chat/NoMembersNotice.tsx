@@ -4,10 +4,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { Props as GroupChatProps } from '../../../screens/GroupChat'
 import { NavigationHook } from '../../../types/navigation'
-
-type GroupChatRouteProp = GroupChatProps['route']
 
 type Props = {
     roomId: string

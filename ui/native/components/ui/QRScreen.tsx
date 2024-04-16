@@ -3,7 +3,6 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-    ScrollView,
     StyleSheet,
     TouchableOpacity,
     View,

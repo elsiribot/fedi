@@ -2,17 +2,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import { selectActiveFederationId, selectMatrixAuth } from '@fedi/common/redux'
-import { makeLog } from '@fedi/common/utils/log'
 
 import { OmniInput } from '../components/feature/omni/OmniInput'
 import { ParserDataType } from '../types'
 import type { RootStackParamList } from '../types/navigation'
-
-const log = makeLog('ChatRoomConversation')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ScanMemberCode'>
 
