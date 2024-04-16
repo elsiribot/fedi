@@ -35,15 +35,6 @@ function ChatPage() {
 
     if (!isReady) return null
 
-    // Regardless of which page they're on, if they need to register a username then show them this screen.
-    if (needsChatRegistration) {
-        return (
-            <ContentBlock>
-                <ChatNeedRegistration />
-            </ContentBlock>
-        )
-    }
-
     let content: React.ReactNode
     let isShowingContent = true
     if (syncStatus === MatrixSyncStatus.initialSync) {
@@ -51,6 +42,14 @@ function ChatPage() {
             <EmptyMessage>
                 <CircularLoader />
             </EmptyMessage>
+        )
+    }
+    // Regardless of which page they're on, if they need to register a username then show them this screen.
+    else if (needsChatRegistration) {
+        return (
+            <ContentBlock>
+                <ChatNeedRegistration />
+            </ContentBlock>
         )
     } else if (chatType === 'new') {
         content = <ChatNew />
