@@ -139,7 +139,7 @@ export const useBridge = () => {
             if (!activeFederationId)
                 return Promise.reject(new Error('No active federation'))
 
-            return fedimint.getNostrPubKey(activeFederationId)
+            return fedimint.getNostrPubKey()
         }, [activeFederationId]),
         signNostrEvent: useCallback(
             (eventHash: string) => {
