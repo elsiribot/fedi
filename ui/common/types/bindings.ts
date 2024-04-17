@@ -74,7 +74,7 @@ export type Event =
     | { deviceRegistration: DeviceRegistrationEvent }
 
 export type GuardianStatus =
-    | { online: { guardian: string } }
+    | { online: { guardian: string; latency_ms: number } }
     | { error: { guardian: string; error: string } }
     | { timeout: { guardian: string; elapsed: string } }
 
@@ -318,7 +318,7 @@ export interface RpcMethods {
     guardianStatus: [
         { federationId: RpcFederationId },
         Array<
-            | { online: { guardian: string } }
+            | { online: { guardian: string; latency_ms: number } }
             | { error: { guardian: string; error: string } }
             | { timeout: { guardian: string; elapsed: string } }
         >,

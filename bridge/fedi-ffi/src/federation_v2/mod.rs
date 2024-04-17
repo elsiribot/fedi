@@ -455,6 +455,7 @@ impl FederationV2 {
         let futures = peer_clients
             .into_iter()
             .map(|(guardian, client)| async move {
+                let start = fedimint_core::time::now();
                 match timeout(
                     GUARDIAN_STATUS_TIMEOUT,
                     client.request_current_consensus::<StatusResponse>(
@@ -469,6 +470,12 @@ impl FederationV2 {
                         info!("Raw status response: {:?}", status_response);
                         GuardianStatus::Online {
                             guardian: guardian.to_string(),
+                            latency_ms: start
+                                .elapsed()
+                                .unwrap_or_default()
+                                .as_millis()
+                                .try_into()
+                                .unwrap_or(u32::MAX),
                         }
                     }
                     Ok(Err(error)) => {

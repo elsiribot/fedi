@@ -378,7 +378,7 @@ const DeveloperSettings: React.FC<Props> = () => {
                     let statusStyle
 
                     if ('online' in n) {
-                        statusText = `Guardian ${n.online.guardian}: Online`
+                        statusText = `Guardian ${n.online.guardian}: Online: ${n.online.latency_ms}ms`
                         statusStyle = styles(theme).onlineStatus
                     }
                     if ('error' in n) {
