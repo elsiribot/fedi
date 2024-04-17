@@ -2679,7 +2679,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_new_device_registration_post_recovery() -> anyhow::Result<()> {
-        let device_identifier_1 = "device 1".to_string();
+        let device_identifier_1 = "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
         let (backup_bridge, federation) =
             setup_custom(device_identifier_1, mock_fedi_api.clone()).await?;
@@ -2718,7 +2718,7 @@ mod tests {
         drop(backup_bridge);
 
         // create new bridge which hasn't joined federation yet and recover mnemnonic
-        let device_identifier_2 = "device_2".to_string();
+        let device_identifier_2 = "bridge_2:test:70c25d23-bfac-4aa2-81c3-d6f5e79ae724".to_string();
         let recovery_bridge = setup_bridge_custom(device_identifier_2, mock_fedi_api).await?;
         recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
 
