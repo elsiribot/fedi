@@ -112,7 +112,7 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
                 const dumpedDbPath = await fedimint.dumpDb({
                     federationId: activeFederation.id,
                 })
-                const dumpBuffer = await RNFS.readFile(dumpedDbPath, 'ascii')
+                const dumpBuffer = await RNFS.readFile(dumpedDbPath)
                 attachmentFiles.push({
                     name: 'db.dump',
                     content: dumpBuffer,
