@@ -1,17 +1,17 @@
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import {
-    selectActiveFederation,
     selectFederationsWithBalances,
+    selectPayFromFederation,
+    setPayFromFederationId,
 } from '@fedi/common/redux'
 import { RpcFederation } from '@fedi/common/types/bindings'
 
-import { useAppSelector } from '../../../state/hooks'
+import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { MSats } from '../../../types'
 import CustomOverlay from '../../ui/CustomOverlay'
 import { FederationLogo } from '../../ui/FederationLogo'
@@ -19,21 +19,26 @@ import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 const FederationWalletSelector: React.FC = () => {
     const { theme } = useTheme()
+    const dispatch = useAppDispatch()
     const [opened, setOpened] = useState<boolean>(false)
     const { t } = useTranslation()
     const style = styles(theme)
-    const activeFederation = useAppSelector(selectActiveFederation)
+    const payFromFederation = useAppSelector(selectPayFromFederation)
     const federations = useAppSelector(selectFederationsWithBalances)
-    const [federationToSendFrom, setFederationToSendFrom] = useState<
-        RpcFederation | undefined
-    >(activeFederation)
 
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
     const {
         formattedPrimaryAmount: primaryAmountToSendFrom,
         formattedSecondaryAmount: secondaryAmountToSendFrom,
     } = makeFormattedAmountsFromMSats(
-        federationToSendFrom?.balance || (0 as MSats),
+        payFromFederation?.balance || (0 as MSats),
+    )
+
+    const handleFederationSelected = useCallback(
+        (fed: RpcFederation) => {
+            dispatch(setPayFromFederationId(fed.id))
+        },
+        [dispatch],
     )
 
     const renderFederation = (f: RpcFederation) => {
@@ -42,7 +47,7 @@ const FederationWalletSelector: React.FC = () => {
         return (
             <Pressable
                 style={style.tileContainer}
-                onPress={() => setFederationToSendFrom(f)}>
+                onPress={() => handleFederationSelected(f)}>
                 <FederationLogo federation={f} size={32} />
                 <View style={style.tileTextContainer}>
                     <Text bold numberOfLines={1}>
@@ -52,7 +57,7 @@ const FederationWalletSelector: React.FC = () => {
                         {`${formattedPrimaryAmount} (${formattedSecondaryAmount})`}
                     </Text>
                 </View>
-                {federationToSendFrom?.id === f.id && (
+                {payFromFederation?.id === f.id && (
                     <SvgImage
                         name="Check"
                         size={SvgImageSize.sm}
@@ -70,10 +75,10 @@ const FederationWalletSelector: React.FC = () => {
             <Pressable
                 style={style.selectedFederation}
                 onPress={() => setOpened(true)}>
-                <FederationLogo federation={federationToSendFrom} size={32} />
+                <FederationLogo federation={payFromFederation} size={32} />
                 <View style={style.tileTextContainer}>
                     <Text caption bold numberOfLines={1}>
-                        {federationToSendFrom?.name || ''}
+                        {payFromFederation?.name || ''}
                     </Text>
                     <Text
                         style={{ color: theme.colors.darkGrey }}

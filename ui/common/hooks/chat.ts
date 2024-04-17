@@ -24,6 +24,7 @@ import {
     selectLatestChatMessageTimestamp,
     selectLatestPaymentUpdateTimestamp,
     selectMatrixAuth,
+    selectPayFromFederation,
     sendMatrixPaymentPush,
     sendMatrixPaymentRequest,
     setLastReadMessageTimestamp,
@@ -361,6 +362,47 @@ export const useIsChatConnected = () => {
     }, [isOffline, lastOnlineAt])
 
     return !showOffline
+}
+
+export const useChatPaymentPush = (
+    t: TFunction,
+    fedimint: FedimintBridge,
+    roomId: string,
+    recipientId: string,
+) => {
+    const toast = useToast()
+    const dispatch = useCommonDispatch()
+    const payFromFederation = useCommonSelector(selectPayFromFederation)
+    const federationId = payFromFederation?.id || ''
+    const [isProcessing, setIsProcessing] = useState<boolean>(false)
+
+    const handleSendPayment = useCallback(
+        async (amount: Sats, onSuccess: () => void) => {
+            if (!federationId || !roomId || !amount) return
+            setIsProcessing(true)
+            try {
+                await dispatch(
+                    sendMatrixPaymentPush({
+                        fedimint,
+                        federationId,
+                        roomId,
+                        recipientId,
+                        amount,
+                    }),
+                ).unwrap()
+                onSuccess()
+            } catch (err) {
+                toast.error(t, err, 'errors.unknown-error')
+            }
+            setIsProcessing(false)
+        },
+        [dispatch, federationId, fedimint, recipientId, roomId, t, toast],
+    )
+
+    return {
+        isProcessing,
+        handleSendPayment,
+    }
 }
 
 export const useChatPaymentUtils = (
