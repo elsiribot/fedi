@@ -603,21 +603,6 @@ export const makeStabilityTxnDetailItems = (
         value: makeTxnDetailStatusText(t, txn),
     })
 
-    if (
-        txn.stabilityPoolState &&
-        txn.stabilityPoolState.type === 'completeDeposit' &&
-        'fees_paid_so_far' in txn.stabilityPoolState
-    ) {
-        const { formattedFiat: feeFormattedFiat } =
-            makeFormattedAmountsFromMSats(
-                txn.stabilityPoolState.fees_paid_so_far,
-            )
-        items.push({
-            label: t('feature.stabilitypool.fees-paid'),
-            value: feeFormattedFiat,
-        })
-    }
-
     items.push({
         label: t('words.time'),
         value: dateUtils.formatTimestamp(txn.createdAt, 'MMM dd yyyy, h:mmaaa'),
@@ -625,7 +610,6 @@ export const makeStabilityTxnDetailItems = (
     return items
 }
 
-// TODO - Add stability-pool fees
 export const makeStabilityTxnFeeDetails = (
     t: TFunction,
     txn: Transaction,
@@ -645,39 +629,31 @@ export const makeStabilityTxnFeeDetails = (
         totalFee += fediFee
     }
 
-    // Handle Lightning Fee
-    if (txn.lightning) {
-        const lnFee = txn.lightning.fee ?? (0 as MSats)
+    if (
+        txn.stabilityPoolState &&
+        txn.stabilityPoolState.type === 'completeDeposit' &&
+        'fees_paid_so_far' in txn.stabilityPoolState
+    ) {
+        const feesPaidSoFar =
+            txn.stabilityPoolState.fees_paid_so_far ?? (0 as MSats)
         const { formattedPrimaryAmount, formattedSecondaryAmount } =
-            makeFormattedAmountsFromMSats(lnFee)
+            makeFormattedAmountsFromMSats(feesPaidSoFar)
         items.push({
-            label: t('phrases.lightning-network'),
+            label: t('feature.stabilitypool.fees-paid'),
             formattedAmount: `${formattedPrimaryAmount} (${formattedSecondaryAmount})`,
         })
-        totalFee += lnFee
-    }
-
-    // Handle Onchain Fee
-    if (txn.onchainWithdrawalDetails) {
-        const onchainFee = txn.onchainWithdrawalDetails.fee ?? (0 as MSats)
-        const { formattedPrimaryAmount, formattedSecondaryAmount } =
-            makeFormattedAmountsFromMSats(onchainFee as MSats)
-        items.push({
-            label: t('phrases.network-fee'),
-            formattedAmount: `${formattedPrimaryAmount} (${formattedSecondaryAmount})`,
-        })
-        totalFee += onchainFee
+        totalFee += feesPaidSoFar
     }
     // TODO - Add Federation Fee once RPC supports it
     //  t('phrases.federation-fee'),
 
     const { formattedPrimaryAmount, formattedSecondaryAmount } =
         makeFormattedAmountsFromMSats(totalFee as MSats)
-    const fediFee = {
+    const totalFees = {
         label: t('phrases.total-fees'),
         formattedAmount: `${formattedPrimaryAmount} (${formattedSecondaryAmount})`,
     }
-    items.push(fediFee)
+    items.push(totalFees)
 
     return items
 }
