@@ -12,11 +12,7 @@ import CustomOverlay, {
     CustomOverlayContents,
 } from '../components/ui/CustomOverlay'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import {
-    ParsedFediChatUser,
-    ParsedLegacyFediChatMember,
-    ParserDataType,
-} from '../types'
+import { ParsedFediChatUser, ParserDataType } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ScanMemberCode'>
