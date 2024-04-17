@@ -339,7 +339,7 @@ export class MatrixChatClient {
         return this.fedimint.matrixIgnoreUser({ userId })
     }
 
-    async unIgnoreUser(userId: string) {
+    async unignoreUser(userId: string) {
         return this.fedimint.matrixUnignoreUser({ userId })
     }
 
