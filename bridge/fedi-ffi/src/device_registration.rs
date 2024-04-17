@@ -9,10 +9,10 @@ use tracing::{error, info};
 use crate::api::{IFediApi, RegisterDeviceError, RegisteredDevice};
 use crate::constants::{DEVICE_REGISTRATION_FREQUENCY, DEVICE_REGISTRATION_OVERDUE};
 use crate::event::{Event, EventSink, TypedEventExt};
-use crate::storage::AppState;
+use crate::storage::{AppState, DeviceIdentifier};
 
 pub struct DeviceRegistrationService {
-    device_identifier: String,
+    device_identifier: DeviceIdentifier,
     app_state: Arc<AppState>,
     event_sink: EventSink,
     task_group: TaskGroup,
@@ -22,7 +22,7 @@ pub struct DeviceRegistrationService {
 
 impl DeviceRegistrationService {
     pub async fn new(
-        device_identifier: String,
+        device_identifier: DeviceIdentifier,
         app_state: Arc<AppState>,
         event_sink: EventSink,
         task_group: TaskGroup,
@@ -83,7 +83,7 @@ impl DeviceRegistrationService {
 }
 
 async fn renew_registration_periodically(
-    device_identifier: String,
+    device_identifier: DeviceIdentifier,
     device_index: u8,
     app_state: Arc<AppState>,
     event_sink: EventSink,
@@ -150,7 +150,7 @@ pub async fn register_device_with_backoff(
     event_sink: EventSink,
     seed: bip39::Mnemonic,
     device_index: u8,
-    device_identifier: String,
+    device_identifier: DeviceIdentifier,
     force_overwrite: bool,
 ) -> anyhow::Result<()> {
     enum RegisterDeviceRetryOk {

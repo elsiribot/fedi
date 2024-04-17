@@ -9,18 +9,21 @@ use fedi_api_types::device_control::response::DevicesForSeedResultV0;
 use fedi_api_types::device_control::{DeviceIdentifierV0, DeviceIndexV0, SeedCommitmentV0};
 use fedi_api_types::fee_schedule::FeesV0;
 use fedi_api_types::invoice_generator::{GenerateInvoiceRequestV0, GenerateInvoiceResponseV0};
+use fedimint_aead::{decrypt, encrypt, LessSafeKey};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send, Amount};
+use fedimint_derive_secret::DerivableSecret;
 use lightning_invoice::Bolt11Invoice;
 use reqwest::{Client, StatusCode};
 
 use crate::constants::{
-    FEDI_DEVICE_REGISTRATION_URL, FEDI_FEE_API_URL_MAINNET, FEDI_FEE_API_URL_MUTINYNET,
-    FEDI_INVOICE_API_URL_MAINNET, FEDI_INVOICE_API_URL_MUTINYNET,
+    DEVICE_IDENTIFIER_FIXED_LENGTH, DEVICE_REGISTRATION_CHILD_ID, FEDI_DEVICE_REGISTRATION_URL,
+    FEDI_FEE_API_URL_MAINNET, FEDI_FEE_API_URL_MUTINYNET, FEDI_INVOICE_API_URL_MAINNET,
+    FEDI_INVOICE_API_URL_MUTINYNET,
 };
-use crate::storage::{FediFeeSchedule, ModuleFediFeeSchedule};
+use crate::storage::{DeviceIdentifier, FediFeeSchedule, ModuleFediFeeSchedule};
 
 /// Represents registration information of a device using our root seed as
 /// recorded with Fedi's servers.
@@ -39,7 +42,7 @@ pub struct RegisteredDevice {
     pub index: u8,
 
     /// Human-readable, unique, stable string identifier assigned to the device
-    pub identifier: String,
+    pub identifier: DeviceIdentifier,
 
     /// Timestamp of the last successful registration renewal made from the
     /// device. The more recent, the better. We expect every device to
@@ -116,7 +119,7 @@ pub trait IFediApi: MaybeSend + MaybeSync + 'static {
         &self,
         seed: bip39::Mnemonic,
         device_index: u8,
-        device_identifier: String,
+        device_identifier: DeviceIdentifier,
         force_overwrite: bool,
     ) -> anyhow::Result<(), RegisterDeviceError>;
 }
@@ -227,9 +230,8 @@ impl IFediApi for LiveFediApi {
         &self,
         seed: bip39::Mnemonic,
     ) -> anyhow::Result<Vec<RegisteredDevice>> {
-        let seed_commitment = SeedCommitmentV0::new(
-            Bip39RootSecretStrategy::<12>::to_root_secret(&seed).to_random_bytes(),
-        );
+        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&seed);
+        let seed_commitment = SeedCommitmentV0::new(root_secret.to_random_bytes());
 
         // Timeout of 2 minutes here since this fetch will either be performed during
         // onboarding and it's important for it to succeed, or it will be performed in a
@@ -252,24 +254,29 @@ impl IFediApi for LiveFediApi {
         Ok(registered_devices_v0
             .devices
             .into_iter()
-            .map(|info| RegisteredDevice {
-                index: info.device_index.0,
-                identifier: info.device_identifier.device_name,
-                last_renewed: info.timestamp.0.into(),
+            .map(|info| {
+                Ok(RegisteredDevice {
+                    index: info.device_index.0,
+                    identifier: decrypt_device_identifier(
+                        &root_secret,
+                        info.device_identifier.device_name,
+                    )?,
+                    last_renewed: info.timestamp.0.into(),
+                })
             })
-            .collect())
+            .collect::<anyhow::Result<_>>()?)
     }
 
     async fn register_device_for_seed(
         &self,
         seed: bip39::Mnemonic,
         device_index: u8,
-        device_identifier: String,
+        device_identifier: DeviceIdentifier,
         force_overwrite: bool,
     ) -> Result<(), RegisterDeviceError> {
-        let seed_commitment = SeedCommitmentV0::new(
-            Bip39RootSecretStrategy::<12>::to_root_secret(&seed).to_random_bytes(),
-        );
+        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&seed);
+        let seed_commitment = SeedCommitmentV0::new(root_secret.to_random_bytes());
+        let device_identifier = encrypt_device_identifier(&root_secret, device_identifier)?;
 
         // Timeout of 2 minutes here since this request will either be performed during
         // onboarding and it's important for it to succeed, or it will be performed in a
@@ -307,4 +314,39 @@ impl IFediApi for LiveFediApi {
             Err(e) => Err(RegisterDeviceError::ErrorSendingRequest(e.to_string())),
         }
     }
+}
+
+fn encrypt_device_identifier(
+    root_secret: &DerivableSecret,
+    device_identifier: DeviceIdentifier,
+) -> Result<String, RegisterDeviceError> {
+    let device_id_encryption_secret = root_secret.child_key(DEVICE_REGISTRATION_CHILD_ID);
+    // Pad if necessary -> encrypt -> hex-encode
+    let padded = format!(
+        "{:width$}",
+        device_identifier,
+        width = DEVICE_IDENTIFIER_FIXED_LENGTH
+    );
+    let encrypted = encrypt(
+        padded.into(),
+        &LessSafeKey::new(device_id_encryption_secret.to_chacha20_poly1305_key()),
+    )
+    .map_err(|e| RegisterDeviceError::ErrorSendingRequest(e.to_string()))?;
+    Ok(hex::encode(encrypted))
+}
+
+fn decrypt_device_identifier(
+    root_secret: &DerivableSecret,
+    encrypted_device_identifier: String,
+) -> anyhow::Result<DeviceIdentifier> {
+    let device_id_encryption_secret = root_secret.child_key(DEVICE_REGISTRATION_CHILD_ID);
+    // Hex-decode -> decrypt -> trim padding
+    let mut decoded = hex::decode(encrypted_device_identifier)?;
+    let decrypted_bytes = decrypt(
+        &mut decoded,
+        &LessSafeKey::new(device_id_encryption_secret.to_chacha20_poly1305_key()),
+    )?;
+    let decrypted_string = String::from_utf8(decrypted_bytes.to_vec())?;
+    let unpadded_string = decrypted_string.trim_end();
+    FromStr::from_str(unpadded_string)
 }

@@ -1,9 +1,11 @@
 use std::collections::BTreeMap;
+use std::fmt::Display;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::sync::Arc;
 use std::time::SystemTime;
 
-use anyhow::{anyhow, bail};
+use anyhow::{anyhow, bail, ensure};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::core::ModuleKind;
@@ -15,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 
-use crate::constants::FEDI_FILE_PATH;
+use crate::constants::{DEVICE_IDENTIFIER_FIXED_LENGTH, FEDI_FILE_PATH};
 use crate::social::SocialRecoveryState;
 
 #[apply(async_trait_maybe_send!)]
@@ -52,7 +54,7 @@ pub struct AppStateRaw {
 
     // Device identifier is used to give this device a name that Fedi's device registration service
     // can store.
-    pub device_identifier: Option<String>,
+    pub device_identifier: Option<DeviceIdentifier>,
 
     // Device index identifies which device number this is under the same root seed as registered
     // with Fedi's device registration service. This index is used in the derivation path for the
@@ -76,6 +78,73 @@ pub struct AppStateRaw {
     /// See [`AppState::new_federation_db_prefix`].
     #[serde(default = "default_next_federation_prefix")]
     next_federation_db_prefix: u64,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct DeviceIdentifier {
+    device_name: String,
+    device_type: String,
+    device_uuid: String,
+}
+
+impl FromStr for DeviceIdentifier {
+    type Err = anyhow::Error;
+
+    // example: iPhone7,2:Mobile:3d8f8f3d-8f3d-3d8f-8f3d-3d8f8f3d8f3d
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts = s.split(':').collect::<Vec<_>>();
+        ensure!(
+            parts.len() == 3,
+            "Identifier format must be <name>:<type>:<uuid>"
+        );
+        let mut device_name = parts[0].to_owned();
+        let device_type = parts[1].to_owned();
+        let device_uuid = parts[2].to_owned();
+
+        // Truncate device_name as needed to ensure device identifier can be displayed
+        // within max 128 characters. We need to ensure that device_type and device_uuid
+        // can fit within 128 - 2 (for :'s) characters.
+        let remaining_len = DEVICE_IDENTIFIER_FIXED_LENGTH
+            .checked_sub(device_type.len() + device_uuid.len() + 2)
+            .ok_or(anyhow!(
+                "Combined length of device type and uuid exceeds max"
+            ))?;
+        device_name.truncate(remaining_len);
+        Ok(Self {
+            device_name,
+            device_type,
+            device_uuid,
+        })
+    }
+}
+
+impl Display for DeviceIdentifier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}:{}:{}",
+            self.device_name, self.device_type, self.device_uuid
+        )
+    }
+}
+
+impl Serialize for DeviceIdentifier {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for DeviceIdentifier {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        FromStr::from_str(&s).map_err(serde::de::Error::custom)
+    }
 }
 
 fn default_device_index() -> Option<u8> {
@@ -276,8 +345,8 @@ impl AppState {
     /// existing device identifier.
     pub async fn verify_and_return_device_identifier(
         &self,
-        new_identifier: String,
-    ) -> anyhow::Result<String> {
+        new_identifier: DeviceIdentifier,
+    ) -> anyhow::Result<DeviceIdentifier> {
         match self
             .with_read_lock(|state| state.device_identifier.clone())
             .await

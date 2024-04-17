@@ -88,7 +88,7 @@ impl Bridge {
         ));
 
         let device_identifier = app_state
-            .verify_and_return_device_identifier(device_identifier)
+            .verify_and_return_device_identifier(FromStr::from_str(&device_identifier)?)
             .await?;
         let device_registration_service = Mutex::new(
             DeviceRegistrationService::new(
