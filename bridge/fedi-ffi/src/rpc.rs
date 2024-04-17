@@ -624,6 +624,7 @@ async fn fetchRegisteredDevices(bridge: Arc<Bridge>) -> anyhow::Result<Vec<RpcRe
 
 #[macro_rules_derive(rpc_method!)]
 async fn registerAsNewDevice(bridge: Arc<Bridge>) -> anyhow::Result<Option<RpcFederation>> {
+    ensure_device_index_unassigned(&bridge).await?;
     bridge
         .register_device_with_index(
             bridge.fetch_registered_devices().await?.len().try_into()?,
@@ -637,7 +638,18 @@ async fn transferExistingDeviceRegistration(
     bridge: Arc<Bridge>,
     index: u8,
 ) -> anyhow::Result<Option<RpcFederation>> {
+    ensure_device_index_unassigned(&bridge).await?;
     bridge.register_device_with_index(index, true).await
+}
+
+async fn ensure_device_index_unassigned(bridge: &Bridge) -> anyhow::Result<()> {
+    Ok(anyhow::ensure!(
+        matches!(
+            bridge.device_index_assignment_status().await,
+            Ok(RpcDeviceIndexAssignmentStatus::Unassigned)
+        ),
+        "device index is already assigned"
+    ))
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -2543,7 +2555,6 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[ignore] // flaky
     async fn test_transfer_device_registration_post_recovery() -> anyhow::Result<()> {
         let device_identifier_1 = "device 1".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
@@ -2667,7 +2678,6 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[ignore] // flaky
     async fn test_new_device_registration_post_recovery() -> anyhow::Result<()> {
         let device_identifier_1 = "device 1".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
