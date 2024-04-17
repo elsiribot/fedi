@@ -93,14 +93,8 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
     ])
 
     const handleScannedData = useCallback(
-        async (parsedData: ParsedFediChatUser | ParsedLegacyFediChatMember) => {
-            if (parsedData.type === ParserDataType.LegacyFediChatMember) {
-                // handle legacy chat code
-                return toast.show({
-                    content: t('feature.omni.unsupported-legacy-chat'),
-                    status: 'error',
-                })
-            } else if (!isInvitation) {
+        (parsedData: ParsedFediChatUser) => {
+            if (!isInvitation) {
                 // If inviteToRoomId is not set, navigate to ChatUserConversation
                 return navigation.replace('ChatUserConversation', {
                     userId: parsedData.data.id,
@@ -111,7 +105,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
                 setScannedUser(parsedData)
             }
         },
-        [navigation, setScannedUser, toast, t, isInvitation],
+        [navigation, setScannedUser, isInvitation],
     )
 
     const confirmationContent: CustomOverlayContents = useMemo(
@@ -139,10 +133,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
     return (
         <View style={style.container}>
             <OmniInput
-                expectedInputTypes={[
-                    ParserDataType.LegacyFediChatMember,
-                    ParserDataType.FediChatUser,
-                ]}
+                expectedInputTypes={[ParserDataType.FediChatUser]}
                 onExpectedInput={handleScannedData}
                 onUnexpectedSuccess={() =>
                     navigation.canGoBack()

@@ -34,6 +34,7 @@ import { Text } from './Text'
 const expectedInputTypes = [
     ParserDataType.Bolt11,
     ParserDataType.LnurlPay,
+    ParserDataType.FediChatUser,
     ParserDataType.LegacyFediChatMember,
 ] as const
 
