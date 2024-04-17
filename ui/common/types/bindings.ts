@@ -930,6 +930,6 @@ export type UserProfile = any
 export interface WithdrawalDetails {
     address: string
     txid: string
-    fee: number
+    fee: RpcAmount
     feeRate: number
 }

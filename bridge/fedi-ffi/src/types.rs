@@ -320,8 +320,7 @@ pub enum RpcTransactionDirection {
 pub struct WithdrawalDetails {
     pub address: String,
     pub txid: String,
-    #[ts(type = "number")]
-    pub fee: u64,
+    pub fee: RpcAmount,
     #[ts(type = "number")]
     pub fee_rate: u64,
 }

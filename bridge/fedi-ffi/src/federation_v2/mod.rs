@@ -700,7 +700,7 @@ impl FederationV2 {
                                 ln_state: RpcLnState::from_ln_recv_state(Some(update)),
                                 lightning: Some(RpcLightningDetails {
                                     invoice: invoice.to_string(),
-                                    fee: None, // TODO: to be implemented on the fedimint side
+                                    fee: None,
                                 }),
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
@@ -1925,7 +1925,7 @@ impl FederationV2 {
                         LIGHTNING_OPERATION_TYPE => {
                             let lightning_meta: LightningOperationMeta = op.1.meta();
                             match lightning_meta.variant {
-                                LightningOperationMetaVariant::Pay(LightningOperationMetaPay{ invoice, .. }) => {
+                                LightningOperationMetaVariant::Pay(LightningOperationMetaPay{ invoice, fee, .. }) => {
                                     let extra_meta = serde_json::from_value::<LightningSendMetadata>(lightning_meta.extra_meta)
                                         .unwrap_or(LightningSendMetadata {
                                             is_fedi_fee_remittance: false,
@@ -1951,7 +1951,7 @@ impl FederationV2 {
                                             ),
                                             lightning: Some(RpcLightningDetails {
                                                 invoice: invoice.to_string(),
-                                                fee: None, // TODO: to be implemented on the fedimint side
+                                                fee: Some(RpcAmount(fee)),
                                             }),
                                             oob_state: None,
                                             onchain_withdrawal_details: None,
@@ -1978,8 +1978,7 @@ impl FederationV2 {
                                         ln_state,
                                         lightning: Some(RpcLightningDetails {
                                             invoice: invoice.to_string(),
-                                            fee: None, /* TODO: to be implemented on the fedimint
-                                                        * side */
+                                            fee: None,
                                         }),
                                         oob_state: None,
                                         onchain_withdrawal_details: None,
@@ -2189,7 +2188,7 @@ impl FederationV2 {
                                         onchain_withdrawal_details: Some(WithdrawalDetails {
                                             address: address.to_string(),
                                             txid: txid_str,
-                                            fee: fee.amount().to_sat(),
+                                            fee: RpcAmount(Amount::from_sats(fee.amount().to_sat())),
                                             fee_rate: fee.fee_rate.sats_per_kvb,
                                         }),
                                         stability_pool_state: None,
