@@ -1,5 +1,5 @@
 import { Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Keyboard,
@@ -12,14 +12,16 @@ import {
 
 import { hexToRgba } from '@fedi/common/utils/color'
 
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import { HistoryDetailItem, HistoryDetailItemProps } from './HistoryDetailItem'
-import SvgImage, { SvgImageSize } from './SvgImage'
 
-export interface HistoryDetailProps {
+export type HistoryDetailProps = {
     icon: React.ReactNode
     title: React.ReactNode
     amount: string
+    fees?: string
     items: HistoryDetailItemProps[]
+    onPressFees?: () => void
     notes?: string
     onSaveNotes?: (notes: string) => void
     onClose: () => void
@@ -30,6 +32,8 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
     title,
     amount,
     items,
+    fees,
+    onPressFees = () => null,
     notes: propsNotes,
     onSaveNotes,
     onClose,
@@ -47,20 +51,23 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
         }
     }, [propsNotes])
 
-    const handleNotesInputChanged = (input: string) => {
-        setNotes(input)
-    }
+    const handleNotesInputChanged = useCallback(
+        (input: string) => {
+            setNotes(input)
+        },
+        [setNotes],
+    )
 
-    const handleSaveNotes = () => {
+    const handleSaveNotes = useCallback(() => {
         if (onSaveNotes && notes !== propsNotes) {
             onSaveNotes(notes)
         }
-    }
+    }, [notes, onSaveNotes, propsNotes])
 
-    const handleClose = () => {
+    const handleClose = useCallback(() => {
         handleSaveNotes()
         onClose()
-    }
+    }, [handleSaveNotes, onClose])
 
     const style = styles(theme)
 
@@ -88,6 +95,19 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
                         noBorder={!onSaveNotes && idx === items.length - 1}
                     />
                 ))}
+                {fees && (
+                    <HistoryDetailItem
+                        label={t('words.fees')}
+                        onPress={() => onPressFees()}
+                        value={
+                            <View style={style.inlineFee}>
+                                <Text caption>{`${fees}`}</Text>
+                                <SvgImage name="Info" size={16} />
+                            </View>
+                        }
+                    />
+                )}
+
                 {onSaveNotes && (
                     <HistoryDetailItem
                         label={`${t('phrases.add-note')} +`}
@@ -112,9 +132,7 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
                                         ? style.focusedInputInnerContainer
                                         : {},
                                 ]}
-                                onSubmitEditing={() => {
-                                    handleSaveNotes()
-                                }}
+                                onSubmitEditing={handleSaveNotes}
                                 inputStyle={style.input}
                                 placeholderTextColor={hexToRgba(
                                     theme.colors.night,
@@ -177,5 +195,9 @@ const styles = (theme: Theme) =>
             textAlign: 'right',
             minHeight: 0,
             paddingTop: 0,
+        },
+        inlineFee: {
+            flexDirection: 'row',
+            gap: 5,
         },
     })

@@ -4,9 +4,11 @@ import { useCallback } from 'react'
 import {
     makeTxnAmountText as makeTxnAmountTextUtil,
     makeTxnDetailItems as makeTxnDetailItemsUtil,
+    makeTxnFeeDetails as makeTxnFeeDetailsUtil,
     makeTxnNotesText as makeTxnNotesTextUtil,
     makeStabilityTxnAmountText as makeStabilityTxnAmountTextUtil,
     makeStabilityTxnDetailItems as makeStabilityTxnDetailItemsUtil,
+    makeStabilityTxnFeeDetails as makeStabilityTxnFeeDetailsUtil,
 } from '@fedi/common/utils/wallet'
 
 import {
@@ -77,6 +79,13 @@ export function useTxnDisplayUtils(t: TFunction) {
     const preferredCurrency = showFiatTxnAmounts
         ? selectedCurrency
         : t('words.sats').toUpperCase()
+
+    const makeTxnFeeDetailItems = useCallback(
+        (txn: Transaction) => {
+            return makeTxnFeeDetailsUtil(t, txn, makeFormattedAmountsFromMSats)
+        },
+        [makeFormattedAmountsFromMSats, t],
+    )
 
     const makeTxnDetailAmountText = useCallback(
         (txn: Transaction) => {
@@ -169,6 +178,17 @@ export function useTxnDisplayUtils(t: TFunction) {
         ],
     )
 
+    const makeStabilityTxnFeeDetailItems = useCallback(
+        (txn: Transaction) => {
+            return makeStabilityTxnFeeDetailsUtil(
+                t,
+                txn,
+                makeFormattedAmountsFromMSats,
+            )
+        },
+        [makeFormattedAmountsFromMSats, t],
+    )
+
     const makeStabilityTxnDetailItems = useCallback(
         (txn: Transaction) => {
             return makeStabilityTxnDetailItemsUtil(
@@ -184,10 +204,12 @@ export function useTxnDisplayUtils(t: TFunction) {
         preferredCurrency,
         makeTxnDetailAmountText,
         makeTxnDetailItems,
+        makeTxnFeeDetailItems,
         makeTxnAmountText,
         makeTxnNotesText,
         makeStabilityTxnAmountText,
         makeStabilityTxnDetailAmountText,
+        makeStabilityTxnFeeDetailItems,
         makeStabilityTxnDetailItems,
     }
 }
@@ -236,6 +258,10 @@ export function useExportTransactions(fedimint: FedimintBridge) {
     }, [activeFederation, fetchTransactions, makeFormattedAmountsFromMSats])
 
     return exportTransactions
+}
+export type FeeDetails = {
+    items: FeeItem[]
+    totalFee: MSats
 }
 
 export type FeeItem = {

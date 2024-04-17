@@ -53,12 +53,13 @@ export const AmountScreen: React.FC<Props> = ({
                 </View>
                 <AmountInput {...amountInputProps} />
                 {subContent && <View>{subContent}</View>}
-                <View style={style.buttonGroup}>
+                <View>
                     {buttons.map((button, index) => (
                         <Button
+                            fullWidth
                             key={`btn-${index}`}
                             containerStyle={[
-                                style.buttonContainer,
+                                style.button,
                                 button.containerStyle,
                             ]}
                             {...button}
@@ -86,13 +87,7 @@ const styles = (theme: Theme, insets: Insets, height: number) =>
             color: hexToRgba(theme.colors.primary, 0.6),
             textAlign: 'center',
         },
-        buttonGroup: {
-            width: '100%',
-            alignSelf: 'center',
-            flexDirection: 'row',
-            gap: 20,
-        },
-        buttonContainer: {
-            flex: 1,
+        button: {
+            marginTop: theme.spacing.lg,
         },
     })

@@ -2,7 +2,7 @@ import { useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
 
-import SvgImage, { SvgImageName } from './SvgImage'
+import SvgImage, { SvgImageName } from '../../ui/SvgImage'
 
 export interface HistoryIconProps {
     children: React.ReactNode

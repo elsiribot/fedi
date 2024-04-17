@@ -3,7 +3,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import SvgImage, { SvgImageSize } from './SvgImage'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 export const HistoryRowError: React.FC = () => {
     const { t } = useTranslation()
