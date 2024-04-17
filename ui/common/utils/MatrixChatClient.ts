@@ -344,27 +344,33 @@ export class MatrixChatClient {
     }
 
     async roomKickUser(roomId: string, userId: string, reason?: string) {
-        return this.fedimint.matrixRoomKickUser({
+        await this.fedimint.matrixRoomKickUser({
             roomId,
             userId,
             reason: reason ?? null,
         })
+        // Refetch room members
+        await this.observeRoomMembers(roomId)
     }
 
     async roomBanUser(roomId: string, userId: string, reason?: string) {
-        return this.fedimint.matrixRoomBanUser({
+        await this.fedimint.matrixRoomBanUser({
             roomId,
             userId,
             reason: reason ?? null,
         })
+        // Refetch room members
+        await this.observeRoomMembers(roomId)
     }
 
     async roomUnbanUser(roomId: string, userId: string, reason?: string) {
-        return this.fedimint.matrixRoomUnbanUser({
+        await this.fedimint.matrixRoomUnbanUser({
             roomId,
             userId,
             reason: reason ?? null,
         })
+        // Refetch room members
+        await this.observeRoomMembers(roomId)
     }
 
     emit<TEventName extends keyof MatrixChatClientEventMap>(

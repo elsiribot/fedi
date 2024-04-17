@@ -6,6 +6,8 @@ import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import {
+    banUser,
+    kickUser,
     selectMatrixAuth,
     selectMatrixRoomSelfPowerLevel,
     setMatrixRoomMemberPowerLevel,
@@ -34,6 +36,10 @@ type RoleChangeAction = Action & {
     powerLevel: MatrixPowerLevel
 }
 
+type ModerationAction = Action & {
+    reason?: string
+}
+
 const log = makeLog('chat/ChatUserActions')
 
 const ChatUserActions: React.FC<Props> = ({
@@ -50,14 +56,14 @@ const ChatUserActions: React.FC<Props> = ({
     const navigation = useNavigation()
     const dispatch = useAppDispatch()
     const { error, show } = useToast()
-    const [changingPowerLevel, setChangingPowerLevel] =
-        useState<MatrixPowerLevel | null>(null)
+    const [loadingAction, setLoadingAction] = useState<number | null>(null)
 
     const handleChangePowerLevel = async (
         userId: string,
         powerLevel: MatrixPowerLevel,
+        actionId: number,
     ) => {
-        setChangingPowerLevel(powerLevel)
+        setLoadingAction(actionId)
         try {
             await dispatch(
                 setMatrixRoomMemberPowerLevel({ roomId, userId, powerLevel }),
@@ -71,23 +77,24 @@ const ChatUserActions: React.FC<Props> = ({
             log.error("Failed to update user's power level", err)
             error(t, 'feature.chat.change-role-failure')
         }
-        setChangingPowerLevel(null)
+        setLoadingAction(null)
         dismiss()
     }
 
     const getRoleDisabled = (
         roomMember: MatrixRoomMember,
-        powerLevel: MatrixPowerLevel,
+        powerLevel?: MatrixPowerLevel,
     ) => {
         if (!myUserId) return true
         // Cannot change your own role
         if (roomMember.id === myUserId) return true
-        // Cannot assign a role higher than your role
-        if (myPowerLevel < powerLevel) return true
         // Cannot lower the role of a member with the same or greater role
         if (myPowerLevel <= roomMember.powerLevel) return true
+
+        // Cannot assign a role higher than your role
+        if (powerLevel && myPowerLevel < powerLevel) return true
         // Cannot set the role to the current role
-        if (roomMember.powerLevel === powerLevel) return true
+        if (powerLevel && roomMember.powerLevel === powerLevel) return true
         return false
     }
 
@@ -107,6 +114,48 @@ const ChatUserActions: React.FC<Props> = ({
         },
     ]
 
+    const handleKickUser = async (
+        userId: string,
+        actionId: number,
+        reason?: string,
+    ) => {
+        setLoadingAction(actionId)
+        try {
+            log.info(`Kicking user ${userId} from room ${roomId}`)
+            await dispatch(kickUser({ roomId, userId, reason })).unwrap()
+            show({
+                content: t('feature.chat.user-kick-success'),
+                status: 'success',
+            })
+        } catch (err) {
+            log.error('Failed to kick user from room', err)
+            error(t, 'feature.errors.failed-to-kick-user')
+        }
+        setLoadingAction(null)
+        dismiss()
+    }
+
+    const handleBanUser = async (
+        userId: string,
+        actionId: number,
+        reason?: string,
+    ) => {
+        setLoadingAction(actionId)
+        try {
+            log.info(`Banning user ${userId} from room ${roomId}`)
+            await dispatch(banUser({ roomId, userId, reason })).unwrap()
+            show({
+                content: t('feature.chat.user-ban-success'),
+                status: 'success',
+            })
+        } catch (err) {
+            log.error('Failed to ban user from room', err)
+            error(t, 'feature.errors.failed-to-ban-user')
+        }
+        setLoadingAction(null)
+        dismiss()
+    }
+
     const changeRoles: RoleChangeAction[] = [
         {
             id: 1,
@@ -114,7 +163,7 @@ const ChatUserActions: React.FC<Props> = ({
             powerLevel: MatrixPowerLevel.Member,
             icon: 'User',
             onPress: () =>
-                handleChangePowerLevel(member.id, MatrixPowerLevel.Member),
+                handleChangePowerLevel(member.id, MatrixPowerLevel.Member, 1),
         },
         {
             id: 2,
@@ -122,7 +171,11 @@ const ChatUserActions: React.FC<Props> = ({
             powerLevel: MatrixPowerLevel.Moderator,
             icon: 'ChatModerator',
             onPress: () =>
-                handleChangePowerLevel(member.id, MatrixPowerLevel.Moderator),
+                handleChangePowerLevel(
+                    member.id,
+                    MatrixPowerLevel.Moderator,
+                    2,
+                ),
         },
         {
             id: 3,
@@ -130,8 +183,32 @@ const ChatUserActions: React.FC<Props> = ({
             powerLevel: MatrixPowerLevel.Admin,
             icon: 'ChatAdmin',
             onPress: () =>
-                handleChangePowerLevel(member.id, MatrixPowerLevel.Admin),
+                handleChangePowerLevel(member.id, MatrixPowerLevel.Admin, 3),
         },
+    ]
+
+    const moderationActions: ModerationAction[] = [
+        {
+            id: 4,
+            label: t('phrases.kick-user'),
+            icon: 'KickMember',
+            onPress: () => handleKickUser(member.id, 4),
+        },
+        {
+            id: 5,
+            label: t('phrases.ban-user'),
+            icon: 'BlockMember',
+            onPress: () => handleBanUser(member.id, 5),
+        },
+        // TODO: Block from this screen?
+        // TODO: Temporary Mute?
+        // {
+        //     id: 6,
+        //     label: t('words.admin'),
+        //     icon: 'ChatAdmin',
+        //     onPress: () =>
+        //         handleChangePowerLevel(member.id, MatrixPowerLevel.Admin),
+        // },
     ]
 
     const getColor = (action: RoleChangeAction) =>
@@ -154,38 +231,66 @@ const ChatUserActions: React.FC<Props> = ({
             </View>
             {/* Only show roles if the user is an admin */}
             {myPowerLevel >= MatrixPowerLevel.Moderator && (
-                <View style={styles(theme).sectionContainer}>
-                    <Text caption style={styles(theme).sectionTitle}>
-                        {t('feature.chat.change-role')}
-                    </Text>
-                    {changeRoles.map(action => (
-                        <ChatUserAction
-                            key={action.id}
-                            leftIcon={
-                                <SvgImage
-                                    name={action.icon}
-                                    color={getColor(action)}
-                                />
-                            }
-                            rightIcon={
-                                member.powerLevel === action.powerLevel && (
+                <>
+                    <View style={styles(theme).sectionContainer}>
+                        <Text caption style={styles(theme).sectionTitle}>
+                            {t('feature.chat.change-role')}
+                        </Text>
+                        {changeRoles.map(action => (
+                            <ChatUserAction
+                                key={action.id}
+                                leftIcon={
                                     <SvgImage
-                                        name={'Check'}
+                                        name={action.icon}
                                         color={getColor(action)}
                                     />
-                                )
-                            }
-                            label={action.label}
-                            onPress={() => action.onPress()}
-                            disabled={getRoleDisabled(
-                                member,
-                                action.powerLevel,
-                            )}
-                            active={action.powerLevel === member.powerLevel}
-                            isLoading={changingPowerLevel === action.powerLevel}
-                        />
-                    ))}
-                </View>
+                                }
+                                rightIcon={
+                                    member.powerLevel === action.powerLevel && (
+                                        <SvgImage
+                                            name={'Check'}
+                                            color={getColor(action)}
+                                        />
+                                    )
+                                }
+                                label={action.label}
+                                onPress={() => action.onPress()}
+                                disabled={getRoleDisabled(
+                                    member,
+                                    action.powerLevel,
+                                )}
+                                active={action.powerLevel === member.powerLevel}
+                                isLoading={loadingAction === action.id}
+                            />
+                        ))}
+                    </View>
+                </>
+            )}
+            {/* Only show roles if the user is an admin */}
+            {myPowerLevel >= MatrixPowerLevel.Moderator && (
+                <>
+                    <View style={styles(theme).sectionContainer}>
+                        <Text caption style={styles(theme).sectionTitle}>
+                            {t('phrases.moderation-tools')}
+                        </Text>
+                        {moderationActions.map(action => (
+                            <ChatUserAction
+                                key={action.id}
+                                leftIcon={
+                                    <SvgImage
+                                        name={action.icon}
+                                        color={theme.colors.red}
+                                    />
+                                }
+                                label={action.label}
+                                labelColor={theme.colors.red}
+                                onPress={() => action.onPress()}
+                                disabled={getRoleDisabled(member)}
+                                isLoading={loadingAction === action.id}
+                            />
+                        ))}
+                    </View>
+                </>
             )}
         </View>
     )
