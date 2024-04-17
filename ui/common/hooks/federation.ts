@@ -213,12 +213,6 @@ export function usePopupFederationInfo(metadata?: Record<string, string>) {
 }
 
 // Only v2+ federations use secrets derived from single seed
-export function useFederationSupportsSingleSeed() {
-    const activeFederation = useCommonSelector(selectActiveFederation)
-    if (!activeFederation) return false
-    return activeFederation.version >= 2
-}
-
 export function useLatestPublicFederations() {
     const publicFederations = useCommonSelector(
         s => s.federation.publicFederations,
