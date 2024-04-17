@@ -7,21 +7,16 @@ import {
     observeMatrixRoom,
     rejectMatrixPaymentRequest,
     searchMatrixUsers,
+    selectIsMatrixReady,
     selectLatestMatrixRoomEventId,
     selectMatrixAuth,
     selectMatrixRoom,
     selectMatrixRoomMember,
-    selectMatrixStatus,
     selectMatrixUser,
     sendMatrixReadReceipt,
     unobserveMatrixRoom,
 } from '../redux'
-import {
-    MatrixPaymentEvent,
-    MatrixPaymentStatus,
-    MatrixSyncStatus,
-    MatrixUser,
-} from '../types'
+import { MatrixPaymentEvent, MatrixPaymentStatus, MatrixUser } from '../types'
 import { FedimintBridge } from '../utils/fedimint'
 import {
     decodeFediMatrixUserUri,
@@ -32,20 +27,6 @@ import {
 import { useAmountFormatter } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useUpdatingRef } from './util'
-
-export function useIsMatrixSynced() {
-    const status = useCommonSelector(selectMatrixStatus)
-    return status === MatrixSyncStatus.synced
-}
-
-export function useIsMatrixReady() {
-    const status = useCommonSelector(selectMatrixStatus)
-    return (
-        status === MatrixSyncStatus.synced
-        // status === MatrixSyncStatus.synced ||
-        // status === MatrixSyncStatus.syncing
-    )
-}
 
 export function useMatrixUserSearch() {
     const dispatch = useCommonDispatch()
@@ -116,8 +97,7 @@ export function useObserveMatrixRoom(
     const latestEventId = useCommonSelector(s =>
         roomId ? selectLatestMatrixRoomEventId(s, roomId) : undefined,
     )
-
-    const isReady = useIsMatrixReady()
+    const isReady = useCommonSelector(s => selectIsMatrixReady(s))
 
     useEffect(() => {
         if (!isReady || !roomId || paused) return

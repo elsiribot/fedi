@@ -611,6 +611,11 @@ export const sendMatrixReadReceipt = createAsyncThunk<
 
 export const selectMatrixStatus = (s: CommonState) => s.matrix.status
 
+export const selectIsMatrixReady = createSelector(
+    selectMatrixStatus,
+    status => status === MatrixSyncStatus.synced,
+)
+
 /**
  * Returns a list of matrix rooms, excluding any that are loading or missing room information.
  * TODO: Alternate selector that includes loading rooms, or refactor all to handle loading rooms?
