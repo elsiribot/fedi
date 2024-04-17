@@ -68,6 +68,7 @@ import StabilityDepositHeader from './components/feature/stabilitypool/Stability
 import StabilityHistoryHeader from './components/feature/stabilitypool/StabilityHistoryHeader'
 import StabilityHomeHeader from './components/feature/stabilitypool/StabilityHomeHeader'
 import StabilityWithdrawHeader from './components/feature/stabilitypool/StabilityWithdrawHeader'
+import StableBalanceIntroHeader from './components/feature/stabilitypool/StableBalanceIntroHeader'
 import WithdrawInitiatedHeader from './components/feature/stabilitypool/WithdrawInitiatedHeader'
 import TransactionsHeader from './components/feature/transaction-history/TransactionsHeader'
 import Header from './components/ui/Header'
@@ -149,6 +150,7 @@ import StabilityHistory from './screens/StabilityHistory'
 import StabilityHome from './screens/StabilityHome'
 import StabilityWithdraw from './screens/StabilityWithdraw'
 import StabilityWithdrawInitiated from './screens/StabilityWithdrawInitiated'
+import StableBalanceIntro from './screens/StableBalanceIntro'
 import StartPersonalBackup from './screens/StartPersonalBackup'
 import StartRecoveryAssist from './screens/StartRecoveryAssist'
 import StartSocialBackup from './screens/StartSocialBackup'
@@ -257,7 +259,6 @@ const MainNavigator = () => {
                                             headerShown: false,
                                         }}
                                     />
-
                                     {/* Federation Onboarding */}
                                     <Stack.Screen
                                         name="EnterDisplayName"
@@ -890,6 +891,15 @@ const MainNavigator = () => {
                                         options={() => ({
                                             header: () => (
                                                 <WithdrawInitiatedHeader />
+                                            ),
+                                        })}
+                                    />{' '}
+                                    <Stack.Screen
+                                        name="StableBalanceIntro"
+                                        component={StableBalanceIntro}
+                                        options={() => ({
+                                            header: () => (
+                                                <StableBalanceIntroHeader />
                                             ),
                                         })}
                                     />

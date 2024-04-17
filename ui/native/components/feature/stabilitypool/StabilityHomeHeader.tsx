@@ -10,6 +10,7 @@ import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import SvgImage from '../../ui/SvgImage'
+import BetaBanner from './BetaBanner'
 
 const StabilityHomeHeader: React.FC = () => {
     const { theme } = useTheme()
@@ -18,22 +19,28 @@ const StabilityHomeHeader: React.FC = () => {
     const selectedCurrency = useAppSelector(selectCurrency)
 
     const style = styles(theme)
+
     return (
-        <Header
-            backButton
-            headerCenter={
-                <Text bold>{`${selectedCurrency} ${t('words.balance')}`}</Text>
-            }
-            headerRight={
-                <Pressable
-                    onPress={() => navigation.navigate('StabilityHistory')}
-                    hitSlop={5}
-                    style={style.iconContainer}>
-                    <SvgImage name="List" />
-                </Pressable>
-            }
-            rightContainerStyle={style.rightContainer}
-        />
+        <>
+            <Header
+                backButton
+                headerCenter={
+                    <Text bold>{`${selectedCurrency} ${t(
+                        'words.balance',
+                    )}`}</Text>
+                }
+                headerRight={
+                    <Pressable
+                        onPress={() => navigation.navigate('StabilityHistory')}
+                        hitSlop={5}
+                        style={style.iconContainer}>
+                        <SvgImage name="List" />
+                    </Pressable>
+                }
+                rightContainerStyle={style.rightContainer}
+            />
+            <BetaBanner />
+        </>
     )
 }
 
