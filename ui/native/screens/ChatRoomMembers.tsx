@@ -39,9 +39,8 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
 
     const handleRefresh = useCallback(() => {
         setIsRefetching(true)
-        dispatch(refetchMatrixRoomMembers(roomId))
-            .unwrap()
-            .catch(() => {
+        roomId &&
+            dispatch(refetchMatrixRoomMembers(roomId)).catch(() => {
                 // no-op
             })
 

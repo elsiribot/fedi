@@ -46,7 +46,34 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
               })
     }, [navigation])
 
+    const handleInviteToRoom = useCallback(
+        async (roomId: string, userId: string) => {
+            try {
+                log.info(
+                    `Inviting user to matrix room (${userId} , ${roomId}) `,
+                )
+                setIsLoading(true)
+                await dispatch(
+                    inviteUserToMatrixRoom({ roomId: roomId, userId }),
+                ).unwrap()
+                toast.show({
+                    status: 'success',
+                    content: t('words.invited'),
+                })
+                setIsLoading(false)
+                handleNavigate()
+            } catch (e) {
+                setIsLoading(false)
+                setScannedUser(null)
+                toast.error(t, e)
+            }
+        },
+        [setIsLoading, setScannedUser, toast, t, dispatch, handleNavigate],
+    )
+
     const handleConfirmation = useCallback(() => {
+        // this should be called, as handleConfirmation should only be
+        // fired when this is an invitation scanner and when scannedUser is set
         if (!isInvitation || !scannedUser) {
             log.warn(`NOOP - NOT adding member to room due to invalid state`)
             toast.show({
@@ -55,46 +82,14 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
             })
             return
         }
-        try {
-            log.info(
-                `Inviting user to matrix room (${scannedUser.data.id} , ${inviteToRoomId}) `,
-            )
-            setIsLoading(true)
-            dispatch(
-                inviteUserToMatrixRoom({
-                    roomId: inviteToRoomId,
-                    userId: scannedUser.data.id,
-                }),
-            )
-                .unwrap()
-                .then(() => {
-                    toast.show({
-                        status: 'success',
-                        content: t('words.invited'),
-                    })
-                    setIsLoading(false)
-                    handleNavigate()
-                })
-                .catch(e => {
-                    setIsLoading(false)
-                    setScannedUser(null)
-                    toast.error(t, e)
-                })
-        } catch (err) {
-            setIsLoading(false)
-            setScannedUser(null)
-            toast.error(t, err)
-        }
+        handleInviteToRoom(inviteToRoomId, scannedUser.data.id)
     }, [
-        dispatch,
         toast,
         t,
         scannedUser,
-        setIsLoading,
-        setScannedUser,
-        handleNavigate,
-        inviteToRoomId,
         isInvitation,
+        inviteToRoomId,
+        handleInviteToRoom,
     ])
 
     const handleScannedData = useCallback(
