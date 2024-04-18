@@ -26,7 +26,7 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
 
-    const { userId, displayName } = route.params
+    const { userId } = route.params
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const existingRoom = useAppSelector(s =>
         selectMatrixDirectMessageRoom(s, userId),

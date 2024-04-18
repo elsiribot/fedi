@@ -165,7 +165,9 @@ export const OmniConfirmation = <T extends AnyParsedData>({
                 return {
                     contents: {
                         icon: 'Chat',
-                        title: t('feature.omni.confirm-fedi-chat'),
+                        title: t('feature.omni.confirm-fedi-chat', {
+                            username: parsedData.data.displayName,
+                        }),
                     },
                     continueOnPress: () => {
                         handleNavigate('ChatUserConversation', {

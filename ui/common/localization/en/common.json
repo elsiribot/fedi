@@ -456,7 +456,7 @@
             "camera-permission-request": "Allow camera access to scan.",
             "confirm-ecash-token": "This is an eCash token, do you want to redeem it?",
             "confirm-federation-invite": "This is a federation invitation, do you want to join?",
-            "confirm-fedi-chat": "This is a chat link, do you want to go there?",
+            "confirm-fedi-chat": "This is a chat link for {{username}}, do you want to go there?",
             "confirm-lightning-pay": "This is a lightning payment request, do you want to pay it?",
             "confirm-lightning-withdraw": "This is a lightning withdrawal, do you want to withdraw?",
             "confirm-lnurl-auth": "Do you want to log in to {{domain}} with lightning?",
