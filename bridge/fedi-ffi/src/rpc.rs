@@ -313,6 +313,11 @@ async fn getMnemonic(bridge: Arc<Bridge>) -> anyhow::Result<Vec<String>> {
     bridge.get_mnemonic_words().await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn checkMnemonic(bridge: Arc<Bridge>, mnemonic: Vec<String>) -> anyhow::Result<bool> {
+    Ok(bridge.get_mnemonic_words().await? == mnemonic)
+}
+
 // TODO: maybe call this "loadMnemonic" or something?
 #[macro_rules_derive(rpc_method!)]
 async fn recoverFromMnemonic(
@@ -1162,6 +1167,7 @@ rpc_methods!(RpcMethods {
     updateTransactionNotes,
     // Recovery
     getMnemonic,
+    checkMnemonic,
     recoverFromMnemonic,
     // Social recovery
     uploadBackupFile,

@@ -405,6 +405,7 @@ export interface RpcMethods {
         null,
     ]
     getMnemonic: [Record<string, never>, Array<string>]
+    checkMnemonic: [{ mnemonic: Array<string> }, boolean]
     recoverFromMnemonic: [
         { mnemonic: Array<string> },
         Array<{
