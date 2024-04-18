@@ -893,7 +893,7 @@ const MainNavigator = () => {
                                                 <WithdrawInitiatedHeader />
                                             ),
                                         })}
-                                    />{' '}
+                                    />
                                     <Stack.Screen
                                         name="StableBalanceIntro"
                                         component={StableBalanceIntro}
