@@ -94,7 +94,7 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
         const taps = dbTaps + 1
         setDbTaps(taps)
 
-        if (taps > 10) {
+        if (taps > 21) {
             setShouldSendDb(!sendDb)
         }
     }
