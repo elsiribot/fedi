@@ -1,7 +1,8 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
+import HoloLoader from '../../ui/HoloLoader'
 import SvgImage from '../../ui/SvgImage'
 import { OmniInputAction } from './OmniInput'
 
@@ -12,14 +13,39 @@ interface Props {
 export const OmniActions: React.FC<Props> = ({ actions }) => {
     const { theme } = useTheme()
     const style = styles(theme)
+    const [loadingActions, setLoadingActions] = useState<number[]>([])
+
+    // Handles async OR non-async onPress callbacks
+    const handlePress = useCallback(
+        (onPress: () => void | Promise<void>, idx: number) => {
+            setLoadingActions(curr => [idx, ...curr])
+            Promise.resolve(onPress()).finally(() =>
+                setLoadingActions(curr => curr.filter(i => i !== idx)),
+            )
+        },
+        [setLoadingActions],
+    )
     return (
         <View style={style.container}>
             {actions.map(({ label, icon, onPress }, idx) => (
-                <Pressable key={idx} onPress={onPress} style={style.action}>
+                <Pressable
+                    key={idx}
+                    onPress={() => handlePress(onPress, idx)}
+                    style={({ pressed }) => [
+                        style.action,
+                        pressed
+                            ? { backgroundColor: theme.colors.primary05 }
+                            : {},
+                    ]}>
                     <SvgImage name={icon} />
                     <Text bold numberOfLines={2}>
                         {label}
                     </Text>
+                    {loadingActions.includes(idx) && (
+                        <View key={idx} style={styles(theme).loaderContainer}>
+                            <HoloLoader key={idx} size={24} />
+                        </View>
+                    )}
                 </Pressable>
             ))}
         </View>
@@ -36,6 +62,11 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             paddingVertical: theme.spacing.md,
+            paddingHorizontal: theme.spacing.sm,
             gap: theme.spacing.lg,
+            borderRadius: theme.borders.defaultRadius,
+        },
+        loaderContainer: {
+            marginLeft: 'auto',
         },
     })

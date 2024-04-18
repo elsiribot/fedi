@@ -24,7 +24,7 @@ import { OmniQrScanner } from './OmniQrScanner'
 export interface OmniInputAction {
     label: React.ReactNode
     icon: SvgImageName
-    onPress(): void
+    onPress: () => void | Promise<void>
 }
 
 interface Props<T extends ParserDataType, ExpectedData> {

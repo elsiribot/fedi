@@ -53,15 +53,15 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
                     inviteUserToMatrixRoom({ roomId: roomId, userId }),
                 ).unwrap()
                 toast.show({
-                    status: 'success',
+                    status: 'info',
                     content: t('words.invited'),
                 })
                 setIsLoading(false)
                 handleNavigate()
             } catch (e) {
+                toast.error(t, e)
                 setIsLoading(false)
                 setScannedUser(null)
-                toast.error(t, e)
             }
         },
         [setIsLoading, setScannedUser, toast, t, dispatch, handleNavigate],
@@ -90,7 +90,6 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
 
     const handleScannedData = useCallback(
         (parsedData: ParsedFediChatUser) => {
-            console.warn('SCANNED', parsedData)
             if (!isInvitation) {
                 // If inviteToRoomId is not set, navigate to ChatUserConversation
                 return navigation.replace('ChatUserConversation', {
