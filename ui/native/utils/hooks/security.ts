@@ -65,15 +65,17 @@ export function usePin(): UsePinReturn {
             service: 'pin',
         })
 
-        Object.entries(protectedFeatures).forEach(([key, isProtected]) => {
-            if (isProtected)
-                dispatch(
-                    setFeatureUnlocked({
-                        key: key as keyof ProtectedFeatures,
-                        unlocked: true,
-                    }),
-                )
-        })
+        // Immediately unlocks all protected features once the pin is unset
+        for (const [key, isProtected] of Object.entries(protectedFeatures)) {
+            if (!isProtected) continue
+
+            dispatch(
+                setFeatureUnlocked({
+                    key: key as keyof ProtectedFeatures,
+                    unlocked: true,
+                }),
+            )
+        }
     }, [deviceId, dispatch, protectedFeatures])
 
     useEffect(() => {

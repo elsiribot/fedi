@@ -248,7 +248,7 @@ const MainNavigator = () => {
                     federation connections in-app, each call requires a
                     Federation to be specified
                 */}
-                {activeFederation !== null ? (
+                {activeFederation !== null && (
                     <>
                         {isAppUnlocked ? (
                             <Stack.Group>
@@ -1029,7 +1029,7 @@ const MainNavigator = () => {
                             </Stack.Group>
                         )}
                     </>
-                ) : null}
+                )}
             </>
         </Stack.Navigator>
     )
