@@ -483,6 +483,10 @@ export class FedimintBridge {
         return this.rpcTyped('matrixObserverCancel', args)
     }
 
+    async dumpDb(args: bindings.RpcPayload<'dumpDb'>) {
+        return this.rpcTyped('dumpDb', args)
+    }
+
     /*** BRIDGE EVENTS ***/
 
     private listeners = new Map<string, Array<(data: unknown) => void>>()

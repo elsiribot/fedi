@@ -5,12 +5,14 @@ import { useTranslation } from 'react-i18next'
 import {
     ActivityIndicator,
     Platform,
+    Pressable,
     ScrollView,
     StyleSheet,
     View,
     useWindowDimensions,
 } from 'react-native'
 import DeviceInfo from 'react-native-device-info'
+import RNFS from 'react-native-fs'
 import { Asset } from 'react-native-image-picker'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { v4 as uuidv4 } from 'uuid'
@@ -27,7 +29,9 @@ import {
 } from '@fedi/common/utils/bug-report'
 import { makeLog } from '@fedi/common/utils/log'
 
+import { fedimint } from '../bridge'
 import { Attachments } from '../components/ui/Attachments'
+import SvgImage from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 import {
@@ -59,6 +63,8 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
     const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false)
     const [status, setStatus] = useState<Status>('idle')
     const [attachments, setAttachments] = useState<Asset[]>([])
+    const [dbTaps, setDbTaps] = useState(0)
+    const [sendDb, setShouldSendDb] = useState(false)
 
     const isSubmitDisabled = status !== 'idle'
     const submitText =
@@ -84,14 +90,34 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
 
     const isValid = !!description
 
+    const handleBugPress = () => {
+        const taps = dbTaps + 1
+        setDbTaps(taps)
+
+        if (taps > 21) {
+            setShouldSendDb(!sendDb)
+        }
+    }
+
     const handleSubmit = async () => {
         setHasAttemptedSubmit(true)
-        if (!isValid) return
+        if (!isValid || !activeFederation) return
         try {
             const id = uuidv4()
             // Generate the logs export gzip
             setStatus('generating-data')
             const attachmentFiles = await attachmentsToFiles(attachments)
+
+            if (sendDb) {
+                const dumpedDbPath = await fedimint.dumpDb({
+                    federationId: activeFederation.id,
+                })
+                const dumpBuffer = await RNFS.readFile(dumpedDbPath, 'base64')
+                attachmentFiles.push({
+                    name: 'db.dump',
+                    content: dumpBuffer,
+                })
+            }
             const gzip = await generateLogsExportGzip(attachmentFiles)
             // Upload the logs export gzip to storage
             setStatus('uploading-data')
@@ -195,9 +221,22 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
                 </View>
             </View>
             <View style={style.actions}>
-                <Text caption medium style={style.disclaimer}>
-                    {t('feature.bug.log-disclaimer')}
-                </Text>
+                <View style={style.bugContainer}>
+                    <Pressable style={style.bugButton} onPress={handleBugPress}>
+                        <Text>🪲</Text>
+                    </Pressable>
+                    <Text caption medium style={style.disclaimer}>
+                        {t('feature.bug.log-disclaimer')}
+                    </Text>
+                </View>
+                {sendDb && (
+                    <View style={style.dbAttachedIndicator}>
+                        <Text medium>
+                            {t('feature.bug.database-attached')} 🕷️🐞🦟
+                        </Text>
+                        <SvgImage name="Check" />
+                    </View>
+                )}
                 <Button
                     fullWidth
                     disabled={isSubmitDisabled}
@@ -316,6 +355,26 @@ const styles = (theme: Theme, insets: EdgeInsets, fontScale: number) =>
             maxWidth: 320,
             lineHeight: 20,
             color: theme.colors.grey,
+        },
+        bugContainer: {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+        },
+        bugButton: {
+            fontSize: 24,
+            padding: 16,
+            paddingBottom: 0,
+        },
+        dbAttachedIndicator: {
+            backgroundColor: theme.colors.offWhite,
+            padding: 12,
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderRadius: 12,
+            width: '100%',
         },
     })
 

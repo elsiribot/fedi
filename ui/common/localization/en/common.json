@@ -261,6 +261,7 @@
             "video-file-too-large": "Video file too large, please record a shorter one"
         },
         "bug": {
+            "database-attached": "Database attached",
             "description-label": "Describe the issue in detail",
             "description-placeholder": "What did you expect and what happened instead?",
             "email-label": "Email (optional)",
