@@ -21,6 +21,7 @@ import { fedimint } from '../bridge'
 import { BIP39_WORD_LIST } from '../constants'
 import { resetAfterPersonalRecovery } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
+import { usePin } from '../utils/hooks/security'
 
 const isValidSeedWord = (word: string) => {
     return word.length > 0 && BIP39_WORD_LIST.indexOf(word.toLowerCase()) >= 0
@@ -91,6 +92,7 @@ const SeedWordInput = React.forwardRef<TextInput, SeedWordInputProps>(
 const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const pin = usePin()
     const { recoveryInProgress, attemptRecovery } = usePersonalRecovery(
         t,
         fedimint,
@@ -123,9 +125,10 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
 
     const handleRecovery = useCallback(() => {
         attemptRecovery(seedWords, () => {
+            if (pin.status === 'set') pin.unset()
             navigation.dispatch(resetAfterPersonalRecovery())
         })
-    }, [attemptRecovery, navigation, seedWords])
+    }, [attemptRecovery, navigation, seedWords, pin])
 
     const handleInputUpdate = (inputValue: string, index: number) => {
         const validatedInput = stringUtils.keepOnlyLowercaseLetters(inputValue)

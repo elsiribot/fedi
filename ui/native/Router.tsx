@@ -43,11 +43,12 @@ import HomeLockScreen from './components/feature/home/LockScreen'
 import { OmniLinkHandler } from './components/feature/omni/OmniLinkHandler'
 import EulaHeader from './components/feature/onboarding/EulaHeader'
 import NewMemberHeader from './components/feature/onboarding/NewMemberHeader'
+import ChangePinLockScreenHeader from './components/feature/pin/ChangePinLockScreenHeader'
 import CreatePinInstructionsHeader from './components/feature/pin/CreatePinInstructionsHeader'
-import LockScreenHeader from './components/feature/pin/LockScreenHeader'
 import PinAccessHeader from './components/feature/pin/PinAccessHeader'
 import SetPinHeader from './components/feature/pin/SetPinHeader'
 import SetPinLockScreen from './components/feature/pin/SetPinLockScreen'
+import UnlockAppLockScreenHeader from './components/feature/pin/UnlockAppLockScreenHeader'
 import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHeader'
 import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
 import ReceiveBitcoinOfflineHeader from './components/feature/receive/ReceiveBitcoinOfflineHeader'
@@ -243,6 +244,21 @@ const MainNavigator = () => {
                     federation connections in-app, each call requires a
                     Federation to be specified
                 */}
+                <Stack.Group>
+                    {/* Personal Recovery */}
+                    <Stack.Screen
+                        name="PersonalRecovery"
+                        component={PersonalRecovery}
+                        options={() => ({
+                            header: () => <PersonalRecoveryHeader backButton />,
+                        })}
+                    />
+                    <Stack.Screen
+                        name="PersonalRecoverySuccess"
+                        component={PersonalRecoverySuccess}
+                        options={{ headerShown: false }}
+                    />
+                </Stack.Group>
                 {activeFederation !== null && (
                     <>
                         {isAppUnlocked ? (
@@ -839,7 +855,7 @@ const MainNavigator = () => {
                                                 component={SetPinLockScreen}
                                                 options={() => ({
                                                     header: () => (
-                                                        <LockScreenHeader />
+                                                        <ChangePinLockScreenHeader />
                                                     ),
                                                 })}
                                             />
@@ -1002,7 +1018,9 @@ const MainNavigator = () => {
                                     name="TabsNavigator"
                                     component={HomeLockScreen}
                                     options={{
-                                        header: () => <LockScreenHeader />,
+                                        header: () => (
+                                            <UnlockAppLockScreenHeader />
+                                        ),
                                     }}
                                 />
                             </Stack.Group>

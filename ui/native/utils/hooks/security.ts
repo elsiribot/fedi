@@ -24,13 +24,14 @@ interface UsePinSet {
     status: 'set'
     check: (digits: Array<number>) => boolean
     set: (digits: Array<number>) => Promise<void>
+    unset: () => Promise<void>
 }
 
 type UsePinReturn = UsePinLoading | UsePinUnset | UsePinSet
 
 /**
  * Returns a `set` function if no pin has been set.
- * Returns both a `set` and `check` function if a pin has been set.
+ * Returns both a `set`, `unset` and `check` function if a pin has been set.
  * Always returns a `status`
  */
 export function usePin(): UsePinReturn {
@@ -53,6 +54,14 @@ export function usePin(): UsePinReturn {
         },
         [deviceId],
     )
+
+    const unset = useCallback(async () => {
+        if (!deviceId) return
+
+        await Keychain.resetGenericPassword({
+            service: 'pin',
+        })
+    }, [deviceId])
 
     useEffect(() => {
         const loadPinCheck = async () => {
@@ -85,7 +94,12 @@ export function usePin(): UsePinReturn {
     if (isLoading) return { status: 'loading' } as UsePinLoading
 
     if (hasSetPin)
-        return { status: 'set', check: checkRef.current, set } as UsePinSet
+        return {
+            status: 'set',
+            check: checkRef.current,
+            set,
+            unset,
+        } as UsePinSet
 
     return { status: 'unset', set } as UsePinUnset
 }

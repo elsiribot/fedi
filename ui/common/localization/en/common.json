@@ -537,6 +537,7 @@
             "create-new-pin": "Create new PIN",
             "enter-current-pin": "Enter current PIN",
             "enter-pin": "Enter PIN",
+            "forgot-your-pin": "Forgot your PIN?",
             "pin-access": "PIN Access",
             "pin-doesnt-match": "PIN doesn't match",
             "pin-setup-successful": "PIN setup successfully!",

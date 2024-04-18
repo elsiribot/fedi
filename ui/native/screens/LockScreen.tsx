@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Theme, useTheme } from '@rneui/themed'
+import { Button, Theme, useTheme, Text } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import { maxPinLength, pinNumbers } from '@fedi/common/constants/security'
@@ -23,6 +24,7 @@ const LockScreen = <T extends keyof RootStackParamList>({
     navigation,
     feature,
     screen,
+    showForgotFlow = false,
 }: Props & {
     feature: keyof ProtectedFeatures
     screen: [
@@ -32,7 +34,9 @@ const LockScreen = <T extends keyof RootStackParamList>({
                 : [screen: T, params: RootStackParamList[T]]
             : never),
     ]
+    showForgotFlow?: boolean
 }) => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const { width } = useWindowDimensions()
     const pin = usePin()
@@ -41,6 +45,11 @@ const LockScreen = <T extends keyof RootStackParamList>({
     const debouncedPin = useDebounce(pinDigits, 500)
 
     const style = styles(theme, width)
+
+    const isEnteredPinIncorrect =
+        pin.status === 'set' &&
+        !pin.check(pinDigits) &&
+        pinDigits.length === maxPinLength
 
     const handleNumpadPress = useCallback(
         (btn: (typeof numpadButtons)[number]) => {
@@ -100,6 +109,11 @@ const LockScreen = <T extends keyof RootStackParamList>({
         <View style={style.container}>
             <View style={style.content}>
                 <View style={style.dots}>
+                    {showForgotFlow && isEnteredPinIncorrect && (
+                        <Text style={style.incorrectPin}>
+                            {t('feature.pin.pin-doesnt-match')}
+                        </Text>
+                    )}
                     {pinNumbers.map(i => (
                         <PinDot
                             key={i}
@@ -107,6 +121,22 @@ const LockScreen = <T extends keyof RootStackParamList>({
                             isLast={i === maxPinLength}
                         />
                     ))}
+                    {showForgotFlow && isEnteredPinIncorrect && (
+                        <View style={style.forgotPinButtonContainer}>
+                            <Button
+                                day
+                                title={
+                                    <Text caption>
+                                        {t('feature.pin.forgot-your-pin')}
+                                    </Text>
+                                }
+                                buttonStyle={style.forgotPinButton}
+                                onPress={() => {
+                                    navigation.navigate('PersonalRecovery')
+                                }}
+                            />
+                        </View>
+                    )}
                 </View>
             </View>
             <View style={style.numpad}>
@@ -149,6 +179,21 @@ const styles = (theme: Theme, width: number) =>
             paddingHorizontal: theme.spacing.lg,
             flexDirection: 'row',
             flexWrap: 'wrap',
+        },
+        forgotPinButtonContainer: {
+            position: 'absolute',
+            display: 'flex',
+            top: 54,
+        },
+        incorrectPin: {
+            position: 'absolute',
+            bottom: 54,
+            color: theme.colors.red,
+        },
+        forgotPinButton: {
+            borderColor: theme.colors.lightGrey,
+            borderWidth: 0.25,
+            paddingHorizontal: 50,
         },
     })
 
