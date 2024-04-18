@@ -3,9 +3,10 @@ import {
     ActivityIndicator,
     ColorValue,
     GestureResponderEvent,
-    Pressable,
     StyleSheet,
 } from 'react-native'
+
+import { Pressable } from '../../ui/Pressable'
 
 type ChatUserActionProps = {
     disabled?: boolean
@@ -31,15 +32,7 @@ const ChatUserAction = ({
 }: ChatUserActionProps) => {
     const { theme } = useTheme()
     return (
-        <Pressable
-            style={({ pressed }) => [
-                styles(theme).container,
-                disabled ? { opacity: 0.25 } : {},
-                pressed && !disabled
-                    ? { backgroundColor: theme.colors.primary05 }
-                    : {},
-            ]}
-            onPress={disabled ? undefined : onPress}>
+        <Pressable disabled={disabled} onPress={disabled ? undefined : onPress}>
             <>{leftIcon}</>
             <Text
                 bold

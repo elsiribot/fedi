@@ -1,10 +1,11 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { MatrixUser } from '@fedi/common/types'
 
 import { AvatarSize } from '../../ui/Avatar'
+import { Pressable } from '../../ui/Pressable'
 import ChatAvatar from './ChatAvatar'
 
 type UserItemProps = {
@@ -25,16 +26,7 @@ const ChatUserTile: React.FC<UserItemProps> = ({
     const { theme } = useTheme()
 
     return (
-        <Pressable
-            style={({ pressed }) => [
-                styles(theme).container,
-                pressed && !disabled
-                    ? { backgroundColor: theme.colors.primary05 }
-                    : {},
-            ]}
-            onPress={() => {
-                !disabled && selectUser(user.id)
-            }}>
+        <Pressable onPress={disabled ? undefined : () => selectUser(user.id)}>
             <View style={styles(theme).usernameContainer}>
                 <ChatAvatar user={user} size={AvatarSize.md} />
                 <Text
@@ -56,14 +48,6 @@ const ChatUserTile: React.FC<UserItemProps> = ({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        container: {
-            flex: 1,
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: theme.spacing.sm,
-            width: '100%',
-            borderRadius: theme.borders.defaultRadius,
-        },
         usernameContainer: {
             flex: 1,
             flexDirection: 'row',

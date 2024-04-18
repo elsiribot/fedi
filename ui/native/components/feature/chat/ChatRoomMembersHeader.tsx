@@ -1,11 +1,13 @@
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback } from 'react'
-import { Pressable, StyleSheet } from 'react-native'
+import { StyleSheet } from 'react-native'
 
 import { ChatRoomMembersProps } from '../../../screens/ChatRoomMembers'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
+import { Pressable } from '../../ui/Pressable'
+import { PressableIcon } from '../../ui/PressableIcon'
 import SvgImage from '../../ui/SvgImage'
 
 type ChatRoomMembersRouteProp = ChatRoomMembersProps['route']
@@ -23,11 +25,10 @@ const ChatRoomMembersHeader: React.FC = () => {
             backButton
             headerRight={
                 <>
-                    <Pressable
+                    <PressableIcon
                         onPress={handleInviteMember}
-                        style={styles(theme).headerIconContainer}>
-                        <SvgImage name="Plus" />
-                    </Pressable>
+                        svgName="Plus"
+                    />
                 </>
             }
         />

@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet } from 'react-native'
+import { StyleSheet } from 'react-native'
 
 import { selectFederationMetadata } from '@fedi/common/redux'
 import { shouldShowOfflineWallet } from '@fedi/common/utils/FederationUtils'
@@ -10,7 +10,7 @@ import { shouldShowOfflineWallet } from '@fedi/common/utils/FederationUtils'
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
-import SvgImage from '../../ui/SvgImage'
+import { PressableIcon } from '../../ui/PressableIcon'
 import { NetworkBanner } from '../wallet/NetworkBanner'
 
 const HomeHeader: React.FC = () => {
@@ -38,12 +38,13 @@ const HomeHeader: React.FC = () => {
                 }
                 headerRight={
                     showOfflineWallet && (
-                        <Pressable
-                            onPress={() => navigation.navigate('Settings')}
+                        <PressableIcon
+                            onPress={() => {
+                                navigation.navigate('Settings')
+                            }}
                             hitSlop={5}
-                            style={style.iconContainer}>
-                            <SvgImage name="Cog" />
-                        </Pressable>
+                            svgName="Cog"
+                        />
                     )
                 }
                 rightContainerStyle={style.rightContainer}
@@ -58,10 +59,6 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             paddingBottom: theme.spacing.lg,
-        },
-        iconContainer: {
-            flexDirection: 'row',
-            alignItems: 'flex-end',
         },
         rightContainer: {
             flexDirection: 'row',
