@@ -71,7 +71,7 @@ export function parseUserInput<T extends TFunction>(
             parseLnurl(raw, t),
             parseBitcoinAddress(raw),
             parseBip21(raw, fedimint, federationId),
-            parseFediUri(raw),
+            parseFediUri(raw, fedimint),
             parseFedimintInvite(raw),
             parseFedimintEcash(raw, fedimint),
         ]
@@ -392,14 +392,16 @@ async function parseBip21(
     }
 }
 
-function parseFediUri(
+async function parseFediUri(
     raw: string,
-):
+    fedimint: FedimintBridge,
+): Promise<
     | ParsedLegacyFediChatGroup
     | ParsedLegacyFediChatMember
     | ParsedFediChatUser
     | ParsedFediChatRoom
-    | undefined {
+    | undefined
+> {
     if (!raw.toLowerCase().startsWith('fedi:')) {
         return
     }
@@ -418,9 +420,12 @@ function parseFediUri(
     // Chat user
     try {
         const id = decodeFediMatrixUserUri(raw)
+        // Fetch profile info for displayName
+        const { displayname } = await fedimint.matrixUserProfile({ userId: id })
+
         return {
             type: ParserDataType.FediChatUser,
-            data: { id },
+            data: { id, displayName: displayname },
         }
     } catch {
         // no-op

@@ -657,7 +657,7 @@ export interface RpcMethods {
         'allMessages' | 'mentionsAndKeywordsOnly' | 'mute' | null,
     ]
     matrixSetPusher: [{ pusher: RpcPusher }, null]
-    matrixUserProfile: [{ userId: RpcUserId }, any]
+    matrixUserProfile: [{ userId: RpcUserId }, { displayname: string }]
     matrixRoomKickUser: [
         { roomId: RpcRoomId; userId: RpcUserId; reason: string | null },
         null,

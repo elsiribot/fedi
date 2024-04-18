@@ -301,7 +301,7 @@
             "click-to-join-group": "Click to join this group",
             "confirm-add-admin-to-group": "Are you sure you want to add {{username}} as an admin? They will be able to send messages in this group.",
             "confirm-remove-admin-from-group": "Are you sure you want to remove {{username}} as an admin? They won't be able to send messages in this group but their previously sent messages will remain.",
-            "confirm-add-to-group": "Are you sure you want to invite this user to {{roomName}}?",
+            "confirm-add-to-group": "Are you sure you want to invite {{username}} to {{roomName}}?",
             "copied-group-invite-code": "Copied group invite code",
             "create-a-display-name": "Create a display name",
             "create-a-group": "Create a group",

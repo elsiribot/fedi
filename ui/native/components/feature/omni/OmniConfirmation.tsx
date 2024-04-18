@@ -170,6 +170,7 @@ export const OmniConfirmation = <T extends AnyParsedData>({
                     continueOnPress: () => {
                         handleNavigate('ChatUserConversation', {
                             userId: parsedData.data.id,
+                            displayName: parsedData.data.displayName,
                         })
                     },
                 }

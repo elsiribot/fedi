@@ -39,6 +39,7 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                     if (parsedData.type === ParserDataType.FediChatUser) {
                         navigation.replace('ChatUserConversation', {
                             userId: parsedData.data.id,
+                            displayName: parsedData.data.displayName,
                         })
                     }
                     // TODO: Implement room search for matrix (knocking)

@@ -55,7 +55,7 @@ export type RootStackParamList = {
     ChatRoomConversation: { roomId: string; chatType: ChatType }
     ChatRoomMembers: { roomId: string }
     ChatRoomInvite: { roomId: string }
-    ChatUserConversation: { userId: string }
+    ChatUserConversation: { userId: string; displayName: string }
     ChatWallet: { recipientId: string }
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined

@@ -98,6 +98,7 @@ const ChatUserActions: React.FC<Props> = ({
             onPress: () => {
                 navigation.navigate('ChatUserConversation', {
                     userId: member.id,
+                    displayName: member.displayName,
                 })
                 dismiss()
             },

@@ -90,10 +90,12 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
 
     const handleScannedData = useCallback(
         (parsedData: ParsedFediChatUser) => {
+            console.warn('SCANNED', parsedData)
             if (!isInvitation) {
                 // If inviteToRoomId is not set, navigate to ChatUserConversation
                 return navigation.replace('ChatUserConversation', {
                     userId: parsedData.data.id,
+                    displayName: parsedData.data.displayName,
                 })
             } else {
                 // If inviteToRoomId is set, then prompt the
@@ -107,7 +109,10 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
     const confirmationContent: CustomOverlayContents = useMemo(
         () => ({
             icon: 'Chat',
-            title: t('feature.chat.confirm-add-to-group', { roomName }),
+            title: t('feature.chat.confirm-add-to-group', {
+                roomName,
+                username: scannedUser?.data?.displayName,
+            }),
             buttons: [
                 {
                     text: t('phrases.go-back'),
@@ -121,7 +126,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
                 },
             ],
         }),
-        [setScannedUser, t, handleConfirmation, roomName],
+        [setScannedUser, t, handleConfirmation, roomName, scannedUser],
     )
 
     const style = styles()

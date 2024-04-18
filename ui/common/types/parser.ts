@@ -117,7 +117,7 @@ export type ParsedLegacyFediChatGroup = ParsedData<
 
 export type ParsedFediChatUser = ParsedData<
     ParserDataType.FediChatUser,
-    { id: string }
+    { id: string; displayName: string }
 >
 
 export type ParsedFediChatRoom = ParsedData<

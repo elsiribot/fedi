@@ -453,6 +453,10 @@ export class FedimintBridge {
         return this.rpcTyped('matrixUserDirectorySearch', args)
     }
 
+    async matrixUserProfile(args: bindings.RpcPayload<'matrixUserProfile'>) {
+        return this.rpcTyped('matrixUserProfile', args)
+    }
+
     async matrixSetDisplayName(
         args: bindings.RpcPayload<'matrixSetDisplayName'>,
     ) {

@@ -252,6 +252,14 @@ export class MatrixChatClient {
             .then(this.serializeUserDirectorySearchResponse)
     }
 
+    async fetchMatrixProfile(
+        userId: MatrixUser['id'],
+    ): Promise<{ displayname: string }> {
+        return await this.fedimint.matrixUserProfile({
+            userId,
+        })
+    }
+
     async setDisplayName(displayName: string) {
         await this.fedimint.matrixSetDisplayName({ displayName })
     }
