@@ -114,22 +114,22 @@ const ChatUserActions: React.FC<Props> = ({
         },
     ]
 
-    const handleKickUser = async (
+    const handleremoveUser = async (
         userId: string,
         actionId: number,
         reason?: string,
     ) => {
         setLoadingAction(actionId)
         try {
-            log.info(`Kicking user ${userId} from room ${roomId}`)
+            log.info(`removing user ${userId} from room ${roomId}`)
             await dispatch(kickUser({ roomId, userId, reason })).unwrap()
             show({
-                content: t('feature.chat.user-kick-success'),
+                content: t('feature.chat.user-remove-success'),
                 status: 'success',
             })
         } catch (err) {
-            log.error('Failed to kick user from room', err)
-            error(t, 'feature.errors.failed-to-kick-user')
+            log.error('Failed to remove user from room', err)
+            error(t, 'feature.errors.failed-to-remove-user')
         }
         setLoadingAction(null)
         dismiss()
@@ -190,9 +190,9 @@ const ChatUserActions: React.FC<Props> = ({
     const moderationActions: ModerationAction[] = [
         {
             id: 4,
-            label: t('phrases.kick-user'),
+            label: t('phrases.remove-user'),
             icon: 'KickMember',
-            onPress: () => handleKickUser(member.id, 4),
+            onPress: () => handleremoveUser(member.id, 4),
         },
         {
             id: 5,
@@ -224,6 +224,7 @@ const ChatUserActions: React.FC<Props> = ({
                     <ChatUserAction
                         key={action.id}
                         leftIcon={<SvgImage name={action.icon} />}
+                        rightIcon={<SvgImage name={'ChevronRight'} />}
                         label={action.label}
                         onPress={() => action.onPress()}
                     />

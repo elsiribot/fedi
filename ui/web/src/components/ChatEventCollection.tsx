@@ -42,7 +42,7 @@ export const ChatEventCollection: React.FC<Props> = ({
                     const hasLeft = roomMember?.membership !== 'join'
                     const isBanned = roomMember?.membership === 'ban'
                     const displayName = isBanned
-                        ? 'Kicked Member'
+                        ? 'removed Member'
                         : hasLeft
                         ? 'Former Member'
                         : roomMember?.displayName || '...'
