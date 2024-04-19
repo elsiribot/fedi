@@ -15,6 +15,7 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 import { hexToRgba } from '@fedi/common/utils/color'
 
 import { fedimint } from '../bridge'
+import ChatAvatar from '../components/feature/chat/ChatAvatar'
 import { FeeBreakdown } from '../components/feature/send/FeeBreakdown'
 import { FederationLogo } from '../components/ui/FederationLogo'
 import SvgImage from '../components/ui/SvgImage'
@@ -86,9 +87,17 @@ const ConfirmSendChatPayment: React.FC<Props> = ({ route, navigation }) => {
                             <Text caption bold style={style.darkGrey}>{`${t(
                                 'feature.send.send-to',
                             )}`}</Text>
-                            <Text caption style={style.darkGrey}>
-                                {existingRoom?.name}
-                            </Text>
+                            <View style={style.sendFrom}>
+                                <ChatAvatar
+                                    user={{
+                                        ...existingRoom,
+                                        displayName: existingRoom.name,
+                                    }}
+                                />
+                                <Text caption style={style.darkGrey}>
+                                    {existingRoom.name}
+                                </Text>
+                            </View>
                         </View>
                     )}
                     <Pressable
@@ -260,6 +269,8 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         sendFrom: {
             flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
         },
     })
 
