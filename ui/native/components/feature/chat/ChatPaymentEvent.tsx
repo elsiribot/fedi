@@ -10,6 +10,7 @@ import { MatrixPaymentEvent } from '@fedi/common/types'
 import { fedimint } from '../../../bridge'
 import HoloLoader from '../../ui/HoloLoader'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import ReceiveForeignEcashOverlay from './ReceiveForeignEcashOverlay'
 
 type Props = {
     event: MatrixPaymentEvent
@@ -20,13 +21,20 @@ const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
     const toast = useToast()
     const { theme } = useTheme()
 
-    const { messageText, statusIcon, statusText, buttons } =
-        useMatrixPaymentEvent({
-            event,
-            fedimint,
-            t,
-            onError: _ => toast.error(t, 'errors.chat-payment-failed'),
-        })
+    const {
+        messageText,
+        statusIcon,
+        statusText,
+        buttons,
+        isHandlingForeignEcash,
+        setIsHandlingForeignEcash,
+        handleRejectRequest,
+    } = useMatrixPaymentEvent({
+        event,
+        fedimint,
+        t,
+        onError: _ => toast.error(t, 'errors.chat-payment-failed'),
+    })
 
     const style = styles(theme)
 
@@ -39,6 +47,8 @@ const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
         const icon =
             statusIcon === 'x' ? (
                 <SvgImage {...iconProps} name={'Close'} />
+            ) : statusIcon === 'reject' ? (
+                <SvgImage {...iconProps} name={'BrokenHeart'} />
             ) : statusIcon === 'check' ? (
                 <SvgImage {...iconProps} name={'Check'} />
             ) : statusIcon === 'error' ? (
@@ -84,6 +94,17 @@ const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
         <>
             <Text style={style.messageText}>{messageText}</Text>
             {extra || null}
+            {isHandlingForeignEcash && (
+                <ReceiveForeignEcashOverlay
+                    paymentEvent={event}
+                    show={isHandlingForeignEcash}
+                    onDismiss={() => setIsHandlingForeignEcash(false)}
+                    onRejected={() => {
+                        setIsHandlingForeignEcash(false)
+                        handleRejectRequest()
+                    }}
+                />
+            )}
         </>
     )
 }
