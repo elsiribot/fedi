@@ -10,7 +10,6 @@ import {
     sendMatrixDirectMessage,
 } from '@fedi/common/redux'
 
-import ChatConversation from '../components/feature/chat/ChatConversation'
 import MessageInput from '../components/feature/chat/MessageInput'
 import NoMessagesNotice from '../components/feature/chat/NoMessagesNotice'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
