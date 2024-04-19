@@ -125,7 +125,7 @@ const contentSchemas = {
 
         // TODO: Attach invite code for federations you belong to that have
         // invites enabled, and allow people to join to accept ecash?
-        // inviteCode: z.string().optional(),
+        inviteCode: z.string().optional(),
     }),
 }
 

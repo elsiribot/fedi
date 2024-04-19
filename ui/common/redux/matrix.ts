@@ -6,7 +6,7 @@ import {
 } from '@reduxjs/toolkit'
 import { v4 as uuidv4 } from 'uuid'
 
-import { CommonState, selectAuthenticatedMember } from '.'
+import { CommonState, selectAuthenticatedMember, selectFederation } from '.'
 import {
     MatrixUser,
     MatrixRoom,
@@ -488,8 +488,11 @@ export const sendMatrixPaymentPush = createAsyncThunk<
         { fedimint, federationId, roomId, recipientId, amount },
         { getState },
     ) => {
-        const matrixAuth = selectMatrixAuth(getState())
+        const state = getState()
+        const federation = selectFederation(state, federationId)
+        const matrixAuth = selectMatrixAuth(state)
         if (!matrixAuth) throw new Error('Not authenticated')
+        if (!federation) throw new Error('Federation not found')
         log.info('sendMatrixPaymentPush', amount, 'sats')
         const msats = amountUtils.satToMsat(amount)
 
@@ -506,8 +509,9 @@ export const sendMatrixPaymentPush = createAsyncThunk<
             senderId: matrixAuth.userId,
             amount: msats,
             recipientId,
-            federationId,
             ecash,
+            federationId: federation?.id,
+            inviteCode: federation?.inviteCode,
         })
     },
 )
