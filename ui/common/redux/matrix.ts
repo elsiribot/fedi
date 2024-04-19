@@ -6,7 +6,12 @@ import {
 } from '@reduxjs/toolkit'
 import { v4 as uuidv4 } from 'uuid'
 
-import { CommonState, selectAuthenticatedMember, selectFederation } from '.'
+import {
+    CommonState,
+    selectAuthenticatedMember,
+    selectFederation,
+    selectFederations,
+} from '.'
 import {
     MatrixUser,
     MatrixRoom,
@@ -988,3 +993,13 @@ export const selectLatestMatrixRoomEventId = (
         }
     }
 }
+
+export const selectCanClaimPayment = createSelector(
+    (s: CommonState) => selectFederations(s),
+    (s: CommonState, chatPayment: MatrixPaymentEvent) => chatPayment,
+    (federations, chatPayment): boolean => {
+        return !!federations.find(
+            f => f.id === chatPayment.content.federationId,
+        )
+    },
+)
