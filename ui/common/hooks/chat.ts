@@ -32,12 +32,12 @@ import {
     selectMatrixPushNotificationToken,
     connectChat,
     selectFederationsWithChatConnections,
+    selectIsMatrixReady,
 } from '../redux'
 import { getLatestMessage, getLatestPaymentUpdate } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { useMinMaxSendAmount, useMinMaxRequestAmount } from './amount'
-import { useIsMatrixReady } from './matrix'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
 
@@ -220,7 +220,7 @@ export function usePublishNotificationToken(
     const pushNotificationToken = useCommonSelector(
         selectMatrixPushNotificationToken,
     )
-    const isMatrixReady = useIsMatrixReady()
+    const isMatrixReady = useCommonSelector(selectIsMatrixReady)
 
     useEffect(() => {
         // Can't publish if we don't have permission to get the token.
