@@ -102,7 +102,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 keyboardHeight > 0 && Platform.OS === 'ios'
                     ? { paddingBottom: keyboardHeight + theme.spacing.lg }
                     : {},
-                inputDisabled ? { borderTopWidth: 0 } : {},
+                isReadOnly ? { borderTopWidth: 0 } : {},
             ]}>
             {/* in-chat payments only available for DirectChat after a room has already been created with the user */}
             {existingRoom && existingRoom.directUserId && (
@@ -133,16 +133,14 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 containerStyle={[style.textInputOuter, { height: inputHeight }]}
                 inputContainerStyle={style.textInputInner}
                 inputStyle={
-                    inputDisabled
-                        ? style.textInputDisabled
-                        : style.textInputStyle
+                    isReadOnly ? style.textInputReadonly : style.textInputStyle
                 }
                 multiline
                 numberOfLines={3}
                 blurOnSubmit={false}
                 disabled={inputDisabled}
             />
-            {!inputDisabled && (
+            {!isReadOnly && (
                 <Pressable
                     style={style.sendButton}
                     onPress={handleSend}
@@ -194,7 +192,7 @@ const styles = (theme: Theme, insets: Insets) =>
         textInputStyle: {
             fontSize: fediTheme.fontSizes.body,
         },
-        textInputDisabled: {
+        textInputReadonly: {
             color: theme.colors.grey,
             fontSize: fediTheme.fontSizes.body,
             textAlign: 'center',
