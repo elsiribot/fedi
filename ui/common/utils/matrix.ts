@@ -13,6 +13,7 @@ import {
     MatrixTimelineItem,
     MatrixUser,
 } from '../types'
+import { RpcFederation } from '../types/bindings'
 import { makeLog } from './log'
 
 const log = makeLog('common/utils/matrix')
@@ -291,12 +292,24 @@ export function isPaymentEvent(
 export function getReceivablePaymentEvents(
     timeline: MatrixTimelineItem[],
     myId: string,
+    myFederations: RpcFederation[],
 ) {
     const latestPayments: Record<string, MatrixPaymentEvent> = {}
     timeline.forEach(item => {
         if (item === null) return
         if (!isPaymentEvent(item)) return
         if (item.content.recipientId !== myId) return
+        // payment is not receivable if we have not joined the federation this ecash is from
+        if (
+            item.content.federationId &&
+            myFederations.find(f => f.id === item.content.federationId) ===
+                undefined
+        ) {
+            log.info(
+                `can't claim ecash from federation ${item.content.federationId}...`,
+            )
+            return
+        }
         latestPayments[item.content.paymentId] = item
     })
     return Object.values(latestPayments).reduce((prev, event) => {
