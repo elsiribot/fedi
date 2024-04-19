@@ -1,14 +1,21 @@
+import { TFunction } from 'i18next'
 import { useCallback, useEffect, useState } from 'react'
 
+import { makeLog } from '@fedi/common/utils/log'
+
 import {
+    joinFederation,
     selectActiveFederation,
+    selectFederationIds,
     selectFederationMetadata,
     selectOnchainDepositsEnabled,
     selectStableBalance,
     selectStableBalanceEnabled,
+    setActiveFederationId,
     setPublicFederations,
 } from '../redux'
 import { Federation } from '../types'
+import { FederationPreview as FederationPreviewType } from '../types'
 import dateUtils from '../utils/DateUtils'
 import {
     shouldShowOfflineWallet,
@@ -21,8 +28,13 @@ import {
     shouldEnableStabilityPool,
     shouldEnableFediInternalInjection,
     fetchPublicFederations,
+    getFederationPreview,
 } from '../utils/FederationUtils'
+import { FedimintBridge } from '../utils/fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
+import { useToast } from './toast'
+
+const log = makeLog('common/hooks/federation')
 
 export function useIsChatSupported(federation?: Pick<Federation, 'meta'>) {
     const activeFederation = useCommonSelector(selectActiveFederation)
@@ -229,5 +241,94 @@ export function useLatestPublicFederations() {
         publicFederations,
         findPublicFederations,
         isFetchingPublicFederations: isFetching,
+    }
+}
+
+export function useFederationPreview(
+    t: TFunction,
+    fedimint: FedimintBridge,
+    invite: string,
+) {
+    const toast = useToast()
+    const dispatch = useCommonDispatch()
+    const federationIds = useCommonSelector(selectFederationIds)
+    const [isJoining, setIsJoining] = useState<boolean>(false)
+    const [isFetchingPreview, setIsFetchingPreview] = useState(!!invite)
+    const [federationPreview, setFederationPreview] =
+        useState<FederationPreviewType>()
+
+    const handleCode = useCallback(
+        async (code: string, onSuccess?: () => void) => {
+            setIsFetchingPreview(true)
+            try {
+                const fed = await getFederationPreview(code, fedimint)
+                if (federationIds.includes(fed.id)) {
+                    dispatch(setActiveFederationId(fed.id))
+                    toast.show({
+                        content: t('errors.you-have-already-joined'),
+                        status: 'error',
+                    })
+                    onSuccess && onSuccess()
+                } else {
+                    setFederationPreview(fed)
+                }
+            } catch (err) {
+                log.error('handleCode', err)
+                toast.error(t, err, 'errors.invalid-federation-code')
+            }
+            setIsFetchingPreview(false)
+        },
+        [fedimint, federationIds, dispatch, toast, t],
+    )
+
+    const handleJoin = useCallback(
+        async (onSuccess?: () => void) => {
+            setIsJoining(true)
+            try {
+                if (!federationPreview) throw new Error()
+                await dispatch(
+                    joinFederation({
+                        fedimint,
+                        code: federationPreview.inviteCode,
+                    }),
+                ).unwrap()
+                onSuccess && onSuccess()
+            } catch (err) {
+                // TODO: Expect an error code from bridge that maps to
+                // a localized error message
+                log.error('handleJoin', err)
+                const typedError = err as Error
+                // This catches specific errors caused by:
+                // 1. leaving a federation immediately before... After
+                // force-quitting, joining again is successful so advise
+                // the user here
+                // 2. scanning a federation code after you already joined
+                if (
+                    typedError?.message?.includes('No record locks available')
+                ) {
+                    toast.show({
+                        content: t('errors.please-force-quit-the-app'),
+                        status: 'error',
+                    })
+                } else {
+                    toast.error(
+                        t,
+                        typedError,
+                        'errors.failed-to-join-federation',
+                    )
+                }
+                setIsJoining(false)
+            }
+        },
+        [dispatch, federationPreview, fedimint, t, toast],
+    )
+
+    return {
+        isJoining,
+        isFetchingPreview,
+        federationPreview,
+        setFederationPreview,
+        handleCode,
+        handleJoin,
     }
 }
