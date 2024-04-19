@@ -19,13 +19,12 @@ import type {
     TabsNavigatorParamList,
 } from '../types/navigation'
 
-export type Props =
-    | BottomTabScreenProps<
-          TabsNavigatorParamList & RootStackParamList,
-          'Home'
-      > & {
-          offline: boolean
-      }
+export type Props = BottomTabScreenProps<
+    TabsNavigatorParamList & RootStackParamList,
+    'Home'
+> & {
+    offline: boolean
+}
 
 const Home: React.FC<Props> = ({ offline }: Props) => {
     const { t } = useTranslation()

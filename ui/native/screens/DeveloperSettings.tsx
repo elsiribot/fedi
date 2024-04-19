@@ -57,6 +57,7 @@ const DeveloperSettings: React.FC<Props> = () => {
     const [isLoadingGateways, setIsLoadingGateways] = useState<boolean>(false)
     const [gateways, setGateways] = useState<LightningGateway[]>([])
     const [isSharingLogs, setIsSharingLogs] = useState(false)
+    const [outstandingFediFees, setOutstandingFediFees] = useState(0)
     const [isSharingState, setIsSharingState] = useState(false)
     const [isSensitiveLogging, setIsSensitiveLogging] = useState<boolean>(false)
     const [guardianOnlineStatus, setGuardianOnlineStatus] = useState<
@@ -78,6 +79,22 @@ const DeveloperSettings: React.FC<Props> = () => {
     const authenticatedGuardian = useAppSelector(
         s => s.federation.authenticatedGuardian,
     )
+
+    useEffect(() => {
+        if (activeFederation) {
+            fedimint
+                .getAccruedOutstandingFediFees({
+                    federationId: activeFederation.id,
+                })
+                .then(setOutstandingFediFees)
+                .catch(err =>
+                    log.warn(
+                        'Failed to get accured outstanding fedi fees',
+                        err,
+                    ),
+                )
+        }
+    }, [activeFederation])
 
     useEffect(() => {
         fedimint
@@ -192,6 +209,10 @@ const DeveloperSettings: React.FC<Props> = () => {
                         }}
                     />
                 </View>
+                <Text
+                    style={
+                        styles(theme).version
+                    }>{`Outstanding Fees: ${outstandingFediFees}`}</Text>
             </SettingsSection>
             <SettingsSection title={t('feature.fedimods.debug-mode')}>
                 <View style={styles(theme).switchWrapper}>
