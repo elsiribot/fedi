@@ -46,7 +46,7 @@ export const Navigation: React.FC = () => {
             hasNotification: hasChatNotifications,
         },
         {
-            name: 'words.settings' as const,
+            name: 'words.account' as const,
             path: '/settings',
             icon: CogIcon,
             activeIcon: CogFilledIcon,

@@ -27,20 +27,10 @@ const SettingsHeader: React.FC = () => {
                 containerStyle={styles(theme).container}
                 headerCenter={
                     <Text bold numberOfLines={1} adjustsFontSizeToFit>
-                        {t('words.settings')}
+                        {t('words.account')}
                     </Text>
                 }
                 centerContainerStyle={{ flex: 2 }}
-                headerRight={
-                    matrixAuth && (
-                        <Pressable
-                            onPress={() => navigation.navigate('MemberQrCode')}
-                            hitSlop={5}>
-                            <SvgImage name="Qr" color={theme.colors.primary} />
-                        </Pressable>
-                    )
-                }
-                rightContainerStyle={styles(theme).rightContainer}
             />
         </>
     )
@@ -51,12 +41,6 @@ const styles = (theme: Theme) =>
         container: {
             paddingTop: theme.spacing.md,
             paddingBottom: theme.spacing.lg,
-        },
-        rightContainer: {
-            flex: 1,
-            flexDirection: 'row',
-            justifyContent: 'flex-end',
-            paddingVertical: theme.spacing.sm,
         },
     })
 

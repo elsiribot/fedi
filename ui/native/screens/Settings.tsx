@@ -10,10 +10,10 @@ import {
     ScrollView,
     StyleSheet,
     View,
+    useWindowDimensions,
 } from 'react-native'
 import Share from 'react-native-share'
 
-import { useFederationSupportsSingleSeed } from '@fedi/common/hooks/federation'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useExportTransactions } from '@fedi/common/hooks/transactions'
@@ -21,29 +21,33 @@ import {
     changeAuthenticatedGuardian,
     leaveFederation,
     resetFederationChatState,
-    selectActiveFederation,
+    selectAlphabeticallySortedFederations,
     selectCurrency,
     selectDeveloperMode,
     selectMatrixAuth,
     selectStableBalance,
     selectStableBalancePending,
+    setActiveFederationId,
     setDeveloperMode,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import {
     getFederationTosUrl,
     shouldShowInviteCode,
+    supportsSingleSeed,
 } from '@fedi/common/utils/FederationUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
-import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import SvgImage from '../components/ui/SvgImage'
 import { version } from '../package.json'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 import { usePin } from '../utils/hooks/security'
+import { Federation } from '../types'
+import { encodeFediMatrixUserUri } from '@fedi/common/utils/matrix'
+import QRCodeContainer from '../components/ui/QRCodeContainer'
 
 const log = makeLog('Settings')
 
@@ -52,14 +56,15 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>
 const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const dispatch = useAppDispatch()
+    const matrixAuth = useAppSelector(selectMatrixAuth)
     const toast = useToast()
     const exportTransactions = useExportTransactions(fedimint)
-    const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
-    const [isExportingCSV, setIsExportingCSV] = useState(false)
 
-    const dispatch = useAppDispatch()
-    const activeFederation = useAppSelector(selectActiveFederation)
-    const matrixAuth = useAppSelector(selectMatrixAuth)
+    const [exportingFederationId, setExportingFederationId] = useState<string>('')
+
+    const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
+
     const authenticatedGuardian = useAppSelector(
         s => s.federation.authenticatedGuardian,
     )
@@ -67,15 +72,12 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const stableBalance = useAppSelector(selectStableBalance)
     const pendingStableBalance = useAppSelector(selectStableBalancePending)
     const currency = useAppSelector(selectCurrency)
-    const supportsSingleSeed = useFederationSupportsSingleSeed()
     const { status } = usePin()
     const [hasPerformedPersonalBackup] = useNuxStep(
         'hasPerformedPersonalBackup',
     )
 
-    const federationId = activeFederation?.id
-
-    const resetChatState = useCallback(() => {
+    const resetChatState = useCallback((federationId: string) => {
         if (federationId) {
             dispatch(
                 resetFederationChatState({
@@ -83,7 +85,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                 }),
             )
         }
-    }, [federationId, dispatch])
+    }, [dispatch])
 
     const resetGuardiansState = useCallback(() => {
         dispatch(changeAuthenticatedGuardian(null))
@@ -91,38 +93,36 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
 
     // FIXME: this needs some kind of loading state
     // TODO: this should be an thunkified action creator
-    const handleLeaveFederation = useCallback(async () => {
+    const handleLeaveFederation = useCallback(async (federation: Federation) => {
         try {
-            if (federationId) {
-                // FIXME: currently this specific order of operations fixes a
-                // bug where the username would get stuck in storage and when
-                // rejoining the federation, the user cannot create an new
-                // username with the fresh seed and the stored username fails
-                // to authenticate so chat ends up totally broken
-                // However it's not safe because if leaveFederation fails, then
-                // we are resetting state too early and could corrupt things
-                // Need to investigate further why running leaveFederation first
-                // causes this bug
-                resetChatState()
-                resetGuardiansState()
-                await dispatch(
-                    leaveFederation({
-                        fedimint,
-                        federationId,
-                    }),
-                ).unwrap()
-                navigation.replace('Initializing')
-            }
+            // FIXME: currently this specific order of operations fixes a
+            // bug where the username would get stuck in storage and when
+            // rejoining the federation, the user cannot create an new
+            // username with the fresh seed and the stored username fails
+            // to authenticate so chat ends up totally broken
+            // However it's not safe because if leaveFederation fails, then
+            // we are resetting state too early and could corrupt things
+            // Need to investigate further why running leaveFederation first
+            // causes this bug
+            resetChatState(federation.id)
+            resetGuardiansState()
+
+            await dispatch(
+                leaveFederation({
+                    fedimint,
+                    federationId: federation.id,
+                }),
+            ).unwrap()
+
+            navigation.replace('Initializing')
         } catch (e) {
             toast.show({
                 content: t('errors.failed-to-leave-federation'),
                 status: 'error',
             })
-            return
         }
     }, [
         navigation,
-        federationId,
         dispatch,
         resetChatState,
         resetGuardiansState,
@@ -130,11 +130,13 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         t,
     ])
 
-    const confirmLeaveFederation = () => {
+    const confirmLeaveFederation = (federation: Federation) => {
+        const alertTitle = `${t('feature.federations.leave-federation')} - ${federation.name}`
+
         // Don't allow leaving if stable balance exists
         if (stableBalance > 0) {
             Alert.alert(
-                t('feature.federations.leave-federation'),
+                alertTitle,
                 t(
                     'feature.federations.leave-federation-withdraw-stable-first',
                     { currency },
@@ -146,10 +148,11 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                 ],
             )
         }
+
         // Don't allow leaving if stable pending balance exists
         else if (pendingStableBalance > 0) {
             Alert.alert(
-                t('feature.federations.leave-federation'),
+                alertTitle,
                 t(
                     'feature.federations.leave-federation-withdraw-pending-stable-first',
                     { currency },
@@ -161,13 +164,11 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                 ],
             )
         }
+
         // Don't allow leaving sats balance is greater than 100
-        else if (
-            activeFederation &&
-            amountUtils.msatToSat(activeFederation.balance) > 100
-        ) {
+        else if (amountUtils.msatToSat(federation.balance) > 100) {
             Alert.alert(
-                t('feature.federations.leave-federation'),
+                alertTitle,
                 t('feature.federations.leave-federation-withdraw-first'),
                 [
                     {
@@ -177,7 +178,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
             )
         } else {
             Alert.alert(
-                t('feature.federations.leave-federation'),
+                alertTitle,
                 t('feature.federations.leave-federation-confirmation'),
                 [
                     {
@@ -185,17 +186,17 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     },
                     {
                         text: t('words.yes'),
-                        onPress: handleLeaveFederation,
+                        onPress: () => handleLeaveFederation(federation),
                     },
                 ],
             )
         }
     }
 
-    const exportTransactionsAsCsv = async () => {
-        setIsExportingCSV(true)
+    const exportTransactionsAsCsv = async (federation: Federation) => {
+        setExportingFederationId(federation.id)
 
-        const res = await exportTransactions()
+        const res = await exportTransactions(federation)
 
         if (res.success) {
             try {
@@ -218,7 +219,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
             })
         }
 
-        setIsExportingCSV(false)
+        setExportingFederationId('')
     }
 
     const createOrManagePin = () => {
@@ -231,33 +232,42 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         }
     }
 
-    const showInviteCode =
-        activeFederation && shouldShowInviteCode(activeFederation.meta)
+    const sortedFederations = useAppSelector(selectAlphabeticallySortedFederations)
 
-    const tosUrl =
-        activeFederation && getFederationTosUrl(activeFederation.meta)
+    const federationMenus = sortedFederations.map((federation) => {
+        const tosUrl = getFederationTosUrl(federation.meta)
 
-    return (
-        <ScrollView contentContainerStyle={styles(theme).container}>
-            {matrixAuth && (
-                <View style={styles(theme).profileHeader}>
-                    <View style={styles(theme).avatarContainer}>
-                        <Avatar
-                            id={matrixAuth.userId || ''}
-                            name={matrixAuth.displayName || '?'}
-                            size={AvatarSize.lg}
-                            url={matrixAuth.avatarUrl || undefined}
-                        />
-                    </View>
-                    <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
-                        {matrixAuth.displayName}
-                    </Text>
-                </View>
-            )}
-            <View style={styles(theme).sectionContainer}>
+        const runSocialBackup = () => {
+            dispatch(setActiveFederationId(federation.id))
+            navigation.navigate('StartSocialBackup')
+        }
+
+        return (
+            <View key={federation.id} style={styles(theme).sectionContainer}>
                 <Text style={styles(theme).sectionTitle}>
-                    {t('words.federation')}
+                    {federation.name}
                 </Text>
+
+                {shouldShowInviteCode(federation.meta) && (
+                    <SettingsItem
+                        image={<SvgImage name="Qr" />}
+                        label={t('feature.federations.invite-members')}
+                        onPress={() => {
+                            navigation.navigate('FederationInvite', {
+                                inviteLink: federation.inviteCode,
+                            })
+                        }}
+                    />
+                )}
+
+                {supportsSingleSeed(federation) && (
+                    <SettingsItem
+                        image={<SvgImage name="SocialPeople" />}
+                        label={t('feature.backup.social-backup')}
+                        onPress={() => runSocialBackup()}
+                    />
+                )}
+
                 {tosUrl && (
                     <SettingsItem
                         image={<SvgImage name="Scroll" />}
@@ -266,55 +276,41 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         onPress={() => Linking.openURL(tosUrl)}
                     />
                 )}
-                {showInviteCode && (
-                    <SettingsItem
-                        image={<SvgImage name="Qr" />}
-                        label={t('feature.federations.invite-members')}
-                        onPress={() => {
-                            navigation.navigate('FederationInvite', {
-                                inviteLink: activeFederation.inviteCode,
-                            })
-                        }}
-                    />
-                )}
-                {authenticatedGuardian !== null && (
-                    <SettingsItem
-                        image={<SvgImage name="SocialPeople" />}
-                        label={t('feature.recovery.recovery-assist')}
-                        onPress={() => {
-                            navigation.navigate('StartRecoveryAssist')
-                        }}
-                    />
-                )}
+
+
+                <SettingsItem
+                    image={<SvgImage name="TableExport" />}
+                    label={t('feature.backup.export-transactions-to-csv')}
+                    onPress={() => exportTransactionsAsCsv(federation)}
+                    disabled={!!exportingFederationId}
+                />
+
                 <SettingsItem
                     image={<SvgImage name="LeaveFederation" />}
                     label={t('feature.federations.leave-federation')}
-                    onPress={confirmLeaveFederation}
+                    onPress={() => confirmLeaveFederation(federation)}
                 />
             </View>
-            {supportsSingleSeed && (
-                <View>
-                    <Text style={styles(theme).sectionTitle}>
-                        {t('words.wallet')}
+        )
+    })
+
+    const { width } = useWindowDimensions()
+
+    const qrValue = encodeFediMatrixUserUri(matrixAuth?.userId || '')
+
+    return (
+        <ScrollView contentContainerStyle={styles(theme).container}>
+            {matrixAuth && (
+                <View style={styles(theme).qrCode}>
+                    <QRCodeContainer
+                        copyMessage={t('phrases.copied-member-code')}
+                        copyValue={qrValue}
+                        qrValue={qrValue}
+                    />
+
+                    <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
+                        {matrixAuth.displayName}
                     </Text>
-                    <SettingsItem
-                        image={<SvgImage name="Wallet" />}
-                        label={t('feature.backup.backup-wallet')}
-                        onPress={() =>
-                            navigation.navigate('ChooseBackupMethod')
-                        }
-                    />
-                    <SettingsItem
-                        image={<SvgImage name="TableExport" />}
-                        label={t('feature.backup.export-transactions-to-csv')}
-                        onPress={exportTransactionsAsCsv}
-                        disabled={isExportingCSV}
-                    />
-                    <SettingsItem
-                        image={<SvgImage name="LockSecurity" />}
-                        label={t('feature.pin.pin-access')}
-                        onPress={createOrManagePin}
-                    />
                 </View>
             )}
             <View>
@@ -344,11 +340,33 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={() => navigation.navigate('CurrencySettings')}
                 />
                 <SettingsItem
+                    image={<SvgImage name="Note" />}
+                    label={t('feature.backup.personal-backup')}
+                    onPress={() => navigation.navigate('StartPersonalBackup')}
+                />
+                {authenticatedGuardian !== null && (
+                    <SettingsItem
+                        image={<SvgImage name="SocialPeople" />}
+                        label={t('feature.recovery.recovery-assist')}
+                        onPress={() => {
+                            navigation.navigate('StartRecoveryAssist')
+                        }}
+                    />
+                )}
+                <SettingsItem
+                    image={<SvgImage name="LockSecurity" />}
+                    label={t('feature.pin.pin-access')}
+                    onPress={createOrManagePin}
+                />
+                <SettingsItem
                     image={<SvgImage name="Bug" />}
                     label={t('feature.bug.report-a-bug')}
                     onPress={() => navigation.navigate('BugReport')}
                 />
             </View>
+
+            {federationMenus}
+
             <View style={styles(theme).versionContainer}>
                 <SvgImage
                     name="FediLogoIcon"
@@ -423,6 +441,10 @@ const styles = (theme: Theme) =>
         logo: {
             marginBottom: theme.spacing.sm,
         },
+        qrCode: {
+            alignItems: 'center',
+            gap: theme.spacing.lg,
+        }
     })
 
 export default Settings

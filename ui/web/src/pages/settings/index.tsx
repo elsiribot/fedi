@@ -1,5 +1,4 @@
 import React, { useCallback, useState } from 'react'
-import orderBy from 'lodash/orderBy'
 import { useTranslation } from 'react-i18next'
 
 import InviteMembersIcon from '@fedi/common/assets/svgs/invite-members.svg'
@@ -8,7 +7,8 @@ import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
 import ScrollIcon from '@fedi/common/assets/svgs/scroll.svg'
 import TableExportIcon from '@fedi/common/assets/svgs/table-export.svg'
 import UsdIcon from '@fedi/common/assets/svgs/usd.svg'
-import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
+import NoteIcon from '@fedi/common/assets/svgs/note.svg'
+import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import {
     useIsInviteSupported,
 } from '@fedi/common/hooks/federation'
@@ -16,8 +16,8 @@ import { useToast } from '@fedi/common/hooks/toast'
 import { useExportTransactions } from '@fedi/common/hooks/transactions'
 import {
     leaveFederation,
+    selectAlphabeticallySortedFederations,
     selectFederation,
-    selectFederations,
     selectMatrixAuth,
     setActiveFederationId,
 } from '@fedi/common/redux'
@@ -44,15 +44,15 @@ function AdminPage() {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const matrixAuth = useAppSelector(selectMatrixAuth)
-    const toast = useToast()
-    const [invitingFederationId, setInvitingFederationId] = useState<string>('')
-    const [leavingFederationId, setLeavingFederationId] = useState<string>('')
-    const [exportingFederationId, setExportingFederationId] = useState<string>('')
-    const [isChangingName, setIsChangingName] = useState(false)
-    const [isChangingAvatar, setIsChangingAvatar] = useState(false)
 
     const isInviteSupported = useIsInviteSupported()
     const exportTransactions = useExportTransactions(fedimint)
+
+    const toast = useToast()
+
+    const [invitingFederationId, setInvitingFederationId] = useState<string>('')
+    const [leavingFederationId, setLeavingFederationId] = useState<string>('')
+    const [exportingFederationId, setExportingFederationId] = useState<string>('')
 
     const leavingFederation = useAppSelector((s) => selectFederation(s, leavingFederationId))
 
@@ -64,7 +64,6 @@ function AdminPage() {
                 await dispatch(leaveFederation({ fedimint, federationId: leavingFederationId }))
             } catch (err) {
                 toast.error(t, err, 'errors.unknown-error')
-                return
             }
         }
 
@@ -91,21 +90,14 @@ function AdminPage() {
         setExportingFederationId('')
     }
 
-    const allFederations = useAppSelector(selectFederations)
-    const sortedFederations = orderBy(allFederations, (federation) => federation.name.toLowerCase(), 'asc')
+    const sortedFederations = useAppSelector(selectAlphabeticallySortedFederations)
 
     const federationMenus: MenuGroup[] = sortedFederations.map((federation) => {
-        const tosUrl = getFederationTosUrl(federation.meta)
+        const tosUrl = getFederationTosUrl(federation.meta) || ''
 
         return {
             label: federation.name,
             items: [
-                {
-                    label: t('feature.federations.federation-terms'),
-                    icon: ScrollIcon,
-                    href: tosUrl,
-                    disabled: !tosUrl,
-                },
                 {
                     label: t('feature.federations.invite-members'),
                     icon: InviteMembersIcon,
@@ -113,17 +105,23 @@ function AdminPage() {
                     disabled: !isInviteSupported,
                 },
                 {
+                    label: t('feature.backup.social-backup'),
+                    icon: SocialPeopleIcon,
+                    href: `/settings/backup/social`,
+                    onClick: () => dispatch(setActiveFederationId(federation.id)),
+                    hidden: !supportsSingleSeed(federation),
+                },
+                {
+                    label: t('feature.federations.federation-terms'),
+                    icon: ScrollIcon,
+                    href: tosUrl,
+                    disabled: !tosUrl,
+                },
+                {
                     label: t('feature.backup.export-transactions-to-csv'),
                     icon: TableExportIcon,
                     onClick: () => exportTransactionsAsCsv(federation),
-                    disabled: exportingFederationId,
-                },
-                {
-                    label: t('feature.backup.backup-wallet'),
-                    icon: WalletIcon,
-                    href: `/settings/backup`,
-                    onClick: () => dispatch(setActiveFederationId(federation.id)),
-                    hidden: !supportsSingleSeed(federation),
+                    disabled: !!exportingFederationId,
                 },
                 {
                     label: t('feature.federations.leave-federation'),
@@ -131,7 +129,7 @@ function AdminPage() {
                     onClick: () => setLeavingFederationId(federation.id),
                 },
             ],
-        } as MenuGroup
+        }
     })
 
     let menu: SettingsMenuProps['menu'] = [
@@ -147,6 +145,11 @@ function AdminPage() {
                     label: t('phrases.display-currency'),
                     icon: UsdIcon,
                     href: '/settings/currency',
+                },
+                {
+                    label: t('feature.backup.personal-backup'),
+                    icon: NoteIcon,
+                    href: `/settings/backup/personal`,
                 },
             ],
         },
@@ -167,8 +170,7 @@ function AdminPage() {
         <ContentBlock>
             <Layout.Root>
                 <Layout.Header>
-                    <Layout.Title>{t('words.settings')}</Layout.Title>
-
+                    <Layout.Title>{t('words.account')}</Layout.Title>
                 </Layout.Header>
                 <Layout.Content>
                     <div>
