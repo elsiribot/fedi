@@ -30,6 +30,7 @@ import {
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
 import { loadFromStorage } from './storage'
+import orderBy from 'lodash/orderBy'
 
 /*** Initial State ***/
 
@@ -265,6 +266,17 @@ export const selectFederations = createSelector(
                 name: getFederationName(meta) || f.name,
             }
         }),
+)
+
+export const selectAlphabeticallySortedFederations = createSelector(
+    selectFederations,
+    (federations) => {
+        return orderBy(
+            federations,
+            (federation) => federation.name.toLowerCase(),
+            'asc'
+        )
+    },
 )
 
 export const selectFederationIds = createSelector(

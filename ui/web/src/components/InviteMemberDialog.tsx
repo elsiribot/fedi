@@ -13,13 +13,11 @@ interface Props {
     onClose: () => void
 }
 
-export const InviteMemberDialog: React.FC<Props> = props => {
-    const {
-        federationId,
-        onClose,
-        ...rest
-    } = props
-
+export const InviteMemberDialog: React.FC<Props> = ({
+    federationId,
+    onClose,
+    ...rest
+}: Props) => {
     const { t } = useTranslation()
 
     const federation = useAppSelector((s) => selectFederation(s, federationId))

@@ -1,6 +1,7 @@
 {
     "words": {
         "accept": "Accept",
+        "account": "Account",
         "actions": "Actions",
         "address": "Address",
         "admin": "Admin",
@@ -83,7 +84,7 @@
         "seen": "Seen",
         "send": "Send",
         "sent": "Sent",
-        "settings": "Account",
+        "settings": "Settings",
         "share": "Share",
         "skip": "Skip",
         "status": "Status",
