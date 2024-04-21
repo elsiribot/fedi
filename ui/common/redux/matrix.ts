@@ -611,7 +611,7 @@ export const acceptMatrixPaymentRequest = createAsyncThunk<
             amount as MSats,
             federationId,
         )
-        client.sendMessage(event.roomId, {
+        await client.sendMessage(event.roomId, {
             ...event.content,
             body: `Sent payment of ${amountUtils.formatSats(
                 amountUtils.msatToSat(amount as MSats),
@@ -628,7 +628,7 @@ export const rejectMatrixPaymentRequest = createAsyncThunk<
     { event: MatrixPaymentEvent }
 >('matrix/rejectMatrixPaymentRequest', async ({ event }) => {
     const client = getMatrixClient()
-    client.sendMessage(event.roomId, {
+    await client.sendMessage(event.roomId, {
         ...event.content,
         body: 'Payment request rejected.', // TODO: i18n?
         status: MatrixPaymentStatus.rejected,
