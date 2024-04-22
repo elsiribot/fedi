@@ -1,8 +1,8 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect } from 'react'
-import { StyleSheet, View } from 'react-native'
+import React, { useCallback, useEffect, useState } from 'react'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import {
     selectMatrixAuth,
@@ -10,7 +10,6 @@ import {
     sendMatrixDirectMessage,
 } from '@fedi/common/redux'
 
-import ChatConversation from '../components/feature/chat/ChatConversation'
 import MessageInput from '../components/feature/chat/MessageInput'
 import NoMessagesNotice from '../components/feature/chat/NoMessagesNotice'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -31,6 +30,7 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
     const existingRoom = useAppSelector(s =>
         selectMatrixDirectMessageRoom(s, userId),
     )
+    const [isSending, setIsSending] = useState(false)
 
     const dispatch = useAppDispatch()
 
@@ -56,8 +56,10 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
     // const isFocused = useIsFocused()
     // useUpdateLastMessageRead(memberId, messages, isFocused !== true)
 
+    // add another check before creating another room
     const handleSend = useCallback(
         async (body: string) => {
+            setIsSending(true)
             const res = await dispatch(
                 sendMatrixDirectMessage({ userId, body }),
             ).unwrap()
@@ -65,19 +67,26 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
                 roomId: res.roomId,
                 chatType: ChatType.direct,
             })
+            setIsSending(false)
         },
-        [dispatch, navigationReplace, userId],
+        [dispatch, navigationReplace, userId, setIsSending],
     )
 
     return (
         <View style={styles(theme).container}>
             <>
-                {existingRoom ? (
-                    <ChatConversation type={ChatType.direct} id={userId} />
+                {isSending ? (
+                    <View style={styles(theme).center}>
+                        <ActivityIndicator size="large" />
+                    </View>
                 ) : (
                     <NoMessagesNotice />
                 )}
-                <MessageInput onMessageSubmitted={handleSend} id={userId} />
+                <MessageInput
+                    isSending={isSending}
+                    onMessageSubmitted={handleSend}
+                    id={userId}
+                />
             </>
         </View>
     )
@@ -92,6 +101,10 @@ const styles = (_: Theme) =>
         },
         centeredText: {
             textAlign: 'center',
+        },
+        center: {
+            flex: 1,
+            justifyContent: 'center',
         },
     })
 

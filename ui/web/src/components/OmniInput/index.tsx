@@ -98,7 +98,7 @@ export function OmniInput<
             } else if (parsedData.type === ParserDataType.Unknown) {
                 if (
                     !props.expectedInputTypes.includes(
-                        ParserDataType.FediChatMember as T,
+                        ParserDataType.LegacyFediChatMember as T,
                     ) ||
                     !federationId ||
                     !connectionOptions?.domain

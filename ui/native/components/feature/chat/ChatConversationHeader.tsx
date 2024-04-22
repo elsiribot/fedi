@@ -21,7 +21,7 @@ const ChatConversationHeader: React.FC = () => {
     const roomRoute = useRoute<ChatRoomRouteProp>()
     const userRoute = useRoute<ChatUserRouteProp>()
     const { roomId } = roomRoute.params
-    const { userId } = userRoute.params
+    const { userId, displayName } = userRoute.params
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
     const user = useAppSelector(s => selectMatrixUser(s, userId))
     const isGroupChat = room?.directUserId === undefined
@@ -34,6 +34,10 @@ const ChatConversationHeader: React.FC = () => {
     } else if (user) {
         name = user?.displayName || user?.id
         avatar = <ChatAvatar user={user} size={AvatarSize.sm} />
+    } else if (displayName) {
+        const placeHolderUser = { id: '', displayName }
+        name = displayName
+        avatar = <ChatAvatar size={AvatarSize.sm} user={placeHolderUser} />
     } else {
         avatar = <Avatar size={AvatarSize.sm} id={''} name={name} />
     }

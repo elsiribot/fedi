@@ -24,7 +24,7 @@ import { OmniQrScanner } from './OmniQrScanner'
 export interface OmniInputAction {
     label: React.ReactNode
     icon: SvgImageName
-    onPress(): void
+    onPress: () => void | Promise<void>
 }
 
 interface Props<T extends ParserDataType, ExpectedData> {
@@ -68,8 +68,13 @@ export function OmniInput<
         ParserDataType.LnurlWithdraw as T,
     )
     const canMemberSearch = expectedInputTypes.includes(
-        ParserDataType.FediChatMember as T,
+        ParserDataType.FediChatUser as T,
     )
+
+    // TODO: Implement Room search for matrix (knocking)
+    // const canRoomSearch = expectedInputTypes.includes(
+    //     ParserDataType.FediChatRoom as T,
+    // )
 
     const parseInput = useCallback(
         async (input: string) => {

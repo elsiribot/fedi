@@ -1,8 +1,15 @@
+import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
+import {
+    FlatList,
+    ListRenderItem,
+    Pressable,
+    StyleSheet,
+    View,
+} from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useMatrixUserSearch } from '@fedi/common/hooks/matrix'
@@ -21,14 +28,16 @@ import ChatUserTile from '../components/feature/chat/ChatUserTile'
 import { AvatarSize } from '../components/ui/HoloAvatar'
 import HoloLoader from '../components/ui/HoloLoader'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
+import SvgImage from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { MatrixUser } from '../types'
-import type { RootStackParamList } from '../types/navigation'
+import type { NavigationHook, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatRoomInvite'>
 
 const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
     const { roomId } = route.params
+    const navigation = useNavigation<NavigationHook>()
     const dispatch = useAppDispatch()
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
@@ -164,6 +173,16 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
                         inputContainerStyle={style.textInputInner}
                         autoCapitalize={'none'}
                         autoCorrect={false}
+                        rightIcon={
+                            <Pressable
+                                onPress={() => {
+                                    navigation.navigate('ScanMemberCode', {
+                                        inviteToRoomId: roomId,
+                                    })
+                                }}>
+                                <SvgImage name={'Scan'} />
+                            </Pressable>
+                        }
                     />
                 </View>
                 {searchContent}

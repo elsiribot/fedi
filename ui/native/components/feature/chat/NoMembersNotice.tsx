@@ -1,24 +1,23 @@
-import { useNavigation, useRoute } from '@react-navigation/native'
+import { useNavigation } from '@react-navigation/native'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { Props as GroupChatProps } from '../../../screens/GroupChat'
 import { NavigationHook } from '../../../types/navigation'
 
-type GroupChatRouteProp = GroupChatProps['route']
-
 type Props = {
+    roomId: string
     isBroadcast?: boolean
 }
 
-const NoMembersNotice: React.FC = ({ isBroadcast = false }: Props) => {
+const NoMembersNotice: React.FC<Props> = ({
+    isBroadcast = false,
+    roomId,
+}: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const route = useRoute<GroupChatRouteProp>()
-    const { groupId } = route.params
 
     return (
         <View style={styles(theme).container}>
@@ -36,7 +35,9 @@ const NoMembersNotice: React.FC = ({ isBroadcast = false }: Props) => {
             <Button
                 containerStyle={styles(theme).button}
                 title={t('feature.chat.invite-to-group')}
-                onPress={() => navigation.navigate('GroupInvite', { groupId })}
+                onPress={() =>
+                    navigation.navigate('ChatRoomInvite', { roomId })
+                }
             />
         </View>
     )

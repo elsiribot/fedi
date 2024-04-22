@@ -163,6 +163,7 @@
         "start-over": "Start over",
         "terms-and-conditions": "Terms & Conditions",
         "total-fees": "Total Fees",
+        "this-group": "this group",
         "transaction-id": "Transaction ID",
         "transaction-received": "Transaction received",
         "view-public-federations": "View public federations",
@@ -181,6 +182,7 @@
         "chat-payment-failed": "Could not update that chat payment",
         "chat-unavailable": "This federation does not have a chat server.",
         "failed-to-fetch-gateways": "Failed to fetch gateways",
+        "failed-to-invite-to-group": "Failed to invite user to group",
         "failed-to-fetch-guardian-approval": "Failed to fetch guardian approval",
         "failed-to-fetch-transactions": "Failed to fetch transactions",
         "failed-to-generate-invoice": "Failed to generate invoice",
@@ -212,7 +214,8 @@
         "webln-method-not-supported": "{{method}} is not supported",
         "webln-payment-rejected": "Payment rejected",
         "webln-payment-request-rejected": "Payment request rejected",
-        "you-have-already-joined": "You have already joined this federation"
+        "you-have-already-joined": "You have already joined this federation",
+        "user-is-already-in-group": "This user is already a member of this group"
     },
     "feature": {
         "backup": {
@@ -298,6 +301,7 @@
             "click-to-join-group": "Click to join this group",
             "confirm-add-admin-to-group": "Are you sure you want to add {{username}} as an admin? They will be able to send messages in this group.",
             "confirm-remove-admin-from-group": "Are you sure you want to remove {{username}} as an admin? They won't be able to send messages in this group but their previously sent messages will remain.",
+            "confirm-add-to-group": "Are you sure you want to invite {{username}} to {{roomName}}?",
             "copied-group-invite-code": "Copied group invite code",
             "create-a-display-name": "Create a display name",
             "create-a-group": "Create a group",
@@ -452,7 +456,7 @@
             "camera-permission-request": "Allow camera access to scan.",
             "confirm-ecash-token": "This is an eCash token, do you want to redeem it?",
             "confirm-federation-invite": "This is a federation invitation, do you want to join?",
-            "confirm-fedi-chat": "This is a chat link, do you want to go there?",
+            "confirm-fedi-chat": "This is a chat link for {{username}}, do you want to go there?",
             "confirm-lightning-pay": "This is a lightning payment request, do you want to pay it?",
             "confirm-lightning-withdraw": "This is a lightning withdrawal, do you want to withdraw?",
             "confirm-lnurl-auth": "Do you want to log in to {{domain}} with lightning?",
@@ -465,6 +469,7 @@
             "search-placeholder-username-or-ln": "Enter a username or lightning address",
             "unsupported-bolt12": "BOLT 12 offers aren’t supported yet. Sorry!",
             "unsupported-legacy-chat": "This chat QR is from a version of the app that is no longer supported. Sorry!",
+            "unsupported-chat-invite": "This is a chat room code. Your username must be invited to a chat room before joining.",
             "unsupported-no-federation": "You can’t use that before joining a federation. Try scanning a federation invite instead.",
             "unsupported-on-chain": "On-chain bitcoin addresses aren’t supported yet. Sorry!",
             "unsupported-unknown": "Hmm, that's not a format we recognize. Sorry!"

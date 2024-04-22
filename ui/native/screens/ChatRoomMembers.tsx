@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
 
 import {
+    refetchMatrixRoomMembers,
     selectMatrixAuth,
     selectMatrixRoomMembersByMe,
 } from '@fedi/common/redux'
@@ -12,7 +13,7 @@ import { MatrixPowerLevel, MatrixRoomMember } from '@fedi/common/types'
 
 import { ChatUserActionsOverlay } from '../components/feature/chat/ChatUserActionsOverlay'
 import ChatUserTile from '../components/feature/chat/ChatUserTile'
-import { useAppSelector } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type ChatRoomMembersProps = NativeStackScreenProps<
@@ -27,6 +28,7 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
     const { roomId } = route.params
     const { theme } = useTheme()
 
+    const dispatch = useAppDispatch()
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
     const myUserId = useAppSelector(selectMatrixAuth)?.userId
     const members = useAppSelector(s => selectMatrixRoomMembersByMe(s, roomId))
@@ -37,8 +39,14 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
 
     const handleRefresh = useCallback(() => {
         setIsRefetching(true)
+        roomId &&
+            dispatch(refetchMatrixRoomMembers(roomId)).catch(() => {
+                // no-op
+            })
+
         setTimeout(() => setIsRefetching(false), 500)
-    }, [])
+        // Dismissing any sooner looks weird
+    }, [dispatch, roomId])
 
     const renderMember: ListRenderItem<MatrixRoomMember> = ({ item }) => {
         const isMe = item.id === myUserId

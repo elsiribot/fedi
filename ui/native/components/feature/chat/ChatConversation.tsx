@@ -187,7 +187,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                     removeClippedSubviews={false}
                     ListEmptyComponent={
                         isAlone ? (
-                            <NoMembersNotice />
+                            <NoMembersNotice roomId={id} />
                         ) : (
                             <NoMessagesNotice isBroadcast={isBroadcast} />
                         )

@@ -315,8 +315,25 @@ export function encodeFediMatrixUserUri(id: string) {
     return `fedi:user:${id}`
 }
 
+export function encodeFediMatrixRoomUri(id: string) {
+    return `fedi:room:${id}`
+}
+
+export function decodeFediMatrixRoomUri(uri: string) {
+    // Decode both fedi:room:{id} and fedi://room:{id}
+    // const match = uri.match(FEDI_ROOM)
+    const match = uri.match(/^fedi(?::|:\/\/)room:(.+)$/i)
+    if (!match) throw new Error('feature.chat.invalid-room')
+
+    const id = match[1]
+    if (!isValidMatrixUserId(id)) throw new Error('feature.chat.invalid-room')
+
+    return id
+}
+
 export function decodeFediMatrixUserUri(uri: string) {
     // Decode both fedi:user:{id} and fedi://user:{id}
+    // const match = uri.match(FEDI_USER)
     const match = uri.match(/^fedi(?::|:\/\/)user:(.+)$/i)
     if (!match) throw new Error('feature.chat.invalid-member')
 
@@ -326,6 +343,26 @@ export function decodeFediMatrixUserUri(uri: string) {
     return id
 }
 
+/**
+ * TODO Implement more sophisticated parsing
+ *   (for example: try to rule out emails)
+ * Our existing pattern will match some invalid matrixIds, as
+ * matrixIds have some constrains on what is a valid "username"
+ * and "homeserver" address. At some point, we might want to implement
+ * a "more complete" pattern for matching matrix ids to avoid
+ * false positives. And if we do, we should also implement stronger
+ * test vectors.
+ *
+ * Ref: https://github.com/matrix-org/matrix-android-sdk/blob/develop/matrix-sdk-core/src/main/java/org/matrix/androidsdk/core/MXPatterns.java
+ * const MATRIX_DOMAIN = new RegExp(/:[A-Z0-9.-]+(:[0-9]{2,5})?/i)
+ * const MATRIX_USER_NAME = new RegExp(/@[A-Z0-9\x21-\x39\x3B-\x7F]+/i)
+ * const FULL_MATRIX_USER_ID = new RegExp(
+ *    MATRIX_USER_NAME.source + MATRIX_DOMAIN.source,
+ * )
+ * export function isValidMatrixFullUserId(id: string) {
+ *     return FULL_MATRIX_USER_ID.test(id)
+ * }
+ */
 export function isValidMatrixUserId(id: string) {
     return /^@[^:]+:.+$/.test(id)
 }

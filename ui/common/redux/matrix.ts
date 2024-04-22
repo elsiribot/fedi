@@ -578,6 +578,22 @@ export const searchMatrixUsers = createAsyncThunk<MatrixSearchResults, string>(
     },
 )
 
+export const fetchMatrixProfile = createAsyncThunk<any, string>(
+    'matrix/fetchMatrixProfile',
+    async userId => {
+        const client = getMatrixClient()
+        return client.fetchMatrixProfile(userId)
+    },
+)
+
+export const refetchMatrixRoomMembers = createAsyncThunk<void, string>(
+    'matrix/refetchRoomMembers',
+    async roomId => {
+        const client = getMatrixClient()
+        return client.refetchRoomMembers(roomId)
+    },
+)
+
 export const paginateMatrixRoomTimeline = createAsyncThunk<
     { end: boolean },
     { roomId: MatrixRoom['id']; limit?: number },
@@ -602,6 +618,11 @@ export const sendMatrixReadReceipt = createAsyncThunk<
 /*** Selectors ***/
 
 export const selectMatrixStatus = (s: CommonState) => s.matrix.status
+
+export const selectIsMatrixReady = createSelector(
+    selectMatrixStatus,
+    status => status === MatrixSyncStatus.synced,
+)
 
 /**
  * Returns a list of matrix rooms, excluding any that are loading or missing room information.

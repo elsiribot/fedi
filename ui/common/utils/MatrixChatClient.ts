@@ -252,6 +252,14 @@ export class MatrixChatClient {
             .then(this.serializeUserDirectorySearchResponse)
     }
 
+    async fetchMatrixProfile(
+        userId: MatrixUser['id'],
+    ): Promise<{ displayname: string }> {
+        return await this.fedimint.matrixUserProfile({
+            userId,
+        })
+    }
+
     async setDisplayName(displayName: string) {
         await this.fedimint.matrixSetDisplayName({ displayName })
     }
@@ -300,6 +308,10 @@ export class MatrixChatClient {
 
     async sendReadReceipt(roomId: string, eventId: string) {
         return this.fedimint.matrixRoomSendReceipt({ roomId, eventId })
+    }
+
+    async refetchRoomMembers(roomId: string) {
+        await this.observeRoomMembers(roomId)
     }
 
     emit<TEventName extends keyof MatrixChatClientEventMap>(
@@ -507,6 +519,15 @@ export class MatrixChatClient {
 
     private async observeRoomMembers(roomId: string) {
         // TODO: Listen for new room member events, re-fetch.
+        // // Only observe room members once, subsequent calls are no-ops.
+        // if (this.roomObserverMap[roomId]?.members !== undefined) return
+
+        // // Immediately add to the map with a fake id to prevent additional calls.
+        // this.roomObserverMap[roomId] = {
+        //     ...this.roomObserverMap[roomId],
+        //     members: Number.MAX_SAFE_INTEGER,
+        // }
+
         const members = await this.fedimint.matrixRoomGetMembers({ roomId })
         members.forEach(member => {
             this.emit('roomMember', this.serializeRoomMember(member, roomId))

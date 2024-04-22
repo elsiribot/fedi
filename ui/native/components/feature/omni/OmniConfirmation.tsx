@@ -21,19 +21,19 @@ import { NavigationHook } from '../../../types/navigation'
 import CustomOverlay, { CustomOverlayContents } from '../../ui/CustomOverlay'
 import RecoveryInProgress from '../recovery/RecoveryInProgress'
 
-interface Props {
-    parsedData: AnyParsedData
+interface Props<T extends AnyParsedData> {
+    parsedData: T
     goBackText?: string
     onGoBack: () => void
-    onSuccess: (parsedData: AnyParsedData) => void
+    onSuccess: (parsedData: T) => void
 }
 
-export const OmniConfirmation: React.FC<Props> = ({
+export const OmniConfirmation = <T extends AnyParsedData>({
     parsedData,
     goBackText: propsGoBackText,
     onGoBack,
     onSuccess,
-}) => {
+}: Props<T>) => {
     const { t } = useTranslation()
     const toast = useToast()
     const navigation = useNavigation()
@@ -162,30 +162,34 @@ export const OmniConfirmation: React.FC<Props> = ({
                     continueOnPress: handleAuth,
                 }
             case ParserDataType.FediChatUser:
-                // TODO: Support me
-                return {
-                    contents: {
-                        icon: 'ScanSad',
-                        title: t('feature.omni.unsupported-unknown'),
-                    },
-                }
-            case ParserDataType.FediChatGroup:
-            case ParserDataType.FediChatMember:
                 return {
                     contents: {
                         icon: 'Chat',
-                        title: t('feature.omni.confirm-fedi-chat'),
+                        title: t('feature.omni.confirm-fedi-chat', {
+                            username: parsedData.data.displayName,
+                        }),
                     },
                     continueOnPress: () => {
-                        if (parsedData.type === ParserDataType.FediChatGroup) {
-                            handleNavigate('GroupChat', {
-                                groupId: parsedData.data.id,
-                            })
-                        } else {
-                            handleNavigate('DirectChat', {
-                                memberId: parsedData.data.id,
-                            })
-                        }
+                        handleNavigate('ChatUserConversation', {
+                            userId: parsedData.data.id,
+                            displayName: parsedData.data.displayName,
+                        })
+                    },
+                }
+            case ParserDataType.FediChatRoom:
+                // TODO: Implement join room by link for matrix (knocking)
+                return {
+                    contents: {
+                        icon: 'ScanSad',
+                        title: t('feature.omni.unsupported-chat-invite'),
+                    },
+                }
+            case ParserDataType.LegacyFediChatGroup:
+            case ParserDataType.LegacyFediChatMember:
+                return {
+                    contents: {
+                        icon: 'ScanSad',
+                        title: t('feature.omni.unsupported-legacy-chat'),
                     },
                 }
             case ParserDataType.Website:

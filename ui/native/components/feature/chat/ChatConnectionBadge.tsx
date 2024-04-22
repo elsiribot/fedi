@@ -10,7 +10,9 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useIsMatrixReady } from '@fedi/common/hooks/matrix'
+import { selectIsMatrixReady } from '@fedi/common/redux'
+
+import { useAppSelector } from '../../../state/hooks'
 
 interface Props {
     offset?: number
@@ -26,7 +28,7 @@ export const ChatConnectionBadge: React.FC<Props> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
-    const isReady = useIsMatrixReady()
+    const isReady = useAppSelector(s => selectIsMatrixReady(s))
 
     const [isVisible, setIsVisible] = useState(!isReady || hide)
 

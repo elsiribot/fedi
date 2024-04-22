@@ -12,6 +12,7 @@ import {
 } from '@fedi/common/redux'
 import { MatrixPowerLevel, MatrixRoomMember } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
+import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 import SvgImage, { SvgImageName } from '@fedi/native/components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '@fedi/native/state/hooks'
 
@@ -98,6 +99,8 @@ const ChatUserActions: React.FC<Props> = ({
             onPress: () => {
                 navigation.navigate('ChatUserConversation', {
                     userId: member.id,
+                    displayName:
+                        member.displayName ?? matrixIdToUsername(member.id),
                 })
                 dismiss()
             },
