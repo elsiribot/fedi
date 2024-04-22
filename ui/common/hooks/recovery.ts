@@ -14,6 +14,8 @@ import {
     selectRegisteredDevices,
     transferExistingWallet,
     createNewWallet,
+    fetchDeviceIndexAssignmentStatus,
+    fetchRegisteredDevices,
 } from '../redux'
 import { SeedWords } from '../types'
 import { DeviceRegistrationEvent, RpcRegisteredDevice } from '../types/bindings'
@@ -175,6 +177,40 @@ export function useDeviceRegistration(t: TFunction, fedimint: FedimintBridge) {
         handleTransfer,
         handleNewWallet,
     }
+}
+
+export function useResumeRecovery(
+    fedimint: FedimintBridge,
+    onResumePersonalRecovery: () => void,
+) {
+    const dispatch = useCommonDispatch()
+
+    const checkDeviceAssignmentStatus = useCallback(() => {
+        return dispatch(fetchDeviceIndexAssignmentStatus(fedimint)).unwrap()
+    }, [dispatch, fedimint])
+
+    const refreshRegisteredDevices = useCallback(() => {
+        return dispatch(fetchRegisteredDevices(fedimint)).unwrap()
+    }, [dispatch, fedimint])
+
+    useEffect(() => {
+        const restoreRecoveryState = async () => {
+            const status = await dispatch(
+                fetchDeviceIndexAssignmentStatus(fedimint),
+            ).unwrap()
+            await dispatch(fetchRegisteredDevices(fedimint)).unwrap()
+            if (status === 'unassigned') {
+                onResumePersonalRecovery()
+            }
+        }
+        restoreRecoveryState()
+    }, [
+        checkDeviceAssignmentStatus,
+        dispatch,
+        fedimint,
+        onResumePersonalRecovery,
+        refreshRegisteredDevices,
+    ])
 }
 
 export function useLockedDeviceDetection(

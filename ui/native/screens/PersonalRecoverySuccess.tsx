@@ -21,11 +21,10 @@ const PersonalRecoverySuccess: React.FC<Props> = () => {
         <Success
             messageText={t('feature.recovery.you-completed-personal-recovery')}
             buttonText={t('words.okay')}
-            // TODO: if there are no registered devices, do we assume this seed was never used in Fedi and go straight to JoinFederation
             nextScreen={
                 registeredDevices.length > 0
                     ? 'RecoveryWalletOptions'
-                    : 'JoinFederation'
+                    : 'RecoveryNewWallet'
             }
         />
     )
