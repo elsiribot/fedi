@@ -50,7 +50,6 @@ const ChatHeader: React.FC = () => {
                             hitSlop={5}
                             svgName="Qr"
                             svgProps={{
-                                // size: 30,
                                 color: theme.colors.primary,
                             }}
                         />
