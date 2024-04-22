@@ -20,7 +20,7 @@ export enum SvgImageSize {
     xl = 'xl',
 }
 
-type SvgImageProps = {
+export type SvgImageProps = {
     name: SvgImageName
     size?: SvgImageSize | number
     containerStyle?: ViewStyle

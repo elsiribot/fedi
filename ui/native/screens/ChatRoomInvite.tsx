@@ -3,13 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    FlatList,
-    ListRenderItem,
-    Pressable,
-    StyleSheet,
-    View,
-} from 'react-native'
+import { FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useMatrixUserSearch } from '@fedi/common/hooks/matrix'
@@ -28,7 +22,7 @@ import ChatUserTile from '../components/feature/chat/ChatUserTile'
 import { AvatarSize } from '../components/ui/HoloAvatar'
 import HoloLoader from '../components/ui/HoloLoader'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
-import SvgImage from '../components/ui/SvgImage'
+import { PressableIcon } from '../components/ui/PressableIcon'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { MatrixUser } from '../types'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
@@ -174,14 +168,14 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
                         autoCapitalize={'none'}
                         autoCorrect={false}
                         rightIcon={
-                            <Pressable
+                            <PressableIcon
+                                svgName="Scan"
                                 onPress={() => {
                                     navigation.navigate('ScanMemberCode', {
                                         inviteToRoomId: roomId,
                                     })
-                                }}>
-                                <SvgImage name={'Scan'} />
-                            </Pressable>
+                                }}
+                            />
                         }
                     />
                 </View>
@@ -221,6 +215,7 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             borderColor: theme.colors.primaryVeryLight,
             borderWidth: 1,
             borderRadius: theme.borders.defaultRadius,
+            paddingRight: 0,
         },
         listContentContainer: {
             width: '100%',

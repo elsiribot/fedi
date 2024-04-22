@@ -1,8 +1,9 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import HoloLoader from '../../ui/HoloLoader'
+import { Pressable } from '../../ui/Pressable'
 import SvgImage from '../../ui/SvgImage'
 import { OmniInputAction } from './OmniInput'
 
@@ -31,12 +32,7 @@ export const OmniActions: React.FC<Props> = ({ actions }) => {
                 <Pressable
                     key={idx}
                     onPress={() => handlePress(onPress, idx)}
-                    style={({ pressed }) => [
-                        style.action,
-                        pressed
-                            ? { backgroundColor: theme.colors.primary05 }
-                            : {},
-                    ]}>
+                    containerStyle={style.action}>
                     <SvgImage name={icon} />
                     <Text bold numberOfLines={2}>
                         {label}
@@ -59,12 +55,7 @@ const styles = (theme: Theme) =>
             flexDirection: 'column',
         },
         action: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingVertical: theme.spacing.md,
-            paddingHorizontal: theme.spacing.sm,
             gap: theme.spacing.lg,
-            borderRadius: theme.borders.defaultRadius,
         },
         loaderContainer: {
             marginLeft: 'auto',
