@@ -541,6 +541,10 @@ export class FedimintBridge {
         return this.rpcTyped('dumpDb', args)
     }
 
+    async getAccruedOutstandingFediFees(args: bindings.RpcPayload<'getAccruedOutstandingFediFees'>) {
+        return this.rpcTyped('getAccruedOutstandingFediFees', args)
+    }
+
     /*** BRIDGE EVENTS ***/
 
     private listeners = new Map<string, Array<(data: unknown) => void>>()
