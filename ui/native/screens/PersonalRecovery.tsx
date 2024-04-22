@@ -1,12 +1,11 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Card, Input, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Keyboard,
     KeyboardEvent,
     Platform,
-    Pressable,
     ScrollView,
     StyleSheet,
     TextInput,
@@ -18,6 +17,7 @@ import type { SeedWords } from '@fedi/common/types'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { fedimint } from '../bridge'
+import SeedWordInput from '../components/feature/recovery/SeedWordInput'
 import { BIP39_WORD_LIST } from '../constants'
 import { resetAfterPersonalRecovery } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
@@ -31,63 +31,6 @@ export type Props = NativeStackScreenProps<
     RootStackParamList,
     'PersonalRecovery'
 >
-
-type SeedWordInputProps = {
-    number: number
-    word: string
-    onInputUpdated: (value: string) => void
-    selectNext: () => void
-}
-
-const SeedWordInput = React.forwardRef<TextInput, SeedWordInputProps>(
-    ({ number, word, onInputUpdated, selectNext }, inputRef) => {
-        const { theme } = useTheme()
-        const [isFocused, setIsFocused] = useState(false)
-        const valid = isValidSeedWord(word)
-
-        return (
-            <Pressable
-                style={styles(theme).wordContainer}
-                onPress={() => {
-                    if (typeof inputRef !== 'object' || !inputRef?.current)
-                        return
-
-                    inputRef.current.focus()
-                }}>
-                <Text style={styles(theme).wordNumber}>{`${number}`}</Text>
-                <Input
-                    ref={(ref: unknown) => {
-                        if (typeof inputRef !== 'object' || !inputRef?.current)
-                            return
-
-                        inputRef.current = ref as TextInput
-                    }}
-                    value={word}
-                    onChangeText={onInputUpdated}
-                    autoCorrect={false}
-                    containerStyle={styles(theme).wordInputOuterContainer}
-                    onFocus={() => setIsFocused(true)}
-                    onBlur={() => setIsFocused(false)}
-                    inputContainerStyle={[
-                        styles(theme).wordInputInnerContainer,
-                        isFocused
-                            ? styles(theme).focusedInputInnerContainer
-                            : {},
-                    ]}
-                    inputStyle={[
-                        styles(theme).wordInput,
-                        isFocused ? styles(theme).focusedInput : {},
-                        !(isFocused || valid) ? styles(theme).invalidWord : {},
-                    ]}
-                    autoCapitalize={'none'}
-                    returnKeyType={'next'}
-                    onSubmitEditing={selectNext}
-                    blurOnSubmit={false}
-                />
-            </Pressable>
-        )
-    },
-)
 
 const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()

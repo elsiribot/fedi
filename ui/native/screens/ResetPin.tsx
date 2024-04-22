@@ -1,12 +1,11 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Card, Input, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Keyboard,
     KeyboardEvent,
     Platform,
-    Pressable,
     ScrollView,
     StyleSheet,
     TextInput,
@@ -18,6 +17,7 @@ import type { SeedWords } from '@fedi/common/types'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { fedimint } from '../bridge'
+import SeedWordInput from '../components/feature/recovery/SeedWordInput'
 import { BIP39_WORD_LIST } from '../constants'
 import type { RootStackParamList } from '../types/navigation'
 import { usePin } from '../utils/hooks/security'
@@ -27,63 +27,6 @@ const isValidSeedWord = (word: string) => {
 }
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ResetPin'>
-
-type SeedWordInputProps = {
-    number: number
-    word: string
-    onInputUpdated: (value: string) => void
-    selectNext: () => void
-}
-
-const SeedWordInput = React.forwardRef<TextInput, SeedWordInputProps>(
-    ({ number, word, onInputUpdated, selectNext }, inputRef) => {
-        const { theme } = useTheme()
-        const [isFocused, setIsFocused] = useState(false)
-        const valid = isValidSeedWord(word)
-
-        return (
-            <Pressable
-                style={styles(theme).wordContainer}
-                onPress={() => {
-                    if (typeof inputRef !== 'object' || !inputRef?.current)
-                        return
-
-                    inputRef.current.focus()
-                }}>
-                <Text style={styles(theme).wordNumber}>{`${number}`}</Text>
-                <Input
-                    ref={(ref: unknown) => {
-                        if (typeof inputRef !== 'object' || !inputRef?.current)
-                            return
-
-                        inputRef.current = ref as TextInput
-                    }}
-                    value={word}
-                    onChangeText={onInputUpdated}
-                    autoCorrect={false}
-                    containerStyle={styles(theme).wordInputOuterContainer}
-                    onFocus={() => setIsFocused(true)}
-                    onBlur={() => setIsFocused(false)}
-                    inputContainerStyle={[
-                        styles(theme).wordInputInnerContainer,
-                        isFocused
-                            ? styles(theme).focusedInputInnerContainer
-                            : {},
-                    ]}
-                    inputStyle={[
-                        styles(theme).wordInput,
-                        isFocused ? styles(theme).focusedInput : {},
-                        !(isFocused || valid) ? styles(theme).invalidWord : {},
-                    ]}
-                    autoCapitalize={'none'}
-                    returnKeyType={'next'}
-                    onSubmitEditing={selectNext}
-                    blurOnSubmit={false}
-                />
-            </Pressable>
-        )
-    },
-)
 
 const ResetPin: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
@@ -235,42 +178,6 @@ const styles = (theme: Theme) =>
         },
         twoColumnContainer: {
             flexDirection: 'row',
-        },
-        wordContainer: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginVertical: 8,
-        },
-        wordNumber: {
-            color: theme.colors.black,
-            paddingLeft: 0,
-            width: '20%',
-            textAlign: 'center',
-        },
-        wordInputOuterContainer: {
-            width: '75%',
-            height: 24,
-            flexDirection: 'row',
-            alignItems: 'center',
-        },
-        wordInputInnerContainer: {
-            borderBottomColor: theme.colors.extraLightGrey,
-            minHeight: 24,
-        },
-        wordInput: {
-            fontSize: 16,
-            minHeight: 24,
-            padding: 0,
-        },
-        focusedInputInnerContainer: {
-            borderBottomColor: theme.colors.primary,
-        },
-        focusedInput: {
-            marginBottom: 0,
-        },
-        invalidWord: {
-            color: 'red',
         },
     })
 

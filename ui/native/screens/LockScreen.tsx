@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Theme, useTheme, Text } from '@rneui/themed'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View, useWindowDimensions } from 'react-native'
 
@@ -46,10 +46,13 @@ const LockScreen = <T extends keyof RootStackParamList>({
 
     const style = styles(theme, width)
 
-    const isEnteredPinIncorrect =
-        pin.status === 'set' &&
-        !pin.check(pinDigits) &&
-        pinDigits.length === maxPinLength
+    const isEnteredPinIncorrect = useMemo(
+        () =>
+            pin.status === 'set' &&
+            !pin.check(pinDigits) &&
+            pinDigits.length === maxPinLength,
+        [pin, pinDigits],
+    )
 
     const handleNumpadPress = useCallback(
         (btn: (typeof numpadButtons)[number]) => {
