@@ -481,6 +481,22 @@ export class FedimintBridge {
         return this.rpcTyped('matrixRoomSendReceipt', args)
     }
 
+    async matrixSetPusher(args: bindings.RpcPayload<'matrixSetPusher'>) {
+        return this.rpcTyped('matrixSetPusher', args)
+    }
+
+    async matrixRoomGetNotificationMode(
+        args: bindings.RpcPayload<'matrixRoomGetNotificationMode'>,
+    ) {
+        return this.rpcTyped('matrixRoomGetNotificationMode', args)
+    }
+
+    async matrixRoomSetNotificationMode(
+        args: bindings.RpcPayload<'matrixRoomSetNotificationMode'>,
+    ) {
+        return this.rpcTyped('matrixRoomSetNotificationMode', args)
+    }
+
     async matrixObserverCancel(
         args: bindings.RpcPayload<'matrixObserverCancel'>,
     ) {

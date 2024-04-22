@@ -71,6 +71,7 @@ const initialState = {
     >,
     users: {} as Record<MatrixUser['id'], MatrixUser | undefined>,
     errors: [] as MatrixError[],
+    pushNotificationToken: null as string | null,
 }
 
 export type MatrixState = typeof initialState
@@ -226,6 +227,13 @@ export const matrixSlice = createSlice({
                 state.users = upsertRecordEntity(state.users, user)
             }
         })
+
+        builder.addCase(
+            configureMatrixPushNotifications.fulfilled,
+            (state, action) => {
+                state.pushNotificationToken = action.payload
+            },
+        )
 
         builder.addCase(loadFromStorage.fulfilled, (_state, action) => {
             if (!action.payload) return
@@ -615,6 +623,16 @@ export const sendMatrixReadReceipt = createAsyncThunk<
     await client.sendReadReceipt(roomId, eventId)
 })
 
+export const configureMatrixPushNotifications = createAsyncThunk<
+    string,
+    { getToken: () => Promise<string> }
+>('matrix/configureMatrixPushNotifications', async ({ getToken }) => {
+    const client = getMatrixClient()
+    const token = await getToken()
+    await client.configureNotificationsPusher(token)
+    return token
+})
+
 /*** Selectors ***/
 
 export const selectMatrixStatus = (s: CommonState) => s.matrix.status
@@ -623,6 +641,9 @@ export const selectIsMatrixReady = createSelector(
     selectMatrixStatus,
     status => status === MatrixSyncStatus.synced,
 )
+
+export const selectMatrixPushNotificationToken = (s: CommonState) =>
+    s.matrix.pushNotificationToken
 
 /**
  * Returns a list of matrix rooms, excluding any that are loading or missing room information.

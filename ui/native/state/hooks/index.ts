@@ -276,8 +276,8 @@ export const useXmppHealthCheck = () => {
 }
 
 // This hook gets the device's FCM token and publishes it
-// to the XMPP server if chat is supported
-export const useXmppPushNotifications = async () => {
+// to the Matrix Sygnal server
+export const useMatrixPushNotifications = async () => {
     const { notificationsPermission } = useNotificationsPermission()
     const getDeviceToken = useMemo(() => {
         return async () => {

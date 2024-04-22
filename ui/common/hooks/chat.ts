@@ -10,9 +10,8 @@ import type {
 } from '@fedi/common/types'
 
 import {
-    connectChat,
     fetchChatMember,
-    publishPushNotificationToken,
+    configureMatrixPushNotifications,
     selectActiveFederation,
     selectActiveFederationId,
     selectAuthenticatedMember,
@@ -21,17 +20,19 @@ import {
     selectChatLastReadMessageTimestamps,
     selectChatLastSeenMessageTimestamp,
     selectChatMember,
-    selectFederationsWithChatConnections,
     selectHasSetMatrixDisplayName,
     selectLatestChatMessageTimestamp,
     selectLatestPaymentUpdateTimestamp,
     selectMatrixAuth,
-    selectPushNotificationToken,
     sendMatrixPaymentPush,
     sendMatrixPaymentRequest,
     setLastReadMessageTimestamp,
     setLastSeenMessageTimestamp,
     setMatrixDisplayName,
+    selectMatrixPushNotificationToken,
+    connectChat,
+    selectFederationsWithChatConnections,
+    selectIsMatrixReady,
 } from '../redux'
 import { getLatestMessage, getLatestPaymentUpdate } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
@@ -209,44 +210,48 @@ export function useUpdateLastMessageRead(
     ])
 }
 
-// This hook sets a given device token to be published to the XMPP server
-// so it can receive push notifications for new messages
-/** @deprecated XMPP legacy code */
+// This hook sets a given device token to be published to the Matrix Sygnal Push server
+// so it can process push notifications for timeline events
 export function usePublishNotificationToken(
     getToken: () => Promise<string>,
     needsPermission = false,
 ) {
     const dispatch = useCommonDispatch()
-    const federationId = useCommonSelector(selectActiveFederation)?.id
-    const pushNotificationToken = useCommonSelector(selectPushNotificationToken)
-    const isChatOnline = useCommonSelector(selectChatClientStatus) === 'online'
+    const pushNotificationToken = useCommonSelector(
+        selectMatrixPushNotificationToken,
+    )
+    const isMatrixReady = useCommonSelector(selectIsMatrixReady)
 
     useEffect(() => {
         // Can't publish if we don't have permission to get the token.
         if (needsPermission) return
 
-        // Can't publish if no federation is selected
-        if (!federationId) return
+        // Don't publish the token again if we already did it
+        if (pushNotificationToken) {
+            log.info('Already published and stored notification token')
+            return
+        }
 
-        // Don't set the token if we already have one
-        if (pushNotificationToken) return
-
-        // Can't publish if chat isn't online
-        if (!isChatOnline) return
+        // Can't publish if matrix isn't ready
+        if (!isMatrixReady) return
 
         log.info('Publishing push notification token')
-        dispatch(publishPushNotificationToken({ federationId, getToken }))
+        dispatch(configureMatrixPushNotifications({ getToken }))
             .unwrap()
             .then(() => {
-                log.info('Successfully published push notification token')
+                log.info(
+                    'Successfully published matrix push notification token',
+                )
             })
             .catch(err => {
-                log.error('Failed to publish push notification token', err)
+                log.error(
+                    'Failed to publish matrix push notification token',
+                    err,
+                )
             })
     }, [
         needsPermission,
-        federationId,
-        isChatOnline,
+        isMatrixReady,
         dispatch,
         getToken,
         pushNotificationToken,

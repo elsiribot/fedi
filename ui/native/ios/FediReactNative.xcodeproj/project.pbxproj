@@ -18,7 +18,6 @@
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		14831B7E23D94F7999D23385 /* AlbertSans-ExtraBoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CBA5A20FFC084EEFB3339B92 /* AlbertSans-ExtraBoldItalic.ttf */; };
 		5118AA9C294A6A1700A41911 /* Fedi in Frameworks */ = {isa = PBXBuildFile; productRef = 5118AA9B294A6A1700A41911 /* Fedi */; };
-		5189C2D22A20EDBC00891D88 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5189C2D12A20EDBC00891D88 /* GoogleService-Info.plist */; };
 		51BDE89B2AD5FFDF006CF72B /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		51BDE89C2AD5FFDF006CF72B /* FedimintFfi.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D73EFE2921E5480059F06F /* FedimintFfi.swift */; };
 		51BDE89D2AD5FFDF006CF72B /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
@@ -44,7 +43,8 @@
 		51BDE8B42AD5FFDF006CF72B /* AlbertSans-SemiBoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E7807C962FEA411DAE116582 /* AlbertSans-SemiBoldItalic.ttf */; };
 		51BDE8B52AD5FFDF006CF72B /* AlbertSans-Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0665FD33D8CC4EE5B91F83C7 /* AlbertSans-Thin.ttf */; };
 		51BDE8B62AD5FFDF006CF72B /* AlbertSans-ThinItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2CA9C347DB3A4A33A044ADBB /* AlbertSans-ThinItalic.ttf */; };
-		51BDE8B72AD5FFDF006CF72B /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5189C2D12A20EDBC00891D88 /* GoogleService-Info.plist */; };
+		51F718EF2BCDE094003FEF7A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 51F718EE2BCDE094003FEF7A /* GoogleService-Info.plist */; };
+		51F718F02BCDE094003FEF7A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 51F718EE2BCDE094003FEF7A /* GoogleService-Info.plist */; };
 		536F5A47CA464486927E82B1 /* AlbertSans-BlackItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 57F5074F39D74067B3835E4C /* AlbertSans-BlackItalic.ttf */; };
 		7251067324F6BA128CD4FAF0 /* libPods-FediReactNative-FediNightly.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04D9F11A9BC39505DD946EA4 /* libPods-FediReactNative-FediNightly.a */; };
 		7AC4173906E545D5AAD23172 /* AlbertSans-MediumItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 55AC34EB407849329AE54B10 /* AlbertSans-MediumItalic.ttf */; };
@@ -100,11 +100,11 @@
 		42187D2041144CAD89D9DD1E /* AlbertSans-ExtraLightItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-ExtraLightItalic.ttf"; path = "../assets/fonts/AlbertSans-ExtraLightItalic.ttf"; sourceTree = "<group>"; };
 		51575EDA2946F9DA00720177 /* hermes.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = hermes.xcframework; path = "Pods/hermes-engine/destroot/Library/Frameworks/universal/hermes.xcframework"; sourceTree = "<group>"; };
 		517E5CA729EF5E7000F3B65A /* OpenSSL.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = OpenSSL.xcframework; path = "Pods/OpenSSL-Universal/Frameworks/OpenSSL.xcframework"; sourceTree = "<group>"; };
-		5189C2D12A20EDBC00891D88 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		51AEF46B2A2BDBC600887043 /* FediReactNative.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = FediReactNative.entitlements; path = FediReactNative/FediReactNative.entitlements; sourceTree = "<group>"; };
 		51BDE8C02AD5FFDF006CF72B /* FediNightly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FediNightly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		51BDE8C12AD5FFDF006CF72B /* FediNightly-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "FediNightly-Info.plist"; path = "/Users/oscarlafarga/fedibtc/fedi/ui/native/ios/FediNightly-Info.plist"; sourceTree = "<absolute>"; };
 		51E5161D29C11D6200753F51 /* fedi-swift */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "fedi-swift"; path = "../../../bridge/fedi-swift"; sourceTree = "<group>"; };
+		51F718EE2BCDE094003FEF7A /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		55AC34EB407849329AE54B10 /* AlbertSans-MediumItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-MediumItalic.ttf"; path = "../assets/fonts/AlbertSans-MediumItalic.ttf"; sourceTree = "<group>"; };
 		57F5074F39D74067B3835E4C /* AlbertSans-BlackItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-BlackItalic.ttf"; path = "../assets/fonts/AlbertSans-BlackItalic.ttf"; sourceTree = "<group>"; };
 		645940C0CD9AC78202694564 /* libPods-FediReactNative.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-FediReactNative.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -188,8 +188,8 @@
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
 				13B07FB01A68108700A75B9A /* AppDelegate.mm */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
+				51F718EE2BCDE094003FEF7A /* GoogleService-Info.plist */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
-				5189C2D12A20EDBC00891D88 /* GoogleService-Info.plist */,
 				13B07FB71A68108700A75B9A /* main.m */,
 				81AB9BB72411601600AC10FF /* GradientLaunch.storyboard */,
 			);
@@ -438,9 +438,9 @@
 				7AC4173906E545D5AAD23172 /* AlbertSans-MediumItalic.ttf in Resources */,
 				12D5236EEF5647A9AB3C8F5F /* AlbertSans-SemiBold.ttf in Resources */,
 				DB56B1CCF54A4112B737871E /* AlbertSans-SemiBoldItalic.ttf in Resources */,
+				51F718EF2BCDE094003FEF7A /* GoogleService-Info.plist in Resources */,
 				9951E94F79E74B61B89E0A50 /* AlbertSans-Thin.ttf in Resources */,
 				B64E6B120C7D4BF89894DF2A /* AlbertSans-ThinItalic.ttf in Resources */,
-				5189C2D22A20EDBC00891D88 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -467,9 +467,9 @@
 				51BDE8B22AD5FFDF006CF72B /* AlbertSans-MediumItalic.ttf in Resources */,
 				51BDE8B32AD5FFDF006CF72B /* AlbertSans-SemiBold.ttf in Resources */,
 				51BDE8B42AD5FFDF006CF72B /* AlbertSans-SemiBoldItalic.ttf in Resources */,
+				51F718F02BCDE094003FEF7A /* GoogleService-Info.plist in Resources */,
 				51BDE8B52AD5FFDF006CF72B /* AlbertSans-Thin.ttf in Resources */,
 				51BDE8B62AD5FFDF006CF72B /* AlbertSans-ThinItalic.ttf in Resources */,
-				51BDE8B72AD5FFDF006CF72B /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
