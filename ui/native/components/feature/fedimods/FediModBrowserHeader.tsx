@@ -1,5 +1,6 @@
+import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { MutableRefObject, useState } from 'react'
+import React, { MutableRefObject } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 import WebView from 'react-native-webview'
 
@@ -7,7 +8,6 @@ import { FediMod } from '@fedi/common/types'
 
 import Header from '../../ui/Header'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
-import ExitFedimodOverlay from './ExitFedimodOverlay'
 
 type FediModBrowserHeaderProps = {
     webViewRef: MutableRefObject<WebView>
@@ -18,9 +18,9 @@ const FediModBrowserHeader: React.FC<FediModBrowserHeaderProps> = ({
     webViewRef,
     fediMod,
 }) => {
-    const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false)
     const { theme } = useTheme()
     const style = styles(theme)
+    const navigation = useNavigation()
 
     return (
         <>
@@ -63,14 +63,10 @@ const FediModBrowserHeader: React.FC<FediModBrowserHeaderProps> = ({
                     <Pressable
                         style={style.close}
                         hitSlop={10}
-                        onPress={() => setConfirmLeaveOpen(true)}>
+                        onPress={() => navigation.goBack()}>
                         <SvgImage size={SvgImageSize.md} name="Close" />
                     </Pressable>
                 }
-            />
-            <ExitFedimodOverlay
-                open={confirmLeaveOpen}
-                onOpenChange={setConfirmLeaveOpen}
             />
         </>
     )
