@@ -255,12 +255,16 @@ impl IFediApi for LiveFediApi {
             .devices
             .into_iter()
             .map(|info| {
+                // If decrypting device identifier fails, attempt to use it as-is. It likely
+                // means that the original registration happened before encryption was
+                // implemented.
                 Ok(RegisteredDevice {
                     index: info.device_index.0,
                     identifier: decrypt_device_identifier(
                         &root_secret,
-                        info.device_identifier.device_name,
-                    )?,
+                        &info.device_identifier.device_name,
+                    )
+                    .unwrap_or(FromStr::from_str(&info.device_identifier.device_name)?),
                     last_renewed: info.timestamp.0.into(),
                 })
             })
@@ -275,50 +279,66 @@ impl IFediApi for LiveFediApi {
         force_overwrite: bool,
     ) -> Result<(), RegisterDeviceError> {
         let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&seed);
-        let seed_commitment = SeedCommitmentV0::new(root_secret.to_random_bytes());
-        let device_identifier = encrypt_device_identifier(&root_secret, device_identifier)?;
+        let registration_closure = |device_identifier| async {
+            let seed_commitment = SeedCommitmentV0::new(root_secret.to_random_bytes());
 
-        // Timeout of 2 minutes here since this request will either be performed during
-        // onboarding and it's important for it to succeed, or it will be performed in a
-        // background task without blocking anything.
-        let timeout_res = fedimint_core::task::timeout(Duration::from_secs(120), async {
-            self.client
-                .post(format!(
-                    "{FEDI_DEVICE_REGISTRATION_URL}/register_device_for_seed"
-                ))
-                .json(&RegisterDeviceRequestV0 {
-                    seed_commitment,
-                    device_index: DeviceIndexV0(device_index),
-                    device_identifier: DeviceIdentifierV0 {
-                        device_name: device_identifier,
-                    },
-                    force: force_overwrite,
-                })
-                .send()
-                .await
-        })
-        .await;
+            // Timeout of 2 minutes here since this request will either be performed during
+            // onboarding and it's important for it to succeed, or it will be performed in a
+            // background task without blocking anything.
+            let timeout_res = fedimint_core::task::timeout(Duration::from_secs(120), async {
+                self.client
+                    .post(format!(
+                        "{FEDI_DEVICE_REGISTRATION_URL}/register_device_for_seed"
+                    ))
+                    .json(&RegisterDeviceRequestV0 {
+                        seed_commitment,
+                        device_index: DeviceIndexV0(device_index),
+                        device_identifier: DeviceIdentifierV0 {
+                            device_name: device_identifier,
+                        },
+                        force: force_overwrite,
+                    })
+                    .send()
+                    .await
+            })
+            .await;
 
-        let Ok(register_device_result_v0) = timeout_res else {
-            return Err(RegisterDeviceError::RequestTimeout);
+            let Ok(register_device_result_v0) = timeout_res else {
+                return Err(RegisterDeviceError::RequestTimeout);
+            };
+
+            match register_device_result_v0 {
+                Ok(resp) if resp.status().is_success() => Ok(()),
+                Ok(resp) if resp.status() == StatusCode::CONFLICT => {
+                    Err(RegisterDeviceError::AnotherDeviceOwnsIndex(
+                        resp.text().await.unwrap_or_default(),
+                    ))
+                }
+                Ok(resp) => Err(RegisterDeviceError::OtherServerError(
+                    resp.text().await.unwrap_or_default(),
+                )),
+                Err(e) => Err(RegisterDeviceError::ErrorSendingRequest(e.to_string())),
+            }
         };
 
-        match register_device_result_v0 {
-            Ok(resp) if resp.status().is_success() => Ok(()),
-            Ok(resp) if resp.status() == StatusCode::CONFLICT => Err(
-                RegisterDeviceError::AnotherDeviceOwnsIndex(resp.text().await.unwrap_or_default()),
-            ),
-            Ok(resp) => Err(RegisterDeviceError::OtherServerError(
-                resp.text().await.unwrap_or_default(),
-            )),
-            Err(e) => Err(RegisterDeviceError::ErrorSendingRequest(e.to_string())),
+        // First try registering with an encrypted device identifier.
+        // If an encrypted device identifier results in conflict, retry
+        // with unencrypted device identifier. It likely
+        // means that the original registration happened before
+        // encryption was implemented.
+        let enc_device_identifier = encrypt_device_identifier(&root_secret, &device_identifier)?;
+        match registration_closure(enc_device_identifier).await {
+            Err(RegisterDeviceError::AnotherDeviceOwnsIndex(_)) => {
+                registration_closure(device_identifier.to_string()).await
+            }
+            res => res,
         }
     }
 }
 
 fn encrypt_device_identifier(
     root_secret: &DerivableSecret,
-    device_identifier: DeviceIdentifier,
+    device_identifier: &DeviceIdentifier,
 ) -> Result<String, RegisterDeviceError> {
     let device_id_encryption_secret = root_secret.child_key(DEVICE_REGISTRATION_CHILD_ID);
     // Pad if necessary -> encrypt -> hex-encode
@@ -337,7 +357,7 @@ fn encrypt_device_identifier(
 
 fn decrypt_device_identifier(
     root_secret: &DerivableSecret,
-    encrypted_device_identifier: String,
+    encrypted_device_identifier: &str,
 ) -> anyhow::Result<DeviceIdentifier> {
     let device_id_encryption_secret = root_secret.child_key(DEVICE_REGISTRATION_CHILD_ID);
     // Hex-decode -> decrypt -> trim padding
