@@ -7,7 +7,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 
-import { useLockedDeviceDetection } from '@fedi/common/hooks/recovery'
+import {
+    useLockedDeviceDetection,
+    useResumeRecovery,
+} from '@fedi/common/hooks/recovery'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederation } from '@fedi/common/redux'
 
@@ -166,7 +169,7 @@ import SwitchingFederations from './screens/SwitchingFederations'
 import TabsNavigator from './screens/TabsNavigator'
 import Transactions from './screens/Transactions'
 import { useAppSelector, useMatrixPushNotifications } from './state/hooks'
-import { resetToLockedDevice } from './state/navigation'
+import { navigate, resetToLockedDevice } from './state/navigation'
 import { MSats } from './types'
 import {
     MainNavigatorDrawerParamList,
@@ -1100,6 +1103,11 @@ const Router = () => {
     // Navigates to locked device screen if we detect a device conflict
     useLockedDeviceDetection(fedimint, () => {
         navigation.dispatch(resetToLockedDevice())
+    })
+
+    // Navigates to locked device screen if we detect a device conflict
+    useResumeRecovery(fedimint, () => {
+        navigation.dispatch(navigate('PersonalRecoverySuccess'))
     })
 
     return (

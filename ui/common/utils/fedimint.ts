@@ -258,6 +258,14 @@ export class FedimintBridge {
         })
     }
 
+    async deviceIndexAssignmentStatus() {
+        return this.rpcTyped('deviceIndexAssignmentStatus', {})
+    }
+
+    async fetchRegisteredDevices() {
+        return this.rpcTyped('fetchRegisteredDevices', {})
+    }
+
     /*
      * Mocked-out social backup and recovery methods
      */
