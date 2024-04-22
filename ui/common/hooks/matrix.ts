@@ -11,6 +11,7 @@ import {
     selectCanClaimPayment,
     selectLatestMatrixRoomEventId,
     selectMatrixAuth,
+    selectMatrixDirectMessageRooms,
     selectMatrixRoom,
     selectMatrixRoomMember,
     selectMatrixUser,
@@ -88,6 +89,25 @@ export function useMatrixUserSearch() {
         searchedUsers: exactMatchUsers || searchedUsers,
         searchError,
     }
+}
+
+export function useObserveMatrixDirectRooms() {
+    const dispatch = useCommonDispatch()
+    const directRooms = useCommonSelector(selectMatrixDirectMessageRooms)
+    const isReady = useCommonSelector(s => selectIsMatrixReady(s))
+
+    useEffect(() => {
+        if (!isReady || directRooms.length === 0) return
+        for (const room of directRooms) {
+            dispatch(observeMatrixRoom({ roomId: room.id }))
+        }
+
+        return () => {
+            for (const room of directRooms) {
+                dispatch(unobserveMatrixRoom({ roomId: room.id }))
+            }
+        }
+    }, [isReady, dispatch, directRooms])
 }
 
 export function useObserveMatrixRoom(

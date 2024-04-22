@@ -161,6 +161,10 @@ export function initializeCommonStore({
 
     // Listen for incoming payment events, and claim any we haven't attempted
     // to claim yet.
+    //
+    // TODO: Does this logic belong here in redux middleware?
+    // This is only called on `roomTimelineUpdate` events, so why not
+    // claim ecash in the `MatrixChatClient` (before it touches redux)?
     const receivedPayments = new Set<string>()
     const unsubscribeMatrixPayments = listenerMiddleware.startListening({
         actionCreator: handleMatrixRoomTimelineObservableUpdates,
