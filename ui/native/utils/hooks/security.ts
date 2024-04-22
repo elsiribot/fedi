@@ -7,9 +7,10 @@ import {
     selectDeviceId,
     selectIsFeatureUnlocked,
     selectProtectedFeatures,
+    setFeatureUnlocked,
 } from '@fedi/common/redux'
 
-import { useAppSelector } from '../../state/hooks'
+import { useAppDispatch, useAppSelector } from '../../state/hooks'
 
 interface UsePinLoading {
     status: 'loading'
@@ -24,13 +25,14 @@ interface UsePinSet {
     status: 'set'
     check: (digits: Array<number>) => boolean
     set: (digits: Array<number>) => Promise<void>
+    unset: () => Promise<void>
 }
 
 type UsePinReturn = UsePinLoading | UsePinUnset | UsePinSet
 
 /**
  * Returns a `set` function if no pin has been set.
- * Returns both a `set` and `check` function if a pin has been set.
+ * Returns both a `set`, `unset` and `check` function if a pin has been set.
  * Always returns a `status`
  */
 export function usePin(): UsePinReturn {
@@ -38,6 +40,8 @@ export function usePin(): UsePinReturn {
     const [isLoading, setIsLoading] = useState(true)
     const checkRef = useRef<(digits: Array<number>) => boolean>(() => true)
     const deviceId = useAppSelector(selectDeviceId)
+    const dispatch = useAppDispatch()
+    const protectedFeatures = useAppSelector(selectProtectedFeatures)
 
     const set = useCallback(
         async (digits: Array<number>) => {
@@ -53,6 +57,26 @@ export function usePin(): UsePinReturn {
         },
         [deviceId],
     )
+
+    const unset = useCallback(async () => {
+        if (!deviceId) return
+
+        await Keychain.resetGenericPassword({
+            service: 'pin',
+        })
+
+        // Immediately unlocks all protected features once the pin is unset
+        for (const [key, isProtected] of Object.entries(protectedFeatures)) {
+            if (!isProtected) continue
+
+            dispatch(
+                setFeatureUnlocked({
+                    key: key as keyof ProtectedFeatures,
+                    unlocked: true,
+                }),
+            )
+        }
+    }, [deviceId, dispatch, protectedFeatures])
 
     useEffect(() => {
         const loadPinCheck = async () => {
@@ -85,7 +109,12 @@ export function usePin(): UsePinReturn {
     if (isLoading) return { status: 'loading' } as UsePinLoading
 
     if (hasSetPin)
-        return { status: 'set', check: checkRef.current, set } as UsePinSet
+        return {
+            status: 'set',
+            check: checkRef.current,
+            set,
+            unset,
+        } as UsePinSet
 
     return { status: 'unset', set } as UsePinUnset
 }

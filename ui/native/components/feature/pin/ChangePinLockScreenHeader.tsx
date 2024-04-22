@@ -4,18 +4,18 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const LockScreenHeader: React.FC = () => {
+const ChangePinLockScreenHeader: React.FC = () => {
     const { t } = useTranslation()
 
     return (
         <Header
             headerCenter={
                 <Text bold numberOfLines={1} adjustsFontSizeToFit>
-                    {t('feature.pin.enter-pin')}
+                    {t('feature.pin.enter-current-pin')}
                 </Text>
             }
         />
     )
 }
 
-export default LockScreenHeader
+export default ChangePinLockScreenHeader

@@ -12,14 +12,13 @@ import {
     View,
 } from 'react-native'
 
-import { usePersonalRecovery } from '@fedi/common/hooks/recovery'
+import { useToast } from '@fedi/common/hooks/toast'
 import type { SeedWords } from '@fedi/common/types'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { fedimint } from '../bridge'
 import SeedWordInput from '../components/feature/recovery/SeedWordInput'
 import { BIP39_WORD_LIST } from '../constants'
-import { resetAfterPersonalRecovery } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 import { usePin } from '../utils/hooks/security'
 
@@ -27,24 +26,18 @@ const isValidSeedWord = (word: string) => {
     return word.length > 0 && BIP39_WORD_LIST.indexOf(word.toLowerCase()) >= 0
 }
 
-export type Props = NativeStackScreenProps<
-    RootStackParamList,
-    'PersonalRecovery'
->
+export type Props = NativeStackScreenProps<RootStackParamList, 'ResetPin'>
 
-const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
+const ResetPin: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const pin = usePin()
-    const { recoveryInProgress, attemptRecovery } = usePersonalRecovery(
-        t,
-        fedimint,
-    )
     const [seedWords, setSeedWords] = useState<SeedWords>(
         new Array(12).fill(''),
     )
     const inputRefs = useRef<Array<TextInput | null>>([])
     const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
+    const toast = useToast()
 
     useEffect(() => {
         const keyboardShownListener = Keyboard.addListener(
@@ -66,12 +59,23 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
         }
     }, [])
 
-    const handleRecovery = useCallback(() => {
-        attemptRecovery(seedWords, () => {
-            if (pin.status === 'set') pin.unset()
-            navigation.dispatch(resetAfterPersonalRecovery())
-        })
-    }, [attemptRecovery, navigation, seedWords, pin])
+    const handleResetPin = useCallback(async () => {
+        if (pin.status !== 'set') return
+
+        const areSeedWordsCorrect = await fedimint.checkMnemonic(seedWords)
+
+        if (!areSeedWordsCorrect) {
+            toast.show({
+                status: 'error',
+                content: t('errors.recovery-failed'),
+            })
+            return
+        }
+
+        await pin.unset()
+
+        navigation.navigate('SetPin')
+    }, [navigation, seedWords, pin, toast, t])
 
     const handleInputUpdate = (inputValue: string, index: number) => {
         const validatedInput = stringUtils.keepOnlyLowercaseLetters(inputValue)
@@ -142,12 +146,8 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
             <Button
                 title={t('feature.recovery.recover-wallet')}
                 containerStyle={styles(theme).continueButton}
-                onPress={handleRecovery}
-                loading={recoveryInProgress}
-                disabled={
-                    recoveryInProgress ||
-                    seedWords.some(s => !isValidSeedWord(s))
-                }
+                onPress={handleResetPin}
+                disabled={seedWords.some(s => !isValidSeedWord(s))}
             />
         </ScrollView>
     )
@@ -179,42 +179,6 @@ const styles = (theme: Theme) =>
         twoColumnContainer: {
             flexDirection: 'row',
         },
-        wordContainer: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginVertical: 8,
-        },
-        wordNumber: {
-            color: theme.colors.black,
-            paddingLeft: 0,
-            width: '20%',
-            textAlign: 'center',
-        },
-        wordInputOuterContainer: {
-            width: '75%',
-            height: 24,
-            flexDirection: 'row',
-            alignItems: 'center',
-        },
-        wordInputInnerContainer: {
-            borderBottomColor: theme.colors.extraLightGrey,
-            minHeight: 24,
-        },
-        wordInput: {
-            fontSize: 16,
-            minHeight: 24,
-            padding: 0,
-        },
-        focusedInputInnerContainer: {
-            borderBottomColor: theme.colors.primary,
-        },
-        focusedInput: {
-            marginBottom: 0,
-        },
-        invalidWord: {
-            color: 'red',
-        },
     })
 
-export default PersonalRecovery
+export default ResetPin

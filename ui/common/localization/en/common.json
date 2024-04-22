@@ -537,10 +537,13 @@
             "create-new-pin": "Create new PIN",
             "enter-current-pin": "Enter current PIN",
             "enter-pin": "Enter PIN",
+            "forgot-your-pin": "Forgot your PIN?",
             "pin-access": "PIN Access",
             "pin-doesnt-match": "PIN doesn't match",
             "pin-setup-successful": "PIN setup successfully!",
             "re-enter-pin": "Re-enter PIN",
+            "recover-with-backup": "Recover with your backup",
+            "recovery-notice": "If you forgot your PIN, you can get access to Fedi with your backup and create a new PIN.",
             "unlocking-fedi-app": "Unlocking Fedi app"
         },
         "popup": {

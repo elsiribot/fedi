@@ -242,6 +242,10 @@ export class FedimintBridge {
         return this.rpcTyped('getMnemonic', {})
     }
 
+    async checkMnemonic(mnemonic: Array<string>) {
+        return this.rpcTyped('checkMnemonic', { mnemonic })
+    }
+
     async recoverFromMnemonic(mnemonic: string[]) {
         return this.rpcTyped('recoverFromMnemonic', {
             mnemonic,

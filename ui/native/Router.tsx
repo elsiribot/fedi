@@ -43,11 +43,14 @@ import HomeLockScreen from './components/feature/home/LockScreen'
 import { OmniLinkHandler } from './components/feature/omni/OmniLinkHandler'
 import EulaHeader from './components/feature/onboarding/EulaHeader'
 import NewMemberHeader from './components/feature/onboarding/NewMemberHeader'
+import ChangePinLockScreenHeader from './components/feature/pin/ChangePinLockScreenHeader'
 import CreatePinInstructionsHeader from './components/feature/pin/CreatePinInstructionsHeader'
-import LockScreenHeader from './components/feature/pin/LockScreenHeader'
 import PinAccessHeader from './components/feature/pin/PinAccessHeader'
+import ResetPinHeader from './components/feature/pin/ResetPinHeader'
+import ResetPinStartHeader from './components/feature/pin/ResetPinStartHeader'
 import SetPinHeader from './components/feature/pin/SetPinHeader'
 import SetPinLockScreen from './components/feature/pin/SetPinLockScreen'
+import UnlockAppLockScreenHeader from './components/feature/pin/UnlockAppLockScreenHeader'
 import BitcoinRequestHeader from './components/feature/receive/BitcoinRequestHeader'
 import ReceiveBitcoinHeader from './components/feature/receive/ReceiveBitcoinHeader'
 import ReceiveBitcoinOfflineHeader from './components/feature/receive/ReceiveBitcoinOfflineHeader'
@@ -132,6 +135,8 @@ import RecoveryNewWallet from './screens/RecoveryNewWallet'
 import RecoveryWalletOptions from './screens/RecoveryWalletOptions'
 import RecoveryWalletTransfer from './screens/RecoveryWalletTransfer'
 import RecoveryWords from './screens/RecoveryWords'
+import ResetPin from './screens/ResetPin'
+import ResetPinStart from './screens/ResetPinStart'
 import ScanMemberCode from './screens/ScanMemberCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
 import SelectRecoveryFileFailure from './screens/SelectRecoveryFileFailure'
@@ -839,7 +844,7 @@ const MainNavigator = () => {
                                                 component={SetPinLockScreen}
                                                 options={() => ({
                                                     header: () => (
-                                                        <LockScreenHeader />
+                                                        <ChangePinLockScreenHeader />
                                                     ),
                                                 })}
                                             />
@@ -1002,7 +1007,23 @@ const MainNavigator = () => {
                                     name="TabsNavigator"
                                     component={HomeLockScreen}
                                     options={{
-                                        header: () => <LockScreenHeader />,
+                                        header: () => (
+                                            <UnlockAppLockScreenHeader />
+                                        ),
+                                    }}
+                                />
+                                <Stack.Screen
+                                    name="ResetPinStart"
+                                    component={ResetPinStart}
+                                    options={{
+                                        header: () => <ResetPinStartHeader />,
+                                    }}
+                                />
+                                <Stack.Screen
+                                    name="ResetPin"
+                                    component={ResetPin}
+                                    options={{
+                                        header: () => <ResetPinHeader />,
                                     }}
                                 />
                             </Stack.Group>
