@@ -28,7 +28,7 @@ export const Pressable: React.FC<PressableProps> = ({
         <BasePressable
             style={({ pressed }) => [
                 style.container,
-                disabled ? { opacity: 0.25 } : {},
+                disabled || loading ? { opacity: 0.25 } : {},
                 !!props.onPress && pressed && !disabled ? style.pressed : {},
                 containerStyle,
             ]}
