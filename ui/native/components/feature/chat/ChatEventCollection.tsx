@@ -1,5 +1,6 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
@@ -27,6 +28,7 @@ const ChatEventCollection: React.FC<Props> = ({
     showUsernames,
 }: Props) => {
     const { theme } = useTheme()
+    const { t } = useTranslation()
 
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const roomMembers = useAppSelector(s => selectMatrixRoomMembers(s, roomId))
@@ -53,12 +55,12 @@ const ChatEventCollection: React.FC<Props> = ({
 
                     const roomMember = roomMembers.find(m => m.id === sentBy)
                     const isMe = sentBy === matrixAuth?.userId
-                    const hasLeft = roomMember?.membership !== 'join'
+                    const hasLeft = roomMember?.membership === 'leave'
                     const isBanned = roomMember?.membership === 'ban'
                     const displayName = isBanned
-                        ? 'Kicked Member'
+                        ? t('feature.chat.removed-member')
                         : hasLeft
-                        ? 'Former Member'
+                        ? t('feature.chat.former-member')
                         : roomMember?.displayName || '...'
                     return (
                         <View style={style.senderGroup} key={`ceci-${index}`}>

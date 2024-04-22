@@ -409,6 +409,28 @@ export class FedimintBridge {
         return this.rpcTyped('matrixRoomLeave', args)
     }
 
+    async matrixIgnoreUser(args: bindings.RpcPayload<'matrixIgnoreUser'>) {
+        return this.rpcTyped('matrixIgnoreUser', args)
+    }
+
+    async matrixUnignoreUser(args: bindings.RpcPayload<'matrixUnignoreUser'>) {
+        return this.rpcTyped('matrixUnignoreUser', args)
+    }
+
+    async matrixRoomKickUser(args: bindings.RpcPayload<'matrixRoomKickUser'>) {
+        return this.rpcTyped('matrixRoomKickUser', args)
+    }
+
+    async matrixRoomBanUser(args: bindings.RpcPayload<'matrixRoomBanUser'>) {
+        return this.rpcTyped('matrixRoomBanUser', args)
+    }
+
+    async matrixRoomUnbanUser(
+        args: bindings.RpcPayload<'matrixRoomUnbanUser'>,
+    ) {
+        return this.rpcTyped('matrixRoomUnbanUser', args)
+    }
+
     async matrixRoomObserveInfo(
         args: bindings.RpcPayload<'matrixRoomObserveInfo'>,
     ) {

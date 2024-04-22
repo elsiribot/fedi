@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectMatrixAuth, selectMatrixRoomMembers } from '@fedi/common/redux'
@@ -22,6 +23,7 @@ export const ChatEventCollection: React.FC<Props> = ({
     collection,
     showUsernames,
 }) => {
+    const { t } = useTranslation()
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const roomMembers = useAppSelector(s => selectMatrixRoomMembers(s, roomId))
 
@@ -39,12 +41,12 @@ export const ChatEventCollection: React.FC<Props> = ({
                     const sentBy = events[0].senderId || ''
                     const roomMember = roomMembers.find(m => m.id === sentBy)
                     const isMe = sentBy === matrixAuth?.userId
-                    const hasLeft = roomMember?.membership !== 'join'
+                    const hasLeft = roomMember?.membership === 'leave'
                     const isBanned = roomMember?.membership === 'ban'
                     const displayName = isBanned
-                        ? 'Kicked Member'
+                        ? t('feature.chat.removed-member')
                         : hasLeft
-                        ? 'Former Member'
+                        ? t('feature.chat.former-member')
                         : roomMember?.displayName || '...'
                     return (
                         <div key={events[0].id}>

@@ -633,6 +633,58 @@ export const configureMatrixPushNotifications = createAsyncThunk<
     return token
 })
 
+export const ignoreUser = createAsyncThunk<void, { userId: MatrixUser['id'] }>(
+    'matrix/ignoreUser',
+    async ({ userId }) => {
+        const client = getMatrixClient()
+        await client.ignoreUser(userId)
+    },
+)
+
+export const unignoreUser = createAsyncThunk<
+    void,
+    { userId: MatrixUser['id'] }
+>('matrix/unignoreUser', async ({ userId }) => {
+    const client = getMatrixClient()
+    await client.unignoreUser(userId)
+})
+
+export const kickUser = createAsyncThunk<
+    void,
+    {
+        roomId: MatrixRoom['id']
+        userId: MatrixRoomMember['id']
+        reason?: string
+    }
+>('matrix/kickUser', async ({ roomId, userId, reason }) => {
+    const client = getMatrixClient()
+    await client.roomKickUser(roomId, userId, reason)
+})
+
+export const banUser = createAsyncThunk<
+    void,
+    {
+        roomId: MatrixRoom['id']
+        userId: MatrixRoomMember['id']
+        reason?: string
+    }
+>('matrix/banUser', async ({ roomId, userId, reason }) => {
+    const client = getMatrixClient()
+    await client.roomBanUser(roomId, userId, reason)
+})
+
+export const unbanUser = createAsyncThunk<
+    void,
+    {
+        roomId: MatrixRoom['id']
+        userId: MatrixRoomMember['id']
+        reason?: string
+    }
+>('matrix/unbanUser', async ({ roomId, userId, reason }) => {
+    const client = getMatrixClient()
+    await client.roomUnbanUser(roomId, userId, reason)
+})
+
 /*** Selectors ***/
 
 export const selectMatrixStatus = (s: CommonState) => s.matrix.status

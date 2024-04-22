@@ -1,6 +1,7 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import {
     ActivityIndicator,
+    ColorValue,
     GestureResponderEvent,
     Pressable,
     StyleSheet,
@@ -15,6 +16,7 @@ type ChatUserActionProps = {
     active?: boolean
     rightIcon?: React.ReactNode
     isLoading?: boolean
+    labelColor?: ColorValue
 }
 
 const ChatUserAction = ({
@@ -22,6 +24,7 @@ const ChatUserAction = ({
     active = false,
     leftIcon,
     label,
+    labelColor,
     rightIcon,
     isLoading,
     onPress,
@@ -43,6 +46,7 @@ const ChatUserAction = ({
                 style={[
                     styles(theme).label,
                     active ? { color: theme.colors.blue } : {},
+                    labelColor ? { color: labelColor } : {},
                 ]}>
                 {label}
             </Text>
