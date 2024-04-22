@@ -132,7 +132,7 @@ const LockScreen = <T extends keyof RootStackParamList>({
                                 }
                                 buttonStyle={style.forgotPinButton}
                                 onPress={() => {
-                                    navigation.navigate('PersonalRecovery')
+                                    navigation.navigate('ResetPinStart')
                                 }}
                             />
                         </View>

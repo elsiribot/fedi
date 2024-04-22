@@ -146,4 +146,6 @@ export type RootStackParamList = {
     CreatePinInstructions: undefined
     PinAccess: undefined
     LockScreen: undefined
+    ResetPinStart: undefined
+    ResetPin: undefined
 }

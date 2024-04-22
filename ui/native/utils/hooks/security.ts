@@ -7,9 +7,10 @@ import {
     selectDeviceId,
     selectIsFeatureUnlocked,
     selectProtectedFeatures,
+    setFeatureUnlocked,
 } from '@fedi/common/redux'
 
-import { useAppSelector } from '../../state/hooks'
+import { useAppDispatch, useAppSelector } from '../../state/hooks'
 
 interface UsePinLoading {
     status: 'loading'
@@ -39,6 +40,8 @@ export function usePin(): UsePinReturn {
     const [isLoading, setIsLoading] = useState(true)
     const checkRef = useRef<(digits: Array<number>) => boolean>(() => true)
     const deviceId = useAppSelector(selectDeviceId)
+    const dispatch = useAppDispatch()
+    const protectedFeatures = useAppSelector(selectProtectedFeatures)
 
     const set = useCallback(
         async (digits: Array<number>) => {
@@ -61,7 +64,17 @@ export function usePin(): UsePinReturn {
         await Keychain.resetGenericPassword({
             service: 'pin',
         })
-    }, [deviceId])
+
+        Object.entries(protectedFeatures).forEach(([key, isProtected]) => {
+            if (isProtected)
+                dispatch(
+                    setFeatureUnlocked({
+                        key: key as keyof ProtectedFeatures,
+                        unlocked: true,
+                    }),
+                )
+        })
+    }, [deviceId, dispatch, protectedFeatures])
 
     useEffect(() => {
         const loadPinCheck = async () => {

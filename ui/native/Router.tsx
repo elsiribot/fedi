@@ -46,6 +46,8 @@ import NewMemberHeader from './components/feature/onboarding/NewMemberHeader'
 import ChangePinLockScreenHeader from './components/feature/pin/ChangePinLockScreenHeader'
 import CreatePinInstructionsHeader from './components/feature/pin/CreatePinInstructionsHeader'
 import PinAccessHeader from './components/feature/pin/PinAccessHeader'
+import ResetPinHeader from './components/feature/pin/ResetPinHeader'
+import ResetPinStartHeader from './components/feature/pin/ResetPinStartHeader'
 import SetPinHeader from './components/feature/pin/SetPinHeader'
 import SetPinLockScreen from './components/feature/pin/SetPinLockScreen'
 import UnlockAppLockScreenHeader from './components/feature/pin/UnlockAppLockScreenHeader'
@@ -133,6 +135,8 @@ import RecoveryNewWallet from './screens/RecoveryNewWallet'
 import RecoveryWalletOptions from './screens/RecoveryWalletOptions'
 import RecoveryWalletTransfer from './screens/RecoveryWalletTransfer'
 import RecoveryWords from './screens/RecoveryWords'
+import ResetPin from './screens/ResetPin'
+import ResetPinStart from './screens/ResetPinStart'
 import ScanMemberCode from './screens/ScanMemberCode'
 import ScanSocialRecoveryCode from './screens/ScanSocialRecoveryCode'
 import SelectRecoveryFileFailure from './screens/SelectRecoveryFileFailure'
@@ -244,22 +248,7 @@ const MainNavigator = () => {
                     federation connections in-app, each call requires a
                     Federation to be specified
                 */}
-                <Stack.Group>
-                    {/* Personal Recovery */}
-                    <Stack.Screen
-                        name="PersonalRecovery"
-                        component={PersonalRecovery}
-                        options={() => ({
-                            header: () => <PersonalRecoveryHeader backButton />,
-                        })}
-                    />
-                    <Stack.Screen
-                        name="PersonalRecoverySuccess"
-                        component={PersonalRecoverySuccess}
-                        options={{ headerShown: false }}
-                    />
-                </Stack.Group>
-                {activeFederation !== null && (
+                {activeFederation !== null ? (
                     <>
                         {isAppUnlocked ? (
                             <Stack.Group>
@@ -1023,10 +1012,24 @@ const MainNavigator = () => {
                                         ),
                                     }}
                                 />
+                                <Stack.Screen
+                                    name="ResetPinStart"
+                                    component={ResetPinStart}
+                                    options={{
+                                        header: () => <ResetPinStartHeader />,
+                                    }}
+                                />
+                                <Stack.Screen
+                                    name="ResetPin"
+                                    component={ResetPin}
+                                    options={{
+                                        header: () => <ResetPinHeader />,
+                                    }}
+                                />
                             </Stack.Group>
                         )}
                     </>
-                )}
+                ) : null}
             </>
         </Stack.Navigator>
     )

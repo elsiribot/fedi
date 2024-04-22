@@ -542,6 +542,8 @@
             "pin-doesnt-match": "PIN doesn't match",
             "pin-setup-successful": "PIN setup successfully!",
             "re-enter-pin": "Re-enter PIN",
+            "recover-with-backup": "Recover with your backup",
+            "recovery-notice": "If you forgot your PIN, you can get access to Fedi with your backup and create a new PIN.",
             "unlocking-fedi-app": "Unlocking Fedi app"
         },
         "popup": {
