@@ -1151,14 +1151,17 @@ const Router = () => {
     const handleStateChange = useCallback(() => {
         toast.close()
         const previousRoute = routeRef.current
-        const currentRoute = navigation.getCurrentRoute()?.name
+        const currentRoute = navigation.getCurrentRoute()
 
-        if (previousRoute === currentRoute) return
+        if (previousRoute === currentRoute?.name) return
 
-        routeRef.current = currentRoute
-        log.debug('App Navigation State Change', {
-            route: routeRef.current,
-        })
+        routeRef.current = currentRoute?.name
+        log.debug(
+            `Navigating from "${previousRoute}" to "${routeRef.current}"`,
+            {
+                params: currentRoute?.params,
+            },
+        )
     }, [navigation, toast])
 
     return (
