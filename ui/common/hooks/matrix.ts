@@ -8,6 +8,7 @@ import {
     rejectMatrixPaymentRequest,
     searchMatrixUsers,
     selectIsMatrixReady,
+    selectCanClaimPayment,
     selectLatestMatrixRoomEventId,
     selectMatrixAuth,
     selectMatrixRoom,
@@ -135,6 +136,9 @@ export function useMatrixPaymentEvent({
     onError: (err: unknown) => void
 }) {
     const dispatch = useCommonDispatch()
+    const canClaimPayment = useCommonSelector(s =>
+        selectCanClaimPayment(s, event),
+    )
     const matrixAuth = useCommonSelector(selectMatrixAuth)
     const eventSender = useCommonSelector(s =>
         selectMatrixRoomMember(s, event.roomId, event.senderId || ''),
@@ -143,8 +147,13 @@ export function useMatrixPaymentEvent({
         selectMatrixRoomMember(s, event.roomId, event.content.senderId || ''),
     )
     const paymentRecipient = useCommonSelector(s =>
-        selectMatrixRoomMember(s, event.roomId, event.content.recipientId),
+        selectMatrixRoomMember(
+            s,
+            event.roomId,
+            event.content.recipientId || '',
+        ),
     )
+    const federationInviteCode = event.content.inviteCode
     const isDm = useCommonSelector(
         s => !!selectMatrixRoom(s, event.roomId)?.directUserId,
     )
@@ -152,6 +161,7 @@ export function useMatrixPaymentEvent({
     const [isCanceling, setIsCanceling] = useState(false)
     const [isAccepting, setIsAccepting] = useState(false)
     const [isRejecting, setIsRejecting] = useState(false)
+    const [isHandlingForeignEcash, setIsHandlingForeignEcash] = useState(false)
     const onErrorRef = useUpdatingRef(onError)
 
     const handleDispatchPaymentUpdate = useCallback(
@@ -191,6 +201,10 @@ export function useMatrixPaymentEvent({
         )
     }, [event, handleDispatchPaymentUpdate])
 
+    const handleAcceptForeignEcash = useCallback(async () => {
+        setIsHandlingForeignEcash(true)
+    }, [])
+
     const messageText = makeMatrixPaymentText({
         t,
         event,
@@ -204,7 +218,7 @@ export function useMatrixPaymentEvent({
     const isSentByMe = event.content.senderId === matrixAuth?.userId
     const isRecipient = event.content.recipientId === matrixAuth?.userId
 
-    let statusIcon: 'x' | 'check' | 'error' | 'loading' | undefined
+    let statusIcon: 'x' | 'reject' | 'check' | 'error' | 'loading' | undefined
     let statusText: string | undefined
     let buttons: {
         label: string
@@ -216,7 +230,7 @@ export function useMatrixPaymentEvent({
         statusIcon = 'check'
         statusText = t('words.received')
     } else if (paymentStatus === MatrixPaymentStatus.rejected) {
-        statusIcon = 'x'
+        statusIcon = 'reject'
         statusText = t('words.rejected')
     } else if (paymentStatus === MatrixPaymentStatus.canceled) {
         statusIcon = 'x'
@@ -225,7 +239,23 @@ export function useMatrixPaymentEvent({
         paymentStatus === MatrixPaymentStatus.pushed ||
         paymentStatus === MatrixPaymentStatus.accepted
     ) {
-        if (isRecipient) {
+        if (!canClaimPayment) {
+            buttons = [
+                {
+                    label: t('words.reject'),
+                    handler: handleRejectRequest,
+                    loading: isRejecting,
+                    disabled: isAccepting,
+                },
+                {
+                    label: t('words.accept'),
+                    handler: handleAcceptForeignEcash,
+                    loading: isRejecting,
+                    disabled: isAccepting,
+                },
+            ]
+            buttons.push()
+        } else if (isRecipient) {
             statusIcon = 'loading'
             statusText = `${t('words.receiving')}...`
         } else if (isSentByMe) {
@@ -281,5 +311,10 @@ export function useMatrixPaymentEvent({
         statusIcon,
         statusText,
         buttons,
+        isHandlingForeignEcash,
+        setIsHandlingForeignEcash,
+        federationInviteCode,
+        paymentSender,
+        handleRejectRequest,
     }
 }

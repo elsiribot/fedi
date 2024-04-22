@@ -26,6 +26,7 @@ import ChatConversationHeader from './components/feature/chat/ChatConversationHe
 import ChatRoomInviteHeader from './components/feature/chat/ChatRoomInviteHeader'
 import ChatRoomMembersHeader from './components/feature/chat/ChatRoomMembersHeader'
 import ChatWalletHeader from './components/feature/chat/ChatWalletHeader'
+import ConfirmChatSendHeader from './components/feature/chat/ConfirmChatSendHeader'
 import CreateGroupHeader from './components/feature/chat/CreateGroupHeader'
 import DirectChatHeader from './components/feature/chat/DirectChatHeader'
 import EditGroupHeader from './components/feature/chat/EditGroupHeader'
@@ -94,6 +95,7 @@ import CompleteSocialBackup from './screens/CompleteSocialBackup'
 import CompleteSocialRecovery from './screens/CompleteSocialRecovery'
 import ConfirmReceiveOffline from './screens/ConfirmReceiveOffline'
 import ConfirmRecoveryAssist from './screens/ConfirmRecoveryAssist'
+import ConfirmSendChatPayment from './screens/ConfirmSendChatPayment'
 import ConfirmSendEcash from './screens/ConfirmSendEcash'
 import ConfirmSendLightning from './screens/ConfirmSendLightning'
 import ConfirmSendOnChain from './screens/ConfirmSendOnChain'
@@ -398,6 +400,16 @@ const MainNavigator = () => {
                                             header: () => <ChatWalletHeader />,
                                         })}
                                     />
+                                    <Stack.Screen
+                                        name="ConfirmSendChatPayment"
+                                        component={ConfirmSendChatPayment}
+                                        options={() => ({
+                                            header: () => (
+                                                <ConfirmChatSendHeader />
+                                            ),
+                                        })}
+                                    />
+
                                     {/* Wallet (Send) */}
                                     <Stack.Screen
                                         name="Send"

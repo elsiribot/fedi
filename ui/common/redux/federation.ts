@@ -37,6 +37,7 @@ const initialState = {
     federations: [] as Federation[],
     publicFederations: [] as PublicFederation[],
     activeFederationId: null as string | null,
+    payFromFederationId: null as string | null,
     authenticatedGuardian: null as Guardian | null,
     externalMeta: {} as Record<
         Federation['id'],
@@ -96,6 +97,9 @@ export const federationSlice = createSlice({
         },
         setActiveFederationId(state, action: PayloadAction<string | null>) {
             state.activeFederationId = action.payload
+        },
+        setPayFromFederationId(state, action: PayloadAction<string | null>) {
+            state.payFromFederationId = action.payload
         },
         updateExternalMeta(
             state,
@@ -185,6 +189,7 @@ export const {
     updateFederation,
     updateFederationBalance,
     setActiveFederationId,
+    setPayFromFederationId,
     updateExternalMeta,
     setFederationExternalMeta,
     changeAuthenticatedGuardian,
@@ -283,6 +288,21 @@ export const selectFederation = (s: CommonState, id: string) =>
 export const selectActiveFederationId = (s: CommonState) => {
     return selectActiveFederation(s)?.id
 }
+
+export const selectPayFromFederation = createSelector(
+    selectFederations,
+    selectActiveFederation,
+    (s: CommonState) => s.federation.payFromFederationId,
+    (
+        federations,
+        activeFederation,
+        payFromFederationId,
+    ): Federation | undefined =>
+        payFromFederationId
+            ? federations.find(f => f.id === payFromFederationId) ||
+              activeFederation
+            : activeFederation,
+)
 
 export const selectFederationClientConfig = createSelector(
     selectActiveFederation,
@@ -479,4 +499,9 @@ export const selectFederationsWithChatConnections = createSelector(
             return result
         }, [])
     },
+)
+
+export const selectFederationsWithBalances = createSelector(
+    selectFederations,
+    federations => federations.filter(f => f.balance > 0),
 )

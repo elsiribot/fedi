@@ -1,5 +1,7 @@
 import { CommonActions } from '@react-navigation/native'
 
+import { ChatType } from '@fedi/common/types'
+
 import { RootStackParamList } from '../types/navigation'
 
 export function navigate(
@@ -67,6 +69,26 @@ export function resetToLockedDevice() {
         ...CommonActions.reset({
             index: 0,
             routes: [{ name: 'LockedDevice' }],
+        }),
+    }
+}
+
+export function resetToDirectChat(roomId: string) {
+    // Reset navigation stack on going back to the chat to give better back
+    // button behavior if directed here from Omni.
+    return {
+        ...CommonActions.reset({
+            index: 1,
+            routes: [
+                { name: 'TabsNavigator', params: { initialRouteName: 'Chat' } },
+                {
+                    name: 'ChatRoomConversation',
+                    params: {
+                        roomId: roomId,
+                        chatType: ChatType.direct,
+                    },
+                },
+            ],
         }),
     }
 }

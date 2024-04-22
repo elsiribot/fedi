@@ -260,27 +260,37 @@ async function parseLnurl(
 /**
  * Attempt to parse a BOLT 11 invoice.
  * BOLT 11 docs: https://github.com/lightning/bolts/blob/master/11-payment-encoding.md
+ *
+ * isBolt11 can be used to avoid using the bridge to
+ * do a full decoding which requires a federationId to include
+ * fee details
  */
-async function parseBolt11(
+export function isBolt11(raw: string) {
+    // Quick detection of BOLT 11, but ignore BOLT 12 and LNURL.
+    if (
+        !raw.startsWith('ln') ||
+        raw.startsWith('lno') ||
+        raw.startsWith('lnurl')
+    ) {
+        return false
+    }
+
+    const bolt11Regex = /^(?:ln(?:bc|tb|tbs|bcrt))[0-9a-zA-Z]{30,}$/
+    return bolt11Regex.test(raw)
+}
+
+export async function parseBolt11(
     raw: string,
     fedimint: FedimintBridge,
     t: TFunction,
-    federationId: string | undefined,
+    federationId: string | null = null,
 ): Promise<ParsedBolt11 | ParsedUnknownData | undefined> {
     const lnRaw = stripProtocol(raw, 'lightning').toLowerCase()
-
-    // Quick detection of BOLT 11, but ignore BOLT 12 and LNURL.
-    if (
-        !lnRaw.startsWith('ln') ||
-        lnRaw.startsWith('lno') ||
-        lnRaw.startsWith('lnurl')
-    ) {
+    if (!isBolt11(lnRaw)) {
         return
     }
 
     try {
-        // TODO: allow parsing with no federation ID
-        if (!federationId) return
         const decoded = await fedimint.decodeInvoice(lnRaw, federationId)
 
         return {

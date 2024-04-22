@@ -1,16 +1,17 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text } from '@rneui/themed'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Keyboard, StyleSheet, View } from 'react-native'
 
 import { useChatPaymentUtils } from '@fedi/common/hooks/chat'
 import { selectMatrixDirectMessageRoom } from '@fedi/common/redux'
-import { ChatType } from '@fedi/common/types'
 
 import { fedimint } from '../bridge'
+import FederationWalletSelector from '../components/feature/send/FederationWalletSelector'
 import { AmountScreen } from '../components/ui/AmountScreen'
 import { useAppSelector } from '../state/hooks'
+import { resetToDirectChat } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
@@ -21,7 +22,6 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const existingRoom = useAppSelector(s =>
         selectMatrixDirectMessageRoom(s, recipientId),
     )
-    const [confirmingSend, setConfirmingSend] = useState(false)
     const {
         submitType,
         setSubmitType,
@@ -32,7 +32,6 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         setAmount,
         inputMinMax,
         canSendAmount,
-        handleSendPayment,
         handleRequestPayment,
     } = useChatPaymentUtils(t, fedimint, existingRoom?.id, recipientId)
 
@@ -40,19 +39,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     // button behavior if directed here from Omni.
     const backToChat = useCallback(() => {
         if (!existingRoom) return
-        navigation.reset({
-            index: 1,
-            routes: [
-                { name: 'TabsNavigator', params: { initialRouteName: 'Chat' } },
-                {
-                    name: 'ChatRoomConversation',
-                    params: {
-                        roomId: existingRoom.id,
-                        chatType: ChatType.direct,
-                    },
-                },
-            ],
-        })
+        navigation.dispatch(resetToDirectChat(existingRoom.id))
     }, [existingRoom, navigation])
 
     const handleRequest = useCallback(async () => {
@@ -62,19 +49,16 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         })
     }, [handleRequestPayment, backToChat])
 
-    const handleConfirmSend = useCallback(async () => {
-        handleSendPayment(() => {
-            // go back to DirectChat to show sent payment
-            backToChat()
-        })
-    }, [handleSendPayment, backToChat])
-
     const handleSend = async () => {
         setSubmitType('send')
         setSubmitAttempts(attempts => attempts + 1)
         if (!canSendAmount) return
-        setConfirmingSend(true)
+        if (!existingRoom) return
         Keyboard.dismiss()
+        navigation.navigate('ConfirmSendChatPayment', {
+            amount,
+            roomId: existingRoom?.id,
+        })
     }
 
     if (!existingRoom) {
@@ -89,45 +73,36 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
 
     return (
         <AmountScreen
-            showBalance
+            showBalance={false}
             amount={amount}
             onChangeAmount={setAmount}
             submitAttempts={submitAttempts}
             isSubmitting={submitAction !== null}
             verb={submitType === 'send' ? t('words.send') : t('words.request')}
+            subHeader={<FederationWalletSelector />}
             {...inputMinMax}
-            buttons={
-                confirmingSend
-                    ? [
-                          {
-                              title: t('feature.send.hold-to-confirm-send'),
-                              onLongPress: handleConfirmSend,
-                              disabled: submitAction === 'send',
-                          },
-                      ]
-                    : [
-                          {
-                              title: t('words.request'),
-                              titleProps: {
-                                  maxFontSizeMultiplier: 1.4,
-                                  numberOfLines: 1,
-                              },
-                              onPress: handleRequest,
-                              disabled: submitAction === 'send',
-                              loading: submitAction === 'request',
-                          },
-                          {
-                              title: t('words.send'),
-                              titleProps: {
-                                  maxFontSizeMultiplier: 1.4,
-                                  numberOfLines: 1,
-                              },
-                              onPress: handleSend,
-                              disabled: submitAction === 'request',
-                              loading: submitAction === 'send',
-                          },
-                      ]
-            }
+            buttons={[
+                {
+                    title: t('words.request'),
+                    titleProps: {
+                        maxFontSizeMultiplier: 1.4,
+                        numberOfLines: 1,
+                    },
+                    onPress: handleRequest,
+                    disabled: submitAction === 'send',
+                    loading: submitAction === 'request',
+                },
+                {
+                    title: t('words.send'),
+                    titleProps: {
+                        maxFontSizeMultiplier: 1.4,
+                        numberOfLines: 1,
+                    },
+                    onPress: handleSend,
+                    disabled: submitAction === 'request',
+                    loading: submitAction === 'send',
+                },
+            ]}
         />
     )
 }

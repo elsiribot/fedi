@@ -171,10 +171,12 @@ export function initializeCommonStore({
             const state = api.getState()
             const myId = state.matrix.auth?.userId
             const timeline = state.matrix.roomTimelines[roomId]
+            const myFederations = state.federation.federations
             if (!myId || !timeline) return
             const receivablePayments = getReceivablePaymentEvents(
                 timeline,
                 myId,
+                myFederations,
             )
             receivablePayments.forEach(event => {
                 if (receivedPayments.has(event.content.paymentId)) return

@@ -13,6 +13,7 @@ import {
     MatrixTimelineItem,
     MatrixUser,
 } from '../types'
+import { RpcFederation } from '../types/bindings'
 import { makeLog } from './log'
 
 const log = makeLog('common/utils/matrix')
@@ -92,7 +93,7 @@ const contentSchemas = {
         /**
          * The matrix id of the user who will receive this payment.
          */
-        recipientId: z.string(),
+        recipientId: z.string().optional(),
         /**
          * The amount of the payment, either requested or sent.
          */
@@ -117,15 +118,15 @@ const contentSchemas = {
          * TODO: Potentially make this optional, allow anyone to pay to using any
          * federation they have in common, or via bolt11 (see more below.)
          */
-        federationId: z.string(),
+        federationId: z.string().optional(),
 
         // TODO: Attach bolt11 to payment requests, and allow to pay that way
         // if no federations in common?
-        // bolt11: z.string().optional(),
+        bolt11: z.string().optional(),
 
         // TODO: Attach invite code for federations you belong to that have
         // invites enabled, and allow people to join to accept ecash?
-        // inviteCode: z.string().optional(),
+        inviteCode: z.string().optional(),
     }),
 }
 
@@ -291,12 +292,24 @@ export function isPaymentEvent(
 export function getReceivablePaymentEvents(
     timeline: MatrixTimelineItem[],
     myId: string,
+    myFederations: RpcFederation[],
 ) {
     const latestPayments: Record<string, MatrixPaymentEvent> = {}
     timeline.forEach(item => {
         if (item === null) return
         if (!isPaymentEvent(item)) return
         if (item.content.recipientId !== myId) return
+        // payment is not receivable if we have not joined the federation this ecash is from
+        if (
+            item.content.federationId &&
+            myFederations.find(f => f.id === item.content.federationId) ===
+                undefined
+        ) {
+            log.info(
+                `can't claim ecash from federation ${item.content.federationId}...`,
+            )
+            return
+        }
         latestPayments[item.content.paymentId] = item
     })
     return Object.values(latestPayments).reduce((prev, event) => {

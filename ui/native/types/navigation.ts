@@ -63,6 +63,10 @@ export type RootStackParamList = {
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined
     ConfirmSendEcash: { amount: Sats }
+    ConfirmSendChatPayment: {
+        amount: Sats
+        roomId: string
+    }
     ConfirmRecoveryAssist: undefined
     ConfirmReceiveOffline: { ecash: string }
     ConfirmSendLightning: { parsedData: ParsedBolt11 | ParsedLnurlPay }
