@@ -90,9 +90,11 @@ impl Bridge {
         let device_identifier = app_state
             .verify_and_return_device_identifier(FromStr::from_str(&device_identifier)?)
             .await?;
+        let enc_identifier = app_state.encrypted_device_identifier().await?;
         let device_registration_service = Mutex::new(
             DeviceRegistrationService::new(
                 device_identifier,
+                enc_identifier,
                 app_state.clone(),
                 event_sink.clone(),
                 task_group.make_subgroup().await,
@@ -728,11 +730,9 @@ impl Bridge {
         force_overwrite: bool,
     ) -> anyhow::Result<Option<RpcFederation>> {
         let seed = self.app_state.root_mnemonic().await;
-        let identifier = self
-            .app_state
-            .with_read_lock(|state| state.device_identifier.clone())
-            .await;
+        let identifier = self.app_state.device_identifier().await;
         let identifier = identifier.ok_or(anyhow!("device identifier must be present"))?;
+        let enc_identifier = self.app_state.encrypted_device_identifier().await?;
         let register_device_fut = device_registration::register_device_with_backoff(
             self.app_state.clone(),
             self.fedi_api.clone(),
@@ -740,6 +740,7 @@ impl Bridge {
             seed,
             index,
             identifier,
+            enc_identifier,
             force_overwrite,
         );
         fedimint_core::task::timeout(Duration::from_secs(120), register_device_fut)

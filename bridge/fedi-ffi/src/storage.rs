@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::time::SystemTime;
 
 use anyhow::{anyhow, bail, ensure};
+use fedimint_aead::LessSafeKey;
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::core::ModuleKind;
@@ -17,7 +18,9 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 
-use crate::constants::{DEVICE_IDENTIFIER_FIXED_LENGTH, FEDI_FILE_PATH};
+use crate::constants::{
+    DEVICE_IDENTIFIER_FIXED_LENGTH, DEVICE_REGISTRATION_CHILD_ID, FEDI_FILE_PATH,
+};
 use crate::social::SocialRecoveryState;
 
 #[apply(async_trait_maybe_send!)]
@@ -53,8 +56,11 @@ pub struct AppStateRaw {
     pub matrix_session: Option<MatrixSession>,
 
     // Device identifier is used to give this device a name that Fedi's device registration service
-    // can store.
-    pub device_identifier: Option<DeviceIdentifier>,
+    // can store. We store an encrypted string version of it separately so that we can reuse the
+    // same ciphertext when communicating with Fedi's device registration service regarding this
+    // device's registration status.
+    device_identifier: Option<DeviceIdentifier>,
+    encrypted_device_identifier: Option<String>,
 
     // Device index identifies which device number this is under the same root seed as registered
     // with Fedi's device registration service. This index is used in the derivation path for the
@@ -144,6 +150,19 @@ impl<'de> Deserialize<'de> for DeviceIdentifier {
     {
         let s = String::deserialize(deserializer)?;
         FromStr::from_str(&s).map_err(serde::de::Error::custom)
+    }
+}
+
+impl DeviceIdentifier {
+    pub fn encrypt_and_hex_encode(&self, root_secret: &DerivableSecret) -> anyhow::Result<String> {
+        let device_id_encryption_secret = root_secret.child_key(DEVICE_REGISTRATION_CHILD_ID);
+        // Pad if necessary -> encrypt -> hex-encode
+        let padded = format!("{:width$}", self, width = DEVICE_IDENTIFIER_FIXED_LENGTH);
+        let encrypted = fedimint_aead::encrypt(
+            padded.into(),
+            &LessSafeKey::new(device_id_encryption_secret.to_chacha20_poly1305_key()),
+        )?;
+        Ok(hex::encode(encrypted))
     }
 }
 
@@ -304,6 +323,7 @@ impl AppState {
                 sensitive_log: None,
                 matrix_session: None,
                 device_identifier: None,
+                encrypted_device_identifier: None,
                 device_index: default_device_index(),
                 last_device_registration_timestamp: None,
                 next_federation_db_prefix: default_next_federation_prefix(),
@@ -367,6 +387,36 @@ impl AppState {
                 .await?;
                 Ok(new_identifier)
             }
+        }
+    }
+
+    pub async fn device_identifier(&self) -> Option<DeviceIdentifier> {
+        self.with_read_lock(|state| state.device_identifier.clone())
+            .await
+    }
+
+    // If an encrypted_device_identifier is set in AppState, returns it. If not,
+    // computes the ciphertext using the root_mnemonic, stores it, and returns it.
+    // However if device_identifier is not set to begin with, returns an error.
+    pub async fn encrypted_device_identifier(&self) -> anyhow::Result<String> {
+        match self
+            .with_read_lock(|state| state.encrypted_device_identifier.clone())
+            .await
+        {
+            Some(enc) => Ok(enc),
+            None => match self.device_identifier().await {
+                Some(identifier) => {
+                    let enc = identifier.encrypt_and_hex_encode(&self.root_secret().await)?;
+                    self.with_write_lock(|state| {
+                        state.encrypted_device_identifier = Some(enc.clone())
+                    })
+                    .await?;
+                    Ok(enc)
+                }
+                None => Err(anyhow!(
+                    "Device identifier must be set prior to requesting encryption"
+                )),
+            },
         }
     }
 
