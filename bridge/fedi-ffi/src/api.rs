@@ -260,11 +260,10 @@ impl IFediApi for LiveFediApi {
                 // implemented.
                 Ok(RegisteredDevice {
                     index: info.device_index.0,
-                    identifier: decrypt_device_identifier(
+                    identifier: process_device_identifier(
                         &root_secret,
-                        &info.device_identifier.device_name,
-                    )
-                    .unwrap_or(FromStr::from_str(&info.device_identifier.device_name)?),
+                        info.device_identifier.device_name,
+                    )?,
                     last_renewed: info.timestamp.0.into(),
                 })
             })
@@ -355,6 +354,16 @@ fn encrypt_device_identifier(
     Ok(hex::encode(encrypted))
 }
 
+fn process_device_identifier(
+    root_secret: &DerivableSecret,
+    maybe_encrypted_device_identifier: String,
+) -> anyhow::Result<DeviceIdentifier> {
+    match decrypt_device_identifier(root_secret, &maybe_encrypted_device_identifier) {
+        Err(_) => FromStr::from_str(&maybe_encrypted_device_identifier),
+        res @ Ok(_) => res,
+    }
+}
+
 fn decrypt_device_identifier(
     root_secret: &DerivableSecret,
     encrypted_device_identifier: &str,
@@ -369,4 +378,42 @@ fn decrypt_device_identifier(
     let decrypted_string = String::from_utf8(decrypted_bytes.to_vec())?;
     let unpadded_string = decrypted_string.trim_end();
     FromStr::from_str(unpadded_string)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_process_encrypted_device_identifier() -> anyhow::Result<()> {
+        let device_identifier_str =
+            "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
+        let device_identifier: DeviceIdentifier = FromStr::from_str(&device_identifier_str)?;
+        let mnemonic = Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
+        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&mnemonic);
+
+        let encrypted_device_identifier =
+            encrypt_device_identifier(&root_secret, &device_identifier)?;
+
+        assert_eq!(
+            device_identifier,
+            process_device_identifier(&root_secret, encrypted_device_identifier)?
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_process_unencrypted_device_identifier() -> anyhow::Result<()> {
+        let device_identifier_str =
+            "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
+        let device_identifier: DeviceIdentifier = FromStr::from_str(&device_identifier_str)?;
+        let mnemonic = Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
+        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&mnemonic);
+
+        assert_eq!(
+            device_identifier,
+            process_device_identifier(&root_secret, device_identifier_str)?
+        );
+        Ok(())
+    }
 }
