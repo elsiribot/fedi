@@ -114,7 +114,7 @@ const ChatUserActions: React.FC<Props> = ({
         },
     ]
 
-    const handleremoveUser = async (
+    const handleRemoveUser = async (
         userId: string,
         actionId: number,
         reason?: string,
@@ -190,13 +190,13 @@ const ChatUserActions: React.FC<Props> = ({
     const moderationActions: ModerationAction[] = [
         {
             id: 4,
-            label: t('phrases.remove-user'),
+            label: t('feature.chat.remove-user'),
             icon: 'KickMember',
-            onPress: () => handleremoveUser(member.id, 4),
+            onPress: () => handleRemoveUser(member.id, 4),
         },
         {
             id: 5,
-            label: t('phrases.ban-user'),
+            label: t('feature.chat.ban-user'),
             icon: 'BlockMember',
             onPress: () => handleBanUser(member.id, 5),
         },
