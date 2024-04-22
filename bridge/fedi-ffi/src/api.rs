@@ -255,9 +255,12 @@ impl IFediApi for LiveFediApi {
             .devices
             .into_iter()
             .map(|info| {
+                // If decrypting device identifier fails, attempt to use it as-is. It likely
+                // means that the original registration happened before encryption was
+                // implemented.
                 Ok(RegisteredDevice {
                     index: info.device_index.0,
-                    identifier: decrypt_device_identifier(
+                    identifier: process_device_identifier(
                         &root_secret,
                         info.device_identifier.device_name,
                     )?,
@@ -274,51 +277,74 @@ impl IFediApi for LiveFediApi {
         device_identifier: DeviceIdentifier,
         force_overwrite: bool,
     ) -> Result<(), RegisterDeviceError> {
-        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&seed);
-        let seed_commitment = SeedCommitmentV0::new(root_secret.to_random_bytes());
-        let device_identifier = encrypt_device_identifier(&root_secret, device_identifier)?;
+        let registration_closure = |secret: DerivableSecret, identifier, overwrite| async move {
+            let seed_commitment = SeedCommitmentV0::new(secret.to_random_bytes());
 
-        // Timeout of 2 minutes here since this request will either be performed during
-        // onboarding and it's important for it to succeed, or it will be performed in a
-        // background task without blocking anything.
-        let timeout_res = fedimint_core::task::timeout(Duration::from_secs(120), async {
-            self.client
-                .post(format!(
-                    "{FEDI_DEVICE_REGISTRATION_URL}/register_device_for_seed"
-                ))
-                .json(&RegisterDeviceRequestV0 {
-                    seed_commitment,
-                    device_index: DeviceIndexV0(device_index),
-                    device_identifier: DeviceIdentifierV0 {
-                        device_name: device_identifier,
-                    },
-                    force: force_overwrite,
-                })
-                .send()
-                .await
-        })
-        .await;
+            // Timeout of 2 minutes here since this request will either be performed during
+            // onboarding and it's important for it to succeed, or it will be performed in a
+            // background task without blocking anything.
+            let timeout_res = fedimint_core::task::timeout(Duration::from_secs(120), async {
+                self.client
+                    .post(format!(
+                        "{FEDI_DEVICE_REGISTRATION_URL}/register_device_for_seed"
+                    ))
+                    .json(&RegisterDeviceRequestV0 {
+                        seed_commitment,
+                        device_index: DeviceIndexV0(device_index),
+                        device_identifier: DeviceIdentifierV0 {
+                            device_name: identifier,
+                        },
+                        force: force_overwrite || overwrite,
+                    })
+                    .send()
+                    .await
+            })
+            .await;
 
-        let Ok(register_device_result_v0) = timeout_res else {
-            return Err(RegisterDeviceError::RequestTimeout);
+            let Ok(register_device_result_v0) = timeout_res else {
+                return Err(RegisterDeviceError::RequestTimeout);
+            };
+
+            match register_device_result_v0 {
+                Ok(resp) if resp.status().is_success() => Ok(()),
+                Ok(resp) if resp.status() == StatusCode::CONFLICT => {
+                    Err(RegisterDeviceError::AnotherDeviceOwnsIndex(
+                        resp.text().await.unwrap_or_default(),
+                    ))
+                }
+                Ok(resp) => Err(RegisterDeviceError::OtherServerError(
+                    resp.text().await.unwrap_or_default(),
+                )),
+                Err(e) => Err(RegisterDeviceError::ErrorSendingRequest(e.to_string())),
+            }
         };
 
-        match register_device_result_v0 {
-            Ok(resp) if resp.status().is_success() => Ok(()),
-            Ok(resp) if resp.status() == StatusCode::CONFLICT => Err(
-                RegisterDeviceError::AnotherDeviceOwnsIndex(resp.text().await.unwrap_or_default()),
-            ),
-            Ok(resp) => Err(RegisterDeviceError::OtherServerError(
-                resp.text().await.unwrap_or_default(),
-            )),
-            Err(e) => Err(RegisterDeviceError::ErrorSendingRequest(e.to_string())),
+        // First try registering with an encrypted device identifier.
+        // If an encrypted device identifier results in conflict, retry
+        // with unencrypted device identifier. It likely
+        // means that the original registration happened before
+        // encryption was implemented.
+        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&seed);
+        let enc_device_identifier = encrypt_device_identifier(&root_secret, &device_identifier)?;
+        match registration_closure(root_secret.clone(), enc_device_identifier.clone(), false).await
+        {
+            Err(RegisterDeviceError::AnotherDeviceOwnsIndex(_)) => {
+                // If registration first fails with encrypted device identifier, but then
+                // succeeds with the unencrypted device identifier, we go ahead and re-register
+                // with force_overwrite using the encrypted version. This is sort of like a DB
+                // migration.
+                registration_closure(root_secret.clone(), device_identifier.to_string(), false)
+                    .await?;
+                registration_closure(root_secret.clone(), enc_device_identifier.clone(), true).await
+            }
+            res => res,
         }
     }
 }
 
 fn encrypt_device_identifier(
     root_secret: &DerivableSecret,
-    device_identifier: DeviceIdentifier,
+    device_identifier: &DeviceIdentifier,
 ) -> Result<String, RegisterDeviceError> {
     let device_id_encryption_secret = root_secret.child_key(DEVICE_REGISTRATION_CHILD_ID);
     // Pad if necessary -> encrypt -> hex-encode
@@ -335,9 +361,19 @@ fn encrypt_device_identifier(
     Ok(hex::encode(encrypted))
 }
 
+fn process_device_identifier(
+    root_secret: &DerivableSecret,
+    maybe_encrypted_device_identifier: String,
+) -> anyhow::Result<DeviceIdentifier> {
+    match decrypt_device_identifier(root_secret, &maybe_encrypted_device_identifier) {
+        Err(_) => FromStr::from_str(&maybe_encrypted_device_identifier),
+        res @ Ok(_) => res,
+    }
+}
+
 fn decrypt_device_identifier(
     root_secret: &DerivableSecret,
-    encrypted_device_identifier: String,
+    encrypted_device_identifier: &str,
 ) -> anyhow::Result<DeviceIdentifier> {
     let device_id_encryption_secret = root_secret.child_key(DEVICE_REGISTRATION_CHILD_ID);
     // Hex-decode -> decrypt -> trim padding
@@ -349,4 +385,42 @@ fn decrypt_device_identifier(
     let decrypted_string = String::from_utf8(decrypted_bytes.to_vec())?;
     let unpadded_string = decrypted_string.trim_end();
     FromStr::from_str(unpadded_string)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_process_encrypted_device_identifier() -> anyhow::Result<()> {
+        let device_identifier_str =
+            "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
+        let device_identifier: DeviceIdentifier = FromStr::from_str(&device_identifier_str)?;
+        let mnemonic = Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
+        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&mnemonic);
+
+        let encrypted_device_identifier =
+            encrypt_device_identifier(&root_secret, &device_identifier)?;
+
+        assert_eq!(
+            device_identifier,
+            process_device_identifier(&root_secret, encrypted_device_identifier)?
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_process_unencrypted_device_identifier() -> anyhow::Result<()> {
+        let device_identifier_str =
+            "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
+        let device_identifier: DeviceIdentifier = FromStr::from_str(&device_identifier_str)?;
+        let mnemonic = Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
+        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&mnemonic);
+
+        assert_eq!(
+            device_identifier,
+            process_device_identifier(&root_secret, device_identifier_str)?
+        );
+        Ok(())
+    }
 }
