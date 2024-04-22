@@ -277,9 +277,8 @@ impl IFediApi for LiveFediApi {
         device_identifier: DeviceIdentifier,
         force_overwrite: bool,
     ) -> Result<(), RegisterDeviceError> {
-        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&seed);
-        let registration_closure = |device_identifier| async {
-            let seed_commitment = SeedCommitmentV0::new(root_secret.to_random_bytes());
+        let registration_closure = |secret: DerivableSecret, identifier, overwrite| async move {
+            let seed_commitment = SeedCommitmentV0::new(secret.to_random_bytes());
 
             // Timeout of 2 minutes here since this request will either be performed during
             // onboarding and it's important for it to succeed, or it will be performed in a
@@ -293,9 +292,9 @@ impl IFediApi for LiveFediApi {
                         seed_commitment,
                         device_index: DeviceIndexV0(device_index),
                         device_identifier: DeviceIdentifierV0 {
-                            device_name: device_identifier,
+                            device_name: identifier,
                         },
-                        force: force_overwrite,
+                        force: force_overwrite || overwrite,
                     })
                     .send()
                     .await
@@ -325,10 +324,18 @@ impl IFediApi for LiveFediApi {
         // with unencrypted device identifier. It likely
         // means that the original registration happened before
         // encryption was implemented.
+        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&seed);
         let enc_device_identifier = encrypt_device_identifier(&root_secret, &device_identifier)?;
-        match registration_closure(enc_device_identifier).await {
+        match registration_closure(root_secret.clone(), enc_device_identifier.clone(), false).await
+        {
             Err(RegisterDeviceError::AnotherDeviceOwnsIndex(_)) => {
-                registration_closure(device_identifier.to_string()).await
+                // If registration first fails with encrypted device identifier, but then
+                // succeeds with the unencrypted device identifier, we go ahead and re-register
+                // with force_overwrite using the encrypted version. This is sort of like a DB
+                // migration.
+                registration_closure(root_secret.clone(), device_identifier.to_string(), false)
+                    .await?;
+                registration_closure(root_secret.clone(), enc_device_identifier.clone(), true).await
             }
             res => res,
         }
