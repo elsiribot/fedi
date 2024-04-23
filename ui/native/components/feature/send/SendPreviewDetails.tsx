@@ -1,5 +1,5 @@
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
@@ -145,19 +145,6 @@ const styles = (theme: Theme) =>
         },
         detailsButton: {
             backgroundColor: theme.colors.offWhite,
-        },
-        overlayContainer: {
-            width: '90%',
-            maxWidth: 312,
-            padding: theme.spacing.xl,
-            borderRadius: theme.borders.defaultRadius,
-            alignItems: 'center',
-        },
-        secondaryAmountText: {
-            color: theme.colors.darkGrey,
-            textAlign: 'center',
-            marginRight: theme.spacing.xs,
-            marginTop: theme.spacing.xs,
         },
     })
 
