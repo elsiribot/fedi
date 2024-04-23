@@ -1410,6 +1410,7 @@ mod tests {
             seed: bip39::Mnemonic,
             device_index: u8,
             device_identifier: DeviceIdentifier,
+            _encrypted_device_identifier: String,
             force_overwrite: bool,
         ) -> anyhow::Result<(), RegisterDeviceError> {
             let mut registry = self.registry.lock().await;

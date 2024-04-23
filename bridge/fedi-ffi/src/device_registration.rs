@@ -13,6 +13,7 @@ use crate::storage::{AppState, DeviceIdentifier};
 
 pub struct DeviceRegistrationService {
     device_identifier: DeviceIdentifier,
+    encrypted_device_identifier: String,
     app_state: Arc<AppState>,
     event_sink: EventSink,
     task_group: TaskGroup,
@@ -23,6 +24,7 @@ pub struct DeviceRegistrationService {
 impl DeviceRegistrationService {
     pub async fn new(
         device_identifier: DeviceIdentifier,
+        encrypted_device_identifier: String,
         app_state: Arc<AppState>,
         event_sink: EventSink,
         task_group: TaskGroup,
@@ -30,6 +32,7 @@ impl DeviceRegistrationService {
     ) -> Self {
         let mut service = Self {
             device_identifier: device_identifier.clone(),
+            encrypted_device_identifier: encrypted_device_identifier.clone(),
             app_state: app_state.clone(),
             event_sink: event_sink.clone(),
             task_group: task_group.clone(),
@@ -72,6 +75,7 @@ impl DeviceRegistrationService {
             "device_registration_service",
             renew_registration_periodically(
                 self.device_identifier.clone(),
+                self.encrypted_device_identifier.clone(),
                 device_index,
                 self.app_state.clone(),
                 self.event_sink.clone(),
@@ -84,6 +88,7 @@ impl DeviceRegistrationService {
 
 async fn renew_registration_periodically(
     device_identifier: DeviceIdentifier,
+    encrypted_device_identifier: String,
     device_index: u8,
     app_state: Arc<AppState>,
     event_sink: EventSink,
@@ -104,6 +109,7 @@ async fn renew_registration_periodically(
             seed.clone(),
             device_index,
             device_identifier.clone(),
+            encrypted_device_identifier.clone(),
             false,
         )
         .await
@@ -144,6 +150,7 @@ pub async fn get_registered_devices_with_backoff(
     .await
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn register_device_with_backoff(
     app_state: Arc<AppState>,
     fedi_api: Arc<dyn IFediApi>,
@@ -151,6 +158,7 @@ pub async fn register_device_with_backoff(
     seed: bip39::Mnemonic,
     device_index: u8,
     device_identifier: DeviceIdentifier,
+    encrypted_device_identifier: String,
     force_overwrite: bool,
 ) -> anyhow::Result<()> {
     enum RegisterDeviceRetryOk {
@@ -171,6 +179,7 @@ pub async fn register_device_with_backoff(
                     seed.clone(),
                     device_index,
                     device_identifier.clone(),
+                    encrypted_device_identifier.clone(),
                     force_overwrite,
                 )
                 .await
