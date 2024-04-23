@@ -7,6 +7,7 @@ import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
 import ScrollIcon from '@fedi/common/assets/svgs/scroll.svg'
 import TableExportIcon from '@fedi/common/assets/svgs/table-export.svg'
 import UsdIcon from '@fedi/common/assets/svgs/usd.svg'
+import UserIcon from '@fedi/common/assets/svgs/user.svg'
 import NoteIcon from '@fedi/common/assets/svgs/note.svg'
 import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import {
@@ -136,6 +137,12 @@ function AdminPage() {
         {
             label: t('words.general'),
             items: [
+                {
+                    label: t('phrases.edit-profile'),
+                    icon: UserIcon,
+                    href: '/settings/edit-profile',
+                    hidden: !matrixAuth,
+                },
                 {
                     label: t('words.language'),
                     icon: LanguageIcon,
