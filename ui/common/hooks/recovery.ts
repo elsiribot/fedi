@@ -185,14 +185,6 @@ export function useResumeRecovery(
 ) {
     const dispatch = useCommonDispatch()
 
-    const checkDeviceAssignmentStatus = useCallback(() => {
-        return dispatch(fetchDeviceIndexAssignmentStatus(fedimint)).unwrap()
-    }, [dispatch, fedimint])
-
-    const refreshRegisteredDevices = useCallback(() => {
-        return dispatch(fetchRegisteredDevices(fedimint)).unwrap()
-    }, [dispatch, fedimint])
-
     useEffect(() => {
         const restoreRecoveryState = async () => {
             const status = await dispatch(
@@ -204,13 +196,7 @@ export function useResumeRecovery(
             }
         }
         restoreRecoveryState()
-    }, [
-        checkDeviceAssignmentStatus,
-        dispatch,
-        fedimint,
-        onResumePersonalRecovery,
-        refreshRegisteredDevices,
-    ])
+    }, [dispatch, fedimint, onResumePersonalRecovery])
 }
 
 export function useLockedDeviceDetection(
