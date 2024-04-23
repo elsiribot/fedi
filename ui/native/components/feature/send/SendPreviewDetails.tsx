@@ -1,5 +1,5 @@
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
@@ -9,8 +9,8 @@ export type Props = {
     onPressFees: () => void
     onSend: () => void
     formattedTotalFee: string
-    receiverText: string
-    senderText: string
+    senderText: string | React.ReactNode
+    receiverText?: string | React.ReactNode
     isLoading?: boolean
 }
 
@@ -35,14 +35,20 @@ const SendPreviewDetails: React.FC<Props> = ({
                         ? style.detailsContainer
                         : style.collapsedContainer,
                 ]}>
-                <View style={[style.detailItem, style.bottomBorder]}>
-                    <Text caption bold style={style.darkGrey}>{`${t(
-                        'feature.send.send-to',
-                    )}`}</Text>
-                    <Text caption style={style.darkGrey}>
-                        {receiverText}
-                    </Text>
-                </View>
+                {receiverText && (
+                    <View style={[style.detailItem, style.bottomBorder]}>
+                        <Text caption bold style={style.darkGrey}>{`${t(
+                            'feature.send.send-to',
+                        )}`}</Text>
+                        {typeof receiverText === 'string' ? (
+                            <Text caption style={style.darkGrey}>
+                                {receiverText}
+                            </Text>
+                        ) : (
+                            receiverText
+                        )}
+                    </View>
+                )}
                 <Pressable
                     style={[style.detailItem, style.bottomBorder]}
                     onPress={onPressFees}>
@@ -61,10 +67,13 @@ const SendPreviewDetails: React.FC<Props> = ({
                     <Text caption bold style={style.darkGrey}>{`${t(
                         'feature.send.send-from',
                     )}`}</Text>
-
-                    <Text caption style={style.darkGrey}>
-                        {senderText}
-                    </Text>
+                    {typeof senderText === 'string' ? (
+                        <Text caption style={style.darkGrey}>
+                            {senderText}
+                        </Text>
+                    ) : (
+                        senderText
+                    )}
                 </View>
             </View>
             <Button
