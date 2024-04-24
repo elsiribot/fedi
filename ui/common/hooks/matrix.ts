@@ -91,6 +91,12 @@ export function useMatrixUserSearch() {
     }
 }
 
+/**
+ * HACK: Observe all DMs to claim ecash in the background.
+ *
+ * TODO: Move this to the bridge... intercept messages that contain
+ * ecash and claim before passing to the frontend.
+ */
 export function useObserveMatrixDirectRooms() {
     const dispatch = useCommonDispatch()
     const directRooms = useCommonSelector(selectMatrixDirectMessageRooms)
@@ -118,15 +124,24 @@ export function useObserveMatrixRoom(
     const latestEventId = useCommonSelector(s =>
         roomId ? selectLatestMatrixRoomEventId(s, roomId) : undefined,
     )
+    const room = useCommonSelector(s =>
+        roomId ? selectMatrixRoom(s, roomId) : undefined,
+    )
     const isReady = useCommonSelector(s => selectIsMatrixReady(s))
 
     useEffect(() => {
         if (!isReady || !roomId || paused) return
         dispatch(observeMatrixRoom({ roomId }))
         return () => {
+            // Don't unobserve DMs so ecash gets claimed in the
+            // background
+            //
+            // TODO: remove when background ecash redemption
+            // is moved to the bridge
+            if (room?.directUserId) return
             dispatch(unobserveMatrixRoom({ roomId }))
         }
-    }, [isReady, roomId, paused, dispatch])
+    }, [isReady, roomId, paused, dispatch, room?.directUserId])
 
     useEffect(() => {
         if (!isReady || !roomId || paused || !latestEventId) return
