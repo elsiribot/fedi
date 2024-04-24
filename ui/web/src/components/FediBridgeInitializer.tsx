@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
+import { useObserveMatrixDirectRooms } from '@fedi/common/hooks/matrix'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     fetchSocialRecovery,
@@ -40,6 +41,9 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const [error, setError] = useState<string>()
     const tRef = useUpdatingRef(t)
     const dispatchRef = useUpdatingRef(dispatch)
+
+    // Hack - permanently observe DMs to redeem ecash in the background
+    useObserveMatrixDirectRooms()
 
     // Initialize device ID
     useEffect(() => {
