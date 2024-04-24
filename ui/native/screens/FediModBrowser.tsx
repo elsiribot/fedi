@@ -26,11 +26,11 @@ import {
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederation,
-    selectAuthenticatedMember,
     selectCurrency,
     selectFediModDebugMode,
     selectIsActiveFederationRecovering,
     selectLanguage,
+    selectMatrixAuth,
 } from '@fedi/common/redux'
 import {
     AnyParsedData,
@@ -107,7 +107,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const member = useAppSelector(selectMatrixAuth)
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
     const currency = useAppSelector(selectCurrency)
     const language = useAppSelector(selectLanguage)
@@ -198,7 +198,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         [InjectionMessageType.webln_getInfo]: async () => {
             log.info('webln.getInfo')
 
-            const alias = authenticatedMember?.username || ''
+            const alias = member?.displayName || ''
             let pubkey = ''
             try {
                 const gateway = await getActiveGatewayOrThrow()
@@ -370,13 +370,13 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         [InjectionMessageType.fedi_getAuthenticatedMember]: async () => {
             log.info('fedi.getAuthenticatedMember')
 
-            if (!authenticatedMember) {
+            if (!member) {
                 throw new Error('No authenticated member')
             }
 
             return {
-                id: authenticatedMember.id,
-                username: authenticatedMember.username,
+                id: member.userId,
+                username: member.displayName,
             }
         },
         [InjectionMessageType.fedi_getActiveFederation]: async () => {
