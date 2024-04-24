@@ -27,8 +27,10 @@ import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
+    selectCurrency,
     selectFediModDebugMode,
     selectIsActiveFederationRecovering,
+    selectLanguage,
 } from '@fedi/common/redux'
 import {
     AnyParsedData,
@@ -107,6 +109,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
+    const currency = useAppSelector(selectCurrency)
+    const language = useAppSelector(selectLanguage)
     const nostrEnabled = useIsNostrEnabled()
     const fediInternalEnabled = useIsFediInternalInjectionEnabled()
     const toast = useToast()
@@ -387,6 +391,16 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 name: activeFederation.name,
                 network: activeFederation.network,
             }
+        },
+        [InjectionMessageType.fedi_getCurrencyCode]: async () => {
+            log.info('fedi.getActiveFederation')
+
+            return currency
+        },
+        [InjectionMessageType.fedi_getLanguageCode]: async () => {
+            log.info('fedi.getActiveFederation')
+
+            return language ?? 'en'
         },
     })
 
