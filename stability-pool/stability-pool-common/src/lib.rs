@@ -439,6 +439,14 @@ pub struct AccountInfo {
     pub seeks_metadata: BTreeMap<TransactionId, SeekMetadata>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encodable, Decodable)]
+pub struct LiquidityStats {
+    pub locked_seeks_sum_msat: u64,
+    pub locked_provides_sum_msat: u64,
+    pub staged_seeks_sum_msat: u64,
+    pub staged_provides_sum_msat: u64,
+}
+
 /// Helper function to convert the given Amount quantity into
 /// cents using the given price.
 pub fn amount_to_cents(amount: Amount, price: u128) -> u64 {

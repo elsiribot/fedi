@@ -499,6 +499,16 @@ async fn stabilityPoolAverageFeeRate(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn stabilityPoolAvailableLiquidity(
+    bridge: Arc<Bridge>,
+    federation_id: RpcFederationId,
+) -> anyhow::Result<RpcAmount> {
+    bridge
+        .stability_pool_available_liquidity(federation_id)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn stabilityPoolDepositToSeek(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
@@ -1197,6 +1207,7 @@ rpc_methods!(RpcMethods {
     stabilityPoolDepositToSeek,
     stabilityPoolWithdraw,
     stabilityPoolAverageFeeRate,
+    stabilityPoolAvailableLiquidity,
     // Developer
     getSensitiveLog,
     setSensitiveLog,
