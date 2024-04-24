@@ -605,10 +605,9 @@ async fn dumpDb(bridge: Arc<Bridge>, federation_id: String) -> anyhow::Result<Pa
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixInit(bridge: Arc<Bridge>) -> anyhow::Result<RpcMatrixAccountSession> {
+async fn matrixInit(bridge: Arc<Bridge>) -> anyhow::Result<()> {
     if bridge.matrix.initialized() {
-        let matrix = get_matrix(&bridge).await?;
-        return matrix.get_account_session().await;
+        return Ok(());
     }
     let nostr_pubkey = bridge.get_nostr_pub_key().await?;
     let matrix_secret = bridge.get_matrix_secret().await;
@@ -628,8 +627,7 @@ async fn matrixInit(bridge: Arc<Bridge>) -> anyhow::Result<RpcMatrixAccountSessi
             .await?,
         )
         .map_err(|_| anyhow::anyhow!("matrix already initialized"))?;
-    let matrix = get_matrix(&bridge).await?;
-    matrix.get_account_session().await
+    Ok(())
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -713,9 +711,12 @@ ts_type_ser!(
 );
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixGetAccountSession(bridge: Arc<Bridge>) -> anyhow::Result<RpcMatrixAccountSession> {
+async fn matrixGetAccountSession(
+    bridge: Arc<Bridge>,
+    cached: bool,
+) -> anyhow::Result<RpcMatrixAccountSession> {
     let matrix = get_matrix(&bridge).await?;
-    matrix.get_account_session().await
+    matrix.get_account_session(cached, &bridge.app_state).await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1008,7 +1009,9 @@ async fn matrixUserDirectorySearch(
 #[macro_rules_derive(rpc_method!)]
 async fn matrixSetDisplayName(bridge: Arc<Bridge>, display_name: String) -> anyhow::Result<()> {
     let matrix = get_matrix(&bridge).await?;
-    matrix.set_display_name(display_name).await
+    matrix
+        .set_display_name(display_name, &bridge.app_state)
+        .await
 }
 
 #[macro_rules_derive(rpc_method!)]

@@ -113,53 +113,113 @@ impl Matrix {
         let client = Self::build_client(base_dir, home_server, &encryption_passphrase).await?;
 
         if let Some(session) = matrix_session {
-            client
-                .restore_session(session)
-                .await
-                .context("matrix restore_session")?;
-        }
-        let matrix_auth = client.matrix_auth();
-        if !matrix_auth.logged_in() {
-            let login_result = matrix_auth.login_username(user_name, user_password).await;
-            match login_result {
-                Ok(_) => {
-                    // on every login, try to recover e2e keys
-                    // this is idempotent.
-                    // TODO: subscribe to recovery progress
-                    // TODO: what happens if app dies here
-                    let _ = client
+            client.restore_session(session).await?;
+        } else {
+            Self::login_or_register(&client, user_name, user_password, matrix_secret, app_state)
+                .await?;
+        };
+
+        client.set_sliding_sync_proxy(Some(url::Url::parse(&sliding_sync_proxy)?));
+        let sync_service = SyncService::builder(client.clone()).build().await?;
+        let matrix = Self {
+            notification_settings: client.notification_settings().await,
+            client,
+            room_list_service: sync_service.room_list_service(),
+            sync_service: Arc::new(sync_service),
+            event_sink,
+            task_group,
+            observables: Default::default(),
+        };
+        let encryption_passphrase = Self::encryption_passphrase(matrix_secret);
+        matrix.start_background(encryption_passphrase).await?;
+        Ok(matrix)
+    }
+
+    pub async fn start_background(&self, encryption_passphrase: String) -> Result<()> {
+        let this = self.clone();
+        self.task_group
+            .spawn_cancellable("matrix::start_sync", async move {
+                this.sync_service.start().await;
+            });
+
+        let this = self.clone();
+        self.task_group
+            .spawn_cancellable("matrix::Recovery::enable", {
+                async move {
+                    // if there are no backups on server, enable backups
+                    if this
+                        .client
+                        .encryption()
+                        .backups()
+                        .exists_on_server()
+                        .await
+                        .is_ok_and(|x| x)
+                    {
+                        return;
+                    }
+                    // enable auto backups with passphrase for e2e keys.
+                    // TODO: subscribe to backup progress
+                    this.client
                         .encryption()
                         .recovery()
-                        .recover(&Self::encryption_passphrase(matrix_secret))
+                        .enable()
+                        .with_passphrase(&encryption_passphrase)
                         .await
-                        .inspect_err(|err| error!(%err, "unable to recover"))
-                        .inspect(|_| info!("matrix recovery completed"));
+                        .inspect_err(|err| error!(%err, "unable to enable recovery (start backup)"))
+                        .ok();
                 }
-                Err(login_error) => {
-                    // TODO: only attempt registration if it was M_FORBIDDEN
-                    info!("login failed, attempting registration");
-                    // Do an initial registration request. Only works on servers with
-                    // open registration enabled.
-                    let mut request = register::Request::new();
-                    request.username = Some(user_name.to_owned());
-                    request.password = Some(user_password.to_owned());
-                    request.auth = Some(uiaa::AuthData::Dummy(uiaa::Dummy::new()));
-                    request.initial_device_display_name =
-                        app_state.device_identifier().await.map(|id| id.to_string());
-                    let register_result = matrix_auth.register(request).await;
-                    match register_result {
-                        Ok(_) => (),
-                        Err(register_error) => {
-                            info!(
-                                "registration failed after login failed: {:?}",
-                                register_error
-                            );
-                            anyhow::bail!(login_error);
-                        }
+            });
+        Ok(())
+    }
+
+    async fn login_or_register(
+        client: &Client,
+        user_name: &str,
+        user_password: &String,
+        matrix_secret: &DerivableSecret,
+        app_state: &AppState,
+    ) -> anyhow::Result<()> {
+        let matrix_auth = client.matrix_auth();
+        let login_result = matrix_auth.login_username(user_name, user_password).await;
+        match login_result {
+            Ok(_) => {
+                // on every login, try to recover e2e keys
+                // this is idempotent.
+                // TODO: subscribe to recovery progress
+                // TODO: what happens if app dies here
+                let _ = client
+                    .encryption()
+                    .recovery()
+                    .recover(&Self::encryption_passphrase(matrix_secret))
+                    .await
+                    .inspect_err(|err| error!(%err, "unable to recover"))
+                    .inspect(|_| info!("matrix recovery completed"));
+            }
+            Err(login_error) => {
+                // TODO: only attempt registration if it was M_FORBIDDEN
+                info!("login failed, attempting registration");
+                // Do an initial registration request. Only works on servers with
+                // open registration enabled.
+                let mut request = register::Request::new();
+                request.username = Some(user_name.to_owned());
+                request.password = Some(user_password.to_owned());
+                request.auth = Some(uiaa::AuthData::Dummy(uiaa::Dummy::new()));
+                request.initial_device_display_name =
+                    app_state.device_identifier().await.map(|id| id.to_string());
+                let register_result = matrix_auth.register(request).await;
+                match register_result {
+                    Ok(_) => (),
+                    Err(register_error) => {
+                        info!(
+                            "registration failed after login failed: {:?}",
+                            register_error
+                        );
+                        anyhow::bail!(login_error);
                     }
                 }
             }
         }
+        // save the session
         match client.session() {
             Some(matrix_sdk::AuthSession::Matrix(matrix_session)) => {
                 app_state
@@ -171,59 +231,45 @@ impl Matrix {
             Some(_) => warn!("unknown session"),
             None => warn!("session not found after login"),
         }
-
-        let encryption_passphrase = Self::encryption_passphrase(matrix_secret);
-        task_group.spawn_cancellable("matrix::Recovery::enable", {
-            let client = client.clone();
-            async move {
-                // if there are no backups on server, enable backups
-                if client
-                    .encryption()
-                    .backups()
-                    .exists_on_server()
-                    .await
-                    .is_ok_and(|x| x)
-                {
-                    return;
-                }
-                // enable auto backups with passphrase for e2e keys.
-                // TODO: subscribe to backup progress
-                client
-                    .encryption()
-                    .recovery()
-                    .enable()
-                    .with_passphrase(&encryption_passphrase)
-                    .await
-                    .inspect_err(|err| error!(%err, "unable to enable recovery (start backup)"))
-                    .ok();
-            }
-        });
-        client.set_sliding_sync_proxy(Some(url::Url::parse(&sliding_sync_proxy)?));
-        let sync_service = SyncService::builder(client.clone()).build().await?;
-        sync_service.start().await;
-        Ok(Self {
-            notification_settings: client.notification_settings().await,
-            client,
-            room_list_service: sync_service.room_list_service(),
-            sync_service: Arc::new(sync_service),
-            event_sink,
-            task_group,
-            observables: Default::default(),
-        })
+        Ok(())
     }
 
-    pub async fn get_account_session(&self) -> Result<RpcMatrixAccountSession> {
+    pub async fn get_account_session(
+        &self,
+        cached: bool,
+        app_state: &AppState,
+    ) -> Result<RpcMatrixAccountSession> {
         let session_meta = self
             .client
             .session()
             .ok_or_else(|| anyhow::anyhow!("session not found, requires login"))?;
         let meta = session_meta.meta().clone();
+        if cached {
+            if let Some(cached_display_name) = app_state
+                .with_read_lock(|r| r.matrix_display_name.clone())
+                .await
+            {
+                return Ok(RpcMatrixAccountSession {
+                    user_id: meta.user_id,
+                    device_id: meta.device_id,
+                    avatar_url: self.client.account().get_cached_avatar_url().await?,
+                    display_name: Some(cached_display_name),
+                });
+            }
+        }
         let profile = self.client.account().fetch_user_profile().await?;
+        let (avatar_url, display_name) = (
+            profile.avatar_url.map(|uri| uri.to_string()),
+            profile.displayname,
+        );
+        app_state
+            .with_write_lock(|r| r.matrix_display_name.clone_from(&display_name))
+            .await?;
         Ok(RpcMatrixAccountSession {
             user_id: meta.user_id,
             device_id: meta.device_id,
-            avatar_url: profile.avatar_url.map(|uri| uri.to_string()),
-            display_name: profile.displayname,
+            avatar_url,
+            display_name,
         })
     }
 
@@ -698,10 +744,13 @@ impl Matrix {
         ))
     }
 
-    pub async fn set_display_name(&self, display_name: String) -> Result<()> {
+    pub async fn set_display_name(&self, display_name: String, app_state: &AppState) -> Result<()> {
         self.client
             .account()
             .set_display_name(Some(&display_name))
+            .await?;
+        app_state
+            .with_write_lock(|r| r.matrix_display_name = Some(display_name.clone()))
             .await?;
         Ok(())
     }
