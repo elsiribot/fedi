@@ -1,8 +1,9 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { StyleSheet, View } from 'react-native'
 
 import { MatrixUser } from '@fedi/common/types'
+import { getUserSuffix } from '@fedi/common/utils/matrix'
 
 import { AvatarSize } from '../../ui/Avatar'
 import { Pressable } from '../../ui/Pressable'
@@ -27,6 +28,10 @@ const ChatUserTile: React.FC<UserItemProps> = ({
 }: UserItemProps) => {
     const { theme } = useTheme()
 
+    const suffix = useMemo(() => {
+        return getUserSuffix(user.id)
+    }, [user])
+
     return (
         <Pressable onPress={disabled ? undefined : () => selectUser(user.id)}>
             <View style={styles(theme).usernameContainer}>
@@ -41,16 +46,16 @@ const ChatUserTile: React.FC<UserItemProps> = ({
                     <Text
                         numberOfLines={1}
                         bold
-                        style={[styles(theme).usernameSuffix]}>
-                        {user.displayName?.substring(0, 4)}
+                        caption
+                        style={styles(theme).usernameSuffix}>
+                        {`#${suffix}`}
                     </Text>
                 )}
-                {rightIcon && <>{rightIcon}</>}
-                {actionIcon && (
-                    <View style={styles(theme).iconContainer}>
-                        <>{actionIcon}</>
-                    </View>
-                )}
+
+                <View style={styles(theme).iconContainer}>
+                    {rightIcon && rightIcon}
+                    {actionIcon && actionIcon}
+                </View>
             </View>
         </Pressable>
     )
@@ -63,20 +68,21 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             width: '100%',
-            borderWidth: 1,
         },
         usernameText: {
             flexShrink: 2,
             marginLeft: theme.spacing.md,
-            borderWidth: 1,
+            paddingRight: theme.spacing.xs,
         },
         usernameSuffix: {
-            borderWidth: 1,
             color: theme.colors.grey,
         },
         iconContainer: {
             marginLeft: 'auto',
-            paddingLeft: theme.spacing.md,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.xs,
+            paddingLeft: theme.spacing.sm,
         },
         roleText: {
             color: theme.colors.grey,

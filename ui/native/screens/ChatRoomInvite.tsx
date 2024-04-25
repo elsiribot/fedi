@@ -131,6 +131,7 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
                 disabled={isDisabled}
                 selectUser={selectUser}
                 actionIcon={icon}
+                showSuffix
             />
         )
     }

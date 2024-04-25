@@ -67,6 +67,7 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
                             : t('words.member')}
                     </Text>
                 }
+                showSuffix
             />
         )
     }
