@@ -299,6 +299,7 @@
             "broadcast-only": "Broadcast only",
             "broadcast-only-notice": "Psst, only admins can send messages here. 🤫",
             "camera-access-information": "To join a group, you will need to allow Fedi access to your camera to scan a group invite link",
+            "change-avatar": "Change Avatar",
             "change-group-name": "Change group name",
             "change-role": "Change role",
             "change-role-failure": "Failed to change role",

@@ -294,8 +294,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         )
     })
 
-    const { width } = useWindowDimensions()
-
     const qrValue = encodeFediMatrixUserUri(matrixAuth?.userId || '')
 
     return (
@@ -324,6 +322,11 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         onPress={() => navigation.navigate('DeveloperSettings')}
                     />
                 )}
+                <SettingsItem
+                    image={<SvgImage name="User" />}
+                    label={t('phrases.edit-profile')}
+                    onPress={() => navigation.navigate('EditProfileSettings')}
+                />
                 <SettingsItem
                     image={<SvgImage name="Apps" />}
                     label={t('feature.fedimods.fedi-mods')}
