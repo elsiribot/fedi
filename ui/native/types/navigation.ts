@@ -77,6 +77,7 @@ export type RootStackParamList = {
     EnterDisplayName: undefined
     DirectChat: { memberId: string }
     EditGroup: { roomId: string }
+    EditProfileSettings: undefined
     Eula: undefined
     FederationInvite: { inviteLink: string }
     FederationGreeting: undefined

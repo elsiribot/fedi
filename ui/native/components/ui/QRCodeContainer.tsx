@@ -1,12 +1,19 @@
 import Clipboard from '@react-native-clipboard/clipboard'
-import { t } from "i18next"
-import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from "react-native"
-
-import { Images } from "../../assets/images"
-import SvgImage, { SvgImageSize } from "./SvgImage"
-import { useToast } from '@fedi/common/hooks/toast'
 import { Theme, useTheme } from '@rneui/themed'
+import { t } from 'i18next'
+import {
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+    useWindowDimensions,
+} from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
+
+import { useToast } from '@fedi/common/hooks/toast'
+
+import { Images } from '../../assets/images'
+import SvgImage, { SvgImageSize } from './SvgImage'
 
 interface Props {
     copyMessage: string

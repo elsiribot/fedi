@@ -10,7 +10,6 @@ import {
     ScrollView,
     StyleSheet,
     View,
-    useWindowDimensions,
 } from 'react-native'
 import Share from 'react-native-share'
 
@@ -37,17 +36,17 @@ import {
     supportsSingleSeed,
 } from '@fedi/common/utils/FederationUtils'
 import { makeLog } from '@fedi/common/utils/log'
+import { encodeFediMatrixUserUri } from '@fedi/common/utils/matrix'
 
 import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
+import QRCodeContainer from '../components/ui/QRCodeContainer'
 import SvgImage from '../components/ui/SvgImage'
 import { version } from '../package.json'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { Federation } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 import { usePin } from '../utils/hooks/security'
-import { Federation } from '../types'
-import { encodeFediMatrixUserUri } from '@fedi/common/utils/matrix'
-import QRCodeContainer from '../components/ui/QRCodeContainer'
 
 const log = makeLog('Settings')
 
@@ -61,7 +60,8 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const toast = useToast()
     const exportTransactions = useExportTransactions(fedimint)
 
-    const [exportingFederationId, setExportingFederationId] = useState<string>('')
+    const [exportingFederationId, setExportingFederationId] =
+        useState<string>('')
 
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
 
@@ -77,15 +77,18 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         'hasPerformedPersonalBackup',
     )
 
-    const resetChatState = useCallback((federationId: string) => {
-        if (federationId) {
-            dispatch(
-                resetFederationChatState({
-                    federationId,
-                }),
-            )
-        }
-    }, [dispatch])
+    const resetChatState = useCallback(
+        (federationId: string) => {
+            if (federationId) {
+                dispatch(
+                    resetFederationChatState({
+                        federationId,
+                    }),
+                )
+            }
+        },
+        [dispatch],
+    )
 
     const resetGuardiansState = useCallback(() => {
         dispatch(changeAuthenticatedGuardian(null))
@@ -93,45 +96,43 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
 
     // FIXME: this needs some kind of loading state
     // TODO: this should be an thunkified action creator
-    const handleLeaveFederation = useCallback(async (federation: Federation) => {
-        try {
-            // FIXME: currently this specific order of operations fixes a
-            // bug where the username would get stuck in storage and when
-            // rejoining the federation, the user cannot create an new
-            // username with the fresh seed and the stored username fails
-            // to authenticate so chat ends up totally broken
-            // However it's not safe because if leaveFederation fails, then
-            // we are resetting state too early and could corrupt things
-            // Need to investigate further why running leaveFederation first
-            // causes this bug
-            resetChatState(federation.id)
-            resetGuardiansState()
+    const handleLeaveFederation = useCallback(
+        async (federation: Federation) => {
+            try {
+                // FIXME: currently this specific order of operations fixes a
+                // bug where the username would get stuck in storage and when
+                // rejoining the federation, the user cannot create an new
+                // username with the fresh seed and the stored username fails
+                // to authenticate so chat ends up totally broken
+                // However it's not safe because if leaveFederation fails, then
+                // we are resetting state too early and could corrupt things
+                // Need to investigate further why running leaveFederation first
+                // causes this bug
+                resetChatState(federation.id)
+                resetGuardiansState()
 
-            await dispatch(
-                leaveFederation({
-                    fedimint,
-                    federationId: federation.id,
-                }),
-            ).unwrap()
+                await dispatch(
+                    leaveFederation({
+                        fedimint,
+                        federationId: federation.id,
+                    }),
+                ).unwrap()
 
-            navigation.replace('Initializing')
-        } catch (e) {
-            toast.show({
-                content: t('errors.failed-to-leave-federation'),
-                status: 'error',
-            })
-        }
-    }, [
-        navigation,
-        dispatch,
-        resetChatState,
-        resetGuardiansState,
-        toast,
-        t,
-    ])
+                navigation.replace('Initializing')
+            } catch (e) {
+                toast.show({
+                    content: t('errors.failed-to-leave-federation'),
+                    status: 'error',
+                })
+            }
+        },
+        [navigation, dispatch, resetChatState, resetGuardiansState, toast, t],
+    )
 
     const confirmLeaveFederation = (federation: Federation) => {
-        const alertTitle = `${t('feature.federations.leave-federation')} - ${federation.name}`
+        const alertTitle = `${t('feature.federations.leave-federation')} - ${
+            federation.name
+        }`
 
         // Don't allow leaving if stable balance exists
         if (stableBalance > 0) {
@@ -232,9 +233,11 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         }
     }
 
-    const sortedFederations = useAppSelector(selectAlphabeticallySortedFederations)
+    const sortedFederations = useAppSelector(
+        selectAlphabeticallySortedFederations,
+    )
 
-    const federationMenus = sortedFederations.map((federation) => {
+    const federationMenus = sortedFederations.map(federation => {
         const tosUrl = getFederationTosUrl(federation.meta)
 
         const runSocialBackup = () => {
@@ -276,7 +279,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         onPress={() => Linking.openURL(tosUrl)}
                     />
                 )}
-
 
                 <SettingsItem
                     image={<SvgImage name="TableExport" />}
@@ -447,7 +449,7 @@ const styles = (theme: Theme) =>
         qrCode: {
             alignItems: 'center',
             gap: theme.spacing.lg,
-        }
+        },
     })
 
 export default Settings

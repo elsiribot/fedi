@@ -1,11 +1,10 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { selectActiveFederation, selectFederation } from '@fedi/common/redux'
+import { selectFederation } from '@fedi/common/redux'
 
 import { useAppSelector } from '../hooks'
 import { QRDialog } from './QRDialog'
-import { Federation } from '@fedi/common/types'
 
 interface Props {
     open: boolean

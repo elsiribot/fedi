@@ -62,14 +62,14 @@ function AdminPage() {
 
         if (canLeaveFederation(leavingFederation)) {
             try {
-                await dispatch(leaveFederation({ fedimint, federationId: leavingFederationId }))
+                await dispatch(leaveFederation({ fedimint, federationId: leavingFederation.id }))
             } catch (err) {
                 toast.error(t, err, 'errors.unknown-error')
             }
         }
 
         setLeavingFederationId('')
-    }, [leavingFederationId, dispatch, toast, t])
+    }, [leavingFederation, dispatch, toast, t])
 
     const exportTransactionsAsCsv = async (federation: Federation) => {
         setExportingFederationId(federation.id)

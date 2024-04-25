@@ -1,17 +1,28 @@
-import { useDisplayNameForm } from '@fedi/common/hooks/chat'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
-import RNFS from 'react-native-fs'
 import { useTranslation } from 'react-i18next'
-import { GestureResponderEvent, Pressable, ScrollView, StyleSheet, View } from 'react-native'
-import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
-import { selectMatrixAuth, uploadAndSetMatrixAvatarUrl } from '@fedi/common/redux'
-import Avatar, { AvatarSize } from '../components/ui/Avatar'
+import {
+    GestureResponderEvent,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    View,
+} from 'react-native'
+import RNFS from 'react-native-fs'
 import { launchImageLibrary } from 'react-native-image-picker'
-import { makeLog } from '@fedi/common/utils/log'
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
+
+import { useDisplayNameForm } from '@fedi/common/hooks/chat'
 import { useToast } from '@fedi/common/hooks/toast'
+import {
+    selectMatrixAuth,
+    uploadAndSetMatrixAvatarUrl,
+} from '@fedi/common/redux'
+import { makeLog } from '@fedi/common/utils/log'
+
 import { fedimint } from '../bridge'
+import Avatar, { AvatarSize } from '../components/ui/Avatar'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 
 const log = makeLog('EditProfile')
 
@@ -26,11 +37,10 @@ const EditProfileSettings: React.FC = () => {
 
     const style = styles(theme, insets)
 
-    const [buttonIsOverlapping, setButtonIsOverlapping] =
-        useState<boolean>()
-    const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
+    const [buttonIsOverlapping, setButtonIsOverlapping] = useState<boolean>()
+    const [keyboardHeight] = useState<number>(0)
     const [buttonYPosition, setButtonYPosition] = useState<number>(0)
-    const [overlapThreshold, setOverlapThreshold] = useState<number>(0)
+    const [overlapThreshold] = useState<number>(0)
 
     const {
         isSubmitting,
@@ -58,9 +68,12 @@ const EditProfileSettings: React.FC = () => {
         }
     }, [buttonIsOverlapping, buttonYPosition, overlapThreshold, keyboardHeight])
 
-    const handleAvatarPress = async (event: GestureResponderEvent) => {
+    const handleAvatarPress = async (_: GestureResponderEvent) => {
         try {
-            const res = await launchImageLibrary({ selectionLimit: 1, mediaType: 'photo' })
+            const res = await launchImageLibrary({
+                selectionLimit: 1,
+                mediaType: 'photo',
+            })
 
             if (res.assets && res.assets.length > 0) {
                 const file = res.assets[0]
@@ -78,7 +91,7 @@ const EditProfileSettings: React.FC = () => {
                         fedimint,
                         mimeType,
                         path: fileDestination,
-                    })
+                    }),
                 ).unwrap()
             }
         } catch (err) {
@@ -88,7 +101,9 @@ const EditProfileSettings: React.FC = () => {
     }
 
     const handleNameSubmit = useCallback(() => {
-        handleSubmitDisplayName(() => {})
+        handleSubmitDisplayName(() => {
+            return
+        })
     }, [handleSubmitDisplayName])
 
     let avatarName = matrixAuth?.displayName
@@ -103,7 +118,6 @@ const EditProfileSettings: React.FC = () => {
             style={style.scrollContainer}
             contentContainerStyle={style.contentContainer}
             overScrollMode="auto">
-
             <View>
                 <Pressable onPress={handleAvatarPress} style={style.avatar}>
                     <Avatar
@@ -113,9 +127,7 @@ const EditProfileSettings: React.FC = () => {
                         name={avatarName}
                     />
 
-                    <Text caption>
-                        {t('feature.chat.change-avatar')}
-                    </Text>
+                    <Text caption>{t('feature.chat.change-avatar')}</Text>
                 </Pressable>
             </View>
 

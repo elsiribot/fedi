@@ -29,7 +29,7 @@ export const QRCode: React.FC<Props> = ({ data, logoOverrideUrl }) => {
         })
         setQrSvgs(svgs)
         setActiveFrame(0)
-    }, [data, isXs])
+    }, [data, isXs, logoOverrideUrl])
 
     useEffect(() => {
         if (!qrSvgs || qrSvgs.length < 2) return

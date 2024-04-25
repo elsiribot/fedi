@@ -1,10 +1,6 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import {
-    StyleSheet,
-    View,
-    useWindowDimensions,
-} from 'react-native'
+import { StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import QRCodeContainer from './QRCodeContainer'
 
