@@ -67,7 +67,7 @@ export function renderStyledQrSvg(
                     size * moduleSize - 700
                 })" xlink:href="#point-${randomId}"/>
                 ${
-                    options.hideLogo
+                    options.hideLogo || !!options.logoOverrideUrl
                         ? ''
                         : `<use fill-rule="evenodd" transform="translate(${
                               size * 0.5 * moduleSize - 280
