@@ -102,15 +102,18 @@ export class MatrixChatClient {
             fedimint
                 .matrixInit()
                 .then(auth => {
+                    resolve(this.serializeAuth(auth))
+                    this.observeSyncStatus()
                     this.observeRoomList()
                         .then(() => {
-                            resolve(this.serializeAuth(auth))
-                            this.observeSyncStatus()
                             this.autoJoinInvites()
                         })
                         .catch(reject)
                 })
-                .catch(reject)
+                .catch(err => {
+                    log.error('matrixInit', err)
+                    reject(err)
+                })
         })
 
         return this.startPromise

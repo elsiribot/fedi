@@ -63,7 +63,7 @@ const getMatrixClient = () => {
 
 const initialState = {
     auth: null as null | MatrixAuth,
-    status: MatrixSyncStatus.stopped,
+    status: MatrixSyncStatus.uninitialized,
     roomList: [] as MatrixRoomListItem[],
     roomInfo: {} as Record<MatrixRoom['id'], MatrixRoom | undefined>,
     roomMembers: {} as Record<MatrixRoom['id'], MatrixRoomMember[] | undefined>,

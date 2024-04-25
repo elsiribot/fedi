@@ -23,12 +23,10 @@ import {
     updateFederation,
     updateFederationBalance,
 } from './federation'
-import { selectActiveFederation } from './federation'
 import {
     claimMatrixPayment,
     handleMatrixRoomTimelineObservableUpdates,
     matrixSlice,
-    startMatrixClient,
 } from './matrix'
 import { nuxSlice } from './nux'
 import { recoverySlice } from './recovery'
@@ -214,16 +212,6 @@ export function initializeCommonStore({
         unsubscribeInitialLang()
     })
 
-    // when we have an active federeration, start the matrix client and unsubscribe
-    // TODO: start matrix client without an active federation to allow for Global Chat
-    const unsubscribeActiveFederation = subscribe(() => {
-        const activeFederation = selectActiveFederation(getState())
-        if (activeFederation) {
-            unsubscribeActiveFederation()
-            dispatch(startMatrixClient({ fedimint }))
-        }
-    })
-
     return () => {
         unsubscribeFederation()
         unsubscribeBalance()
@@ -231,6 +219,5 @@ export function initializeCommonStore({
         unsubscribeRecovery()
         unsubscribeStorage()
         unsubscribeMatrixPayments()
-        unsubscribeActiveFederation()
     }
 }

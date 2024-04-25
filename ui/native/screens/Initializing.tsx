@@ -7,8 +7,9 @@ import SplashScreen from 'react-native-splash-screen'
 
 import {
     refreshFederations,
-    selectActiveFederation,
     selectAuthenticatedMember,
+    selectHasSetMatrixDisplayName,
+    selectMatrixAuth,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { makeLog } from '@fedi/common/utils/log'
@@ -23,20 +24,22 @@ const log = makeLog('Initializing')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
 
+// TODO: Replace this entire screen with FediBridgeInitializer
 const Initializing: React.FC<Props> = () => {
     const dispatch = useAppDispatch()
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
-    const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const matrixAuth = useAppSelector(selectMatrixAuth)
+    const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
     const hasStorageLoaded = useAppSelector(selectHasLoadedFromStorage)
     const [hasRefreshedFederations, setHasRefreshedFederations] =
         useState(false)
     const [bridgeError, setBridgeError] = useState<unknown | null>(null)
 
-    const hasLoaded = hasStorageLoaded && hasRefreshedFederations
-    const hasFederation = !!activeFederation
-    const hasAuthenticatedMember = !!authenticatedMember
+    const hasLoaded =
+        hasStorageLoaded && hasRefreshedFederations && !!matrixAuth
+    const hasLegacyChatData = !!authenticatedMember
 
     // Refresh federations from bridge
     useEffect(() => {
@@ -57,10 +60,8 @@ const Initializing: React.FC<Props> = () => {
         const doNavigation = async () => {
             if (!hasLoaded) return
 
-            if (hasFederation) {
-                // Otherwise, go Home
-                return navigation.replace('TabsNavigator')
-            } else {
+            // make sure there is a display name
+            if (hasSetDisplayName) {
                 // If this RPC resolves with something truthy, then they are doing social recovery
                 const socialRecoveryActive = await fedimint
                     .recoveryQr()
@@ -70,12 +71,19 @@ const Initializing: React.FC<Props> = () => {
                 if (socialRecoveryActive) {
                     return navigation.replace('CompleteSocialRecovery')
                 }
-                // Otherwise go to splash and have them join a federation
+                // Otherwise, go Home
+                return navigation.replace('TabsNavigator')
+            } else if (hasLegacyChatData) {
+                // This is to support existing users with legacy chat data and send
+                // them to Home so they can set a display name via the Upgrade Chat UX
+                return navigation.replace('TabsNavigator')
+            } else {
+                // go to splash and have them set a display name
                 return navigation.replace('Splash')
             }
         }
         doNavigation()
-    }, [hasLoaded, hasFederation, hasAuthenticatedMember, navigation])
+    }, [hasLegacyChatData, hasLoaded, hasSetDisplayName, navigation])
 
     if (bridgeError) {
         return <ErrorScreen error={bridgeError} />

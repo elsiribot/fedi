@@ -11,6 +11,7 @@ import {
     initializeDeviceId,
     selectDeviceId,
     selectFederations,
+    startMatrixClient,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { TransactionDirection, TransactionEvent } from '@fedi/common/types'
@@ -161,6 +162,12 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             unsubscribePanic()
         }
     }, [t])
+
+    useEffect(() => {
+        if (bridgeIsReady) {
+            dispatch(startMatrixClient({ fedimint }))
+        }
+    }, [bridgeIsReady])
 
     if (bridgeIsReady && !bridgeError) {
         return <>{children}</>

@@ -4,6 +4,7 @@ import type { ObservableVecUpdate, RpcMatrixMembership } from './bindings'
 export { MatrixEventContent }
 
 export enum MatrixSyncStatus {
+    uninitialized = 'uninitialized',
     stopped = 'stopped',
     initialSync = 'initialSync',
     syncing = 'syncing',
