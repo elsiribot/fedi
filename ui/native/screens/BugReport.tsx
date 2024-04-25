@@ -22,6 +22,7 @@ import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederation,
     selectAuthenticatedMember,
+    selectMatrixAuth,
 } from '@fedi/common/redux'
 import {
     submitBugReport,
@@ -56,6 +57,7 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
     const toast = useToast()
     const { fontScale } = useWindowDimensions()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const matrixAuth = useAppSelector(selectMatrixAuth)
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const [description, setDescription] = useState('')
     const [isSendingUserInfo, setIsSendingUserInfo] = useState(true)
@@ -101,7 +103,7 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
 
     const handleSubmit = async () => {
         setHasAttemptedSubmit(true)
-        if (!isValid || !activeFederation) return
+        if (!isValid) return
         try {
             const id = uuidv4()
             // Generate the logs export gzip
@@ -109,14 +111,23 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
             const attachmentFiles = await attachmentsToFiles(attachments)
 
             if (sendDb) {
-                const dumpedDbPath = await fedimint.dumpDb({
-                    federationId: activeFederation.id,
-                })
-                const dumpBuffer = await RNFS.readFile(dumpedDbPath, 'base64')
-                attachmentFiles.push({
-                    name: 'db.dump',
-                    content: dumpBuffer,
-                })
+                if (!activeFederation) {
+                    log.warn(
+                        'Cannot include DB dump, no active federation is selected',
+                    )
+                } else {
+                    const dumpedDbPath = await fedimint.dumpDb({
+                        federationId: activeFederation.id,
+                    })
+                    const dumpBuffer = await RNFS.readFile(
+                        dumpedDbPath,
+                        'base64',
+                    )
+                    attachmentFiles.push({
+                        name: 'db.dump',
+                        content: dumpBuffer,
+                    })
+                }
             }
             const gzip = await generateLogsExportGzip(attachmentFiles)
             // Upload the logs export gzip to storage
@@ -124,16 +135,28 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
             await uploadBugReportLogs(id, gzip)
             // Submit bug report
             setStatus('submitting-report')
+            let federationName = undefined
+            let username = undefined
+
+            if (isSendingUserInfo) {
+                federationName =
+                    activeFederation?.name ||
+                    activeFederation?.id ||
+                    '(no joined federations)'
+
+                // this will be the npub if the user has not set a display name yet
+                username = matrixAuth?.displayName || undefined
+                // if user has legacy chat data, attach the xmpp username
+                if (authenticatedMember) {
+                    username += `(legacy username: ${authenticatedMember?.username})`
+                }
+            }
             await submitBugReport({
                 id,
                 description,
                 email,
-                federationName: isSendingUserInfo
-                    ? activeFederation?.name || activeFederation?.id
-                    : undefined,
-                username: isSendingUserInfo
-                    ? authenticatedMember?.username
-                    : undefined,
+                federationName,
+                username,
                 platform: `${DeviceInfo.getApplicationName()} (${Platform.OS})`,
                 version: DeviceInfo.getVersion(),
             })
