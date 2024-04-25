@@ -30,7 +30,7 @@ const RecoveryDeviceSelection: React.FC<Props> = ({ navigation }: Props) => {
 
     const selectDevice = async (device: RpcRegisteredDevice) => {
         handleTransfer(device, () => {
-            navigation.navigate('JoinFederation', { invite: undefined })
+            navigation.navigate('TabsNavigator')
         })
     }
 

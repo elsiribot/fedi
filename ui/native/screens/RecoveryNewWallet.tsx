@@ -25,7 +25,7 @@ const RecoveryNewWallet: React.FC<Props> = ({ navigation }: Props) => {
 
     const handleContinue = async () => {
         handleNewWallet(() => {
-            navigation.navigate('JoinFederation', { invite: undefined })
+            navigation.navigate('TabsNavigator')
         })
     }
 
