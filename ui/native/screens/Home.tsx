@@ -7,8 +7,12 @@ import { ScrollView, StyleSheet, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useShouldShowStabilityPool } from '@fedi/common/hooks/federation'
-import { selectIsActiveFederationRecovering } from '@fedi/common/redux'
+import {
+    selectFederations,
+    selectIsActiveFederationRecovering,
+} from '@fedi/common/redux'
 
+import NoFederations from '../components/feature/federations/NoFederations'
 import ShortcutsList from '../components/feature/home/ShortcutsList'
 import RecoveryInProgress from '../components/feature/recovery/RecoveryInProgress'
 import StabilityWallet from '../components/feature/stabilitypool/StabilityWallet'
@@ -29,10 +33,15 @@ export type Props = BottomTabScreenProps<
 const Home: React.FC<Props> = ({ offline }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const federations = useAppSelector(selectFederations)
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
     )
     const showStabilityWallet = useShouldShowStabilityPool()
+
+    if (federations.length === 0) {
+        return <NoFederations />
+    }
 
     return (
         <ScrollView
