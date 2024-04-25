@@ -1,6 +1,6 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useMemo } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native'
 
 import { MatrixUser } from '@fedi/common/types'
 import { getUserSuffix } from '@fedi/common/utils/matrix'
@@ -16,6 +16,7 @@ type UserItemProps = {
     actionIcon?: React.ReactNode
     rightIcon?: React.ReactNode
     showSuffix?: boolean
+    containerStyle?: StyleProp<ViewStyle>
 }
 
 const ChatUserTile: React.FC<UserItemProps> = ({
@@ -25,6 +26,7 @@ const ChatUserTile: React.FC<UserItemProps> = ({
     rightIcon = null,
     disabled = false,
     showSuffix = false,
+    containerStyle,
 }: UserItemProps) => {
     const { theme } = useTheme()
 
@@ -33,7 +35,9 @@ const ChatUserTile: React.FC<UserItemProps> = ({
     }, [user])
 
     return (
-        <Pressable onPress={disabled ? undefined : () => selectUser(user.id)}>
+        <Pressable
+            containerStyle={containerStyle}
+            onPress={disabled ? undefined : () => selectUser(user.id)}>
             <View style={styles(theme).usernameContainer}>
                 <ChatAvatar user={user} size={AvatarSize.md} />
                 <Text

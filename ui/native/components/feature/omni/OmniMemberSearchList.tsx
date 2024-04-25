@@ -14,6 +14,7 @@ import { MatrixUser } from '@fedi/common/types/matrix'
 import { isValidInternetIdentifier } from '@fedi/common/utils/validation'
 
 import { useHasBottomTabsNavigation } from '../../../utils/hooks'
+import ChatUserTile from '../chat/ChatUserTile'
 import { OmniMemberSearchItem } from './OmniMemberSearchItem'
 
 export type OmniMemberSearchListItemType =
@@ -59,6 +60,11 @@ export const OmniMemberSearchList: React.FC<Props> = ({
     }, [query, searchedUsers, canLnurlPay, t])
 
     const style = styles(theme, hasBottomTabs ? {} : insets)
+    // renderItem={({ item }) =>
+    //     'loading' in item ? null : (
+    //         <ChatUserTile user={item} selectUser={onInput} />
+    //     )
+    // }
     return (
         <SectionList
             sections={searchResultsSections}
@@ -70,9 +76,14 @@ export const OmniMemberSearchList: React.FC<Props> = ({
                     </Text>
                 )
             }
-            renderItem={({ item }) => (
-                <OmniMemberSearchItem item={item} onInput={onInput} />
-            )}
+            renderItem={
+                ({ item }) => (
+                    <OmniMemberSearchItem item={item} onInput={onInput} />
+                )
+                // 'loading' in item ? null : (
+                //     <ChatUserTile user={item} selectUser={onInput} />
+                // )
+            }
             keyExtractor={item => ('id' in item ? `${item.id}` : 'loading')}
             style={style.searchMembersScrollOuter}
             contentContainerStyle={style.searchMembersScrollInner}
