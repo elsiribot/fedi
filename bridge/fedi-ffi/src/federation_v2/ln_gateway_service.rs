@@ -35,7 +35,12 @@ const ABOUT_TO_EXPIRE_DURATION: Duration = Duration::from_secs(30);
 impl LnGatewayService {
     pub fn new(client: Arc<ClientHandle>, task_group: &TaskGroup) -> Self {
         task_group.spawn_cancellable("gateway_update_cache", async move {
-            client.ln().update_gateway_cache_continuously().await
+            client
+                .ln()
+                .update_gateway_cache_continuously(|gws| {
+                    Self::maybe_filter_vetted_gateways(&client, gws)
+                })
+                .await
         });
         Self {}
     }
@@ -68,7 +73,10 @@ impl LnGatewayService {
         dbtx.get_value(&LastActiveGatewayKey).await
     }
 
-    async fn selectable_gateways(&self, client: &Client) -> Vec<LightningGatewayAnnouncement> {
+    async fn maybe_filter_vetted_gateways(
+        client: &Client,
+        gateways: Vec<LightningGatewayAnnouncement>,
+    ) -> Vec<LightningGatewayAnnouncement> {
         let meta_service = client.meta_service();
         let vetted_gws = meta_service
             .get_field::<Vec<String>>(client.db(), META_VETTED_GATEWAYS_KEY)
@@ -82,15 +90,24 @@ impl LnGatewayService {
             })
             .collect::<HashSet<_>>();
 
-        let (vetted, unvetted) = client
-            .ln()
-            .list_gateways()
-            .await
+        let (vetted, unvetted) = gateways
             .into_iter()
             .partition::<Vec<_>, _>(|g| vetted_gws.contains(&g.info.gateway_id));
 
-        let gws = if !vetted.is_empty() { vetted } else { unvetted };
-        gws.into_iter()
+        if !vetted.is_empty() {
+            vetted
+        } else {
+            unvetted
+        }
+    }
+
+    async fn selectable_gateways(
+        client: &Client,
+        gateways: Vec<LightningGatewayAnnouncement>,
+    ) -> Vec<LightningGatewayAnnouncement> {
+        Self::maybe_filter_vetted_gateways(client, gateways)
+            .await
+            .into_iter()
             // filter out all gateways are about to expire
             .filter(|g| ABOUT_TO_EXPIRE_DURATION < g.ttl)
             .collect()
@@ -101,14 +118,14 @@ impl LnGatewayService {
         client: &Client,
     ) -> anyhow::Result<Option<LightningGateway>> {
         let last_active_gateway_id = self.get_active_gateway(client).await;
-        let mut gws = self.selectable_gateways(client).await;
+        let mut gws = Self::selectable_gateways(client, client.ln().list_gateways().await).await;
 
         // this should be rare, the background service should keep the gateways updated.
         if gws.is_empty() {
             if let Err(error) = client.ln().update_gateway_cache().await {
                 warn!(?error, "updating gateway cache failed");
             }
-            gws = self.selectable_gateways(client).await;
+            gws = Self::selectable_gateways(client, client.ln().list_gateways().await).await;
         }
 
         if let Some(gw) = gws

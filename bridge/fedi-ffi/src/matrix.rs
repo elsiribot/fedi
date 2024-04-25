@@ -144,10 +144,8 @@ impl Matrix {
                     request.username = Some(user_name.to_owned());
                     request.password = Some(user_password.to_owned());
                     request.auth = Some(uiaa::AuthData::Dummy(uiaa::Dummy::new()));
-                    request.initial_device_display_name = app_state
-                        .with_read_lock(|state| state.device_identifier.clone())
-                        .await
-                        .map(|id| id.to_string());
+                    request.initial_device_display_name =
+                        app_state.device_identifier().await.map(|id| id.to_string());
                     let register_result = matrix_auth.register(request).await;
                     match register_result {
                         Ok(_) => (),
