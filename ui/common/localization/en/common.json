@@ -490,6 +490,7 @@
             "unsupported-unknown": "Hmm, that's not a format we recognize. Sorry!"
         },
         "onboarding": {
+            "are-you-new": "Are you new to Fedi?",
             "by-clicking-i-accept": "By clicking 'I accept' you agree to the terms of service at {{tos_url}}",
             "by-clicking-you-agree-user-agreement": "By clicking 'Join a Federation' you agree to the <anchor>User Agreement</anchor>",
             "chat-earn-save-spend": "Chat, earn, save, and spend money privately with your community",
@@ -507,6 +508,7 @@
             "guidance-public-federations": "Try a community from the Awesome Fedimint list",
             "i-accept": "I accept",
             "i-do-not-accept": "I do not accept",
+            "im-returning": "I'm returning",
             "join-new-member": "Join as a new member",
             "join-returning-member": "I'm a returning member",
             "new-users-disabled-notice": "Sorry, this federation is not accepting new users",
@@ -521,7 +523,8 @@
             "welcome-instructions-returning": "As a returning member of the federation, your wallet will be restored. This may take a few minutes.",
             "welcome-instructions-unknown": "New members receive a fresh wallet. Returning members will have their old wallet recovered automatically.",
             "welcome-to-federation": "Welcome to {{federation}}",
-            "welcome-to-fedi": "Welcome to Fedi Bravo"
+            "welcome-to-fedi": "Welcome to Fedi Bravo",
+            "yes-create-account": "Yes, create an account"
         },
         "parser": {
             "unrecognized": "Unrecognized data format",

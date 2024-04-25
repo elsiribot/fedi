@@ -1,14 +1,12 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { StyleSheet, View, useWindowDimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { selectFederations } from '@fedi/common/redux'
-
 import CircleLogo from '../components/ui/CircleLogo'
-import { useAppSelector } from '../state/hooks'
+import CustomOverlay from '../components/ui/CustomOverlay'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
@@ -17,13 +15,18 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { fontScale } = useWindowDimensions()
-    const hasFederations = useAppSelector(selectFederations).length > 0
+    const [showOverlay, setShowOverlay] = useState(false)
 
+    const handleContinue = async () => {
+        setShowOverlay(true)
+    }
     const handleNewUser = async () => {
-        navigation.navigate('JoinFederation', { invite: undefined })
+        navigation.navigate('EnterDisplayName')
+        setShowOverlay(false)
     }
     const handleReturningUser = async () => {
         navigation.navigate('ChooseRecoveryMethod')
+        setShowOverlay(false)
     }
 
     const style = styles(theme, fontScale)
@@ -42,20 +45,11 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
             </View>
 
             <View style={style.buttonsContainer}>
-                {!hasFederations && (
-                    <Button
-                        fullWidth
-                        type="outline"
-                        buttonStyle={style.returnButton}
-                        title={t('feature.onboarding.join-returning-member')}
-                        onPress={handleReturningUser}
-                    />
-                )}
                 <Button
                     fullWidth
                     testID="JoinFederationButton"
-                    title={t('feature.federations.join-federation')}
-                    onPress={handleNewUser}
+                    title={t('words.continue')}
+                    onPress={handleContinue}
                 />
                 <Text style={style.agreementText} small>
                     <Trans
@@ -72,6 +66,31 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                     />
                 </Text>
             </View>
+            <CustomOverlay
+                show={showOverlay}
+                onBackdropPress={() => setShowOverlay(false)}
+                contents={{
+                    body: (
+                        <View style={style.overlayContainer}>
+                            <Text h1>{'👋'}</Text>
+                            <Text h2>
+                                {t('feature.onboarding.are-you-new')}
+                            </Text>
+                            <View style={style.overlayButtonsContainer}>
+                                <Button fullWidth onPress={handleNewUser}>
+                                    {t('feature.onboarding.yes-create-account')}
+                                </Button>
+                                <Button
+                                    fullWidth
+                                    onPress={handleReturningUser}
+                                    day>
+                                    {t('feature.onboarding.im-returning')}
+                                </Button>
+                            </View>
+                        </View>
+                    ),
+                }}
+            />
         </SafeAreaView>
     )
 }
@@ -92,13 +111,6 @@ const styles = (theme: Theme, fontScale: number) =>
             justifyContent: 'space-evenly',
             gap: theme.spacing.xl,
         },
-        backgroundImage: {
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: 0,
-        },
         welcomeContainer: {
             flexGrow: 1,
             flexShrink: 1,
@@ -110,9 +122,15 @@ const styles = (theme: Theme, fontScale: number) =>
             gap: theme.spacing.sm,
             paddingHorizontal: theme.spacing.xl,
         },
-        returnButton: {
-            backgroundColor: theme.colors.offWhite100,
-            borderWidth: 0,
+        overlayContainer: {
+            width: '100%',
+            alignItems: 'center',
+            gap: 16,
+        },
+        overlayButtonsContainer: {
+            marginTop: theme.spacing.lg,
+            width: '100%',
+            gap: 16,
         },
         iconContainer: {
             marginBottom: theme.spacing.lg,
