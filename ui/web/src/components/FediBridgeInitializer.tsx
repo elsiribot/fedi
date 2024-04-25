@@ -7,11 +7,11 @@ import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     fetchSocialRecovery,
     refreshFederations,
-    selectActiveFederation,
     selectSocialRecoveryQr,
     selectDeviceId,
     initializeDeviceId,
     startMatrixClient,
+    selectHasSetMatrixDisplayName,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -34,10 +34,10 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { asPath } = useRouter()
-    const activeFederation = useAppSelector(selectActiveFederation)
     const deviceId = useAppSelector(selectDeviceId)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const socialRecoveryId = useAppSelector(selectSocialRecoveryQr)
+    const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
     const [isInitialized, setIsInitialized] = useState(false)
     const [isShowingLoading, setIsShowingLoading] = useState(false)
     const [error, setError] = useState<string>()
@@ -108,8 +108,8 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         if (socialRecoveryId && asPath !== '/onboarding/recover/social') {
             return <Redirect path="/onboarding/recover/social" />
         }
-        // If they haven't joined a federation, force them into onboarding
-        if (!activeFederation && !asPath.startsWith('/onboarding')) {
+        // If they haven't set a display name, force them into onboarding
+        if (!hasSetDisplayName && !asPath.startsWith('/onboarding')) {
             return <Redirect path="/onboarding" />
         }
         // Otherwise render the page as normal
