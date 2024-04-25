@@ -14,6 +14,7 @@ type UserItemProps = {
     disabled?: boolean
     actionIcon?: React.ReactNode
     rightIcon?: React.ReactNode
+    showSuffix?: boolean
 }
 
 const ChatUserTile: React.FC<UserItemProps> = ({
@@ -22,6 +23,7 @@ const ChatUserTile: React.FC<UserItemProps> = ({
     actionIcon = null,
     rightIcon = null,
     disabled = false,
+    showSuffix = false,
 }: UserItemProps) => {
     const { theme } = useTheme()
 
@@ -35,6 +37,14 @@ const ChatUserTile: React.FC<UserItemProps> = ({
                     style={[styles(theme).usernameText]}>
                     {user.displayName}
                 </Text>
+                {showSuffix && (
+                    <Text
+                        numberOfLines={1}
+                        bold
+                        style={[styles(theme).usernameSuffix]}>
+                        {user.displayName?.substring(0, 4)}
+                    </Text>
+                )}
                 {rightIcon && <>{rightIcon}</>}
                 {actionIcon && (
                     <View style={styles(theme).iconContainer}>
@@ -53,13 +63,20 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             width: '100%',
+            borderWidth: 1,
         },
         usernameText: {
-            marginHorizontal: theme.spacing.md,
-            flex: 1,
+            flexShrink: 2,
+            marginLeft: theme.spacing.md,
+            borderWidth: 1,
+        },
+        usernameSuffix: {
+            borderWidth: 1,
+            color: theme.colors.grey,
         },
         iconContainer: {
             marginLeft: 'auto',
+            paddingLeft: theme.spacing.md,
         },
         roleText: {
             color: theme.colors.grey,

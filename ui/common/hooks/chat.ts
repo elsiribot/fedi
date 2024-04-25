@@ -264,6 +264,7 @@ export function usePublishNotificationToken(
  * Given a member id, return the chat member and whether or not we're actively
  * fetching the chat member. If the chat member is not found in the redux store,
  * attempt to fetch information about them from the chat server.
+ * @deprecated
  */
 export function useChatMember(memberId: string) {
     const dispatch = useCommonDispatch()
@@ -291,6 +292,7 @@ export function useChatMember(memberId: string) {
 /**
  * Given an instance of the bridge, monitor all available chat connections and
  * attempt to reconnect and continue attempting on failure
+ * @deprecated
  */
 export async function useMonitorChatConnections(fedimint: FedimintBridge) {
     const dispatch = useCommonDispatch()
@@ -342,6 +344,7 @@ export async function useMonitorChatConnections(fedimint: FedimintBridge) {
     }, [federationsWithChat.length])
 }
 
+/** @deprecated */
 export const useIsChatConnected = () => {
     const chatStatus = useCommonSelector(selectChatClientStatus)
     const lastOnlineAt = useCommonSelector(selectChatClientLastOnlineAt)
