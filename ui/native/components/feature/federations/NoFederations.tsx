@@ -7,7 +7,6 @@ import { Image, ScrollView, StyleSheet, View } from 'react-native'
 import { useLatestPublicFederations } from '@fedi/common/hooks/federation'
 
 import { Images } from '../../../assets/images'
-import { useAppSelector } from '../../../state/hooks'
 import { FederationLogo } from '../../ui/FederationLogo'
 
 const NoFederations: React.FC = () => {

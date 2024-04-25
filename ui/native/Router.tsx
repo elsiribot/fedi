@@ -177,7 +177,7 @@ import StartSocialBackup from './screens/StartSocialBackup'
 import SwitchingFederations from './screens/SwitchingFederations'
 import TabsNavigator from './screens/TabsNavigator'
 import Transactions from './screens/Transactions'
-import { useAppSelector, useMatrixPushNotifications } from './state/hooks'
+import { useMatrixPushNotifications } from './state/hooks'
 import { navigate, resetToLockedDevice } from './state/navigation'
 import { MSats } from './types'
 import {

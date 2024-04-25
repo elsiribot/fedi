@@ -9,18 +9,15 @@ import {
     AppStateStatus,
     Pressable,
     StyleSheet,
-    View,
     useWindowDimensions,
 } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 import {
-    useIsChatSupported,
     useIsStabilityPoolSupported,
     usePopupFederationInfo,
 } from '@fedi/common/hooks/federation'
-import { useToast } from '@fedi/common/hooks/toast'
 import {
     refreshActiveStabilityPool,
     refreshFederations,
@@ -58,7 +55,6 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
     const isFocused = useIsFocused()
     const insets = useSafeAreaInsets()
     const [offline] = useState(false)
-    const toast = useToast()
     const hasUnseenMessages = useAppSelector(selectHasUnseenMessages)
     const hasUnseenPaymentUpdates = useAppSelector(
         selectHasUnseenPaymentUpdates,

@@ -167,7 +167,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         if (bridgeIsReady) {
             dispatch(startMatrixClient({ fedimint }))
         }
-    }, [bridgeIsReady])
+    }, [bridgeIsReady, dispatch])
 
     if (bridgeIsReady && !bridgeError) {
         return <>{children}</>
