@@ -15,6 +15,7 @@ import {
     setMatrixRoomMemberPowerLevel,
 } from '@fedi/common/redux'
 import { MatrixPowerLevel, MatrixRoomMember } from '@fedi/common/types'
+import { getUserSuffix } from '@fedi/common/utils/matrix'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
@@ -55,12 +56,14 @@ export const ChatRoomMembersList: React.FC<Props> = ({ roomId }) => {
     }
 
     const renderMemberContent = (member: (typeof members)[0]) => {
+        const suffix = getUserSuffix(member.id)
         return (
             <>
                 <ChatAvatar user={member} />
-                <Text ellipsize css={{ flex: 1 }}>
+                <Text ellipsize css={{ flexShrink: 1 }}>
                     {member.displayName || member.id}
                 </Text>
+                <MemberSuffixText variant="caption">{suffix}</MemberSuffixText>
                 <MemberRoleText variant="small">
                     {member.powerLevel >= MatrixPowerLevel.Admin
                         ? t('words.admin')
@@ -212,5 +215,10 @@ const Member = styled('div', {
 })
 
 const MemberRoleText = styled(Text, {
+    color: theme.colors.grey,
+    marginLeft: 'auto',
+})
+
+const MemberSuffixText = styled(Text, {
     color: theme.colors.grey,
 })

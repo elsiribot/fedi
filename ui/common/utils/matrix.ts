@@ -290,7 +290,7 @@ const SUFFIX_LENGTH = 3 as const
 
 export function getUserSuffix(id: MatrixUser['id']) {
     const hash = EncryptionUtils.toSha256EncHex(id)
-    return hash.substring(hash.length - SUFFIX_LENGTH)
+    return `#${hash.substring(hash.length - SUFFIX_LENGTH)}`
 }
 
 export function isPaymentEvent(

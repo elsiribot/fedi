@@ -52,7 +52,7 @@ const ChatUserTile: React.FC<UserItemProps> = ({
                         bold
                         caption
                         style={styles(theme).usernameSuffix}>
-                        {`#${suffix}`}
+                        {suffix}
                     </Text>
                 )}
 

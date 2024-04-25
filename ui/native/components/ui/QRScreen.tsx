@@ -53,7 +53,7 @@ const QRScreen: React.FC<Props> = ({
                     )}
                     {titleSuffix && (
                         <Text numberOfLines={1} bold style={style.titleSuffix}>
-                            {`#${titleSuffix}`}
+                            {titleSuffix}
                         </Text>
                     )}
                 </View>
