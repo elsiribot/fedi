@@ -12,11 +12,9 @@ import {
 } from '@fedi/common/utils/wallet'
 
 import {
-    selectActiveFederation,
     selectActiveFederationId,
     selectCurrency,
     selectEcashFeeSchedule,
-    selectFederation,
     selectMaximumAPR,
     selectShowFiatTxnAmounts,
     selectStabilityPoolFeeSchedule,
