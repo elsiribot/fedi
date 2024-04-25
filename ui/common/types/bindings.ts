@@ -232,6 +232,7 @@ export type RpcLnReceiveState =
 export type RpcLnState = RpcLnPayState | RpcLnReceiveState
 
 export interface RpcLockedSeek {
+    currCycleBeginningLockedAmount: RpcAmount
     initialAmount: RpcAmount
     initialAmountCents: number
     withdrawnAmount: RpcAmount
