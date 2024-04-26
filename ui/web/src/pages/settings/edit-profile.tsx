@@ -98,7 +98,7 @@ const EditProfile = () => {
         } finally {
             setIsChangingName(false)
         }
-    }, [dispatch, t, toast])
+    }, [dispatch, matrixAuth?.displayName, t, toast])
 
     return (
         <ContentBlock>

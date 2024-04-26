@@ -112,7 +112,7 @@ const EditProfileSettings: React.FC = () => {
                 status: 'success',
             })
         })
-    }, [handleSubmitDisplayName])
+    }, [handleSubmitDisplayName, t, toast])
 
     let avatarName = matrixAuth?.displayName
 
