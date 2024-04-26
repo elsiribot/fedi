@@ -106,7 +106,7 @@ impl Bridge {
 
         let root_mnemonic = app_state.root_mnemonic().await;
 
-        let device_index = app_state.with_read_lock(|state| state.device_index).await;
+        let device_index = app_state.device_index().await;
 
         // load joined federations
         let joined_federations = app_state
@@ -143,16 +143,7 @@ impl Bridge {
                                         event_sink.clone(),
                                         task_group.make_subgroup().await,
                                         &root_mnemonic,
-                                        // If a joined federation exists in the DB, then one of the
-                                        // following two
-                                        // conditions will virtually always be the case:
-                                        //
-                                        // 1. A device index exists because at least one device
-                                        //    registration request was successful in the past
-                                        // 2. We are yet to successfully call the device
-                                        //    registration service for the first time for the given
-                                        //    seed, and so we will try to register the device with
-                                        //    index 0 anyway.
+                                        // Always present when join federations exist
                                         device_index.context(
                                             "device index must exist when joined federations exist",
                                         )?,
@@ -744,9 +735,7 @@ impl Bridge {
             .await
             .context("registering device timed out")??;
 
-        self.app_state
-            .with_write_lock(|state| state.device_index = Some(index))
-            .await?;
+        self.app_state.set_device_index(index).await?;
         self.device_registration_service
             .lock()
             .await
@@ -800,12 +789,6 @@ impl Bridge {
             .stop_ongoing_periodic_registration()
             .await?;
         self.app_state.recover_mnemonic(mnemonic).await?;
-        self.app_state
-            .with_write_lock(|state| {
-                state.device_index = None;
-            })
-            .await?;
-
         self.fetch_registered_devices().await
     }
 

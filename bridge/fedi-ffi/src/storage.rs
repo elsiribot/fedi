@@ -73,7 +73,7 @@ pub struct AppStateRaw {
     // through the flow of setting up a device index before they can continue using the app as
     // usual.
     #[serde(default = "default_device_index")]
-    pub device_index: Option<u8>,
+    device_index: Option<u8>,
 
     // Every so often, we renew this device's registration against the given seed + device
     // identifier + device index with Fedi's device registration service. Here we store the
@@ -420,10 +420,27 @@ impl AppState {
         }
     }
 
+    /// Always present if federations are present.
     pub async fn ensure_device_index(&self) -> anyhow::Result<u8> {
-        self.with_read_lock(|state| state.device_index)
+        self.device_index()
             .await
             .ok_or(anyhow!("device_index not set"))
+    }
+
+    pub async fn device_index(&self) -> Option<u8> {
+        self.with_read_lock(|state| state.device_index).await
+    }
+
+    pub async fn set_device_index(&self, index: u8) -> anyhow::Result<()> {
+        self.with_write_lock(|state| {
+            if !state.joined_federations.is_empty() {
+                bail!("joined federations is not empty")
+            } else {
+                state.device_index = Some(index);
+                Ok(())
+            }
+        })
+        .await?
     }
 
     pub async fn root_mnemonic(&self) -> bip39::Mnemonic {
@@ -439,12 +456,14 @@ impl AppState {
     }
 
     /// Recover to a seed, fails if state has joined any federation.
+    /// Also resets the device index.
     pub async fn recover_mnemonic(&self, mnemonic: bip39::Mnemonic) -> anyhow::Result<()> {
         self.with_write_lock(|state| {
             if !state.joined_federations.is_empty() {
                 bail!("Cannot recover while joined federations exist");
             }
             state.root_mnemonic = mnemonic;
+            state.device_index = None;
             Ok(())
         })
         .await??;
