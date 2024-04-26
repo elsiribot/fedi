@@ -106,22 +106,7 @@ impl Bridge {
 
         let root_mnemonic = app_state.root_mnemonic().await;
 
-        // If a joined federation exists in the DB, then one of the following two
-        // conditions will virtually always be the case:
-        //
-        // 1. A device index exists because at least one device registration request was
-        //    successful in the past
-        // 2. We are yet to successfully call the device registration service for the
-        //    first time for the given seed, and so we will try to register the device
-        //    with index 0 anyway.
-        //
-        // We cannot make bridge initialization fail, and we must pass a device index to
-        // the FederationV2 constructor, so here we use `unwrap_or_default()` instead of
-        // `app_state.ensure_device_index()`.
-        let device_index = app_state
-            .with_read_lock(|state| state.device_index)
-            .await
-            .unwrap_or_default();
+        let device_index = app_state.with_read_lock(|state| state.device_index).await;
 
         // load joined federations
         let joined_federations = app_state
@@ -158,7 +143,19 @@ impl Bridge {
                                         event_sink.clone(),
                                         task_group.make_subgroup().await,
                                         &root_mnemonic,
-                                        device_index,
+                                        // If a joined federation exists in the DB, then one of the
+                                        // following two
+                                        // conditions will virtually always be the case:
+                                        //
+                                        // 1. A device index exists because at least one device
+                                        //    registration request was successful in the past
+                                        // 2. We are yet to successfully call the device
+                                        //    registration service for the first time for the given
+                                        //    seed, and so we will try to register the device with
+                                        //    index 0 anyway.
+                                        device_index.context(
+                                            "device index must exist when joined federations exist",
+                                        )?,
                                         fedi_fee_helper.clone(),
                                     )
                                     .await
