@@ -26,9 +26,12 @@ import {
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederation,
-    selectAuthenticatedMember,
+    selectCurrency,
     selectFediModDebugMode,
+    selectHasSetMatrixDisplayName,
     selectIsActiveFederationRecovering,
+    selectLanguage,
+    selectMatrixAuth,
 } from '@fedi/common/redux'
 import {
     AnyParsedData,
@@ -105,8 +108,13 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const member = useAppSelector(selectMatrixAuth)
+    const hasSetMatrixDisplayName = useAppSelector(
+        selectHasSetMatrixDisplayName,
+    )
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
+    const currency = useAppSelector(selectCurrency)
+    const language = useAppSelector(selectLanguage)
     const nostrEnabled = useIsNostrEnabled()
     const fediInternalEnabled = useIsFediInternalInjectionEnabled()
     const toast = useToast()
@@ -194,7 +202,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         [InjectionMessageType.webln_getInfo]: async () => {
             log.info('webln.getInfo')
 
-            const alias = authenticatedMember?.username || ''
+            const alias = member?.displayName || ''
             let pubkey = ''
             try {
                 const gateway = await getActiveGatewayOrThrow()
@@ -366,13 +374,15 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         [InjectionMessageType.fedi_getAuthenticatedMember]: async () => {
             log.info('fedi.getAuthenticatedMember')
 
-            if (!authenticatedMember) {
+            if (!member) {
                 throw new Error('No authenticated member')
             }
 
             return {
-                id: authenticatedMember.id,
-                username: authenticatedMember.username,
+                id: member.userId,
+                username: hasSetMatrixDisplayName
+                    ? member.displayName
+                    : 'member',
             }
         },
         [InjectionMessageType.fedi_getActiveFederation]: async () => {
@@ -387,6 +397,16 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 name: activeFederation.name,
                 network: activeFederation.network,
             }
+        },
+        [InjectionMessageType.fedi_getCurrencyCode]: async () => {
+            log.info('fedi.getActiveFederation')
+
+            return currency
+        },
+        [InjectionMessageType.fedi_getLanguageCode]: async () => {
+            log.info('fedi.getActiveFederation')
+
+            return language ?? 'en'
         },
     })
 

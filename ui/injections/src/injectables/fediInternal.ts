@@ -1,4 +1,4 @@
-import { EcashRequest, MSats } from '@fedi/common/types'
+import { EcashRequest, MSats, SupportedCurrency } from '@fedi/common/types'
 import { RpcFederation } from '@fedi/common/types/bindings'
 
 import { InjectionMessageType, InjectionMessageResponseMap } from '../types'
@@ -32,6 +32,20 @@ class InjectionFediProvider {
     > {
         return this.sendMessage(
             InjectionMessageType.fedi_getActiveFederation,
+            undefined,
+        )
+    }
+
+    async getCurrencyCode(): Promise<SupportedCurrency> {
+        return this.sendMessage(
+            InjectionMessageType.fedi_getCurrencyCode,
+            undefined,
+        )
+    }
+
+    async getLanguageCode(): Promise<string> {
+        return this.sendMessage(
+            InjectionMessageType.fedi_getLanguageCode,
             undefined,
         )
     }

@@ -343,16 +343,16 @@ export function useFeeDisplayUtils(t: TFunction) {
 
         const lightningFeeItems: FeeItem[] = [
             {
-                label: t('phrases.lightning-network'),
-                formattedAmount: `${formattedNetworkFee} (${formattedNetworkFeeSecondary})`,
-            },
-            {
                 label: t('phrases.fedi-fee'),
                 formattedAmount: `${formattedFediFee} (${formattedFediFeeSecondary})`,
             },
             {
                 label: t('phrases.federation-fee'),
                 formattedAmount: `${formattedFederationFee} (${formattedFederationFeeSecondary})`,
+            },
+            {
+                label: t('phrases.lightning-network'),
+                formattedAmount: `${formattedNetworkFee} (${formattedNetworkFeeSecondary})`,
             },
         ]
 
@@ -385,12 +385,12 @@ export function useFeeDisplayUtils(t: TFunction) {
 
         const lightningFeeItems: FeeItem[] = [
             {
-                label: t('phrases.network-fee'),
-                formattedAmount: `${formattedNetworkFee} (${formattedNetworkFeeSecondary})`,
-            },
-            {
                 label: t('phrases.fedi-fee'),
                 formattedAmount: `${formattedFediFee} (${formattedFediFeeSecondary})`,
+            },
+            {
+                label: t('phrases.network-fee'),
+                formattedAmount: `${formattedNetworkFee} (${formattedNetworkFeeSecondary})`,
             },
         ]
 
@@ -429,16 +429,16 @@ export function useFeeDisplayUtils(t: TFunction) {
 
         const ecashFeeItems: FeeItem[] = [
             {
-                label: `${t('phrases.yearly-fee')}*`,
-                formattedAmount: `${maxFeeRate}% max`,
-            },
-            {
                 label: t('phrases.fedi-fee'),
                 formattedAmount: `${formattedFediFee} (${formattedFediFeeSecondary})`,
             },
             {
                 label: t('phrases.federation-fee'),
                 formattedAmount: `${formattedFederationFee} (${formattedFederationFeeSecondary})`,
+            },
+            {
+                label: `${t('phrases.yearly-fee')}*`,
+                formattedAmount: `${maxFeeRate}% max`,
             },
         ]
 

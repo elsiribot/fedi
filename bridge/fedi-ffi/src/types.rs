@@ -660,6 +660,7 @@ pub struct RpcStabilityPoolAccountInfo {
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcLockedSeek {
+    pub curr_cycle_beginning_locked_amount: RpcAmount,
     pub initial_amount: RpcAmount,
     #[ts(type = "number")]
     pub initial_amount_cents: u64,
@@ -694,6 +695,7 @@ impl From<ClientAccountInfo> for RpcStabilityPoolAccountInfo {
                         .cloned()
                         .unwrap_or_default();
                     RpcLockedSeek {
+                        curr_cycle_beginning_locked_amount: RpcAmount(l.amount),
                         initial_amount: RpcAmount(metadata.initial_amount),
                         initial_amount_cents: metadata.initial_amount_cents,
                         withdrawn_amount: RpcAmount(metadata.withdrawn_amount),

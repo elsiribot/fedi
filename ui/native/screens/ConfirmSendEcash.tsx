@@ -91,7 +91,6 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
                 onSend={handleConfirm}
                 isLoading={isLoading}
                 senderText={t('feature.stabilitypool.bitcoin-balance')}
-                receiverText={'username'}
             />
             <FeeOverlay
                 show={showFeeBreakdown}

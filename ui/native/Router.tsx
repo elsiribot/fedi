@@ -5,7 +5,7 @@ import {
 } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useCallback, useRef } from 'react'
 
 import {
     useLockedDeviceDetection,
@@ -13,6 +13,7 @@ import {
 } from '@fedi/common/hooks/recovery'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederation } from '@fedi/common/redux'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from './bridge'
 import AddFediModHeader from './components/feature/admin/AddFediModHeader'
@@ -188,6 +189,8 @@ import {
     DRAWER_NAVIGATION_ID,
 } from './types/navigation'
 import { useIsFeatureUnlocked } from './utils/hooks/security'
+
+const log = makeLog('NavigationRouter')
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Drawer = createDrawerNavigator<MainNavigatorDrawerParamList>()
@@ -1137,6 +1140,7 @@ const Router = () => {
     const navigation = useNavigationContainerRef()
 
     const toast = useToast()
+    const routeRef = useRef<string>()
 
     // Makes sure to check XMPP socket health when app is foregrounded
     // useXmppHealthCheck()
@@ -1154,14 +1158,35 @@ const Router = () => {
         navigation.dispatch(navigate('PersonalRecoverySuccess'))
     })
 
+    // Logs changes in navigation state for debugging
+    const handleStateChange = useCallback(() => {
+        toast.close()
+        const previousRoute = routeRef.current
+        const currentRoute = navigation.getCurrentRoute()
+
+        if (previousRoute === currentRoute?.name) return
+
+        routeRef.current = currentRoute?.name
+        log.debug(
+            `Navigating from "${previousRoute}" to "${routeRef.current}"`,
+            {
+                params: currentRoute?.params,
+            },
+        )
+    }, [navigation, toast])
+
     return (
         <NavigationContainer
             ref={navigation}
             theme={theme}
             linking={linking}
-            onStateChange={() => {
-                toast.close()
-            }}>
+            onReady={() => {
+                routeRef.current = navigation.getCurrentRoute()?.name
+                log.debug('Navigation is ready', {
+                    route: routeRef.current,
+                })
+            }}
+            onStateChange={handleStateChange}>
             <Drawer.Navigator
                 id={DRAWER_NAVIGATION_ID}
                 drawerContent={ConnectedFederationsDrawer}>
