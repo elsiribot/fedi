@@ -23,6 +23,7 @@ import {
     selectAlphabeticallySortedFederations,
     selectCurrency,
     selectDeveloperMode,
+    selectHasSetMatrixDisplayName,
     selectMatrixAuth,
     selectStableBalance,
     selectStableBalancePending,
@@ -59,6 +60,9 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const toast = useToast()
     const exportTransactions = useExportTransactions(fedimint)
+    const hasSetMatrixDisplayName = useAppSelector(
+        selectHasSetMatrixDisplayName,
+    )
 
     const [exportingFederationId, setExportingFederationId] =
         useState<string>('')
@@ -300,7 +304,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
-            {matrixAuth && (
+            {hasSetMatrixDisplayName && (
                 <View style={styles(theme).qrCode}>
                     <QRCodeContainer
                         copyMessage={t('phrases.copied-member-code')}
@@ -309,7 +313,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     />
 
                     <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
-                        {matrixAuth.displayName}
+                        {matrixAuth?.displayName}
                     </Text>
                 </View>
             )}

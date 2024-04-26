@@ -1,28 +1,45 @@
-import React, { useCallback, useState } from 'react'
+import { styled } from '@stitches/react'
+import { useRouter } from 'next/router'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { selectMatrixAuth, setMatrixDisplayName, uploadAndSetMatrixAvatarUrl } from '@fedi/common/redux'
-
-import { ContentBlock } from '../../components/ContentBlock'
-import * as Layout from '../../components/Layout'
-import { useAppDispatch, useAppSelector } from '../../hooks'
-import { styled } from '@stitches/react'
-import { CircularLoader } from '../../components/CircularLoader'
-import { IconButton } from '../../components/IconButton'
-import { theme } from '../../styles'
-import { Avatar } from '../../components/Avatar'
-import { writeBridgeFile, fedimint } from '../../lib/bridge'
-import { useToast } from '@fedi/common/hooks/toast'
-import { Icon } from '../../components/Icon'
 import EditIcon from '@fedi/common/assets/svgs/edit.svg'
+import { useToast } from '@fedi/common/hooks/toast'
+import {
+    selectHasSetMatrixDisplayName,
+    selectMatrixAuth,
+    setMatrixDisplayName,
+    uploadAndSetMatrixAvatarUrl,
+} from '@fedi/common/redux'
+
+import { Avatar } from '../../components/Avatar'
+import { CircularLoader } from '../../components/CircularLoader'
+import { ContentBlock } from '../../components/ContentBlock'
+import { Icon } from '../../components/Icon'
+import { IconButton } from '../../components/IconButton'
+import * as Layout from '../../components/Layout'
 import { Text } from '../../components/Text'
+import { useAppDispatch, useAppSelector } from '../../hooks'
+import { writeBridgeFile, fedimint } from '../../lib/bridge'
+import { theme } from '../../styles'
 
 const EditProfile = () => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const toast = useToast()
 
+    const { replace } = useRouter()
+
     const matrixAuth = useAppSelector(selectMatrixAuth)
+    const hasSetMatrixDisplayName = useAppSelector(
+        selectHasSetMatrixDisplayName,
+    )
+
+    useEffect(() => {
+        if (!hasSetMatrixDisplayName) {
+            replace('/onboarding/username')
+        }
+    }, [hasSetMatrixDisplayName, replace])
 
     const [isChangingAvatar, setIsChangingAvatar] = useState<boolean>(false)
     const [isChangingName, setIsChangingName] = useState<boolean>(false)
@@ -31,40 +48,65 @@ const EditProfile = () => {
         async (ev: React.ChangeEvent<HTMLInputElement>) => {
             const file = ev.target.files?.[0]
             if (!file) return
-            setIsChangingAvatar(true)
+
             try {
+                setIsChangingAvatar(true)
+
                 const path = 'chat-avatar'
                 const mimeType = file.type
                 const data = new Uint8Array(await file.arrayBuffer())
+
                 await writeBridgeFile(path, data)
+
                 await dispatch(
                     uploadAndSetMatrixAvatarUrl({ fedimint, path, mimeType }),
                 ).unwrap()
+
+                toast.show({
+                    content: t('phrases.changes-saved'),
+                    status: 'success',
+                })
             } catch (err) {
                 toast.error(t, 'errors.unknown-error')
+            } finally {
+                setIsChangingAvatar(false)
             }
-            setIsChangingAvatar(false)
         },
         [dispatch, t, toast],
     )
 
     const handleDisplayNameChange = useCallback(async () => {
-        setIsChangingName(true)
-        const displayName = prompt(t('feature.onboarding.enter-username'))
-        if (!displayName) return
         try {
+            setIsChangingName(true)
+
+            const displayName = prompt(
+                t('feature.onboarding.enter-username'),
+                matrixAuth?.displayName,
+            )
+
+            if (!displayName) return
+            if (displayName === matrixAuth?.displayName) return
+
             await dispatch(setMatrixDisplayName({ displayName })).unwrap()
+
+            toast.show({
+                content: t('phrases.changes-saved'),
+                status: 'success',
+            })
         } catch (err) {
             toast.error(t, 'errors.unknown-error')
+        } finally {
+            setIsChangingName(false)
         }
-        setIsChangingName(false)
     }, [dispatch, t, toast])
 
     return (
         <ContentBlock>
             <Layout.Root>
                 <Layout.Header back="/settings">
-                    <Layout.Title subheader>{t('phrases.edit-profile')}</Layout.Title>
+                    <Layout.Title subheader>
+                        {t('phrases.edit-profile')}
+                    </Layout.Title>
                 </Layout.Header>
                 <Layout.Content>
                     <ChatIdentity>

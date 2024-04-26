@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     GestureResponderEvent,
-    Pressable,
     ScrollView,
     StyleSheet,
     View,
@@ -22,6 +21,7 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
+import { Pressable } from '../components/ui/Pressable'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 
 const log = makeLog('EditProfile')
@@ -93,6 +93,11 @@ const EditProfileSettings: React.FC = () => {
                         path: fileDestination,
                     }),
                 ).unwrap()
+
+                toast.show({
+                    content: t('phrases.changes-saved'),
+                    status: 'success',
+                })
             }
         } catch (err) {
             log.error('Failed to launch image library', err)
@@ -102,7 +107,10 @@ const EditProfileSettings: React.FC = () => {
 
     const handleNameSubmit = useCallback(() => {
         handleSubmitDisplayName(() => {
-            return
+            toast.show({
+                content: t('phrases.changes-saved'),
+                status: 'success',
+            })
         })
     }, [handleSubmitDisplayName])
 
@@ -113,20 +121,24 @@ const EditProfileSettings: React.FC = () => {
         avatarName = ''
     }
 
+    const saveButtonDisabled =
+        username === matrixAuth?.displayName || !username || isSubmitting
+
     return (
         <ScrollView
             style={style.scrollContainer}
             contentContainerStyle={style.contentContainer}
             overScrollMode="auto">
             <View>
-                <Pressable onPress={handleAvatarPress} style={style.avatar}>
+                <Pressable
+                    onPress={handleAvatarPress}
+                    containerStyle={style.avatar}>
                     <Avatar
                         id={matrixAuth?.userId || ''}
                         url={matrixAuth?.avatarUrl}
                         size={AvatarSize.lg}
                         name={avatarName}
                     />
-
                     <Text caption>{t('feature.chat.change-avatar')}</Text>
                 </Pressable>
             </View>
@@ -161,7 +173,7 @@ const EditProfileSettings: React.FC = () => {
                     fullWidth
                     title={t('words.save')}
                     onPress={handleNameSubmit}
-                    disabled={!username || isSubmitting}
+                    disabled={saveButtonDisabled}
                     loading={isSubmitting}
                 />
             </View>
@@ -176,6 +188,7 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         avatar: {
             alignItems: 'center',
+            flexDirection: 'column',
             gap: theme.spacing.sm,
         },
         buttonContainer: {
