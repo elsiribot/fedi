@@ -77,16 +77,21 @@ const ConfirmSendChatPayment: React.FC<Props> = ({ route, navigation }) => {
                 onSend={onSend}
                 isLoading={isProcessing}
                 senderText={
-                    <View style={style.sendFrom}>
-                        <FederationLogo
-                            federation={payFromFederation}
-                            size={16}
-                        />
+                    payFromFederation && (
+                        <View style={style.sendFrom}>
+                            <FederationLogo
+                                federation={payFromFederation}
+                                size={16}
+                            />
 
-                        <Text caption numberOfLines={1} style={style.darkGrey}>
-                            {payFromFederation?.name || ''}
-                        </Text>
-                    </View>
+                            <Text
+                                caption
+                                numberOfLines={1}
+                                style={style.darkGrey}>
+                                {payFromFederation?.name || ''}
+                            </Text>
+                        </View>
+                    )
                 }
                 receiverText={
                     existingRoom ? (
