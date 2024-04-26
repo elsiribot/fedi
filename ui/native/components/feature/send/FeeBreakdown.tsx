@@ -1,16 +1,11 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import {
-    Keyboard,
-    Pressable,
-    StyleSheet,
-    TouchableOpacity,
-    View,
-} from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { DetailItem } from '@fedi/common/utils/wallet'
 
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import { PressableIcon } from '../../ui/PressableIcon'
+import { SvgImageSize } from '../../ui/SvgImage'
 import { FeeBreakdownItem } from './FeeBreakdownItem'
 
 export type FeeBreakdownProps = {
@@ -37,20 +32,23 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
     const style = styles(theme)
 
     return (
-        <Pressable style={style.container} onPress={Keyboard.dismiss}>
+        <View style={style.container}>
             <View style={style.headerButtons}>
-                {showBack && (
-                    <TouchableOpacity
-                        style={style.backIconContainer}
-                        onPress={() => onPressBack()}>
-                        <SvgImage name="ChevronLeft" size={SvgImageSize.md} />
-                    </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                    style={style.closeIconContainer}
-                    onPress={() => onClose()}>
-                    <SvgImage name="Close" size={SvgImageSize.md} />
-                </TouchableOpacity>
+                <PressableIcon
+                    svgName="ChevronLeft"
+                    onPress={() => onPressBack()}
+                    svgProps={{ size: SvgImageSize.md }}
+                    containerStyle={[
+                        style.backIconContainer,
+                        !showBack && style.hide,
+                    ]}
+                />
+                <PressableIcon
+                    containerStyle={style.closeIconContainer}
+                    svgName="Close"
+                    svgProps={{ size: SvgImageSize.md }}
+                    onPress={() => onClose()}
+                />
             </View>
             {icon}
             <Text h2 h2Style={style.detailTitle}>
@@ -72,7 +70,7 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
                     </Text>
                 )}
             </View>
-        </Pressable>
+        </View>
     )
 }
 
@@ -84,13 +82,13 @@ const styles = (theme: Theme) =>
         },
         closeIconContainer: {
             position: 'absolute',
-            top: 0,
-            right: 0,
+            top: -5,
+            right: -5,
         },
         backIconContainer: {
             position: 'absolute',
-            top: 0,
-            left: 0,
+            top: -5,
+            left: -5,
         },
         detailItemsContainer: {
             marginTop: theme.spacing.xl,
@@ -110,7 +108,11 @@ const styles = (theme: Theme) =>
             borderWidth: 1,
         },
         headerButtons: {
-            width: '100%',
+            position: 'relative',
             height: theme.spacing.lg,
+            alignSelf: 'stretch',
+        },
+        hide: {
+            display: 'none',
         },
     })
