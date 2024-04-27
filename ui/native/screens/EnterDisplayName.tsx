@@ -81,7 +81,7 @@ const EnterDisplayName: React.FC<Props> = ({ navigation }: Props) => {
         handleSubmitDisplayName(async () => {
             navigation.reset({
                 index: 0,
-                routes: [{ name: 'FederationGreeting' }],
+                routes: [{ name: 'UploadAvatarImage' }],
             })
         })
     }, [handleSubmitDisplayName, navigation])
