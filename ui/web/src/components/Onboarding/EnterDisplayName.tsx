@@ -36,7 +36,7 @@ export const EnterDisplayName: React.FC = () => {
             ev.preventDefault()
             handleSubmitDisplayName(() => {
                 // continue to onboarding complete
-                push('/onboarding/complete')
+                push('/onboarding/image')
             })
         },
         [handleSubmitDisplayName, push],
