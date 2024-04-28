@@ -1,119 +1,99 @@
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import EditIcon from '@fedi/common/assets/svgs/edit.svg'
 import InviteMembersIcon from '@fedi/common/assets/svgs/invite-members.svg'
 import LanguageIcon from '@fedi/common/assets/svgs/language.svg'
 import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
-import QRIcon from '@fedi/common/assets/svgs/qr.svg'
+import NoteIcon from '@fedi/common/assets/svgs/note.svg'
 import ScrollIcon from '@fedi/common/assets/svgs/scroll.svg'
+import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import TableExportIcon from '@fedi/common/assets/svgs/table-export.svg'
 import UsdIcon from '@fedi/common/assets/svgs/usd.svg'
-import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
-import {
-    useFederationSupportsSingleSeed,
-    useIsInviteSupported,
-} from '@fedi/common/hooks/federation'
+import UserIcon from '@fedi/common/assets/svgs/user.svg'
+import { useIsInviteSupported } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useExportTransactions } from '@fedi/common/hooks/transactions'
 import {
     leaveFederation,
-    selectActiveFederation,
+    selectAlphabeticallySortedFederations,
+    selectFederation,
+    selectHasSetMatrixDisplayName,
     selectMatrixAuth,
-    setMatrixDisplayName,
-    uploadAndSetMatrixAvatarUrl,
+    setActiveFederationId,
 } from '@fedi/common/redux'
-import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
+import { Federation } from '@fedi/common/types'
+import {
+    getFederationTosUrl,
+    supportsSingleSeed,
+} from '@fedi/common/utils/FederationUtils'
+import { encodeFediMatrixUserUri } from '@fedi/common/utils/matrix'
 
-import { Avatar } from '../../components/Avatar'
-import { ChatUserQRDialog } from '../../components/ChatUserQRDialog'
-import { CircularLoader } from '../../components/CircularLoader'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { ContentBlock } from '../../components/ContentBlock'
-import { Icon } from '../../components/Icon'
-import { IconButton } from '../../components/IconButton'
+import { CopyInput } from '../../components/CopyInput'
 import { InviteMemberDialog } from '../../components/InviteMemberDialog'
 import * as Layout from '../../components/Layout'
-import { SettingsMenu, SettingsMenuProps } from '../../components/SettingsMenu'
-import { Text } from '../../components/Text'
+import { QRCode } from '../../components/QRCode'
+import {
+    MenuGroup,
+    SettingsMenu,
+    SettingsMenuProps,
+} from '../../components/SettingsMenu'
 import { useAppDispatch, useAppSelector } from '../../hooks'
-import { fedimint, writeBridgeFile } from '../../lib/bridge'
-import { styled, theme } from '../../styles'
+import { fedimint } from '../../lib/bridge'
+import { styled } from '../../styles'
+
+const canLeaveFederation = (federation: Federation | undefined) => {
+    return (
+        typeof federation?.balance === 'number' && federation?.balance < 100_000
+    )
+}
 
 function AdminPage() {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const matrixAuth = useAppSelector(selectMatrixAuth)
-    const activeFederation = useAppSelector(selectActiveFederation)
-    const toast = useToast()
-    const exportTransactions = useExportTransactions(fedimint)
-    const [isMemberQrOpen, setIsMemberQrOpen] = useState(false)
-    const [isInvitingMember, setIsInvitingMember] = useState(false)
-    const [isLeavingFederation, setIsLeavingFederation] = useState(false)
-    const [isExportingCSV, setIsExportingCSV] = useState(false)
-    const [isChangingName, setIsChangingName] = useState(false)
-    const [isChangingAvatar, setIsChangingAvatar] = useState(false)
-    const isInviteSupported = useIsInviteSupported()
-    const supportsSingleSeed = useFederationSupportsSingleSeed()
-
-    const federationId = activeFederation?.id
-    const balance = activeFederation?.balance
-    const canLeaveFederation = typeof balance === 'number' && balance < 100_000
-
-    const handleAvatarChange = useCallback(
-        async (ev: React.ChangeEvent<HTMLInputElement>) => {
-            const file = ev.target.files?.[0]
-            if (!file) return
-            setIsChangingAvatar(true)
-            try {
-                const path = 'chat-avatar'
-                const mimeType = file.type
-                const data = new Uint8Array(await file.arrayBuffer())
-                await writeBridgeFile(path, data)
-                await dispatch(
-                    uploadAndSetMatrixAvatarUrl({ fedimint, path, mimeType }),
-                ).unwrap()
-            } catch (err) {
-                toast.error(t, 'errors.unknown-error')
-            }
-            setIsChangingAvatar(false)
-        },
-        [dispatch, t, toast],
+    const hasSetMatrixDisplayName = useAppSelector(
+        selectHasSetMatrixDisplayName,
     )
 
-    const handleDisplayNameChange = useCallback(async () => {
-        setIsChangingName(true)
-        const displayName = prompt(t('feature.onboarding.enter-username'))
-        if (!displayName) return
-        try {
-            await dispatch(setMatrixDisplayName({ displayName })).unwrap()
-        } catch (err) {
-            toast.error(t, 'errors.unknown-error')
-        }
-        setIsChangingName(false)
-    }, [dispatch, t, toast])
+    const isInviteSupported = useIsInviteSupported()
+    const exportTransactions = useExportTransactions(fedimint)
+
+    const toast = useToast()
+
+    const [invitingFederationId, setInvitingFederationId] = useState<string>('')
+    const [leavingFederationId, setLeavingFederationId] = useState<string>('')
+    const [exportingFederationId, setExportingFederationId] =
+        useState<string>('')
+
+    const leavingFederation = useAppSelector(s =>
+        selectFederation(s, leavingFederationId),
+    )
 
     const handleConfirmLeaveFederation = useCallback(async () => {
-        if (!federationId) return
-        if (canLeaveFederation) {
+        if (!leavingFederation) return
+
+        if (canLeaveFederation(leavingFederation)) {
             try {
-                await dispatch(leaveFederation({ fedimint, federationId }))
+                await dispatch(
+                    leaveFederation({
+                        fedimint,
+                        federationId: leavingFederation.id,
+                    }),
+                )
             } catch (err) {
                 toast.error(t, err, 'errors.unknown-error')
-                return
             }
         }
-        setIsLeavingFederation(false)
-    }, [canLeaveFederation, federationId, dispatch, toast, t])
 
-    const tosUrl =
-        (activeFederation && getFederationTosUrl(activeFederation.meta)) ||
-        undefined
+        setLeavingFederationId('')
+    }, [leavingFederation, dispatch, toast, t])
 
-    const exportTransactionsAsCsv = async () => {
-        setIsExportingCSV(true)
+    const exportTransactionsAsCsv = async (federation: Federation) => {
+        setExportingFederationId(federation.id)
 
-        const res = await exportTransactions()
+        const res = await exportTransactions(federation)
 
         if (res.success) {
             const element = document.createElement('a')
@@ -127,13 +107,33 @@ function AdminPage() {
             toast.error(t, res.message, 'errors.unknown-error')
         }
 
-        setIsExportingCSV(false)
+        setExportingFederationId('')
     }
 
-    let menu: SettingsMenuProps['menu'] = [
-        {
-            label: t('words.federation'),
+    const sortedFederations = useAppSelector(
+        selectAlphabeticallySortedFederations,
+    )
+
+    const federationMenus: MenuGroup[] = sortedFederations.map(federation => {
+        const tosUrl = getFederationTosUrl(federation.meta) || ''
+
+        return {
+            label: federation.name,
             items: [
+                {
+                    label: t('feature.federations.invite-members'),
+                    icon: InviteMembersIcon,
+                    onClick: () => setInvitingFederationId(federation.id),
+                    disabled: !isInviteSupported,
+                },
+                {
+                    label: t('feature.backup.social-backup'),
+                    icon: SocialPeopleIcon,
+                    href: `/settings/backup/social`,
+                    onClick: () =>
+                        dispatch(setActiveFederationId(federation.id)),
+                    hidden: !supportsSingleSeed(federation),
+                },
                 {
                     label: t('feature.federations.federation-terms'),
                     icon: ScrollIcon,
@@ -141,38 +141,30 @@ function AdminPage() {
                     disabled: !tosUrl,
                 },
                 {
-                    label: t('feature.federations.invite-members'),
-                    icon: InviteMembersIcon,
-                    onClick: () => setIsInvitingMember(true),
-                    disabled: !isInviteSupported,
+                    label: t('feature.backup.export-transactions-to-csv'),
+                    icon: TableExportIcon,
+                    onClick: () => exportTransactionsAsCsv(federation),
+                    disabled: !!exportingFederationId,
                 },
                 {
                     label: t('feature.federations.leave-federation'),
                     icon: LeaveFederationIcon,
-                    onClick: () => setIsLeavingFederation(true),
+                    onClick: () => setLeavingFederationId(federation.id),
                 },
             ],
-        },
-        {
-            label: 'words.wallet',
-            items: [
-                {
-                    label: t('feature.backup.backup-wallet'),
-                    icon: WalletIcon,
-                    href: '/settings/backup',
-                    hidden: !supportsSingleSeed,
-                },
-                {
-                    label: t('feature.backup.export-transactions-to-csv'),
-                    icon: TableExportIcon,
-                    onClick: exportTransactionsAsCsv,
-                    disabled: isExportingCSV,
-                },
-            ],
-        },
+        }
+    })
+
+    let menu: SettingsMenuProps['menu'] = [
         {
             label: t('words.general'),
             items: [
+                {
+                    label: t('phrases.edit-profile'),
+                    icon: UserIcon,
+                    href: '/settings/edit-profile',
+                    hidden: !hasSetMatrixDisplayName,
+                },
                 {
                     label: t('words.language'),
                     icon: LanguageIcon,
@@ -183,9 +175,16 @@ function AdminPage() {
                     icon: UsdIcon,
                     href: '/settings/currency',
                 },
+                {
+                    label: t('feature.backup.personal-backup'),
+                    icon: NoteIcon,
+                    href: `/settings/backup/personal`,
+                },
             ],
         },
+        ...federationMenus,
     ]
+
     // Filter out hidden items, filter out groups that have no items left.
     menu = menu
         .map(group => ({
@@ -194,159 +193,80 @@ function AdminPage() {
         }))
         .filter(group => group.items.length > 0)
 
+    const directChatLink = matrixAuth
+        ? encodeFediMatrixUserUri(matrixAuth.userId)
+        : ''
+
     return (
         <ContentBlock>
             <Layout.Root>
                 <Layout.Header>
-                    <Layout.Title>{t('words.settings')}</Layout.Title>
-                    {!!matrixAuth && (
-                        <IconButton
-                            icon={QRIcon}
-                            size="md"
-                            onClick={() => setIsMemberQrOpen(true)}
-                        />
-                    )}
+                    <Layout.Title>{t('words.account')}</Layout.Title>
                 </Layout.Header>
                 <Layout.Content>
                     <div>
-                        {matrixAuth && (
-                            <ChatIdentity>
-                                <ChatAvatarContainer>
-                                    <Avatar
-                                        id={matrixAuth.userId}
-                                        name={matrixAuth.displayName}
-                                        src={matrixAuth.avatarUrl || ''}
-                                        size="lg"
+                        {hasSetMatrixDisplayName && (
+                            <Content>
+                                <QRContainer>
+                                    <QRCode
+                                        data={directChatLink}
+                                        logoOverrideUrl={matrixAuth?.avatarUrl}
                                     />
-                                    <AvatarEdit isUploading={isChangingAvatar}>
-                                        <AvatarEditFileInput
-                                            type="file"
-                                            onChange={handleAvatarChange}
-                                            accept="image/*, video/*"
-                                            id="file-input"
-                                            tabIndex={-1}
-                                            aria-hidden="true"
-                                            multiple
-                                        />
-                                        {isChangingAvatar ? (
-                                            <CircularLoader size="sm" />
-                                        ) : (
-                                            <Icon icon={EditIcon} size="md" />
+                                    <CopyInput
+                                        value={directChatLink}
+                                        onCopyMessage={t(
+                                            'phrases.copied-to-clipboard',
                                         )}
-                                    </AvatarEdit>
-                                </ChatAvatarContainer>
-                                <ChatIdentityName>
-                                    <Text variant="h2" weight="medium">
-                                        {matrixAuth.displayName}
-                                    </Text>
-                                    {isChangingName ? (
-                                        <EditNameLoading>
-                                            <CircularLoader size="xs" />
-                                        </EditNameLoading>
-                                    ) : (
-                                        <IconButton
-                                            icon={EditIcon}
-                                            size="md"
-                                            onClick={handleDisplayNameChange}
-                                        />
-                                    )}
-                                </ChatIdentityName>
-                            </ChatIdentity>
+                                    />
+                                    <Layout.Title small>
+                                        {matrixAuth?.displayName}
+                                    </Layout.Title>
+                                </QRContainer>
+                            </Content>
                         )}
                         <SettingsMenu menu={menu} />
                     </div>
                 </Layout.Content>
             </Layout.Root>
 
-            <ChatUserQRDialog
-                open={isMemberQrOpen}
-                onOpenChange={setIsMemberQrOpen}
-            />
-
             <InviteMemberDialog
-                open={isInvitingMember}
-                onOpenChange={setIsInvitingMember}
+                open={!!invitingFederationId}
+                federationId={invitingFederationId}
+                onClose={() => setInvitingFederationId('')}
             />
 
             <ConfirmDialog
-                open={isLeavingFederation}
-                title={t('feature.federations.leave-federation')}
+                open={!!leavingFederationId}
+                title={`${t('feature.federations.leave-federation')} - ${
+                    leavingFederation?.name
+                }`}
                 description={t(
-                    canLeaveFederation
+                    canLeaveFederation(leavingFederation)
                         ? 'feature.federations.leave-federation-confirmation'
                         : 'feature.federations.leave-federation-withdraw-first',
                 )}
-                onClose={() => setIsLeavingFederation(false)}
+                onClose={() => setLeavingFederationId('')}
                 onConfirm={handleConfirmLeaveFederation}
             />
         </ContentBlock>
     )
 }
 
-const ChatIdentity = styled('div', {
+const Content = styled('div', {
+    flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingTop: 16,
     gap: 16,
-    padding: '24px 16px',
-    borderRadius: 16,
-    holoGradient: '400',
 })
 
-const ChatAvatarContainer = styled('div', {
+const QRContainer = styled('div', {
+    flex: 1,
     display: 'flex',
-    position: 'relative',
-})
-
-const AvatarEdit = styled('label', {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: '100%',
-    opacity: 0,
-    cursor: 'pointer',
-    color: theme.colors.white,
-    background: theme.colors.primary20,
-    filter: `drop-shadow(1px 1px 2px ${theme.colors.primary20})`,
-    transition: `opacity 100ms ease`,
-
-    '&:hover': {
-        opacity: 1,
-    },
-    variants: {
-        isUploading: {
-            true: {
-                opacity: 1,
-                pointerEvents: 'none',
-            },
-        },
-    },
-})
-
-const AvatarEditFileInput = styled('input', {
-    opacity: 0,
-    position: 'absolute',
-    zIndex: -1,
-    top: 0,
-    left: 0,
-    width: 1,
-    height: 1,
-})
-
-const ChatIdentityName = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 4,
-})
-
-const EditNameLoading = styled('div', {
-    width: 32,
+    gap: 16,
 })
 
 export default AdminPage

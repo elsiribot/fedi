@@ -12,7 +12,6 @@ import {
 } from '@fedi/common/utils/wallet'
 
 import {
-    selectActiveFederation,
     selectActiveFederationId,
     selectCurrency,
     selectEcashFeeSchedule,
@@ -25,7 +24,7 @@ import {
     selectTransactionHistory,
     selectStabilityTransactionHistory,
 } from '../redux/transactions'
-import { MSats, Sats, Transaction } from '../types'
+import { Federation, MSats, Sats, Transaction } from '../types'
 import { RpcFeeDetails } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import {
@@ -216,11 +215,9 @@ export function useTxnDisplayUtils(t: TFunction) {
 
 export function useExportTransactions(fedimint: FedimintBridge) {
     const { fetchTransactions } = useTransactionHistory(fedimint)
-    const activeFederation = useCommonSelector(selectActiveFederation)
-
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
-    const exportTransactions = useCallback(async (): Promise<
+    const exportTransactions = useCallback(async (federation: Federation): Promise<
         | { success: true; uri: string; fileName: string }
         | { success: false; message: string }
     > => {
@@ -233,8 +230,8 @@ export function useExportTransactions(fedimint: FedimintBridge) {
             })
 
             const fileName = makeCSVFilename(
-                activeFederation?.name
-                    ? 'transactions-' + activeFederation.name
+                federation?.name
+                    ? 'transactions-' + federation?.name
                     : 'transactions',
             )
             const uri = makeBase64CSVUri(
@@ -255,7 +252,7 @@ export function useExportTransactions(fedimint: FedimintBridge) {
                 message: (e as Error).message,
             }
         }
-    }, [activeFederation, fetchTransactions, makeFormattedAmountsFromMSats])
+    }, [fetchTransactions, makeFormattedAmountsFromMSats])
 
     return exportTransactions
 }

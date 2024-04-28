@@ -1,6 +1,7 @@
 {
     "words": {
         "accept": "Accept",
+        "account": "Account",
         "actions": "Actions",
         "address": "Address",
         "admin": "Admin",
@@ -117,6 +118,7 @@
         "bitcoin-address-created": "Bitcoin address created",
         "bitcoin-equivalent": "Bitcoin equivalent",
         "camera-settings": "Camera settings",
+        "changes-saved": "Changes saved",
         "changes-may-not-be-saved": "Changes you made may not be saved",
         "click-for-more-details": "Click for more details",
         "confirm-chat-send": "Confirm Chat Send",
@@ -129,6 +131,7 @@
         "copied-transaction-id": "Copied transaction ID",
         "display-currency": "Display currency",
         "edit-note": "Edit note",
+        "edit-profile": "Edit profile",
         "email-address": "Email address",
         "expires-in": "Expires in",
         "failed-to-decode-invoice": "Failed to decode invoice",
@@ -297,6 +300,7 @@
             "broadcast-only": "Broadcast only",
             "broadcast-only-notice": "Psst, only admins can send messages here. 🤫",
             "camera-access-information": "To join a group, you will need to allow Fedi access to your camera to scan a group invite link",
+            "change-avatar": "Change Avatar",
             "change-group-name": "Change group name",
             "change-role": "Change role",
             "change-role-failure": "Failed to change role",

@@ -398,6 +398,10 @@ export const shouldEnableNostr = (federation: Federation) => {
     return true
 }
 
+export function supportsSingleSeed(federation: Federation) {
+    return federation.version >= 2
+}
+
 export const getFederationGroupChats = (
     metadata: ClientConfigMetadata,
 ): string[] => {

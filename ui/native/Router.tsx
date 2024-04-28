@@ -18,6 +18,7 @@ import { makeLog } from '@fedi/common/utils/log'
 import { fedimint } from './bridge'
 import AddFediModHeader from './components/feature/admin/AddFediModHeader'
 import CurrencySettingsHeader from './components/feature/admin/CurrencySettingsHeader'
+import EditProfileSettingsHeader from './components/feature/admin/EditProfileSettingsHeader'
 import FediModSettingsHeader from './components/feature/admin/FediModSettingsHeader'
 import LanguageSettingsHeader from './components/feature/admin/LanguageSettingsHeader'
 import SettingsHeader from './components/feature/admin/SettingsHeader'
@@ -110,6 +111,7 @@ import CurrencySettings from './screens/CurrencySettings'
 import DeveloperSettings from './screens/DeveloperSettings'
 import DirectChat from './screens/DirectChat'
 import EditGroup from './screens/EditGroup'
+import EditProfileSettings from './screens/EditProfileSettings'
 import EnterDisplayName from './screens/EnterDisplayName'
 import Eula from './screens/Eula'
 import FederationGreeting from './screens/FederationGreeting'
@@ -823,6 +825,15 @@ const MainNavigator = () => {
                                         component={AddFediMod}
                                         options={() => ({
                                             header: () => <AddFediModHeader />,
+                                        })}
+                                    />
+                                    <Stack.Screen
+                                        name="EditProfileSettings"
+                                        component={EditProfileSettings}
+                                        options={() => ({
+                                            header: () => (
+                                                <EditProfileSettingsHeader />
+                                            ),
                                         })}
                                     />
                                     <Stack.Screen
