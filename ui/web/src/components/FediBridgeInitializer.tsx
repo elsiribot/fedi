@@ -11,6 +11,7 @@ import {
     selectSocialRecoveryQr,
     selectDeviceId,
     initializeDeviceId,
+    startMatrixClient,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -63,6 +64,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                 Promise.all([
                     dispatchRef.current(refreshFederations(fedimint)).unwrap(),
                     dispatchRef.current(fetchSocialRecovery(fedimint)),
+                    dispatchRef.current(startMatrixClient({ fedimint })),
                 ]),
             )
             .then(() => setIsInitialized(true))

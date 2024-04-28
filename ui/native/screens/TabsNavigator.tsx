@@ -9,22 +9,18 @@ import {
     AppStateStatus,
     Pressable,
     StyleSheet,
-    View,
     useWindowDimensions,
 } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 import {
-    useIsChatSupported,
     useIsStabilityPoolSupported,
     usePopupFederationInfo,
 } from '@fedi/common/hooks/federation'
-import { useToast } from '@fedi/common/hooks/toast'
 import {
     refreshActiveStabilityPool,
     refreshFederations,
-    selectActiveFederation,
     selectHasUnseenMessages,
     selectHasUnseenPaymentUpdates,
 } from '@fedi/common/redux'
@@ -59,13 +55,10 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
     const isFocused = useIsFocused()
     const insets = useSafeAreaInsets()
     const [offline] = useState(false)
-    const toast = useToast()
-    const canChat = useIsChatSupported()
     const hasUnseenMessages = useAppSelector(selectHasUnseenMessages)
     const hasUnseenPaymentUpdates = useAppSelector(
         selectHasUnseenPaymentUpdates,
     )
-    const activeFederation = useAppSelector(selectActiveFederation)
     const isStabilityPoolSupported = useIsStabilityPoolSupported()
     const popupInfo = usePopupFederationInfo()
     const dispatch = useAppDispatch()
@@ -104,13 +97,6 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
         return () => subscription.remove()
     }, [dispatch, isStabilityPoolSupported])
 
-    // If we don't have a selected federation, there's nothing to display here
-    // Redirect user to splash screen and render nothing.
-    if (!activeFederation && isFocused) {
-        navigation.navigate('Splash')
-        return <View />
-    }
-
     const style = styles(
         theme,
         insets,
@@ -128,27 +114,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                             case 'Home':
                                 return <Pressable {...props} />
                             case 'Chat':
-                                if (canChat) {
-                                    return <Pressable {...props} />
-                                } else {
-                                    return (
-                                        <Pressable
-                                            {...props}
-                                            style={[
-                                                props.style,
-                                                style.disabledIcon,
-                                            ]}
-                                            onPress={() => {
-                                                toast.show({
-                                                    content: t(
-                                                        'errors.chat-unavailable',
-                                                    ),
-                                                    status: 'error',
-                                                })
-                                            }}
-                                        />
-                                    )
-                                }
+                                return <Pressable {...props} />
                             case 'OmniScanner':
                                 return <Pressable {...props} />
                             default:

@@ -74,35 +74,38 @@ const SelectedFederationHeader: React.FC = () => {
                 // hide the header if showing the upgrade chat screen
                 isOnChatScreen && shouldShowUpgradeChat ? { opacity: 0 } : {},
             ]}>
-            <Pressable
-                style={[
-                    style.federation,
-                    hasNewChatActivityInOtherFeds
-                        ? {
-                              marginRight: theme.spacing.sm,
-                              paddingHorizontal: theme.spacing.md,
-                          }
-                        : {},
-                ]}
-                onPress={openFederationsDrawer}>
-                <FederationLogo federation={activeFederation} size={24} />
-                <Text
-                    bold
-                    caption
-                    numberOfLines={1}
-                    style={style.federationName}>
-                    {activeFederation?.name}
-                </Text>
-                <SvgImage name="ChevronRight" size={20} />
-                <View
+            {/* don't render this if the user has not joined any federations */}
+            {activeFederation && (
+                <Pressable
                     style={[
-                        style.unreadIndicator,
+                        style.federation,
                         hasNewChatActivityInOtherFeds
-                            ? { opacity: 1 }
-                            : { opacity: 0 },
+                            ? {
+                                  marginRight: theme.spacing.sm,
+                                  paddingHorizontal: theme.spacing.md,
+                              }
+                            : {},
                     ]}
-                />
-            </Pressable>
+                    onPress={openFederationsDrawer}>
+                    <FederationLogo federation={activeFederation} size={24} />
+                    <Text
+                        bold
+                        caption
+                        numberOfLines={1}
+                        style={style.federationName}>
+                        {activeFederation?.name}
+                    </Text>
+                    <SvgImage name="ChevronRight" size={20} />
+                    <View
+                        style={[
+                            style.unreadIndicator,
+                            hasNewChatActivityInOtherFeds
+                                ? { opacity: 1 }
+                                : { opacity: 0 },
+                        ]}
+                    />
+                </Pressable>
+            )}
             {popupInfo && <PopupFederationCountdown />}
             {/* Display a small UI indicator for Fedi Nightly builds */}
             {DeviceInfo.getBundleId().includes('nightly') && (
