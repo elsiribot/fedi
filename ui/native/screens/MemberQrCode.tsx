@@ -22,13 +22,17 @@ const MemberQrCode: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
     const matrixAuth = useAppSelector(selectMatrixAuth)
 
+    const directChatLink = useMemo(
+        () => (matrixAuth ? encodeFediMatrixUserUri(matrixAuth.userId) : ''),
+        [matrixAuth],
+    )
+
+    const suffix = useMemo(
+        () => (matrixAuth ? getUserSuffix(matrixAuth.userId) : ''),
+        [matrixAuth],
+    )
+
     if (!matrixAuth) return null
-
-    const directChatLink = encodeFediMatrixUserUri(matrixAuth.userId)
-
-    const suffix = useMemo(() => {
-        return getUserSuffix(matrixAuth.userId)
-    }, [matrixAuth])
 
     const goToScanMemberCode = () => {
         navigation.navigate('ScanMemberCode')
