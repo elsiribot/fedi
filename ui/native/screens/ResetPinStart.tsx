@@ -38,7 +38,7 @@ const ResetPinStart: React.FC<Props> = ({ navigation }: Props) => {
                     dispatch(setIsBackingUpBeforePin(true))
                     navigation.navigate('ResetPin')
                 }}>
-                Continue
+                {t('words.continue')}
             </Button>
         </View>
     )
