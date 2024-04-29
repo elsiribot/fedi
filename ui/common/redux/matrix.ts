@@ -1000,11 +1000,6 @@ export const selectMatrixDirectMessageRoom = createSelector(
     (userId, rooms) => rooms.find(room => room.directUserId === userId),
 )
 
-export const selectMatrixDirectMessageRooms = createSelector(
-    selectMatrixRooms,
-    roomList => roomList.filter(room => !!room.directUserId),
-)
-
 export const selectMatrixHasNotifications = createSelector(
     selectMatrixRooms,
     rooms => rooms.some(room => room.notificationCount > 0),
