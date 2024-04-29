@@ -128,6 +128,15 @@ pub struct DeviceRegistrationEvent {
     pub state: DeviceRegistrationState,
 }
 
+/// Notifier for partial/whole unfilled stability pool deposit having been
+/// claimed back as e-cash.
+#[derive(Serialize, Debug, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct StabilityPoolUnfilledDepositSweptEvent {
+    pub amount: RpcAmount,
+}
+
 /// States representing the different outcomes for device registration requests
 /// sent to Fedi's servers
 #[derive(Serialize, Debug, TS)]
@@ -175,6 +184,7 @@ pub enum Event {
     RecoveryComplete(RecoveryCompleteEvent),
     RecoveryProgress(RecoveryProgressEvent),
     DeviceRegistration(DeviceRegistrationEvent),
+    StabilityPoolUnfilledDepositSwept(StabilityPoolUnfilledDepositSweptEvent),
 }
 
 impl Event {
@@ -259,6 +269,10 @@ impl Event {
     pub fn device_registration(state: DeviceRegistrationState) -> Self {
         Self::DeviceRegistration(DeviceRegistrationEvent { state })
     }
+
+    pub fn stability_pool_unfilled_deposit_swept(amount: RpcAmount) -> Self {
+        Self::StabilityPoolUnfilledDepositSwept(StabilityPoolUnfilledDepositSweptEvent { amount })
+    }
 }
 
 /// Sends events to iOS / Android layer
@@ -325,6 +339,10 @@ pub trait TypedEventExt: IEventSink {
             Event::DeviceRegistration(event) => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 IEventSink::event(self, "deviceRegistration".into(), body);
+            }
+            Event::StabilityPoolUnfilledDepositSwept(event) => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                IEventSink::event(self, "stabilityPoolUnfilledDepositSwept".into(), body);
             }
         };
     }

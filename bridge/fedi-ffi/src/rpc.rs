@@ -2608,9 +2608,10 @@ mod tests {
         // give some time for backup to complete before shutting down the bridge
         fedimint_core::task::sleep(Duration::from_secs(1)).await;
 
-        // get mnemonic (not dropping old federation / bridge so we can assert device
+        // get mnemonic (not dropping old bridge so we can assert device
         // index being stolen)
         let mnemonic = getMnemonic(backup_bridge.clone()).await?;
+        drop(federation);
 
         // create new bridge which hasn't joined federation yet and recover mnemnonic
         let device_identifier_2 = "bridge_2:test:70c25d23-bfac-4aa2-81c3-d6f5e79ae724".to_string();

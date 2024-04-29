@@ -72,6 +72,9 @@ export type Event =
     | { recoveryComplete: RecoveryCompleteEvent }
     | { recoveryProgress: RecoveryProgressEvent }
     | { deviceRegistration: DeviceRegistrationEvent }
+    | {
+          stabilityPoolUnfilledDepositSwept: StabilityPoolUnfilledDepositSweptEvent
+      }
 
 export type GuardianStatus =
     | { online: { guardian: string; latency_ms: number } }
@@ -898,6 +901,10 @@ export type StabilityPoolDepositState =
     | { txRejected: string }
     | { primaryOutputError: string }
     | 'success'
+
+export interface StabilityPoolUnfilledDepositSweptEvent {
+    amount: RpcAmount
+}
 
 export interface StabilityPoolWithdrawalEvent {
     federationId: RpcFederationId

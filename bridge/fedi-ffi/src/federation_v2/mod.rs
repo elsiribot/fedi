@@ -64,11 +64,14 @@ use tracing::{error, info, warn};
 
 use self::backup_service::BackupService;
 pub use self::backup_service::BackupServiceStatus;
-use self::db::{OperationFediFeeStatusKey, OutstandingFediFeesKey};
+use self::db::{
+    LastStabilityPoolDepositCycleKey, OperationFediFeeStatusKey, OutstandingFediFeesKey,
+};
 use self::dev::{
     override_localhost, override_localhost_client_config, override_localhost_invite_code,
 };
 use self::ln_gateway_service::LnGatewayService;
+use self::stability_pool_sweeper_service::StabilityPoolSweeperService;
 use super::constants::{
     LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE, ONE_WEEK, PAY_INVOICE_TIMEOUT,
     REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE, XMPP_CHILD_ID,
@@ -98,6 +101,7 @@ use crate::utils::{display_currency, to_unix_time, unix_now};
 
 mod backup_service;
 mod ln_gateway_service;
+mod stability_pool_sweeper_service;
 
 pub const GUARDIAN_STATUS_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -145,6 +149,7 @@ pub struct FederationV2 {
     pub fedi_fee_remittance_service: OnceCell<FediFeeRemittanceService>,
     pub recovering: bool,
     pub gateway_service: OnceCell<LnGatewayService>,
+    pub stability_pool_sweeper_service: OnceCell<StabilityPoolSweeperService>,
     // Mutex that is held within spending functions to ensure that virtual balance doesn't become
     // negative. That is, two concurrent spends don't accidentally spend more than the virtual
     // balance would allow. We hold the mutex over a span that covers the time of check (recording
@@ -184,6 +189,7 @@ impl FederationV2 {
             fedi_fee_remittance_service: OnceCell::new(),
             recovering,
             gateway_service: OnceCell::new(),
+            stability_pool_sweeper_service: OnceCell::new(),
             client,
             spend_guard: Default::default(),
         };
@@ -218,6 +224,17 @@ impl FederationV2 {
             .is_err()
         {
             error!("ln gateway service already initialized");
+        }
+        if self
+            .stability_pool_sweeper_service
+            .set(StabilityPoolSweeperService::new(
+                self.client.clone(),
+                &self.task_group,
+                self.event_sink.clone(),
+            ))
+            .is_err()
+        {
+            error!("stability pool sweeper service already initialized");
         }
     }
 
@@ -2332,14 +2349,34 @@ impl FederationV2 {
             )));
         }
 
-        let operation_id = self
-            .client
-            .get_first_module::<StabilityPoolClientModule>()
-            .deposit_to_seek(amount)
-            .await?;
+        let module = self.client.get_first_module::<StabilityPoolClientModule>();
+        let operation_id = module.deposit_to_seek(amount).await?;
         self.write_pending_send_fedi_fee(operation_id, fedi_fee)
             .await?;
         drop(spend_guard);
+
+        if let Ok(index) = module.current_cycle_index().await {
+            // This is not critical so we ignore the result
+            let autocommit_res = self
+                .client
+                .db()
+                .autocommit(
+                    |dbtx, _| {
+                        Box::pin(async move {
+                            dbtx.insert_entry(&LastStabilityPoolDepositCycleKey, &index)
+                                .await;
+                            Ok::<(), anyhow::Error>(())
+                        })
+                    },
+                    Some(100),
+                )
+                .await;
+
+            if let Err(e) = autocommit_res {
+                error!(?e, "Error while writing last SP deposit cycle");
+            }
+        }
+
         let fed = self.clone();
         self.task_group
             .clone()
