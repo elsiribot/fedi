@@ -28,7 +28,10 @@ const MemberQrCode: React.FC<Props> = ({ navigation }: Props) => {
     )
 
     const suffix = useMemo(
-        () => (matrixAuth ? getUserSuffix(matrixAuth.userId) : ''),
+        () =>
+            matrixAuth
+                ? getUserSuffix(matrixAuth.displayName, matrixAuth.userId)
+                : '',
         [matrixAuth],
     )
 

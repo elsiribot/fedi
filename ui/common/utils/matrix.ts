@@ -288,8 +288,17 @@ export const makeMatrixPaymentText = ({
 // TODO - make this dynamic if we have a naming collision
 const SUFFIX_LENGTH = 3 as const
 
-export function getUserSuffix(id: MatrixUser['id']) {
-    const hash = EncryptionUtils.toSha256EncHex(id)
+/**
+ * Gets a {SUFFIX_LENGTH} UUID for a user to protect against impersonation.
+ * Generates ID via `sha256(displayName || id)`.
+ *
+ * It includes the display name so the suffix will change if the displayname changes.
+ */
+export function getUserSuffix(
+    displayName: MatrixUser['displayName'],
+    id: MatrixUser['id'],
+) {
+    const hash = EncryptionUtils.toSha256EncHex(displayName + id)
     return `#${hash.substring(hash.length - SUFFIX_LENGTH)}`
 }
 

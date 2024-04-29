@@ -73,7 +73,9 @@ export const ChatRoomInviteUser: React.FC<Props> = ({ roomId }) => {
                     : member?.membership === 'join'
                     ? t('words.joined')
                     : t('words.invite')
-            const suffix = user?.id ? getUserSuffix(user.id) : ''
+            const suffix = user?.id
+                ? getUserSuffix(user.displayName, user.id)
+                : ''
             return (
                 <SearchButton
                     key={user.id}

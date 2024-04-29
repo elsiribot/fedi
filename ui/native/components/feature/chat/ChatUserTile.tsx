@@ -31,7 +31,7 @@ const ChatUserTile: React.FC<UserItemProps> = ({
     const { theme } = useTheme()
 
     const suffix = useMemo(() => {
-        return getUserSuffix(user.id)
+        return getUserSuffix(user.displayName, user.id)
     }, [user])
 
     return (
