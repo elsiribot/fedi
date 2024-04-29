@@ -8,6 +8,9 @@ import {
     useWindowDimensions,
 } from 'react-native'
 
+import { selectIsActiveFederationRecovering } from '@fedi/common/redux'
+
+import { useAppSelector } from '../../../state/hooks'
 import { FediMod, Shortcut } from '../../../types'
 import SvgImage, {
     SvgImageName,
@@ -23,6 +26,10 @@ type ShortcutTileProps = {
 const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
     const { theme } = useTheme()
     const { fontScale } = useWindowDimensions()
+
+    const recoveryInProgress = useAppSelector(
+        selectIsActiveFederationRecovering,
+    )
 
     const style = styles(theme, fontScale)
 
@@ -56,7 +63,13 @@ const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
     }
 
     return (
-        <Pressable style={style.container} onPress={() => onSelect(shortcut)}>
+        <Pressable
+            style={[
+                style.container,
+                recoveryInProgress ? style.disabled : null,
+            ]}
+            onPress={() => onSelect(shortcut)}
+            disabled={recoveryInProgress}>
             <View>{renderIcon()}</View>
             <View style={style.title}>
                 <Text caption medium numberOfLines={2} style={style.titleText}>
@@ -74,6 +87,9 @@ const styles = (theme: Theme, fontScale: number) => {
             alignItems: 'center',
             width: '100%',
             marginVertical: theme.spacing.md,
+        },
+        disabled: {
+            opacity: 0.5,
         },
         iconImage: {
             width: iconSize,
