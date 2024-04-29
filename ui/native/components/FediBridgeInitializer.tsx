@@ -7,7 +7,6 @@ import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import SplashScreen from 'react-native-splash-screen'
 
-import { useObserveMatrixDirectRooms } from '@fedi/common/hooks/matrix'
 import {
     initializeDeviceId,
     selectDeviceId,
@@ -40,9 +39,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const [bridgeError, setBridgeError] = useState<unknown>()
     const deviceId = useAppSelector(selectDeviceId)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
-
-    // Hack - permanently observe DMs to redeem ecash in the background
-    useObserveMatrixDirectRooms()
 
     // Initialize device ID
     useEffect(() => {

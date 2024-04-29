@@ -11,7 +11,6 @@ import {
     selectCanClaimPayment,
     selectLatestMatrixRoomEventId,
     selectMatrixAuth,
-    selectMatrixDirectMessageRooms,
     selectMatrixRoom,
     selectMatrixRoomMember,
     selectMatrixUser,
@@ -89,31 +88,6 @@ export function useMatrixUserSearch() {
         searchedUsers: exactMatchUsers || searchedUsers,
         searchError,
     }
-}
-
-/**
- * HACK: Observe all DMs to claim ecash in the background.
- *
- * TODO: Move this to the bridge... intercept messages that contain
- * ecash and claim before passing to the frontend.
- */
-export function useObserveMatrixDirectRooms() {
-    const dispatch = useCommonDispatch()
-    const directRooms = useCommonSelector(selectMatrixDirectMessageRooms)
-    const isReady = useCommonSelector(s => selectIsMatrixReady(s))
-
-    useEffect(() => {
-        if (!isReady || directRooms.length === 0) return
-        for (const room of directRooms) {
-            dispatch(observeMatrixRoom({ roomId: room.id }))
-        }
-
-        return () => {
-            for (const room of directRooms) {
-                dispatch(unobserveMatrixRoom({ roomId: room.id }))
-            }
-        }
-    }, [isReady, dispatch, directRooms])
 }
 
 export function useObserveMatrixRoom(
