@@ -29,6 +29,11 @@ pub enum BridgeDbPrefix {
     // withdrawn back as e-cash.
     LastStabilityPoolDepositCycle = 0xbb,
 
+    // We need to track pending accrued Fedi app fees separately from outstanding/successfully
+    // accrued Fedi app fees. As pending operations succeed, we move their share of the pending
+    // Fedi app fees to the oustanding Fedi app fees.
+    PendingFediFees = 0xbc,
+
     // Do not use anything after this key (inclusive)
     // see https://github.com/fedimint/fedimint/pull/4445
     #[allow(dead_code)]
@@ -96,6 +101,15 @@ impl_db_record!(
     key = OperationFediFeeStatusKey,
     value = OperationFediFeeStatus,
     db_prefix = BridgeDbPrefix::OperationFediFeeStatus,
+);
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct PendingFediFeesKey;
+
+impl_db_record!(
+    key = PendingFediFeesKey,
+    value = Amount,
+    db_prefix = BridgeDbPrefix::PendingFediFees,
 );
 
 #[derive(Debug, Decodable, Encodable)]
