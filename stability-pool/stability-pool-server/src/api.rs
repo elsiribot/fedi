@@ -25,6 +25,13 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
             }
         },
         api_endpoint! {
+            "current_cycle_index",
+            ApiVersion::new(0, 0),
+            async |_module: &StabilityPool, context, _request: ()| -> u64 {
+                Ok(current_cycle_index(&mut context.dbtx().into_nc()).await?)
+            }
+        },
+        api_endpoint! {
             "next_cycle_start_time",
             ApiVersion::new(0, 0),
             async |module: &StabilityPool, context, _request: ()| -> u64 {
@@ -110,6 +117,20 @@ pub async fn account_info(dbtx: &mut DatabaseTransaction<'_>, account: PublicKey
         locked_provides,
         seeks_metadata,
     }
+}
+
+pub async fn current_cycle_index(
+    dbtx: &mut DatabaseTransaction<'_>,
+) -> anyhow::Result<u64, ApiError> {
+    let current_cycle_index = dbtx
+        .get_value(&CurrentCycleKey)
+        .await
+        .ok_or(ApiError::server_error(
+            "First cycle not yet started".to_owned(),
+        ))?
+        .index;
+
+    Ok(current_cycle_index)
 }
 
 pub async fn next_cycle_start_time(

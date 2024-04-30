@@ -69,7 +69,7 @@ impl ClientModuleInit for StabilityPoolClientInit {
 
     async fn init(&self, args: &ClientModuleInitArgs<Self>) -> anyhow::Result<Self::Module> {
         Ok(StabilityPoolClientModule {
-            _cfg: args.cfg().to_owned(),
+            cfg: args.cfg().to_owned(),
             client_key_pair: args
                 .module_root_secret()
                 .to_owned()
@@ -90,7 +90,7 @@ impl ClientModuleInit for StabilityPoolClientInit {
 
 #[derive(Debug, Clone)]
 pub struct StabilityPoolClientModule {
-    _cfg: StabilityPoolClientConfig,
+    pub cfg: StabilityPoolClientConfig,
     client_key_pair: KeyPair,
     module_api: DynModuleApi,
     client_ctx: ClientContext<Self>,
@@ -580,6 +580,15 @@ impl StabilityPoolClientModule {
         )
         .await
         .map_err(FederationError::general)?
+    }
+
+    pub async fn current_cycle_index(&self) -> anyhow::Result<u64, FederationError> {
+        self.module_api
+            .request_current_consensus(
+                "current_cycle_index".to_string(),
+                ApiRequestErased::default(),
+            )
+            .await
     }
 
     pub async fn next_cycle_start_time(&self) -> anyhow::Result<u64, FederationError> {

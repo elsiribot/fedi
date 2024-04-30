@@ -23,6 +23,12 @@ pub enum BridgeDbPrefix {
     OperationFediFeeStatus = 0xb9,
     LastActiveGateway = 0xba,
 
+    // Index of the stability pool cycle during which the last deposit was made. We track this so
+    // we can determine when user's deposit(s) are unfilled. Any staged/pending seeks that exist
+    // in a cycle after this last recorded cycle are by definition unfilled and therefore may be
+    // withdrawn back as e-cash.
+    LastStabilityPoolDepositCycle = 0xbb,
+
     // Do not use anything after this key (inclusive)
     // see https://github.com/fedimint/fedimint/pull/4445
     #[allow(dead_code)]
@@ -99,4 +105,13 @@ impl_db_record!(
     key = LastActiveGatewayKey,
     value = secp256k1::PublicKey,
     db_prefix = BridgeDbPrefix::LastActiveGateway,
+);
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct LastStabilityPoolDepositCycleKey;
+
+impl_db_record!(
+    key = LastStabilityPoolDepositCycleKey,
+    value = u64,
+    db_prefix = BridgeDbPrefix::LastStabilityPoolDepositCycle,
 );
