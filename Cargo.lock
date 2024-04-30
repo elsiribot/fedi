@@ -1814,7 +1814,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fedi-db-tool"
+name = "fedi-debug"
 version = "0.0.0"
 dependencies = [
  "anyhow",

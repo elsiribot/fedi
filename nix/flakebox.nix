@@ -12,7 +12,7 @@ let
     "fedimintd"
     "fedimint-cli"
     "fedi-db-dump"
-    "fedi-db-tool"
+    "fedi-debug"
     "devi"
     "fedi-social-client"
     "fedi-social-common"
