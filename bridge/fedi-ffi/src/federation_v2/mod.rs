@@ -2326,6 +2326,18 @@ impl FederationV2 {
             .context("Error when fetching average fee rate")
     }
 
+    pub async fn stability_pool_available_liquidity(&self) -> Result<RpcAmount> {
+        let stats = self
+            .client
+            .get_first_module::<StabilityPoolClientModule>()
+            .liquidity_stats()
+            .await
+            .context("Error when fetching liquidity stats")?;
+        Ok(RpcAmount(Amount::from_msats(
+            stats.staged_provides_sum_msat,
+        )))
+    }
+
     /// Deposit the given amount of msats into the stability pool
     /// with the intention of seeking. Once the fedimint transaction
     /// is accepted, the deposit is staged (pending). When the next

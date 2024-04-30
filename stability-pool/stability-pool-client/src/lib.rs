@@ -9,7 +9,7 @@ use async_stream::stream;
 use bitcoin::KeyPair;
 use common::config::StabilityPoolClientConfig;
 use common::{
-    amount_to_cents, AccountInfo, CancelRenewal, IntendedAction, Provide, Seek,
+    amount_to_cents, AccountInfo, CancelRenewal, IntendedAction, LiquidityStats, Provide, Seek,
     StabilityPoolCommonGen, StabilityPoolInput, StabilityPoolModuleTypes, StabilityPoolOutput,
     BPS_UNIT,
 };
@@ -618,6 +618,14 @@ impl StabilityPoolClientModule {
     pub async fn cycle_start_price(&self) -> anyhow::Result<u64, FederationError> {
         self.module_api
             .request_current_consensus("cycle_start_price".to_string(), ApiRequestErased::default())
+            .await
+    }
+
+    /// Returns the current provider liquidity stats of the federation,
+    /// including total free and used-up liquidity.
+    pub async fn liquidity_stats(&self) -> anyhow::Result<LiquidityStats, FederationError> {
+        self.module_api
+            .request_current_consensus("liquidity_stats".to_string(), ApiRequestErased::default())
             .await
     }
 

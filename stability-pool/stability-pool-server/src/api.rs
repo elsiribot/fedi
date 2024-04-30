@@ -5,8 +5,7 @@ use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiEr
 use fedimint_core::Amount;
 use futures::{stream, StreamExt};
 use secp256k1_zkp::PublicKey;
-use serde_json::json;
-use stability_pool_common::AccountInfo;
+use stability_pool_common::{AccountInfo, LiquidityStats};
 
 use crate::db::{
     CurrentCycleKey, Cycle, IdleBalance, IdleBalanceKey, PastCycleKeyPrefix,
@@ -55,7 +54,7 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
         api_endpoint! {
             "liquidity_stats",
             ApiVersion::new(0, 0),
-            async |_module: &StabilityPool, context, _request: ()| -> serde_json::Value {
+            async |_module: &StabilityPool, context, _request: ()| -> LiquidityStats {
                 Ok(liquidity_stats(&mut context.dbtx().into_nc()).await?)
             }
         },
@@ -214,7 +213,7 @@ pub async fn wait_cancellation_processed(
 /// - sum of currently staged provides
 pub async fn liquidity_stats(
     dbtx: &mut DatabaseTransaction<'_>,
-) -> anyhow::Result<serde_json::Value, ApiError> {
+) -> anyhow::Result<LiquidityStats, ApiError> {
     let current_cycle = dbtx
         .get_value(&CurrentCycleKey)
         .await
@@ -252,12 +251,12 @@ pub async fn liquidity_stats(
         .map(|p| p.provide.amount.msats)
         .sum();
 
-    Ok(json!({
-        "locked_seeks_sum_msat": locked_seeks_sum_msat,
-        "locked_provides_sum_msat": locked_provides_sum_msat,
-        "staged_seeks_sum_msat": staged_seeks_sum_msat,
-        "staged_provides_sum_msat": staged_provides_sum_msat,
-    }))
+    Ok(LiquidityStats {
+        locked_seeks_sum_msat,
+        locked_provides_sum_msat,
+        staged_seeks_sum_msat,
+        staged_provides_sum_msat,
+    })
 }
 
 /// Returns the average of the provider fee rate over the last #num_cycles

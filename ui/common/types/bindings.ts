@@ -502,6 +502,7 @@ export interface RpcMethods {
         { federationId: RpcFederationId; numCycles: bigint },
         bigint,
     ]
+    stabilityPoolAvailableLiquidity: [{ federationId: RpcFederationId }, MSats]
     getSensitiveLog: [Record<string, never>, boolean]
     setSensitiveLog: [{ enable: boolean }, null]
     setMintModuleFediFeeSchedule: [

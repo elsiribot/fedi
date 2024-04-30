@@ -1216,6 +1216,16 @@ impl Bridge {
             .await
     }
 
+    pub(crate) async fn stability_pool_available_liquidity(
+        &self,
+        federation_id: RpcFederationId,
+    ) -> Result<RpcAmount> {
+        self.get_multi(&federation_id.0)
+            .await?
+            .stability_pool_available_liquidity()
+            .await
+    }
+
     pub async fn set_mint_module_fedi_fee_schedule(
         &self,
         federation_id: RpcFederationId,
