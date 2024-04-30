@@ -66,6 +66,7 @@ use self::backup_service::BackupService;
 pub use self::backup_service::BackupServiceStatus;
 use self::db::{
     LastStabilityPoolDepositCycleKey, OperationFediFeeStatusKey, OutstandingFediFeesKey,
+    PendingFediFeesKey,
 };
 use self::dev::{
     override_localhost, override_localhost_client_config, override_localhost_invite_code,
@@ -457,7 +458,7 @@ impl FederationV2 {
             .get_wallet_summary(&mut dbtx)
             .await
             .total_amount()
-            - self.get_outstanding_fedi_fees().await
+            - (self.get_outstanding_fedi_fees().await + self.get_pending_fedi_fees().await)
     }
 
     pub async fn guardian_status(&self) -> anyhow::Result<Vec<GuardianStatus>> {
@@ -526,6 +527,15 @@ impl FederationV2 {
             .await
             .into_nc()
             .get_value(&OutstandingFediFeesKey)
+            .await
+            .unwrap_or(Amount::ZERO)
+    }
+
+    pub async fn get_pending_fedi_fees(&self) -> Amount {
+        self.dbtx()
+            .await
+            .into_nc()
+            .get_value(&PendingFediFeesKey)
             .await
             .unwrap_or(Amount::ZERO)
     }
@@ -2494,9 +2504,8 @@ impl FederationV2 {
         }
     }
 
-    /// We optimistically charge the fee from the send amount (since the amount
-    /// + fee must already be in the user's possession) and refund the fee
-    /// in case the operation ends up failing.
+    /// We record the fee within the pending counter. On success, we move the
+    /// fee to the success/accrued counter. On failure, we refund the fee.
     async fn write_pending_send_fedi_fee(
         &self,
         operation_id: OperationId,
@@ -2508,9 +2517,9 @@ impl FederationV2 {
             .autocommit(
                 |dbtx, _| {
                     Box::pin(async move {
-                        let outstanding_fedi_fees = fedi_fee
+                        let pending_fedi_fees = fedi_fee
                             + dbtx
-                                .get_value(&OutstandingFediFeesKey)
+                                .get_value(&PendingFediFeesKey)
                                 .await
                                 .unwrap_or(Amount::ZERO);
                         dbtx.insert_entry(
@@ -2518,7 +2527,7 @@ impl FederationV2 {
                             &OperationFediFeeStatus::PendingSend { fedi_fee },
                         )
                         .await;
-                        dbtx.insert_entry(&OutstandingFediFeesKey, &outstanding_fedi_fees)
+                        dbtx.insert_entry(&PendingFediFeesKey, &pending_fedi_fees)
                             .await;
                         Ok::<(), anyhow::Error>(())
                     })
@@ -2547,10 +2556,11 @@ impl FederationV2 {
 
     /// Transitions the OperationFediFeeStatus for a send operation from pending
     /// to success, iff the status is currently pending. Therefore the
-    /// transition only happens once. Returns Ok((true, new_status)) if a DB
-    /// write actually occurred, and Ok((false, current_status)) if no write
-    /// was needed, meaning that the status has already been recorded as a
-    /// success.
+    /// transition only happens once. When this transition happens, the pending
+    /// counter is reduced and the accrued counter increased by the operation's
+    /// fee amount. Returns Ok((true, new_status)) if a DB write actually
+    /// occurred, and Ok((false, current_status)) if no write was needed,
+    /// meaning that the status has already been recorded as a success.
     async fn write_success_send_fedi_fee(
         &self,
         operation_id: OperationId,
@@ -2564,8 +2574,27 @@ impl FederationV2 {
                         let key = OperationFediFeeStatusKey(operation_id);
                         let (did_overwrite, status) = match dbtx.get_value(&key).await {
                             Some(OperationFediFeeStatus::PendingSend { fedi_fee }) => {
+                                // Transition operation status
                                 let new_status = OperationFediFeeStatus::Success { fedi_fee };
                                 dbtx.insert_entry(&key, &new_status).await;
+
+                                // Reduce pending counter
+                                let pending_fedi_fees = dbtx
+                                    .get_value(&PendingFediFeesKey)
+                                    .await
+                                    .unwrap_or(Amount::ZERO)
+                                    .saturating_sub(fedi_fee);
+                                dbtx.insert_entry(&PendingFediFeesKey, &pending_fedi_fees)
+                                    .await;
+
+                                // Increment outstanding/success counter
+                                let outstanding_fedi_fees = fedi_fee
+                                    + dbtx
+                                        .get_value(&OutstandingFediFeesKey)
+                                        .await
+                                        .unwrap_or(Amount::ZERO);
+                                dbtx.insert_entry(&OutstandingFediFeesKey, &outstanding_fedi_fees)
+                                    .await;
                                 (true, new_status)
                             }
                             Some(status @ OperationFediFeeStatus::Success { .. }) => {
@@ -2627,18 +2656,17 @@ impl FederationV2 {
                         let key = OperationFediFeeStatusKey(operation_id);
                         let (did_overwrite, status) = match dbtx.get_value(&key).await {
                             Some(OperationFediFeeStatus::PendingSend { fedi_fee }) => {
+                                // Transition operation status
                                 let new_status = OperationFediFeeStatus::FailedSend { fedi_fee };
                                 dbtx.insert_entry(&key, &new_status).await;
-                                let outstanding_fedi_fees = dbtx
-                                    .get_value(&OutstandingFediFeesKey)
+
+                                // Reduce pending counter
+                                let pending_fedi_fees = dbtx
+                                    .get_value(&PendingFediFeesKey)
                                     .await
-                                    .unwrap_or(Amount::ZERO);
-                                let outstanding_fedi_fees = if outstanding_fedi_fees > fedi_fee {
-                                    outstanding_fedi_fees - fedi_fee
-                                } else {
-                                    Amount::ZERO
-                                };
-                                dbtx.insert_entry(&OutstandingFediFeesKey, &outstanding_fedi_fees)
+                                    .unwrap_or(Amount::ZERO)
+                                    .saturating_sub(fedi_fee);
+                                dbtx.insert_entry(&PendingFediFeesKey, &pending_fedi_fees)
                                     .await;
                                 (true, new_status)
                             }
