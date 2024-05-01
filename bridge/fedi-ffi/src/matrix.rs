@@ -766,8 +766,8 @@ mod tests {
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
 
-    const TEST_HOME_SERVER: &str = "matrix-dendrite-homeserver2.dev.fedibtc.com";
-    const TEST_SLIDING_SYNC: &str = "https://sliding.matrix-dendrite-homeserver2.dev.fedibtc.com";
+    const TEST_HOME_SERVER: &str = "matrix-synapse-homeserver2.dev.fedibtc.com";
+    const TEST_SLIDING_SYNC: &str = "https://sliding.matrix-synapse-homeserver2.dev.fedibtc.com";
 
     async fn mk_matrix_login(
         user_name: &str,
