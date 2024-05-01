@@ -43,9 +43,9 @@ use crate::matrix::{
 };
 use crate::observable::{Observable, ObservableVec};
 use crate::types::{
-    GuardianStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederationPreview,
-    RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway, RpcPayAddressResponse,
-    RpcRegisteredDevice,
+    GuardianStatus, RpcBridgeStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
+    RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
+    RpcPayAddressResponse, RpcRegisteredDevice,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -664,6 +664,11 @@ async fn deviceIndexAssignmentStatus(
     bridge.device_index_assignment_status().await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn bridgeStatus(bridge: Arc<Bridge>) -> anyhow::Result<RpcBridgeStatus> {
+    bridge.bridge_status().await
+}
+
 async fn get_matrix(bridge: &Bridge) -> anyhow::Result<&Matrix> {
     bridge.matrix.get().context(ErrorCode::MatrixNotInitialized)
 }
@@ -1141,6 +1146,7 @@ macro_rules! rpc_methods {
 }
 
 rpc_methods!(RpcMethods {
+    bridgeStatus,
     // Federations
     joinFederation,
     federationPreview,

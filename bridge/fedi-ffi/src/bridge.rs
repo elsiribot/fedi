@@ -45,9 +45,9 @@ use crate::storage::{
     AppState, DatabaseInfo, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule,
 };
 use crate::types::{
-    GuardianStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederationPreview,
-    RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway, RpcPayAddressResponse,
-    RpcRegisteredDevice, RpcReturningMemberStatus,
+    GuardianStatus, RpcBridgeStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
+    RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
+    RpcPayAddressResponse, RpcRegisteredDevice, RpcReturningMemberStatus,
 };
 use crate::utils::required_threashold_of;
 
@@ -220,6 +220,17 @@ impl Bridge {
         Ok(bridge)
     }
 
+    pub async fn bridge_status(&self) -> anyhow::Result<RpcBridgeStatus> {
+        let matrix_setup = self
+            .app_state
+            .with_read_lock(|x| x.matrix_session.is_some())
+            .await;
+        let device_index_assignment_status = self.device_index_assignment_status().await?;
+        Ok(RpcBridgeStatus {
+            matrix_setup,
+            device_index_assignment_status,
+        })
+    }
     /// Dump the database for a given federation.
     pub async fn dump_db(&self, federation_id: &str) -> anyhow::Result<PathBuf> {
         let db_dump_path = format!("db-{federation_id}.dump");
