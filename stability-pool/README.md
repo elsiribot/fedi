@@ -147,11 +147,9 @@ When other guardians receive these proposals and consensus items, they wait to s
 ### Oracle solution
 
 To obtain the BTC/USD price, each guardian sends API requests to the following sources in parallel:
-1. blockchain.com
-2. cex.io
-3. coingecko.com
-4. coinbase.com
-5. bitstamp.net
+1. cex.io
+2. yadio.io
+3. bitstamp.net
 
 The median value across all returned values is chosen. The oracle is considered as long as at least one source returns a price. Note that there are two points where a median is selected: among all the price sources, and then among all the guardian votes.
 
