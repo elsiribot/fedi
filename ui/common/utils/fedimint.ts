@@ -358,8 +358,10 @@ export class FedimintBridge {
         return this.rpcTyped('matrixInit', {})
     }
 
-    async matrixGetAccountSession() {
-        return this.rpcTyped('matrixGetAccountSession', {})
+    async matrixGetAccountSession(
+        args: bindings.RpcPayload<'matrixGetAccountSession'>,
+    ) {
+        return this.rpcTyped('matrixGetAccountSession', args)
     }
 
     async matrixRoomList() {
@@ -552,7 +554,9 @@ export class FedimintBridge {
         return this.rpcTyped('dumpDb', args)
     }
 
-    async getAccruedOutstandingFediFees(args: bindings.RpcPayload<'getAccruedOutstandingFediFees'>) {
+    async getAccruedOutstandingFediFees(
+        args: bindings.RpcPayload<'getAccruedOutstandingFediFees'>,
+    ) {
         return this.rpcTyped('getAccruedOutstandingFediFees', args)
     }
 
