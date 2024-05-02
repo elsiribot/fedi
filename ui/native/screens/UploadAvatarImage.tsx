@@ -84,8 +84,7 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
             <View style={style.buttonContainer}>
                 <Button
                     titleStyle={style.skipButtonText}
-                    type="outline"
-                    color={theme.colors.primary}
+                    color={theme.colors.offWhite}
                     fullWidth
                     title={t('words.skip')}
                     onPress={finishStep}
