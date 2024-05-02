@@ -539,6 +539,8 @@
             "allow-camera-title": "Allow camera access to",
             "allow-notifications-description": "New chat messages, payments, and announcements",
             "allow-notifications-title": "Allow notifications to see",
+            "allow-storage-title": "Allow storage access to",
+            "allow-storage-description": "Upload files, set your profile picture, and more",
             "update-later-disclaimer": "This can be updated later"
         },
         "pin": {

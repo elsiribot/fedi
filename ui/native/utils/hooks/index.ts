@@ -8,6 +8,9 @@ import {
     requestNotifications,
     PermissionStatus,
     PERMISSIONS,
+    RESULTS,
+    checkMultiple,
+    requestMultiple,
 } from 'react-native-permissions'
 
 import { makeLog } from '@fedi/common/utils/log'
@@ -73,4 +76,73 @@ export function useNotificationsPermission() {
     }, [])
 
     return { notificationsPermission, requestNotificationsPermission }
+}
+
+export function useStoragePermission() {
+    const [storagePermission, setStoragePermission] =
+        useState<PermissionStatus>()
+    const permissions = Platform.select({
+        ios: [PERMISSIONS.IOS.PHOTO_LIBRARY],
+        android: [
+            PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE,
+            PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE,
+        ],
+    })
+
+    useEffect(() => {
+        if (!permissions) {
+            log.error('useStoragePermission: unsupported platform')
+            setStoragePermission('unavailable')
+            return
+        }
+
+        checkMultiple(permissions)
+            .then(statuses => {
+                let allGranted = true
+
+                for (const permission of permissions) {
+                    if (statuses[permission] !== RESULTS.GRANTED) {
+                        allGranted = false
+                        break
+                    }
+                }
+
+                setStoragePermission(
+                    allGranted ? RESULTS.GRANTED : RESULTS.DENIED,
+                )
+            })
+            .catch(err => {
+                log.error('useStoragePermission check', err)
+                setStoragePermission('unavailable')
+            })
+    }, [permissions])
+
+    const requestStoragePermission = useCallback(() => {
+        if (!permissions) {
+            log.error('requestStoragePermission: unsupported platform')
+            throw new Error('Unsupported platform')
+        }
+
+        return requestMultiple(permissions)
+            .then(statuses => {
+                let allGranted = true
+
+                for (const permission of permissions) {
+                    if (statuses[permission] !== RESULTS.GRANTED) {
+                        allGranted = false
+                        break
+                    }
+                }
+
+                setStoragePermission(
+                    allGranted ? RESULTS.GRANTED : RESULTS.DENIED,
+                )
+            })
+            .catch(err => {
+                log.error('useStoragePermission check', err)
+                setStoragePermission('unavailable')
+            })
+    }, [permissions])
+
+    return { storagePermission, requestStoragePermission }
 }

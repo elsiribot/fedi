@@ -14,6 +14,7 @@ import {
 } from '@fedi/common/redux'
 
 import { fedimint } from '../bridge'
+import { StoragePermissionGate } from '../components/feature/permissions/StoragePermissionGate'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -123,22 +124,26 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
         : `${t('words.hello')}, ${displayName}`
 
     return (
-        <ScrollView
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={style.container}>
-            <View style={style.avatarContainer}>
-                <Avatar
-                    id={matrixAuth?.userId || ''}
-                    url={matrixAuth?.avatarUrl}
-                    size={AvatarSize.lg}
-                    name={avatarName}
-                />
+        <StoragePermissionGate>
+            <ScrollView
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={style.container}>
+                <View style={style.avatarContainer}>
+                    <Avatar
+                        id={matrixAuth?.userId || ''}
+                        url={matrixAuth?.avatarUrl}
+                        size={AvatarSize.lg}
+                        name={avatarName}
+                    />
 
-                <Text h2>{greeting}</Text>
-            </View>
+                    <Text h2>{greeting}</Text>
+                </View>
 
-            {didUpload ? renderPostUploadButtons() : renderPreUploadButtons()}
-        </ScrollView>
+                {didUpload
+                    ? renderPostUploadButtons()
+                    : renderPreUploadButtons()}
+            </ScrollView>
+        </StoragePermissionGate>
     )
 }
 
