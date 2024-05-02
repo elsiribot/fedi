@@ -97,7 +97,7 @@ impl Bridge {
                 enc_identifier,
                 app_state.clone(),
                 event_sink.clone(),
-                task_group.make_subgroup().await,
+                &task_group,
                 fedi_api.clone(),
             )
             .await,
@@ -750,7 +750,7 @@ impl Bridge {
         self.device_registration_service
             .lock()
             .await
-            .start_ongoing_periodic_registration(index)
+            .start_ongoing_periodic_registration(index, &self.task_group, self.event_sink.clone())
             .await?;
 
         if self

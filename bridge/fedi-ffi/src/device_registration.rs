@@ -15,8 +15,6 @@ pub struct DeviceRegistrationService {
     device_identifier: DeviceIdentifier,
     encrypted_device_identifier: String,
     app_state: Arc<AppState>,
-    event_sink: EventSink,
-    task_group: TaskGroup,
     fedi_api: Arc<dyn IFediApi>,
     active_task_subgroup: Option<TaskGroup>,
 }
@@ -27,22 +25,20 @@ impl DeviceRegistrationService {
         encrypted_device_identifier: String,
         app_state: Arc<AppState>,
         event_sink: EventSink,
-        task_group: TaskGroup,
+        task_group: &TaskGroup,
         fedi_api: Arc<dyn IFediApi>,
     ) -> Self {
         let mut service = Self {
             device_identifier: device_identifier.clone(),
             encrypted_device_identifier: encrypted_device_identifier.clone(),
             app_state: app_state.clone(),
-            event_sink: event_sink.clone(),
-            task_group: task_group.clone(),
             fedi_api: fedi_api.clone(),
             active_task_subgroup: None,
         };
 
         if let Some(device_index) = app_state.with_read_lock(|state| state.device_index).await {
             service
-                .start_periodic_registration_inner(device_index)
+                .start_periodic_registration_inner(device_index, task_group, event_sink)
                 .await;
         }
         service
@@ -60,17 +56,25 @@ impl DeviceRegistrationService {
     pub async fn start_ongoing_periodic_registration(
         &mut self,
         device_index: u8,
+        task_group: &TaskGroup,
+        event_sink: EventSink,
     ) -> anyhow::Result<()> {
         if self.active_task_subgroup.is_some() {
             bail!("Stop currently ongoing device registration task first");
         }
 
-        self.start_periodic_registration_inner(device_index).await;
+        self.start_periodic_registration_inner(device_index, task_group, event_sink)
+            .await;
         Ok(())
     }
 
-    async fn start_periodic_registration_inner(&mut self, device_index: u8) {
-        let subgroup = self.task_group.make_subgroup().await;
+    async fn start_periodic_registration_inner(
+        &mut self,
+        device_index: u8,
+        task_group: &TaskGroup,
+        event_sink: EventSink,
+    ) {
+        let subgroup = task_group.make_subgroup().await;
         subgroup.spawn_cancellable(
             "device_registration_service",
             renew_registration_periodically(
@@ -78,7 +82,7 @@ impl DeviceRegistrationService {
                 self.encrypted_device_identifier.clone(),
                 device_index,
                 self.app_state.clone(),
-                self.event_sink.clone(),
+                event_sink,
                 self.fedi_api.clone(),
             ),
         );
