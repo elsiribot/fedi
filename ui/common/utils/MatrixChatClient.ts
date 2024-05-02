@@ -530,6 +530,13 @@ export class MatrixChatClient {
                     { roomId, err },
                 )
             })
+            // HACK: Observe all DMs to claim ecash in the background.
+            // TODO: Move this to the bridge... intercept messages that contain
+            // ecash and claim before passing to the frontend.
+            //
+            this.observeRoomTimeline(roomId).catch(err => {
+                log.warn('Failed to observe room timeline', { roomId, err })
+            })
         }
 
         // Listen and emit on observable updates
