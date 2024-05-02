@@ -40,7 +40,7 @@ impl DeviceRegistrationService {
             active_task_subgroup: None,
         };
 
-        if let Some(device_index) = app_state.with_read_lock(|state| state.device_index).await {
+        if let Some(device_index) = app_state.device_index().await {
             service
                 .start_periodic_registration_inner(device_index)
                 .await;
