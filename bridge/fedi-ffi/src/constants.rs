@@ -52,8 +52,7 @@ pub const FEDI_INVOICE_API_URL_MAINNET: &str =
     "https://mainnet-fedi-fee-collection.dev.fedibtc.com/v0/generate-invoice";
 
 // URL for Fedi's device registration API
-// TODO shaurya replace with production URL when deployed (currently staging)
-pub const FEDI_DEVICE_REGISTRATION_URL: &str = "https://staging-device-control.dev.fedibtc.com/v0";
+pub const FEDI_DEVICE_REGISTRATION_URL: &str = "https://prod-device-control.dev.fedibtc.com/v0";
 
 pub const GLOBAL_MATRIX_SERVER: &str = "https://matrix-synapse-homeserver2.dev.fedibtc.com";
 pub const GLOBAL_MATRIX_SLIDING_SYNC_PROXY: &str =
