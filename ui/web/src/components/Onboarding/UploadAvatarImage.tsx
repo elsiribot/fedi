@@ -33,6 +33,7 @@ export const UploadAvatarImage: React.FC = () => {
 
     const imageInputRef = useRef<HTMLInputElement>(null)
 
+    const [localImageUrl, setLocalImageUrl] = useState<string>('')
     const [didUpload, setDidUpload] = useState<boolean>(false)
     const [isUploading, setIsUploading] = useState<boolean>(false)
 
@@ -59,6 +60,8 @@ export const UploadAvatarImage: React.FC = () => {
                     uploadAndSetMatrixAvatarUrl({ fedimint, path, mimeType }),
                 ).unwrap()
 
+                const fileUrl = URL.createObjectURL(file)
+                setLocalImageUrl(fileUrl)
                 setDidUpload(true)
             } catch (err) {
                 toast.error(t, 'errors.unknown-error')
@@ -140,7 +143,7 @@ export const UploadAvatarImage: React.FC = () => {
                 <OnboardingContent>
                     <Avatar
                         id={matrixAuth.userId || ''}
-                        src={matrixAuth?.avatarUrl}
+                        src={localImageUrl}
                         size="lg"
                         name={avatarName}
                     />
