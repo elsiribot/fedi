@@ -14,9 +14,8 @@ import {
     selectRegisteredDevices,
     transferExistingWallet,
     createNewWallet,
-    fetchDeviceIndexAssignmentStatus,
-    fetchRegisteredDevices,
     startMatrixClient,
+    selectHasSetMatrixDisplayName,
 } from '../redux'
 import { SeedWords } from '../types'
 import { DeviceRegistrationEvent, RpcRegisteredDevice } from '../types/bindings'
@@ -100,8 +99,9 @@ export function usePersonalRecovery(t: TFunction, fedimint: FedimintBridge) {
                     }),
                 ).unwrap()
 
-                // this should be the first time we start the
-                // matrix client for an initial registration
+                // this should be the first time we start the matrix client
+                // for an initial registration if this is the 1st time using global chat
+                // or an initial login if the user has already set their display name
                 await dispatch(startMatrixClient({ fedimint })).unwrap()
 
                 onSuccess()
@@ -123,11 +123,12 @@ export function usePersonalRecovery(t: TFunction, fedimint: FedimintBridge) {
 export function useDeviceRegistration(t: TFunction, fedimint: FedimintBridge) {
     const toast = useToast()
     const dispatch = useCommonDispatch()
+    const hasSetDisplayName = useCommonSelector(selectHasSetMatrixDisplayName)
     const registeredDevices = useCommonSelector(selectRegisteredDevices)
     const [isProcessing, setIsProcessing] = useState<boolean>(false)
 
     const handleNewWallet = useCallback(
-        async (onSuccess: () => void) => {
+        async (onSuccess: (_: boolean) => void) => {
             setIsProcessing(true)
             try {
                 const federation = await dispatch(
@@ -139,18 +140,21 @@ export function useDeviceRegistration(t: TFunction, fedimint: FedimintBridge) {
                 if (federation) {
                     // TODO: go to federation preview? or auto-join
                 }
-                onSuccess()
+                onSuccess(hasSetDisplayName)
             } catch (error) {
                 log.error('handleNewWallet', error)
                 toast.error(t, error)
             }
             setIsProcessing(false)
         },
-        [dispatch, fedimint, t, toast],
+        [dispatch, fedimint, hasSetDisplayName, t, toast],
     )
 
     const handleTransfer = useCallback(
-        async (device: RpcRegisteredDevice, onSuccess: () => void) => {
+        async (
+            device: RpcRegisteredDevice,
+            onSuccess: (_: boolean) => void,
+        ) => {
             setIsProcessing(true)
             try {
                 const federation = await dispatch(
@@ -163,14 +167,14 @@ export function useDeviceRegistration(t: TFunction, fedimint: FedimintBridge) {
                     // TODO: go to federation preview? or auto-join
                 }
 
-                onSuccess()
+                onSuccess(hasSetDisplayName)
             } catch (error) {
                 log.error('transferExistingWallet', error)
                 toast.error(t, error)
             }
             setIsProcessing(false)
         },
-        [dispatch, fedimint, t, toast],
+        [dispatch, fedimint, hasSetDisplayName, t, toast],
     )
 
     const devicesSortedByTimestamp = useMemo(() => {
@@ -183,26 +187,6 @@ export function useDeviceRegistration(t: TFunction, fedimint: FedimintBridge) {
         handleTransfer,
         handleNewWallet,
     }
-}
-
-export function useResumeRecovery(
-    fedimint: FedimintBridge,
-    onResumePersonalRecovery: () => void,
-) {
-    const dispatch = useCommonDispatch()
-
-    useEffect(() => {
-        const restoreRecoveryState = async () => {
-            const status = await dispatch(
-                fetchDeviceIndexAssignmentStatus(fedimint),
-            ).unwrap()
-            await dispatch(fetchRegisteredDevices(fedimint)).unwrap()
-            if (status === 'unassigned') {
-                onResumePersonalRecovery()
-            }
-        }
-        restoreRecoveryState()
-    }, [dispatch, fedimint, onResumePersonalRecovery])
 }
 
 export function useLockedDeviceDetection(

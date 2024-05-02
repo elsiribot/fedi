@@ -23,9 +23,13 @@ const RecoveryNewWallet: React.FC<Props> = ({ navigation }: Props) => {
 
     const style = styles(theme)
 
-    const handleContinue = async () => {
-        handleNewWallet(() => {
-            navigation.navigate('TabsNavigator')
+    const handleContinue = () => {
+        handleNewWallet(hasSetDisplayName => {
+            if (hasSetDisplayName) {
+                navigation.navigate('TabsNavigator')
+            } else {
+                navigation.navigate('EnterDisplayName')
+            }
         })
     }
 

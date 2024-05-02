@@ -28,9 +28,13 @@ const RecoveryDeviceSelection: React.FC<Props> = ({ navigation }: Props) => {
 
     const style = styles(theme)
 
-    const selectDevice = async (device: RpcRegisteredDevice) => {
-        handleTransfer(device, () => {
-            navigation.navigate('TabsNavigator')
+    const selectDevice = (device: RpcRegisteredDevice) => {
+        handleTransfer(device, hasSetDisplayName => {
+            if (hasSetDisplayName) {
+                navigation.navigate('TabsNavigator')
+            } else {
+                navigation.navigate('EnterDisplayName')
+            }
         })
     }
 

@@ -9,11 +9,13 @@ import SplashScreen from 'react-native-splash-screen'
 
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
+    fetchRegisteredDevices,
     fetchSocialRecovery,
     initializeDeviceId,
     refreshFederations,
     selectDeviceId,
     selectFederations,
+    setDeviceIndexRequired,
     startMatrixClient,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
@@ -85,11 +87,23 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             })
             .then(status => {
                 log.info('bridgeStatus', status)
-                // Fetch federations, social recovery, and matrix setup in parallel after bridge
-                // is initialized. Only throw (via unwrap) for refreshFederations.
+                // These all happen in parallel after bridge is initialized
+                // Only throw (via unwrap) for refreshFederations.
                 return Promise.all([
                     dispatchRef.current(refreshFederations(fedimint)).unwrap(),
                     dispatchRef.current(fetchSocialRecovery(fedimint)),
+                    // this happens when the user entered seed words but quit the app
+                    // before completing device index selection so we fetch devices
+                    // again since that typically gets fetched from recoverFromMnemonic
+                    ...(status?.deviceIndexAssignmentStatus === 'unassigned'
+                        ? [
+                              dispatchRef.current(setDeviceIndexRequired(true)),
+                              dispatchRef.current(
+                                  // TODO: make sure this is offline-friendly? should it be?
+                                  fetchRegisteredDevices(fedimint),
+                              ),
+                          ]
+                        : []),
                     // if there is no matrix session yet we will start the matrix
                     // client either during recovery or during onboarding after a
                     // display name is entered
