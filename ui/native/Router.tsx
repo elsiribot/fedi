@@ -5,13 +5,14 @@ import {
 } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text, useTheme } from '@rneui/themed'
-import React, { useCallback, useRef } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 
 import {
     useLockedDeviceDetection,
     useResumeRecovery,
 } from '@fedi/common/hooks/recovery'
 import { useToast } from '@fedi/common/hooks/toast'
+import { selectSocialRecoveryState } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from './bridge'
@@ -177,8 +178,12 @@ import StartSocialBackup from './screens/StartSocialBackup'
 import SwitchingFederations from './screens/SwitchingFederations'
 import TabsNavigator from './screens/TabsNavigator'
 import Transactions from './screens/Transactions'
-import { useMatrixPushNotifications } from './state/hooks'
-import { navigate, resetToLockedDevice } from './state/navigation'
+import { useAppSelector, useMatrixPushNotifications } from './state/hooks'
+import {
+    navigate,
+    resetToLockedDevice,
+    resetToSocialRecovery,
+} from './state/navigation'
 import { MSats } from './types'
 import {
     MainNavigatorDrawerParamList,
@@ -1040,6 +1045,7 @@ const linking: NavigationLinkingConfig = {
 const Router = () => {
     const { theme } = useTheme()
     const navigation = useNavigationContainerRef()
+    const socialRecoveryState = useAppSelector(selectSocialRecoveryState)
 
     const toast = useToast()
     const routeRef = useRef<string>()
@@ -1050,11 +1056,20 @@ const Router = () => {
     // Publishes an FCM push notification token if chat is available
     useMatrixPushNotifications()
 
+    useEffect(() => {
+        if (socialRecoveryState && navigation.isReady()) {
+            navigation.dispatch(resetToSocialRecovery())
+        }
+    }, [navigation, socialRecoveryState])
+
+    // TODO: these 2 navigation effects intentionally do not check
+    // navigation.isReady() to make sure they throw due to the hacky
+    // logic inside each effect. we should refactor them accordingly...
+
     // Navigates to locked device screen if we detect a device conflict
     useLockedDeviceDetection(fedimint, () => {
         navigation.dispatch(resetToLockedDevice())
     })
-
     // Navigates to locked device screen if we detect a device conflict
     useResumeRecovery(fedimint, () => {
         navigation.dispatch(navigate('PersonalRecoverySuccess'))

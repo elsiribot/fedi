@@ -92,3 +92,12 @@ export function resetToDirectChat(roomId: string) {
         }),
     }
 }
+
+export function resetToSocialRecovery() {
+    return {
+        ...CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'CompleteSocialRecovery' }],
+        }),
+    }
+}

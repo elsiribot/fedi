@@ -7,8 +7,11 @@ import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import SplashScreen from 'react-native-splash-screen'
 
+import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
+    fetchSocialRecovery,
     initializeDeviceId,
+    refreshFederations,
     selectDeviceId,
     selectFederations,
     startMatrixClient,
@@ -39,6 +42,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const [bridgeError, setBridgeError] = useState<unknown>()
     const deviceId = useAppSelector(selectDeviceId)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
+    const dispatchRef = useUpdatingRef(dispatch)
 
     // Initialize device ID
     useEffect(() => {
@@ -67,28 +71,42 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
 
     // Initialize redux store and bridge
     useEffect(() => {
-        async function onInitializeBridge() {
-            if (!deviceId) return
-            log.info(
-                'initializing connection to federation',
-                RNFS.DocumentDirectoryPath,
-            )
-            const start = Date.now()
-            try {
-                await initializeBridge(RNFS.DocumentDirectoryPath, deviceId)
-            } catch (err) {
-                log.error('bridge failed to initialize', err)
+        if (!deviceId) return
+        log.info(
+            'initializing connection to federation',
+            RNFS.DocumentDirectoryPath,
+        )
+        const start = Date.now()
+        initializeBridge(RNFS.DocumentDirectoryPath, deviceId)
+            .then(() => {
+                // Fetch federations, social recovery in parallel after bridge.
+                // is initialized. Only throw (via unwrap) for refreshFederations.
+                // TODO: matrix client should only start if bridge initializeBridge returns
+                // and the user does not have a matrix session yet
+                Promise.all([
+                    dispatchRef.current(refreshFederations(fedimint)).unwrap(),
+                    dispatchRef.current(fetchSocialRecovery(fedimint)),
+                    // Can't start this here yet because we need to be sure recoverFromMnemonic
+                    // will not be called
+                    // dispatchRef.current(startMatrixClient({ fedimint })),
+                ])
+            })
+            .then(() => {
+                setBridgeIsReady(true)
+                const stop = Date.now()
+                log.info('initialized:', stop - start, 'ms OS:', Platform.OS)
+            })
+            .catch(err => {
+                log.error(
+                    `bridge failed to initialize after ${Date.now() - start}ms`,
+                    err,
+                )
                 setBridgeError(err)
+            })
+            .finally(() => {
                 SplashScreen.hide()
-                return
-            }
-            setBridgeIsReady(true)
-            const stop = Date.now()
-            log.info('initialized:', stop - start, 'ms OS:', Platform.OS)
-        }
-
-        onInitializeBridge()
-    }, [deviceId])
+            })
+    }, [deviceId, dispatchRef])
 
     useEffect(() => {
         // Initialize logger
