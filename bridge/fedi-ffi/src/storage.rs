@@ -84,6 +84,8 @@ pub struct AppStateRaw {
     /// See [`AppState::new_federation_db_prefix`].
     #[serde(default = "default_next_federation_prefix")]
     next_federation_db_prefix: u64,
+    // NOTE: if you ever remove fields from AppState, don't delete the field.
+    // just comment it out to prevent field reuse in future.
 }
 
 #[derive(Debug, Clone, PartialEq)]
