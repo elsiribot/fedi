@@ -14,6 +14,7 @@ use tracing::{error, info};
 
 use crate::api::LiveFediApi;
 use crate::event::IEventSink;
+use crate::features::FeatureCatalog;
 use crate::ffi::PathBasedStorage;
 use crate::rpc::{fedimint_initialize_async, fedimint_rpc_async};
 
@@ -172,6 +173,7 @@ pub async fn init(data_dir: PathBuf) -> anyhow::Result<()> {
         Arc::new(response_tx.clone()),
         Arc::new(LiveFediApi::new()),
         "Unknown (remote bridge)".to_owned(),
+        FeatureCatalog::new(crate::features::RuntimeEnvironment::Dev).into(),
     )
     .await
     .context("fedimint initalize")?;

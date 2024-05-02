@@ -132,6 +132,11 @@ export interface RecoveryProgressEvent {
 
 export type RpcAmount = MSats
 
+export type RpcAppFlavor =
+    | { type: 'dev' }
+    | { type: 'nightly' }
+    | { type: 'bravo' }
+
 export type RpcBackPaginationStatus =
     | 'idle'
     | 'paginating'
@@ -206,6 +211,13 @@ export interface RpcFeeDetails {
 export interface RpcGenerateEcashResponse {
     ecash: string
     cancelAt: number
+}
+
+export interface RpcInitOpts {
+    dataDir: string | null
+    logLevel: string | null
+    deviceIdentifier: string
+    appFlavor: RpcAppFlavor
 }
 
 export interface RpcInvoice {

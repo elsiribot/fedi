@@ -2042,6 +2042,8 @@ dependencies = [
  "imbl",
  "js-sys",
  "rexie",
+ "serde",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",

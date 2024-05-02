@@ -37,6 +37,7 @@ use crate::constants::{MATRIX_CHILD_ID, NOSTR_CHILD_ID};
 use crate::device_registration::{self, DeviceRegistrationService};
 use crate::error::{get_error_code, ErrorCode};
 use crate::event::{Event, SocialRecoveryEvent, TypedEventExt as _};
+use crate::features::FeatureCatalog;
 use crate::federation_v2::{self, BackupServiceStatus, FederationV2};
 use crate::fedi_fee::FediFeeHelper;
 use crate::matrix::Matrix;
@@ -72,6 +73,7 @@ pub struct Bridge {
     pub matrix: OnceCell<Matrix>,
     pub device_registration_service: Arc<Mutex<DeviceRegistrationService>>,
     pub global_db: Database,
+    pub feature_catalog: Arc<FeatureCatalog>,
 }
 
 impl Bridge {
@@ -80,6 +82,7 @@ impl Bridge {
         event_sink: EventSink,
         fedi_api: Arc<dyn IFediApi>,
         device_identifier: String,
+        feature_catalog: Arc<FeatureCatalog>,
     ) -> Result<Self> {
         let task_group = TaskGroup::new();
         let app_state = Arc::new(AppState::load(storage.clone()).await?);
@@ -209,6 +212,7 @@ impl Bridge {
             matrix: OnceCell::default(),
             device_registration_service,
             global_db,
+            feature_catalog,
         };
         let federations = bridge.federations.lock().await.clone();
         for federation in federations.into_values() {

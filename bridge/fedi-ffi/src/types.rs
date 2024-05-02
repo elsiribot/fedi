@@ -21,6 +21,26 @@ use crate::community::CommunityJson;
 use crate::multi::MultiFederation;
 use crate::storage::FediFeeSchedule;
 
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcInitOpts {
+    pub data_dir: Option<String>,
+    pub log_level: Option<String>,
+    pub device_identifier: String,
+    pub app_flavor: RpcAppFlavor,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcAppFlavor {
+    Dev,
+    Nightly,
+    Bravo,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcAmount(#[ts(type = "MSats")] pub fedimint_core::Amount);
