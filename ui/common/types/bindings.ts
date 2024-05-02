@@ -136,6 +136,11 @@ export interface RpcBitcoinDetails {
     expiresAt: number
 }
 
+export interface RpcBridgeStatus {
+    matrixSetup: boolean
+    deviceIndexAssignmentStatus: RpcDeviceIndexAssignmentStatus
+}
+
 export type RpcDeviceIndexAssignmentStatus = { assigned: number } | 'unassigned'
 
 export interface RpcDuration {
@@ -275,6 +280,13 @@ export interface RpcMatrixUserDirectorySearchUser {
 }
 
 export interface RpcMethods {
+    bridgeStatus: [
+        Record<string, never>,
+        {
+            matrixSetup: boolean
+            deviceIndexAssignmentStatus: RpcDeviceIndexAssignmentStatus
+        },
+    ]
     joinFederation: [
         { inviteCode: string },
         {
@@ -662,7 +674,7 @@ export interface RpcMethods {
         'allMessages' | 'mentionsAndKeywordsOnly' | 'mute' | null,
     ]
     matrixSetPusher: [{ pusher: RpcPusher }, null]
-    matrixUserProfile: [{ userId: RpcUserId }, { displayname: string }]
+    matrixUserProfile: [{ userId: RpcUserId }, any]
     matrixRoomKickUser: [
         { roomId: RpcRoomId; userId: RpcUserId; reason: string | null },
         null,
