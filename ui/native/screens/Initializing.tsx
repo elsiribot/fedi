@@ -7,7 +7,6 @@ import { StyleSheet, View } from 'react-native'
 import {
     selectAuthenticatedMember,
     selectHasSetMatrixDisplayName,
-    selectMatrixAuth,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 
@@ -22,11 +21,10 @@ const Initializing: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const matrixAuth = useAppSelector(selectMatrixAuth)
     const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
     const hasStorageLoaded = useAppSelector(selectHasLoadedFromStorage)
 
-    const hasLoaded = hasStorageLoaded && !!matrixAuth
+    const hasLoaded = hasStorageLoaded
     const hasLegacyChatData = !!authenticatedMember
 
     // once everything has loaded, determine where to navigate

@@ -79,22 +79,27 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         const start = Date.now()
         initializeBridge(RNFS.DocumentDirectoryPath, deviceId)
             .then(() => {
-                // Fetch federations, social recovery in parallel after bridge.
+                const stop = Date.now()
+                log.info('initialized:', stop - start, 'ms OS:', Platform.OS)
+                return fedimint.bridgeStatus()
+            })
+            .then(status => {
+                log.info('bridgeStatus', status)
+                // Fetch federations, social recovery, and matrix setup in parallel after bridge
                 // is initialized. Only throw (via unwrap) for refreshFederations.
-                // TODO: matrix client should only start if bridge initializeBridge returns
-                // and the user does not have a matrix session yet
-                Promise.all([
+                return Promise.all([
                     dispatchRef.current(refreshFederations(fedimint)).unwrap(),
                     dispatchRef.current(fetchSocialRecovery(fedimint)),
-                    // Can't start this here yet because we need to be sure recoverFromMnemonic
-                    // will not be called
-                    // dispatchRef.current(startMatrixClient({ fedimint })),
+                    // if there is no matrix session yet we will start the matrix
+                    // client either during recovery or during onboarding after a
+                    // display name is entered
+                    ...(status?.matrixSetup
+                        ? [dispatchRef.current(startMatrixClient({ fedimint }))]
+                        : []),
                 ])
             })
             .then(() => {
                 setBridgeIsReady(true)
-                const stop = Date.now()
-                log.info('initialized:', stop - start, 'ms OS:', Platform.OS)
             })
             .catch(err => {
                 log.error(
@@ -180,12 +185,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             unsubscribePanic()
         }
     }, [t])
-
-    useEffect(() => {
-        if (bridgeIsReady) {
-            dispatch(startMatrixClient({ fedimint }))
-        }
-    }, [bridgeIsReady, dispatch])
 
     if (bridgeIsReady && !bridgeError) {
         return <>{children}</>

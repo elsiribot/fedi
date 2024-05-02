@@ -16,6 +16,7 @@ import {
     createNewWallet,
     fetchDeviceIndexAssignmentStatus,
     fetchRegisteredDevices,
+    startMatrixClient,
 } from '../redux'
 import { SeedWords } from '../types'
 import { DeviceRegistrationEvent, RpcRegisteredDevice } from '../types/bindings'
@@ -98,6 +99,11 @@ export function usePersonalRecovery(t: TFunction, fedimint: FedimintBridge) {
                         mnemonic: seedWords,
                     }),
                 ).unwrap()
+
+                // this should be the first time we start the
+                // matrix client for an initial registration
+                await dispatch(startMatrixClient({ fedimint })).unwrap()
+
                 onSuccess()
             } catch (err) {
                 toast.error(t, 'errors.recovery-failed')

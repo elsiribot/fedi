@@ -14,6 +14,7 @@ import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context'
 
 import { useDisplayNameForm } from '@fedi/common/hooks/chat'
 
+import { fedimint } from '../bridge'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -35,7 +36,7 @@ const EnterDisplayName: React.FC<Props> = ({ navigation }: Props) => {
         isSubmitting,
         handleChangeUsername,
         handleSubmitDisplayName,
-    } = useDisplayNameForm(t)
+    } = useDisplayNameForm(t, fedimint)
 
     // when the keyboard is opened and content layouts change, this effect
     // determines whether the Create username button is overlapping with
@@ -77,7 +78,7 @@ const EnterDisplayName: React.FC<Props> = ({ navigation }: Props) => {
     }, [])
 
     const handleSubmit = useCallback(() => {
-        handleSubmitDisplayName(() => {
+        handleSubmitDisplayName(async () => {
             navigation.reset({
                 index: 0,
                 routes: [{ name: 'FederationGreeting' }],

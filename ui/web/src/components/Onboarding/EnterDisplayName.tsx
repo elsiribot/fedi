@@ -6,6 +6,7 @@ import { useDisplayNameForm } from '@fedi/common/hooks/chat'
 import { selectActiveFederationId, selectMatrixAuth } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../hooks'
+import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 import { Button } from '../Button'
 import { HoloLoader } from '../HoloLoader'
@@ -28,7 +29,7 @@ export const EnterDisplayName: React.FC = () => {
         isSubmitting,
         handleChangeUsername,
         handleSubmitDisplayName,
-    } = useDisplayNameForm(t)
+    } = useDisplayNameForm(t, fedimint)
 
     const handleSubmit = useCallback(
         async (ev: React.FormEvent) => {
