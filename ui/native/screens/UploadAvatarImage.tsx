@@ -49,29 +49,27 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
                 mediaType: 'photo',
             })
 
-            if (res.assets && res.assets.length > 0) {
-                const file = res.assets[0]
-                const mimeType = file.type || ''
+            if (!res.assets || res.assets.length === 0) return
 
-                if (!file.uri) {
-                    return
-                }
+            const file = res.assets[0]
 
-                const fileDestination = `${RNFS.PicturesDirectoryPath}/avatar_image`
-                setIsUploading(true)
+            if (!file.uri) return
 
-                await RNFS.copyFile(file.uri, fileDestination)
+            const mimeType = file.type || ''
+            const fileDestination = `${RNFS.PicturesDirectoryPath}/avatar_image`
+            setIsUploading(true)
 
-                await dispatch(
-                    uploadAndSetMatrixAvatarUrl({
-                        fedimint,
-                        mimeType,
-                        path: fileDestination,
-                    }),
-                ).unwrap()
+            await RNFS.copyFile(file.uri, fileDestination)
 
-                setDidUpload(true)
-            }
+            await dispatch(
+                uploadAndSetMatrixAvatarUrl({
+                    fedimint,
+                    mimeType,
+                    path: fileDestination,
+                }),
+            ).unwrap()
+
+            setDidUpload(true)
         } catch (err) {
             toast.error(t, err)
         } finally {
@@ -84,7 +82,7 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
             <View style={style.buttonContainer}>
                 <Button
                     titleStyle={style.skipButtonText}
-                    color={theme.colors.offWhite}
+                    color={theme.colors.offWhite100}
                     fullWidth
                     title={t('words.skip')}
                     onPress={finishStep}

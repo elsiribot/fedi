@@ -96,10 +96,9 @@ export const UploadAvatarImage: React.FC = () => {
             return (
                 <>
                     <Button
+                        variant="secondary"
                         width="full"
-                        variant="outline"
                         disabled={isUploading || didUpload}
-                        loading={isUploading}
                         onClick={finishStep}>
                         {t('words.skip')}
                     </Button>
