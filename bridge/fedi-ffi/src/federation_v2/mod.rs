@@ -227,13 +227,17 @@ impl FederationV2 {
             error!("ln gateway service already initialized");
         }
         if self
-            .stability_pool_sweeper_service
-            .set(StabilityPoolSweeperService::new(
-                self.client.clone(),
-                &self.task_group,
-                self.event_sink.clone(),
-            ))
-            .is_err()
+            .client
+            .get_first_instance(&stability_pool_client::common::KIND)
+            .is_some()
+            && self
+                .stability_pool_sweeper_service
+                .set(StabilityPoolSweeperService::new(
+                    self.client.clone(),
+                    &self.task_group,
+                    self.event_sink.clone(),
+                ))
+                .is_err()
         {
             error!("stability pool sweeper service already initialized");
         }
