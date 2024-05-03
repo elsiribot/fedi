@@ -9,7 +9,6 @@ import type {
 import {
     GuardianStatus,
     RpcAmount,
-    RpcDeviceIndexAssignmentStatus,
     RpcFeeDetails,
     RpcPayAddressResponse,
     RpcStabilityPoolAccountInfo,
@@ -36,13 +35,7 @@ export class FedimintBridge {
     /*** RPC METHODS ***/
 
     async bridgeStatus() {
-        return this.rpcTyped<
-            'bridgeStatus',
-            {
-                matrixSetup: boolean
-                deviceIndexAssignmentStatus: RpcDeviceIndexAssignmentStatus
-            }
-        >('bridgeStatus', {})
+        return this.rpcTyped('bridgeStatus', {})
     }
 
     async federationPreview(inviteCode: string) {
