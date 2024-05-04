@@ -1,5 +1,3 @@
-This is a fork of [uniffi-bindings-template](https://github.com/thunderbiscuit/uniffi-bindings-template)
-
 # Fedi README
 
 ## Prerequisites
@@ -59,7 +57,7 @@ cargo test -- --test-threads=1
 ## Build the library for Android
 
 1. Fire the `buildAndroidLib` gradle task in the `fedi-android` directory
-2. Publish it to your local Maven (the library will appear at `~/.m2/repository/org/rustylibs/fedi-android/0.1.2/`)
+2. Publish it to your local Maven (the library will appear at `~/.m2/repository/org/fedi/fedi-android/0.1.2/`)
 
 ```shell
 cd fedi-android

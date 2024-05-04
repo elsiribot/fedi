@@ -53,7 +53,7 @@ afterEvaluate {
     publishing {
         publications {
             create<MavenPublication>("maven") {
-                groupId = "org.rustylibs"
+                groupId = "org.fedi"
                 artifactId = "fedi-android"
                 version = "0.1.2"
 
@@ -61,13 +61,7 @@ afterEvaluate {
                 pom {
                     name.set("fedi-android")
                     description.set("Fedi Kotlin language bindings.")
-                    url.set("https://rustylibs.org")
-                    licenses {
-                        license {
-                            name.set("APACHE 2.0")
-                            url.set("")
-                        }
-                    }
+                    url.set("https://fedi.org")
                     // developers {
                     //     developer {
                     //         id.set("")
