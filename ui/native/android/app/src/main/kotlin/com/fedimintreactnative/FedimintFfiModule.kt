@@ -3,7 +3,7 @@ package com.fedi
 import android.util.Log
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
-import org.rustylibs.fedi.*
+import org.fedi.fedi.*
 import com.facebook.react.bridge.Arguments
 
 import kotlinx.coroutines.*

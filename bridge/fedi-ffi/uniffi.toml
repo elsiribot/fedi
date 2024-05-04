@@ -1,5 +1,5 @@
 [bindings.kotlin]
-package_name = "org.rustylibs.fedi"
+package_name = "org.fedi.fedi"
 cdylib_name = "fediffi"
 
 [bindings.python]
