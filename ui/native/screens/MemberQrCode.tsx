@@ -4,11 +4,11 @@ import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
 
-import { selectMatrixAuth } from '@fedi/common/redux'
 import {
-    encodeFediMatrixUserUri,
-    getUserSuffix,
-} from '@fedi/common/utils/matrix'
+    selectMatrixAuth,
+    selectMatrixDisplayNameSuffix,
+} from '@fedi/common/redux'
+import { encodeFediMatrixUserUri } from '@fedi/common/utils/matrix'
 
 import QRScreen from '../components/ui/QRScreen'
 import SvgImage from '../components/ui/SvgImage'
@@ -21,17 +21,10 @@ const MemberQrCode: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const matrixAuth = useAppSelector(selectMatrixAuth)
+    const suffix = useAppSelector(selectMatrixDisplayNameSuffix)
 
     const directChatLink = useMemo(
         () => (matrixAuth ? encodeFediMatrixUserUri(matrixAuth.userId) : ''),
-        [matrixAuth],
-    )
-
-    const suffix = useMemo(
-        () =>
-            matrixAuth
-                ? getUserSuffix(matrixAuth.displayName, matrixAuth.userId)
-                : '',
         [matrixAuth],
     )
 

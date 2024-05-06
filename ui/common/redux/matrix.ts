@@ -39,6 +39,7 @@ import { MatrixChatClient } from '../utils/MatrixChatClient'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import {
+    getUserSuffix,
     isPaymentEvent,
     matrixIdToUsername,
     mxcUrlToHttpUrl,
@@ -811,6 +812,11 @@ export const selectHasSetMatrixDisplayName = createSelector(
             return true
         return false
     },
+)
+
+export const selectMatrixDisplayNameSuffix = createSelector(
+    (s: CommonState) => s.matrix.auth,
+    auth => (auth ? getUserSuffix(auth.displayName, auth.userId) : ''),
 )
 
 export const selectNeedsMatrixRegistration = createSelector(
