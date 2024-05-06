@@ -84,6 +84,8 @@ pub struct AppStateRaw {
     /// See [`AppState::new_federation_db_prefix`].
     #[serde(default = "default_next_federation_prefix")]
     next_federation_db_prefix: u64,
+
+    pub matrix_display_name: Option<String>,
     // NOTE: if you ever remove fields from AppState, don't delete the field.
     // just comment it out to prevent field reuse in future.
 }
@@ -329,6 +331,7 @@ impl AppState {
                 device_index: default_device_index(),
                 last_device_registration_timestamp: None,
                 next_federation_db_prefix: default_next_federation_prefix(),
+                matrix_display_name: None,
             })),
             storage,
         }

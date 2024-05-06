@@ -15,6 +15,7 @@ import {
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { formatErrorMessage } from '@fedi/common/utils/format'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint, initializeBridge } from '../lib/bridge'
@@ -22,6 +23,8 @@ import { keyframes, styled, theme } from '../styles'
 import { generateDeviceId } from '../utils/browserInfo'
 import { Redirect } from './Redirect'
 import { Text } from './Text'
+
+const log = makeLog('FediBridgeInitializer')
 
 interface Props {
     children: React.ReactNode
@@ -58,15 +61,22 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         }, 1000)
 
         initializeBridge(deviceId)
-            .then(() =>
-                // Fetch federations and social recovery in parallel after bridge.
+            .then(() => fedimint.bridgeStatus())
+            .then(status => {
+                log.info('bridgeStatus', status)
+                // Fetch federations, social recovery, and matrix setup in parallel after bridge
                 // is initialized. Only throw (via unwrap) for refreshFederations.
-                Promise.all([
+                return Promise.all([
                     dispatchRef.current(refreshFederations(fedimint)).unwrap(),
                     dispatchRef.current(fetchSocialRecovery(fedimint)),
-                    dispatchRef.current(startMatrixClient({ fedimint })),
-                ]),
-            )
+                    // if there is no matrix session yet we will start the matrix
+                    // client either during recovery or during onboarding after a
+                    // display name is entered
+                    ...(status?.matrixSetup
+                        ? [dispatchRef.current(startMatrixClient({ fedimint }))]
+                        : []),
+                ])
+            })
             .then(() => setIsInitialized(true))
             .catch(err =>
                 setError(

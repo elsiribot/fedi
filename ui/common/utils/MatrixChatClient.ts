@@ -101,6 +101,7 @@ export class MatrixChatClient {
         this.startPromise = new Promise((resolve, reject) => {
             fedimint
                 .matrixInit()
+                .then(() => this.getAccountSession())
                 .then(auth => {
                     resolve(this.serializeAuth(auth))
                     this.observeSyncStatus()
@@ -119,8 +120,8 @@ export class MatrixChatClient {
         return this.startPromise
     }
 
-    async getAccountSession() {
-        return this.fedimint.matrixGetAccountSession()
+    async getAccountSession(cached = true) {
+        return this.fedimint.matrixGetAccountSession({ cached })
     }
 
     async joinRoom(roomId: string) {
@@ -131,10 +132,7 @@ export class MatrixChatClient {
         const roomId = await this.fedimint.matrixRoomCreate({
             request: options,
         })
-        // TODO: Remove timeouts, matrixCreateRoom is kind of racey.
-        await new Promise(resolve => setTimeout(resolve, 500))
         await this.observeRoomInfo(roomId)
-        await new Promise(resolve => setTimeout(resolve, 500))
         await this.observeRoomTimeline(roomId)
         await this.observeRoomPowerLevels(roomId)
         return { roomId }

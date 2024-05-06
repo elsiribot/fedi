@@ -19,6 +19,7 @@ const initialState = {
     socialRecoveryQr: null as string | null,
     socialRecoveryState: null as SocialRecoveryEvent | null,
     registeredDevices: [] as RpcRegisteredDevice[],
+    deviceIndexRequired: false,
 }
 
 export type RecoveryState = typeof initialState
@@ -34,6 +35,9 @@ export const recoverySlice = createSlice({
             action: PayloadAction<RecoveryState['socialRecoveryState']>,
         ) {
             state.socialRecoveryState = action.payload
+        },
+        setDeviceIndexRequired(state, action: PayloadAction<boolean>) {
+            state.deviceIndexRequired = action.payload
         },
     },
     extraReducers: builder => {
@@ -87,7 +91,8 @@ export const recoverySlice = createSlice({
 
 /*** Basic actions ***/
 
-export const { setSocialRecoveryState } = recoverySlice.actions
+export const { setSocialRecoveryState, setDeviceIndexRequired } =
+    recoverySlice.actions
 
 /*** Async thunk actions ***/
 
@@ -148,6 +153,7 @@ export const transferExistingWallet = createAsyncThunk<
     return fedimint.transferExistingDeviceRegistration(device.deviceIndex)
 })
 
+// TODO: consider removing since it is no longer used anywhere?
 export const fetchDeviceIndexAssignmentStatus = createAsyncThunk<
     RpcDeviceIndexAssignmentStatus,
     FedimintBridge

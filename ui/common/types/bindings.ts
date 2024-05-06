@@ -580,17 +580,9 @@ export interface RpcMethods {
         { assigned: number } | 'unassigned',
     ]
     matrixObserverCancel: [{ id: bigint }, null]
-    matrixInit: [
-        Record<string, never>,
-        {
-            userId: string
-            deviceId: string
-            displayName: string | null
-            avatarUrl: string | null
-        },
-    ]
+    matrixInit: [Record<string, never>, null]
     matrixGetAccountSession: [
-        Record<string, never>,
+        { cached: boolean },
         {
             userId: string
             deviceId: string

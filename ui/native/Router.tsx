@@ -1,17 +1,16 @@
 import { createDrawerNavigator } from '@react-navigation/drawer'
 import {
     NavigationContainer,
+    useNavigation,
     useNavigationContainerRef,
 } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text, useTheme } from '@rneui/themed'
-import React, { useCallback, useRef } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 
-import {
-    useLockedDeviceDetection,
-    useResumeRecovery,
-} from '@fedi/common/hooks/recovery'
+import { useLockedDeviceDetection } from '@fedi/common/hooks/recovery'
 import { useToast } from '@fedi/common/hooks/toast'
+import { selectSocialRecoveryState } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from './bridge'
@@ -177,8 +176,12 @@ import StartSocialBackup from './screens/StartSocialBackup'
 import SwitchingFederations from './screens/SwitchingFederations'
 import TabsNavigator from './screens/TabsNavigator'
 import Transactions from './screens/Transactions'
-import { useMatrixPushNotifications } from './state/hooks'
-import { navigate, resetToLockedDevice } from './state/navigation'
+import { useAppSelector, useMatrixPushNotifications } from './state/hooks'
+import {
+    resetAfterPersonalRecovery,
+    resetToLockedDevice,
+    resetToSocialRecovery,
+} from './state/navigation'
 import { MSats } from './types'
 import {
     MainNavigatorDrawerParamList,
@@ -197,6 +200,32 @@ const Drawer = createDrawerNavigator<MainNavigatorDrawerParamList>()
 const MainNavigator = () => {
     const isAppUnlocked = useIsFeatureUnlocked('app')
     const isChangePinUnlocked = useIsFeatureUnlocked('changePin')
+    const socialRecoveryState = useAppSelector(selectSocialRecoveryState)
+    const deviceIndexRequired = useAppSelector(
+        s => s.recovery.deviceIndexRequired,
+    )
+    const navigation = useNavigation()
+
+    useEffect(() => {
+        if (socialRecoveryState && navigation) {
+            navigation.dispatch(resetToSocialRecovery())
+        }
+    }, [navigation, socialRecoveryState])
+
+    // Navigates to personal recovery success since this means the user entered
+    // seed words but quit the app before completing device index selection
+    useEffect(() => {
+        if (deviceIndexRequired && navigation) {
+            navigation.dispatch(resetAfterPersonalRecovery())
+        }
+    }, [navigation, deviceIndexRequired])
+
+    // TODO: this navigation effect might be racey so we make sure it
+    // throws and retires inside the effect... we should refactor it...
+    // Navigates to locked device screen if we detect a device conflict
+    useLockedDeviceDetection(fedimint, () => {
+        navigation.dispatch(resetToLockedDevice())
+    })
 
     return (
         <Stack.Navigator
@@ -247,6 +276,49 @@ const MainNavigator = () => {
                         options={{
                             header: () => <EulaHeader />,
                         }}
+                    />
+                    <Stack.Screen
+                        name="PersonalRecoverySuccess"
+                        component={PersonalRecoverySuccess}
+                        options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name="RecoveryWalletOptions"
+                        component={RecoveryWalletOptions}
+                        options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name="RecoveryWalletTransfer"
+                        component={RecoveryWalletTransfer}
+                        options={() => ({
+                            header: () => <RecoveryWalletTransferHeader />,
+                        })}
+                    />
+                    <Stack.Screen
+                        name="RecoveryNewWallet"
+                        component={RecoveryNewWallet}
+                        options={() => ({
+                            header: () => <RecoveryNewWalletHeader />,
+                        })}
+                    />
+                    <Stack.Screen
+                        name="RecoveryDeviceSelection"
+                        component={RecoveryDeviceSelection}
+                        options={() => ({
+                            header: () => <RecoveryDeviceSelectionHeader />,
+                        })}
+                    />
+                    <Stack.Screen
+                        name="LockedDevice"
+                        component={LockedDevice}
+                        options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name="CompleteSocialRecovery"
+                        component={CompleteSocialRecovery}
+                        options={() => ({
+                            header: () => <SocialRecoveryHeader cancelButton />,
+                        })}
                     />
                 </Stack.Group>
                 {/*
@@ -603,15 +675,6 @@ const MainNavigator = () => {
                                 options={{ headerShown: false }}
                             />
                             <Stack.Screen
-                                name="CompleteSocialRecovery"
-                                component={CompleteSocialRecovery}
-                                options={() => ({
-                                    header: () => (
-                                        <SocialRecoveryHeader cancelButton />
-                                    ),
-                                })}
-                            />
-                            <Stack.Screen
                                 name="SocialRecoveryFailure"
                                 component={SocialRecoveryFailure}
                                 options={{ headerShown: false }}
@@ -690,46 +753,6 @@ const MainNavigator = () => {
                                         <PersonalRecoveryHeader backButton />
                                     ),
                                 })}
-                            />
-                            <Stack.Screen
-                                name="PersonalRecoverySuccess"
-                                component={PersonalRecoverySuccess}
-                                options={{ headerShown: false }}
-                            />
-                            <Stack.Screen
-                                name="RecoveryWalletOptions"
-                                component={RecoveryWalletOptions}
-                                options={{ headerShown: false }}
-                            />
-                            <Stack.Screen
-                                name="RecoveryWalletTransfer"
-                                component={RecoveryWalletTransfer}
-                                options={() => ({
-                                    header: () => (
-                                        <RecoveryWalletTransferHeader />
-                                    ),
-                                })}
-                            />
-                            <Stack.Screen
-                                name="RecoveryNewWallet"
-                                component={RecoveryNewWallet}
-                                options={() => ({
-                                    header: () => <RecoveryNewWalletHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="RecoveryDeviceSelection"
-                                component={RecoveryDeviceSelection}
-                                options={() => ({
-                                    header: () => (
-                                        <RecoveryDeviceSelectionHeader />
-                                    ),
-                                })}
-                            />
-                            <Stack.Screen
-                                name="LockedDevice"
-                                component={LockedDevice}
-                                options={{ headerShown: false }}
                             />
                             {/* Popup federations */}
                             <Stack.Screen
@@ -1049,16 +1072,6 @@ const Router = () => {
 
     // Publishes an FCM push notification token if chat is available
     useMatrixPushNotifications()
-
-    // Navigates to locked device screen if we detect a device conflict
-    useLockedDeviceDetection(fedimint, () => {
-        navigation.dispatch(resetToLockedDevice())
-    })
-
-    // Navigates to locked device screen if we detect a device conflict
-    useResumeRecovery(fedimint, () => {
-        navigation.dispatch(navigate('PersonalRecoverySuccess'))
-    })
 
     // Logs changes in navigation state for debugging
     const handleStateChange = useCallback(() => {

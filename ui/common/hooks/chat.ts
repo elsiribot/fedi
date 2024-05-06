@@ -34,6 +34,7 @@ import {
     connectChat,
     selectFederationsWithChatConnections,
     selectIsMatrixReady,
+    startMatrixClient,
 } from '../redux'
 import { getLatestMessage, getLatestPaymentUpdate } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
@@ -524,7 +525,7 @@ export const useChatPaymentUtils = (
     }
 }
 
-export const useDisplayNameForm = (t: TFunction) => {
+export const useDisplayNameForm = (t: TFunction, fedimint?: FedimintBridge) => {
     const [username, setUsername] = useState<string>('')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const toast = useToast()
@@ -560,6 +561,14 @@ export const useDisplayNameForm = (t: TFunction) => {
         async (onSuccess: () => void) => {
             setIsSubmitting(true)
             try {
+                // this is optional because it must be provided during onboarding
+                // to start the matrix client for the first time but this same hook
+                // can also be used after the client has started
+                if (fedimint) {
+                    // this should be the first time we start the
+                    // matrix client for an initial registration
+                    await dispatch(startMatrixClient({ fedimint })).unwrap()
+                }
                 await dispatch(
                     setMatrixDisplayName({ displayName: username }),
                 ).unwrap()
@@ -570,7 +579,7 @@ export const useDisplayNameForm = (t: TFunction) => {
             }
             setIsSubmitting(false)
         },
-        [dispatch, t, toast, username],
+        [dispatch, fedimint, t, toast, username],
     )
 
     return {
