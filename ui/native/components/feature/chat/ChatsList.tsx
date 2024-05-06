@@ -1,16 +1,17 @@
 import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import {
     selectMatrixOrderedRoomsList,
     selectMatrixStatus,
+    refetchMatrixRoomList,
 } from '@fedi/common/redux'
 import { ChatType, MatrixRoom, MatrixSyncStatus } from '@fedi/common/types'
 
-import { useAppSelector } from '../../../state/hooks'
+import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import HoloLoader from '../../ui/HoloLoader'
 import ChatTile from './ChatTile'
@@ -20,9 +21,21 @@ const WINDOW_WIDTH = Dimensions.get('window').width
 const ChatsList: React.FC = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
+    const dispatch = useAppDispatch()
 
     const rooms = useAppSelector(selectMatrixOrderedRoomsList)
     const syncStatus = useAppSelector(selectMatrixStatus)
+    const [isRefetching, setIsRefetching] = useState(false)
+    const handleRefresh = useCallback(() => {
+        setIsRefetching(true)
+        dispatch(refetchMatrixRoomList()).catch(() => {
+            // no-op
+        })
+
+        setTimeout(() => setIsRefetching(false), 500)
+        // Dismissing any sooner looks weird
+    }, [dispatch])
+
     const handleSelectChat = useCallback(
         (chat: MatrixRoom) => {
             navigation.navigate('ChatRoomConversation', {
@@ -54,6 +67,8 @@ const ChatsList: React.FC = () => {
             contentContainerStyle={styles(theme).content}
             data={rooms}
             renderItem={renderChat}
+            onRefresh={handleRefresh}
+            refreshing={isRefetching}
             keyExtractor={item => `${item.id}`}
             // optimization that allows skipping the measurement of dynamic content
             // for fixed-size list items

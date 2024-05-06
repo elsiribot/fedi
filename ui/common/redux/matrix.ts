@@ -659,6 +659,14 @@ export const refetchMatrixRoomMembers = createAsyncThunk<void, string>(
     },
 )
 
+export const refetchMatrixRoomList = createAsyncThunk<void, void>(
+    'matrix/refetchRoomList',
+    async () => {
+        const client = getMatrixClient()
+        return client.refetchRoomList()
+    },
+)
+
 export const paginateMatrixRoomTimeline = createAsyncThunk<
     { end: boolean },
     { roomId: MatrixRoom['id']; limit?: number },

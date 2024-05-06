@@ -315,6 +315,10 @@ export class MatrixChatClient {
         await this.observeRoomMembers(roomId)
     }
 
+    async refetchRoomList() {
+        await this.observeRoomList()
+    }
+
     async configureNotificationsPusher(token: string) {
         return this.fedimint.matrixSetPusher({
             pusher: {
