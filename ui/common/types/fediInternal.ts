@@ -2,4 +2,4 @@ import { RequestInvoiceArgs } from 'webln'
 
 export type EcashRequest = Omit<RequestInvoiceArgs, 'defaultMemo'>
 
-export const FediInternalVersion = 0 as const
+export type FediInternalVersion = 0
