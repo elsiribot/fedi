@@ -5,7 +5,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { Provider as ReduxProvider } from 'react-redux'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { makeLog } from '@fedi/common/utils/log'
 
 import Router from './Router'
 import FediBridgeInitializer from './components/FediBridgeInitializer'
@@ -16,8 +15,7 @@ import { OmniLinkContextProvider } from './state/contexts/OmniLinkContext'
 import ProviderComposer from './state/contexts/ProviderComposer'
 import { initializeNativeStore, store } from './state/store'
 import theme from './styles/theme'
-
-const log = makeLog('App')
+import { handleForegroundReceived } from './utils/notifications'
 
 const App = () => {
     // Initialize redux store
@@ -26,13 +24,9 @@ const App = () => {
         return unsubscribe
     }, [])
 
-    // TODO: Remove this? Do we need this to handle incoming push notifications
-    // while the app is open?
     useEffect(() => {
-        const unsubscribe = messaging().onMessage(async remoteMessage => {
-            log.info('push notification received', remoteMessage)
-        })
-
+        // Handles notifications when app is open
+        const unsubscribe = messaging().onMessage(handleForegroundReceived)
         return unsubscribe
     }, [])
 

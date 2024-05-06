@@ -173,7 +173,7 @@
         "total-fees": "Total Fees",
         "this-group": "this group",
         "transaction-id": "Transaction ID",
-        "transaction-received": "Transaction received",
+        "payment-received": "Payment Received",
         "view-public-federations": "View public federations",
         "yearly-fee": "Yearly fee",
         "you-are-offline": "You are currently in offline mode"
@@ -229,6 +229,10 @@
         "user-is-already-in-group": "This user is already a member of this group"
     },
     "feature": {
+        "notifications": {
+            "new-messages-count": "You have {{unread}} new messages",
+            "new-messages": "You have new messages"
+        },
         "backup": {
             "backup-social-recovery-file": "Backup your social recovery file",
             "backup-to-google-drive": "Backup to Google Drive",
