@@ -1,10 +1,16 @@
-import { EcashRequest, MSats, SupportedCurrency } from '@fedi/common/types'
+import {
+    EcashRequest,
+    FediInternalVersion,
+    MSats,
+    SupportedCurrency,
+} from '@fedi/common/types'
 import { RpcFederation } from '@fedi/common/types/bindings'
 
 import { InjectionMessageType, InjectionMessageResponseMap } from '../types'
 import { sendInjectorMessage } from '../utils'
 
 class InjectionFediProvider {
+    public version = FediInternalVersion
     private lastMessageId = 0
 
     async generateEcash(
