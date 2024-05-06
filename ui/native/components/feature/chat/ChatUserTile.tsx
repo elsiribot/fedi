@@ -1,8 +1,9 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
-import { StyleSheet, View } from 'react-native'
+import React, { useMemo } from 'react'
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native'
 
 import { MatrixUser } from '@fedi/common/types'
+import { getUserSuffix } from '@fedi/common/utils/matrix'
 
 import { AvatarSize } from '../../ui/Avatar'
 import { Pressable } from '../../ui/Pressable'
@@ -14,6 +15,8 @@ type UserItemProps = {
     disabled?: boolean
     actionIcon?: React.ReactNode
     rightIcon?: React.ReactNode
+    showSuffix?: boolean
+    containerStyle?: StyleProp<ViewStyle>
 }
 
 const ChatUserTile: React.FC<UserItemProps> = ({
@@ -22,11 +25,19 @@ const ChatUserTile: React.FC<UserItemProps> = ({
     actionIcon = null,
     rightIcon = null,
     disabled = false,
+    showSuffix = false,
+    containerStyle,
 }: UserItemProps) => {
     const { theme } = useTheme()
 
+    const suffix = useMemo(() => {
+        return getUserSuffix(user.displayName, user.id)
+    }, [user])
+
     return (
-        <Pressable onPress={disabled ? undefined : () => selectUser(user.id)}>
+        <Pressable
+            containerStyle={containerStyle}
+            onPress={disabled ? undefined : () => selectUser(user.id)}>
             <View style={styles(theme).usernameContainer}>
                 <ChatAvatar user={user} size={AvatarSize.md} />
                 <Text
@@ -35,12 +46,20 @@ const ChatUserTile: React.FC<UserItemProps> = ({
                     style={[styles(theme).usernameText]}>
                     {user.displayName}
                 </Text>
-                {rightIcon && <>{rightIcon}</>}
-                {actionIcon && (
-                    <View style={styles(theme).iconContainer}>
-                        <>{actionIcon}</>
-                    </View>
+                {showSuffix && (
+                    <Text
+                        numberOfLines={1}
+                        bold
+                        caption
+                        style={styles(theme).usernameSuffix}>
+                        {suffix}
+                    </Text>
                 )}
+
+                <View style={styles(theme).iconContainer}>
+                    {rightIcon && rightIcon}
+                    {actionIcon && actionIcon}
+                </View>
             </View>
         </Pressable>
     )
@@ -55,11 +74,19 @@ const styles = (theme: Theme) =>
             width: '100%',
         },
         usernameText: {
-            marginHorizontal: theme.spacing.md,
-            flex: 1,
+            flexShrink: 2,
+            marginLeft: theme.spacing.md,
+            paddingRight: theme.spacing.xs,
+        },
+        usernameSuffix: {
+            color: theme.colors.grey,
         },
         iconContainer: {
             marginLeft: 'auto',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.xs,
+            paddingLeft: theme.spacing.sm,
         },
         roleText: {
             color: theme.colors.grey,

@@ -2,6 +2,8 @@ import { TFunction } from 'i18next'
 import orderBy from 'lodash/orderBy'
 import { z } from 'zod'
 
+import EncryptionUtils from '@fedi/common/utils/EncryptionUtils'
+
 import { GLOBAL_MATRIX_SERVER } from '../constants/matrix'
 import { FormattedAmounts } from '../hooks/amount'
 import {
@@ -281,6 +283,23 @@ export const makeMatrixPaymentText = ({
                 eventSender?.displayName || matrixIdToUsername(eventSenderId),
         })
     }
+}
+
+// TODO - make this dynamic if we have a naming collision
+const SUFFIX_LENGTH = 3 as const
+
+/**
+ * Gets a {SUFFIX_LENGTH} UUID for a user to protect against impersonation.
+ * Generates ID via `sha256(displayName || id)`.
+ *
+ * It includes the display name so the suffix will change if the displayname changes.
+ */
+export function getUserSuffix(
+    displayName: MatrixUser['displayName'],
+    id: MatrixUser['id'],
+) {
+    const hash = EncryptionUtils.toSha256EncHex(displayName + id)
+    return `#${hash.substring(hash.length - SUFFIX_LENGTH)}`
 }
 
 export function isPaymentEvent(

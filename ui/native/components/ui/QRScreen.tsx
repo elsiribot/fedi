@@ -13,6 +13,8 @@ interface Props {
     copyValue?: string
     /** H2 title at the top of screen */
     title?: string
+    /** Smaller, grey title suffix, intended for username suffix */
+    titleSuffix?: string
     /** Caption text below title */
     subtitle?: string
     /** Content to display at the bottom, typically help text or an action */
@@ -23,6 +25,7 @@ interface Props {
 
 const QRScreen: React.FC<Props> = ({
     title,
+    titleSuffix,
     subtitle,
     qrValue,
     copyValue = qrValue,
@@ -37,16 +40,23 @@ const QRScreen: React.FC<Props> = ({
     return (
         <View style={style.container}>
             <View style={style.topContainer}>
-                {title && (
-                    <Text
-                        h2
-                        medium
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        style={style.title}>
-                        {title}
-                    </Text>
-                )}
+                <View style={style.titleContainer}>
+                    {title && (
+                        <Text
+                            h2
+                            medium
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                            style={style.title}>
+                            {title}
+                        </Text>
+                    )}
+                    {titleSuffix && (
+                        <Text numberOfLines={1} bold style={style.titleSuffix}>
+                            {titleSuffix}
+                        </Text>
+                    )}
+                </View>
                 {subtitle && (
                     <Text caption style={style.subtitle}>
                         {subtitle}
@@ -80,9 +90,21 @@ const styles = (theme: Theme, width: number, dark?: boolean) =>
             alignItems: 'center',
             justifyContent: 'flex-end',
             gap: theme.spacing.sm,
+            width: '100%',
+        },
+        titleContainer: {
+            textAlign: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+            alignItems: 'center',
+            width: '100%',
+            gap: theme.spacing.xs,
         },
         title: {
             textAlign: 'center',
+        },
+        titleSuffix: {
+            color: theme.colors.grey,
         },
         subtitle: {
             textAlign: 'center',

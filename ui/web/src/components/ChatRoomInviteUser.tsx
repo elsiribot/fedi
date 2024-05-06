@@ -9,6 +9,7 @@ import {
 } from '@fedi/common/redux'
 import { MatrixRoom } from '@fedi/common/types'
 import { formatErrorMessage } from '@fedi/common/utils/format'
+import { getUserSuffix } from '@fedi/common/utils/matrix'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
@@ -72,22 +73,33 @@ export const ChatRoomInviteUser: React.FC<Props> = ({ roomId }) => {
                     : member?.membership === 'join'
                     ? t('words.joined')
                     : t('words.invite')
+            const suffix = user?.id
+                ? getUserSuffix(user.displayName, user.id)
+                : ''
             return (
                 <SearchButton
                     key={user.id}
                     disabled={disabled}
-                    onClick={() => inviteUser(user.id)}>
+                    onClick={() => !disabled && inviteUser(user.id)}>
                     <ChatAvatar user={user} size="md" />
-                    <Text variant="caption" weight="bold" css={{ flex: 1 }}>
+                    <Text
+                        variant="caption"
+                        weight="bold"
+                        css={{ flexShrink: 1 }}>
                         {user.displayName}
                     </Text>
-                    {invitingUsers.includes(user.id) ? (
-                        <CircularLoader size={24} />
-                    ) : (
-                        <InviteText disabled={disabled}>
-                            {inviteText}
-                        </InviteText>
-                    )}
+                    <MemberSuffixText variant="caption">
+                        {suffix}
+                    </MemberSuffixText>
+                    <RightIcons>
+                        {invitingUsers.includes(user.id) ? (
+                            <CircularLoader size={24} />
+                        ) : (
+                            <InviteText disabled={disabled}>
+                                {inviteText}
+                            </InviteText>
+                        )}
+                    </RightIcons>
                 </SearchButton>
             )
         })
@@ -146,15 +158,16 @@ const SearchButton = styled('button', {
     textAlign: 'left',
     borderRadius: 8,
 
-    '&:hover, &:focus': {
-        background: theme.colors.extraLightGrey,
-        outline: 'none',
-    },
-
     variants: {
         disabled: {
             true: {
                 background: 'none',
+            },
+            false: {
+                '&:hover, &:focus': {
+                    background: theme.colors.extraLightGrey,
+                    outline: 'none',
+                },
             },
         },
     },
@@ -182,4 +195,12 @@ const LoaderContainer = styled('div', {
 
 const EmptyContainer = styled(EmptyState, {
     minHeight,
+})
+
+const MemberSuffixText = styled(Text, {
+    color: theme.colors.grey,
+})
+
+const RightIcons = styled('div', {
+    marginLeft: 'auto',
 })
