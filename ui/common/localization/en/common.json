@@ -69,6 +69,7 @@
         "payments": "Payments",
         "pending": "Pending",
         "people": "People",
+        "public": "Public",
         "receive": "Receive",
         "received": "Received",
         "receiving": "Receiving",
@@ -394,6 +395,8 @@
             "you-sent-payment": "You sent {{fiat}} ({{amount}}) {{memo}}"
         },
         "developer": {
+            "create-default-group": "Create Default Group",
+            "default-groups-info": "Creates a public, broadcast-only group to be configured as default groups that users join automatically",
             "developer-mode-activated": "You are now a developer!",
             "developer-mode-deactivated": "You are no longer a developer...",
             "download-logs": "Download logs",

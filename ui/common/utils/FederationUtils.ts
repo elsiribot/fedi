@@ -221,8 +221,8 @@ const getMetaField = (
         )
     }
 
-    if (field === 'default_group_chats') {
-        return metadata[`fedi:default_group_chats`] ?? metadata[field] ?? null
+    if (field === 'default_matrix_rooms') {
+        return metadata[`fedi:default_matrix_rooms`] ?? metadata[field] ?? null
     }
 
     if (Object.values(SupportedMetaFields).some(x => x === field)) {
@@ -405,7 +405,11 @@ export function supportsSingleSeed(federation: Federation) {
 export const getFederationGroupChats = (
     metadata: ClientConfigMetadata,
 ): string[] => {
-    const defaultGroupChats = getMetaField('default_group_chats', metadata)
+    const defaultGroupChats = getMetaField(
+        SupportedMetaFields.default_matrix_rooms,
+        metadata,
+    )
+    // const legacyDefaultGroupChats = getMetaField('default_group_chats', metadata)
 
     if (defaultGroupChats) {
         try {

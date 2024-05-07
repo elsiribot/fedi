@@ -34,7 +34,9 @@ import {
     MatrixCreateRoomOptions,
     Sats,
 } from '../types'
+import { RpcFederation } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
+import { getFederationGroupChats } from '../utils/FederationUtils'
 import { MatrixChatClient } from '../utils/MatrixChatClient'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
@@ -334,14 +336,17 @@ export const joinMatrixRoom = createAsyncThunk<
 
 export const createMatrixRoom = createAsyncThunk<
     { roomId: MatrixRoom['id'] },
-    { name: MatrixRoom['name']; broadcastOnly?: boolean }
->('matrix/createMatrixRoom', async ({ name, broadcastOnly }) => {
+    { name: MatrixRoom['name']; broadcastOnly?: boolean; isPublic?: boolean }
+>('matrix/createMatrixRoom', async ({ name, broadcastOnly, isPublic }) => {
     const client = getMatrixClient()
     const roomArgs: MatrixCreateRoomOptions = { name }
     if (broadcastOnly) {
         roomArgs.power_level_content_override = {
             events_default: MatrixPowerLevel.Moderator,
         }
+    }
+    if (isPublic === true) {
+        roomArgs.visibility = 'public'
     }
     return client.createRoom(roomArgs)
 })
@@ -751,6 +756,30 @@ export const unbanUser = createAsyncThunk<
     await client.roomUnbanUser(roomId, userId, reason)
 })
 
+export const joinDefaultGroupChats = createAsyncThunk<
+    void,
+    void,
+    { state: CommonState }
+>('matrix/joinDefaultGroupChats', async (_, { getState }) => {
+    const client = getMatrixClient()
+    const state = getState()
+    // Join every default chat group we don't have in state
+    const federations = state.federation.federations
+    federations.forEach(f => {
+        const federation = selectFederation(state, f.id)
+        if (!federation) return
+
+        const defaultRoomIds = getFederationGroupChats(federation.meta)
+        log.info(
+            `${defaultRoomIds.length} default groups for federation ${f.name} found...`,
+        )
+        // no need to check if we have already joined since bridge should handle it gracefully and we cannot guarantee the room list is fully loaded at this point anyway
+        defaultRoomIds.forEach(roomId => {
+            client.joinRoom(`${roomId}`, true)
+        })
+    })
+})
+
 /*** Selectors ***/
 
 export const selectMatrixStatus = (s: CommonState) => s.matrix.status
@@ -1067,5 +1096,15 @@ export const selectCanClaimPayment = createSelector(
         return !!federations.find(
             f => f.id === chatPayment.content.federationId,
         )
+    },
+)
+
+export const selectAllDefaultMatrixRooms = createSelector(
+    (s: CommonState) => selectFederations(s),
+    federations => {
+        return federations.reduce((result: string[], f: RpcFederation) => {
+            const defaultGroupIds = getFederationGroupChats(f.meta)
+            return [...result, ...defaultGroupIds]
+        }, [])
     },
 )

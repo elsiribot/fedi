@@ -126,8 +126,12 @@ export class MatrixChatClient {
         return this.fedimint.matrixGetAccountSession({ cached })
     }
 
-    async joinRoom(roomId: string) {
-        await this.fedimint.matrixRoomJoin({ roomId })
+    async joinRoom(roomId: string, isPublic?: boolean) {
+        if (isPublic) {
+            await this.fedimint.matrixRoomJoinPublic({ roomId })
+        } else {
+            await this.fedimint.matrixRoomJoin({ roomId })
+        }
     }
 
     async createRoom(options: MatrixCreateRoomOptions = {}) {
@@ -698,6 +702,7 @@ export class MatrixChatClient {
             // We need power levels to determine this, which is a separate call.
             // For now leave this undefined, and just apply it with a redux selector.
             // broadcastOnly: false,
+            isPublic: room.base_info.encryption === null,
         }
     }
 

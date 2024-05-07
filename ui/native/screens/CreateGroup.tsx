@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Switch, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
@@ -17,16 +17,27 @@ const log = makeLog('CreateGroup')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'CreateGroup'>
 
-const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
+const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const defaultGroup = route.params?.defaultGroup || undefined
     const dispatch = useAppDispatch()
     const [groupName, setGroupName] = useState<string>(
         t('feature.chat.new-group'),
     )
     const [creatingGroup, setCreatingGroup] = useState<boolean>(false)
-    const [broadcastOnly, setBroadcastOnly] = useState<boolean>(false)
+    const [broadcastOnly, setBroadcastOnly] = useState<boolean>(
+        defaultGroup === true,
+    )
+    const [isPublic, setIsPublic] = useState<boolean>(defaultGroup === true)
     const toast = useToast()
+
+    useEffect(() => {
+        if (!defaultGroup) {
+            setBroadcastOnly(false)
+            setIsPublic(false)
+        }
+    }, [defaultGroup])
 
     const handleCreateGroup = useCallback(async () => {
         setCreatingGroup(true)
@@ -35,6 +46,7 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
                 createMatrixRoom({
                     name: groupName,
                     broadcastOnly,
+                    isPublic,
                 }),
             ).unwrap()
             log.info('group created', roomId)
@@ -47,7 +59,7 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
             toast.error(t, error)
         }
         setCreatingGroup(false)
-    }, [broadcastOnly, dispatch, groupName, navigation, toast, t])
+    }, [broadcastOnly, dispatch, groupName, isPublic, navigation, toast, t])
 
     const handleSubmit = async () => {
         if (groupName) {
@@ -79,6 +91,17 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
                     onValueChange={value => setBroadcastOnly(value)}
                 />
             </View>
+            {defaultGroup && (
+                <View style={styles(theme).switchWrapper}>
+                    <Text style={styles(theme).inputLabel}>
+                        {t('words.public')}
+                    </Text>
+                    <Switch
+                        value={isPublic}
+                        onValueChange={value => setIsPublic(value)}
+                    />
+                </View>
+            )}
             <Button
                 fullWidth
                 title={t('phrases.save-changes')}

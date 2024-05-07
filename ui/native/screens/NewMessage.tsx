@@ -61,7 +61,7 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
                     {
                         label: t('feature.chat.create-a-group'),
                         icon: 'SocialPeople',
-                        onPress: () => navigation.push('CreateGroup'),
+                        onPress: () => navigation.push('CreateGroup', {}),
                     },
                 ]}
             />
