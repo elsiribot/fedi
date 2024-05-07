@@ -45,7 +45,7 @@ export const EnterDisplayName: React.FC = () => {
         [handleSubmitDisplayName, push],
     )
 
-    if (hasSetDisplayName) {
+    if (hasSetDisplayName && !isSubmitting) {
         return <Redirect path="/onboarding/complete" />
     }
 
