@@ -78,7 +78,7 @@ const EnterDisplayName: React.FC<Props> = ({ navigation }: Props) => {
     }, [])
 
     const handleSubmit = useCallback(() => {
-        handleSubmitDisplayName(async () => {
+        handleSubmitDisplayName(() => {
             navigation.reset({
                 index: 0,
                 routes: [{ name: 'UploadAvatarImage' }],

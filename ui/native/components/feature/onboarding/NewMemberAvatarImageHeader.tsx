@@ -7,13 +7,11 @@ import SelectedFederationHeader from '../federations/SelectedFederationHeader'
 
 const NewMemberAvatarImageHeader: React.FC = () => {
     const { t } = useTranslation()
-
     return (
         <>
             <SelectedFederationHeader />
             <Header
                 inline
-                backButton
                 headerCenter={
                     <Text bold numberOfLines={1} adjustsFontSizeToFit>
                         {t('feature.chat.add-an-avatar')}
