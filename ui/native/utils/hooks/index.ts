@@ -81,16 +81,28 @@ export function useNotificationsPermission() {
 export function useStoragePermission() {
     const [storagePermission, setStoragePermission] =
         useState<PermissionStatus>()
-    const permissions = Platform.select({
-        ios: [PERMISSIONS.IOS.PHOTO_LIBRARY],
-        android: [
-            PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE,
-            PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE,
-        ],
-    })
+
+    const getPermissions = useCallback(() => {
+        switch (Platform.OS) {
+            case 'ios':
+                return [PERMISSIONS.IOS.PHOTO_LIBRARY]
+
+            case 'android':
+                if (Platform.Version >= 33) {
+                    return [PERMISSIONS.ANDROID.READ_MEDIA_IMAGES]
+                }
+
+                return [PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE]
+
+            default:
+                return null
+        }
+    }, [])
 
     useEffect(() => {
-        if (!permissions) {
+        const permissions = getPermissions()
+
+        if (permissions === null) {
             log.error('useStoragePermission: unsupported platform')
             setStoragePermission('unavailable')
             return
@@ -115,10 +127,12 @@ export function useStoragePermission() {
                 log.error('useStoragePermission check', err)
                 setStoragePermission('unavailable')
             })
-    }, [permissions])
+    }, [getPermissions])
 
     const requestStoragePermission = useCallback(() => {
-        if (!permissions) {
+        const permissions = getPermissions()
+
+        if (permissions === null) {
             log.error('requestStoragePermission: unsupported platform')
             throw new Error('Unsupported platform')
         }
@@ -142,7 +156,7 @@ export function useStoragePermission() {
                 log.error('useStoragePermission check', err)
                 setStoragePermission('unavailable')
             })
-    }, [permissions])
+    }, [getPermissions])
 
     return { storagePermission, requestStoragePermission }
 }
