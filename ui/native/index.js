@@ -12,20 +12,24 @@ import { configureLogging, saveLogsToStorage } from '@fedi/common/utils/log'
 
 import App from './App'
 import { name as appName } from './app.json'
-import './localization/i18n'
+import i18next from './localization/i18n'
 import {
     handleBackgroundEvent,
-    handleBackgroundReceived,
-    handleForegroundReceived,
+    handleBackgroundFCMReceived,
+    handleForegroundFCMReceived,
 } from './utils/notifications'
 import { storage } from './utils/storage'
 
-// Handles notifications when app is closed
-messaging().setBackgroundMessageHandler(handleBackgroundReceived)
-notifee.onBackgroundEvent(handleBackgroundEvent)
+// Handles FCM notifications when app is closed
+messaging().setBackgroundMessageHandler(m =>
+    handleBackgroundFCMReceived(m, i18next.t),
+)
 
-// Handles notifications when app is open
-messaging().onMessage(handleForegroundReceived)
+// Handles FCM notifications when app is open
+messaging().onMessage(m => handleForegroundFCMReceived(m, i18next.t))
+
+// Handles updates to notification (user taps notification, actions, etc)
+notifee.onBackgroundEvent(e => handleBackgroundEvent(e, i18next.t))
 
 // Register the app component
 AppRegistry.registerComponent(appName, () => App)

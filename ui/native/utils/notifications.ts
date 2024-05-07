@@ -16,64 +16,23 @@ import { TransactionDirection, TransactionEvent } from '../types'
 
 const log = makeLog('Notifications')
 
-export const handleForegroundReceived = async (
+export const NOTIFICATION_TYPES = {
+    chat: 'chat-message',
+    payment: 'payment-received',
+} as const
+
+export const handleForegroundFCMReceived = async (
     remoteMessage: FirebaseMessagingTypes.RemoteMessage,
 ) => {
-    log.info('foreground notification received', remoteMessage)
-    console.error('FOREGROUND RECEIVED', JSON.stringify(remoteMessage))
-    // Create a channel (required for Android)
-    // const channelId = await notifee.createChannel({
-    //     id: 'chat-new-messages',
-    //     name: 'Chat channel',
-    // })
-    // const title = `Chat`
-    // const body = remoteMessage?.data?.unread
-    //     ? `You have ${remoteMessage.data.unread} new messages`
-    //     : `You have new messages`
-
-    // await notifee.displayNotification({
-    //     title,
-    //     body,
-    //     android: {
-    //         channelId,
-    //         pressAction: {
-    //             id: 'chat-new-messages',
-    //             // roomId: remoteMessage?.data?.roomId ?? '',
-    //         },
-    //     },
-    // })
+    log.info('foreground FCM notification received (no-op)', remoteMessage)
 }
 
-export const handleBackgroundReceived = async (
-    remoteMessage: FirebaseMessagingTypes.RemoteMessage,
+export const handleBackgroundFCMReceived = async (
+    message: FirebaseMessagingTypes.RemoteMessage,
+    t: TFunction,
 ) => {
-    console.error(
-        'BACKGROUND RECEIVED',
-        typeof remoteMessage,
-        remoteMessage.data,
-    )
-    // notifee.displayNotification(JSON.parse(remoteMessage.data.notifee))
-    const title = `Chat`
-    const body = remoteMessage?.data?.unread
-        ? `You have ${remoteMessage.data.unread} new messages`
-        : `You have new messages`
-
-    await dispatchNotification('chat', 'Chat channel', title, body)
-}
-export const handleBackgroundEvent = async ({ type, detail }: Event) => {
-    console.warn('background event----', type)
-    if (type === EventType.ACTION_PRESS) {
-        console.warn('ACTION PRESS', detail)
-    } else if (type === EventType.DELIVERED) {
-        console.warn('DELIVERED', detail)
-        // redeem ecash?
-    } else if (type === EventType.DISMISSED) {
-        console.warn('DISMISSED', detail)
-        // dismiss unread?
-    } else if (type === EventType.PRESS) {
-        console.warn('PRESS', detail)
-        // deep link?
-    }
+    log.info('background FCM notification received', message.data)
+    await displayMessageReceivedNotification(message.data, t)
 }
 
 export const displayPaymentReceivedNotification = async (
@@ -96,29 +55,44 @@ export const displayPaymentReceivedNotification = async (
 
     const amountText = amountUtils.formatNumber(amountUtils.msatToSat(amount))
     await dispatchNotification(
-        'transactions',
+        'transaction',
         'Transactions Channel',
         federationName
             ? `${federationName}: ${t('phrases.payment-received')}`
             : t('phrases.payment-received'),
         `${amountText} ${t('words.sats')}`,
+        {
+            type: NOTIFICATION_TYPES.payment,
+        },
     )
 }
 
 export const displayMessageReceivedNotification = async (
-    event: FirebaseMessagingTypes.RemoteMessage,
+    // data: FirebaseMessagingTypes.RemoteMessage,
+    // todo: get type from bridge
+    data: any, // extends MatrixChatEvent,
     t: TFunction,
 ) => {
-    const title = `Chat`
-    const body = event?.data?.unread
+    const title = t('words.chat')
+    const body = data?.unread
         ? t('feature.notifications.new-messages-count', {
-              unread: event.data.unread,
+              unread: data.unread,
           })
         : t('feature.notifications.new-messages')
 
-    await dispatchNotification('chat', 'Chat channel', title, body, {
-        groupSummary: true,
-    })
+    await dispatchNotification(
+        'chat',
+        'Chat channel',
+        title,
+        body,
+        {
+            type: NOTIFICATION_TYPES.chat,
+            ...data,
+        },
+        {
+            android: { groupSummary: true },
+        },
+    )
 }
 
 /**
@@ -128,33 +102,59 @@ export const displayMessageReceivedNotification = async (
  * @param channelName for Android notification channel
  * @param title Bold notification title
  * @param body Long subtext for notification
- * @param actions Additional data for handling pressing the notification
+ * @param data context for notification
+ * @param params platform-specific information for notification
  */
 const dispatchNotification = async (
     id: string,
     channelName: string,
     title: string,
     body: string,
-    androidParams?: NotificationAndroid,
-    iosParams?: NotificationIOS,
+    data?: {},
+    params: {
+        android?: NotificationAndroid
+        ios?: NotificationIOS
+    } = {},
 ) => {
     // Create a channel (required for Android)
     const channelId = await notifee.createChannel({
         id,
         name: channelName,
     })
+    const androidParams = {
+        channelId,
+        // Default open the app when pressed
+        // (required for android)
+        pressAction: {
+            id,
+            launchActivity: 'default',
+            ...params.android?.pressAction,
+        },
+        ...params.android,
+    }
     await notifee.displayNotification({
         title,
         body,
-        android: {
-            channelId,
-            // pressAction is need if you want the notification to open the app when pressed
-            pressAction: {
-                id,
-                ...androidParams?.pressAction,
-            },
-            ...androidParams,
-        },
-        ios: iosParams,
+        data,
+        android: androidParams,
+        ios: params.ios,
     })
+    await notifee.incrementBadgeCount()
+}
+
+// Handles user interaction with notifications
+export const handleBackgroundEvent = async ({ type, detail }: Event) => {
+    if (type === EventType.ACTION_PRESS) {
+        log.info('notification event (action pressed)', detail)
+        // TODO: reply? accept/reject? etc?
+    } else if (type === EventType.DELIVERED) {
+        log.info('notification event ', detail)
+        // TODO: redeem ecash?
+    } else if (type === EventType.DISMISSED) {
+        log.info('notification event (dismissed)', detail)
+        // TODO: dismiss unread indicator?
+    } else if (type === EventType.PRESS) {
+        log.info('notification event (pressed)', detail)
+        // deep link? (handled elsewhere for now)
+    }
 }

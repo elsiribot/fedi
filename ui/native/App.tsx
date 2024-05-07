@@ -24,12 +24,6 @@ const App = () => {
         return unsubscribe
     }, [])
 
-    useEffect(() => {
-        // Handles notifications when app is open
-        const unsubscribe = messaging().onMessage(handleForegroundReceived)
-        return unsubscribe
-    }, [])
-
     return (
         <SafeAreaProvider>
             <ThemeProvider theme={theme}>

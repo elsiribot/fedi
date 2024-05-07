@@ -181,6 +181,7 @@ import UploadAvatarImage from './screens/UploadAvatarImage'
 import { useAppSelector, useMatrixPushNotifications } from './state/hooks'
 import {
     resetAfterPersonalRecovery,
+    resetChatRoom,
     resetToLockedDevice,
     resetToSocialRecovery,
 } from './state/navigation'
@@ -192,6 +193,7 @@ import {
     RootStackParamList,
     DRAWER_NAVIGATION_ID,
 } from './types/navigation'
+import { useHandleInitialNotification } from './utils/hooks/notifications'
 import { useIsFeatureUnlocked } from './utils/hooks/security'
 
 const log = makeLog('NavigationRouter')
@@ -229,6 +231,17 @@ const MainNavigator = () => {
             navigation.dispatch(resetToLockedDevice())
         }
     }, [navigation, shouldLockDevice])
+
+    // TODO: replace with deep linking
+    // ref: https://medium.com/cybermonkey/deep-linking-push-notifications-with-react-navigation-5fce260ccca2
+    const { loadingNotification, initialNotificationData } =
+        useHandleInitialNotification()
+
+    useEffect(() => {
+        if (!loadingNotification && initialNotificationData && navigation) {
+            navigation.dispatch(resetChatRoom(initialNotificationData))
+        }
+    }, [navigation, initialNotificationData, loadingNotification])
 
     return (
         <Stack.Navigator

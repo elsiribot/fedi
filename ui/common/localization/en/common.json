@@ -231,7 +231,8 @@
     "feature": {
         "notifications": {
             "new-messages-count": "You have {{unread}} new messages",
-            "new-messages": "You have new messages"
+            "new-messages": "You have new messages",
+            "open-chat": "Open Chat"
         },
         "backup": {
             "backup-social-recovery-file": "Backup your social recovery file",

@@ -1,5 +1,9 @@
-import { useRef, useState, useEffect } from 'react'
+import notifee, { InitialNotification } from '@notifee/react-native'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { AppState } from 'react-native'
+
+import { RootStackParamList } from '../../types/navigation'
+import { NOTIFICATION_TYPES, handleInitialNotification } from '../notifications'
 
 /**
  * Hook to track whether the app is in the foreground.
@@ -28,4 +32,44 @@ export const useIsForeground = () => {
 
     // True if
     return isActive
+}
+
+export const useHandleInitialNotification = () => {
+    const [loading, setLoading] = useState(true)
+    const [initialNotificationData, setInitialNotificationData] =
+        useState<string>()
+
+    useEffect(() => {
+        const onLoad = async () => {
+            try {
+                // Clear notification count (ios)
+                await notifee.setBadgeCount(0)
+
+                // Checks if app was opened by notification
+                const notification = await notifee.getInitialNotification()
+                if (!notification) return
+
+                const data = notification?.notification.data
+                if (!data) return
+
+                if (
+                    data.type === NOTIFICATION_TYPES.chat &&
+                    data.room_id &&
+                    typeof data.room_id === 'string'
+                ) {
+                    // Handle chat notifications
+                    setInitialNotificationData(data.room_id)
+                } else if (data.type === NOTIFICATION_TYPES.payment) {
+                    // Handle payment notifications
+                    console.error('PAYMENT NOTIFICATIONASDFLKSDF')
+                }
+            } catch (e) {
+                console.error('Failed to handle initial notification', e)
+            } finally {
+                setLoading(false)
+            }
+        }
+        onLoad()
+    }, [])
+    return { loadingNotification: loading, initialNotificationData }
 }
