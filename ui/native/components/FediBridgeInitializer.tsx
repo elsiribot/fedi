@@ -32,6 +32,7 @@ import { ErrorScreen } from '../screens/ErrorScreen'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import theme from '../styles/theme'
 import { generateDeviceId } from '../utils/device-info'
+import { useIsForeground } from '../utils/hooks/notifications'
 import { displayPaymentReceivedNotification } from '../utils/notifications'
 
 const log = makeLog('FediBridgeInitializer')
@@ -48,6 +49,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const deviceId = useAppSelector(selectDeviceId)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const dispatchRef = useUpdatingRef(dispatch)
+    const isForeground = useIsForeground()
 
     // Initialize device ID
     useEffect(() => {
@@ -132,6 +134,26 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     }, [deviceId, dispatchRef])
 
     useEffect(() => {
+        // Initialize push notification sender
+        const unsubscribeTransaction = fedimint.addListener(
+            'transaction',
+            async (event: TransactionEvent) => {
+                if (isForeground)
+                    return log.info(
+                        'Payment received (foreground - no notification)',
+                    )
+
+                log.info(
+                    'Payment received (background - delivering notification)',
+                )
+                await displayPaymentReceivedNotification(event, t)
+            },
+        )
+
+        return () => unsubscribeTransaction()
+    }, [t, isForeground])
+
+    useEffect(() => {
         // Initialize logger
         const unsubscribeLog = fedimint.addListener(
             'log',
@@ -140,13 +162,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                 const stripped = event.log.replace('\\', '')
                 log.info('OS:', Platform.OS, `": log" -> "${stripped}"`)
             },
-        )
-
-        // Initialize push notification sender
-        const unsubscribeTransaction = fedimint.addListener(
-            'transaction',
-            async (event: TransactionEvent) =>
-                await displayPaymentReceivedNotification(event, t),
         )
 
         // Initialize panic listener
@@ -172,7 +187,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
 
         return () => {
             unsubscribeLog()
-            unsubscribeTransaction()
             unsubscribePanic()
             unsubscribeDeviceRegistration()
         }

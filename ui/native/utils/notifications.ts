@@ -22,26 +22,26 @@ export const handleForegroundReceived = async (
     log.info('foreground notification received', remoteMessage)
     console.error('FOREGROUND RECEIVED', JSON.stringify(remoteMessage))
     // Create a channel (required for Android)
-    const channelId = await notifee.createChannel({
-        id: 'chat-new-messages',
-        name: 'Chat channel',
-    })
-    const title = `Chat`
-    const body = remoteMessage?.data?.unread
-        ? `You have ${remoteMessage.data.unread} new messages`
-        : `You have new messages`
+    // const channelId = await notifee.createChannel({
+    //     id: 'chat-new-messages',
+    //     name: 'Chat channel',
+    // })
+    // const title = `Chat`
+    // const body = remoteMessage?.data?.unread
+    //     ? `You have ${remoteMessage.data.unread} new messages`
+    //     : `You have new messages`
 
-    await notifee.displayNotification({
-        title,
-        body,
-        android: {
-            channelId,
-            pressAction: {
-                id: 'chat-new-messages',
-                // roomId: remoteMessage?.data?.roomId ?? '',
-            },
-        },
-    })
+    // await notifee.displayNotification({
+    //     title,
+    //     body,
+    //     android: {
+    //         channelId,
+    //         pressAction: {
+    //             id: 'chat-new-messages',
+    //             // roomId: remoteMessage?.data?.roomId ?? '',
+    //         },
+    //     },
+    // })
 }
 
 export const handleBackgroundReceived = async (

@@ -1,7 +1,7 @@
 /**
  * @format
  */
-import notifee, { EventType } from '@notifee/react-native'
+import notifee from '@notifee/react-native'
 import messaging from '@react-native-firebase/messaging'
 import { AppRegistry, AppState } from 'react-native'
 import 'react-native-gesture-handler'
@@ -16,12 +16,16 @@ import './localization/i18n'
 import {
     handleBackgroundEvent,
     handleBackgroundReceived,
+    handleForegroundReceived,
 } from './utils/notifications'
 import { storage } from './utils/storage'
 
 // Handles notifications when app is closed
 messaging().setBackgroundMessageHandler(handleBackgroundReceived)
 notifee.onBackgroundEvent(handleBackgroundEvent)
+
+// Handles notifications when app is open
+messaging().onMessage(handleForegroundReceived)
 
 // Register the app component
 AppRegistry.registerComponent(appName, () => App)
