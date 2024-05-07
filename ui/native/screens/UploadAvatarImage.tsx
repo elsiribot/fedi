@@ -35,6 +35,7 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
 
     const [isUploading, setIsUploading] = useState<boolean>(false)
     const [didUpload, setDidUpload] = useState<boolean>(false)
+    const [imageUri, setImageUri] = useState<string>('')
 
     const finishStep = () => {
         navigation.reset({
@@ -57,7 +58,8 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
             if (!file.uri) return
 
             const mimeType = file.type || ''
-            const fileDestination = `${RNFS.PicturesDirectoryPath}/avatar_image`
+            const fileDestination = `${RNFS.TemporaryDirectoryPath}/avatar_image`
+
             setIsUploading(true)
 
             await RNFS.copyFile(file.uri, fileDestination)
@@ -70,6 +72,7 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
                 }),
             ).unwrap()
 
+            setImageUri(file.uri)
             setDidUpload(true)
         } catch (err) {
             toast.error(t, err)
@@ -117,21 +120,28 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
     const displayName = matrixAuth?.displayName || ''
 
     // don't show name in avatar if avatar image is present
-    const avatarName = matrixAuth?.avatarUrl ? '' : displayName
+    const avatarName = imageUri ? '' : displayName
 
     const greeting = didUpload
         ? `${t('feature.onboarding.greeting-image')}, ${displayName}`
         : `${t('words.hello')}, ${displayName}`
 
     return (
-        <StoragePermissionGate>
+        <StoragePermissionGate
+            alternativeActionButton={
+                <Button
+                    title={t('words.skip')}
+                    onPress={finishStep}
+                    type="clear"
+                />
+            }>
             <ScrollView
                 keyboardShouldPersistTaps="handled"
                 contentContainerStyle={style.container}>
                 <View style={style.avatarContainer}>
                     <Avatar
                         id={matrixAuth?.userId || ''}
-                        url={matrixAuth?.avatarUrl}
+                        url={imageUri}
                         size={AvatarSize.lg}
                         name={avatarName}
                     />

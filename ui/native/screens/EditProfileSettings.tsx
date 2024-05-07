@@ -91,7 +91,7 @@ const EditProfileSettings: React.FC = () => {
                     return
                 }
 
-                const fileDestination = `${RNFS.PicturesDirectoryPath}/avatar_image`
+                const fileDestination = `${RNFS.TemporaryDirectoryPath}/avatar_image`
                 await RNFS.copyFile(file.uri, fileDestination)
 
                 await dispatch(
