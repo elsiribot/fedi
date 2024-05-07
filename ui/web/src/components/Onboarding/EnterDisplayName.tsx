@@ -3,13 +3,15 @@ import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useDisplayNameForm } from '@fedi/common/hooks/chat'
-import { selectActiveFederationId, selectMatrixAuth } from '@fedi/common/redux'
+import {
+    selectAuthenticatedMember,
+    selectHasSetMatrixDisplayName,
+} from '@fedi/common/redux'
 
 import { useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 import { Button } from '../Button'
-import { HoloLoader } from '../HoloLoader'
 import { Input } from '../Input'
 import { Redirect } from '../Redirect'
 import { Text } from '../Text'
@@ -22,8 +24,9 @@ import {
 export const EnterDisplayName: React.FC = () => {
     const { t } = useTranslation()
     const { push } = useRouter()
-    const matrixAuth = useAppSelector(selectMatrixAuth)
-    const federationId = useAppSelector(selectActiveFederationId)
+    const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
+    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
+    const hasLegacyChatData = !!authenticatedMember
     const {
         username,
         isSubmitting,
@@ -42,56 +45,43 @@ export const EnterDisplayName: React.FC = () => {
         [handleSubmitDisplayName, push],
     )
 
-    // TODO: Allow username registration before joining a federation, chat does
-    // not require federation membership.
-    if (!federationId) {
-        return <Redirect path="/onboarding" />
+    if (hasSetDisplayName) {
+        return <Redirect path="/onboarding/complete" />
     }
 
-    let content: React.ReactNode
-    if (!matrixAuth) {
-        content = (
-            <OnboardingContent>
-                <HoloLoader size="xl" />
-            </OnboardingContent>
-        )
-    } else {
-        content = (
-            <>
-                <OnboardingContent>
-                    <Text variant="h2" weight="medium">
-                        {t('feature.chat.enter-display-name')}
-                    </Text>
-                    <Text>{t('feature.onboarding.username-instructions')}</Text>
-                    <InputWrapper>
-                        <Input
-                            label={t('feature.chat.display-name')}
-                            value={username}
-                            onChange={ev =>
-                                handleChangeUsername(ev.currentTarget.value)
-                            }
-                            disabled={isSubmitting}
-                            autoFocus
-                            autoCapitalize="off"
-                        />
-                    </InputWrapper>
-                </OnboardingContent>
-                <OnboardingActions>
-                    <Button
-                        width="full"
-                        type="submit"
-                        disabled={!username}
-                        loading={isSubmitting}>
-                        {t('words.continue')}
-                    </Button>
-                </OnboardingActions>
-            </>
-        )
+    if (hasLegacyChatData) {
+        return <Redirect path="/" />
     }
 
     return (
         <OnboardingContainer as="form" onSubmit={handleSubmit}>
-            {content}
+            <OnboardingContent>
+                <Text variant="h2" weight="medium">
+                    {t('feature.chat.enter-display-name')}
+                </Text>
+                <Text>{t('feature.onboarding.username-instructions')}</Text>
+                <InputWrapper>
+                    <Input
+                        label={t('feature.chat.display-name')}
+                        value={username}
+                        onChange={ev =>
+                            handleChangeUsername(ev.currentTarget.value)
+                        }
+                        disabled={isSubmitting}
+                        autoFocus
+                        autoCapitalize="off"
+                    />
+                </InputWrapper>
+            </OnboardingContent>
+            <OnboardingActions>
+                <Button
+                    width="full"
+                    type="submit"
+                    disabled={!username}
+                    loading={isSubmitting}>
+                    {t('words.continue')}
+                </Button>
+            </OnboardingActions>
         </OnboardingContainer>
     )
 }

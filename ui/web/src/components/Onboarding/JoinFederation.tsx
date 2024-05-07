@@ -53,9 +53,7 @@ export const JoinFederation: React.FC = () => {
     const federationIds = useAppSelector(selectFederationIds)
     const isSm = useMediaQuery(config.media.sm)
     const popupInfo = usePopupFederationInfo(federationPreview?.meta)
-    const hasSetMatrixDisplayName = useAppSelector(
-        selectHasSetMatrixDisplayName,
-    )
+    const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
 
     const handleCode = useCallback(
         async (code: string) => {
@@ -95,7 +93,7 @@ export const JoinFederation: React.FC = () => {
                 }),
             ).unwrap()
             push(
-                hasSetMatrixDisplayName
+                hasSetDisplayName
                     ? '/onboarding/complete'
                     : '/onboarding/username',
             )
@@ -104,7 +102,7 @@ export const JoinFederation: React.FC = () => {
             toast.error(t, err, 'errors.invalid-federation-code')
             setIsJoining(false)
         }
-    }, [dispatch, federationPreview, hasSetMatrixDisplayName, push, t, toast])
+    }, [dispatch, federationPreview, hasSetDisplayName, push, t, toast])
 
     const tosUrl = federationPreview
         ? getFederationTosUrl(federationPreview.meta)
