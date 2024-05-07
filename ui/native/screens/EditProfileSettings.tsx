@@ -9,6 +9,7 @@ import {
 } from 'react-native'
 import RNFS from 'react-native-fs'
 import { launchImageLibrary } from 'react-native-image-picker'
+import { RESULTS } from 'react-native-permissions'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useDisplayNameForm } from '@fedi/common/hooks/chat'
@@ -23,6 +24,7 @@ import { fedimint } from '../bridge'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import { Pressable } from '../components/ui/Pressable'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { useStoragePermission } from '../utils/hooks'
 
 const log = makeLog('EditProfile')
 
@@ -34,6 +36,8 @@ const EditProfileSettings: React.FC = () => {
     const dispatch = useAppDispatch()
 
     const matrixAuth = useAppSelector(selectMatrixAuth)
+    const { storagePermission, requestStoragePermission } =
+        useStoragePermission()
 
     const style = styles(theme, insets)
 
@@ -69,6 +73,10 @@ const EditProfileSettings: React.FC = () => {
     }, [buttonIsOverlapping, buttonYPosition, overlapThreshold, keyboardHeight])
 
     const handleAvatarPress = async (_: GestureResponderEvent) => {
+        if (storagePermission !== RESULTS.GRANTED) {
+            await requestStoragePermission()
+        }
+
         try {
             const res = await launchImageLibrary({
                 selectionLimit: 1,
@@ -83,7 +91,7 @@ const EditProfileSettings: React.FC = () => {
                     return
                 }
 
-                const fileDestination = `${RNFS.PicturesDirectoryPath}/avatar_image`
+                const fileDestination = `${RNFS.TemporaryDirectoryPath}/avatar_image`
                 await RNFS.copyFile(file.uri, fileDestination)
 
                 await dispatch(

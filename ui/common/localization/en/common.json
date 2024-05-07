@@ -38,6 +38,7 @@
         "from": "From",
         "general": "General",
         "group": "Group",
+        "hello": "Hello",
         "history": "History",
         "home": "Home",
         "icon": "Icon",
@@ -288,6 +289,7 @@
         },
         "chat": {
             "add-admin": "Add Admin",
+            "add-a-photo": "Add a photo",
             "add-an-avatar": "Add an avatar",
             "add-user-as-an-admin": "Add {{username}} as an admin",
             "added-admin-to-group": "Added {{username}} as an admin",
@@ -500,6 +502,7 @@
             "create-your-username": "Create your username",
             "earn-and-save": "Earn and Save",
             "enter-username": "Enter username",
+            "greeting-image": "Looking good",
             "greeting-instructions": "Now you will be able to send money, communicate with your community, and more with Fedi.",
             "guidance-1": "Chat, earn, save, and spend money privately with your community",
             "guidance-2": "Fedi uses your community to make it easy to backup and secure your money, change to local money or get help.",
@@ -536,6 +539,8 @@
             "allow-camera-title": "Allow camera access to",
             "allow-notifications-description": "New chat messages, payments, and announcements",
             "allow-notifications-title": "Allow notifications to see",
+            "allow-storage-title": "Allow storage access to",
+            "allow-storage-description": "Upload files, set your profile picture, and more",
             "update-later-disclaimer": "This can be updated later"
         },
         "pin": {

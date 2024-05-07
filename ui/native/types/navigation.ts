@@ -145,6 +145,7 @@ export type RootStackParamList = {
         | { initialRouteName: keyof TabsNavigatorParamList }
         | undefined
     Transactions: undefined
+    UploadAvatarImage: undefined
     DeveloperSettings: undefined
     SetPin: undefined
     CreatedPin: undefined

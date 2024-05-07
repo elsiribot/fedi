@@ -46,6 +46,7 @@ import SelectedFederationHeader from './components/feature/federations/SelectedF
 import HomeLockScreen from './components/feature/home/LockScreen'
 import { OmniLinkHandler } from './components/feature/omni/OmniLinkHandler'
 import EulaHeader from './components/feature/onboarding/EulaHeader'
+import NewMemberAvatarImageHeader from './components/feature/onboarding/NewMemberAvatarImageHeader'
 import NewMemberHeader from './components/feature/onboarding/NewMemberHeader'
 import ChangePinLockScreenHeader from './components/feature/pin/ChangePinLockScreenHeader'
 import CreatePinInstructionsHeader from './components/feature/pin/CreatePinInstructionsHeader'
@@ -176,6 +177,7 @@ import StartSocialBackup from './screens/StartSocialBackup'
 import SwitchingFederations from './screens/SwitchingFederations'
 import TabsNavigator from './screens/TabsNavigator'
 import Transactions from './screens/Transactions'
+import UploadAvatarImage from './screens/UploadAvatarImage'
 import { useAppSelector, useMatrixPushNotifications } from './state/hooks'
 import {
     resetAfterPersonalRecovery,
@@ -356,6 +358,17 @@ const MainNavigator = () => {
                                 component={EnterDisplayName}
                                 options={() => ({
                                     header: () => <NewMemberHeader />,
+                                    animation: 'fade',
+                                    animationDuration: 300,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="UploadAvatarImage"
+                                component={UploadAvatarImage}
+                                options={() => ({
+                                    header: () => (
+                                        <NewMemberAvatarImageHeader />
+                                    ),
                                     animation: 'fade',
                                     animationDuration: 300,
                                 })}

@@ -8,6 +8,9 @@ import {
     requestNotifications,
     PermissionStatus,
     PERMISSIONS,
+    RESULTS,
+    checkMultiple,
+    requestMultiple,
 } from 'react-native-permissions'
 
 import { makeLog } from '@fedi/common/utils/log'
@@ -73,4 +76,87 @@ export function useNotificationsPermission() {
     }, [])
 
     return { notificationsPermission, requestNotificationsPermission }
+}
+
+export function useStoragePermission() {
+    const [storagePermission, setStoragePermission] =
+        useState<PermissionStatus>()
+
+    const getPermissions = useCallback(() => {
+        switch (Platform.OS) {
+            case 'ios':
+                return [PERMISSIONS.IOS.PHOTO_LIBRARY]
+
+            case 'android':
+                if (Platform.Version >= 33) {
+                    return [PERMISSIONS.ANDROID.READ_MEDIA_IMAGES]
+                }
+
+                return [PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE]
+
+            default:
+                return null
+        }
+    }, [])
+
+    useEffect(() => {
+        const permissions = getPermissions()
+
+        if (permissions === null) {
+            log.error('useStoragePermission: unsupported platform')
+            setStoragePermission('unavailable')
+            return
+        }
+
+        checkMultiple(permissions)
+            .then(statuses => {
+                let allGranted = true
+
+                for (const permission of permissions) {
+                    if (statuses[permission] !== RESULTS.GRANTED) {
+                        allGranted = false
+                        break
+                    }
+                }
+
+                setStoragePermission(
+                    allGranted ? RESULTS.GRANTED : RESULTS.DENIED,
+                )
+            })
+            .catch(err => {
+                log.error('useStoragePermission check', err)
+                setStoragePermission('unavailable')
+            })
+    }, [getPermissions])
+
+    const requestStoragePermission = useCallback(() => {
+        const permissions = getPermissions()
+
+        if (permissions === null) {
+            log.error('requestStoragePermission: unsupported platform')
+            throw new Error('Unsupported platform')
+        }
+
+        return requestMultiple(permissions)
+            .then(statuses => {
+                let allGranted = true
+
+                for (const permission of permissions) {
+                    if (statuses[permission] !== RESULTS.GRANTED) {
+                        allGranted = false
+                        break
+                    }
+                }
+
+                setStoragePermission(
+                    allGranted ? RESULTS.GRANTED : RESULTS.DENIED,
+                )
+            })
+            .catch(err => {
+                log.error('useStoragePermission check', err)
+                setStoragePermission('unavailable')
+            })
+    }, [getPermissions])
+
+    return { storagePermission, requestStoragePermission }
 }
