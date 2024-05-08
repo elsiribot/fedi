@@ -468,6 +468,9 @@ impl AppState {
                 bail!("Cannot recover while joined federations exist");
             }
             state.root_mnemonic = mnemonic;
+            // Clear encrypted device identifier since the seed has changed. It will be
+            // re-encrypted and stored when queried for again.
+            state.encrypted_device_identifier = None;
             state.device_index = None;
             Ok(())
         })

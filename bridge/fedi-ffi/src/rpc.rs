@@ -1435,7 +1435,7 @@ mod tests {
         ) -> anyhow::Result<(), RegisterDeviceError> {
             let mut registry = self.registry.lock().await;
             if let Some(value) = registry.get_mut(&(seed.clone(), device_index)) {
-                if force_overwrite {
+                if force_overwrite || device_identifier == value.0 {
                     value.0 = device_identifier;
                     value.1 = fedimint_core::time::now();
                     Ok(())
@@ -2578,6 +2578,64 @@ mod tests {
 
         // Rejoining federation should fail since device index wasn't assigned
         assert!(join_test_fed_recovery(&recovery_bridge).await.is_err());
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_transfer_device_registration_no_feds() -> anyhow::Result<()> {
+        let device_identifier_1 = "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
+        let mock_fedi_api = Arc::new(MockFediApi::new());
+        let bridge_1 = setup_bridge_custom(device_identifier_1, mock_fedi_api.clone()).await?;
+
+        // give some time for backup to complete before shutting down the bridge
+        fedimint_core::task::sleep(Duration::from_secs(1)).await;
+
+        // get mnemonic (not dropping old bridge so we can assert device
+        // index being stolen)
+        let mnemonic = getMnemonic(bridge_1.clone()).await?;
+
+        // create new bridge which hasn't joined federation yet and recover mnemnonic
+        let device_identifier_2 = "bridge_2:test:70c25d23-bfac-4aa2-81c3-d6f5e79ae724".to_string();
+        let bridge_2 = setup_bridge_custom(device_identifier_2, mock_fedi_api.clone()).await?;
+        recoverFromMnemonic(bridge_2.clone(), mnemonic.clone()).await?;
+
+        // Register device as index 0 since it's a transfer
+        transferExistingDeviceRegistration(bridge_2.clone(), 0).await?;
+
+        // Verify that original device would see the conflict whenever its background
+        // service would try to renew registration. The conflict event is what the
+        // front-end uses to block further user action.
+        let registration_conflict_body = serde_json::to_string(&DeviceRegistrationEvent {
+            state: crate::event::DeviceRegistrationState::Conflict,
+        })
+        .expect("failed to json serialize");
+        assert!(!bridge_1
+            .event_sink
+            .events()
+            .iter()
+            .any(|(ev_type, ev_body)| ev_type == "deviceRegistration"
+                && *ev_body == registration_conflict_body));
+        assert!(bridge_1.register_device_with_index(0, false).await.is_err());
+        assert!(bridge_1
+            .event_sink
+            .events()
+            .iter()
+            .any(|(ev_type, ev_body)| ev_type == "deviceRegistration"
+                && *ev_body == registration_conflict_body));
+        drop(bridge_1);
+
+        // Create 3rd bridge which hasn't joined federation yet and recover mnemnonic
+        let device_identifier_3 = "bridge_3:test:ed086973-98c7-4ad0-8f03-52ba7280b9c0".to_string();
+        let bridge_3 = setup_bridge_custom(device_identifier_3, mock_fedi_api.clone()).await?;
+        recoverFromMnemonic(bridge_3.clone(), mnemonic.clone()).await?;
+
+        // Register device as index 0 since it's a transfer
+        transferExistingDeviceRegistration(bridge_3.clone(), 0).await?;
+
+        // Verify that 2nd device would see the conflict whenever its background
+        // service would try to renew registration.
+        assert!(bridge_2.register_device_with_index(0, false).await.is_err());
+
         Ok(())
     }
 
