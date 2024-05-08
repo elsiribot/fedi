@@ -9,7 +9,6 @@ import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import { selectActiveFederation } from '@fedi/common/redux'
-import { RpcAmount } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { BridgeError, fedimint } from '../bridge'
