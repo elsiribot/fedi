@@ -9,9 +9,10 @@ import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import { selectActiveFederation } from '@fedi/common/redux'
+import { RpcAmount } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import { fedimint } from '../bridge'
+import { BridgeError, fedimint } from '../bridge'
 import FeeOverlay from '../components/feature/send/FeeOverlay'
 import SendPreviewDetails from '../components/feature/send/SendPreviewDetails'
 import { AmountScreen } from '../components/ui/AmountScreen'
@@ -76,7 +77,17 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                 unit,
             })
         } catch (err) {
-            toast.error(t, err)
+            const error = err as BridgeError
+
+            if (!error.code || typeof error.code === 'string')
+                return toast.error(t, err)
+
+            toast.show({
+                content: t('errors.insufficient-balance-send', {
+                    sats: amountUtils.msatToSat(error.code.insufficientBalance),
+                }),
+                status: 'error',
+            })
         }
         setIsPayingInvoice(false)
     }, [
