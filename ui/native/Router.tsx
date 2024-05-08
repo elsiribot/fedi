@@ -1076,6 +1076,7 @@ const linking: NavigationLinkingConfig = {
 const Router = () => {
     const { theme } = useTheme()
     const navigation = useNavigationContainerRef()
+    const isAppUnlocked = useIsFeatureUnlocked('app')
 
     const toast = useToast()
     const routeRef = useRef<string>()
@@ -1117,7 +1118,8 @@ const Router = () => {
             onStateChange={handleStateChange}>
             <Drawer.Navigator
                 id={DRAWER_NAVIGATION_ID}
-                drawerContent={ConnectedFederationsDrawer}>
+                drawerContent={ConnectedFederationsDrawer}
+                screenOptions={{ swipeEnabled: isAppUnlocked }}>
                 <Drawer.Screen
                     name="MainNavigator"
                     component={MainNavigator}
