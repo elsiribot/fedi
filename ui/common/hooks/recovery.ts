@@ -18,7 +18,7 @@ import {
     selectHasSetMatrixDisplayName,
 } from '../redux'
 import { SeedWords } from '../types'
-import { DeviceRegistrationEvent, RpcRegisteredDevice } from '../types/bindings'
+import { RpcRegisteredDevice } from '../types/bindings'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { useCommonDispatch, useCommonSelector } from './redux'
@@ -187,41 +187,4 @@ export function useDeviceRegistration(t: TFunction, fedimint: FedimintBridge) {
         handleTransfer,
         handleNewWallet,
     }
-}
-
-export function useLockedDeviceDetection(
-    fedimint: FedimintBridge,
-    onDeviceLocked: () => void,
-) {
-    // Initialize locked device listener
-    useEffect(() => {
-        log.debug('useLockedDeviceDetection listening...')
-        const unsubscribeDeviceRegistration = fedimint.addListener(
-            'deviceRegistration',
-            (event: DeviceRegistrationEvent) => {
-                log.info('DeviceRegistrationEvent', event)
-                if (event.state === 'conflict') {
-                    // hack: retry this every 1 second until it succeeds because there is a race condition
-                    // where the navigator using this hook may not ready yet so onDeviceLock fails
-                    // this way we make sure the lock screen appears as soon as possible provided
-                    // the event fired from the bridge is received and emitted
-                    const attemptLock = () => {
-                        try {
-                            log.info('attemptLock')
-                            onDeviceLocked()
-                        } catch (error) {
-                            log.error('Error locking device:', error)
-                            // Retry after 1 second
-                            setTimeout(attemptLock, 1000)
-                        }
-                    }
-                    attemptLock()
-                }
-            },
-        )
-
-        return () => {
-            unsubscribeDeviceRegistration()
-        }
-    }, [fedimint, onDeviceLocked])
 }
