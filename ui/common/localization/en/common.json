@@ -410,7 +410,8 @@
             "logs": "Logs",
             "nightly": "nightly",
             "share-logs": "Share logs",
-            "share-state": "Share app state"
+            "share-state": "Share app state",
+            "log-fcm-token": "Log FCM token"
         },
         "federations": {
             "add-federation": "Add a Federation",
