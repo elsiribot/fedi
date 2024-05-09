@@ -358,7 +358,7 @@ export function decodeFediMatrixRoomUri(uri: string) {
     if (!match) throw new Error('feature.chat.invalid-room')
 
     const id = match[1]
-    if (!isValidMatrixUserId(id)) throw new Error('feature.chat.invalid-room')
+    if (!isValidMatrixRoomId(id)) throw new Error('feature.chat.invalid-room')
 
     return id
 }
@@ -397,4 +397,8 @@ export function decodeFediMatrixUserUri(uri: string) {
  */
 export function isValidMatrixUserId(id: string) {
     return /^@[^:]+:.+$/.test(id)
+}
+
+export function isValidMatrixRoomId(id: string) {
+    return /^![^:]+:.+$/.test(id)
 }

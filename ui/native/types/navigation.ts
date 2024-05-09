@@ -1,5 +1,9 @@
 import { DrawerNavigationProp } from '@react-navigation/drawer'
-import { LinkingOptions, RouteProp } from '@react-navigation/native'
+import {
+    LinkingOptions,
+    NavigatorScreenParams,
+    RouteProp,
+} from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import {
@@ -38,7 +42,7 @@ export type NavigationLinkingConfig = LinkingOptions<
     RootStackParamList | MainNavigatorDrawerParamList
 >
 export type MainNavigatorDrawerParamList = {
-    MainNavigator: undefined
+    MainNavigator: NavigatorScreenParams<RootStackParamList>
     SwitchingFederations: { federationId: string | null }
 }
 export type TabsNavigatorParamList = {
@@ -155,4 +159,69 @@ export type RootStackParamList = {
     LockScreen: undefined
     ResetPinStart: undefined
     ResetPin: undefined
+}
+
+export const deepLinksConfig: NavigationLinkingConfig['config'] = {
+    screens: {
+        MainNavigator: {
+            initialRouteName: 'TabsNavigator',
+            screens: {
+                TabsNavigator: {
+                    screens: {
+                        Home: 'home',
+                        Chat: 'chat',
+                        OmniScanner: 'scan',
+                    },
+                },
+                // Wallet (Send)
+                Send: 'send',
+                ConfirmSendLightning: 'confirm-send-lightning',
+                ConfirmSendOnChain: 'confirm-send-on-chain',
+                SendSuccess: 'send-success',
+                SendOfflineAmount: 'send-offline-amount',
+                SendOfflineQr: 'send-offline-qr',
+                // Wallet (Receive)
+                Receive: 'receive',
+                BitcoinRequest: 'bitcoin-request',
+                ReceiveSuccess: 'receive-success',
+                // Federations
+                FederationInvite: 'federation-invite',
+                JoinFederation: 'join-federation',
+                // Backup & Recovery
+                ChooseBackupMethod: 'choose-backup-method',
+                ChooseRecoveryMethod: 'choose-recovery-method',
+                // Social Backup
+                RecordBackupVideo: 'record-backup-video',
+                StartSocialBackup: 'start-social-backup',
+                SocialBackupProcessing: 'social-backup-processing',
+                SocialBackupCloudUpload: 'social-backup-cloud-upload',
+                CompleteSocialBackup: 'complete-social-backup',
+                SocialBackupSuccess: 'social-backup-success',
+                // Social Recovery
+                LocateSocialRecovery: 'locate-social-recovery',
+                SelectRecoveryFileSuccess: 'select-recovery-file-success',
+                SelectRecoveryFileFailure: 'select-recovery-file-failure',
+                CompleteSocialRecovery: 'complete-social-recovery',
+                SocialRecoveryFailure: 'social-recovery-failure',
+                SocialRecoverySuccess: 'social-recovery-success',
+                ScanSocialRecoveryCode: 'scan-social-recovery-code',
+                CompleteRecoveryAssist: 'recovery-assist-confirmation',
+                RecoveryAssistSuccess: 'recovery-assist-success',
+                // Personal Backup
+                StartPersonalBackup: 'start-personal-backup',
+                RecoveryWords: 'recovery-words',
+                // Personal Recovery
+                PersonalRecovery: 'personal-recovery',
+                PersonalRecoverySuccess: 'personal-recovery-success',
+                // Modals
+                Transactions: 'transactions',
+                SocialRecoveryQrModal: 'social-recovery-qr-modal',
+                // No federation
+                Splash: 'splash',
+                // Chat
+                ChatRoomConversation: 'room/:roomId',
+                ChatUserConversation: 'user/:userId',
+            },
+        },
+    },
 }

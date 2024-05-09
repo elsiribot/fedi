@@ -1,3 +1,4 @@
+import notifee from '@notifee/react-native'
 import {
     createContext,
     useCallback,
@@ -40,6 +41,8 @@ interface OmniLinkContextState {
      * rather than the OmniLinkHandler. Returns an unsubscribe function.
      */
     subscribeInterceptor: (interceptor: OmniLinkInterceptFunction) => () => void
+    /** Parses a Url */
+    parseUrl: (url: string | null) => Promise<void>
 }
 
 const OmniLinkContext = createContext<OmniLinkContextState | null>(null)
@@ -54,10 +57,8 @@ export const OmniLinkContextProvider: React.FC<{
     const interceptorsRef = useRef<OmniLinkInterceptFunction[]>([])
     const tRef = useUpdatingRef(t)
 
-    // Grab the initial link the app was opened with, if any.
-    // Subscribe to future links that bring the app to the foreground.
-    useEffect(() => {
-        const parseUrl = async (url: string | null) => {
+    const parseUrl = useCallback(
+        async (url: string | null) => {
             if (!url) return
             log.info('parsing link', url)
             setIsParsingLink(true)
@@ -81,10 +82,12 @@ export const OmniLinkContextProvider: React.FC<{
                 setParsedLink({ type: ParserDataType.Unknown, data: {} })
             }
             setIsParsingLink(false)
-        }
-
-        Linking.getInitialURL().then(url => parseUrl(url))
-        Linking.addEventListener('url', event => parseUrl(event.url))
+        },
+        [tRef, federationId],
+    )
+    useEffect(() => {
+        // Linking.getInitialURL().then(url => parseUrl(url))
+        // Linking.addEventListener('url', event => parseUrl(event.url))
     }, [tRef, federationId])
 
     const subscribeInterceptor: OmniLinkContextState['subscribeInterceptor'] =
@@ -102,8 +105,15 @@ export const OmniLinkContextProvider: React.FC<{
             isParsingLink,
             setParsedLink,
             subscribeInterceptor,
+            parseUrl,
         }),
-        [parsedLink, isParsingLink, setParsedLink, subscribeInterceptor],
+        [
+            parsedLink,
+            isParsingLink,
+            setParsedLink,
+            subscribeInterceptor,
+            parseUrl,
+        ],
     )
 
     return (

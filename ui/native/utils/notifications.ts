@@ -1,4 +1,6 @@
 import notifee, {
+    AndroidImportance,
+    AndroidVisibility,
     Event,
     EventType,
     NotificationAndroid,
@@ -6,27 +8,37 @@ import notifee, {
 } from '@notifee/react-native'
 import { FirebaseMessagingTypes } from '@react-native-firebase/messaging'
 import { TFunction } from 'i18next'
+import { Linking } from 'react-native'
 
 import { selectFederations } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
+import { encodeFediMatrixRoomUri } from '@fedi/common/utils/matrix'
 
 import { store } from '../state/store'
 import { TransactionDirection, TransactionEvent } from '../types'
 
 const log = makeLog('Notifications')
 
-export const NOTIFICATION_TYPES = {
-    chat: 'chat-message',
-    payment: 'payment-received',
-} as const
+export const NOTIFICATION_TYPES = ['chat', 'payment'] as const
+export type NOTIFICATION_TYPE = (typeof NOTIFICATION_TYPES)[number]
 
 export const handleForegroundFCMReceived = async (
-    remoteMessage: FirebaseMessagingTypes.RemoteMessage,
+    message: FirebaseMessagingTypes.RemoteMessage,
 ) => {
-    log.info('foreground FCM notification received (no-op)', remoteMessage)
+    // Ignore chat notifications if app is in foreground
+    if (message?.data?.type === 'chat')
+        return log.info('foreground FCM notification received (no-op)', message)
+
+    // Any other FCM notification must be a campaign message
+    if (!message.notification)
+        return log.info('invalid FCM notification received (no-op)', message)
+
+    log.info('foreground Campaign notification received', message)
+    await displayAnnouncement(message)
 }
 
+// Passes FCM notification (chat) to notifee
 export const handleBackgroundFCMReceived = async (
     message: FirebaseMessagingTypes.RemoteMessage,
     t: TFunction,
@@ -62,7 +74,8 @@ export const displayPaymentReceivedNotification = async (
             : t('phrases.payment-received'),
         `${amountText} ${t('words.sats')}`,
         {
-            type: NOTIFICATION_TYPES.payment,
+            link: '',
+            type: 'payment',
         },
     )
 }
@@ -73,6 +86,8 @@ export const displayMessageReceivedNotification = async (
     data: any, // extends MatrixChatEvent,
     t: TFunction,
 ) => {
+    if (!data.room_id) return null // throw error?
+
     const title = t('words.chat')
     const body = data?.unread
         ? t('feature.notifications.new-messages-count', {
@@ -80,19 +95,71 @@ export const displayMessageReceivedNotification = async (
           })
         : t('feature.notifications.new-messages')
 
+    const link = encodeFediMatrixRoomUri(data.room_id)
+
     await dispatchNotification(
         'chat',
         'Chat channel',
         title,
         body,
         {
-            type: NOTIFICATION_TYPES.chat,
-            ...data,
+            type: 'chat',
+            link,
+            data,
         },
         {
             android: { groupSummary: true },
         },
     )
+}
+
+type NotificationData = {
+    // Deep link to open application when pressed
+    link: string
+
+    // Type of notification, determines what to present to user
+    type: NOTIFICATION_TYPE
+
+    // todo: type inner data?
+    data?: any
+}
+
+export const displayAnnouncement = async (
+    message: FirebaseMessagingTypes.RemoteMessage,
+) => {
+    const id = 'announcement'
+    const channelName = 'Fedi Announcements'
+    const title = message?.notification?.title
+    const body = message?.notification?.body
+    // Create a channel (required for Android)
+    const channelId = await notifee.createChannel({
+        id,
+        name: channelName,
+    })
+    const android: NotificationAndroid = {
+        channelId,
+        // Default open the app when pressed
+        // (required for android)
+        pressAction: {
+            id,
+            launchActivity: 'default',
+        },
+        ...message?.notification?.android,
+
+        // override visibility to public
+        visibility: AndroidVisibility.PUBLIC,
+        importance: AndroidImportance.HIGH,
+    }
+    const ios = {}
+
+    await notifee.displayNotification({
+        title,
+        body,
+        android,
+        ios,
+    })
+
+    await notifee.incrementBadgeCount()
 }
 
 /**
@@ -110,7 +177,7 @@ const dispatchNotification = async (
     channelName: string,
     title: string,
     body: string,
-    data?: {},
+    data: NotificationData,
     params: {
         android?: NotificationAndroid
         ios?: NotificationIOS
@@ -157,4 +224,23 @@ export const handleBackgroundEvent = async ({ type, detail }: Event) => {
         log.info('notification event (pressed)', detail)
         // deep link? (handled elsewhere for now)
     }
+}
+
+export const getInitialUrl = async () => {
+    // Check if the app was opened by a deep link
+    const url = await Linking.getInitialURL()
+
+    if (url != null) {
+        return url
+    }
+
+    // Check if there is an initial notification
+    // ie. app was opened by tapping a notification
+    const notification = await notifee.getInitialNotification()
+
+    // TODO: Handle press actions (quick actions)
+
+    // Get the `url` property from the notification which corresponds to a screen
+    // This property needs to be set on the notification payload when sending it
+    return notification?.notification?.data?.link
 }

@@ -32,7 +32,7 @@ import { ErrorScreen } from '../screens/ErrorScreen'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import theme from '../styles/theme'
 import { generateDeviceId } from '../utils/device-info'
-import { useIsForeground } from '../utils/hooks/notifications'
+import { useAppIsInForeground } from '../utils/hooks/notifications'
 import { displayPaymentReceivedNotification } from '../utils/notifications'
 
 const log = makeLog('FediBridgeInitializer')
@@ -49,7 +49,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const deviceId = useAppSelector(selectDeviceId)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const dispatchRef = useUpdatingRef(dispatch)
-    const isForeground = useIsForeground()
+    const isForeground = useAppIsInForeground()
 
     // Initialize device ID
     useEffect(() => {
