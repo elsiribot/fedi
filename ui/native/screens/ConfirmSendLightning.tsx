@@ -78,15 +78,20 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
         } catch (err) {
             const error = err as BridgeError
 
-            if (!error.code || typeof error.code === 'string')
+            if (
+                !error.code ||
+                typeof error.code === 'string' ||
+                !('insufficientBalance' in error.code)
+            )
                 return toast.error(t, err)
 
-            toast.show({
-                content: t('errors.insufficient-balance-send', {
+            toast.error(
+                t,
+                null,
+                t('errors.insufficient-balance-send', {
                     sats: amountUtils.msatToSat(error.code.insufficientBalance),
                 }),
-                status: 'error',
-            })
+            )
         }
         setIsPayingInvoice(false)
     }, [
