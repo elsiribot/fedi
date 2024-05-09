@@ -8,12 +8,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useRef } from 'react'
 
-import { useLockedDeviceDetection } from '@fedi/common/hooks/recovery'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectSocialRecoveryState } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { fedimint } from './bridge'
 import AddFediModHeader from './components/feature/admin/AddFediModHeader'
 import CurrencySettingsHeader from './components/feature/admin/CurrencySettingsHeader'
 import EditProfileSettingsHeader from './components/feature/admin/EditProfileSettingsHeader'
@@ -206,6 +204,7 @@ const MainNavigator = () => {
     const deviceIndexRequired = useAppSelector(
         s => s.recovery.deviceIndexRequired,
     )
+    const shouldLockDevice = useAppSelector(s => s.recovery.shouldLockDevice)
     const navigation = useNavigation()
 
     useEffect(() => {
@@ -222,12 +221,12 @@ const MainNavigator = () => {
         }
     }, [navigation, deviceIndexRequired])
 
-    // TODO: this navigation effect might be racey so we make sure it
-    // throws and retires inside the effect... we should refactor it...
     // Navigates to locked device screen if we detect a device conflict
-    useLockedDeviceDetection(fedimint, () => {
-        navigation.dispatch(resetToLockedDevice())
-    })
+    useEffect(() => {
+        if (shouldLockDevice && navigation) {
+            navigation.dispatch(resetToLockedDevice())
+        }
+    }, [navigation, shouldLockDevice])
 
     return (
         <Stack.Navigator

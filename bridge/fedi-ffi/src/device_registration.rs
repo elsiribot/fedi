@@ -12,8 +12,6 @@ use crate::event::{Event, EventSink, TypedEventExt};
 use crate::storage::{AppState, DeviceIdentifier};
 
 pub struct DeviceRegistrationService {
-    device_identifier: DeviceIdentifier,
-    encrypted_device_identifier: String,
     app_state: Arc<AppState>,
     fedi_api: Arc<dyn IFediApi>,
     active_task_subgroup: Option<TaskGroup>,
@@ -21,26 +19,33 @@ pub struct DeviceRegistrationService {
 
 impl DeviceRegistrationService {
     pub async fn new(
-        device_identifier: DeviceIdentifier,
-        encrypted_device_identifier: String,
         app_state: Arc<AppState>,
         event_sink: EventSink,
         task_group: &TaskGroup,
         fedi_api: Arc<dyn IFediApi>,
     ) -> Self {
         let mut service = Self {
-            device_identifier: device_identifier.clone(),
-            encrypted_device_identifier: encrypted_device_identifier.clone(),
             app_state: app_state.clone(),
             fedi_api: fedi_api.clone(),
             active_task_subgroup: None,
         };
 
-        if let Some(device_index) = app_state.device_index().await {
+        if let (Some(device_identifier), Ok(encrypted_device_identifier), Some(device_index)) = (
+            app_state.device_identifier().await,
+            app_state.encrypted_device_identifier().await,
+            app_state.device_index().await,
+        ) {
             service
-                .start_periodic_registration_inner(device_index, task_group, event_sink)
+                .start_periodic_registration_inner(
+                    device_identifier,
+                    encrypted_device_identifier,
+                    device_index,
+                    task_group,
+                    event_sink,
+                )
                 .await;
         }
+
         service
     }
 
@@ -63,13 +68,30 @@ impl DeviceRegistrationService {
             bail!("Stop currently ongoing device registration task first");
         }
 
-        self.start_periodic_registration_inner(device_index, task_group, event_sink)
-            .await;
+        match (
+            self.app_state.device_identifier().await,
+            self.app_state.encrypted_device_identifier().await,
+        ) {
+            (Some(device_identifier), Ok(encrypted_device_identifier)) => {
+                self.start_periodic_registration_inner(
+                    device_identifier,
+                    encrypted_device_identifier,
+                    device_index,
+                    task_group,
+                    event_sink,
+                )
+                .await;
+            }
+            _ => bail!("Missing device identifier, this shouldn't happen!"),
+        }
+
         Ok(())
     }
 
     async fn start_periodic_registration_inner(
         &mut self,
+        device_identifier: DeviceIdentifier,
+        encrypted_device_identifier: String,
         device_index: u8,
         task_group: &TaskGroup,
         event_sink: EventSink,
@@ -78,8 +100,8 @@ impl DeviceRegistrationService {
         subgroup.spawn_cancellable(
             "device_registration_service",
             renew_registration_periodically(
-                self.device_identifier.clone(),
-                self.encrypted_device_identifier.clone(),
+                device_identifier,
+                encrypted_device_identifier,
                 device_index,
                 self.app_state.clone(),
                 event_sink,
