@@ -1,16 +1,19 @@
+import notifee from '@notifee/react-native'
 import { createDrawerNavigator } from '@react-navigation/drawer'
 import {
     NavigationContainer,
-    useNavigation,
     useNavigationContainerRef,
 } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { Text, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect, useRef } from 'react'
+import { useTheme } from '@rneui/themed'
+import React, { useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Linking } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectSocialRecoveryState } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
+import { parseUserInput } from '@fedi/common/utils/parser'
 
 import AddFediModHeader from './components/feature/admin/AddFediModHeader'
 import CurrencySettingsHeader from './components/feature/admin/CurrencySettingsHeader'
@@ -1098,6 +1101,8 @@ const Router = () => {
     const { theme } = useTheme()
     const navigation = useNavigationContainerRef()
     const isAppUnlocked = useIsFeatureUnlocked('app')
+    const { parseUrl } = useOmniLinkContext()
+    const { t } = useTranslation()
 
     const toast = useToast()
     const routeRef = useRef<string>()
@@ -1124,6 +1129,96 @@ const Router = () => {
             },
         )
     }, [navigation, toast])
+
+    // Grab the initial link the app was opened with, if any.
+    const getInitialURL: NavigationLinkingConfig['getInitialURL'] =
+        async () => {
+            // Check if app was opened with deep link
+            const url = await Linking.getInitialURL()
+            console.error('initial url', url)
+            if (url != null) {
+                const link = await parseUserInput(url, fedimint, t)
+                // bypass normal link handling with deep links
+                switch (link.type) {
+                    // navigate straight to chat rooms
+                    case ParserDataType.FediChatRoom:
+                        // check if you've been added to the room first
+                        return `room/${link.data.id}`
+                    case ParserDataType.FediChatUser:
+                        return `user/${link.data.id}`
+                    default:
+                        // handle Omni link
+                        parseUrl(url)
+                        return url
+                }
+            }
+
+            // Check if app was opened with notification
+            const message = await notifee.getInitialNotification()
+            const link = message?.notification?.data?.link
+            console.error('initial link not', link)
+
+            if (typeof link !== 'string') return ''
+            const parsed = await parseUserInput(link, fedimint, t)
+            console.warn('PARSED', parsed)
+            // bypass normal link handling with deep links
+            switch (parsed.type) {
+                // navigate straight to chat rooms
+                case ParserDataType.FediChatRoom:
+                    // check if you've been added to the room first
+                    return `room/${parsed.data.id}`
+                case ParserDataType.FediChatUser:
+                    return `user/${parsed.data.id}`
+                default:
+                    // handle Omni link
+                    parseUrl(link)
+                    return link
+            }
+            // TODO: determine if we should navigate user or parseUrl
+            // just parsing for now
+        }
+
+    // Subscribe to future links that bring the app to the foreground.
+    const subscribe: NavigationLinkingConfig['subscribe'] = (
+        listener: (url: string) => void,
+    ) => {
+        const subscription = Linking.addEventListener(
+            'url',
+            async ({ url }) => {
+                // TODO: add other deep links
+                console.error('subscribe url detected', url)
+                const parsed = await parseUserInput(url, fedimint, t)
+                switch (parsed.type) {
+                    // case ParserDataType.FediChatRoom:
+                    //     listener(`${parsed.type}/${parsed.data.id}`)
+                    //     break
+                    default:
+                        parseUrl(url)
+                }
+            },
+        )
+
+        // Handles updates to notification (user taps notification, actions, etc)
+        notifee.onBackgroundEvent(e => handleBackgroundEvent(e))
+
+        return () => {
+            subscription.remove()
+        }
+    }
+
+    const linking: NavigationLinkingConfig = {
+        prefixes: [
+            'fedi:',
+            'lightning:',
+            'bitcoin:',
+            'lnurlw://',
+            'lnurlp://',
+            'keyauth://',
+        ],
+        config: deepLinksConfig,
+        getInitialURL,
+        subscribe,
+    }
 
     return (
         <NavigationContainer
