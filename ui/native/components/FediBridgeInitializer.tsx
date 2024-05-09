@@ -16,11 +16,16 @@ import {
     selectDeviceId,
     selectFederations,
     setDeviceIndexRequired,
+    setShouldLockDevice,
     startMatrixClient,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { TransactionDirection, TransactionEvent } from '@fedi/common/types'
-import { LogEvent, PanicEvent } from '@fedi/common/types/bindings'
+import {
+    DeviceRegistrationEvent,
+    LogEvent,
+    PanicEvent,
+} from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -193,12 +198,24 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             },
         )
 
+        // Initialize locked device listener
+        const unsubscribeDeviceRegistration = fedimint.addListener(
+            'deviceRegistration',
+            (event: DeviceRegistrationEvent) => {
+                log.info('DeviceRegistrationEvent', event)
+                if (event.state === 'conflict') {
+                    dispatchRef.current(setShouldLockDevice(true))
+                }
+            },
+        )
+
         return () => {
             unsubscribeLog()
             unsubscribeTransaction()
             unsubscribePanic()
+            unsubscribeDeviceRegistration()
         }
-    }, [t])
+    }, [dispatchRef, t])
 
     if (bridgeIsReady && !bridgeError) {
         return <>{children}</>
