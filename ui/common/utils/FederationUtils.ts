@@ -39,7 +39,8 @@ export const getMetaUrl = (meta: ClientConfigMetadata): string | undefined => {
         const parsed: string = url && JSON.parse(url)
         return typeof parsed === 'string' ? parsed : url
     } catch (error) {
-        log.info(`getMetaUrl: error parsing meta url ${url}`, error)
+        // log.info(`getMetaUrl: error parsing meta url ${url}`, error)
+        // no-op
         return url
     }
 }
@@ -73,7 +74,6 @@ const fetchExternalMetadata = async (
             signal: controller?.signal,
         })
         const metaJson = await response.json()
-        log.info(`Found metadata at ${externalUrl}`, Object.keys(metaJson))
         if (timeoutId) {
             clearTimeout(timeoutId)
         }
