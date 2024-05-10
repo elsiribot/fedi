@@ -58,6 +58,7 @@ const Router = () => {
         )
     }, [navigation, toast])
 
+    // Handles deep linking
     const linkingConfig = getLinkingConfig(parseUrl)
 
     return (

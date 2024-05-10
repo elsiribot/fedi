@@ -8,7 +8,6 @@ import {
 } from '@fedi/common/utils/matrix'
 
 import { NavigationLinkingConfig } from '../types/navigation'
-import { handleBackgroundEvent } from './notifications'
 
 const log = makeLog('utils/linking')
 
@@ -34,6 +33,7 @@ const parseDeepLink = (uri: string): string | null => {
  * Otherwise, it returns "" and calls fallback
  */
 const parseLink = (uri: string, fallback: (uri: string) => void): string => {
+    log.info(`Parsing link - ${uri}`)
     // First, try to handle as deep link
     const deepLink = parseDeepLink(uri)
     if (deepLink) return deepLink
@@ -44,7 +44,11 @@ const parseLink = (uri: string, fallback: (uri: string) => void): string => {
     return ''
 }
 
-/** Maps valid deep links */
+/**
+ * Maps valid deep links. This needs to be updated whenever
+ * we add a new link type.
+ * ref: https://reactnavigation.org/docs/configuring-links
+ */
 const deepLinksConfig: NavigationLinkingConfig['config'] = {
     screens: {
         MainNavigator: {
@@ -71,6 +75,21 @@ const deepLinksConfig: NavigationLinkingConfig['config'] = {
     },
 }
 
+/**
+ * Generates Linking configuration for App Navigator.
+ *
+ * `getInitialURL` handles all links that are dispatched
+ * while the app is closed (which opens the app).
+ *
+ * `subscribe` handles links that are dispatched while the app
+ * is open. (ex. user taps notification while app is open,
+ * user taps link in Fedi Mod, user trigger deep link in another part
+ * of the application). This architecture lets us unify IDs (share link)
+ * with navigation throughout the app.
+ *
+ * @param fallback Function called whenever a pressed link is not a
+ * valid deep link
+ */
 export const getLinkingConfig = (
     fallback: (url: string) => void,
 ): NavigationLinkingConfig => {
@@ -88,6 +107,7 @@ export const getLinkingConfig = (
         getInitialURL: async () => {
             // Check if app was opened with deep link
             const url = await Linking.getInitialURL()
+
             // If navigation is warranted, it return a link.
             // Otherwise, it returns "" and calls fallback
             if (url != null) return parseLink(url, fallback)
@@ -110,17 +130,14 @@ export const getLinkingConfig = (
                 'url',
                 async ({ url }) => {
                     log.info('URL received', url)
-                    // TODO: add other deep links
+
                     // If navigation is warranted, it return a link.
                     // Otherwise, it returns "" and calls fallback
                     const link = parseLink(url, fallback)
+
                     if (link !== '') listener(link)
                 },
             )
-
-            // Handles updates to notification (user taps notification, actions, etc)
-            // TODO: when we add quick actions, incorporate deep linking here
-            notifee.onBackgroundEvent(e => handleBackgroundEvent(e))
 
             const unsubscribe = notifee.onForegroundEvent(e => {
                 if (e.type !== EventType.PRESS) return

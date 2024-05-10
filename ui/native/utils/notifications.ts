@@ -23,22 +23,30 @@ const log = makeLog('Notifications')
 export const NOTIFICATION_TYPES = ['chat', 'payment'] as const
 export type NOTIFICATION_TYPE = (typeof NOTIFICATION_TYPES)[number]
 
+/** Handles Firebase Messages when app is in foreground */
 export const handleForegroundFCMReceived = async (
     message: FirebaseMessagingTypes.RemoteMessage,
 ) => {
     // Ignore chat notifications if app is in foreground
-    if (message?.data?.type === 'chat')
+    if (message?.data?.unread)
         return log.info('foreground FCM notification received (no-op)', message)
 
-    // Any other FCM notification must be a campaign message
+    // Any other FCM notification should be a campaign message, so
+    // it should have a notification property
     if (!message.notification)
-        return log.info('invalid FCM notification received (no-op)', message)
+        return log.warn(
+            'invalid FCM notification received (no-op)',
+            JSON.stringify(message),
+        )
 
     log.info('foreground Campaign notification received', message)
     await displayAnnouncement(message)
 }
 
-// Passes FCM notification (chat) to notifee
+/**
+ * Handles Firebase Messages when app is in background.
+ * Passes FCM notification (chat) to notifee for presentation.
+ */
 export const handleBackgroundFCMReceived = async (
     message: FirebaseMessagingTypes.RemoteMessage,
     t: TFunction,
@@ -47,6 +55,7 @@ export const handleBackgroundFCMReceived = async (
     await displayMessageReceivedNotification(message.data, t)
 }
 
+/** Displays Payment Notifications */
 export const displayPaymentReceivedNotification = async (
     event: TransactionEvent,
     t: TFunction,
@@ -80,6 +89,7 @@ export const displayPaymentReceivedNotification = async (
     )
 }
 
+/** Displays Chat Notifications */
 export const displayMessageReceivedNotification = async (
     // data: FirebaseMessagingTypes.RemoteMessage,
     // todo: get type from bridge
@@ -88,6 +98,11 @@ export const displayMessageReceivedNotification = async (
 ) => {
     if (!data.room_id) return null // throw error?
 
+    /*
+     * TOOD:
+     * 1. Get room info
+     * 2. Get message info (including sender)
+     */
     const title = t('words.chat')
     const body = data?.unread
         ? t('feature.notifications.new-messages-count', {
@@ -115,15 +130,18 @@ export const displayMessageReceivedNotification = async (
 
 type NotificationData = {
     // Deep link to open application when pressed
-    link: string
+    link?: string
 
     // Type of notification, determines what to present to user
-    type: NOTIFICATION_TYPE
+    type?: NOTIFICATION_TYPE
 
     // todo: type inner data?
     data?: any
 }
 
+/**
+ * Handles Bespoke Firebase Messaging Campaigns
+ */
 export const displayAnnouncement = async (
     message: FirebaseMessagingTypes.RemoteMessage,
 ) => {
@@ -131,35 +149,41 @@ export const displayAnnouncement = async (
     const channelName = 'Fedi Announcements'
     const title = message?.notification?.title
     const body = message?.notification?.body
-    // Create a channel (required for Android)
-    const channelId = await notifee.createChannel({
-        id,
-        name: channelName,
-    })
+
+    // Announcements must have a title & body
+    if (!title || !body)
+        return log.warn(
+            'Malformed Announcement notification received (no-op)',
+            message,
+        )
+
     const android: NotificationAndroid = {
-        channelId,
-        // Default open the app when pressed
-        // (required for android)
-        pressAction: {
-            id,
-            launchActivity: 'default',
-        },
         ...message?.notification?.android,
 
         // override visibility to public
         visibility: AndroidVisibility.PUBLIC,
         importance: AndroidImportance.HIGH,
     }
-    const ios = {}
 
-    await notifee.displayNotification({
+    // Fixes type incompatibility between FCM and notifee
+    const sound =
+        typeof message.notification?.ios?.sound === 'string'
+            ? message.notification?.ios?.sound
+            : undefined
+
+    const ios = {
+        ...message?.notification?.ios,
+        sound,
+    }
+
+    await dispatchNotification(
+        id,
+        channelName,
         title,
         body,
-        android,
-        ios,
-    })
-
-    await notifee.incrementBadgeCount()
+        {},
+        { android, ios },
+    )
 }
 
 /**
@@ -199,48 +223,38 @@ const dispatchNotification = async (
         },
         ...params.android,
     }
-    await notifee.displayNotification({
-        title,
-        body,
-        data,
-        android: androidParams,
-        ios: params.ios,
-    })
-    await notifee.incrementBadgeCount()
+    try {
+        await notifee.displayNotification({
+            title,
+            body,
+            data,
+            android: androidParams,
+            ios: params.ios,
+        })
+        await notifee.incrementBadgeCount()
+    } catch (e) {
+        log.error('Failed to display notification', e)
+    }
 }
 
 // Handles user interaction with notifications
-export const handleBackgroundEvent = async ({ type, detail }: Event) => {
+// TODO: when we add quick actions, incorporate deep linking here
+export const handleBackgroundNotificationUpdate = async ({
+    type,
+    detail,
+}: Event) => {
     if (type === EventType.ACTION_PRESS) {
         log.info('notification event (action pressed)', detail)
         // TODO: reply? accept/reject? etc?
     } else if (type === EventType.DELIVERED) {
-        log.info('notification event ', detail)
+        log.info('notification event (delivered)', detail)
         // TODO: redeem ecash?
     } else if (type === EventType.DISMISSED) {
         log.info('notification event (dismissed)', detail)
         // TODO: dismiss unread indicator?
     } else if (type === EventType.PRESS) {
-        log.info('notification event (pressed)', detail)
-        // deep link? (handled elsewhere for now)
+        log.info('notification event (pressed)', JSON.stringify(detail))
+        const link = detail?.notification?.data?.link
+        if (typeof link === 'string') Linking.openURL(link)
     }
-}
-
-export const getInitialUrl = async () => {
-    // Check if the app was opened by a deep link
-    const url = await Linking.getInitialURL()
-
-    if (url != null) {
-        return url
-    }
-
-    // Check if there is an initial notification
-    // ie. app was opened by tapping a notification
-    const notification = await notifee.getInitialNotification()
-
-    // TODO: Handle press actions (quick actions)
-
-    // Get the `url` property from the notification which corresponds to a screen
-    // This property needs to be set on the notification payload when sending it
-    return notification?.notification?.data?.link
 }
