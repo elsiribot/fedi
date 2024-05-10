@@ -95,7 +95,7 @@ export const displayMessageReceivedNotification = async (
           })
         : t('feature.notifications.new-messages')
 
-    const link = encodeFediMatrixRoomUri(data.room_id)
+    const link = encodeFediMatrixRoomUri(data.room_id, true)
 
     await dispatchNotification(
         'chat',

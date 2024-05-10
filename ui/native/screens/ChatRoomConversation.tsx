@@ -6,7 +6,6 @@ import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectMatrixRoom, sendMatrixMessage } from '@fedi/common/redux'
-import { ChatType } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'

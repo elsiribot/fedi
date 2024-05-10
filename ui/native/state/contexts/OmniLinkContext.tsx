@@ -85,10 +85,6 @@ export const OmniLinkContextProvider: React.FC<{
         },
         [tRef, federationId],
     )
-    useEffect(() => {
-        // Linking.getInitialURL().then(url => parseUrl(url))
-        // Linking.addEventListener('url', event => parseUrl(event.url))
-    }, [tRef, federationId])
 
     const subscribeInterceptor: OmniLinkContextState['subscribeInterceptor'] =
         useCallback(interceptor => {

@@ -5,7 +5,6 @@ import {
 } from '@react-navigation/native'
 import { useTheme } from '@rneui/themed'
 import React, { useCallback, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
@@ -21,7 +20,7 @@ import {
     DRAWER_NAVIGATION_ID,
 } from './types/navigation'
 import { useIsFeatureUnlocked } from './utils/hooks/security'
-import { getLinkingConfig } from './utils/navigation'
+import { getLinkingConfig } from './utils/linking'
 
 const log = makeLog('NavigationRouter')
 
@@ -32,7 +31,6 @@ const Router = () => {
     const navigation = useNavigationContainerRef()
     const isAppUnlocked = useIsFeatureUnlocked('app')
     const { parseUrl } = useOmniLinkContext()
-    const { t } = useTranslation()
 
     const toast = useToast()
     const routeRef = useRef<string>()
@@ -60,7 +58,7 @@ const Router = () => {
         )
     }, [navigation, toast])
 
-    const linkingConfig = getLinkingConfig(t, parseUrl)
+    const linkingConfig = getLinkingConfig(parseUrl)
 
     return (
         <NavigationContainer

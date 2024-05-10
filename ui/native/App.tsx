@@ -1,4 +1,3 @@
-import messaging from '@react-native-firebase/messaging'
 import { ThemeProvider } from '@rneui/themed'
 import { useEffect } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
@@ -15,7 +14,6 @@ import { OmniLinkContextProvider } from './state/contexts/OmniLinkContext'
 import ProviderComposer from './state/contexts/ProviderComposer'
 import { initializeNativeStore, store } from './state/store'
 import theme from './styles/theme'
-import { handleForegroundReceived } from './utils/notifications'
 
 const App = () => {
     // Initialize redux store

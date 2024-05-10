@@ -343,11 +343,19 @@ export function getReceivablePaymentEvents(
     }, [] as MatrixPaymentEvent[])
 }
 
-export function encodeFediMatrixUserUri(id: string) {
+/**
+ * @param deep set to true to encode as a deep link
+ */
+export function encodeFediMatrixUserUri(id: string, deep = false) {
+    if (deep) return `fedi://user:${id}`
     return `fedi:user:${id}`
 }
 
-export function encodeFediMatrixRoomUri(id: string) {
+/**
+ * @param deep set to true to encode as a deep link
+ */
+export function encodeFediMatrixRoomUri(id: string, deep = false) {
+    if (deep) return `fedi://room:${id}`
     return `fedi:room:${id}`
 }
 
