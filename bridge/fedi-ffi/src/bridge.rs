@@ -1295,4 +1295,13 @@ impl Bridge {
             .get_accrued_outstanding_fedi_fees()
             .await
     }
+    pub async fn get_accrued_pending_fedi_fees(
+        &self,
+        federation_id: RpcFederationId,
+    ) -> Result<RpcAmount> {
+        self.get_multi(&federation_id.0)
+            .await?
+            .get_accrued_pending_fedi_fees()
+            .await
+    }
 }

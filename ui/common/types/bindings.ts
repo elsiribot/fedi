@@ -534,6 +534,7 @@ export interface RpcMethods {
         null,
     ]
     getAccruedOutstandingFediFees: [{ federationId: RpcFederationId }, MSats]
+    getAccruedPendingFediFees: [{ federationId: RpcFederationId }, MSats]
     dumpDb: [{ federationId: string }, string]
     fetchRegisteredDevices: [
         Record<string, never>,
