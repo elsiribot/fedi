@@ -1,4 +1,3 @@
-import notifee from '@notifee/react-native'
 import {
     createContext,
     useCallback,
@@ -9,7 +8,6 @@ import {
     useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Linking } from 'react-native'
 
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectActiveFederationId } from '@fedi/common/redux'
