@@ -25,6 +25,7 @@ import {
     RpcMatrixUserDirectorySearchResponse,
     RpcRoomListEntry,
     RpcRoomMember,
+    RpcRoomNotificationMode,
 } from '../types/bindings'
 import { isDev } from './environment'
 import { FedimintBridge } from './fedimint'
@@ -65,6 +66,10 @@ interface MatrixChatClientEventMap {
     roomPowerLevels: {
         roomId: MatrixRoom['id']
         powerLevels: MatrixRoomPowerLevels
+    }
+    roomNotificationMode: {
+        roomId: MatrixRoom['id']
+        mode: RpcRoomNotificationMode
     }
     user: MatrixUser
     error: MatrixError
@@ -208,6 +213,23 @@ export class MatrixChatClient {
         // TODO: Remove timeouts, inviting new members is kinda racey.
         await new Promise(resolve => setTimeout(resolve, 500))
         await this.observeRoomMembers(roomId)
+    }
+
+    async getRoomNotificationMode(roomId: string) {
+        return await this.fedimint.matrixRoomGetNotificationMode({ roomId })
+        // TODO: clear existing notifications?
+        // await new Promise(resolve => setTimeout(resolve, 500))
+        // await this.observeRoomMembers(roomId)
+    }
+
+    async setRoomNotificationMode(
+        roomId: string,
+        mode: RpcRoomNotificationMode,
+    ) {
+        await this.fedimint.matrixRoomSetNotificationMode({ roomId, mode })
+        // TODO: clear existing notifications?
+        // await new Promise(resolve => setTimeout(resolve, 500))
+        // await this.observeRoomMembers(roomId)
     }
 
     async setRoomMemberPowerLevel(
@@ -485,6 +507,7 @@ export class MatrixChatClient {
         })
     }
 
+    // TODO!!!: Add listener for emitted roomnotification modes
     private async observeRoomList() {
         // Only observe the roomList once, subsequent calls are no-ops.
         if (this.clientObserverMap['roomListUpdate'] !== undefined) return
@@ -509,6 +532,7 @@ export class MatrixChatClient {
                 if ('value' in room) {
                     await this.observeRoomInfo(room.value)
                     await this.observeRoomPowerLevels(room.value)
+                    await this.observeRoomNotificationMode(room.value)
                 }
             }),
         )
@@ -658,6 +682,15 @@ export class MatrixChatClient {
         } catch (error) {
             log.warn('Failed to get power levels for roomId', roomId, error)
         }
+    }
+
+    private async observeRoomNotificationMode(roomId: string) {
+        // TODO: Listen for notification mode, re-fetch. (observables)
+        const mode = await this.fedimint.matrixRoomGetNotificationMode({
+            roomId,
+        })
+        if (!mode) return
+        this.emit('roomNotificationMode', { roomId, mode })
     }
 
     private async autoJoinInvites() {

@@ -13,10 +13,11 @@ import GroupIcon from './GroupIcon'
 
 type ChatTileProps = {
     room: MatrixRoom
-    selectChat: (chat: MatrixRoom) => void
+    onSelect: (chat: MatrixRoom) => void
+    onLongPress: (chat: MatrixRoom) => void
 }
 
-const ChatTile = ({ room, selectChat }: ChatTileProps) => {
+const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
     const { theme } = useTheme()
 
     const hasNewMessages = useMemo(() => room.notificationCount > 0, [room])
@@ -35,7 +36,8 @@ const ChatTile = ({ room, selectChat }: ChatTileProps) => {
                     : {},
             ]}
             disabled={!room}
-            onPress={() => selectChat(room)}>
+            onLongPress={() => onLongPress(room)}
+            onPress={() => onSelect(room)}>
             <View style={styles(theme).iconContainer}>
                 <View
                     style={[

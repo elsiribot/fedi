@@ -113,7 +113,7 @@ export const displayMessageReceivedNotification = async (
     const link = encodeFediMatrixRoomUri(data.room_id, true)
 
     await dispatchNotification(
-        'chat',
+        'chat-message-received',
         'Chat channel',
         title,
         body,
@@ -123,7 +123,11 @@ export const displayMessageReceivedNotification = async (
             data,
         },
         {
-            android: { groupSummary: true },
+            android: {
+                groupSummary: true,
+                // group notifications by chat room
+                groupId: data.room_id,
+            },
         },
     )
 }
@@ -207,6 +211,9 @@ const dispatchNotification = async (
         ios?: NotificationIOS
     } = {},
 ) => {
+    // Request permissions (required for iOS)
+    await notifee.requestPermission()
+
     // Create a channel (required for Android)
     const channelId = await notifee.createChannel({
         id,
@@ -231,6 +238,7 @@ const dispatchNotification = async (
             android: androidParams,
             ios: params.ios,
         })
+        // ios
         await notifee.incrementBadgeCount()
     } catch (e) {
         log.error('Failed to display notification', e)

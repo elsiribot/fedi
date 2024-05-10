@@ -16,6 +16,7 @@ import { ChatType, MatrixRoom, MatrixSyncStatus } from '@fedi/common/types'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import HoloLoader from '../../ui/HoloLoader'
+import { ChatRoomActionsOverlay } from './ChatRoomActionsOverlay'
 import ChatTile from './ChatTile'
 
 const WINDOW_WIDTH = Dimensions.get('window').width
@@ -31,6 +32,8 @@ const ChatsList: React.FC = () => {
     const rooms = useAppSelector(selectMatrixOrderedRoomsList)
     const syncStatus = useAppSelector(selectMatrixStatus)
     const [isRefetching, setIsRefetching] = useState(false)
+    const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
+
     const handleRefresh = useCallback(() => {
         setIsRefetching(true)
         dispatch(refetchMatrixRoomList())
@@ -38,7 +41,11 @@ const ChatsList: React.FC = () => {
             .finally(() => setIsRefetching(false))
     }, [dispatch])
 
-    const handleSelectChat = useCallback(
+    const handleLongPressChat = useCallback((chat: MatrixRoom) => {
+        setSelectedRoomId(chat.id)
+    }, [])
+
+    const handleOpenChat = useCallback(
         (chat: MatrixRoom) => {
             navigation.navigate('ChatRoomConversation', {
                 roomId: chat.id,
@@ -52,11 +59,15 @@ const ChatsList: React.FC = () => {
         ({ item }) => {
             return (
                 <ErrorBoundary fallback={null}>
-                    <ChatTile room={item} selectChat={handleSelectChat} />
+                    <ChatTile
+                        room={item}
+                        onSelect={handleOpenChat}
+                        onLongPress={handleLongPressChat}
+                    />
                 </ErrorBoundary>
             )
         },
-        [handleSelectChat],
+        [handleLongPressChat, handleOpenChat],
     )
 
     if (syncStatus === MatrixSyncStatus.initialSync) {
@@ -64,39 +75,46 @@ const ChatsList: React.FC = () => {
     }
 
     return (
-        <FlatList
-            style={styles(theme).container}
-            contentContainerStyle={styles(theme).content}
-            data={rooms}
-            renderItem={renderChat}
-            onRefresh={handleRefresh}
-            refreshing={isRefetching}
-            keyExtractor={item => `${item.id}`}
-            progressViewOffset={-10}
-            ListFooterComponent={
-                <>
-                    {hasLegacyChatData && (
-                        <Button
-                            fullWidth
-                            type="clear"
-                            title={
-                                <Text caption medium>
-                                    {t('feature.chat.view-archived-chats')}
-                                </Text>
-                            }
-                            onPress={() => navigation.push('LegacyChat')}
-                        />
-                    )}
-                </>
-            }
-            // optimization that allows skipping the measurement of dynamic content
-            // for fixed-size list items
-            getItemLayout={(data, index) => ({
-                length: WINDOW_WIDTH,
-                offset: 48 * index,
-                index,
-            })}
-        />
+        <>
+            <FlatList
+                style={styles(theme).container}
+                contentContainerStyle={styles(theme).content}
+                data={rooms}
+                renderItem={renderChat}
+                onRefresh={handleRefresh}
+                refreshing={isRefetching}
+                keyExtractor={item => `${item.id}`}
+                progressViewOffset={-10}
+                ListFooterComponent={
+                    <>
+                        {hasLegacyChatData && (
+                            <Button
+                                fullWidth
+                                type="clear"
+                                title={
+                                    <Text caption medium>
+                                        {t('feature.chat.view-archived-chats')}
+                                    </Text>
+                                }
+                                onPress={() => navigation.push('LegacyChat')}
+                            />
+                        )}
+                    </>
+                }
+                // optimization that allows skipping the measurement of dynamic content
+                // for fixed-size list items
+                getItemLayout={(data, index) => ({
+                    length: WINDOW_WIDTH,
+                    offset: 48 * index,
+                    index,
+                })}
+            />
+            <ChatRoomActionsOverlay
+                show={selectedRoomId !== null}
+                onDismiss={() => setSelectedRoomId(null)}
+                selectedRoomId={selectedRoomId}
+            />
+        </>
     )
 }
 
