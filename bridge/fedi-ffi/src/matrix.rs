@@ -17,12 +17,14 @@ use matrix_sdk::ruma::api::client::profile::get_profile;
 use matrix_sdk::ruma::api::client::push::Pusher;
 use matrix_sdk::ruma::api::client::receipt::create_receipt::v3::ReceiptType;
 pub use matrix_sdk::ruma::api::client::room::create_room::v3 as create_room;
+use matrix_sdk::ruma::api::client::room::Visibility;
 use matrix_sdk::ruma::api::client::state::send_state_event;
 use matrix_sdk::ruma::api::client::uiaa;
 use matrix_sdk::ruma::events::receipt::ReceiptThread;
+use matrix_sdk::ruma::events::room::encryption::RoomEncryptionEventContent;
 use matrix_sdk::ruma::events::room::message::{MessageType, RoomMessageEventContent};
 use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
-use matrix_sdk::ruma::events::AnySyncTimelineEvent;
+use matrix_sdk::ruma::events::{AnySyncTimelineEvent, InitialStateEvent};
 use matrix_sdk::ruma::{OwnedMxcUri, RoomId, UserId};
 use matrix_sdk::sliding_sync::Ranges;
 use matrix_sdk::{Client, RoomInfo, RoomMemberships};
@@ -563,8 +565,14 @@ impl Matrix {
 
     pub async fn room_create(
         &self,
-        request: create_room::Request,
+        mut request: create_room::Request,
     ) -> Result<matrix_sdk::ruma::OwnedRoomId> {
+        if request.visibility != Visibility::Public {
+            request.initial_state = vec![InitialStateEvent::new(
+                RoomEncryptionEventContent::with_recommended_defaults(),
+            )
+            .to_raw_any()];
+        }
         let room = self.client.create_room(request).await?;
         self.wait_for_room_id(room.room_id()).await?;
         Ok(room.room_id().into())
