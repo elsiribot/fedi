@@ -59,9 +59,9 @@ const LockScreen = <T extends keyof RootStackParamList>({
         [pin, pinDigits],
     )
 
-    const setTimedOut = useCallback(() => {
+    const setTimedOut = useCallback((attempts: number) => {
         if (timerRef.current) clearInterval(timerRef.current)
-        setTimeoutSeconds(5)
+        setTimeoutSeconds(attempts > 4 ? 21 : attempts > 3 ? 7 : 3)
         timerRef.current = setInterval(() => {
             setTimeoutSeconds(prevSeconds => {
                 if (prevSeconds === 0) {
@@ -89,9 +89,7 @@ const LockScreen = <T extends keyof RootStackParamList>({
                 )
                     setAttempts(a => {
                         const totalAttempts = a + 1
-
-                        if (totalAttempts > 2) setTimedOut()
-
+                        if (totalAttempts > 2) setTimedOut(totalAttempts)
                         return totalAttempts
                     })
 
