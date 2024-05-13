@@ -362,4 +362,9 @@ impl MultiFederation {
             MultiFederation::V2(v2) => Ok(RpcAmount(v2.get_outstanding_fedi_fees().await)),
         }
     }
+    pub async fn get_accrued_pending_fedi_fees(&self) -> Result<RpcAmount> {
+        match self {
+            MultiFederation::V2(v2) => Ok(RpcAmount(v2.get_pending_fedi_fees().await)),
+        }
+    }
 }
