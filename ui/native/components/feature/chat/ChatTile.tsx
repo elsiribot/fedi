@@ -37,6 +37,7 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
             ]}
             disabled={!room}
             onLongPress={() => onLongPress(room)}
+            delayLongPress={300}
             onPress={() => onSelect(room)}>
             <View style={styles(theme).iconContainer}>
                 <View

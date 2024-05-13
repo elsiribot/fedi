@@ -2,7 +2,13 @@ import { useNavigation } from '@react-navigation/native'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Dimensions, FlatList, ListRenderItem, StyleSheet } from 'react-native'
+import {
+    Dimensions,
+    FlatList,
+    ListRenderItem,
+    StyleSheet,
+    Vibration,
+} from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import {
@@ -42,6 +48,7 @@ const ChatsList: React.FC = () => {
     }, [dispatch])
 
     const handleLongPressChat = useCallback((chat: MatrixRoom) => {
+        Vibration.vibrate(50)
         setSelectedRoomId(chat.id)
     }, [])
 

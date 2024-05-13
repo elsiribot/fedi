@@ -159,25 +159,15 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
                 {notificationActions.map(action => (
                     <ChatRoomAction
                         key={action.id}
-                        leftIcon={
-                            <SvgImage
-                                name={action.icon}
-                                color={theme.colors.blue}
-                            />
-                        }
+                        leftIcon={<SvgImage name={action.icon} />}
                         label={action.label}
-                        labelColor={theme.colors.blue}
                         onPress={() => action.onPress()}
                         disabled={getIsDisabled(action.dataId)}
-                        disabledStyle={{}}
-                        active={action.dataId === notificationMode}
+                        disabledStyle={{ opacity: 0.5 }}
                         isLoading={loadingAction === action.id}
                         rightIcon={
                             action.dataId === notificationMode && (
-                                <SvgImage
-                                    name={'Check'}
-                                    // color={theme.colors.blue}
-                                />
+                                <SvgImage name={'Check'} />
                             )
                         }
                     />
