@@ -8,7 +8,7 @@ import { ChatMessage, ChatMessageStatus } from '@fedi/common/types'
 
 import { useAppSelector } from '../../../state/hooks'
 import { OptionalGradient } from '../../ui/OptionalGradient'
-import MessageContents from './MessageContents'
+import LegacyMessageContents from './LegacyMessageContents'
 import PaymentMessage from './PaymentMessage'
 
 type MessageItemProps = {
@@ -81,7 +81,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                             {payment ? (
                                 <PaymentMessage message={message} />
                             ) : (
-                                <MessageContents
+                                <LegacyMessageContents
                                     sentByMe={sentByMe}
                                     content={message.content}
                                     textStyles={textStyles}
