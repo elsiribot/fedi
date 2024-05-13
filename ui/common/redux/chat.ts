@@ -1281,10 +1281,7 @@ export const updateChatPayment = createAsyncThunk<
     { state: CommonState }
 >(
     'chat/updateChatPayment',
-    async (
-        { fedimint, federationId, messageId, action },
-        { getState, dispatch },
-    ) => {
+    async ({ fedimint, federationId, messageId, action }, { getState }) => {
         const state = getState()
         const chatState = state.chat[federationId]
         const message = state.chat[federationId]?.messages.find(
@@ -1308,30 +1305,10 @@ export const updateChatPayment = createAsyncThunk<
             throw new Error('errors.chat-payment-failed')
         }
 
-        const client = xmppChatClientManager.getClient(federationId)
-
-        // Get the recipient's pubkey, fetch it if we don't have it
-        const recipientPubkey = await getOrFetchMemberPubkey(
-            chatState,
-            client,
-            recipientId,
-        )
-
-        // Get or fetch credentials
-        const { encryptionKeys } = await getOrFetchCredentials(
-            fedimint,
-            federationId,
-            state,
-            dispatch,
-        )
-
         // Update payment depending on action
         const paymentUpdates: Partial<ChatPayment> = {
             updatedAt: makePaymentUpdatedAt(payment),
         }
-        // Always send a push notification except for a few
-        // specific payment update cases
-        let sendPushNotification = true
         switch (action) {
             case 'receive': {
                 const { token } = payment
@@ -1354,8 +1331,6 @@ export const updateChatPayment = createAsyncThunk<
                 }
                 paymentUpdates.token = null
                 paymentUpdates.status = ChatPaymentStatus.paid
-                // don't send a push notification for redeemed ecash
-                sendPushNotification = false
                 break
             }
             case 'reject': {
@@ -1380,8 +1355,6 @@ export const updateChatPayment = createAsyncThunk<
                 }
                 paymentUpdates.token = null
                 paymentUpdates.status = ChatPaymentStatus.canceled
-                // don't send a push notification for canceled payments
-                sendPushNotification = false
                 break
             }
             default:
@@ -1396,13 +1369,9 @@ export const updateChatPayment = createAsyncThunk<
                 ...paymentUpdates,
             },
         }
-        await client.sendDirectMessage(
-            recipientId,
-            recipientPubkey,
+        log.info(
+            'User updated legacy chat payment (local update only)',
             updatedMessage,
-            encryptionKeys,
-            true,
-            sendPushNotification,
         )
 
         return updatedMessage
