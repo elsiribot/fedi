@@ -1,6 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
 import { Button, Image, Input, Text, Theme, useTheme } from '@rneui/themed'
-import { parse } from 'date-fns'
 import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
