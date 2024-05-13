@@ -187,7 +187,6 @@ export class MatrixChatClient {
     async setRoomName(roomId: string, name: string) {
         await this.fedimint.matrixRoomSetName({ roomId, name })
     }
-
     async setRoomPowerLevels(
         roomId: string,
         powerLevels: MatrixRoomPowerLevels,
@@ -215,21 +214,14 @@ export class MatrixChatClient {
         await this.observeRoomMembers(roomId)
     }
 
-    async getRoomNotificationMode(roomId: string) {
-        return await this.fedimint.matrixRoomGetNotificationMode({ roomId })
-        // TODO: clear existing notifications?
-        // await new Promise(resolve => setTimeout(resolve, 500))
-        // await this.observeRoomMembers(roomId)
-    }
-
     async setRoomNotificationMode(
         roomId: string,
         mode: RpcRoomNotificationMode,
     ) {
-        await this.fedimint.matrixRoomSetNotificationMode({ roomId, mode })
-        // TODO: clear existing notifications?
-        // await new Promise(resolve => setTimeout(resolve, 500))
-        // await this.observeRoomMembers(roomId)
+        await this.fedimint.matrixRoomSetNotificationMode({
+            roomId,
+            mode,
+        })
     }
 
     async setRoomMemberPowerLevel(
@@ -689,8 +681,11 @@ export class MatrixChatClient {
         const mode = await this.fedimint.matrixRoomGetNotificationMode({
             roomId,
         })
-        if (!mode) return
-        this.emit('roomNotificationMode', { roomId, mode })
+        this.emit('roomNotificationMode', {
+            roomId,
+            // defaults to "allMessages"
+            mode: mode ?? 'allMessages',
+        })
     }
 
     private async autoJoinInvites() {

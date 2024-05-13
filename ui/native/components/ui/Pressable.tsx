@@ -10,6 +10,7 @@ import {
 export type PressableProps = {
     loading?: boolean
     disabled?: boolean
+    disabledStyle?: StyleProp<ViewStyle>
     children?: React.ReactNode
     containerStyle?: StyleProp<ViewStyle>
 } & Omit<BaseProps, 'style'>
@@ -17,6 +18,7 @@ export type PressableProps = {
 export const Pressable: React.FC<PressableProps> = ({
     loading = false,
     disabled = false,
+    disabledStyle = { opacity: 0.25 },
     children = <></>,
     containerStyle = {},
     ...props
@@ -28,7 +30,7 @@ export const Pressable: React.FC<PressableProps> = ({
         <BasePressable
             style={({ pressed }) => [
                 style.container,
-                disabled || loading ? { opacity: 0.25 } : {},
+                disabled || loading ? disabledStyle : {},
                 !!props.onPress && pressed && !disabled ? style.pressed : {},
                 containerStyle,
             ]}

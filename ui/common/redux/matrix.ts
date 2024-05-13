@@ -34,7 +34,7 @@ import {
     MatrixCreateRoomOptions,
     Sats,
 } from '../types'
-import { RpcFederation } from '../types/bindings'
+import { RpcFederation, RpcRoomNotificationMode } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationGroupChats } from '../utils/FederationUtils'
 import { MatrixChatClient } from '../utils/MatrixChatClient'
@@ -77,6 +77,10 @@ const initialState = {
     roomPowerLevels: {} as Record<
         MatrixRoom['id'],
         MatrixRoomPowerLevels | undefined
+    >,
+    roomNotificationMode: {} as Record<
+        MatrixRoom['id'],
+        RpcRoomNotificationMode | undefined
     >,
     users: {} as Record<MatrixUser['id'], MatrixUser | undefined>,
     errors: [] as MatrixError[],
@@ -160,6 +164,16 @@ export const matrixSlice = createSlice({
         ) {
             const { roomId, powerLevels } = action.payload
             state.roomPowerLevels[roomId] = powerLevels
+        },
+        setMatrixRoomNotificationMode(
+            state,
+            action: PayloadAction<{
+                roomId: MatrixRoom['id']
+                mode: RpcRoomNotificationMode
+            }>,
+        ) {
+            const { roomId, mode } = action.payload
+            state.roomNotificationMode[roomId] = mode
         },
         addMatrixError(state, action: PayloadAction<MatrixError>) {
             state.errors = [...state.errors, action.payload]
@@ -248,6 +262,14 @@ export const matrixSlice = createSlice({
             if (!action.payload) return
             // state.auth = action.payload.matrixAuth
         })
+
+        builder.addCase(
+            updateMatrixRoomNotificationMode.fulfilled,
+            (state, action) => {
+                state.roomNotificationMode[action.meta.arg.roomId] =
+                    action.payload
+            },
+        )
     },
 })
 
@@ -262,6 +284,7 @@ export const {
     addMatrixUser,
     setMatrixUsers,
     setMatrixRoomPowerLevels,
+    setMatrixRoomNotificationMode,
     addMatrixError,
     handleMatrixRoomListObservableUpdates,
     handleMatrixRoomTimelineObservableUpdates,
@@ -296,6 +319,11 @@ export const startMatrixClient = createAsyncThunk<
         dispatch(handleMatrixRoomTimelineObservableUpdates(ev)),
     )
     client.on('roomPowerLevels', ev => dispatch(setMatrixRoomPowerLevels(ev)))
+
+    client.on('roomNotificationMode', ev =>
+        dispatch(setMatrixRoomNotificationMode(ev)),
+    )
+
     client.on('error', err => dispatch(addMatrixError(err)))
 
     client.on('status', status => {
@@ -704,6 +732,15 @@ export const configureMatrixPushNotifications = createAsyncThunk<
     return token
 })
 
+export const updateMatrixRoomNotificationMode = createAsyncThunk<
+    RpcRoomNotificationMode,
+    { roomId: MatrixRoom['id']; mode: RpcRoomNotificationMode }
+>('matrix/updateMatrixRoomNotificationMode', async ({ roomId, mode }) => {
+    const client = getMatrixClient()
+    await client.setRoomNotificationMode(roomId, mode)
+    return mode
+})
+
 export const ignoreUser = createAsyncThunk<void, { userId: MatrixUser['id'] }>(
     'matrix/ignoreUser',
     async ({ userId }) => {
@@ -889,6 +926,11 @@ export const selectMatrixRoomPowerLevels = (
     s: CommonState,
     roomId: MatrixRoom['id'],
 ) => s.matrix.roomPowerLevels[roomId]
+
+export const selectMatrixRoomNotificationMode = (
+    s: CommonState,
+    roomId: MatrixRoom['id'],
+) => s.matrix.roomNotificationMode[roomId]
 
 export const selectMatrixRoomMembers = (
     s: CommonState,

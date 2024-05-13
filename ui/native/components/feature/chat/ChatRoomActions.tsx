@@ -6,19 +6,16 @@ import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import {
-    banUser,
-    kickUser,
-    selectMatrixAuth,
-    selectMatrixRoomSelfPowerLevel,
-    setMatrixRoomMemberPowerLevel,
+    selectMatrixRoomNotificationMode,
+    updateMatrixRoomNotificationMode,
 } from '@fedi/common/redux'
-import { MatrixPowerLevel, MatrixRoomMember } from '@fedi/common/types'
+import { MatrixRoom } from '@fedi/common/types'
+import { RpcRoomNotificationMode } from '@fedi/common/types/bindings'
 import { makeLog } from '@fedi/common/utils/log'
-import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 import SvgImage, { SvgImageName } from '@fedi/native/components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '@fedi/native/state/hooks'
 
-import ChatRoomAction from './ChatRoomAction'
+import ChatRoomAction from './ChatAction'
 
 export type Props = {
     room: MatrixRoom
@@ -27,16 +24,10 @@ export type Props = {
 
 type Action = {
     id: number
+    dataId?: string
     label: string
     icon: SvgImageName
     onPress: () => void
-}
-type RoleChangeAction = Action & {
-    powerLevel: MatrixPowerLevel
-}
-
-type ModerationAction = Action & {
-    reason?: string
 }
 
 const log = makeLog('chat/ChatRoomActions')
@@ -44,36 +35,41 @@ const log = makeLog('chat/ChatRoomActions')
 const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const myPowerLevel = useAppSelector(s =>
-        selectMatrixRoomSelfPowerLevel(s, room.id),
-    )
     const navigation = useNavigation()
     const dispatch = useAppDispatch()
     const { error, show } = useToast()
     const [loadingAction, setLoadingAction] = useState<number | null>(null)
+    const notificationMode = useAppSelector(s =>
+        selectMatrixRoomNotificationMode(s, room.id),
+    )
 
     const actions: Action[] = [
         {
             id: 0,
-            label: t('feature.chat.go-to-direct-chat'),
+            label: t('feature.notifications.open-chat'),
             icon: 'Chat',
-            onPress: () => {
+            onPress: async () => {
+                setLoadingAction(0)
                 navigation.navigate('ChatRoomConversation', {
-                    userId: member.id,
-                    displayName:
-                        member.displayName ?? matrixIdToUsername(member.id),
+                    roomId: room.id,
                 })
                 dismiss()
+                setLoadingAction(null)
             },
         },
     ]
-    const handleMuteRoom = async () => {
-        setLoadingAction(1)
+    const handleUpdateNotificationMode = async (
+        id: number,
+        mode: RpcRoomNotificationMode,
+    ) => {
+        setLoadingAction(id)
         try {
             log.info(`Muting room ${room.id}`)
-            await dispatch(banUser({ roomId, userId, reason })).unwrap()
+            await dispatch(
+                updateMatrixRoomNotificationMode({ roomId: room.id, mode }),
+            ).unwrap()
             show({
-                content: t('feature.chat.user-ban-success'),
+                content: t('feature.chat.notification-update-success'),
                 status: 'success',
             })
         } catch (err) {
@@ -84,63 +80,60 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
         dismiss()
     }
 
-    const changeRoles: RoleChangeAction[] = [
+    const notificationActions: Action[] = [
         {
             id: 1,
-            label: t('words.member'),
-            powerLevel: MatrixPowerLevel.Member,
-            icon: 'User',
-            onPress: () =>
-                handleChangePowerLevel(member.id, MatrixPowerLevel.Member, 1),
+            dataId: 'allMessages',
+            label: t('feature.chat.notification-always'),
+            icon: 'Bell',
+            onPress: () => handleUpdateNotificationMode(1, 'allMessages'),
         },
         {
             id: 2,
-            label: t('words.moderator'),
-            powerLevel: MatrixPowerLevel.Moderator,
-            icon: 'ChatModerator',
+            label: t('feature.chat.notification-mentions'),
+            dataId: 'mentionsAndKeywordsOnly',
+            icon: 'User',
             onPress: () =>
-                handleChangePowerLevel(
-                    member.id,
-                    MatrixPowerLevel.Moderator,
-                    2,
-                ),
+                handleUpdateNotificationMode(2, 'mentionsAndKeywordsOnly'),
         },
         {
             id: 3,
-            label: t('words.admin'),
-            powerLevel: MatrixPowerLevel.Admin,
-            icon: 'ChatAdmin',
-            onPress: () =>
-                handleChangePowerLevel(member.id, MatrixPowerLevel.Admin, 3),
+            label: t('feature.chat.notification-mute'),
+            dataId: 'mute',
+            icon: 'Close',
+            onPress: () => handleUpdateNotificationMode(3, 'mute'),
         },
     ]
 
-    const moderationActions: ModerationAction[] = [
-        {
-            id: 4,
-            label: t('feature.chat.remove-user'),
-            icon: 'KickMember',
-            onPress: () => handleRemoveUser(member.id, 4),
-        },
-        {
-            id: 5,
-            label: t('feature.chat.ban-user'),
-            icon: 'BlockMember',
-            onPress: () => handleBanUser(member.id, 5),
-        },
-        // TODO: Block from this screen?
-        // TODO: Temporary Mute?
-        // {
-        //     id: 6,
-        //     label: t('words.admin'),
-        //     icon: 'ChatAdmin',
-        //     onPress: () =>
-        //         handleChangePowerLevel(member.id, MatrixPowerLevel.Admin),
-        // },
-    ]
+    // const moderationActions: ModerationAction[] = [
+    //     {
+    //         id: 4,
+    //         label: t('feature.chat.remove-user'),
+    //         icon: 'KickMember',
+    //         onPress: () => handleRemoveUser(member.id, 4),
+    //     },
+    //     {
+    //         id: 5,
+    //         label: t('feature.chat.ban-user'),
+    //         icon: 'BlockMember',
+    //         onPress: () => handleBanUser(member.id, 5),
+    //     },
+    // TODO: Block from this screen?
+    // TODO: Temporary Mute?
+    // {
+    //     id: 6,
+    //     label: t('words.admin'),
+    //     icon: 'ChatAdmin',
+    //     onPress: () =>
+    //         handleChangePowerLevel(member.id, MatrixPowerLevel.Admin),
+    // },
+    // ]
 
-    const getColor = (action: RoleChangeAction) =>
-        member.powerLevel === action.powerLevel ? theme.colors.blue : undefined
+    const getIsDisabled = (dataId?: string) => {
+        if (!dataId) return true
+        if (dataId === notificationMode) return true
+        return false
+    }
 
     return (
         <View style={styles(theme).container}>
@@ -154,73 +147,42 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
                         leftIcon={<SvgImage name={action.icon} />}
                         rightIcon={<SvgImage name={'ChevronRight'} />}
                         label={action.label}
+                        isLoading={loadingAction === action.id}
                         onPress={() => action.onPress()}
                     />
                 ))}
             </View>
-            {/* Only show roles if the user is an admin */}
-            {myPowerLevel >= MatrixPowerLevel.Moderator && (
-                <>
-                    <View style={styles(theme).sectionContainer}>
-                        <Text caption style={styles(theme).sectionTitle}>
-                            {t('feature.chat.change-role')}
-                        </Text>
-                        {changeRoles.map(action => (
-                            <ChatRoomAction
-                                key={action.id}
-                                leftIcon={
-                                    <SvgImage
-                                        name={action.icon}
-                                        color={getColor(action)}
-                                    />
-                                }
-                                rightIcon={
-                                    member.powerLevel === action.powerLevel && (
-                                        <SvgImage
-                                            name={'Check'}
-                                            color={getColor(action)}
-                                        />
-                                    )
-                                }
-                                label={action.label}
-                                onPress={() => action.onPress()}
-                                disabled={getRoleDisabled(
-                                    member,
-                                    action.powerLevel,
-                                )}
-                                active={action.powerLevel === member.powerLevel}
-                                isLoading={loadingAction === action.id}
+            <View style={styles(theme).sectionContainer}>
+                <Text caption style={styles(theme).sectionTitle}>
+                    {t('feature.chat.notification-settings')}
+                </Text>
+                {notificationActions.map(action => (
+                    <ChatRoomAction
+                        key={action.id}
+                        leftIcon={
+                            <SvgImage
+                                name={action.icon}
+                                color={theme.colors.blue}
                             />
-                        ))}
-                    </View>
-                </>
-            )}
-            {/* Only show roles if the user is an admin */}
-            {myPowerLevel >= MatrixPowerLevel.Moderator && (
-                <>
-                    <View style={styles(theme).sectionContainer}>
-                        <Text caption style={styles(theme).sectionTitle}>
-                            {t('phrases.moderation-tools')}
-                        </Text>
-                        {moderationActions.map(action => (
-                            <ChatRoomAction
-                                key={action.id}
-                                leftIcon={
-                                    <SvgImage
-                                        name={action.icon}
-                                        color={theme.colors.red}
-                                    />
-                                }
-                                label={action.label}
-                                labelColor={theme.colors.red}
-                                onPress={() => action.onPress()}
-                                disabled={getRoleDisabled(member)}
-                                isLoading={loadingAction === action.id}
-                            />
-                        ))}
-                    </View>
-                </>
-            )}
+                        }
+                        label={action.label}
+                        labelColor={theme.colors.blue}
+                        onPress={() => action.onPress()}
+                        disabled={getIsDisabled(action.dataId)}
+                        disabledStyle={{}}
+                        active={action.dataId === notificationMode}
+                        isLoading={loadingAction === action.id}
+                        rightIcon={
+                            action.dataId === notificationMode && (
+                                <SvgImage
+                                    name={'Check'}
+                                    // color={theme.colors.blue}
+                                />
+                            )
+                        }
+                    />
+                ))}
+            </View>
         </View>
     )
 }

@@ -3,7 +3,9 @@ import {
     ActivityIndicator,
     ColorValue,
     GestureResponderEvent,
+    StyleProp,
     StyleSheet,
+    ViewStyle,
 } from 'react-native'
 
 import { Pressable } from '../../ui/Pressable'
@@ -12,6 +14,7 @@ type ChatUserActionProps = {
     disabled?: boolean
     leftIcon: React.ReactNode
     label: string
+    disabledStyle?: StyleProp<ViewStyle>
     action?: React.ReactNode
     onPress: (event: GestureResponderEvent) => void
     active?: boolean
@@ -20,9 +23,10 @@ type ChatUserActionProps = {
     labelColor?: ColorValue
 }
 
-const ChatUserAction = ({
+const ChatAction = ({
     disabled = false,
     active = false,
+    disabledStyle,
     leftIcon,
     label,
     labelColor,
@@ -32,7 +36,10 @@ const ChatUserAction = ({
 }: ChatUserActionProps) => {
     const { theme } = useTheme()
     return (
-        <Pressable disabled={disabled} onPress={disabled ? undefined : onPress}>
+        <Pressable
+            disabled={disabled}
+            disabledStyle={disabledStyle}
+            onPress={disabled ? undefined : onPress}>
             <>{leftIcon}</>
             <Text
                 bold
@@ -43,8 +50,7 @@ const ChatUserAction = ({
                 ]}>
                 {label}
             </Text>
-            <>{rightIcon}</>
-            {isLoading && <ActivityIndicator size={24} />}
+            {isLoading ? <ActivityIndicator size={24} /> : rightIcon}
         </Pressable>
     )
 }
@@ -71,4 +77,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default ChatUserAction
+export default ChatAction
