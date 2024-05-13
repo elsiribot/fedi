@@ -9,7 +9,6 @@ import { useAppSelector } from '../../../state/hooks'
 import { RootStackParamList } from '../../../types/navigation'
 import Avatar from '../../ui/Avatar'
 import Header from '../../ui/Header'
-import { ChatConnectionBadge } from './ChatConnectionBadge'
 
 type ChatRouteProp = RouteProp<RootStackParamList, 'DirectChat'>
 
@@ -46,7 +45,6 @@ const DirectChatHeader: React.FC = () => {
                     </Pressable>
                 }
             />
-            <ChatConnectionBadge offset={63} />
         </>
     )
 }

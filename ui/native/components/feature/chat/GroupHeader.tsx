@@ -10,7 +10,6 @@ import { useAppSelector } from '../../../state/hooks'
 import { RootStackParamList } from '../../../types/navigation'
 import { AvatarSize } from '../../ui/Avatar'
 import Header from '../../ui/Header'
-import { ChatConnectionBadge } from './ChatConnectionBadge'
 import GroupIcon from './GroupIcon'
 
 type GroupChatRouteProp = RouteProp<RootStackParamList, 'GroupChat'>
@@ -46,7 +45,6 @@ const GroupHeader: React.FC = () => {
                     </Pressable>
                 }
             />
-            <ChatConnectionBadge offset={63} />
         </>
     )
 }
