@@ -13,6 +13,7 @@ import {
     selectMatrixRoomSelfPowerLevel,
     setMatrixRoomBroadcastOnly,
     setMatrixRoomName,
+    selectAllDefaultMatrixRooms,
 } from '@fedi/common/redux'
 import { MatrixPowerLevel, MatrixRoom } from '@fedi/common/types'
 
@@ -51,6 +52,9 @@ export const ChatRoomSettingsDialog: React.FC<Props> = ({
     const { error } = useToast()
 
     const isAdmin = myPowerLevel >= MatrixPowerLevel.Admin
+    const isDefaultGroup = useAppSelector(s =>
+        selectAllDefaultMatrixRooms(s).includes(room?.id || ''),
+    )
 
     useEffect(() => {
         if (open) return
@@ -124,11 +128,13 @@ export const ChatRoomSettingsDialog: React.FC<Props> = ({
                         label: t('feature.chat.invite-to-group'),
                         icon: RoomIcon,
                         onClick: () => setPage('invite'),
+                        disabled: !isAdmin,
                     },
                     {
                         label: t('feature.chat.leave-group'),
                         icon: LeaveRoomIcon,
                         onClick: handleLeaveRoom,
+                        disabled: isDefaultGroup,
                     },
                     {
                         label: t('feature.chat.change-group-name'),
