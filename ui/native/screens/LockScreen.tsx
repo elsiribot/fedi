@@ -138,6 +138,12 @@ const LockScreen = <T extends keyof RootStackParamList>({
         navigation.navigate(...screen)
     }, [debouncedPin, feature, navigation, dispatch, pin, screen])
 
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current)
+        }
+    }, [])
+
     return (
         <View style={style.container}>
             <View style={style.content}>
