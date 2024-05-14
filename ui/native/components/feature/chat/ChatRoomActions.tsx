@@ -105,30 +105,6 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
         },
     ]
 
-    // const moderationActions: ModerationAction[] = [
-    //     {
-    //         id: 4,
-    //         label: t('feature.chat.remove-user'),
-    //         icon: 'KickMember',
-    //         onPress: () => handleRemoveUser(member.id, 4),
-    //     },
-    //     {
-    //         id: 5,
-    //         label: t('feature.chat.ban-user'),
-    //         icon: 'BlockMember',
-    //         onPress: () => handleBanUser(member.id, 5),
-    //     },
-    // TODO: Block from this screen?
-    // TODO: Temporary Mute?
-    // {
-    //     id: 6,
-    //     label: t('words.admin'),
-    //     icon: 'ChatAdmin',
-    //     onPress: () =>
-    //         handleChangePowerLevel(member.id, MatrixPowerLevel.Admin),
-    // },
-    // ]
-
     const getIsDisabled = (dataId?: string) => {
         if (!dataId) return true
         if (dataId === notificationMode) return true

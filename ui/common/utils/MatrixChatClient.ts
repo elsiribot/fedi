@@ -499,7 +499,6 @@ export class MatrixChatClient {
         })
     }
 
-    // TODO!!!: Add listener for emitted roomnotification modes
     private async observeRoomList() {
         // Only observe the roomList once, subsequent calls are no-ops.
         if (this.clientObserverMap['roomListUpdate'] !== undefined) return
