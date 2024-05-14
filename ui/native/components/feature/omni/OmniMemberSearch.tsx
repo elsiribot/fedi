@@ -102,9 +102,7 @@ export const OmniMemberSearch: React.FC<Props> = ({
                                     style={style.recentMember}
                                     onPress={() =>
                                         onInput(
-                                            encodeFediMatrixUserUri(
-                                                user.roomId,
-                                            ),
+                                            encodeFediMatrixUserUri(user.id),
                                         )
                                     }>
                                     <Avatar
