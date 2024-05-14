@@ -238,7 +238,7 @@ const styles = (theme: Theme) =>
         },
         contentContainer: {
             paddingTop: theme.spacing.md,
-            flex: 1,
+            flexGrow: 1,
         },
         newMessageButtonContainer: {
             position: 'absolute',
