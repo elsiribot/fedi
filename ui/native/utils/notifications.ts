@@ -212,7 +212,7 @@ const dispatchNotification = async (
     } = {},
 ) => {
     // Request permissions (required for iOS)
-    await notifee.requestPermission()
+    // await notifee.requestPermission()
 
     // Create a channel (required for Android)
     const channelId = await notifee.createChannel({
