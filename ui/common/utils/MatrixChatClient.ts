@@ -95,7 +95,7 @@ export class MatrixChatClient {
 
         fedimint.addListener('observableUpdate', ev => {
             // This is noisy, but can be helpful for debugging
-            // log.debug('Received observable update', { ev })
+            if (__DEV__) log.debug('Received observable update', { ev })
             this.handleObservableUpdate(ev)
         })
 
