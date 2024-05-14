@@ -6,8 +6,9 @@ import {
 } from '@reduxjs/toolkit'
 import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
+import orderBy from 'lodash/orderBy'
 
-import { CommonState } from '.'
+import { CommonState, joinDefaultGroupChats } from '.'
 import {
     Federation,
     Guardian,
@@ -30,7 +31,6 @@ import {
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
 import { loadFromStorage } from './storage'
-import orderBy from 'lodash/orderBy'
 
 /*** Initial State ***/
 
@@ -228,6 +228,9 @@ export const joinFederation = createAsyncThunk<
 
         await dispatch(refreshFederations(fedimint))
         dispatch(setActiveFederationId(federation.id))
+        // matrix client should be initialized by now
+        // so we can join default groups
+        dispatch(joinDefaultGroupChats())
 
         const activeFederation = selectActiveFederation(getState())
         if (!activeFederation) throw new Error('errors.unknown-error')
@@ -270,11 +273,11 @@ export const selectFederations = createSelector(
 
 export const selectAlphabeticallySortedFederations = createSelector(
     selectFederations,
-    (federations) => {
+    federations => {
         return orderBy(
             federations,
-            (federation) => federation.name.toLowerCase(),
-            'asc'
+            federation => federation.name.toLowerCase(),
+            'asc',
         )
     },
 )
