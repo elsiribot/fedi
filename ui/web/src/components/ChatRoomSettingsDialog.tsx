@@ -123,6 +123,7 @@ export const ChatRoomSettingsDialog: React.FC<Props> = ({
                         label: t('words.members'),
                         icon: SocialPeopleIcon,
                         onClick: () => setPage('members'),
+                        hidden: isDefaultGroup,
                     },
                     {
                         label: t('feature.chat.invite-to-group'),

@@ -127,13 +127,15 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 <Text style={styles(theme).sectionTitle}>
                     {t('words.group')}
                 </Text>
-                <SettingsItem
-                    image={<SvgImage name="SocialPeople" />}
-                    label={`${amountUtils.formatNumber(memberCount)} ${t(
-                        'words.members',
-                    )}`}
-                    onPress={handleViewMembers}
-                />
+                {!isDefaultGroup && (
+                    <SettingsItem
+                        image={<SvgImage name="SocialPeople" />}
+                        label={`${amountUtils.formatNumber(memberCount)} ${t(
+                            'words.members',
+                        )}`}
+                        onPress={handleViewMembers}
+                    />
+                )}
                 <SettingsItem
                     image={<SvgImage name="Room" />}
                     label={t('feature.chat.invite-to-group')}
