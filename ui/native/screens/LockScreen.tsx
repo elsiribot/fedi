@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Theme, useTheme, Text } from '@rneui/themed'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View, useWindowDimensions } from 'react-native'
 
@@ -36,13 +36,18 @@ const LockScreen = <T extends keyof RootStackParamList>({
     ]
     showForgotFlow?: boolean
 }) => {
+    const [pinDigits, setPinDigits] = useState<Array<number>>([])
+    const [timeoutSeconds, setTimeoutSeconds] = useState(0)
+    const [, setAttempts] = useState(0)
+
+    const { width } = useWindowDimensions()
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { width } = useWindowDimensions()
-    const pin = usePin()
-    const [pinDigits, setPinDigits] = useState<Array<number>>([])
-    const dispatch = useAppDispatch()
+
+    const timerRef = useRef<NodeJS.Timer | null>(null)
     const debouncedPin = useDebounce(pinDigits, 500)
+    const dispatch = useAppDispatch()
+    const pin = usePin()
 
     const style = styles(theme, width)
 
@@ -54,6 +59,20 @@ const LockScreen = <T extends keyof RootStackParamList>({
         [pin, pinDigits],
     )
 
+    const setTimedOut = useCallback((attempts: number) => {
+        if (timerRef.current) clearInterval(timerRef.current)
+        setTimeoutSeconds(attempts > 4 ? 21 : attempts > 3 ? 7 : 3)
+        timerRef.current = setInterval(() => {
+            setTimeoutSeconds(prevSeconds => {
+                if (prevSeconds === 0) {
+                    if (timerRef.current) clearInterval(timerRef.current)
+                    return 0
+                }
+                return prevSeconds - 1
+            })
+        }, 1000)
+    }, [])
+
     const handleNumpadPress = useCallback(
         (btn: (typeof numpadButtons)[number]) => {
             if (btn === null || pin.status !== 'set') return
@@ -63,12 +82,23 @@ const LockScreen = <T extends keyof RootStackParamList>({
             } else if (pinDigits.length < maxPinLength) {
                 const updatedDigits = [...pinDigits, btn]
 
+                // If adding pressing this numpad causes the PIN to be incorrect
+                if (
+                    pinDigits.length === maxPinLength - 1 &&
+                    !pin.check(updatedDigits)
+                )
+                    setAttempts(a => {
+                        const totalAttempts = a + 1
+                        if (totalAttempts > 2) setTimedOut(totalAttempts)
+                        return totalAttempts
+                    })
+
                 setPinDigits(updatedDigits)
             } else if (!pin.check(pinDigits)) {
                 setPinDigits([btn])
             }
         },
-        [pinDigits, pin],
+        [pinDigits, pin, setTimedOut],
     )
 
     const dotStatus = useCallback(
@@ -107,6 +137,12 @@ const LockScreen = <T extends keyof RootStackParamList>({
 
         navigation.navigate(...screen)
     }, [debouncedPin, feature, navigation, dispatch, pin, screen])
+
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current)
+        }
+    }, [])
 
     return (
         <View style={style.container}>
@@ -148,8 +184,16 @@ const LockScreen = <T extends keyof RootStackParamList>({
                         key={btn}
                         btn={btn}
                         onPress={() => handleNumpadPress(btn)}
+                        disabled={timeoutSeconds > 0}
                     />
                 ))}
+                {timeoutSeconds > 0 && (
+                    <View style={style.timeoutOverlay}>
+                        <Text bold h1>
+                            0:{String(timeoutSeconds).padStart(2, '0')}
+                        </Text>
+                    </View>
+                )}
             </View>
         </View>
     )
@@ -182,6 +226,7 @@ const styles = (theme: Theme, width: number) =>
             paddingHorizontal: theme.spacing.lg,
             flexDirection: 'row',
             flexWrap: 'wrap',
+            position: 'relative',
         },
         forgotPinButtonContainer: {
             position: 'absolute',
@@ -197,6 +242,18 @@ const styles = (theme: Theme, width: number) =>
             borderColor: theme.colors.lightGrey,
             borderWidth: 0.25,
             paddingHorizontal: 50,
+        },
+        timeoutOverlay: {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: '#fffc',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
         },
     })
 
