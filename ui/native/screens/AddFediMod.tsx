@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { Button, Image, Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -12,7 +12,12 @@ import { fetchMetadataFromUrl } from '@fedi/common/utils/fedimods'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { FediModImages } from '../assets/images'
+import {
+    OmniInput,
+    OmniInputAction,
+} from '../components/feature/omni/OmniInput'
 import { useAppSelector } from '../state/hooks'
+import { ParserDataType } from '../types'
 
 const log = makeLog('AddFediMod')
 
@@ -30,6 +35,7 @@ const AddFediMod: React.FC = () => {
     const [imageUrl, setImageUrl] = useState('')
     const [isFetching, setIsFetching] = useState(false)
     const [isValidUrl, setIsValidUrl] = useState(false)
+    const [action, setAction] = useState<'scan' | 'enter'>('scan')
 
     const style = styles(theme, insets)
 
@@ -59,6 +65,16 @@ const AddFediMod: React.FC = () => {
             log.error('handleSubmit', e)
         }
     }
+
+    const customActions: OmniInputAction[] = useMemo(() => {
+        return [
+            {
+                label: t('feature.omni.action-enter-url'),
+                icon: 'Globe',
+                onPress: () => setAction('enter'),
+            },
+        ]
+    }, [t])
 
     useDebouncedEffect(
         () => {
@@ -90,6 +106,22 @@ const AddFediMod: React.FC = () => {
     )
 
     const canSave = isValidUrl && !isFetching && title && url && federationId
+
+    if (action === 'scan') {
+        return (
+            <OmniInput
+                expectedInputTypes={[ParserDataType.Website]}
+                onExpectedInput={parsedData => {
+                    if (parsedData.type === ParserDataType.Website) {
+                        setUrl(parsedData.data.url)
+                        setAction('enter')
+                    }
+                }}
+                onUnexpectedSuccess={() => null}
+                customActions={customActions}
+            />
+        )
+    }
 
     return (
         <View style={style.container}>
@@ -150,6 +182,10 @@ const AddFediMod: React.FC = () => {
 
 const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
+        omniContainer: {
+            width: '100%',
+            flex: 1,
+        },
         scrollContainer: {
             flex: 1,
         },
