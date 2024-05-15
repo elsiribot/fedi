@@ -1,6 +1,12 @@
 import { Image, Text, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
-import { StyleSheet, View, useWindowDimensions } from 'react-native'
+import {
+    StyleProp,
+    StyleSheet,
+    View,
+    ViewStyle,
+    useWindowDimensions,
+} from 'react-native'
 
 import stringUtils from '@fedi/common/utils/StringUtils'
 import { getIdentityColors } from '@fedi/common/utils/color'
@@ -29,6 +35,7 @@ export type AvatarProps = {
     url?: string
     name?: string
     icon?: SvgImageName
+    containerStyle?: StyleProp<ViewStyle>
 }
 
 const Avatar: React.FC<AvatarProps> = ({
@@ -37,6 +44,7 @@ const Avatar: React.FC<AvatarProps> = ({
     name,
     icon,
     url,
+    containerStyle,
 }: AvatarProps) => {
     const { theme } = useTheme()
     const [bgColor, textColor] = getIdentityColors(id)
@@ -58,6 +66,7 @@ const Avatar: React.FC<AvatarProps> = ({
             borderRadius: pxSize * 0.5,
         },
         { backgroundColor: bgColor },
+        containerStyle,
     ]
     const mergedTextStyle = [styles.text, { color: textColor }]
     const imageStyle = [styles.image, { borderRadius: pxSize * 0.5 }]

@@ -210,7 +210,6 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                 </View>
             )}
             <ChatUserActionsOverlay
-                show={selectedUserId !== null}
                 onDismiss={() => setSelectedUserId(null)}
                 selectedUserId={selectedUserId}
                 roomId={id}
@@ -238,7 +237,7 @@ const styles = (theme: Theme) =>
         },
         contentContainer: {
             paddingTop: theme.spacing.md,
-            flex: 1,
+            flexGrow: 1,
         },
         newMessageButtonContainer: {
             position: 'absolute',

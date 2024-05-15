@@ -7,6 +7,7 @@ import { getUserSuffix } from '@fedi/common/utils/matrix'
 
 import { AvatarSize } from '../../ui/Avatar'
 import { Pressable } from '../../ui/Pressable'
+import SvgImage from '../../ui/SvgImage'
 import ChatAvatar from './ChatAvatar'
 
 type UserItemProps = {
@@ -16,6 +17,7 @@ type UserItemProps = {
     actionIcon?: React.ReactNode
     rightIcon?: React.ReactNode
     showSuffix?: boolean
+    showAdmin?: boolean
     containerStyle?: StyleProp<ViewStyle>
 }
 
@@ -26,6 +28,7 @@ const ChatUserTile: React.FC<UserItemProps> = ({
     rightIcon = null,
     disabled = false,
     showSuffix = false,
+    showAdmin = false,
     containerStyle,
 }: UserItemProps) => {
     const { theme } = useTheme()
@@ -39,7 +42,18 @@ const ChatUserTile: React.FC<UserItemProps> = ({
             containerStyle={containerStyle}
             onPress={disabled ? undefined : () => selectUser(user.id)}>
             <View style={styles(theme).usernameContainer}>
-                <ChatAvatar user={user} size={AvatarSize.md} />
+                <ChatAvatar
+                    containerStyle={[styles(theme).avatar]}
+                    user={user}
+                    size={AvatarSize.md}
+                />
+                {showAdmin && (
+                    <SvgImage
+                        size={15}
+                        name={'AdminBadge'}
+                        containerStyle={styles(theme).adminBadge}
+                    />
+                )}
                 <Text
                     numberOfLines={1}
                     bold
@@ -55,7 +69,6 @@ const ChatUserTile: React.FC<UserItemProps> = ({
                         {suffix}
                     </Text>
                 )}
-
                 <View style={styles(theme).iconContainer}>
                     {rightIcon && rightIcon}
                     {actionIcon && actionIcon}
@@ -67,6 +80,12 @@ const ChatUserTile: React.FC<UserItemProps> = ({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        avatar: {
+            marginRight: theme.spacing.md,
+        },
+        adminBadge: {
+            marginRight: theme.spacing.xs,
+        },
         usernameContainer: {
             flex: 1,
             flexDirection: 'row',
@@ -75,7 +94,6 @@ const styles = (theme: Theme) =>
         },
         usernameText: {
             flexShrink: 2,
-            marginLeft: theme.spacing.md,
             paddingRight: theme.spacing.xs,
         },
         usernameSuffix: {
