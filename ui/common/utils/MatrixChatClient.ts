@@ -144,8 +144,6 @@ export class MatrixChatClient {
             request: options,
         })
         await this.observeRoomInfo(roomId)
-        await this.observeRoomTimeline(roomId)
-        await this.observeRoomPowerLevels(roomId)
         return { roomId }
     }
 
@@ -159,6 +157,9 @@ export class MatrixChatClient {
         })
         this.observeRoomMembers(roomId).catch(err => {
             log.warn('Failed to observe room members', { roomId, err })
+        })
+        this.observeRoomPowerLevels(roomId).catch(err => {
+            log.warn('Failed to observe room power levels', { roomId, err })
         })
     }
 

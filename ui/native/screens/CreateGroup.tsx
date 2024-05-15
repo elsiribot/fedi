@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import { createMatrixRoom } from '@fedi/common/redux'
+import { createMatrixRoom, selectMatrixRoom } from '@fedi/common/redux'
 import { ChatType } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
-import { useAppDispatch } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('CreateGroup')
@@ -26,16 +26,34 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
         t('feature.chat.new-group'),
     )
     const [creatingGroup, setCreatingGroup] = useState<boolean>(false)
+    const [pendingRoomId, setPendingRoomId] = useState<string | null>(null)
     const [broadcastOnly, setBroadcastOnly] = useState<boolean>(false)
     const [isPublic, setIsPublic] = useState<boolean>(false)
     const toast = useToast()
 
+    const loadedRoom = useAppSelector(
+        s => pendingRoomId && selectMatrixRoom(s, pendingRoomId),
+    )
+
+    // Forces default groups to be broadcast-only & public
+    // TODO: support nonbroadcast/nonpublic default groups
     useEffect(() => {
         if (defaultGroup === true) {
             setBroadcastOnly(true)
             setIsPublic(true)
         }
     }, [defaultGroup])
+
+    useEffect(() => {
+        if (loadedRoom) {
+            log.info('group created', loadedRoom)
+            navigation.replace('ChatRoomConversation', {
+                roomId: loadedRoom.id,
+                chatType: ChatType.group,
+            })
+            setCreatingGroup(false)
+        }
+    }, [loadedRoom, navigation])
 
     const handleCreateGroup = useCallback(async () => {
         setCreatingGroup(true)
@@ -47,17 +65,13 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                     isPublic,
                 }),
             ).unwrap()
-            log.info('group created', roomId)
-            navigation.replace('ChatRoomConversation', {
-                roomId,
-                chatType: ChatType.group,
-            })
+            setPendingRoomId(roomId)
         } catch (error) {
             log.error('group create failed', error)
             toast.error(t, error)
         }
         setCreatingGroup(false)
-    }, [broadcastOnly, dispatch, groupName, isPublic, navigation, toast, t])
+    }, [broadcastOnly, dispatch, groupName, isPublic, toast, t])
 
     const handleSubmit = async () => {
         if (groupName) {
