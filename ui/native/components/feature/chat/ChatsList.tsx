@@ -33,12 +33,9 @@ const ChatsList: React.FC = () => {
     const [isRefetching, setIsRefetching] = useState(false)
     const handleRefresh = useCallback(() => {
         setIsRefetching(true)
-        dispatch(refetchMatrixRoomList()).catch(() => {
-            // no-op
-        })
-
-        setTimeout(() => setIsRefetching(false), 500)
-        // Dismissing any sooner looks weird
+        dispatch(refetchMatrixRoomList())
+            .catch(() => null) // no-op
+            .finally(() => setIsRefetching(false))
     }, [dispatch])
 
     const handleSelectChat = useCallback(

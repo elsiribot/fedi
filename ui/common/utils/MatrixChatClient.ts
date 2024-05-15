@@ -69,6 +69,10 @@ interface MatrixChatClientEventMap {
     user: MatrixUser
     error: MatrixError
 }
+type ClientObserverKind = keyof Pick<
+    MatrixChatClientEventMap,
+    'status' | 'roomListUpdate'
+>
 
 export class MatrixChatClient {
     hasStarted = false
@@ -82,6 +86,7 @@ export class MatrixChatClient {
         MatrixRoom['id'],
         { info?: number; timeline?: number } | undefined
     > = {}
+    private clientObserverMap: Partial<Record<ClientObserverKind, number>> = {}
     private roomInvites: RpcRoomListEntry[] = []
     private joinedInvites: Set<string> = new Set()
 
@@ -105,10 +110,10 @@ export class MatrixChatClient {
                 .matrixInit()
                 .then(() => this.getAccountSession())
                 .then(auth => {
-                    resolve(this.serializeAuth(auth))
-                    this.observeSyncStatus()
                     this.observeRoomList()
                         .then(() => {
+                            resolve(this.serializeAuth(auth))
+                            this.observeSyncStatus()
                             this.autoJoinInvites()
                         })
                         .catch(reject)
@@ -322,6 +327,14 @@ export class MatrixChatClient {
     }
 
     async refetchRoomList() {
+        // Clear existing observer
+        const oldId = this.clientObserverMap['roomListUpdate']
+
+        if (typeof oldId === 'number' && oldId !== Number.MAX_SAFE_INTEGER) {
+            await this.unobserve(oldId)
+            delete this.clientObserverMap['roomListUpdate']
+        }
+        // Recreate observer with fresh "initial list"
         await this.observeRoomList()
     }
 
@@ -438,7 +451,7 @@ export class MatrixChatClient {
         if (!observer) {
             log.info(
                 'Received observable update without associated observer handler',
-                { update },
+                JSON.stringify(update),
             )
             return
         }
@@ -446,6 +459,17 @@ export class MatrixChatClient {
     }
 
     private async observeSyncStatus() {
+        // Only observe the sync status once, subsequent calls are no-ops.
+        if (this.clientObserverMap['status'] !== undefined) return
+
+        // Immediately add to the map with a fake id to prevent additional calls.
+        this.clientObserverMap['status'] = Number.MAX_SAFE_INTEGER
+
+        const { id, initial } = await this.fedimint.matrixObserveSyncIndicator()
+
+        // Update the map with the real id
+        this.clientObserverMap['status'] = id
+
         const handleEmit = (status: typeof initial) => {
             this.emit(
                 'status',
@@ -454,8 +478,6 @@ export class MatrixChatClient {
                     : MatrixSyncStatus.synced,
             )
         }
-
-        const { id, initial } = await this.fedimint.matrixObserveSyncIndicator()
         handleEmit(initial)
 
         this.observe(id, (update: ObservableUpdate<typeof initial>) => {
@@ -464,7 +486,17 @@ export class MatrixChatClient {
     }
 
     private async observeRoomList() {
+        // Only observe the roomList once, subsequent calls are no-ops.
+        if (this.clientObserverMap['roomListUpdate'] !== undefined) return
+
+        // Immediately add to the map with a fake id to prevent additional calls.
+        this.clientObserverMap['roomListUpdate'] = Number.MAX_SAFE_INTEGER
+
         const { id, initial } = await this.fedimint.matrixRoomList()
+
+        // Update the map with the real id
+        this.clientObserverMap['roomListUpdate'] = id
+
         // Emit a fake "update" using the initial values
         this.emit(
             'roomListUpdate',
