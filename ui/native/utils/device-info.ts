@@ -1,4 +1,5 @@
 import RNDI from 'react-native-device-info'
+import 'react-native-get-random-values'
 import { v4 as uuidv4 } from 'uuid'
 
 import { RpcRegisteredDevice } from '@fedi/common/types/bindings'

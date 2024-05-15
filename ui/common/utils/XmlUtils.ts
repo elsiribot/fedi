@@ -1,6 +1,7 @@
 import { jid, xml } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
 import { Element } from 'ltx'
+import 'react-native-get-random-values'
 import { randomBytes } from 'tweetnacl'
 import { v4 as uuidv4 } from 'uuid'
 
