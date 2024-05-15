@@ -1,7 +1,7 @@
 import { RouteProp, useRoute } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { Pressable, StyleSheet } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 
 import { selectChatMember } from '@fedi/common/redux'
 
@@ -28,13 +28,7 @@ const DirectChatHeader: React.FC = () => {
                 leftContainerStyle={styles(theme).headerLeftContainer}
                 centerContainerStyle={styles(theme).headerCenterContainer}
                 headerCenter={
-                    <Pressable
-                        disabled
-                        style={styles(theme).memberContainer}
-                        onPress={() => {
-                            // TODO: implement admin settings for 1on1 chat
-                            // navigation.navigate('GroupAdmin', { group })
-                        }}>
+                    <View style={styles(theme).memberContainer}>
                         <Avatar id={member?.id || ''} name={username} />
                         <Text
                             bold
@@ -42,7 +36,7 @@ const DirectChatHeader: React.FC = () => {
                             style={styles(theme).memberText}>
                             {username}
                         </Text>
-                    </Pressable>
+                    </View>
                 }
             />
         </>

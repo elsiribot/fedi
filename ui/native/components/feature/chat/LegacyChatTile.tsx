@@ -1,6 +1,6 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import { t } from 'i18next'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
@@ -21,12 +21,12 @@ type LegacyChatTileProps = {
 }
 
 const LegacyChatTile = ({ chat, selectChat }: LegacyChatTileProps) => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
-    const { latestMessage, hasNewMessages } = chat
-    const previewTextWeight = hasNewMessages ? { medium: true } : {}
+    const { latestMessage } = chat
 
     let previewMessage = latestMessage?.content
     if (latestMessage?.payment) {
@@ -43,12 +43,7 @@ const LegacyChatTile = ({ chat, selectChat }: LegacyChatTileProps) => {
             style={styles(theme).container}
             onPress={() => selectChat(chat)}>
             <View style={styles(theme).iconContainer}>
-                <View
-                    style={[
-                        styles(theme).unreadIndicator,
-                        hasNewMessages ? { opacity: 1 } : { opacity: 0 },
-                    ]}
-                />
+                <View style={[styles(theme).unreadIndicator, { opacity: 0 }]} />
                 <View style={styles(theme).chatTypeIconContainer}>
                     {chat.type === ChatType.direct ? (
                         <Avatar
@@ -72,22 +67,15 @@ const LegacyChatTile = ({ chat, selectChat }: LegacyChatTileProps) => {
                     {previewMessage ? (
                         <Text
                             caption
-                            style={[
-                                styles(theme).messagePreview,
-                                hasNewMessages
-                                    ? styles(theme).messagePreviewUnread
-                                    : undefined,
-                            ]}
-                            numberOfLines={1}
-                            {...previewTextWeight}>
+                            style={[styles(theme).messagePreview]}
+                            numberOfLines={1}>
                             {previewMessage}
                         </Text>
                     ) : (
                         <Text
                             caption
                             style={styles(theme).emptyMessagePreview}
-                            numberOfLines={1}
-                            {...previewTextWeight}>
+                            numberOfLines={1}>
                             {t('feature.chat.no-one-is-in-this-group')}
                         </Text>
                     )}

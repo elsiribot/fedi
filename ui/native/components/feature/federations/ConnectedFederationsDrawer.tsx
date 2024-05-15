@@ -17,12 +17,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
-import {
-    selectActiveFederationId,
-    selectFederations,
-    selectHasUnseenMessages,
-    selectHasUnseenPaymentUpdates,
-} from '@fedi/common/redux'
+import { selectActiveFederationId, selectFederations } from '@fedi/common/redux'
 import { Federation } from '@fedi/common/types'
 import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
 
@@ -39,12 +34,6 @@ type Props = {
 const FederationDrawerItemLabel = ({ federation }: Props) => {
     const { theme } = useTheme()
     const navigation = useNavigation()
-    const hasNewMessages = useAppSelector(s =>
-        selectHasUnseenMessages(s, federation.id),
-    )
-    const hasNewPaymentUpdates = useAppSelector(s =>
-        selectHasUnseenPaymentUpdates(s, federation.id),
-    )
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
     const { formattedPrimaryAmount, formattedSecondaryAmount } =
@@ -55,14 +44,6 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
     const style = styles(theme)
     return (
         <View style={style.drawerItemLabel}>
-            <View
-                style={[
-                    style.unreadIndicator,
-                    hasNewMessages || hasNewPaymentUpdates
-                        ? { opacity: 1 }
-                        : { opacity: 0 },
-                ]}
-            />
             <FederationLogo federation={federation} size={48} />
             <View style={style.labelsContainer}>
                 <Text bold numberOfLines={1}>

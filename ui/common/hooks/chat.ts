@@ -2,15 +2,9 @@ import { TFunction } from 'i18next'
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 
-import type {
-    ChatMember,
-    ChatMessage,
-    Federation,
-    Sats,
-} from '@fedi/common/types'
+import type { ChatMember, ChatMessage, Sats } from '@fedi/common/types'
 
 import {
-    fetchChatMember,
     configureMatrixPushNotifications,
     selectActiveFederation,
     selectActiveFederationId,
@@ -31,8 +25,6 @@ import {
     setLastSeenMessageTimestamp,
     setMatrixDisplayName,
     selectMatrixPushNotificationToken,
-    connectChat,
-    selectFederationsWithChatConnections,
     selectIsMatrixReady,
     startMatrixClient,
 } from '../redux'
@@ -267,81 +259,9 @@ export function usePublishNotificationToken(
  * @deprecated
  */
 export function useChatMember(memberId: string) {
-    const dispatch = useCommonDispatch()
-    const federationId = useCommonSelector(selectActiveFederation)?.id
     const member = useCommonSelector(s => selectChatMember(s, memberId))
-    const isChatOnline = useCommonSelector(selectChatClientStatus) === 'online'
-    const [isFetchingMember, setIsFetchingMember] = useState(false)
 
-    const hasMember = !!member
-    useEffect(() => {
-        if (hasMember || !federationId || !isChatOnline) return
-        setIsFetchingMember(true)
-        dispatch(fetchChatMember({ federationId, memberId }))
-            .catch(() => {
-                /* no-op */
-            })
-            .finally(() => {
-                setIsFetchingMember(false)
-            })
-    }, [dispatch, hasMember, federationId, isChatOnline, memberId])
-
-    return { member, isFetchingMember }
-}
-
-/**
- * Given an instance of the bridge, monitor all available chat connections and
- * attempt to reconnect and continue attempting on failure
- * @deprecated
- */
-export async function useMonitorChatConnections(fedimint: FedimintBridge) {
-    const dispatch = useCommonDispatch()
-    const federationsWithChat = useCommonSelector(
-        selectFederationsWithChatConnections,
-    )
-
-    useEffect(() => {
-        // Can't connect any chats if no federations support it
-        if (federationsWithChat.length === 0) return
-
-        const attemptChatConnection = async (
-            federationId: Federation['id'],
-        ) => {
-            await dispatch(
-                connectChat({
-                    fedimint,
-                    federationId,
-                }),
-            ).unwrap()
-        }
-
-        const reconnectTimers = federationsWithChat.map(f => {
-            let reconnectTimeout: number | undefined
-            try {
-                log.debug('attemptChatConnection for federation', f.id)
-                attemptChatConnection(f.id)
-            } catch (error) {
-                // Attempt reconnect in 5s if it fails
-                log.error(
-                    `failed to connect chat for federation ${f.id} retrying in 5s...`,
-                )
-                reconnectTimeout = setTimeout(attemptChatConnection, 5000)
-            }
-
-            // reconnectTimeout is undefined if connection succeeds on first try
-            return reconnectTimeout
-        })
-
-        // Clear reconnectTimers if dependencies change in case any of the
-        // chat connections are in a 5-second retry state
-        return () => {
-            if (reconnectTimers.length > 0) {
-                reconnectTimers.filter(c => !!c).forEach(c => clearTimeout(c))
-            }
-        }
-        // Dependencies are non-exhaustive here intentionally to prevent
-        // multiple calls to connectChat which may cause race-condition bugs
-    }, [federationsWithChat.length])
+    return { member }
 }
 
 /** @deprecated */

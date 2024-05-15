@@ -9,7 +9,6 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import {
     selectActiveFederation,
-    selectHasNewChatActivityInOtherFeds,
     selectShouldShowUpgradeChat,
 } from '@fedi/common/redux'
 
@@ -50,10 +49,6 @@ const SelectedFederationHeader: React.FC = () => {
         return false
     }, [navState])
 
-    const hasNewChatActivityInOtherFeds = useAppSelector(
-        selectHasNewChatActivityInOtherFeds,
-    )
-
     const openFederationsDrawer = () => {
         drawerNavigator.openDrawer()
     }
@@ -77,15 +72,7 @@ const SelectedFederationHeader: React.FC = () => {
             {/* don't render this if the user has not joined any federations */}
             {activeFederation && (
                 <Pressable
-                    style={[
-                        style.federation,
-                        hasNewChatActivityInOtherFeds
-                            ? {
-                                  marginRight: theme.spacing.sm,
-                                  paddingHorizontal: theme.spacing.md,
-                              }
-                            : {},
-                    ]}
+                    style={[style.federation]}
                     onPress={openFederationsDrawer}>
                     <FederationLogo federation={activeFederation} size={24} />
                     <Text
@@ -96,14 +83,6 @@ const SelectedFederationHeader: React.FC = () => {
                         {activeFederation?.name}
                     </Text>
                     <SvgImage name="ChevronRight" size={20} />
-                    <View
-                        style={[
-                            style.unreadIndicator,
-                            hasNewChatActivityInOtherFeds
-                                ? { opacity: 1 }
-                                : { opacity: 0 },
-                        ]}
-                    />
                 </Pressable>
             )}
             {popupInfo && <PopupFederationCountdown />}
