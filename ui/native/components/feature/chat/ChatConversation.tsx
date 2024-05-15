@@ -210,7 +210,6 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                 </View>
             )}
             <ChatUserActionsOverlay
-                show={selectedUserId !== null}
                 onDismiss={() => setSelectedUserId(null)}
                 selectedUserId={selectedUserId}
                 roomId={id}
