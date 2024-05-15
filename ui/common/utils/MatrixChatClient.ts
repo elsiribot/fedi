@@ -609,10 +609,14 @@ export class MatrixChatClient {
 
     private async observeRoomPowerLevels(roomId: string) {
         // TODO: Listen for room power level events, re-fetch.
-        const powerLevels = await this.fedimint.matrixRoomGetPowerLevels({
-            roomId,
-        })
-        this.emit('roomPowerLevels', { roomId, powerLevels })
+        try {
+            const powerLevels = await this.fedimint.matrixRoomGetPowerLevels({
+                roomId,
+            })
+            this.emit('roomPowerLevels', { roomId, powerLevels })
+        } catch (error) {
+            log.warn('Failed to get power levels for roomId', roomId, error)
+        }
     }
 
     private async autoJoinInvites() {
