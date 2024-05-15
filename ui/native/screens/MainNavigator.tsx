@@ -27,6 +27,7 @@ import EditGroupHeader from '../components/feature/chat/EditGroupHeader'
 import GroupAdminHeader from '../components/feature/chat/GroupAdminHeader'
 import GroupHeader from '../components/feature/chat/GroupHeader'
 import GroupInviteHeader from '../components/feature/chat/GroupInviteHeader'
+import LegacyChatHeader from '../components/feature/chat/LegacyChatHeader'
 import MemberQrCodeHeader from '../components/feature/chat/MemberQrCodeHeader'
 import NewMessageHeader from '../components/feature/chat/NewMessageHeader'
 import ScanMemberCodeHeader from '../components/feature/chat/ScanMemberCodeHeader'
@@ -176,7 +177,6 @@ import StartSocialBackup from './StartSocialBackup'
 import TabsNavigator from './TabsNavigator'
 import Transactions from './Transactions'
 import UploadAvatarImage from './UploadAvatarImage'
-import LegacyChatHeader from './components/feature/chat/LegacyChatHeader'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 

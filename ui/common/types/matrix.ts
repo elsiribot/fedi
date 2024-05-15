@@ -1,9 +1,5 @@
 import type { MatrixEventContent } from '../utils/matrix'
-import type {
-    ObservableVecUpdate,
-    RpcMatrixMembership,
-    RpcRoomNotificationMode,
-} from './bindings'
+import type { ObservableVecUpdate, RpcMatrixMembership } from './bindings'
 
 export { MatrixEventContent }
 
@@ -50,7 +46,6 @@ export interface MatrixRoom {
     directUserId?: MatrixUser['id']
     broadcastOnly?: boolean
     notificationCount: number
-    notificationMode: RpcRoomNotificationMode
     isPublic?: boolean
 }
 
