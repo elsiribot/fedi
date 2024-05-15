@@ -409,7 +409,6 @@ export const getFederationGroupChats = (
         SupportedMetaFields.default_matrix_rooms,
         metadata,
     )
-    // const legacyDefaultGroupChats = getMetaField('default_group_chats', metadata)
 
     if (defaultGroupChats) {
         try {
