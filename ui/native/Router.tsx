@@ -34,6 +34,7 @@ import EditGroupHeader from './components/feature/chat/EditGroupHeader'
 import GroupAdminHeader from './components/feature/chat/GroupAdminHeader'
 import GroupHeader from './components/feature/chat/GroupHeader'
 import GroupInviteHeader from './components/feature/chat/GroupInviteHeader'
+import LegacyChatHeader from './components/feature/chat/LegacyChatHeader'
 import MemberQrCodeHeader from './components/feature/chat/MemberQrCodeHeader'
 import NewMessageHeader from './components/feature/chat/NewMessageHeader'
 import ScanMemberCodeHeader from './components/feature/chat/ScanMemberCodeHeader'
@@ -121,6 +122,7 @@ import GroupInvite from './screens/GroupInvite'
 import Initializing from './screens/Initializing'
 import JoinFederation from './screens/JoinFederation'
 import LanguageSettings from './screens/LanguageSettings'
+import LegacyChat from './screens/LegacyChat'
 import LocateSocialRecovery from './screens/LocateSocialRecovery'
 import LockedDevice from './screens/LockedDevice'
 import MemberQrCode from './screens/MemberQrCode'
@@ -481,6 +483,13 @@ const MainNavigator = () => {
                                 component={ConfirmSendChatPayment}
                                 options={() => ({
                                     header: () => <ConfirmChatSendHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="LegacyChat"
+                                component={LegacyChat}
+                                options={() => ({
+                                    header: () => <LegacyChatHeader />,
                                 })}
                             />
 

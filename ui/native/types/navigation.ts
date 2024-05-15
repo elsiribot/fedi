@@ -106,6 +106,7 @@ export type RootStackParamList = {
     RecoveryWalletTransfer: undefined
     RecoveryNewWallet: undefined
     RecoveryDeviceSelection: undefined
+    LegacyChat: undefined
     LockedDevice: undefined
     RecordBackupVideo: undefined
     GroupChat: { groupId: string }

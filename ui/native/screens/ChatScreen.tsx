@@ -8,6 +8,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
+    selectIsChatEmpty,
     selectIsMatrixChatEmpty,
     selectMatrixStatus,
     selectNeedsMatrixRegistration,
@@ -39,6 +40,8 @@ const ChatScreen: React.FC<Props> = () => {
     const syncStatus = useAppSelector(selectMatrixStatus)
     const needsChatRegistration = useAppSelector(selectNeedsMatrixRegistration)
     const shouldShowUpgradeChat = useAppSelector(selectShouldShowUpgradeChat)
+    const isLegacyChatEmpty = useAppSelector(selectIsChatEmpty)
+    const hasLegacyChatData = !isLegacyChatEmpty
 
     const isChatEmpty = useAppSelector(selectIsMatrixChatEmpty)
     const [hasOpenedNewChat, completeOpenedNewChat] =
@@ -115,6 +118,19 @@ const ChatScreen: React.FC<Props> = () => {
                         horizontalOffset={44}
                         verticalOffset={78}
                     />
+
+                    {hasLegacyChatData && (
+                        <Button
+                            fullWidth
+                            type="clear"
+                            title={
+                                <Text caption medium>
+                                    {t('feature.chat.view-archived-chats')}
+                                </Text>
+                            }
+                            onPress={() => navigation.push('LegacyChat')}
+                        />
+                    )}
                 </>
             ) : (
                 <ErrorBoundary

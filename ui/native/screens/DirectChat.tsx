@@ -1,16 +1,12 @@
-import { useIsFocused, useNavigation } from '@react-navigation/native'
+import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme, Text } from '@rneui/themed'
 import React, { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
+import { useChatMember } from '@fedi/common/hooks/chat'
 import {
-    useChatMember,
-    useUpdateLastMessageRead,
-} from '@fedi/common/hooks/chat'
-import {
-    selectAuthenticatedMember,
     selectChatConnectionOptions,
     selectChatMessages,
 } from '@fedi/common/redux'
@@ -42,29 +38,16 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
         }
     }, [memberId, connectionOptions, navigation])
 
-    const isFocused = useIsFocused()
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const messages = useAppSelector(s => selectChatMessages(s, memberId))
-    const { member, isFetchingMember } = useChatMember(memberId)
+    const { member } = useChatMember(memberId)
 
     const messageCollections = useMemo(
         () => makeMessageGroups(messages, 'desc'),
         [messages],
     )
 
-    // Use these hooks only if the screen is in focus, otherwise use pauseUpdates
-    useUpdateLastMessageRead(memberId, messages, isFocused !== true)
-
-    useEffect(() => {
-        if (memberId === authenticatedMember?.id) {
-            navigation.navigate('TabsNavigator')
-        }
-    }, [memberId, authenticatedMember?.id, navigation])
-
     let content: React.ReactNode
-    if (isFetchingMember) {
-        content = <ActivityIndicator />
-    } else if (!member) {
+    if (!member) {
         const username = memberId.split('@')[0]
         content = (
             <Text style={styles(theme).centeredText}>
@@ -74,7 +57,6 @@ const DirectChat: React.FC<Props> = ({ route }: Props) => {
     } else {
         content = (
             <>
-                {/* TODO: Restore XMPP read-only chats */}
                 <MessagesList messages={messageCollections} />
             </>
         )

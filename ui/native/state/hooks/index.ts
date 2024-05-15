@@ -1,21 +1,11 @@
 import messaging from '@react-native-firebase/messaging'
 import { useNavigation } from '@react-navigation/native'
-import {
-    MutableRefObject,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-} from 'react'
-import { AppStateStatus, AppState as RNAppState } from 'react-native'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 
 import { usePublishNotificationToken } from '@fedi/common/hooks/chat'
 import {
-    ensureHealthyXmppStream,
-    selectActiveFederationId,
     refreshActiveStabilityPool,
-    selectChatXmppClient,
     selectCurrency,
     selectStableBalance,
     selectStableBalancePending,
@@ -238,41 +228,6 @@ export const useBridge = () => {
             [activeFederationId],
         ),
     }
-}
-
-export const useXmppHealthCheck = () => {
-    const appStateRef = useRef<AppStateStatus>(
-        RNAppState.currentState,
-    ) as MutableRefObject<AppStateStatus>
-    const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(selectActiveFederationId)
-    const xmppClient = useAppSelector(selectChatXmppClient)
-
-    // This logic is needed to help gracefully resume the XMPP websocket stream
-    useEffect(() => {
-        if (!xmppClient) return
-
-        // Subscribe to changes in AppState to detect when app goes from
-        // background to foreground
-        const subscription = RNAppState.addEventListener(
-            'change',
-            nextAppState => {
-                if (
-                    appStateRef.current.match(/inactive|background/) &&
-                    nextAppState === 'active'
-                ) {
-                    dispatch(
-                        ensureHealthyXmppStream({
-                            fedimint,
-                            federationId: activeFederationId as string,
-                        }),
-                    )
-                }
-                appStateRef.current = nextAppState
-            },
-        )
-        return () => subscription.remove()
-    }, [activeFederationId, dispatch, xmppClient])
 }
 
 // This hook gets the device's FCM token and publishes it

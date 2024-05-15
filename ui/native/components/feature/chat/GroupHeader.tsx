@@ -2,7 +2,7 @@ import { RouteProp, useRoute } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
 import React from 'react'
-import { Pressable, StyleSheet } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 
 import { selectChatGroup } from '@fedi/common/redux'
 
@@ -10,7 +10,6 @@ import { useAppSelector } from '../../../state/hooks'
 import { RootStackParamList } from '../../../types/navigation'
 import { AvatarSize } from '../../ui/Avatar'
 import Header from '../../ui/Header'
-import { ChatConnectionBadge } from './ChatConnectionBadge'
 import GroupIcon from './GroupIcon'
 
 type GroupChatRouteProp = RouteProp<RootStackParamList, 'GroupChat'>
@@ -30,10 +29,7 @@ const GroupHeader: React.FC = () => {
                 backButton
                 centerContainerStyle={styles(theme).headerCenterContainer}
                 headerCenter={
-                    <Pressable
-                        /** This header is no longer pressable in XMPP read-only view */
-                        disabled
-                        style={styles(theme).groupNameContainer}>
+                    <View style={styles(theme).groupNameContainer}>
                         {group && (
                             <GroupIcon chat={group} size={AvatarSize.sm} />
                         )}
@@ -43,10 +39,9 @@ const GroupHeader: React.FC = () => {
                             style={styles(theme).groupNameText}>
                             {headerText}
                         </Text>
-                    </Pressable>
+                    </View>
                 }
             />
-            <ChatConnectionBadge offset={63} />
         </>
     )
 }
