@@ -1,5 +1,5 @@
 import { Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { PropsWithChildren, Ref, useState } from 'react'
 import { Pressable, StyleSheet, TextInput } from 'react-native'
 
 import { BIP39_WORD_LIST } from '@fedi/common/constants/bip39'
@@ -32,12 +32,7 @@ export const SeedWordInput = React.forwardRef<TextInput, SeedWordInputProps>(
                 }}>
                 <Text style={styles(theme).wordNumber}>{`${number}`}</Text>
                 <Input
-                    ref={(ref: unknown) => {
-                        if (typeof inputRef !== 'object' || !inputRef?.current)
-                            return
-
-                        inputRef.current = ref as TextInput
-                    }}
+                    ref={inputRef as Ref<PropsWithChildren<TextInput>>}
                     value={word}
                     onChangeText={onInputUpdated}
                     autoCorrect={false}
