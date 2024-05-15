@@ -26,6 +26,7 @@ import {
     RpcRoomListEntry,
     RpcRoomMember,
 } from '../types/bindings'
+import { isDev } from './environment'
 import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
 import {
@@ -94,7 +95,8 @@ export class MatrixChatClient {
         this.fedimint = fedimint
 
         fedimint.addListener('observableUpdate', ev => {
-            log.debug('Received observable update', { ev })
+            // This is noisy, but can be helpful for debugging
+            if (isDev()) log.debug('Received observable update', { ev })
             this.handleObservableUpdate(ev)
         })
 
