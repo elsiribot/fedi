@@ -34,7 +34,7 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
     const members = useAppSelector(s => selectMatrixRoomMembersByMe(s, roomId))
     const [isRefetching, setIsRefetching] = useState(false)
     const handleSelectMember = useCallback((userId: string) => {
-        setSelectedUserId(userId)
+        requestAnimationFrame(() => setSelectedUserId(userId))
     }, [])
 
     const handleRefresh = useCallback(() => {
@@ -58,6 +58,7 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
                 user={member}
                 selectUser={handleSelectMember}
                 disabled={isMe}
+                showAdmin={member.powerLevel >= MatrixPowerLevel.Admin}
                 rightIcon={
                     <Text small color={theme.colors.grey}>
                         {member.powerLevel >= MatrixPowerLevel.Admin
@@ -67,7 +68,7 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
                             : t('words.member')}
                     </Text>
                 }
-                showSuffix
+                showSuffix={!isMe}
             />
         )
     }
@@ -89,8 +90,9 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
                 showsVerticalScrollIndicator={false}
             />
             <ChatUserActionsOverlay
-                show={selectedUserId !== null}
-                onDismiss={() => setSelectedUserId(null)}
+                onDismiss={() =>
+                    requestAnimationFrame(() => setSelectedUserId(null))
+                }
                 selectedUserId={selectedUserId}
                 roomId={roomId}
             />

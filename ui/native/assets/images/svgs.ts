@@ -1,3 +1,4 @@
+export { default as AdminBadge } from '@fedi/common/assets/svgs/admin-badge.svg'
 export { default as Alarm } from '@fedi/common/assets/svgs/alarm.svg'
 export { default as AllowCameraAccessIcon } from '@fedi/common/assets/svgs/allow-camera-access-icon.svg'
 export { default as Apps } from '@fedi/common/assets/svgs/apps.svg'

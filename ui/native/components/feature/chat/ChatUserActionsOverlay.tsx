@@ -1,4 +1,6 @@
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
+import { StyleSheet, View } from 'react-native'
 
 import {
     addMatrixUser,
@@ -7,21 +9,21 @@ import {
 } from '@fedi/common/redux'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
+import { MatrixPowerLevel } from '../../../types'
 import CustomOverlay from '../../ui/CustomOverlay'
 import HoloLoader from '../../ui/HoloLoader'
+import SvgImage from '../../ui/SvgImage'
 import ChatUserActions from './ChatUserActions'
 
 interface Props {
     roomId: string
     selectedUserId: string | null
-    show: boolean
     onDismiss: () => void
 }
 
 export const ChatUserActionsOverlay: React.FC<Props> = ({
     roomId,
     selectedUserId,
-    show,
     onDismiss,
 }) => {
     const dispatch = useAppDispatch()
@@ -45,14 +47,27 @@ export const ChatUserActionsOverlay: React.FC<Props> = ({
         )
     }, [dispatch, member, hasStoredUser])
 
-    if (!selectedUserId) return <></>
+    const { theme } = useTheme()
+
+    if (!member) return <></>
+
+    const isAdmin =
+        !!member?.powerLevel && member.powerLevel >= MatrixPowerLevel.Admin
+    const style = styles(theme)
 
     return (
         <CustomOverlay
-            show={show}
+            show={!!member}
             onBackdropPress={() => onDismiss()}
             contents={{
-                title: member?.displayName ?? '',
+                title: (
+                    <View style={style.displayInline}>
+                        <Text medium style={style.title}>
+                            {member?.displayName ?? ''}
+                        </Text>
+                        {isAdmin && <SvgImage size={15} name={'AdminBadge'} />}
+                    </View>
+                ),
                 body: !member ? (
                     <HoloLoader size={48} />
                 ) : (
@@ -66,3 +81,15 @@ export const ChatUserActionsOverlay: React.FC<Props> = ({
         />
     )
 }
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        displayInline: {
+            flexDirection: 'row',
+            gap: theme.spacing.xs,
+            alignItems: 'center',
+        },
+        title: {
+            textAlign: 'center',
+        },
+    })

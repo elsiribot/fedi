@@ -5,11 +5,11 @@ import { Pressable, StyleSheet, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectMatrixAuth, selectMatrixRoomMembers } from '@fedi/common/redux'
-import { MatrixEvent } from '@fedi/common/types'
+import { MatrixEvent, MatrixRoomMember } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
 
-// import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 import { useAppSelector } from '../../../state/hooks'
+import SvgImage from '../../ui/SvgImage'
 import ChatAvatar from './ChatAvatar'
 import ChatEvent from './ChatEvent'
 import { MessageItemError } from './MessageItemError'
@@ -32,6 +32,9 @@ const ChatEventCollection: React.FC<Props> = ({
 
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const roomMembers = useAppSelector(s => selectMatrixRoomMembers(s, roomId))
+
+    const handlePress = (member?: MatrixRoomMember) =>
+        member && member?.membership !== 'leave' && onSelect(member.id)
 
     const earliestEvent = collection.slice(-1)[0].slice(-1)[0]
 
@@ -57,6 +60,7 @@ const ChatEventCollection: React.FC<Props> = ({
                     const isMe = sentBy === matrixAuth?.userId
                     const hasLeft = roomMember?.membership === 'leave'
                     const isBanned = roomMember?.membership === 'ban'
+                    const isAdmin = roomMember?.powerLevel === 100
                     const displayName = isBanned
                         ? t('feature.chat.removed-member')
                         : hasLeft
@@ -66,17 +70,21 @@ const ChatEventCollection: React.FC<Props> = ({
                         <View style={style.senderGroup} key={`ceci-${index}`}>
                             {showUsernames && !isMe && (
                                 <View style={style.senderNameContainer}>
-                                    <Text tiny>{displayName}</Text>
+                                    <Text small>{displayName}</Text>
+                                    {isAdmin && (
+                                        <SvgImage size={12} name="AdminBadge" />
+                                    )}
                                 </View>
                             )}
                             <View style={style.senderGroupContent}>
                                 {!isMe && showUsernames && (
                                     <Pressable
                                         style={style.senderAvatar}
-                                        onPress={() =>
-                                            roomMember &&
-                                            !hasLeft &&
-                                            onSelect(roomMember.id)
+                                        hitSlop={30}
+                                        pressRetentionOffset={30}
+                                        onPress={() => handlePress(roomMember)}
+                                        onLongPress={() =>
+                                            handlePress(roomMember)
                                         }>
                                         <ChatAvatar
                                             user={roomMember || { id: sentBy }}
@@ -137,6 +145,9 @@ const styles = (theme: Theme) =>
         },
         senderNameContainer: {
             paddingLeft: 43,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.xxs,
         },
         senderMessages: {
             flexDirection: 'column-reverse',
