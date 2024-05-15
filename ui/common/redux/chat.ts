@@ -36,7 +36,6 @@ import {
 import {
     getChatInfoFromMessage,
     getLatestMessage,
-    getLatestPaymentUpdate,
     makePaymentUpdatedAt,
 } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
@@ -694,21 +693,9 @@ export const selectLatestChatMessage = createSelector(
 )
 
 /** @deprecated XMPP legacy code */
-export const selectLatestPaymentUpdate = createSelector(
-    selectAllChatMessages,
-    messages => getLatestPaymentUpdate(messages),
-)
-
-/** @deprecated XMPP legacy code */
 export const selectLatestChatMessageTimestamp = createSelector(
     selectLatestChatMessage,
     latestMessage => latestMessage?.sentAt,
-)
-
-/** @deprecated XMPP legacy code */
-export const selectLatestPaymentUpdateTimestamp = createSelector(
-    selectLatestPaymentUpdate,
-    latestPaymentUpdate => latestPaymentUpdate?.payment?.updatedAt,
 )
 
 /** @deprecated XMPP legacy code */
@@ -938,15 +925,6 @@ export const selectHasUnseenMessages = createSelector(
     (latestMessageTimestamp, lastSeenMessageTimestamp) =>
         !!latestMessageTimestamp &&
         (lastSeenMessageTimestamp || 0) < latestMessageTimestamp,
-)
-
-/** @deprecated XMPP legacy code */
-export const selectHasUnseenPaymentUpdates = createSelector(
-    selectLatestPaymentUpdateTimestamp,
-    selectChatLastSeenMessageTimestamp,
-    (latestPaymentUpdateTimestamp, lastSeenMessageTimestamp) =>
-        !!latestPaymentUpdateTimestamp &&
-        (lastSeenMessageTimestamp || 0) < (latestPaymentUpdateTimestamp || 0),
 )
 
 /** @deprecated XMPP legacy code */

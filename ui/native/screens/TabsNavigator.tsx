@@ -21,8 +21,7 @@ import {
 import {
     refreshActiveStabilityPool,
     refreshFederations,
-    selectHasUnseenMessages,
-    selectHasUnseenPaymentUpdates,
+    selectMatrixHasNotifications,
 } from '@fedi/common/redux'
 
 import { fedimint } from '../bridge'
@@ -55,10 +54,9 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
     const isFocused = useIsFocused()
     const insets = useSafeAreaInsets()
     const [offline] = useState(false)
-    const hasUnseenMessages = useAppSelector(selectHasUnseenMessages)
-    const hasUnseenPaymentUpdates = useAppSelector(
-        selectHasUnseenPaymentUpdates,
-    )
+    // TODO: Reimplement unseen logic with matrix
+    // const hasUnseenMessages = useAppSelector(selectHasUnseenMessages)
+    const hasUnreadMessages = useAppSelector(selectMatrixHasNotifications)
     const isStabilityPoolSupported = useIsStabilityPoolSupported()
     const popupInfo = usePopupFederationInfo()
     const dispatch = useAppDispatch()
@@ -191,10 +189,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                     options={() => ({
                         title: t('words.chat'),
                         header: () => <ChatHeader />,
-                        tabBarBadge:
-                            hasUnseenMessages || hasUnseenPaymentUpdates
-                                ? ''
-                                : undefined,
+                        tabBarBadge: hasUnreadMessages ? '' : undefined,
                     })}
                 />
                 <Tab.Screen
