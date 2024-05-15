@@ -484,7 +484,9 @@ export class MatrixChatClient {
                 mapObservableUpdates(update.update, this.serializeRoomListItem),
             )
             getNewObservableIds(update.update, room =>
-                room.kind !== 'empty' ? room.value : false,
+                room.kind !== 'empty' && room.kind !== 'invalidated'
+                    ? room.value
+                    : false,
             ).forEach(roomId => {
                 this.observeRoomInfo(roomId).catch(err =>
                     log.warn('Failed to observe room info', {
@@ -651,7 +653,7 @@ export class MatrixChatClient {
     }
 
     private serializeRoomListItem(room: RpcRoomListEntry): MatrixRoomListItem {
-        if (room.kind === 'empty') {
+        if (room.kind === 'empty' || room.kind === 'invalidated') {
             return { status: MatrixRoomListItemStatus.loading }
         } else {
             return {
