@@ -118,6 +118,19 @@ const ChatScreen: React.FC<Props> = () => {
                         horizontalOffset={44}
                         verticalOffset={78}
                     />
+
+                    {hasLegacyChatData && (
+                        <Button
+                            fullWidth
+                            type="clear"
+                            title={
+                                <Text caption medium>
+                                    {t('feature.chat.view-archived-chats')}
+                                </Text>
+                            }
+                            onPress={() => navigation.push('LegacyChat')}
+                        />
+                    )}
                 </>
             ) : (
                 <ErrorBoundary
@@ -129,15 +142,6 @@ const ChatScreen: React.FC<Props> = () => {
                         </View>
                     )}>
                     <ChatsList />
-
-                    {hasLegacyChatData && (
-                        <Button
-                            fullWidth
-                            type="clear"
-                            title={t('feature.chat.view-archived-chats')}
-                            onPress={() => navigation.push('LegacyChat')}
-                        />
-                    )}
                 </ErrorBoundary>
             )}
 
