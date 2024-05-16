@@ -101,7 +101,8 @@ export class MatrixChatClient {
 
         fedimint.addListener('observableUpdate', ev => {
             // This is noisy, but can be helpful for debugging
-            if (isDev()) log.debug('Received observable update', { ev })
+            if (isDev())
+                log.debug('Received observable update', JSON.stringify(ev))
             this.handleObservableUpdate(ev)
         })
 
@@ -433,14 +434,10 @@ export class MatrixChatClient {
     }
 
     private unobserve(id: number) {
-        if (!this.observers[id]) {
-            log.warn('Attempted to cancel observer that does not exist', { id })
-            return
-        }
         this.fedimint
             .matrixObserverCancel({ id: id as unknown as bigint })
             .then(() => {
-                delete this.observers[id]
+                if (this.observers[id]) delete this.observers[id]
             })
             .catch(err => {
                 log.warn('Failed to cancel observer', { id, err })
@@ -454,7 +451,7 @@ export class MatrixChatClient {
                 'Received observable update without associated observer handler',
                 JSON.stringify(update),
             )
-            return
+            return this.unobserve(update.id)
         }
         observer(update)
     }
@@ -629,6 +626,7 @@ export class MatrixChatClient {
         })
     }
 
+    // Fake observe - just fetches
     private async observeRoomMembers(roomId: string) {
         // TODO: Listen for new room member events, re-fetch.
         // // Only observe room members once, subsequent calls are no-ops.
@@ -641,11 +639,13 @@ export class MatrixChatClient {
         // }
 
         const members = await this.fedimint.matrixRoomGetMembers({ roomId })
-        members.forEach(member => {
-            this.emit('roomMember', this.serializeRoomMember(member, roomId))
-        })
+        const serializedMembers = members.map(member =>
+            this.serializeRoomMember(member, roomId),
+        )
+        this.emit('roomMembers', { roomId, members: serializedMembers })
     }
 
+    // Fake observe - just fetches
     private async observeRoomPowerLevels(roomId: string) {
         // TODO: Listen for room power level events, re-fetch.
         try {

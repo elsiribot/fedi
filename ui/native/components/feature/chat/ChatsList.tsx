@@ -72,6 +72,7 @@ const ChatsList: React.FC = () => {
             onRefresh={handleRefresh}
             refreshing={isRefetching}
             keyExtractor={item => `${item.id}`}
+            progressViewOffset={-10}
             ListFooterComponent={
                 <>
                     {hasLegacyChatData && (
