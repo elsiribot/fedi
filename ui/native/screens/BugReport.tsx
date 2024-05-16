@@ -13,7 +13,6 @@ import {
 } from 'react-native'
 import DeviceInfo from 'react-native-device-info'
 import RNFS from 'react-native-fs'
-import 'react-native-get-random-values'
 import { Asset } from 'react-native-image-picker'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { v4 as uuidv4 } from 'uuid'
