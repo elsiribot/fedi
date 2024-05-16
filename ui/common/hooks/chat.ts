@@ -421,6 +421,7 @@ export const useChatPaymentUtils = (
     }
 }
 
+// Pass in fedimint bridge to make sure startMatrixClient is called
 export const useDisplayNameForm = (t: TFunction, fedimint?: FedimintBridge) => {
     const [username, setUsername] = useState<string>('')
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -457,13 +458,13 @@ export const useDisplayNameForm = (t: TFunction, fedimint?: FedimintBridge) => {
         async (onSuccess: () => void) => {
             setIsSubmitting(true)
             try {
-                // this is optional because it must be provided during onboarding
-                // to start the matrix client for the first time but this same hook
-                // can also be used after the client has started
-                if (fedimint) {
+                // this is optional because it must be provided during onboarding to start
+                // the matrix client for the first time but this same hook is also
+                // used after the client has started when editing the display name
+                if (fedimint && !matrixAuth) {
                     // this should be the first time we start the
-                    // matrix client for an initial registration
-                    await dispatch(startMatrixClient({ fedimint })).unwrap()
+                    // matrix client when registering for the first time
+                    await dispatch(startMatrixClient({ fedimint }))
                 }
                 await dispatch(
                     setMatrixDisplayName({ displayName: username }),
@@ -475,7 +476,7 @@ export const useDisplayNameForm = (t: TFunction, fedimint?: FedimintBridge) => {
             }
             setIsSubmitting(false)
         },
-        [dispatch, fedimint, t, toast, username],
+        [dispatch, fedimint, matrixAuth, t, toast, username],
     )
 
     return {
