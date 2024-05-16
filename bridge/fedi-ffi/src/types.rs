@@ -82,6 +82,39 @@ pub struct RpcFederationPreview {
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
+pub struct RpcCommunity {
+    pub id: String,
+    pub invite_code: String,
+    pub name: String,
+    pub version: u32,
+    pub meta: BTreeMap<String, String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CommunityJson {
+    pub id: String,
+    pub invite_code: String,
+    pub name: String,
+    pub version: u32,
+    #[serde(flatten)]
+    pub meta: BTreeMap<String, String>,
+}
+
+impl From<CommunityJson> for RpcCommunity {
+    fn from(value: CommunityJson) -> Self {
+        RpcCommunity {
+            id: value.id,
+            invite_code: value.invite_code,
+            name: value.name,
+            version: value.version,
+            meta: value.meta,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub enum GuardianStatus {
     Online { guardian: String, latency_ms: u32 },
     Error { guardian: String, error: String },

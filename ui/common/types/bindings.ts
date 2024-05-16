@@ -141,6 +141,14 @@ export interface RpcBridgeStatus {
     deviceIndexAssignmentStatus: RpcDeviceIndexAssignmentStatus
 }
 
+export interface RpcCommunity {
+    id: string
+    inviteCode: string
+    name: string
+    version: number
+    meta: Record<string, string>
+}
+
 export type RpcDeviceIndexAssignmentStatus = { assigned: number } | 'unassigned'
 
 export interface RpcDuration {
@@ -682,6 +690,16 @@ export interface RpcMethods {
     ]
     matrixIgnoreUser: [{ userId: RpcUserId }, null]
     matrixUnignoreUser: [{ userId: RpcUserId }, null]
+    communityPreview: [
+        { inviteCode: string },
+        {
+            id: string
+            inviteCode: string
+            name: string
+            version: number
+            meta: Record<string, string>
+        },
+    ]
 }
 
 export interface RpcModuleFediFeeSchedule {

@@ -5,7 +5,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, bail, Context, Result};
-use bitcoin::bech32::{self, ToBase32};
+use bitcoin::bech32::{self, FromBase32, ToBase32};
 use bitcoin::secp256k1::{Message, Secp256k1};
 use bitcoin::Address;
 use fedi_social_client::FediSocialCommonGen;
@@ -16,10 +16,12 @@ use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::CommonModuleInit;
 use fedimint_core::task::TaskGroup;
+use fedimint_core::util::FibonacciBackoff;
 use fedimint_core::PeerId;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use futures::future::join_all;
 use lightning_invoice::Bolt11Invoice;
+use serde::Deserialize;
 use tokio::sync::{Mutex, OnceCell};
 use tracing::{debug, error, info, info_span, warn, Instrument};
 
@@ -32,7 +34,7 @@ use super::types::{
     SocialRecoveryApproval, SocialRecoveryQr,
 };
 use crate::api::IFediApi;
-use crate::constants::{MATRIX_CHILD_ID, NOSTR_CHILD_ID};
+use crate::constants::{COMMUNITY_INVITE_CODE_HRP, MATRIX_CHILD_ID, NOSTR_CHILD_ID};
 use crate::device_registration::{self, DeviceRegistrationService};
 use crate::error::{get_error_code, ErrorCode};
 use crate::event::{Event, SocialRecoveryEvent, TypedEventExt as _};
@@ -45,9 +47,9 @@ use crate::storage::{
     AppState, DatabaseInfo, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule,
 };
 use crate::types::{
-    GuardianStatus, RpcBridgeStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
-    RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
-    RpcPayAddressResponse, RpcRegisteredDevice, RpcReturningMemberStatus,
+    CommunityJson, GuardianStatus, RpcBridgeStatus, RpcCommunity, RpcDeviceIndexAssignmentStatus,
+    RpcEcashInfo, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
+    RpcLightningGateway, RpcPayAddressResponse, RpcRegisteredDevice, RpcReturningMemberStatus,
 };
 use crate::utils::required_threashold_of;
 
@@ -451,6 +453,70 @@ impl Bridge {
             }),
             (Err(e),) => Err(e.context("Failed to connect")),
         }
+    }
+
+    pub async fn community_preview(&self, invite_code: &str) -> Result<RpcCommunity> {
+        #[derive(Debug, Deserialize)]
+        struct CommunityMeta {
+            community_meta_url: String,
+        }
+
+        // TODO shaurya move below code as a static util function in
+        // community::Community
+
+        // The invite code is bech32 encoded with a human-readable part "fedi:community"
+        // After decoding from bech32, we expect a JSON blob that at least has the key
+        // "community_meta_url" whose value is a valid URL to the community's meta JSON
+        // file.
+        let invite_code = invite_code.to_lowercase();
+
+        // TODO shaurya ok to ignore bech32 variant here?
+        let (hrp, data, _) = bech32::decode(&invite_code)?;
+        if hrp != COMMUNITY_INVITE_CODE_HRP {
+            bail!("Unexpected hrp: {hrp}");
+        }
+
+        let decoded = Vec::from_base32(&data)?;
+        let decoded_str = String::from_utf8(decoded)?;
+        let community_meta: CommunityMeta = serde_json::from_str(&decoded_str)?;
+
+        // Retry the network request closure with backoff and an overall timeout of one
+        // minute
+        let client = reqwest::Client::new();
+        fedimint_core::task::timeout(
+            Duration::from_secs(60),
+            fedimint_core::util::retry(
+                "fetch community meta",
+                FibonacciBackoff::default()
+                    .with_min_delay(Duration::from_millis(100))
+                    .with_max_delay(Duration::from_secs(3))
+                    .with_max_times(usize::MAX)
+                    .with_jitter(),
+                || {
+                    Self::fetch_community_meta_json(
+                        client.clone(),
+                        community_meta.community_meta_url.clone(),
+                    )
+                },
+            ),
+        )
+        .await?
+    }
+
+    async fn fetch_community_meta_json(
+        client: reqwest::Client,
+        community_meta_url: String,
+    ) -> anyhow::Result<RpcCommunity> {
+        Ok(fedimint_core::task::timeout(
+            Duration::from_secs(5),
+            client.get(community_meta_url).send(),
+        )
+        .await
+        .context(ErrorCode::Timeout)??
+        .json::<CommunityJson>()
+        .await
+        .context(ErrorCode::InvalidJson)?
+        .into())
     }
 
     /// Look up federation by id from in-memory hashmap

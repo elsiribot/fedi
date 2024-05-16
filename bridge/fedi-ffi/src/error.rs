@@ -35,6 +35,8 @@ pub enum ErrorCode {
     Timeout,
     #[error("Not allowed while recovering")]
     Recovery,
+    #[error("Deserializing JSON failed")]
+    InvalidJson,
 }
 
 pub fn get_error_code(err: &anyhow::Error) -> Option<ErrorCode> {
