@@ -92,6 +92,17 @@ const EditProfileSettings: React.FC = () => {
                 }
 
                 const fileDestination = `${RNFS.TemporaryDirectoryPath}/avatar_image`
+
+                try {
+                    const fileExists = await RNFS.exists(fileDestination)
+
+                    if (fileExists) {
+                        await RNFS.unlink(fileDestination)
+                    }
+                } catch (e) {
+                    log.error('no existing file to remove')
+                }
+
                 await RNFS.copyFile(file.uri, fileDestination)
 
                 await dispatch(
