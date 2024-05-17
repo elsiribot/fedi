@@ -554,9 +554,9 @@ export class FedimintBridge {
     }
 
     async getAccruedPendingFediFees(
-        args: bindings.RpcPayload<'getAccruedOutstandingFediFees'>,
+        args: bindings.RpcPayload<'getAccruedPendingFediFees'>,
     ) {
-        return this.rpcTyped('getAccruedOutstandingFediFees', args)
+        return this.rpcTyped('getAccruedPendingFediFees', args)
     }
 
     /*** BRIDGE EVENTS ***/
