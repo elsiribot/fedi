@@ -44,15 +44,19 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
         }
     }, [defaultGroup])
 
+    // Upon creating a room, we wait for the new room
+    // to show up in the room list before trying to navigate
     useEffect(() => {
-        if (loadedRoom) {
-            log.info('group created', loadedRoom)
+        const handleRoomLoaded = async () => {
+            if (!loadedRoom) return
+            log.info('Group created', loadedRoom)
             navigation.replace('ChatRoomConversation', {
                 roomId: loadedRoom.id,
                 chatType: ChatType.group,
             })
             setCreatingGroup(false)
         }
+        if (loadedRoom) handleRoomLoaded()
     }, [loadedRoom, navigation])
 
     const handleCreateGroup = useCallback(async () => {
