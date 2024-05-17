@@ -26,6 +26,8 @@ import {
 
 import { fedimint } from '../bridge'
 import ChatHeader from '../components/feature/chat/ChatHeader'
+import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
+import ModsHeader from '../components/feature/fedimods/ModsHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
 import Header from '../components/ui/Header'
 import SvgImage, {
@@ -40,6 +42,7 @@ import {
 } from '../types/navigation'
 import ChatScreen from './ChatScreen'
 import Home from './Home'
+import Mods from './Mods'
 import OmniScanner from './OmniScanner'
 
 const MAX_TABS_FONT_SCALE = 1.8
@@ -113,6 +116,8 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                                 return <Pressable {...props} />
                             case 'Chat':
                                 return <Pressable {...props} />
+                            case 'Mods':
+                                return <Pressable {...props} />
                             case 'OmniScanner':
                                 return <Pressable {...props} />
                             default:
@@ -139,6 +144,13 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                                 return (
                                     <SvgImage
                                         name={focused ? 'ChatFilled' : 'Chat'}
+                                        {...svgImageProps}
+                                    />
+                                )
+                            case 'Mods':
+                                return (
+                                    <SvgImage
+                                        name={focused ? 'Apps' : 'Apps'}
                                         {...svgImageProps}
                                     />
                                 )
@@ -190,6 +202,14 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                         title: t('words.chat'),
                         header: () => <ChatHeader />,
                         tabBarBadge: hasUnreadMessages ? '' : undefined,
+                    })}
+                />
+                <Tab.Screen
+                    name="Mods"
+                    component={Mods}
+                    options={() => ({
+                        title: t('words.mods'),
+                        header: () => <ModsHeader />,
                     })}
                 />
                 <Tab.Screen

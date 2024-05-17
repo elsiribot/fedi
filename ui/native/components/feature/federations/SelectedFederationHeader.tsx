@@ -49,6 +49,20 @@ const SelectedFederationHeader: React.FC = () => {
         return false
     }, [navState])
 
+    const isOnModsScreen = useMemo(() => {
+        const currentScreen = navState.routes[navState.index]
+
+        if (currentScreen.state && currentScreen.state.index) {
+            const currentTab =
+                currentScreen.state.routes[currentScreen.state.index]
+            if (currentTab.name === 'Mods') {
+                return true
+            }
+        }
+
+        return false
+    }, [navState])
+
     const openFederationsDrawer = () => {
         drawerNavigator.openDrawer()
     }
@@ -60,7 +74,11 @@ const SelectedFederationHeader: React.FC = () => {
         }
     }, [drawerNavigator, activeFederation, previousActiveFederation?.id])
 
+    const shouldHide =
+        (isOnChatScreen && shouldShowUpgradeChat) || isOnModsScreen
+
     const style = styles(theme)
+
     return (
         <SafeAreaView
             edges={['top', 'left', 'right']}

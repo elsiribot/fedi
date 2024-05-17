@@ -28,6 +28,7 @@ import {
     handleMatrixRoomTimelineObservableUpdates,
     matrixSlice,
 } from './matrix'
+import { modSlice } from './mod'
 import { nuxSlice } from './nux'
 import { recoverySlice } from './recovery'
 import { securitySlice } from './security'
@@ -55,6 +56,7 @@ export const commonReducers = {
     environment: environmentSlice.reducer,
     federation: federationSlice.reducer,
     matrix: matrixSlice.reducer,
+    mod: modSlice.reducer,
     nux: nuxSlice.reducer,
     recovery: recoverySlice.reducer,
     storage: storageSlice.reducer,

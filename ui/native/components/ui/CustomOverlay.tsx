@@ -24,6 +24,7 @@ type CustomOverlayButton = {
 export type CustomOverlayContents = {
     title?: React.ReactNode | string
     icon?: SvgImageName
+    headerElement?: React.ReactNode
     url?: string | null
     message?: string | null
     description?: string | null
@@ -53,6 +54,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
     const {
         title,
         icon = null,
+        headerElement,
         url = null,
         message = null,
         description = null,
@@ -141,6 +143,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                             containerStyle={style.overlayIcon}
                         />
                     )}
+                    {headerElement}
                     {url && (
                         <Text style={style.overlayUrl} numberOfLines={5}>
                             {url}

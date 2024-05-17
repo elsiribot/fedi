@@ -15,10 +15,11 @@ import SvgImage, {
 
 type ShortcutTileProps = {
     shortcut: Shortcut
+    onHold?: (shortcut: Shortcut) => void
     onSelect: (shortcut: Shortcut) => void
 }
 
-const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
+const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
     const { theme } = useTheme()
     const { fontScale } = useWindowDimensions()
 
@@ -64,6 +65,7 @@ const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
                 recoveryInProgress ? style.disabled : null,
             ]}
             onPress={() => onSelect(shortcut)}
+            onLongPress={() => onHold?.(shortcut)}
             disabled={recoveryInProgress}>
             <View>{renderIcon()}</View>
             <View style={style.title}>

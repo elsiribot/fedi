@@ -7,7 +7,7 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch } from 'react-redux'
 
 import { useDebouncedEffect } from '@fedi/common/hooks/util'
-import { addCustomFediMod, selectActiveFederationId } from '@fedi/common/redux'
+import { addCustomGlobalMod } from '@fedi/common/redux/mod'
 import { fetchMetadataFromUrl } from '@fedi/common/utils/fedimods'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -28,7 +28,6 @@ const AddFediMod: React.FC = () => {
     const dispatch = useDispatch()
     const insets = useSafeAreaInsets()
     const navigation = useNavigation()
-    const federationId = useAppSelector(selectActiveFederationId)
 
     const [url, setUrl] = useState('')
     const [title, setTitle] = useState('')
@@ -40,7 +39,6 @@ const AddFediMod: React.FC = () => {
     const style = styles(theme, insets)
 
     const handleSubmit = async () => {
-        if (!federationId) return
         try {
             const validUrl = new URL(
                 /^https?:\/\//.test(url) ? url : `https://${url}`,
@@ -49,8 +47,7 @@ const AddFediMod: React.FC = () => {
                 .toLowerCase()
 
             dispatch(
-                addCustomFediMod({
-                    federationId,
+                addCustomGlobalMod({
                     fediMod: {
                         id: `custom-${Date.now()}`,
                         title,
@@ -60,7 +57,7 @@ const AddFediMod: React.FC = () => {
                 }),
             )
 
-            navigation.navigate('TabsNavigator')
+            navigation.goBack() // multiple ways we could have been sent here
         } catch (e) {
             log.error('handleSubmit', e)
         }
@@ -105,7 +102,7 @@ const AddFediMod: React.FC = () => {
         500,
     )
 
-    const canSave = isValidUrl && !isFetching && title && url && federationId
+    const canSave = isValidUrl && !isFetching && title && url
 
     if (action === 'scan') {
         return (

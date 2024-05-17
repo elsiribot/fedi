@@ -48,6 +48,7 @@ export type MainNavigatorDrawerParamList = {
 export type TabsNavigatorParamList = {
     Chat: undefined
     Home: { offline: boolean }
+    Mods: undefined
     OmniScanner: undefined
 }
 export type RootStackParamList = {
