@@ -60,6 +60,7 @@ export type ErrorCode =
     | 'unknownObservable'
     | 'timeout'
     | 'recovery'
+    | { invalidJson: string }
 
 export type Event =
     | { transaction: TransactionEvent }
@@ -142,9 +143,9 @@ export interface RpcBridgeStatus {
 }
 
 export interface RpcCommunity {
-    id: string
+    communityId: string
     inviteCode: string
-    name: string
+    communityName: string
     version: number
     meta: Record<string, string>
 }
@@ -693,9 +694,9 @@ export interface RpcMethods {
     communityPreview: [
         { inviteCode: string },
         {
-            id: string
+            communityId: string
             inviteCode: string
-            name: string
+            communityName: string
             version: number
             meta: Record<string, string>
         },
