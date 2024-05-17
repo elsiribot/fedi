@@ -114,6 +114,8 @@ export class MatrixChatClient {
                     this.observeRoomList()
                         .then(() => {
                             resolve(this.serializeAuth(auth))
+                            // Wait until after the roomlist is observed 
+                            // to prevent flickering on startup
                             this.observeSyncStatus()
                             this.autoJoinInvites()
                         })
