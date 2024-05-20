@@ -26,16 +26,14 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
         t('feature.chat.new-group'),
     )
     const [creatingGroup, setCreatingGroup] = useState<boolean>(false)
-    const [broadcastOnly, setBroadcastOnly] = useState<boolean>(
-        defaultGroup === true,
-    )
-    const [isPublic, setIsPublic] = useState<boolean>(defaultGroup === true)
+    const [broadcastOnly, setBroadcastOnly] = useState<boolean>(false)
+    const [isPublic, setIsPublic] = useState<boolean>(false)
     const toast = useToast()
 
     useEffect(() => {
-        if (!defaultGroup) {
-            setBroadcastOnly(false)
-            setIsPublic(false)
+        if (defaultGroup === true) {
+            setBroadcastOnly(true)
+            setIsPublic(true)
         }
     }, [defaultGroup])
 
@@ -88,7 +86,11 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                 </Text>
                 <Switch
                     value={broadcastOnly}
-                    onValueChange={value => setBroadcastOnly(value)}
+                    onValueChange={value => {
+                        // for now default groups must be public
+                        if (defaultGroup === true) return
+                        setBroadcastOnly(value)
+                    }}
                 />
             </View>
             {defaultGroup && (
@@ -98,7 +100,11 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                     </Text>
                     <Switch
                         value={isPublic}
-                        onValueChange={value => setIsPublic(value)}
+                        onValueChange={value => {
+                            // for now default groups must be public
+                            if (defaultGroup === true) return
+                            setIsPublic(value)
+                        }}
                     />
                 </View>
             )}
