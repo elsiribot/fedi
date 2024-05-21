@@ -31,7 +31,7 @@ use matrix_sdk::ruma::{assign, OwnedMxcUri, RoomId, UserId};
 use matrix_sdk::sliding_sync::Ranges;
 use matrix_sdk::{Client, RoomInfo, RoomMemberships};
 use matrix_sdk_ui::sync_service::{self, SyncService};
-use matrix_sdk_ui::timeline::{default_event_filter, PaginationOptions};
+use matrix_sdk_ui::timeline::default_event_filter;
 use matrix_sdk_ui::{room_list_service, RoomListService};
 use mime::Mime;
 use serde::Serialize;
@@ -294,7 +294,12 @@ impl Matrix {
                 return Ok(RpcMatrixAccountSession {
                     user_id: meta.user_id,
                     device_id: meta.device_id,
-                    avatar_url: self.client.account().get_cached_avatar_url().await?,
+                    avatar_url: self
+                        .client
+                        .account()
+                        .get_cached_avatar_url()
+                        .await?
+                        .map(|x| x.to_string()),
                     display_name: Some(cached_display_name),
                 });
             }
@@ -389,11 +394,6 @@ impl Matrix {
             .await
     }
 
-    pub async fn room_list_invites(&self) -> Result<ObservableVec<RpcRoomListEntry>> {
-        self.room_list_to_observable(self.room_list_service.invites().await?)
-            .await
-    }
-
     async fn room_list_to_observable(
         &self,
         list: room_list_service::RoomList,
@@ -465,7 +465,7 @@ impl Matrix {
     }
 
     async fn room(&self, room_id: &RoomId) -> Result<room_list_service::Room, anyhow::Error> {
-        Ok(self.room_list_service.room(room_id).await?)
+        Ok(self.room_list_service.room(room_id)?)
     }
 
     /// See [`matrix_sdk_ui::Timeline`].
@@ -529,9 +529,7 @@ impl Matrix {
         events_limit: u16,
     ) -> Result<()> {
         let timeline = self.timeline(room_id).await?;
-        timeline
-            .paginate_backwards(PaginationOptions::simple_request(events_limit))
-            .await?;
+        timeline.paginate_backwards(events_limit).await?;
         Ok(())
     }
 
@@ -540,12 +538,16 @@ impl Matrix {
         room_id: &RoomId,
     ) -> Result<Observable<RpcBackPaginationStatus>> {
         let timeline = self.timeline(room_id).await?;
-        let mut sub = timeline.back_pagination_status();
+        let (current, stream) = timeline
+            .live_back_pagination_status()
+            .await
+            .context("we only have live rooms")?;
         self.make_observable(
-            RpcBackPaginationStatus::from(sub.get()),
+            RpcBackPaginationStatus::from(current),
             move |this, id| async move {
+                let mut stream = std::pin::pin!(stream);
                 let mut update_index = 0;
-                while let Some(value) = sub.next().await {
+                while let Some(value) = stream.next().await {
                     this.send_observable_update(ObservableUpdate::new(
                         id,
                         update_index,
@@ -564,7 +566,7 @@ impl Matrix {
         let timeline = self.timeline(room_id).await?;
         timeline
             .send(RoomMessageEventContent::text_plain(message).into())
-            .await;
+            .await?;
         Ok(())
     }
 
@@ -583,7 +585,7 @@ impl Matrix {
                 )
                 .into(),
             )
-            .await;
+            .await?;
         Ok(())
     }
 
@@ -591,7 +593,7 @@ impl Matrix {
     pub async fn wait_for_room_id(&self, room_id: &RoomId) -> Result<()> {
         fedimint_core::task::timeout(Duration::from_secs(20), async {
             loop {
-                match self.room_list_service.room(room_id).await {
+                match self.room_list_service.room(room_id) {
                     Ok(_) => return Ok(()),
                     Err(room_list_service::Error::RoomNotFound(_)) => {
                         fedimint_core::task::sleep(Duration::from_millis(100)).await;

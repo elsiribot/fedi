@@ -823,11 +823,6 @@ async fn matrixRoomList(bridge: Arc<Bridge>) -> anyhow::Result<ObservableRoomLis
     Ok(ObservableRoomList(matrix.room_list().await?))
 }
 
-#[macro_rules_derive(rpc_method!)]
-async fn matrixRoomListInvites(bridge: Arc<Bridge>) -> anyhow::Result<ObservableRoomList> {
-    let matrix = get_matrix(&bridge).await?;
-    Ok(ObservableRoomList(matrix.room_list_invites().await?))
-}
 // inclusive on both sides
 ts_type_de!(RpcRanges: Ranges = "Array<{start: number, end: number}>");
 #[macro_rules_derive(rpc_method!)]
@@ -1372,7 +1367,6 @@ rpc_methods!(RpcMethods {
     matrixGetAccountSession,
     matrixObserveSyncIndicator,
     matrixRoomList,
-    matrixRoomListInvites,
     matrixRoomListUpdateRanges,
     matrixRoomTimelineItems,
     matrixRoomTimelineItemsPaginateBackwards,
