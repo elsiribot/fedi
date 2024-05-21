@@ -60,6 +60,7 @@ export type ErrorCode =
     | 'unknownObservable'
     | 'timeout'
     | 'recovery'
+    | { invalidJson: string }
 
 export type Event =
     | { transaction: TransactionEvent }
@@ -139,6 +140,14 @@ export interface RpcBitcoinDetails {
 export interface RpcBridgeStatus {
     matrixSetup: boolean
     deviceIndexAssignmentStatus: RpcDeviceIndexAssignmentStatus
+}
+
+export interface RpcCommunity {
+    communityId: string
+    inviteCode: string
+    communityName: string
+    version: number
+    meta: Record<string, string>
 }
 
 export type RpcDeviceIndexAssignmentStatus = { assigned: number } | 'unassigned'
@@ -682,6 +691,16 @@ export interface RpcMethods {
     ]
     matrixIgnoreUser: [{ userId: RpcUserId }, null]
     matrixUnignoreUser: [{ userId: RpcUserId }, null]
+    communityPreview: [
+        { inviteCode: string },
+        {
+            communityId: string
+            inviteCode: string
+            communityName: string
+            version: number
+            meta: Record<string, string>
+        },
+    ]
 }
 
 export interface RpcModuleFediFeeSchedule {

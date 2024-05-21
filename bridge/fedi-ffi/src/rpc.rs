@@ -43,7 +43,7 @@ use crate::matrix::{
 };
 use crate::observable::{Observable, ObservableVec};
 use crate::types::{
-    GuardianStatus, RpcBridgeStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
+    GuardianStatus, RpcBridgeStatus, RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
     RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
     RpcPayAddressResponse, RpcRegisteredDevice,
 };
@@ -684,6 +684,14 @@ async fn bridgeStatus(bridge: Arc<Bridge>) -> anyhow::Result<RpcBridgeStatus> {
     bridge.bridge_status().await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn communityPreview(
+    bridge: Arc<Bridge>,
+    invite_code: String,
+) -> anyhow::Result<RpcCommunity> {
+    bridge.community_preview(&invite_code).await
+}
+
 async fn get_matrix(bridge: &Bridge) -> anyhow::Result<&Matrix> {
     bridge.matrix.get().context(ErrorCode::MatrixNotInitialized)
 }
@@ -1281,6 +1289,9 @@ rpc_methods!(RpcMethods {
     matrixRoomUnbanUser,
     matrixIgnoreUser,
     matrixUnignoreUser,
+
+    // Communities
+    communityPreview,
 });
 
 #[instrument(

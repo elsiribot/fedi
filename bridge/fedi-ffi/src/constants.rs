@@ -57,3 +57,5 @@ pub const FEDI_DEVICE_REGISTRATION_URL: &str = "https://prod-device-control.dev.
 pub const GLOBAL_MATRIX_SERVER: &str = "https://matrix-synapse-homeserver2.dev.fedibtc.com";
 pub const GLOBAL_MATRIX_SLIDING_SYNC_PROXY: &str =
     "https://sliding.matrix-synapse-homeserver2.dev.fedibtc.com";
+
+pub const COMMUNITY_INVITE_CODE_HRP: &str = "fedi:community";
