@@ -823,6 +823,14 @@ export const joinDefaultGroupChats = createAsyncThunk<
     })
 })
 
+export const ensureHealthyMatrixStream = createAsyncThunk<void, void>(
+    'chat/ensureHealthyMatrixStream',
+    () => {
+        const client = getMatrixClient()
+        client.refreshSyncStatus()
+    },
+)
+
 /*** Selectors ***/
 
 export const selectMatrixStatus = (s: CommonState) => s.matrix.status

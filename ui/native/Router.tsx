@@ -14,7 +14,7 @@ import { OmniLinkHandler } from './components/feature/omni/OmniLinkHandler'
 import { MainNavigator } from './screens/MainNavigator'
 import SwitchingFederations from './screens/SwitchingFederations'
 import { useOmniLinkContext } from './state/contexts/OmniLinkContext'
-import { useMatrixPushNotifications } from './state/hooks'
+import { useMatrixHealthCheck, useMatrixPushNotifications } from './state/hooks'
 import {
     MainNavigatorDrawerParamList,
     DRAWER_NAVIGATION_ID,
@@ -35,8 +35,8 @@ const Router = () => {
     const toast = useToast()
     const routeRef = useRef<string>()
 
-    // Makes sure to check XMPP socket health when app is foregrounded
-    // useXmppHealthCheck()
+    // Makes sure to check Matrix connection health when app is foregrounded
+    useMatrixHealthCheck()
 
     // Publishes an FCM push notification token if chat is available
     useMatrixPushNotifications()

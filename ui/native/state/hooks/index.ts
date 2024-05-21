@@ -1,6 +1,13 @@
 import messaging from '@react-native-firebase/messaging'
 import { useNavigation } from '@react-navigation/native'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import {
+    MutableRefObject,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+} from 'react'
+import { AppStateStatus, AppState as RNAppState } from 'react-native'
 import DeviceInfo from 'react-native-device-info'
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 
@@ -11,6 +18,7 @@ import {
     selectStableBalance,
     selectStableBalancePending,
     selectActiveFederation,
+    ensureHealthyMatrixStream,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
@@ -229,6 +237,31 @@ export const useBridge = () => {
             [activeFederationId],
         ),
     }
+}
+
+export const useMatrixHealthCheck = () => {
+    const appStateRef = useRef<AppStateStatus>(
+        RNAppState.currentState,
+    ) as MutableRefObject<AppStateStatus>
+    const dispatch = useAppDispatch()
+
+    useEffect(() => {
+        // Subscribe to changes in AppState to detect when app goes from
+        // background to foreground
+        const subscription = RNAppState.addEventListener(
+            'change',
+            nextAppState => {
+                if (
+                    appStateRef.current.match(/inactive|background/) &&
+                    nextAppState === 'active'
+                ) {
+                    dispatch(ensureHealthyMatrixStream())
+                }
+                appStateRef.current = nextAppState
+            },
+        )
+        return () => subscription.remove()
+    }, [dispatch])
 }
 
 // This hook gets the device's FCM token and publishes it

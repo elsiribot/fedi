@@ -356,6 +356,20 @@ export class MatrixChatClient {
         await this.observeRoomList()
     }
 
+    async refreshSyncStatus() {
+        // Clear existing observer
+        const oldId = this.clientObserverMap['status']
+        log.debug('refreshSyncStatus oldId', oldId)
+
+        if (typeof oldId === 'number' && oldId !== Number.MAX_SAFE_INTEGER) {
+            log.debug('clearing observer:', oldId)
+            await this.unobserve(oldId)
+            delete this.clientObserverMap['status']
+        }
+        // Recreate observer with fresh "initial list"
+        await this.observeSyncStatus()
+    }
+
     async configureNotificationsPusher(
         token: string,
         appId: string,
@@ -477,6 +491,10 @@ export class MatrixChatClient {
     }
 
     private async observeSyncStatus() {
+        log.debug(
+            'observeSyncStatus this.clientObserverMap[status]',
+            this.clientObserverMap['status'],
+        )
         // Only observe the sync status once, subsequent calls are no-ops.
         if (this.clientObserverMap['status'] !== undefined) return
 
@@ -499,6 +517,10 @@ export class MatrixChatClient {
         handleEmit(initial)
 
         this.observe(id, (update: ObservableUpdate<typeof initial>) => {
+            log.debug(
+                'Recieved syncStatus observable update',
+                JSON.stringify(update),
+            )
             handleEmit(update.update)
         })
     }
