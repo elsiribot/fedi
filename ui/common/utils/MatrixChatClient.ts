@@ -517,17 +517,6 @@ export class MatrixChatClient {
             makeInitialResetUpdate(initial.map(this.serializeRoomListItem)),
         )
 
-        // Observe all of the rooms
-        await Promise.all(
-            initial.map(async room => {
-                if ('value' in room) {
-                    await this.observeRoomInfo(room.value)
-                    await this.observeRoomPowerLevels(room.value)
-                    await this.observeRoomNotificationMode(room.value)
-                }
-            }),
-        )
-
         // Listen and emit on observable updates
         this.observe(id, (update: ObservableVecUpdate<RpcRoomListEntry>) => {
             this.emit(
@@ -551,8 +540,25 @@ export class MatrixChatClient {
                         err,
                     }),
                 )
+                this.observeRoomNotificationMode(roomId).catch(err =>
+                    log.warn('Failed to observe room notification mode', {
+                        roomId,
+                        err,
+                    }),
+                )
             })
         })
+
+        // Observe all of the rooms
+        await Promise.all(
+            initial.map(async room => {
+                if ('value' in room) {
+                    await this.observeRoomInfo(room.value)
+                    await this.observeRoomPowerLevels(room.value)
+                    await this.observeRoomNotificationMode(room.value)
+                }
+            }),
+        )
     }
 
     private async observeRoomInfo(roomId: string) {
