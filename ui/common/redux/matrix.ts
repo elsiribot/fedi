@@ -710,7 +710,7 @@ export const paginateMatrixRoomTimeline = createAsyncThunk<
     { state: CommonState }
 >(
     'matrix/paginateMatrixRoomTimeline',
-    async ({ roomId, limit = 20 }, { getState }) => {
+    async ({ roomId, limit = 30 }, { getState }) => {
         const numEvents = getState().matrix.roomTimelines[roomId]?.length || 0
         const client = getMatrixClient()
         return client.roomPaginateTimeline(roomId, numEvents + limit)

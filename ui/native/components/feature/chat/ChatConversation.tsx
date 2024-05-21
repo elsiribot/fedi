@@ -130,7 +130,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
         if (isPaginating || hasPaginated || isAtEnd) return
         setIsPaginating(true)
         setHasPaginated(true)
-        dispatch(paginateMatrixRoomTimeline({ roomId: id, limit: 10 }))
+        dispatch(paginateMatrixRoomTimeline({ roomId: id, limit: 30 }))
             .unwrap()
             .then(({ end }) => setIsAtEnd(end))
             .finally(() => setIsPaginating(false))
