@@ -515,8 +515,3 @@ export const selectFederationsWithChatConnections = createSelector(
         }, [])
     },
 )
-
-export const selectFederationsWithBalances = createSelector(
-    selectFederations,
-    federations => federations.filter(f => f.balance > 0),
-)

@@ -155,7 +155,16 @@ const styles = (theme: Theme) =>
     })
 
 const areEqual = (prev: Props, curr: Props) => {
-    return prev.collection[0][0].id === curr.collection[0][0].id
+    // Chat payments can update in place with the same ID so this requires special memoization
+    if (curr.collection[0][0].content.msgtype === 'xyz.fedi.payment') {
+        return (
+            prev.collection[0][0].id === curr.collection[0][0].id &&
+            prev.collection[0][0].content.body ===
+                curr.collection[0][0].content.body
+        )
+    } else {
+        return prev.collection[0][0].id === curr.collection[0][0].id
+    }
 }
 
 export default React.memo(ChatEventCollection, areEqual)

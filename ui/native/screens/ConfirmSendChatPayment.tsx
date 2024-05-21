@@ -17,6 +17,7 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../bridge'
 import ChatAvatar from '../components/feature/chat/ChatAvatar'
+import FederationWalletSelector from '../components/feature/send/FederationWalletSelector'
 import FeeOverlay from '../components/feature/send/FeeOverlay'
 import SendAmounts from '../components/feature/send/SendAmounts'
 import SendPreviewDetails from '../components/feature/send/SendPreviewDetails'
@@ -66,6 +67,7 @@ const ConfirmSendChatPayment: React.FC<Props> = ({ route, navigation }) => {
 
     return (
         <View style={style.container}>
+            <FederationWalletSelector />
             <SendAmounts
                 balanceDisplay={balanceDisplay}
                 formattedPrimaryAmount={formattedPrimaryAmount}

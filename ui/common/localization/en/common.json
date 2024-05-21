@@ -227,6 +227,7 @@
         "webln-payment-rejected": "Payment rejected",
         "webln-payment-request-rejected": "Payment request rejected",
         "you-have-already-joined": "You have already joined this federation",
+        "you-must-join-a-federation": "You must join a federation before you can make payments",
         "user-is-already-in-group": "This user is already a member of this group"
     },
     "feature": {

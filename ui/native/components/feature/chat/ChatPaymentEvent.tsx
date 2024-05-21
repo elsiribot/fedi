@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -5,9 +6,11 @@ import { View, StyleSheet } from 'react-native'
 
 import { useMatrixPaymentEvent } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
-import { MatrixPaymentEvent } from '@fedi/common/types'
+import { MSats, MatrixPaymentEvent } from '@fedi/common/types'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../../../bridge'
+import { NavigationHook } from '../../../types/navigation'
 import HoloLoader from '../../ui/HoloLoader'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import ReceiveForeignEcashOverlay from './ReceiveForeignEcashOverlay'
@@ -20,6 +23,7 @@ const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
     const { t } = useTranslation()
     const toast = useToast()
     const { theme } = useTheme()
+    const navigation = useNavigation<NavigationHook>()
 
     const {
         messageText,
@@ -33,7 +37,17 @@ const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
         event,
         fedimint,
         t,
-        onError: _ => toast.error(t, 'errors.chat-payment-failed'),
+        onError: (err: unknown) => toast.error(t, err),
+        onPayWithForeignEcash: () => {
+            if (event.content?.amount && event.roomId) {
+                navigation.navigate('ConfirmSendChatPayment', {
+                    amount: amountUtils.msatToSat(
+                        event.content.amount as MSats,
+                    ),
+                    roomId: event.roomId,
+                })
+            }
+        },
     })
 
     const style = styles(theme)

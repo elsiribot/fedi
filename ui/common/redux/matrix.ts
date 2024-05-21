@@ -710,7 +710,7 @@ export const paginateMatrixRoomTimeline = createAsyncThunk<
     { state: CommonState }
 >(
     'matrix/paginateMatrixRoomTimeline',
-    async ({ roomId, limit = 20 }, { getState }) => {
+    async ({ roomId, limit = 30 }, { getState }) => {
         const numEvents = getState().matrix.roomTimelines[roomId]?.length || 0
         const client = getMatrixClient()
         return client.roomPaginateTimeline(roomId, numEvents + limit)
@@ -822,6 +822,14 @@ export const joinDefaultGroupChats = createAsyncThunk<
         })
     })
 })
+
+export const ensureHealthyMatrixStream = createAsyncThunk<void, void>(
+    'chat/ensureHealthyMatrixStream',
+    () => {
+        const client = getMatrixClient()
+        client.refreshSyncStatus()
+    },
+)
 
 /*** Selectors ***/
 
@@ -1136,6 +1144,26 @@ export const selectLatestMatrixRoomEventId = (
         }
     }
 }
+
+export const selectCanPayFromOtherFeds = createSelector(
+    (s: CommonState) => selectFederations(s),
+    (s: CommonState, chatPayment: MatrixPaymentEvent) => chatPayment,
+    (federations, chatPayment): boolean => {
+        return !!federations.find(f => f.balance > chatPayment.content.amount)
+    },
+)
+
+export const selectCanSendPayment = createSelector(
+    (s: CommonState) => selectFederations(s),
+    (s: CommonState, chatPayment: MatrixPaymentEvent) => chatPayment,
+    (federations, chatPayment): boolean => {
+        return !!federations.find(
+            f =>
+                f.id === chatPayment.content.federationId &&
+                f.balance > chatPayment.content.amount,
+        )
+    },
+)
 
 export const selectCanClaimPayment = createSelector(
     (s: CommonState) => selectFederations(s),
