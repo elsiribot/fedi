@@ -184,12 +184,14 @@ export const matrixSlice = createSlice({
     },
     extraReducers: builder => {
         builder.addCase(startMatrixClient.pending, state => {
+            log.debug('startMatrixClient.pending')
             state.status = MatrixSyncStatus.initialSync
         })
         builder.addCase(startMatrixClient.fulfilled, (state, action) => {
             state.auth = action.payload
         })
         builder.addCase(startMatrixClient.rejected, state => {
+            log.debug('startMatrixClient.rejected')
             state.status = MatrixSyncStatus.stopped
         })
 
@@ -327,6 +329,7 @@ export const startMatrixClient = createAsyncThunk<
     client.on('error', err => dispatch(addMatrixError(err)))
 
     client.on('status', status => {
+        log.debug('Matrix client status update: ', status)
         if (status === getState().matrix.status) return
         dispatch(setMatrixStatus(status))
     })
