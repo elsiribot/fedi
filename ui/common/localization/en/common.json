@@ -173,7 +173,7 @@
         "total-fees": "Total Fees",
         "this-group": "this group",
         "transaction-id": "Transaction ID",
-        "transaction-received": "Transaction received",
+        "payment-received": "Payment Received",
         "view-public-federations": "View public federations",
         "yearly-fee": "Yearly fee",
         "you-are-offline": "You are currently in offline mode"
@@ -200,6 +200,7 @@
         "failed-to-leave-federation": "Failed to leave federation",
         "failed-to-load-tos": "Failed to load terms of service",
         "failed-to-pay-invoice": "Failed to pay invoice",
+        "failed-to-update-notification": "Failed to update notification setting for this chat",
         "failed-to-switch-gateways": "Failed to switch gateways",
         "get-nostr-pubkey-failed": "Failed to get nostr pub key",
         "history-render-error": "Encountered an error rendering this item",
@@ -229,6 +230,11 @@
         "user-is-already-in-group": "This user is already a member of this group"
     },
     "feature": {
+        "notifications": {
+            "new-messages-count": "You have {{unread}} new messages",
+            "new-messages": "You have new messages",
+            "open-chat": "Open Chat"
+        },
         "backup": {
             "backup-social-recovery-file": "Backup your social recovery file",
             "backup-to-google-drive": "Backup to Google Drive",
@@ -347,6 +353,11 @@
             "new-group": "New group",
             "new-message": "New message",
             "new-messages": "New messages",
+            "notification-settings": "Chat Notification Settings",
+            "notification-always": "Always Notify",
+            "notification-mentions": "Only Mentions",
+            "notification-mute": "Mute",
+            "notification-update-success": "Updated chat notifications settings",
             "no-admins": "No broadcast admins yet",
             "no-messages": "No messages in this group yet.",
             "no-one-is-in-this-group": "No one is in this group yet.",
@@ -405,7 +416,8 @@
             "logs": "Logs",
             "nightly": "nightly",
             "share-logs": "Share logs",
-            "share-state": "Share app state"
+            "share-state": "Share app state",
+            "log-fcm-token": "Log FCM token"
         },
         "federations": {
             "add-federation": "Add a Federation",

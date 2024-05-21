@@ -25,6 +25,7 @@ import {
     RpcMatrixUserDirectorySearchResponse,
     RpcRoomListEntry,
     RpcRoomMember,
+    RpcRoomNotificationMode,
 } from '../types/bindings'
 import { isDev } from './environment'
 import { FedimintBridge } from './fedimint'
@@ -65,6 +66,10 @@ interface MatrixChatClientEventMap {
     roomPowerLevels: {
         roomId: MatrixRoom['id']
         powerLevels: MatrixRoomPowerLevels
+    }
+    roomNotificationMode: {
+        roomId: MatrixRoom['id']
+        mode: RpcRoomNotificationMode
     }
     user: MatrixUser
     error: MatrixError
@@ -182,7 +187,6 @@ export class MatrixChatClient {
     async setRoomName(roomId: string, name: string) {
         await this.fedimint.matrixRoomSetName({ roomId, name })
     }
-
     async setRoomPowerLevels(
         roomId: string,
         powerLevels: MatrixRoomPowerLevels,
@@ -208,6 +212,16 @@ export class MatrixChatClient {
         // TODO: Remove timeouts, inviting new members is kinda racey.
         await new Promise(resolve => setTimeout(resolve, 500))
         await this.observeRoomMembers(roomId)
+    }
+
+    async setRoomNotificationMode(
+        roomId: string,
+        mode: RpcRoomNotificationMode,
+    ) {
+        await this.fedimint.matrixRoomSetNotificationMode({
+            roomId,
+            mode,
+        })
     }
 
     async setRoomMemberPowerLevel(
@@ -342,12 +356,16 @@ export class MatrixChatClient {
         await this.observeRoomList()
     }
 
-    async configureNotificationsPusher(token: string) {
+    async configureNotificationsPusher(
+        token: string,
+        appId: string,
+        appName: string,
+    ) {
+        log.info('appId', appId)
         return this.fedimint.matrixSetPusher({
             pusher: {
                 kind: 'http',
-                // TODO: get app name from react native?
-                app_display_name: 'Fedi Bravo',
+                app_display_name: appName,
                 // TODO: get device name from device ID?
                 device_display_name: 'Device',
                 // TODO: get locale from device?
@@ -357,7 +375,7 @@ export class MatrixChatClient {
                     format: 'event_id_only',
                     url: 'https://matrix-sygnal.dev.fedibtc.com/_matrix/push/v1/notify',
                 },
-                app_id: 'com.fedi',
+                app_id: appId,
                 pushkey: token,
             },
         })
@@ -503,16 +521,6 @@ export class MatrixChatClient {
             makeInitialResetUpdate(initial.map(this.serializeRoomListItem)),
         )
 
-        // Observe all of the rooms
-        await Promise.all(
-            initial.map(async room => {
-                if ('value' in room) {
-                    await this.observeRoomInfo(room.value)
-                    await this.observeRoomPowerLevels(room.value)
-                }
-            }),
-        )
-
         // Listen and emit on observable updates
         this.observe(id, (update: ObservableVecUpdate<RpcRoomListEntry>) => {
             this.emit(
@@ -536,8 +544,25 @@ export class MatrixChatClient {
                         err,
                     }),
                 )
+                this.observeRoomNotificationMode(roomId).catch(err =>
+                    log.warn('Failed to observe room notification mode', {
+                        roomId,
+                        err,
+                    }),
+                )
             })
         })
+
+        // Observe all of the rooms
+        await Promise.all(
+            initial.map(async room => {
+                if ('value' in room) {
+                    await this.observeRoomInfo(room.value)
+                    await this.observeRoomPowerLevels(room.value)
+                    await this.observeRoomNotificationMode(room.value)
+                }
+            }),
+        )
     }
 
     private async observeRoomInfo(roomId: string) {
@@ -658,6 +683,18 @@ export class MatrixChatClient {
         } catch (error) {
             log.warn('Failed to get power levels for roomId', roomId, error)
         }
+    }
+
+    private async observeRoomNotificationMode(roomId: string) {
+        // TODO: Listen for notification mode, re-fetch. (observables)
+        const mode = await this.fedimint.matrixRoomGetNotificationMode({
+            roomId,
+        })
+        this.emit('roomNotificationMode', {
+            roomId,
+            // defaults to "allMessages"
+            mode: mode ?? 'allMessages',
+        })
     }
 
     private async autoJoinInvites() {

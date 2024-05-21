@@ -182,6 +182,8 @@ export function useUpdateLastMessageRead(
 export function usePublishNotificationToken(
     getToken: () => Promise<string>,
     needsPermission = false,
+    appId: string,
+    appName: string,
 ) {
     const dispatch = useCommonDispatch()
     const pushNotificationToken = useCommonSelector(
@@ -203,7 +205,7 @@ export function usePublishNotificationToken(
         if (!isMatrixReady) return
 
         log.info('Publishing push notification token')
-        dispatch(configureMatrixPushNotifications({ getToken }))
+        dispatch(configureMatrixPushNotifications({ getToken, appId, appName }))
             .unwrap()
             .then(() => {
                 log.info(
@@ -217,6 +219,8 @@ export function usePublishNotificationToken(
                 )
             })
     }, [
+        appId,
+        appName,
         needsPermission,
         isMatrixReady,
         dispatch,

@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectMatrixRoom, sendMatrixMessage } from '@fedi/common/redux'
+import { ChatType } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
@@ -26,7 +27,7 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const dispatch = useAppDispatch()
-    const { roomId, chatType } = route.params
+    const { roomId, chatType = ChatType.group } = route.params
     const [isSending, setIsSending] = useState(false)
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
     const toast = useToast()

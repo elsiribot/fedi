@@ -1,6 +1,7 @@
 import messaging from '@react-native-firebase/messaging'
 import { useNavigation } from '@react-navigation/native'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
+import DeviceInfo from 'react-native-device-info'
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 
 import { usePublishNotificationToken } from '@fedi/common/hooks/chat'
@@ -245,6 +246,8 @@ export const useMatrixPushNotifications = async () => {
     usePublishNotificationToken(
         getDeviceToken,
         notificationsPermission !== 'granted',
+        DeviceInfo.getBundleId(),
+        DeviceInfo.getApplicationName(),
     )
 }
 

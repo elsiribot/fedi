@@ -18,7 +18,7 @@ import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 import SvgImage, { SvgImageName } from '@fedi/native/components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '@fedi/native/state/hooks'
 
-import ChatUserAction from './ChatUserAction'
+import ChatAction from './ChatAction'
 
 export type Props = {
     roomId: string
@@ -221,7 +221,7 @@ const ChatUserActions: React.FC<Props> = ({
                     {t('words.actions')}
                 </Text>
                 {actions.map(action => (
-                    <ChatUserAction
+                    <ChatAction
                         key={action.id}
                         leftIcon={<SvgImage name={action.icon} />}
                         rightIcon={<SvgImage name={'ChevronRight'} />}
@@ -238,7 +238,7 @@ const ChatUserActions: React.FC<Props> = ({
                             {t('feature.chat.change-role')}
                         </Text>
                         {changeRoles.map(action => (
-                            <ChatUserAction
+                            <ChatAction
                                 key={action.id}
                                 leftIcon={
                                     <SvgImage
@@ -275,7 +275,7 @@ const ChatUserActions: React.FC<Props> = ({
                             {t('phrases.moderation-tools')}
                         </Text>
                         {moderationActions.map(action => (
-                            <ChatUserAction
+                            <ChatAction
                                 key={action.id}
                                 leftIcon={
                                     <SvgImage

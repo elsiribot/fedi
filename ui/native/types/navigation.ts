@@ -1,5 +1,9 @@
 import { DrawerNavigationProp } from '@react-navigation/drawer'
-import { LinkingOptions, RouteProp } from '@react-navigation/native'
+import {
+    LinkingOptions,
+    NavigatorScreenParams,
+    RouteProp,
+} from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import {
@@ -38,7 +42,7 @@ export type NavigationLinkingConfig = LinkingOptions<
     RootStackParamList | MainNavigatorDrawerParamList
 >
 export type MainNavigatorDrawerParamList = {
-    MainNavigator: undefined
+    MainNavigator: NavigatorScreenParams<RootStackParamList>
     SwitchingFederations: { federationId: string | null }
 }
 export type TabsNavigatorParamList = {
@@ -52,7 +56,7 @@ export type RootStackParamList = {
     BugReport: undefined
     BugReportSuccess: undefined
     CameraPermission: { nextScreen: keyof RootStackParamList } | undefined
-    ChatRoomConversation: { roomId: string; chatType: ChatType }
+    ChatRoomConversation: { roomId: string; chatType?: ChatType }
     ChatRoomMembers: { roomId: string }
     ChatRoomInvite: { roomId: string }
     ChatUserConversation: { userId: string; displayName: string }

@@ -93,6 +93,26 @@ export function resetToDirectChat(roomId: string) {
     }
 }
 
+export function resetToGroupChat(roomId: string) {
+    // Reset navigation stack on going back to the chat to give better back
+    // button behavior if directed here from Omni.
+    return {
+        ...CommonActions.reset({
+            index: 1,
+            routes: [
+                { name: 'TabsNavigator', params: { initialRouteName: 'Chat' } },
+                {
+                    name: 'ChatRoomConversation',
+                    params: {
+                        roomId: roomId,
+                        chatType: ChatType.group,
+                    },
+                },
+            ],
+        }),
+    }
+}
+
 export function resetToSocialRecovery() {
     return {
         ...CommonActions.reset({

@@ -1,3 +1,4 @@
+import messaging from '@react-native-firebase/messaging'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Switch, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
@@ -190,6 +191,11 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
         setIsSharingState(false)
     }
 
+    const logFCMToken = async () => {
+        const fcmToken = await messaging().getToken()
+        log.info(`FCM Notification Token - ${fcmToken}`)
+    }
+
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <SettingsSection title="App info">
@@ -206,6 +212,11 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                     containerStyle={styles(theme).buttonContainer}
                     onPress={handleShareStorage}
                     loading={isSharingState}
+                />
+                <Button
+                    title={t('feature.developer.log-fcm-token')}
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={logFCMToken}
                 />
                 <View style={styles(theme).switchWrapper}>
                     <View style={styles(theme).switchLabelContainer}>
