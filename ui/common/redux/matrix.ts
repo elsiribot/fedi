@@ -1137,6 +1137,26 @@ export const selectLatestMatrixRoomEventId = (
     }
 }
 
+export const selectCanPayFromOtherFeds = createSelector(
+    (s: CommonState) => selectFederations(s),
+    (s: CommonState, chatPayment: MatrixPaymentEvent) => chatPayment,
+    (federations, chatPayment): boolean => {
+        return !!federations.find(f => f.balance > chatPayment.content.amount)
+    },
+)
+
+export const selectCanSendPayment = createSelector(
+    (s: CommonState) => selectFederations(s),
+    (s: CommonState, chatPayment: MatrixPaymentEvent) => chatPayment,
+    (federations, chatPayment): boolean => {
+        return !!federations.find(
+            f =>
+                f.id === chatPayment.content.federationId &&
+                f.balance > chatPayment.content.amount,
+        )
+    },
+)
+
 export const selectCanClaimPayment = createSelector(
     (s: CommonState) => selectFederations(s),
     (s: CommonState, chatPayment: MatrixPaymentEvent) => chatPayment,
