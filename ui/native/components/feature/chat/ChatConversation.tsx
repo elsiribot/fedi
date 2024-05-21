@@ -127,15 +127,14 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     }, [eventGroups, myId, scrollToEnd])
 
     const handlePaginate = useCallback(async () => {
-        if (events.length === 0 || isPaginating || hasPaginated || isAtEnd)
-            return
+        if (isPaginating || hasPaginated || isAtEnd) return
         setIsPaginating(true)
         setHasPaginated(true)
         dispatch(paginateMatrixRoomTimeline({ roomId: id, limit: 10 }))
             .unwrap()
             .then(({ end }) => setIsAtEnd(end))
             .finally(() => setIsPaginating(false))
-    }, [id, events.length, dispatch, isPaginating, hasPaginated, isAtEnd])
+    }, [id, dispatch, isPaginating, hasPaginated, isAtEnd])
 
     // Mark hasNewMessages as false when we scroll to the bottom, and keep a ref up to date
     const handleScroll = useCallback(

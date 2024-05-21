@@ -82,7 +82,13 @@ const ChatTile = ({ room, selectChat }: ChatTileProps) => {
                             style={styles(theme).emptyMessagePreview}
                             numberOfLines={1}
                             {...previewTextWeight}>
-                            {t('feature.chat.no-messages')}
+                            {/* 
+                                HACK: public rooms don't show a preview message so you have to click into it to paginate backwards
+                                TODO: Replace with proper room previews
+                            */}
+                            {room.isPublic
+                                ? t('feature.chat.click-here-for-announcements')
+                                : t('feature.chat.no-messages')}
                         </Text>
                     )}
                 </View>

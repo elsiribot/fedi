@@ -49,7 +49,7 @@ export type Props = NativeStackScreenProps<
     'DeveloperSettings'
 >
 
-const DeveloperSettings: React.FC<Props> = () => {
+const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { listGateways, switchGateway, guardianStatus } = useBridge()
@@ -438,6 +438,21 @@ const DeveloperSettings: React.FC<Props> = () => {
                         </Text>
                     )
                 })}
+            </SettingsSection>
+
+            <SettingsSection title="Chat">
+                <Button
+                    title={t('feature.developer.create-default-group')}
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={() => {
+                        navigation.navigate('CreateGroup', {
+                            defaultGroup: true,
+                        })
+                    }}
+                />
+                <Text small style={styles(theme).switchLabel}>
+                    {t('feature.developer.default-groups-info')}
+                </Text>
             </SettingsSection>
 
             <SettingsSection title="Danger zone">

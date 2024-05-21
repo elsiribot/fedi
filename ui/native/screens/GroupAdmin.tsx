@@ -13,6 +13,7 @@ import {
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     leaveMatrixRoom,
+    selectAllDefaultMatrixRooms,
     selectMatrixRoom,
     selectMatrixRoomMembersCount,
     selectMatrixRoomSelfPowerLevel,
@@ -43,14 +44,9 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
         selectMatrixRoomSelfPowerLevel(s, room?.id || ''),
     )
     const isAdmin = myPowerLevel >= MatrixPowerLevel.Admin
-    // const myAffiliation = useAppSelector(s =>
-    //     selectChatGroupAffiliation(s, groupId),
-    // )
-    // TODO: Reimplement with matrix
-    const isDefaultGroup = false
-    // const isDefaultGroup = useAppSelector(s =>
-    //     selectChatDefaultGroupIds(s).includes(groupId),
-    // )
+    const isDefaultGroup = useAppSelector(s =>
+        selectAllDefaultMatrixRooms(s).includes(room?.id || ''),
+    )
     const [isTogglingBroadcastOnly, setIsTogglingBroadcastOnly] =
         useState(false)
 
@@ -131,13 +127,15 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 <Text style={styles(theme).sectionTitle}>
                     {t('words.group')}
                 </Text>
-                <SettingsItem
-                    image={<SvgImage name="SocialPeople" />}
-                    label={`${amountUtils.formatNumber(memberCount)} ${t(
-                        'words.members',
-                    )}`}
-                    onPress={handleViewMembers}
-                />
+                {!isDefaultGroup && (
+                    <SettingsItem
+                        image={<SvgImage name="SocialPeople" />}
+                        label={`${amountUtils.formatNumber(memberCount)} ${t(
+                            'words.members',
+                        )}`}
+                        onPress={handleViewMembers}
+                    />
+                )}
                 <SettingsItem
                     image={<SvgImage name="Room" />}
                     label={t('feature.chat.invite-to-group')}
