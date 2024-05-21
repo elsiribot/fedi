@@ -7,8 +7,8 @@ import dateUtils from '@fedi/common/utils/DateUtils'
 
 import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { MatrixRoom } from '../../../types'
-import Avatar from '../../ui/Avatar'
 import { AvatarSize } from '../../ui/Avatar'
+import ChatAvatar from './ChatAvatar'
 import GroupIcon from './GroupIcon'
 
 type ChatTileProps = {
@@ -48,11 +48,7 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
                 />
                 <View style={styles(theme).chatTypeIconContainer}>
                     {room.directUserId ? (
-                        <Avatar
-                            id={room.directUserId || ''}
-                            name={room.name || '?'}
-                            size={AvatarSize.md}
-                        />
+                        <ChatAvatar room={room} size={AvatarSize.md} />
                     ) : (
                         <GroupIcon chat={room} />
                     )}

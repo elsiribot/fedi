@@ -1,6 +1,11 @@
 import React from 'react'
 
-import { MatrixRoom, MatrixRoomMember, MatrixUser } from '@fedi/common/types'
+import {
+    MatrixAuth,
+    MatrixRoom,
+    MatrixRoomMember,
+    MatrixUser,
+} from '@fedi/common/types'
 import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 
 import Avatar, { AvatarProps } from '../../ui/Avatar'
@@ -17,13 +22,22 @@ type UserProps = BaseProps & {
         membership?: MatrixRoomMember['membership']
     }
 }
-type Props = RoomProps | UserProps
+export const matrixAuthToAvatarProps = (
+    matrixAuth: MatrixAuth,
+): ChatAvatarProps => ({
+    user: {
+        ...matrixAuth,
+        id: matrixAuth?.userId,
+    },
+})
 
-const ChatAvatar: React.FC<Props> = props => {
+export type ChatAvatarProps = RoomProps | UserProps
+
+const ChatAvatar: React.FC<ChatAvatarProps> = props => {
     let id: string | undefined
     let name: string | undefined
     let icon: AvatarProps['icon'] | undefined
-    // let src: string | undefined
+    let src: string | undefined
     let avatarProps: BaseProps
     if ('room' in props) {
         const { room, ...rest } = props
@@ -34,7 +48,7 @@ const ChatAvatar: React.FC<Props> = props => {
             : room.broadcastOnly
             ? 'SpeakerPhone'
             : 'SocialPeople'
-        // src = room.avatarUrl
+        src = room.avatarUrl
         avatarProps = rest
     } else {
         const { user, ...rest } = props
@@ -43,7 +57,7 @@ const ChatAvatar: React.FC<Props> = props => {
         if (user.membership) {
             icon = user.membership === 'join' ? undefined : 'User'
         }
-        // src = user.avatarUrl
+        src = user.avatarUrl
         avatarProps = rest
     }
 
@@ -52,7 +66,7 @@ const ChatAvatar: React.FC<Props> = props => {
             id={id || ''}
             name={name || '?'}
             icon={icon}
-            // src={src}
+            url={src}
             {...avatarProps}
         />
     )
