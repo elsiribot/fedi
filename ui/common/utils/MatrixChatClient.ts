@@ -111,10 +111,11 @@ export class MatrixChatClient {
                 .matrixInit()
                 .then(() => this.getAccountSession())
                 .then(auth => {
+                    // resolve auth before fetching anything to support offline UX
+                    resolve(this.serializeAuth(auth))
                     this.observeRoomList()
                         .then(() => {
-                            resolve(this.serializeAuth(auth))
-                            // Wait until after the roomlist is observed 
+                            // Wait until after the roomlist is observed
                             // to prevent flickering on startup
                             this.observeSyncStatus()
                             this.autoJoinInvites()
@@ -529,12 +530,12 @@ export class MatrixChatClient {
                         err,
                     }),
                 )
-                // this.observeRoomPowerLevels(roomId).catch(err =>
-                //     log.warn('Failed to observe room power levels', {
-                //         roomId,
-                //         err,
-                //     }),
-                // )
+                this.observeRoomPowerLevels(roomId).catch(err =>
+                    log.warn('Failed to observe room power levels', {
+                        roomId,
+                        err,
+                    }),
+                )
             })
         })
     }
