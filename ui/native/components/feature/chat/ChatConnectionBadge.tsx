@@ -1,5 +1,5 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Animated,
@@ -17,28 +17,22 @@ import { useAppSelector } from '../../../state/hooks'
 interface Props {
     offset?: number
     noSafeArea?: boolean
-    hide?: boolean
 }
 
 export const ChatConnectionBadge: React.FC<Props> = ({
     offset = 0,
     noSafeArea,
-    hide,
 }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const isReady = useAppSelector(s => selectIsMatrixReady(s))
 
-    const [isVisible, setIsVisible] = useState(!isReady || hide)
+    const isVisible = !isReady
 
     const visibleAnimation = useRef(
         new Animated.Value(isVisible ? 1 : 0),
     ).current
-
-    useEffect(() => {
-        if (isReady) setIsVisible(false)
-    }, [isReady])
 
     // Animate container in and out when visible
     useEffect(() => {
