@@ -74,7 +74,6 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
             log.error('group create failed', error)
             toast.error(t, error)
         }
-        setCreatingGroup(false)
     }, [broadcastOnly, dispatch, groupName, isPublic, toast, t])
 
     const handleSubmit = async () => {
