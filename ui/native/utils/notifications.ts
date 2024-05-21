@@ -102,13 +102,18 @@ export const displayMessageReceivedNotification = async (
      * TOOD:
      * 1. Get room info
      * 2. Get message info (including sender)
+     * 3. Group notification channels by room ID
      */
     const title = t('words.chat')
-    const body = data?.unread
-        ? t('feature.notifications.new-messages-count', {
-              unread: data.unread,
-          })
-        : t('feature.notifications.new-messages')
+    // TODO: for some reason data.unread is not returning >1 even on subsequent
+    // sent messages so it is just confusing to show "You have 1 new message"
+    // when really there could be more. Just make it generic for now
+    const body = t('feature.notifications.new-messages')
+    // const body = data?.unread
+    //     ? t('feature.notifications.new-messages-count', {
+    //           unread: data.unread,
+    //       })
+    //     : t('feature.notifications.new-messages')
 
     const link = encodeFediMatrixRoomUri(data.room_id, true)
 
@@ -125,8 +130,8 @@ export const displayMessageReceivedNotification = async (
         {
             android: {
                 groupSummary: true,
-                // group notifications by chat room
-                groupId: data.room_id,
+                // TODO: group notifications by chat room? for now it will confuse users since room name is not included but we should be able to fetch the name and group by room ID
+                // groupId: data.room_id,
             },
         },
     )
@@ -232,6 +237,7 @@ const dispatchNotification = async (
     }
     try {
         await notifee.displayNotification({
+            id,
             title,
             body,
             data,
