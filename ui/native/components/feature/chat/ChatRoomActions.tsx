@@ -64,7 +64,7 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
     ) => {
         setLoadingAction(id)
         try {
-            log.info(`Muting room ${room.id}`)
+            log.info(`Updating notifications for room ${room.id} to ${mode}`)
             await dispatch(
                 updateMatrixRoomNotificationMode({ roomId: room.id, mode }),
             ).unwrap()
@@ -73,8 +73,8 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
                 status: 'success',
             })
         } catch (err) {
-            log.error('Failed to ban user from room', err)
-            error(t, 'feature.errors.failed-to-ban-user')
+            log.error('Failed to update notifications for room', err)
+            error(t, 'feature.errors.failed-to-update-notification')
         }
         setLoadingAction(null)
         dismiss()
@@ -88,18 +88,19 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
             icon: 'Bell',
             onPress: () => handleUpdateNotificationMode(1, 'allMessages'),
         },
-        {
-            id: 2,
-            label: t('feature.chat.notification-mentions'),
-            dataId: 'mentionsAndKeywordsOnly',
-            icon: 'User',
-            onPress: () =>
-                handleUpdateNotificationMode(2, 'mentionsAndKeywordsOnly'),
-        },
+        // TODO: implement mentions notification mode
+        // {
+        //     id: 2,
+        //     label: t('feature.chat.notification-mentions'),
+        //     dataId: 'mentionsAndKeywordsOnly',
+        //     icon: 'User',
+        //     onPress: () =>
+        //         handleUpdateNotificationMode(2, 'mentionsAndKeywordsOnly'),
+        // },
         {
             id: 3,
-            label: t('feature.chat.notification-mute'),
             dataId: 'mute',
+            label: t('feature.chat.notification-mute'),
             icon: 'Close',
             onPress: () => handleUpdateNotificationMode(3, 'mute'),
         },

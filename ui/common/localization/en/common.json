@@ -200,6 +200,7 @@
         "failed-to-leave-federation": "Failed to leave federation",
         "failed-to-load-tos": "Failed to load terms of service",
         "failed-to-pay-invoice": "Failed to pay invoice",
+        "failed-to-update-notification": "Failed to update notification setting for this chat",
         "failed-to-switch-gateways": "Failed to switch gateways",
         "get-nostr-pubkey-failed": "Failed to get nostr pub key",
         "history-render-error": "Encountered an error rendering this item",

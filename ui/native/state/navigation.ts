@@ -93,7 +93,7 @@ export function resetToDirectChat(roomId: string) {
     }
 }
 
-export function resetToChatRoom(roomId: string) {
+export function resetToGroupChat(roomId: string) {
     // Reset navigation stack on going back to the chat to give better back
     // button behavior if directed here from Omni.
     return {
