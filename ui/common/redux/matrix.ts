@@ -724,13 +724,16 @@ export const sendMatrixReadReceipt = createAsyncThunk<
 
 export const configureMatrixPushNotifications = createAsyncThunk<
     string,
-    { getToken: () => Promise<string> }
->('matrix/configureMatrixPushNotifications', async ({ getToken }) => {
-    const client = getMatrixClient()
-    const token = await getToken()
-    await client.configureNotificationsPusher(token)
-    return token
-})
+    { getToken: () => Promise<string>; appId: string; appName: string }
+>(
+    'matrix/configureMatrixPushNotifications',
+    async ({ getToken, appId, appName }) => {
+        const client = getMatrixClient()
+        const token = await getToken()
+        await client.configureNotificationsPusher(token, appId, appName)
+        return token
+    },
+)
 
 export const updateMatrixRoomNotificationMode = createAsyncThunk<
     RpcRoomNotificationMode,

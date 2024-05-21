@@ -356,12 +356,16 @@ export class MatrixChatClient {
         await this.observeRoomList()
     }
 
-    async configureNotificationsPusher(token: string) {
+    async configureNotificationsPusher(
+        token: string,
+        appId: string,
+        appName: string,
+    ) {
+        log.info('appId', appId)
         return this.fedimint.matrixSetPusher({
             pusher: {
                 kind: 'http',
-                // TODO: get app name from react native?
-                app_display_name: 'Fedi Bravo',
+                app_display_name: appName,
                 // TODO: get device name from device ID?
                 device_display_name: 'Device',
                 // TODO: get locale from device?
@@ -371,7 +375,7 @@ export class MatrixChatClient {
                     format: 'event_id_only',
                     url: 'https://matrix-sygnal.dev.fedibtc.com/_matrix/push/v1/notify',
                 },
-                app_id: 'com.fedi',
+                app_id: appId,
                 pushkey: token,
             },
         })
