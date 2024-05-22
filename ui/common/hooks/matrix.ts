@@ -16,6 +16,8 @@ import {
     selectMatrixUser,
     sendMatrixReadReceipt,
     unobserveMatrixRoom,
+    selectCanSendPayment,
+    selectCanPayFromOtherFeds,
 } from '../redux'
 import { MatrixPaymentEvent, MatrixPaymentStatus, MatrixUser } from '../types'
 import { FedimintBridge } from '../utils/fedimint'
@@ -138,15 +140,23 @@ export function useMatrixPaymentEvent({
     fedimint,
     t,
     onError,
+    onPayWithForeignEcash,
 }: {
     event: MatrixPaymentEvent
     fedimint: FedimintBridge
     t: TFunction
     onError: (err: unknown) => void
+    onPayWithForeignEcash?: () => void
 }) {
     const dispatch = useCommonDispatch()
     const canClaimPayment = useCommonSelector(s =>
         selectCanClaimPayment(s, event),
+    )
+    const canSendPayment = useCommonSelector(s =>
+        selectCanSendPayment(s, event),
+    )
+    const canPayFromOtherFeds = useCommonSelector(s =>
+        selectCanPayFromOtherFeds(s, event),
     )
     const matrixAuth = useCommonSelector(selectMatrixAuth)
     const eventSender = useCommonSelector(s =>
@@ -197,11 +207,29 @@ export function useMatrixPaymentEvent({
     }, [fedimint, event, handleDispatchPaymentUpdate])
 
     const handleAcceptRequest = useCallback(async () => {
-        handleDispatchPaymentUpdate(
-            acceptMatrixPaymentRequest({ fedimint, event }),
-            setIsAccepting,
-        )
-    }, [fedimint, event, handleDispatchPaymentUpdate])
+        if (canSendPayment) {
+            handleDispatchPaymentUpdate(
+                acceptMatrixPaymentRequest({ fedimint, event }),
+                setIsAccepting,
+            )
+        } else if (onPayWithForeignEcash && canPayFromOtherFeds) {
+            onPayWithForeignEcash()
+            handleDispatchPaymentUpdate(
+                rejectMatrixPaymentRequest({ event }),
+                setIsRejecting,
+            )
+        } else {
+            onErrorRef.current('errors.please-join-a-federation')
+        }
+    }, [
+        canPayFromOtherFeds,
+        canSendPayment,
+        event,
+        fedimint,
+        handleDispatchPaymentUpdate,
+        onErrorRef,
+        onPayWithForeignEcash,
+    ])
 
     const handleRejectRequest = useCallback(async () => {
         handleDispatchPaymentUpdate(

@@ -12,32 +12,27 @@ import { configureLogging, saveLogsToStorage } from '@fedi/common/utils/log'
 
 import App from './App'
 import { name as appName } from './app.json'
-import './localization/i18n'
+import i18next from './localization/i18n'
+import {
+    handleForegroundFCMReceived,
+    handleBackgroundFCMReceived,
+    handleBackgroundNotificationUpdate,
+} from './utils/notifications'
 import { storage } from './utils/storage'
 
-messaging().setBackgroundMessageHandler(async remoteMessage => {
-    // Create a channel (required for Android)
-    const channelId = await notifee.createChannel({
-        id: 'chat-new-messages',
-        name: 'Chat channel',
-    })
-    const title = `Chat`
-    const body = remoteMessage.data.unread
-        ? `You have ${remoteMessage.data.unread} new messages`
-        : `You have new messages`
+// Handles FCM notifications when app is open
+messaging().onMessage(m => handleForegroundFCMReceived(m))
 
-    await notifee.displayNotification({
-        title,
-        body,
-        android: {
-            channelId,
-            pressAction: {
-                id: 'chat-new-messages',
-                roomId: remoteMessage.data.roomId || '',
-            },
-        },
-    })
-})
+// Dispatches FCM notifications when app is closed
+messaging().setBackgroundMessageHandler(m =>
+    handleBackgroundFCMReceived(m, i18next.t),
+)
+
+// Handles updates to notification (delivered, user taps notification, actions, etc)
+// Runs in headless js, so we don't have access to the UI or clients.
+// However, we can make api calls or access offline resources.
+notifee.onBackgroundEvent(e => handleBackgroundNotificationUpdate(e))
+
 // Register the app component
 AppRegistry.registerComponent(appName, () => App)
 

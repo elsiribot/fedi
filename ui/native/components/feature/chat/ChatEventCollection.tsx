@@ -154,8 +154,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-const areEqual = (prev: Props, curr: Props) => {
-    return prev.collection[0][0].id === curr.collection[0][0].id
-}
-
-export default React.memo(ChatEventCollection, areEqual)
+export default ChatEventCollection

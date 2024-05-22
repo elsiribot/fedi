@@ -178,6 +178,7 @@ export const OmniConfirmation = <T extends AnyParsedData>({
                 }
             case ParserDataType.FediChatRoom:
                 // TODO: Implement join room by link for matrix (knocking)
+                // TODO: Implement navigating to room if it exists
                 return {
                     contents: {
                         icon: 'ScanSad',

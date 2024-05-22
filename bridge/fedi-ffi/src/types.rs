@@ -17,6 +17,7 @@ use ts_rs::TS;
 use super::federation_v2::FederationV2;
 use super::utils::to_unix_time;
 use crate::api::RegisteredDevice;
+use crate::community::CommunityJson;
 use crate::multi::MultiFederation;
 use crate::storage::FediFeeSchedule;
 
@@ -77,6 +78,29 @@ pub struct RpcFederationPreview {
     pub invite_code: String,
     pub version: u32,
     pub returning_member_status: RpcReturningMemberStatus,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcCommunity {
+    pub community_id: String,
+    pub invite_code: String,
+    pub community_name: String,
+    pub version: u32,
+    pub meta: BTreeMap<String, String>,
+}
+
+impl From<CommunityJson> for RpcCommunity {
+    fn from(value: CommunityJson) -> Self {
+        RpcCommunity {
+            community_id: value.community_id,
+            invite_code: value.invite_code,
+            community_name: value.community_name,
+            version: value.version,
+            meta: value.meta,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]

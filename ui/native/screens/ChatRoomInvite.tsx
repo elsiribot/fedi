@@ -23,6 +23,7 @@ import { AvatarSize } from '../components/ui/HoloAvatar'
 import HoloLoader from '../components/ui/HoloLoader'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import { PressableIcon } from '../components/ui/PressableIcon'
+import QRScreen from '../components/ui/QRScreen'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { MatrixUser } from '../types'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
@@ -97,6 +98,19 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
     if (!matrixAuth || !room) return null
 
     const style = styles(theme, insets)
+
+    // TODO: for now public rooms are reserved for the default groups use case which are auto-joined
+    // so we should not need to invite anyone. When requesting to join a room is implemented we
+    // can use this to display a QR code in addition to (or instead of) inviting users by ID
+    if (room.isPublic) {
+        return (
+            <QRScreen
+                title={roomName}
+                qrValue={roomId}
+                copyMessage={t('feature.chat.copied-group-invite-code')}
+            />
+        )
+    }
 
     const getInviteText = (membership: RpcMatrixMembership | undefined) => {
         switch (membership) {

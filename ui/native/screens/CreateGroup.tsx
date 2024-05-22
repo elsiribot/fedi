@@ -1,32 +1,63 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Switch, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import { createMatrixRoom } from '@fedi/common/redux'
+import { createMatrixRoom, selectMatrixRoom } from '@fedi/common/redux'
 import { ChatType } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
-import { useAppDispatch } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('CreateGroup')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'CreateGroup'>
 
-const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
+const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const defaultGroup = route.params?.defaultGroup || undefined
     const dispatch = useAppDispatch()
     const [groupName, setGroupName] = useState<string>(
         t('feature.chat.new-group'),
     )
     const [creatingGroup, setCreatingGroup] = useState<boolean>(false)
+    const [pendingRoomId, setPendingRoomId] = useState<string | null>(null)
     const [broadcastOnly, setBroadcastOnly] = useState<boolean>(false)
+    const [isPublic, setIsPublic] = useState<boolean>(false)
     const toast = useToast()
+
+    const loadedRoom = useAppSelector(
+        s => pendingRoomId && selectMatrixRoom(s, pendingRoomId),
+    )
+
+    // Forces default groups to be broadcast-only & public
+    // TODO: support nonbroadcast/nonpublic default groups
+    useEffect(() => {
+        if (defaultGroup === true) {
+            setBroadcastOnly(true)
+            setIsPublic(true)
+        }
+    }, [defaultGroup])
+
+    // Upon creating a room, we wait for the new room
+    // to show up in the room list before trying to navigate
+    useEffect(() => {
+        const handleRoomLoaded = async () => {
+            if (!loadedRoom) return
+            log.info('Group created', loadedRoom)
+            navigation.replace('ChatRoomConversation', {
+                roomId: loadedRoom.id,
+                chatType: ChatType.group,
+            })
+            setCreatingGroup(false)
+        }
+        if (loadedRoom) handleRoomLoaded()
+    }, [loadedRoom, navigation])
 
     const handleCreateGroup = useCallback(async () => {
         setCreatingGroup(true)
@@ -35,19 +66,15 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
                 createMatrixRoom({
                     name: groupName,
                     broadcastOnly,
+                    isPublic,
                 }),
             ).unwrap()
-            log.info('group created', roomId)
-            navigation.replace('ChatRoomConversation', {
-                roomId,
-                chatType: ChatType.group,
-            })
+            setPendingRoomId(roomId)
         } catch (error) {
             log.error('group create failed', error)
             toast.error(t, error)
         }
-        setCreatingGroup(false)
-    }, [broadcastOnly, dispatch, groupName, navigation, toast, t])
+    }, [broadcastOnly, dispatch, groupName, isPublic, toast, t])
 
     const handleSubmit = async () => {
         if (groupName) {
@@ -76,9 +103,28 @@ const CreateGroup: React.FC<Props> = ({ navigation }: Props) => {
                 </Text>
                 <Switch
                     value={broadcastOnly}
-                    onValueChange={value => setBroadcastOnly(value)}
+                    onValueChange={value => {
+                        // for now default groups must be public
+                        if (defaultGroup === true) return
+                        setBroadcastOnly(value)
+                    }}
                 />
             </View>
+            {defaultGroup && (
+                <View style={styles(theme).switchWrapper}>
+                    <Text style={styles(theme).inputLabel}>
+                        {t('words.public')}
+                    </Text>
+                    <Switch
+                        value={isPublic}
+                        onValueChange={value => {
+                            // for now default groups must be public
+                            if (defaultGroup === true) return
+                            setIsPublic(value)
+                        }}
+                    />
+                </View>
+            )}
             <Button
                 fullWidth
                 title={t('phrases.save-changes')}

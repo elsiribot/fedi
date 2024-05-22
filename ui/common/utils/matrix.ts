@@ -343,11 +343,19 @@ export function getReceivablePaymentEvents(
     }, [] as MatrixPaymentEvent[])
 }
 
-export function encodeFediMatrixUserUri(id: string) {
+/**
+ * @param deep set to true to encode as a deep link
+ */
+export function encodeFediMatrixUserUri(id: string, deep = false) {
+    if (deep) return `fedi://user:${id}`
     return `fedi:user:${id}`
 }
 
-export function encodeFediMatrixRoomUri(id: string) {
+/**
+ * @param deep set to true to encode as a deep link
+ */
+export function encodeFediMatrixRoomUri(id: string, deep = false) {
+    if (deep) return `fedi://room:${id}`
     return `fedi:room:${id}`
 }
 
@@ -358,7 +366,7 @@ export function decodeFediMatrixRoomUri(uri: string) {
     if (!match) throw new Error('feature.chat.invalid-room')
 
     const id = match[1]
-    if (!isValidMatrixUserId(id)) throw new Error('feature.chat.invalid-room')
+    if (!isValidMatrixRoomId(id)) throw new Error('feature.chat.invalid-room')
 
     return id
 }
@@ -397,4 +405,8 @@ export function decodeFediMatrixUserUri(uri: string) {
  */
 export function isValidMatrixUserId(id: string) {
     return /^@[^:]+:.+$/.test(id)
+}
+
+export function isValidMatrixRoomId(id: string) {
+    return /^![^:]+:.+$/.test(id)
 }

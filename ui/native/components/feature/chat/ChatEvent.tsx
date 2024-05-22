@@ -150,4 +150,20 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default ChatEvent
+const areEqual = (prev: Props, curr: Props) => {
+    if (
+        isPaymentEvent(curr.event) &&
+        // TODO: make better TS types to avoid this ick
+        'status' in prev.event.content &&
+        'status' in curr.event.content
+    ) {
+        return (
+            prev.event.id === curr.event.id &&
+            prev.event.content.status === curr.event.content.status
+        )
+    } else {
+        return prev.event.id === curr.event.id
+    }
+}
+
+export default React.memo(ChatEvent, areEqual)

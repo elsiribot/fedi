@@ -39,7 +39,8 @@ export const getMetaUrl = (meta: ClientConfigMetadata): string | undefined => {
         const parsed: string = url && JSON.parse(url)
         return typeof parsed === 'string' ? parsed : url
     } catch (error) {
-        log.info(`getMetaUrl: error parsing meta url ${url}`, error)
+        // log.info(`getMetaUrl: error parsing meta url ${url}`, error)
+        // no-op
         return url
     }
 }
@@ -73,7 +74,6 @@ const fetchExternalMetadata = async (
             signal: controller?.signal,
         })
         const metaJson = await response.json()
-        log.info(`Found metadata at ${externalUrl}`, Object.keys(metaJson))
         if (timeoutId) {
             clearTimeout(timeoutId)
         }
@@ -221,8 +221,8 @@ const getMetaField = (
         )
     }
 
-    if (field === 'default_group_chats') {
-        return metadata[`fedi:default_group_chats`] ?? metadata[field] ?? null
+    if (field === 'default_matrix_rooms') {
+        return metadata[`fedi:default_matrix_rooms`] ?? metadata[field] ?? null
     }
 
     if (Object.values(SupportedMetaFields).some(x => x === field)) {
@@ -405,7 +405,10 @@ export function supportsSingleSeed(federation: Federation) {
 export const getFederationGroupChats = (
     metadata: ClientConfigMetadata,
 ): string[] => {
-    const defaultGroupChats = getMetaField('default_group_chats', metadata)
+    const defaultGroupChats = getMetaField(
+        SupportedMetaFields.default_matrix_rooms,
+        metadata,
+    )
 
     if (defaultGroupChats) {
         try {

@@ -32,6 +32,7 @@ use super::types::{
     SocialRecoveryApproval, SocialRecoveryQr,
 };
 use crate::api::IFediApi;
+use crate::community::Community;
 use crate::constants::{MATRIX_CHILD_ID, NOSTR_CHILD_ID};
 use crate::device_registration::{self, DeviceRegistrationService};
 use crate::error::{get_error_code, ErrorCode};
@@ -45,7 +46,7 @@ use crate::storage::{
     AppState, DatabaseInfo, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule,
 };
 use crate::types::{
-    GuardianStatus, RpcBridgeStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
+    GuardianStatus, RpcBridgeStatus, RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
     RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
     RpcPayAddressResponse, RpcRegisteredDevice, RpcReturningMemberStatus,
 };
@@ -451,6 +452,10 @@ impl Bridge {
             }),
             (Err(e),) => Err(e.context("Failed to connect")),
         }
+    }
+
+    pub async fn community_preview(&self, invite_code: &str) -> Result<RpcCommunity> {
+        Community::preview(invite_code).await.map(Into::into)
     }
 
     /// Look up federation by id from in-memory hashmap

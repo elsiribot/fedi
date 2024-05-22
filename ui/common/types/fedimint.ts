@@ -124,6 +124,7 @@ export enum SupportedMetaFields {
     welcome_message = 'welcome_message',
     federation_icon_url = 'federation_icon_url',
     federation_name = 'federation_name',
+    default_matrix_rooms = 'default_matrix_rooms',
 }
 
 export type ClientConfigMetadata = Record<string, string | undefined>

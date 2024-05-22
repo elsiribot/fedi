@@ -182,6 +182,8 @@ export function useUpdateLastMessageRead(
 export function usePublishNotificationToken(
     getToken: () => Promise<string>,
     needsPermission = false,
+    appId: string,
+    appName: string,
 ) {
     const dispatch = useCommonDispatch()
     const pushNotificationToken = useCommonSelector(
@@ -203,7 +205,7 @@ export function usePublishNotificationToken(
         if (!isMatrixReady) return
 
         log.info('Publishing push notification token')
-        dispatch(configureMatrixPushNotifications({ getToken }))
+        dispatch(configureMatrixPushNotifications({ getToken, appId, appName }))
             .unwrap()
             .then(() => {
                 log.info(
@@ -217,6 +219,8 @@ export function usePublishNotificationToken(
                 )
             })
     }, [
+        appId,
+        appName,
         needsPermission,
         isMatrixReady,
         dispatch,
@@ -336,8 +340,10 @@ export const useChatPaymentUtils = (
 
     const handleSendPayment = useCallback(
         async (onSuccess: () => void) => {
+            if (!federationId)
+                return toast.error(t, 'errors.please-join-a-federation')
             // TODO: allow for on-the-fly room creation?
-            if (!federationId || !roomId) return
+            if (!roomId) return
             try {
                 setSubmitAction('send')
                 await dispatch(
@@ -369,8 +375,11 @@ export const useChatPaymentUtils = (
 
     const handleRequestPayment = useCallback(
         async (onSuccess: () => void) => {
+            if (!federationId)
+                return toast.error(t, 'errors.please-join-a-federation')
             // TODO: allow for on-the-fly room creation?
-            if (!federationId || !roomId) return
+            if (!roomId) return
+
             setSubmitType('request')
             setSubmitAttempts(attempt => attempt + 1)
             if (!canRequestAmount) return

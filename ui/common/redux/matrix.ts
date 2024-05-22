@@ -34,7 +34,9 @@ import {
     MatrixCreateRoomOptions,
     Sats,
 } from '../types'
+import { RpcFederation, RpcRoomNotificationMode } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
+import { getFederationGroupChats } from '../utils/FederationUtils'
 import { MatrixChatClient } from '../utils/MatrixChatClient'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
@@ -75,6 +77,10 @@ const initialState = {
     roomPowerLevels: {} as Record<
         MatrixRoom['id'],
         MatrixRoomPowerLevels | undefined
+    >,
+    roomNotificationMode: {} as Record<
+        MatrixRoom['id'],
+        RpcRoomNotificationMode | undefined
     >,
     users: {} as Record<MatrixUser['id'], MatrixUser | undefined>,
     errors: [] as MatrixError[],
@@ -159,6 +165,16 @@ export const matrixSlice = createSlice({
             const { roomId, powerLevels } = action.payload
             state.roomPowerLevels[roomId] = powerLevels
         },
+        setMatrixRoomNotificationMode(
+            state,
+            action: PayloadAction<{
+                roomId: MatrixRoom['id']
+                mode: RpcRoomNotificationMode
+            }>,
+        ) {
+            const { roomId, mode } = action.payload
+            state.roomNotificationMode[roomId] = mode
+        },
         addMatrixError(state, action: PayloadAction<MatrixError>) {
             state.errors = [...state.errors, action.payload]
         },
@@ -168,12 +184,14 @@ export const matrixSlice = createSlice({
     },
     extraReducers: builder => {
         builder.addCase(startMatrixClient.pending, state => {
+            log.debug('startMatrixClient.pending')
             state.status = MatrixSyncStatus.initialSync
         })
         builder.addCase(startMatrixClient.fulfilled, (state, action) => {
             state.auth = action.payload
         })
         builder.addCase(startMatrixClient.rejected, state => {
+            log.debug('startMatrixClient.rejected')
             state.status = MatrixSyncStatus.stopped
         })
 
@@ -246,6 +264,14 @@ export const matrixSlice = createSlice({
             if (!action.payload) return
             // state.auth = action.payload.matrixAuth
         })
+
+        builder.addCase(
+            updateMatrixRoomNotificationMode.fulfilled,
+            (state, action) => {
+                state.roomNotificationMode[action.meta.arg.roomId] =
+                    action.payload
+            },
+        )
     },
 })
 
@@ -260,6 +286,7 @@ export const {
     addMatrixUser,
     setMatrixUsers,
     setMatrixRoomPowerLevels,
+    setMatrixRoomNotificationMode,
     addMatrixError,
     handleMatrixRoomListObservableUpdates,
     handleMatrixRoomTimelineObservableUpdates,
@@ -294,9 +321,15 @@ export const startMatrixClient = createAsyncThunk<
         dispatch(handleMatrixRoomTimelineObservableUpdates(ev)),
     )
     client.on('roomPowerLevels', ev => dispatch(setMatrixRoomPowerLevels(ev)))
+
+    client.on('roomNotificationMode', ev =>
+        dispatch(setMatrixRoomNotificationMode(ev)),
+    )
+
     client.on('error', err => dispatch(addMatrixError(err)))
 
     client.on('status', status => {
+        log.debug('Matrix client status update: ', status)
         if (status === getState().matrix.status) return
         dispatch(setMatrixStatus(status))
     })
@@ -334,14 +367,17 @@ export const joinMatrixRoom = createAsyncThunk<
 
 export const createMatrixRoom = createAsyncThunk<
     { roomId: MatrixRoom['id'] },
-    { name: MatrixRoom['name']; broadcastOnly?: boolean }
->('matrix/createMatrixRoom', async ({ name, broadcastOnly }) => {
+    { name: MatrixRoom['name']; broadcastOnly?: boolean; isPublic?: boolean }
+>('matrix/createMatrixRoom', async ({ name, broadcastOnly, isPublic }) => {
     const client = getMatrixClient()
     const roomArgs: MatrixCreateRoomOptions = { name }
     if (broadcastOnly) {
         roomArgs.power_level_content_override = {
             events_default: MatrixPowerLevel.Moderator,
         }
+    }
+    if (isPublic === true) {
+        roomArgs.visibility = 'public'
     }
     return client.createRoom(roomArgs)
 })
@@ -674,7 +710,7 @@ export const paginateMatrixRoomTimeline = createAsyncThunk<
     { state: CommonState }
 >(
     'matrix/paginateMatrixRoomTimeline',
-    async ({ roomId, limit = 20 }, { getState }) => {
+    async ({ roomId, limit = 30 }, { getState }) => {
         const numEvents = getState().matrix.roomTimelines[roomId]?.length || 0
         const client = getMatrixClient()
         return client.roomPaginateTimeline(roomId, numEvents + limit)
@@ -691,12 +727,24 @@ export const sendMatrixReadReceipt = createAsyncThunk<
 
 export const configureMatrixPushNotifications = createAsyncThunk<
     string,
-    { getToken: () => Promise<string> }
->('matrix/configureMatrixPushNotifications', async ({ getToken }) => {
+    { getToken: () => Promise<string>; appId: string; appName: string }
+>(
+    'matrix/configureMatrixPushNotifications',
+    async ({ getToken, appId, appName }) => {
+        const client = getMatrixClient()
+        const token = await getToken()
+        await client.configureNotificationsPusher(token, appId, appName)
+        return token
+    },
+)
+
+export const updateMatrixRoomNotificationMode = createAsyncThunk<
+    RpcRoomNotificationMode,
+    { roomId: MatrixRoom['id']; mode: RpcRoomNotificationMode }
+>('matrix/updateMatrixRoomNotificationMode', async ({ roomId, mode }) => {
     const client = getMatrixClient()
-    const token = await getToken()
-    await client.configureNotificationsPusher(token)
-    return token
+    await client.setRoomNotificationMode(roomId, mode)
+    return mode
 })
 
 export const ignoreUser = createAsyncThunk<void, { userId: MatrixUser['id'] }>(
@@ -750,6 +798,38 @@ export const unbanUser = createAsyncThunk<
     const client = getMatrixClient()
     await client.roomUnbanUser(roomId, userId, reason)
 })
+
+export const joinDefaultGroupChats = createAsyncThunk<
+    void,
+    void,
+    { state: CommonState }
+>('matrix/joinDefaultGroupChats', async (_, { getState }) => {
+    const client = getMatrixClient()
+    const state = getState()
+    // Join every default chat group we don't have in state
+    const federations = state.federation.federations
+    federations.forEach(f => {
+        const federation = selectFederation(state, f.id)
+        if (!federation) return
+
+        const defaultRoomIds = getFederationGroupChats(federation.meta)
+        log.info(
+            `${defaultRoomIds.length} default groups for federation ${f.name} found...`,
+        )
+        // no need to check if we have already joined since bridge should handle it gracefully and we cannot guarantee the room list is fully loaded at this point anyway
+        defaultRoomIds.forEach(roomId => {
+            client.joinRoom(`${roomId}`, true)
+        })
+    })
+})
+
+export const ensureHealthyMatrixStream = createAsyncThunk<void, void>(
+    'chat/ensureHealthyMatrixStream',
+    () => {
+        const client = getMatrixClient()
+        client.refreshSyncStatus()
+    },
+)
 
 /*** Selectors ***/
 
@@ -860,6 +940,11 @@ export const selectMatrixRoomPowerLevels = (
     s: CommonState,
     roomId: MatrixRoom['id'],
 ) => s.matrix.roomPowerLevels[roomId]
+
+export const selectMatrixRoomNotificationMode = (
+    s: CommonState,
+    roomId: MatrixRoom['id'],
+) => s.matrix.roomNotificationMode[roomId]
 
 export const selectMatrixRoomMembers = (
     s: CommonState,
@@ -1060,6 +1145,26 @@ export const selectLatestMatrixRoomEventId = (
     }
 }
 
+export const selectCanPayFromOtherFeds = createSelector(
+    (s: CommonState) => selectFederations(s),
+    (s: CommonState, chatPayment: MatrixPaymentEvent) => chatPayment,
+    (federations, chatPayment): boolean => {
+        return !!federations.find(f => f.balance > chatPayment.content.amount)
+    },
+)
+
+export const selectCanSendPayment = createSelector(
+    (s: CommonState) => selectFederations(s),
+    (s: CommonState, chatPayment: MatrixPaymentEvent) => chatPayment,
+    (federations, chatPayment): boolean => {
+        return !!federations.find(
+            f =>
+                f.id === chatPayment.content.federationId &&
+                f.balance > chatPayment.content.amount,
+        )
+    },
+)
+
 export const selectCanClaimPayment = createSelector(
     (s: CommonState) => selectFederations(s),
     (s: CommonState, chatPayment: MatrixPaymentEvent) => chatPayment,
@@ -1067,5 +1172,15 @@ export const selectCanClaimPayment = createSelector(
         return !!federations.find(
             f => f.id === chatPayment.content.federationId,
         )
+    },
+)
+
+export const selectAllDefaultMatrixRooms = createSelector(
+    (s: CommonState) => selectFederations(s),
+    federations => {
+        return federations.reduce((result: string[], f: RpcFederation) => {
+            const defaultGroupIds = getFederationGroupChats(f.meta)
+            return [...result, ...defaultGroupIds]
+        }, [])
     },
 )

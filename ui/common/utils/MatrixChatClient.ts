@@ -25,6 +25,7 @@ import {
     RpcMatrixUserDirectorySearchResponse,
     RpcRoomListEntry,
     RpcRoomMember,
+    RpcRoomNotificationMode,
 } from '../types/bindings'
 import { isDev } from './environment'
 import { FedimintBridge } from './fedimint'
@@ -66,9 +67,17 @@ interface MatrixChatClientEventMap {
         roomId: MatrixRoom['id']
         powerLevels: MatrixRoomPowerLevels
     }
+    roomNotificationMode: {
+        roomId: MatrixRoom['id']
+        mode: RpcRoomNotificationMode
+    }
     user: MatrixUser
     error: MatrixError
 }
+type ClientObserverKind = keyof Pick<
+    MatrixChatClientEventMap,
+    'status' | 'roomListUpdate'
+>
 
 export class MatrixChatClient {
     hasStarted = false
@@ -82,6 +91,7 @@ export class MatrixChatClient {
         MatrixRoom['id'],
         { info?: number; timeline?: number } | undefined
     > = {}
+    private clientObserverMap: Partial<Record<ClientObserverKind, number>> = {}
     private roomInvites: RpcRoomListEntry[] = []
     private joinedInvites: Set<string> = new Set()
 
@@ -96,7 +106,8 @@ export class MatrixChatClient {
 
         fedimint.addListener('observableUpdate', ev => {
             // This is noisy, but can be helpful for debugging
-            if (isDev()) log.debug('Received observable update', { ev })
+            if (isDev())
+                log.debug('Received observable update', JSON.stringify(ev))
             this.handleObservableUpdate(ev)
         })
 
@@ -105,10 +116,13 @@ export class MatrixChatClient {
                 .matrixInit()
                 .then(() => this.getAccountSession())
                 .then(auth => {
+                    // resolve auth before fetching anything to support offline UX
                     resolve(this.serializeAuth(auth))
-                    this.observeSyncStatus()
                     this.observeRoomList()
                         .then(() => {
+                            // Wait until after the roomlist is observed
+                            // to prevent flickering on startup
+                            this.observeSyncStatus()
                             this.autoJoinInvites()
                         })
                         .catch(reject)
@@ -126,17 +140,18 @@ export class MatrixChatClient {
         return this.fedimint.matrixGetAccountSession({ cached })
     }
 
-    async joinRoom(roomId: string) {
-        await this.fedimint.matrixRoomJoin({ roomId })
+    async joinRoom(roomId: string, isPublic?: boolean) {
+        if (isPublic) {
+            await this.fedimint.matrixRoomJoinPublic({ roomId })
+        } else {
+            await this.fedimint.matrixRoomJoin({ roomId })
+        }
     }
 
     async createRoom(options: MatrixCreateRoomOptions = {}) {
         const roomId = await this.fedimint.matrixRoomCreate({
             request: options,
         })
-        await this.observeRoomInfo(roomId)
-        await this.observeRoomTimeline(roomId)
-        await this.observeRoomPowerLevels(roomId)
         return { roomId }
     }
 
@@ -150,6 +165,9 @@ export class MatrixChatClient {
         })
         this.observeRoomMembers(roomId).catch(err => {
             log.warn('Failed to observe room members', { roomId, err })
+        })
+        this.observeRoomPowerLevels(roomId).catch(err => {
+            log.warn('Failed to observe room power levels', { roomId, err })
         })
     }
 
@@ -169,7 +187,6 @@ export class MatrixChatClient {
     async setRoomName(roomId: string, name: string) {
         await this.fedimint.matrixRoomSetName({ roomId, name })
     }
-
     async setRoomPowerLevels(
         roomId: string,
         powerLevels: MatrixRoomPowerLevels,
@@ -195,6 +212,16 @@ export class MatrixChatClient {
         // TODO: Remove timeouts, inviting new members is kinda racey.
         await new Promise(resolve => setTimeout(resolve, 500))
         await this.observeRoomMembers(roomId)
+    }
+
+    async setRoomNotificationMode(
+        roomId: string,
+        mode: RpcRoomNotificationMode,
+    ) {
+        await this.fedimint.matrixRoomSetNotificationMode({
+            roomId,
+            mode,
+        })
     }
 
     async setRoomMemberPowerLevel(
@@ -318,15 +345,41 @@ export class MatrixChatClient {
     }
 
     async refetchRoomList() {
+        // Clear existing observer
+        const oldId = this.clientObserverMap['roomListUpdate']
+
+        if (typeof oldId === 'number' && oldId !== Number.MAX_SAFE_INTEGER) {
+            await this.unobserve(oldId)
+            delete this.clientObserverMap['roomListUpdate']
+        }
+        // Recreate observer with fresh "initial list"
         await this.observeRoomList()
     }
 
-    async configureNotificationsPusher(token: string) {
+    async refreshSyncStatus() {
+        // Clear existing observer
+        const oldId = this.clientObserverMap['status']
+        log.debug('refreshSyncStatus oldId', oldId)
+
+        if (typeof oldId === 'number' && oldId !== Number.MAX_SAFE_INTEGER) {
+            log.debug('clearing observer:', oldId)
+            await this.unobserve(oldId)
+            delete this.clientObserverMap['status']
+        }
+        // Recreate observer with fresh "initial list"
+        await this.observeSyncStatus()
+    }
+
+    async configureNotificationsPusher(
+        token: string,
+        appId: string,
+        appName: string,
+    ) {
+        log.info('appId', appId)
         return this.fedimint.matrixSetPusher({
             pusher: {
                 kind: 'http',
-                // TODO: get app name from react native?
-                app_display_name: 'Fedi Bravo',
+                app_display_name: appName,
                 // TODO: get device name from device ID?
                 device_display_name: 'Device',
                 // TODO: get locale from device?
@@ -336,7 +389,7 @@ export class MatrixChatClient {
                     format: 'event_id_only',
                     url: 'https://matrix-sygnal.dev.fedibtc.com/_matrix/push/v1/notify',
                 },
-                app_id: 'com.fedi',
+                app_id: appId,
                 pushkey: token,
             },
         })
@@ -415,14 +468,10 @@ export class MatrixChatClient {
     }
 
     private unobserve(id: number) {
-        if (!this.observers[id]) {
-            log.warn('Attempted to cancel observer that does not exist', { id })
-            return
-        }
-        this.fedimint
+        return this.fedimint
             .matrixObserverCancel({ id: id as unknown as bigint })
             .then(() => {
-                delete this.observers[id]
+                if (this.observers[id]) delete this.observers[id]
             })
             .catch(err => {
                 log.warn('Failed to cancel observer', { id, err })
@@ -434,14 +483,29 @@ export class MatrixChatClient {
         if (!observer) {
             log.info(
                 'Received observable update without associated observer handler',
-                { update },
+                JSON.stringify(update),
             )
-            return
+            return this.unobserve(update.id)
         }
         observer(update)
     }
 
     private async observeSyncStatus() {
+        log.debug(
+            'observeSyncStatus this.clientObserverMap[status]',
+            this.clientObserverMap['status'],
+        )
+        // Only observe the sync status once, subsequent calls are no-ops.
+        if (this.clientObserverMap['status'] !== undefined) return
+
+        // Immediately add to the map with a fake id to prevent additional calls.
+        this.clientObserverMap['status'] = Number.MAX_SAFE_INTEGER
+
+        const { id, initial } = await this.fedimint.matrixObserveSyncIndicator()
+
+        // Update the map with the real id
+        this.clientObserverMap['status'] = id
+
         const handleEmit = (status: typeof initial) => {
             this.emit(
                 'status',
@@ -450,31 +514,33 @@ export class MatrixChatClient {
                     : MatrixSyncStatus.synced,
             )
         }
-
-        const { id, initial } = await this.fedimint.matrixObserveSyncIndicator()
         handleEmit(initial)
 
         this.observe(id, (update: ObservableUpdate<typeof initial>) => {
+            log.debug(
+                'Recieved syncStatus observable update',
+                JSON.stringify(update),
+            )
             handleEmit(update.update)
         })
     }
 
     private async observeRoomList() {
+        // Only observe the roomList once, subsequent calls are no-ops.
+        if (this.clientObserverMap['roomListUpdate'] !== undefined) return
+
+        // Immediately add to the map with a fake id to prevent additional calls.
+        this.clientObserverMap['roomListUpdate'] = Number.MAX_SAFE_INTEGER
+
         const { id, initial } = await this.fedimint.matrixRoomList()
+
+        // Update the map with the real id
+        this.clientObserverMap['roomListUpdate'] = id
+
         // Emit a fake "update" using the initial values
         this.emit(
             'roomListUpdate',
             makeInitialResetUpdate(initial.map(this.serializeRoomListItem)),
-        )
-
-        // Observe all of the rooms
-        await Promise.all(
-            initial.map(async room => {
-                if ('value' in room) {
-                    await this.observeRoomInfo(room.value)
-                    await this.observeRoomPowerLevels(room.value)
-                }
-            }),
         )
 
         // Listen and emit on observable updates
@@ -500,8 +566,25 @@ export class MatrixChatClient {
                         err,
                     }),
                 )
+                this.observeRoomNotificationMode(roomId).catch(err =>
+                    log.warn('Failed to observe room notification mode', {
+                        roomId,
+                        err,
+                    }),
+                )
             })
         })
+
+        // Observe all of the rooms
+        await Promise.all(
+            initial.map(async room => {
+                if ('value' in room) {
+                    await this.observeRoomInfo(room.value)
+                    await this.observeRoomPowerLevels(room.value)
+                    await this.observeRoomNotificationMode(room.value)
+                }
+            }),
+        )
     }
 
     private async observeRoomInfo(roomId: string) {
@@ -536,10 +619,10 @@ export class MatrixChatClient {
                     { roomId, err },
                 )
             })
+
             // HACK: Observe all DMs to claim ecash in the background.
             // TODO: Move this to the bridge... intercept messages that contain
             // ecash and claim before passing to the frontend.
-            //
             this.observeRoomTimeline(roomId).catch(err => {
                 log.warn('Failed to observe room timeline', { roomId, err })
             })
@@ -592,6 +675,7 @@ export class MatrixChatClient {
         })
     }
 
+    // Fake observe - just fetches
     private async observeRoomMembers(roomId: string) {
         // TODO: Listen for new room member events, re-fetch.
         // // Only observe room members once, subsequent calls are no-ops.
@@ -604,11 +688,13 @@ export class MatrixChatClient {
         // }
 
         const members = await this.fedimint.matrixRoomGetMembers({ roomId })
-        members.forEach(member => {
-            this.emit('roomMember', this.serializeRoomMember(member, roomId))
-        })
+        const serializedMembers = members.map(member =>
+            this.serializeRoomMember(member, roomId),
+        )
+        this.emit('roomMembers', { roomId, members: serializedMembers })
     }
 
+    // Fake observe - just fetches
     private async observeRoomPowerLevels(roomId: string) {
         // TODO: Listen for room power level events, re-fetch.
         try {
@@ -619,6 +705,18 @@ export class MatrixChatClient {
         } catch (error) {
             log.warn('Failed to get power levels for roomId', roomId, error)
         }
+    }
+
+    private async observeRoomNotificationMode(roomId: string) {
+        // TODO: Listen for notification mode, re-fetch. (observables)
+        const mode = await this.fedimint.matrixRoomGetNotificationMode({
+            roomId,
+        })
+        this.emit('roomNotificationMode', {
+            roomId,
+            // defaults to "allMessages"
+            mode: mode ?? 'allMessages',
+        })
     }
 
     private async autoJoinInvites() {
@@ -698,6 +796,7 @@ export class MatrixChatClient {
             // We need power levels to determine this, which is a separate call.
             // For now leave this undefined, and just apply it with a redux selector.
             // broadcastOnly: false,
+            isPublic: room.base_info.encryption === null,
         }
     }
 

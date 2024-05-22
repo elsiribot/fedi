@@ -1,4 +1,3 @@
-import notifee from '@notifee/react-native'
 import { ThemeProvider } from '@rneui/themed'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -12,29 +11,29 @@ import {
     fetchRegisteredDevices,
     fetchSocialRecovery,
     initializeDeviceId,
+    joinDefaultGroupChats,
     refreshFederations,
     selectDeviceId,
-    selectFederations,
     setDeviceIndexRequired,
     setShouldLockDevice,
     startMatrixClient,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
-import { TransactionDirection, TransactionEvent } from '@fedi/common/types'
+import { TransactionEvent } from '@fedi/common/types'
 import {
     DeviceRegistrationEvent,
     LogEvent,
     PanicEvent,
 } from '@fedi/common/types/bindings'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint, initializeBridge, subscribeToBridgeEvents } from '../bridge'
 import { ErrorScreen } from '../screens/ErrorScreen'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import { store } from '../state/store'
 import theme from '../styles/theme'
 import { generateDeviceId } from '../utils/device-info'
+import { useAppIsInForeground } from '../utils/hooks/notifications'
+import { displayPaymentReceivedNotification } from '../utils/notifications'
 
 const log = makeLog('FediBridgeInitializer')
 
@@ -50,6 +49,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const deviceId = useAppSelector(selectDeviceId)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const dispatchRef = useUpdatingRef(dispatch)
+    const isForeground = useAppIsInForeground()
 
     // Initialize device ID
     useEffect(() => {
@@ -119,6 +119,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             })
             .then(() => {
                 setBridgeIsReady(true)
+                dispatchRef.current(joinDefaultGroupChats())
             })
             .catch(err => {
                 log.error(
@@ -133,6 +134,26 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     }, [deviceId, dispatchRef])
 
     useEffect(() => {
+        // Initialize push notification sender
+        const unsubscribeTransaction = fedimint.addListener(
+            'transaction',
+            async (event: TransactionEvent) => {
+                if (isForeground)
+                    return log.info(
+                        'Payment received (foreground - no notification)',
+                    )
+
+                log.info(
+                    'Payment received (background - delivering notification)',
+                )
+                await displayPaymentReceivedNotification(event, t)
+            },
+        )
+
+        return () => unsubscribeTransaction()
+    }, [t, isForeground])
+
+    useEffect(() => {
         // Initialize logger
         const unsubscribeLog = fedimint.addListener(
             'log',
@@ -140,51 +161,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                 // Strip escape characters
                 const stripped = event.log.replace('\\', '')
                 log.info('OS:', Platform.OS, `": log" -> "${stripped}"`)
-            },
-        )
-
-        // Initialize push notification sender
-        const unsubscribeTransaction = fedimint.addListener(
-            'transaction',
-            async (event: TransactionEvent) => {
-                // Create a channel (required for Android)
-                const channelId = await notifee.createChannel({
-                    id: 'transactions',
-                    name: 'Transactions Channel',
-                })
-
-                // Display notifications only for incoming transactions
-                if (
-                    event.transaction.direction === TransactionDirection.receive
-                ) {
-                    const { amount, onchainState, oobState } = event.transaction
-                    // dont show notification for onchain txn until it is claimed
-                    if (onchainState && onchainState.type !== 'claimed') return
-                    // dont show notification for ecash txn until it is done
-                    if (oobState && oobState.type !== 'done') return
-
-                    const federations = selectFederations(store.getState())
-                    const federation = federations.find(
-                        f => f.id === event.federationId,
-                    )
-                    await notifee.displayNotification({
-                        title: federation
-                            ? `${federation.name}: ${t(
-                                  'phrases.transaction-received',
-                              )}`
-                            : t('phrases.transaction-received'),
-                        body: `${amountUtils.formatNumber(
-                            amountUtils.msatToSat(amount),
-                        )} ${t('words.sats')}`,
-                        android: {
-                            channelId,
-                            // pressAction is needed if you want the notification to open the app when pressed
-                            pressAction: {
-                                id: 'transactions',
-                            },
-                        },
-                    })
-                }
             },
         )
 
@@ -211,7 +187,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
 
         return () => {
             unsubscribeLog()
-            unsubscribeTransaction()
             unsubscribePanic()
             unsubscribeDeviceRegistration()
         }

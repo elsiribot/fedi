@@ -29,16 +29,31 @@ export const ChatConnectionBadge: React.FC<Props> = ({
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const isReady = useAppSelector(s => selectIsMatrixReady(s))
+    const [isStillLoading, setIsStillLoading] = useState(false)
 
-    const [isVisible, setIsVisible] = useState(!isReady || hide)
+    let isVisible = !isReady
+    if (hide) {
+        isVisible = false
+    }
+    // Set isStillLoading to true after 5 seconds to change
+    // from 'Loading...' to 'Waiting for network...'
+    // reset the loading state if needed
+    useEffect(() => {
+        if (isVisible) {
+            const timer = setTimeout(() => {
+                setIsStillLoading(true)
+            }, 5000)
+
+            // Cleanup the timer when the effect is cleaned up
+            return () => clearTimeout(timer)
+        } else {
+            setIsStillLoading(false)
+        }
+    }, [isVisible])
 
     const visibleAnimation = useRef(
         new Animated.Value(isVisible ? 1 : 0),
     ).current
-
-    useEffect(() => {
-        if (isReady) setIsVisible(false)
-    }, [isReady])
 
     // Animate container in and out when visible
     useEffect(() => {
@@ -71,7 +86,13 @@ export const ChatConnectionBadge: React.FC<Props> = ({
                 }),
             },
         ],
+        backgroundColor: isStillLoading
+            ? '#FCDDEC' // TODO: Replace with fuschia from theme when new colors are added
+            : theme.colors.lightGrey,
     }
+    const badgeText = isStillLoading
+        ? t('feature.chat.waiting-for-network')
+        : t('words.loading')
     const style = styles(theme)
 
     return (
@@ -79,7 +100,7 @@ export const ChatConnectionBadge: React.FC<Props> = ({
             <Animated.View style={[style.badge, badgeStyle]}>
                 <ActivityIndicator size={16} color={theme.colors.primary} />
                 <Text caption medium>
-                    {t('feature.chat.waiting-for-network')}
+                    {`${badgeText}...`}
                 </Text>
             </Animated.View>
         </Animated.View>
@@ -105,7 +126,6 @@ const styles = (theme: Theme) =>
             gap: theme.spacing.sm,
             paddingVertical: theme.spacing.sm,
             paddingHorizontal: theme.spacing.md,
-            backgroundColor: '#FCDDEC', // TODO: Replace with fuschia from theme when new colors are added
             borderRadius: 8,
             shadowOffset: { width: 0, height: 4 },
             shadowRadius: 24,

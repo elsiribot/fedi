@@ -1,3 +1,4 @@
+import messaging from '@react-native-firebase/messaging'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Switch, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
@@ -49,7 +50,7 @@ export type Props = NativeStackScreenProps<
     'DeveloperSettings'
 >
 
-const DeveloperSettings: React.FC<Props> = () => {
+const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { listGateways, switchGateway, guardianStatus } = useBridge()
@@ -190,6 +191,11 @@ const DeveloperSettings: React.FC<Props> = () => {
         setIsSharingState(false)
     }
 
+    const logFCMToken = async () => {
+        const fcmToken = await messaging().getToken()
+        log.info(`FCM Notification Token - ${fcmToken}`)
+    }
+
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             <SettingsSection title="App info">
@@ -206,6 +212,11 @@ const DeveloperSettings: React.FC<Props> = () => {
                     containerStyle={styles(theme).buttonContainer}
                     onPress={handleShareStorage}
                     loading={isSharingState}
+                />
+                <Button
+                    title={t('feature.developer.log-fcm-token')}
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={logFCMToken}
                 />
                 <View style={styles(theme).switchWrapper}>
                     <View style={styles(theme).switchLabelContainer}>
@@ -438,6 +449,21 @@ const DeveloperSettings: React.FC<Props> = () => {
                         </Text>
                     )
                 })}
+            </SettingsSection>
+
+            <SettingsSection title="Chat">
+                <Button
+                    title={t('feature.developer.create-default-group')}
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={() => {
+                        navigation.navigate('CreateGroup', {
+                            defaultGroup: true,
+                        })
+                    }}
+                />
+                <Text small style={styles(theme).switchLabel}>
+                    {t('feature.developer.default-groups-info')}
+                </Text>
             </SettingsSection>
 
             <SettingsSection title="Danger zone">

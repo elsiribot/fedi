@@ -7,16 +7,17 @@ import dateUtils from '@fedi/common/utils/DateUtils'
 
 import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { MatrixRoom } from '../../../types'
-import Avatar from '../../ui/Avatar'
 import { AvatarSize } from '../../ui/Avatar'
+import ChatAvatar from './ChatAvatar'
 import GroupIcon from './GroupIcon'
 
 type ChatTileProps = {
     room: MatrixRoom
-    selectChat: (chat: MatrixRoom) => void
+    onSelect: (chat: MatrixRoom) => void
+    onLongPress: (chat: MatrixRoom) => void
 }
 
-const ChatTile = ({ room, selectChat }: ChatTileProps) => {
+const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
     const { theme } = useTheme()
 
     const hasNewMessages = useMemo(() => room.notificationCount > 0, [room])
@@ -35,7 +36,9 @@ const ChatTile = ({ room, selectChat }: ChatTileProps) => {
                     : {},
             ]}
             disabled={!room}
-            onPress={() => selectChat(room)}>
+            onLongPress={() => onLongPress(room)}
+            delayLongPress={300}
+            onPress={() => onSelect(room)}>
             <View style={styles(theme).iconContainer}>
                 <View
                     style={[
@@ -45,11 +48,7 @@ const ChatTile = ({ room, selectChat }: ChatTileProps) => {
                 />
                 <View style={styles(theme).chatTypeIconContainer}>
                     {room.directUserId ? (
-                        <Avatar
-                            id={room.directUserId || ''}
-                            name={room.name || '?'}
-                            size={AvatarSize.md}
-                        />
+                        <ChatAvatar room={room} size={AvatarSize.md} />
                     ) : (
                         <GroupIcon chat={room} />
                     )}
@@ -82,7 +81,13 @@ const ChatTile = ({ room, selectChat }: ChatTileProps) => {
                             style={styles(theme).emptyMessagePreview}
                             numberOfLines={1}
                             {...previewTextWeight}>
-                            {t('feature.chat.no-messages')}
+                            {/* 
+                                HACK: public rooms don't show a preview message so you have to click into it to paginate backwards
+                                TODO: Replace with proper room previews
+                            */}
+                            {room.isPublic
+                                ? t('feature.chat.click-here-for-announcements')
+                                : t('feature.chat.no-messages')}
                         </Text>
                     )}
                 </View>

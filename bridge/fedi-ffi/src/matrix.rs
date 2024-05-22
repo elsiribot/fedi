@@ -7,6 +7,7 @@ use std::time::Duration;
 use anyhow::{bail, Context, Result};
 use eyeball::Subscriber;
 use fedimint_core::task::{MaybeSend, MaybeSync, TaskGroup};
+use fedimint_core::util::BackoffBuilder;
 use fedimint_derive_secret::DerivableSecret;
 use futures::{Future, StreamExt};
 use matrix_sdk::encryption::BackupDownloadStrategy;
@@ -28,7 +29,7 @@ use matrix_sdk::ruma::events::{AnySyncTimelineEvent, InitialStateEvent};
 use matrix_sdk::ruma::{OwnedMxcUri, RoomId, UserId};
 use matrix_sdk::sliding_sync::Ranges;
 use matrix_sdk::{Client, RoomInfo, RoomMemberships};
-use matrix_sdk_ui::sync_service::SyncService;
+use matrix_sdk_ui::sync_service::{self, SyncService};
 use matrix_sdk_ui::timeline::{default_event_filter, PaginationOptions};
 use matrix_sdk_ui::{room_list_service, RoomListService};
 use mime::Mime;
@@ -142,6 +143,22 @@ impl Matrix {
         self.task_group
             .spawn_cancellable("matrix::start_sync", async move {
                 this.sync_service.start().await;
+                let mut backoff = fedimint_core::util::FibonacciBackoff::default()
+                    .with_min_delay(Duration::from_secs(1))
+                    .with_max_delay(Duration::from_secs(60))
+                    .with_max_times(usize::MAX)
+                    .with_jitter()
+                    .build();
+                while let Some(state) = this.sync_service.state().next().await {
+                    if matches!(
+                        state,
+                        sync_service::State::Terminated | sync_service::State::Error
+                    ) {
+                        // should never return None
+                        fedimint_core::task::sleep(backoff.next().unwrap_or_default()).await;
+                        this.sync_service.start().await;
+                    }
+                }
             });
 
         let this = self.clone();
@@ -409,6 +426,7 @@ impl Matrix {
             |this, id| async move {
                 let mut index = 0;
                 while let Some(item) = stream.next().await {
+                    info!("matrix sync status: {item:?}");
                     this.send_observable_update(ObservableUpdate::new(
                         id,
                         index,
