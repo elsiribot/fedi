@@ -409,6 +409,7 @@ impl Matrix {
             |this, id| async move {
                 let mut index = 0;
                 while let Some(item) = stream.next().await {
+                    info!("matrix sync status: {item:?}");
                     this.send_observable_update(ObservableUpdate::new(
                         id,
                         index,
