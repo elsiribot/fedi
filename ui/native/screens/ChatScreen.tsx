@@ -58,7 +58,6 @@ const ChatScreen: React.FC<Props> = () => {
         return (
             <View style={style.centerContainer}>
                 <ActivityIndicator size={16} color={theme.colors.primary} />
-                <Text>{t('feature.chat.waiting-for-network')}</Text>
             </View>
         )
     } else if (syncStatus === MatrixSyncStatus.stopped) {

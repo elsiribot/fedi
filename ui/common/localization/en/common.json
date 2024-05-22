@@ -50,6 +50,7 @@
         "language": "Language",
         "leave": "Leave",
         "lightning": "Lightning",
+        "loading": "Loading",
         "member": "Member",
         "members": "Members",
         "memo": "Memo",
@@ -216,6 +217,7 @@
         "onchain-deposits-disabled": "Onchain deposits have been disabled for this federation",
         "only-group-owners-can-change-name": "Only group owners can change the group name",
         "please-force-quit-the-app": "An error occurred, please force quit the app and try again",
+        "please-join-a-federation": "Please join a federation before making chat payments",
         "receive-ecash-failed": "Failed to receive ecash",
         "receives-have-been-disabled": "Receives have been disabled for this federation",
         "recovery-failed": "Recovery failed, please try again",
@@ -227,7 +229,6 @@
         "webln-payment-rejected": "Payment rejected",
         "webln-payment-request-rejected": "Payment request rejected",
         "you-have-already-joined": "You have already joined this federation",
-        "you-must-join-a-federation": "You must join a federation before you can make payments",
         "user-is-already-in-group": "This user is already a member of this group"
     },
     "feature": {
@@ -403,7 +404,7 @@
             "removed-member": "Removed Member",
             "view-archived-chats": "View Archived chats",
             "view-shared-media": "View shared media",
-            "waiting-for-network": "Waiting for network...",
+            "waiting-for-network": "Waiting for network",
             "you-requested-payment": "You requested {{fiat}} ({{amount}}) {{memo}}",
             "you-sent-payment": "You sent {{fiat}} ({{amount}}) {{memo}}"
         },

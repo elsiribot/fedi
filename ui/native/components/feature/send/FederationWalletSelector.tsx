@@ -70,6 +70,8 @@ const FederationWalletSelector: React.FC = () => {
         )
     }
 
+    if (federations.length === 0) return null
+
     return (
         <View style={style.container}>
             <Pressable

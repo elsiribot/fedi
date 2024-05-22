@@ -340,8 +340,10 @@ export const useChatPaymentUtils = (
 
     const handleSendPayment = useCallback(
         async (onSuccess: () => void) => {
+            if (!federationId)
+                return toast.error(t, 'errors.please-join-a-federation')
             // TODO: allow for on-the-fly room creation?
-            if (!federationId || !roomId) return
+            if (!roomId) return
             try {
                 setSubmitAction('send')
                 await dispatch(
@@ -373,8 +375,11 @@ export const useChatPaymentUtils = (
 
     const handleRequestPayment = useCallback(
         async (onSuccess: () => void) => {
+            if (!federationId)
+                return toast.error(t, 'errors.please-join-a-federation')
             // TODO: allow for on-the-fly room creation?
-            if (!federationId || !roomId) return
+            if (!roomId) return
+
             setSubmitType('request')
             setSubmitAttempts(attempt => attempt + 1)
             if (!canRequestAmount) return

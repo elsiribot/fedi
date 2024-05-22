@@ -127,7 +127,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 <Text style={styles(theme).sectionTitle}>
                     {t('words.group')}
                 </Text>
-                {!isDefaultGroup && (
+                {(!isDefaultGroup || (isDefaultGroup && isAdmin)) && (
                     <SettingsItem
                         image={<SvgImage name="SocialPeople" />}
                         label={`${amountUtils.formatNumber(memberCount)} ${t(

@@ -174,16 +174,12 @@ export const displayAnnouncement = async (
         importance: AndroidImportance.HIGH,
     }
 
-    // Fixes type incompatibility between FCM and notifee
-    const sound =
-        typeof message.notification?.ios?.sound === 'string'
-            ? message.notification?.ios?.sound
-            : undefined
-
     const ios = {
         ...message?.notification?.ios,
-        sound,
-    }
+        // Fixes type incompatibility between FCM and
+        // notifee for "sound" property
+        // `Type 'NotificationIOSCriticalSound' is not assignable to type 'string'.`
+    } as NotificationIOS
 
     await dispatchNotification(
         id,
