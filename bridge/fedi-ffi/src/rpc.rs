@@ -689,7 +689,12 @@ async fn communityPreview(
     bridge: Arc<Bridge>,
     invite_code: String,
 ) -> anyhow::Result<RpcCommunity> {
-    bridge.community_preview(&invite_code).await
+    bridge.communities.community_preview(&invite_code).await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn joinCommunity(bridge: Arc<Bridge>, invite_code: String) -> anyhow::Result<RpcCommunity> {
+    bridge.communities.join_community(&invite_code).await
 }
 
 async fn get_matrix(bridge: &Bridge) -> anyhow::Result<&Matrix> {
@@ -1292,6 +1297,7 @@ rpc_methods!(RpcMethods {
 
     // Communities
     communityPreview,
+    joinCommunity,
 });
 
 #[instrument(
