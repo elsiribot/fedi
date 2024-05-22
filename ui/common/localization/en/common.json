@@ -50,6 +50,7 @@
         "language": "Language",
         "leave": "Leave",
         "lightning": "Lightning",
+        "loading": "Loading",
         "member": "Member",
         "members": "Members",
         "memo": "Memo",
@@ -403,7 +404,7 @@
             "removed-member": "Removed Member",
             "view-archived-chats": "View Archived chats",
             "view-shared-media": "View shared media",
-            "waiting-for-network": "Waiting for network...",
+            "waiting-for-network": "Waiting for network",
             "you-requested-payment": "You requested {{fiat}} ({{amount}}) {{memo}}",
             "you-sent-payment": "You sent {{fiat}} ({{amount}}) {{memo}}"
         },
