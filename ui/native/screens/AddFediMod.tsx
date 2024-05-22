@@ -16,7 +16,6 @@ import {
     OmniInput,
     OmniInputAction,
 } from '../components/feature/omni/OmniInput'
-import { useAppSelector } from '../state/hooks'
 import { ParserDataType } from '../types'
 
 const log = makeLog('AddFediMod')

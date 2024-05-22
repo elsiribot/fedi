@@ -232,10 +232,7 @@ export const fetchGlobalFederation =
                         SupportedMetaFields.federation_name,
                         globalEntry,
                     ) || '',
-                meta: {
-                    ...globalEntry,
-                    sites: '[{"id":"meetups","url":"https://www.meetup.com/madeira-bitcoin-meetup-group/","title":"Meetups","imageUrl":"https://fedi-public-snapshots.s3.amazonaws.com/icons/speakers.png"},{"id":"youtube","url":"https://www.youtube.com/@freemadeira","title":"YT FREE Madeira","imageUrl":"https://fedi-public-snapshots.s3.amazonaws.com/icons/education-youtube.png"},{"id":"boltz","url":"https://boltz.exchange/swap","title":"BTC to Lightning","imageUrl":"https://fedi-public-snapshots.s3.amazonaws.com/icons/boltz.png"},{"id":"bitrefill","url":"https://embed.bitrefill.com/refill?paymentMethod=lightning&ref=bezsoYNf&utm_source=fedi","title":"Bitrefill","imageUrl":"https://fedi-public-snapshots.s3.amazonaws.com/icons/bitrefill.png"},{"id":"lngpt","url":"https://lngpt.vercel.app","title":"AI Assistant","imageUrl":"https://lngpt.vercel.app/logo.png"},{"id":"geyser","url":"https://geyser.fund","title":"Geyser Fund","imageUrl":"https://fedi-public-snapshots.s3.amazonaws.com/icons/geyserfund.jpg"},{"id":"tbc","url":"https://embed.thebitcoincompany.com/giftcard","title":"The Bitcoin Company","imageUrl":"https://fedi-public-snapshots.s3.amazonaws.com/icons/thebitcoincompany.jpg"},{"id":"btcmap","url":"https://btcmap.org/map","title":"BTC Map","imageUrl":"https://fedi-public-snapshots.s3.amazonaws.com/icons/btcmap.png"},{"id":"fedisupport","url":"https://support.fedi.xyz","title":"Support","imageUrl":"https://fedi-public-snapshots.s3.amazonaws.com/icons/fedi-faq-logo.png"}]',
-                },
+                meta: globalEntry,
             }
         } catch (error) {
             log.error('Failed to fetch public federations', error)

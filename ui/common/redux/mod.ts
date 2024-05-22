@@ -103,13 +103,20 @@ export const selectVisibleCustomMods = createSelector(
         }),
 )
 
-const selectGlobalFederationFediMods = createSelector(
+export const selectGlobalSuggestedMods = createSelector(
     (s: CommonState) => s.federation.globalFederation,
-    (s: CommonState) => s.federation.customFediMods[GLOBAL_FEDERATION_ID],
-    (federation, customMods = []) => {
+    federation => {
         if (!federation) return []
 
-        return [...getFederationFediMods(federation.meta), ...customMods]
+        return getFederationFediMods(federation.meta)
+    },
+)
+
+export const selectGlobalFederationFediMods = createSelector(
+    selectGlobalSuggestedMods,
+    (s: CommonState) => s.federation.customFediMods[GLOBAL_FEDERATION_ID],
+    (suggestedMods, customMods = []) => {
+        return [...suggestedMods, ...customMods]
     },
 )
 

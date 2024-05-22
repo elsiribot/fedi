@@ -12,10 +12,12 @@ import {
 } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useGlobalFederation } from '@fedi/common/hooks/federation'
 import { CommonState } from '@fedi/common/redux'
 import {
     removeCustomGlobalMod,
     selectGlobalCustomMods,
+    selectGlobalSuggestedMods,
     setCustomGlobalModVisibility,
     setSuggestedGlobalModVisibility,
 } from '@fedi/common/redux/mod'
@@ -35,7 +37,9 @@ const FediModSettings: React.FC = () => {
     const insets = useSafeAreaInsets()
     const navigation = useNavigation()
 
-    const suggestedFediMods = useAppSelector(selectGlobalCustomMods)
+    useGlobalFederation()
+
+    const suggestedFediMods = useAppSelector(selectGlobalSuggestedMods)
     const suggestedVisibility = useAppSelector(
         (s: CommonState) => s.mod.suggestedVisibility,
     )
@@ -132,11 +136,12 @@ const FediModSettings: React.FC = () => {
 
             return (
                 <ModRow
-                    canDelete
+                    key={mod.id}
                     isHidden={isHidden}
                     mod={mod}
                     onDelete={handleDeletePress}
                     onToggleVisibility={handleToggleCustomVisibility}
+                    canDelete
                 />
             )
         })
@@ -148,6 +153,7 @@ const FediModSettings: React.FC = () => {
 
             return (
                 <ModRow
+                    key={mod.id}
                     isHidden={isHidden}
                     mod={mod}
                     onToggleVisibility={handleToggleSuggestedVisibility}
@@ -166,7 +172,7 @@ const FediModSettings: React.FC = () => {
                 style={style.scrollContainer}
                 contentContainerStyle={style.contentContainer}
                 overScrollMode="auto">
-                {customFediMods.length > 0 ? (
+                {customFediMods.length > 0 || suggestedFediMods.length > 0 ? (
                     <>
                         <Text style={style.label}>
                             {t('feature.fedimods.your-mods')}
@@ -240,7 +246,7 @@ const ModRow = ({
                 <Text small>{mod.url}</Text>
             </View>
             <Pressable onPress={() => onToggleVisibility(mod)}>
-                <SvgImage name={isHidden ? 'Bug' : 'Cash'} size={24} />
+                <SvgImage name={isHidden ? 'EyeClosed' : 'Eye'} size={24} />
             </Pressable>
             {canDelete && (
                 <Pressable onPress={() => onDelete?.(mod)}>

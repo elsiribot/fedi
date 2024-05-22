@@ -1,22 +1,40 @@
 import { useNavigation } from '@react-navigation/native'
 import type { Theme } from '@rneui/themed'
 import { useTheme } from '@rneui/themed'
-import React from 'react'
-import { Linking, StyleSheet, View, useWindowDimensions } from 'react-native'
+import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+    Dimensions,
+    Linking,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
+    useWindowDimensions,
+} from 'react-native'
 
+import { useGlobalFederation } from '@fedi/common/hooks/federation'
 import {
     selectVisibleCustomMods,
     selectVisibleGlobalSuggestedMods,
+    setCustomGlobalModVisibility,
+    setSuggestedGlobalModVisibility,
 } from '@fedi/common/redux/mod'
 
 import ShortcutTile from '../components/feature/home/ShortcutTile'
-import { useAppSelector } from '../state/hooks'
+import { NuxTooltip } from '../components/ui/NuxTooltip'
+import SvgImage from '../components/ui/SvgImage'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { Shortcut, FediMod } from '../types'
 import { NavigationHook } from '../types/navigation'
 
 const Mods: React.FC = () => {
     const { theme } = useTheme()
+    const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
+    const dispatch = useAppDispatch()
+
+    useGlobalFederation()
 
     const globalMods = useAppSelector(selectVisibleGlobalSuggestedMods)
     const customMods = useAppSelector(selectVisibleCustomMods)
@@ -25,9 +43,10 @@ const Mods: React.FC = () => {
     const columns = width / fontScale < 300 ? 2 : 3
     const style = styles(theme, columns)
 
-    // const [_, setActionsMod] = useState<FediMod>()
+    const [actionsMod, setActionsMod] = useState<FediMod>()
 
     const onSelectFediMod = (shortcut: Shortcut) => {
+        setActionsMod(undefined)
         const fediMod = shortcut as FediMod
         // Handle telegram and whatsapp links natively
         if (
@@ -40,18 +59,55 @@ const Mods: React.FC = () => {
         }
     }
 
-    const handleModHold = () => {
-        // const fediMod = shortcut as FediMod
-        // setActionsMod(fediMod)
+    const handleModHold = (shortcut: Shortcut) => {
+        const fediMod = shortcut as FediMod
+        setActionsMod(fediMod)
+    }
+
+    const toggleHideMod = (modId: FediMod['id']) => {
+        const isGlobal = globalMods.some(mod => mod.id === modId)
+
+        if (isGlobal) {
+            dispatch(
+                setSuggestedGlobalModVisibility({
+                    modId,
+                    isHidden: true,
+                }),
+            )
+        } else {
+            dispatch(setCustomGlobalModVisibility({ modId, isHidden: true }))
+        }
+
+        setActionsMod(undefined)
     }
 
     const renderFediModShortcuts = () => {
         const fediModShortcuts = [...globalMods, ...customMods].map(
             s => new FediMod(s),
         )
-        return fediModShortcuts.map((s: FediMod, i: number) => {
+        return fediModShortcuts.map((s: FediMod) => {
             return (
-                <View key={`fediMod-s-${i}`} style={style.shortcut}>
+                <View key={`fediMod-s-${s.id}`} style={style.shortcut}>
+                    {/* an invisible overlay so we can hide the tooltip on outside press */}
+                    <Pressable
+                        style={style.tooltipOverlay}
+                        onPress={() => setActionsMod(undefined)}
+                    />
+                    <NuxTooltip
+                        shouldShow={actionsMod?.id === s.id}
+                        orientation="above"
+                        verticalOffset={96}
+                        horizontalOffset={48}
+                        text="">
+                        <Pressable
+                            style={style.tooltipAction}
+                            onPress={() => toggleHideMod(s.id)}>
+                            <Text style={style.tooltipText}>
+                                {t('words.hide')}
+                            </Text>
+                            <SvgImage name="Eye" />
+                        </Pressable>
+                    </NuxTooltip>
                     <ShortcutTile
                         shortcut={s}
                         onSelect={onSelectFediMod}
@@ -106,6 +162,18 @@ const styles = (theme: Theme, columns: number) =>
             flexDirection: 'row',
             flexWrap: 'wrap',
             justifyContent: 'space-between',
+        },
+        tooltipAction: {
+            flexDirection: 'row',
+            gap: theme.sizes.xs,
+        },
+        tooltipText: {
+            color: theme.colors.primary,
+        },
+        tooltipOverlay: {
+            height: Dimensions.get('window').height,
+            width: Dimensions.get('window').width,
+            position: 'absolute',
         },
     })
 

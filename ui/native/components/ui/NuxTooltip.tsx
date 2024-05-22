@@ -23,6 +23,7 @@ interface Props {
     delay?: number
     verticalOffset?: number
     horizontalOffset?: number
+    children?: React.ReactNode
 }
 
 export const NuxTooltip: React.FC<Props> = ({
@@ -33,6 +34,7 @@ export const NuxTooltip: React.FC<Props> = ({
     side = 'left',
     verticalOffset = 0,
     horizontalOffset = 0,
+    children = <></>,
 }) => {
     const { theme } = useTheme()
     const [isShowing, setIsShowing] = useState(false)
@@ -96,9 +98,12 @@ export const NuxTooltip: React.FC<Props> = ({
                 side === 'right' ? style.containerRight : {},
             ]}>
             <View style={style.textContainer}>
-                <Text caption medium>
-                    {text}
-                </Text>
+                {text && (
+                    <Text caption medium>
+                        {text}
+                    </Text>
+                )}
+                {children}
             </View>
             <View
                 style={[
