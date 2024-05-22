@@ -102,9 +102,9 @@ impl Communities {
 /// Community invite codes are bech32m encoded with the human-readable part
 /// being "fedi:community". The decoded data is actually a json blob that
 /// follows this schema.
-#[derive(Debug, Deserialize)]
-struct CommunityInvite {
-    community_meta_url: String,
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CommunityInvite {
+    pub community_meta_url: String,
 }
 
 impl FromStr for CommunityInvite {
@@ -129,7 +129,7 @@ impl FromStr for CommunityInvite {
 /// community ID, invite code, name, and version to always be there. All other
 /// fields are encapsulated in the "meta" map and the front-end can decide how
 /// best to utilize them.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CommunityJson {
     pub community_id: String,
     pub invite_code: String,
