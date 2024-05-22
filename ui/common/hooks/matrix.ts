@@ -219,7 +219,7 @@ export function useMatrixPaymentEvent({
                 setIsRejecting,
             )
         } else {
-            onErrorRef.current('errors.you-must-join-a-federation')
+            onErrorRef.current('errors.please-join-a-federation')
         }
     }, [
         canPayFromOtherFeds,
