@@ -468,7 +468,7 @@ export class MatrixChatClient {
     }
 
     private unobserve(id: number) {
-        this.fedimint
+        return this.fedimint
             .matrixObserverCancel({ id: id as unknown as bigint })
             .then(() => {
                 if (this.observers[id]) delete this.observers[id]
