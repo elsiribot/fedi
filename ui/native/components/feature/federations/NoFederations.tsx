@@ -9,7 +9,7 @@ import { Images } from '@fedi/native/assets/images'
 import { FediMod } from '@fedi/native/types'
 
 import { FederationLogo } from '../../ui/FederationLogo'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import SvgImage from '../../ui/SvgImage'
 
 const AWESOME_FEDIMINT_LINK = 'https://github.com/fedimint/awesome-fedimint'
 
