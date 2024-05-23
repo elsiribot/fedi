@@ -58,6 +58,7 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
                 user={member}
                 selectUser={handleSelectMember}
                 disabled={isMe}
+                overrideAvatarName={isMe ? item.displayName : undefined}
                 showAdmin={member.powerLevel >= MatrixPowerLevel.Admin}
                 rightIcon={
                     <Text small color={theme.colors.grey}>

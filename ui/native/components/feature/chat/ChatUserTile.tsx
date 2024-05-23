@@ -19,6 +19,7 @@ type UserItemProps = {
     showSuffix?: boolean
     showAdmin?: boolean
     containerStyle?: StyleProp<ViewStyle>
+    overrideAvatarName?: string
 }
 
 const ChatUserTile: React.FC<UserItemProps> = ({
@@ -29,6 +30,7 @@ const ChatUserTile: React.FC<UserItemProps> = ({
     disabled = false,
     showSuffix = false,
     showAdmin = false,
+    overrideAvatarName,
     containerStyle,
 }: UserItemProps) => {
     const { theme } = useTheme()
@@ -37,6 +39,13 @@ const ChatUserTile: React.FC<UserItemProps> = ({
         return getUserSuffix(user.displayName, user.id)
     }, [user])
 
+    const avatarUser = !!overrideAvatarName
+        ? {
+              ...user,
+              displayName: overrideAvatarName,
+          }
+        : user
+
     return (
         <Pressable
             containerStyle={containerStyle}
@@ -44,7 +53,7 @@ const ChatUserTile: React.FC<UserItemProps> = ({
             <View style={styles(theme).usernameContainer}>
                 <ChatAvatar
                     containerStyle={[styles(theme).avatar]}
-                    user={user}
+                    user={avatarUser}
                     size={AvatarSize.md}
                 />
                 {showAdmin && (
