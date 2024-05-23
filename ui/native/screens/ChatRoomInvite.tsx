@@ -159,6 +159,7 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
             keyboardDismissMode={'on-drag'}
             showsVerticalScrollIndicator={false}
             extraData={[invitingUsers]}
+            keyboardShouldPersistTaps="always"
         />
     )
 
