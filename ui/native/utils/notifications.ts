@@ -268,8 +268,3 @@ export const handleBackgroundNotificationUpdate = async ({
         if (typeof link === 'string') Linking.openURL(link)
     }
 }
-
-export const dismissIosNotifications = async () => {
-    await notifee.setBadgeCount(0)
-    log.info('Reset IOS Badge count to 0')
-}

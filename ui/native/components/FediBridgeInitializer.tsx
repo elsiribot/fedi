@@ -33,10 +33,7 @@ import { useAppDispatch, useAppSelector } from '../state/hooks'
 import theme from '../styles/theme'
 import { generateDeviceId } from '../utils/device-info'
 import { useAppIsInForeground } from '../utils/hooks/notifications'
-import {
-    dismissIosNotifications,
-    displayPaymentReceivedNotification,
-} from '../utils/notifications'
+import { displayPaymentReceivedNotification } from '../utils/notifications'
 
 const log = makeLog('FediBridgeInitializer')
 
@@ -118,9 +115,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                     ...(status?.matrixSetup
                         ? [dispatchRef.current(startMatrixClient({ fedimint }))]
                         : []),
-
-                    // Resets ios badge count
-                    dismissIosNotifications(),
                 ])
             })
             .then(() => {
