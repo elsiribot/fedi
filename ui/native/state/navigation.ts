@@ -48,7 +48,7 @@ export function resetAfterSocialRecovery() {
     }
 }
 
-export function resetAfterGroupNameUpdate(roomId: string) {
+export function resetToChatSettings(roomId: string) {
     return {
         ...CommonActions.reset({
             index: 2,

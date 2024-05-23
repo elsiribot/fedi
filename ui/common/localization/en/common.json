@@ -234,8 +234,7 @@
     "feature": {
         "notifications": {
             "new-messages-count": "You have {{unread}} new messages",
-            "new-messages": "You have new messages",
-            "open-chat": "Open Chat"
+            "new-messages": "You have new messages"
         },
         "backup": {
             "backup-social-recovery-file": "Backup your social recovery file",
@@ -365,6 +364,7 @@
             "no-one-is-in-this-group": "No one is in this group yet.",
             "no-users-found": "No users found",
             "open-camera-scanner": "Open Camera Scanner",
+            "open-chat": "Open Chat",
             "other-sent-payment": "{{name}} sent {{recipient}} {{fiat}} ({{amount}}) {{memo}}",
             "paid-by-name": "Paid by {{name}}",
             "paste-group-invite": "Paste group invite",

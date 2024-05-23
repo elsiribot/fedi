@@ -11,7 +11,7 @@ import { selectMatrixRoom, setMatrixRoomName } from '@fedi/common/redux'
 import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import { resetAfterGroupNameUpdate } from '../state/navigation'
+import { resetToChatSettings } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'EditGroup'>
@@ -39,7 +39,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                     name: groupName,
                 }),
             ).unwrap()
-            navigation.dispatch(resetAfterGroupNameUpdate(room.id))
+            navigation.dispatch(resetToChatSettings(room.id))
         } catch (err) {
             toast.error(t, 'errors.unknown-error')
         }
