@@ -7,7 +7,7 @@ import {
 
 import * as Svgs from '../../../assets/images/svgs'
 import { Pressable } from '../../ui/Pressable'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import SvgImage from '../../ui/SvgImage'
 
 type SettingsItemProps = {
     disabled?: boolean
