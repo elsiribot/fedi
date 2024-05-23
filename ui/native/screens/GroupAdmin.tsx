@@ -156,6 +156,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                         label={t('feature.chat.broadcast-only')}
                         action={
                             <Switch
+                                style={styles(theme).switch}
                                 value={room?.broadcastOnly}
                                 disabled={isTogglingBroadcastOnly || !isAdmin}
                                 onValueChange={_ => {
@@ -163,6 +164,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                                 }}
                             />
                         }
+                        isLoading={isTogglingBroadcastOnly}
                         disabled={!isAdmin}
                         onPress={handleToggleBroadcastOnly}
                     />
@@ -176,7 +178,7 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             justifyContent: 'space-evenly',
-            padding: theme.spacing.xl,
+            padding: theme.spacing.lg,
         },
         profileHeader: {
             alignItems: 'center',
@@ -202,6 +204,10 @@ const styles = (theme: Theme) =>
         },
         content: {
             height: '100%',
+        },
+        switch: {
+            position: 'absolute',
+            right: theme.spacing.sm,
         },
     })
 
