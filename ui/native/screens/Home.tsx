@@ -75,7 +75,7 @@ const styles = (theme: Theme) =>
         container: {
             alignItems: 'center',
             justifyContent: 'flex-start',
-            paddingTop: theme.spacing.sm,
+            marginTop: theme.spacing.sm,
             paddingHorizontal: theme.spacing.lg,
         },
         wallet: {
