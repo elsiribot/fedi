@@ -17,11 +17,10 @@ import { MatrixPowerLevel } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import ChatAvatar from '@fedi/native/components/feature/chat/ChatAvatar'
 
-import { Images } from '../assets/images'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import { AvatarSize } from '../components/ui/Avatar'
 import HoloLoader from '../components/ui/HoloLoader'
-import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
+import SvgImage from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -193,10 +192,6 @@ const styles = (theme: Theme) =>
         groupNameText: {
             textAlign: 'center',
         },
-        groupIcon: {
-            height: theme.sizes.md,
-            width: theme.sizes.md,
-        },
         sectionContainer: {
             flexDirection: 'column',
             alignItems: 'flex-start',
@@ -204,9 +199,6 @@ const styles = (theme: Theme) =>
         sectionTitle: {
             color: theme.colors.primaryLight,
             paddingVertical: theme.spacing.sm,
-        },
-        settingsItemArrow: {
-            alignSelf: 'flex-end',
         },
         content: {
             height: '100%',
