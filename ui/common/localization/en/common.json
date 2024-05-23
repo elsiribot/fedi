@@ -111,6 +111,7 @@
         "you": "You"
     },
     "phrases": {
+        "add-community": "Add community",
         "add-note": "Add note",
         "allow-camera-access": "Allow camera access",
         "app-settings-security": "App settings and security",
@@ -148,7 +149,6 @@
         "i-understand": "I understand",
         "invalid-federation-code": "Invalid federation code",
         "join-another-federation": "Join another federation",
-        "open-awesome-fedimint": "Open Awesome Fedimint",
         "last-seen": "Last seen",
         "lets-go": "Let's go",
         "lightning-address": "Lightning address",
@@ -408,6 +408,12 @@
             "waiting-for-network": "Waiting for network",
             "you-requested-payment": "You requested {{fiat}} ({{amount}}) {{memo}}",
             "you-sent-payment": "You sent {{fiat}} ({{amount}}) {{memo}}"
+        },
+        "community": {
+            "add-community": "Add community",
+            "join-a-community": "Join a community",
+            "join-community-guidance": "Join your favorite community or federation to access money and more",
+            "or-visit-awesome-fedimint": "or Visit Awesome Fedimint"
         },
         "developer": {
             "create-default-group": "Create Default Group",

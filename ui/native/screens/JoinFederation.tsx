@@ -18,6 +18,7 @@ import {
 import FederationPreview from '../components/feature/onboarding/FederationPreview'
 import { CameraPermissionGate } from '../components/feature/permissions/CameraPermissionGate'
 import { useAppSelector } from '../state/hooks'
+import { reset } from '../state/navigation'
 import { ParserDataType } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -40,7 +41,8 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
 
     const goToNextScreen = useCallback(() => {
         if (!federationPreview) return
-        navigation.replace(hasMatrixAuth ? 'TabsNavigator' : 'EnterDisplayName')
+        if (hasMatrixAuth) return navigation.dispatch(reset('TabsNavigator'))
+        navigation.dispatch(reset('EnterDisplayName'))
     }, [federationPreview, hasMatrixAuth, navigation])
 
     // If they came here with route state, paste the code for them
