@@ -342,7 +342,13 @@ export const makeTxnFeeDetails = (
     const items: FeeItem[] = []
     let totalFee = 0
     // Handle Fedi Fee
-    if (txn.fediFeeStatus?.type === 'success') {
+    if (
+        txn.fediFeeStatus &&
+        // TODO: render "pending" txns differently than
+        // success txns. For now, we render each the same
+        (txn.fediFeeStatus.type === 'success' ||
+            txn.fediFeeStatus.type === 'pendingSend')
+    ) {
         const fediFee = txn.fediFeeStatus.fedi_fee ?? (0 as MSats)
         const { formattedPrimaryAmount, formattedSecondaryAmount } =
             makeFormattedAmountsFromMSats(fediFee)
@@ -603,7 +609,13 @@ export const makeStabilityTxnFeeDetails = (
     const items: FeeItem[] = []
     let totalFee = 0
     // Handle Fedi Fee
-    if (txn.fediFeeStatus?.type === 'success') {
+    if (
+        txn.fediFeeStatus &&
+        // TODO: render "pending" txns differently than
+        // success txns. For now, we render each the same
+        (txn.fediFeeStatus.type === 'success' ||
+            txn.fediFeeStatus.type === 'pendingSend')
+    ) {
         const fediFee = txn.fediFeeStatus.fedi_fee ?? (0 as MSats)
         const { formattedPrimaryAmount, formattedSecondaryAmount } =
             makeFormattedAmountsFromMSats(fediFee)
