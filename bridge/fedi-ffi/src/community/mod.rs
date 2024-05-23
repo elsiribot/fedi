@@ -26,6 +26,7 @@ pub struct Communities {
     pub app_state: Arc<AppState>,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
+    http_client: reqwest::Client,
 }
 
 impl Communities {
@@ -61,11 +62,14 @@ impl Communities {
             app_state,
             event_sink,
             task_group,
+            http_client: reqwest::Client::new(),
         }
     }
 
     pub async fn community_preview(&self, invite_code: &str) -> anyhow::Result<RpcCommunity> {
-        Community::preview(invite_code).await.map(Into::into)
+        Community::preview(invite_code, self.http_client.clone())
+            .await
+            .map(Into::into)
     }
 
     pub async fn join_community(&self, invite_code: &str) -> anyhow::Result<RpcCommunity> {
@@ -73,6 +77,7 @@ impl Communities {
             invite_code,
             self.event_sink.clone(),
             self.task_group.make_subgroup().await,
+            self.http_client.clone(),
         )
         .await?;
         let meta = community.meta.read().await.clone();
@@ -95,9 +100,7 @@ impl Communities {
             .await?;
 
         // Write to memory
-        communities
-            .entry(meta.community_id)
-            .or_insert(Arc::new(community));
+        communities.insert(meta.community_id, Arc::new(community));
 
         Ok(rpc_community)
     }
@@ -159,12 +162,14 @@ pub struct Community {
 
 impl Community {
     /// Decodes the invite code and fetches the community's JSON file.
-    pub async fn preview(invite_code: &str) -> anyhow::Result<CommunityJson> {
+    pub async fn preview(
+        invite_code: &str,
+        http_client: reqwest::Client,
+    ) -> anyhow::Result<CommunityJson> {
         let community_invite = CommunityInvite::from_str(invite_code)?;
 
         // Retry the network request closure with backoff and an overall timeout of one
         // minute
-        let client = reqwest::Client::new();
         fedimint_core::task::timeout(
             Duration::from_secs(60),
             fedimint_core::util::retry(
@@ -176,7 +181,7 @@ impl Community {
                     .with_jitter(),
                 || {
                     fetch_community_meta_json(
-                        client.clone(),
+                        http_client.clone(),
                         community_invite.community_meta_url.clone(),
                     )
                 },
@@ -191,9 +196,10 @@ impl Community {
         invite_code: &str,
         event_sink: EventSink,
         task_group: TaskGroup,
+        http_client: reqwest::Client,
     ) -> anyhow::Result<Self> {
         Ok(Community {
-            meta: RwLock::new(Self::preview(invite_code).await?).into(),
+            meta: RwLock::new(Self::preview(invite_code, http_client).await?).into(),
             event_sink,
             task_group,
         })
@@ -215,12 +221,12 @@ impl Community {
 }
 
 async fn fetch_community_meta_json(
-    client: reqwest::Client,
+    http_client: reqwest::Client,
     community_meta_url: String,
 ) -> anyhow::Result<CommunityJson> {
     Ok(fedimint_core::task::timeout(
         Duration::from_secs(5),
-        client.get(community_meta_url).send(),
+        http_client.get(community_meta_url).send(),
     )
     .await
     .context(ErrorCode::Timeout)??
