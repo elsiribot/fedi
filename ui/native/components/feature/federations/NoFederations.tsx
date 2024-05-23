@@ -5,9 +5,12 @@ import { useTranslation } from 'react-i18next'
 import { Image, ScrollView, StyleSheet, View } from 'react-native'
 
 import { useLatestPublicFederations } from '@fedi/common/hooks/federation'
+import { Images } from '@fedi/native/assets/images'
+import { FediMod } from '@fedi/native/types'
 
-import { Images } from '../../../assets/images'
 import { FederationLogo } from '../../ui/FederationLogo'
+
+const AWESOME_FEDIMINT_LINK = 'https://github.com/fedimint/awesome-fedimint'
 
 const NoFederations: React.FC = () => {
     const { t } = useTranslation()
@@ -16,6 +19,16 @@ const NoFederations: React.FC = () => {
     const { publicFederations } = useLatestPublicFederations()
 
     const style = styles(theme)
+
+    const onOpenAwesomeFedimint = () => {
+        navigation.navigate('FediModBrowser', {
+            fediMod: new FediMod({
+                id: 'awesomefedimint',
+                title: 'Awesome Fedimint',
+                url: AWESOME_FEDIMINT_LINK,
+            }),
+        })
+    }
 
     return (
         <ScrollView
@@ -63,8 +76,16 @@ const NoFederations: React.FC = () => {
                     )
                 })}
                 <Button
-                    fullWidth
-                    type="clear"
+                    type="solid"
+                    title={
+                        <Text caption medium style={style.joinButtonText}>
+                            {t('phrases.open-awesome-fedimint')}
+                        </Text>
+                    }
+                    onPress={() => onOpenAwesomeFedimint()}
+                />
+                <Button
+                    type="outline"
                     title={
                         <Text caption medium>
                             {t('phrases.join-another-federation')}
