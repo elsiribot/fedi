@@ -336,7 +336,7 @@
             "paste-group-invite": "Pegar invitación de grupo",
             "register-a-username": "Registrar un nombre de usuario",
             "removed-admin-from-group": "{{username}} ya no es un admin",
-            "room-settings": "Configuración de la habitación",
+            "chat-settings": "Configuración de la habitación",
             "scan-chat-invite": "Escanear invitación de chat",
             "scan-group-invite": "Escanear invitación de grupo",
             "scan-member-code-notice": "Muestra QR para compartir tu nombre de usuario",

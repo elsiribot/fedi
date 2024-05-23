@@ -370,7 +370,7 @@
             "paste-group-invite": "Paste group invite",
             "register-a-username": "Register a username",
             "removed-admin-from-group": "Removed {{username}} as an admin",
-            "room-settings": "Room settings",
+            "chat-settings": "Chat settings",
             "scan-chat-invite": "Scan chat invite",
             "scan-group-invite": "Scan a group invite",
             "scan-member-code-notice": "Show QR to share your username",

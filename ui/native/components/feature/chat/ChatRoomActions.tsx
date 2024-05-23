@@ -60,7 +60,7 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
         },
         {
             id: 1,
-            label: t('feature.chat.room-settings'),
+            label: t('feature.chat.chat-settings'),
             icon: 'Cog',
             onPress: async () => {
                 setLoadingAction(1)
