@@ -83,10 +83,15 @@ impl Communities {
         let meta = community.meta.read().await.clone();
         let rpc_community = meta.clone().into();
 
-        // Verify that community has not already been joined
-        let mut communities = self.communities.lock().await;
-        if communities.contains_key(&meta.community_id) {
-            bail!("Community with ID {} already joined", meta.community_id);
+        {
+            // Verify that community has not already been joined
+            let mut communities = self.communities.lock().await;
+            if communities.contains_key(&meta.community_id) {
+                bail!("Community with ID {} already joined", meta.community_id);
+            }
+
+            // Write to memory
+            communities.insert(meta.community_id.clone(), Arc::new(community));
         }
 
         // Write to AppState
@@ -98,9 +103,6 @@ impl Communities {
                 );
             })
             .await?;
-
-        // Write to memory
-        communities.insert(meta.community_id, Arc::new(community));
 
         Ok(rpc_community)
     }
