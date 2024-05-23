@@ -128,7 +128,7 @@ export const useIsFeatureUnlocked = (feature: keyof ProtectedFeatures) => {
     const isFeatureProtected = useAppSelector(selectProtectedFeatures)[feature]
     const { status } = usePin()
 
-    if (status === 'loading') return false
+    if (status === 'loading') return undefined
 
     if (status === 'unset') return true
 
