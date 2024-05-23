@@ -11,6 +11,7 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
 import { OmniLinkHandler } from './components/feature/omni/OmniLinkHandler'
+import Header from './components/ui/Header'
 import { MainNavigator } from './screens/MainNavigator'
 import SwitchingFederations from './screens/SwitchingFederations'
 import { useOmniLinkContext } from './state/contexts/OmniLinkContext'
@@ -87,7 +88,7 @@ const Router = () => {
                     component={SwitchingFederations}
                     initialParams={{ federationId: null }}
                     options={{
-                        headerShown: false,
+                        header: () => <Header />,
                     }}
                 />
             </Drawer.Navigator>

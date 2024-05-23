@@ -312,7 +312,7 @@ export const MainNavigator = () => {
                     federation connections in-app, each call requires a
                     Federation to be specified
                 */}
-                {isAppUnlocked ? (
+                {isAppUnlocked !== false ? (
                     <Stack.Group>
                         <Stack.Group
                             screenOptions={{
