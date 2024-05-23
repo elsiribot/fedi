@@ -173,6 +173,11 @@ const styles = (theme: Theme) =>
             width: theme.sizes.unreadIndicatorSize,
             paddingHorizontal: theme.spacing.xs,
             borderRadius: theme.sizes.unreadIndicatorSize * 0.5,
+            transform: [
+                {
+                    translateX: theme.sizes.unreadIndicatorSize * -0.3,
+                },
+            ],
         },
         namePreview: {
             width: '80%',
