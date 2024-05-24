@@ -106,6 +106,29 @@ impl Communities {
 
         Ok(rpc_community)
     }
+
+    pub async fn leave_community(&self, community_id: &str) -> anyhow::Result<()> {
+        // Update memory, verifying that community has already been joined
+        if self.communities.lock().await.remove(community_id).is_none() {
+            bail!("Community with ID {community_id} must already be joined");
+        }
+
+        // Update AppState
+        self.app_state
+            .with_write_lock(|state| {
+                state.joined_communities.remove(community_id);
+            })
+            .await?;
+        Ok(())
+    }
+
+    pub async fn list_communities(&self) -> anyhow::Result<Vec<RpcCommunity>> {
+        let communities = self.communities.lock().await.clone();
+        let read_futs = communities
+            .values()
+            .map(|v| async { v.meta.read().await.clone().into() });
+        Ok(futures::future::join_all(read_futs).await)
+    }
 }
 
 /// Community invite codes are bech32m encoded with the human-readable part
