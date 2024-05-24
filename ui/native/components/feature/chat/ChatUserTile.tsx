@@ -39,12 +39,10 @@ const ChatUserTile: React.FC<UserItemProps> = ({
         return getUserSuffix(user.displayName, user.id)
     }, [user])
 
-    const avatarUser = !!overrideAvatarName
-        ? {
-              ...user,
-              displayName: overrideAvatarName,
-          }
-        : user
+    const avatarUser = {
+        ...user,
+        displayName: overrideAvatarName || user.displayName,
+    }
 
     return (
         <Pressable
