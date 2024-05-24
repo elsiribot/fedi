@@ -896,7 +896,7 @@ export const selectHasSetMatrixDisplayName = createSelector(
 
 export const selectMatrixDisplayNameSuffix = createSelector(
     (s: CommonState) => s.matrix.auth,
-    auth => (auth ? getUserSuffix(auth.displayName, auth.userId) : ''),
+    auth => (auth ? getUserSuffix(auth.userId) : ''),
 )
 
 export const selectNeedsMatrixRegistration = createSelector(
