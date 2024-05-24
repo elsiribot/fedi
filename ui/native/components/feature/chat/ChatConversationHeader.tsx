@@ -1,9 +1,10 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { Pressable, StyleSheet } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 
 import { selectMatrixRoom, selectMatrixUser } from '@fedi/common/redux'
+import { getUserSuffix } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../../../state/hooks'
 import { RootStackParamList } from '../../../types/navigation'
@@ -60,12 +61,22 @@ const ChatConversationHeader: React.FC = () => {
                             }
                         }}>
                         {avatar}
-                        <Text
-                            bold
-                            numberOfLines={1}
-                            style={styles(theme).memberText}>
-                            {name}
-                        </Text>
+                        <View style={styles(theme).textContainer}>
+                            <Text
+                                bold
+                                numberOfLines={1}
+                                style={styles(theme).memberText}>
+                                {name}
+                            </Text>
+                            {room?.directUserId && (
+                                <Text
+                                    caption
+                                    numberOfLines={1}
+                                    style={styles(theme).shortIdText}>
+                                    {getUserSuffix(room.directUserId)}
+                                </Text>
+                            )}
+                        </View>
                     </Pressable>
                 }
             />
@@ -96,6 +107,13 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
+        },
+        textContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        shortIdText: {
+            marginLeft: theme.spacing.xs,
         },
     })
 
