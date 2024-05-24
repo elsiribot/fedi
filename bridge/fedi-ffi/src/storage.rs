@@ -51,6 +51,7 @@ pub struct AppStateRaw {
     pub joined_federations: BTreeMap<String, FederationInfo>,
 
     /// Mapping of community ID => CommunityInfo
+    #[serde(default)]
     pub joined_communities: BTreeMap<String, CommunityInfo>,
 
     // Social recovery state
