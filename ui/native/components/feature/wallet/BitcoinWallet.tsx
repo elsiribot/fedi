@@ -110,7 +110,8 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
                     }
                     containerStyle={styles(theme).buttonContainer}
                     buttonStyle={styles(theme).button}
-                    disabled={!(activeFederation.balance > 0)}
+                    // Sats are rounded down from msats. Disable the send button if the user has less than 1000 msat
+                    disabled={activeFederation.balance < 1000}
                 />
             </View>
         </Card>

@@ -293,7 +293,7 @@ export function useAmountInput(
             // UX expectation is that the entered amount is exactly equal to the min/max amount
             // This logic ensures to round the min/max (in fiat) down to the nearest 0.01 to
             // include the entered amount into the rounding threshold to qualify as a min/max input
-            if (minimumAmount) {
+            if (typeof minimumAmount === 'number') {
                 const minFiat =
                     amountUtils.satToBtc(minimumAmount as Sats) *
                     btcToFiatRateRef.current
@@ -304,7 +304,7 @@ export function useAmountInput(
                     sats = minimumAmount
                 }
             }
-            if (maximumAmount) {
+            if (typeof maximumAmount === 'number') {
                 const maxFiat =
                     amountUtils.satToBtc(maximumAmount as Sats) *
                     btcToFiatRateRef.current
@@ -355,7 +355,7 @@ export function useAmountInput(
     )
 
     const validation = useMemo(() => {
-        if (maximumAmount && amount > maximumAmount) {
+        if (typeof maximumAmount === 'number' && amount > maximumAmount) {
             return {
                 i18nKey: 'errors.invalid-amount-max',
                 amount: maximumAmount,
@@ -366,7 +366,7 @@ export function useAmountInput(
                 onlyShowOnSubmit: false,
             } as const
         }
-        if (minimumAmount && amount < minimumAmount) {
+        if (typeof minimumAmount === 'number' && amount < minimumAmount) {
             return {
                 i18nKey: 'errors.invalid-amount-min',
                 amount: minimumAmount,
@@ -469,11 +469,16 @@ export function useMinMaxSendAmount({
     const { minSendable, maxSendable } = lnurlPayment || {}
 
     return useMemo(() => {
+        // If balance is less than 1000 msat (rounded down to 0 sats), don't allow send at all
+        if (balance < 1000)
+            return {
+                minimumAmount: 0,
+                maximumAmount: 0,
+            }
+
         let minimumAmount = 1 as Sats // Cannot send millisat amounts
-        let maximumAmount = 1_000_000_000_000_000 as Sats // MAX_SAFE_INTEGER rounded down
-        if (balance) {
-            maximumAmount = amountUtils.msatToSat(balance)
-        }
+        let maximumAmount = amountUtils.msatToSat(balance)
+
         if (invoiceAmount) {
             minimumAmount = amountUtils.msatToSat(invoiceAmount)
         } else {

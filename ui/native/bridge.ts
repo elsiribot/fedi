@@ -1,8 +1,7 @@
 import { NativeEventEmitter, NativeModules } from 'react-native'
 
 import { FedimintBridgeEventMap } from '@fedi/common/types'
-import { ErrorCode } from '@fedi/common/types/bindings'
-import { FedimintBridge } from '@fedi/common/utils/fedimint'
+import { BridgeError, FedimintBridge } from '@fedi/common/utils/fedimint'
 import { makeLog } from '@fedi/common/utils/log'
 
 const { BridgeNativeEventEmitter, FedimintFfi } = NativeModules
@@ -49,22 +48,5 @@ export async function initializeBridge(dataDir: string, deviceId: string) {
     if (resultJson.error !== undefined) {
         log.error('FedimintFfi.initialize', resultJson)
         throw new Error(resultJson.error)
-    }
-}
-
-export class BridgeError extends Error {
-    public detail: string
-    public error: string
-    public code: ErrorCode | null
-
-    constructor(json: {
-        detail: string
-        error: string
-        code: ErrorCode | null
-    }) {
-        super(json.error)
-        this.error = json.error
-        this.code = json.code
-        this.detail = json.detail
     }
 }
