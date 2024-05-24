@@ -9,7 +9,6 @@ import { selectFederationFediMods } from '@fedi/common/redux'
 
 import { FediModImages } from '../../../assets/images'
 import { useAppSelector } from '../../../state/hooks'
-import { navigate } from '../../../state/navigation'
 import { Screen, Shortcut, FediMod } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import ShortcutTile from './ShortcutTile'
@@ -53,27 +52,12 @@ const ShortcutsList: React.FC = () => {
         }
     }
 
-    const onSelectScreen = (shortcut: Shortcut) => {
-        const screen = shortcut as Screen
-        navigation.dispatch(navigate(screen.screenName))
-    }
-
     const renderFediModShortcuts = () => {
         const fediModShortcuts = fediMods.map(s => new FediMod(s))
         return fediModShortcuts.map((s: FediMod, i: number) => {
             return (
                 <View key={`fediMod-s-${i}`} style={style.shortcut}>
                     <ShortcutTile shortcut={s} onSelect={onSelectFediMod} />
-                </View>
-            )
-        })
-    }
-
-    const renderScreenShortcuts = () => {
-        return screenShortcuts.map((s: Screen, i: number) => {
-            return (
-                <View key={`screen-s-${i}`} style={style.shortcut}>
-                    <ShortcutTile shortcut={s} onSelect={onSelectScreen} />
                 </View>
             )
         })
@@ -86,7 +70,7 @@ const ShortcutsList: React.FC = () => {
         const totalShortcuts = fediMods.length + screenShortcuts.length
         const bufferCount = columns - (totalShortcuts % columns)
 
-        return new Array(bufferCount).fill('').map((b, i) => {
+        return new Array(bufferCount).fill('').map((_, i) => {
             return (
                 <View
                     key={`buffer-s-${i}`}
@@ -100,7 +84,6 @@ const ShortcutsList: React.FC = () => {
         <View style={style.container}>
             <View style={style.listContainer}>
                 {renderFediModShortcuts()}
-                {renderScreenShortcuts()}
                 {renderBuffers()}
             </View>
         </View>
