@@ -265,7 +265,7 @@ export function useMatrixPaymentEvent({
     }[] = []
     if (paymentStatus === MatrixPaymentStatus.received) {
         statusIcon = 'check'
-        statusText = t('words.received')
+        statusText = isRecipient ? t('words.received') : t('words.paid')
     } else if (paymentStatus === MatrixPaymentStatus.rejected) {
         statusIcon = 'reject'
         statusText = t('words.rejected')
