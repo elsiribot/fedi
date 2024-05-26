@@ -190,6 +190,7 @@
         "chat-message-render-error": "Encountered an error rendering this message",
         "chat-payment-failed": "Could not update that chat payment",
         "chat-unavailable": "This federation does not have a chat server.",
+        "default-groups-must-be-broadcast": "Default groups must be broadcast only",
         "failed-to-ban-user": "Failed to ban user",
         "failed-to-fetch-gateways": "Failed to fetch gateways",
         "failed-to-invite-to-group": "Failed to invite user to group",
