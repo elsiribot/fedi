@@ -48,7 +48,7 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
             .finally(() => {
                 setIsJoiningGroup(false)
             })
-    }, [groupId, navigation])
+    }, [groupId, joinPublicGroup, navigation])
 
     return (
         <Button
