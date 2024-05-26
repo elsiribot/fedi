@@ -11,6 +11,7 @@ import {
     MatrixEvent,
     MatrixPaymentEvent,
     MatrixPaymentStatus,
+    MatrixRoom,
     MatrixRoomPowerLevels,
     MatrixTimelineItem,
     MatrixUser,
@@ -351,21 +352,22 @@ export function encodeFediMatrixUserUri(id: string, deep = false) {
 /**
  * @param deep set to true to encode as a deep link
  */
-export function encodeFediMatrixRoomUri(id: string, deep = false) {
+export function encodeFediMatrixRoomUri(id: MatrixRoom['id'], deep = false) {
     if (deep) return `fedi://room:${id}`
-    return `fedi:room:${id}`
+    return `fedi:room:${id}:::`
 }
 
 export function decodeFediMatrixRoomUri(uri: string) {
     // Decode both fedi:room:{id} and fedi://room:{id}
     // const match = uri.match(FEDI_ROOM)
-    const match = uri.match(/^fedi(?::|:\/\/)room:(.+)$/i)
+    const match = uri.match(/^fedi(?::|:\/\/)room:(.+)(?:::|$)/i)
     if (!match) throw new Error('feature.chat.invalid-room')
 
-    const id = match[1]
-    if (!isValidMatrixRoomId(id)) throw new Error('feature.chat.invalid-room')
+    const decodedId = match[1]
+    if (!isValidMatrixRoomId(decodedId))
+        throw new Error('feature.chat.invalid-room')
 
-    return id
+    return decodedId
 }
 
 export function decodeFediMatrixUserUri(uri: string) {
