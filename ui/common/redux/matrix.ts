@@ -359,10 +359,10 @@ export const uploadAndSetMatrixAvatarUrl = createAsyncThunk<
 
 export const joinMatrixRoom = createAsyncThunk<
     void,
-    { roomId: MatrixRoom['id'] }
->('matrix/joinMatrixRoom', async ({ roomId }) => {
+    { roomId: MatrixRoom['id']; isPublic?: boolean }
+>('matrix/joinMatrixRoom', async ({ roomId, isPublic = false }) => {
     const client = getMatrixClient()
-    return client.joinRoom(roomId)
+    return client.joinRoom(roomId, isPublic)
 })
 
 export const createMatrixRoom = createAsyncThunk<
@@ -896,7 +896,7 @@ export const selectHasSetMatrixDisplayName = createSelector(
 
 export const selectMatrixDisplayNameSuffix = createSelector(
     (s: CommonState) => s.matrix.auth,
-    auth => (auth ? getUserSuffix(auth.displayName, auth.userId) : ''),
+    auth => (auth ? getUserSuffix(auth.userId) : ''),
 )
 
 export const selectNeedsMatrixRegistration = createSelector(

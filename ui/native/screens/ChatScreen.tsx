@@ -27,6 +27,7 @@ import {
     RootStackParamList,
     TabsNavigatorParamList,
 } from '../types/navigation'
+import { useDismissIosNotifications } from '../utils/hooks/notifications'
 
 export type Props = BottomTabScreenProps<
     TabsNavigatorParamList & RootStackParamList,
@@ -46,6 +47,8 @@ const ChatScreen: React.FC<Props> = () => {
     const isChatEmpty = useAppSelector(selectIsMatrixChatEmpty)
     const [hasOpenedNewChat, completeOpenedNewChat] =
         useNuxStep('hasOpenedNewChat')
+
+    useDismissIosNotifications()
 
     // TODO: reimplement seen message hook for matrix
     // Use this hook only if the screen is in focus

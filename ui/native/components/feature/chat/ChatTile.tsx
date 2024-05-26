@@ -85,7 +85,7 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
                                 HACK: public rooms don't show a preview message so you have to click into it to paginate backwards
                                 TODO: Replace with proper room previews
                             */}
-                            {room.isPublic
+                            {room.isPublic && room.broadcastOnly
                                 ? t('feature.chat.click-here-for-announcements')
                                 : t('feature.chat.no-messages')}
                         </Text>

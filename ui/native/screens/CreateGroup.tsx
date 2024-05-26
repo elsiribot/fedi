@@ -110,21 +110,19 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                     }}
                 />
             </View>
-            {defaultGroup && (
-                <View style={styles(theme).switchWrapper}>
-                    <Text style={styles(theme).inputLabel}>
-                        {t('words.public')}
-                    </Text>
-                    <Switch
-                        value={isPublic}
-                        onValueChange={value => {
-                            // for now default groups must be public
-                            if (defaultGroup === true) return
-                            setIsPublic(value)
-                        }}
-                    />
-                </View>
-            )}
+            <View style={styles(theme).switchWrapper}>
+                <Text style={styles(theme).inputLabel}>
+                    {t('words.public')}
+                </Text>
+                <Switch
+                    value={isPublic}
+                    onValueChange={value => {
+                        // for now default groups must be public
+                        if (defaultGroup === true) return
+                        setIsPublic(value)
+                    }}
+                />
+            </View>
             <Button
                 fullWidth
                 title={t('phrases.save-changes')}

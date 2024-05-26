@@ -35,14 +35,14 @@ export const ChatConnectionBadge: React.FC<Props> = ({
     if (hide) {
         isVisible = false
     }
-    // Set isStillLoading to true after 5 seconds to change
+    // Set isStillLoading to true after 30 seconds to change
     // from 'Loading...' to 'Waiting for network...'
     // reset the loading state if needed
     useEffect(() => {
         if (isVisible) {
             const timer = setTimeout(() => {
                 setIsStillLoading(true)
-            }, 5000)
+            }, 30000)
 
             // Cleanup the timer when the effect is cleaned up
             return () => clearTimeout(timer)
