@@ -359,8 +359,14 @@ export function encodeFediMatrixRoomUri(id: MatrixRoom['id'], deep = false) {
 
 export function decodeFediMatrixRoomUri(uri: string) {
     // Decode both fedi:room:{id} and fedi://room:{id}
-    // const match = uri.match(FEDI_ROOM)
-    const match = uri.match(/^fedi(?::|:\/\/)room:(.+)(?:::|$)/i)
+    // Regex breakdown:
+    // ^fedi           - Ensures the string starts with "fedi".
+    // (?::|:\/\/)     - Matches either ":" or "://" for both `fedi:room:` and `fedi://room:`
+    // room:           - Matches the "room:" part of the string
+    // (.+?)           - Non-greedy capture of the room ID (which contains a single colon)
+    // (?:::|$)        - Ensures the room ID is followed either by ":::” or the end of the string
+    // /i              - Case-insensitive matching.
+    const match = uri.match(/^fedi(?::|:\/\/)room:(.+?)(?:::|$)/i)
     if (!match) throw new Error('feature.chat.invalid-room')
 
     const decodedId = match[1]
