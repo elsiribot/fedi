@@ -229,6 +229,7 @@
         "webln-payment-rejected": "Payment rejected",
         "webln-payment-request-rejected": "Payment request rejected",
         "you-have-already-joined": "You have already joined this federation",
+        "you-have-been-banned": "You have been banned from this group",
         "user-is-already-in-group": "This user is already a member of this group"
     },
     "feature": {
@@ -346,6 +347,7 @@
             "invalid-member": "This is not a valid chat member",
             "invite-to-group": "Invite to group",
             "join-a-group": "Join a group",
+            "join-group": "Join group",
             "leave-group": "Leave group",
             "leave-group-confirmation": "Are you sure you want to leave the group? All group message history will be lost.",
             "member-not-found": "Could not find a member with the username '{{username}}'",
@@ -380,6 +382,7 @@
             "start-the-conversation": "Start the conversation.",
             "they-requested-payment": "{{name}} requested {{fiat}} ({{amount}}) {{memo}}",
             "they-sent-payment": "{{name}} sent you {{fiat}} ({{amount}}) {{memo}}",
+            "this-is-a-chat-group": "This is a chat group invitation",
             "try-inviting-someone": "Try inviting someone.",
             "type-to-search-members": "Type to search members in this group",
             "unknown-member": "Unknown member",
@@ -496,6 +499,7 @@
             "confirm-ecash-token": "This is an eCash token, do you want to redeem it?",
             "confirm-federation-invite": "This is a federation invitation, do you want to join?",
             "confirm-fedi-chat": "This is a chat link for {{username}}, do you want to go there?",
+            "confirm-fedi-chat-group-invite": "This is a chat group invitation, do you want to join?",
             "confirm-lightning-pay": "This is a lightning payment request, do you want to pay it?",
             "confirm-lightning-withdraw": "This is a lightning withdrawal, do you want to withdraw?",
             "confirm-lnurl-auth": "Do you want to log in to {{domain}} with lightning?",

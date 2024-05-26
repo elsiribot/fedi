@@ -47,6 +47,7 @@ export interface MatrixRoom {
     broadcastOnly?: boolean
     notificationCount: number
     isPublic?: boolean
+    inviteCode?: string
 }
 
 export enum MatrixRoomListItemStatus {

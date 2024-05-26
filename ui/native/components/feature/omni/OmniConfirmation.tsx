@@ -3,11 +3,13 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking } from 'react-native'
 
+import { useMatrixChatInvites } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederationId,
     selectIsActiveFederationRecovering,
 } from '@fedi/common/redux'
+import { ChatType } from '@fedi/common/types'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
 import {
     ALLOWED_PARSER_TYPES_BEFORE_FEDERATION,
@@ -42,6 +44,7 @@ export const OmniConfirmation = <T extends AnyParsedData>({
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
     )
+    const { joinPublicGroup } = useMatrixChatInvites(t)
 
     // OmniConfirmation can be rendered ourside of StackNavigator, so `replace`
     // is not always available, so fall back to navigate. Cast as NavigationHook
@@ -66,6 +69,27 @@ export const OmniConfirmation = <T extends AnyParsedData>({
             toast.error(t, err)
         }
         setIsLoading(false)
+    }
+
+    const handleJoinChatGroup = async () => {
+        if (parsedData.type !== ParserDataType.FediChatRoom) return
+        setIsLoading(true)
+        if (parsedData.data?.id) {
+            const roomId = parsedData.data.id
+            joinPublicGroup(roomId)
+                .then(() => {
+                    handleNavigate('ChatRoomConversation', {
+                        roomId,
+                        chatType: ChatType.group,
+                    })
+                })
+                .catch(() => {
+                    onGoBack()
+                })
+                .finally(() => {
+                    setIsLoading(false)
+                })
+        }
     }
 
     const {
@@ -181,9 +205,10 @@ export const OmniConfirmation = <T extends AnyParsedData>({
                 // TODO: Implement navigating to room if it exists
                 return {
                     contents: {
-                        icon: 'ScanSad',
-                        title: t('feature.omni.unsupported-chat-invite'),
+                        icon: 'Chat',
+                        title: t('feature.omni.confirm-fedi-chat-group-invite'),
                     },
+                    continueOnPress: handleJoinChatGroup,
                 }
             case ParserDataType.LegacyFediChatGroup:
             case ParserDataType.LegacyFediChatMember:

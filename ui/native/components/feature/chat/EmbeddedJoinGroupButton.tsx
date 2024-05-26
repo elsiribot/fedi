@@ -1,116 +1,114 @@
-import React from 'react'
+import Clipboard from '@react-native-clipboard/clipboard'
+import { useNavigation } from '@react-navigation/native'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
+import React, { useCallback, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { View, StyleSheet } from 'react-native'
+
+import { useToast } from '@fedi/common/hooks/toast'
+import { joinMatrixRoom } from '@fedi/common/redux'
+import { ChatType } from '@fedi/common/types'
+import { encodeFediMatrixRoomUri } from '@fedi/common/utils/matrix'
+
+import { useAppDispatch } from '../../../state/hooks'
+import { NavigationHook } from '../../../types/navigation'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type Props = {
     groupId: string
 }
 
-// TODO: Reimplement with Matrix rooms knocking feature
 const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
-    return <>{groupId}</>
+    const navigation = useNavigation<NavigationHook>()
+    const dispatch = useAppDispatch()
+    const toast = useToast()
+    const { t } = useTranslation()
+    const { theme } = useTheme()
+    const [isJoiningGroup, setIsJoiningGroup] = useState(false)
 
-    // const navigation = useNavigation<NavigationHook>()
-    // const dispatch = useAppDispatch()
-    // const federationId = useAppSelector(selectActiveFederationId)
-    // const xmppClient = useAppSelector(selectChatXmppClient)
-    // const toast = useToast()
-    // const { t } = useTranslation()
-    // const { theme } = useTheme()
-    // const [groupConfig, setGroupConfig] =
-    //     useState<Pick<ChatGroup, 'name' | 'broadcastOnly'>>()
-    // const [isJoiningGroup, setIsJoiningGroup] = useState(false)
+    const copyToClipboard = () => {
+        const invitationLink = encodeFediMatrixRoomUri(groupId)
+        Clipboard.setString(invitationLink as string)
+        toast.show({
+            content: t('feature.chat.copied-group-invite-code'),
+            status: 'success',
+        })
+    }
 
-    // const copyToClipboard = () => {
-    //     const invitationLink = encodeGroupInvitationLink(groupId)
-    //     Clipboard.setString(invitationLink as string)
-    //     toast.show({
-    //         content: t('feature.chat.copied-group-invite-code'),
-    //         status: 'success',
-    //     })
-    // }
+    const handleJoinGroup = useCallback(async () => {
+        setIsJoiningGroup(true)
+        try {
+            // For now, only public rooms can be joined by scanning
+            // TODO: Implement knocking to support non-public rooms
+            await dispatch(
+                joinMatrixRoom({ roomId: groupId, isPublic: true }),
+            ).unwrap()
+            navigation.navigate('ChatRoomConversation', {
+                roomId: groupId,
+                chatType: ChatType.group,
+            })
+        } catch (error) {
+            toast.show({
+                content: t('errors.chat-unavailable'),
+                status: 'error',
+            })
+        }
+        setIsJoiningGroup(false)
+    }, [dispatch, groupId, navigation, t, toast])
 
-    // const handleJoinGroup = useCallback(async () => {
-    //     if (!federationId) return
-    //     setIsJoiningGroup(true)
-    //     try {
-    //         const res = await dispatch(
-    //             joinChatGroup({
-    //                 federationId,
-    //                 link: encodeGroupInvitationLink(groupId),
-    //             }),
-    //         ).unwrap()
-    //         navigation.replace('GroupChat', {
-    //             groupId: res.id,
-    //         })
-    //     } catch (error) {
-    //         toast.show({
-    //             content: t('errors.chat-unavailable'),
-    //             status: 'error',
-    //         })
-    //     }
-    //     setIsJoiningGroup(false)
-    // }, [dispatch, federationId, groupId, navigation, t, toast])
-
-    // useEffect(() => {
-    //     if (!xmppClient || !groupId) return
-    //     const refreshGroupConfig = async () => {
-    //         const config = await xmppClient.fetchGroupConfig(groupId)
-    //         setGroupConfig(config)
-    //     }
-    //     refreshGroupConfig()
-    // }, [groupId, xmppClient])
-
-    // if (!groupConfig) return null
-
-    // return (
-    //     <Button
-    //         size="sm"
-    //         color={theme.colors.secondary}
-    //         containerStyle={styles(theme).container}
-    //         onPress={handleJoinGroup}
-    //         onLongPress={copyToClipboard}
-    //         loading={isJoiningGroup}
-    //         title={
-    //             <View style={styles(theme).contents}>
-    //                 <SvgImage
-    //                     containerStyle={styles(theme).icon}
-    //                     name={
-    //                         groupConfig.broadcastOnly
-    //                             ? 'SpeakerPhone'
-    //                             : 'SocialPeople'
-    //                     }
-    //                     size={SvgImageSize.xs}
-    //                 />
-    //                 <Text medium caption>
-    //                     {`${t('words.join')} `}
-    //                 </Text>
-    //                 <Text
-    //                     bold
-    //                     caption
-    //                     numberOfLines={1}
-    //                     style={styles(theme).groupNameText}>
-    //                     {`${groupConfig.name}`}
-    //                 </Text>
-    //             </View>
-    //         }
-    //     />
-    // )
+    return (
+        <Button
+            size="sm"
+            color={theme.colors.secondary}
+            containerStyle={styles(theme).container}
+            onPress={handleJoinGroup}
+            onLongPress={copyToClipboard}
+            loading={isJoiningGroup}
+            title={
+                <View style={styles(theme).contents}>
+                    <SvgImage
+                        containerStyle={styles(theme).icon}
+                        size={SvgImageSize.xs}
+                        name={'SocialPeople'}
+                        // TODO: Implement room preview to show group type
+                        // name={
+                        //     groupConfig.broadcastOnly
+                        //         ? 'SpeakerPhone'
+                        //         : 'SocialPeople'
+                        // }
+                    />
+                    <Text medium caption>
+                        {`${t('feature.chat.join-group')} `}
+                    </Text>
+                    {/* TODO: Implement room preview to show group name */}
+                    {/* <Text
+                        bold
+                        caption
+                        numberOfLines={1}
+                        style={styles(theme).groupNameText}>
+                        {`${groupConfig.name}`}
+                    </Text> */}
+                </View>
+            }
+        />
+    )
 }
 
-// const styles = (theme: Theme) =>
-//     StyleSheet.create({
-//         container: {},
-//         contents: {
-//             flexDirection: 'row',
-//             alignItems: 'center',
-//             justifyContent: 'center',
-//             minWidth: '100%',
-//         },
-//         icon: {
-//             marginRight: theme.spacing.sm,
-//         },
-//         groupNameText: {
-//             maxWidth: '70%',
-//         },
-//     })
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {},
+        contents: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minWidth: '100%',
+        },
+        icon: {
+            marginRight: theme.spacing.sm,
+        },
+        groupNameText: {
+            maxWidth: '70%',
+        },
+    })
 
 export default EmbeddedJoinGroupButton
