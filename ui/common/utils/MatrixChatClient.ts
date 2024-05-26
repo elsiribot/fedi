@@ -32,6 +32,7 @@ import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
 import {
     MatrixEventContent,
+    encodeFediMatrixRoomUri,
     formatMatrixEventContent,
     mxcUrlToHttpUrl,
 } from './matrix'
@@ -797,6 +798,7 @@ export class MatrixChatClient {
             // For now leave this undefined, and just apply it with a redux selector.
             // broadcastOnly: false,
             isPublic: room.base_info.encryption === null,
+            inviteCode: encodeFediMatrixRoomUri(room.room_id),
         }
     }
 

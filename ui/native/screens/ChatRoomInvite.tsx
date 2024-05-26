@@ -102,11 +102,11 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
     // TODO: for now public rooms are reserved for the default groups use case which are auto-joined
     // so we should not need to invite anyone. When requesting to join a room is implemented we
     // can use this to display a QR code in addition to (or instead of) inviting users by ID
-    if (room.isPublic) {
+    if (room.isPublic && room.inviteCode) {
         return (
             <QRScreen
                 title={roomName}
-                qrValue={roomId}
+                qrValue={room.inviteCode}
                 copyMessage={t('feature.chat.copied-group-invite-code')}
             />
         )

@@ -359,10 +359,10 @@ export const uploadAndSetMatrixAvatarUrl = createAsyncThunk<
 
 export const joinMatrixRoom = createAsyncThunk<
     void,
-    { roomId: MatrixRoom['id'] }
->('matrix/joinMatrixRoom', async ({ roomId }) => {
+    { roomId: MatrixRoom['id']; isPublic?: boolean }
+>('matrix/joinMatrixRoom', async ({ roomId, isPublic = false }) => {
     const client = getMatrixClient()
-    return client.joinRoom(roomId)
+    return client.joinRoom(roomId, isPublic)
 })
 
 export const createMatrixRoom = createAsyncThunk<

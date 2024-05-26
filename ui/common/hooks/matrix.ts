@@ -18,9 +18,16 @@ import {
     unobserveMatrixRoom,
     selectCanSendPayment,
     selectCanPayFromOtherFeds,
+    joinMatrixRoom,
 } from '../redux'
-import { MatrixPaymentEvent, MatrixPaymentStatus, MatrixUser } from '../types'
+import {
+    MatrixPaymentEvent,
+    MatrixPaymentStatus,
+    MatrixRoom,
+    MatrixUser,
+} from '../types'
 import { FedimintBridge } from '../utils/fedimint'
+import { formatErrorMessage } from '../utils/format'
 import {
     decodeFediMatrixUserUri,
     isValidMatrixUserId,
@@ -29,6 +36,7 @@ import {
 } from '../utils/matrix'
 import { useAmountFormatter } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
+import { useToast } from './toast'
 import { useUpdatingRef } from './util'
 
 export function useMatrixUserSearch() {
@@ -353,5 +361,37 @@ export function useMatrixPaymentEvent({
         federationInviteCode,
         paymentSender,
         handleRejectRequest,
+    }
+}
+
+export function useMatrixChatInvites(t: TFunction) {
+    const dispatch = useCommonDispatch()
+    const toast = useToast()
+
+    const joinPublicGroup = async (
+        roomId: MatrixRoom['id'],
+    ): Promise<boolean> => {
+        try {
+            // For now, only public rooms can be joined by scanning
+            // TODO: Implement knocking to support non-public rooms
+            await dispatch(joinMatrixRoom({ roomId, isPublic: true })).unwrap()
+            return true
+        } catch (err) {
+            const errorMessage = formatErrorMessage(
+                t,
+                err,
+                'errors.bad-connection',
+            )
+            if (errorMessage.includes('Cannot join user who was banned')) {
+                toast.error(t, 'errors.you-have-been-banned')
+            } else {
+                toast.error(t, err)
+            }
+            throw err
+        }
+    }
+
+    return {
+        joinPublicGroup,
     }
 }
