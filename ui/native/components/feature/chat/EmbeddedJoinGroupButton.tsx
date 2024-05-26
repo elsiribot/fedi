@@ -5,12 +5,11 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { View, StyleSheet } from 'react-native'
 
+import { useMatrixChatInvites } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
-import { joinMatrixRoom } from '@fedi/common/redux'
 import { ChatType } from '@fedi/common/types'
 import { encodeFediMatrixRoomUri } from '@fedi/common/utils/matrix'
 
-import { useAppDispatch } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
@@ -20,11 +19,11 @@ type Props = {
 
 const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
     const navigation = useNavigation<NavigationHook>()
-    const dispatch = useAppDispatch()
     const toast = useToast()
     const { t } = useTranslation()
     const { theme } = useTheme()
     const [isJoiningGroup, setIsJoiningGroup] = useState(false)
+    const { joinPublicGroup } = useMatrixChatInvites(t)
 
     const copyToClipboard = () => {
         const invitationLink = encodeFediMatrixRoomUri(groupId)
@@ -37,24 +36,19 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
 
     const handleJoinGroup = useCallback(async () => {
         setIsJoiningGroup(true)
-        try {
-            // For now, only public rooms can be joined by scanning
-            // TODO: Implement knocking to support non-public rooms
-            await dispatch(
-                joinMatrixRoom({ roomId: groupId, isPublic: true }),
-            ).unwrap()
-            navigation.navigate('ChatRoomConversation', {
-                roomId: groupId,
-                chatType: ChatType.group,
+        // For now, only public rooms can be joined by scanning
+        // TODO: Implement knocking to support non-public rooms
+        joinPublicGroup(groupId)
+            .then(() => {
+                navigation.navigate('ChatRoomConversation', {
+                    roomId: groupId,
+                    chatType: ChatType.group,
+                })
             })
-        } catch (error) {
-            toast.show({
-                content: t('errors.chat-unavailable'),
-                status: 'error',
+            .finally(() => {
+                setIsJoiningGroup(false)
             })
-        }
-        setIsJoiningGroup(false)
-    }, [dispatch, groupId, navigation, t, toast])
+    }, [groupId, joinPublicGroup, navigation])
 
     return (
         <Button
