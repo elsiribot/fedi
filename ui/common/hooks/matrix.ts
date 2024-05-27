@@ -84,7 +84,15 @@ export function useMatrixUserSearch() {
         timeoutRef.current = setTimeout(() => {
             dispatch(searchMatrixUsers(query))
                 .unwrap()
-                .then(res => setSearchedUsers(res.results))
+                .then(res => {
+                    // HACK: half-measure to prevent users in public groups from appearing
+                    // in these search results. for now we do this UI-only filter until we
+                    // can migrate default groups to use room previews
+                    const filteredUsers = res.results.filter(
+                        r => r.displayName === query,
+                    )
+                    setSearchedUsers(filteredUsers)
+                })
                 .catch(err => setSearchError(err))
                 .finally(() => setIsSearching(false))
         }, 500)
