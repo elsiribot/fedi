@@ -66,7 +66,7 @@ const ChatHeader: React.FC = () => {
                 }
                 rightContainerStyle={styles(theme).rightContainer}
             />
-            <ChatConnectionBadge offset={14} noSafeArea />
+            <ChatConnectionBadge />
         </>
     )
 }

@@ -54,7 +54,7 @@ const ChatWalletHeader: React.FC = () => {
                     </Pressable>
                 }
             />
-            <ChatConnectionBadge offset={63} />
+            <ChatConnectionBadge offset={37} />
         </>
     )
 }
