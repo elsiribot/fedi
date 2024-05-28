@@ -783,6 +783,15 @@ async fn matrixRoomTimelineItems(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn matrixRoomPreviewContent(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+) -> anyhow::Result<Vec<RpcTimelineItem>> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.preview_room_content(&room_id.into_typed()?).await
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn matrixRoomTimelineItemsPaginateBackwards(
     bridge: Arc<Bridge>,
     room_id: RpcRoomId,
@@ -1304,6 +1313,7 @@ rpc_methods!(RpcMethods {
     matrixRoomUnbanUser,
     matrixIgnoreUser,
     matrixUnignoreUser,
+    matrixRoomPreviewContent,
 
     // Communities
     communityPreview,

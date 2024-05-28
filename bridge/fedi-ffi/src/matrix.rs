@@ -14,6 +14,7 @@ use matrix_sdk::encryption::BackupDownloadStrategy;
 use matrix_sdk::notification_settings::NotificationSettings;
 pub use matrix_sdk::ruma::api::client::account::register::v3 as register;
 use matrix_sdk::ruma::api::client::directory::get_public_rooms_filtered::v3 as get_public_rooms_filtered;
+use matrix_sdk::ruma::api::client::message::get_message_events;
 use matrix_sdk::ruma::api::client::profile::get_profile;
 use matrix_sdk::ruma::api::client::push::Pusher;
 use matrix_sdk::ruma::api::client::receipt::create_receipt::v3::ReceiptType;
@@ -26,7 +27,7 @@ use matrix_sdk::ruma::events::room::encryption::RoomEncryptionEventContent;
 use matrix_sdk::ruma::events::room::message::{MessageType, RoomMessageEventContent};
 use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
 use matrix_sdk::ruma::events::{AnySyncTimelineEvent, InitialStateEvent};
-use matrix_sdk::ruma::{OwnedMxcUri, RoomId, UserId};
+use matrix_sdk::ruma::{assign, OwnedMxcUri, RoomId, UserId};
 use matrix_sdk::sliding_sync::Ranges;
 use matrix_sdk::{Client, RoomInfo, RoomMemberships};
 use matrix_sdk_ui::sync_service::{self, SyncService};
@@ -830,6 +831,28 @@ impl Matrix {
 
     pub async fn user_profile(&self, user_id: &UserId) -> Result<get_profile::v3::Response> {
         Ok(self.client.account().fetch_user_profile_of(user_id).await?)
+    }
+
+    pub async fn preview_room_content(&self, room_id: &RoomId) -> Result<Vec<RpcTimelineItem>> {
+        let response: get_message_events::v3::Response = self
+            .client
+            .send(
+                assign!(
+                    get_message_events::v3::Request::new(
+                        room_id.into(),
+                        matrix_sdk::ruma::api::Direction::Forward,
+                    ),
+                    { limit: 50000u32.into() }
+                ),
+                None,
+            )
+            .await?;
+
+        Ok(response
+            .chunk
+            .iter()
+            .filter_map(RpcTimelineItem::from_preview_item)
+            .collect())
     }
 }
 
