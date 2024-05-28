@@ -58,7 +58,6 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             paddingVertical: theme.spacing.md,
-            // paddingHorizontal: 0,
             width: '100%',
         },
         image: {
