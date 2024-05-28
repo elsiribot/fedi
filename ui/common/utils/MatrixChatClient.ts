@@ -1,5 +1,6 @@
 import EventEmitter from 'events'
 
+import { GLOBAL_MATRIX_PUSH_SERVER } from '../constants/matrix'
 import {
     MatrixRoom,
     MatrixUser,
@@ -388,7 +389,7 @@ export class MatrixChatClient {
                 // TODO: how to pass the URL to bridge? or should this be hard-coded bridge-side?
                 data: {
                     format: 'event_id_only',
-                    url: 'https://matrix-sygnal.dev.fedibtc.com/_matrix/push/v1/notify',
+                    url: `${GLOBAL_MATRIX_PUSH_SERVER}/_matrix/push/v1/notify`,
                 },
                 app_id: appId,
                 pushkey: token,
