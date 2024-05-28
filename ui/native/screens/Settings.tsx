@@ -25,6 +25,7 @@ import {
     selectDeveloperMode,
     selectHasSetMatrixDisplayName,
     selectMatrixAuth,
+    selectMatrixDisplayNameSuffix,
     selectStableBalance,
     selectStableBalancePending,
     setActiveFederationId,
@@ -63,6 +64,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const hasSetMatrixDisplayName = useAppSelector(
         selectHasSetMatrixDisplayName,
     )
+    const displayNameSuffix = useAppSelector(selectMatrixDisplayNameSuffix)
 
     const [exportingFederationId, setExportingFederationId] =
         useState<string>('')
@@ -311,10 +313,19 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         copyValue={qrValue}
                         qrValue={qrValue}
                     />
-
-                    <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
-                        {matrixAuth?.displayName}
-                    </Text>
+                    <View style={styles(theme).titleContainer}>
+                        <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
+                            {matrixAuth?.displayName}
+                        </Text>
+                        {displayNameSuffix && (
+                            <Text
+                                numberOfLines={1}
+                                medium
+                                style={styles(theme).titleSuffix}>
+                                {displayNameSuffix}
+                            </Text>
+                        )}
+                    </View>
                 </View>
             )}
             <View>
@@ -453,6 +464,17 @@ const styles = (theme: Theme) =>
         qrCode: {
             alignItems: 'center',
             gap: theme.spacing.lg,
+        },
+        titleSuffix: {
+            color: theme.colors.grey,
+        },
+        titleContainer: {
+            textAlign: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+            alignItems: 'center',
+            width: '100%',
+            gap: theme.spacing.xs,
         },
     })
 
