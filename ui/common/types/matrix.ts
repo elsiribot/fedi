@@ -140,6 +140,11 @@ export type MatrixPaymentEventContent = PickEventContentType<
 
 export type MatrixPaymentEvent = MatrixEvent<MatrixPaymentEventContent>
 
+interface StateEvent {
+    content: object
+    state_key?: string
+    type: string
+}
 /** Taken from matrix-js-sdk's `ICreateRoomOpts` */
 export interface MatrixCreateRoomOptions {
     visibility?: 'public' | 'private'
@@ -161,4 +166,5 @@ export interface MatrixCreateRoomOptions {
         users?: Record<string, number>
         users_default?: number
     }
+    initial_state?: StateEvent[]
 }

@@ -378,6 +378,15 @@ export const createMatrixRoom = createAsyncThunk<
     }
     if (isPublic === true) {
         roomArgs.visibility = 'public'
+        roomArgs.initial_state = [
+            {
+                content: {
+                    history_visibility: 'world_readable',
+                },
+                type: 'm.room.history_visibility',
+                state_key: '',
+            },
+        ]
     }
     return client.createRoom(roomArgs)
 })
