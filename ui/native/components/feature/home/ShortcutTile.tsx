@@ -1,17 +1,12 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import {
-    Image,
-    Pressable,
-    StyleSheet,
-    View,
-    useWindowDimensions,
-} from 'react-native'
+import { Image, StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import { selectIsActiveFederationRecovering } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import { FediMod, Shortcut } from '../../../types'
+import { Pressable } from '../../ui/Pressable'
 import SvgImage, {
     SvgImageName,
     SvgImageSize,
@@ -64,7 +59,7 @@ const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
 
     return (
         <Pressable
-            style={[
+            containerStyle={[
                 style.container,
                 recoveryInProgress ? style.disabled : null,
             ]}
@@ -86,7 +81,8 @@ const styles = (theme: Theme, fontScale: number) => {
         container: {
             alignItems: 'center',
             width: '100%',
-            marginVertical: theme.spacing.md,
+            paddingHorizontal: theme.spacing.sm,
+            flexDirection: 'column',
         },
         disabled: {
             opacity: 0.5,

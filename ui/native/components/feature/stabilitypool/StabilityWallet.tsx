@@ -33,7 +33,7 @@ const StabilityWallet: React.FC = () => {
     const style = styles(theme)
     return (
         <Pressable
-            style={style.container}
+            style={({ pressed }) => [style.container, pressed && style.pressed]}
             onPress={() =>
                 navigation.navigate(
                     hasOpenedStabilityPool
@@ -118,6 +118,9 @@ const styles = (theme: Theme) =>
         },
         button: {
             backgroundColor: theme.colors.secondary,
+        },
+        pressed: {
+            backgroundColor: theme.colors.primary05,
         },
     })
 
