@@ -150,6 +150,10 @@ export class MatrixChatClient {
         return this.fedimint.matrixGetAccountSession({ cached })
     }
 
+    async getRoomPreview(roomId: string) {
+        return this.fedimint.matrixRoomPreviewContent({ roomId })
+    }
+
     async joinRoom(roomId: string, isPublic?: boolean) {
         if (isPublic) {
             await this.fedimint.matrixRoomJoinPublic({ roomId })

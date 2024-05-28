@@ -697,6 +697,14 @@ export const fetchMatrixProfile = createAsyncThunk<any, string>(
     },
 )
 
+export const getMatrixRoomPreview = createAsyncThunk<any, string>(
+    'matrix/getMatrixRoomPreview',
+    async roomId => {
+        const client = getMatrixClient()
+        return client.getRoomPreview(roomId)
+    },
+)
+
 export const refetchMatrixRoomMembers = createAsyncThunk<void, string>(
     'matrix/refetchRoomMembers',
     async roomId => {
