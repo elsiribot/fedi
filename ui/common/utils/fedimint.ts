@@ -629,7 +629,8 @@ export class BridgeError extends Error {
         if (
             this.code &&
             typeof this.code === 'object' &&
-            'insufficientBalance' in this.code
+            'insufficientBalance' in this.code &&
+            typeof this.code.insufficientBalance === 'number'
         ) {
             return t('errors.insufficient-balance-send', {
                 sats: amountUtils.msatToSat(this.code.insufficientBalance),
