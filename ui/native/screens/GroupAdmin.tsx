@@ -89,6 +89,10 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
 
     const handleToggleBroadcastOnly = useCallback(async () => {
         if (isTogglingBroadcastOnly || !room) return
+        if (isDefaultGroup) {
+            toast.error(t, 'errors.default-groups-must-be-broadcast')
+            return
+        }
         setIsTogglingBroadcastOnly(true)
         try {
             await dispatch(
@@ -101,7 +105,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
             toast.error(t, 'errors.unknown-error')
         }
         setIsTogglingBroadcastOnly(false)
-    }, [isTogglingBroadcastOnly, room, dispatch, toast, t])
+    }, [isDefaultGroup, isTogglingBroadcastOnly, room, dispatch, toast, t])
 
     if (!room) return <HoloLoader />
 

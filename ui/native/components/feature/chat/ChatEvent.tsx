@@ -162,7 +162,7 @@ const areEqual = (prev: Props, curr: Props) => {
             prev.event.content.status === curr.event.content.status
         )
     } else {
-        return prev.event.id === curr.event.id
+        return prev.event.eventId === curr.event.eventId
     }
 }
 
