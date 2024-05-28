@@ -33,7 +33,6 @@ import NewMessageHeader from '../components/feature/chat/NewMessageHeader'
 import ScanMemberCodeHeader from '../components/feature/chat/ScanMemberCodeHeader'
 import FederationInviteHeader from '../components/feature/federations/FederationInviteHeader'
 import JoinFederationHeader from '../components/feature/federations/JoinFederationHeader'
-import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import HomeLockScreen from '../components/feature/home/LockScreen'
 import EulaHeader from '../components/feature/onboarding/EulaHeader'
 import NewMemberAvatarImageHeader from '../components/feature/onboarding/NewMemberAvatarImageHeader'
@@ -322,9 +321,7 @@ export const MainNavigator = () => {
                             <Stack.Screen
                                 name="TabsNavigator"
                                 component={TabsNavigator}
-                                options={() => ({
-                                    headerShown: false,
-                                })}
+                                options={{ headerShown: false }}
                             />
                             {/* FediMods */}
                             <Stack.Screen
@@ -761,7 +758,7 @@ export const MainNavigator = () => {
                                 name="PopupFederationEnded"
                                 component={PopupFederationEnded}
                                 options={() => ({
-                                    header: () => <SelectedFederationHeader />,
+                                    header: () => <Header />,
                                 })}
                             />
                             {/* Settings */}

@@ -31,7 +31,6 @@ const ChatHeader: React.FC = () => {
     return (
         <>
             <Header
-                inline
                 containerStyle={styles(theme).container}
                 leftContainerStyle={{ flex: 2 }}
                 headerLeft={
