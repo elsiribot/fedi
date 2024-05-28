@@ -19,6 +19,8 @@ type UserItemProps = {
     showSuffix?: boolean
     showAdmin?: boolean
     containerStyle?: StyleProp<ViewStyle>
+    // Pass a name to the chat avatar OTHER
+    // than user.displayName
     overrideAvatarName?: string
 }
 

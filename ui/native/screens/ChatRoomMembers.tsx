@@ -58,6 +58,9 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
                 user={member}
                 selectUser={handleSelectMember}
                 disabled={isMe}
+                // Even though we display the current user as "you",
+                // we still want the user's avatar to show the
+                // initials of their "real" display name
                 overrideAvatarName={isMe ? item.displayName : undefined}
                 showAdmin={member.powerLevel >= MatrixPowerLevel.Admin}
                 rightIcon={
