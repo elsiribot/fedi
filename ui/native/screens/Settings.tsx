@@ -321,6 +321,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                             <Text
                                 numberOfLines={1}
                                 medium
+                                adjustsFontSizeToFit
                                 style={styles(theme).titleSuffix}>
                                 {displayNameSuffix}
                             </Text>
