@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 
+use crate::community::CommunityJson;
 use crate::constants::{
     DEVICE_IDENTIFIER_FIXED_LENGTH, DEVICE_REGISTRATION_CHILD_ID, FEDI_FILE_PATH,
 };
@@ -48,6 +49,10 @@ pub struct AppStateRaw {
 
     /// Mapping of federation ID => FederationInfo
     pub joined_federations: BTreeMap<String, FederationInfo>,
+
+    /// Mapping of community ID => CommunityInfo
+    #[serde(default)]
+    pub joined_communities: BTreeMap<String, CommunityInfo>,
 
     // Social recovery state
     pub social_recovery_state: Option<SocialRecoveryState>,
@@ -269,6 +274,15 @@ pub struct ModuleFediFeeSchedule {
     pub receive_ppm: u64,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+pub struct CommunityInfo {
+    /// Meta field captures the full JSON object for the community as fetched
+    /// from server. We keep this in AppState so we can reload from disk on app
+    /// restart, and also to be able to diff and notify the front-end in
+    /// case of any updates.
+    pub meta: CommunityJson,
+}
+
 pub struct AppState {
     raw: RwLock<Arc<AppStateRaw>>,
     storage: Storage,
@@ -323,6 +337,7 @@ impl AppState {
                 format_version: 0,
                 root_mnemonic: Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng()),
                 joined_federations: BTreeMap::new(),
+                joined_communities: BTreeMap::new(),
                 social_recovery_state: None,
                 sensitive_log: None,
                 matrix_session: None,

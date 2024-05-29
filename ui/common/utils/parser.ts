@@ -33,6 +33,8 @@ const log = makeLog('common/utils/parser')
 
 /** List of parse types that are usable before a user is a member of a federation */
 export const ALLOWED_PARSER_TYPES_BEFORE_FEDERATION = [
+    ParserDataType.FediChatRoom,
+    ParserDataType.FediChatUser,
     ParserDataType.FedimintInvite,
     ParserDataType.Website,
     ParserDataType.Unknown,

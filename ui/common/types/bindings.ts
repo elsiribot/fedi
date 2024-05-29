@@ -691,6 +691,15 @@ export interface RpcMethods {
     ]
     matrixIgnoreUser: [{ userId: RpcUserId }, null]
     matrixUnignoreUser: [{ userId: RpcUserId }, null]
+    matrixRoomPreviewContent: [
+        { roomId: RpcRoomId },
+        Array<
+            | { kind: 'event'; value: RpcTimelineItemEvent }
+            | { kind: 'dayDivider'; value: number }
+            | { kind: 'readMarker' }
+            | { kind: 'unknown' }
+        >,
+    ]
     communityPreview: [
         { inviteCode: string },
         {
@@ -700,6 +709,27 @@ export interface RpcMethods {
             version: number
             meta: Record<string, string>
         },
+    ]
+    joinCommunity: [
+        { inviteCode: string },
+        {
+            communityId: string
+            inviteCode: string
+            communityName: string
+            version: number
+            meta: Record<string, string>
+        },
+    ]
+    leaveCommunity: [{ communityId: string }, null]
+    listCommunities: [
+        Record<string, never>,
+        Array<{
+            communityId: string
+            inviteCode: string
+            communityName: string
+            version: number
+            meta: Record<string, string>
+        }>,
     ]
 }
 

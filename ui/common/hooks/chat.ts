@@ -26,6 +26,7 @@ import {
     selectMatrixPushNotificationToken,
     selectIsMatrixReady,
     startMatrixClient,
+    joinDefaultGroupChats,
 } from '../redux'
 import { getLatestMessage } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
@@ -474,6 +475,8 @@ export const useDisplayNameForm = (t: TFunction, fedimint?: FedimintBridge) => {
                     // this should be the first time we start the
                     // matrix client when registering for the first time
                     await dispatch(startMatrixClient({ fedimint }))
+                    // TODO: find a better place for this action
+                    dispatch(joinDefaultGroupChats())
                 }
                 await dispatch(
                     setMatrixDisplayName({ displayName: username }),

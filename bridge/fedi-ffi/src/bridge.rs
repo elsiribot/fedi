@@ -32,7 +32,7 @@ use super::types::{
     SocialRecoveryApproval, SocialRecoveryQr,
 };
 use crate::api::IFediApi;
-use crate::community::Community;
+use crate::community::Communities;
 use crate::constants::{MATRIX_CHILD_ID, NOSTR_CHILD_ID};
 use crate::device_registration::{self, DeviceRegistrationService};
 use crate::error::{get_error_code, ErrorCode};
@@ -46,7 +46,7 @@ use crate::storage::{
     AppState, DatabaseInfo, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule,
 };
 use crate::types::{
-    GuardianStatus, RpcBridgeStatus, RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
+    GuardianStatus, RpcBridgeStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
     RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
     RpcPayAddressResponse, RpcRegisteredDevice, RpcReturningMemberStatus,
 };
@@ -64,6 +64,7 @@ pub struct Bridge {
     pub storage: Storage,
     pub app_state: Arc<AppState>,
     pub federations: Arc<Mutex<BTreeMap<String, Arc<MultiFederation>>>>,
+    pub communities: Arc<Communities>,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
     pub fedi_api: Arc<dyn IFediApi>,
@@ -174,6 +175,15 @@ impl Bridge {
                 .collect::<BTreeMap<_, _>>(),
         ));
 
+        // Load communities module
+        let communities = Communities::init(
+            app_state.clone(),
+            event_sink.clone(),
+            task_group.make_subgroup().await,
+        )
+        .await
+        .into();
+
         // Spawn a new task to asynchronously fetch the fee schedule and update app
         // state
         fedi_fee_helper
@@ -191,6 +201,7 @@ impl Bridge {
             storage,
             app_state,
             federations,
+            communities,
             event_sink,
             task_group,
             fedi_api,
@@ -377,7 +388,7 @@ impl Bridge {
         let federation = FederationV2::join(
             invite_code_string,
             self.event_sink.clone(),
-            TaskGroup::new(),
+            self.task_group.make_subgroup().await,
             db,
             &root_mnemonic,
             device_index,
@@ -452,10 +463,6 @@ impl Bridge {
             }),
             (Err(e),) => Err(e.context("Failed to connect")),
         }
-    }
-
-    pub async fn community_preview(&self, invite_code: &str) -> Result<RpcCommunity> {
-        Community::preview(invite_code).await.map(Into::into)
     }
 
     /// Look up federation by id from in-memory hashmap

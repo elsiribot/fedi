@@ -56,7 +56,7 @@ export const ChatRoomMembersList: React.FC<Props> = ({ roomId }) => {
     }
 
     const renderMemberContent = (member: (typeof members)[0]) => {
-        const suffix = getUserSuffix(member.displayName, member.id)
+        const suffix = getUserSuffix(member.id)
         return (
             <>
                 <ChatAvatar user={member} />

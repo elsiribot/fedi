@@ -1,5 +1,6 @@
 import EventEmitter from 'events'
 
+import { GLOBAL_MATRIX_PUSH_SERVER } from '../constants/matrix'
 import {
     MatrixRoom,
     MatrixUser,
@@ -32,6 +33,7 @@ import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
 import {
     MatrixEventContent,
+    encodeFediMatrixRoomUri,
     formatMatrixEventContent,
     mxcUrlToHttpUrl,
 } from './matrix'
@@ -387,7 +389,7 @@ export class MatrixChatClient {
                 // TODO: how to pass the URL to bridge? or should this be hard-coded bridge-side?
                 data: {
                     format: 'event_id_only',
-                    url: 'https://matrix-sygnal.dev.fedibtc.com/_matrix/push/v1/notify',
+                    url: `${GLOBAL_MATRIX_PUSH_SERVER}/_matrix/push/v1/notify`,
                 },
                 app_id: appId,
                 pushkey: token,
@@ -797,6 +799,7 @@ export class MatrixChatClient {
             // For now leave this undefined, and just apply it with a redux selector.
             // broadcastOnly: false,
             isPublic: room.base_info.encryption === null,
+            inviteCode: encodeFediMatrixRoomUri(room.room_id),
         }
     }
 

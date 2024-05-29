@@ -6,6 +6,8 @@ use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::api::client::user_directory::search_users::v3 as search_user_directory;
 use matrix_sdk::ruma::events::room::member::MembershipState;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
+use matrix_sdk::ruma::events::AnyTimelineEvent;
+use matrix_sdk::ruma::serde::Raw;
 use matrix_sdk::ruma::MilliSecondsSinceUnixEpoch;
 use matrix_sdk::RoomListEntry;
 use matrix_sdk_ui::room_list_service::SyncIndicator;
@@ -197,6 +199,28 @@ impl RpcTimelineItem {
     pub fn unknown() -> Self {
         warn!("unknown timeline item");
         Self::Unknown
+    }
+
+    pub fn from_preview_item(item: &Raw<AnyTimelineEvent>) -> Option<Self> {
+        match item.deserialize().ok()? {
+            AnyTimelineEvent::MessageLike(message_event) => {
+                let event = RpcTimelineItemEvent {
+                    id: message_event.event_id().to_string(),
+                    txn_id: message_event.transaction_id().map(|tid| tid.to_string()),
+                    event_id: Some(message_event.event_id().to_string()),
+                    content: RpcTimelineItemContent::Json(
+                        item.deserialize_as::<serde_json::Value>().ok()?,
+                    ),
+                    local_echo: false, // preview is never a local echo
+                    timestamp: message_event.origin_server_ts(),
+                    sender: message_event.sender().to_owned(),
+                    send_state: None, // This is for local echos, not relevant here
+                };
+
+                Some(RpcTimelineItem::Event(event))
+            }
+            AnyTimelineEvent::State(_) => None, // Skip state events for the preview
+        }
     }
 }
 

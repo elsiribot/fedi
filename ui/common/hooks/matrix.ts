@@ -18,9 +18,16 @@ import {
     unobserveMatrixRoom,
     selectCanSendPayment,
     selectCanPayFromOtherFeds,
+    joinMatrixRoom,
 } from '../redux'
-import { MatrixPaymentEvent, MatrixPaymentStatus, MatrixUser } from '../types'
+import {
+    MatrixPaymentEvent,
+    MatrixPaymentStatus,
+    MatrixRoom,
+    MatrixUser,
+} from '../types'
 import { FedimintBridge } from '../utils/fedimint'
+import { formatErrorMessage } from '../utils/format'
 import {
     decodeFediMatrixUserUri,
     isValidMatrixUserId,
@@ -29,6 +36,7 @@ import {
 } from '../utils/matrix'
 import { useAmountFormatter } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
+import { useToast } from './toast'
 import { useUpdatingRef } from './util'
 
 export function useMatrixUserSearch() {
@@ -76,7 +84,15 @@ export function useMatrixUserSearch() {
         timeoutRef.current = setTimeout(() => {
             dispatch(searchMatrixUsers(query))
                 .unwrap()
-                .then(res => setSearchedUsers(res.results))
+                .then(res => {
+                    // HACK: half-measure to prevent users in public groups from appearing
+                    // in these search results. for now we do this UI-only filter until we
+                    // can migrate default groups to use room previews
+                    const filteredUsers = res.results.filter(
+                        r => r.displayName === query,
+                    )
+                    setSearchedUsers(filteredUsers)
+                })
                 .catch(err => setSearchError(err))
                 .finally(() => setIsSearching(false))
         }, 500)
@@ -265,7 +281,7 @@ export function useMatrixPaymentEvent({
     }[] = []
     if (paymentStatus === MatrixPaymentStatus.received) {
         statusIcon = 'check'
-        statusText = t('words.received')
+        statusText = isRecipient ? t('words.received') : t('words.paid')
     } else if (paymentStatus === MatrixPaymentStatus.rejected) {
         statusIcon = 'reject'
         statusText = t('words.rejected')
@@ -353,5 +369,37 @@ export function useMatrixPaymentEvent({
         federationInviteCode,
         paymentSender,
         handleRejectRequest,
+    }
+}
+
+export function useMatrixChatInvites(t: TFunction) {
+    const dispatch = useCommonDispatch()
+    const toast = useToast()
+
+    const joinPublicGroup = async (
+        roomId: MatrixRoom['id'],
+    ): Promise<boolean> => {
+        try {
+            // For now, only public rooms can be joined by scanning
+            // TODO: Implement knocking to support non-public rooms
+            await dispatch(joinMatrixRoom({ roomId, isPublic: true })).unwrap()
+            return true
+        } catch (err) {
+            const errorMessage = formatErrorMessage(
+                t,
+                err,
+                'errors.bad-connection',
+            )
+            if (errorMessage.includes('Cannot join user who was banned')) {
+                toast.error(t, 'errors.you-have-been-banned')
+            } else {
+                toast.error(t, err)
+            }
+            throw err
+        }
+    }
+
+    return {
+        joinPublicGroup,
     }
 }
