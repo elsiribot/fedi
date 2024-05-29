@@ -215,6 +215,7 @@
         "invalid-federation-code": "Invalid federation code",
         "invalid-group-code": "This is not a valid group code",
         "invalid-username": "Must be 21 characters or less and cannot include uppercase letters",
+        "invalid-username-banned": "Display name cannot contain the word \"{{banned}}\"",
         "no-lightning-gateways": "No lightning gateways found for this user",
         "onchain-deposits-disabled": "Onchain deposits have been disabled for this federation",
         "only-group-owners-can-change-name": "Only group owners can change the group name",

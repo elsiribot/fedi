@@ -28,7 +28,7 @@ import {
     startMatrixClient,
     joinDefaultGroupChats,
 } from '../redux'
-import { getLatestMessage } from '../utils/chat'
+import { getDisplayNameValidator, getLatestMessage } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { useMinMaxSendAmount, useMinMaxRequestAmount } from './amount'
@@ -439,6 +439,7 @@ export const useDisplayNameForm = (t: TFunction, fedimint?: FedimintBridge) => {
     const dispatch = useCommonDispatch()
     const matrixAuth = useCommonSelector(selectMatrixAuth)
     const hasSetDisplayName = useCommonSelector(selectHasSetMatrixDisplayName)
+    const validator = useMemo(() => getDisplayNameValidator(t), [t])
 
     useEffect(() => {
         if (!matrixAuth) return
@@ -450,18 +451,16 @@ export const useDisplayNameForm = (t: TFunction, fedimint?: FedimintBridge) => {
 
     const handleChangeUsername = useCallback(
         (input: string) => {
-            const isValid =
-                // Don't allow uppercase letters
-                !/[A-Z]/.test(input) &&
-                // Don't allow usernames greater than 21 characters
-                input.length <= 21
-            if (!isValid) {
-                toast.error(t, 'errors.invalid-username')
+            const result = validator.safeParse(input)
+            if (!result.success) {
+                // Only show first error
+                const errorMessage = result.error.errors[0].message
+                toast.show({ status: 'error', content: errorMessage })
                 return
             }
             setUsername(input)
         },
-        [t, toast],
+        [toast, validator],
     )
 
     const handleSubmitDisplayName = useCallback(

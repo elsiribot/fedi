@@ -1,6 +1,7 @@
 import type { JID } from '@xmpp/jid'
 import { TFunction } from 'i18next'
 import orderBy from 'lodash/orderBy'
+import { z } from 'zod'
 
 import {
     Chat,
@@ -10,6 +11,7 @@ import {
     MSats,
 } from '@fedi/common/types'
 
+import { bannedDisplayNameTerms } from '../constants/matrix'
 import { FormattedAmounts } from '../hooks/amount'
 
 /** @deprecated XMPP legacy code */
@@ -227,3 +229,42 @@ export const makePaymentUpdatedAt = (
         (payment?.updatedAt || 0) + 1,
     )
 }
+
+/**
+ * Validates a user-entered displayName against the following criteria:
+ *  - length <= 21
+ *  - must be lowercase
+ *  - must not include any banned term
+ *
+ */
+export const getDisplayNameValidator = (t: TFunction) =>
+    z
+        .string()
+        // Validates length
+        .max(21, { message: t('errors.invalid-username') })
+        // Validates all lowercase
+        .refine(username => !/[A-Z]/.test(username), {
+            message: t('errors.invalid-username'),
+        })
+        // Validates No banned words
+        .refine(
+            username => {
+                const lowerUsername = username.toLowerCase()
+                const foundWord = bannedDisplayNameTerms.find(word =>
+                    lowerUsername.includes(word),
+                )
+                return !foundWord
+            },
+            // Only runs if a banned word was found
+            username => {
+                const lowerUsername = username.toLowerCase()
+                const foundWord = bannedDisplayNameTerms.find(word =>
+                    lowerUsername.includes(word),
+                )
+                return {
+                    message: t('errors.invalid-username-banned', {
+                        banned: foundWord,
+                    }),
+                }
+            },
+        )
