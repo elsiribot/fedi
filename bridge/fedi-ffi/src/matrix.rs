@@ -858,6 +858,9 @@ impl Matrix {
 
 #[cfg(test)]
 mod tests {
+    use fedimint_bip39::Bip39RootSecretStrategy;
+    use fedimint_client::secret::RootSecretStrategy as _;
+    use fedimint_derive_secret::ChildId;
     use fedimint_logging::TracingSetup;
     use rand::{thread_rng, Rng};
     use tempfile::TempDir;
@@ -865,6 +868,7 @@ mod tests {
     use tracing::info;
 
     use super::*;
+    use crate::constants::MATRIX_CHILD_ID;
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
 
@@ -1022,5 +1026,20 @@ mod tests {
         }
         info!("### got all messages");
         Ok(())
+    }
+
+    #[test]
+    #[ignore]
+    fn matrix_password() {
+        TracingSetup::default().init().unwrap();
+        let home_server = "matrix-synapse-homeserver2.dev.fedibtc.com";
+        let mnemonic = "foo bar baz".parse::<bip39::Mnemonic>().unwrap();
+        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&mnemonic);
+
+        let password = Matrix::home_server_password(
+            &root_secret.child_key(ChildId(MATRIX_CHILD_ID)),
+            home_server,
+        );
+        info!("password: {password}");
     }
 }
