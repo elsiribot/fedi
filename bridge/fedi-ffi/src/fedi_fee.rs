@@ -129,11 +129,7 @@ impl FediFeeHelper {
             .await
     }
 
-    /// For the given:
-    /// - federation ID
-    /// - module (identified by ModuleKind)
-    /// - send/receive direction
-    /// returns the fedi fee to be charged in ppm. If either the federation ID
+    /// Returns the fedi fee to be charged in ppm. If either the federation ID
     /// or the module is unknown, returns an error.
     pub async fn get_fedi_fee_ppm(
         &self,
@@ -162,10 +158,7 @@ impl FediFeeHelper {
             .await?
     }
 
-    /// For the given:
-    /// - federation ID
-    /// - module (identified by ModuleKind)
-    /// sets the ModuleFediFeeSchedule. If the federation ID is unknown, returns
+    /// Sets the ModuleFediFeeSchedule. If the federation ID is unknown, returns
     /// an error.
     pub async fn set_module_fee_schedule(
         &self,

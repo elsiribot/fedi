@@ -147,6 +147,15 @@ pub fn tcp_server() -> (
     })
 }
 
+impl IEventSink for mpsc::Sender<Response> {
+    fn event(&self, event_type: String, body: String) {
+        tokio::task::block_in_place(|| {
+            self.blocking_send(Response::Event { event_type, body })
+                .unwrap()
+        });
+    }
+}
+
 pub async fn init(data_dir: PathBuf) -> anyhow::Result<()> {
     TracingSetup::default().init()?;
     let (response_tx, mut request_rx, server_task) = tcp_server();
@@ -158,14 +167,6 @@ pub async fn init(data_dir: PathBuf) -> anyhow::Result<()> {
         rt.block_on(server_task);
     });
     let storage = PathBasedStorage::new(data_dir).await?;
-    impl IEventSink for mpsc::Sender<Response> {
-        fn event(&self, event_type: String, body: String) {
-            tokio::task::block_in_place(|| {
-                self.blocking_send(Response::Event { event_type, body })
-                    .unwrap()
-            });
-        }
-    }
     let bridge = fedimint_initialize_async(
         Arc::new(storage),
         Arc::new(response_tx.clone()),
