@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::convert::Infallible;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -6,13 +7,15 @@ use std::time::Duration;
 use anyhow::{bail, Context};
 use bitcoin::bech32::{self, FromBase32};
 use fedimint_core::task::TaskGroup;
+use fedimint_core::util::update_merge::UpdateMerge;
 use fedimint_core::util::FibonacciBackoff;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
+use tracing::info;
 
 use crate::constants::COMMUNITY_INVITE_CODE_HRP;
 use crate::error::ErrorCode;
-use crate::event::EventSink;
+use crate::event::{Event, EventSink, TypedEventExt};
 use crate::storage::{AppState, CommunityInfo};
 use crate::types::RpcCommunity;
 
@@ -22,11 +25,12 @@ use crate::types::RpcCommunity;
 /// to its Communities struct.
 #[derive(Clone)]
 pub struct Communities {
-    pub communities: Arc<Mutex<BTreeMap<String, Arc<Community>>>>,
+    pub communities: Arc<Mutex<BTreeMap<String, Community>>>,
     pub app_state: Arc<AppState>,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
     http_client: reqwest::Client,
+    bg_refresh_lock: Arc<UpdateMerge>,
 }
 
 impl Communities {
@@ -35,6 +39,8 @@ impl Communities {
         event_sink: EventSink,
         task_group: TaskGroup,
     ) -> Self {
+        let http_client = reqwest::Client::new();
+
         let joined_communities = app_state
             .with_read_lock(|state| state.joined_communities.clone())
             .await
@@ -42,11 +48,7 @@ impl Communities {
             .map(|(id, info)| async {
                 (
                     id,
-                    Arc::new(Community::from_local_meta(
-                        info.meta,
-                        event_sink.clone(),
-                        task_group.make_subgroup().await,
-                    )),
+                    Community::from_local_meta(info.meta, event_sink.clone(), http_client.clone()),
                 )
             });
 
@@ -57,13 +59,17 @@ impl Communities {
                 .collect::<BTreeMap<_, _>>(),
         ));
 
-        Self {
+        let this = Self {
             communities,
             app_state,
             event_sink,
             task_group,
             http_client: reqwest::Client::new(),
-        }
+            bg_refresh_lock: Default::default(),
+        };
+
+        this.refresh_metas_in_background();
+        this
     }
 
     pub async fn community_preview(&self, invite_code: &str) -> anyhow::Result<RpcCommunity> {
@@ -76,7 +82,6 @@ impl Communities {
         let community = Community::join(
             invite_code,
             self.event_sink.clone(),
-            self.task_group.make_subgroup().await,
             self.http_client.clone(),
         )
         .await?;
@@ -91,7 +96,7 @@ impl Communities {
             }
 
             // Write to memory
-            communities.insert(meta.community_id.clone(), Arc::new(community));
+            communities.insert(meta.community_id.clone(), community);
         }
 
         // Write to AppState
@@ -128,6 +133,22 @@ impl Communities {
             .values()
             .map(|v| async { v.meta.read().await.clone().into() });
         Ok(futures::future::join_all(read_futs).await)
+    }
+
+    pub fn refresh_metas_in_background(&self) {
+        let this = self.clone();
+        self.task_group
+            .spawn_cancellable("Communities::refresh_metas_in_background", async move {
+                this.bg_refresh_lock
+                    .merge(async {
+                        let communities = this.communities.lock().await.clone();
+                        futures::future::join_all(communities.values().map(|c| c.refresh_meta()))
+                            .await;
+                        Ok::<_, Infallible>(())
+                    })
+                    .await
+                    .unwrap();
+            });
     }
 }
 
@@ -173,16 +194,14 @@ pub struct CommunityJson {
 
 /// We think of a Community as a Federation without a wallet (fedimint-client).
 /// So a Community affords all the functionality that comes from the root seed
-/// such as chat, mods, npub-related features. And a community may also have its
-/// own background tasks that it needs to run and its own events that it may
-/// wish to pipe through.
+/// such as chat, mods, npub-related features.
 #[derive(Clone)]
 pub struct Community {
     /// Meta is an RwLock since most of the time we'll be reading it but
     /// occasionally we might update it if the remote data changes.
     pub meta: Arc<RwLock<CommunityJson>>,
-    pub event_sink: EventSink,
-    pub task_group: TaskGroup,
+    event_sink: EventSink,
+    http_client: reqwest::Client,
 }
 
 impl Community {
@@ -220,13 +239,12 @@ impl Community {
     pub async fn join(
         invite_code: &str,
         event_sink: EventSink,
-        task_group: TaskGroup,
         http_client: reqwest::Client,
     ) -> anyhow::Result<Self> {
         Ok(Community {
-            meta: RwLock::new(Self::preview(invite_code, http_client).await?).into(),
+            meta: RwLock::new(Self::preview(invite_code, http_client.clone()).await?).into(),
             event_sink,
-            task_group,
+            http_client,
         })
     }
 
@@ -235,12 +253,27 @@ impl Community {
     pub fn from_local_meta(
         meta: CommunityJson,
         event_sink: EventSink,
-        task_group: TaskGroup,
+        http_client: reqwest::Client,
     ) -> Self {
         Community {
             meta: RwLock::new(meta).into(),
             event_sink,
-            task_group,
+            http_client,
+        }
+    }
+
+    /// Re-fetch from network the metadata for this community. If any properties
+    /// have changed, send an event.
+    async fn refresh_meta(&self) {
+        let meta = self.meta.read().await.clone();
+
+        match Self::preview(&meta.invite_code, self.http_client.clone()).await {
+            Ok(new_meta) if new_meta != meta => {
+                self.event_sink
+                    .typed_event(&Event::community_metadata_updated(new_meta.into()));
+            }
+            Ok(_) => (),
+            Err(e) => info!(%e, "Failed to refresh communtiy meta for {}", meta.community_id),
         }
     }
 }
