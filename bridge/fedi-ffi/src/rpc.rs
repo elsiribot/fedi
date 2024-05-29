@@ -707,6 +707,12 @@ async fn listCommunities(bridge: Arc<Bridge>) -> anyhow::Result<Vec<RpcCommunity
     bridge.communities.list_communities().await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn onAppForeground(bridge: Arc<Bridge>) -> anyhow::Result<()> {
+    bridge.on_app_foreground().await;
+    Ok(())
+}
+
 async fn get_matrix(bridge: &Bridge) -> anyhow::Result<&Matrix> {
     bridge.matrix.get().context(ErrorCode::MatrixNotInitialized)
 }
@@ -1199,6 +1205,7 @@ macro_rules! rpc_methods {
 
 rpc_methods!(RpcMethods {
     bridgeStatus,
+    onAppForeground,
     // Federations
     joinFederation,
     federationPreview,

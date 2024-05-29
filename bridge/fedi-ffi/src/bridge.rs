@@ -228,6 +228,13 @@ impl Bridge {
             device_index_assignment_status,
         })
     }
+
+    /// Kick-off tasks that should be performed whenever the app returns to the
+    /// foreground.
+    pub async fn on_app_foreground(&self) {
+        self.communities.refresh_metas_in_background();
+    }
+
     /// Dump the database for a given federation.
     pub async fn dump_db(&self, federation_id: &str) -> anyhow::Result<PathBuf> {
         let db_dump_path = format!("db-{federation_id}.dump");
