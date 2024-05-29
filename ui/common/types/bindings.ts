@@ -31,6 +31,10 @@ export interface BalanceEvent {
     balance: RpcAmount
 }
 
+export interface CommunityMetadataUpdatedEvent {
+    newCommunity: RpcCommunity
+}
+
 export type CreateRoomRequest = any
 
 export type CustomMessageData = Record<string, any>
@@ -76,6 +80,7 @@ export type Event =
     | {
           stabilityPoolUnfilledDepositSwept: StabilityPoolUnfilledDepositSweptEvent
       }
+    | { communityMetadataUpdated: CommunityMetadataUpdatedEvent }
 
 export type GuardianStatus =
     | { online: { guardian: string; latency_ms: number } }
