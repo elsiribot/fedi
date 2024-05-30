@@ -1,3 +1,4 @@
+import { useRouter } from 'next/router'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -6,6 +7,7 @@ import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
 import FederationIcon from '@fedi/common/assets/svgs/federation.svg'
 import GlobeIcon from '@fedi/common/assets/svgs/globe.svg'
 import ScanSadIcon from '@fedi/common/assets/svgs/scan-sad.svg'
+import { useMatrixChatInvites } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { AnyParsedData, ParserDataType } from '@fedi/common/types'
@@ -37,6 +39,8 @@ export const OmniConfirmation: React.FC<Props> = ({
     const { pushWithState } = useRouteStateContext()
     const [isLoading, setIsLoading] = useState(false)
     const activeFederationId = useAppSelector(selectActiveFederationId)
+    const { joinPublicGroup } = useMatrixChatInvites(t)
+    const router = useRouter()
 
     const handleAuth = async () => {
         if (!activeFederationId || parsedData.type !== ParserDataType.LnurlAuth)
@@ -68,6 +72,24 @@ export const OmniConfirmation: React.FC<Props> = ({
             toast.error(t, err, 'errors.unknown-error')
         }
         setIsLoading(false)
+    }
+
+    const handleJoinRoom = async () => {
+        if (parsedData.type !== ParserDataType.FediChatRoom) return
+        setIsLoading(true)
+        if (parsedData.data?.id) {
+            const roomId = parsedData.data.id
+            joinPublicGroup(roomId)
+                .then(() => {
+                    router.push('/chat/room/' + roomId)
+                })
+                .catch(() => {
+                    onGoBack()
+                })
+                .finally(() => {
+                    setIsLoading(false)
+                })
+        }
     }
 
     const {
@@ -136,19 +158,21 @@ export const OmniConfirmation: React.FC<Props> = ({
             case ParserDataType.FediChatUser:
                 return {
                     icon: ChatIcon,
-                    text: t('feature.omni.confirm-fedi-chat'),
+                    text: t('feature.omni.confirm-fedi-chat', {
+                        username: parsedData.data.displayName,
+                    }),
                     continueHref: `/chat/user/${parsedData.data.id}`,
                 }
             case ParserDataType.FediChatRoom:
-                // TODO: Implement join room by link for matrix (knocking)
                 return {
-                    icon: ScanSadIcon,
+                    icon: ChatIcon,
                     text: t('feature.omni.unsupported-chat-invite'),
+                    continueOnClick: handleJoinRoom,
                 }
             case ParserDataType.LegacyFediChatGroup:
             case ParserDataType.LegacyFediChatMember:
                 return {
-                    icon: ChatIcon,
+                    icon: ScanSadIcon,
                     text: t('feature.omni.unsupported-legacy-chat'),
                 }
             case ParserDataType.Website:
