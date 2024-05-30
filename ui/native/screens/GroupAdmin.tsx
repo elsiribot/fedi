@@ -2,13 +2,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Switch, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    Alert,
-    ImageBackground,
-    ScrollView,
-    StyleSheet,
-    View,
-} from 'react-native'
+import { Alert, ScrollView, StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import {
@@ -21,10 +15,12 @@ import {
 } from '@fedi/common/redux'
 import { MatrixPowerLevel } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import ChatAvatar from '@fedi/native/components/feature/chat/ChatAvatar'
 
-import { Images } from '../assets/images'
 import SettingsItem from '../components/feature/admin/SettingsItem'
-import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
+import { AvatarSize } from '../components/ui/Avatar'
+import HoloLoader from '../components/ui/HoloLoader'
+import SvgImage from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -111,70 +107,74 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
         setIsTogglingBroadcastOnly(false)
     }, [isDefaultGroup, isTogglingBroadcastOnly, room, dispatch, toast, t])
 
+    if (!room) return <HoloLoader />
+
     return (
-        <ScrollView contentContainerStyle={styles(theme).container}>
+        <View style={styles(theme).container}>
             <View style={styles(theme).profileHeader}>
-                <ImageBackground
-                    source={Images.HoloBackground}
-                    style={styles(theme).profileCircle}
-                    imageStyle={styles(theme).circleBorder}>
-                    <SvgImage
-                        name={room?.broadcastOnly ? 'SpeakerPhone' : 'Room'}
-                        size={SvgImageSize.md}
-                    />
-                </ImageBackground>
+                <ChatAvatar
+                    room={room}
+                    size={AvatarSize.lg}
+                    containerStyle={styles(theme).avatar}
+                />
                 <Text h2 style={styles(theme).groupNameText}>
                     {room?.name || ''}
                 </Text>
             </View>
-            <View style={styles(theme).sectionContainer}>
-                <Text style={styles(theme).sectionTitle}>
-                    {t('words.group')}
-                </Text>
-                {(!isDefaultGroup || (isDefaultGroup && isAdmin)) && (
-                    <SettingsItem
-                        image={<SvgImage name="SocialPeople" />}
-                        label={`${amountUtils.formatNumber(memberCount)} ${t(
-                            'words.members',
-                        )}`}
-                        onPress={handleViewMembers}
-                    />
-                )}
-                <SettingsItem
-                    image={<SvgImage name="Room" />}
-                    label={t('feature.chat.invite-to-group')}
-                    onPress={handleInviteMember}
-                    disabled={!isAdmin}
-                />
-                <SettingsItem
-                    image={<SvgImage name="LeaveRoom" />}
-                    label={t('feature.chat.leave-group')}
-                    onPress={handleLeaveGroup}
-                    disabled={isDefaultGroup}
-                />
-                <SettingsItem
-                    image={<SvgImage name="Edit" />}
-                    label={t('feature.chat.change-group-name')}
-                    onPress={handleChangeGroupName}
-                    disabled={!isAdmin}
-                />
-                <SettingsItem
-                    image={<SvgImage name="SpeakerPhone" />}
-                    label={t('feature.chat.broadcast-only')}
-                    action={
-                        <Switch
-                            value={room?.broadcastOnly}
-                            disabled={isTogglingBroadcastOnly || !isAdmin}
-                            onValueChange={_ => {
-                                handleToggleBroadcastOnly()
-                            }}
+            <ScrollView
+                bounces={false}
+                contentContainerStyle={styles(theme).content}>
+                <View style={styles(theme).sectionContainer}>
+                    <Text style={styles(theme).sectionTitle}>
+                        {t('words.group')}
+                    </Text>
+                    {(!isDefaultGroup || (isDefaultGroup && isAdmin)) && (
+                        <SettingsItem
+                            image={<SvgImage name="SocialPeople" />}
+                            label={`${amountUtils.formatNumber(
+                                memberCount,
+                            )} ${t('words.members')}`}
+                            onPress={handleViewMembers}
                         />
-                    }
-                    disabled={!isAdmin}
-                    onPress={handleToggleBroadcastOnly}
-                />
-            </View>
-        </ScrollView>
+                    )}
+                    <SettingsItem
+                        image={<SvgImage name="Room" />}
+                        label={t('feature.chat.invite-to-group')}
+                        onPress={handleInviteMember}
+                        disabled={!isAdmin}
+                    />
+                    <SettingsItem
+                        image={<SvgImage name="LeaveRoom" />}
+                        label={t('feature.chat.leave-group')}
+                        onPress={handleLeaveGroup}
+                        disabled={isDefaultGroup}
+                    />
+                    <SettingsItem
+                        image={<SvgImage name="Edit" />}
+                        label={t('feature.chat.change-group-name')}
+                        onPress={handleChangeGroupName}
+                        disabled={!isAdmin}
+                    />
+                    <SettingsItem
+                        image={<SvgImage name="SpeakerPhone" />}
+                        label={t('feature.chat.broadcast-only')}
+                        action={
+                            <Switch
+                                style={styles(theme).switch}
+                                value={room?.broadcastOnly}
+                                disabled={isTogglingBroadcastOnly || !isAdmin}
+                                onValueChange={_ => {
+                                    handleToggleBroadcastOnly()
+                                }}
+                            />
+                        }
+                        isLoading={isTogglingBroadcastOnly}
+                        disabled={!isAdmin}
+                        onPress={handleToggleBroadcastOnly}
+                    />
+                </View>
+            </ScrollView>
+        </View>
     )
 }
 
@@ -182,28 +182,21 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             justifyContent: 'space-evenly',
-            padding: theme.spacing.xl,
+            padding: theme.spacing.lg,
         },
         profileHeader: {
             alignItems: 'center',
             paddingBottom: theme.spacing.lg,
         },
-        profileCircle: {
+        avatar: {
             height: theme.sizes.adminProfileCircle,
             width: theme.sizes.adminProfileCircle,
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: theme.spacing.md,
         },
-        circleBorder: {
-            borderRadius: theme.sizes.adminProfileCircle * 0.5,
-        },
         groupNameText: {
             textAlign: 'center',
-        },
-        groupIcon: {
-            height: theme.sizes.md,
-            width: theme.sizes.md,
         },
         sectionContainer: {
             flexDirection: 'column',
@@ -213,8 +206,12 @@ const styles = (theme: Theme) =>
             color: theme.colors.primaryLight,
             paddingVertical: theme.spacing.sm,
         },
-        settingsItemArrow: {
-            alignSelf: 'flex-end',
+        content: {
+            height: '100%',
+        },
+        switch: {
+            position: 'absolute',
+            right: theme.spacing.sm,
         },
     })
 

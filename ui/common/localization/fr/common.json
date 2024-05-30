@@ -336,7 +336,7 @@
             "paste-group-invite": "Coller l'invitation de groupe",
             "register-a-username": "Enregistrez un nom d'utilisateur",
             "removed-admin-from-group": "{{username}} supprimé en tant qu'administrateur",
-            "room-settings": "Paramètres de la pièce",
+            "chat-settings": "Paramètres de la pièce",
             "scan-chat-invite": "Analyser l'invitation au chat",
             "scan-group-invite": "Scanner une invitation de groupe",
             "scan-member-code-notice": "Afficher QR pour partager votre nom d'utilisateur",

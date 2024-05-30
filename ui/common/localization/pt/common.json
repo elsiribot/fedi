@@ -336,7 +336,7 @@
             "paste-group-invite": "Colar convite para o grupo",
             "register-a-username": "Registar um nome de utilizador",
             "removed-admin-from-group": "{{username}} removido como administrador",
-            "room-settings": "Configurações da sala",
+            "chat-settings": "Configurações da sala",
             "scan-chat-invite": "Ler o convite para a conversa",
             "scan-group-invite": "Ler o convite para o grupo",
             "scan-member-code-notice": "Mostrar código QR para partilhar o seu nome de utilizador",

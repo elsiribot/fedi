@@ -114,7 +114,7 @@ export const ChatRoomSettingsDialog: React.FC<Props> = ({
     let content: React.ReactNode
     let title: string | undefined
     if (page === 'index') {
-        title = t('feature.chat.room-settings')
+        title = t('feature.chat.chat-settings')
         const menu: SettingsMenuProps['menu'] = [
             {
                 label: t('words.group'),

@@ -14,6 +14,7 @@ import { RpcRoomNotificationMode } from '@fedi/common/types/bindings'
 import { makeLog } from '@fedi/common/utils/log'
 import SvgImage, { SvgImageName } from '@fedi/native/components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '@fedi/native/state/hooks'
+import { resetToChatSettings } from '@fedi/native/state/navigation'
 
 import ChatRoomAction from './ChatAction'
 
@@ -46,13 +47,24 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
     const actions: Action[] = [
         {
             id: 0,
-            label: t('feature.notifications.open-chat'),
+            label: t('feature.chat.open-chat'),
             icon: 'Chat',
             onPress: async () => {
                 setLoadingAction(0)
                 navigation.navigate('ChatRoomConversation', {
                     roomId: room.id,
                 })
+                dismiss()
+                setLoadingAction(null)
+            },
+        },
+        {
+            id: 1,
+            label: t('feature.chat.chat-settings'),
+            icon: 'Cog',
+            onPress: async () => {
+                setLoadingAction(1)
+                navigation.dispatch(resetToChatSettings(room.id))
                 dismiss()
                 setLoadingAction(null)
             },
@@ -82,11 +94,11 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
 
     const notificationActions: Action[] = [
         {
-            id: 1,
+            id: 2,
             dataId: 'allMessages',
             label: t('feature.chat.notification-always'),
             icon: 'Bell',
-            onPress: () => handleUpdateNotificationMode(1, 'allMessages'),
+            onPress: () => handleUpdateNotificationMode(2, 'allMessages'),
         },
         // TODO: implement mentions notification mode
         // {

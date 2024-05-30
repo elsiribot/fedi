@@ -40,7 +40,8 @@ const ChatUserTile: React.FC<UserItemProps> = ({
     return (
         <Pressable
             containerStyle={containerStyle}
-            onPress={disabled ? undefined : () => selectUser(user.id)}>
+            onPress={disabled ? undefined : () => selectUser(user.id)}
+            onLongPress={disabled ? undefined : () => selectUser(user.id)}>
             <View style={styles(theme).usernameContainer}>
                 <ChatAvatar
                     containerStyle={[styles(theme).avatar]}

@@ -10,9 +10,11 @@ import {
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { MatrixPowerLevel } from '../../../types'
+import { AvatarSize } from '../../ui/Avatar'
 import CustomOverlay from '../../ui/CustomOverlay'
 import HoloLoader from '../../ui/HoloLoader'
 import SvgImage from '../../ui/SvgImage'
+import ChatAvatar from './ChatAvatar'
 import ChatUserActions from './ChatUserActions'
 
 interface Props {
@@ -62,7 +64,12 @@ export const ChatUserActionsOverlay: React.FC<Props> = ({
             contents={{
                 title: (
                     <View style={style.displayInline}>
-                        <Text medium style={style.title}>
+                        <ChatAvatar
+                            containerStyle={[style.avatar]}
+                            user={member}
+                            size={AvatarSize.sm}
+                        />
+                        <Text bold style={style.title}>
                             {member?.displayName ?? ''}
                         </Text>
                         {isAdmin && <SvgImage size={15} name={'AdminBadge'} />}
@@ -91,5 +98,8 @@ const styles = (theme: Theme) =>
         },
         title: {
             textAlign: 'center',
+        },
+        avatar: {
+            marginRight: theme.spacing.xs,
         },
     })
