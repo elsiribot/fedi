@@ -322,9 +322,7 @@ export const MainNavigator = () => {
                             <Stack.Screen
                                 name="TabsNavigator"
                                 component={TabsNavigator}
-                                options={() => ({
-                                    headerShown: false,
-                                })}
+                                options={{ headerShown: false }}
                             />
                             {/* FediMods */}
                             <Stack.Screen

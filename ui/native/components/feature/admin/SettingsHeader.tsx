@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
 
 import Header from '../../ui/Header'
-import SelectedFederationHeader from '../federations/SelectedFederationHeader'
 
 const SettingsHeader: React.FC = () => {
     const { theme } = useTheme()
@@ -12,9 +11,7 @@ const SettingsHeader: React.FC = () => {
 
     return (
         <>
-            <SelectedFederationHeader />
             <Header
-                inline
                 backButton
                 containerStyle={styles(theme).container}
                 headerCenter={

@@ -11,6 +11,7 @@ import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import { PressableIcon } from '../../ui/PressableIcon'
+import SelectedFederationHeader from '../federations/SelectedFederationHeader'
 import { NetworkBanner } from '../wallet/NetworkBanner'
 
 const HomeHeader: React.FC = () => {
@@ -27,6 +28,7 @@ const HomeHeader: React.FC = () => {
 
     return (
         <>
+            <SelectedFederationHeader />
             <NetworkBanner />
             <Header
                 inline

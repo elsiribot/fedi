@@ -26,8 +26,8 @@ import {
 
 import { fedimint } from '../bridge'
 import ChatHeader from '../components/feature/chat/ChatHeader'
-import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
+import Header from '../components/ui/Header'
 import SvgImage, {
     SvgImageSize,
     getIconSizeMultiplier,
@@ -102,7 +102,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
     )
     return (
         <>
-            <SelectedFederationHeader />
+            {/* <SelectedFederationHeader /> */}
             <Tab.Navigator
                 initialRouteName={route.params?.initialRouteName || 'Home'}
                 id={TABS_NAVIGATOR_ID}
@@ -197,7 +197,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                     component={OmniScanner}
                     options={() => ({
                         title: t('words.scan'),
-                        headerShown: false,
+                        header: () => <Header />,
                     })}
                 />
             </Tab.Navigator>
