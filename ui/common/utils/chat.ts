@@ -11,7 +11,7 @@ import {
     MSats,
 } from '@fedi/common/types'
 
-import { bannedDisplayNameTerms } from '../constants/matrix'
+import { BANNED_DISPLAY_NAME_TERMS } from '../constants/matrix'
 import { FormattedAmounts } from '../hooks/amount'
 
 /** @deprecated XMPP legacy code */
@@ -250,7 +250,7 @@ export const getDisplayNameValidator = (t: TFunction) =>
         .refine(
             username => {
                 const lowerUsername = username.toLowerCase()
-                const foundWord = bannedDisplayNameTerms.find(word =>
+                const foundWord = BANNED_DISPLAY_NAME_TERMS.find(word =>
                     lowerUsername.includes(word),
                 )
                 return !foundWord
@@ -258,7 +258,7 @@ export const getDisplayNameValidator = (t: TFunction) =>
             // Only runs if a banned word was found
             username => {
                 const lowerUsername = username.toLowerCase()
-                const foundWord = bannedDisplayNameTerms.find(word =>
+                const foundWord = BANNED_DISPLAY_NAME_TERMS.find(word =>
                     lowerUsername.includes(word),
                 )
                 return {
