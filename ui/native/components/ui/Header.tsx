@@ -5,6 +5,7 @@ import { Pressable, ViewStyle } from 'react-native'
 
 import { reset } from '../../state/navigation'
 import { NavigationHook } from '../../types/navigation'
+import { PressableIcon } from './PressableIcon'
 import SvgImage from './SvgImage'
 
 interface HeaderBase {
@@ -54,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({
     let leftComponent = <>{headerLeft || null}</>
     if (backButton) {
         leftComponent = (
-            <Pressable
+            <PressableIcon
                 testID="HeaderBackButton"
                 onPress={() =>
                     navigation.canGoBack()
@@ -62,11 +63,14 @@ const Header: React.FC<HeaderProps> = ({
                         : navigation.navigate('TabsNavigator')
                 }
                 hitSlop={5}
-                style={{
-                    paddingVertical: theme.spacing.sm,
-                }}>
-                <SvgImage name="ChevronLeft" />
-            </Pressable>
+                svgName="ChevronLeft"
+                containerStyle={{
+                    marginVertical: theme.spacing.xs,
+                    // shifts the width of the pressable padding
+                    // to preserve exact position
+                    transform: [{ translateX: -theme.spacing.xs }],
+                }}
+            />
         )
     }
 

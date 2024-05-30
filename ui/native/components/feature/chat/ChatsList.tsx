@@ -48,7 +48,7 @@ const ChatsList: React.FC = () => {
     }, [dispatch])
 
     const handleLongPressChat = useCallback((chat: MatrixRoom) => {
-        Vibration.vibrate(50)
+        Vibration.vibrate(10)
         setSelectedRoomId(chat.id)
     }, [])
 
