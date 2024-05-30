@@ -5,9 +5,13 @@ import { useTranslation } from 'react-i18next'
 import { Image, ScrollView, StyleSheet, View } from 'react-native'
 
 import { useLatestPublicFederations } from '@fedi/common/hooks/federation'
+import { Images } from '@fedi/native/assets/images'
+import { FediMod } from '@fedi/native/types'
 
-import { Images } from '../../../assets/images'
 import { FederationLogo } from '../../ui/FederationLogo'
+import SvgImage from '../../ui/SvgImage'
+
+const AWESOME_FEDIMINT_LINK = 'https://github.com/fedimint/awesome-fedimint'
 
 const NoFederations: React.FC = () => {
     const { t } = useTranslation()
@@ -17,14 +21,27 @@ const NoFederations: React.FC = () => {
 
     const style = styles(theme)
 
+    const onOpenAwesomeFedimint = () => {
+        navigation.navigate('FediModBrowser', {
+            fediMod: new FediMod({
+                id: 'awesomefedimint',
+                title: 'Awesome Fedimint',
+                url: AWESOME_FEDIMINT_LINK,
+            }),
+        })
+    }
+
     return (
         <ScrollView
             contentContainerStyle={style.container}
-            overScrollMode="auto">
+            alwaysBounceVertical={false}>
+            <Image style={style.image} source={Images.AwesomeFedimint} />
             <View style={style.titleContainer}>
-                <Image style={style.image} source={Images.AwesomeFedimint} />
-                <Text h2 medium h2Style={style.title}>
-                    {t('feature.onboarding.guidance-public-federations')}
+                <Text h2 medium>
+                    {t('feature.community.join-a-community')}
+                </Text>
+                <Text style={style.subtitle}>
+                    {t('feature.community.join-community-guidance')}
                 </Text>
             </View>
             <View style={style.contentContainer}>
@@ -62,20 +79,34 @@ const NoFederations: React.FC = () => {
                         </View>
                     )
                 })}
-                <Button
-                    fullWidth
-                    type="clear"
-                    title={
-                        <Text caption medium>
-                            {t('phrases.join-another-federation')}
-                        </Text>
-                    }
-                    onPress={() =>
-                        navigation.navigate('JoinFederation', {
-                            invite: undefined,
-                        })
-                    }
-                />
+                <View style={style.buttonGroup}>
+                    <Button
+                        title={
+                            <Text caption medium style={style.joinButtonText}>
+                                {t('phrases.add-community')}
+                            </Text>
+                        }
+                        onPress={() =>
+                            navigation.navigate('JoinFederation', {
+                                invite: undefined,
+                            })
+                        }
+                    />
+                    <Button
+                        type="clear"
+                        title={
+                            <View style={style.link}>
+                                <Text caption medium>
+                                    {t(
+                                        'feature.community.or-visit-awesome-fedimint',
+                                    )}
+                                </Text>
+                                <SvgImage name="ExternalLink" size={20} />
+                            </View>
+                        }
+                        onPress={() => onOpenAwesomeFedimint()}
+                    />
+                </View>
             </View>
         </ScrollView>
     )
@@ -84,13 +115,16 @@ const NoFederations: React.FC = () => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flexGrow: 1,
+            justifyContent: 'center',
             alignItems: 'center',
-            gap: 32,
+            gap: 23,
             padding: theme.spacing.lg,
         },
         titleContainer: {
-            gap: 32,
+            gap: 24,
             alignItems: 'center',
+            textAlign: 'center',
         },
         image: {
             height: 200,
@@ -99,10 +133,15 @@ const styles = (theme: Theme) =>
         title: {
             textAlign: 'center',
         },
+        subtitle: {
+            textAlign: 'center',
+            lineHeight: 20,
+            fontFamily: 'Albert Sans',
+            letterSpacing: 0.16,
+        },
         contentContainer: {
-            flex: 1,
             width: '100%',
-            gap: 16,
+            gap: 24,
             justifyContent: 'flex-end',
         },
         tileContainer: {
@@ -114,7 +153,6 @@ const styles = (theme: Theme) =>
             gap: 12,
         },
         tileTextContainer: {
-            flex: 1,
             flexDirection: 'column',
             gap: theme.spacing.xs,
         },
@@ -122,6 +160,14 @@ const styles = (theme: Theme) =>
         joinButtonText: {
             color: theme.colors.secondary,
             paddingHorizontal: theme.spacing.xs,
+        },
+        link: {
+            alignItems: 'center',
+            flexDirection: 'row',
+            gap: 8,
+        },
+        buttonGroup: {
+            gap: theme.spacing.sm,
         },
     })
 
