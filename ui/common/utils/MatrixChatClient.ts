@@ -818,11 +818,10 @@ export class MatrixChatClient {
         member: RpcRoomMember,
         roomId: string,
     ): MatrixRoomMember {
-        const test = this.ensureDisplayName(member.displayName)
         return {
             roomId,
             id: member.userId,
-            displayName: test,
+            displayName: this.ensureDisplayName(member.displayName),
             powerLevel: member.powerLevel,
             membership: member.membership,
             // TODO: Make opaque mxc type, have each component do the conversion with width / height args
