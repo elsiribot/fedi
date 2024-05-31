@@ -372,6 +372,7 @@
             "other-sent-payment": "{{name}} sent {{recipient}} {{fiat}} ({{amount}}) {{memo}}",
             "paid-by-name": "Paid by {{name}}",
             "paste-group-invite": "Paste group invite",
+            "public-group-notice": "This is a public group. Members and messages are publicly viewable.",
             "register-a-username": "Register a username",
             "remove-user": "Remove user from group",
             "removed-admin-from-group": "Removed {{username}} as an admin",

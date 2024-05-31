@@ -1,13 +1,11 @@
 import Clipboard from '@react-native-clipboard/clipboard'
 import { useNavigation } from '@react-navigation/native'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useState } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { View, StyleSheet } from 'react-native'
 
-import { useMatrixChatInvites } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
-import { ChatType } from '@fedi/common/types'
 import { encodeFediMatrixRoomUri } from '@fedi/common/utils/matrix'
 
 import { NavigationHook } from '../../../types/navigation'
@@ -22,8 +20,6 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
     const toast = useToast()
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const [isJoiningGroup, setIsJoiningGroup] = useState(false)
-    const { joinPublicGroup } = useMatrixChatInvites(t)
 
     const copyToClipboard = () => {
         const invitationLink = encodeFediMatrixRoomUri(groupId)
@@ -34,30 +30,17 @@ const EmbeddedJoinGroupButton: React.FC<Props> = ({ groupId }: Props) => {
         })
     }
 
-    const handleJoinGroup = useCallback(async () => {
-        setIsJoiningGroup(true)
-        // For now, only public rooms can be joined by scanning
-        // TODO: Implement knocking to support non-public rooms
-        joinPublicGroup(groupId)
-            .then(() => {
-                navigation.navigate('ChatRoomConversation', {
-                    roomId: groupId,
-                    chatType: ChatType.group,
-                })
-            })
-            .finally(() => {
-                setIsJoiningGroup(false)
-            })
-    }, [groupId, joinPublicGroup, navigation])
-
     return (
         <Button
             size="sm"
             color={theme.colors.secondary}
             containerStyle={styles(theme).container}
-            onPress={handleJoinGroup}
+            onPress={() =>
+                navigation.navigate('ConfirmJoinPublicGroup', {
+                    groupId,
+                })
+            }
             onLongPress={copyToClipboard}
-            loading={isJoiningGroup}
             title={
                 <View style={styles(theme).contents}>
                     <SvgImage

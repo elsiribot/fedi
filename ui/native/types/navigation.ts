@@ -66,6 +66,7 @@ export type RootStackParamList = {
     CompleteRecoveryAssist: { videoPath: string; recoveryId: string }
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined
+    ConfirmJoinPublicGroup: { groupId: string }
     ConfirmSendEcash: { amount: Sats }
     ConfirmSendChatPayment: {
         amount: Sats

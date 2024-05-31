@@ -21,6 +21,7 @@ import ChatRoomInviteHeader from '../components/feature/chat/ChatRoomInviteHeade
 import ChatRoomMembersHeader from '../components/feature/chat/ChatRoomMembersHeader'
 import ChatWalletHeader from '../components/feature/chat/ChatWalletHeader'
 import ConfirmChatSendHeader from '../components/feature/chat/ConfirmChatSendHeader'
+import ConfirmJoinPublicGroupHeader from '../components/feature/chat/ConfirmJoinPublicGroupHeader'
 import CreateGroupHeader from '../components/feature/chat/CreateGroupHeader'
 import DirectChatHeader from '../components/feature/chat/DirectChatHeader'
 import EditGroupHeader from '../components/feature/chat/EditGroupHeader'
@@ -96,6 +97,7 @@ import ChooseRecoveryMethod from './ChooseRecoveryMethod'
 import CompleteRecoveryAssist from './CompleteRecoveryAssist'
 import CompleteSocialBackup from './CompleteSocialBackup'
 import CompleteSocialRecovery from './CompleteSocialRecovery'
+import ConfirmJoinPublicGroup from './ConfirmJoinPublicGroup'
 import ConfirmReceiveOffline from './ConfirmReceiveOffline'
 import ConfirmRecoveryAssist from './ConfirmRecoveryAssist'
 import ConfirmSendChatPayment from './ConfirmSendChatPayment'
@@ -420,6 +422,15 @@ export const MainNavigator = () => {
                                 component={ChatRoomInvite}
                                 options={() => ({
                                     header: () => <ChatRoomInviteHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ConfirmJoinPublicGroup"
+                                component={ConfirmJoinPublicGroup}
+                                options={() => ({
+                                    header: () => (
+                                        <ConfirmJoinPublicGroupHeader />
+                                    ),
                                 })}
                             />
                             <Stack.Screen
