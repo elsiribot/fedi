@@ -26,7 +26,6 @@ import {
 
 import { fedimint } from '../bridge'
 import ChatHeader from '../components/feature/chat/ChatHeader'
-import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
 import ModsHeader from '../components/feature/fedimods/ModsHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
 import Header from '../components/ui/Header'

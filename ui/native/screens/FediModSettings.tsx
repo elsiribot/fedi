@@ -9,7 +9,6 @@ import {
     View,
     Image,
     useWindowDimensions,
-    ImageSourcePropType,
 } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
