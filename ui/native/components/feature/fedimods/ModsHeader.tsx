@@ -16,7 +16,7 @@ const ModsHeader: React.FC = () => {
     const style = styles(theme)
 
     const handleAddPress = () => {
-        navigation.push('AddFediMod')
+        navigation.navigate('AddFediMod')
     }
 
     return (

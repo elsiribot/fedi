@@ -13,7 +13,6 @@ import {
     useWindowDimensions,
 } from 'react-native'
 
-import { useGlobalFederation } from '@fedi/common/hooks/federation'
 import {
     selectVisibleCustomMods,
     selectVisibleGlobalSuggestedMods,
@@ -33,8 +32,6 @@ const Mods: React.FC = () => {
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
     const dispatch = useAppDispatch()
-
-    useGlobalFederation()
 
     const globalMods = useAppSelector(selectVisibleGlobalSuggestedMods)
     const customMods = useAppSelector(selectVisibleCustomMods)

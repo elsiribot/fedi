@@ -12,7 +12,6 @@ import {
 } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useGlobalFederation } from '@fedi/common/hooks/federation'
 import { CommonState } from '@fedi/common/redux'
 import {
     removeCustomGlobalMod,
@@ -36,8 +35,6 @@ const FediModSettings: React.FC = () => {
     const { t } = useTranslation()
     const insets = useSafeAreaInsets()
     const navigation = useNavigation()
-
-    useGlobalFederation()
 
     const suggestedFediMods = useAppSelector(selectGlobalSuggestedMods)
     const suggestedVisibility = useAppSelector(
