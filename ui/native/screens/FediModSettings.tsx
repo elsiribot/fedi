@@ -9,6 +9,7 @@ import {
     View,
     Image,
     useWindowDimensions,
+    ImageSourcePropType,
 } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -224,17 +225,22 @@ const ModRow = ({
 
     const style = styles(theme, fontScale, insets)
 
+    // use local image if we have it
+    let imageSrc = FediModImages[mod.id]
+
+    if (!imageSrc) {
+        if (mod.imageUrl) {
+            imageSrc = { uri: mod.imageUrl }
+        } else {
+            imageSrc = FediModImages.default
+        }
+    }
+
     return (
         <View key={mod.id} style={style.fediMod}>
             <Image
                 style={style.iconImage}
-                source={
-                    mod.imageUrl
-                        ? {
-                              uri: mod.imageUrl,
-                          }
-                        : FediModImages.default
-                }
+                source={imageSrc}
                 resizeMode="contain"
             />
 

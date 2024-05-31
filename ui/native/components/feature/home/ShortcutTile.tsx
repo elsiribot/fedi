@@ -4,8 +4,9 @@ import { Image, StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import { selectIsActiveFederationRecovering } from '@fedi/common/redux'
 
+import { FediModImages } from '../../../assets/images'
 import { useAppSelector } from '../../../state/hooks'
-import { FediMod, Shortcut } from '../../../types'
+import { FediMod, Shortcut, ShortcutType } from '../../../types'
 import { Pressable } from '../../ui/Pressable'
 import SvgImage, {
     SvgImageName,
@@ -19,6 +20,10 @@ type ShortcutTileProps = {
     onSelect: (shortcut: Shortcut) => void
 }
 
+function isMod(shortcut: Shortcut | FediMod): shortcut is FediMod {
+    return shortcut.type == ShortcutType.fediMod
+}
+
 const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
     const { theme } = useTheme()
     const { fontScale } = useWindowDimensions()
@@ -30,11 +35,22 @@ const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
     const style = styles(theme, fontScale)
 
     const renderIcon = () => {
-        if ((shortcut as FediMod).imageUrl) {
+        if (isMod(shortcut)) {
+            // use local image if we have it
+            let imageSrc = FediModImages[shortcut.id]
+
+            if (!imageSrc) {
+                if (shortcut.imageUrl) {
+                    imageSrc = { uri: shortcut.imageUrl }
+                } else {
+                    imageSrc = FediModImages.default
+                }
+            }
+
             return (
                 <Image
                     style={style.iconImage}
-                    source={{ uri: (shortcut as FediMod).imageUrl }}
+                    source={imageSrc}
                     resizeMode="contain"
                 />
             )
