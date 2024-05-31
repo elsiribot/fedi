@@ -21,7 +21,7 @@ type ShortcutTileProps = {
 }
 
 function isMod(shortcut: Shortcut | FediMod): shortcut is FediMod {
-    return shortcut.type == ShortcutType.fediMod
+    return shortcut.type === ShortcutType.fediMod
 }
 
 const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {

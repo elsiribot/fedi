@@ -20,6 +20,7 @@ import {
     setSuggestedGlobalModVisibility,
 } from '@fedi/common/redux/mod'
 
+import ModsHeader from '../components/feature/fedimods/ModsHeader'
 import ShortcutTile from '../components/feature/home/ShortcutTile'
 import SvgImage from '../components/ui/SvgImage'
 import { Tooltip } from '../components/ui/Tooltip'
@@ -134,6 +135,7 @@ const Mods: React.FC = () => {
 
     return (
         <View style={style.container}>
+            <ModsHeader />
             <View style={style.listContainer}>
                 {renderFediModShortcuts()}
                 {renderBuffers()}
@@ -147,7 +149,6 @@ const styles = (theme: Theme, columns: number) =>
         container: {
             flex: 1,
             width: '100%',
-            marginVertical: theme.spacing.xl,
         },
         shortcut: {
             width: `${100 / columns}%`,

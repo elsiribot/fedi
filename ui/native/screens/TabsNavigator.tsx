@@ -26,7 +26,6 @@ import {
 
 import { fedimint } from '../bridge'
 import ChatHeader from '../components/feature/chat/ChatHeader'
-import ModsHeader from '../components/feature/fedimods/ModsHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
 import Header from '../components/ui/Header'
 import SvgImage, {
@@ -207,8 +206,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                     name="Mods"
                     component={Mods}
                     options={() => ({
-                        title: t('words.mods'),
-                        header: () => <ModsHeader />,
+                        headerShown: false, // this allows us to draw over the header with tooltips
                     })}
                 />
                 <Tab.Screen
