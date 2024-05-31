@@ -7,7 +7,6 @@ use std::time::Duration;
 use anyhow::{bail, Context, Result};
 use eyeball::Subscriber;
 use fedimint_core::task::{MaybeSend, MaybeSync, TaskGroup};
-use fedimint_core::util::BackoffBuilder;
 use fedimint_derive_secret::DerivableSecret;
 use futures::{Future, StreamExt};
 use matrix_sdk::encryption::BackupDownloadStrategy;
@@ -144,24 +143,12 @@ impl Matrix {
         self.task_group
             .spawn_cancellable("matrix::start_sync", async move {
                 this.sync_service.start().await;
-                let backoff_builder = fedimint_core::util::FibonacciBackoff::default()
-                    .with_min_delay(Duration::from_secs(1))
-                    .with_max_delay(Duration::from_secs(60))
-                    .with_max_times(usize::MAX)
-                    .with_jitter();
-
-                let mut backoff = backoff_builder.build();
                 while let Some(state) = this.sync_service.state().next().await {
                     match state {
                         sync_service::State::Terminated | sync_service::State::Error => {
-                            // should never return None
-                            fedimint_core::task::sleep(backoff.next().unwrap_or_default()).await;
                             this.sync_service.start().await;
                         }
-                        sync_service::State::Idle | sync_service::State::Running => {
-                            // restart the backoff from 1s
-                            backoff = backoff_builder.build();
-                        }
+                        sync_service::State::Idle | sync_service::State::Running => {}
                     }
                 }
             });
