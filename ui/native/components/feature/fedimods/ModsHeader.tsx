@@ -22,7 +22,6 @@ const ModsHeader: React.FC = () => {
     return (
         <>
             <Header
-                inline
                 containerStyle={style.container}
                 headerLeft={
                     <Text h2 medium>
@@ -37,8 +36,7 @@ const ModsHeader: React.FC = () => {
                     />
                 }
                 rightContainerStyle={style.rightContainer}
-                // Needed to make more room for Wallet title in headerLeft
-                centerContainerStyle={{ flex: 0 }}
+                centerContainerStyle={{ flex: 2 }}
             />
         </>
     )
