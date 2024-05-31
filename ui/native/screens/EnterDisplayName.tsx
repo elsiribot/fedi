@@ -34,6 +34,7 @@ const EnterDisplayName: React.FC<Props> = ({ navigation }: Props) => {
     const {
         username,
         isSubmitting,
+        errorMessage,
         handleChangeUsername,
         handleSubmitDisplayName,
     } = useDisplayNameForm(t, fedimint)
@@ -124,6 +125,11 @@ const EnterDisplayName: React.FC<Props> = ({ navigation }: Props) => {
                 <Text caption style={style.inputGuidance}>
                     {t('feature.onboarding.username-guidance')}
                 </Text>
+                {errorMessage && (
+                    <Text caption style={style.errorLabel}>
+                        {errorMessage}
+                    </Text>
+                )}
             </View>
             <View
                 style={[
@@ -137,7 +143,9 @@ const EnterDisplayName: React.FC<Props> = ({ navigation }: Props) => {
                     fullWidth
                     title={t('words.continue')}
                     onPress={handleSubmit}
-                    disabled={!username || isSubmitting}
+                    disabled={
+                        !username || isSubmitting || errorMessage !== null
+                    }
                     loading={isSubmitting}
                 />
             </View>
@@ -171,8 +179,14 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         inputLabel: {
             textAlign: 'left',
-            marginLeft: theme.spacing.sm,
             marginBottom: theme.spacing.xs,
+            marginTop: theme.spacing.xs,
+        },
+        errorLabel: {
+            textAlign: 'left',
+            marginBottom: theme.spacing.xs,
+            marginTop: theme.spacing.xs,
+            color: theme.colors.red,
         },
         textInputInner: {
             borderBottomWidth: 0,
@@ -186,7 +200,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         inputGuidance: {
             textAlign: 'left',
-            marginLeft: theme.spacing.sm,
             marginTop: theme.spacing.xs,
             color: theme.colors.grey,
         },

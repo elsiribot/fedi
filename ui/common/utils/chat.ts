@@ -235,17 +235,18 @@ export const makePaymentUpdatedAt = (
  *  - length <= 21
  *  - must be lowercase
  *  - must not include any banned term
- *
  */
-export const getDisplayNameValidator = (t: TFunction) =>
+export const getDisplayNameValidator = () =>
     z
         .string()
+        // Removes leading/trailing whitespace
+        .trim()
         // Validates length
-        .max(21, { message: t('errors.invalid-username') })
+        // Using z.string().refine() instead of z.string().max()
+        // to keep return types consistent
+        .refine(username => username.length <= 21)
         // Validates all lowercase
-        .refine(username => !/[A-Z]/.test(username), {
-            message: t('errors.invalid-username'),
-        })
+        .refine(username => !/[A-Z]/.test(username))
         // Validates No banned words
         .refine(
             username => {
@@ -255,16 +256,38 @@ export const getDisplayNameValidator = (t: TFunction) =>
                 )
                 return !foundWord
             },
-            // Only runs if a banned word was found
-            username => {
-                const lowerUsername = username.toLowerCase()
-                const foundWord = BANNED_DISPLAY_NAME_TERMS.find(word =>
-                    lowerUsername.includes(word),
-                )
-                return {
-                    message: t('errors.invalid-username-banned', {
-                        banned: foundWord,
-                    }),
-                }
-            },
+            { message: 'banned' },
         )
+
+export type DisplayNameValidatorType = ReturnType<
+    typeof getDisplayNameValidator
+>
+
+type ParsedResult =
+    | {
+          success: true
+          data: string
+      }
+    | {
+          success: false
+          errorMessage: string
+      }
+
+// Ref: https://zod.dev/?id=inferring-the-inferred-type
+export const parseData = <T extends z.ZodTypeAny>(
+    data: unknown,
+    schema: T,
+    t: TFunction,
+): ParsedResult => {
+    const parsed = schema.safeParse(data) as z.infer<T>
+    if (parsed.success) return { success: true, data: parsed.data }
+
+    const message = parsed.error.errors[0].message
+    // handle banned_words
+    if (message === 'banned')
+        return {
+            success: false,
+            errorMessage: t('errors.invalid-username-banned'),
+        }
+    return { success: false, errorMessage: t('errors.invalid-username') }
+}

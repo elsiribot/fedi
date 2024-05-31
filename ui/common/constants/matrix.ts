@@ -11,3 +11,5 @@ export const BANNED_DISPLAY_NAME_TERMS = [
     'helpdesk',
     'security',
 ]
+
+export const INVALID_NAME_PLACEHOLDER = 'Invalid Name'

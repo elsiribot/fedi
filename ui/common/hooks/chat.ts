@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux'
 
 import type { ChatMember, ChatMessage, Sats } from '@fedi/common/types'
 
+import { INVALID_NAME_PLACEHOLDER } from '../constants/matrix'
 import {
     configureMatrixPushNotifications,
     selectActiveFederation,
@@ -28,7 +29,11 @@ import {
     startMatrixClient,
     joinDefaultGroupChats,
 } from '../redux'
-import { getDisplayNameValidator, getLatestMessage } from '../utils/chat'
+import {
+    getDisplayNameValidator,
+    getLatestMessage,
+    parseData,
+} from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { useMinMaxSendAmount, useMinMaxRequestAmount } from './amount'
@@ -435,38 +440,45 @@ export const useChatPaymentUtils = (
 export const useDisplayNameForm = (t: TFunction, fedimint?: FedimintBridge) => {
     const [username, setUsername] = useState<string>('')
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const toast = useToast()
     const dispatch = useCommonDispatch()
     const matrixAuth = useCommonSelector(selectMatrixAuth)
     const hasSetDisplayName = useCommonSelector(selectHasSetMatrixDisplayName)
-    const validator = useMemo(() => getDisplayNameValidator(t), [t])
+    const validator = useMemo(() => getDisplayNameValidator(), [])
 
     useEffect(() => {
         if (!matrixAuth) return
         const { displayName } = matrixAuth
-        if (hasSetDisplayName) {
+        if (hasSetDisplayName && displayName !== INVALID_NAME_PLACEHOLDER) {
             setUsername(displayName)
         }
     }, [hasSetDisplayName, matrixAuth])
 
     const handleChangeUsername = useCallback(
         (input: string) => {
-            const result = validator.safeParse(input)
+            const result = parseData(input, validator, t)
             if (!result.success) {
                 // Only show first error
-                const errorMessage = result.error.errors[0].message
-                toast.show({ status: 'error', content: errorMessage })
-                return
+                setErrorMessage(result.errorMessage)
+            } else {
+                setErrorMessage(null)
             }
             setUsername(input)
         },
-        [toast, validator],
+        [t, validator],
     )
 
     const handleSubmitDisplayName = useCallback(
         async (onSuccess: () => void) => {
             setIsSubmitting(true)
             try {
+                // Double check the submitted username is valid
+                const result = parseData(username, validator, t)
+                if (!result.success) {
+                    // Only show first error
+                    throw new Error(result.errorMessage)
+                }
                 // this is optional because it must be provided during onboarding to start
                 // the matrix client for the first time but this same hook is also
                 // used after the client has started when editing the display name
@@ -487,12 +499,13 @@ export const useDisplayNameForm = (t: TFunction, fedimint?: FedimintBridge) => {
             }
             setIsSubmitting(false)
         },
-        [dispatch, fedimint, matrixAuth, t, toast, username],
+        [dispatch, fedimint, matrixAuth, t, toast, username, validator],
     )
 
     return {
         username,
         isSubmitting,
+        errorMessage,
         handleChangeUsername,
         handleSubmitDisplayName,
     }
