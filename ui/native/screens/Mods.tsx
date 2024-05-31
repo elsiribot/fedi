@@ -21,8 +21,8 @@ import {
 } from '@fedi/common/redux/mod'
 
 import ShortcutTile from '../components/feature/home/ShortcutTile'
-import { NuxTooltip } from '../components/ui/NuxTooltip'
 import SvgImage from '../components/ui/SvgImage'
+import { Tooltip } from '../components/ui/Tooltip'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { Shortcut, FediMod } from '../types'
 import { NavigationHook } from '../types/navigation'
@@ -90,7 +90,7 @@ const Mods: React.FC = () => {
                         style={style.tooltipOverlay}
                         onPress={() => setActionsMod(undefined)}
                     />
-                    <NuxTooltip
+                    <Tooltip
                         shouldShow={actionsMod?.id === s.id}
                         orientation="above"
                         verticalOffset={96}
@@ -104,7 +104,7 @@ const Mods: React.FC = () => {
                             </Text>
                             <SvgImage name="Eye" />
                         </Pressable>
-                    </NuxTooltip>
+                    </Tooltip>
                     <ShortcutTile
                         shortcut={s}
                         onSelect={onSelectFediMod}

@@ -13,8 +13,8 @@ import {
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
-import { NuxTooltip } from '../../ui/NuxTooltip'
 import { PressableIcon } from '../../ui/PressableIcon'
+import { Tooltip } from '../../ui/Tooltip'
 import { ChatConnectionBadge } from './ChatConnectionBadge'
 
 const ChatHeader: React.FC = () => {
@@ -53,7 +53,7 @@ const ChatHeader: React.FC = () => {
                             }}
                         />
 
-                        <NuxTooltip
+                        <Tooltip
                             delay={600}
                             shouldShow={isChatEmpty && !hasViewedMemberQr}
                             orientation="below"

@@ -26,7 +26,7 @@ interface Props {
     children?: React.ReactNode
 }
 
-export const NuxTooltip: React.FC<Props> = ({
+export const Tooltip: React.FC<Props> = ({
     shouldShow,
     text,
     delay,

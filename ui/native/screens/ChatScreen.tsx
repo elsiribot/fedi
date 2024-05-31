@@ -18,8 +18,8 @@ import {
 import { Images } from '../assets/images'
 import ChatsList from '../components/feature/chat/ChatsList'
 import UpgradeChat from '../components/feature/chat/UpgradeChat'
-import { NuxTooltip } from '../components/ui/NuxTooltip'
 import SvgImage from '../components/ui/SvgImage'
+import { Tooltip } from '../components/ui/Tooltip'
 import { useAppSelector } from '../state/hooks'
 import { MatrixSyncStatus } from '../types'
 import {
@@ -111,7 +111,7 @@ const ChatScreen: React.FC<Props> = () => {
                         source={Images.IllustrationChat}
                         style={style.emptyImage}
                     />
-                    <NuxTooltip
+                    <Tooltip
                         shouldShow={isChatEmpty && !hasOpenedNewChat}
                         delay={1200}
                         text="New chat"
