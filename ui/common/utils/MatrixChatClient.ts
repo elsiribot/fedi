@@ -2,7 +2,6 @@ import EventEmitter from 'events'
 
 import {
     GLOBAL_MATRIX_PUSH_SERVER,
-    INVALID_NAME,
     INVALID_NAME_PLACEHOLDER,
 } from '../constants/matrix'
 import {
