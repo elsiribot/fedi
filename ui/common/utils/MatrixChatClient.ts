@@ -198,9 +198,14 @@ export class MatrixChatClient {
         }
     }
 
+    async setRoomTopic(roomId: string, topic: string) {
+        await this.fedimint.matrixRoomSetTopic({ roomId, topic })
+    }
+
     async setRoomName(roomId: string, name: string) {
         await this.fedimint.matrixRoomSetName({ roomId, name })
     }
+
     async setRoomPowerLevels(
         roomId: string,
         powerLevels: MatrixRoomPowerLevels,

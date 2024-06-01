@@ -388,7 +388,12 @@ export const createMatrixRoom = createAsyncThunk<
             },
         ]
     }
-    return client.createRoom(roomArgs)
+    const { roomId } = await client.createRoom(roomArgs)
+    if (isPublic === true) {
+        // for public rooms set the roomId as the topic so it is filterable for room previews
+        await client.setRoomTopic(roomId, roomId)
+    }
+    return { roomId }
 })
 
 export const leaveMatrixRoom = createAsyncThunk<
