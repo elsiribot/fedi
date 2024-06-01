@@ -18,7 +18,7 @@ export const StoragePermissionGate: React.FC<Props> = ({
     const { storagePermission, requestStoragePermission } =
         useStoragePermission()
 
-    const [didTry, setDidTry] = useState<boolean>()
+    const [didTry, setDidTry] = useState<boolean>(false)
 
     const handleContinueClick = async () => {
         await requestStoragePermission()
