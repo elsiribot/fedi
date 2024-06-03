@@ -150,6 +150,7 @@ impl Matrix {
                         }
                         sync_service::State::Idle | sync_service::State::Running => {}
                     }
+                    fedimint_core::task::sleep(Duration::from_millis(500)).await;
                 }
             });
 
