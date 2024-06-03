@@ -4,6 +4,7 @@ import {
     createAsyncThunk,
     createSelector,
 } from '@reduxjs/toolkit'
+import orderBy from 'lodash/orderBy'
 import { v4 as uuidv4 } from 'uuid'
 
 import {
@@ -48,6 +49,7 @@ import { makeLog } from '../utils/log'
 import {
     getUserSuffix,
     isPaymentEvent,
+    makeChatFromPreview,
     matrixIdToUsername,
     mxcUrlToHttpUrl,
 } from '../utils/matrix'
@@ -992,18 +994,50 @@ export const selectMatrixUsers = (s: CommonState) => s.matrix.users
 export const selectMatrixUser = (s: CommonState, userId: MatrixUser['id']) =>
     s.matrix.users[userId]
 
-export const selectMatrixOrderedRoomsList = createSelector(
+export const selectMatrixChatsList = createSelector(
     selectMatrixRooms,
-    rooms => {
-        return rooms
+    selectGroupPreviews,
+    (orderedRoomsList, defaultGroupPreviews): MatrixRoom[] => {
+        // Here we add preview rooms from the default groups list to be
+        // displayed alongside the user's joined rooms to make it seem like
+        // the user has joined these rooms when really they are just public previews
+        // TODO: These should be moved to the Community screen and only shown
+        // when the user switches to view that community
+        const defaultGroupsList = Object.entries(defaultGroupPreviews).reduce<
+            MatrixRoom[]
+        >((result, [_, preview]: [RpcRoomId, MatrixGroupPreview]) => {
+            const { info, timeline } = preview
+            // don't include previews if we dont have info and timeline
+            if (!info || !timeline) return result
+            // don't include previews for rooms we are already joined to
+            if (orderedRoomsList.find(r => r.id === info.id)) return result
+            result.push(makeChatFromPreview(preview))
+            return result
+        }, [])
+        const chatList: MatrixRoom[] = [
+            ...orderedRoomsList,
+            ...defaultGroupsList,
+        ]
+        return orderBy(
+            chatList,
+            item => item.preview?.timestamp || Date.now(),
+            'desc',
+        )
     },
 )
 
 export const selectIsMatrixChatEmpty = (s: CommonState) =>
-    selectMatrixOrderedRoomsList(s).length === 0
+    selectMatrixChatsList(s).length === 0
 
 export const selectMatrixRoom = (s: CommonState, roomId: MatrixRoom['id']) =>
     selectMatrixRooms(s).find(room => room.id === roomId)
+
+export const selectGroupPreview = createSelector(
+    selectGroupPreviews,
+    (_s: CommonState, roomId: RpcRoomId) => roomId,
+    (groupPreviews: Record<RpcRoomId, MatrixGroupPreview>, roomId: RpcRoomId) =>
+        groupPreviews[roomId] || undefined,
+)
 
 export const selectMatrixRoomPowerLevels = (
     s: CommonState,

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
 import QRIcon from '@fedi/common/assets/svgs/qr.svg'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { selectMatrixOrderedRoomsList } from '@fedi/common/redux'
+import { selectMatrixChatsList } from '@fedi/common/redux'
 
 import * as Layout from '../components/Layout'
 import { useAppSelector } from '../hooks'
@@ -24,7 +24,7 @@ interface Props {
 
 export const ChatBlock: React.FC<Props> = ({ children, isShowingContent }) => {
     const { t } = useTranslation()
-    const rooms = useAppSelector(selectMatrixOrderedRoomsList)
+    const rooms = useAppSelector(selectMatrixChatsList)
 
     const [isMemberQrOpen, setIsMemberQrOpen] = useState(false)
 

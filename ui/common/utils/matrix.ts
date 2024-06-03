@@ -9,6 +9,7 @@ import { FormattedAmounts } from '../hooks/amount'
 import {
     MSats,
     MatrixEvent,
+    MatrixGroupPreview,
     MatrixPaymentEvent,
     MatrixPaymentStatus,
     MatrixRoom,
@@ -207,6 +208,25 @@ export function makeMatrixEventGroups(
     }
 
     return eventGroups
+}
+
+export function makeChatFromPreview(preview: MatrixGroupPreview) {
+    const { info, timeline } = preview
+
+    const previewContent: MatrixTimelineItem = timeline[0]
+    const chat: MatrixRoom = { ...info }
+    if (previewContent) {
+        chat.preview = {
+            eventId: previewContent?.id,
+            body: previewContent?.content.body || '',
+            timestamp: previewContent?.timestamp || Date.now(),
+            // TODO: get this from members list if we have them
+            displayName: previewContent?.senderId || '',
+            senderId: previewContent?.senderId || '',
+        }
+    }
+
+    return chat
 }
 
 export function getRoomEventPowerLevel(

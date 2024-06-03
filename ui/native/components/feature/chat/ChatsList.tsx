@@ -12,7 +12,7 @@ import {
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import {
-    selectMatrixOrderedRoomsList,
+    selectMatrixChatsList,
     selectMatrixStatus,
     refetchMatrixRoomList,
     selectIsChatEmpty,
@@ -35,7 +35,7 @@ const ChatsList: React.FC = () => {
     const isLegacyChatEmpty = useAppSelector(selectIsChatEmpty)
     const hasLegacyChatData = !isLegacyChatEmpty
 
-    const rooms = useAppSelector(selectMatrixOrderedRoomsList)
+    const rooms = useAppSelector(selectMatrixChatsList)
     const syncStatus = useAppSelector(selectMatrixStatus)
     const [isRefetching, setIsRefetching] = useState(false)
     const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
