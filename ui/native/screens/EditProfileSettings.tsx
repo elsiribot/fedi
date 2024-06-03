@@ -49,6 +49,7 @@ const EditProfileSettings: React.FC = () => {
     const {
         isSubmitting,
         username,
+        errorMessage,
         handleChangeUsername,
         handleSubmitDisplayName,
     } = useDisplayNameForm(t)
@@ -141,7 +142,10 @@ const EditProfileSettings: React.FC = () => {
     }
 
     const saveButtonDisabled =
-        username === matrixAuth?.displayName || !username || isSubmitting
+        username === matrixAuth?.displayName ||
+        !username ||
+        isSubmitting ||
+        errorMessage !== null
 
     return (
         <ScrollView
@@ -178,6 +182,11 @@ const EditProfileSettings: React.FC = () => {
                     autoCorrect={false}
                     disabled={isSubmitting}
                 />
+                {errorMessage && (
+                    <Text caption style={style.errorLabel}>
+                        {errorMessage}
+                    </Text>
+                )}
             </View>
 
             <View
@@ -229,8 +238,14 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         inputLabel: {
             textAlign: 'left',
-            marginLeft: theme.spacing.sm,
             marginBottom: theme.spacing.xs,
+            marginTop: theme.spacing.xs,
+        },
+        errorLabel: {
+            textAlign: 'left',
+            marginBottom: theme.spacing.xs,
+            marginTop: theme.spacing.xs,
+            color: theme.colors.red,
         },
         radioContainer: {
             margin: 0,

@@ -1,6 +1,9 @@
 import EventEmitter from 'events'
 
-import { GLOBAL_MATRIX_PUSH_SERVER } from '../constants/matrix'
+import {
+    GLOBAL_MATRIX_PUSH_SERVER,
+    INVALID_NAME_PLACEHOLDER,
+} from '../constants/matrix'
 import {
     MatrixRoom,
     MatrixUser,
@@ -28,6 +31,7 @@ import {
     RpcRoomMember,
     RpcRoomNotificationMode,
 } from '../types/bindings'
+import { DisplayNameValidatorType, getDisplayNameValidator } from './chat'
 import { isDev } from './environment'
 import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
@@ -96,6 +100,7 @@ export class MatrixChatClient {
     private clientObserverMap: Partial<Record<ClientObserverKind, number>> = {}
     private roomInvites: RpcRoomListEntry[] = []
     private joinedInvites: Set<string> = new Set()
+    private displayNameValidator: DisplayNameValidatorType | undefined
 
     /*** Public methods ***/
 
@@ -105,6 +110,9 @@ export class MatrixChatClient {
         }
         this.hasStarted = true
         this.fedimint = fedimint
+        if (!this.displayNameValidator) {
+            this.displayNameValidator = getDisplayNameValidator()
+        }
 
         fedimint.addListener('observableUpdate', ev => {
             // This is noisy, but can be helpful for debugging
@@ -293,7 +301,9 @@ export class MatrixChatClient {
     }
 
     async setDisplayName(displayName: string) {
-        await this.fedimint.matrixSetDisplayName({ displayName })
+        await this.fedimint.matrixSetDisplayName({
+            displayName: this.ensureDisplayName(displayName) ?? displayName,
+        })
     }
 
     async setAvatarUrl(avatarUrl: string) {
@@ -772,9 +782,10 @@ export class MatrixChatClient {
             preview = {
                 eventId: room.latest_event.event.event.event_id,
                 senderId: room.latest_event.sender_profile.Original.content.id,
-                displayName:
+                displayName: this.ensureDisplayName(
                     room.latest_event.sender_profile.Original.content
                         .displayname,
+                ),
                 avatarUrl:
                     room.latest_event.sender_profile.Original.content
                         .avatar_url,
@@ -810,7 +821,7 @@ export class MatrixChatClient {
         return {
             roomId,
             id: member.userId,
-            displayName: member.displayName || undefined,
+            displayName: this.ensureDisplayName(member.displayName),
             powerLevel: member.powerLevel,
             membership: member.membership,
             // TODO: Make opaque mxc type, have each component do the conversion with width / height args
@@ -823,7 +834,7 @@ export class MatrixChatClient {
     private serializeAuth(auth: RpcMatrixAccountSession): MatrixAuth {
         return {
             userId: auth.userId,
-            displayName: auth.displayName || undefined,
+            displayName: this.ensureDisplayName(auth.displayName),
             avatarUrl: auth.avatarUrl
                 ? mxcUrlToHttpUrl(auth.avatarUrl, 200, 200, 'crop')
                 : undefined,
@@ -831,13 +842,13 @@ export class MatrixChatClient {
         }
     }
 
-    private serializeUserDirectorySearchResponse(
+    private serializeUserDirectorySearchResponse = (
         res: RpcMatrixUserDirectorySearchResponse,
-    ): MatrixSearchResults {
+    ): MatrixSearchResults => {
         return {
             results: res.results.map(user => ({
                 id: user.userId,
-                displayName: user.displayName || undefined,
+                displayName: this.ensureDisplayName(user.displayName),
                 avatarUrl: user.avatarUrl
                     ? mxcUrlToHttpUrl(user.avatarUrl, 200, 200, 'crop')
                     : undefined,
@@ -899,5 +910,18 @@ export class MatrixChatClient {
             status,
             error,
         }
+    }
+
+    // Ref: https://github.com/fedibtc/fedi/issues/1184#issuecomment-2137529842
+    private ensureDisplayName = (name: string | null) => {
+        if (!name) return ''
+        if (!this.displayNameValidator) return name
+        const res = this.displayNameValidator.safeParse(name)
+        if (res.success) return name
+        // TODO: figure out efficient way to localize this.
+        // What's a place this can live such that locales are accessible?
+        // Ideally, we only want to validate a displayName once, so
+        // this shouldn't live inside of the ui components.
+        return INVALID_NAME_PLACEHOLDER
     }
 }
