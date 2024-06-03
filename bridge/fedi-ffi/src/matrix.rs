@@ -143,7 +143,8 @@ impl Matrix {
         self.task_group
             .spawn_cancellable("matrix::start_sync", async move {
                 this.sync_service.start().await;
-                while let Some(state) = this.sync_service.state().next().await {
+                let mut state_subscriber = this.sync_service.state();
+                while let Some(state) = state_subscriber.next().await {
                     match state {
                         sync_service::State::Terminated | sync_service::State::Error => {
                             this.sync_service.start().await;
