@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RESULTS } from 'react-native-permissions'
 
@@ -18,7 +18,15 @@ export const StoragePermissionGate: React.FC<Props> = ({
     const { storagePermission, requestStoragePermission } =
         useStoragePermission()
 
-    if (storagePermission === RESULTS.DENIED) {
+    const [didTry, setDidTry] = useState<boolean>(false)
+
+    const handleContinueClick = async () => {
+        await requestStoragePermission()
+        setDidTry(true)
+    }
+
+    // we only have one chance to request permissions
+    if (storagePermission === RESULTS.DENIED && !didTry) {
         return (
             <PermissionGate
                 icon="FediFile"
@@ -27,7 +35,7 @@ export const StoragePermissionGate: React.FC<Props> = ({
                 descriptionText={t(
                     'feature.permissions.allow-storage-description',
                 )}
-                onContinue={requestStoragePermission}
+                onContinue={handleContinueClick}
                 alternativeActionButton={alternativeActionButton}
             />
         )
