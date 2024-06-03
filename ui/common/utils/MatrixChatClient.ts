@@ -151,7 +151,34 @@ export class MatrixChatClient {
     }
 
     async getRoomPreview(roomId: string) {
-        return this.fedimint.matrixRoomPreviewContent({ roomId })
+        let previewInfo: MatrixRoom
+        let previewTimeline: MatrixTimelineItem[]
+        try {
+            const publicRoomInfo = await this.fedimint.matrixPublicRoomInfo({
+                roomId,
+            })
+            previewInfo = this.serializePublicRoomInfo(publicRoomInfo)
+        } catch (error) {
+            log.error('Failed to get room preview info', roomId, error)
+            throw error
+        }
+        try {
+            const previewContent = await this.fedimint.matrixRoomPreviewContent(
+                {
+                    roomId,
+                },
+            )
+            previewTimeline = previewContent.map(item =>
+                this.serializeTimelineItem(item, roomId),
+            )
+        } catch (error) {
+            log.error('Failed to get room preview timeline', roomId, error)
+            throw error
+        }
+        return {
+            info: previewInfo,
+            timeline: previewTimeline,
+        }
     }
 
     async joinRoom(roomId: string, isPublic?: boolean) {
@@ -779,6 +806,25 @@ export class MatrixChatClient {
                 status: MatrixRoomListItemStatus.ready,
                 id: room.value,
             }
+        }
+    }
+
+    // TODO: get type for this from bridge?
+    private serializePublicRoomInfo(room: any): MatrixRoom {
+        return {
+            id: room.room_id,
+            name: room.name,
+            // We need preview timeline items to determine this, which is a separate call.
+            // For now leave this undefined, and just apply it with a redux selector.
+            notificationCount: undefined,
+            joinedMemberCount: room.num_joined_members || 0,
+            // We need power levels to determine this, which is a separate call.
+            // For now leave this undefined, and just apply it with a redux selector.
+            // broadcastOnly: false,
+            // Private rooms don't have previews so these are always true
+            isPreview: true,
+            isPublic: true,
+            inviteCode: encodeFediMatrixRoomUri(room.room_id),
         }
     }
 

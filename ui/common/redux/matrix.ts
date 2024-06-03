@@ -33,8 +33,13 @@ import {
     MatrixSyncStatus,
     MatrixCreateRoomOptions,
     Sats,
+    MatrixGroupPreview,
 } from '../types'
-import { RpcFederation, RpcRoomNotificationMode } from '../types/bindings'
+import {
+    RpcFederation,
+    RpcRoomId,
+    RpcRoomNotificationMode,
+} from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationGroupChats } from '../utils/FederationUtils'
 import { MatrixChatClient } from '../utils/MatrixChatClient'
@@ -85,6 +90,7 @@ const initialState = {
     users: {} as Record<MatrixUser['id'], MatrixUser | undefined>,
     errors: [] as MatrixError[],
     pushNotificationToken: null as string | null,
+    groupPreviews: {} as Record<RpcRoomId, MatrixGroupPreview>,
 }
 
 export type MatrixState = typeof initialState
@@ -272,6 +278,23 @@ export const matrixSlice = createSlice({
                     action.payload
             },
         )
+        builder.addCase(previewDefaultGroupChats.fulfilled, (state, action) => {
+            const updatedDefaultGroups = action.payload.reduce(
+                (
+                    result: Record<RpcRoomId, MatrixGroupPreview>,
+                    preview: MatrixGroupPreview,
+                ) => {
+                    result[preview.info.id] = preview
+                    return result
+                },
+                {},
+            )
+            state.groupPreviews = updatedDefaultGroups
+        })
+        builder.addCase(getMatrixRoomPreview.fulfilled, (state, action) => {
+            if (!action.payload) return
+            state.groupPreviews[action.meta.arg] = action.payload
+        })
     },
 })
 
@@ -821,28 +844,50 @@ export const unbanUser = createAsyncThunk<
     await client.roomUnbanUser(roomId, userId, reason)
 })
 
-export const joinDefaultGroupChats = createAsyncThunk<
-    void,
+export const previewDefaultGroupChats = createAsyncThunk<
+    MatrixGroupPreview[],
     void,
     { state: CommonState }
->('matrix/joinDefaultGroupChats', async (_, { getState }) => {
+>('matrix/previewDefaultGroupChats', async (_, { getState }) => {
     const client = getMatrixClient()
     const state = getState()
-    // Join every default chat group we don't have in state
+    // Preview every default chat group in federation metas
+    let defaultRoomIds: RpcRoomId[] = []
+
     const federations = state.federation.federations
     federations.forEach(f => {
         const federation = selectFederation(state, f.id)
         if (!federation) return
 
-        const defaultRoomIds = getFederationGroupChats(federation.meta)
+        defaultRoomIds = [
+            ...defaultRoomIds,
+            ...getFederationGroupChats(federation.meta),
+        ]
         log.info(
             `${defaultRoomIds.length} default groups for federation ${f.name} found...`,
         )
-        // no need to check if we have already joined since bridge should handle it gracefully and we cannot guarantee the room list is fully loaded at this point anyway
-        defaultRoomIds.forEach(roomId => {
-            client.joinRoom(`${roomId}`, true)
-        })
     })
+    const fetchRoomPreview = async (roomId: RpcRoomId) => {
+        try {
+            const preview = await client.getRoomPreview(roomId)
+            return preview
+        } catch (error) {
+            log.error('fetchRoomPreview', error)
+            throw error
+        }
+    }
+    // Wait for all promises to settle and only take the fulfilled results
+    const promises = defaultRoomIds.map(fetchRoomPreview)
+    const roomPreviews = await Promise.allSettled(promises)
+    return roomPreviews.reduce<MatrixGroupPreview[]>(
+        (previewList, settledResult) => {
+            if (settledResult.status === 'fulfilled') {
+                previewList.push(settledResult.value)
+            }
+            return previewList
+        },
+        [],
+    )
 })
 
 export const ensureHealthyMatrixStream = createAsyncThunk<void, void>(
@@ -893,6 +938,8 @@ export const selectMatrixRooms = createSelector(
         return rooms
     },
 )
+
+export const selectGroupPreviews = (s: CommonState) => s.matrix.groupPreviews
 
 export const selectMatrixAuth = createSelector(
     (s: CommonState) => s.matrix.auth,
@@ -1123,7 +1170,12 @@ export const selectMatrixDirectMessageRoom = createSelector(
 
 export const selectMatrixHasNotifications = createSelector(
     selectMatrixRooms,
-    rooms => rooms.some(room => room.notificationCount > 0),
+    rooms =>
+        rooms.some(
+            room =>
+                room.notificationCount !== undefined &&
+                room.notificationCount > 0,
+        ),
 )
 
 /**

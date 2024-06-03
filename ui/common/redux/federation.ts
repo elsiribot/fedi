@@ -8,7 +8,7 @@ import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
 import orderBy from 'lodash/orderBy'
 
-import { CommonState, joinDefaultGroupChats } from '.'
+import { CommonState, previewDefaultGroupChats } from '.'
 import {
     Federation,
     Guardian,
@@ -230,7 +230,7 @@ export const joinFederation = createAsyncThunk<
         dispatch(setActiveFederationId(federation.id))
         // matrix client should be initialized by now
         // so we can join default groups
-        dispatch(joinDefaultGroupChats())
+        dispatch(previewDefaultGroupChats())
 
         const activeFederation = selectActiveFederation(getState())
         if (!activeFederation) throw new Error('errors.unknown-error')

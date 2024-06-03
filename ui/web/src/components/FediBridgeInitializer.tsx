@@ -12,7 +12,7 @@ import {
     initializeDeviceId,
     startMatrixClient,
     selectHasSetMatrixDisplayName,
-    joinDefaultGroupChats,
+    previewDefaultGroupChats,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -80,7 +80,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             })
             .then(() => {
                 setIsInitialized(true)
-                dispatchRef.current(joinDefaultGroupChats())
+                dispatchRef.current(previewDefaultGroupChats())
             })
             .catch(err =>
                 setError(

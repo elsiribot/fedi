@@ -37,6 +37,10 @@ export interface MatrixRoomPreview {
     body: string
     timestamp: number
 }
+export type MatrixGroupPreview = {
+    info: MatrixRoom
+    timeline: MatrixTimelineItem[]
+}
 
 export interface MatrixRoom {
     id: string
@@ -45,7 +49,9 @@ export interface MatrixRoom {
     preview?: MatrixRoomPreview
     directUserId?: MatrixUser['id']
     broadcastOnly?: boolean
-    notificationCount: number
+    notificationCount: number | undefined
+    joinedMemberCount?: number
+    isPreview?: boolean
     isPublic?: boolean
     inviteCode?: string
 }
