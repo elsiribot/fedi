@@ -3,7 +3,14 @@ import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback } from 'react'
 import { StyleSheet } from 'react-native'
 
+import {
+    selectMatrixAuth,
+    selectMatrixRoomMembersByMe,
+} from '@fedi/common/redux'
+
 import { ChatRoomMembersProps } from '../../../screens/ChatRoomMembers'
+import { useAppSelector } from '../../../state/hooks'
+import { MatrixPowerLevel } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import { PressableIcon } from '../../ui/PressableIcon'
@@ -15,21 +22,28 @@ const ChatRoomMembersHeader: React.FC = () => {
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<ChatRoomMembersRouteProp>()
     const { roomId } = route.params
+
+    const myUserId = useAppSelector(selectMatrixAuth)?.userId
+    const members = useAppSelector(s => selectMatrixRoomMembersByMe(s, roomId))
+    const me = members.find(m => m.id === myUserId)
+
     const handleInviteMember = useCallback(() => {
+        if (me?.powerLevel === MatrixPowerLevel.Member) return
+
         navigation.replace('ChatRoomInvite', { roomId })
-    }, [navigation, roomId])
+    }, [navigation, roomId, me])
     const style = styles(theme)
+
     return (
         <Header
             backButton
             headerRight={
-                <>
-                    <PressableIcon
-                        onPress={handleInviteMember}
-                        svgName="Plus"
-                        hitSlop={5}
-                    />
-                </>
+                <PressableIcon
+                    onPress={handleInviteMember}
+                    svgName="Plus"
+                    hitSlop={5}
+                    disabled={me?.powerLevel === MatrixPowerLevel.Member}
+                />
             }
             rightContainerStyle={style.rightContainer}
         />
