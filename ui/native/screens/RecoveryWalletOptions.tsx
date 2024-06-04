@@ -2,11 +2,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { hexToRgba } from '@fedi/common/utils/color'
 
 import HoloCircle from '../components/ui/HoloCircle'
+import { Pressable } from '../components/ui/Pressable'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -31,7 +32,7 @@ const RecoveryWalletOptions: React.FC<Props> = ({ navigation }: Props) => {
             </View>
             <View style={style.optionsContainer}>
                 <Pressable
-                    style={style.actionCardContainer}
+                    containerStyle={style.actionCardContainer}
                     onPress={() =>
                         navigation.navigate('RecoveryWalletTransfer')
                     }>
@@ -54,8 +55,11 @@ const RecoveryWalletOptions: React.FC<Props> = ({ navigation }: Props) => {
                     </View>
                 </Pressable>
                 <Pressable
-                    style={style.actionCardContainer}
-                    onPress={() => navigation.navigate('RecoveryNewWallet')}>
+                    containerStyle={style.actionCardContainer}
+                    // onPress={() => navigation.navigate('RecoveryNewWallet')}
+                    // TODO: reenable once we've figured out a way to communicate this
+                    // that doesn't confusing to the user
+                    disabled>
                     <View style={style.roundIconContainer}>
                         <SvgImage name="Wallet" size={SvgImageSize.sm} />
                     </View>
