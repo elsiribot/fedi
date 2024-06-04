@@ -147,7 +147,6 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                         image={<SvgImage name="LeaveRoom" />}
                         label={t('feature.chat.leave-group')}
                         onPress={handleLeaveGroup}
-                        disabled={isDefaultGroup}
                     />
                     <SettingsItem
                         image={<SvgImage name="Edit" />}
