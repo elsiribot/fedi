@@ -6,11 +6,7 @@ import { StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context'
 
 import { useMatrixChatInvites } from '@fedi/common/hooks/matrix'
-import {
-    getMatrixRoomPreview,
-    selectGroupPreview,
-    selectGroupPreviews,
-} from '@fedi/common/redux'
+import { getMatrixRoomPreview, selectGroupPreviews } from '@fedi/common/redux'
 import { ChatType, MatrixGroupPreview } from '@fedi/common/types'
 
 import HoloGradient from '../components/ui/HoloGradient'
@@ -32,9 +28,9 @@ const ConfirmJoinPublicGroup: React.FC<Props> = ({ route, navigation }) => {
     const dispatch = useAppDispatch()
 
     const [isJoiningGroup, setIsJoiningGroup] = useState(false)
-    const [previewGroup, setPreviewGroup] = useState<MatrixGroupPreview | null>(
-        null,
-    )
+    const [previewGroup, setPreviewGroup] = useState<
+        MatrixGroupPreview | null | undefined
+    >(undefined)
 
     const insets = useSafeAreaInsets()
     const groupPreviews = useAppSelector(selectGroupPreviews)
@@ -70,9 +66,12 @@ const ConfirmJoinPublicGroup: React.FC<Props> = ({ route, navigation }) => {
             .then(preview => {
                 setPreviewGroup(preview)
             })
+            .catch(() => {
+                setPreviewGroup(null)
+            })
     }, [groupPreviews, groupId, dispatch])
 
-    return previewGroup ? (
+    return previewGroup === undefined ? null : (
         <View style={style.container}>
             <View style={style.content}>
                 <HoloGradient level="400" gradientStyle={style.icon}>
@@ -92,10 +91,6 @@ const ConfirmJoinPublicGroup: React.FC<Props> = ({ route, navigation }) => {
             <Button onPress={handleJoinGroup} loading={isJoiningGroup}>
                 {t('words.continue')}
             </Button>
-        </View>
-    ) : (
-        <View style={style.container}>
-            <Text>Loading...</Text>
         </View>
     )
 }
