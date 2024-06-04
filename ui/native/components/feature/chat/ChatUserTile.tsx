@@ -19,6 +19,9 @@ type UserItemProps = {
     showSuffix?: boolean
     showAdmin?: boolean
     containerStyle?: StyleProp<ViewStyle>
+    // Pass a name to the chat avatar OTHER
+    // than user.displayName
+    overrideAvatarName?: string
 }
 
 const ChatUserTile: React.FC<UserItemProps> = ({
@@ -29,6 +32,7 @@ const ChatUserTile: React.FC<UserItemProps> = ({
     disabled = false,
     showSuffix = false,
     showAdmin = false,
+    overrideAvatarName,
     containerStyle,
 }: UserItemProps) => {
     const { theme } = useTheme()
@@ -36,6 +40,11 @@ const ChatUserTile: React.FC<UserItemProps> = ({
     const suffix = useMemo(() => {
         return getUserSuffix(user.id)
     }, [user])
+
+    const avatarUser = {
+        ...user,
+        displayName: overrideAvatarName || user.displayName,
+    }
 
     return (
         <Pressable
@@ -45,7 +54,7 @@ const ChatUserTile: React.FC<UserItemProps> = ({
             <View style={styles(theme).usernameContainer}>
                 <ChatAvatar
                     containerStyle={[styles(theme).avatar]}
-                    user={user}
+                    user={avatarUser}
                     size={AvatarSize.md}
                 />
                 {showAdmin && (
