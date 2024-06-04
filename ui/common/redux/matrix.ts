@@ -12,6 +12,7 @@ import {
     selectAuthenticatedMember,
     selectFederation,
     selectFederations,
+    selectGlobalCommunityMeta,
 } from '.'
 import {
     MatrixUser,
@@ -860,15 +861,23 @@ export const previewDefaultGroupChats = createAsyncThunk<
     federations.forEach(f => {
         const federation = selectFederation(state, f.id)
         if (!federation) return
+        const defaultGroups = getFederationGroupChats(federation.meta)
 
-        defaultRoomIds = [
-            ...defaultRoomIds,
-            ...getFederationGroupChats(federation.meta),
-        ]
+        defaultRoomIds = [...defaultRoomIds, ...defaultGroups]
         log.info(
-            `${defaultRoomIds.length} default groups for federation ${f.name} found...`,
+            `Found ${defaultGroups.length} default groups for federation ${f.name}...`,
         )
     })
+    // Also check the Fedi Global community for default groups
+    const globalCommunityMeta = selectGlobalCommunityMeta(state)
+    if (globalCommunityMeta) {
+        const defaultGlobalGroups = getFederationGroupChats(globalCommunityMeta)
+        log.info(
+            `Found ${defaultGlobalGroups.length} default groups for global communiy...`,
+        )
+        defaultRoomIds = [...defaultRoomIds, ...defaultGlobalGroups]
+    }
+
     const fetchRoomPreview = async (roomId: RpcRoomId) => {
         try {
             const preview = await client.getRoomPreview(roomId)
@@ -1285,10 +1294,21 @@ export const selectCanClaimPayment = createSelector(
 
 export const selectAllDefaultMatrixRooms = createSelector(
     (s: CommonState) => selectFederations(s),
-    federations => {
-        return federations.reduce((result: string[], f: RpcFederation) => {
-            const defaultGroupIds = getFederationGroupChats(f.meta)
-            return [...result, ...defaultGroupIds]
-        }, [])
+    (s: CommonState) => selectGlobalCommunityMeta(s),
+    (federations, globalCommunityMeta) => {
+        let defaultMatrixRooms: RpcRoomId[] = federations.reduce(
+            (result: string[], f: RpcFederation) => {
+                const defaultGroupIds = getFederationGroupChats(f.meta)
+                return [...result, ...defaultGroupIds]
+            },
+            [],
+        )
+        // Also check the Fedi Global community for default groups
+        if (globalCommunityMeta) {
+            const defaultGlobalGroups =
+                getFederationGroupChats(globalCommunityMeta)
+            defaultMatrixRooms = [...defaultMatrixRooms, ...defaultGlobalGroups]
+        }
+        return defaultMatrixRooms
     },
 )

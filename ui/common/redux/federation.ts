@@ -9,6 +9,7 @@ import omit from 'lodash/omit'
 import orderBy from 'lodash/orderBy'
 
 import { CommonState, previewDefaultGroupChats } from '.'
+import { FEDI_GLOBAL_COMMUNITY } from '../constants/community'
 import {
     Federation,
     Guardian,
@@ -207,7 +208,8 @@ export const refreshFederations = createAsyncThunk<
 >('federation/refreshFederations', async (fedimint, { dispatch, getState }) => {
     const federations = await fedimint.listFederations()
     const externalMeta = await fetchFederationsExternalMetadata(
-        federations,
+        // include the Fedi Global community used for the global announcements channel
+        [...federations, FEDI_GLOBAL_COMMUNITY],
         (federationId, meta) => {
             dispatch(setFederationExternalMeta({ federationId, meta }))
         },
@@ -379,6 +381,11 @@ export const selectFederationMetadata = createSelector(
     activeFederation => {
         return activeFederation ? activeFederation.meta : {}
     },
+)
+
+export const selectGlobalCommunityMeta = createSelector(
+    (s: CommonState) => s.federation.externalMeta,
+    externalMeta => externalMeta[FEDI_GLOBAL_COMMUNITY.id],
 )
 
 export const selectFederationBalance = createSelector(
