@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Text, Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
@@ -76,14 +76,25 @@ const RecoveryDeviceSelection: React.FC<Props> = ({ navigation }: Props) => {
                     {t('feature.recovery.select-a-device-guidance')}
                 </Text>
             </View>
-            <View style={style.optionsContainer}>
-                {registeredDevices.map(renderDevice)}
-            </View>
-            <Button
+            {registeredDevices.length === 0 ? (
+                <View style={style.optionsContainer}>
+                    <Text caption>
+                        {t('feature.recovery.no-devices-found')}
+                    </Text>
+                </View>
+            ) : (
+                <View style={style.optionsContainer}>
+                    {registeredDevices.map(renderDevice)}
+                </View>
+            )}
+            {/*
+                // TODO: reenable once we've figured out a clear
+                // way to communicate this
+                <Button
                 type="clear"
                 title={t('feature.recovery.create-a-new-wallet-instead')}
                 onPress={() => navigation.navigate('RecoveryNewWallet')}
-            />
+            /> */}
             {/* TODO: build confirmation overlay */}
         </ScrollView>
     )
