@@ -1,14 +1,20 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context'
 
 import { useMatrixChatInvites } from '@fedi/common/hooks/matrix'
-import { ChatType } from '@fedi/common/types'
+import {
+    getMatrixRoomPreview,
+    selectGroupPreview,
+    selectGroupPreviews,
+} from '@fedi/common/redux'
+import { ChatType, MatrixGroupPreview } from '@fedi/common/types'
 
 import HoloGradient from '../components/ui/HoloGradient'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -23,9 +29,15 @@ const ConfirmJoinPublicGroup: React.FC<Props> = ({ route, navigation }) => {
     const { theme } = useTheme()
     const { joinPublicGroup } = useMatrixChatInvites(t)
 
+    const dispatch = useAppDispatch()
+
     const [isJoiningGroup, setIsJoiningGroup] = useState(false)
+    const [previewGroup, setPreviewGroup] = useState<MatrixGroupPreview | null>(
+        null,
+    )
 
     const insets = useSafeAreaInsets()
+    const groupPreviews = useAppSelector(selectGroupPreviews)
 
     const handleJoinGroup = useCallback(async () => {
         setIsJoiningGroup(true)
@@ -45,7 +57,22 @@ const ConfirmJoinPublicGroup: React.FC<Props> = ({ route, navigation }) => {
 
     const style = styles(theme, insets)
 
-    return (
+    useEffect(() => {
+        const defaultGroup = groupPreviews[groupId]
+
+        if (defaultGroup) {
+            setPreviewGroup(defaultGroup)
+            return
+        }
+
+        dispatch(getMatrixRoomPreview(groupId))
+            .unwrap()
+            .then(preview => {
+                setPreviewGroup(preview)
+            })
+    }, [groupPreviews, groupId, dispatch])
+
+    return previewGroup ? (
         <View style={style.container}>
             <View style={style.content}>
                 <HoloGradient level="400" gradientStyle={style.icon}>
@@ -65,6 +92,10 @@ const ConfirmJoinPublicGroup: React.FC<Props> = ({ route, navigation }) => {
             <Button onPress={handleJoinGroup} loading={isJoiningGroup}>
                 {t('words.continue')}
             </Button>
+        </View>
+    ) : (
+        <View style={style.container}>
+            <Text>Loading...</Text>
         </View>
     )
 }
