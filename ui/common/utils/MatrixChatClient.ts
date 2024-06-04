@@ -927,6 +927,13 @@ export class MatrixChatClient {
             item.value.content.value.type !== 'm.room.message'
         )
             return null
+        // ignore deleted messages
+        if (
+            item.value.content.kind === 'json' &&
+            item.value.content.value &&
+            'redacted_because' in item.value.content.value
+        )
+            return null
 
         // Map the status to an enum, include the error if it failed
         let status: MatrixEventStatus
