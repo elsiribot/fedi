@@ -13,7 +13,7 @@ import {
     selectMatrixRoomSelfPowerLevel,
     setMatrixRoomBroadcastOnly,
     setMatrixRoomName,
-    selectAllDefaultMatrixRooms,
+    selectDefaultMatrixRoomIds,
 } from '@fedi/common/redux'
 import { MatrixPowerLevel, MatrixRoom } from '@fedi/common/types'
 
@@ -53,7 +53,7 @@ export const ChatRoomSettingsDialog: React.FC<Props> = ({
 
     const isAdmin = myPowerLevel >= MatrixPowerLevel.Admin
     const isDefaultGroup = useAppSelector(s =>
-        selectAllDefaultMatrixRooms(s).includes(room?.id || ''),
+        selectDefaultMatrixRoomIds(s).includes(room?.id || ''),
     )
 
     useEffect(() => {

@@ -93,7 +93,7 @@ const initialState = {
     users: {} as Record<MatrixUser['id'], MatrixUser | undefined>,
     errors: [] as MatrixError[],
     pushNotificationToken: null as string | null,
-    groupPreviews: {} as Record<RpcRoomId, MatrixGroupPreview>,
+    groupPreviews: {} as Record<MatrixRoom['id'], MatrixGroupPreview>,
 }
 
 export type MatrixState = typeof initialState
@@ -878,17 +878,16 @@ export const previewDefaultGroupChats = createAsyncThunk<
         defaultRoomIds = [...defaultRoomIds, ...defaultGlobalGroups]
     }
 
-    const fetchRoomPreview = async (roomId: RpcRoomId) => {
+    // Wait for all promises to settle and only take the fulfilled results
+    const promises = defaultRoomIds.map(async (roomId: RpcRoomId) => {
         try {
             const preview = await client.getRoomPreview(roomId)
             return preview
         } catch (error) {
-            log.error('fetchRoomPreview', error)
+            log.error('defaultRoomIds.map getRoomPreview', error)
             throw error
         }
-    }
-    // Wait for all promises to settle and only take the fulfilled results
-    const promises = defaultRoomIds.map(fetchRoomPreview)
+    })
     const roomPreviews = await Promise.allSettled(promises)
     return roomPreviews.reduce<MatrixGroupPreview[]>(
         (previewList, settledResult) => {
@@ -1292,23 +1291,26 @@ export const selectCanClaimPayment = createSelector(
     },
 )
 
-export const selectAllDefaultMatrixRooms = createSelector(
+export const selectDefaultMatrixRoomIds = createSelector(
     (s: CommonState) => selectFederations(s),
     (s: CommonState) => selectGlobalCommunityMeta(s),
     (federations, globalCommunityMeta) => {
-        let defaultMatrixRooms: RpcRoomId[] = federations.reduce(
-            (result: string[], f: RpcFederation) => {
-                const defaultGroupIds = getFederationGroupChats(f.meta)
-                return [...result, ...defaultGroupIds]
+        let defaultMatrixRoomIds: MatrixRoom['id'][] = federations.reduce(
+            (result: MatrixRoom['id'][], f: RpcFederation) => {
+                const defaultRoomIds = getFederationGroupChats(f.meta)
+                return [...result, ...defaultRoomIds]
             },
             [],
         )
         // Also check the Fedi Global community for default groups
         if (globalCommunityMeta) {
-            const defaultGlobalGroups =
+            const defaultGlobalRoomIds =
                 getFederationGroupChats(globalCommunityMeta)
-            defaultMatrixRooms = [...defaultMatrixRooms, ...defaultGlobalGroups]
+            defaultMatrixRoomIds = [
+                ...defaultMatrixRoomIds,
+                ...defaultGlobalRoomIds,
+            ]
         }
-        return defaultMatrixRooms
+        return defaultMatrixRoomIds
     },
 )
