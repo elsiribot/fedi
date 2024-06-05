@@ -20,7 +20,11 @@ type ChatTileProps = {
 const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
     const { theme } = useTheme()
 
-    const hasNewMessages = useMemo(() => room.notificationCount > 0, [room])
+    const hasNewMessages = useMemo(
+        () =>
+            room.notificationCount !== undefined && room.notificationCount > 0,
+        [room.notificationCount],
+    )
     const previewTextWeight = useMemo(
         () => (hasNewMessages ? { medium: true } : {}),
         [hasNewMessages],

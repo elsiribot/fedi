@@ -19,6 +19,7 @@ interface HeaderBase {
     dark?: boolean
     backButton?: boolean
     closeButton?: boolean
+    onClose?: () => void
     inline?: boolean
 }
 
@@ -45,6 +46,7 @@ const Header: React.FC<HeaderProps> = ({
     dark,
     backButton,
     closeButton,
+    onClose,
     inline,
 }: HeaderProps) => {
     const { theme } = useTheme()
@@ -81,7 +83,11 @@ const Header: React.FC<HeaderProps> = ({
         rightComponent = (
             <Pressable
                 testID="HeaderCloseButton"
-                onPress={() => navigation.dispatch(reset('TabsNavigator'))}
+                onPress={
+                    typeof onClose === 'function'
+                        ? onClose
+                        : () => navigation.dispatch(reset('TabsNavigator'))
+                }
                 hitSlop={5}
                 style={{
                     padding: theme.spacing.sm,

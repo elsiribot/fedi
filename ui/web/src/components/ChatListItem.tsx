@@ -18,7 +18,10 @@ export const ChatListItem: React.FC<Props> = ({ room }) => {
     const { query } = useRouter()
 
     const isActive = room.id === query?.path?.[1]
-    const hasNewMessages = !isActive && room.notificationCount > 0
+    const hasNewMessages =
+        !isActive &&
+        room.notificationCount !== undefined &&
+        room.notificationCount > 0
 
     return (
         <Container

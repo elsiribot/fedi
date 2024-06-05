@@ -82,23 +82,25 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
         }
     }
 
+    const style = styles(theme)
+
     return (
-        <View style={styles(theme).container}>
+        <View style={style.container}>
             <SvgImage name="NewRoom" size={SvgImageSize.lg} />
-            <View style={styles(theme).inputWrapper}>
+            <View style={style.inputWrapper}>
                 <Input
                     onChangeText={setGroupName}
                     value={groupName}
                     placeholder={`${t('feature.chat.group-name')}`}
                     returnKeyType="done"
-                    containerStyle={styles(theme).textInputOuter}
-                    inputContainerStyle={styles(theme).textInputInner}
+                    containerStyle={style.textInputOuter}
+                    inputContainerStyle={style.textInputInner}
                     autoCapitalize={'none'}
                     autoCorrect={false}
                 />
             </View>
-            <View style={styles(theme).switchWrapper}>
-                <Text style={styles(theme).inputLabel}>
+            <View style={style.switchWrapper}>
+                <Text style={style.inputLabel}>
                     {t('feature.chat.broadcast-only')}
                 </Text>
                 <Switch
@@ -110,10 +112,8 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                     }}
                 />
             </View>
-            <View style={styles(theme).switchWrapper}>
-                <Text style={styles(theme).inputLabel}>
-                    {t('words.public')}
-                </Text>
+            <View style={style.switchWrapper}>
+                <Text style={style.inputLabel}>{t('words.public')}</Text>
                 <Switch
                     value={isPublic}
                     onValueChange={value => {
@@ -123,13 +123,18 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                     }}
                 />
             </View>
+            {isPublic && (
+                <Text caption style={style.errorLabel}>
+                    {t('feature.chat.public-group-warning')}
+                </Text>
+            )}
             <Button
                 fullWidth
                 title={t('phrases.save-changes')}
                 onPress={handleSubmit}
                 loading={creatingGroup}
                 disabled={!groupName || creatingGroup}
-                containerStyle={styles(theme).button}
+                containerStyle={style.button}
             />
         </View>
     )
@@ -145,6 +150,11 @@ const styles = (theme: Theme) =>
         },
         button: {
             marginTop: 'auto',
+        },
+        errorLabel: {
+            textAlign: 'left',
+            marginTop: theme.spacing.sm,
+            color: theme.colors.red,
         },
         inputWrapper: {
             width: '100%',

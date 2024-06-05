@@ -357,6 +357,18 @@ export class FedimintBridge {
         return this.rpcTyped('matrixGetAccountSession', args)
     }
 
+    async matrixPublicRoomInfo(
+        args: bindings.RpcPayload<'matrixPublicRoomInfo'>,
+    ) {
+        return this.rpcTyped('matrixPublicRoomInfo', args)
+    }
+
+    async matrixRoomPreviewContent(
+        args: bindings.RpcPayload<'matrixRoomPreviewContent'>,
+    ) {
+        return this.rpcTyped('matrixRoomPreviewContent', args)
+    }
+
     async matrixRoomList() {
         return this.rpcTyped('matrixRoomList', {})
     }

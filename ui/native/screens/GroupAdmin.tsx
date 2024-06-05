@@ -7,7 +7,7 @@ import { Alert, ScrollView, StyleSheet, View } from 'react-native'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     leaveMatrixRoom,
-    selectAllDefaultMatrixRooms,
+    selectDefaultMatrixRoomIds,
     selectMatrixRoom,
     selectMatrixRoomMembersCount,
     selectMatrixRoomSelfPowerLevel,
@@ -41,7 +41,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
     )
     const isAdmin = myPowerLevel >= MatrixPowerLevel.Admin
     const isDefaultGroup = useAppSelector(s =>
-        selectAllDefaultMatrixRooms(s).includes(room?.id || ''),
+        selectDefaultMatrixRoomIds(s).includes(room?.id || ''),
     )
     const [isTogglingBroadcastOnly, setIsTogglingBroadcastOnly] =
         useState(false)
@@ -147,7 +147,6 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                         image={<SvgImage name="LeaveRoom" />}
                         label={t('feature.chat.leave-group')}
                         onPress={handleLeaveGroup}
-                        disabled={isDefaultGroup}
                     />
                     <SettingsItem
                         image={<SvgImage name="Edit" />}

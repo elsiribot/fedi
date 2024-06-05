@@ -3,7 +3,11 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { selectMatrixRoom, selectMatrixUser } from '@fedi/common/redux'
+import {
+    selectGroupPreview,
+    selectMatrixRoom,
+    selectMatrixUser,
+} from '@fedi/common/redux'
 import { getUserSuffix } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../../../state/hooks'
@@ -24,6 +28,7 @@ const ChatConversationHeader: React.FC = () => {
     const { roomId } = roomRoute.params
     const { userId, displayName } = userRoute.params
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
+    const preview = useAppSelector(s => selectGroupPreview(s, roomId))
     const user = useAppSelector(s => selectMatrixUser(s, userId))
     const isGroupChat = room?.directUserId === undefined
 
@@ -32,6 +37,9 @@ const ChatConversationHeader: React.FC = () => {
     if (room) {
         name = room?.name
         avatar = <ChatAvatar room={room} size={AvatarSize.sm} />
+    } else if (preview) {
+        name = preview?.info.name
+        avatar = <ChatAvatar room={preview.info} size={AvatarSize.sm} />
     } else if (user) {
         name = user?.displayName || user?.id
         avatar = <ChatAvatar user={user} size={AvatarSize.sm} />
@@ -55,8 +63,9 @@ const ChatConversationHeader: React.FC = () => {
                         disabled={!isGroupChat}
                         style={styles(theme).memberContainer}
                         onPress={() => {
+                            // make sure we have joined room and its not just a preview to show admin settings
                             // TODO: implement admin settings for 1on1 chat
-                            if (isGroupChat) {
+                            if (isGroupChat && room) {
                                 navigation.navigate('GroupAdmin', { roomId })
                             }
                         }}>

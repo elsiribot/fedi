@@ -12,10 +12,11 @@ import {
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import {
-    selectMatrixOrderedRoomsList,
+    selectMatrixChatsList,
     selectMatrixStatus,
     refetchMatrixRoomList,
     selectIsChatEmpty,
+    previewDefaultGroupChats,
 } from '@fedi/common/redux'
 import { ChatType, MatrixRoom, MatrixSyncStatus } from '@fedi/common/types'
 
@@ -35,14 +36,17 @@ const ChatsList: React.FC = () => {
     const isLegacyChatEmpty = useAppSelector(selectIsChatEmpty)
     const hasLegacyChatData = !isLegacyChatEmpty
 
-    const rooms = useAppSelector(selectMatrixOrderedRoomsList)
+    const rooms = useAppSelector(selectMatrixChatsList)
     const syncStatus = useAppSelector(selectMatrixStatus)
     const [isRefetching, setIsRefetching] = useState(false)
     const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
 
     const handleRefresh = useCallback(() => {
         setIsRefetching(true)
-        dispatch(refetchMatrixRoomList())
+        Promise.all([
+            dispatch(refetchMatrixRoomList()),
+            dispatch(previewDefaultGroupChats()),
+        ])
             .catch(() => null) // no-op
             .finally(() => setIsRefetching(false))
     }, [dispatch])
