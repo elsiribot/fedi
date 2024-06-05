@@ -668,6 +668,7 @@
             "locked-device-guidance-2": "This <bold>{{deviceName}}</bold> device is now locked. ❌",
             "locked-device-guidance-3": "If you want to set up another wallet on this device, please delete and reinstall Fedi. 👍",
             "new-wallet": "New wallet",
+            "no-devices-found": "No devices found",
             "nothing-to-download": "Nothing to download from guardian",
             "open-qr-code": "Open QR Code",
             "opening-backup-file-failed": "Opening backup file failed",

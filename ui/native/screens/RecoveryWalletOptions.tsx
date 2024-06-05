@@ -57,8 +57,8 @@ const RecoveryWalletOptions: React.FC<Props> = ({ navigation }: Props) => {
                 <Pressable
                     containerStyle={style.actionCardContainer}
                     // onPress={() => navigation.navigate('RecoveryNewWallet')}
-                    // TODO: reenable once we've figured out a way to communicate this
-                    // that doesn't confusing to the user
+                    // TODO: reenable once we've figured out a clear
+                    // way to communicate this
                     disabled>
                     <View style={style.roundIconContainer}>
                         <SvgImage name="Wallet" size={SvgImageSize.sm} />
