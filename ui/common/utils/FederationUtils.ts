@@ -207,39 +207,6 @@ export const fetchPublicFederations = async (): Promise<PublicFederation[]> => {
     return publicFederations
 }
 
-// although this function makes the same fetch call as above, that may not always be true,
-// hence this separate function
-export const GLOBAL_FEDERATION_ID = '00000000000000000000000066656469'
-export const fetchGlobalFederation =
-    async (): Promise<PublicFederation | null> => {
-        try {
-            const externalMetaJson = await fetchExternalMetadata(
-                FEDIBTC_META_JSON_URL,
-            )
-
-            if (!externalMetaJson) throw new Error('No meta JSON to read from')
-
-            const globalEntry = externalMetaJson[GLOBAL_FEDERATION_ID]
-
-            if (globalEntry === undefined) {
-                return null
-            }
-
-            return {
-                id: GLOBAL_FEDERATION_ID,
-                name:
-                    getMetaField(
-                        SupportedMetaFields.federation_name,
-                        globalEntry,
-                    ) || '',
-                meta: globalEntry,
-            }
-        } catch (error) {
-            log.error('Failed to fetch public federations', error)
-            return null
-        }
-    }
-
 const getMetaField = (
     field: SupportedMetaFields | 'sites' | 'fedimods' | 'default_group_chats',
     metadata: ClientConfigMetadata,

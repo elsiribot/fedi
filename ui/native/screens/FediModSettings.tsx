@@ -38,12 +38,12 @@ const FediModSettings: React.FC = () => {
 
     const suggestedFediMods = useAppSelector(selectGlobalSuggestedMods)
     const suggestedVisibility = useAppSelector(
-        (s: CommonState) => s.mod.suggestedVisibility,
+        (s: CommonState) => s.mod.suggestedGlobalModVisibility,
     )
 
     const customFediMods = useAppSelector(selectGlobalCustomMods)
     const customVisibility = useAppSelector(
-        (s: CommonState) => s.mod.customVisibility,
+        (s: CommonState) => s.mod.customGlobalModVisibility,
     )
 
     const reduxDispatch = useAppDispatch()
@@ -304,6 +304,11 @@ const styles = (theme: Theme, fontScale: number, insets: EdgeInsets) => {
             height: 32,
             overflow: 'hidden',
             borderRadius: 8,
+        },
+        loadingState: {
+            opacity: 0,
+            width: 1,
+            height: 1,
         },
         label: {
             color: theme.colors.darkGrey,

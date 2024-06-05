@@ -15,7 +15,7 @@ import {
 
 import {
     selectVisibleCustomMods,
-    selectVisibleGlobalSuggestedMods,
+    selectVisibleSuggestedMods,
     setCustomGlobalModVisibility,
     setSuggestedGlobalModVisibility,
 } from '@fedi/common/redux/mod'
@@ -34,7 +34,7 @@ const Mods: React.FC = () => {
     const navigation = useNavigation<NavigationHook>()
     const dispatch = useAppDispatch()
 
-    const globalMods = useAppSelector(selectVisibleGlobalSuggestedMods)
+    const suggestedMods = useAppSelector(selectVisibleSuggestedMods)
     const customMods = useAppSelector(selectVisibleCustomMods)
     const { width, fontScale } = useWindowDimensions()
 
@@ -63,7 +63,7 @@ const Mods: React.FC = () => {
     }
 
     const toggleHideMod = (modId: FediMod['id']) => {
-        const isGlobal = globalMods.some(mod => mod.id === modId)
+        const isGlobal = suggestedMods.some(mod => mod.id === modId)
 
         if (isGlobal) {
             dispatch(
@@ -80,7 +80,7 @@ const Mods: React.FC = () => {
     }
 
     const renderFediModShortcuts = () => {
-        const fediModShortcuts = [...globalMods, ...customMods].map(
+        const fediModShortcuts = [...suggestedMods, ...customMods].map(
             s => new FediMod(s),
         )
         return fediModShortcuts.map((s: FediMod) => {

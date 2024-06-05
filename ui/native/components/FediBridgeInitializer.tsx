@@ -6,7 +6,6 @@ import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import SplashScreen from 'react-native-splash-screen'
 
-import { useGlobalFederation } from '@fedi/common/hooks/federation'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     fetchRegisteredDevices,
@@ -192,8 +191,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             unsubscribeDeviceRegistration()
         }
     }, [dispatchRef, t])
-
-    useGlobalFederation()
 
     if (bridgeIsReady && !bridgeError) {
         return <>{children}</>

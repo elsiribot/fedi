@@ -1,12 +1,9 @@
 import { PayloadAction, createSelector, createSlice } from '@reduxjs/toolkit'
 import omit from 'lodash/omit'
 
-import { CommonState } from '.'
+import { CommonState, selectGlobalCommunityMeta } from '.'
 import { FediMod } from '../types'
-import {
-    GLOBAL_FEDERATION_ID,
-    getFederationFediMods,
-} from '../utils/FederationUtils'
+import { getFederationFediMods } from '../utils/FederationUtils'
 import { loadFromStorage } from './storage'
 
 // using an interface here to explicitly define "visibility" instead of an ambigious bool
@@ -15,9 +12,9 @@ export interface ModVisibility {
 }
 
 const initialState = {
-    customGlobal: {} as Record<FediMod['id'], FediMod>,
-    customVisibility: {} as Record<FediMod['id'], ModVisibility>,
-    suggestedVisibility: {} as Record<FediMod['id'], ModVisibility>,
+    customGlobalMods: {} as Record<FediMod['id'], FediMod>,
+    customGlobalModVisibility: {} as Record<FediMod['id'], ModVisibility>,
+    suggestedGlobalModVisibility: {} as Record<FediMod['id'], ModVisibility>,
 }
 
 export type ModState = typeof initialState
@@ -34,7 +31,7 @@ export const modSlice = createSlice({
         ) {
             const { fediMod } = action.payload
 
-            state.customGlobal[fediMod.id] = fediMod
+            state.customGlobalMods[fediMod.id] = fediMod
         },
         removeCustomGlobalMod(
             state,
@@ -43,8 +40,8 @@ export const modSlice = createSlice({
             const { modId } = action.payload
 
             // Clean up mod
-            if (state.customGlobal[modId]) {
-                state.customGlobal = omit(state.customGlobal, modId)
+            if (state.customGlobalMods[modId]) {
+                state.customGlobalMods = omit(state.customGlobalMods, modId)
             }
         },
         setCustomGlobalModVisibility(
@@ -56,7 +53,7 @@ export const modSlice = createSlice({
         ) {
             const { modId, isHidden } = action.payload
 
-            state.customVisibility[modId] = { isHidden }
+            state.customGlobalModVisibility[modId] = { isHidden }
         },
         setSuggestedGlobalModVisibility(
             state,
@@ -67,17 +64,17 @@ export const modSlice = createSlice({
         ) {
             const { modId, isHidden } = action.payload
 
-            state.suggestedVisibility[modId] = { isHidden }
+            state.suggestedGlobalModVisibility[modId] = { isHidden }
         },
     },
     extraReducers: builder => {
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
 
-            state.customGlobal = action.payload.customGlobalMods || {}
-            state.customVisibility =
+            state.customGlobalMods = action.payload.customGlobalMods || {}
+            state.customGlobalModVisibility =
                 action.payload.customGlobalModVisibility || {}
-            state.suggestedVisibility =
+            state.suggestedGlobalModVisibility =
                 action.payload.suggestedGlobalModVisibility || {}
         })
     },
@@ -91,56 +88,47 @@ export const {
 } = modSlice.actions
 
 export const selectGlobalCustomMods = (s: CommonState) =>
-    Object.values(s.mod.customGlobal)
-
-export const selectVisibleCustomMods = createSelector(
-    (s: CommonState) => s.mod.customVisibility,
-    selectGlobalCustomMods,
-    (customVisibility, mods) =>
-        mods.filter(mod => {
-            const visibility = customVisibility[mod.id]
-            if (!visibility) {
-                return true
-            }
-
-            return visibility.isHidden
-        }),
-)
+    Object.values(s.mod.customGlobalMods)
 
 export const selectGlobalSuggestedMods = createSelector(
-    (s: CommonState) => s.federation.globalFederation,
-    federation => {
-        if (!federation) return []
+    (s: CommonState) => selectGlobalCommunityMeta(s),
+    globalCommunityMeta => {
+        if (!globalCommunityMeta) return []
 
-        return getFederationFediMods(federation.meta)
+        return getFederationFediMods(globalCommunityMeta)
     },
 )
 
-export const selectGlobalFederationFediMods = createSelector(
+export const selectVisibleSuggestedMods = createSelector(
+    (s: CommonState) => s.mod.suggestedGlobalModVisibility,
     selectGlobalSuggestedMods,
-    (s: CommonState) => s.federation.customFediMods[GLOBAL_FEDERATION_ID],
-    (suggestedMods, customMods = []) => {
-        return [...suggestedMods, ...customMods]
-    },
-)
-
-export const selectVisibleGlobalSuggestedMods = createSelector(
-    (s: CommonState) => s.mod.suggestedVisibility,
-    selectGlobalFederationFediMods,
-    (suggestedVisibility, mods) => {
-        return mods.filter(mod => {
-            const visibility = suggestedVisibility[mod.id]
+    (suggestedGlobalModVisibility, mods) =>
+        mods.filter(mod => {
+            const visibility = suggestedGlobalModVisibility[mod.id]
             if (!visibility) {
                 return true
             }
 
             return !visibility.isHidden
-        })
-    },
+        }),
 )
 
-export const selectVisibleGlobalMods = createSelector(
-    selectVisibleGlobalSuggestedMods,
+export const selectVisibleCustomMods = createSelector(
+    (s: CommonState) => s.mod.customGlobalModVisibility,
+    selectGlobalCustomMods,
+    (customGlobalModVisibility, mods) =>
+        mods.filter(mod => {
+            const visibility = customGlobalModVisibility[mod.id]
+            if (!visibility) {
+                return true
+            }
+
+            return !visibility.isHidden
+        }),
+)
+
+export const selectAllVisibleMods = createSelector(
+    selectVisibleSuggestedMods,
     selectVisibleCustomMods,
     (suggested, custom) => [...suggested, ...custom],
 )

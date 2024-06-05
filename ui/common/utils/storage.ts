@@ -67,9 +67,9 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         ),
         matrixAuth: state.matrix.auth,
         protectedFeatures: state.security.protectedFeatures,
-        customGlobalMods: state.mod.customGlobal,
-        customGlobalModVisibility: state.mod.customVisibility,
-        suggestedGlobalModVisibility: state.mod.suggestedVisibility,
+        customGlobalMods: state.mod.customGlobalMods,
+        customGlobalModVisibility: state.mod.customGlobalModVisibility,
+        suggestedGlobalModVisibility: state.mod.suggestedGlobalModVisibility,
     }
 }
 
@@ -115,7 +115,9 @@ export function hasStorageStateChanged(
         ['matrix', 'auth'],
         ['nux', 'steps'],
         ['security', 'protectedFeatures'],
-        ['mods', 'global'],
+        ['mod', 'customGlobalMods'],
+        ['mod', 'customGlobalModVisibility'],
+        ['mod', 'suggestedGlobalModVisibility'],
     ]
 
     // Check all federation's chat states, including old and new.

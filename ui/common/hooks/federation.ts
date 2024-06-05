@@ -12,7 +12,6 @@ import {
     selectStableBalance,
     selectStableBalanceEnabled,
     setActiveFederationId,
-    setGlobalFederation,
     setPublicFederations,
 } from '../redux'
 import { Federation } from '../types'
@@ -30,7 +29,6 @@ import {
     shouldEnableFediInternalInjection,
     fetchPublicFederations,
     getFederationPreview,
-    fetchGlobalFederation,
 } from '../utils/FederationUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
@@ -237,32 +235,6 @@ export function useLatestPublicFederations() {
         publicFederations,
         findPublicFederations,
         isFetchingPublicFederations: isFetching,
-    }
-}
-
-export function useGlobalFederation() {
-    const globalFederation = useCommonSelector(
-        s => s.federation.globalFederation,
-    )
-
-    const dispatch = useCommonDispatch()
-    const [isFetching, setIsFetching] = useState(false)
-
-    const findGlobalFederation = useCallback(async () => {
-        setIsFetching(true)
-        const federation = await fetchGlobalFederation()
-        setIsFetching(false)
-        dispatch(setGlobalFederation(federation))
-    }, [dispatch])
-
-    useEffect(() => {
-        findGlobalFederation()
-    }, [findGlobalFederation])
-
-    return {
-        globalFederation,
-        findGlobalFederation,
-        isFetchingGlobalFederation: isFetching,
     }
 }
 
