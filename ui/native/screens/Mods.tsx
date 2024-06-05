@@ -136,10 +136,20 @@ const Mods: React.FC = () => {
     return (
         <View style={style.container}>
             <ModsHeader />
-            <View style={style.listContainer}>
-                {renderFediModShortcuts()}
-                {renderBuffers()}
-            </View>
+            {customMods.length > 0 || suggestedMods.length > 0 ? (
+                <View style={style.listContainer}>
+                    {renderFediModShortcuts()}
+                    {renderBuffers()}
+                </View>
+            ) : (
+                <View style={style.empty}>
+                    <Pressable
+                        onPress={() => navigation.navigate('AddFediMod')}>
+                        <SvgImage name="NewModIcon" size={48} />
+                    </Pressable>
+                    <Text>{t('feature.fedimods.add-mods-homescreen')}</Text>
+                </View>
+            )}
         </View>
     )
 }
@@ -156,10 +166,19 @@ const styles = (theme: Theme, columns: number) =>
         buffer: {
             height: theme.sizes.lg,
         },
+        empty: {
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: theme.spacing.md,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
         listContainer: {
             flexDirection: 'row',
             flexWrap: 'wrap',
             justifyContent: 'space-between',
+            paddingHorizontal: theme.spacing.sm,
         },
         tooltipAction: {
             flexDirection: 'row',
