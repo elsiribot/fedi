@@ -27,7 +27,7 @@ export const ChatRoomActionsOverlay: React.FC<Props> = ({
 
     const style = styles(theme)
 
-    if (!selectedRoomId) return <></>
+    if (!selectedRoomId || !room) return <></>
 
     return (
         <CustomOverlay
