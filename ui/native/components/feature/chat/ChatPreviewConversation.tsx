@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native'
 import { Theme, useTheme, Text } from '@rneui/themed'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -33,6 +34,7 @@ const ChatPreviewConversation: React.FC<Props> = ({ id, preview }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const dispatch = useAppDispatch()
+    const isFocused = useIsFocused()
 
     const [isRefreshing, setIsRefreshing] = useState(false)
 
@@ -70,6 +72,14 @@ const ChatPreviewConversation: React.FC<Props> = ({ id, preview }: Props) => {
             .unwrap()
             .finally(() => setIsRefreshing(false))
     }, [id, dispatch, isRefreshing])
+
+    useEffect(() => {
+        if (isFocused) {
+            handleRefresh()
+            const timer = setInterval(handleRefresh, 15000)
+            return () => clearInterval(timer)
+        }
+    }, [isFocused, handleRefresh])
 
     const style = styles(theme)
 
@@ -145,7 +155,6 @@ const ChatPreviewConversation: React.FC<Props> = ({ id, preview }: Props) => {
                 data={eventGroups}
                 ref={listRef}
                 renderItem={renderEventGroup}
-                onRefresh={handleRefresh}
                 keyExtractor={item => `cc-fl-${item[0][0]?.id}`}
                 style={[style.listContainer]}
                 contentContainerStyle={style.contentContainer}
@@ -157,7 +166,6 @@ const ChatPreviewConversation: React.FC<Props> = ({ id, preview }: Props) => {
                 // adjust this for more/less aggressive loading
                 onEndReachedThreshold={1}
                 inverted={events.length > 0}
-                // onEndReached={handleRefresh}
                 refreshing={isRefreshing}
                 maintainVisibleContentPosition={{
                     minIndexForVisible: 1,

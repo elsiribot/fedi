@@ -16,6 +16,7 @@ import {
     selectMatrixStatus,
     refetchMatrixRoomList,
     selectIsChatEmpty,
+    previewDefaultGroupChats,
 } from '@fedi/common/redux'
 import { ChatType, MatrixRoom, MatrixSyncStatus } from '@fedi/common/types'
 
@@ -42,7 +43,10 @@ const ChatsList: React.FC = () => {
 
     const handleRefresh = useCallback(() => {
         setIsRefetching(true)
-        dispatch(refetchMatrixRoomList())
+        Promise.all([
+            dispatch(refetchMatrixRoomList()),
+            dispatch(previewDefaultGroupChats()),
+        ])
             .catch(() => null) // no-op
             .finally(() => setIsRefetching(false))
     }, [dispatch])
