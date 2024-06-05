@@ -1017,6 +1017,8 @@ export const selectMatrixChatsList = createSelector(
             const { info, timeline } = preview
             // don't include previews if we dont have info and timeline
             if (!info || !timeline) return result
+            // don't include previews that have no messages in the timeline
+            if (timeline.filter(t => t !== null).length === 0) return result
             // don't include previews for rooms we are already joined to
             if (orderedRoomsList.find(r => r.id === info.id)) return result
             result.push(makeChatFromPreview(preview))
@@ -1026,11 +1028,7 @@ export const selectMatrixChatsList = createSelector(
             ...orderedRoomsList,
             ...defaultGroupsList,
         ]
-        return orderBy(
-            chatList,
-            item => item.preview?.timestamp || Date.now(),
-            'desc',
-        )
+        return orderBy(chatList, item => item.preview?.timestamp || 0, 'desc')
     },
 )
 

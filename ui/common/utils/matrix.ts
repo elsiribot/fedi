@@ -213,13 +213,28 @@ export function makeMatrixEventGroups(
 export function makeChatFromPreview(preview: MatrixGroupPreview) {
     const { info, timeline } = preview
 
-    const previewContent: MatrixTimelineItem = timeline[0]
-    const chat: MatrixRoom = { ...info }
+    // filter out null values added by MatrixChatClient.serializeTimelineItem
+    const messages = timeline.filter(t => t !== null)
+
+    const previewContent: MatrixTimelineItem = messages.reduce(
+        (latest, current) => {
+            return (latest?.timestamp || 0) > (current?.timestamp || 0)
+                ? latest
+                : current
+        },
+        messages[0],
+    )
+    const chat: MatrixRoom = {
+        ...info,
+        // all previews are default rooms which should be broadcast only
+        // TODO: allow non-default, non-broadcast only previewing of rooms
+        broadcastOnly: true,
+    }
     if (previewContent) {
         chat.preview = {
             eventId: previewContent?.id,
             body: previewContent?.content.body || '',
-            timestamp: previewContent?.timestamp || Date.now(),
+            timestamp: previewContent?.timestamp || 0,
             // TODO: get this from members list if we have them
             displayName: previewContent?.senderId || '',
             senderId: previewContent?.senderId || '',
