@@ -15,6 +15,7 @@ import {
 } from '@fedi/common/redux'
 import { ParserDataType, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { BridgeError } from '@fedi/common/utils/fedimint'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useRouteState } from '../context/RouteStateContext'
@@ -151,7 +152,11 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
             setHasSent(true)
             setTimeout(() => onOpenChange(false), 2500)
         } catch (err) {
-            setSendError(formatErrorMessage(t, err, 'errors.unknown-error'))
+            if (err instanceof BridgeError) {
+                setSendError(err.format(t))
+            } else {
+                setSendError(formatErrorMessage(t, err, 'errors.unknown-error'))
+            }
         }
         setIsSending(false)
     }, [handleOmniSend, inputAmount, onOpenChange, t])

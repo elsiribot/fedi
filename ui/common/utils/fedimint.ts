@@ -1,3 +1,5 @@
+import { TFunction } from 'i18next'
+
 import type {
     Federation,
     FedimintBridgeEventMap,
@@ -7,12 +9,14 @@ import type {
     bindings,
 } from '../types'
 import {
+    ErrorCode,
     GuardianStatus,
     RpcAmount,
     RpcFeeDetails,
     RpcPayAddressResponse,
     RpcStabilityPoolAccountInfo,
 } from '../types/bindings'
+import amountUtils from './AmountUtils'
 import { makeLog } from './log'
 
 const log = makeLog('common/utils/fedimint')
@@ -602,5 +606,37 @@ export class FedimintBridge {
                 subscribedListeners.filter(l => l !== listener),
             )
         }
+    }
+}
+
+export class BridgeError extends Error {
+    public detail: string
+    public error: string
+    public code: ErrorCode | null
+
+    constructor(json: {
+        detail: string
+        error: string
+        code: ErrorCode | null
+    }) {
+        super(json.error)
+        this.error = json.error
+        this.code = json.code
+        this.detail = json.detail
+    }
+
+    public format(t: TFunction) {
+        if (
+            this.code &&
+            typeof this.code === 'object' &&
+            'insufficientBalance' in this.code &&
+            typeof this.code.insufficientBalance === 'number'
+        ) {
+            return t('errors.insufficient-balance-send', {
+                sats: amountUtils.msatToSat(this.code.insufficientBalance),
+            })
+        }
+
+        return this.error
     }
 }
