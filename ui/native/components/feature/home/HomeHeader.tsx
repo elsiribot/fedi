@@ -35,7 +35,7 @@ const HomeHeader: React.FC = () => {
                 containerStyle={style.container}
                 headerLeft={
                     <Text h2 medium>
-                        {t('words.home')}
+                        {t('words.community')}
                     </Text>
                 }
                 headerRight={

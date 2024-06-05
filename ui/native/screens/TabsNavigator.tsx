@@ -134,7 +134,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                             case 'Home':
                                 return (
                                     <SvgImage
-                                        name={focused ? 'HomeFilled' : 'Home'}
+                                        name={'Community'}
                                         {...svgImageProps}
                                     />
                                 )
@@ -148,7 +148,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                             case 'Mods':
                                 return (
                                     <SvgImage
-                                        name={focused ? 'Apps' : 'Apps'}
+                                        name={'Apps'}
                                         {...svgImageProps}
                                     />
                                 )
@@ -188,7 +188,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                     name="Home"
                     initialParams={{ offline }}
                     options={() => ({
-                        title: t('words.home'),
+                        title: t('words.community'),
                         header: () => <HomeHeader />,
                     })}>
                     {props => <Home {...props} offline={offline} />}
