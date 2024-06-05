@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import {
-    selectActiveFederationId,
     selectMatrixAuth,
     uploadAndSetMatrixAvatarUrl,
 } from '@fedi/common/redux'
@@ -14,7 +13,6 @@ import { fedimint, writeBridgeFile } from '../../lib/bridge'
 import { Avatar } from '../Avatar'
 import { Button } from '../Button'
 import { HoloLoader } from '../HoloLoader'
-import { Redirect } from '../Redirect'
 import { Text } from '../Text'
 import {
     OnboardingActions,
@@ -27,7 +25,6 @@ export const UploadAvatarImage: React.FC = () => {
     const { push } = useRouter()
     const toast = useToast()
     const matrixAuth = useAppSelector(selectMatrixAuth)
-    const federationId = useAppSelector(selectActiveFederationId)
 
     const dispatch = useAppDispatch()
 
@@ -71,12 +68,6 @@ export const UploadAvatarImage: React.FC = () => {
         },
         [dispatch, t, toast],
     )
-
-    // TODO: Allow username registration before joining a federation, chat does
-    // not require federation membership.
-    if (!federationId) {
-        return <Redirect path="/onboarding" />
-    }
 
     let content: React.ReactNode
     if (!matrixAuth) {

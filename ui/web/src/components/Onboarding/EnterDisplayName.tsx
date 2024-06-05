@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useDisplayNameForm } from '@fedi/common/hooks/chat'
@@ -33,19 +33,22 @@ export const EnterDisplayName: React.FC = () => {
         handleChangeUsername,
         handleSubmitDisplayName,
     } = useDisplayNameForm(t, fedimint)
+    const [hasSubmitted, setHasSubmitted] = useState(false)
 
     const handleSubmit = useCallback(
         async (ev: React.FormEvent) => {
             ev.preventDefault()
+            setHasSubmitted(true)
             handleSubmitDisplayName(() => {
-                // continue to onboarding complete
                 push('/onboarding/image')
             })
         },
         [handleSubmitDisplayName, push],
     )
 
-    if (hasSetDisplayName && !isSubmitting) {
+    // Make sure to only redirect if the user hasn't submitted a profile image.
+    // This would override the push('/onboarding/image')
+    if (hasSetDisplayName && !isSubmitting && !hasSubmitted) {
         return <Redirect path="/onboarding/complete" />
     }
 
