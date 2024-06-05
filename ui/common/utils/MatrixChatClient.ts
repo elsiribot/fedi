@@ -849,11 +849,12 @@ export class MatrixChatClient {
             }
         }
 
+        const roomName = room.base_info.name?.Original?.content?.name
         return {
             directUserId,
             preview,
             id: room.room_id,
-            name: room.base_info.name?.Original?.content?.name,
+            name: directUserId ? this.ensureDisplayName(roomName) : roomName,
             notificationCount:
                 room.notification_counts?.notification_count || 0,
             // TODO: Sometimes non-dm room with 1 user has an avatar of the user, figure out how to stop that
