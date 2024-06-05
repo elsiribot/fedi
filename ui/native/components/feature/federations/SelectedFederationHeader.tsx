@@ -61,6 +61,7 @@ const SelectedFederationHeader: React.FC = () => {
     }, [drawerNavigator, activeFederation, previousActiveFederation?.id])
 
     const style = styles(theme)
+
     return (
         <SafeAreaView
             edges={['top', 'left', 'right']}

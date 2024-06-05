@@ -5,7 +5,7 @@ import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, View, useWindowDimensions } from 'react-native'
 
-import { selectFederationFediMods } from '@fedi/common/redux'
+import { selectActiveFederationFediMods } from '@fedi/common/redux'
 
 import { FediModImages } from '../../../assets/images'
 import { useAppSelector } from '../../../state/hooks'
@@ -17,7 +17,7 @@ const ShortcutsList: React.FC = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
-    const fediMods = useAppSelector(selectFederationFediMods)
+    const fediMods = useAppSelector(selectActiveFederationFediMods)
     const { width, fontScale } = useWindowDimensions()
 
     const columns = width / fontScale < 300 ? 2 : 3

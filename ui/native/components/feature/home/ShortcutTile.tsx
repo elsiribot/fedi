@@ -1,11 +1,18 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
-import { Image, StyleSheet, View, useWindowDimensions } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import {
+    Image,
+    ImageSourcePropType,
+    StyleSheet,
+    View,
+    useWindowDimensions,
+} from 'react-native'
 
 import { selectIsActiveFederationRecovering } from '@fedi/common/redux'
 
+import { FediModImages } from '../../../assets/images'
 import { useAppSelector } from '../../../state/hooks'
-import { FediMod, Shortcut } from '../../../types'
+import { FediMod, Shortcut, ShortcutType } from '../../../types'
 import { Pressable } from '../../ui/Pressable'
 import SvgImage, {
     SvgImageName,
@@ -15,12 +22,35 @@ import SvgImage, {
 
 type ShortcutTileProps = {
     shortcut: Shortcut
+    onHold?: (shortcut: Shortcut) => void
     onSelect: (shortcut: Shortcut) => void
 }
 
-const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
+function isMod(shortcut: Shortcut | FediMod): shortcut is FediMod {
+    return shortcut.type === ShortcutType.fediMod
+}
+
+const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
     const { theme } = useTheme()
     const { fontScale } = useWindowDimensions()
+    const [imageSrc, setImageSrc] = useState<ImageSourcePropType | undefined>(
+        undefined,
+    )
+
+    useEffect(() => {
+        if (isMod(shortcut)) {
+            // use local image if we have it
+            if (FediModImages[shortcut.id]) {
+                setImageSrc(FediModImages[shortcut.id])
+            } else if (shortcut.imageUrl) {
+                // then try image url
+                setImageSrc({ uri: shortcut.imageUrl })
+            } else {
+                // fallback to default
+                setImageSrc(FediModImages.default)
+            }
+        }
+    }, [shortcut])
 
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
@@ -29,12 +59,16 @@ const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
     const style = styles(theme, fontScale)
 
     const renderIcon = () => {
-        if ((shortcut as FediMod).imageUrl) {
+        if (isMod(shortcut) && imageSrc) {
             return (
                 <Image
                     style={style.iconImage}
-                    source={{ uri: (shortcut as FediMod).imageUrl }}
+                    source={imageSrc}
                     resizeMode="contain"
+                    // use fallback if url fails to load
+                    onError={() => {
+                        setImageSrc(FediModImages.default)
+                    }}
                 />
             )
         } else if (shortcut.icon.image) {
@@ -64,6 +98,7 @@ const ShortcutTile = ({ shortcut, onSelect }: ShortcutTileProps) => {
                 recoveryInProgress ? style.disabled : null,
             ]}
             onPress={() => onSelect(shortcut)}
+            onLongPress={() => onHold?.(shortcut)}
             disabled={recoveryInProgress}>
             <View>{renderIcon()}</View>
             <View style={style.title}>

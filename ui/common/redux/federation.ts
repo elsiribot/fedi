@@ -130,17 +130,6 @@ export const federationSlice = createSlice({
         ) {
             state.authenticatedGuardian = action.payload
         },
-        addCustomFediMod(
-            state,
-            action: PayloadAction<{
-                federationId: Federation['id']
-                fediMod: FediMod
-            }>,
-        ) {
-            const { federationId, fediMod } = action.payload
-            const fediMods = state.customFediMods[federationId] || []
-            state.customFediMods[federationId] = [...fediMods, fediMod]
-        },
         removeCustomFediMod(
             state,
             action: PayloadAction<{
@@ -195,7 +184,6 @@ export const {
     updateExternalMeta,
     setFederationExternalMeta,
     changeAuthenticatedGuardian,
-    addCustomFediMod,
     removeCustomFediMod,
 } = federationSlice.actions
 
@@ -409,7 +397,15 @@ export const selectIsAnyFederationRecovering = createSelector(
     },
 )
 
-export const selectFederationCustomFediMods = (s: CommonState) => {
+export const selectFederationCustomFediMods = (
+    s: CommonState,
+    federationId: Federation['id'],
+) => {
+    const federation = selectFederation(s, federationId)
+    return federation ? s.federation.customFediMods[federation?.id] || [] : []
+}
+
+export const selectActiveFederationCustomFediMods = (s: CommonState) => {
     const activeFederation = selectActiveFederation(s)
     return activeFederation
         ? s.federation.customFediMods[activeFederation?.id] || []
@@ -484,9 +480,9 @@ export const selectReceivesDisabled = createSelector(
     },
 )
 
-export const selectFederationFediMods = createSelector(
+export const selectActiveFederationFediMods = createSelector(
     selectActiveFederation,
-    selectFederationCustomFediMods,
+    selectActiveFederationCustomFediMods,
     (federation, customFediMods) => {
         if (!federation) return []
         return [...getFederationFediMods(federation.meta), ...customFediMods]
