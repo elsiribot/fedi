@@ -1,6 +1,12 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
-import { Image, StyleSheet, View, useWindowDimensions } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import {
+    Image,
+    ImageSourcePropType,
+    StyleSheet,
+    View,
+    useWindowDimensions,
+} from 'react-native'
 
 import { selectIsActiveFederationRecovering } from '@fedi/common/redux'
 
@@ -27,6 +33,24 @@ function isMod(shortcut: Shortcut | FediMod): shortcut is FediMod {
 const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
     const { theme } = useTheme()
     const { fontScale } = useWindowDimensions()
+    const [imageSrc, setImageSrc] = useState<ImageSourcePropType | undefined>(
+        undefined,
+    )
+
+    useEffect(() => {
+        if (isMod(shortcut)) {
+            // use local image if we have it
+            if (FediModImages[shortcut.id]) {
+                setImageSrc(FediModImages[shortcut.id])
+            } else if (shortcut.imageUrl) {
+                // then try image url
+                setImageSrc({ uri: shortcut.imageUrl })
+            } else {
+                // fallback to default
+                setImageSrc(FediModImages.default)
+            }
+        }
+    }, [shortcut])
 
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
@@ -35,23 +59,16 @@ const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
     const style = styles(theme, fontScale)
 
     const renderIcon = () => {
-        if (isMod(shortcut)) {
-            // use local image if we have it
-            let imageSrc = FediModImages[shortcut.id]
-
-            if (!imageSrc) {
-                if (shortcut.imageUrl) {
-                    imageSrc = { uri: shortcut.imageUrl }
-                } else {
-                    imageSrc = FediModImages.default
-                }
-            }
-
+        if (isMod(shortcut) && imageSrc) {
             return (
                 <Image
                     style={style.iconImage}
                     source={imageSrc}
                     resizeMode="contain"
+                    // use fallback if url fails to load
+                    onError={() => {
+                        setImageSrc(FediModImages.default)
+                    }}
                 />
             )
         } else if (shortcut.icon.image) {

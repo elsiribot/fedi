@@ -221,26 +221,28 @@ const ModRow = ({
     const { theme } = useTheme()
     const { fontScale } = useWindowDimensions()
     const insets = useSafeAreaInsets()
+    const [loaded, setLoaded] = useState(false)
+    // use local image if we have it
+    // then try image url
+    // fallback to default
+    const [imageSrc, setImageSrc] = useState(
+        FediModImages[mod.id] ||
+            (mod.imageUrl ? { uri: mod.imageUrl } : FediModImages.default),
+    )
 
     const style = styles(theme, fontScale, insets)
-
-    // use local image if we have it
-    let imageSrc = FediModImages[mod.id]
-
-    if (!imageSrc) {
-        if (mod.imageUrl) {
-            imageSrc = { uri: mod.imageUrl }
-        } else {
-            imageSrc = FediModImages.default
-        }
-    }
 
     return (
         <View key={mod.id} style={style.fediMod}>
             <Image
-                style={style.iconImage}
+                style={[style.iconImage, !loaded ? style.loadingState : {}]}
                 source={imageSrc}
                 resizeMode="contain"
+                // use fallback if url fails to load
+                onError={() => {
+                    setImageSrc(FediModImages.default)
+                }}
+                onLoadEnd={() => setLoaded(true)}
             />
 
             <View style={style.fediModText}>
