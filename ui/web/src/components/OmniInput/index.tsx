@@ -103,7 +103,25 @@ export function OmniInput<
 
     const handlePaste = useCallback(async () => {
         try {
-            const input = await navigator.clipboard.readText()
+            let input: string | null = null
+
+            if (
+                'readText' in navigator.clipboard &&
+                typeof navigator.clipboard.readText === 'function'
+            ) {
+                try {
+                    // Newer versions of firefox allow you to paste with a confirmation similar to how iOS does it
+                    // When cancelled, it throws an error
+                    input = await navigator.clipboard.readText()
+                } catch {
+                    /*no-op*/
+                }
+            } else {
+                input = prompt(t('feature.omni.action-paste'))
+            }
+
+            if (!input) return
+
             await parseInput(input)
         } catch (err) {
             toast.error(t, err, 'errors.unknown-error')
