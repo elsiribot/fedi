@@ -40,6 +40,7 @@ export interface MatrixRoomPreview {
 export type MatrixGroupPreview = {
     info: MatrixRoom
     timeline: MatrixTimelineItem[]
+    isDefaultGroup?: boolean
 }
 
 export interface MatrixRoom {

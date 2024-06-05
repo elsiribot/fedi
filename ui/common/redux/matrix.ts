@@ -287,7 +287,10 @@ export const matrixSlice = createSlice({
                     result: Record<RpcRoomId, MatrixGroupPreview>,
                     preview: MatrixGroupPreview,
                 ) => {
-                    result[preview.info.id] = preview
+                    result[preview.info.id] = {
+                        ...preview,
+                        isDefaultGroup: true,
+                    }
                     return result
                 },
                 {},
@@ -296,7 +299,11 @@ export const matrixSlice = createSlice({
         })
         builder.addCase(getMatrixRoomPreview.fulfilled, (state, action) => {
             if (!action.payload) return
-            state.groupPreviews[action.meta.arg] = action.payload
+            const existingPreview = state.groupPreviews[action.meta.arg] || {}
+            state.groupPreviews[action.meta.arg] = {
+                ...existingPreview,
+                ...action.payload,
+            }
         })
     },
 })
@@ -1005,7 +1012,7 @@ export const selectMatrixUser = (s: CommonState, userId: MatrixUser['id']) =>
 export const selectMatrixChatsList = createSelector(
     selectMatrixRooms,
     selectGroupPreviews,
-    (orderedRoomsList, defaultGroupPreviews): MatrixRoom[] => {
+    (roomsList, defaultGroupPreviews): MatrixRoom[] => {
         // Here we add preview rooms from the default groups list to be
         // displayed alongside the user's joined rooms to make it seem like
         // the user has joined these rooms when really they are just public previews
@@ -1017,17 +1024,16 @@ export const selectMatrixChatsList = createSelector(
             const { info, timeline } = preview
             // don't include previews if we dont have info and timeline
             if (!info || !timeline) return result
+            // don't include previews unless they are default groups
+            if (!preview.isDefaultGroup) return result
             // don't include previews that have no messages in the timeline
             if (timeline.filter(t => t !== null).length === 0) return result
             // don't include previews for rooms we are already joined to
-            if (orderedRoomsList.find(r => r.id === info.id)) return result
+            if (roomsList.find(r => r.id === info.id)) return result
             result.push(makeChatFromPreview(preview))
             return result
         }, [])
-        const chatList: MatrixRoom[] = [
-            ...orderedRoomsList,
-            ...defaultGroupsList,
-        ]
+        const chatList: MatrixRoom[] = [...roomsList, ...defaultGroupsList]
         return orderBy(chatList, item => item.preview?.timestamp || 0, 'desc')
     },
 )
