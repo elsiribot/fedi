@@ -1,4 +1,5 @@
 import { PayloadAction, createSelector, createSlice } from '@reduxjs/toolkit'
+import omit from 'lodash/omit'
 
 import { CommonState } from '.'
 import { FediMod } from '../types'
@@ -41,7 +42,10 @@ export const modSlice = createSlice({
         ) {
             const { modId } = action.payload
 
-            delete state.customGlobal[modId]
+            // Clean up mod
+            if (state.customGlobal[modId]) {
+                state.customGlobal = omit(state.customGlobal, modId)
+            }
         },
         setCustomGlobalModVisibility(
             state,
