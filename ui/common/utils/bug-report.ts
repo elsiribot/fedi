@@ -5,8 +5,8 @@ import { makeLog } from './log'
 // eslint-disable-next-line prefer-const
 let API_ORIGIN = 'https://app.fedi.xyz'
 if (process.env.NODE_ENV === 'development') {
-    API_ORIGIN = 'https://fedi-ashen.vercel.app'
-    // API_ORIGIN = '' // Local PWA (relative path)
+    // API_ORIGIN = 'https://fedi-ashen.vercel.app'
+    API_ORIGIN = '' // Local PWA (relative path)
     // API_ORIGIN = 'http://localhost:3000' // Local iOS
     // API_ORIGIN = 'http://10.0.2.2:3000' // Local Android
 }
