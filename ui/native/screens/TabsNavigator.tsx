@@ -214,7 +214,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                     component={OmniScanner}
                     options={() => ({
                         title: t('words.scan'),
-                        header: () => <Header />,
+                        header: () => <Header empty />,
                     })}
                 />
             </Tab.Navigator>

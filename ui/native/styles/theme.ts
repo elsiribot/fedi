@@ -231,22 +231,32 @@ const theme = createTheme({
         },
         Header: {
             containerStyle: {
-                paddingHorizontal: 16,
+                paddingHorizontal: fediTheme.spacing.lg,
                 borderBottomColor: colors.secondary,
                 // This helps maximize the clickable area for any header buttons
                 paddingVertical: 0,
             },
             leftContainerStyle: {
                 flex: 1,
+                flexDirection: 'row',
+                justifyContent: 'flex-start',
+                alignItems: 'center',
             },
             centerContainerStyle: {
                 flex: 4,
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
+                // the content height should always be consistent
+                // so the header buttons don't move when
+                // the content changes
+                height: 36,
             },
             rightContainerStyle: {
                 flex: 1,
+                flexDirection: 'row',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
             },
         },
     },

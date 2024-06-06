@@ -1,58 +1,63 @@
 import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
+import DeviceInfo from 'react-native-device-info'
 
-import { selectFederationMetadata } from '@fedi/common/redux'
-import { shouldShowOfflineWallet } from '@fedi/common/utils/FederationUtils'
-
-import { useAppSelector } from '../../../state/hooks'
-import { NavigationHook } from '../../../types/navigation'
+import {
+    DRAWER_NAVIGATION_ID,
+    DrawerNavigationHook,
+    NavigationHook,
+} from '../../../types/navigation'
 import Header from '../../ui/Header'
 import { PressableIcon } from '../../ui/PressableIcon'
-import SelectedFederationHeader from '../federations/SelectedFederationHeader'
+import { SvgImageSize } from '../../ui/SvgImage'
+import HeaderAvatar from '../chat/HeaderAvatar'
+import FederationSelector from '../federations/FederationSelector'
 import { NetworkBanner } from '../wallet/NetworkBanner'
 
 const HomeHeader: React.FC = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
-    const activeFederationMetadata = useAppSelector(selectFederationMetadata)
-
-    const showOfflineWallet =
-        activeFederationMetadata &&
-        shouldShowOfflineWallet(activeFederationMetadata)
 
     const style = styles(theme)
 
+    const drawerNavigator = navigation.getParent(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        DRAWER_NAVIGATION_ID as any,
+    ) as DrawerNavigationHook
+
+    const openFederationsDrawer = () => {
+        drawerNavigator.openDrawer()
+    }
+    const openSettings = useCallback(() => {
+        return navigation.navigate('Settings')
+    }, [navigation])
+
     return (
         <>
-            <SelectedFederationHeader />
-            <NetworkBanner />
             <Header
-                inline
                 containerStyle={style.container}
                 headerLeft={
-                    <Text h2 medium>
-                        {t('words.community')}
-                    </Text>
+                    <PressableIcon
+                        onPress={openFederationsDrawer}
+                        hitSlop={10}
+                        svgName="HamburgerIcon"
+                    />
                 }
-                headerRight={
-                    showOfflineWallet && (
-                        <PressableIcon
-                            onPress={() => {
-                                navigation.navigate('Settings')
-                            }}
-                            hitSlop={5}
-                            svgName="Cog"
-                        />
-                    )
-                }
-                rightContainerStyle={style.rightContainer}
-                // Needed to make more room for Wallet title in headerLeft
-                centerContainerStyle={{ flex: 0 }}
+                headerRight={<HeaderAvatar onPress={openSettings} />}
+                headerCenter={<FederationSelector />}
             />
+            <NetworkBanner />
+            {DeviceInfo.getBundleId().includes('nightly') && (
+                <View style={style.nightly}>
+                    <Text small style={style.nightlyText}>
+                        {t('feature.developer.nightly')}
+                    </Text>
+                </View>
+            )}
         </>
     )
 }
@@ -60,12 +65,21 @@ const HomeHeader: React.FC = () => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            paddingBottom: theme.spacing.lg,
+            paddingBottom: theme.spacing.md,
+            justifyContent: 'space-between',
         },
-        rightContainer: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
+        nightly: {
+            position: 'absolute',
+            bottom: 0,
+            right: theme.spacing.lg,
+            backgroundColor: theme.colors.primary,
+            paddingHorizontal: theme.spacing.sm,
+            borderTopLeftRadius: 5,
+            borderTopRightRadius: 5,
+        },
+        nightlyText: {
+            fontSize: 10,
+            color: theme.colors.secondary,
         },
     })
 

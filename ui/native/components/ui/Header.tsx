@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native'
 import { Header as HeaderRNE, useTheme } from '@rneui/themed'
 import React from 'react'
-import { Pressable, ViewStyle } from 'react-native'
+import { Pressable, View, ViewStyle } from 'react-native'
 
 import { reset } from '../../state/navigation'
 import { NavigationHook } from '../../types/navigation'
@@ -16,6 +16,7 @@ interface HeaderBase {
     centerContainerStyle?: ViewStyle
     rightContainerStyle?: ViewStyle
     containerStyle?: ViewStyle
+    empty?: boolean
     dark?: boolean
     backButton?: boolean
     closeButton?: boolean
@@ -43,6 +44,7 @@ const Header: React.FC<HeaderProps> = ({
     centerContainerStyle = {},
     rightContainerStyle = {},
     containerStyle = {},
+    empty,
     dark,
     backButton,
     closeButton,
@@ -51,6 +53,11 @@ const Header: React.FC<HeaderProps> = ({
 }: HeaderProps) => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
+
+    if (empty) {
+        console.warn('Header empty prop is deprecated, use Header with empty')
+        return <View style={{ marginTop: theme.spacing.xl }} />
+    }
 
     // This logic allows for custom UI in the left side of the Header
     // but the backButton prop overrides any custom headerLeft component
@@ -81,19 +88,16 @@ const Header: React.FC<HeaderProps> = ({
     let rightComponent = <>{headerRight || null}</>
     if (closeButton) {
         rightComponent = (
-            <Pressable
+            <PressableIcon
                 testID="HeaderCloseButton"
                 onPress={
                     typeof onClose === 'function'
                         ? onClose
                         : () => navigation.dispatch(reset('TabsNavigator'))
                 }
-                hitSlop={5}
-                style={{
-                    padding: theme.spacing.sm,
-                }}>
-                <SvgImage name="Close" />
-            </Pressable>
+                hitSlop={10}
+                svgName="Close"
+            />
         )
     }
 
@@ -124,9 +128,7 @@ const Header: React.FC<HeaderProps> = ({
             ? theme.colors.primary
             : defaultContainerStyle.borderBottomColor,
         shadowColor: inline ? 'transparent' : defaultContainerStyle.shadowColor,
-        paddingTop: inline
-            ? theme.spacing.lg
-            : defaultContainerStyle.paddingTop,
+        paddingTop: theme.spacing.lg,
         ...containerStyle,
     }
 

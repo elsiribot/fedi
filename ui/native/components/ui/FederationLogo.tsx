@@ -1,5 +1,5 @@
 import { Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { ActivityIndicator, Image, StyleSheet, View } from 'react-native'
 
 import { Federation } from '@fedi/common/types'
@@ -28,41 +28,35 @@ export const FederationLogo: React.FC<Props> = ({ federation, size }) => {
 
     const style = styles(theme)
 
-    return iconUrl ? (
-        <>
-            <Image
-                style={[
-                    style.iconImage,
-                    svgProps,
-                    !loaded ? style.loadingState : {},
-                ]}
-                source={{ uri: iconUrl }}
-                resizeMode="cover"
-                onError={() => setHasErrored(true)}
-                onLoadEnd={() => setLoaded(true)}
+    if (!iconUrl) {
+        return (
+            <SvgImage
+                name="Federation"
+                size={svgSize}
+                svgProps={{ ...style.svgIconImage, ...svgProps }}
             />
+        )
+    }
 
-            {(!loaded || hasErrored) && (
-                <View style={[svgProps, style.fallbackIconContainer]}>
-                    <Image
-                        style={style.fallbackIconLayer}
-                        source={Images.FallbackInset}
-                    />
-                    <View style={style.fallbackIconLayer}>
-                        <ActivityIndicator
-                            size={16}
-                            color={theme.colors.primary}
-                        />
-                    </View>
+    return (
+        <>
+            <View style={[svgProps, style.fallbackIconContainer]}>
+                <Image
+                    style={style.fallbackIconLayer}
+                    source={Images.FallbackInset}
+                />
+                <View style={style.fallbackIconLayer}>
+                    <ActivityIndicator size={16} color={theme.colors.primary} />
                 </View>
-            )}
+                <Image
+                    style={[style.iconImage, svgProps]}
+                    source={{ uri: iconUrl }}
+                    resizeMode="cover"
+                    onError={() => setHasErrored(true)}
+                    onLoadEnd={() => setLoaded(true)}
+                />
+            </View>
         </>
-    ) : (
-        <SvgImage
-            name="Federation"
-            size={svgSize}
-            svgProps={{ ...style.svgIconImage, ...svgProps }}
-        />
     )
 }
 
@@ -89,10 +83,5 @@ const styles = (theme: Theme) =>
         },
         svgIconImage: {
             borderRadius: 8,
-        },
-        loadingState: {
-            opacity: 0,
-            width: 1,
-            height: 1,
         },
     })

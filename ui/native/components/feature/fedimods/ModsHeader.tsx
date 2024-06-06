@@ -7,6 +7,7 @@ import { StyleSheet } from 'react-native'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import { PressableIcon } from '../../ui/PressableIcon'
+import HeaderAvatar from '../chat/HeaderAvatar'
 
 const ModsHeader: React.FC = () => {
     const { theme } = useTheme()
@@ -19,6 +20,10 @@ const ModsHeader: React.FC = () => {
         navigation.navigate('AddFediMod')
     }
 
+    const handleAvatarPress = () => {
+        navigation.navigate('Settings')
+    }
+
     return (
         <>
             <Header
@@ -29,14 +34,16 @@ const ModsHeader: React.FC = () => {
                     </Text>
                 }
                 headerRight={
-                    <PressableIcon
-                        onPress={handleAddPress}
-                        hitSlop={5}
-                        svgName="Plus"
-                    />
+                    <>
+                        <PressableIcon
+                            onPress={handleAddPress}
+                            hitSlop={5}
+                            svgName="Plus"
+                        />
+                        <HeaderAvatar onPress={handleAvatarPress} />
+                    </>
                 }
                 rightContainerStyle={style.rightContainer}
-                centerContainerStyle={{ flex: 2 }}
             />
         </>
     )
@@ -48,9 +55,7 @@ const styles = (theme: Theme) =>
             paddingBottom: theme.spacing.lg,
         },
         rightContainer: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
+            gap: theme.spacing.lg,
         },
     })
 
