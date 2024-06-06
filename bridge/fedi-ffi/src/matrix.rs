@@ -50,7 +50,6 @@ pub use types::*;
 pub struct Matrix {
     /// matrix client
     client: Client,
-    #[allow(dead_code)]
     /// sync service to load new messages
     sync_service: Arc<SyncService>,
     /// manages list of room visible to user.
