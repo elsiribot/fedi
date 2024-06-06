@@ -1,3 +1,5 @@
+#![cfg(target_family = "wasm")]
+
 use std::cell::RefCell;
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
