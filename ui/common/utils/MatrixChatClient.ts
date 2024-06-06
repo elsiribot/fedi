@@ -79,6 +79,7 @@ interface MatrixChatClientEventMap {
     }
     user: MatrixUser
     error: MatrixError
+    auth: MatrixAuth
 }
 type ClientObserverKind = keyof Pick<
     MatrixChatClientEventMap,
@@ -124,10 +125,16 @@ export class MatrixChatClient {
         this.startPromise = new Promise((resolve, reject) => {
             fedimint
                 .matrixInit()
-                .then(() => this.getAccountSession())
+                .then(() => this.getInitialAuth())
                 .then(auth => {
-                    // resolve auth before fetching anything to support offline UX
-                    resolve(this.serializeAuth(auth))
+                    // resolve cached auth before fetching anything
+                    // to support offline UX
+                    resolve(auth)
+
+                    // try to refetch auth in the background to
+                    // asynchronously get the user's avatarUrl
+                    this.refetchAuth()
+
                     this.observeRoomList()
                         .then(() => {
                             // Wait until after the roomlist is observed
@@ -146,8 +153,20 @@ export class MatrixChatClient {
         return this.startPromise
     }
 
-    async getAccountSession(cached = true) {
-        return this.fedimint.matrixGetAccountSession({ cached })
+    async getInitialAuth() {
+        // Don't emit cached auth to make sure the startPromise
+        // resolves before matrixAuth is set
+        return this.getAccountSession()
+    }
+
+    async refetchAuth() {
+        const auth = await this.getAccountSession(false)
+        this.emit('auth', auth)
+    }
+
+    private async getAccountSession(cached = true) {
+        const session = await this.fedimint.matrixGetAccountSession({ cached })
+        return this.serializeAuth(session)
     }
 
     async getRoomPreview(roomId: string) {
@@ -888,6 +907,7 @@ export class MatrixChatClient {
     }
 
     private serializeAuth(auth: RpcMatrixAccountSession): MatrixAuth {
+        console.warn('Serializing auth', auth)
         return {
             userId: auth.userId,
             displayName: this.ensureDisplayName(auth.displayName),

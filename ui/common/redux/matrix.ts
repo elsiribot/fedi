@@ -344,6 +344,7 @@ export const startMatrixClient = createAsyncThunk<
     }
 
     // Bind all the listeners we need to dispatch actions
+    client.on('auth', auth => dispatch(setMatrixAuth(auth)))
     client.on('roomListUpdate', updates =>
         dispatch(handleMatrixRoomListObservableUpdates(updates)),
     )
