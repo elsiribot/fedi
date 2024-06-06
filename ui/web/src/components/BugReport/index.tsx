@@ -120,7 +120,7 @@ export default function BugReport() {
 
                     attachmentFiles.push({
                         name: 'db.dump',
-                        content: Buffer.from(content),
+                        content: Buffer.from(content).toString('base64'),
                     })
                 }
             }
