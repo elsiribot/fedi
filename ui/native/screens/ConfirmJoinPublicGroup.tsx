@@ -41,7 +41,7 @@ const ConfirmJoinPublicGroup: React.FC<Props> = ({ route, navigation }) => {
         // TODO: Implement knocking to support non-public rooms
         joinPublicGroup(groupId)
             .then(() => {
-                navigation.navigate('ChatRoomConversation', {
+                navigation.replace('ChatRoomConversation', {
                     roomId: groupId,
                     chatType: ChatType.group,
                 })
