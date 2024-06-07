@@ -7,7 +7,7 @@ import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context'
 
 import { useMatrixChatInvites } from '@fedi/common/hooks/matrix'
 import { getMatrixRoomPreview, selectGroupPreviews } from '@fedi/common/redux'
-import { ChatType, MatrixGroupPreview } from '@fedi/common/types'
+import { MatrixGroupPreview } from '@fedi/common/types'
 
 import HoloGradient from '../components/ui/HoloGradient'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
