@@ -28,6 +28,10 @@ function LanguageSettings() {
             value: 'fr',
         },
         {
+            label: 'Português',
+            value: 'pt',
+        },
+        {
             label: 'Bahasa Indonesia',
             value: 'id',
         },
