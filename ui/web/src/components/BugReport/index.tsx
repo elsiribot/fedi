@@ -206,7 +206,9 @@ export default function BugReport() {
             </Text>
             <FileUploader files={files} setFiles={setFiles} />
             <DisclaimerBanner>
-                <BugIcon onClick={handleBugClick}>🪲</BugIcon>
+                {activeFederation && (
+                    <BugIcon onClick={handleBugClick}>🪲</BugIcon>
+                )}
                 <Text variant="caption" weight="medium">
                     {t('feature.bug.log-disclaimer')}
                 </Text>
