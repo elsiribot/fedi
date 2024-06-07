@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text } from '@rneui/themed'
 import React, { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { selectSocialRecoveryState } from '@fedi/common/redux'
 
@@ -17,21 +18,8 @@ import RecoveryWordsHeader from '../components/feature/backup/RecoveryWordsHeade
 import SocialBackupHeader from '../components/feature/backup/SocialBackupHeader'
 import BugReportHeader from '../components/feature/bug/BugReportHeader'
 import ChatConversationHeader from '../components/feature/chat/ChatConversationHeader'
-import ChatRoomInviteHeader from '../components/feature/chat/ChatRoomInviteHeader'
-import ChatRoomMembersHeader from '../components/feature/chat/ChatRoomMembersHeader'
-import ChatWalletHeader from '../components/feature/chat/ChatWalletHeader'
-import ConfirmChatSendHeader from '../components/feature/chat/ConfirmChatSendHeader'
 import ConfirmJoinPublicGroupHeader from '../components/feature/chat/ConfirmJoinPublicGroupHeader'
-import CreateGroupHeader from '../components/feature/chat/CreateGroupHeader'
-import DirectChatHeader from '../components/feature/chat/DirectChatHeader'
-import EditGroupHeader from '../components/feature/chat/EditGroupHeader'
-import GroupAdminHeader from '../components/feature/chat/GroupAdminHeader'
-import GroupHeader from '../components/feature/chat/GroupHeader'
-import GroupInviteHeader from '../components/feature/chat/GroupInviteHeader'
-import LegacyChatHeader from '../components/feature/chat/LegacyChatHeader'
-import MemberQrCodeHeader from '../components/feature/chat/MemberQrCodeHeader'
-import NewMessageHeader from '../components/feature/chat/NewMessageHeader'
-import ScanMemberCodeHeader from '../components/feature/chat/ScanMemberCodeHeader'
+import DefaultChatHeader from '../components/feature/chat/DefaultChatHeader'
 import FederationInviteHeader from '../components/feature/federations/FederationInviteHeader'
 import JoinFederationHeader from '../components/feature/federations/JoinFederationHeader'
 import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
@@ -109,7 +97,6 @@ import CreatePinInstructions from './CreatePinInstructions'
 import CreatedPin from './CreatedPin'
 import CurrencySettings from './CurrencySettings'
 import DeveloperSettings from './DeveloperSettings'
-import DirectChat from './DirectChat'
 import EditGroup from './EditGroup'
 import EditProfileSettings from './EditProfileSettings'
 import EnterDisplayName from './EnterDisplayName'
@@ -119,15 +106,12 @@ import FederationInvite from './FederationInvite'
 import FediModBrowser from './FediModBrowser'
 import FediModSettings from './FediModSettings'
 import GroupAdmin from './GroupAdmin'
-import GroupChat from './GroupChat'
-import GroupInvite from './GroupInvite'
 import Initializing from './Initializing'
 import JoinFederation from './JoinFederation'
 import LanguageSettings from './LanguageSettings'
 import LegacyChat from './LegacyChat'
 import LocateSocialRecovery from './LocateSocialRecovery'
 import LockedDevice from './LockedDevice'
-import MemberQrCode from './MemberQrCode'
 import NewMessage from './NewMessage'
 import PersonalRecovery from './PersonalRecovery'
 import PersonalRecoverySuccess from './PersonalRecoverySuccess'
@@ -183,6 +167,7 @@ import UploadAvatarImage from './UploadAvatarImage'
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
 export const MainNavigator = () => {
+    const { t } = useTranslation()
     const isAppUnlocked = useIsFeatureUnlocked('app')
     const isChangePinUnlocked = useIsFeatureUnlocked('changePin')
     const socialRecoveryState = useAppSelector(selectSocialRecoveryState)
@@ -361,127 +346,132 @@ export const MainNavigator = () => {
                                 options={{ headerShown: false }}
                             />
                             {/* Chat */}
-                            <Stack.Screen
-                                name="NewMessage"
-                                component={NewMessage}
-                                options={() => ({
-                                    header: () => <NewMessageHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="GroupInvite"
-                                component={GroupInvite}
-                                options={() => ({
-                                    header: () => <GroupInviteHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="MemberQrCode"
-                                component={MemberQrCode}
-                                options={() => ({
-                                    header: () => <MemberQrCodeHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="ScanMemberCode"
-                                component={ScanMemberCode}
-                                options={() => ({
-                                    header: () => <ScanMemberCodeHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="DirectChat"
-                                component={DirectChat}
-                                options={() => ({
-                                    header: () => <DirectChatHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="GroupChat"
-                                component={GroupChat}
-                                options={() => ({
-                                    header: () => <GroupHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="ChatRoomConversation"
-                                component={ChatRoomConversation}
-                                options={() => ({
-                                    header: () => <ChatConversationHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="ChatRoomMembers"
-                                component={ChatRoomMembers}
-                                options={() => ({
-                                    header: () => <ChatRoomMembersHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="ChatRoomInvite"
-                                component={ChatRoomInvite}
-                                options={() => ({
-                                    header: () => <ChatRoomInviteHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="ConfirmJoinPublicGroup"
-                                component={ConfirmJoinPublicGroup}
-                                options={() => ({
-                                    header: () => (
-                                        <ConfirmJoinPublicGroupHeader />
-                                    ),
-                                })}
-                            />
-                            <Stack.Screen
-                                name="ChatUserConversation"
-                                component={ChatUserConversation}
-                                options={() => ({
-                                    header: () => <ChatConversationHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="CreateGroup"
-                                component={CreateGroup}
-                                options={() => ({
-                                    header: () => <CreateGroupHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="EditGroup"
-                                component={EditGroup}
-                                options={() => ({
-                                    header: () => <EditGroupHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="GroupAdmin"
-                                component={GroupAdmin}
-                                options={() => ({
-                                    header: () => <GroupAdminHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="ChatWallet"
-                                component={ChatWallet}
-                                options={() => ({
-                                    header: () => <ChatWalletHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="ConfirmSendChatPayment"
-                                component={ConfirmSendChatPayment}
-                                options={() => ({
-                                    header: () => <ConfirmChatSendHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="LegacyChat"
-                                component={LegacyChat}
-                                options={() => ({
-                                    header: () => <LegacyChatHeader />,
-                                })}
-                            />
+                            <Stack.Group
+                                screenOptions={{
+                                    header: () => <DefaultChatHeader />,
+                                }}>
+                                <Stack.Screen
+                                    name="NewMessage"
+                                    component={NewMessage}
+                                    options={() => ({
+                                        header: () => (
+                                            <DefaultChatHeader
+                                                title={t(
+                                                    'feature.chat.new-message',
+                                                )}
+                                            />
+                                        ),
+                                    })}
+                                />
+                                <Stack.Screen
+                                    name="ScanMemberCode"
+                                    component={ScanMemberCode}
+                                    options={() => ({
+                                        header: () => (
+                                            <DefaultChatHeader
+                                                title={t(
+                                                    'feature.chat.scan-user-code',
+                                                )}
+                                            />
+                                        ),
+                                    })}
+                                />
+                                <Stack.Screen
+                                    name="ChatRoomConversation"
+                                    component={ChatRoomConversation}
+                                    options={() => ({
+                                        header: () => (
+                                            <ChatConversationHeader />
+                                        ),
+                                    })}
+                                />
+                                <Stack.Screen
+                                    name="ChatRoomMembers"
+                                    component={ChatRoomMembers}
+                                />
+                                <Stack.Screen
+                                    name="ChatRoomInvite"
+                                    component={ChatRoomInvite}
+                                />
+                                <Stack.Screen
+                                    name="ConfirmJoinPublicGroup"
+                                    component={ConfirmJoinPublicGroup}
+                                    options={() => ({
+                                        header: () => (
+                                            <ConfirmJoinPublicGroupHeader />
+                                        ),
+                                    })}
+                                />
+                                <Stack.Screen
+                                    name="ChatUserConversation"
+                                    component={ChatUserConversation}
+                                    options={() => ({
+                                        header: () => (
+                                            <ChatConversationHeader />
+                                        ),
+                                    })}
+                                />
+                                <Stack.Screen
+                                    name="CreateGroup"
+                                    component={CreateGroup}
+                                    options={() => ({
+                                        header: () => (
+                                            <DefaultChatHeader
+                                                title={t(
+                                                    'feature.chat.create-a-group',
+                                                )}
+                                            />
+                                        ),
+                                    })}
+                                />
+                                <Stack.Screen
+                                    name="EditGroup"
+                                    component={EditGroup}
+                                    options={() => ({
+                                        header: () => (
+                                            <DefaultChatHeader
+                                                title={t(
+                                                    'feature.chat.change-group-name',
+                                                )}
+                                            />
+                                        ),
+                                    })}
+                                />
+                                <Stack.Screen
+                                    name="GroupAdmin"
+                                    component={GroupAdmin}
+                                />
+                                <Stack.Screen
+                                    name="ChatWallet"
+                                    component={ChatWallet}
+                                />
+                                <Stack.Screen
+                                    name="ConfirmSendChatPayment"
+                                    component={ConfirmSendChatPayment}
+                                    options={() => ({
+                                        header: () => (
+                                            <DefaultChatHeader
+                                                title={t(
+                                                    'phrases.confirm-chat-send',
+                                                )}
+                                            />
+                                        ),
+                                    })}
+                                />
+                                <Stack.Screen
+                                    name="LegacyChat"
+                                    component={LegacyChat}
+                                    options={() => ({
+                                        header: () => (
+                                            <DefaultChatHeader
+                                                title={t(
+                                                    'feature.chat.archived-chats',
+                                                )}
+                                            />
+                                        ),
+                                    })}
+                                />
+                            </Stack.Group>
 
                             {/* Wallet (Send) */}
                             <Stack.Screen

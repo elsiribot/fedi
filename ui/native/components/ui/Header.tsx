@@ -1,12 +1,11 @@
 import { useNavigation } from '@react-navigation/native'
 import { Header as HeaderRNE, useTheme } from '@rneui/themed'
 import React from 'react'
-import { Pressable, View, ViewStyle } from 'react-native'
+import { View, ViewStyle } from 'react-native'
 
 import { reset } from '../../state/navigation'
 import { NavigationHook } from '../../types/navigation'
 import { PressableIcon } from './PressableIcon'
-import SvgImage from './SvgImage'
 
 interface HeaderBase {
     headerLeft?: React.ReactNode
@@ -19,6 +18,7 @@ interface HeaderBase {
     empty?: boolean
     dark?: boolean
     backButton?: boolean
+    onBackButtonPress?: () => void
     closeButton?: boolean
     onClose?: () => void
     inline?: boolean
@@ -47,6 +47,7 @@ const Header: React.FC<HeaderProps> = ({
     empty,
     dark,
     backButton,
+    onBackButtonPress,
     closeButton,
     onClose,
     inline,
@@ -55,8 +56,7 @@ const Header: React.FC<HeaderProps> = ({
     const navigation = useNavigation<NavigationHook>()
 
     if (empty) {
-        console.warn('Header empty prop is deprecated, use Header with empty')
-        return <View style={{ marginTop: theme.spacing.xl }} />
+        return <View style={{ marginTop: theme.spacing.xxl }} />
     }
 
     // This logic allows for custom UI in the left side of the Header
@@ -67,14 +67,15 @@ const Header: React.FC<HeaderProps> = ({
             <PressableIcon
                 testID="HeaderBackButton"
                 onPress={() =>
-                    navigation.canGoBack()
+                    typeof onBackButtonPress === 'function'
+                        ? onBackButtonPress()
+                        : navigation.canGoBack()
                         ? navigation.goBack()
                         : navigation.navigate('TabsNavigator')
                 }
-                hitSlop={5}
+                hitSlop={10}
                 svgName="ChevronLeft"
                 containerStyle={{
-                    marginVertical: theme.spacing.xs,
                     // shifts the width of the pressable padding
                     // to preserve exact position
                     transform: [{ translateX: -theme.spacing.xs }],

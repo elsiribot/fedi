@@ -17,9 +17,8 @@ import {
 import { RpcMatrixMembership } from '@fedi/common/types/bindings'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
-import ChatAvatar from '../components/feature/chat/ChatAvatar'
+import { ChatSettingsAvatar } from '../components/feature/chat/ChatSettingsAvatar'
 import ChatUserTile from '../components/feature/chat/ChatUserTile'
-import { AvatarSize } from '../components/ui/HoloAvatar'
 import HoloLoader from '../components/ui/HoloLoader'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import { PressableIcon } from '../components/ui/PressableIcon'
@@ -167,10 +166,7 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
         <KeyboardAwareWrapper>
             <View style={style.container}>
                 <View style={style.inputWrapper}>
-                    <ChatAvatar room={room} size={AvatarSize.md} />
-                    <Text h2 style={style.roomName}>
-                        {roomName}
-                    </Text>
+                    <ChatSettingsAvatar room={room} />
                     <Text bold style={style.inputLabel}>
                         {t('feature.chat.invite-to-group')}
                     </Text>
@@ -204,6 +200,7 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
     StyleSheet.create({
         container: {
             flex: 1,
+            padding: theme.spacing.lg,
             paddingHorizontal: theme.spacing.xl + insets.left,
             paddingBottom: insets.bottom,
             width: '100%',
@@ -211,10 +208,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         inputWrapper: {
             width: '100%',
             alignItems: 'center',
-        },
-        roomName: {
-            marginTop: theme.spacing.sm,
-            marginBottom: theme.spacing.lg,
         },
         inputLabel: {
             alignSelf: 'flex-start',

@@ -12,7 +12,6 @@ import {
 } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import { PressableIcon } from '../../ui/PressableIcon'
-import { SvgImageSize } from '../../ui/SvgImage'
 import HeaderAvatar from '../chat/HeaderAvatar'
 import FederationSelector from '../federations/FederationSelector'
 import { NetworkBanner } from '../wallet/NetworkBanner'

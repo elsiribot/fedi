@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
@@ -13,7 +14,9 @@ import { MatrixPowerLevel, MatrixRoomMember } from '@fedi/common/types'
 
 import { ChatUserActionsOverlay } from '../components/feature/chat/ChatUserActionsOverlay'
 import ChatUserTile from '../components/feature/chat/ChatUserTile'
+import { PressableIcon } from '../components/ui/PressableIcon'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { NavigationHook } from '../types/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
 export type ChatRoomMembersProps = NativeStackScreenProps<
@@ -27,11 +30,13 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
     const { t } = useTranslation()
     const { roomId } = route.params
     const { theme } = useTheme()
+    const navigation = useNavigation<NavigationHook>()
 
     const dispatch = useAppDispatch()
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
     const myUserId = useAppSelector(selectMatrixAuth)?.userId
     const members = useAppSelector(s => selectMatrixRoomMembersByMe(s, roomId))
+    const me = members.find(m => m.id === myUserId)
     const [isRefetching, setIsRefetching] = useState(false)
     const handleSelectMember = useCallback((userId: string) => {
         requestAnimationFrame(() => setSelectedUserId(userId))
@@ -47,6 +52,12 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
         setTimeout(() => setIsRefetching(false), 500)
         // Dismissing any sooner looks weird
     }, [dispatch, roomId])
+
+    const handleInviteMember = useCallback(() => {
+        if (me?.powerLevel === MatrixPowerLevel.Member) return
+
+        navigation.replace('ChatRoomInvite', { roomId })
+    }, [navigation, roomId, me])
 
     const renderMember: ListRenderItem<MatrixRoomMember> = ({ item }) => {
         const isMe = item.id === myUserId
@@ -81,9 +92,15 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
 
     return (
         <View style={style.container}>
-            <Text h2 h2Style={style.headerText}>
-                {t('words.members')}
-            </Text>
+            <View style={style.titleContainer}>
+                <Text h2>{t('words.members')}</Text>
+                <PressableIcon
+                    onPress={handleInviteMember}
+                    svgName="Plus"
+                    hitSlop={5}
+                    disabled={me?.powerLevel === MatrixPowerLevel.Member}
+                />
+            </View>
             <FlatList
                 data={members}
                 renderItem={renderMember}
@@ -111,7 +128,10 @@ const styles = (theme: Theme) =>
             width: '100%',
             padding: theme.spacing.lg,
         },
-        headerText: {
+        titleContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             marginBottom: theme.spacing.sm,
         },
         instructions: {

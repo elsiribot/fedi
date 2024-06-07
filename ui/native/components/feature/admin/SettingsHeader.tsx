@@ -6,7 +6,6 @@ import { StyleSheet } from 'react-native'
 
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
-import { PressableIcon } from '../../ui/PressableIcon'
 
 const SettingsHeader: React.FC = () => {
     const { theme } = useTheme()
@@ -25,7 +24,6 @@ const SettingsHeader: React.FC = () => {
                         {t('words.account')}
                     </Text>
                 }
-                leftContainerStyle={style.leftContainer}
                 onClose={() =>
                     navigation.canGoBack()
                         ? navigation.goBack()
@@ -40,9 +38,6 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             paddingBottom: theme.spacing.lg,
-        },
-        leftContainer: {
-            flexGrow: 3,
         },
     })
 

@@ -121,3 +121,13 @@ export function resetToSocialRecovery() {
         }),
     }
 }
+export function resetToChatsScreen() {
+    return {
+        ...CommonActions.reset({
+            index: 0,
+            routes: [
+                { name: 'TabsNavigator', params: { initialRouteName: 'Chat' } },
+            ],
+        }),
+    }
+}

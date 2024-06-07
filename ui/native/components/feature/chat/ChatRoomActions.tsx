@@ -43,6 +43,7 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
     const notificationMode = useAppSelector(s =>
         selectMatrixRoomNotificationMode(s, room.id),
     )
+    const isGroupChat = room?.directUserId === undefined
 
     const actions: Action[] = [
         {
@@ -58,7 +59,9 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
                 setLoadingAction(null)
             },
         },
-        {
+    ]
+    if (isGroupChat) {
+        actions.push({
             id: 1,
             label: t('feature.chat.chat-settings'),
             icon: 'Cog',
@@ -68,8 +71,8 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
                 dismiss()
                 setLoadingAction(null)
             },
-        },
-    ]
+        })
+    }
     const handleUpdateNotificationMode = async (
         id: number,
         mode: RpcRoomNotificationMode,

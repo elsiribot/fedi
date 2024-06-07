@@ -29,7 +29,7 @@ const ModsHeader: React.FC = () => {
             <Header
                 containerStyle={style.container}
                 headerLeft={
-                    <Text h2 medium>
+                    <Text h2 medium numberOfLines={1}>
                         {t('words.mods')}
                     </Text>
                 }
@@ -52,7 +52,7 @@ const ModsHeader: React.FC = () => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            paddingBottom: theme.spacing.lg,
+            paddingBottom: theme.spacing.md,
         },
         rightContainer: {
             gap: theme.spacing.lg,

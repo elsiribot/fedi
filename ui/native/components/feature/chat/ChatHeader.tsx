@@ -13,7 +13,6 @@ import {
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
-import { PressableIcon } from '../../ui/PressableIcon'
 import { Tooltip } from '../../ui/Tooltip'
 import { ChatConnectionBadge } from './ChatConnectionBadge'
 import HeaderAvatar from './HeaderAvatar'
@@ -41,14 +40,24 @@ const ChatHeader: React.FC = () => {
                     </Text>
                 }
                 headerRight={
-                    <HeaderAvatar
-                        onPress={() => {
-                            navigation.navigate('Settings')
-                            completeViewedMemberQr()
-                        }}
-                    />
+                    <>
+                        <HeaderAvatar
+                            onPress={() => {
+                                navigation.navigate('Settings')
+                                completeViewedMemberQr()
+                            }}
+                        />
+                        <Tooltip
+                            delay={600}
+                            shouldShow={isChatEmpty && !hasViewedMemberQr}
+                            orientation="below"
+                            side="right"
+                            text="Your username"
+                            horizontalOffset={20}
+                            verticalOffset={34}
+                        />
+                    </>
                 }
-                leftContainerStyle={{ borderWidth: 1 }}
             />
             <ChatConnectionBadge />
         </>

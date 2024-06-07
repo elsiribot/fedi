@@ -206,6 +206,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                     name="Mods"
                     component={Mods}
                     options={() => ({
+                        title: t('words.mods'),
                         headerShown: false, // this allows us to draw over the header with tooltips
                     })}
                 />

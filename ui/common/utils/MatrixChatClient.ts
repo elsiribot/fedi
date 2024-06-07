@@ -907,7 +907,6 @@ export class MatrixChatClient {
     }
 
     private serializeAuth(auth: RpcMatrixAccountSession): MatrixAuth {
-        console.warn('Serializing auth', auth)
         return {
             userId: auth.userId,
             displayName: this.ensureDisplayName(auth.displayName),

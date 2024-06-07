@@ -8,7 +8,8 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectMatrixRoom, setMatrixRoomName } from '@fedi/common/redux'
 
-import HoloAvatar, { AvatarSize } from '../components/ui/HoloAvatar'
+import { ChatSettingsAvatar } from '../components/feature/chat/ChatSettingsAvatar'
+import HoloLoader from '../components/ui/HoloLoader'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { resetToChatSettings } from '../state/navigation'
@@ -46,10 +47,12 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
         setEditingGroupName(false)
     }, [room, groupName, dispatch, navigation, toast, t])
 
+    if (!room) return <HoloLoader />
+
     return (
         <KeyboardAwareWrapper>
             <View style={style.container}>
-                <HoloAvatar title={groupName[0]} size={AvatarSize.md} />
+                <ChatSettingsAvatar room={room} />
                 <View style={style.inputWrapper}>
                     <Text caption style={style.inputLabel}>
                         {t('feature.chat.group-name')}
@@ -84,7 +87,7 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: theme.spacing.xl,
+            padding: theme.spacing.lg,
             paddingBottom: theme.spacing.xl + insets.bottom,
             width: '100%',
         },

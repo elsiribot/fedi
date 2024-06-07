@@ -9,7 +9,6 @@ import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { MatrixRoom } from '../../../types'
 import { AvatarSize } from '../../ui/Avatar'
 import ChatAvatar from './ChatAvatar'
-import GroupIcon from './GroupIcon'
 
 type ChatTileProps = {
     room: MatrixRoom
@@ -51,11 +50,7 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
                     ]}
                 />
                 <View style={styles(theme).chatTypeIconContainer}>
-                    {room.directUserId ? (
-                        <ChatAvatar room={room} size={AvatarSize.md} />
-                    ) : (
-                        <GroupIcon chat={room} />
-                    )}
+                    <ChatAvatar room={room} size={AvatarSize.md} />
                 </View>
             </View>
             <View style={styles(theme).content}>
@@ -75,7 +70,7 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
                                     ? styles(theme).messagePreviewUnread
                                     : undefined,
                             ]}
-                            numberOfLines={1}
+                            numberOfLines={2}
                             {...previewTextWeight}>
                             {previewMessage}
                         </Text>
@@ -83,7 +78,7 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
                         <Text
                             caption
                             style={styles(theme).emptyMessagePreview}
-                            numberOfLines={1}
+                            numberOfLines={2}
                             {...previewTextWeight}>
                             {/* 
                                 HACK: public rooms don't show a preview message so you have to click into it to paginate backwards
@@ -138,12 +133,12 @@ const styles = (theme: Theme) =>
         content: {
             flex: 1,
             flexDirection: 'row',
-            minHeight: 48,
+            height: theme.sizes.mediumAvatar,
         },
         preview: {
             flex: 1,
             flexDirection: 'column',
-            gap: theme.spacing.xs,
+            alignSelf: 'center',
         },
         metadata: {
             flexDirection: 'column',

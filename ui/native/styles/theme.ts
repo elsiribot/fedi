@@ -92,6 +92,17 @@ const themeDefaults = {
             // TODO: import this font
             // fontFamily: 'Martian Mono',
         },
+        subtleShadow: {
+            shadowColor: fediTheme.colors.night,
+            shadowOffset: {
+                width: 0,
+                height: 4,
+            },
+            shadowOpacity: 0.1,
+            shadowRadius: 24,
+
+            elevation: 9,
+        },
     },
 } as const
 
@@ -243,7 +254,7 @@ const theme = createTheme({
                 alignItems: 'center',
             },
             centerContainerStyle: {
-                flex: 4,
+                flex: 0,
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',

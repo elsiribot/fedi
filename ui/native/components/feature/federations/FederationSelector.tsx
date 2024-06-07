@@ -13,7 +13,6 @@ import {
 } from '../../../types/navigation'
 import { FederationLogo } from '../../ui/FederationLogo'
 import HoloGradient from '../../ui/HoloGradient'
-import { SvgImageSize } from '../../ui/SvgImage'
 
 const FederationSelector: React.FC = () => {
     const { theme } = useTheme()
@@ -67,10 +66,11 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         gradientContainer: {
             borderRadius: 50,
-            overflow: 'hidden',
+            ...theme.styles.subtleShadow,
         },
         gradient: {
             padding: theme.spacing.xxs,
+            borderRadius: 50,
         },
         container: {
             flexDirection: 'row',

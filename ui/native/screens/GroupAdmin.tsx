@@ -15,10 +15,9 @@ import {
 } from '@fedi/common/redux'
 import { MatrixPowerLevel } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import ChatAvatar from '@fedi/native/components/feature/chat/ChatAvatar'
 
 import SettingsItem from '../components/feature/admin/SettingsItem'
-import { AvatarSize } from '../components/ui/Avatar'
+import { ChatSettingsAvatar } from '../components/feature/chat/ChatSettingsAvatar'
 import HoloLoader from '../components/ui/HoloLoader'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -111,22 +110,13 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <View style={styles(theme).profileHeader}>
-                <ChatAvatar
-                    room={room}
-                    size={AvatarSize.lg}
-                    containerStyle={styles(theme).avatar}
-                />
-                <Text h2 style={styles(theme).groupNameText}>
-                    {room?.name || ''}
-                </Text>
-            </View>
+            <ChatSettingsAvatar room={room} />
             <ScrollView
                 bounces={false}
                 contentContainerStyle={styles(theme).content}>
                 <View style={styles(theme).sectionContainer}>
                     <Text style={styles(theme).sectionTitle}>
-                        {t('words.group')}
+                        {t('feature.chat.chat-settings')}
                     </Text>
                     {(!isDefaultGroup || (isDefaultGroup && isAdmin)) && (
                         <SettingsItem
@@ -182,20 +172,6 @@ const styles = (theme: Theme) =>
         container: {
             justifyContent: 'space-evenly',
             padding: theme.spacing.lg,
-        },
-        profileHeader: {
-            alignItems: 'center',
-            paddingBottom: theme.spacing.lg,
-        },
-        avatar: {
-            height: theme.sizes.adminProfileCircle,
-            width: theme.sizes.adminProfileCircle,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: theme.spacing.md,
-        },
-        groupNameText: {
-            textAlign: 'center',
         },
         sectionContainer: {
             flexDirection: 'column',

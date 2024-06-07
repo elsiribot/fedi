@@ -1,5 +1,5 @@
 import { Theme, useTheme } from '@rneui/themed'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { ActivityIndicator, Image, StyleSheet, View } from 'react-native'
 
 import { Federation } from '@fedi/common/types'
@@ -14,9 +14,6 @@ type Props = {
 }
 
 export const FederationLogo: React.FC<Props> = ({ federation, size }) => {
-    const [loaded, setLoaded] = React.useState(false)
-    const [hasErrored, setHasErrored] = React.useState(false)
-
     const { theme } = useTheme()
 
     const iconUrl = federation?.meta
@@ -52,8 +49,6 @@ export const FederationLogo: React.FC<Props> = ({ federation, size }) => {
                     style={[style.iconImage, svgProps]}
                     source={{ uri: iconUrl }}
                     resizeMode="cover"
-                    onError={() => setHasErrored(true)}
-                    onLoadEnd={() => setLoaded(true)}
                 />
             </View>
         </>
