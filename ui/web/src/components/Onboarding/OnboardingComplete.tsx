@@ -37,7 +37,7 @@ export const OnboardingComplete: React.FC = () => {
                 <Text>{t('feature.onboarding.greeting-instructions')}</Text>
             </OnboardingContent>
             <OnboardingActions>
-                <Button width="full" href="/">
+                <Button width="full" href="/chat">
                     {t('feature.onboarding.continue-to-fedi')}
                 </Button>
             </OnboardingActions>
