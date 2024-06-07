@@ -74,7 +74,8 @@ impl Matrix {
                 auto_enable_cross_signing: true,
                 backup_download_strategy: BackupDownloadStrategy::OneShot,
                 auto_enable_backups: true,
-            });
+            })
+            .handle_refresh_tokens();
         #[cfg(not(target_family = "wasm"))]
         let builder = builder.sqlite_store(base_dir.join("db.sqlite"), Some(passphrase));
         #[cfg(target_family = "wasm")]
@@ -108,7 +109,7 @@ impl Matrix {
         user_name: &str,
         home_server: String,
         sliding_sync_proxy: String,
-        app_state: &AppState,
+        app_state: Arc<AppState>,
     ) -> Result<Self> {
         let matrix_session = app_state.with_read_lock(|r| r.matrix_session.clone()).await;
         let user_password = &Self::home_server_password(matrix_secret, &home_server);
@@ -118,7 +119,7 @@ impl Matrix {
         if let Some(session) = matrix_session {
             client.restore_session(session).await?;
         } else {
-            Self::login_or_register(&client, user_name, user_password, matrix_secret, app_state)
+            Self::login_or_register(&client, user_name, user_password, matrix_secret, &app_state)
                 .await?;
         };
 
@@ -134,11 +135,17 @@ impl Matrix {
             observables: Default::default(),
         };
         let encryption_passphrase = Self::encryption_passphrase(matrix_secret);
-        matrix.start_background(encryption_passphrase).await?;
+        matrix
+            .start_background(encryption_passphrase, app_state)
+            .await?;
         Ok(matrix)
     }
 
-    pub async fn start_background(&self, encryption_passphrase: String) -> Result<()> {
+    pub async fn start_background(
+        &self,
+        encryption_passphrase: String,
+        app_state: Arc<AppState>,
+    ) -> Result<()> {
         let this = self.clone();
         self.task_group
             .spawn_cancellable("matrix::start_sync", async move {
@@ -180,6 +187,28 @@ impl Matrix {
                         .await
                         .inspect_err(|err| error!(%err, "unable to enable recovery (start backup)"))
                         .ok();
+                }
+            });
+        let this = self.clone();
+        // use session token changed stream to update the token in app state
+        self.task_group
+            .spawn_cancellable("matrix::session_token_changed", async move {
+                let Some(mut session_token_changed) =
+                    this.client.matrix_auth().session_tokens_stream()
+                else {
+                    return;
+                };
+                while let Some(token) = session_token_changed.next().await {
+                    if let Err(err) = app_state
+                        .with_write_lock(|w| {
+                            if let Some(session) = w.matrix_session.as_mut() {
+                                session.tokens = token;
+                            }
+                        })
+                        .await
+                    {
+                        error!(%err, "unable to update session token");
+                    }
                 }
             });
         Ok(())
@@ -908,7 +937,7 @@ mod tests {
             user_name,
             format!("https://{TEST_HOME_SERVER}"),
             TEST_SLIDING_SYNC.to_string(),
-            &AppState::load(Arc::new(storage)).await?,
+            Arc::new(AppState::load(Arc::new(storage)).await?),
         )
         .await?;
         Ok((matrix, event_rx, tmp_dir))

@@ -630,7 +630,7 @@ async fn matrixInit(bridge: Arc<Bridge>) -> anyhow::Result<()> {
                 &nostr_pubkey,
                 GLOBAL_MATRIX_SERVER.to_owned(),
                 GLOBAL_MATRIX_SLIDING_SYNC_PROXY.to_owned(),
-                &bridge.app_state,
+                bridge.app_state.clone(),
             )
             .await?,
         )
