@@ -1,7 +1,6 @@
 import Image, { StaticImageData } from 'next/image'
 import Link from 'next/link'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 
 import DefaultFediModIcon from '@fedi/common/assets/images/fedimods/default.png'
 import { selectActiveFederationFediMods } from '@fedi/common/redux'
@@ -13,7 +12,6 @@ import { Text } from './Text'
 
 export const FediModTiles: React.FC = () => {
     const fediMods = useAppSelector(selectActiveFederationFediMods)
-    const { t } = useTranslation()
 
     return (
         <Container>
@@ -31,13 +29,6 @@ export const FediModTiles: React.FC = () => {
                     />
                 )
             })}
-
-            {/* Hardcoded for now */}
-            <FediModTile
-                href="/bug-report"
-                title={t('feature.bug.report-a-bug')}
-                image={FEDIMOD_IMAGES['bug-report'] as StaticImageData}
-            />
         </Container>
     )
 }

@@ -5,7 +5,7 @@ import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { v4 as uuidv4 } from 'uuid'
 
-import Info from '@fedi/common/assets/svgs/info.svg'
+import CheckIcon from '@fedi/common/assets/svgs/check.svg'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederation, selectMatrixAuth } from '@fedi/common/redux'
 import {
@@ -16,6 +16,7 @@ import { makeLog, exportLogs } from '@fedi/common/utils/log'
 import { makeTarGz } from '@fedi/common/utils/targz'
 
 import { useAppSelector, useAutosizeTextArea } from '../../hooks'
+import { fedimint, readBridgeFile } from '../../lib/bridge'
 import { theme } from '../../styles'
 import { Button } from '../Button'
 import { Dialog } from '../Dialog'
@@ -41,6 +42,8 @@ export default function BugReport() {
     const [status, setStatus] = useState<Status>('idle')
     const [email, setEmail] = useState('')
     const [files, setFiles] = useState<Array<FileData>>([])
+    const [dbTaps, setDbTaps] = useState(0)
+    const [sendDb, setShouldSendDb] = useState(false)
 
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -65,6 +68,15 @@ export default function BugReport() {
         router.push('/')
     }
 
+    const handleBugClick = () => {
+        const taps = dbTaps + 1
+        setDbTaps(taps)
+
+        if (taps > 21) {
+            setShouldSendDb(!sendDb)
+        }
+    }
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         try {
@@ -74,7 +86,7 @@ export default function BugReport() {
 
             const jsLogs = await exportLogs()
 
-            const gzip = await makeTarGz([
+            const attachmentFiles = [
                 {
                     name: 'app.log',
                     content: jsLogs,
@@ -93,7 +105,27 @@ export default function BugReport() {
                     name: f.fileName,
                     content: Buffer.from(f.base64, 'base64'),
                 })),
-            ])
+            ]
+
+            if (sendDb) {
+                if (!activeFederation) {
+                    log.warn(
+                        'Cannot include DB dump, no active federation is selected',
+                    )
+                } else {
+                    const dumpedDbPath = await fedimint.dumpDb({
+                        federationId: activeFederation.id,
+                    })
+                    const content = await readBridgeFile(dumpedDbPath)
+
+                    attachmentFiles.push({
+                        name: 'db.dump',
+                        content: Buffer.from(content).toString('base64'),
+                    })
+                }
+            }
+
+            const gzip = await makeTarGz(attachmentFiles)
 
             setStatus('uploading-data')
 
@@ -174,11 +206,21 @@ export default function BugReport() {
             </Text>
             <FileUploader files={files} setFiles={setFiles} />
             <DisclaimerBanner>
-                <Icon icon={Info} />
+                {activeFederation && (
+                    <BugIcon onClick={handleBugClick}>🪲</BugIcon>
+                )}
                 <Text variant="caption" weight="medium">
                     {t('feature.bug.log-disclaimer')}
                 </Text>
             </DisclaimerBanner>
+            {sendDb && (
+                <AttachedIndicator>
+                    <Text weight="medium" variant="caption">
+                        {t('feature.bug.database-attached')} 🕷️🐞🦟
+                    </Text>
+                    <Icon icon={CheckIcon} />
+                </AttachedIndicator>
+            )}
             <SubmitContainer>
                 <Button disabled={isSubmitDisabled}>{submitText}</Button>
             </SubmitContainer>
@@ -193,6 +235,22 @@ export default function BugReport() {
         </Form>
     )
 }
+
+const BugIcon = styled('div', {
+    userSelect: 'none',
+    fontSize: 24,
+    cursor: 'default',
+})
+
+const AttachedIndicator = styled('div', {
+    background: theme.colors.offWhite,
+    borderRadius: 12,
+    padding: 12,
+    gap: 8,
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+})
 
 const Form = styled('form', {
     flex: 1,
@@ -254,12 +312,14 @@ const SendFederationNoticeLabel = styled(Text, {
 })
 
 const DisclaimerBanner = styled('div', {
-    background: theme.colors.offWhite,
-    padding: theme.space.md,
     borderRadius: 8,
+    marginTop: 32,
     display: 'flex',
+    flexDirection: 'column',
     alignItems: 'center',
     gap: theme.space.md,
+    textAlign: 'center',
+    color: theme.colors.grey,
 })
 
 const SubmitContainer = styled('div', {
