@@ -153,6 +153,9 @@ async fn leaveFederation(
     bridge.leave_federation(&federation_id.0).await
 }
 
+// TODO: generateInvoice should return OperationId
+// so frontend can subscribe to the operation.
+// TODO: actually return the RpcInvoice (frontend expects string)
 #[macro_rules_derive(rpc_method!)]
 async fn generateInvoice(
     bridge: Arc<Bridge>,
@@ -165,7 +168,6 @@ async fn generateInvoice(
     let rpc_invoice = bridge
         .generate_invoice(federation_id, amount, description, expiry.map(|x| x.into()))
         .await?;
-    // TODO: actually return the RpcInvoice (frontend expects string)
     Ok(rpc_invoice.invoice)
 }
 
@@ -1397,12 +1399,13 @@ mod tests {
     use crate::api::{RegisterDeviceError, RegisteredDevice};
     use crate::community::CommunityInvite;
     use crate::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_PATH, MILLION};
-    use crate::event::DeviceRegistrationEvent;
+    use crate::event::{DeviceRegistrationEvent, TransactionEvent};
     use crate::ffi::PathBasedStorage;
     use crate::multi::MultiFederation;
     use crate::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
     use crate::types::{
-        RpcOOBReissueState, RpcOOBState, RpcReturningMemberStatus, RpcTransactionDirection,
+        RpcLnReceiveState, RpcLnState, RpcOOBReissueState, RpcOOBState, RpcOnchainDepositState,
+        RpcReturningMemberStatus, RpcTransactionDirection,
     };
 
     struct FakeEventSink {
@@ -1877,8 +1880,33 @@ mod tests {
 
         cln_pay_invoice(&invoice_string).await?;
 
-        // TODO: generateInvoice needs to spawn a task that reacts to updates
-        fedimint_core::task::sleep(Duration::from_secs(15)).await;
+        // check for event of type transaction that has ln_state
+        'check: loop {
+            let events = bridge.event_sink.events();
+            for (_, ev_body) in events
+                .iter()
+                .rev()
+                .filter(|(kind, _)| kind == "transaction")
+            {
+                let ev_body = serde_json::from_str::<TransactionEvent>(ev_body).unwrap();
+                let transaction = ev_body.transaction;
+                if transaction
+                    .lightning
+                    .map_or(false, |ln| ln.invoice == invoice_string)
+                    && matches!(
+                        transaction.ln_state,
+                        Some(RpcLnState::RecvState(RpcLnReceiveState::Claimed))
+                    )
+                {
+                    break 'check;
+                }
+            }
+            fedimint_core::task::sleep_in_test(
+                "waiting for external ln recv",
+                Duration::from_millis(100),
+            )
+            .await;
+        }
 
         assert_eq!(receive_amount - fedi_fee, federation.get_balance().await);
 
@@ -2081,8 +2109,36 @@ mod tests {
         let address = generateAddress(bridge.clone(), federation.federation_id()).await?;
         bitcoin_cli_send_to_address(&address, "0.1").await?;
 
-        // TODO: do something smarter than sleep
-        fedimint_core::task::sleep(Duration::from_secs(15)).await;
+        // check for event of type transaction that has onchain_state of
+        // DepositState::Claimed
+        'check: loop {
+            let events = bridge.event_sink.events();
+            for (_, ev_body) in events
+                .iter()
+                .rev()
+                .filter(|(kind, _)| kind == "transaction")
+            {
+                let ev_body = serde_json::from_str::<TransactionEvent>(ev_body).unwrap();
+                let transaction = ev_body.transaction;
+                if transaction
+                    .bitcoin
+                    .map_or(false, |btc| btc.address == address)
+                    && matches!(
+                        transaction.onchain_state,
+                        Some(crate::types::RpcOnchainState::DepositState(
+                            RpcOnchainDepositState::Claimed(_)
+                        ))
+                    )
+                {
+                    break 'check;
+                }
+            }
+            fedimint_core::task::sleep_in_test(
+                "waiting for generate to address",
+                Duration::from_secs(1),
+            )
+            .await;
+        }
 
         let btc_amount = Amount::from_sats(10_000_000);
         let receive_fedi_fee =
@@ -2118,9 +2174,7 @@ mod tests {
         .await?
         .ecash;
 
-        // cancel too fast doesn't work: https://github.com/fedimint/fedimint/pull/3435
-        fedimint_core::task::sleep(Duration::from_secs(1)).await;
-
+        // if you notice this flake in CI, revert this change
         cancelEcash(bridge.clone(), federation.federation_id(), send_ecash).await?;
         Ok(())
     }
@@ -2198,7 +2252,7 @@ mod tests {
                 break;
             }
 
-            fedimint_core::task::sleep(Duration::from_secs(2)).await;
+            fedimint_core::task::sleep(Duration::from_millis(100)).await;
         }
         let recovery_federation = recovery_bridge.get_multi(&id.0).await?;
         // Currently, accrued fedi fee is merged back into balance upon recovery
@@ -2373,7 +2427,7 @@ mod tests {
                 break;
             }
 
-            fedimint_core::task::sleep(Duration::from_secs(2)).await;
+            fedimint_core::task::sleep(Duration::from_millis(100)).await;
         }
         let recovery_federation = recovery_bridge.get_multi(&id.0).await?;
         // Currently, accrued fedi fee is merged back into balance upon recovery
@@ -2453,7 +2507,7 @@ mod tests {
                 break;
             }
 
-            fedimint_core::task::sleep(Duration::from_secs(2)).await;
+            fedimint_core::task::sleep(Duration::from_millis(100)).await;
         }
 
         assert_eq!(
@@ -2492,7 +2546,7 @@ mod tests {
                 break;
             }
 
-            fedimint_core::task::sleep(Duration::from_secs(2)).await;
+            fedimint_core::task::sleep(Duration::from_millis(100)).await;
         }
 
         assert_eq!(
@@ -2785,7 +2839,7 @@ mod tests {
                 break;
             }
 
-            fedimint_core::task::sleep(Duration::from_secs(2)).await;
+            fedimint_core::task::sleep(Duration::from_millis(100)).await;
         }
         let recovery_federation = recovery_bridge.get_multi(&id.0).await?;
         // Currently, accrued fedi fee is merged back into balance upon recovery
