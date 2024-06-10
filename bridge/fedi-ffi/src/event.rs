@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use fedimint_core::task::{MaybeSend, MaybeSync};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use super::types::{
@@ -10,7 +10,7 @@ use super::types::{
 use crate::observable::ObservableUpdate;
 use crate::types::{RpcAmount, RpcCommunity};
 
-#[derive(Serialize, Debug, TS)]
+#[derive(Serialize, Deserialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct TransactionEvent {

@@ -346,7 +346,7 @@ pub enum RpcTransactionDirection {
     Send,
 }
 
-#[derive(Debug, Serialize, TS)]
+#[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct WithdrawalDetails {
@@ -357,7 +357,7 @@ pub struct WithdrawalDetails {
     pub fee_rate: u64,
 }
 
-#[derive(Debug, Serialize, TS)]
+#[derive(Debug, Deserialize, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcTransaction {
@@ -479,7 +479,7 @@ pub enum RpcOnchainWithdrawState {
     Failed,
 }
 
-#[derive(Debug, Serialize, TS)]
+#[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcBitcoinDetails {
@@ -647,7 +647,7 @@ impl RpcOOBState {
     }
 }
 
-#[derive(Debug, Serialize, TS)]
+#[derive(Debug, Deserialize, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcLightningDetails {
@@ -656,7 +656,7 @@ pub struct RpcLightningDetails {
 }
 
 // FIXME: should probaby type these as bytes
-#[derive(Debug, Serialize, TS)]
+#[derive(Debug, Deserialize, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcXmppCredentials {
@@ -675,7 +675,7 @@ pub struct LightningSendMetadata {
     pub is_fedi_fee_remittance: bool,
 }
 
-#[derive(Debug, Serialize, TS)]
+#[derive(Debug, Deserialize, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcStabilityPoolAccountInfo {
@@ -688,7 +688,7 @@ pub struct RpcStabilityPoolAccountInfo {
     pub is_fetched_from_server: bool,
 }
 
-#[derive(Debug, Serialize, TS)]
+#[derive(Debug, Deserialize, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcLockedSeek {
