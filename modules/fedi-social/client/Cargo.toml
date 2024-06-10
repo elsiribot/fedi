@@ -21,7 +21,7 @@ hex = { version = "0.4.2", features = ["serde"] }
 itertools = "0.10.5"
 fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
-fedi-social-common = { path = "../fedi-social-common" }
+fedi-social-common = { path = "../common" }
 rand = "0.8"
 secp256k1 = "0.24.2"
 secp256k1-zkp = "0.7.0"
