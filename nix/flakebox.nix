@@ -14,13 +14,13 @@ let
     "fedi-db-dump"
     "fedi-debug"
     "devi"
-    "fedi-social-client"
-    "fedi-social-common"
-    "fedi-social-server"
-    "stability-pool/stability-pool-client"
-    "stability-pool/stability-pool-common"
-    "stability-pool/stability-pool-server"
-    "stability-pool/stability-pool-tests"
+    "modules/fedi-social/client"
+    "modules/fedi-social/common"
+    "modules/fedi-social/server"
+    "modules/stability-pool/client"
+    "modules/stability-pool/common"
+    "modules/stability-pool/server"
+    "modules/stability-pool/tests"
   ];
 
   root = builtins.path {
