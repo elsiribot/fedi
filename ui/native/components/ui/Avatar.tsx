@@ -73,32 +73,32 @@ const Avatar: React.FC<AvatarProps> = ({
 
     return (
         <View style={mergedContainerStyle}>
-            {url && (
+            {/*
+                Defaults to the image url if provided.
+                Then falls back to a provided icon.
+                then falls back to initials.
+            */}
+            {!isFallback && url ? (
                 <Image
                     containerStyle={imageStyle}
                     resizeMode="cover"
                     source={{ uri: url }}
                     onError={() => setIsFallback(true)}
                 />
-            )}
-            {name && isFallback && (
-                <>
-                    {icon ? (
-                        <SvgImage
-                            name={icon}
-                            size={svgImageSizeMapping[size]}
-                            color={textColor}
-                        />
-                    ) : (
-                        <Text
-                            bold
-                            tiny={size === AvatarSize.sm}
-                            h2={size === AvatarSize.lg}
-                            style={mergedTextStyle}>
-                            {stringUtils.getInitialsFromName(name)}
-                        </Text>
-                    )}
-                </>
+            ) : icon ? (
+                <SvgImage
+                    name={icon}
+                    size={svgImageSizeMapping[size]}
+                    color={textColor}
+                />
+            ) : (
+                <Text
+                    bold
+                    tiny={size === AvatarSize.sm}
+                    h2={size === AvatarSize.lg}
+                    style={mergedTextStyle}>
+                    {name ? stringUtils.getInitialsFromName(name) : ''}
+                </Text>
             )}
         </View>
     )
