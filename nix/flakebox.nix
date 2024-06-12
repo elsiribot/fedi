@@ -113,9 +113,13 @@ let
       moreutils-ts = pkgs.writeShellScriptBin "ts" "exec ${pkgs.moreutils}/bin/ts \"$@\"";
     in
     {
-      buildInputs = builtins.attrValues {
-        inherit (pkgs) openssl;
-      };
+      buildInputs = builtins.attrValues
+        {
+          inherit (pkgs) openssl;
+        } ++ lib.optionals pkgs.stdenv.isDarwin [
+        pkgs.libiconv
+        pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+      ];
 
       nativeBuildInputs = (builtins.attrValues {
         inherit (pkgs) clang mold pkg-config parallel time;
