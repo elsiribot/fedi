@@ -210,7 +210,7 @@ rec {
   };
 
   workspaceClippy = craneLib.cargoClippy {
-    cargoArtifacts = workspaceDeps;
+    cargoArtifacts = workspaceBuild;
 
     cargoClippyExtraArgs = "--all-targets --no-deps -- --deny warnings --allow deprecated";
     doInstallCargoArtifacts = false;
