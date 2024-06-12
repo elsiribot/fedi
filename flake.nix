@@ -277,9 +277,9 @@
           '';
         };
 
-        crossDevShell = flakeboxLib.mkDevShell (craneMultiBuild.commonEnvsShell // craneMultiBuild.commonEnvsShellRocksdbLink // {
+        crossDevShell = flakeboxLib.mkDevShell (craneMultiBuild.commonEnvsShell // craneMultiBuild.commonEnvsShellRocksdbLink // craneMultiBuild.commonArgs // {
           toolchain = toolchainAll;
-          nativeBuildInputs =
+          nativeBuildInputs = craneMultiBuild.commonArgs.nativeBuildInputs ++
             [
               fedimint-pkgs.packages.${system}.gateway-pkgs
               pkgs.fs-dir-cache
@@ -311,7 +311,7 @@
               androidSdk
             ];
 
-          buildInputs = [ pkgs.openssl ];
+          buildInputs = craneMultiBuild.commonArgs.buildInputs ++ [ pkgs.openssl ];
 
           # Use old ESLINT config format
           ESLINT_USE_FLAT_CONFIG = false;

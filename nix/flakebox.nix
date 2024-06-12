@@ -106,18 +106,76 @@ let
       # SNAPPY_aarch64_apple_ios_LIB_DIR = "${pkgs-unstable.pkgsCross.iphone64.pkgsStatic.snappy}/lib/";
     };
 
-  craneLib =
-    (craneLib'.overrideArgs ({
-      pname = "fedi";
-      version = "0.1.0";
-      nativeBuildInputs = builtins.attrValues {
-        inherit (pkgs) clang mold pkg-config;
-        inherit (pkgs) cargo-nextest;
-        inherit (pkgs) perl;
-      };
+  commonArgs =
+    let
+      # `moreutils/bin/parallel` and `parallel/bin/parallel` conflict, so just use
+      # the binary we need from `moreutils`
+      moreutils-ts = pkgs.writeShellScriptBin "ts" "exec ${pkgs.moreutils}/bin/ts \"$@\"";
+    in
+    {
       buildInputs = builtins.attrValues {
         inherit (pkgs) openssl;
       };
+
+      nativeBuildInputs = (builtins.attrValues {
+        inherit (pkgs) clang mold pkg-config parallel time;
+        inherit (pkgs) cargo-nextest;
+        inherit (pkgs) perl;
+        inherit moreutils-ts;
+      }) ++ [
+        # add a command that can be used to lower both CPU and IO priority
+        # of a command to help make it more friendly to other things
+        # potentially sharing the CI or dev machine
+        (if pkgs.stdenv.isLinux then [
+          pkgs.util-linux
+
+          (pkgs.writeShellScriptBin "runLowPrio" ''
+            set -euo pipefail
+
+            cmd=()
+            if ${pkgs.which}/bin/which chrt 1>/dev/null 2>/dev/null ; then
+              cmd+=(chrt -i 0)
+            fi
+            if ${pkgs.which}/bin/which ionice 1>/dev/null 2>/dev/null ; then
+              cmd+=(ionice -c 3)
+            fi
+
+            >&2 echo "Lowering IO priority with ''${cmd[@]}"
+            exec "''${cmd[@]}" "$@"
+          ''
+          )
+        ] else [
+
+          (pkgs.writeShellScriptBin "runLowPrio" ''
+            exec "$@"
+          ''
+          )
+        ])
+      ];
+
+    };
+
+  commonTestArgs = commonArgs // {
+
+    nativeBuildInputs =
+      commonArgs.nativeBuildInputs ++ [
+        pkgs.clightning
+        pkgs.lnd
+        pkgs.bitcoind
+        pkgs.electrs
+        pkgs.esplora-electrs
+        fedimint-pkgs.packages.${system}.gateway-pkgs
+        # helpers
+        pkgs.jq
+        pkgs.bc
+        pkgs.which
+      ];
+  };
+
+  craneLib =
+    (craneLib'.overrideArgs (commonArgs // {
+      pname = "fedi";
+      version = "0.1.0";
       src = rustSrc;
 
       FEDIMINT_BUILD_FORCE_GIT_HASH = gitHashPlaceholderValue;
@@ -215,25 +273,12 @@ rec {
     ];
   };
 
-  testStabilityPool = craneLib.buildCommand {
+  testStabilityPool = craneLib.buildCommand (commonTestArgs // {
     pname = "fedi-test-stability-pool";
     cargoArtifacts = workspaceBuild;
     doInstallCargoArtifacts = false;
     src = rustTestSrc;
 
-    nativeBuildInputs =
-      craneLib.args.nativeBuildInputs ++ [
-        pkgs.clightning
-        pkgs.lnd
-        pkgs.bitcoind
-        pkgs.electrs
-        pkgs.esplora-electrs
-        fedimint-pkgs.packages.${system}.gateway-pkgs
-        # helpers
-        pkgs.jq
-        pkgs.bc
-        pkgs.which
-      ];
     cmd = ''
       patchShebangs ./scripts
       export FM_CARGO_DENY_COMPILATION=1
@@ -246,31 +291,18 @@ rec {
       export HOME=/tmp
       ./scripts/test-stability-pool.sh
     '';
-  };
+  });
 
   testBridgeAll = pkgs.linkFarmFromDrvs "fedi-test-bridge-all" [
     testBridgeCurrent
   ];
 
-  testBridgeCurrent = craneLib.buildCommand {
+  testBridgeCurrent = craneLib.buildCommand (commonTestArgs // {
     pname = "fedi-test-bridge-current";
     cargoArtifacts = workspaceBuild;
     doInstallCargoArtifacts = false;
     src = rustTestSrc;
 
-    nativeBuildInputs =
-      craneLib.args.nativeBuildInputs ++ [
-        pkgs.clightning
-        pkgs.lnd
-        pkgs.bitcoind
-        pkgs.electrs
-        pkgs.esplora-electrs
-        fedimint-pkgs.packages.${system}.gateway-pkgs
-        # helpers
-        pkgs.jq
-        pkgs.bc
-        pkgs.which
-      ];
     cmd = ''
       patchShebangs ./scripts
       export FM_CARGO_DENY_COMPILATION=1
@@ -283,7 +315,24 @@ rec {
       export HOME=/tmp
       ./scripts/test-bridge-current.sh
     '';
-  };
+  });
+
+  testCiAll = craneLib.buildCommand (commonTestArgs // {
+    pname = "fedi-test-ci-all";
+    cargoArtifacts = workspaceBuild;
+    doInstallCargoArtifacts = false;
+    src = rustTestSrc;
+
+    cmd = ''
+      patchShebangs ./scripts
+      export FM_CARGO_DENY_COMPILATION=1
+
+      export HOME=/tmp
+      export FM_TEST_CI_ALL_TIMES=${builtins.toString 1}
+      export FM_TEST_CI_ALL_DISABLE_ETA=1
+      ./scripts/test-ci-all.sh
+    '';
+  });
 
   container =
     let
@@ -331,6 +380,6 @@ rec {
     };
 
 
-  inherit commonEnvsShell;
+  inherit commonEnvsShell commonArgs;
   inherit commonEnvsShellRocksdbLink;
 })
