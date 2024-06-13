@@ -122,7 +122,7 @@ let
       ];
 
       nativeBuildInputs = (builtins.attrValues {
-        inherit (pkgs) clang mold pkg-config parallel time;
+        inherit (pkgs) mold pkg-config parallel time;
         inherit (pkgs) cargo-nextest;
         inherit (pkgs) perl;
         inherit moreutils-ts;
