@@ -9,7 +9,7 @@ import {
     selectIsActiveFederationRecovering,
     selectPayFromFederation,
 } from '@fedi/common/redux'
-import { cashuMeltTokens } from '@fedi/common/utils/cashu'
+import { redeemCashuTokens } from '@fedi/common/utils/cashu'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
 import {
     ALLOWED_PARSER_TYPES_BEFORE_FEDERATION,
@@ -18,7 +18,7 @@ import {
 
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
-import { AnyParsedData, ParserDataType } from '../../../types'
+import { AnyParsedData, MSats, ParserDataType } from '../../../types'
 import { NavigationArgs, NavigationHook } from '../../../types/navigation'
 import CustomOverlay, { CustomOverlayContents } from '../../ui/CustomOverlay'
 import RecoveryInProgress from '../recovery/RecoveryInProgress'
@@ -158,16 +158,30 @@ export const OmniConfirmation = <T extends AnyParsedData>({
                         icon: 'Bolt',
                         title: t('feature.omni.confirm-cashu-token'),
                     },
-                    continueOnPress: () => {
+                    continueOnPress: async () => {
                         if (!activeWalletFederation) {
                             toast.error(t, 'errors.receive-ecash-failed')
                             return
                         }
-                        cashuMeltTokens(
-                            parsedData.data.token,
-                            fedimint,
-                            activeWalletFederation?.id,
-                        )
+                        setIsLoading(true)
+                        try {
+                            const redeemedAmountMsats: MSats =
+                                await redeemCashuTokens(
+                                    parsedData.data.token,
+                                    fedimint,
+                                    activeWalletFederation.id,
+                                )
+                            handleNavigate('ReceiveSuccess', {
+                                tx: {
+                                    amount: redeemedAmountMsats,
+                                    bitcoin: null,
+                                },
+                            })
+                        } catch (error) {
+                            toast.error(t, error)
+                        }
+
+                        setIsLoading(true)
                     },
                 }
             case ParserDataType.FedimintEcash:

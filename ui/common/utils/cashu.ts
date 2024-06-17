@@ -1,8 +1,12 @@
 import { Buffer } from 'buffer'
 
-import { MSats } from '@fedi/common/types'
+import { MSats, Sats } from '@fedi/common/types'
 
+import amountUtils from './AmountUtils'
 import { FedimintBridge } from './fedimint'
+import { makeLog } from './log'
+
+const log = makeLog('common/utils/cashu')
 
 interface Proof {
     id: string
@@ -22,13 +26,18 @@ export interface SerializedToken {
     memo?: string
 }
 
-interface MeltPayload {
-    amount: number
-    pr: string
-    proofs: Array<Proof>
+interface MeltQuoteResponse {
+    quote: string
+    amount: Sats
+    fee_reserve: Sats
 }
 
-export function getDecodedToken(token: string): SerializedToken {
+interface MeltPayload {
+    quote: string
+    inputs: Array<Proof>
+}
+
+export function decodeCashuTokens(token: string): SerializedToken {
     // remove prefixes
     const uriPrefixes = ['web+cashu://', 'cashu://', 'cashu:']
     uriPrefixes.forEach(prefix => {
@@ -39,43 +48,62 @@ export function getDecodedToken(token: string): SerializedToken {
     if (!token.startsWith('cashuA')) {
         throw new Error('Invalid cashu token')
     }
-    return handleTokens(token.replace('cashuA', ''))
-}
+    const rawToken = token.replace('cashuA', '')
 
-function handleTokens(token: string): SerializedToken {
-    const obj = JSON.parse(Buffer.from(token, 'base64').toString())
-
+    const parsedTokenBuffer = JSON.parse(
+        Buffer.from(rawToken, 'base64').toString(),
+    )
     // check if v3
-    if ('token' in obj) {
-        return obj
+    if (
+        'token' in parsedTokenBuffer &&
+        Array.isArray(parsedTokenBuffer.token)
+    ) {
+        return parsedTokenBuffer
     }
-
-    // check if v1
-    if (Array.isArray(obj)) {
-        return { token: [{ proofs: obj, mint: '' }] }
-    }
-
     // if v2 token return v3 format
-    return { token: [{ proofs: obj.proofs, mint: obj?.mints[0]?.url ?? '' }] }
+    if (
+        'proofs' in parsedTokenBuffer &&
+        'mints' in parsedTokenBuffer &&
+        parsedTokenBuffer.mints.length > 0 &&
+        parsedTokenBuffer.mints[0].url
+    ) {
+        return {
+            token: [
+                {
+                    proofs: parsedTokenBuffer.proofs,
+                    mint: parsedTokenBuffer.mints[0].url,
+                },
+            ],
+        }
+    }
+    // check if v1
+    if (Array.isArray(parsedTokenBuffer)) {
+        throw new Error('v1 cashu tokens are not supported')
+    }
+
+    throw new Error('No valid ecash proofs found')
 }
 
-// async function requestMeltQuote(mintHost: string, request: string) {
-//   const response = await fetch(`${mintHost}/melt/quote/bolt11`, {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json'
-//     },
-//     body: JSON.stringify({
-//       request,
-//       unit: 'sat', // Cashu only supports satoshis
-//     })
-//   });
+async function getMeltQuote(
+    mintHost: string,
+    invoice: string,
+): Promise<MeltQuoteResponse> {
+    log.debug('getMeltQuote mintHost, invoice', mintHost, invoice)
+    const feeResponse = await fetch(`${mintHost}/v1/melt/quote/bolt11`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ request: invoice, unit: 'sat' }),
+    })
+    const json = await feeResponse.json()
+    log.debug('getMeltQuote json', json)
 
-//   return await response.json();
-// }
+    return json
+}
 
 async function meltTokens(mintHost: string, payload: MeltPayload) {
-    const response = await fetch(`${mintHost}/melt`, {
+    const response = await fetch(`${mintHost}/v1/melt/bolt11`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -86,127 +114,100 @@ async function meltTokens(mintHost: string, payload: MeltPayload) {
     return await response.json()
 }
 
-async function calculateAmountMsatsToMelt(
-    totalTokensSats: number,
-    feeReserve: number,
-): Promise<MSats> {
-    const amount = totalTokensSats - feeReserve
-    return (amount * 1000) as MSats
-}
-
-async function checkFees(mintHost: string, invoice: string) {
-    const feeResponse = await fetch(`${mintHost}/checkfees`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ pr: invoice }),
-    })
-    return await feeResponse.json()
-}
-
 async function buildMeltPayload(
-    amount: number,
-    invoice: string,
+    meltQuoteId: string,
     proofs: Proof[],
 ): Promise<MeltPayload> {
     const meltPayload: MeltPayload = {
-        amount: amount,
-        pr: invoice,
-        proofs,
+        quote: meltQuoteId,
+        inputs: proofs,
     }
     return meltPayload
 }
 
-async function handleFeesAndInvoice(
-    totalTokensSats: number,
-    feeReserve: number,
+async function getUpdatedMeltQuote(
+    totalTokensSats: Sats,
     federationId: string,
     mintHost: string,
     fedimint: FedimintBridge,
-): Promise<{ amountMsats: MSats; invoice: string }> {
-    // Calculate the amount to melt
-    let amountMsats = await calculateAmountMsatsToMelt(
-        totalTokensSats,
-        feeReserve,
-    )
-
-    // Request a pr for the amount to melt
-    let invoice = await fedimint.generateInvoice(
-        amountMsats,
-        'cashu melt',
-        federationId,
-    )
-
-    // Check fees with {pr: invoice}
-    let feeData = await checkFees(mintHost, invoice)
-
+): Promise<{ amountMsats: MSats; meltQuoteId: string }> {
+    let invoice = ''
+    let meltQuote: MeltQuoteResponse | undefined = undefined
+    const totalTokensMsats = amountUtils.satToMsat(totalTokensSats)
+    let amountMsats = totalTokensMsats
+    let quoteAmountMsats = 0
+    // Start with max fee to ensure at least 1 melt quote attempt
+    let quoteFeeReserveMsats = Number.MAX_SAFE_INTEGER
     // If the fees are <= fee reserve it continues with the melt otherwise it makes another invoice using the new fees
-    while (feeData.fee > feeReserve) {
-        feeReserve = feeData.fee
-        amountMsats = await calculateAmountMsatsToMelt(
-            totalTokensSats,
-            feeReserve,
-        )
+    while (quoteFeeReserveMsats + quoteAmountMsats > totalTokensMsats) {
+        log.debug(`generateInvoice for ${amountMsats} msats`)
         invoice = await fedimint.generateInvoice(
             amountMsats,
             'cashu melt',
             federationId,
         )
-        feeData = await checkFees(mintHost, invoice)
+        meltQuote = await getMeltQuote(mintHost, invoice)
+        log.debug('meltQuote', meltQuote)
+        const { amount, fee_reserve } = meltQuote
+        quoteAmountMsats = amountUtils.satToMsat(amount)
+        quoteFeeReserveMsats = amountUtils.satToMsat(fee_reserve)
+        amountMsats = (quoteAmountMsats - quoteFeeReserveMsats) as MSats
+        log.debug('fee_reserve + amount', fee_reserve + amount)
+        log.debug('totalTokensMsats', totalTokensMsats)
     }
+    log.debug('meltQuote?.quote', meltQuote?.quote)
 
-    return { amountMsats, invoice }
+    return { amountMsats, meltQuoteId: meltQuote?.quote || '' }
 }
 
-export async function cashuMeltTokens(
+export async function redeemCashuTokens(
     tokens: string | SerializedToken,
     fedimint: FedimintBridge,
     federationId: string | undefined,
 ): Promise<MSats> {
     if (!federationId) throw new Error('No federation id')
     const decodedTokens =
-        typeof tokens === 'string' ? getDecodedToken(tokens) : tokens
-    let totalMelted = 0
+        typeof tokens === 'string' ? decodeCashuTokens(tokens) : tokens
+    let totalMelted: MSats = 0 as MSats
+
+    log.debug('tokens', tokens)
+    log.debug('decodedTokens', decodedTokens)
 
     // Iterate over each token
     for (const token of decodedTokens.token) {
         const mintHost = token.mint
         const proofs = token.proofs
-
-        const feeReserve = 2 // Start with a fee_reserve of 2 sats
+        log.debug('token.proofs', token.proofs)
 
         // Check if we have enough tokens
         const totalTokensSats = proofs.reduce(
             (sum, proof) => sum + proof.amount,
             0,
-        )
+        ) as Sats
 
-        const { amountMsats, invoice } = await handleFeesAndInvoice(
+        const { amountMsats, meltQuoteId } = await getUpdatedMeltQuote(
             totalTokensSats,
-            feeReserve,
             federationId,
             mintHost,
             fedimint,
         )
 
         // Build the melt payload
-        const meltPayload = await buildMeltPayload(
-            amountMsats / 1000,
-            invoice,
-            proofs,
-        )
+        const meltPayload = await buildMeltPayload(meltQuoteId, proofs)
+        log.debug('meltPayload', meltPayload)
 
         // Melt tokens
         const meltData = await meltTokens(mintHost, meltPayload)
+        log.debug('meltData', meltData)
         if (!meltData.paid) {
             throw new Error('Payment failed')
         }
 
         // Add the amount melted for this token to the total
-        totalMelted += amountMsats
+        totalMelted = (totalMelted + amountMsats) as MSats
     }
+    log.debug('totalMelted', totalMelted)
 
     // Return the total amount of MSats melted
-    return totalMelted as MSats
+    return totalMelted
 }

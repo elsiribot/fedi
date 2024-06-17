@@ -11,7 +11,7 @@ import { useMatrixChatInvites } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { AnyParsedData, ParserDataType } from '@fedi/common/types'
-import { cashuMeltTokens } from '@fedi/common/utils/cashu'
+import { redeemCashuTokens } from '@fedi/common/utils/cashu'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
 import { ALLOWED_PARSER_TYPES_BEFORE_FEDERATION } from '@fedi/common/utils/parser'
 
@@ -98,7 +98,7 @@ export const OmniConfirmation: React.FC<Props> = ({
             return
         setIsLoading(true)
         try {
-            await cashuMeltTokens(
+            await redeemCashuTokens(
                 parsedData.data.token,
                 fedimint,
                 activeFederationId,

@@ -5,6 +5,7 @@ import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { redeemCashuTokens } from '@fedi/common/utils/cashu'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useAppSelector } from '../hooks'
@@ -12,7 +13,6 @@ import { fedimint } from '../lib/bridge'
 import { DialogStatus, DialogStatusProps } from './DialogStatus'
 import { Input } from './Input'
 import { QRScanner, ScanResult } from './QRScanner'
-import {cashuMeltTokens} from "@fedi/common/utils/cashu";
 
 interface Props {
     onReceive(amount: MSats): void
@@ -32,9 +32,13 @@ export const ReceiveOffline: React.FC<Props> = ({ onReceive }) => {
             setIsRedeeming(true)
             try {
                 if (!federationId) throw new Error('No active federation')
-                let msats: MSats;
+                let msats: MSats
                 if (ecash.startsWith('cashu')) {
-                    msats = await cashuMeltTokens(ecash, fedimint, federationId);
+                    msats = await redeemCashuTokens(
+                        ecash,
+                        fedimint,
+                        federationId,
+                    )
                 } else {
                     msats = await fedimint.receiveEcash(ecash, federationId)
                 }
