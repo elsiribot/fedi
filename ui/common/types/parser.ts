@@ -1,4 +1,3 @@
-import { SerializedToken } from '../utils/cashu'
 import { Invoice } from './fedimint'
 import { Btc, MSats } from './units'
 
@@ -109,7 +108,7 @@ export type ParsedCommunityInvite = ParsedData<
 export type ParsedCashuEcash = ParsedData<
     ParserDataType.CashuEcash,
     {
-        token: SerializedToken
+        token: string
     }
 >
 

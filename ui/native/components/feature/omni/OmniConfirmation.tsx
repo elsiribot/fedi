@@ -7,9 +7,7 @@ import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederationId,
     selectIsActiveFederationRecovering,
-    selectPayFromFederation,
 } from '@fedi/common/redux'
-import { redeemCashuTokens } from '@fedi/common/utils/cashu'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
 import {
     ALLOWED_PARSER_TYPES_BEFORE_FEDERATION,
@@ -18,7 +16,7 @@ import {
 
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
-import { AnyParsedData, MSats, ParserDataType } from '../../../types'
+import { AnyParsedData, ParserDataType } from '../../../types'
 import { NavigationArgs, NavigationHook } from '../../../types/navigation'
 import CustomOverlay, { CustomOverlayContents } from '../../ui/CustomOverlay'
 import RecoveryInProgress from '../recovery/RecoveryInProgress'
@@ -41,7 +39,6 @@ export const OmniConfirmation = <T extends AnyParsedData>({
     const navigation = useNavigation()
     const [isLoading, setIsLoading] = useState(false)
     const activeFederationId = useAppSelector(selectActiveFederationId)
-    const activeWalletFederation = useAppSelector(selectPayFromFederation)
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
     )
@@ -158,30 +155,10 @@ export const OmniConfirmation = <T extends AnyParsedData>({
                         icon: 'Bolt',
                         title: t('feature.omni.confirm-cashu-token'),
                     },
-                    continueOnPress: async () => {
-                        if (!activeWalletFederation) {
-                            toast.error(t, 'errors.receive-ecash-failed')
-                            return
-                        }
-                        setIsLoading(true)
-                        try {
-                            const redeemedAmountMsats: MSats =
-                                await redeemCashuTokens(
-                                    parsedData.data.token,
-                                    fedimint,
-                                    activeWalletFederation.id,
-                                )
-                            handleNavigate('ReceiveSuccess', {
-                                tx: {
-                                    amount: redeemedAmountMsats,
-                                    bitcoin: null,
-                                },
-                            })
-                        } catch (error) {
-                            toast.error(t, error)
-                        }
-
-                        setIsLoading(true)
+                    continueOnPress: () => {
+                        handleNavigate('ConfirmReceiveCashu', {
+                            parsedData,
+                        })
                     },
                 }
             case ParserDataType.FedimintEcash:

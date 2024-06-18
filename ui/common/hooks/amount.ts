@@ -35,6 +35,7 @@ import {
 import amountUtils from '../utils/AmountUtils'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'
 import stringUtils from '../utils/StringUtils'
+import { MeltSummary } from '../utils/cashu'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useUpdatingRef } from './util'
 
@@ -50,6 +51,7 @@ interface SendAmountArgs {
     invoice?: Invoice | null
     lnurlPayment?: ParsedLnurlPay['data'] | null
     selectedPaymentFederation?: boolean
+    cashuMeltSummary?: MeltSummary | null
 }
 
 export type FormattedAmounts = {
@@ -533,9 +535,9 @@ export function useMinMaxDepositAmount() {
         maxStableBalanceSats === 0
             ? balanceSats
             : (Math.min(
-                balanceSats,
-                Math.max(0, maxStableBalanceSats - stableBalanceSats),
-            ) as Sats)
+                  balanceSats,
+                  Math.max(0, maxStableBalanceSats - stableBalanceSats),
+              ) as Sats)
 
     return { minimumAmount, maximumAmount }
 }
@@ -565,7 +567,7 @@ export function useRequestForm(args: RequestAmountArgs = {}) {
         args.lnurlWithdrawal &&
         args.lnurlWithdrawal.minWithdrawable &&
         args.lnurlWithdrawal.minWithdrawable ===
-        args.lnurlWithdrawal.maxWithdrawable
+            args.lnurlWithdrawal.maxWithdrawable
     ) {
         exactAmount = amountUtils.msatToSat(
             args.lnurlWithdrawal.minWithdrawable,
@@ -640,6 +642,7 @@ export function useSendForm({
     invoice,
     lnurlPayment,
     selectedPaymentFederation,
+    cashuMeltSummary,
 }: SendAmountArgs = {}) {
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount({
@@ -671,6 +674,12 @@ export function useSendForm({
         sendTo = stringUtils.truncateMiddleOfString(bip21Payment.address, 8)
     } else if (btcAddress) {
         sendTo = stringUtils.truncateMiddleOfString(btcAddress.address, 8)
+    } else if (cashuMeltSummary) {
+        exactAmount = amountUtils.msatToSat(cashuMeltSummary.totalAmount)
+        // TODO: replace with locale
+        description = 'Convert Send Cashu Ecash to Fedi Wallet'
+        // description = cashuMeltSummary.totalFees
+        // sendTo = cashuMeltSummary.totalFees
     }
 
     const reset = useCallback(() => {

@@ -25,7 +25,7 @@ import {
     ParsedWebsite,
     ParserDataType,
 } from '../types/parser'
-import { decodeCashuTokens } from './cashu'
+import { validateCashuTokens } from './cashu'
 import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
 import { decodeFediMatrixRoomUri, decodeFediMatrixUserUri } from './matrix'
@@ -507,8 +507,8 @@ async function parseCashuEcash(
     raw: string,
 ): Promise<ParsedCashuEcash | undefined> {
     try {
-        const decoded = await decodeCashuTokens(raw)
-        return { type: ParserDataType.CashuEcash, data: { token: decoded } }
+        await validateCashuTokens(raw)
+        return { type: ParserDataType.CashuEcash, data: { token: raw } }
     } catch {
         // no-op
     }

@@ -23,7 +23,7 @@ const SendPreviewDetails: React.FC<Props> = ({
     isLoading = false,
 }) => {
     const { theme } = useTheme()
-    const [showDetails, setShowDetails] = useState<boolean>(false)
+    const [showDetails, setShowDetails] = useState<boolean>(true)
     const { t } = useTranslation()
 
     const style = styles(theme)
