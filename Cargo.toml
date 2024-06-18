@@ -57,6 +57,7 @@ license-file = "LICENSE"
 keywords = ["bitcoin", "lightning", "chaumian", "e-cash", "federated"]
 
 [workspace.dependencies]
+subtle = "2.5.0"
 fedimint_threshold_crypto = { version = "0.1", package = "fedimint-threshold-crypto" }
 
 fedimintd = { git = "https://x-access-token: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@github.com/fedibtc/fedimint-fedi", tag = "v0.3.2-rc.0-fed0" }

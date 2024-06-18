@@ -24,6 +24,7 @@ fedimint-core = { workspace = true }
 fedimint-server = { workspace = true }
 fedi-social-common = { path = "../common" }
 rand = "0.8"
+subtle = { workspace = true }
 secp256k1 = "0.24.2"
 secp256k1-zkp = "0.7.0"
 serde = { version = "1.0.149", features = ["derive"] }
