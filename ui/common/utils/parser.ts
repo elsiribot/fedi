@@ -496,6 +496,7 @@ async function parseFedimintEcash(
     fedimint: FedimintBridge,
 ): Promise<ParsedFedimintEcash | undefined> {
     try {
+        if (raw.startsWith('cashuA')) throw new Error()
         await fedimint.validateEcash(raw)
         return { type: ParserDataType.FedimintEcash, data: { token: raw } }
     } catch {

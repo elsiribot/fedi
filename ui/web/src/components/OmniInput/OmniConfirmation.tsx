@@ -11,7 +11,6 @@ import { useMatrixChatInvites } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { AnyParsedData, ParserDataType } from '@fedi/common/types'
-import { redeemCashuTokens } from '@fedi/common/utils/cashu'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
 import { ALLOWED_PARSER_TYPES_BEFORE_FEDERATION } from '@fedi/common/utils/parser'
 
@@ -90,25 +89,6 @@ export const OmniConfirmation: React.FC<Props> = ({
                 })
         }
     }
-    const handleRedeemCashu = async () => {
-        if (
-            !activeFederationId ||
-            parsedData.type !== ParserDataType.CashuEcash
-        )
-            return
-        setIsLoading(true)
-        try {
-            await redeemCashuTokens(
-                parsedData.data.token,
-                fedimint,
-                activeFederationId,
-            )
-            onSuccess(parsedData)
-        } catch (err) {
-            toast.show(t, err, 'errors.unknown-error')
-        }
-        setIsLoading(false)
-    }
 
     const {
         icon,
@@ -162,7 +142,7 @@ export const OmniConfirmation: React.FC<Props> = ({
                 return {
                     icon: BoltIcon,
                     text: t('feature.omni.confirm-cashu-token'),
-                    continueOnClick: handleRedeemCashu,
+                    continueOnClick: () => pushWithState('/send', parsedData),
                 }
             case ParserDataType.FedimintEcash:
                 return {

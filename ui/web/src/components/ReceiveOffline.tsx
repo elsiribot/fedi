@@ -5,7 +5,11 @@ import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { redeemCashuTokens } from '@fedi/common/utils/cashu'
+import {
+    decodeCashuTokens,
+    getMeltQuotes,
+    executeMelts,
+} from '@fedi/common/utils/cashu'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { useAppSelector } from '../hooks'
@@ -34,11 +38,14 @@ export const ReceiveOffline: React.FC<Props> = ({ onReceive }) => {
                 if (!federationId) throw new Error('No active federation')
                 let msats: MSats
                 if (ecash.startsWith('cashu')) {
-                    msats = await redeemCashuTokens(
-                        ecash,
+                    const tokens = await decodeCashuTokens(ecash)
+                    const meltSummary = await getMeltQuotes(
+                        tokens,
                         fedimint,
                         federationId,
                     )
+                    const meltResult = await executeMelts(meltSummary)
+                    msats = meltResult.mSats
                 } else {
                     msats = await fedimint.receiveEcash(ecash, federationId)
                 }

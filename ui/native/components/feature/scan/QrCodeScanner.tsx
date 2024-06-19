@@ -89,7 +89,6 @@ const QrCodeScanner: React.FC<Props> = ({ processing, onQrCodeDetected }) => {
     // ref: https://github.com/ngraveio/bc-ur
     // For cashu (TODO: encode fedimint notes with UR like cashu)
     const handleScanBcUr = (data: string) => {
-        console.warn('urDATA', data, data.startsWith('ur'))
         if (!data.startsWith('ur')) return
         // Create the decoder object
         if (!decoder.current) {
@@ -98,7 +97,6 @@ const QrCodeScanner: React.FC<Props> = ({ processing, onQrCodeDetected }) => {
         // Don't try to receive the same part twice
         if (urFramesRef.current?.includes(data)) return
         setUrFrames([...(urFramesRef.current ?? []), data])
-        // console.warn('res', decoder.current.receivedPartIndexes())
         decoder.current.receivePart(data)
         const newProgress = decoder.current.estimatedPercentComplete()
         setProgress(newProgress)
@@ -115,8 +113,6 @@ const QrCodeScanner: React.FC<Props> = ({ processing, onQrCodeDetected }) => {
                 decoder.current = new URDecoder()
             }, 300)
         } else if (decoder.current.isComplete()) {
-            // } else {
-            console.error('Decoder error', decoder.current.resultError())
             setProgress(0)
             decoder.current = new URDecoder()
             // If the decoder is complete, but not successful, log the error

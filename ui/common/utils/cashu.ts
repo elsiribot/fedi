@@ -56,15 +56,7 @@ export type MeltResult = {
 
 // TODO: Add complete validation
 export function validateCashuTokens(raw: string) {
-    if (!raw.startsWith('cashuA')) {
-        throw new Error('Invalid cashu token')
-    }
-}
-
-// Takes cashu note, parses it into individual tokens for each mint
-// Then, we melt for each mint (convert to lightning invoices and pay self)
-export function decodeCashuTokens(token: string): SerializedToken {
-    // remove prefixes
+    let token = raw
     const uriPrefixes = ['web+cashu://', 'cashu://', 'cashu:']
     uriPrefixes.forEach(prefix => {
         if (token.startsWith(prefix)) {
@@ -74,6 +66,14 @@ export function decodeCashuTokens(token: string): SerializedToken {
     if (!token.startsWith('cashuA')) {
         throw new Error('Invalid cashu token')
     }
+    return token
+}
+
+// Takes cashu note, parses it into individual tokens for each mint
+// Then, we melt for each mint (convert to lightning invoices and pay self)
+export function decodeCashuTokens(raw: string): SerializedToken {
+    // remove prefixes
+    const token = validateCashuTokens(raw)
     const rawToken = token.replace('cashuA', '')
 
     const parsedTokenBuffer = JSON.parse(
