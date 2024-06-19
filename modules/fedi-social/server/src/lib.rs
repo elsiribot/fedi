@@ -34,6 +34,7 @@ use futures::stream::StreamExt;
 use rand::rngs::OsRng;
 use secp256k1::SECP256K1;
 use strum::IntoEnumIterator;
+use subtle::ConstantTimeEq;
 use tracing::{debug, info};
 
 use crate::common::{
@@ -449,7 +450,11 @@ impl FediSocial {
         if env_admin_password.is_empty() {
             return Err(ApiError::bad_request("admin interface not enabled".into()));
         }
-        if req_admin_pass != env_admin_password {
+        if req_admin_pass
+            .as_bytes()
+            .ct_ne(env_admin_password.as_bytes())
+            .into()
+        {
             return Err(ApiError::bad_request("unauthorized".into()));
         }
 
