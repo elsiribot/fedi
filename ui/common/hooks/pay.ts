@@ -171,6 +171,7 @@ export function useOmniPaymentState(
                     federationId,
                 )
                 setCashuMeltSummary(meltSummary)
+                setInputAmount(amountUtils.msatToSat(meltSummary.totalAmount))
                 setFeeDetails({
                     fediFee: 0 as MSats,
                     networkFee: meltSummary.totalFees,

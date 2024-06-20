@@ -110,10 +110,12 @@ const QrCodeScanner: React.FC<Props> = ({ processing, onQrCodeDetected }) => {
             handleDetected(originalMessage)
             setTimeout(() => {
                 setProgress(0)
+                setUrFrames(null)
                 decoder.current = new URDecoder()
             }, 300)
         } else if (decoder.current.isComplete()) {
             setProgress(0)
+            setUrFrames(null)
             decoder.current = new URDecoder()
             // If the decoder is complete, but not successful, log the error
             throw new Error('Decoder error')

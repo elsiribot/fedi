@@ -463,13 +463,16 @@ export function useMinMaxRequestAmount({
  * Get the minimum and maximum amount you can send. Optionally take in an
  * LNURL pay request as part of the calculation.
  */
-export function useMinMaxSendAmount({
-    invoice,
-    lnurlPayment,
+export function useMinMaxSendAmount(
+    {
+        invoice,
+        lnurlPayment,
+        cashuMeltSummary,
+        selectedPaymentFederation,
+    }: SendAmountArgs = {},
     // TODO: Remove this option in favor of always using payFromFederation once
     // https://github.com/fedibtc/fedi/issues/4070 is finished
-    selectedPaymentFederation,
-}: SendAmountArgs = {}) {
+) {
     const balance = useCommonSelector(s =>
         selectedPaymentFederation
             ? selectPaymentFederationBalance(s)
@@ -490,7 +493,9 @@ export function useMinMaxSendAmount({
         let minimumAmount = 1 as Sats // Cannot send millisat amounts
         let maximumAmount = amountUtils.msatToSat(balance)
 
-        if (invoiceAmount) {
+        if (cashuMeltSummary) {
+            minimumAmount = amountUtils.msatToSat(cashuMeltSummary.totalAmount)
+        } else if (invoiceAmount) {
             minimumAmount = amountUtils.msatToSat(invoiceAmount)
         } else {
             if (minSendable) {
@@ -504,7 +509,7 @@ export function useMinMaxSendAmount({
             }
         }
         return { minimumAmount, maximumAmount }
-    }, [balance, invoiceAmount, minSendable, maxSendable])
+    }, [balance, cashuMeltSummary, invoiceAmount, minSendable, maxSendable])
 }
 
 /**
@@ -649,6 +654,7 @@ export function useSendForm({
         invoice,
         lnurlPayment,
         selectedPaymentFederation,
+        cashuMeltSummary,
     })
     const minimumAmountRef = useUpdatingRef(minimumAmount)
 
@@ -676,8 +682,10 @@ export function useSendForm({
         sendTo = stringUtils.truncateMiddleOfString(btcAddress.address, 8)
     } else if (cashuMeltSummary) {
         exactAmount = amountUtils.msatToSat(cashuMeltSummary.totalAmount)
+        // totalFees = amountUtils.msatToSat(cashuMeltSummary.totalFees)
         // TODO: replace with locale
-        description = 'Convert Send Cashu Ecash to Fedi Wallet'
+        description =
+            'Send Cashu Ecash to your Fedi Wallet (Lightning fees deducted)'
         // description = cashuMeltSummary.totalFees
         // sendTo = cashuMeltSummary.totalFees
     }

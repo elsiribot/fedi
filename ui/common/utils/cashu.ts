@@ -160,6 +160,23 @@ async function buildMeltPayload(
     return meltPayload
 }
 
+// Tries to create an invoice
+async function getInvoiceFee(
+    amountMsats: MSats,
+    federationId: string,
+    mintHost: string,
+    fedimint: FedimintBridge,
+) {
+    const invoice = await fedimint.generateInvoice(
+        amountMsats,
+        'cashu melt',
+        federationId,
+    )
+    const meltQuote = await getMeltQuote(mintHost, invoice)
+    const { fee_reserve } = meltQuote
+    return amountUtils.satToMsat(fee_reserve)
+}
+
 // After we have a quote for melting ecash,
 // we need to an "updated" quote that includes the new fees
 async function getUpdatedMeltQuote(
@@ -172,36 +189,32 @@ async function getUpdatedMeltQuote(
     meltQuoteId: string
     quoteFeeReserveMsats: MSats
 }> {
-    let invoice = ''
-    let meltQuote: MeltQuoteResponse | undefined = undefined
-    const totalTokensMsats = amountUtils.satToMsat(totalTokensSats)
-    let amountMsats = totalTokensMsats
-    let quoteAmountMsats = 0
+    const amountMsats = amountUtils.satToMsat(totalTokensSats) // Total amount to send
     // Start with max fee to ensure at least 1 melt quote attempt
-    let quoteFeeReserveMsats = Number.MAX_SAFE_INTEGER
     // If the fees are <= fee reserve it continues with the melt otherwise it makes another invoice using the new fees
-    while (quoteFeeReserveMsats + quoteAmountMsats > totalTokensMsats) {
-        log.debug(`generateInvoice for ${amountMsats} msats`)
-        invoice = await fedimint.generateInvoice(
-            amountMsats,
-            'cashu melt',
-            federationId,
-        )
-        meltQuote = await getMeltQuote(mintHost, invoice)
-        log.debug('meltQuote', meltQuote)
-        const { amount, fee_reserve } = meltQuote
-        quoteAmountMsats = amountUtils.satToMsat(amount)
-        quoteFeeReserveMsats = amountUtils.satToMsat(fee_reserve) as MSats
-        amountMsats = (quoteAmountMsats - quoteFeeReserveMsats) as MSats
-        log.debug('fee_reserve + amount', fee_reserve + amount)
-        log.debug('totalTokensMsats', totalTokensMsats)
-    }
-    log.debug('meltQuote?.quote', meltQuote?.quote)
+    const targetFee = await getInvoiceFee(
+        amountMsats,
+        federationId,
+        mintHost,
+        fedimint,
+    )
+
+    // TODO: Add retrying
+    const candidateAmount = (amountMsats - targetFee) as MSats
+    const candidateInvoice = await fedimint.generateInvoice(
+        candidateAmount,
+        'cashu melt',
+        federationId,
+    )
+    const quote = await getMeltQuote(mintHost, candidateInvoice)
+    const quotedAmount = amountUtils.satToMsat(quote.amount)
+    const quotedFees = amountUtils.satToMsat(quote.fee_reserve)
+    log.debug('meltQuote?.quote', quote?.quote)
 
     return {
-        amountMsats, // Amount you get paid (with fees deducted)
-        meltQuoteId: meltQuote?.quote || '',
-        quoteFeeReserveMsats: quoteFeeReserveMsats as MSats, // fees
+        amountMsats: quotedAmount, // Amount you get paid (with fees deducted)
+        meltQuoteId: quote.quote,
+        quoteFeeReserveMsats: quotedFees,
     }
 }
 
