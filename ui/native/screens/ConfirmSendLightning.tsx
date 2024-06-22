@@ -47,7 +47,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
         setInputAmount,
         handleOmniInput,
         handleOmniSend,
-    } = useOmniPaymentState(fedimint, paymentFederation?.id, true)
+    } = useOmniPaymentState(fedimint, activeFederation?.id, true, t)
 
     const { formattedTotalFee, feeItemsBreakdown } = useMemo(() => {
         return feeDetails

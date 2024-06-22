@@ -52,6 +52,7 @@ interface SendAmountArgs {
     lnurlPayment?: ParsedLnurlPay['data'] | null
     selectedPaymentFederation?: boolean
     cashuMeltSummary?: MeltSummary | null
+    t: TFunction
 }
 
 export type FormattedAmounts = {
@@ -648,6 +649,7 @@ export function useSendForm({
     lnurlPayment,
     selectedPaymentFederation,
     cashuMeltSummary,
+    t,
 }: SendAmountArgs = {}) {
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount({
@@ -682,12 +684,8 @@ export function useSendForm({
         sendTo = stringUtils.truncateMiddleOfString(btcAddress.address, 8)
     } else if (cashuMeltSummary) {
         exactAmount = amountUtils.msatToSat(cashuMeltSummary.totalAmount)
+        description = t('feature.omni.confirm-melt-cashu')
         // totalFees = amountUtils.msatToSat(cashuMeltSummary.totalFees)
-        // TODO: replace with locale
-        description =
-            'Send Cashu Ecash to your Fedi Wallet (Lightning fees deducted)'
-        // description = cashuMeltSummary.totalFees
-        // sendTo = cashuMeltSummary.totalFees
     }
 
     const reset = useCallback(() => {

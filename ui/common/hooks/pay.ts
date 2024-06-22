@@ -1,3 +1,4 @@
+import { TFunction } from 'i18next'
 import { useCallback, useEffect, useState } from 'react'
 
 import {
@@ -76,10 +77,10 @@ export function useOmniPaymentState(
     fedimint: FedimintBridge,
     federationId: string | undefined,
     selectedPaymentFederation = false,
+    t: TFunction,
 ): OmniPaymentState {
     const [feeDetails, setFeeDetails] = useState<RpcFeeDetails>()
     const [invoice, setInvoice] = useState<Invoice>()
-    // const [cashuTokens, setCashuTokens] = useState<SerializedToken>()
     const [cashuMeltSummary, setCashuMeltSummary] = useState<MeltSummary>()
     const [lnurlPayment, setLnurlPayment] = useState<ParsedLnurlPay['data']>()
     const [bip21Payment, setBip21Payment] = useState<ParsedBip21['data']>()
@@ -99,6 +100,7 @@ export function useOmniPaymentState(
         lnurlPayment,
         selectedPaymentFederation,
         cashuMeltSummary,
+        t,
     })
 
     useEffect(() => {

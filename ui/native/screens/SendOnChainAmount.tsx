@@ -36,8 +36,7 @@ const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
         inputAmount,
         setInputAmount,
         handleOmniInput,
-        exactAmount,
-    } = useOmniPaymentState(fedimint, paymentFederation?.id, true)
+    } = useOmniPaymentState(fedimint, activeFederation?.id, true, t)
 
     useEffect(() => {
         handleOmniInput(parsedData)

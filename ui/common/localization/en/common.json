@@ -533,6 +533,7 @@
             "confirm-lightning-pay": "This is a lightning payment request, do you want to pay it?",
             "confirm-lightning-withdraw": "This is a lightning withdrawal, do you want to withdraw?",
             "confirm-lnurl-auth": "Do you want to log in to {{domain}} with lightning?",
+            "confirm-melt-cashu": "Send Cashu Ecash to your Fedi Wallet (Lightning fees deducted)",
             "confirm-onchain-pay": "This is a bitcoin onchain payment, do you want to pay it?",
             "confirm-website-url": "This is a website url, do you want to open this in your browser?",
             "search-no-history-header": "No history with user",

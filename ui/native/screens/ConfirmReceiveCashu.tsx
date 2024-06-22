@@ -48,7 +48,7 @@ const ConfirmReceiveCashu: React.FC<Props> = ({ route, navigation }: Props) => {
         sendTo,
         handleOmniInput,
         handleOmniSend,
-    } = useOmniPaymentState(fedimint, activeWalletFederationId)
+    } = useOmniPaymentState(fedimint, activeWalletFederationId, t)
 
     const { formattedTotalFee, feeItemsBreakdown } = useMemo(() => {
         return feeDetails
@@ -57,8 +57,16 @@ const ConfirmReceiveCashu: React.FC<Props> = ({ route, navigation }: Props) => {
     }, [feeDetails, makeLightningFeeContent])
 
     useEffect(() => {
-        handleOmniInput(parsedData)
-    }, [handleOmniInput, parsedData])
+        try {
+            handleOmniInput(parsedData)
+        } catch (err) {
+            if (err instanceof BridgeError) {
+                toast.error(t, null, err.format(t))
+            } else {
+                toast.error(t, err)
+            }
+        }
+    }, [handleOmniInput, parsedData, t, toast])
 
     const navigationReplace = navigation.replace
     const handleSend = useCallback(async () => {
@@ -139,25 +147,6 @@ const ConfirmReceiveCashu: React.FC<Props> = ({ route, navigation }: Props) => {
                 readOnly={true}
                 description={description}
                 subContent={renderDetails()}
-                buttons={
-                    exactAmount
-                        ? [
-                              {
-                                  title: (
-                                      <Text
-                                          medium
-                                          caption
-                                          style={style.buttonText}>
-                                          {t('words.send')}
-                                      </Text>
-                                  ),
-                                  onPress: handleSend,
-                                  loading: isPayingInvoice,
-                                  disabled: isPayingInvoice,
-                              },
-                          ]
-                        : []
-                }
             />
         </>
     )
