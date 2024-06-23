@@ -284,7 +284,7 @@
               pkgs.binaryen
               pkgs.gnused
               pkgs.yarn
-              pkgs.nodejs
+              pkgs.nodejs_21
               pkgs.nodePackages.prettier # for ts-bindgen
               pkgs.jdk17
               pkgs.nodePackages.typescript-language-server
