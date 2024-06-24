@@ -7,6 +7,7 @@ pub mod constants;
 pub mod device_registration;
 pub mod error;
 pub mod event;
+pub mod features;
 pub mod fedi_fee;
 #[cfg(not(target_family = "wasm"))]
 mod ffi;

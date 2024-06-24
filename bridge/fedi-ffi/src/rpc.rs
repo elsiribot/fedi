@@ -36,6 +36,7 @@ use crate::api::IFediApi;
 use crate::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
 use crate::error::get_error_code;
 use crate::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
+use crate::features::FeatureCatalog;
 use crate::federation_v2::BackupServiceStatus;
 use crate::matrix::{
     self, Matrix, RpcBackPaginationStatus, RpcMatrixAccountSession, RpcMatrixUploadResult,
@@ -60,6 +61,7 @@ pub async fn fedimint_initialize_async(
     event_sink: EventSink,
     fedi_api: Arc<dyn IFediApi>,
     device_identifier: String,
+    feature_catalog: Arc<FeatureCatalog>,
 ) -> anyhow::Result<Arc<Bridge>> {
     info!(
         "bridge version hash={}",
@@ -67,9 +69,15 @@ pub async fn fedimint_initialize_async(
     );
     let _g = TimeReporter::new("fedimint_initialize").level(Level::INFO);
 
-    let bridge = Bridge::new(storage, event_sink, fedi_api, device_identifier)
-        .await
-        .context("could not create a bridge")?;
+    let bridge = Bridge::new(
+        storage,
+        event_sink,
+        fedi_api,
+        device_identifier,
+        feature_catalog,
+    )
+    .await
+    .context("could not create a bridge")?;
     Ok(Arc::new(bridge))
 }
 
@@ -1400,6 +1408,7 @@ mod tests {
     use crate::community::CommunityInvite;
     use crate::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_PATH, MILLION};
     use crate::event::{DeviceRegistrationEvent, TransactionEvent};
+    use crate::features::RuntimeEnvironment;
     use crate::ffi::PathBasedStorage;
     use crate::multi::MultiFederation;
     use crate::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
@@ -1692,8 +1701,9 @@ mod tests {
     async fn setup_custom(
         device_identifier: String,
         mock_fedi_api: Arc<dyn IFediApi>,
+        feature_catalog: Arc<FeatureCatalog>,
     ) -> anyhow::Result<(Arc<Bridge>, Arc<MultiFederation>)> {
-        let bridge = setup_bridge_custom(device_identifier, mock_fedi_api).await?;
+        let bridge = setup_bridge_custom(device_identifier, mock_fedi_api, feature_catalog).await?;
 
         let federation = join_test_fed(&bridge).await?;
         Ok((bridge, federation))
@@ -1703,6 +1713,7 @@ mod tests {
         setup_bridge_custom(
             "default_bridge:test:d4d743a7-b343-48e3-a5f9-90d032af3e98".to_owned(),
             Arc::new(MockFediApi::new()),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
         )
         .await
     }
@@ -1710,6 +1721,7 @@ mod tests {
     async fn setup_bridge_custom(
         device_identifier: String,
         fedi_api: Arc<dyn IFediApi>,
+        feature_catalog: Arc<FeatureCatalog>,
     ) -> anyhow::Result<Arc<Bridge>> {
         INIT_TRACING.call_once(|| {
             TracingSetup::default()
@@ -1719,16 +1731,22 @@ mod tests {
         let event_sink = Arc::new(FakeEventSink::new());
         let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
-        let bridge =
-            match fedimint_initialize_async(storage, event_sink, fedi_api, device_identifier).await
-            {
-                Ok(bridge) => bridge,
-                Err(e) => {
-                    let context_error = e.context("Failed to initialize Bridge");
-                    error!("{}", context_error);
-                    return Err(context_error);
-                }
-            };
+        let bridge = match fedimint_initialize_async(
+            storage,
+            event_sink,
+            fedi_api,
+            device_identifier,
+            feature_catalog,
+        )
+        .await
+        {
+            Ok(bridge) => bridge,
+            Err(e) => {
+                let context_error = e.context("Failed to initialize Bridge");
+                error!("{}", context_error);
+                return Err(context_error);
+            }
+        };
         Ok(bridge)
     }
 
@@ -1772,6 +1790,7 @@ mod tests {
             event_sink,
             fedi_api,
             "Unknown (bridge tests)".to_owned(),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
         )
         .await
         .is_err());
@@ -1806,6 +1825,7 @@ mod tests {
             event_sink,
             fedi_api,
             "default_bridge:test:d4d743a7-b343-48e3-a5f9-90d032af3e98".to_owned(),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
         )
         .await?;
         let federations = listFederations(bridge.clone()).await?;
@@ -2663,8 +2683,12 @@ mod tests {
     async fn test_join_fails_post_recovery_index_unassigned() -> anyhow::Result<()> {
         let device_identifier = "bridge:test:fd3e4705-f453-45ee-9e84-4bd4fdc6c22a".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
-        let (backup_bridge, federation) =
-            setup_custom(device_identifier.clone(), mock_fedi_api.clone()).await?;
+        let (backup_bridge, federation) = setup_custom(
+            device_identifier.clone(),
+            mock_fedi_api.clone(),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+        )
+        .await?;
 
         // Device index should be 0 since it's a fresh seed
         assert!(matches!(
@@ -2690,7 +2714,12 @@ mod tests {
         drop(backup_bridge);
 
         // create new bridge which hasn't joined federation yet and recover mnemnonic
-        let recovery_bridge = setup_bridge_custom(device_identifier, mock_fedi_api).await?;
+        let recovery_bridge = setup_bridge_custom(
+            device_identifier,
+            mock_fedi_api,
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+        )
+        .await?;
         recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
 
         // Device index should be unassigned since it's a recovery
@@ -2708,7 +2737,12 @@ mod tests {
     async fn test_transfer_device_registration_no_feds() -> anyhow::Result<()> {
         let device_identifier_1 = "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
-        let bridge_1 = setup_bridge_custom(device_identifier_1, mock_fedi_api.clone()).await?;
+        let bridge_1 = setup_bridge_custom(
+            device_identifier_1,
+            mock_fedi_api.clone(),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+        )
+        .await?;
 
         // give some time for backup to complete before shutting down the bridge
         fedimint_core::task::sleep(Duration::from_secs(1)).await;
@@ -2719,7 +2753,12 @@ mod tests {
 
         // create new bridge which hasn't joined federation yet and recover mnemnonic
         let device_identifier_2 = "bridge_2:test:70c25d23-bfac-4aa2-81c3-d6f5e79ae724".to_string();
-        let bridge_2 = setup_bridge_custom(device_identifier_2, mock_fedi_api.clone()).await?;
+        let bridge_2 = setup_bridge_custom(
+            device_identifier_2,
+            mock_fedi_api.clone(),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+        )
+        .await?;
         recoverFromMnemonic(bridge_2.clone(), mnemonic.clone()).await?;
 
         // Register device as index 0 since it's a transfer
@@ -2749,7 +2788,12 @@ mod tests {
 
         // Create 3rd bridge which hasn't joined federation yet and recover mnemnonic
         let device_identifier_3 = "bridge_3:test:ed086973-98c7-4ad0-8f03-52ba7280b9c0".to_string();
-        let bridge_3 = setup_bridge_custom(device_identifier_3, mock_fedi_api.clone()).await?;
+        let bridge_3 = setup_bridge_custom(
+            device_identifier_3,
+            mock_fedi_api.clone(),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+        )
+        .await?;
         recoverFromMnemonic(bridge_3.clone(), mnemonic.clone()).await?;
 
         // Register device as index 0 since it's a transfer
@@ -2766,8 +2810,12 @@ mod tests {
     async fn test_transfer_device_registration_post_recovery() -> anyhow::Result<()> {
         let device_identifier_1 = "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
-        let (backup_bridge, federation) =
-            setup_custom(device_identifier_1, mock_fedi_api.clone()).await?;
+        let (backup_bridge, federation) = setup_custom(
+            device_identifier_1,
+            mock_fedi_api.clone(),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+        )
+        .await?;
 
         // receive ecash
         let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
@@ -2816,7 +2864,12 @@ mod tests {
 
         // create new bridge which hasn't joined federation yet and recover mnemnonic
         let device_identifier_2 = "bridge_2:test:70c25d23-bfac-4aa2-81c3-d6f5e79ae724".to_string();
-        let recovery_bridge = setup_bridge_custom(device_identifier_2, mock_fedi_api).await?;
+        let recovery_bridge = setup_bridge_custom(
+            device_identifier_2,
+            mock_fedi_api,
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+        )
+        .await?;
         recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
 
         // Register device as index 0 since it's a transfer
@@ -2890,8 +2943,12 @@ mod tests {
     async fn test_new_device_registration_post_recovery() -> anyhow::Result<()> {
         let device_identifier_1 = "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
-        let (backup_bridge, federation) =
-            setup_custom(device_identifier_1, mock_fedi_api.clone()).await?;
+        let (backup_bridge, federation) = setup_custom(
+            device_identifier_1,
+            mock_fedi_api.clone(),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+        )
+        .await?;
 
         // receive ecash
         let ecash = cli_generate_ecash(Amount::from_msats(200_000), &federation).await?;
@@ -2928,7 +2985,12 @@ mod tests {
 
         // create new bridge which hasn't joined federation yet and recover mnemnonic
         let device_identifier_2 = "bridge_2:test:70c25d23-bfac-4aa2-81c3-d6f5e79ae724".to_string();
-        let recovery_bridge = setup_bridge_custom(device_identifier_2, mock_fedi_api).await?;
+        let recovery_bridge = setup_bridge_custom(
+            device_identifier_2,
+            mock_fedi_api,
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+        )
+        .await?;
         recoverFromMnemonic(recovery_bridge.clone(), mnemonic).await?;
 
         // Register device as index 1 since it's a new device
