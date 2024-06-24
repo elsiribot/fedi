@@ -1,6 +1,10 @@
 import { NativeEventEmitter, NativeModules } from 'react-native'
+import DeviceInfo from 'react-native-device-info'
+import RNFS from 'react-native-fs'
 
 import { FedimintBridgeEventMap } from '@fedi/common/types'
+import { RpcInitOpts } from '@fedi/common/types/bindings'
+import { isDev } from '@fedi/common/utils/environment'
 import { BridgeError, FedimintBridge } from '@fedi/common/utils/fedimint'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -41,9 +45,25 @@ export async function subscribeToBridgeEvents() {
     )
 }
 
-export async function initializeBridge(dataDir: string, deviceId: string) {
-    const logLevel = 'info'
-    const result = await FedimintFfi.initialize(dataDir, logLevel, deviceId)
+export async function initializeBridge(deviceId: string) {
+    const options: RpcInitOpts = {
+        dataDir: RNFS.DocumentDirectoryPath,
+        deviceIdentifier: deviceId,
+        logLevel: 'info',
+        appFlavor: {
+            type: isDev()
+                ? 'dev'
+                : DeviceInfo.getBundleId().includes('nightly')
+                ? 'nightly'
+                : 'bravo',
+        },
+    }
+    log.info(
+        'initializing connection to federation',
+        RNFS.DocumentDirectoryPath,
+    )
+    const stringifiedOptions = JSON.stringify(options)
+    const result = await FedimintFfi.initialize(stringifiedOptions)
     const resultJson = JSON.parse(result)
     if (resultJson.error !== undefined) {
         log.error('FedimintFfi.initialize', resultJson)

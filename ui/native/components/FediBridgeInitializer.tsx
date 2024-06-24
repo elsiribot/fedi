@@ -2,7 +2,6 @@ import { ThemeProvider } from '@rneui/themed'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform } from 'react-native'
-import RNFS from 'react-native-fs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import SplashScreen from 'react-native-splash-screen'
 
@@ -79,12 +78,8 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     // Initialize redux store and bridge
     useEffect(() => {
         if (!deviceId) return
-        log.info(
-            'initializing connection to federation',
-            RNFS.DocumentDirectoryPath,
-        )
         const start = Date.now()
-        initializeBridge(RNFS.DocumentDirectoryPath, deviceId)
+        initializeBridge(deviceId)
             .then(() => {
                 const stop = Date.now()
                 log.info('initialized:', stop - start, 'ms OS:', Platform.OS)
