@@ -53,6 +53,7 @@ const FederationSelector: React.FC = () => {
                         bold
                         caption
                         numberOfLines={1}
+                        adjustsFontSizeToFit
                         style={style.federationName}>
                         {activeFederation?.name}
                     </Text>

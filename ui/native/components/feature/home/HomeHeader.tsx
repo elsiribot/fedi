@@ -47,6 +47,7 @@ const HomeHeader: React.FC = () => {
                     <PressableIcon
                         onPress={openFederationsDrawer}
                         hitSlop={10}
+                        maxFontSizeMultiplier={1.5}
                         svgName="HamburgerIcon"
                     />
                 }
@@ -57,7 +58,7 @@ const HomeHeader: React.FC = () => {
             {popupInfo && <PopupFederationCountdown />}
             {DeviceInfo.getBundleId().includes('nightly') && (
                 <View style={style.nightly}>
-                    <Text small style={style.nightlyText}>
+                    <Text small style={style.nightlyText} adjustsFontSizeToFit>
                         {t('feature.developer.nightly')}
                     </Text>
                 </View>

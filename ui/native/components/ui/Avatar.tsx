@@ -36,6 +36,7 @@ export type AvatarProps = {
     name?: string
     icon?: SvgImageName
     containerStyle?: StyleProp<ViewStyle>
+    maxFontSizeMultiplier?: number
 }
 
 const Avatar: React.FC<AvatarProps> = ({
@@ -45,6 +46,7 @@ const Avatar: React.FC<AvatarProps> = ({
     icon,
     url,
     containerStyle,
+    maxFontSizeMultiplier = Infinity,
 }: AvatarProps) => {
     const { theme } = useTheme()
     const [bgColor, textColor] = getIdentityColors(id)
@@ -57,7 +59,11 @@ const Avatar: React.FC<AvatarProps> = ({
             : size === AvatarSize.md
             ? theme.sizes.mediumAvatar
             : theme.sizes.largeAvatar
-    const pxSize = getIconSizeMultiplier(fontScale) * customSize
+
+    const multiplier = getIconSizeMultiplier(
+        Math.min(fontScale, maxFontSizeMultiplier),
+    )
+    const pxSize = multiplier * customSize
     const mergedContainerStyle = [
         styles.container,
         {
@@ -90,9 +96,12 @@ const Avatar: React.FC<AvatarProps> = ({
                     name={icon}
                     size={svgImageSizeMapping[size]}
                     color={textColor}
+                    maxFontSizeMultiplier={maxFontSizeMultiplier}
                 />
             ) : (
                 <Text
+                    adjustsFontSizeToFit
+                    maxFontSizeMultiplier={maxFontSizeMultiplier}
                     bold
                     tiny={size === AvatarSize.sm}
                     h2={size === AvatarSize.lg}

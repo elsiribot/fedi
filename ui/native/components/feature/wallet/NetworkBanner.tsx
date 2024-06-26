@@ -26,7 +26,12 @@ export const NetworkBanner: React.FC = () => {
                 name="Info"
                 size={SvgImageSize.xs}
             />
-            <Text small medium style={style.text}>
+            <Text
+                small
+                medium
+                style={style.text}
+                adjustsFontSizeToFit
+                numberOfLines={1}>
                 {t('feature.wallet.network-notice', {
                     network: capitalize(activeFederation.network),
                 })}
