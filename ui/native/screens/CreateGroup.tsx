@@ -90,16 +90,7 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
 
     return (
         <View style={style.container}>
-            {/* <SvgImage
-                name={broadcastOnly ? 'SpeakerPhone' : 'SocialPeople'}
-                size={SvgImageSize.lg}
-            /> */}
-            <Avatar id={'1asdkasdklf'} icon={icon} size={AvatarSize.md} />
-            {/* <SvgImage
-                name={broadcastOnly ? 'SpeakerPhone' : 'SocialPeople'}
-                size={SvgImageSize.lg}
-                color={getIdentityColors('')}
-            /> */}
+            <Avatar id={''} icon={icon} size={AvatarSize.md} />
             <View style={style.inputWrapper}>
                 <Input
                     onChangeText={setGroupName}

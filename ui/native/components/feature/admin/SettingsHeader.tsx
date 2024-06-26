@@ -20,7 +20,7 @@ const SettingsHeader: React.FC = () => {
                 containerStyle={style.container}
                 closeButton
                 headerLeft={
-                    <Text h2 medium numberOfLines={1}>
+                    <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
                         {t('words.account')}
                     </Text>
                 }
