@@ -26,8 +26,9 @@ export const ChatSettingsAvatar: React.FC<Props> = ({ room }) => {
                 room={room}
                 size={AvatarSize.lg}
                 containerStyle={style.avatar}
+                maxFontSizeMultiplier={1}
             />
-            <Text h2 style={style.roomName}>
+            <Text h2 style={style.roomName} numberOfLines={1}>
                 {room?.name || ''}
             </Text>
         </View>

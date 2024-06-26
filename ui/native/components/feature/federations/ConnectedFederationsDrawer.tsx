@@ -46,10 +46,13 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
         <View style={style.drawerItemLabel}>
             <FederationLogo federation={federation} size={48} />
             <View style={style.labelsContainer}>
-                <Text bold numberOfLines={1}>
+                <Text bold numberOfLines={2}>
                     {federation.name}
                 </Text>
-                <Text style={style.subText}>
+                <Text
+                    style={style.subText}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit>
                     {`${formattedPrimaryAmount} (${formattedSecondaryAmount})`}
                 </Text>
             </View>
@@ -141,10 +144,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                         })
                     }}
                     title={
-                        <Text
-                            style={style.addFederationText}
-                            caption
-                            maxFontSizeMultiplier={1.8}>
+                        <Text style={style.addFederationText} caption>
                             {t('feature.federations.add-federation')}
                         </Text>
                     }

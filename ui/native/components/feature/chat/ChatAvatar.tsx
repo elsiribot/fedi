@@ -1,3 +1,4 @@
+import { useTheme } from '@rneui/themed'
 import React from 'react'
 
 import {
@@ -31,9 +32,12 @@ export const matrixAuthToAvatarProps = (
     },
 })
 
-export type ChatAvatarProps = RoomProps | UserProps
+export type ChatAvatarProps =
+    | RoomProps
+    | (UserProps & { maxFontSizeMultiplier?: number })
 
 const ChatAvatar: React.FC<ChatAvatarProps> = props => {
+    const { theme } = useTheme()
     let id: string | undefined
     let name: string | undefined
     let icon: AvatarProps['icon'] | undefined
@@ -61,12 +65,17 @@ const ChatAvatar: React.FC<ChatAvatarProps> = props => {
         avatarProps = rest
     }
 
+    const maxFontSizeMultiplier =
+        props.maxFontSizeMultiplier ||
+        theme.multipliers.defaultMaxFontMultiplier
+
     return (
         <Avatar
             id={id || ''}
             name={name || '?'}
             icon={icon}
             url={src}
+            maxFontSizeMultiplier={maxFontSizeMultiplier}
             {...avatarProps}
         />
     )

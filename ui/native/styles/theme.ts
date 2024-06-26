@@ -33,6 +33,11 @@ const shouldShowDefaultButtonBackground = (props: ButtonProps) => {
 }
 
 const themeDefaults = {
+    multipliers: {
+        headerMaxFontMultiplier: 1.4,
+        iconMaxSizeMultiplier: 2,
+        defaultMaxFontMultiplier: 1.8,
+    },
     percentages: {
         shortcutTileWidth: '33%',
     },
@@ -120,6 +125,10 @@ const theme = createTheme({
                 fontFamily: 'AlbertSans-Regular',
                 ...(props.day ? { color: theme.colors?.primary } : {}),
             },
+            titleProps: {
+                maxFontSizeMultiplier:
+                    themeDefaults.multipliers.defaultMaxFontMultiplier,
+            },
             disabledStyle: {
                 opacity: 0.7,
             },
@@ -164,7 +173,9 @@ const theme = createTheme({
         }),
         Text: props => ({
             // Don't allow titles to get insane font size multipliers
-            maxFontSizeMultiplier: props.h1 ? 1.4 : props.h2 ? 1.8 : undefined,
+            maxFontSizeMultiplier: props.h1
+                ? 1.4
+                : themeDefaults.multipliers.defaultMaxFontMultiplier,
             style: {
                 ...themeDefaults.styles?.text,
                 // Use fontFamily for bolding effects because the fontWeight
@@ -258,10 +269,10 @@ const theme = createTheme({
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
-                // the content height should always be consistent
-                // so the header buttons don't move when
+                // the min content height should always be
+                // consistent so the header buttons don't move when
                 // the content changes
-                height: 36,
+                minHeight: 36,
             },
             rightContainerStyle: {
                 flex: 1,

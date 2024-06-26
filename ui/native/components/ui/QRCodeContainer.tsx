@@ -49,7 +49,10 @@ const QRCodeContainer = ({
                 />
             </View>
             <View style={style.copyInviteLinkContainer}>
-                <Text style={style.inviteLinkText} numberOfLines={1}>
+                <Text
+                    style={style.inviteLinkText}
+                    numberOfLines={1}
+                    maxFontSizeMultiplier={1.4}>
                     {copyValue}
                 </Text>
                 <TouchableOpacity

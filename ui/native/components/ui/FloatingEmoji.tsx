@@ -44,7 +44,9 @@ const FloatingEmoji: React.FC<FloatingEmojiProps> = ({
                     borderRadius,
                 },
             ]}>
-            <Text style={{ fontSize }}>{emoji}</Text>
+            <Text style={{ fontSize }} adjustsFontSizeToFit>
+                {emoji}
+            </Text>
         </View>
     )
 }

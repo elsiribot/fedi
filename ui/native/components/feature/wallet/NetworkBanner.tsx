@@ -25,6 +25,7 @@ export const NetworkBanner: React.FC = () => {
                 color={theme.colors.night}
                 name="Info"
                 size={SvgImageSize.xs}
+                maxFontSizeMultiplier={1.2}
             />
             <Text
                 small
@@ -46,7 +47,7 @@ const styles = (theme: Theme) =>
             width: '100%',
             flexDirection: 'row',
             justifyContent: 'center',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             padding: theme.spacing.sm,
             gap: theme.spacing.xs,
             backgroundColor: '#FFFAEB', // TODO: add to theme.colors
