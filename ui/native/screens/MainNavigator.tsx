@@ -22,7 +22,7 @@ import ConfirmJoinPublicGroupHeader from '../components/feature/chat/ConfirmJoin
 import DefaultChatHeader from '../components/feature/chat/DefaultChatHeader'
 import FederationInviteHeader from '../components/feature/federations/FederationInviteHeader'
 import JoinFederationHeader from '../components/feature/federations/JoinFederationHeader'
-import SelectedFederationHeader from '../components/feature/federations/SelectedFederationHeader'
+import PopupFederationEndedHeader from '../components/feature/federations/PopupFederationEndedHeader'
 import HomeLockScreen from '../components/feature/home/LockScreen'
 import EulaHeader from '../components/feature/onboarding/EulaHeader'
 import NewMemberAvatarImageHeader from '../components/feature/onboarding/NewMemberAvatarImageHeader'
@@ -760,7 +760,9 @@ export const MainNavigator = () => {
                                 name="PopupFederationEnded"
                                 component={PopupFederationEnded}
                                 options={() => ({
-                                    header: () => <SelectedFederationHeader />,
+                                    header: () => (
+                                        <PopupFederationEndedHeader />
+                                    ),
                                 })}
                             />
                             {/* Settings */}

@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import DeviceInfo from 'react-native-device-info'
 
+import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
+
 import {
     DRAWER_NAVIGATION_ID,
     DrawerNavigationHook,
@@ -14,12 +16,14 @@ import Header from '../../ui/Header'
 import { PressableIcon } from '../../ui/PressableIcon'
 import HeaderAvatar from '../chat/HeaderAvatar'
 import FederationSelector from '../federations/FederationSelector'
+import { PopupFederationCountdown } from '../federations/PopupFederationCountdown'
 import { NetworkBanner } from '../wallet/NetworkBanner'
 
 const HomeHeader: React.FC = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
+    const popupInfo = usePopupFederationInfo()
 
     const style = styles(theme)
 
@@ -50,6 +54,7 @@ const HomeHeader: React.FC = () => {
                 headerCenter={<FederationSelector />}
             />
             <NetworkBanner />
+            {popupInfo && <PopupFederationCountdown />}
             {DeviceInfo.getBundleId().includes('nightly') && (
                 <View style={style.nightly}>
                     <Text small style={style.nightlyText}>
