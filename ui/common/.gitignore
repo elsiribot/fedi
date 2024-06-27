@@ -4,6 +4,8 @@ npm-debug.log
 yarn-error.log
 
 # ts / build
-tsconfig.tsbuildinfo
-.turbo
 dist
+.turbo
+tsconfig.tsbuildinfo
+
+localization/export.csv
