@@ -25,8 +25,8 @@ export const useDebouncedEffect = (
     }, [...(deps || []), delay])
 }
 
-export const useDebounce = <T>(value: T, delay = 1000): T | null => {
-    const [debouncedValue, setDebouncedValue] = useState<T | null>(null)
+export const useDebounce = <T>(value: T, delay = 1000): T => {
+    const [debouncedValue, setDebouncedValue] = useState<T>(value)
     const timerRef = useRef<NodeJS.Timeout>()
 
     useEffect(() => {

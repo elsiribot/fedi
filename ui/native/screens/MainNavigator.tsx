@@ -1,5 +1,8 @@
 import { useNavigation } from '@react-navigation/native'
-import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import {
+    NativeStackScreenProps,
+    createNativeStackNavigator,
+} from '@react-navigation/native-stack'
 import { Text } from '@rneui/themed'
 import React, { useEffect } from 'react'
 
@@ -314,7 +317,28 @@ export const MainNavigator = () => {
                     federation connections in-app, each call requires a
                     Federation to be specified
                 */}
-                {isAppUnlocked !== false ? (
+                {isAppUnlocked === undefined ? (
+                    <Stack.Group
+                        screenOptions={{
+                            animation: 'fade',
+                            animationDuration: 250,
+                        }}>
+                        <Stack.Screen
+                            name="TabsNavigator"
+                            component={
+                                Initializing as unknown as React.FC<
+                                    NativeStackScreenProps<
+                                        RootStackParamList,
+                                        'TabsNavigator'
+                                    >
+                                >
+                            }
+                            options={{
+                                headerShown: false,
+                            }}
+                        />
+                    </Stack.Group>
+                ) : isAppUnlocked ? (
                     <Stack.Group>
                         <Stack.Group
                             screenOptions={{
@@ -971,7 +995,11 @@ export const MainNavigator = () => {
                         </Stack.Group>
                     </Stack.Group>
                 ) : (
-                    <Stack.Group>
+                    <Stack.Group
+                        screenOptions={{
+                            animation: 'fade',
+                            animationDuration: 250,
+                        }}>
                         <Stack.Screen
                             name="TabsNavigator"
                             component={HomeLockScreen}

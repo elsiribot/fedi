@@ -13,6 +13,7 @@ import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
+import { useIsFeatureUnlocked } from '../utils/hooks/security'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
 
@@ -23,6 +24,7 @@ const Initializing: React.FC<Props> = () => {
     const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
     const hasStorageLoaded = useAppSelector(selectHasLoadedFromStorage)
+    const isAppUnlocked = useIsFeatureUnlocked('app')
 
     const hasLoaded = hasStorageLoaded
     const hasLegacyChatData = !!authenticatedMember
@@ -30,7 +32,7 @@ const Initializing: React.FC<Props> = () => {
     // once everything has loaded, determine where to navigate
     useEffect(() => {
         const doNavigation = async () => {
-            if (!hasLoaded) return
+            if (!hasLoaded || isAppUnlocked === undefined) return
 
             // make sure there is a display name before navigating to Home
             if (hasSetDisplayName) {
@@ -46,7 +48,13 @@ const Initializing: React.FC<Props> = () => {
             }
         }
         doNavigation()
-    }, [hasLegacyChatData, hasLoaded, hasSetDisplayName, navigation])
+    }, [
+        hasLegacyChatData,
+        hasLoaded,
+        hasSetDisplayName,
+        navigation,
+        isAppUnlocked,
+    ])
 
     return (
         <View style={styles(theme).container}>

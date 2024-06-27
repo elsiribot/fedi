@@ -122,7 +122,7 @@ const LockScreen = <T extends keyof RootStackParamList>({
 
     useEffect(() => {
         if (
-            debouncedPin?.length !== maxPinLength ||
+            debouncedPin.length !== maxPinLength ||
             pin.status !== 'set' ||
             !pin.check(debouncedPin)
         )
