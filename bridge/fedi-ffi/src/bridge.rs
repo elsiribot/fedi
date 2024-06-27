@@ -150,6 +150,7 @@ impl Bridge {
                                             "device index must exist when joined federations exist",
                                         )?,
                                         fedi_fee_helper.clone(),
+                                        feature_catalog.clone(),
                                     )
                                     .await
                                     .with_context(|| {
@@ -324,6 +325,7 @@ impl Bridge {
                     &root_mnemonic,
                     device_index,
                     this.fedi_fee_helper.clone(),
+                    this.feature_catalog.clone(),
                 )
                 .await
                 .with_context(|| format!("loading federation {}", federation_id.clone()))?;
@@ -404,6 +406,7 @@ impl Bridge {
             &root_mnemonic,
             device_index,
             self.fedi_fee_helper.clone(),
+            self.feature_catalog.clone(),
         )
         .await?;
         let federation_id = federation.federation_id();
@@ -452,6 +455,7 @@ impl Bridge {
             &invite_code,
             &root_mnemonic,
             device_index,
+            self.feature_catalog.override_localhost.is_some(),
         ));
         match (v2,) {
             (Ok((config, backup_snapshots_result)),) => Ok(RpcFederationPreview {
