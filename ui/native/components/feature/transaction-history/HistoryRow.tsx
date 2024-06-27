@@ -61,7 +61,10 @@ export const HistoryRow: React.FC<HistoryRowProps> = ({
             <View style={style.rightContainer}>
                 {amountNode}
                 {timestamp && (
-                    <Text small style={[style.rightAlignedText, style.subText]}>
+                    <Text
+                        small
+                        style={[style.rightAlignedText, style.subText]}
+                        maxFontSizeMultiplier={1.4}>
                         {dateUtils.formatTxnTileTimestamp(timestamp)}
                     </Text>
                 )}

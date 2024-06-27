@@ -128,6 +128,7 @@ const theme = createTheme({
             titleProps: {
                 maxFontSizeMultiplier:
                     themeDefaults.multipliers.defaultMaxFontMultiplier,
+                adjustsFontSizeToFit: true,
             },
             disabledStyle: {
                 opacity: 0.7,
@@ -173,9 +174,10 @@ const theme = createTheme({
         }),
         Text: props => ({
             // Don't allow titles to get insane font size multipliers
-            maxFontSizeMultiplier: props.h1
-                ? 1.4
-                : themeDefaults.multipliers.defaultMaxFontMultiplier,
+            maxFontSizeMultiplier:
+                props.h1 || props.h2
+                    ? themeDefaults.multipliers.headerMaxFontMultiplier
+                    : themeDefaults.multipliers.defaultMaxFontMultiplier,
             style: {
                 ...themeDefaults.styles?.text,
                 // Use fontFamily for bolding effects because the fontWeight

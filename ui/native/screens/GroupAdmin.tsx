@@ -115,11 +115,7 @@ const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
                 bounces={false}
                 contentContainerStyle={styles(theme).content}>
                 <View style={styles(theme).sectionContainer}>
-                    <Text
-                        style={styles(theme).sectionTitle}
-                        maxFontSizeMultiplier={
-                            theme.multipliers.headerMaxFontMultiplier
-                        }>
+                    <Text style={styles(theme).sectionTitle}>
                         {t('feature.chat.chat-settings')}
                     </Text>
                     {(!isDefaultGroup || (isDefaultGroup && isAdmin)) && (

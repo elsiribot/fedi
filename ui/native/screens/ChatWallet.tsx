@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Text, useTheme } from '@rneui/themed'
+import { Text } from '@rneui/themed'
 import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Keyboard, StyleSheet, View } from 'react-native'
@@ -18,7 +18,6 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'ChatWallet'>
 
 const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
-    const { theme } = useTheme()
     const { recipientId } = route.params
     const existingRoom = useAppSelector(s =>
         selectMatrixDirectMessageRoom(s, recipientId),
@@ -85,22 +84,14 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
             buttons={[
                 {
                     title: t('words.request'),
-                    titleProps: {
-                        maxFontSizeMultiplier:
-                            theme.multipliers.headerMaxFontMultiplier,
-                        numberOfLines: 1,
-                    },
+                    titleProps: { numberOfLines: 1 },
                     onPress: handleRequest,
                     disabled: submitAction === 'send',
                     loading: submitAction === 'request',
                 },
                 {
                     title: t('words.send'),
-                    titleProps: {
-                        maxFontSizeMultiplier:
-                            theme.multipliers.headerMaxFontMultiplier,
-                        numberOfLines: 1,
-                    },
+                    titleProps: { numberOfLines: 1 },
                     onPress: handleSend,
                     disabled: submitAction === 'request',
                     loading: submitAction === 'send',

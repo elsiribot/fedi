@@ -41,7 +41,11 @@ export const ChatRoomActionsOverlay: React.FC<Props> = ({
                             room={room}
                             size={AvatarSize.sm}
                         />
-                        <Text bold style={style.title}>
+                        <Text
+                            bold
+                            style={style.title}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit>
                             {room?.name ?? ''}
                         </Text>
                     </View>
@@ -64,9 +68,11 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             gap: theme.spacing.xs,
             alignItems: 'center',
+            justifyContent: 'center',
         },
         title: {
             textAlign: 'center',
+            flexShrink: 1,
         },
         avatar: {
             marginRight: theme.spacing.xs,

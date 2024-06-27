@@ -130,7 +130,11 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
     return (
         <View style={styles(theme).container}>
             <View style={styles(theme).sectionContainer}>
-                <Text caption style={styles(theme).sectionTitle}>
+                <Text
+                    caption
+                    style={styles(theme).sectionTitle}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit>
                     {t('words.actions')}
                 </Text>
                 {actions.map(action => (
@@ -145,7 +149,11 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
                 ))}
             </View>
             <View style={styles(theme).sectionContainer}>
-                <Text caption style={styles(theme).sectionTitle}>
+                <Text
+                    caption
+                    style={styles(theme).sectionTitle}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit>
                     {t('feature.chat.notification-settings')}
                 </Text>
                 {notificationActions.map(action => (

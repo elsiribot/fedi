@@ -63,7 +63,11 @@ const QRCodeContainer = ({
                         color={theme.colors.primary}
                         size={SvgImageSize.xs}
                     />
-                    <Text style={style.copyText} numberOfLines={1}>
+                    <Text
+                        style={style.copyText}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        maxFontSizeMultiplier={1.4}>
                         {t('words.copy')}
                     </Text>
                 </TouchableOpacity>

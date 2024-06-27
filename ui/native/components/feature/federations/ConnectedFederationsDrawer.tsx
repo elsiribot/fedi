@@ -14,7 +14,7 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import { selectActiveFederationId, selectFederations } from '@fedi/common/redux'
@@ -133,9 +133,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                     />
                 ))}
             </DrawerContentScrollView>
-            <SafeAreaView
-                edges={['bottom', 'left']}
-                style={style.addFederationContainer}>
+            <View style={style.addFederationContainer}>
                 <Button
                     style={style.addFederationButton}
                     onPress={() => {
@@ -143,13 +141,10 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                             invite: undefined,
                         })
                     }}
-                    title={
-                        <Text style={style.addFederationText} caption>
-                            {t('feature.federations.add-federation')}
-                        </Text>
-                    }
+                    title={t('feature.federations.add-federation')}
+                    titleStyle={style.addFederationText}
                 />
-            </SafeAreaView>
+            </View>
         </ImageBackground>
     )
 }
@@ -171,7 +166,6 @@ const styles = (theme: Theme) =>
             height: theme.sizes.addFederationButtonHeight,
         },
         addFederationText: {
-            paddingLeft: theme.spacing.xs,
             color: theme.colors.white,
         },
         drawerItem: {

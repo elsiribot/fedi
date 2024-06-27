@@ -54,9 +54,6 @@ const FederationSelector: React.FC = () => {
                         caption
                         numberOfLines={1}
                         adjustsFontSizeToFit
-                        maxFontSizeMultiplier={
-                            theme.multipliers.headerMaxFontMultiplier
-                        }
                         style={style.federationName}>
                         {activeFederation?.name}
                     </Text>

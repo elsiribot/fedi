@@ -29,11 +29,7 @@ const ModsHeader: React.FC = () => {
             <Header
                 containerStyle={style.container}
                 headerLeft={
-                    <Text
-                        h2
-                        // medium
-                        numberOfLines={1}
-                        adjustsFontSizeToFit>
+                    <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
                         {t('words.mods')}
                     </Text>
                 }

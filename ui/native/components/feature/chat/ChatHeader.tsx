@@ -35,14 +35,7 @@ const ChatHeader: React.FC = () => {
             <Header
                 containerStyle={style.container}
                 headerLeft={
-                    <Text
-                        h2
-                        medium
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        maxFontSizeMultiplier={
-                            theme.multipliers.headerMaxFontMultiplier
-                        }>
+                    <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
                         {t('words.chat')}
                     </Text>
                 }

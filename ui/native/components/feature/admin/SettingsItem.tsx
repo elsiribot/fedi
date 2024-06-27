@@ -40,9 +40,6 @@ const SettingsItem = ({
             <Text
                 style={styles(theme).label}
                 adjustsFontSizeToFit
-                maxFontSizeMultiplier={
-                    theme.multipliers.headerMaxFontMultiplier
-                }
                 numberOfLines={1}>
                 {label}
             </Text>
