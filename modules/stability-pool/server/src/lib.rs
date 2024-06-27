@@ -872,7 +872,10 @@ fn settle_locks(
         .for_each(|LockedSeek { amount, .. }| {
             let new_amount = (seeks_msat_pool * amount.msats as u128) / total_seek_msats;
             draining_seeks_msat_pool -= new_amount;
-            amount.msats = new_amount as u64; // Guaranteed to fit in u64
+            // `seeks_msat_pool` fits in u64 since it cannot grow larger than 21 million
+            // BTC. `new_amount` is less than `seeks_msat_pool`. Therefore,
+            // `new_amount` must fit in u64.
+            amount.msats = new_amount.try_into().unwrap();
         });
 
     // If there's any left over msats owed to seeks (due to rounding),
@@ -881,8 +884,11 @@ fn settle_locks(
         let mut seeks_vec = locked_seeks.values_mut().flatten().collect_vec();
         let rand_index = randomness % seeks_vec.len();
         if let Some(LockedSeek { amount, .. }) = seeks_vec.get_mut(rand_index) {
-            amount.msats += draining_seeks_msat_pool as u64; // Guaranteed to
-                                                             // fit in u64
+            // `draining_seeks_msat_pool` starts off as `seeks_msat_pool` and gets
+            // progressively smaller. `seeks_msat_pool` fits in u64 since it
+            // cannot grow larger than 21 million BTC. Therefore
+            // `draining_seeks_msat_pool` must also fit in u64.
+            amount.msats += TryInto::<u64>::try_into(draining_seeks_msat_pool).unwrap();
         }
     }
 
@@ -895,7 +901,10 @@ fn settle_locks(
         .for_each(|LockedProvide { amount, .. }| {
             let new_amount = (provides_msat_pool * amount.msats as u128) / total_provide_msats;
             draining_provides_msat_pool -= new_amount;
-            amount.msats = new_amount as u64; // Guaranteed to fit in u64
+            // `provides_msat_pool` fits in u64 since it cannot grow larger than 21 million
+            // BTC. `new_amount` is less than `provides_msat_pool`. Therefore,
+            // `new_amount` must fit in u64.
+            amount.msats = new_amount.try_into().unwrap();
         });
 
     // If there's any left over msats owed to provides (due to rounding),
@@ -904,8 +913,11 @@ fn settle_locks(
         let mut provides_vec = locked_provides.values_mut().flatten().collect_vec();
         let rand_index = randomness % provides_vec.len();
         if let Some(LockedProvide { amount, .. }) = provides_vec.get_mut(rand_index) {
-            amount.msats += draining_provides_msat_pool as u64; // Guaranteed to
-                                                                // fit in u64
+            // `draining_provides_msat_pool` starts off as `provides_msat_pool` and gets
+            // progressively smaller. `provides_msat_pool` fits in u64 since it
+            // cannot grow larger than 21 million BTC. Therefore
+            // `draining_provides_msat_pool` must also fit in u64.
+            amount.msats += TryInto::<u64>::try_into(draining_provides_msat_pool).unwrap();
         }
     }
 }
@@ -951,7 +963,9 @@ async fn apply_staged_cancellations(
                     seeks_msat_to_cancel -= cancellable;
                     msats_to_refund += cancellable;
 
-                    let cancellable = Amount::from_msats(cancellable as u64);
+                    // `cancellable` is the min of two valid msat values. Since an msat value is
+                    // guaranteed to fit within u64, so is `cancellable`.
+                    let cancellable = Amount::from_msats(cancellable.try_into().unwrap());
                     *amount -= cancellable;
 
                     let seek_metadata_key = SeekMetadataKey(key.0, *staged_txid);
@@ -992,7 +1006,10 @@ async fn apply_staged_cancellations(
                 // Iterate in reverse to ensure older sequences are preserved
                 for LockedProvide { amount, .. } in provides_list.iter_mut().rev() {
                     let cancellable = provides_msat_to_cancel.min(amount.msats.into());
-                    amount.msats -= cancellable as u64;
+
+                    // `cancellable` is the min of two valid msat values. Since an msat value is
+                    // guaranteed to fit within u64, so is `cancellable`
+                    amount.msats -= TryInto::<u64>::try_into(cancellable).unwrap();
                     provides_msat_to_cancel -= cancellable;
                     msats_to_refund += cancellable;
 
@@ -1012,7 +1029,13 @@ async fn apply_staged_cancellations(
             .get_value(&idle_balance_key)
             .await
             .unwrap_or(IdleBalance(Amount::ZERO));
-        idle_balance.0.msats += msats_to_refund as u64;
+
+        // `msats_to_refund` is an accrued value calculated by taking the user's seeks
+        // (or provides) and draining the seeks according to the specified basis points.
+        // Since the sum of the user's seeks cannot exceed 21 million BTC,
+        // `msats_to_refund` cannot exceed 21 million BTC, and must therefore fit within
+        // u64.
+        idle_balance.0.msats += TryInto::<u64>::try_into(msats_to_refund).unwrap();
         dbtx.insert_entry(&idle_balance_key, &idle_balance).await;
         dbtx.remove_entry(&key).await;
     }
@@ -1261,7 +1284,6 @@ fn calculate_locked_provides_and_fee_rate(
             remaining_coll_needed = new_remaining_coll_needed;
         }
 
-        // amount_used is guaranteed to fit in u64 since it's a min(u64)
         let amount_used = remaining_coll_needed.min(provide.amount.msats.into());
         included_provides_sum += amount_used;
         remaining_coll_needed -= amount_used;
@@ -1271,12 +1293,14 @@ fn calculate_locked_provides_and_fee_rate(
                 staged_txid: *txid,
                 staged_sequence: *sequence,
                 staged_min_fee_rate: provide.min_fee_rate,
-                amount: Amount::from_msats(amount_used as u64),
+                // amount_used is guaranteed to fit in u64 since it's a min(u64)
+                amount: Amount::from_msats(amount_used.try_into().unwrap()),
             },
         ));
 
         // Modify the staged provide we just used (or remove it if exhausted)
-        provide.amount.msats -= amount_used as u64;
+        // amount_used is guaranteed to fit in u64 since it's a min(u64)
+        provide.amount.msats -= TryInto::<u64>::try_into(amount_used).unwrap();
         if provide.amount == Amount::ZERO {
             staged_provides.pop_front();
         }
@@ -1316,7 +1340,6 @@ fn calculate_locked_seeks(
             },
         ) = &mut staged_seeks[0];
 
-        // amount_used is guaranteed to fit in u64 since it's a min(u64)
         let amount_used = included_seeks_sum_before_fees.min(seek.0.msats.into());
         included_seeks_sum_before_fees -= amount_used;
         locked_seeks.push((
@@ -1324,12 +1347,14 @@ fn calculate_locked_seeks(
             LockedSeek {
                 staged_txid: *txid,
                 staged_sequence: *sequence,
-                amount: Amount::from_msats(amount_used as u64),
+                // amount_used is guaranteed to fit in u64 since it's a min(u64)
+                amount: Amount::from_msats(amount_used.try_into().unwrap()),
             },
         ));
 
         // Modify the staged seek we just used (or remove it if exhausted)
-        seek.0.msats -= amount_used as u64;
+        // amount_used is guaranteed to fit in u64 since it's a min(u64)
+        seek.0.msats -= TryInto::<u64>::try_into(amount_used).unwrap();
         if seek.0 == Amount::ZERO {
             staged_seeks.pop_front();
         }
@@ -1392,7 +1417,10 @@ async fn distribute_fees_and_write_cycle(
             let fee = ceil_division(amount.msats as u128 * fee_rate as u128, B);
             fee_pool += fee;
 
-            let fee = Amount::from_msats(fee as u64); // fee guaranteed to fit in u64
+            // `fee` is calculated by taking a real msat value (which is guaranteed to fit
+            // within u64) and multiplying it by a fraction smaller than 1. Therefore `fee`
+            // must fit within u64.
+            let fee = Amount::from_msats(fee.try_into().unwrap());
             seek_amount_and_fee_map.insert(
                 AmountAndFeeKey {
                     pub_key: *account,
@@ -1483,7 +1511,14 @@ async fn distribute_fees_and_write_cycle(
             .get_value(&idle_balance_key)
             .await
             .unwrap_or(IdleBalance(Amount::ZERO));
-        idle_balance.0.msats += fee_owed as u64;
+        // `fee_owed` is calculated by taking the total fee amount owed to all the
+        // providers which comes from all the seeks. Since the sum of seeks cannot
+        // exceed 21 million BTC, the total fee amount owed to all the providers cannot
+        // exceed 21 million BTC. Then to calculate `fee_owed`, we take this total fee
+        // amount and multiply it by a fraction representing the provider's share of the
+        // total provided liquidity. Therefore, `fee_owed` cannot exceed 21 million BTC.
+        // And hence it must fit within u64.
+        idle_balance.0.msats += TryInto::<u64>::try_into(fee_owed).unwrap();
         dbtx.insert_entry(&idle_balance_key, &idle_balance).await;
     }
 
