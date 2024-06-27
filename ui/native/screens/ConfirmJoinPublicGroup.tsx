@@ -11,7 +11,7 @@ import { MatrixGroupPreview } from '@fedi/common/types'
 
 import HoloGradient from '../components/ui/HoloGradient'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import { resetToDirectChat } from '../state/navigation'
+import { resetToGroupChat } from '../state/navigation'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -42,7 +42,7 @@ const ConfirmJoinPublicGroup: React.FC<Props> = ({ route, navigation }) => {
         // TODO: Implement knocking to support non-public rooms
         joinPublicGroup(groupId)
             .then(() => {
-                navigation.dispatch(resetToDirectChat(groupId))
+                navigation.dispatch(resetToGroupChat(groupId))
             })
             .finally(() => {
                 setIsJoiningGroup(false)
