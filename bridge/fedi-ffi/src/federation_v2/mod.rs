@@ -89,6 +89,7 @@ use super::types::{
 };
 use crate::error::ErrorCode;
 use crate::event::RecoveryProgressEvent;
+use crate::features::FeatureCatalog;
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
 use crate::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::storage::FediFeeSchedule;
@@ -156,6 +157,7 @@ pub struct FederationV2 {
     // balance would allow. We hold the mutex over a span that covers the time of check (recording
     // virtual balance) and the time of use (spending ecash and recording fee).
     pub spend_guard: Arc<Mutex<()>>,
+    pub feature_catalog: Arc<FeatureCatalog>,
 }
 
 impl FederationV2 {
@@ -177,6 +179,7 @@ impl FederationV2 {
         task_group: TaskGroup,
         secret: DerivableSecret,
         fedi_fee_helper: Arc<FediFeeHelper>,
+        feature_catalog: Arc<FeatureCatalog>,
     ) -> Self {
         let recovering = ng.has_pending_recoveries().await;
         let client = Arc::new(ng);
@@ -193,6 +196,7 @@ impl FederationV2 {
             stability_pool_sweeper_service: OnceCell::new(),
             client,
             spend_guard: Default::default(),
+            feature_catalog,
         };
         if !recovering {
             federation.start_background_tasks().await;
@@ -269,6 +273,7 @@ impl FederationV2 {
         root_mnemonic: &bip39::Mnemonic,
         device_index: u8,
         fedi_fee_helper: Arc<FediFeeHelper>,
+        feature_catalog: Arc<FeatureCatalog>,
     ) -> anyhow::Result<Self> {
         let client_builder = Self::build_client_builder(db.clone()).await?;
         let config = Client::get_config_from_db(&db)
@@ -290,6 +295,7 @@ impl FederationV2 {
             task_group.make_subgroup().await,
             auxiliary_secret,
             fedi_fee_helper,
+            feature_catalog,
         )
         .await)
     }
@@ -298,9 +304,12 @@ impl FederationV2 {
         invite_code_string: &str,
         root_mnemonic: &bip39::Mnemonic,
         device_index: u8,
+        should_override_localhost: bool,
     ) -> anyhow::Result<(ClientConfig, FederationResult<Vec<ClientBackupSnapshot>>)> {
         let mut invite_code: InviteCode = InviteCode::from_str(invite_code_string)?;
-        override_localhost_invite_code(&mut invite_code);
+        if should_override_localhost {
+            override_localhost_invite_code(&mut invite_code);
+        }
         let api = DynGlobalApi::from_invite_code(&[invite_code.clone()]);
         let backup_id_pub_key = {
             let federation_id = invite_code.federation_id();
@@ -337,13 +346,18 @@ impl FederationV2 {
         root_mnemonic: &bip39::Mnemonic,
         device_index: u8,
         fedi_fee_helper: Arc<FediFeeHelper>,
+        feature_catalog: Arc<FeatureCatalog>,
     ) -> Result<Self> {
         let mut invite_code =
             InviteCode::from_str(&invite_code_string).context("invalid invite code")?;
-        override_localhost_invite_code(&mut invite_code);
+        if feature_catalog.override_localhost.is_some() {
+            override_localhost_invite_code(&mut invite_code);
+        }
         let mut client_config: ClientConfig =
             ClientConfig::download_from_invite_code(&invite_code).await?;
-        override_localhost_client_config(&mut client_config);
+        if feature_catalog.override_localhost.is_some() {
+            override_localhost_client_config(&mut client_config);
+        }
 
         // fedimint-client will add decoders
         let mut dbtx = db.begin_transaction().await;
@@ -385,6 +399,7 @@ impl FederationV2 {
                 task_group.make_subgroup().await,
                 auxiliary_secret,
                 fedi_fee_helper,
+                feature_catalog,
             )
             .await;
             this.save_restored_metadata(metadata).await?;
@@ -398,6 +413,7 @@ impl FederationV2 {
                 task_group.make_subgroup().await,
                 auxiliary_secret,
                 fedi_fee_helper,
+                feature_catalog,
             )
             .await)
         }
@@ -445,6 +461,10 @@ impl FederationV2 {
 
     pub async fn select_gateway(&self) -> anyhow::Result<Option<LightningGateway>> {
         let gateway = self.gateway_service()?.select_gateway(&self.client).await?;
+        if self.feature_catalog.override_localhost.is_none() {
+            return Ok(gateway);
+        }
+
         Ok(gateway.map(|mut g| {
             g.api = override_localhost(&g.api);
             g

@@ -45,12 +45,21 @@ pub struct FeatureCatalog {
     /// could be device-level, meaning it differs across devices using the same
     /// seed. Furthermore, we use e2e encryption.
     pub encrypted_sync: Option<EncryptedSyncFeatureConfig>,
+
+    // "Override localhost" feature determines whether or not the IP address 127.0.0.1 should be
+    // overridden to a different IP address or hostname depending on the build target
+    // (Android/iOS/web). This is typically a dev-only feature needed for testing on Android and
+    // iOS emulators.
+    pub override_localhost: Option<OverrideLocalhostFeatureConfig>,
 }
 
 #[derive(Debug, Clone)]
 pub struct EncryptedSyncFeatureConfig {
     pub server_url: String,
 }
+
+#[derive(Debug, Clone)]
+pub struct OverrideLocalhostFeatureConfig {}
 
 impl FeatureCatalog {
     pub fn new(runtime_env: RuntimeEnvironment) -> Self {
@@ -66,18 +75,21 @@ impl FeatureCatalog {
             encrypted_sync: Some(EncryptedSyncFeatureConfig {
                 server_url: "https://prod-kv-store.dev.fedibtc.com/".to_string(),
             }),
+            override_localhost: Some(OverrideLocalhostFeatureConfig {}),
         }
     }
 
     fn new_staging() -> Self {
         Self {
             encrypted_sync: None,
+            override_localhost: None,
         }
     }
 
     fn new_prod() -> Self {
         Self {
             encrypted_sync: None,
+            override_localhost: None,
         }
     }
 }
