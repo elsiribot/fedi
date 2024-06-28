@@ -414,7 +414,9 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                             }
                         }
                     }}>
-                    <Text>{t('phrases.app-version', { version })}</Text>
+                    <Text adjustsFontSizeToFit numberOfLines={1}>
+                        {t('phrases.app-version', { version })}
+                    </Text>
                 </Pressable>
             </View>
         </ScrollView>

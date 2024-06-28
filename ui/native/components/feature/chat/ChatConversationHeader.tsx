@@ -11,6 +11,7 @@ import {
 import { getUserSuffix } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../../../state/hooks'
+import { resetToChatsScreen } from '../../../state/navigation'
 import { RootStackParamList } from '../../../types/navigation'
 import Avatar, { AvatarSize } from '../../ui/Avatar'
 import Header from '../../ui/Header'
@@ -32,6 +33,8 @@ const ChatConversationHeader: React.FC = () => {
     const user = useAppSelector(s => selectMatrixUser(s, userId))
     const isGroupChat = room?.directUserId === undefined
 
+    const style = styles(theme)
+
     let avatar: React.ReactNode
     let name = ''
     if (room) {
@@ -48,20 +51,32 @@ const ChatConversationHeader: React.FC = () => {
         name = displayName
         avatar = <ChatAvatar size={AvatarSize.sm} user={placeHolderUser} />
     } else {
-        avatar = <Avatar size={AvatarSize.sm} id={''} name={name} />
+        avatar = (
+            <Avatar
+                size={AvatarSize.sm}
+                id={''}
+                name={name}
+                maxFontSizeMultiplier={
+                    theme.multipliers.headerMaxFontMultiplier
+                }
+            />
+        )
     }
 
     return (
         <>
             <Header
                 backButton
-                containerStyle={styles(theme).container}
-                leftContainerStyle={styles(theme).headerLeftContainer}
-                centerContainerStyle={styles(theme).headerCenterContainer}
+                onBackButtonPress={() =>
+                    navigation.dispatch(resetToChatsScreen())
+                }
+                containerStyle={style.container}
+                centerContainerStyle={style.headerCenterContainer}
                 headerCenter={
                     <Pressable
                         disabled={!isGroupChat}
-                        style={styles(theme).memberContainer}
+                        style={style.memberContainer}
+                        hitSlop={10}
                         onPress={() => {
                             // make sure we have joined room and its not just a preview to show admin settings
                             // TODO: implement admin settings for 1on1 chat
@@ -70,18 +85,27 @@ const ChatConversationHeader: React.FC = () => {
                             }
                         }}>
                         {avatar}
-                        <View style={styles(theme).textContainer}>
+                        <View style={style.textContainer}>
                             <Text
                                 bold
                                 numberOfLines={1}
-                                style={styles(theme).memberText}>
+                                adjustsFontSizeToFit
+                                maxFontSizeMultiplier={
+                                    theme.multipliers.headerMaxFontMultiplier
+                                }
+                                style={style.memberText}>
                                 {name}
                             </Text>
                             {room?.directUserId && (
                                 <Text
                                     caption
                                     numberOfLines={1}
-                                    style={styles(theme).shortIdText}>
+                                    adjustsFontSizeToFit
+                                    maxFontSizeMultiplier={
+                                        theme.multipliers
+                                            .headerMaxFontMultiplier
+                                    }
+                                    style={style.shortIdText}>
                                     {getUserSuffix(room.directUserId)}
                                 </Text>
                             )}
@@ -97,16 +121,14 @@ const ChatConversationHeader: React.FC = () => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            alignItems: 'center',
+            paddingTop: theme.spacing.xs,
         },
         headerLeftContainer: {
             height: theme.sizes.md,
+            borderWidth: 1,
         },
         headerCenterContainer: {
             flex: 6,
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 0,
         },
         memberText: {
             marginLeft: theme.spacing.sm,

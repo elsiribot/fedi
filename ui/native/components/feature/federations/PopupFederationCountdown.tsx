@@ -61,7 +61,7 @@ export const PopupFederationCountdown: React.FC = () => {
         )
 
     return (
-        <>
+        <View style={style.container}>
             <Pressable
                 style={pillStyles}
                 onPress={() => setIsOverlayVisible(true)}>
@@ -113,12 +113,15 @@ export const PopupFederationCountdown: React.FC = () => {
                     )}
                 </View>
             </Overlay>
-        </>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: {
+            alignItems: 'center',
+        },
         pill: {
             paddingVertical: theme.spacing.xxs,
             paddingHorizontal: theme.spacing.sm,

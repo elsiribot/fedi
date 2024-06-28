@@ -56,7 +56,9 @@ const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
         selectIsActiveFederationRecovering,
     )
 
-    const style = styles(theme, fontScale)
+    const multiplier = Math.min(fontScale, 2)
+
+    const style = styles(theme, multiplier)
 
     const renderIcon = () => {
         if (isMod(shortcut) && imageSrc) {
@@ -86,6 +88,7 @@ const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
                     name={shortcut.icon.svg as SvgImageName}
                     size={SvgImageSize.md}
                     color={theme.colors.secondary}
+                    maxFontSizeMultiplier={1.2}
                 />
             )
         }

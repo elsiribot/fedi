@@ -6,6 +6,7 @@ import SvgImage, { SvgImageName, SvgImageProps } from './SvgImage'
 
 type Props = {
     svgName: SvgImageName
+    maxFontSizeMultiplier?: number
     svgProps?: Omit<SvgImageProps, 'name'>
 } & PressableProps
 
@@ -13,16 +14,23 @@ export const PressableIcon: React.FC<Props> = ({
     svgName,
     svgProps,
     containerStyle = {},
+    maxFontSizeMultiplier,
     ...props
 }) => {
     const { theme } = useTheme()
     const style = styles(theme)
+    const multiplier =
+        maxFontSizeMultiplier || theme.multipliers.defaultMaxFontMultiplier
 
     return (
         <Pressable
             containerStyle={[style.container, containerStyle]}
             {...props}>
-            <SvgImage name={svgName} {...svgProps} />
+            <SvgImage
+                maxFontSizeMultiplier={multiplier}
+                name={svgName}
+                {...svgProps}
+            />
         </Pressable>
     )
 }

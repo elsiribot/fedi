@@ -33,6 +33,11 @@ const shouldShowDefaultButtonBackground = (props: ButtonProps) => {
 }
 
 const themeDefaults = {
+    multipliers: {
+        headerMaxFontMultiplier: 1.4,
+        iconMaxSizeMultiplier: 2,
+        defaultMaxFontMultiplier: 1.8,
+    },
     percentages: {
         shortcutTileWidth: '33%',
     },
@@ -92,6 +97,17 @@ const themeDefaults = {
             // TODO: import this font
             // fontFamily: 'Martian Mono',
         },
+        subtleShadow: {
+            shadowColor: fediTheme.colors.night,
+            shadowOffset: {
+                width: 0,
+                height: 4,
+            },
+            shadowOpacity: 0.1,
+            shadowRadius: 24,
+
+            elevation: 9,
+        },
     },
 } as const
 
@@ -108,6 +124,11 @@ const theme = createTheme({
                 paddingRight: 10,
                 fontFamily: 'AlbertSans-Regular',
                 ...(props.day ? { color: theme.colors?.primary } : {}),
+            },
+            titleProps: {
+                maxFontSizeMultiplier:
+                    themeDefaults.multipliers.defaultMaxFontMultiplier,
+                adjustsFontSizeToFit: true,
             },
             disabledStyle: {
                 opacity: 0.7,
@@ -153,7 +174,10 @@ const theme = createTheme({
         }),
         Text: props => ({
             // Don't allow titles to get insane font size multipliers
-            maxFontSizeMultiplier: props.h1 ? 1.4 : props.h2 ? 1.8 : undefined,
+            maxFontSizeMultiplier:
+                props.h1 || props.h2
+                    ? themeDefaults.multipliers.headerMaxFontMultiplier
+                    : themeDefaults.multipliers.defaultMaxFontMultiplier,
             style: {
                 ...themeDefaults.styles?.text,
                 // Use fontFamily for bolding effects because the fontWeight
@@ -231,22 +255,32 @@ const theme = createTheme({
         },
         Header: {
             containerStyle: {
-                paddingHorizontal: 16,
+                paddingHorizontal: fediTheme.spacing.lg,
                 borderBottomColor: colors.secondary,
                 // This helps maximize the clickable area for any header buttons
                 paddingVertical: 0,
             },
             leftContainerStyle: {
                 flex: 1,
+                flexDirection: 'row',
+                justifyContent: 'flex-start',
+                alignItems: 'center',
             },
             centerContainerStyle: {
-                flex: 4,
+                flex: 0,
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
+                // the min content height should always be
+                // consistent so the header buttons don't move when
+                // the content changes
+                minHeight: 36,
             },
             rightContainerStyle: {
                 flex: 1,
+                flexDirection: 'row',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
             },
         },
     },

@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Switch, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
@@ -9,7 +9,7 @@ import { createMatrixRoom, selectMatrixRoom } from '@fedi/common/redux'
 import { ChatType } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 
-import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
+import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -76,6 +76,10 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
         }
     }, [broadcastOnly, dispatch, groupName, isPublic, toast, t])
 
+    const icon = useMemo(() => {
+        return broadcastOnly ? 'SpeakerPhone' : 'SocialPeople'
+    }, [broadcastOnly])
+
     const handleSubmit = async () => {
         if (groupName) {
             handleCreateGroup()
@@ -86,7 +90,7 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
 
     return (
         <View style={style.container}>
-            <SvgImage name="NewRoom" size={SvgImageSize.lg} />
+            <Avatar id={''} icon={icon} size={AvatarSize.md} />
             <View style={style.inputWrapper}>
                 <Input
                     onChangeText={setGroupName}

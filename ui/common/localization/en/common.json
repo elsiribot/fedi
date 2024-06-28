@@ -384,6 +384,7 @@
             "scan-chat-invite": "Scan chat invite",
             "scan-group-invite": "Scan a group invite",
             "scan-member-code-notice": "Show QR to share your username",
+            "scan-user-code": "Scan a user code",
             "select-or-start": "Select a chat, or start a new chat",
             "send-a-message-to": "Send a message to {{name}}",
             "show-history-to-new-members": "Show history to new members",

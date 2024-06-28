@@ -43,7 +43,7 @@ import Home from './Home'
 import Mods from './Mods'
 import OmniScanner from './OmniScanner'
 
-const MAX_TABS_FONT_SCALE = 1.8
+const MAX_TABS_FONT_SCALE = 1.2
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'TabsNavigator'>
 
@@ -103,7 +103,6 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
     )
     return (
         <>
-            {/* <SelectedFederationHeader /> */}
             <Tab.Navigator
                 initialRouteName={route.params?.initialRouteName || 'Home'}
                 id={TABS_NAVIGATOR_ID}
@@ -169,6 +168,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                             bold={focused}
                             medium={!focused}
                             maxFontSizeMultiplier={MAX_TABS_FONT_SCALE}
+                            numberOfLines={1}
                             style={{
                                 color: focused
                                     ? theme.colors.primary
@@ -206,6 +206,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                     name="Mods"
                     component={Mods}
                     options={() => ({
+                        title: t('words.mods'),
                         headerShown: false, // this allows us to draw over the header with tooltips
                     })}
                 />
@@ -214,7 +215,7 @@ const TabsNavigator: React.FC<Props> = ({ navigation, route }: Props) => {
                     component={OmniScanner}
                     options={() => ({
                         title: t('words.scan'),
-                        header: () => <Header />,
+                        header: () => <Header empty />,
                     })}
                 />
             </Tab.Navigator>

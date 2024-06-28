@@ -37,7 +37,12 @@ const SettingsItem = ({
             ]}
             onPress={disabled ? undefined : onPress}>
             {image}
-            <Text style={styles(theme).label}>{label}</Text>
+            <Text
+                style={styles(theme).label}
+                adjustsFontSizeToFit
+                numberOfLines={1}>
+                {label}
+            </Text>
             {isLoading ? (
                 <ActivityIndicator size={theme.sizes.sm} />
             ) : (

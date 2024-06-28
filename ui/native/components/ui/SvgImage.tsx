@@ -35,7 +35,7 @@ const SvgImage = ({
     containerStyle,
     svgProps,
     color,
-    maxFontSizeMultiplier = Infinity,
+    maxFontSizeMultiplier,
 }: SvgImageProps) => {
     const { theme } = useTheme()
     const Svg = Object(Svgs)[name]
@@ -44,7 +44,10 @@ const SvgImage = ({
     // Calculate the size. Use fontScale as a multiplier, but only at
     // half the intensity. E.g. if fontScale is 2, the multiplier is 1.5.
     const multiplier = getIconSizeMultiplier(
-        Math.min(fontScale, maxFontSizeMultiplier),
+        Math.min(
+            fontScale,
+            maxFontSizeMultiplier || theme.multipliers.defaultMaxFontMultiplier,
+        ),
     )
     const pxSize =
         (typeof size === 'number' ? size : theme.sizes[size]) * multiplier

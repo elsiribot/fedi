@@ -13,9 +13,9 @@ import {
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import Header from '../../ui/Header'
-import { PressableIcon } from '../../ui/PressableIcon'
 import { Tooltip } from '../../ui/Tooltip'
 import { ChatConnectionBadge } from './ChatConnectionBadge'
+import HeaderAvatar from './HeaderAvatar'
 
 const ChatHeader: React.FC = () => {
     const { theme } = useTheme()
@@ -28,43 +28,36 @@ const ChatHeader: React.FC = () => {
 
     if (shouldShowUpgradeChat) return null
 
+    const style = styles(theme)
+
     return (
         <>
             <Header
-                containerStyle={styles(theme).container}
-                leftContainerStyle={{ flex: 2 }}
+                containerStyle={style.container}
                 headerLeft={
-                    <Text h2 medium>
+                    <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
                         {t('words.chat')}
                     </Text>
                 }
-                centerContainerStyle={{ flex: 2 }}
                 headerRight={
                     <>
-                        <PressableIcon
+                        <HeaderAvatar
                             onPress={() => {
-                                navigation.navigate('MemberQrCode')
+                                navigation.navigate('Settings')
                                 completeViewedMemberQr()
                             }}
-                            hitSlop={5}
-                            svgName="Qr"
-                            svgProps={{
-                                color: theme.colors.primary,
-                            }}
                         />
-
                         <Tooltip
                             delay={600}
                             shouldShow={isChatEmpty && !hasViewedMemberQr}
                             orientation="below"
                             side="right"
                             text="Your username"
-                            horizontalOffset={12}
-                            verticalOffset={32}
+                            horizontalOffset={20}
+                            verticalOffset={34}
                         />
                     </>
                 }
-                rightContainerStyle={styles(theme).rightContainer}
             />
             <ChatConnectionBadge />
         </>
@@ -74,13 +67,7 @@ const ChatHeader: React.FC = () => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            paddingBottom: theme.spacing.lg,
-        },
-        rightContainer: {
-            flex: 1,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
+            paddingBottom: theme.spacing.md,
         },
     })
 
