@@ -14,7 +14,7 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import { selectActiveFederationId, selectFederations } from '@fedi/common/redux'
@@ -46,10 +46,13 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
         <View style={style.drawerItemLabel}>
             <FederationLogo federation={federation} size={48} />
             <View style={style.labelsContainer}>
-                <Text bold numberOfLines={1}>
+                <Text bold numberOfLines={2}>
                     {federation.name}
                 </Text>
-                <Text style={style.subText}>
+                <Text
+                    style={style.subText}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit>
                     {`${formattedPrimaryAmount} (${formattedSecondaryAmount})`}
                 </Text>
             </View>
@@ -130,9 +133,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                     />
                 ))}
             </DrawerContentScrollView>
-            <SafeAreaView
-                edges={['bottom', 'left']}
-                style={style.addFederationContainer}>
+            <View style={style.addFederationContainer}>
                 <Button
                     style={style.addFederationButton}
                     onPress={() => {
@@ -140,16 +141,10 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                             invite: undefined,
                         })
                     }}
-                    title={
-                        <Text
-                            style={style.addFederationText}
-                            caption
-                            maxFontSizeMultiplier={1.8}>
-                            {t('feature.federations.add-federation')}
-                        </Text>
-                    }
+                    title={t('feature.federations.add-federation')}
+                    titleStyle={style.addFederationText}
                 />
-            </SafeAreaView>
+            </View>
         </ImageBackground>
     )
 }
@@ -171,7 +166,6 @@ const styles = (theme: Theme) =>
             height: theme.sizes.addFederationButtonHeight,
         },
         addFederationText: {
-            paddingLeft: theme.spacing.xs,
             color: theme.colors.white,
         },
         drawerItem: {

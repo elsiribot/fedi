@@ -21,7 +21,7 @@ const HeaderAvatar: React.FC<Props> = ({ onPress }) => {
             name={'Smile'}
             size={SvgImageSize.sm}
             containerStyle={style.iconContainer}
-            maxFontSizeMultiplier={1.5}
+            maxFontSizeMultiplier={theme.multipliers.headerMaxFontMultiplier}
         />
     ) : (
         <View style={style.avatarContainer}>
@@ -31,7 +31,9 @@ const HeaderAvatar: React.FC<Props> = ({ onPress }) => {
                 size={AvatarSize.sm}
                 name={matrixAuth?.displayName || ''}
                 containerStyle={style.avatarContainer}
-                maxFontSizeMultiplier={1.5}
+                maxFontSizeMultiplier={
+                    theme.multipliers.headerMaxFontMultiplier
+                }
             />
         </View>
     )

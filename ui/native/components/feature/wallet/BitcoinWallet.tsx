@@ -35,7 +35,6 @@ const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
         caption: true,
         medium: true,
         style: styles(theme).buttonTitle,
-        maxFontSizeMultiplier: 1.8,
         numberOfLines: 1,
     }
 
@@ -125,7 +124,7 @@ const styles = (theme: Theme) =>
             borderRadius: theme.borders.defaultRadius,
             padding: theme.spacing.lg,
             width: '100%',
-            height: theme.sizes.walletCardHeight,
+            minHeight: theme.sizes.walletCardHeight,
             margin: 0,
             borderWidth: 0,
             shadowColor: 'transparent',

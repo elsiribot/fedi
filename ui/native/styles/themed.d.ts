@@ -42,6 +42,9 @@ declare module '@rneui/themed' {
             border: string
             notification: string
         }
+        multipliers: {
+            [key: string]: number
+        }
         percentages: {
             [key: string]: DimensionValue
         }

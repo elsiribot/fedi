@@ -50,7 +50,11 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
                     ]}
                 />
                 <View style={styles(theme).chatTypeIconContainer}>
-                    <ChatAvatar room={room} size={AvatarSize.md} />
+                    <ChatAvatar
+                        room={room}
+                        size={AvatarSize.md}
+                        maxFontSizeMultiplier={1.2}
+                    />
                 </View>
             </View>
             <View style={styles(theme).content}>
@@ -92,7 +96,11 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
                 </View>
                 <View style={styles(theme).metadata}>
                     {room.preview?.timestamp && (
-                        <Text small style={styles(theme).timestamp}>
+                        <Text
+                            small
+                            style={styles(theme).timestamp}
+                            adjustsFontSizeToFit
+                            maxFontSizeMultiplier={1.4}>
                             {dateUtils.formatChatTileTimestamp(
                                 room.preview.timestamp / 1000,
                             )}

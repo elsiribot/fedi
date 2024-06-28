@@ -66,6 +66,7 @@ const ChatUserTile: React.FC<UserItemProps> = ({
                 )}
                 <Text
                     numberOfLines={1}
+                    adjustsFontSizeToFit
                     bold
                     style={[styles(theme).usernameText]}>
                     {user.displayName}

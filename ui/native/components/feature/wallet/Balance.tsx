@@ -8,16 +8,22 @@ import { useBalance } from '@fedi/common/hooks/amount'
 const Balance: React.FC = () => {
     const { theme } = useTheme()
     const { formattedBalanceSats, formattedBalanceFiat } = useBalance()
+    const maxFontSizeMultiplier = 1.8
 
     return (
         <View style={styles(theme).container}>
             <Text
                 h2
                 medium
-                style={[styles(theme).balanceText, styles(theme).topText]}>
+                style={[styles(theme).balanceText, styles(theme).topText]}
+                maxFontSizeMultiplier={maxFontSizeMultiplier}>
                 {`${formattedBalanceFiat}`}
             </Text>
-            <Text caption medium style={styles(theme).balanceText}>
+            <Text
+                caption
+                medium
+                style={styles(theme).balanceText}
+                maxFontSizeMultiplier={maxFontSizeMultiplier}>
                 {`${formattedBalanceSats}`}
             </Text>
         </View>

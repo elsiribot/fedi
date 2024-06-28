@@ -51,7 +51,16 @@ const ChatConversationHeader: React.FC = () => {
         name = displayName
         avatar = <ChatAvatar size={AvatarSize.sm} user={placeHolderUser} />
     } else {
-        avatar = <Avatar size={AvatarSize.sm} id={''} name={name} />
+        avatar = (
+            <Avatar
+                size={AvatarSize.sm}
+                id={''}
+                name={name}
+                maxFontSizeMultiplier={
+                    theme.multipliers.headerMaxFontMultiplier
+                }
+            />
+        )
     }
 
     return (
@@ -80,6 +89,10 @@ const ChatConversationHeader: React.FC = () => {
                             <Text
                                 bold
                                 numberOfLines={1}
+                                adjustsFontSizeToFit
+                                maxFontSizeMultiplier={
+                                    theme.multipliers.headerMaxFontMultiplier
+                                }
                                 style={style.memberText}>
                                 {name}
                             </Text>
@@ -87,6 +100,11 @@ const ChatConversationHeader: React.FC = () => {
                                 <Text
                                     caption
                                     numberOfLines={1}
+                                    adjustsFontSizeToFit
+                                    maxFontSizeMultiplier={
+                                        theme.multipliers
+                                            .headerMaxFontMultiplier
+                                    }
                                     style={style.shortIdText}>
                                     {getUserSuffix(room.directUserId)}
                                 </Text>

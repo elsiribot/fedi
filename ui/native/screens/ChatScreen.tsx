@@ -66,7 +66,7 @@ const ChatScreen: React.FC<Props> = () => {
     } else if (syncStatus === MatrixSyncStatus.stopped) {
         return (
             <View style={style.centerContainer}>
-                <Text style={style.errorText}>
+                <Text style={style.errorText} adjustsFontSizeToFit>
                     {t('errors.chat-connection-unhealthy')}
                 </Text>
             </View>
@@ -91,15 +91,25 @@ const ChatScreen: React.FC<Props> = () => {
                             source={Images.IllustrationChat}
                             style={style.emptyImage}
                         />
-                        <Text h1 style={style.registrationText}>
+                        <Text
+                            h1
+                            style={style.registrationText}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit>
                             {t('feature.chat.need-registration-title')}
                         </Text>
-                        <Text style={style.registrationText}>
+                        <Text
+                            style={style.registrationText}
+                            adjustsFontSizeToFit>
                             {t('feature.chat.need-registration-description')}
                         </Text>
                         <Button
                             fullWidth
-                            title={t('words.continue')}
+                            title={
+                                <Text style={{ color: theme.colors.secondary }}>
+                                    {t('words.continue')}
+                                </Text>
+                            }
                             onPress={() => navigation.push('EnterDisplayName')}
                         />
                     </View>
@@ -126,7 +136,7 @@ const ChatScreen: React.FC<Props> = () => {
                             fullWidth
                             type="clear"
                             title={
-                                <Text caption medium>
+                                <Text caption medium adjustsFontSizeToFit>
                                     {t('feature.chat.view-archived-chats')}
                                 </Text>
                             }
@@ -150,7 +160,11 @@ const ChatScreen: React.FC<Props> = () => {
             {!needsChatRegistration && (
                 <FAB
                     icon={
-                        <SvgImage name="Plus" color={theme.colors.secondary} />
+                        <SvgImage
+                            name="Plus"
+                            color={theme.colors.secondary}
+                            maxFontSizeMultiplier={1}
+                        />
                     }
                     color={theme.colors.blue}
                     style={style.actionButton}
