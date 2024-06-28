@@ -13,6 +13,7 @@ import { selectIsActiveFederationRecovering } from '@fedi/common/redux'
 import { FediModImages } from '../../../assets/images'
 import { useAppSelector } from '../../../state/hooks'
 import { FediMod, Shortcut, ShortcutType } from '../../../types'
+import { BubbleView } from '../../ui/BubbleView'
 import { Pressable } from '../../ui/Pressable'
 import SvgImage, {
     SvgImageName,
@@ -103,7 +104,9 @@ const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
             onPress={() => onSelect(shortcut)}
             onLongPress={() => onHold?.(shortcut)}
             disabled={recoveryInProgress}>
-            <View>{renderIcon()}</View>
+            <BubbleView containerStyle={style.iconContainer}>
+                {renderIcon()}
+            </BubbleView>
             <View style={style.title}>
                 <Text caption medium numberOfLines={2} style={style.titleText}>
                     {shortcut.title}
@@ -124,6 +127,21 @@ const styles = (theme: Theme, fontScale: number) => {
         },
         disabled: {
             opacity: 0.5,
+        },
+        iconContainer: {
+            width: iconSize,
+            height: iconSize,
+            overflow: 'hidden',
+            borderRadius: theme.borders.fediModTileRadius,
+            shadowColor: '#000',
+            shadowOffset: {
+                width: 0,
+                height: 1,
+            },
+            shadowOpacity: 0.18,
+            shadowRadius: 1.0,
+
+            elevation: 1,
         },
         iconImage: {
             width: iconSize,

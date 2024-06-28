@@ -22,6 +22,7 @@ const HEX_COLORS = {
     // TODO: Move these into maps instead of properties, e.g. blue[100] instead of blue100
     blue100: '#BAE0FE',
     blueDropShadow: '#7099B0',
+    mint: '#26A07B',
 }
 
 export const theme = {

@@ -6,6 +6,7 @@ import { selectMatrixAuth } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import Avatar, { AvatarSize } from '../../ui/Avatar'
+import { BubbleView } from '../../ui/BubbleView'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type Props = {
@@ -39,24 +40,16 @@ const HeaderAvatar: React.FC<Props> = ({ onPress }) => {
     )
 
     return (
-        <Pressable hitSlop={10} onPress={onPress} style={style.pressable}>
-            {contents}
+        <Pressable hitSlop={10} onPress={onPress}>
+            <BubbleView containerStyle={style.container}>{contents}</BubbleView>
         </Pressable>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        pressable: {
-            shadowColor: '#000',
-            shadowOffset: {
-                width: 0,
-                height: 1,
-            },
-            shadowOpacity: 0.22,
-            shadowRadius: 2.22,
+        container: {
             borderRadius: 40,
-            elevation: 3,
             marginRight: theme.spacing.xs,
         },
         iconContainer: {

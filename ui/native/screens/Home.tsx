@@ -43,13 +43,15 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
         return <NoFederations />
     }
 
+    const style = styles(theme)
+
     return (
         <ScrollView
-            contentContainerStyle={styles(theme).container}
+            contentContainerStyle={style.container}
             alwaysBounceVertical={false}>
-            <View style={styles(theme).wallet}>
+            <View style={style.wallet}>
                 {recoveryInProgress ? (
-                    <View style={styles(theme).border}>
+                    <View style={style.border}>
                         <RecoveryInProgress
                             label={t(
                                 'feature.recovery.recovery-in-progress-balance',
@@ -57,10 +59,10 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
                         />
                     </View>
                 ) : (
-                    <>
+                    <View style={style.balances}>
                         <BitcoinWallet offline={offline} />
                         {showStabilityWallet && <StabilityWallet />}
-                    </>
+                    </View>
                 )}
             </View>
             <ErrorBoundary fallback={null}>
@@ -81,6 +83,9 @@ const styles = (theme: Theme) =>
         wallet: {
             width: '100%',
             minHeight: theme.sizes.walletCardHeight,
+        },
+        balances: {
+            gap: theme.spacing.lg,
         },
         border: {
             padding: theme.spacing.lg,
