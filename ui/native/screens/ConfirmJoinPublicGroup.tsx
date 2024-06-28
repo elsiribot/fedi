@@ -7,10 +7,11 @@ import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context'
 
 import { useMatrixChatInvites } from '@fedi/common/hooks/matrix'
 import { getMatrixRoomPreview, selectGroupPreviews } from '@fedi/common/redux'
-import { ChatType, MatrixGroupPreview } from '@fedi/common/types'
+import { MatrixGroupPreview } from '@fedi/common/types'
 
 import HoloGradient from '../components/ui/HoloGradient'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { resetToGroupChat } from '../state/navigation'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -41,10 +42,7 @@ const ConfirmJoinPublicGroup: React.FC<Props> = ({ route, navigation }) => {
         // TODO: Implement knocking to support non-public rooms
         joinPublicGroup(groupId)
             .then(() => {
-                navigation.navigate('ChatRoomConversation', {
-                    roomId: groupId,
-                    chatType: ChatType.group,
-                })
+                navigation.dispatch(resetToGroupChat(groupId))
             })
             .finally(() => {
                 setIsJoiningGroup(false)
