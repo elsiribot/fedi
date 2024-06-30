@@ -3,10 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useDisplayNameForm } from '@fedi/common/hooks/chat'
-import {
-    selectAuthenticatedMember,
-    selectHasSetMatrixDisplayName,
-} from '@fedi/common/redux'
+import { selectHasSetMatrixDisplayName } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
@@ -25,8 +22,6 @@ export const EnterDisplayName: React.FC = () => {
     const { t } = useTranslation()
     const { push } = useRouter()
     const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
-    const hasLegacyChatData = !!authenticatedMember
     const {
         username,
         isSubmitting,
@@ -50,10 +45,6 @@ export const EnterDisplayName: React.FC = () => {
     // This would override the push('/onboarding/image')
     if (hasSetDisplayName && !isSubmitting && !hasSubmitted) {
         return <Redirect path="/onboarding/complete" />
-    }
-
-    if (hasLegacyChatData) {
-        return <Redirect path="/" />
     }
 
     return (
