@@ -348,7 +348,12 @@ export const startMatrixClient = createAsyncThunk<
     client.on('roomListUpdate', updates =>
         dispatch(handleMatrixRoomListObservableUpdates(updates)),
     )
-    client.on('roomInfo', room => dispatch(addMatrixRoomInfo(room)))
+    client.on('roomInfo', room => {
+        dispatch(addMatrixRoomInfo(room))
+        if (room.roomState === 'Invited') {
+            dispatch(joinMatrixRoom({ roomId: room.id }))
+        }
+    })
     client.on('roomMember', member => dispatch(addMatrixRoomMember(member)))
     client.on('roomMembers', ev => dispatch(setMatrixRoomMembers(ev)))
     client.on('roomTimelineUpdate', ev =>

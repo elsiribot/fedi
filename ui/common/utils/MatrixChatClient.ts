@@ -42,7 +42,6 @@ import {
     mxcUrlToHttpUrl,
 } from './matrix'
 import {
-    applyObservableUpdates,
     getNewObservableIds,
     makeInitialResetUpdate,
     mapObservableUpdates,
@@ -99,8 +98,6 @@ export class MatrixChatClient {
         { info?: number; timeline?: number } | undefined
     > = {}
     private clientObserverMap: Partial<Record<ClientObserverKind, number>> = {}
-    private roomInvites: RpcRoomListEntry[] = []
-    private joinedInvites: Set<string> = new Set()
     private displayNameValidator: DisplayNameValidatorType | undefined
 
     /*** Public methods ***/
@@ -140,7 +137,6 @@ export class MatrixChatClient {
                             // Wait until after the roomlist is observed
                             // to prevent flickering on startup
                             this.observeSyncStatus()
-                            this.autoJoinInvites()
                         })
                         .catch(reject)
                 })
@@ -169,7 +165,7 @@ export class MatrixChatClient {
         return this.serializeAuth(session)
     }
 
-    getRoomPreview = async (roomId: string) => {
+    async getRoomPreview(roomId: string) {
         let previewInfo: MatrixRoom
         let previewTimeline: MatrixTimelineItem[]
         try {
@@ -614,6 +610,8 @@ export class MatrixChatClient {
             makeInitialResetUpdate(initial.map(this.serializeRoomListItem)),
         )
 
+        // Join rooms we're invited to
+
         // Listen and emit on observable updates
         this.observe(id, (update: ObservableVecUpdate<RpcRoomListEntry>) => {
             this.emit(
@@ -657,6 +655,7 @@ export class MatrixChatClient {
             }),
         )
     }
+    // private async
 
     private async observeRoomInfo(roomId: string) {
         // Only observe a room once, subsequent calls are no-ops.
@@ -680,6 +679,11 @@ export class MatrixChatClient {
 
         // Emit the initial info
         const room = this.serializeRoomInfo(initial)
+
+        // Previously, room invite and room list were separate
+        // but now they are combined.
+        // All updates are merged too
+
         this.emit('roomInfo', room)
 
         // If it's a DM, fetch the member since it's small and we use recent DM users.
@@ -790,37 +794,6 @@ export class MatrixChatClient {
         })
     }
 
-    private async autoJoinInvites() {
-        const attemptJoins = () => {
-            this.roomInvites.forEach(invite => {
-                if (invite.kind === 'empty') return
-                const roomId = invite.value
-                if (this.joinedInvites.has(roomId)) return
-                this.joinedInvites.add(invite.value)
-                this.joinRoom(invite.value).catch(err => {
-                    log.warn(
-                        'Failed to auto-join invite, will try again later',
-                        { invite, err },
-                    )
-                    this.joinedInvites.delete(invite.value)
-                })
-            })
-        }
-
-        const { id, initial } = await this.fedimint.matrixRoomListInvites()
-        this.roomInvites = initial
-        attemptJoins()
-
-        // Listen and re-run auto accept on updates
-        this.observe(id, (update: ObservableVecUpdate<RpcRoomListEntry>) => {
-            this.roomInvites = applyObservableUpdates(
-                this.roomInvites,
-                update.update,
-            )
-            attemptJoins()
-        })
-    }
-
     private serializeRoomListItem(room: RpcRoomListEntry): MatrixRoomListItem {
         if (room.kind === 'empty' || room.kind === 'invalidated') {
             return { status: MatrixRoomListItemStatus.loading }
@@ -848,6 +821,8 @@ export class MatrixChatClient {
             isPreview: true,
             isPublic: true,
             inviteCode: encodeFediMatrixRoomUri(room.room_id),
+            // TODO: HACK - move this to bridge
+            roomState: 'Invited',
         }
     }
 
@@ -890,6 +865,8 @@ export class MatrixChatClient {
             // broadcastOnly: false,
             isPublic: room.base_info.encryption === null,
             inviteCode: encodeFediMatrixRoomUri(room.room_id),
+            // TODO: use zod OR export types more strictly...
+            roomState: room.room_state,
         }
     }
 

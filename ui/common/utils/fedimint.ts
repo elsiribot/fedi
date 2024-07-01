@@ -383,10 +383,6 @@ export class FedimintBridge {
         return this.rpcTyped('matrixRoomListUpdateRanges', args)
     }
 
-    async matrixRoomListInvites() {
-        return this.rpcTyped('matrixRoomListInvites', {})
-    }
-
     async matrixRoomTimelineItems(
         args: bindings.RpcPayload<'matrixRoomTimelineItems'>,
     ) {
