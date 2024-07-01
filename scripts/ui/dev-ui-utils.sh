@@ -12,6 +12,9 @@ fi
 
 while true; do
     echo "Select an option:"
+    echo "L - run the linter for all /ui code"
+    echo "T - run tests for all /ui code"
+    echo "U - run linter + tests for all /ui code"
     echo "a - rebuild bridge (android only)"
     echo "A - rebuild bridge & reinstall app (android only)"
     echo "i - rebuild bridge (ios only)"
@@ -25,6 +28,18 @@ while true; do
     read -rsn1 input
     
     case $input in
+        L)
+            echo "Running linter on all UI code"
+            pushd $REPO_ROOT/ui && yarn lint && popd
+            ;;
+        T)
+            echo "Running tests for all UI code"
+            pushd $REPO_ROOT/ui && yarn test && popd
+            ;;
+        U)
+            echo "Running linter & tests for all UI code"
+            pushd $REPO_ROOT/ui && yarn lint && yarn test && popd
+            ;;
         a)
             echo "Building android bridge artifacts"
             $REPO_ROOT/scripts/bridge/build-bridge-android.sh
