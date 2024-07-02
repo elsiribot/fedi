@@ -8,7 +8,11 @@ import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
 import orderBy from 'lodash/orderBy'
 
-import { CommonState, previewDefaultGroupChats } from '.'
+import {
+    CommonState,
+    previewCommunityDefaultChats,
+    previewDefaultGroupChats,
+} from '.'
 import { FEDI_GLOBAL_COMMUNITY } from '../constants/community'
 import {
     Federation,
@@ -17,6 +21,7 @@ import {
     PublicFederation,
     Sats,
     FediMod,
+    MatrixRoom,
 } from '../types'
 import { RpcJsonClientConfig, RpcStabilityPoolConfig } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
@@ -31,6 +36,7 @@ import {
     getFederationMaxStableBalanceMsats,
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
+import { makeChatFromPreview } from '../utils/matrix'
 import { loadFromStorage } from './storage'
 
 /*** Initial State ***/
@@ -46,6 +52,7 @@ const initialState = {
         Federation['meta'] | undefined
     >,
     customFediMods: {} as Record<Federation['id'], FediMod[] | undefined>,
+    defaultCommunityChats: {} as Record<Federation['id'], MatrixRoom[]>,
 }
 
 export type FederationState = typeof initialState
@@ -169,6 +176,23 @@ export const federationSlice = createSlice({
             state.externalMeta = action.payload.externalMeta
             state.customFediMods = action.payload.customFediMods || {}
         })
+
+        builder.addCase(
+            previewCommunityDefaultChats.fulfilled,
+            (state, action) => {
+                const chatPreviews = action.payload.map(makeChatFromPreview)
+                const federationId = action.meta.arg
+                state.defaultCommunityChats = isEqual(
+                    chatPreviews,
+                    state.defaultCommunityChats[federationId],
+                )
+                    ? state.defaultCommunityChats
+                    : {
+                          ...state.defaultCommunityChats,
+                          [federationId]: chatPreviews,
+                      }
+            },
+        )
     },
 })
 
@@ -416,6 +440,13 @@ export const selectActiveFederationCustomFediMods = (s: CommonState) => {
     const activeFederation = selectActiveFederation(s)
     return activeFederation
         ? s.federation.customFediMods[activeFederation?.id] || []
+        : []
+}
+
+export const selectActiveFederationChats = (s: CommonState) => {
+    const activeFederation = selectActiveFederation(s)
+    return activeFederation
+        ? s.federation.defaultCommunityChats[activeFederation.id] || []
         : []
 }
 

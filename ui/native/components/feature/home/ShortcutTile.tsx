@@ -108,7 +108,11 @@ const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
                 {renderIcon()}
             </BubbleView>
             <View style={style.title}>
-                <Text caption medium numberOfLines={2} style={style.titleText}>
+                <Text
+                    caption
+                    medium
+                    style={style.titleText}
+                    adjustsFontSizeToFit>
                     {shortcut.title}
                 </Text>
             </View>
@@ -124,6 +128,7 @@ const styles = (theme: Theme, fontScale: number) => {
             width: '100%',
             paddingHorizontal: theme.spacing.sm,
             flexDirection: 'column',
+            paddingVertical: theme.spacing.xs,
         },
         disabled: {
             opacity: 0.5,

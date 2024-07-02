@@ -575,6 +575,24 @@ export class FedimintBridge {
         return this.rpcTyped('getAccruedPendingFediFeesPerTXType', args)
     }
 
+    /*** COMMUNITIES RPCs ***/
+
+    async communityPreview(args: bindings.RpcPayload<'communityPreview'>) {
+        return this.rpcTyped('communityPreview', args)
+    }
+
+    async joinCommunity(args: bindings.RpcPayload<'joinCommunity'>) {
+        return this.rpcTyped('joinCommunity', args)
+    }
+
+    async leaveCommunity(args: bindings.RpcPayload<'leaveCommunity'>) {
+        return this.rpcTyped('leaveCommunity', args)
+    }
+
+    async listCommunities(args: bindings.RpcPayload<'listCommunities'>) {
+        return this.rpcTyped('listCommunities', args)
+    }
+
     /*** BRIDGE EVENTS ***/
 
     private listeners = new Map<string, Array<(data: unknown) => void>>()

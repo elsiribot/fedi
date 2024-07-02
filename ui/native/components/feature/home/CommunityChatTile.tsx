@@ -1,0 +1,128 @@
+import { Text, Theme, useTheme } from '@rneui/themed'
+import { t } from 'i18next'
+import React, { useMemo } from 'react'
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
+
+import { DEFAULT_GROUP_NAME } from '../../../constants'
+import { MatrixRoom } from '../../../types'
+import { AvatarSize } from '../../ui/Avatar'
+import { BubbleCard, BubbleView } from '../../ui/BubbleView'
+import HoloLoader from '../../ui/HoloLoader'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import ChatAvatar from '../chat/ChatAvatar'
+
+type CommunityChatTileProps = {
+    room?: MatrixRoom
+    onSelect?: (chat: MatrixRoom) => void
+    onLongPress?: (chat: MatrixRoom) => void
+}
+
+const CommunityChatTile = ({
+    room,
+    onSelect = () => null,
+    onLongPress = () => null,
+}: CommunityChatTileProps) => {
+    const { theme } = useTheme()
+
+    const style = styles(theme)
+
+    if (!room)
+        return (
+            <BubbleView containerStyle={style.card}>
+                <ActivityIndicator size={theme.sizes.mediumAvatar} />
+            </BubbleView>
+        )
+
+    const hasNewMessages = !Boolean(
+        room?.notificationCount && room.notificationCount > 0,
+    )
+
+    const subtitle = room.broadcastOnly
+        ? t('words.announcements')
+        : t('feature.chat.group-chat')
+
+    return (
+        <BubbleView containerStyle={style.card}>
+            <Pressable
+                style={style.content}
+                onLongPress={() => onLongPress(room)}
+                delayLongPress={300}
+                onPress={() => onSelect(room)}>
+                <View
+                    style={[
+                        style.unreadIndicator,
+                        hasNewMessages ? { opacity: 1 } : { opacity: 0 },
+                    ]}
+                />
+                <ChatAvatar
+                    room={room}
+                    size={AvatarSize.md}
+                    maxFontSizeMultiplier={1.2}
+                />
+                <View style={style.textContainer}>
+                    <Text style={style.title} numberOfLines={1} bold>
+                        {room.name || DEFAULT_GROUP_NAME}
+                    </Text>
+                    <Text
+                        small
+                        style={style.subtitle}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        medium>
+                        {subtitle}
+                    </Text>
+                </View>
+                <>
+                    <SvgImage
+                        name="ChevronRightSmall"
+                        color={theme.colors.grey}
+                        dimensions={{ width: 8, height: 16 }}
+                    />
+                </>
+            </Pressable>
+        </BubbleView>
+    )
+}
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        card: {
+            paddingVertical: theme.spacing.lg,
+            paddingHorizontal: theme.spacing.lg,
+            backgroundColor: theme.colors.offWhite100,
+            justifyContent: 'center',
+            borderRadius: 20,
+        },
+        content: {
+            display: 'flex',
+            gap: theme.spacing.sm,
+            flexDirection: 'row',
+            alignItems: 'center',
+            alignSelf: 'center',
+            justifySelf: 'center',
+        },
+        textContainer: {
+            flex: 1,
+            flexDirection: 'column',
+        },
+        title: {
+            letterSpacing: -0.16,
+            lineHeight: 20,
+        },
+        subtitle: {
+            color: theme.colors.grey,
+            lineHeight: 15,
+            letterSpacing: -0.12,
+        },
+        unreadIndicator: {
+            position: 'absolute',
+            zIndex: 1,
+            left: -(6 + theme.sizes.unreadIndicatorSize / 2),
+            backgroundColor: theme.colors.red,
+            height: theme.sizes.unreadIndicatorSize,
+            width: theme.sizes.unreadIndicatorSize,
+            borderRadius: theme.sizes.unreadIndicatorSize * 0.5,
+        },
+    })
+
+export default CommunityChatTile

@@ -10,6 +10,8 @@ import { theme as fediTheme } from '@fedi/common/constants/theme'
 
 type BubbleViewProps = {
     containerStyle?: StyleProp<ViewStyle>
+    topShadowStyle?: StyleProp<ViewStyle>
+    bottomShadowStyle?: StyleProp<ViewStyle>
     children: React.ReactNode
 }
 
@@ -25,18 +27,25 @@ type BubbleCardProps = BubbleViewProps & {
  * top and bottom of a View. It is used
  * to create the effect of a bubble view with a shadow.
  */
-export const BubbleView = ({ containerStyle, children }: BubbleViewProps) => {
+export const BubbleView = ({
+    containerStyle,
+    topShadowStyle,
+    bottomShadowStyle,
+    children,
+}: BubbleViewProps) => {
     const [width, setWidth] = useState(0)
     const { theme } = useTheme()
     const style = styles(theme, width)
+    const topShadow = topShadowStyle || style.top
+    const bottomShadow = bottomShadowStyle || style.bottom
     return (
         <View
             style={[containerStyle, style.container]}
             onLayout={({ nativeEvent }) => {
                 setWidth(nativeEvent.layout.width)
             }}>
-            <View style={[style.shadow, style.top]} />
-            <View style={[style.shadow, style.bottom]} />
+            <View style={[style.shadow, topShadow]} />
+            <View style={[style.shadow, bottomShadow]} />
             {children}
         </View>
     )
@@ -48,7 +57,6 @@ export const BubbleView = ({ containerStyle, children }: BubbleViewProps) => {
  * to create the effect of a bubble view with a shadow.
  */
 export const BubbleGradient = ({
-    containerStyle,
     children,
     ...linearGradientProps
 }: BubbleGradientProps) => {
@@ -106,7 +114,6 @@ const styles = (theme: Theme, width: number) =>
             gap: theme.spacing.md,
         },
         card: {
-            borderRadius: theme.borders.defaultRadius,
             padding: theme.spacing.lg,
             width: '100%',
             overflow: 'hidden',

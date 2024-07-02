@@ -6,17 +6,16 @@ import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { useShouldShowStabilityPool } from '@fedi/common/hooks/federation'
 import {
     selectFederations,
     selectIsActiveFederationRecovering,
 } from '@fedi/common/redux'
 
 import NoFederations from '../components/feature/federations/NoFederations'
+import CommunityChats from '../components/feature/home/CommunityChats'
+import HomeWallets from '../components/feature/home/HomeWallets'
 import ShortcutsList from '../components/feature/home/ShortcutsList'
 import RecoveryInProgress from '../components/feature/recovery/RecoveryInProgress'
-import StabilityWallet from '../components/feature/stabilitypool/StabilityWallet'
-import BitcoinWallet from '../components/feature/wallet/BitcoinWallet'
 import { useAppSelector } from '../state/hooks'
 import type {
     RootStackParamList,
@@ -37,7 +36,6 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
     )
-    const showStabilityWallet = useShouldShowStabilityPool()
 
     if (federations.length === 0) {
         return <NoFederations />
@@ -49,25 +47,29 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
         <ScrollView
             contentContainerStyle={style.container}
             alwaysBounceVertical={false}>
-            <View style={style.wallet}>
-                {recoveryInProgress ? (
-                    <View style={style.border}>
-                        <RecoveryInProgress
-                            label={t(
-                                'feature.recovery.recovery-in-progress-balance',
-                            )}
-                        />
-                    </View>
-                ) : (
-                    <View style={style.balances}>
-                        <BitcoinWallet offline={offline} />
-                        {showStabilityWallet && <StabilityWallet />}
-                    </View>
-                )}
+            <View style={style.content}>
+                <View style={style.section}>
+                    {recoveryInProgress ? (
+                        <View style={style.recovery}>
+                            <RecoveryInProgress
+                                label={t(
+                                    'feature.recovery.recovery-in-progress-balance',
+                                )}
+                            />
+                        </View>
+                    ) : (
+                        <HomeWallets offline={offline} />
+                    )}
+                </View>
+                <View style={style.section}>
+                    <ErrorBoundary fallback={null}>
+                        <ShortcutsList />
+                    </ErrorBoundary>
+                </View>
+                <View style={style.section}>
+                    <CommunityChats />
+                </View>
             </View>
-            <ErrorBoundary fallback={null}>
-                <ShortcutsList />
-            </ErrorBoundary>
         </ScrollView>
     )
 }
@@ -79,21 +81,20 @@ const styles = (theme: Theme) =>
             justifyContent: 'flex-start',
             marginTop: theme.spacing.sm,
             paddingHorizontal: theme.spacing.lg,
-        },
-        wallet: {
+            paddingBottom: theme.spacing.xl,
             width: '100%',
-            minHeight: theme.sizes.walletCardHeight,
         },
-        balances: {
+        content: {
+            width: '100%',
             gap: theme.spacing.lg,
         },
-        border: {
-            padding: theme.spacing.lg,
-            width: '100%',
+        recovery: {
             minHeight: theme.sizes.walletCardHeight,
             borderRadius: 20,
-            borderWidth: 1,
             borderColor: theme.colors.extraLightGrey,
+        },
+        section: {
+            // borderWidth: 1,
         },
     })
 
