@@ -1,20 +1,17 @@
 import { useNavigation } from '@react-navigation/native'
 import type { Theme } from '@rneui/themed'
 import { useTheme } from '@rneui/themed'
-import React, { useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
+import React from 'react'
 import { Linking, StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import { selectActiveFederationFediMods } from '@fedi/common/redux'
 
-import { FediModImages } from '../../../assets/images'
 import { useAppSelector } from '../../../state/hooks'
-import { Screen, Shortcut, FediMod } from '../../../types'
+import { Shortcut, FediMod } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
 import ShortcutTile from './ShortcutTile'
 
 const ShortcutsList: React.FC = () => {
-    const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const fediMods = useAppSelector(selectActiveFederationFediMods)
@@ -22,22 +19,6 @@ const ShortcutsList: React.FC = () => {
 
     const columns = width / fontScale < 300 ? 2 : 3
     const style = styles(theme, columns)
-
-    const screenShortcuts: Screen[] = useMemo(
-        () => [
-            // TODO: Refactor Screen to not be a class from Base, this is not typesafe.
-            // It could be missing required properties and TypeScript would not throw!
-            new Screen({
-                id: 'bug-report',
-                title: t('feature.bug.report-a-bug'),
-                screenName: 'BugReport',
-                icon: {
-                    image: FediModImages['bug-report'],
-                },
-            }),
-        ],
-        [t],
-    )
 
     const onSelectFediMod = (shortcut: Shortcut) => {
         const fediMod = shortcut as FediMod
@@ -67,7 +48,7 @@ const ShortcutsList: React.FC = () => {
     // while also left-justifying rows with 1 or 2 tiles so we just
     // make sure to fill the remaining space with invisible elements
     const renderBuffers = () => {
-        const totalShortcuts = fediMods.length + screenShortcuts.length
+        const totalShortcuts = fediMods.length
         const bufferCount = columns - (totalShortcuts % columns)
 
         return new Array(bufferCount).fill('').map((_, i) => {
