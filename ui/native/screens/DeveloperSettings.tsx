@@ -9,13 +9,8 @@ import { useIsStabilityPoolSupported } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     changeAuthenticatedGuardian,
-    resetAuthenticatedMember,
-    resetFederationChatState,
     selectActiveFederation,
     selectOnchainDepositsEnabled,
-    setChatGroups,
-    setChatMembersSeen,
-    setChatMessages,
     setOnchainDepositsEnabled,
     selectStableBalanceEnabled,
     setStableBalanceEnabled,
@@ -416,8 +411,6 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                             }}
                             value={authenticatedGuardian.password}
                             returnKeyType="done"
-                            // containerStyle={styles(theme).textInputOuter}
-                            // inputContainerStyle={styles(theme).textInputInner}
                             autoCapitalize={'none'}
                             autoCorrect={false}
                         />
@@ -473,74 +466,6 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                     onPress={() => {
                         reduxDispatch(resetNuxSteps())
                         toast.show('NUX reset!')
-                    }}
-                />
-                <Button
-                    title={'Delete all groups, messages, & members seen'}
-                    containerStyle={styles(theme).buttonContainer}
-                    onPress={() => {
-                        if (activeFederation) {
-                            reduxDispatch(
-                                resetFederationChatState({
-                                    federationId: activeFederation.id,
-                                }),
-                            )
-                        }
-                    }}
-                />
-                <Button
-                    title={'Delete all groups'}
-                    containerStyle={styles(theme).buttonContainer}
-                    onPress={() => {
-                        if (activeFederation) {
-                            reduxDispatch(
-                                setChatGroups({
-                                    federationId: activeFederation.id,
-                                    groups: [],
-                                }),
-                            )
-                        }
-                    }}
-                />
-                <Button
-                    title={'Delete all messages'}
-                    containerStyle={styles(theme).buttonContainer}
-                    onPress={() => {
-                        if (activeFederation) {
-                            reduxDispatch(
-                                setChatMessages({
-                                    federationId: activeFederation.id,
-                                    messages: [],
-                                }),
-                            )
-                        }
-                    }}
-                />
-                <Button
-                    title={'Delete all members seen'}
-                    containerStyle={styles(theme).buttonContainer}
-                    onPress={() => {
-                        if (activeFederation) {
-                            reduxDispatch(
-                                setChatMembersSeen({
-                                    federationId: activeFederation.id,
-                                    membersSeen: [],
-                                }),
-                            )
-                        }
-                    }}
-                />
-                <Button
-                    title="Reset username"
-                    containerStyle={styles(theme).buttonContainer}
-                    onPress={() => {
-                        if (activeFederation) {
-                            reduxDispatch(
-                                resetAuthenticatedMember({
-                                    federationId: activeFederation.id,
-                                }),
-                            )
-                        }
                     }}
                 />
             </SettingsSection>

@@ -140,6 +140,9 @@ android {
     }
     buildTypes {
         debug {
+            manifestPlaceholders = [
+                networkSecurityConfig: "@xml/network_security_config_debug"
+            ]
             signingConfig signingConfigs.debug
             packagingOptions {
                 gradle.startParameter.getTaskNames().each { task ->
@@ -152,6 +155,9 @@ android {
             }
         }
         release {
+            manifestPlaceholders = [
+                networkSecurityConfig: "@xml/network_security_config_release"
+            ]
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
             signingConfig signingConfigs.release
