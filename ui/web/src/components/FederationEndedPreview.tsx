@@ -1,19 +1,19 @@
 import { styled } from '@stitches/react'
 import { Trans, useTranslation } from 'react-i18next'
 
+import { theme } from '@fedi/common/constants/theme'
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
-import { Federation, FederationPreview } from '@fedi/common/types'
+import { FederationListItem, JoinPreview } from '@fedi/common/types'
 
 import { FederationAvatar } from './FederationAvatar'
 import { Text } from './Text'
-import { theme } from '@fedi/common/constants/theme'
 
 export default function FederationEndedPreview({
     popupInfo,
     federation,
 }: {
     popupInfo: ReturnType<typeof usePopupFederationInfo>
-    federation: Federation | FederationPreview
+    federation: FederationListItem | JoinPreview
 }) {
     const { t } = useTranslation()
 

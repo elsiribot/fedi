@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { Button, Theme } from '@rneui/themed'
-import { Text, useTheme, TextProps } from '@rneui/themed'
+import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
@@ -8,6 +8,7 @@ import { Pressable, StyleSheet, View } from 'react-native'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederation,
+    selectActiveFederationHasWallet,
     selectReceivesDisabled,
 } from '@fedi/common/redux/federation'
 
@@ -25,66 +26,67 @@ const WalletButtons: React.FC<Props> = ({ offline }: Props) => {
     const navigation = useNavigation<NavigationHook>()
     const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const hasWallet = useAppSelector(selectActiveFederationHasWallet)
     const receivesDisabled = useAppSelector(selectReceivesDisabled)
-    const buttonTitleProps: Partial<TextProps> = {
-        caption: true,
-        bold: true,
-        numberOfLines: 1,
-    }
 
     const style = styles(theme)
 
-    if (!activeFederation) return null
+    if (!activeFederation || !hasWallet) return null
 
     // I'm not happy about this, but I couldn't
     // figure out how to detect clicks when the
     // button is disabled
-    const ReceiveButton = () =>
-        receivesDisabled ? (
-            <Pressable
-                style={style.buttonContainer}
-                onPress={() => {
-                    toast.show({
-                        content: t('errors.receives-have-been-disabled'),
-                        status: 'error',
-                    })
-                }}>
+    return (
+        <View style={style.container}>
+            {receivesDisabled ? (
+                <Pressable
+                    style={style.buttonContainer}
+                    onPress={() => {
+                        toast.show({
+                            content: t('errors.receives-have-been-disabled'),
+                            status: 'error',
+                        })
+                    }}>
+                    <Button
+                        bubble
+                        icon={<SvgImage name="ArrowDown" />}
+                        titleStyle={style.buttonTitle}
+                        title={
+                            <Text caption numberOfLines={1}>
+                                {t('words.receive')}
+                            </Text>
+                        }
+                        disabled
+                        style={style.disabled}
+                        containerStyle={style.buttonContainer}
+                        buttonStyle={style.button}
+                    />
+                </Pressable>
+            ) : (
                 <Button
                     bubble
                     icon={<SvgImage name="ArrowDown" />}
                     titleStyle={style.buttonTitle}
                     title={
-                        <Text {...buttonTitleProps}>{t('words.receive')}</Text>
+                        <Text bold caption numberOfLines={1}>
+                            {t('words.receive')}
+                        </Text>
                     }
-                    disabled
                     style={style.disabled}
                     containerStyle={style.buttonContainer}
                     buttonStyle={style.button}
+                    onPress={() => navigation.navigate('ReceiveLightning')}
                 />
-            </Pressable>
-        ) : (
-            <Button
-                bubble
-                icon={<SvgImage name="ArrowDown" />}
-                titleStyle={style.buttonTitle}
-                title={<Text {...buttonTitleProps}>{t('words.receive')}</Text>}
-                style={style.disabled}
-                containerStyle={style.buttonContainer}
-                buttonStyle={style.button}
-                onPress={() => navigation.navigate('ReceiveLightning')}
-            />
-        )
-
-    return (
-        <View style={style.container}>
-            <ReceiveButton />
+            )}
 
             <Button
                 bubble
                 title={
                     <View style={style.buttonRow}>
                         <SvgImage name="ArrowUpRight" />
-                        <Text {...buttonTitleProps}>{t('words.send')}</Text>
+                        <Text bold caption numberOfLines={1}>
+                            {t('words.send')}
+                        </Text>
                     </View>
                 }
                 onPress={() =>
@@ -92,7 +94,10 @@ const WalletButtons: React.FC<Props> = ({ offline }: Props) => {
                 }
                 containerStyle={style.buttonContainer}
                 // Sats are rounded down from msats. Disable the send button if the user has less than 1000 msat
-                disabled={activeFederation.balance < 1000}
+                disabled={
+                    !activeFederation.hasWallet ||
+                    activeFederation.balance < 1000
+                }
             />
         </View>
     )

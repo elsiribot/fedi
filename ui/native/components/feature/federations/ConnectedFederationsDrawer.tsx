@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import { selectActiveFederationId, selectFederations } from '@fedi/common/redux'
-import { Federation } from '@fedi/common/types'
+import { FederationListItem, MSats } from '@fedi/common/types'
 import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
 
 import { Images } from '../../../assets/images'
@@ -28,7 +28,7 @@ import { FederationLogo } from '../../ui/FederationLogo'
 import SvgImage from '../../ui/SvgImage'
 
 type Props = {
-    federation: Federation
+    federation: FederationListItem
 }
 
 const FederationDrawerItemLabel = ({ federation }: Props) => {
@@ -37,7 +37,9 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
     const { formattedPrimaryAmount, formattedSecondaryAmount } =
-        makeFormattedAmountsFromMSats(federation.balance)
+        makeFormattedAmountsFromMSats(
+            federation.hasWallet ? federation.balance : (0 as MSats),
+        )
 
     const showInviteCode = shouldShowInviteCode(federation.meta)
 
@@ -49,12 +51,14 @@ const FederationDrawerItemLabel = ({ federation }: Props) => {
                 <Text bold numberOfLines={2}>
                     {federation.name}
                 </Text>
-                <Text
-                    style={style.subText}
-                    numberOfLines={2}
-                    adjustsFontSizeToFit>
-                    {`${formattedPrimaryAmount} (${formattedSecondaryAmount})`}
-                </Text>
+                {federation.hasWallet && (
+                    <Text
+                        style={style.subText}
+                        numberOfLines={2}
+                        adjustsFontSizeToFit>
+                        {`${formattedPrimaryAmount} (${formattedSecondaryAmount})`}
+                    </Text>
+                )}
             </View>
 
             {showInviteCode && (
@@ -107,31 +111,33 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                     adjustsFontSizeToFit>
                     {t('words.federations')}
                 </Text>
-                {federations.map((f, i) => (
-                    <DrawerItem
-                        key={`di-${i}`}
-                        label={() => (
-                            <FederationDrawerItemLabel federation={f} />
-                        )}
-                        style={style.drawerItem}
-                        focused={f.id === activeFederationId}
-                        onPress={() => {
-                            // Dismiss drawer if active federation is clicked
-                            if (f.id === activeFederationId) {
-                                return drawerNavigation.closeDrawer()
-                            }
-                            drawerNavigation.reset({
-                                index: 0,
-                                routes: [
-                                    {
-                                        name: 'SwitchingFederations',
-                                        params: { federationId: f.id },
-                                    },
-                                ],
-                            })
-                        }}
-                    />
-                ))}
+                <View style={style.federationsList}>
+                    {federations.map((f, i) => (
+                        <DrawerItem
+                            key={`di-${i}`}
+                            label={() => (
+                                <FederationDrawerItemLabel federation={f} />
+                            )}
+                            style={style.drawerItem}
+                            focused={f.id === activeFederationId}
+                            onPress={() => {
+                                // Dismiss drawer if active federation is clicked
+                                if (f.id === activeFederationId) {
+                                    return drawerNavigation.closeDrawer()
+                                }
+                                drawerNavigation.reset({
+                                    index: 0,
+                                    routes: [
+                                        {
+                                            name: 'SwitchingFederations',
+                                            params: { federationId: f.id },
+                                        },
+                                    ],
+                                })
+                            }}
+                        />
+                    ))}
+                </View>
             </DrawerContentScrollView>
             <View style={style.addFederationContainer}>
                 <Button
@@ -143,6 +149,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                     }}
                     title={t('feature.federations.add-federation')}
                     titleStyle={style.addFederationText}
+                    night
                 />
             </View>
         </ImageBackground>
@@ -157,6 +164,7 @@ const styles = (theme: Theme) =>
             flexGrow: 0,
             flexShrink: 0,
         },
+        federationsList: {},
         addFederationContainer: {
             paddingLeft: theme.spacing.xl,
             paddingRight: theme.spacing.xl,

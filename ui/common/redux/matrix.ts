@@ -36,12 +36,9 @@ import {
     MatrixCreateRoomOptions,
     Sats,
     MatrixGroupPreview,
+    FederationListItem,
 } from '../types'
-import {
-    RpcFederation,
-    RpcRoomId,
-    RpcRoomNotificationMode,
-} from '../types/bindings'
+import { RpcRoomId, RpcRoomNotificationMode } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationGroupChats } from '../utils/FederationUtils'
 import { MatrixChatClient } from '../utils/MatrixChatClient'
@@ -1349,7 +1346,12 @@ export const selectCanPayFromOtherFeds = createSelector(
     (s: CommonState) => selectFederations(s),
     (s: CommonState, chatPayment: MatrixPaymentEvent) => chatPayment,
     (federations, chatPayment): boolean => {
-        return !!federations.find(f => f.balance > chatPayment.content.amount)
+        return !!federations.find(
+            f =>
+                f.hasWallet &&
+                f.balance &&
+                f.balance > chatPayment.content.amount,
+        )
     },
 )
 
@@ -1360,6 +1362,8 @@ export const selectCanSendPayment = createSelector(
         return !!federations.find(
             f =>
                 f.id === chatPayment.content.federationId &&
+                f.hasWallet &&
+                f.balance &&
                 f.balance > chatPayment.content.amount,
         )
     },
@@ -1388,7 +1392,7 @@ export const selectDefaultMatrixRoomIds = createSelector(
     (s: CommonState) => selectGlobalCommunityMeta(s),
     (federations, globalCommunityMeta) => {
         let defaultMatrixRoomIds: MatrixRoom['id'][] = federations.reduce(
-            (result: MatrixRoom['id'][], f: RpcFederation) => {
+            (result: MatrixRoom['id'][], f: FederationListItem) => {
                 const defaultRoomIds = getFederationGroupChats(f.meta)
                 return [...result, ...defaultRoomIds]
             },

@@ -2,14 +2,14 @@ import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { ActivityIndicator, Image, StyleSheet, View } from 'react-native'
 
-import { Federation } from '@fedi/common/types'
+import { FederationListItem } from '@fedi/common/types'
 import { getFederationIconUrl } from '@fedi/common/utils/FederationUtils'
 
 import { Images } from '../../assets/images'
 import SvgImage, { SvgImageSize } from './SvgImage'
 
 type Props = {
-    federation?: Pick<Federation, 'id' | 'name' | 'meta'>
+    federation?: Pick<FederationListItem, 'id' | 'name' | 'meta'>
     size: SvgImageSize | number
 }
 

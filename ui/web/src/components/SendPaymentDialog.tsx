@@ -48,7 +48,9 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
     const membersWithHistory = useAppSelector(selectChatMembersWithHistory)
-    const balance = activeFederation?.balance
+    const balance = activeFederation?.hasWallet
+        ? activeFederation.balance
+        : undefined
     const activeFederationId = activeFederation?.id
     const sendRouteState = useRouteState('/send')
     const connectionOptions = useAppSelector(selectChatConnectionOptions)

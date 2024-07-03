@@ -9,7 +9,6 @@ import { useToast } from '@fedi/common/hooks/toast'
 import {
     changeAuthenticatedGuardian,
     leaveFederation,
-    resetFederationChatState,
     selectActiveFederation,
 } from '@fedi/common/redux'
 import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
@@ -38,16 +37,6 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
     const dispatch = useAppDispatch()
     const activeFederationId = activeFederation?.id
 
-    const resetChatState = useCallback(() => {
-        if (activeFederationId) {
-            dispatch(
-                resetFederationChatState({
-                    federationId: activeFederationId,
-                }),
-            )
-        }
-    }, [activeFederationId, dispatch])
-
     const resetGuardiansState = useCallback(() => {
         dispatch(changeAuthenticatedGuardian(null))
     }, [dispatch])
@@ -66,7 +55,6 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
                 // we are resetting state too early and could corrupt things
                 // Need to investigate further why running leaveFederation first
                 // causes this bug
-                resetChatState()
                 resetGuardiansState()
                 await dispatch(
                     leaveFederation({
@@ -87,7 +75,6 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
         activeFederationId,
         dispatch,
         navigation,
-        resetChatState,
         resetGuardiansState,
         toast,
         t,

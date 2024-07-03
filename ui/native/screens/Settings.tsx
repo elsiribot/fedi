@@ -19,7 +19,6 @@ import { useExportTransactions } from '@fedi/common/hooks/transactions'
 import {
     changeAuthenticatedGuardian,
     leaveFederation,
-    resetFederationChatState,
     selectAlphabeticallySortedFederations,
     selectCurrency,
     selectDeveloperMode,
@@ -46,7 +45,7 @@ import QRCodeContainer from '../components/ui/QRCodeContainer'
 import SvgImage from '../components/ui/SvgImage'
 import { version } from '../package.json'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import { Federation } from '../types'
+import { Federation, FederationListItem } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 import { usePin } from '../utils/hooks/security'
 
@@ -83,19 +82,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         'hasPerformedPersonalBackup',
     )
 
-    const resetChatState = useCallback(
-        (federationId: string) => {
-            if (federationId) {
-                dispatch(
-                    resetFederationChatState({
-                        federationId,
-                    }),
-                )
-            }
-        },
-        [dispatch],
-    )
-
     const resetGuardiansState = useCallback(() => {
         dispatch(changeAuthenticatedGuardian(null))
     }, [dispatch])
@@ -103,7 +89,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     // FIXME: this needs some kind of loading state
     // TODO: this should be an thunkified action creator
     const handleLeaveFederation = useCallback(
-        async (federation: Federation) => {
+        async (federation: FederationListItem) => {
             try {
                 // FIXME: currently this specific order of operations fixes a
                 // bug where the username would get stuck in storage and when
@@ -114,7 +100,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                 // we are resetting state too early and could corrupt things
                 // Need to investigate further why running leaveFederation first
                 // causes this bug
-                resetChatState(federation.id)
                 resetGuardiansState()
 
                 await dispatch(
@@ -132,10 +117,11 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                 })
             }
         },
-        [navigation, dispatch, resetChatState, resetGuardiansState, toast, t],
+        [navigation, dispatch, resetGuardiansState, toast, t],
     )
 
-    const confirmLeaveFederation = (federation: Federation) => {
+    // TODO: Implement leaving no-wallet communities
+    const confirmLeaveFederation = (federation: FederationListItem) => {
         const alertTitle = `${t('feature.federations.leave-federation')} - ${
             federation.name
         }`
@@ -173,7 +159,10 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         }
 
         // Don't allow leaving sats balance is greater than 100
-        else if (amountUtils.msatToSat(federation.balance) > 100) {
+        else if (
+            federation.hasWallet &&
+            amountUtils.msatToSat((federation as Federation).balance) > 100
+        ) {
             Alert.alert(
                 alertTitle,
                 t('feature.federations.leave-federation-withdraw-first'),
@@ -256,7 +245,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                 <Text style={styles(theme).sectionTitle}>
                     {federation.name}
                 </Text>
-
                 {shouldShowInviteCode(federation.meta) && (
                     <SettingsItem
                         image={<SvgImage name="Qr" />}
@@ -268,7 +256,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         }}
                     />
                 )}
-
                 {supportsSingleSeed(federation) && (
                     <SettingsItem
                         image={<SvgImage name="SocialPeople" />}
@@ -276,7 +263,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         onPress={() => runSocialBackup()}
                     />
                 )}
-
                 {tosUrl && (
                     <SettingsItem
                         image={<SvgImage name="Scroll" />}
@@ -285,14 +271,16 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                         onPress={() => Linking.openURL(tosUrl)}
                     />
                 )}
-
+                {/*// TODO: Disable settings that only apply to wallet federations */}
                 <SettingsItem
                     image={<SvgImage name="TableExport" />}
                     label={t('feature.backup.export-transactions-to-csv')}
-                    onPress={() => exportTransactionsAsCsv(federation)}
+                    onPress={() =>
+                        federation.hasWallet &&
+                        exportTransactionsAsCsv(federation as Federation)
+                    }
                     disabled={!!exportingFederationId}
                 />
-
                 <SettingsItem
                     image={<SvgImage name="LeaveFederation" />}
                     label={t('feature.federations.leave-federation')}

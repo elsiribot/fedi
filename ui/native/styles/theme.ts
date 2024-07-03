@@ -162,7 +162,7 @@ const theme = createTheme({
                       }
                     : {}),
             },
-            ...(shouldShowDefaultButtonBackground(props)
+            ...(props.night || shouldShowDefaultButtonBackground(props)
                 ? {
                       ViewComponent: LinearGradient,
                       linearGradientProps: {

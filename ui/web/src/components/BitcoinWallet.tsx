@@ -22,7 +22,7 @@ export const BitcoinWallet: React.FC = () => {
     const { formattedBalanceSats, formattedBalanceFiat } = useBalance()
     const activeFederation = useAppSelector(selectActiveFederation)
 
-    if (!activeFederation) return null
+    if (!activeFederation || !activeFederation.hasWallet) return null
 
     return (
         <Container>

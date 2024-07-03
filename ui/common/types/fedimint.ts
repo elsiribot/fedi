@@ -143,10 +143,58 @@ export enum Network {
     regtest = 'regtest',
 }
 
+// type FederationOnlyProperties = Pick<
+//     RpcFederation,
+//     | 'balance'
+//     | 'recovering'
+//     | 'nodes'
+//     | 'fediFeeSchedule'
+//     | 'network'
+//     | 'clientConfig'
+// >
+
+// TODO: This should be exported from the bridge bindings
+export type RpcCommunity = {
+    communityId: string
+    inviteCode: string
+    communityName: string
+
+    // TODO: Determine what version means in the context of communities
+    version: number
+    meta: ClientConfigMetadata
+}
+
+// TODO: This should be exported from the bridge bindings
+export type RpcCommunityPreview = RpcCommunity
+
+export type CommunityPreview = Omit<
+    RpcCommunityPreview,
+    'communityId' | 'communityName'
+> & {
+    id: Federation['id']
+    name: Federation['name']
+    readonly hasWallet: false
+}
+
+export type JoinPreview = FederationPreview | CommunityPreview
+
 export type Federation = Omit<RpcFederation, 'network'> & {
     meta: ClientConfigMetadata
     network: Network
+    readonly hasWallet: true
 }
+
+export type Community = Omit<RpcCommunity, 'communityId' | 'communityName'> & {
+    id: Federation['id']
+    name: Federation['name']
+    // Added for compatibility with Mods
+    readonly network: undefined
+    readonly hasWallet: false
+}
+
+// Check if hasWallet is true to determine if it's a wallet type or community
+export type FederationListItem = Federation | Community
+
 export type PublicFederation = Pick<Federation, 'id' | 'name' | 'meta'>
 
 export type SeedWords = RpcResponse<'getMnemonic'>
@@ -165,7 +213,10 @@ export interface FederationApiVersion {
     minor: number
 }
 
-export type FederationPreview = RpcFederationPreview
+export type FederationPreview = Omit<RpcFederationPreview, 'meta'> & {
+    readonly hasWallet: true
+    meta: ClientConfigMetadata
+}
 
 /*
  * Mocked-out social backup and recovery events

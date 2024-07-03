@@ -88,6 +88,7 @@ declare module '@rneui/themed' {
     export interface ButtonProps {
         fullWidth?: boolean
         day?: boolean
+        night?: boolean
         bubble?: boolean
     }
     export interface CardProps {

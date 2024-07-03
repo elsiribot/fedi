@@ -1,14 +1,13 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 
 import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { MatrixRoom } from '../../../types'
 import { AvatarSize } from '../../ui/Avatar'
-import { BubbleCard, BubbleView } from '../../ui/BubbleView'
-import HoloLoader from '../../ui/HoloLoader'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import { BubbleView } from '../../ui/BubbleView'
+import SvgImage from '../../ui/SvgImage'
 import ChatAvatar from '../chat/ChatAvatar'
 
 type CommunityChatTileProps = {
@@ -33,8 +32,8 @@ const CommunityChatTile = ({
             </BubbleView>
         )
 
-    const hasNewMessages = !Boolean(
-        room?.notificationCount && room.notificationCount > 0,
+    const hasNewMessages = !(
+        room?.notificationCount && room.notificationCount > 0
     )
 
     const subtitle = room.broadcastOnly

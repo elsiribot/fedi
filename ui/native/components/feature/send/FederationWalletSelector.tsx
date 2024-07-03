@@ -5,8 +5,8 @@ import { Pressable, StyleSheet, View } from 'react-native'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import {
-    selectFederations,
     selectPayFromFederation,
+    selectWalletFederations,
     setPayFromFederationId,
 } from '@fedi/common/redux'
 import { RpcFederation } from '@fedi/common/types/bindings'
@@ -24,7 +24,7 @@ const FederationWalletSelector: React.FC = () => {
     const { t } = useTranslation()
     const style = styles(theme)
     const payFromFederation = useAppSelector(selectPayFromFederation)
-    const federations = useAppSelector(selectFederations)
+    const federations = useAppSelector(selectWalletFederations)
 
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
     const {

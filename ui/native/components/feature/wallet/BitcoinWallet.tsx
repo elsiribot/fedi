@@ -4,7 +4,10 @@ import React from 'react'
 import { StyleSheet } from 'react-native'
 import { LinearGradientProps } from 'react-native-linear-gradient'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    selectActiveFederation,
+    selectActiveFederationHasWallet,
+} from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import { BubbleCard } from '../../ui/BubbleView'
@@ -18,10 +21,11 @@ type Props = {
 const BitcoinWallet: React.FC<Props> = ({ offline }: Props) => {
     const { theme } = useTheme()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const hasWallet = useAppSelector(selectActiveFederationHasWallet)
 
     const style = styles(theme)
 
-    if (!activeFederation) return null
+    if (!activeFederation || !hasWallet) return null
     const gradientProps: LinearGradientProps = {
         colors: ['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.0)'],
         start: { x: 0, y: 0 },

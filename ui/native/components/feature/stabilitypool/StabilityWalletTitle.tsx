@@ -1,6 +1,7 @@
 import { Theme } from '@rneui/themed'
 import { Text, useTheme } from '@rneui/themed'
-import { toLower, toUpper } from 'lodash'
+import toLower from 'lodash/toLower'
+import toUpper from 'lodash/toUpper'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'

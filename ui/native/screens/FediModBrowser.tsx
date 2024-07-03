@@ -274,8 +274,13 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             return new Promise((resolve, reject) => {
                 if (!activeFederation)
                     return reject(new Error('No active federation'))
+                if (!activeFederation.hasWallet)
+                    return reject(new Error('Active federation has no wallet'))
                 // TODO: Hoist this to respect balance changes
-                if (activeFederation.balance < invoice.amount) {
+                if (
+                    !activeFederation.balance ||
+                    activeFederation.balance < invoice.amount
+                ) {
                     const message = t('errors.insufficient-balance', {
                         balance: `${amountUtils.msatToSat(
                             activeFederation?.balance as MSats,
@@ -395,7 +400,9 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             return {
                 id: activeFederation.id,
                 name: activeFederation.name,
-                network: activeFederation.network,
+                network: activeFederation.hasWallet
+                    ? activeFederation.network
+                    : undefined,
             }
         },
         [InjectionMessageType.fedi_getCurrencyCode]: async () => {

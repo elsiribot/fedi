@@ -14,8 +14,7 @@ import {
     setActiveFederationId,
     setPublicFederations,
 } from '../redux'
-import { Federation } from '../types'
-import { FederationPreview as FederationPreviewType } from '../types'
+import { ClientConfigMetadata, Federation, JoinPreview } from '../types'
 import dateUtils from '../utils/DateUtils'
 import {
     shouldShowOfflineWallet,
@@ -57,7 +56,7 @@ export function useIsSocialRecoverySupported() {
 
 export function useIsStabilityPoolSupported() {
     const activeFederation = useCommonSelector(selectActiveFederation)
-    if (!activeFederation) return false
+    if (!activeFederation || !activeFederation.hasWallet) return false
     let supported = false
     if (activeFederation.clientConfig) {
         const { modules } = activeFederation.clientConfig
@@ -131,7 +130,7 @@ export function useIsFediInternalInjectionEnabled() {
     return shouldEnableFediInternalInjection(activeFederation.meta)
 }
 
-export function usePopupFederationInfo(metadata?: Record<string, string>) {
+export function usePopupFederationInfo(metadata?: ClientConfigMetadata) {
     const activeFederationMetadata = useCommonSelector(selectFederationMetadata)
     const meta = metadata || activeFederationMetadata
 
@@ -248,8 +247,7 @@ export function useFederationPreview(
     const federationIds = useCommonSelector(selectFederationIds)
     const [isJoining, setIsJoining] = useState<boolean>(false)
     const [isFetchingPreview, setIsFetchingPreview] = useState(!!invite)
-    const [federationPreview, setFederationPreview] =
-        useState<FederationPreviewType>()
+    const [federationPreview, setFederationPreview] = useState<JoinPreview>()
 
     const handleCode = useCallback(
         async (code: string, onSuccess?: () => void) => {
