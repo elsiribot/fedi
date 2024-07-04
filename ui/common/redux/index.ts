@@ -101,6 +101,8 @@ export function initializeCommonStore({
     i18n: I18n
     detectLanguage?: () => Promise<string>
 }) {
+    const receivedPayments = new Set<string>()
+
     // Fetch the latest prices immediately.
     dispatch(fetchCurrencyPrices()).catch(err => {
         log.warn('Failed initial currency price fetch', err)
@@ -140,7 +142,7 @@ export function initializeCommonStore({
             dispatch(refreshFederations(fedimint))
             // we check for receivable chat payments from this newly
             // joined federation after recovery is complete
-            dispatch(checkForReceivablePayments({ fedimint }))
+            dispatch(checkForReceivablePayments({ fedimint, receivedPayments }))
         },
     )
 
@@ -178,7 +180,13 @@ export function initializeCommonStore({
         ),
         effect: (action, api) => {
             const { roomId } = action.payload
-            api.dispatch(checkForReceivablePayments({ fedimint, roomId }))
+            api.dispatch(
+                checkForReceivablePayments({
+                    fedimint,
+                    roomId,
+                    receivedPayments,
+                }),
+            )
         },
     })
 

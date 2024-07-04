@@ -661,11 +661,15 @@ export const claimMatrixPayment = createAsyncThunk<
 
 export const checkForReceivablePayments = createAsyncThunk<
     void,
-    { fedimint: FedimintBridge; roomId?: MatrixRoom['id'] },
+    {
+        fedimint: FedimintBridge
+        roomId?: MatrixRoom['id']
+        receivedPayments: Set<string>
+    },
     { state: CommonState }
 >(
     'matrix/checkForReceivablePayments',
-    async ({ fedimint, roomId }, { getState, dispatch }) => {
+    async ({ fedimint, roomId, receivedPayments }, { getState, dispatch }) => {
         const state = getState()
         const myId = state.matrix.auth?.userId
         // if we have a roomId, check only that room's timeline
@@ -685,7 +689,6 @@ export const checkForReceivablePayments = createAsyncThunk<
         const myFederations = state.federation.federations
         log.info('Looking for receivable payment events...')
 
-        const receivedPayments = new Set<string>()
         const receivablePayments = getReceivablePaymentEvents(
             timeline,
             myId,
