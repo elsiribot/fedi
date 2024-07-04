@@ -48,6 +48,7 @@ import { MatrixChatClient } from '../utils/MatrixChatClient'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import {
+    getReceivablePaymentEvents,
     getUserSuffix,
     isPaymentEvent,
     makeChatFromPreview,
@@ -657,6 +658,47 @@ export const claimMatrixPayment = createAsyncThunk<
         status: MatrixPaymentStatus.received,
     })
 })
+
+export const checkForReceivablePayments = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge; roomId: MatrixRoom['id'] },
+    { state: CommonState }
+>(
+    'matrix/checkForReceivablePayments',
+    async ({ fedimint, roomId }, { getState, dispatch }) => {
+        const state = getState()
+        const myId = state.matrix.auth?.userId
+        const timeline = state.matrix.roomTimelines[roomId]
+        const myFederations = state.federation.federations
+        if (!myId || !timeline) return
+        const receivedPayments = new Set<string>()
+        const receivablePayments = getReceivablePaymentEvents(
+            timeline,
+            myId,
+            myFederations,
+        )
+        receivablePayments.forEach(event => {
+            if (receivedPayments.has(event.content.paymentId)) return
+            receivedPayments.add(event.content.paymentId)
+            log.info(
+                'Unclaimed matrix payment event, attempting to claim',
+                event,
+            )
+            dispatch(claimMatrixPayment({ fedimint, event }))
+                .unwrap()
+                .then(() => {
+                    log.info('Successfully claimed matrix payment', event)
+                })
+                .catch(err => {
+                    log.warn(
+                        'Failed to claim matrix payment, will try again later',
+                        err,
+                    )
+                    receivedPayments.delete(event.content.paymentId)
+                })
+        })
+    },
+)
 
 export const cancelMatrixPayment = createAsyncThunk<
     void,
