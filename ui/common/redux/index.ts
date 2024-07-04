@@ -2,6 +2,7 @@ import {
     EnhancedStore,
     UnsubscribeListener,
     createListenerMiddleware,
+    isAnyOf,
 } from '@reduxjs/toolkit'
 import { CurriedGetDefaultMiddleware } from '@reduxjs/toolkit/dist/getDefaultMiddleware'
 import type { i18n as I18n } from 'i18next'
@@ -18,6 +19,7 @@ import { currencySlice, fetchCurrencyPrices } from './currency'
 import { environmentSlice, selectLanguage } from './environment'
 import {
     federationSlice,
+    joinFederation,
     refreshFederations,
     updateFederation,
     updateFederationBalance,
@@ -136,6 +138,9 @@ export function initializeCommonStore({
         event => {
             log.debug('Recovery complete', event)
             dispatch(refreshFederations(fedimint))
+            // we check for receivable chat payments from this newly
+            // joined federation after recovery is complete
+            dispatch(checkForReceivablePayments({ fedimint }))
         },
     )
 
@@ -167,7 +172,10 @@ export function initializeCommonStore({
     // This is only called on `roomTimelineUpdate` events, so why not
     // claim ecash in the `MatrixChatClient` (before it touches redux)?
     const unsubscribeMatrixPayments = listenerMiddleware.startListening({
-        actionCreator: handleMatrixRoomTimelineObservableUpdates,
+        matcher: isAnyOf(
+            joinFederation.fulfilled,
+            handleMatrixRoomTimelineObservableUpdates,
+        ),
         effect: (action, api) => {
             const { roomId } = action.payload
             api.dispatch(checkForReceivablePayments({ fedimint, roomId }))
