@@ -11,8 +11,8 @@ import {
     DRAWER_NAVIGATION_ID,
     NavigationHook,
 } from '../../../types/navigation'
-import { FederationLogo } from '../../ui/FederationLogo'
 import HoloGradient from '../../ui/HoloGradient'
+import { FederationLogo } from './FederationLogo'
 
 const FederationSelector: React.FC = () => {
     const { theme } = useTheme()
@@ -48,7 +48,11 @@ const FederationSelector: React.FC = () => {
                 <Pressable
                     style={style.container}
                     onPress={openFederationsDrawer}>
-                    <FederationLogo federation={activeFederation} size={24} />
+                    <FederationLogo
+                        federation={activeFederation}
+                        size={24}
+                        hex
+                    />
                     <Text
                         bold
                         caption

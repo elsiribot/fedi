@@ -13,6 +13,7 @@ import {
     selectFederation,
     selectFederations,
     selectGlobalCommunityMeta,
+    selectWalletFederations,
 } from '.'
 import {
     MatrixUser,
@@ -683,13 +684,13 @@ export const checkForReceivablePayments = createAsyncThunk<
                   return [...result, ...t]
               }, [])
         if (!myId || !timeline) return
-        const myFederations = state.federation.federations
+        const walletFederations = selectWalletFederations(getState())
         log.info('Looking for receivable payment events...')
 
         const receivablePayments = getReceivablePaymentEvents(
             timeline,
             myId,
-            myFederations,
+            walletFederations,
         )
         log.info(`Found ${receivablePayments.length} receivable payments`)
         receivablePayments.forEach(event => {
@@ -942,11 +943,7 @@ export const previewDefaultGroupChats = createAsyncThunk<
     void,
     { state: CommonState }
 >('matrix/previewDefaultGroupChats', async (_, { getState, dispatch }) => {
-    // fake timeout
-    await Promise.resolve(new Promise(resolve => setTimeout(resolve, 3000)))
-
     const client = getMatrixClient()
-    // const federations = selectFederations(getState())
     const federations = getState().federation.federations
     // Previews default chats for each federation
     const federationDefaultChatResults = await Promise.allSettled(
@@ -1033,7 +1030,10 @@ export const selectMatrixRooms = createSelector(
     },
 )
 
-export const selectGroupPreviews = (s: CommonState) => s.matrix.groupPreviews
+export const selectGroupPreviews = createSelector(
+    (s: CommonState) => s.matrix.groupPreviews,
+    groupPreviews => groupPreviews,
+)
 
 export const selectMatrixAuth = createSelector(
     (s: CommonState) => s.matrix.auth,

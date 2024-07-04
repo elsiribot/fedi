@@ -24,8 +24,8 @@ import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
 import { Images } from '../../../assets/images'
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
-import { FederationLogo } from '../../ui/FederationLogo'
 import SvgImage from '../../ui/SvgImage'
+import { FederationLogo } from './FederationLogo'
 
 type Props = {
     federation: FederationListItem

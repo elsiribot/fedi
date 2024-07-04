@@ -13,9 +13,9 @@ import {
     shouldShowJoinFederation,
 } from '@fedi/common/utils/FederationUtils'
 
-import { FederationLogo } from '../../ui/FederationLogo'
 import HoloGradient from '../../ui/HoloGradient'
 import EndedFederationPreview from '../federations/EndedPreview'
+import { FederationLogo } from '../federations/FederationLogo'
 import AcceptTermsOfService from './AcceptTermsOfService'
 
 type Props = {

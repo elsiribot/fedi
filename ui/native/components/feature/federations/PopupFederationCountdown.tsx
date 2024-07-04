@@ -19,7 +19,7 @@ import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
 import { FALLBACK_TERMS_URL } from '../../../constants'
 import { useAppSelector } from '../../../state/hooks'
-import { FederationLogo } from '../../ui/FederationLogo'
+import { FederationLogo } from './FederationLogo'
 
 export const PopupFederationCountdown: React.FC = () => {
     const { t } = useTranslation()

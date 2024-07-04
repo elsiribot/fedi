@@ -3,15 +3,20 @@ import { t } from 'i18next'
 import React from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 
+import { selectActiveFederation } from '@fedi/common/redux'
+
 import { DEFAULT_GROUP_NAME } from '../../../constants'
+import { useAppSelector } from '../../../state/hooks'
 import { MatrixRoom } from '../../../types'
 import { AvatarSize } from '../../ui/Avatar'
 import { BubbleView } from '../../ui/BubbleView'
 import SvgImage from '../../ui/SvgImage'
 import ChatAvatar from '../chat/ChatAvatar'
+import { FederationLogo } from '../federations/FederationLogo'
 
 type CommunityChatTileProps = {
     room?: MatrixRoom
+    imageUrl?: string
     onSelect?: (chat: MatrixRoom) => void
     onLongPress?: (chat: MatrixRoom) => void
 }
@@ -22,7 +27,7 @@ const CommunityChatTile = ({
     onLongPress = () => null,
 }: CommunityChatTileProps) => {
     const { theme } = useTheme()
-
+    const activeFederation = useAppSelector(selectActiveFederation)
     const style = styles(theme)
 
     if (!room)
@@ -32,9 +37,7 @@ const CommunityChatTile = ({
             </BubbleView>
         )
 
-    const hasNewMessages = !(
-        room?.notificationCount && room.notificationCount > 0
-    )
+    const hasNewMessages = room?.notificationCount && room.notificationCount > 0
 
     const subtitle = room.broadcastOnly
         ? t('words.announcements')
@@ -42,22 +45,30 @@ const CommunityChatTile = ({
 
     return (
         <BubbleView containerStyle={style.card}>
+            <View
+                style={[
+                    style.unreadIndicator,
+                    hasNewMessages ? { opacity: 1 } : { opacity: 0 },
+                ]}
+            />
             <Pressable
                 style={style.content}
                 onLongPress={() => onLongPress(room)}
                 delayLongPress={300}
                 onPress={() => onSelect(room)}>
-                <View
-                    style={[
-                        style.unreadIndicator,
-                        hasNewMessages ? { opacity: 1 } : { opacity: 0 },
-                    ]}
-                />
-                <ChatAvatar
-                    room={room}
-                    size={AvatarSize.md}
-                    maxFontSizeMultiplier={1.2}
-                />
+                {activeFederation ? (
+                    <FederationLogo
+                        federation={activeFederation}
+                        size={theme.sizes.mediumAvatar}
+                        hex
+                    />
+                ) : (
+                    <ChatAvatar
+                        room={room}
+                        size={AvatarSize.md}
+                        maxFontSizeMultiplier={1.2}
+                    />
+                )}
                 <View style={style.textContainer}>
                     <Text style={style.title} numberOfLines={1} bold>
                         {room.name || DEFAULT_GROUP_NAME}
@@ -116,7 +127,7 @@ const styles = (theme: Theme) =>
         unreadIndicator: {
             position: 'absolute',
             zIndex: 1,
-            left: -(6 + theme.sizes.unreadIndicatorSize / 2),
+            left: 4,
             backgroundColor: theme.colors.red,
             height: theme.sizes.unreadIndicatorSize,
             width: theme.sizes.unreadIndicatorSize,

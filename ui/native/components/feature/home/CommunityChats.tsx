@@ -1,4 +1,6 @@
+import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
@@ -9,19 +11,32 @@ import {
 import { getFederationGroupChats } from '@fedi/common/utils/FederationUtils'
 
 import { useAppSelector } from '../../../state/hooks'
-import { MatrixRoom } from '../../../types'
+import { ChatType, MatrixRoom } from '../../../types'
 import CommunityChatTile from './CommunityChatTile'
 
 const CommunityChats = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const navigation = useNavigation()
     const style = styles(theme)
     const activeFederation = useAppSelector(selectActiveFederation)
     const defaultChats = useAppSelector(s => selectActiveFederationChats(s))
+    const expectedNumberOfDefaultChats = activeFederation
+        ? getFederationGroupChats(activeFederation.meta).length
+        : 0
+
+    const handleOpenChat = useCallback(
+        (chat: MatrixRoom) => {
+            navigation.navigate('ChatRoomConversation', {
+                roomId: chat.id,
+                chatType: chat.directUserId ? ChatType.direct : ChatType.group,
+            })
+        },
+        [navigation],
+    )
     if (!activeFederation) return null
-    const expectedNumberOfDefaultChats = getFederationGroupChats(
-        activeFederation.meta,
-    ).length
+
+    if (expectedNumberOfDefaultChats === 0) return null
 
     // If we have fewer default chats than expected,
     // Assume we're loading and fill the gaps with undefined
@@ -36,7 +51,11 @@ const CommunityChats = () => {
                 {t('feature.chat.community-chat')}
             </Text>
             {chats.map((chat: MatrixRoom | undefined, idx) => (
-                <CommunityChatTile key={idx} room={chat} />
+                <CommunityChatTile
+                    key={idx}
+                    room={chat}
+                    onSelect={handleOpenChat}
+                />
             ))}
         </View>
     )

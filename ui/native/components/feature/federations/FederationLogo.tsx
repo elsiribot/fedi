@@ -5,15 +5,21 @@ import { ActivityIndicator, Image, StyleSheet, View } from 'react-native'
 import { FederationListItem } from '@fedi/common/types'
 import { getFederationIconUrl } from '@fedi/common/utils/FederationUtils'
 
-import { Images } from '../../assets/images'
-import SvgImage, { SvgImageSize } from './SvgImage'
+import { Images } from '../../../assets/images'
+import HexImage from '../../ui/HexImage'
+import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type Props = {
     federation?: Pick<FederationListItem, 'id' | 'name' | 'meta'>
     size: SvgImageSize | number
+    hex?: boolean
 }
 
-export const FederationLogo: React.FC<Props> = ({ federation, size }) => {
+export const FederationLogo: React.FC<Props> = ({
+    federation,
+    size,
+    hex = false,
+}) => {
     const { theme } = useTheme()
 
     const iconUrl = federation?.meta
@@ -27,31 +33,44 @@ export const FederationLogo: React.FC<Props> = ({ federation, size }) => {
 
     if (!iconUrl) {
         return (
-            <SvgImage
-                name="Federation"
-                size={svgSize}
-                svgProps={{ ...style.svgIconImage, ...svgProps }}
-            />
+            <View>
+                <SvgImage
+                    name="Federation"
+                    size={svgSize}
+                    svgProps={{ ...style.svgIconImage, ...svgProps }}
+                />
+            </View>
         )
     }
 
     return (
-        <>
-            <View style={[svgProps, style.fallbackIconContainer]}>
-                <Image
-                    style={style.fallbackIconLayer}
-                    source={Images.FallbackInset}
-                />
+        <View>
+            <View
+                style={[
+                    svgProps,
+                    style.fallbackIconContainer,
+                    hex ? { backgroundColor: 'transparent' } : {},
+                ]}>
+                {!hex && (
+                    <Image
+                        style={style.fallbackIconLayer}
+                        source={Images.FallbackInset}
+                    />
+                )}
                 <View style={style.fallbackIconLayer}>
                     <ActivityIndicator size={16} color={theme.colors.primary} />
                 </View>
-                <Image
-                    style={[style.iconImage, svgProps]}
-                    source={{ uri: iconUrl }}
-                    resizeMode="cover"
-                />
+                {hex ? (
+                    <HexImage imageUrl={iconUrl} />
+                ) : (
+                    <Image
+                        style={[style.iconImage, svgProps]}
+                        source={{ uri: iconUrl }}
+                        resizeMode="cover"
+                    />
+                )}
             </View>
-        </>
+        </View>
     )
 }
 

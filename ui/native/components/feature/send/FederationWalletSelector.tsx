@@ -14,8 +14,8 @@ import { RpcFederation } from '@fedi/common/types/bindings'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { MSats } from '../../../types'
 import CustomOverlay from '../../ui/CustomOverlay'
-import { FederationLogo } from '../../ui/FederationLogo'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import { FederationLogo } from '../federations/FederationLogo'
 
 const FederationWalletSelector: React.FC = () => {
     const { theme } = useTheme()

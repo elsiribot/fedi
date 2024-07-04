@@ -7,7 +7,7 @@ import EncryptionUtils from '@fedi/common/utils/EncryptionUtils'
 import { GLOBAL_MATRIX_SERVER } from '../constants/matrix'
 import { FormattedAmounts } from '../hooks/amount'
 import {
-    FederationListItem,
+    Federation,
     MSats,
     MatrixEvent,
     MatrixGroupPreview,
@@ -344,7 +344,7 @@ export function isPaymentEvent(
 export function getReceivablePaymentEvents(
     timeline: MatrixTimelineItem[],
     myId: string,
-    myFederations: FederationListItem[],
+    myFederations: Federation[],
 ) {
     const latestPayments: Record<string, MatrixPaymentEvent> = {}
     timeline.forEach(item => {

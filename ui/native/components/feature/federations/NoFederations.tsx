@@ -8,8 +8,8 @@ import { useLatestPublicFederations } from '@fedi/common/hooks/federation'
 import { Images } from '@fedi/native/assets/images'
 import { FediMod } from '@fedi/native/types'
 
-import { FederationLogo } from '../../ui/FederationLogo'
 import SvgImage from '../../ui/SvgImage'
+import { FederationLogo } from './FederationLogo'
 
 const AWESOME_FEDIMINT_LINK = 'https://github.com/fedimint/awesome-fedimint'
 

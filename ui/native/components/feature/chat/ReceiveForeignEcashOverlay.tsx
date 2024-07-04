@@ -10,8 +10,8 @@ import { useToast } from '@fedi/common/hooks/toast'
 import { fedimint } from '../../../bridge'
 import { MatrixPaymentEvent } from '../../../types'
 import CustomOverlay from '../../ui/CustomOverlay'
-import { FederationLogo } from '../../ui/FederationLogo'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import { FederationLogo } from '../federations/FederationLogo'
 import FederationPreview from '../onboarding/FederationPreview'
 
 interface Props {
