@@ -17,6 +17,7 @@ import {
     selectShowFiatTxnAmounts,
     selectMaxStableBalanceSats,
     selectStableBalanceSats,
+    selectPayFromFederationBalance,
 } from '../redux'
 import {
     Btc,
@@ -459,11 +460,17 @@ export function useMinMaxRequestAmount({
  * Get the minimum and maximum amount you can send. Optionally take in an
  * LNURL pay request as part of the calculation.
  */
-export function useMinMaxSendAmount({
-    invoice,
-    lnurlPayment,
-}: SendAmountArgs = {}) {
-    const balance = useCommonSelector(selectFederationBalance)
+export function useMinMaxSendAmount(
+    { invoice, lnurlPayment }: SendAmountArgs = {},
+    // TODO: Remove this option in favor of always using payFromFederation once
+    // https://github.com/fedibtc/fedi/issues/4070 is finished
+    usePayFromFederationBalance = false,
+) {
+    const balance = useCommonSelector(s =>
+        usePayFromFederationBalance
+            ? selectPayFromFederationBalance(s)
+            : selectFederationBalance(s),
+    )
 
     const invoiceAmount = invoice?.amount
     const { minSendable, maxSendable } = lnurlPayment || {}

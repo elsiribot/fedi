@@ -383,6 +383,13 @@ export const selectFederationBalance = createSelector(
     },
 )
 
+export const selectPayFromFederationBalance = createSelector(
+    selectPayFromFederation,
+    payFromFederation => {
+        return payFromFederation ? payFromFederation.balance : (0 as MSats)
+    },
+)
+
 export const selectIsActiveFederationRecovering = createSelector(
     selectActiveFederation,
     activeFederation => {
