@@ -351,14 +351,20 @@ export function getReceivablePaymentEvents(
         if (item === null) return
         if (!isPaymentEvent(item)) return
         if (item.content.recipientId !== myId) return
-        // payment is not receivable if we have not joined the federation this ecash is from
-        if (
-            item.content.federationId &&
-            myFederations.find(f => f.id === item.content.federationId) ===
-                undefined
-        ) {
+        if (!item.content.federationId) return
+        // payment is not receivable if we have not joined the federation this ecash is from or if we have joined but are still recovering
+        const joinedFederation = myFederations.find(
+            f => f.id === item.content.federationId,
+        )
+        if (joinedFederation === undefined) {
             log.info(
-                `can't claim ecash from federation ${item.content.federationId}...`,
+                `can't claim ecash from federation ${item.content.federationId}: user is not joined`,
+            )
+            return
+        }
+        if (joinedFederation?.recovering) {
+            log.info(
+                `can't claim ecash from federation ${item.content.federationId}: user is joined but recovery is in progress`,
             )
             return
         }

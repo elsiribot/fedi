@@ -2,6 +2,7 @@ import {
     EnhancedStore,
     UnsubscribeListener,
     createListenerMiddleware,
+    isAnyOf,
 } from '@reduxjs/toolkit'
 import { CurriedGetDefaultMiddleware } from '@reduxjs/toolkit/dist/getDefaultMiddleware'
 import type { i18n as I18n } from 'i18next'
@@ -12,19 +13,19 @@ import { Federation, StorageApi } from '../types'
 import { getMetaUrl } from '../utils/FederationUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
-import { getReceivablePaymentEvents } from '../utils/matrix'
 import { hasStorageStateChanged } from '../utils/storage'
 import { chatSlice } from './chat'
 import { currencySlice, fetchCurrencyPrices } from './currency'
 import { environmentSlice, selectLanguage } from './environment'
 import {
     federationSlice,
+    joinFederation,
     refreshFederations,
     updateFederation,
     updateFederationBalance,
 } from './federation'
 import {
-    claimMatrixPayment,
+    checkForReceivablePayments,
     handleMatrixRoomTimelineObservableUpdates,
     matrixSlice,
 } from './matrix'
@@ -100,6 +101,8 @@ export function initializeCommonStore({
     i18n: I18n
     detectLanguage?: () => Promise<string>
 }) {
+    const receivedPayments = new Set<string>()
+
     // Fetch the latest prices immediately.
     dispatch(fetchCurrencyPrices()).catch(err => {
         log.warn('Failed initial currency price fetch', err)
@@ -137,6 +140,9 @@ export function initializeCommonStore({
         event => {
             log.debug('Recovery complete', event)
             dispatch(refreshFederations(fedimint))
+            // we check for receivable chat payments from this newly
+            // joined federation after recovery is complete
+            dispatch(checkForReceivablePayments({ fedimint, receivedPayments }))
         },
     )
 
@@ -167,41 +173,20 @@ export function initializeCommonStore({
     // TODO: Does this logic belong here in redux middleware?
     // This is only called on `roomTimelineUpdate` events, so why not
     // claim ecash in the `MatrixChatClient` (before it touches redux)?
-    const receivedPayments = new Set<string>()
     const unsubscribeMatrixPayments = listenerMiddleware.startListening({
-        actionCreator: handleMatrixRoomTimelineObservableUpdates,
+        matcher: isAnyOf(
+            joinFederation.fulfilled,
+            handleMatrixRoomTimelineObservableUpdates,
+        ),
         effect: (action, api) => {
             const { roomId } = action.payload
-            const state = api.getState()
-            const myId = state.matrix.auth?.userId
-            const timeline = state.matrix.roomTimelines[roomId]
-            const myFederations = state.federation.federations
-            if (!myId || !timeline) return
-            const receivablePayments = getReceivablePaymentEvents(
-                timeline,
-                myId,
-                myFederations,
+            api.dispatch(
+                checkForReceivablePayments({
+                    fedimint,
+                    roomId,
+                    receivedPayments,
+                }),
             )
-            receivablePayments.forEach(event => {
-                if (receivedPayments.has(event.content.paymentId)) return
-                receivedPayments.add(event.content.paymentId)
-                log.info(
-                    'Unclaimed matrix payment event, attempting to claim',
-                    event,
-                )
-                api.dispatch(claimMatrixPayment({ fedimint, event }))
-                    .unwrap()
-                    .then(() => {
-                        log.info('Successfully claimed matrix payment', event)
-                    })
-                    .catch(err => {
-                        log.warn(
-                            'Failed to claim matrix payment, will try again later',
-                            err,
-                        )
-                        receivedPayments.delete(event.content.paymentId)
-                    })
-            })
         },
     })
 

@@ -48,6 +48,7 @@ import { MatrixChatClient } from '../utils/MatrixChatClient'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import {
+    getReceivablePaymentEvents,
     getUserSuffix,
     isPaymentEvent,
     makeChatFromPreview,
@@ -657,6 +658,65 @@ export const claimMatrixPayment = createAsyncThunk<
         status: MatrixPaymentStatus.received,
     })
 })
+
+export const checkForReceivablePayments = createAsyncThunk<
+    void,
+    {
+        fedimint: FedimintBridge
+        roomId?: MatrixRoom['id']
+        receivedPayments: Set<string>
+    },
+    { state: CommonState }
+>(
+    'matrix/checkForReceivablePayments',
+    async ({ fedimint, roomId, receivedPayments }, { getState, dispatch }) => {
+        const state = getState()
+        const myId = state.matrix.auth?.userId
+        // if we have a roomId, check only that room's timeline
+        // otherwise check all loaded timelines for receivable payments
+        // note: timelines are only loaded when clicking into a chat so this
+        // isn't as bad on performance as it might seem
+        const timeline = roomId
+            ? state.matrix.roomTimelines[roomId]
+            : // flattens all timelines into 1 array
+              Object.values(state.matrix.roomTimelines).reduce<
+                  MatrixTimelineItem[]
+              >((result, t) => {
+                  if (!t) return result
+                  return [...result, ...t]
+              }, [])
+        if (!myId || !timeline) return
+        const myFederations = state.federation.federations
+        log.info('Looking for receivable payment events...')
+
+        const receivablePayments = getReceivablePaymentEvents(
+            timeline,
+            myId,
+            myFederations,
+        )
+        log.info(`Found ${receivablePayments.length} receivable payments`)
+        receivablePayments.forEach(event => {
+            if (receivedPayments.has(event.content.paymentId)) return
+            receivedPayments.add(event.content.paymentId)
+            log.info(
+                'Unclaimed matrix payment event detected, attempting to claim',
+                event,
+            )
+            dispatch(claimMatrixPayment({ fedimint, event }))
+                .unwrap()
+                .then(() => {
+                    log.info('Successfully claimed matrix payment', event)
+                })
+                .catch(err => {
+                    log.warn(
+                        'Failed to claim matrix payment, will try again later',
+                        err,
+                    )
+                    receivedPayments.delete(event.content.paymentId)
+                })
+        })
+    },
+)
 
 export const cancelMatrixPayment = createAsyncThunk<
     void,
