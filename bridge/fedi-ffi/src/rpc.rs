@@ -1411,6 +1411,7 @@ mod tests {
     use devimint::cmd;
     use devimint::util::{ClnLightningCli, FedimintCli, LnCli};
     use fedi_social_client::common::VerificationDocument;
+    use fedimint_core::core::ModuleKind;
     use fedimint_core::{apply, async_trait_maybe_send, Amount};
     use fedimint_logging::TracingSetup;
     use tokio::sync::Mutex;
@@ -1489,6 +1490,8 @@ mod tests {
             &self,
             _amount: Amount,
             _network: Network,
+            _module: ModuleKind,
+            _tx_direction: RpcTransactionDirection,
         ) -> anyhow::Result<Bolt11Invoice> {
             unimplemented!("TODO shaurya implement when testing");
         }

@@ -2690,7 +2690,13 @@ impl FederationV2 {
                     operation_id
                 );
                 if let Some(service) = self.fedi_fee_remittance_service.get() {
-                    service.remit_fedi_fee_if_threshold_met(self).await;
+                    service
+                        .remit_fedi_fee_if_threshold_met(
+                            self,
+                            module,
+                            RpcTransactionDirection::Send,
+                        )
+                        .await;
                 }
             }
             Ok((false, _)) => info!(
@@ -2915,7 +2921,13 @@ impl FederationV2 {
                     operation_id
                 );
                 if let Some(service) = self.fedi_fee_remittance_service.get() {
-                    service.remit_fedi_fee_if_threshold_met(self).await;
+                    service
+                        .remit_fedi_fee_if_threshold_met(
+                            self,
+                            module,
+                            RpcTransactionDirection::Receive,
+                        )
+                        .await;
                 }
             }
             Ok((false, _)) => info!(

@@ -8,10 +8,13 @@ use fedi_api_types::device_control::request::{GetDevicesForSeedQueryV0, Register
 use fedi_api_types::device_control::response::DevicesForSeedResultV0;
 use fedi_api_types::device_control::{DeviceIdentifierV0, DeviceIndexV0, SeedCommitmentV0};
 use fedi_api_types::fee_schedule::FeesV0;
-use fedi_api_types::invoice_generator::{GenerateInvoiceRequestV0, GenerateInvoiceResponseV0};
+use fedi_api_types::invoice_generator::{
+    GenerateInvoiceRequestV1, GenerateInvoiceResponseV1, TransactionDirection,
+};
 use fedimint_aead::{decrypt, LessSafeKey};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
+use fedimint_core::core::ModuleKind;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send, Amount};
 use fedimint_derive_secret::DerivableSecret;
@@ -23,6 +26,7 @@ use crate::constants::{
     FEDI_FEE_API_URL_MUTINYNET, FEDI_INVOICE_API_URL_MAINNET, FEDI_INVOICE_API_URL_MUTINYNET,
 };
 use crate::storage::{DeviceIdentifier, FediFeeSchedule, ModuleFediFeeSchedule};
+use crate::types::RpcTransactionDirection;
 
 /// Represents registration information of a device using our root seed as
 /// recorded with Fedi's servers.
@@ -98,6 +102,8 @@ pub trait IFediApi: MaybeSend + MaybeSync + 'static {
         &self,
         amount: Amount,
         network: Network,
+        module: ModuleKind,
+        tx_direction: RpcTransactionDirection,
     ) -> anyhow::Result<Bolt11Invoice>;
 
     /// Fetches a list of all registered devices (as recorded by Fedi's servers)
@@ -202,6 +208,8 @@ impl IFediApi for LiveFediApi {
         &self,
         amount: Amount,
         network: Network,
+        module: ModuleKind,
+        tx_direction: RpcTransactionDirection,
     ) -> anyhow::Result<Bolt11Invoice> {
         let api_url = match network {
             Network::Bitcoin => FEDI_INVOICE_API_URL_MAINNET,
@@ -211,8 +219,13 @@ impl IFediApi for LiveFediApi {
         let invoice_v0 = fedimint_core::task::timeout(Duration::from_secs(15), async {
             self.client
                 .post(api_url)
-                .json(&GenerateInvoiceRequestV0 {
+                .json(&GenerateInvoiceRequestV1 {
                     amount_msat: amount.msats,
+                    module,
+                    tx_direction: match tx_direction {
+                        RpcTransactionDirection::Send => TransactionDirection::Send,
+                        RpcTransactionDirection::Receive => TransactionDirection::Receive,
+                    },
                 })
                 .send()
                 .await
@@ -220,7 +233,7 @@ impl IFediApi for LiveFediApi {
         .await
         .context("Request to fetch fee invoice took too long")?
         .context("Fetch fee invoice response error")?
-        .json::<GenerateInvoiceResponseV0>()
+        .json::<GenerateInvoiceResponseV1>()
         .await?;
 
         Ok(Bolt11Invoice::from_str(&invoice_v0.invoice).context("Failed to parse fee invoice")?)
