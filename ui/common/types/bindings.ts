@@ -1,6 +1,6 @@
 import { RequestInvoiceArgs } from 'webln'
 
-import { MSats } from '@fedi/common/types'
+import { MSats } from './units'
 
 export type RpcMethodNames = keyof RpcMethods
 export type RpcPayload<M extends RpcMethodNames> = RpcMethods[M][0]
@@ -313,6 +313,7 @@ export interface RpcMethods {
             deviceIndexAssignmentStatus: RpcDeviceIndexAssignmentStatus
         },
     ]
+    onAppForeground: [Record<string, never>, null]
     joinFederation: [
         { inviteCode: string },
         {
@@ -718,6 +719,7 @@ export interface RpcMethods {
         >,
     ]
     matrixPublicRoomInfo: [{ roomId: string }, any]
+    matrixRoomMarkAsUnread: [{ roomId: RpcRoomId; unread: boolean }, null]
     communityPreview: [
         { inviteCode: string },
         {
