@@ -50,7 +50,7 @@ pub struct AppStateRaw {
     /// Mapping of federation ID => FederationInfo
     pub joined_federations: BTreeMap<String, FederationInfo>,
 
-    /// Mapping of community ID => CommunityInfo
+    /// Mapping of community invite code => CommunityInfo
     #[serde(default)]
     pub joined_communities: BTreeMap<String, CommunityInfo>,
 
