@@ -50,7 +50,8 @@ impl Communities {
                     invite.clone(),
                     Community::from_local_meta(
                         invite,
-                        info.meta,
+                        info,
+                        app_state.clone(),
                         event_sink.clone(),
                         http_client.clone(),
                     ),
@@ -91,6 +92,7 @@ impl Communities {
     pub async fn join_community(&self, invite_code: &str) -> anyhow::Result<RpcCommunity> {
         let community = Community::join(
             invite_code,
+            self.app_state.clone(),
             self.event_sink.clone(),
             self.http_client.clone(),
         )
@@ -218,6 +220,7 @@ pub struct Community {
     /// Meta is an RwLock since most of the time we'll be reading it but
     /// occasionally we might update it if the remote data changes.
     pub meta: Arc<RwLock<CommunityJson>>,
+    app_state: Arc<AppState>,
     event_sink: EventSink,
     http_client: reqwest::Client,
 }
@@ -256,12 +259,14 @@ impl Community {
     /// constructs a Community object and returns it.
     pub async fn join(
         invite_code: &str,
+        app_state: Arc<AppState>,
         event_sink: EventSink,
         http_client: reqwest::Client,
     ) -> anyhow::Result<Self> {
         Ok(Community {
             invite_code: invite_code.to_owned(),
             meta: RwLock::new(Self::preview(invite_code, http_client.clone()).await?).into(),
+            app_state,
             event_sink,
             http_client,
         })
@@ -271,13 +276,15 @@ impl Community {
     /// returns it.
     pub fn from_local_meta(
         invite_code: String,
-        meta: CommunityJson,
+        info: CommunityInfo,
+        app_state: Arc<AppState>,
         event_sink: EventSink,
         http_client: reqwest::Client,
     ) -> Self {
         Community {
             invite_code,
-            meta: RwLock::new(meta).into(),
+            meta: RwLock::new(info.meta).into(),
+            app_state,
             event_sink,
             http_client,
         }
@@ -290,7 +297,15 @@ impl Community {
 
         match Self::preview(&self.invite_code, self.http_client.clone()).await {
             Ok(new_meta) if new_meta != meta => {
-                // TODO shaurya update in-memory struct + AppState if meta changes
+                *self.meta.write().await = new_meta.clone();
+                let _ = self
+                    .app_state
+                    .with_write_lock(|state| {
+                        state
+                            .joined_communities
+                            .insert(self.invite_code.clone(), CommunityInfo { meta: new_meta })
+                    })
+                    .await;
                 self.event_sink
                     .typed_event(&Event::community_metadata_updated(RpcCommunity {
                         invite_code: self.invite_code.clone(),
