@@ -45,10 +45,16 @@ impl Communities {
             .with_read_lock(|state| state.joined_communities.clone())
             .await
             .into_iter()
-            .map(|(id, info)| async {
+            .map(|(invite, info)| async {
                 (
-                    id,
-                    Community::from_local_meta(info.meta, event_sink.clone(), http_client.clone()),
+                    invite.clone(),
+                    Community::from_local_meta(
+                        invite,
+                        info,
+                        app_state.clone(),
+                        event_sink.clone(),
+                        http_client.clone(),
+                    ),
                 )
             });
 
@@ -75,53 +81,63 @@ impl Communities {
     pub async fn community_preview(&self, invite_code: &str) -> anyhow::Result<RpcCommunity> {
         Community::preview(invite_code, self.http_client.clone())
             .await
-            .map(Into::into)
+            .map(|json| RpcCommunity {
+                invite_code: invite_code.to_owned(),
+                community_name: json.community_name,
+                version: json.version,
+                meta: json.meta,
+            })
     }
 
     pub async fn join_community(&self, invite_code: &str) -> anyhow::Result<RpcCommunity> {
         let community = Community::join(
             invite_code,
+            self.app_state.clone(),
             self.event_sink.clone(),
             self.http_client.clone(),
         )
         .await?;
         let meta = community.meta.read().await.clone();
-        let rpc_community = meta.clone().into();
+        let rpc_community = RpcCommunity {
+            invite_code: invite_code.to_owned(),
+            community_name: meta.community_name.clone(),
+            version: meta.version,
+            meta: meta.meta.clone(),
+        };
 
         {
             // Verify that community has not already been joined
             let mut communities = self.communities.lock().await;
-            if communities.contains_key(&meta.community_id) {
-                bail!("Community with ID {} already joined", meta.community_id);
+            if communities.contains_key(invite_code) {
+                bail!("Community with invite code {} already joined", invite_code);
             }
 
             // Write to memory
-            communities.insert(meta.community_id.clone(), community);
+            communities.insert(invite_code.to_owned(), community);
         }
 
         // Write to AppState
         self.app_state
             .with_write_lock(|state| {
-                state.joined_communities.insert(
-                    meta.community_id.clone(),
-                    CommunityInfo { meta: meta.clone() },
-                );
+                state
+                    .joined_communities
+                    .insert(invite_code.to_owned(), CommunityInfo { meta: meta.clone() });
             })
             .await?;
 
         Ok(rpc_community)
     }
 
-    pub async fn leave_community(&self, community_id: &str) -> anyhow::Result<()> {
+    pub async fn leave_community(&self, invite_code: &str) -> anyhow::Result<()> {
         // Update memory, verifying that community has already been joined
-        if self.communities.lock().await.remove(community_id).is_none() {
-            bail!("Community with ID {community_id} must already be joined");
+        if self.communities.lock().await.remove(invite_code).is_none() {
+            bail!("Community with invite code {invite_code} must already be joined");
         }
 
         // Update AppState
         self.app_state
             .with_write_lock(|state| {
-                state.joined_communities.remove(community_id);
+                state.joined_communities.remove(invite_code);
             })
             .await?;
         Ok(())
@@ -129,9 +145,15 @@ impl Communities {
 
     pub async fn list_communities(&self) -> anyhow::Result<Vec<RpcCommunity>> {
         let communities = self.communities.lock().await.clone();
-        let read_futs = communities
-            .values()
-            .map(|v| async { v.meta.read().await.clone().into() });
+        let read_futs = communities.iter().map(|(invite_code, community)| async {
+            let meta = community.meta.read().await.clone();
+            RpcCommunity {
+                invite_code: invite_code.to_owned(),
+                community_name: meta.community_name,
+                version: meta.version,
+                meta: meta.meta,
+            }
+        });
         Ok(futures::future::join_all(read_futs).await)
     }
 
@@ -179,13 +201,10 @@ impl FromStr for CommunityInvite {
 }
 
 /// When fetching the Community's JSON file and deserializing it, we expect the
-/// community ID, invite code, name, and version to always be there. All other
-/// fields are encapsulated in the "meta" map and the front-end can decide how
-/// best to utilize them.
+/// name, and version to always be there. All other fields are encapsulated in
+/// the "meta" map and the front-end can decide how best to utilize them.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CommunityJson {
-    pub community_id: String,
-    pub invite_code: String,
     pub community_name: String,
     pub version: u32,
     #[serde(flatten)]
@@ -197,9 +216,11 @@ pub struct CommunityJson {
 /// such as chat, mods, npub-related features.
 #[derive(Clone)]
 pub struct Community {
+    pub invite_code: String,
     /// Meta is an RwLock since most of the time we'll be reading it but
     /// occasionally we might update it if the remote data changes.
     pub meta: Arc<RwLock<CommunityJson>>,
+    app_state: Arc<AppState>,
     event_sink: EventSink,
     http_client: reqwest::Client,
 }
@@ -238,11 +259,14 @@ impl Community {
     /// constructs a Community object and returns it.
     pub async fn join(
         invite_code: &str,
+        app_state: Arc<AppState>,
         event_sink: EventSink,
         http_client: reqwest::Client,
     ) -> anyhow::Result<Self> {
         Ok(Community {
+            invite_code: invite_code.to_owned(),
             meta: RwLock::new(Self::preview(invite_code, http_client.clone()).await?).into(),
+            app_state,
             event_sink,
             http_client,
         })
@@ -251,12 +275,16 @@ impl Community {
     /// Uses the provided CommunityJson meta to construct a Community object and
     /// returns it.
     pub fn from_local_meta(
-        meta: CommunityJson,
+        invite_code: String,
+        info: CommunityInfo,
+        app_state: Arc<AppState>,
         event_sink: EventSink,
         http_client: reqwest::Client,
     ) -> Self {
         Community {
-            meta: RwLock::new(meta).into(),
+            invite_code,
+            meta: RwLock::new(info.meta).into(),
+            app_state,
             event_sink,
             http_client,
         }
@@ -267,13 +295,27 @@ impl Community {
     async fn refresh_meta(&self) {
         let meta = self.meta.read().await.clone();
 
-        match Self::preview(&meta.invite_code, self.http_client.clone()).await {
+        match Self::preview(&self.invite_code, self.http_client.clone()).await {
             Ok(new_meta) if new_meta != meta => {
+                *self.meta.write().await = new_meta.clone();
+                let _ = self
+                    .app_state
+                    .with_write_lock(|state| {
+                        state
+                            .joined_communities
+                            .insert(self.invite_code.clone(), CommunityInfo { meta: new_meta })
+                    })
+                    .await;
                 self.event_sink
-                    .typed_event(&Event::community_metadata_updated(new_meta.into()));
+                    .typed_event(&Event::community_metadata_updated(RpcCommunity {
+                        invite_code: self.invite_code.clone(),
+                        community_name: meta.community_name,
+                        version: meta.version,
+                        meta: meta.meta,
+                    }));
             }
             Ok(_) => (),
-            Err(e) => info!(%e, "Failed to refresh communtiy meta for {}", meta.community_id),
+            Err(e) => info!(%e, "Failed to refresh communtiy meta for {}", self.invite_code),
         }
     }
 }

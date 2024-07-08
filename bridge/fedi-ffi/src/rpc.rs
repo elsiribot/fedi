@@ -709,8 +709,8 @@ async fn joinCommunity(bridge: Arc<Bridge>, invite_code: String) -> anyhow::Resu
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn leaveCommunity(bridge: Arc<Bridge>, community_id: String) -> anyhow::Result<()> {
-    bridge.communities.leave_community(&community_id).await
+async fn leaveCommunity(bridge: Arc<Bridge>, invite_code: String) -> anyhow::Result<()> {
+    bridge.communities.leave_community(&invite_code).await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -3016,30 +3016,26 @@ mod tests {
     }
 
     const COMMUNITY_JSON_0: &str = r#"{
-        "community_id": "0000-0000-0000000-0000000",
         "version": 1,
         "community_icon_url": "https://fedi-public-snapshots.s3.amazonaws.com/icons/bitcoin-principles.png",
-        "community_name": "Bitcoin Principles",
+        "community_name": "0 Bitcoin Principles",
         "fedimods": "[{\"id\":\"swap\",\"url\":\"https://ln-swap.vercel.app\",\"title\":\"SWAP\",\"imageUrl\":\"https://ln-swap.vercel.app/logo.png\"},{\"id\":\"bitrefill\",\"url\":\"https://embed.bitrefill.com/?paymentMethod=lightning&ref=bezsoYNf&utm_source=fedi\",\"title\":\"Bitrefill\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/bitrefill.png\"},{\"id\":\"lngpt\",\"url\":\"https://lngpt.vercel.app\",\"title\":\"AI Assistant\",\"imageUrl\":\"https://lngpt.vercel.app/logo.png\"},{\"id\":\"tbc\",\"url\":\"https://embed.thebitcoincompany.com/giftcard\",\"title\":\"The Bitcoin Company\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/thebitcoincompany.jpg\"},{\"id\":\"btcmap\",\"url\":\"https://btcmap.org/map\",\"title\":\"BTC Map\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/btcmap.png\"},{\"id\":\"fedisupport\",\"url\":\"https://support.fedi.xyz\",\"title\":\"Support\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/fedi-faq-logo.png\"}]",
         "default_currency": "USD",
         "welcome_message": "Welcome to the Bitcoin Principles Federation! Feel free to use the wallet, chat and other features. For any issues with the app, please use the Bug Report mod on the homepage.",
         "tos_url": "https://tos-fedi.replit.app/btc-principles.html",
         "preview_message": "Welcome to the Bitcoin Principles Federation! Feel free to use the wallet, chat and other features. For any issues with the app, please use the Bug Report mod on the homepage.",
-        "invite_code": "fed11qgqzygrhwden5te0v9cxjtnzd96xxmmfdec8y6twvd5hqmr9wvhxuet59upqzg9jzp5vsn6mzt9ylhun70jy85aa0sn7sepdp4fw5tjdeehah0hfmufvlqem",
         "public": "false",
         "default_group_chats": "[\"fzvjqrtcwcswn4kocj1htpdd\"]"
     }"#;
     const COMMUNITY_JSON_1: &str = r#"{
-        "community_id": "1000-0000-0000000-0000000",
         "version": 1,
         "community_icon_url": "https://fedi-public-snapshots.s3.amazonaws.com/icons/bitcoin-principles.png",
-        "community_name": "Bitcoin Principles",
+        "community_name": "1 Bitcoin Principles",
         "fedimods": "[{\"id\":\"swap\",\"url\":\"https://ln-swap.vercel.app\",\"title\":\"SWAP\",\"imageUrl\":\"https://ln-swap.vercel.app/logo.png\"},{\"id\":\"bitrefill\",\"url\":\"https://embed.bitrefill.com/?paymentMethod=lightning&ref=bezsoYNf&utm_source=fedi\",\"title\":\"Bitrefill\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/bitrefill.png\"},{\"id\":\"lngpt\",\"url\":\"https://lngpt.vercel.app\",\"title\":\"AI Assistant\",\"imageUrl\":\"https://lngpt.vercel.app/logo.png\"},{\"id\":\"tbc\",\"url\":\"https://embed.thebitcoincompany.com/giftcard\",\"title\":\"The Bitcoin Company\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/thebitcoincompany.jpg\"},{\"id\":\"btcmap\",\"url\":\"https://btcmap.org/map\",\"title\":\"BTC Map\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/btcmap.png\"},{\"id\":\"fedisupport\",\"url\":\"https://support.fedi.xyz\",\"title\":\"Support\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/fedi-faq-logo.png\"}]",
         "default_currency": "USD",
         "welcome_message": "Welcome to the Bitcoin Principles Federation! Feel free to use the wallet, chat and other features. For any issues with the app, please use the Bug Report mod on the homepage.",
         "tos_url": "https://tos-fedi.replit.app/btc-principles.html",
         "preview_message": "Welcome to the Bitcoin Principles Federation! Feel free to use the wallet, chat and other features. For any issues with the app, please use the Bug Report mod on the homepage.",
-        "invite_code": "fed11qgqzygrhwden5te0v9cxjtnzd96xxmmfdec8y6twvd5hqmr9wvhxuet59upqzg9jzp5vsn6mzt9ylhun70jy85aa0sn7sepdp4fw5tjdeehah0hfmufvlqem",
         "public": "false",
         "default_group_chats": "[\"fzvjqrtcwcswn4kocj1htpdd\"]"
     }"#;
@@ -3083,20 +3079,20 @@ mod tests {
             .is_empty());
 
         // Calling join() actually joins
-        joinCommunity(bridge.clone(), invite_code).await?;
+        joinCommunity(bridge.clone(), invite_code.clone()).await?;
         let memory_community = bridge
             .communities
             .communities
             .lock()
             .await
-            .get("0000-0000-0000000-0000000")
+            .get(&invite_code)
             .unwrap()
             .clone();
         let app_state_community = bridge
             .app_state
             .with_read_lock(|state| state.joined_communities.clone())
             .await
-            .get("0000-0000-0000000-0000000")
+            .get(&invite_code)
             .unwrap()
             .clone();
         assert!(memory_community.meta.read().await.to_owned() == app_state_community.meta);
@@ -3155,43 +3151,137 @@ mod tests {
         assert!(listCommunities(bridge.clone()).await?.is_empty());
 
         // Leaving throws error
-        assert!(
-            leaveCommunity(bridge.clone(), "0000-0000-0000000-0000000".to_string())
-                .await
-                .is_err()
-        );
+        assert!(leaveCommunity(bridge.clone(), invite_code_0.clone())
+            .await
+            .is_err());
 
         // Join community 0
-        joinCommunity(bridge.clone(), invite_code_0).await?;
+        joinCommunity(bridge.clone(), invite_code_0.clone()).await?;
 
         // List contains community 0
         assert!(matches!(
                 &listCommunities(bridge.clone()).await?[..],
-                [RpcCommunity { community_id, .. }] if community_id == "0000-0000-0000000-0000000"));
+                [RpcCommunity { invite_code, .. }] if *invite_code == invite_code_0));
 
         // Join community 1
-        joinCommunity(bridge.clone(), invite_code_1).await?;
+        joinCommunity(bridge.clone(), invite_code_1.clone()).await?;
 
         // List contains community 0 + community 1
         assert!(matches!(
                 &listCommunities(bridge.clone()).await?[..], [
-                    RpcCommunity { community_id: id_0, .. },
-                    RpcCommunity { community_id: id_1, .. }
-                ] if id_0 == "0000-0000-0000000-0000000" && id_1 == "1000-0000-0000000-0000000"));
+                    RpcCommunity { invite_code: invite_0, .. },
+                    RpcCommunity { invite_code: invite_1, .. }
+                ] if (*invite_0 == invite_code_0 && *invite_1 == invite_code_1) ||
+                (*invite_0 == invite_code_1 && *invite_1 == invite_code_0)));
 
         // Leave community 0
-        leaveCommunity(bridge.clone(), "0000-0000-0000000-0000000".to_string()).await?;
+        leaveCommunity(bridge.clone(), invite_code_0.clone()).await?;
 
         // List contains only community 1
         assert!(matches!(
                 &listCommunities(bridge.clone()).await?[..],
-                [RpcCommunity { community_id, .. }] if community_id == "1000-0000-0000000-0000000"));
+                [RpcCommunity { invite_code, .. }] if *invite_code == invite_code_1));
 
         // Leave community 1
-        leaveCommunity(bridge.clone(), "1000-0000-0000000-0000000".to_string()).await?;
+        leaveCommunity(bridge.clone(), invite_code_1).await?;
 
         // No joined communities
         assert!(listCommunities(bridge.clone()).await?.is_empty());
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_community_meta_bg_refresh() -> anyhow::Result<()> {
+        let bridge = setup_bridge().await?;
+
+        let mut server = mockito::Server::new_async().await;
+        let url = server.url();
+
+        let invite_path = "/invite-0";
+        let community_invite = CommunityInvite {
+            community_meta_url: format!("{url}{invite_path}"),
+        };
+        let invite_json_str = serde_json::to_string(&community_invite)?;
+        let invite_bytes = invite_json_str.as_bytes();
+        let invite_code = bech32::encode(
+            COMMUNITY_INVITE_CODE_HRP,
+            invite_bytes.to_base32(),
+            bitcoin::bech32::Variant::Bech32m,
+        )?;
+
+        server
+            .mock("GET", invite_path)
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(COMMUNITY_JSON_0)
+            .create_async()
+            .await;
+
+        // Calling join() actually joins
+        joinCommunity(bridge.clone(), invite_code.clone()).await?;
+        let memory_community = bridge
+            .communities
+            .communities
+            .lock()
+            .await
+            .get(&invite_code)
+            .unwrap()
+            .clone();
+        let app_state_community = bridge
+            .app_state
+            .with_read_lock(|state| state.joined_communities.clone())
+            .await
+            .get(&invite_code)
+            .unwrap()
+            .clone();
+        assert!(memory_community.meta.read().await.to_owned() == app_state_community.meta);
+        assert!(
+            serde_json::to_value(memory_community.meta.read().await.to_owned()).unwrap()
+                == serde_json::from_str::<serde_json::Value>(COMMUNITY_JSON_0).unwrap()
+        );
+
+        server
+            .mock("GET", invite_path)
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(COMMUNITY_JSON_1)
+            .create_async()
+            .await;
+        bridge.on_app_foreground().await;
+
+        loop {
+            fedimint_core::task::sleep(Duration::from_millis(10)).await;
+            let memory_community = bridge
+                .communities
+                .communities
+                .lock()
+                .await
+                .get(&invite_code)
+                .unwrap()
+                .clone();
+            let app_state_community = bridge
+                .app_state
+                .with_read_lock(|state| state.joined_communities.clone())
+                .await
+                .get(&invite_code)
+                .unwrap()
+                .clone();
+            if memory_community.meta.read().await.to_owned() != app_state_community.meta {
+                continue;
+            }
+            if serde_json::to_value(memory_community.meta.read().await.to_owned()).unwrap()
+                == serde_json::from_str::<serde_json::Value>(COMMUNITY_JSON_0).unwrap()
+            {
+                continue;
+            }
+
+            assert!(
+                serde_json::to_value(memory_community.meta.read().await.to_owned()).unwrap()
+                    == serde_json::from_str::<serde_json::Value>(COMMUNITY_JSON_1).unwrap()
+            );
+            break;
+        }
 
         Ok(())
     }
