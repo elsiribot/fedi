@@ -3018,7 +3018,7 @@ mod tests {
     const COMMUNITY_JSON_0: &str = r#"{
         "version": 1,
         "community_icon_url": "https://fedi-public-snapshots.s3.amazonaws.com/icons/bitcoin-principles.png",
-        "community_name": "Bitcoin Principles",
+        "community_name": "0 Bitcoin Principles",
         "fedimods": "[{\"id\":\"swap\",\"url\":\"https://ln-swap.vercel.app\",\"title\":\"SWAP\",\"imageUrl\":\"https://ln-swap.vercel.app/logo.png\"},{\"id\":\"bitrefill\",\"url\":\"https://embed.bitrefill.com/?paymentMethod=lightning&ref=bezsoYNf&utm_source=fedi\",\"title\":\"Bitrefill\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/bitrefill.png\"},{\"id\":\"lngpt\",\"url\":\"https://lngpt.vercel.app\",\"title\":\"AI Assistant\",\"imageUrl\":\"https://lngpt.vercel.app/logo.png\"},{\"id\":\"tbc\",\"url\":\"https://embed.thebitcoincompany.com/giftcard\",\"title\":\"The Bitcoin Company\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/thebitcoincompany.jpg\"},{\"id\":\"btcmap\",\"url\":\"https://btcmap.org/map\",\"title\":\"BTC Map\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/btcmap.png\"},{\"id\":\"fedisupport\",\"url\":\"https://support.fedi.xyz\",\"title\":\"Support\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/fedi-faq-logo.png\"}]",
         "default_currency": "USD",
         "welcome_message": "Welcome to the Bitcoin Principles Federation! Feel free to use the wallet, chat and other features. For any issues with the app, please use the Bug Report mod on the homepage.",
@@ -3030,7 +3030,7 @@ mod tests {
     const COMMUNITY_JSON_1: &str = r#"{
         "version": 1,
         "community_icon_url": "https://fedi-public-snapshots.s3.amazonaws.com/icons/bitcoin-principles.png",
-        "community_name": "Bitcoin Principles",
+        "community_name": "1 Bitcoin Principles",
         "fedimods": "[{\"id\":\"swap\",\"url\":\"https://ln-swap.vercel.app\",\"title\":\"SWAP\",\"imageUrl\":\"https://ln-swap.vercel.app/logo.png\"},{\"id\":\"bitrefill\",\"url\":\"https://embed.bitrefill.com/?paymentMethod=lightning&ref=bezsoYNf&utm_source=fedi\",\"title\":\"Bitrefill\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/bitrefill.png\"},{\"id\":\"lngpt\",\"url\":\"https://lngpt.vercel.app\",\"title\":\"AI Assistant\",\"imageUrl\":\"https://lngpt.vercel.app/logo.png\"},{\"id\":\"tbc\",\"url\":\"https://embed.thebitcoincompany.com/giftcard\",\"title\":\"The Bitcoin Company\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/thebitcoincompany.jpg\"},{\"id\":\"btcmap\",\"url\":\"https://btcmap.org/map\",\"title\":\"BTC Map\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/btcmap.png\"},{\"id\":\"fedisupport\",\"url\":\"https://support.fedi.xyz\",\"title\":\"Support\",\"imageUrl\":\"https://fedi-public-snapshots.s3.amazonaws.com/icons/fedi-faq-logo.png\"}]",
         "default_currency": "USD",
         "welcome_message": "Welcome to the Bitcoin Principles Federation! Feel free to use the wallet, chat and other features. For any issues with the app, please use the Bug Report mod on the homepage.",
@@ -3187,6 +3187,101 @@ mod tests {
 
         // No joined communities
         assert!(listCommunities(bridge.clone()).await?.is_empty());
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_community_meta_bg_refresh() -> anyhow::Result<()> {
+        let bridge = setup_bridge().await?;
+
+        let mut server = mockito::Server::new_async().await;
+        let url = server.url();
+
+        let invite_path = "/invite-0";
+        let community_invite = CommunityInvite {
+            community_meta_url: format!("{url}{invite_path}"),
+        };
+        let invite_json_str = serde_json::to_string(&community_invite)?;
+        let invite_bytes = invite_json_str.as_bytes();
+        let invite_code = bech32::encode(
+            COMMUNITY_INVITE_CODE_HRP,
+            invite_bytes.to_base32(),
+            bitcoin::bech32::Variant::Bech32m,
+        )?;
+
+        server
+            .mock("GET", invite_path)
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(COMMUNITY_JSON_0)
+            .create_async()
+            .await;
+
+        // Calling join() actually joins
+        joinCommunity(bridge.clone(), invite_code.clone()).await?;
+        let memory_community = bridge
+            .communities
+            .communities
+            .lock()
+            .await
+            .get(&invite_code)
+            .unwrap()
+            .clone();
+        let app_state_community = bridge
+            .app_state
+            .with_read_lock(|state| state.joined_communities.clone())
+            .await
+            .get(&invite_code)
+            .unwrap()
+            .clone();
+        assert!(memory_community.meta.read().await.to_owned() == app_state_community.meta);
+        assert!(
+            serde_json::to_value(memory_community.meta.read().await.to_owned()).unwrap()
+                == serde_json::from_str::<serde_json::Value>(COMMUNITY_JSON_0).unwrap()
+        );
+
+        server
+            .mock("GET", invite_path)
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(COMMUNITY_JSON_1)
+            .create_async()
+            .await;
+        bridge.on_app_foreground().await;
+
+        loop {
+            fedimint_core::task::sleep(Duration::from_millis(10)).await;
+            let memory_community = bridge
+                .communities
+                .communities
+                .lock()
+                .await
+                .get(&invite_code)
+                .unwrap()
+                .clone();
+            let app_state_community = bridge
+                .app_state
+                .with_read_lock(|state| state.joined_communities.clone())
+                .await
+                .get(&invite_code)
+                .unwrap()
+                .clone();
+            if memory_community.meta.read().await.to_owned() != app_state_community.meta {
+                continue;
+            }
+            if serde_json::to_value(memory_community.meta.read().await.to_owned()).unwrap()
+                == serde_json::from_str::<serde_json::Value>(COMMUNITY_JSON_0).unwrap()
+            {
+                continue;
+            }
+
+            assert!(
+                serde_json::to_value(memory_community.meta.read().await.to_owned()).unwrap()
+                    == serde_json::from_str::<serde_json::Value>(COMMUNITY_JSON_1).unwrap()
+            );
+            break;
+        }
 
         Ok(())
     }
