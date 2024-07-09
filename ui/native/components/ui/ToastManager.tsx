@@ -49,10 +49,11 @@ export default function ToastManager() {
         } else {
             setIsToastOpen(false)
         }
-    }, [toast])
+    }, [toast, slideAnim, toastHeight])
 
     useEffect(() => {
         if (isToastOpen) {
+            slideAnim.setValue(-toastHeight)
             Animated.timing(slideAnim, {
                 toValue: insets.top,
                 duration: 300,
@@ -65,7 +66,7 @@ export default function ToastManager() {
                 useNativeDriver: true,
             }).start()
         }
-    }, [isToastOpen, insets, slideAnim, toastHeight])
+    }, [isToastOpen, insets, slideAnim, toastHeight, toast?.key])
 
     const handleLayout = useCallback(
         (e: LayoutChangeEvent) => {
