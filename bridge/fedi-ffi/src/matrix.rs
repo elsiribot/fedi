@@ -870,7 +870,14 @@ impl Matrix {
     pub async fn user_profile(&self, user_id: &UserId) -> Result<get_profile::v3::Response> {
         Ok(self.client.account().fetch_user_profile_of(user_id).await?)
     }
-
+    pub async fn room_mark_as_unread(&self, room_id: &RoomId, unread: bool) -> Result<()> {
+        self.room(room_id)
+            .await?
+            .inner_room()
+            .set_unread_flag(unread)
+            .await?;
+        Ok(())
+    }
     pub async fn preview_room_content(&self, room_id: &RoomId) -> Result<Vec<RpcTimelineItem>> {
         let response: get_message_events::v3::Response = self
             .client

@@ -1158,6 +1158,18 @@ async fn matrixRoomGetNotificationMode(
         .await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomMarkAsUnread(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    unread: bool,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .room_mark_as_unread(&room_id.into_typed()?, unread)
+        .await
+}
+
 ts_type_ser!(UserProfile: get_profile::v3::Response = "any");
 #[macro_rules_derive(rpc_method!)]
 async fn matrixUserProfile(bridge: Arc<Bridge>, user_id: RpcUserId) -> anyhow::Result<UserProfile> {
@@ -1344,6 +1356,7 @@ rpc_methods!(RpcMethods {
     matrixUnignoreUser,
     matrixRoomPreviewContent,
     matrixPublicRoomInfo,
+    matrixRoomMarkAsUnread,
 
     // Communities
     communityPreview,
