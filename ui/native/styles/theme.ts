@@ -166,9 +166,10 @@ const theme = createTheme({
                 ? {
                       ViewComponent: LinearGradient,
                       linearGradientProps: {
-                          colors: fediTheme.nightHoloAmbientGradient,
-                          start: { x: 0, y: 0.75 },
-                          end: { x: 1, y: 0.95 },
+                          locations: [0, 1],
+                          colors: fediTheme.nightLinearGradient,
+                          useAngle: true,
+                          angle: 180,
                       },
                   }
                 : {}),

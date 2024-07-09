@@ -1,7 +1,6 @@
 import { TFunction } from 'i18next'
 
 import type {
-    Federation,
     FedimintBridgeEventMap,
     MSats,
     Sats,
@@ -124,10 +123,7 @@ export class FedimintBridge {
     }
 
     async listFederations() {
-        return this.rpcTyped<'listFederations', Federation[]>(
-            'listFederations',
-            {},
-        )
+        return this.rpcTyped('listFederations', {})
     }
 
     async generateInvoice(

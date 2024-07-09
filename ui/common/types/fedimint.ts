@@ -16,6 +16,7 @@ import {
     RecoveryProgressEvent,
     ObservableUpdate,
     DeviceRegistrationEvent,
+    RpcCommunity,
 } from './bindings'
 import { Usd, UsdCents } from './units'
 
@@ -143,54 +144,25 @@ export enum Network {
     regtest = 'regtest',
 }
 
-// type FederationOnlyProperties = Pick<
-//     RpcFederation,
-//     | 'balance'
-//     | 'recovering'
-//     | 'nodes'
-//     | 'fediFeeSchedule'
-//     | 'network'
-//     | 'clientConfig'
-// >
-
-// TODO: This should be exported from the bridge bindings
-export type RpcCommunity = {
-    communityId: string
-    inviteCode: string
-    communityName: string
-
-    // TODO: Determine what version means in the context of communities
-    version: number
-    meta: ClientConfigMetadata
-}
-
-// TODO: This should be exported from the bridge bindings
-export type RpcCommunityPreview = RpcCommunity
-
-export type CommunityPreview = Omit<
-    RpcCommunityPreview,
-    'communityId' | 'communityName'
-> & {
-    id: Federation['id']
-    name: Federation['name']
-    readonly hasWallet: false
-}
-
-export type JoinPreview = FederationPreview | CommunityPreview
-
-export type Federation = Omit<RpcFederation, 'network'> & {
+export type Federation = Omit<RpcFederation, 'network' | 'meta'> & {
     meta: ClientConfigMetadata
     network: Network
     readonly hasWallet: true
 }
 
-export type Community = Omit<RpcCommunity, 'communityId' | 'communityName'> & {
+export type Community = Omit<RpcCommunity, 'meta'> & {
     id: Federation['id']
-    name: Federation['name']
+    meta: ClientConfigMetadata
     // Added for compatibility with Mods
     readonly network: undefined
     readonly hasWallet: false
 }
+
+export type RpcCommunityPreview = RpcCommunity
+
+export type CommunityPreview = Community
+
+export type JoinPreview = FederationPreview | CommunityPreview
 
 // Check if hasWallet is true to determine if it's a wallet type or community
 export type FederationListItem = Federation | Community
