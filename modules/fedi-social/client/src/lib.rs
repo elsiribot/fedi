@@ -61,14 +61,14 @@ impl ClientModule for FediSocialClientModule {
         &self,
         _input: &<Self::Common as fedimint_core::module::ModuleCommon>::Input,
     ) -> Option<fedimint_core::module::TransactionItemAmount> {
-        unimplemented!()
+        unreachable!("FediSocial does not have any inputs")
     }
 
     fn output_amount(
         &self,
         _output: &<Self::Common as fedimint_core::module::ModuleCommon>::Output,
     ) -> Option<fedimint_core::module::TransactionItemAmount> {
-        unimplemented!()
+        unreachable!("FediSocial does not have any outputs")
     }
 }
 
@@ -91,10 +91,10 @@ impl State for FediSocialClientStates {
         _context: &Self::ModuleContext,
         _global_context: &DynGlobalClientContext,
     ) -> Vec<StateTransition<Self>> {
-        unimplemented!()
+        unreachable!("FediSocial does not have any state machines")
     }
 
     fn operation_id(&self) -> OperationId {
-        unimplemented!()
+        unreachable!("FediSocial does not have any state machines")
     }
 }
