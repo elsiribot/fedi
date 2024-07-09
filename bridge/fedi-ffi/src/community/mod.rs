@@ -83,7 +83,7 @@ impl Communities {
             .await
             .map(|json| RpcCommunity {
                 invite_code: invite_code.to_owned(),
-                community_name: json.community_name,
+                name: json.name,
                 version: json.version,
                 meta: json.meta,
             })
@@ -100,7 +100,7 @@ impl Communities {
         let meta = community.meta.read().await.clone();
         let rpc_community = RpcCommunity {
             invite_code: invite_code.to_owned(),
-            community_name: meta.community_name.clone(),
+            name: meta.name.clone(),
             version: meta.version,
             meta: meta.meta.clone(),
         };
@@ -149,7 +149,7 @@ impl Communities {
             let meta = community.meta.read().await.clone();
             RpcCommunity {
                 invite_code: invite_code.to_owned(),
-                community_name: meta.community_name,
+                name: meta.name,
                 version: meta.version,
                 meta: meta.meta,
             }
@@ -205,7 +205,7 @@ impl FromStr for CommunityInvite {
 /// the "meta" map and the front-end can decide how best to utilize them.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CommunityJson {
-    pub community_name: String,
+    pub name: String,
     pub version: u32,
     #[serde(flatten)]
     pub meta: BTreeMap<String, String>,
@@ -309,7 +309,7 @@ impl Community {
                 self.event_sink
                     .typed_event(&Event::community_metadata_updated(RpcCommunity {
                         invite_code: self.invite_code.clone(),
-                        community_name: meta.community_name,
+                        name: meta.name,
                         version: meta.version,
                         meta: meta.meta,
                     }));

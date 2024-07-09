@@ -104,7 +104,7 @@ pub struct RpcFederationPreview {
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcCommunity {
     pub invite_code: String,
-    pub community_name: String,
+    pub name: String,
     pub version: u32,
     pub meta: BTreeMap<String, String>,
 }

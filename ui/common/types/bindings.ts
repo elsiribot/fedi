@@ -153,9 +153,8 @@ export interface RpcBridgeStatus {
 }
 
 export interface RpcCommunity {
-    communityId: string
     inviteCode: string
-    communityName: string
+    name: string
     version: number
     meta: Record<string, string>
 }
@@ -723,9 +722,8 @@ export interface RpcMethods {
     communityPreview: [
         { inviteCode: string },
         {
-            communityId: string
             inviteCode: string
-            communityName: string
+            name: string
             version: number
             meta: Record<string, string>
         },
@@ -733,20 +731,18 @@ export interface RpcMethods {
     joinCommunity: [
         { inviteCode: string },
         {
-            communityId: string
             inviteCode: string
-            communityName: string
+            name: string
             version: number
             meta: Record<string, string>
         },
     ]
-    leaveCommunity: [{ communityId: string }, null]
+    leaveCommunity: [{ inviteCode: string }, null]
     listCommunities: [
         Record<string, never>,
         Array<{
-            communityId: string
             inviteCode: string
-            communityName: string
+            name: string
             version: number
             meta: Record<string, string>
         }>,
