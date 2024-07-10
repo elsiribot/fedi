@@ -557,6 +557,19 @@ impl FederationV2 {
             .await
     }
 
+    pub async fn get_outstanding_fedi_fees_per_tx_type(
+        &self,
+    ) -> Vec<(ModuleKind, RpcTransactionDirection, Amount)> {
+        self.dbtx()
+            .await
+            .into_nc()
+            .find_by_prefix(&OutstandingFediFeesPerTXTypeKeyPrefix)
+            .await
+            .map(|(key, amt)| (key.0, key.1, amt))
+            .collect()
+            .await
+    }
+
     pub async fn get_pending_fedi_fees(&self) -> Amount {
         self.dbtx()
             .await
@@ -564,6 +577,19 @@ impl FederationV2 {
             .find_by_prefix(&PendingFediFeesPerTXTypeKeyPrefix)
             .await
             .fold(Amount::ZERO, |acc, (_, amt)| async move { acc + amt })
+            .await
+    }
+
+    pub async fn get_pending_fedi_fees_per_tx_type(
+        &self,
+    ) -> Vec<(ModuleKind, RpcTransactionDirection, Amount)> {
+        self.dbtx()
+            .await
+            .into_nc()
+            .find_by_prefix(&PendingFediFeesPerTXTypeKeyPrefix)
+            .await
+            .map(|(key, amt)| (key.0, key.1, amt))
+            .collect()
             .await
     }
 

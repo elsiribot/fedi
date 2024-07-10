@@ -20,7 +20,7 @@ use crate::error::ErrorCode;
 use crate::federation_v2::{BackupServiceStatus, FederationV2};
 use crate::types::{
     GuardianStatus, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
-    RpcPayAddressResponse,
+    RpcPayAddressResponse, RpcTransactionDirection,
 };
 
 pub enum MultiFederation {
@@ -357,14 +357,28 @@ impl MultiFederation {
         }
     }
 
-    pub async fn get_accrued_outstanding_fedi_fees(&self) -> Result<RpcAmount> {
+    pub async fn get_accrued_outstanding_fedi_fees_per_tx_type(
+        &self,
+    ) -> Result<Vec<(String, RpcTransactionDirection, RpcAmount)>> {
         match self {
-            MultiFederation::V2(v2) => Ok(RpcAmount(v2.get_outstanding_fedi_fees().await)),
+            MultiFederation::V2(v2) => Ok(v2
+                .get_outstanding_fedi_fees_per_tx_type()
+                .await
+                .into_iter()
+                .map(|(kind, dir, amount)| (kind.to_string(), dir, RpcAmount(amount)))
+                .collect()),
         }
     }
-    pub async fn get_accrued_pending_fedi_fees(&self) -> Result<RpcAmount> {
+    pub async fn get_accrued_pending_fedi_fees(
+        &self,
+    ) -> Result<Vec<(String, RpcTransactionDirection, RpcAmount)>> {
         match self {
-            MultiFederation::V2(v2) => Ok(RpcAmount(v2.get_pending_fedi_fees().await)),
+            MultiFederation::V2(v2) => Ok(v2
+                .get_pending_fedi_fees_per_tx_type()
+                .await
+                .into_iter()
+                .map(|(kind, dir, amount)| (kind.to_string(), dir, RpcAmount(amount)))
+                .collect()),
         }
     }
 }
