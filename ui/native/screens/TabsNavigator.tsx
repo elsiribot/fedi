@@ -239,6 +239,14 @@ const styles = (theme: Theme, insets: EdgeInsets, fontScale: number) => {
             height: tabBarHeight + insets.bottom,
             borderTopWidth: 1,
             borderTopColor: theme.colors.extraLightGrey,
+            shadowColor: 'rgba(11, 16, 19, 0.1)',
+            shadowOffset: {
+                width: 0,
+                height: 4,
+            },
+            shadowRadius: 24,
+            elevation: 24,
+            shadowOpacity: 1,
         },
         tabBarIconContainer: {
             paddingBottom: iconPadding,

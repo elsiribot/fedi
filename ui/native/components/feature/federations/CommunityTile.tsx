@@ -72,6 +72,7 @@ const styles = (theme: Theme) =>
             paddingVertical: theme.spacing.lg,
             alignItems: 'center',
             flexDirection: 'row',
+            gap: theme.spacing.lg,
         },
         content: {
             gap: theme.spacing.md,

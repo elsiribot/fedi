@@ -8,6 +8,7 @@ import { ScrollView, StyleSheet, View } from 'react-native'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import {
     selectActiveFederation,
+    selectFederationWelcomeMessage,
     selectFederations,
     selectIsActiveFederationRecovering,
 } from '@fedi/common/redux'
@@ -16,6 +17,7 @@ import NoFederations from '../components/feature/federations/NoFederations'
 import CommunityChats from '../components/feature/home/CommunityChats'
 import HomeWallets from '../components/feature/home/HomeWallets'
 import ShortcutsList from '../components/feature/home/ShortcutsList'
+import WelcomeMessage from '../components/feature/home/WelcomeMessage'
 import RecoveryInProgress from '../components/feature/recovery/RecoveryInProgress'
 import { useAppSelector } from '../state/hooks'
 import type {
@@ -38,6 +40,7 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
         selectIsActiveFederationRecovering,
     )
     const activeFederation = useAppSelector(selectActiveFederation)
+    const welcomeMessage = useAppSelector(selectFederationWelcomeMessage)
 
     if (federations.length === 0) {
         return <NoFederations />
@@ -50,6 +53,11 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
             contentContainerStyle={style.container}
             alwaysBounceVertical={false}>
             <View style={style.content}>
+                {welcomeMessage && (
+                    <View style={style.section}>
+                        <WelcomeMessage message={welcomeMessage} />
+                    </View>
+                )}
                 {activeFederation?.hasWallet && (
                     <View style={style.section}>
                         {recoveryInProgress ? (

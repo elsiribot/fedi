@@ -38,6 +38,7 @@ import {
     getFederationMaxStableBalanceMsats,
     coerceFederationListItem,
     joinFromInvite,
+    getFederationWelcomeMessage,
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
 import { makeChatFromPreview } from '../utils/matrix'
@@ -600,4 +601,9 @@ export const selectActiveFederationFediMods = createSelector(
 export const selectFederationGroupChats = createSelector(
     selectFederationMetadata,
     getFederationGroupChats,
+)
+
+export const selectFederationWelcomeMessage = createSelector(
+    selectFederationMetadata,
+    getFederationWelcomeMessage,
 )

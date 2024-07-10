@@ -44,9 +44,6 @@ const CommunityChats = () => {
         },
         [navigation],
     )
-    if (!activeFederation) return null
-
-    if (expectedNumberOfDefaultChats === 0) return null
 
     // If we have fewer default chats than expected,
     // Assume we're loading and fill the gaps with undefined
@@ -62,6 +59,10 @@ const CommunityChats = () => {
                   ],
         [defaultChats, expectedNumberOfDefaultChats, hasTimedOut],
     )
+
+    if (!activeFederation) return null
+
+    if (expectedNumberOfDefaultChats === 0) return null
 
     return (
         <View style={style.container}>

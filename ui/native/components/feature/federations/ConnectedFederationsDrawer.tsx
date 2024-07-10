@@ -159,8 +159,7 @@ const styles = (theme: Theme) =>
             resizeMode: 'cover',
         },
         title: {
-            paddingHorizontal: theme.spacing.xl,
-            paddingVertical: theme.spacing.md,
+            padding: theme.spacing.lg,
         },
     })
 
