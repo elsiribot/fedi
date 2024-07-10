@@ -14,7 +14,10 @@ use bitcoin::secp256k1::{self, PublicKey, Secp256k1};
 use bitcoin::{Address, Network};
 use db::{FediRawClientConfigKey, InviteCodeKey, TransactionNotesKey, XmppUsernameKey};
 use fedi_social_client::common::VerificationDocument;
-use fedi_social_client::{FediSocialClientInit, RecoveryId};
+use fedi_social_client::{
+    FediSocialClientInit, RecoveryFile, RecoveryId, SocialBackup, SocialRecoveryClient,
+    SocialRecoveryState, SocialVerification, UserSeedPhrase, SOCIAL_RECOVERY_SECRET_CHILD_ID,
+};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::backup::Metadata;
 use fedimint_client::db::ChronologicalOperationLogKey;
@@ -79,10 +82,6 @@ use super::constants::{
     XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
 };
 use super::event::{Event, EventSink, TypedEventExt};
-use super::social::{
-    RecoveryFile, SocialBackup, SocialRecoveryClient, SocialRecoveryState, SocialVerification,
-    UserSeedPhrase,
-};
 use super::types::{
     federation_v2_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
     RpcLightningGateway, RpcPayInvoiceResponse, RpcPublicKey, RpcXmppCredentials,
@@ -91,7 +90,6 @@ use crate::error::ErrorCode;
 use crate::event::RecoveryProgressEvent;
 use crate::features::FeatureCatalog;
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
-use crate::social::SOCIAL_RECOVERY_SECRET_CHILD_ID;
 use crate::storage::FediFeeSchedule;
 use crate::types::{
     EcashReceiveMetadata, GuardianStatus, LightningSendMetadata, OperationFediFeeStatus,

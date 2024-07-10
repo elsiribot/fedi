@@ -248,7 +248,7 @@ impl BackupRequest {
 pub struct SignedBackupRequest {
     #[serde(flatten)]
     request: BackupRequest,
-    pub signature: secp256k1::schnorr::Signature,
+    signature: secp256k1::schnorr::Signature,
 }
 
 impl SignedBackupRequest {

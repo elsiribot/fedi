@@ -2,25 +2,25 @@ use std::collections::BTreeMap;
 use std::fmt;
 
 use anyhow::format_err;
-use async_trait::async_trait;
 use bitcoin::secp256k1;
-use fedi_social_client::common::{
-    BackupId, BackupRequest, DoubleEncryptedData, EncryptedRecoveryShare, RecoveryId,
-    RecoveryRequest, SerdeEncodable, SignedBackupRequest, SignedRecoveryRequest,
-    VerificationDocument,
-};
-use fedi_social_client::config::FediSocialClientConfig;
-use fedimint_core::api::{DynModuleApi, FederationApiExt, FederationResult, IRawFederationApi};
+use fedimint_core::api::DynModuleApi;
 use fedimint_core::config::ClientConfig;
 use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::ApiRequestErased;
-use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::PeerId;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use secp256k1::Secp256k1;
 use serde::{Deserialize, Serialize};
+
+use crate::api::FediSocialFederationApi as _;
+use crate::common::{
+    BackupId, BackupRequest, DoubleEncryptedData, EncryptedRecoveryShare, RecoveryId,
+    RecoveryRequest, SerdeEncodable, SignedBackupRequest, SignedRecoveryRequest,
+    VerificationDocument,
+};
+use crate::config::FediSocialClientConfig;
 
 // TODO: Actually implement. Use some bip39 crate instead?
 #[derive(Serialize, Deserialize, Encodable, Decodable, PartialEq, Eq, Clone)]
@@ -99,7 +99,7 @@ pub struct SocialBackup {
 
     pub module_id: ModuleInstanceId,
 
-    pub config: fedi_social_client::config::FediSocialClientConfig,
+    pub config: crate::config::FediSocialClientConfig,
 
     pub api: DynModuleApi,
 }
@@ -417,48 +417,5 @@ impl SocialVerification {
         let _: Option<()> = serde_json::from_value(encrypted_share)?;
 
         Ok(())
-    }
-}
-
-#[cfg_attr(target_family = "wasm", async_trait(? Send))]
-#[cfg_attr(not(target_family = "wasm"), async_trait)]
-pub trait FediSocialFederationApi {
-    /// Upload social recovery backup for mint to safekeep
-    async fn social_backup(
-        &self,
-        module_id: ModuleInstanceId,
-        request: &SignedBackupRequest,
-    ) -> FederationResult<()>;
-
-    async fn social_recovery(
-        &self,
-        module_id: ModuleInstanceId,
-        request: &SignedRecoveryRequest,
-    ) -> FederationResult<()>;
-}
-
-#[cfg_attr(target_family = "wasm", async_trait(? Send))]
-#[cfg_attr(not(target_family = "wasm"), async_trait)]
-impl<T: ?Sized> FediSocialFederationApi for T
-where
-    T: IRawFederationApi + MaybeSend + MaybeSync + 'static,
-{
-    /// Upload social recovery backup for mint to safekeep
-    async fn social_backup(
-        &self,
-        _module_id: ModuleInstanceId,
-        request: &SignedBackupRequest,
-    ) -> FederationResult<()> {
-        self.request_current_consensus("backup".into(), ApiRequestErased::new(request))
-            .await
-    }
-
-    async fn social_recovery(
-        &self,
-        _module_id: ModuleInstanceId,
-        request: &SignedRecoveryRequest,
-    ) -> FederationResult<()> {
-        self.request_current_consensus("recover".into(), ApiRequestErased::new(request))
-            .await
     }
 }

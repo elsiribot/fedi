@@ -20,7 +20,7 @@ pub mod observable;
 pub mod remote;
 pub mod rpc;
 pub mod serde;
-pub mod social;
+
 pub mod storage;
 pub mod translate;
 pub mod types;
