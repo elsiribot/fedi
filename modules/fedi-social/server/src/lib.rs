@@ -12,9 +12,10 @@ use common::db::{
 };
 use common::{
     FediSocialCommonGen, FediSocialConsensusItem, FediSocialModuleTypes, FediSocialOutputOutcome,
-    NoInputError, NoOutputError, CONSENSUS_VERSION,
+    CONSENSUS_VERSION,
 };
 pub use fedi_social_common as common;
+use fedi_social_common::{FediSocialInputError, FediSocialOutputError};
 use fedimint_core::config::{
     ConfigGenModuleParams, DkgResult, ServerModuleConfig, ServerModuleConsensusConfig,
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
@@ -227,15 +228,15 @@ impl ServerModule for FediSocial {
         _consensus_item: <Self::Common as ModuleCommon>::ConsensusItem,
         _peer_id: PeerId,
     ) -> anyhow::Result<()> {
-        unimplemented!();
+        unreachable!("FediSocial does not have any consensus items")
     }
 
     async fn process_input<'a, 'b, 'c>(
         &'a self,
         _dbtx: &mut DatabaseTransaction<'c>,
         _input: &'b <Self::Common as ModuleCommon>::Input,
-    ) -> Result<InputMeta, NoInputError> {
-        unimplemented!();
+    ) -> Result<InputMeta, FediSocialInputError> {
+        unreachable!("FediSocial does not have any inputs")
     }
 
     async fn process_output<'a, 'b>(
@@ -243,8 +244,8 @@ impl ServerModule for FediSocial {
         _dbtx: &mut DatabaseTransaction<'b>,
         _output: &'a <Self::Common as ModuleCommon>::Output,
         _out_point: OutPoint,
-    ) -> Result<TransactionItemAmount, NoOutputError> {
-        unimplemented!()
+    ) -> Result<TransactionItemAmount, FediSocialOutputError> {
+        unreachable!("FediSocial does not have any outputs")
     }
 
     async fn output_status(

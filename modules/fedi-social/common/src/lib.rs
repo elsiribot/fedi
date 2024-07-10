@@ -4,6 +4,7 @@ use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::{CommonModuleInit, ModuleCommon, ModuleConsensusVersion};
 use fedimint_core::{extensible_associated_module_type, plugin_types_trait_impl_common};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 pub use crate::common::{
     BackupId, BackupRequest, EncryptedRecoveryShare, RecoveryId, RecoveryRequest,
@@ -102,12 +103,15 @@ impl CommonModuleInit for FediSocialCommonGen {
     }
 }
 
-#[derive(thiserror::Error, Debug, Clone, Encodable, Decodable, PartialEq, Eq, Hash)]
-pub enum NoInputError {}
+/// Errors that might be returned by the server
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Error, Encodable, Decodable)]
+#[error("This module does not support inputs")]
+pub enum FediSocialInputError {}
 
-#[derive(thiserror::Error, Debug, Clone, Encodable, Decodable, PartialEq, Eq, Hash)]
-#[error(transparent)]
-pub enum NoOutputError {}
+/// Errors that might be returned by the server
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Error, Encodable, Decodable)]
+#[error("This module does not support outputs")]
+pub enum FediSocialOutputError {}
 
 plugin_types_trait_impl_common!(
     FediSocialModuleTypes,
@@ -116,6 +120,6 @@ plugin_types_trait_impl_common!(
     FediSocialOutput,
     FediSocialOutputOutcome,
     FediSocialConsensusItem,
-    NoInputError,
-    NoOutputError
+    FediSocialInputError,
+    FediSocialOutputError
 );
