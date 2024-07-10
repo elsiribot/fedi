@@ -216,6 +216,25 @@ rec {
     doInstallCargoArtifacts = false;
   };
 
+  workspaceCargoUdepsDeps = craneLib.buildDepsOnly {
+    pname = "fedi-cargo-udeps-deps";
+    nativeBuildInputs = commonArgs.nativeBuildInputs ++ [ pkgs.cargo-udeps ];
+    # since we filtered all the actual project source, everything will definitely fail
+    # but we only run this step to cache the build artifacts, so we ignore failure with `|| true`
+    buildPhaseCargoCommand = "cargo udeps --all-targets --profile $CARGO_PROFILE || true";
+    doCheck = false;
+  };
+
+  workspaceCargoUdeps = craneLib.mkCargoDerivation {
+    pname = "fedi-cargo-udeps";
+    cargoArtifacts = workspaceCargoUdepsDeps;
+    nativeBuildInputs = commonArgs.nativeBuildInputs ++ [ pkgs.cargo-udeps ];
+    buildPhaseCargoCommand = "cargo udeps --all-targets --profile $CARGO_PROFILE";
+    doInstallCargoArtifacts = false;
+    doCheck = false;
+  };
+
+
   workspaceWasmDeps = craneLib.buildWorkspaceDepsOnly {
     cargoArtifacts = workspaceDeps;
     buildPhaseCargoCommand = "cargoWithProfile build --locked --lib --package fedi-wasm";

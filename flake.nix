@@ -242,7 +242,7 @@
             "default" = toolchainDefault;
             "wasm32-unknown-unkown" = toolchainWasm;
           };
-          profiles = [ "dev" "ci" "release" ];
+          profiles = [ "dev" "ci" "test" "release" ];
         };
 
         lib = pkgs.lib;
@@ -278,6 +278,7 @@
               pkgs.fs-dir-cache
               pkgs.cargo-nextest
               pkgs.cargo-audit
+              pkgs.cargo-udeps
               pkgs.curl # wasm build needs it for some reason
               pkgs.wasm-pack
               pkgs.wasm-bindgen-cli
