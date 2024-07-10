@@ -8,7 +8,9 @@ use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::bech32::{self, ToBase32};
 use bitcoin::secp256k1::{Message, Secp256k1};
 use bitcoin::Address;
-use fedi_social_client::FediSocialCommonGen;
+use fedi_social_client::{
+    self, FediSocialCommonGen, RecoveryFile, SocialRecoveryClient, SocialRecoveryState,
+};
 use fedimint_core::api::{DynGlobalApi, InviteCode};
 use fedimint_core::config::ClientConfig;
 use fedimint_core::db::{Database, IDatabaseTransactionOpsCore};
@@ -42,7 +44,6 @@ use crate::federation_v2::{self, BackupServiceStatus, FederationV2};
 use crate::fedi_fee::FediFeeHelper;
 use crate::matrix::Matrix;
 use crate::multi::MultiFederation;
-use crate::social::{self, SocialRecoveryClient, SocialRecoveryState};
 use crate::storage::{
     AppState, DatabaseInfo, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule,
 };
@@ -849,7 +850,7 @@ impl Bridge {
 
     pub async fn start_social_recovery_v2(
         &self,
-        recovery_file: social::RecoveryFile,
+        recovery_file: RecoveryFile,
     ) -> anyhow::Result<()> {
         let social_instance_id = *recovery_file
             .client_config
@@ -922,7 +923,7 @@ impl Bridge {
             .read_file(&recovery_file_path)
             .await?
             .ok_or(anyhow!("recovery file not found"))?;
-        let recovery_file = social::RecoveryFile::from_bytes(&recovery_file_bytes)
+        let recovery_file = RecoveryFile::from_bytes(&recovery_file_bytes)
             .context(ErrorCode::InvalidSocialRecoveryFile)?;
 
         // this starts a social recovery "session" ... what this means is kinda

@@ -1,5 +1,8 @@
+mod api;
+mod client;
 use std::collections::BTreeMap;
 
+pub use client::*;
 pub use fedi_social_common::*;
 use fedimint_client::module::init::{ClientModuleInit, ClientModuleInitArgs};
 use fedimint_client::module::recovery::NoModuleBackup;

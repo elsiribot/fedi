@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::time::SystemTime;
 
 use anyhow::{anyhow, bail, ensure};
+use fedi_social_client::SocialRecoveryState;
 use fedimint_aead::LessSafeKey;
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
@@ -22,7 +23,6 @@ use crate::community::CommunityJson;
 use crate::constants::{
     DEVICE_IDENTIFIER_FIXED_LENGTH, DEVICE_REGISTRATION_CHILD_ID, FEDI_FILE_PATH,
 };
-use crate::social::SocialRecoveryState;
 
 #[apply(async_trait_maybe_send!)]
 pub trait IStorage: 'static + MaybeSend + MaybeSync {
