@@ -6,20 +6,16 @@ import { useNavigation } from '@react-navigation/native'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    ImageBackground,
-    StyleSheet,
-    View,
-    useWindowDimensions,
-} from 'react-native'
+import { StyleSheet, View, useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { selectActiveFederation, selectFederations } from '@fedi/common/redux'
 import { FederationListItem } from '@fedi/common/types'
 
-import { Images } from '../../../assets/images'
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
+import HoloGradient from '../../ui/HoloGradient'
 import CommunityTile from './CommunityTile'
 
 const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
@@ -66,9 +62,12 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
 
     const style = styles(theme)
     return (
-        <ImageBackground
-            style={style.imageBackground}
-            source={Images.HoloBackground}>
+        <HoloGradient
+            level="400"
+            gradientStyle={style.imageBackground}
+            locations={fediTheme.holoGradientLocations.radial}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}>
             <DrawerContentScrollView
                 {...props}
                 style={[
@@ -83,6 +82,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                 <View style={style.content}>
                     <Text
                         h2
+                        medium
                         style={style.title}
                         numberOfLines={1}
                         adjustsFontSizeToFit>
@@ -95,6 +95,9 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                                 community={f}
                                 onSelect={() => handleTilePress(f)}
                                 onSelectQr={() => handleQrPress(f)}
+                                isActiveCommunity={
+                                    activeFederation?.id === f.id
+                                }
                             />
                         ))}
                     </View>
@@ -123,7 +126,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                     night
                 />
             </View>
-        </ImageBackground>
+        </HoloGradient>
     )
 }
 
@@ -156,10 +159,11 @@ const styles = (theme: Theme) =>
         imageBackground: {
             height: '100%',
             width: '100%',
-            resizeMode: 'cover',
+            // resizeMode: 'cover',
         },
         title: {
             padding: theme.spacing.lg,
+            paddingBottom: theme.spacing.lg + 2,
         },
     })
 

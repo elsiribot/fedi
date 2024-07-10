@@ -62,7 +62,11 @@ const CommunityChats = () => {
 
     if (!activeFederation) return null
 
-    if (expectedNumberOfDefaultChats === 0) return null
+    if (
+        expectedNumberOfDefaultChats === 0 ||
+        (hasTimedOut && defaultChats.length === 0)
+    )
+        return null
 
     return (
         <View style={style.container}>

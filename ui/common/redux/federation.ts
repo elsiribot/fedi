@@ -244,7 +244,6 @@ export const refreshFederations = createAsyncThunk<
     // TODO Check arguments for listCommunities
     const communities = await fedimint.listCommunities({})
     const communitiesAsFederations = communities.map(coerceFederationListItem)
-    // TODO Verify this works
     const externalMeta = await fetchFederationsExternalMetadata(
         // include the Fedi Global community used for the global announcements channel
         [...federations, ...communitiesAsFederations, FEDI_GLOBAL_COMMUNITY],
@@ -286,14 +285,20 @@ export const leaveFederation = createAsyncThunk<
     'federation/leaveFederation',
     async ({ fedimint, federationId }, { getState }) => {
         const federation = selectFederation(getState(), federationId)
+        if (!federation) throw new Error('failed-to-leave-federation')
+
+        // for communities, the federation id is the invite code
+        if (!federation.hasWallet) {
+            await fedimint.leaveCommunity({ inviteCode: federationId })
+            return
+        }
+
         // Fixes https://github.com/fedibtc/fedi/issues/3754
         const isRecovering = selectIsAnyFederationRecovering(getState())
         if (isRecovering || !federation)
             throw new Error('failed-to-leave-federation')
 
-        if (federation.hasWallet) await fedimint.leaveFederation(federationId)
-        // for communities, the federation id is the invite code
-        else fedimint.leaveCommunity({ inviteCode: federationId })
+        await fedimint.leaveFederation(federationId)
     },
 )
 

@@ -15,12 +15,14 @@ type CommunityTileProps = {
     onSelect?: () => void
     onSelectQr?: () => void
     showQr?: boolean
+    isActiveCommunity?: boolean
 }
 
 const CommunityTile = ({
     community,
     onSelect = () => null,
     onSelectQr = () => null,
+    isActiveCommunity = false,
 }: CommunityTileProps) => {
     const { theme } = useTheme()
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
@@ -33,7 +35,12 @@ const CommunityTile = ({
 
     const style = styles(theme)
     return (
-        <Pressable containerStyle={style.container} onPress={onSelect}>
+        <Pressable
+            containerStyle={[
+                style.container,
+                isActiveCommunity && style.active,
+            ]}
+            onPress={onSelect}>
             <View style={style.content}>
                 <FederationLogo federation={community} size={48} />
                 <View style={style.titleContainer}>
@@ -99,6 +106,9 @@ const styles = (theme: Theme) =>
             paddingHorizontal: 0,
             paddingVertical: 0,
             flexShrink: 0,
+        },
+        active: {
+            backgroundColor: theme.colors.ghost,
         },
     })
 

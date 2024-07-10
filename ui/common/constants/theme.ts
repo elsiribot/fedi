@@ -32,6 +32,7 @@ export const theme = {
         primary05: alphaHex(HEX_COLORS.night, 5),
         primaryLight: HEX_COLORS.darkGrey,
         primaryVeryLight: HEX_COLORS.lightGrey,
+        ghost: alphaHex(HEX_COLORS.lightGrey, 60),
         success: HEX_COLORS.green,
         secondary: HEX_COLORS.white,
         ...HEX_COLORS,
@@ -76,6 +77,13 @@ export const theme = {
         '600': makeHoloGradientRgbas(0.6),
         '400': makeHoloGradientRgbas(0.3),
         '100': makeHoloGradientRgbas(0.13),
+    },
+    holoGradientLocations: {
+        // Used to mimic the radial gradient in figma
+        // with a LinearGradient
+        radial: [
+            0.026, 0.1947, 0.3376, 0.4708, 0.5915, 0.7363, 0.8402, 1,
+        ] as number[],
     },
     nightHoloAmbientGradient: [
         'rgba(224, 32, 32, 0.075)',

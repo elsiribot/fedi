@@ -1,6 +1,8 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { StyleSheet, View } from 'react-native'
 
+import { theme as fediTheme } from '@fedi/common/constants/theme'
+
 import HoloGradient from '../../ui/HoloGradient'
 
 type Props = {
@@ -11,11 +13,12 @@ const WelcomeMessage = ({ message }: Props) => {
     const style = styles(theme)
     return (
         <View style={style.container}>
-            <HoloGradient level="100" gradientStyle={style.content}>
+            <HoloGradient
+                level="100"
+                locations={fediTheme.holoGradientLocations.radial}
+                gradientStyle={style.content}>
                 <Text caption style={style.message}>
                     {message}
-                    {/* Welcome to this Community. You can learn more on this
-                    website. community.com */}
                 </Text>
             </HoloGradient>
         </View>
@@ -26,7 +29,6 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             display: 'flex',
-            // alignItems: 'center',
             justifyContent: 'center',
         },
         content: {
@@ -34,9 +36,10 @@ const styles = (theme: Theme) =>
             borderRadius: theme.borders.defaultRadius,
         },
         message: {
-            textAlign: 'center',
-            letterSpacing: -0.14,
+            flex: 1,
+            letterSpacing: -0.1,
             lineHeight: 18,
+            textAlign: 'center',
         },
     })
 

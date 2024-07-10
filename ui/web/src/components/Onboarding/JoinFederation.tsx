@@ -12,10 +12,10 @@ import {
 } from '@fedi/common/redux'
 import { JoinPreview, ParserDataType } from '@fedi/common/types'
 import {
-    getFederationPreview,
     getFederationTosUrl,
     getFederationWelcomeMessage,
     getIsFederationSupported,
+    previewInvite,
 } from '@fedi/common/utils/FederationUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -58,7 +58,7 @@ export const JoinFederation: React.FC = () => {
         async (code: string) => {
             setIsFetchingPreview(true)
             try {
-                const fed = await getFederationPreview(code, fedimint)
+                const fed = await previewInvite(fedimint, code)
                 if (federationIds.includes(fed.id)) {
                     dispatch(setActiveFederationId(fed.id))
                     push('/')

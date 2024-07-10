@@ -58,6 +58,7 @@ const FederationSelector: React.FC = () => {
                         caption
                         numberOfLines={1}
                         adjustsFontSizeToFit
+                        minimumFontScale={0.8}
                         style={style.federationName}>
                         {activeFederation?.name}
                     </Text>
@@ -76,12 +77,13 @@ const styles = (theme: Theme) =>
         gradient: {
             padding: theme.spacing.xxs,
             borderRadius: 50,
+            alignSelf: 'center',
         },
         container: {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            alignSelf: 'stretch',
+            alignSelf: 'center',
             paddingVertical: theme.spacing.xs,
             paddingHorizontal: theme.spacing.md,
             // margin: theme.spacing.xxs,

@@ -1,8 +1,7 @@
-import { FederationListItem } from '../types'
+import { Community } from '../types'
 
-// TODO: change type to Community after we implement the Communities feature
 export const FEDI_GLOBAL_COMMUNITY: Pick<
-    FederationListItem,
+    Community,
     'id' | 'meta' | 'hasWallet'
 > = {
     // this is a hard-coded "fake" federation expected to have configured metadata at the provided URL

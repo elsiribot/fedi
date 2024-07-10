@@ -143,7 +143,7 @@ export const OmniConfirmation = <T extends AnyParsedData>({
                 return {
                     contents: {
                         icon: 'Federation',
-                        title: t('feature.omni.confirm-federation-invite'),
+                        title: t('feature.omni.confirm-community-invite'),
                     },
                     continueOnPress: () =>
                         handleNavigate('JoinFederation', {

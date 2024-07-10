@@ -38,13 +38,6 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
         handleJoin,
     } = useFederationPreview(t, fedimint, invite || '')
 
-    // // Reset preview when leaving the screen
-    // useEffect(() => {
-    //     return () => {
-    //         setFederationPreview(undefined)
-    //     }
-    // }, [setFederationPreview])
-
     const goToNextScreen = useCallback(() => {
         if (!federationPreview) return
         navigation.replace(hasMatrixAuth ? 'TabsNavigator' : 'EnterDisplayName')

@@ -555,7 +555,7 @@ export const getIsFederationSupported = (
  * Fetch information about a federation without using the bridge wasm. This
  * allows us to fetch federation info before the bridge is loaded.
  */
-export async function getFederationPreview(
+async function getFederationPreview(
     inviteCode: string,
     fedimint: FedimintBridge,
 ): Promise<JoinPreview> {
@@ -564,7 +564,8 @@ export async function getFederationPreview(
     // fields need to be fetched from... otherwise we won't know about chat
     // servers after joining which will break onboarding
     // TODO: Refactor this to the bridge...?
-    const preview = await previewInvite(fedimint, inviteCode)
+    // const preview = await previewInvite(fedimint, inviteCode)
+    const preview = await fedimint.federationPreview(inviteCode)
     try {
         const metaUrl = getMetaUrl(preview.meta)
         if (metaUrl) {
@@ -595,6 +596,7 @@ export async function getFederationPreview(
             ...preview.meta,
             ...externalMeta,
         },
+        hasWallet: true,
     }
 }
 
@@ -676,8 +678,7 @@ export const previewInvite = async (
     const codeType = detectInviteCodeType(code)
     log.info(`previewInvite: codeType is '${codeType}'`)
     if (codeType === 'federation') {
-        const preview = await fedimint.federationPreview(code)
-        return { ...preview, hasWallet: true }
+        return await getFederationPreview(code, fedimint)
     } else {
         const preview = await fedimint.communityPreview({
             inviteCode: code,

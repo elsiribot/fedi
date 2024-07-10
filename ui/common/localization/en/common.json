@@ -517,6 +517,7 @@
             "action-upload": "Upload QR image",
             "camera-permission-denied": "Go to settings to change Camera permissions.",
             "camera-permission-request": "Allow camera access to scan.",
+            "confirm-community-invite": "This is a community invitation, do you want to join?",
             "confirm-ecash-token": "This is an eCash token, do you want to redeem it?",
             "confirm-federation-invite": "This is a federation invitation, do you want to join?",
             "confirm-fedi-chat": "This is a chat link for {{username}}, do you want to go there?",
