@@ -139,6 +139,17 @@ export const OmniConfirmation = <T extends AnyParsedData>({
                             invite: parsedData.data.invite,
                         }),
                 }
+            case ParserDataType.CommunityInvite:
+                return {
+                    contents: {
+                        icon: 'Federation',
+                        title: t('feature.omni.confirm-federation-invite'),
+                    },
+                    continueOnPress: () =>
+                        handleNavigate('JoinFederation', {
+                            invite: parsedData.data.invite,
+                        }),
+                }
             case ParserDataType.FedimintEcash:
                 return {
                     contents: {

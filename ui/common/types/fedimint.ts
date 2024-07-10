@@ -133,6 +133,7 @@ export enum SupportedMetaFields {
     federation_icon_url = 'federation_icon_url',
     federation_name = 'federation_name',
     default_matrix_rooms = 'default_matrix_rooms',
+    default_group_chats = 'default_group_chats',
 }
 
 export type ClientConfigMetadata = Record<string, string | undefined>

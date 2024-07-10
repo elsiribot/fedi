@@ -13,6 +13,7 @@ export enum ParserDataType {
     FedimintInvite = 'fedimint:invite',
     LegacyFediChatMember = 'fedi:member', // TODO: remove after matrixification
     LegacyFediChatGroup = 'fedi:group', // TODO: remove after matrixification
+    CommunityInvite = 'fedi:community',
     FediChatUser = 'fedi:user',
     FediChatRoom = 'fedi:room',
     Website = 'website',
@@ -96,6 +97,13 @@ export type ParsedFedimintEcash = ParsedData<
     }
 >
 
+export type ParsedCommunityInvite = ParsedData<
+    ParserDataType.CommunityInvite,
+    {
+        invite: string
+    }
+>
+
 export type ParsedFederationInvite = ParsedData<
     ParserDataType.FedimintInvite,
     {
@@ -142,6 +150,7 @@ export type AnyParsedData =
     | ParsedBip21
     | ParsedFedimintEcash
     | ParsedFederationInvite
+    | ParsedCommunityInvite
     | ParsedLegacyFediChatMember
     | ParsedLegacyFediChatGroup
     | ParsedFediChatUser

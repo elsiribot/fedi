@@ -52,6 +52,9 @@ export default function PublicFederations() {
                             <Button
                                 size="sm"
                                 onClick={() =>
+                                    // TODO: fix public federation type.
+                                    // probably should use/extend Federation
+                                    f.meta.invite_code &&
                                     pushWithState('/onboarding/join', {
                                         type: ParserDataType.FedimintInvite,
                                         data: {

@@ -23,6 +23,8 @@ import {
     FediMod,
     MatrixRoom,
     FederationListItem,
+    ClientConfigMetadata,
+    Network,
 } from '../types'
 import { RpcJsonClientConfig, RpcStabilityPoolConfig } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
@@ -51,7 +53,7 @@ const initialState = {
     authenticatedGuardian: null as Guardian | null,
     externalMeta: {} as Record<
         Federation['id'],
-        Federation['meta'] | undefined
+        ClientConfigMetadata | undefined
     >,
     customFediMods: {} as Record<Federation['id'], FediMod[] | undefined>,
     defaultCommunityChats: {} as Record<Federation['id'], MatrixRoom[]>,
@@ -137,7 +139,7 @@ export const federationSlice = createSlice({
             state,
             action: PayloadAction<{
                 federationId: Federation['id']
-                meta: Federation['meta'] | undefined
+                meta: ClientConfigMetadata | undefined
             }>,
         ) {
             const { federationId, meta } = action.payload
@@ -233,8 +235,9 @@ export const refreshFederations = createAsyncThunk<
     { state: CommonState }
 >('federation/refreshFederations', async (fedimint, { dispatch, getState }) => {
     const federationsList = await fedimint.listFederations()
-    const federations = federationsList.map(f => ({
+    const federations: FederationListItem[] = federationsList.map(f => ({
         ...f,
+        network: f.network as Network,
         hasWallet: true as const,
     }))
     // TODO Check arguments for listCommunities
@@ -249,7 +252,7 @@ export const refreshFederations = createAsyncThunk<
         },
     )
     dispatch(updateExternalMeta(externalMeta))
-    dispatch(setFederations(federations))
+    dispatch(setFederations([...federations, ...communitiesAsFederations]))
     return selectFederations(getState())
 })
 
@@ -288,7 +291,8 @@ export const leaveFederation = createAsyncThunk<
             throw new Error('failed-to-leave-federation')
 
         if (federation.hasWallet) await fedimint.leaveFederation(federationId)
-        else fedimint.leaveCommunity({ communityId: federationId })
+        // for communities, the federation id is the invite code
+        else fedimint.leaveCommunity({ inviteCode: federationId })
     },
 )
 

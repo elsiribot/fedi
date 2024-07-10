@@ -7,6 +7,7 @@ import { ScrollView, StyleSheet, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import {
+    selectActiveFederation,
     selectFederations,
     selectIsActiveFederationRecovering,
 } from '@fedi/common/redux'
@@ -36,6 +37,7 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
     )
+    const activeFederation = useAppSelector(selectActiveFederation)
 
     if (federations.length === 0) {
         return <NoFederations />
@@ -48,19 +50,21 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
             contentContainerStyle={style.container}
             alwaysBounceVertical={false}>
             <View style={style.content}>
-                <View style={style.section}>
-                    {recoveryInProgress ? (
-                        <View style={style.recovery}>
-                            <RecoveryInProgress
-                                label={t(
-                                    'feature.recovery.recovery-in-progress-balance',
-                                )}
-                            />
-                        </View>
-                    ) : (
-                        <HomeWallets offline={offline} />
-                    )}
-                </View>
+                {activeFederation?.hasWallet && (
+                    <View style={style.section}>
+                        {recoveryInProgress ? (
+                            <View style={style.recovery}>
+                                <RecoveryInProgress
+                                    label={t(
+                                        'feature.recovery.recovery-in-progress-balance',
+                                    )}
+                                />
+                            </View>
+                        ) : (
+                            <HomeWallets offline={offline} />
+                        )}
+                    </View>
+                )}
                 <View style={style.section}>
                     <ErrorBoundary fallback={null}>
                         <ShortcutsList />

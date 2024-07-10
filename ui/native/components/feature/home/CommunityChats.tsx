@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import { useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
@@ -24,6 +24,16 @@ const CommunityChats = () => {
     const expectedNumberOfDefaultChats = activeFederation
         ? getFederationGroupChats(activeFederation.meta).length
         : 0
+    const [hasTimedOut, setHasTimedOut] = useState(false)
+
+    useEffect(() => {
+        // After 3s, we assume the loading chats have timed out
+        // TODO: Add real error handling for previewing default chats
+        const timeout = setTimeout(() => {
+            setHasTimedOut(true)
+        }, 3000)
+        return () => clearTimeout(timeout)
+    }, [defaultChats, expectedNumberOfDefaultChats])
 
     const handleOpenChat = useCallback(
         (chat: MatrixRoom) => {
@@ -40,10 +50,18 @@ const CommunityChats = () => {
 
     // If we have fewer default chats than expected,
     // Assume we're loading and fill the gaps with undefined
-    const chats =
-        defaultChats.length === expectedNumberOfDefaultChats
-            ? defaultChats
-            : new Array(expectedNumberOfDefaultChats).fill(undefined)
+    const chats = useMemo(
+        () =>
+            hasTimedOut || defaultChats.length === expectedNumberOfDefaultChats
+                ? defaultChats
+                : [
+                      ...defaultChats,
+                      ...new Array(
+                          expectedNumberOfDefaultChats - defaultChats.length,
+                      ).fill(undefined),
+                  ],
+        [defaultChats, expectedNumberOfDefaultChats, hasTimedOut],
+    )
 
     return (
         <View style={style.container}>
@@ -52,7 +70,7 @@ const CommunityChats = () => {
             </Text>
             {chats.map((chat: MatrixRoom | undefined, idx) => (
                 <CommunityChatTile
-                    key={idx}
+                    key={`chat-tile-${idx}`}
                     room={chat}
                     onSelect={handleOpenChat}
                 />

@@ -78,7 +78,6 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         fallbackIconContainer: {
             borderRadius: 8,
-            backgroundColor: theme.colors.white,
             overflow: 'hidden',
             position: 'relative',
         },

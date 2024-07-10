@@ -15,7 +15,11 @@ export const NetworkBanner: React.FC = () => {
     const { theme } = useTheme()
     const activeFederation = useAppSelector(selectActiveFederation)
 
-    if (!activeFederation || activeFederation.network === Network.bitcoin)
+    if (
+        !activeFederation ||
+        !activeFederation.hasWallet ||
+        activeFederation.network === Network.bitcoin
+    )
         return null
 
     const style = styles(theme)

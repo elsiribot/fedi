@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native'
-import Svg, { Defs, Image, Path, Pattern } from 'react-native-svg'
+import Svg, { Defs, Image, Path, Pattern, Rect } from 'react-native-svg'
 
 type Props = {
     imageUrl: string
@@ -21,9 +21,11 @@ const HexImage = ({ imageUrl }: Props) => {
                         patternUnits="userSpaceOnUse"
                         width="22"
                         height="24">
+                        {/* Adds a white background for transparent images */}
+                        <Rect width="22" height="24" fill="white" />
                         <Image
                             id="image0"
-                            href={{ uri: imageUrl }}
+                            xlinkHref={{ uri: imageUrl }}
                             width="22"
                             height="24"
                             preserveAspectRatio="xMidYMid slice"
@@ -37,7 +39,6 @@ const HexImage = ({ imageUrl }: Props) => {
 const styles = () =>
     StyleSheet.create({
         container: {
-            // width: 40,
             aspectRatio: 1,
             overflow: 'hidden',
             paddingHorizontal: 1.05,

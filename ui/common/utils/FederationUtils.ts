@@ -423,10 +423,9 @@ export function supportsSingleSeed(federation: FederationListItem) {
 export const getFederationGroupChats = (
     metadata: ClientConfigMetadata,
 ): string[] => {
-    const defaultGroupChats = getMetaField(
-        SupportedMetaFields.default_matrix_rooms,
-        metadata,
-    )
+    const defaultGroupChats =
+        getMetaField(SupportedMetaFields.default_matrix_rooms, metadata) ??
+        getMetaField(SupportedMetaFields.default_group_chats, metadata)
 
     if (defaultGroupChats) {
         try {

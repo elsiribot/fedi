@@ -27,7 +27,7 @@ import {
     shouldEnableStabilityPool,
     shouldEnableFediInternalInjection,
     fetchPublicFederations,
-    getFederationPreview,
+    previewInvite,
 } from '../utils/FederationUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
@@ -253,16 +253,16 @@ export function useFederationPreview(
         async (code: string, onSuccess?: () => void) => {
             setIsFetchingPreview(true)
             try {
-                const fed = await getFederationPreview(code, fedimint)
-                if (federationIds.includes(fed.id)) {
-                    dispatch(setActiveFederationId(fed.id))
+                const preview = await previewInvite(fedimint, code)
+                if (federationIds.includes(preview.id)) {
+                    dispatch(setActiveFederationId(preview.id))
                     toast.show({
                         content: t('errors.you-have-already-joined'),
                         status: 'error',
                     })
                     onSuccess && onSuccess()
                 } else {
-                    setFederationPreview(fed)
+                    setFederationPreview(preview)
                 }
             } catch (err) {
                 log.error('handleCode', err)
