@@ -120,7 +120,7 @@ export function OmniInput<
                 input = prompt(t('feature.omni.action-paste'))
             }
 
-            if (!input) return
+            if (input === null) return
 
             await parseInput(input)
         } catch (err) {
