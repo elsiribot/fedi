@@ -231,7 +231,7 @@ impl Default for FediFeeSchedule {
         modules.insert(
             fedimint_mint_client::KIND,
             ModuleFediFeeSchedule {
-                send_ppm: default_send_ppm,
+                send_ppm: 0,
                 receive_ppm: 0,
             },
         );
@@ -245,7 +245,7 @@ impl Default for FediFeeSchedule {
         modules.insert(
             fedimint_wallet_client::KIND,
             ModuleFediFeeSchedule {
-                send_ppm: default_send_ppm,
+                send_ppm: 0,
                 receive_ppm: 0,
             },
         );
@@ -257,7 +257,7 @@ impl Default for FediFeeSchedule {
             },
         );
         Self {
-            remittance_threshold_msat: 10_000,
+            remittance_threshold_msat: 100_000,
             modules,
         }
     }

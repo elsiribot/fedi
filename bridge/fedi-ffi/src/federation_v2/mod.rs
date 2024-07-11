@@ -32,7 +32,7 @@ use fedimint_core::api::{
 };
 use fedimint_core::backup::ClientBackupSnapshot;
 use fedimint_core::config::{ClientConfig, FederationId};
-use fedimint_core::core::OperationId;
+use fedimint_core::core::{ModuleKind, OperationId};
 use fedimint_core::db::{
     Committable, Database, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped,
 };
@@ -68,8 +68,9 @@ use tracing::{error, info, warn};
 use self::backup_service::BackupService;
 pub use self::backup_service::BackupServiceStatus;
 use self::db::{
-    LastStabilityPoolDepositCycleKey, OperationFediFeeStatusKey, OutstandingFediFeesKey,
-    PendingFediFeesKey,
+    LastStabilityPoolDepositCycleKey, OperationFediFeeStatusKey, OutstandingFediFeesPerTXTypeKey,
+    OutstandingFediFeesPerTXTypeKeyPrefix, PendingFediFeesPerTXTypeKey,
+    PendingFediFeesPerTXTypeKeyPrefix,
 };
 use self::dev::{
     override_localhost, override_localhost_client_config, override_localhost_invite_code,
@@ -548,18 +549,46 @@ impl FederationV2 {
         self.dbtx()
             .await
             .into_nc()
-            .get_value(&OutstandingFediFeesKey)
+            .find_by_prefix(&OutstandingFediFeesPerTXTypeKeyPrefix)
             .await
-            .unwrap_or(Amount::ZERO)
+            .fold(Amount::ZERO, |acc, (_, amt)| async move { acc + amt })
+            .await
+    }
+
+    pub async fn get_outstanding_fedi_fees_per_tx_type(
+        &self,
+    ) -> Vec<(ModuleKind, RpcTransactionDirection, Amount)> {
+        self.dbtx()
+            .await
+            .into_nc()
+            .find_by_prefix(&OutstandingFediFeesPerTXTypeKeyPrefix)
+            .await
+            .map(|(key, amt)| (key.0, key.1, amt))
+            .collect()
+            .await
     }
 
     pub async fn get_pending_fedi_fees(&self) -> Amount {
         self.dbtx()
             .await
             .into_nc()
-            .get_value(&PendingFediFeesKey)
+            .find_by_prefix(&PendingFediFeesPerTXTypeKeyPrefix)
             .await
-            .unwrap_or(Amount::ZERO)
+            .fold(Amount::ZERO, |acc, (_, amt)| async move { acc + amt })
+            .await
+    }
+
+    pub async fn get_pending_fedi_fees_per_tx_type(
+        &self,
+    ) -> Vec<(ModuleKind, RpcTransactionDirection, Amount)> {
+        self.dbtx()
+            .await
+            .into_nc()
+            .find_by_prefix(&PendingFediFeesPerTXTypeKeyPrefix)
+            .await
+            .map(|(key, amt)| (key.0, key.1, amt))
+            .collect()
+            .await
     }
 
     /// Generate bitcoin address
@@ -2545,25 +2574,34 @@ impl FederationV2 {
         operation_id: OperationId,
         fedi_fee: Amount,
     ) -> anyhow::Result<()> {
+        let module = ModuleKind::clone_from_str(
+            self.client
+                .operation_log()
+                .get_operation(operation_id)
+                .await
+                .ok_or(anyhow!("operation not found!"))?
+                .operation_module_kind(),
+        );
         let res = self
             .client
             .db()
             .autocommit(
                 |dbtx, _| {
-                    Box::pin(async move {
-                        let pending_fedi_fees = fedi_fee
-                            + dbtx
-                                .get_value(&PendingFediFeesKey)
-                                .await
-                                .unwrap_or(Amount::ZERO);
-                        dbtx.insert_entry(
-                            &OperationFediFeeStatusKey(operation_id),
-                            &OperationFediFeeStatus::PendingSend { fedi_fee },
-                        )
-                        .await;
-                        dbtx.insert_entry(&PendingFediFeesKey, &pending_fedi_fees)
+                    Box::pin({
+                        let module = module.clone();
+                        async move {
+                            let db_key =
+                                PendingFediFeesPerTXTypeKey(module, RpcTransactionDirection::Send);
+                            let pending_fedi_fees =
+                                fedi_fee + dbtx.get_value(&db_key).await.unwrap_or(Amount::ZERO);
+                            dbtx.insert_entry(
+                                &OperationFediFeeStatusKey(operation_id),
+                                &OperationFediFeeStatus::PendingSend { fedi_fee },
+                            )
                             .await;
-                        Ok::<(), anyhow::Error>(())
+                            dbtx.insert_entry(&db_key, &pending_fedi_fees).await;
+                            Ok::<(), anyhow::Error>(())
+                        }
                     })
                 },
                 Some(100),
@@ -2599,45 +2637,66 @@ impl FederationV2 {
         &self,
         operation_id: OperationId,
     ) -> anyhow::Result<(bool, OperationFediFeeStatus)> {
+        let module = ModuleKind::clone_from_str(
+            self.client
+                .operation_log()
+                .get_operation(operation_id)
+                .await
+                .ok_or(anyhow!("operation not found!"))?
+                .operation_module_kind(),
+        );
         let res = self
             .client
             .db()
             .autocommit(
                 |dbtx, _| {
-                    Box::pin(async move {
-                        let key = OperationFediFeeStatusKey(operation_id);
-                        let (did_overwrite, status) = match dbtx.get_value(&key).await {
-                            Some(OperationFediFeeStatus::PendingSend { fedi_fee }) => {
-                                // Transition operation status
-                                let new_status = OperationFediFeeStatus::Success { fedi_fee };
-                                dbtx.insert_entry(&key, &new_status).await;
+                    Box::pin({
+                        let module = module.clone();
+                        async move {
+                            let op_key = OperationFediFeeStatusKey(operation_id);
+                            let (did_overwrite, status) = match dbtx.get_value(&op_key).await {
+                                Some(OperationFediFeeStatus::PendingSend { fedi_fee }) => {
+                                    // Transition operation status
+                                    let new_status = OperationFediFeeStatus::Success { fedi_fee };
+                                    dbtx.insert_entry(&op_key, &new_status).await;
 
-                                // Reduce pending counter
-                                let pending_fedi_fees = dbtx
-                                    .get_value(&PendingFediFeesKey)
-                                    .await
-                                    .unwrap_or(Amount::ZERO)
-                                    .saturating_sub(fedi_fee);
-                                dbtx.insert_entry(&PendingFediFeesKey, &pending_fedi_fees)
-                                    .await;
-
-                                // Increment outstanding/success counter
-                                let outstanding_fedi_fees = fedi_fee
-                                    + dbtx
-                                        .get_value(&OutstandingFediFeesKey)
+                                    // Reduce pending counter
+                                    let pending_key = PendingFediFeesPerTXTypeKey(
+                                        module.clone(),
+                                        RpcTransactionDirection::Send,
+                                    );
+                                    let pending_fedi_fees = dbtx
+                                        .get_value(&pending_key)
                                         .await
-                                        .unwrap_or(Amount::ZERO);
-                                dbtx.insert_entry(&OutstandingFediFeesKey, &outstanding_fedi_fees)
-                                    .await;
-                                (true, new_status)
-                            }
-                            Some(status @ OperationFediFeeStatus::Success { .. }) => {
-                                (false, status)
-                            }
-                            Some(_) => bail!("Invalid operation fedi fee status found!"),
-                            None => bail!("No operation fedi fee status found!"),
-                        };
-                        Ok::<(bool, OperationFediFeeStatus), anyhow::Error>((did_overwrite, status))
+                                        .unwrap_or(Amount::ZERO)
+                                        .saturating_sub(fedi_fee);
+                                    dbtx.insert_entry(&pending_key, &pending_fedi_fees).await;
+
+                                    // Increment outstanding/success counter
+                                    let outstanding_key = OutstandingFediFeesPerTXTypeKey(
+                                        module,
+                                        RpcTransactionDirection::Send,
+                                    );
+                                    let outstanding_fedi_fees = fedi_fee
+                                        + dbtx
+                                            .get_value(&outstanding_key)
+                                            .await
+                                            .unwrap_or(Amount::ZERO);
+                                    dbtx.insert_entry(&outstanding_key, &outstanding_fedi_fees)
+                                        .await;
+                                    (true, new_status)
+                                }
+                                Some(status @ OperationFediFeeStatus::Success { .. }) => {
+                                    (false, status)
+                                }
+                                Some(_) => bail!("Invalid operation fedi fee status found!"),
+                                None => bail!("No operation fedi fee status found!"),
+                            };
+                            Ok::<(bool, OperationFediFeeStatus), anyhow::Error>((
+                                did_overwrite,
+                                status,
+                            ))
+                        }
                     })
                 },
                 Some(100),
@@ -2655,7 +2714,13 @@ impl FederationV2 {
                     operation_id
                 );
                 if let Some(service) = self.fedi_fee_remittance_service.get() {
-                    service.remit_fedi_fee_if_threshold_met(self).await;
+                    service
+                        .remit_fedi_fee_if_threshold_met(
+                            self,
+                            module,
+                            RpcTransactionDirection::Send,
+                        )
+                        .await;
                 }
             }
             Ok((false, _)) => info!(
@@ -2681,36 +2746,54 @@ impl FederationV2 {
         &self,
         operation_id: OperationId,
     ) -> anyhow::Result<(bool, OperationFediFeeStatus)> {
+        let module = ModuleKind::clone_from_str(
+            self.client
+                .operation_log()
+                .get_operation(operation_id)
+                .await
+                .ok_or(anyhow!("operation not found!"))?
+                .operation_module_kind(),
+        );
         let res = self
             .client
             .db()
             .autocommit(
                 |dbtx, _| {
-                    Box::pin(async move {
-                        let key = OperationFediFeeStatusKey(operation_id);
-                        let (did_overwrite, status) = match dbtx.get_value(&key).await {
-                            Some(OperationFediFeeStatus::PendingSend { fedi_fee }) => {
-                                // Transition operation status
-                                let new_status = OperationFediFeeStatus::FailedSend { fedi_fee };
-                                dbtx.insert_entry(&key, &new_status).await;
+                    Box::pin({
+                        let module = module.clone();
+                        async move {
+                            let op_key = OperationFediFeeStatusKey(operation_id);
+                            let (did_overwrite, status) = match dbtx.get_value(&op_key).await {
+                                Some(OperationFediFeeStatus::PendingSend { fedi_fee }) => {
+                                    // Transition operation status
+                                    let new_status =
+                                        OperationFediFeeStatus::FailedSend { fedi_fee };
+                                    dbtx.insert_entry(&op_key, &new_status).await;
 
-                                // Reduce pending counter
-                                let pending_fedi_fees = dbtx
-                                    .get_value(&PendingFediFeesKey)
-                                    .await
-                                    .unwrap_or(Amount::ZERO)
-                                    .saturating_sub(fedi_fee);
-                                dbtx.insert_entry(&PendingFediFeesKey, &pending_fedi_fees)
-                                    .await;
-                                (true, new_status)
-                            }
-                            Some(status @ OperationFediFeeStatus::FailedSend { .. }) => {
-                                (false, status)
-                            }
-                            Some(_) => bail!("Invalid operation fedi fee status found!"),
-                            None => bail!("No operation fedi fee status found!"),
-                        };
-                        Ok::<(bool, OperationFediFeeStatus), anyhow::Error>((did_overwrite, status))
+                                    // Reduce pending counter
+                                    let pending_key = PendingFediFeesPerTXTypeKey(
+                                        module,
+                                        RpcTransactionDirection::Send,
+                                    );
+                                    let pending_fedi_fees = dbtx
+                                        .get_value(&pending_key)
+                                        .await
+                                        .unwrap_or(Amount::ZERO)
+                                        .saturating_sub(fedi_fee);
+                                    dbtx.insert_entry(&pending_key, &pending_fedi_fees).await;
+                                    (true, new_status)
+                                }
+                                Some(status @ OperationFediFeeStatus::FailedSend { .. }) => {
+                                    (false, status)
+                                }
+                                Some(_) => bail!("Invalid operation fedi fee status found!"),
+                                None => bail!("No operation fedi fee status found!"),
+                            };
+                            Ok::<(bool, OperationFediFeeStatus), anyhow::Error>((
+                                did_overwrite,
+                                status,
+                            ))
+                        }
                     })
                 },
                 Some(100),
@@ -2797,36 +2880,54 @@ impl FederationV2 {
         operation_id: OperationId,
         amount: Amount,
     ) -> anyhow::Result<(bool, OperationFediFeeStatus)> {
+        let module = ModuleKind::clone_from_str(
+            self.client
+                .operation_log()
+                .get_operation(operation_id)
+                .await
+                .ok_or(anyhow!("operation not found!"))?
+                .operation_module_kind(),
+        );
         let res = self
             .client
             .db()
             .autocommit(
                 |dbtx, _| {
-                    Box::pin(async move {
-                        let key = OperationFediFeeStatusKey(operation_id);
-                        let (did_overwrite, status) = match dbtx.get_value(&key).await {
-                            Some(OperationFediFeeStatus::PendingReceive { fedi_fee_ppm }) => {
-                                let fedi_fee = Amount::from_msats(
-                                    (amount.msats * fedi_fee_ppm).div_ceil(MILLION),
-                                );
-                                let outstanding_fedi_fees = fedi_fee
-                                    + dbtx
-                                        .get_value(&OutstandingFediFeesKey)
-                                        .await
-                                        .unwrap_or(Amount::ZERO);
-                                let new_status = OperationFediFeeStatus::Success { fedi_fee };
-                                dbtx.insert_entry(&key, &new_status).await;
-                                dbtx.insert_entry(&OutstandingFediFeesKey, &outstanding_fedi_fees)
-                                    .await;
-                                (true, new_status)
-                            }
-                            Some(status @ OperationFediFeeStatus::Success { .. }) => {
-                                (false, status)
-                            }
-                            Some(_) => bail!("Invalid operation fedi fee status found!"),
-                            None => bail!("No operation fedi fee status found!"),
-                        };
-                        Ok::<(bool, OperationFediFeeStatus), anyhow::Error>((did_overwrite, status))
+                    Box::pin({
+                        let module = module.clone();
+                        async move {
+                            let op_key = OperationFediFeeStatusKey(operation_id);
+                            let (did_overwrite, status) = match dbtx.get_value(&op_key).await {
+                                Some(OperationFediFeeStatus::PendingReceive { fedi_fee_ppm }) => {
+                                    let fedi_fee = Amount::from_msats(
+                                        (amount.msats * fedi_fee_ppm).div_ceil(MILLION),
+                                    );
+                                    let outstanding_key = OutstandingFediFeesPerTXTypeKey(
+                                        module,
+                                        RpcTransactionDirection::Receive,
+                                    );
+                                    let outstanding_fedi_fees = fedi_fee
+                                        + dbtx
+                                            .get_value(&outstanding_key)
+                                            .await
+                                            .unwrap_or(Amount::ZERO);
+                                    let new_status = OperationFediFeeStatus::Success { fedi_fee };
+                                    dbtx.insert_entry(&op_key, &new_status).await;
+                                    dbtx.insert_entry(&outstanding_key, &outstanding_fedi_fees)
+                                        .await;
+                                    (true, new_status)
+                                }
+                                Some(status @ OperationFediFeeStatus::Success { .. }) => {
+                                    (false, status)
+                                }
+                                Some(_) => bail!("Invalid operation fedi fee status found!"),
+                                None => bail!("No operation fedi fee status found!"),
+                            };
+                            Ok::<(bool, OperationFediFeeStatus), anyhow::Error>((
+                                did_overwrite,
+                                status,
+                            ))
+                        }
                     })
                 },
                 Some(100),
@@ -2844,7 +2945,13 @@ impl FederationV2 {
                     operation_id
                 );
                 if let Some(service) = self.fedi_fee_remittance_service.get() {
-                    service.remit_fedi_fee_if_threshold_met(self).await;
+                    service
+                        .remit_fedi_fee_if_threshold_met(
+                            self,
+                            module,
+                            RpcTransactionDirection::Receive,
+                        )
+                        .await;
                 }
             }
             Ok((false, _)) => info!(

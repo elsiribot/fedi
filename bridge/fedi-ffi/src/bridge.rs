@@ -50,7 +50,7 @@ use crate::storage::{
 use crate::types::{
     GuardianStatus, RpcBridgeStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
     RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
-    RpcPayAddressResponse, RpcRegisteredDevice, RpcReturningMemberStatus,
+    RpcPayAddressResponse, RpcRegisteredDevice, RpcReturningMemberStatus, RpcTransactionDirection,
 };
 use crate::utils::required_threashold_of;
 
@@ -1314,19 +1314,19 @@ impl Bridge {
             .await
     }
 
-    pub async fn get_accrued_outstanding_fedi_fees(
+    pub async fn get_accrued_outstanding_fedi_fees_per_tx_type(
         &self,
         federation_id: RpcFederationId,
-    ) -> Result<RpcAmount> {
+    ) -> Result<Vec<(String, RpcTransactionDirection, RpcAmount)>> {
         self.get_multi(&federation_id.0)
             .await?
-            .get_accrued_outstanding_fedi_fees()
+            .get_accrued_outstanding_fedi_fees_per_tx_type()
             .await
     }
-    pub async fn get_accrued_pending_fedi_fees(
+    pub async fn get_accrued_pending_fedi_fees_per_tx_type(
         &self,
         federation_id: RpcFederationId,
-    ) -> Result<RpcAmount> {
+    ) -> Result<Vec<(String, RpcTransactionDirection, RpcAmount)>> {
         self.get_multi(&federation_id.0)
             .await?
             .get_accrued_pending_fedi_fees()

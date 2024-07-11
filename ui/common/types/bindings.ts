@@ -559,8 +559,14 @@ export interface RpcMethods {
         { federationId: RpcFederationId; sendPpm: bigint; receivePpm: bigint },
         null,
     ]
-    getAccruedOutstandingFediFees: [{ federationId: RpcFederationId }, MSats]
-    getAccruedPendingFediFees: [{ federationId: RpcFederationId }, MSats]
+    getAccruedOutstandingFediFeesPerTXType: [
+        { federationId: RpcFederationId },
+        Array<[string, 'receive' | 'send', MSats]>,
+    ]
+    getAccruedPendingFediFeesPerTXType: [
+        { federationId: RpcFederationId },
+        Array<[string, 'receive' | 'send', MSats]>,
+    ]
     dumpDb: [{ federationId: string }, string]
     fetchRegisteredDevices: [
         Record<string, never>,

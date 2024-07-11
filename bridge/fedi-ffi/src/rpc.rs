@@ -47,7 +47,7 @@ use crate::observable::{Observable, ObservableVec};
 use crate::types::{
     GuardianStatus, RpcBridgeStatus, RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
     RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
-    RpcPayAddressResponse, RpcRegisteredDevice,
+    RpcPayAddressResponse, RpcRegisteredDevice, RpcTransactionDirection,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -601,22 +601,25 @@ async fn setStabilityPoolModuleFediFeeSchedule(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn getAccruedOutstandingFediFees(
+async fn getAccruedOutstandingFediFeesPerTXType(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
-) -> anyhow::Result<RpcAmount> {
+) -> anyhow::Result<Vec<(String, RpcTransactionDirection, RpcAmount)>> {
     bridge
-        .get_accrued_outstanding_fedi_fees(federation_id)
+        .get_accrued_outstanding_fedi_fees_per_tx_type(federation_id)
         .await
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn getAccruedPendingFediFees(
+async fn getAccruedPendingFediFeesPerTXType(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
-) -> anyhow::Result<RpcAmount> {
-    bridge.get_accrued_pending_fedi_fees(federation_id).await
+) -> anyhow::Result<Vec<(String, RpcTransactionDirection, RpcAmount)>> {
+    bridge
+        .get_accrued_pending_fedi_fees_per_tx_type(federation_id)
+        .await
 }
+
 #[macro_rules_derive(rpc_method!)]
 async fn dumpDb(bridge: Arc<Bridge>, federation_id: String) -> anyhow::Result<PathBuf> {
     bridge.dump_db(&federation_id).await
@@ -1304,8 +1307,8 @@ rpc_methods!(RpcMethods {
     setWalletModuleFediFeeSchedule,
     setLightningModuleFediFeeSchedule,
     setStabilityPoolModuleFediFeeSchedule,
-    getAccruedOutstandingFediFees,
-    getAccruedPendingFediFees,
+    getAccruedOutstandingFediFeesPerTXType,
+    getAccruedPendingFediFeesPerTXType,
     dumpDb,
 
     // Device Registration
@@ -1411,6 +1414,7 @@ mod tests {
     use devimint::cmd;
     use devimint::util::{ClnLightningCli, FedimintCli, LnCli};
     use fedi_social_client::common::VerificationDocument;
+    use fedimint_core::core::ModuleKind;
     use fedimint_core::{apply, async_trait_maybe_send, Amount};
     use fedimint_logging::TracingSetup;
     use tokio::sync::Mutex;
@@ -1489,6 +1493,8 @@ mod tests {
             &self,
             _amount: Amount,
             _network: Network,
+            _module: ModuleKind,
+            _tx_direction: RpcTransactionDirection,
         ) -> anyhow::Result<Bolt11Invoice> {
             unimplemented!("TODO shaurya implement when testing");
         }

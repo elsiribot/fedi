@@ -344,7 +344,9 @@ pub struct RpcSignedLnurlMessage {
     pub pubkey: RpcPublicKey,
 }
 
-#[derive(Debug, Serialize, Deserialize, TS)]
+#[derive(
+    Debug, Clone, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize, TS, Encodable, Decodable,
+)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub enum RpcTransactionDirection {

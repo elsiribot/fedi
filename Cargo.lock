@@ -1816,10 +1816,11 @@ checksum = "25cbce373ec4653f1a01a31e8a5e5ec0c622dc27ff9c4e6606eefef5cbbed4a5"
 [[package]]
 name = "fedi-api-types"
 version = "0.1.0"
-source = "git+https://x-access-token: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@github.com/fedibtc/devops-automation?rev=64c5a7b6bffacf4fb2d62b8e0a4ac59900068bf7#64c5a7b6bffacf4fb2d62b8e0a4ac59900068bf7"
+source = "git+https://x-access-token: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@github.com/fedibtc/devops-automation?rev=5a38bf5676652ec79abbed92e93414f4ab9bfc8d#5a38bf5676652ec79abbed92e93414f4ab9bfc8d"
 dependencies = [
  "anyhow",
  "chrono",
+ "fedimint-core",
  "hex",
  "serde",
 ]
