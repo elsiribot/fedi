@@ -563,16 +563,16 @@ export class FedimintBridge {
         return this.rpcTyped('dumpDb', args)
     }
 
-    async getAccruedOutstandingFediFees(
-        args: bindings.RpcPayload<'getAccruedOutstandingFediFees'>,
+    async getAccruedOutstandingFediFeesPerTXType(
+        args: bindings.RpcPayload<'getAccruedOutstandingFediFeesPerTXType'>,
     ) {
-        return this.rpcTyped('getAccruedOutstandingFediFees', args)
+        return this.rpcTyped('getAccruedOutstandingFediFeesPerTXType', args)
     }
 
-    async getAccruedPendingFediFees(
-        args: bindings.RpcPayload<'getAccruedPendingFediFees'>,
+    async getAccruedPendingFediFeesPerTXType(
+        args: bindings.RpcPayload<'getAccruedPendingFediFeesPerTXType'>,
     ) {
-        return this.rpcTyped('getAccruedPendingFediFees', args)
+        return this.rpcTyped('getAccruedPendingFediFeesPerTXType', args)
     }
 
     /*** BRIDGE EVENTS ***/
