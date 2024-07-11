@@ -92,7 +92,11 @@ const Router = () => {
                     }}
                 />
             </Drawer.Navigator>
-            <OmniLinkHandler />
+            {/*
+                Only show this when the app is unlocked.
+                It handles state from a context provider so it won't drop the state.
+            */}
+            {isAppUnlocked && <OmniLinkHandler />}
         </NavigationContainer>
     )
 }

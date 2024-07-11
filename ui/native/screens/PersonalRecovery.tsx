@@ -19,9 +19,9 @@ import stringUtils from '@fedi/common/utils/StringUtils'
 import { fedimint } from '../bridge'
 import SeedWordInput from '../components/feature/recovery/SeedWordInput'
 import { BIP39_WORD_LIST } from '../constants'
+import { usePinContext } from '../state/contexts/PinContext'
 import { resetAfterPersonalRecovery } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
-import { usePin } from '../utils/hooks/security'
 
 const isValidSeedWord = (word: string) => {
     return word.length > 0 && BIP39_WORD_LIST.indexOf(word.toLowerCase()) >= 0
@@ -35,7 +35,7 @@ export type Props = NativeStackScreenProps<
 const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const pin = usePin()
+    const pin = usePinContext()
     const { recoveryInProgress, attemptRecovery } = usePersonalRecovery(
         t,
         fedimint,

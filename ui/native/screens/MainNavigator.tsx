@@ -1,8 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import {
-    NativeStackScreenProps,
-    createNativeStackNavigator,
-} from '@react-navigation/native-stack'
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -302,28 +299,7 @@ export const MainNavigator = () => {
                     federation connections in-app, each call requires a
                     Federation to be specified
                 */}
-                {isAppUnlocked === undefined ? (
-                    <Stack.Group
-                        screenOptions={{
-                            animation: 'fade',
-                            animationDuration: 250,
-                        }}>
-                        <Stack.Screen
-                            name="TabsNavigator"
-                            component={
-                                Initializing as unknown as React.FC<
-                                    NativeStackScreenProps<
-                                        RootStackParamList,
-                                        'TabsNavigator'
-                                    >
-                                >
-                            }
-                            options={{
-                                headerShown: false,
-                            }}
-                        />
-                    </Stack.Group>
-                ) : isAppUnlocked ? (
+                {isAppUnlocked ? (
                     <Stack.Group>
                         <Stack.Group
                             screenOptions={{
@@ -993,7 +969,7 @@ export const MainNavigator = () => {
                             animationDuration: 250,
                         }}>
                         <Stack.Screen
-                            name="TabsNavigator"
+                            name="LockScreen"
                             component={HomeLockScreen}
                             options={{
                                 header: () => <UnlockAppLockScreenHeader />,

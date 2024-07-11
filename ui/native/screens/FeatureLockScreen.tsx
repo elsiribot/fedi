@@ -1,8 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Theme, useTheme, Text } from '@rneui/themed'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { StyleSheet, View, useWindowDimensions } from 'react-native'
+import { useTheme, Text } from '@rneui/themed'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { View, useWindowDimensions } from 'react-native'
 
 import { maxPinLength, pinNumbers } from '@fedi/common/constants/security'
 import { numpadButtons } from '@fedi/common/hooks/amount'
@@ -14,11 +13,15 @@ import { NumpadButton } from '../components/ui/NumpadButton'
 import { usePinContext } from '../state/contexts/PinContext'
 import { useAppDispatch } from '../state/hooks'
 import type { NavigationArgs, RootStackParamList } from '../types/navigation'
+import { styles } from './LockScreen'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'LockScreen'>
+export type Props = NativeStackScreenProps<
+    RootStackParamList,
+    keyof RootStackParamList
+>
 
-// App Lock Screen
-const LockScreen = <T extends keyof RootStackParamList>({
+// Reusable Lock Screen for any protected feature
+const FeatureLockScreen = <T extends keyof RootStackParamList>({
     navigation,
     feature,
     screen,
@@ -32,7 +35,6 @@ const LockScreen = <T extends keyof RootStackParamList>({
     const [, setAttempts] = useState(0)
 
     const { width } = useWindowDimensions()
-    const { t } = useTranslation()
     const { theme } = useTheme()
 
     const timerRef = useRef<NodeJS.Timer | null>(null)
@@ -41,14 +43,6 @@ const LockScreen = <T extends keyof RootStackParamList>({
     const pin = usePinContext()
 
     const style = styles(theme, width)
-
-    const isEnteredPinIncorrect = useMemo(
-        () =>
-            pin.status === 'set' &&
-            !pin.check(pinDigits) &&
-            pinDigits.length === maxPinLength,
-        [pin, pinDigits],
-    )
 
     const setTimedOut = useCallback((attempts: number) => {
         if (timerRef.current) clearInterval(timerRef.current)
@@ -126,12 +120,7 @@ const LockScreen = <T extends keyof RootStackParamList>({
             }),
         )
 
-        const resolvedScreen =
-            route.params && 'routeParams' in route.params
-                ? route.params.routeParams
-                : screen
-
-        navigation.navigate(...resolvedScreen)
+        navigation.navigate(...screen)
     }, [debouncedPin, feature, navigation, dispatch, pin, screen, route.params])
 
     useEffect(() => {
@@ -144,11 +133,6 @@ const LockScreen = <T extends keyof RootStackParamList>({
         <View style={style.container}>
             <View style={style.content}>
                 <View style={style.dots}>
-                    {isEnteredPinIncorrect && (
-                        <Text style={style.incorrectPin}>
-                            {t('feature.pin.pin-doesnt-match')}
-                        </Text>
-                    )}
                     {pinNumbers.map(i => (
                         <PinDot
                             key={i}
@@ -156,22 +140,6 @@ const LockScreen = <T extends keyof RootStackParamList>({
                             isLast={i === maxPinLength}
                         />
                     ))}
-                    {isEnteredPinIncorrect && (
-                        <View style={style.forgotPinButtonContainer}>
-                            <Button
-                                day
-                                title={
-                                    <Text caption>
-                                        {t('feature.pin.forgot-your-pin')}
-                                    </Text>
-                                }
-                                buttonStyle={style.forgotPinButton}
-                                onPress={() => {
-                                    navigation.navigate('ResetPinStart')
-                                }}
-                            />
-                        </View>
-                    )}
                 </View>
             </View>
             <View style={style.numpad}>
@@ -195,62 +163,4 @@ const LockScreen = <T extends keyof RootStackParamList>({
     )
 }
 
-export const styles = (theme: Theme, width: number) =>
-    StyleSheet.create({
-        container: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: theme.spacing.xl,
-        },
-        dots: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-        },
-        content: {
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 32,
-        },
-        numpad: {
-            width: '100%',
-            maxWidth: Math.min(400, width),
-            paddingHorizontal: theme.spacing.lg,
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            position: 'relative',
-        },
-        forgotPinButtonContainer: {
-            position: 'absolute',
-            display: 'flex',
-            top: 54,
-        },
-        incorrectPin: {
-            position: 'absolute',
-            bottom: 54,
-            color: theme.colors.red,
-        },
-        forgotPinButton: {
-            borderColor: theme.colors.lightGrey,
-            borderWidth: 0.25,
-            paddingHorizontal: 50,
-        },
-        timeoutOverlay: {
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: '#fffc',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-    })
-
-export default LockScreen
+export default FeatureLockScreen

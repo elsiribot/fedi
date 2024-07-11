@@ -11,6 +11,7 @@ import ToastManager from './components/ui/ToastManager'
 import { ErrorScreen } from './screens/ErrorScreen'
 import { BackupRecoveryProvider } from './state/contexts/BackupRecoveryContext'
 import { OmniLinkContextProvider } from './state/contexts/OmniLinkContext'
+import { PinContextProvider } from './state/contexts/PinContext'
 import ProviderComposer from './state/contexts/ProviderComposer'
 import { initializeNativeStore, store } from './state/store'
 import theme from './styles/theme'
@@ -32,6 +33,7 @@ const App = () => {
                                 providers={[
                                     BackupRecoveryProvider,
                                     OmniLinkContextProvider,
+                                    PinContextProvider,
                                 ]}>
                                 {<Router />}
                                 <ToastManager />

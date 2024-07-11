@@ -17,7 +17,8 @@ import {
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
 import { AnyParsedData, ParserDataType } from '../../../types'
-import { NavigationHook } from '../../../types/navigation'
+import { NavigationArgs, NavigationHook } from '../../../types/navigation'
+import { useIsFeatureUnlocked } from '../../../utils/hooks/security'
 import CustomOverlay, { CustomOverlayContents } from '../../ui/CustomOverlay'
 import RecoveryInProgress from '../recovery/RecoveryInProgress'
 
@@ -39,6 +40,7 @@ export const OmniConfirmation = <T extends AnyParsedData>({
     const navigation = useNavigation()
     const [isLoading, setIsLoading] = useState(false)
     const activeFederationId = useAppSelector(selectActiveFederationId)
+    const isAppUnlocked = useIsFeatureUnlocked('app')
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
     )
@@ -50,9 +52,15 @@ export const OmniConfirmation = <T extends AnyParsedData>({
         'replace' in navigation
             ? (navigation as NavigationHook).replace
             : (navigation as NavigationHook).navigate
-    const handleNavigate = (...params: Parameters<typeof navigate>) => {
-        navigate(...params)
-        onSuccess(parsedData)
+    const handleNavigate = (...params: NavigationArgs) => {
+        if (isAppUnlocked === undefined) return
+
+        if (isAppUnlocked) {
+            navigate(...params)
+            onSuccess(parsedData)
+        } else {
+            navigate('LockScreen', { routeParams: params })
+        }
     }
 
     const handleAuth = async () => {

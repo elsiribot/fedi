@@ -1,5 +1,7 @@
-import LockScreen, { Props } from '../../../screens/LockScreen'
+import FeatureLockScreen, { Props } from '../../../screens/FeatureLockScreen'
 
 export default function SetPinLockScreen(props: Props) {
-    return <LockScreen {...props} feature="changePin" screen={['SetPin']} />
+    return (
+        <FeatureLockScreen {...props} feature="changePin" screen={['SetPin']} />
+    )
 }
