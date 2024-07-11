@@ -44,6 +44,7 @@ export type Props = NativeStackScreenProps<
     RootStackParamList,
     'DeveloperSettings'
 >
+type FeesMap = { [key: string]: number }
 
 const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
     const { theme } = useTheme()
@@ -53,8 +54,14 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
     const [isLoadingGateways, setIsLoadingGateways] = useState<boolean>(false)
     const [gateways, setGateways] = useState<LightningGateway[]>([])
     const [isSharingLogs, setIsSharingLogs] = useState(false)
-    const [outstandingFediFees, setOutstandingFediFees] = useState(0)
-    const [pendingFediFees, setPendingFediFees] = useState(0)
+    const [outstandingFediSendFeesMap, setOutstandingFediSendFeesMap] =
+        useState<FeesMap>({})
+    const [outstandingFediReceiveFeesMap, setOutstandingFediReceiveFeesMap] =
+        useState<FeesMap>({})
+    const [pendingFediSendFeesMap, setPendingFediSendFeesMap] =
+        useState<FeesMap>({})
+    const [pendingFediReceiveFeesMap, setPendingFediReceiveFeesMap] =
+        useState<FeesMap>({})
     const [isSharingState, setIsSharingState] = useState(false)
     const [isSensitiveLogging, setIsSensitiveLogging] = useState<boolean>(false)
     const [guardianOnlineStatus, setGuardianOnlineStatus] = useState<
@@ -80,10 +87,20 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
     useEffect(() => {
         if (activeFederation) {
             fedimint
-                .getAccruedOutstandingFediFees({
+                .getAccruedOutstandingFediFeesPerTXType({
                     federationId: activeFederation.id,
                 })
-                .then(setOutstandingFediFees)
+                .then(res => {
+                    const sendFeesMap: FeesMap = {}
+                    const receiveFeesMap: FeesMap = {}
+                    res.map(fee => {
+                        if (fee[1] === 'send') sendFeesMap[fee[0]] = fee[2]
+                        else if (fee[1] === 'receive')
+                            receiveFeesMap[fee[0]] = fee[2]
+                    }, {})
+                    setOutstandingFediSendFeesMap(sendFeesMap)
+                    setOutstandingFediReceiveFeesMap(receiveFeesMap)
+                })
                 .catch(err =>
                     log.warn(
                         'Failed to get accured outstanding fedi fees',
@@ -96,10 +113,20 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
     useEffect(() => {
         if (activeFederation) {
             fedimint
-                .getAccruedPendingFediFees({
+                .getAccruedPendingFediFeesPerTXType({
                     federationId: activeFederation.id,
                 })
-                .then(setPendingFediFees)
+                .then(res => {
+                    const sendFeesMap: FeesMap = {}
+                    const receiveFeesMap: FeesMap = {}
+                    res.map(fee => {
+                        if (fee[1] === 'send') sendFeesMap[fee[0]] = fee[2]
+                        else if (fee[1] === 'receive')
+                            receiveFeesMap[fee[0]] = fee[2]
+                    }, {})
+                    setPendingFediSendFeesMap(sendFeesMap)
+                    setPendingFediReceiveFeesMap(receiveFeesMap)
+                })
                 .catch(err =>
                     log.warn(
                         'Failed to get pending outstanding fedi fees',
@@ -232,14 +259,63 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                         }}
                     />
                 </View>
-                <Text
-                    style={
-                        styles(theme).version
-                    }>{`Outstanding Fees: ${outstandingFediFees}`}</Text>
-                <Text
-                    style={
-                        styles(theme).version
-                    }>{`Pending Fees: ${pendingFediFees}`}</Text>
+                {/* TODO: Clean up this mess */}
+                {Object.keys(outstandingFediSendFeesMap).length !== 0 ? (
+                    Object.entries(outstandingFediSendFeesMap).map(
+                        ([module, fee]) => (
+                            <View key={`outstanding-send-fees-${module}`}>
+                                <Text
+                                    style={
+                                        styles(theme).version
+                                    }>{`Outstanding Send Fees for ${module}: ${fee}`}</Text>
+                            </View>
+                        ),
+                    )
+                ) : (
+                    <Text>No outstanding send fees</Text>
+                )}
+                {Object.keys(outstandingFediReceiveFeesMap).length !== 0 ? (
+                    Object.entries(outstandingFediReceiveFeesMap).map(
+                        ([module, fee]) => (
+                            <View key={`outstanding-receive-fees-${module}`}>
+                                <Text
+                                    style={
+                                        styles(theme).version
+                                    }>{`Outstanding Receive Fees for ${module}: ${fee}`}</Text>
+                            </View>
+                        ),
+                    )
+                ) : (
+                    <Text>No outstanding receive fees</Text>
+                )}
+                {Object.keys(pendingFediSendFeesMap).length !== 0 ? (
+                    Object.entries(pendingFediSendFeesMap).map(
+                        ([module, fee]) => (
+                            <View key={`pending-send-fees-${module}`}>
+                                <Text
+                                    style={
+                                        styles(theme).version
+                                    }>{`Pending Send Fees for ${module}: ${fee}`}</Text>
+                            </View>
+                        ),
+                    )
+                ) : (
+                    <Text>No pending send fees</Text>
+                )}
+                {Object.keys(pendingFediReceiveFeesMap).length !== 0 ? (
+                    Object.entries(pendingFediReceiveFeesMap).map(
+                        ([module, fee]) => (
+                            <View key={`pending-receive-fees-${module}`}>
+                                <Text
+                                    style={
+                                        styles(theme).version
+                                    }>{`Pending Receive Fees for ${module}: ${fee}`}</Text>
+                            </View>
+                        ),
+                    )
+                ) : (
+                    <Text>No pending receive fees</Text>
+                )}
             </SettingsSection>
             <SettingsSection title={t('feature.fedimods.debug-mode')}>
                 <View style={styles(theme).switchWrapper}>
