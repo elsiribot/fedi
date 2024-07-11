@@ -75,6 +75,7 @@ const styles = (theme: Theme) =>
         },
         iconImage: {
             borderRadius: 8,
+            backgroundColor: theme.colors.white,
         },
         svgIconImage: {
             borderRadius: 8,
