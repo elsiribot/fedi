@@ -137,9 +137,9 @@ export function initializeCommonStore({
     // Refresh federations on recoveryComplete event to enable UI
     const unsubscribeRecovery = fedimint.addListener(
         'recoveryComplete',
-        event => {
+        async event => {
             log.debug('Recovery complete', event)
-            dispatch(refreshFederations(fedimint))
+            await dispatch(refreshFederations(fedimint))
             // we check for receivable chat payments from this newly
             // joined federation after recovery is complete
             dispatch(checkForReceivablePayments({ fedimint, receivedPayments }))
