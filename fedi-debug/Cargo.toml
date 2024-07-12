@@ -9,6 +9,6 @@ edition = "2021"
 fedimint-rocksdb = { workspace = true }
 fedimint-core = { workspace = true }
 fedi-db-dump = { path = "../fedi-db-dump" }
-clap = { version = "4.5.4", features = ["derive"] }
-tokio = { version = "1.37.0", features = ["full"] }
-anyhow = "1.0.81"
+clap = { workspace = true, features = ["derive"] }
+tokio = { workspace = true, features = ["full"] }
+anyhow = { workspace = true }

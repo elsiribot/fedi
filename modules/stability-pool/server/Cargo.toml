@@ -4,24 +4,21 @@ version = "0.3.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.66"
-async-trait = "0.1"
+anyhow = { workspace = true }
+async-trait = { workspace = true }
 fedimint-core = { workspace = true }
-futures = "0.3.24"
+futures = { workspace = true }
 serde = { workspace = true }
-strum = "0.24"
-strum_macros = "0.24"
+strum = { workspace = true }
+strum_macros = { workspace = true }
 bitcoin = { workspace = true }
-tracing = "0.1.37"
-secp256k1-zkp = { version = "0.7.0", features = ["serde", "bitcoin_hashes"] }
-reqwest = { version = "0.11.14", features = [
-    "json",
-    "rustls-tls",
-], default-features = false }
+tracing = { workspace = true }
+secp256k1-zkp = { workspace = true }
+reqwest = { workspace = true }
 ring = { workspace = true }
 serde_json = { workspace = true }
-erased-serde = "0.4"
+erased-serde = { workspace = true }
 stability-pool-common = { path = "../common" }
-rand = "0.8"
-itertools = "0.11.0"
-tokio = "1.23"
+rand = { workspace = true }
+itertools = { workspace = true }
+tokio = { workspace = true }
