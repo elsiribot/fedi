@@ -39,7 +39,6 @@ const HexImage = ({ imageUrl }: Props) => {
 const styles = () =>
     StyleSheet.create({
         container: {
-            backgroundColor: 'white',
             aspectRatio: 1,
             overflow: 'hidden',
             paddingHorizontal: 1.05,
