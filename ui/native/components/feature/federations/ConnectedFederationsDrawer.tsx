@@ -65,6 +65,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
         <HoloGradient
             level="400"
             gradientStyle={style.imageBackground}
+            style={style.backgroundContainer}
             locations={fediTheme.holoGradientLocations.radial}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}>
@@ -156,10 +157,12 @@ const styles = (theme: Theme) =>
             fontFamily: 'AlbertSans-Medium',
             color: theme.colors.white,
         },
+        backgroundContainer: {
+            backgroundColor: theme.colors.white,
+        },
         imageBackground: {
             height: '100%',
             width: '100%',
-            // resizeMode: 'cover',
         },
         title: {
             padding: theme.spacing.lg,
