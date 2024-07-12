@@ -423,6 +423,11 @@ impl FederationV2 {
         self.client.federation_id()
     }
 
+    /// Get rpc federation ID
+    pub fn rpc_federation_id(&self) -> RpcFederationId {
+        RpcFederationId(self.federation_id().to_string())
+    }
+
     /// Get full Fedi fee schedule. This is made to be infallible so that
     /// consumers can always get a valid fee schedule back.
     pub async fn fedi_fee_schedule(&self) -> FediFeeSchedule {

@@ -17,7 +17,6 @@ use ts_rs::TS;
 use super::federation_v2::FederationV2;
 use super::utils::to_unix_time;
 use crate::api::RegisteredDevice;
-use crate::multi::MultiFederation;
 use crate::storage::FediFeeSchedule;
 
 #[derive(Debug, Serialize, Deserialize, TS)]
@@ -196,12 +195,6 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
             modules: client_config_json.modules,
         }),
         fedi_fee_schedule: fedi_fee_schedule.into(),
-    }
-}
-
-pub async fn multi_federation_to_rpc_federation(multi: &MultiFederation) -> RpcFederation {
-    match multi {
-        MultiFederation::V2(federation) => federation_v2_to_rpc_federation(federation).await,
     }
 }
 
