@@ -86,7 +86,6 @@ const styles = (theme: Theme) =>
             alignSelf: 'center',
             paddingVertical: theme.spacing.xs,
             paddingHorizontal: theme.spacing.md,
-            // margin: theme.spacing.xxs,
             gap: theme.spacing.sm,
             borderRadius: 50,
             backgroundColor: theme.colors.white,

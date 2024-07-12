@@ -107,8 +107,6 @@ const themeDefaults = {
             },
             shadowOpacity: 0.1,
             shadowRadius: 24,
-
-            elevation: 9,
         },
         bubble: {},
     },

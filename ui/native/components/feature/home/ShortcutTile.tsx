@@ -147,6 +147,7 @@ const styles = (theme: Theme, fontScale: number) => {
             shadowRadius: 1.0,
 
             elevation: 1,
+            backgroundColor: theme.colors.white,
         },
         iconImage: {
             width: iconSize,
