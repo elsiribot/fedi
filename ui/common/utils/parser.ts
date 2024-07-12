@@ -37,6 +37,7 @@ export const ALLOWED_PARSER_TYPES_BEFORE_FEDERATION = [
     ParserDataType.FediChatRoom,
     ParserDataType.FediChatUser,
     ParserDataType.FedimintInvite,
+    ParserDataType.CommunityInvite,
     ParserDataType.Website,
     ParserDataType.Unknown,
 ]
