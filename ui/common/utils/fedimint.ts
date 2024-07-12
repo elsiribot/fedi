@@ -41,6 +41,10 @@ export class FedimintBridge {
         return this.rpcTyped('bridgeStatus', {})
     }
 
+    async onAppForeground() {
+        return this.rpcTyped('onAppForeground', {})
+    }
+
     async federationPreview(inviteCode: string) {
         return this.rpcTyped('federationPreview', { inviteCode })
     }

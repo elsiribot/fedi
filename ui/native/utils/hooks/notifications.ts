@@ -5,6 +5,8 @@ import { AppState } from 'react-native'
 
 import { makeLog } from '@fedi/common/utils/log'
 
+import { fedimint } from '../../bridge'
+
 const log = makeLog('Notifications')
 
 /**
@@ -26,6 +28,11 @@ export const useAppIsInForeground = () => {
             nextAppState => {
                 if (appState.current === nextAppState) return
                 setIsActive(nextAppState === 'active')
+
+                // Handles foreground tasks in the bridge
+                // (e.g. refetching community meta)
+                if (nextAppState === 'active') fedimint.onAppForeground()
+
                 appState.current = nextAppState
             },
         )

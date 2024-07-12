@@ -298,7 +298,9 @@ export const leaveFederation = createAsyncThunk<
         if (isRecovering || !federation)
             throw new Error('failed-to-leave-federation')
 
-        await fedimint.leaveFederation(federationId)
+        if (federation.hasWallet) await fedimint.leaveFederation(federationId)
+        // for communities, the federation id is the invite code
+        else fedimint.leaveCommunity({ inviteCode: federationId })
     },
 )
 

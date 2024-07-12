@@ -119,6 +119,12 @@ export function initializeCommonStore({
         dispatch(updateFederation(federation))
     })
 
+    // Update communities on bridge events
+    const unsubscribeCommunities = fedimint.addListener(
+        'communityMetadataUpdated',
+        event => dispatch(updateFederation(event.newCommunity)),
+    )
+
     // Update balance on bridge events
     const unsubscribeBalance = fedimint.addListener('balance', event => {
         log.debug('Balance update', event)
@@ -205,6 +211,7 @@ export function initializeCommonStore({
 
     return () => {
         unsubscribeFederation()
+        unsubscribeCommunities()
         unsubscribeBalance()
         unsubscribeTransaction()
         unsubscribeRecovery()

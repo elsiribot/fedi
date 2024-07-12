@@ -17,6 +17,7 @@ import {
     ObservableUpdate,
     DeviceRegistrationEvent,
     RpcCommunity,
+    CommunityMetadataUpdatedEvent,
 } from './bindings'
 import { Usd, UsdCents } from './units'
 
@@ -202,6 +203,11 @@ export interface TransactionEvent {
     transaction: Transaction
 }
 
+// TODO: Create a type that derives the map from the `Event` type in bindings.ts
+// so we don't have to manually update it every time we add a new event type
+//
+// ref: https://github.com/sindresorhus/type-fest/blob/main/source/union-to-intersection.d.ts
+//
 // Map of event type name -> event data
 export type FedimintBridgeEventMap = {
     log: LogEvent
@@ -216,6 +222,7 @@ export type FedimintBridgeEventMap = {
     recoveryProgress: RecoveryProgressEvent
     observableUpdate: ObservableUpdate<unknown>
     deviceRegistration: DeviceRegistrationEvent
+    communityMetadataUpdated: CommunityMetadataUpdatedEvent
 }
 
 export type StabilityPoolTxn = {
