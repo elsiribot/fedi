@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import { MatrixRoom } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
@@ -9,6 +9,7 @@ import { styled, theme } from '../styles'
 import { ChatAvatar } from './ChatAvatar'
 import { NotificationDot } from './NotificationDot'
 import { Text } from './Text'
+import { shouldShowUnreadIndicator } from '@fedi/common/utils/matrix'
 
 interface Props {
     room: MatrixRoom
@@ -18,17 +19,22 @@ export const ChatListItem: React.FC<Props> = ({ room }) => {
     const { query } = useRouter()
 
     const isActive = room.id === query?.path?.[1]
-    const hasNewMessages =
-        !isActive &&
-        room.notificationCount !== undefined &&
-        room.notificationCount > 0
+
+    const showUnreadIndicator = useMemo(
+        () =>
+            !isActive && shouldShowUnreadIndicator(
+                room.notificationCount,
+                room.isMarkedUnread,
+            ),
+        [isActive, room.notificationCount, room.isMarkedUnread],
+    )
 
     return (
         <Container
             key={room.id}
             active={isActive}
             href={`/chat/room/${room.id}`}>
-            <NotificationDot visible={hasNewMessages}>
+            <NotificationDot visible={showUnreadIndicator}>
                 <ChatAvatar room={room} css={{ flexShrink: 0 }} />
             </NotificationDot>
             <Content>
@@ -50,9 +56,9 @@ export const ChatListItem: React.FC<Props> = ({ room }) => {
                 <Text
                     variant="small"
                     ellipsize
-                    weight={hasNewMessages ? 'bold' : 'normal'}
+                    weight={showUnreadIndicator ? 'bold' : 'normal'}
                     css={{
-                        color: hasNewMessages
+                        color: showUnreadIndicator
                             ? theme.colors.primary
                             : theme.colors.darkGrey,
                     }}>

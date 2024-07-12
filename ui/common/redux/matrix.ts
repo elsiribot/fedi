@@ -54,6 +54,7 @@ import {
     makeChatFromPreview,
     matrixIdToUsername,
     mxcUrlToHttpUrl,
+    shouldShowUnreadIndicator,
 } from '../utils/matrix'
 import { getRoomEventPowerLevel } from '../utils/matrix'
 import { applyObservableUpdates } from '../utils/observable'
@@ -657,6 +658,7 @@ export const claimMatrixPayment = createAsyncThunk<
         body: 'Payment received.', // TODO: i18n?
         status: MatrixPaymentStatus.received,
     })
+    await client.markRoomAsUnread(event.roomId, true)
 })
 
 export const checkForReceivablePayments = createAsyncThunk<
@@ -839,6 +841,7 @@ export const sendMatrixReadReceipt = createAsyncThunk<
 >('matrix/sendMatrixEventReadReceipt', async ({ roomId, eventId }) => {
     const client = getMatrixClient()
     await client.sendReadReceipt(roomId, eventId)
+    await client.markRoomAsUnread(roomId, false)
 })
 
 export const configureMatrixPushNotifications = createAsyncThunk<
@@ -1278,10 +1281,11 @@ export const selectMatrixDirectMessageRoom = createSelector(
 export const selectMatrixHasNotifications = createSelector(
     selectMatrixRooms,
     rooms =>
-        rooms.some(
-            room =>
-                room.notificationCount !== undefined &&
-                room.notificationCount > 0,
+        rooms.some(room =>
+            shouldShowUnreadIndicator(
+                room.notificationCount,
+                room.isMarkedUnread,
+            ),
         ),
 )
 

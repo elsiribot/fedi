@@ -456,3 +456,16 @@ export function isValidMatrixUserId(id: string) {
 export function isValidMatrixRoomId(id: string) {
     return /^![^:]+:.+$/.test(id)
 }
+
+// read_receipts is the primary source of truth for notificationCount but when
+// ecash is claimed in the background read receipts gets reset to 0
+// so we mark the room as unread in that same background process so that
+// we can still show the unread indicator in that case
+export function shouldShowUnreadIndicator(
+    notificationCount: number | undefined,
+    isMarkedUnread: boolean | undefined,
+): boolean {
+    if (notificationCount && notificationCount > 0) return true
+    if (isMarkedUnread) return true
+    return false
+}

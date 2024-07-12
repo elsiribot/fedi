@@ -878,8 +878,8 @@ export class MatrixChatClient {
             preview,
             id: room.room_id,
             name: directUserId ? this.ensureDisplayName(roomName) : roomName,
-            notificationCount:
-                room.notification_counts?.notification_count || 0,
+            notificationCount: room.read_receipts?.num_unread || 0,
+            isMarkedUnread: room.base_info.is_marked_unread,
             // TODO: Sometimes non-dm room with 1 user has an avatar of the user, figure out how to stop that
             // TODO: Make opaque mxc type, have each component do the conversion with width / height args
             avatarUrl: avatarUrl

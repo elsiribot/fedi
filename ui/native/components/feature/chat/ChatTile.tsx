@@ -4,6 +4,7 @@ import React, { useMemo } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import dateUtils from '@fedi/common/utils/DateUtils'
+import { shouldShowUnreadIndicator } from '@fedi/common/utils/matrix'
 
 import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { MatrixRoom } from '../../../types'
@@ -19,14 +20,17 @@ type ChatTileProps = {
 const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
     const { theme } = useTheme()
 
-    const hasNewMessages = useMemo(
+    const showUnreadIndicator = useMemo(
         () =>
-            room.notificationCount !== undefined && room.notificationCount > 0,
-        [room.notificationCount],
+            shouldShowUnreadIndicator(
+                room.notificationCount,
+                room.isMarkedUnread,
+            ),
+        [room.notificationCount, room.isMarkedUnread],
     )
     const previewTextWeight = useMemo(
-        () => (hasNewMessages ? { medium: true } : {}),
-        [hasNewMessages],
+        () => (showUnreadIndicator ? { medium: true } : {}),
+        [showUnreadIndicator],
     )
     const previewMessage = useMemo(() => room?.preview?.body, [room?.preview])
 
@@ -46,7 +50,7 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
                 <View
                     style={[
                         styles(theme).unreadIndicator,
-                        hasNewMessages ? { opacity: 1 } : { opacity: 0 },
+                        showUnreadIndicator ? { opacity: 1 } : { opacity: 0 },
                     ]}
                 />
                 <View style={styles(theme).chatTypeIconContainer}>
@@ -70,7 +74,7 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
                             caption
                             style={[
                                 styles(theme).messagePreview,
-                                hasNewMessages
+                                showUnreadIndicator
                                     ? styles(theme).messagePreviewUnread
                                     : undefined,
                             ]}
