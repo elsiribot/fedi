@@ -1,10 +1,10 @@
 import {
     EcashRequest,
+    FederationListItem,
     FediInternalVersion,
     MSats,
     SupportedCurrency,
 } from '@fedi/common/types'
-import { RpcFederation } from '@fedi/common/types/bindings'
 
 import { InjectionMessageType, InjectionMessageResponseMap } from '../types'
 import { sendInjectorMessage } from '../utils'
@@ -34,7 +34,7 @@ class InjectionFediProvider {
     }
 
     async getActiveFederation(): Promise<
-        Pick<RpcFederation, 'id' | 'name' | 'network'>
+        Pick<FederationListItem, 'id' | 'name' | 'network'>
     > {
         return this.sendMessage(
             InjectionMessageType.fedi_getActiveFederation,

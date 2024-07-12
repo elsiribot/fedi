@@ -5,17 +5,16 @@ import { Pressable, StyleSheet, View } from 'react-native'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import {
-    selectFederations,
     selectPayFromFederation,
+    selectWalletFederations,
     setPayFromFederationId,
 } from '@fedi/common/redux'
-import { RpcFederation } from '@fedi/common/types/bindings'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
-import { MSats } from '../../../types'
+import { Federation, MSats } from '../../../types'
 import CustomOverlay from '../../ui/CustomOverlay'
-import { FederationLogo } from '../../ui/FederationLogo'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import { FederationLogo } from '../federations/FederationLogo'
 
 const FederationWalletSelector: React.FC = () => {
     const { theme } = useTheme()
@@ -24,7 +23,7 @@ const FederationWalletSelector: React.FC = () => {
     const { t } = useTranslation()
     const style = styles(theme)
     const payFromFederation = useAppSelector(selectPayFromFederation)
-    const federations = useAppSelector(selectFederations)
+    const federations = useAppSelector(selectWalletFederations)
 
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
     const {
@@ -35,13 +34,13 @@ const FederationWalletSelector: React.FC = () => {
     )
 
     const handleFederationSelected = useCallback(
-        (fed: RpcFederation) => {
+        (fed: Federation) => {
             dispatch(setPayFromFederationId(fed.id))
         },
         [dispatch],
     )
 
-    const renderFederation = (f: RpcFederation) => {
+    const renderFederation = (f: Federation) => {
         const { formattedPrimaryAmount, formattedSecondaryAmount } =
             makeFormattedAmountsFromMSats(f?.balance || (0 as MSats))
         return (

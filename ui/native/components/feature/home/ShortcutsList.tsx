@@ -49,7 +49,7 @@ const ShortcutsList: React.FC = () => {
     // make sure to fill the remaining space with invisible elements
     const renderBuffers = () => {
         const totalShortcuts = fediMods.length
-        const bufferCount = columns - (totalShortcuts % columns)
+        const bufferCount = (columns - (totalShortcuts % columns)) % columns
 
         return new Array(bufferCount).fill('').map((_, i) => {
             return (
@@ -76,7 +76,6 @@ const styles = (theme: Theme, columns: number) =>
         container: {
             flex: 1,
             width: '100%',
-            marginVertical: theme.spacing.xl,
         },
         shortcut: {
             width: `${100 / columns}%`,
@@ -88,6 +87,10 @@ const styles = (theme: Theme, columns: number) =>
             flexDirection: 'row',
             flexWrap: 'wrap',
             justifyContent: 'space-between',
+
+            // This is smaller than the designs because
+            // the tiles already have some padding
+            rowGap: theme.spacing.md,
         },
     })
 

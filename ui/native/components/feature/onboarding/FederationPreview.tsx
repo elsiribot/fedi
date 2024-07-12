@@ -5,7 +5,7 @@ import { Trans, useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
-import { FederationPreview as FederationPreviewType } from '@fedi/common/types'
+import { JoinPreview } from '@fedi/common/types'
 import {
     getFederationTosUrl,
     getFederationWelcomeMessage,
@@ -13,13 +13,13 @@ import {
     shouldShowJoinFederation,
 } from '@fedi/common/utils/FederationUtils'
 
-import { FederationLogo } from '../../ui/FederationLogo'
 import HoloGradient from '../../ui/HoloGradient'
 import EndedFederationPreview from '../federations/EndedPreview'
+import { FederationLogo } from '../federations/FederationLogo'
 import AcceptTermsOfService from './AcceptTermsOfService'
 
 type Props = {
-    federation: FederationPreviewType
+    federation: JoinPreview
     onJoin: () => void | Promise<void>
     onBack: () => void
 }
@@ -111,6 +111,7 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
     }
 
     const welcomeTitle =
+        federation.hasWallet &&
         federation.returningMemberStatus.type === 'returningMember'
             ? t('feature.onboarding.welcome-back-to-federation', {
                   federation: federation?.name,
@@ -119,9 +120,11 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
                   federation: federation?.name,
               })
     const welcomeInstructions =
+        federation.hasWallet &&
         federation.returningMemberStatus.type === 'newMember'
             ? t('feature.onboarding.welcome-instructions-new')
-            : federation.returningMemberStatus.type === 'returningMember'
+            : federation.hasWallet &&
+              federation.returningMemberStatus.type === 'returningMember'
             ? t('feature.onboarding.welcome-instructions-returning')
             : t('feature.onboarding.welcome-instructions-unknown')
 

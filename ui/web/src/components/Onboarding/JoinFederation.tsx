@@ -10,12 +10,12 @@ import {
     selectHasSetMatrixDisplayName,
     setActiveFederationId,
 } from '@fedi/common/redux'
-import { FederationPreview, ParserDataType } from '@fedi/common/types'
+import { JoinPreview, ParserDataType } from '@fedi/common/types'
 import {
-    getFederationPreview,
     getFederationTosUrl,
     getFederationWelcomeMessage,
     getIsFederationSupported,
+    previewInvite,
 } from '@fedi/common/utils/FederationUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -48,8 +48,7 @@ export const JoinFederation: React.FC = () => {
     const [isFetchingPreview, setIsFetchingPreview] = useState(false)
     const [isJoining, setIsJoining] = useState(false)
     const [isShowingTos, setIsShowingTos] = useState(false)
-    const [federationPreview, setFederationPreview] =
-        useState<FederationPreview>()
+    const [federationPreview, setFederationPreview] = useState<JoinPreview>()
     const federationIds = useAppSelector(selectFederationIds)
     const isSm = useMediaQuery(config.media.sm)
     const popupInfo = usePopupFederationInfo(federationPreview?.meta)
@@ -59,7 +58,7 @@ export const JoinFederation: React.FC = () => {
         async (code: string) => {
             setIsFetchingPreview(true)
             try {
-                const fed = await getFederationPreview(code, fedimint)
+                const fed = await previewInvite(fedimint, code)
                 if (federationIds.includes(fed.id)) {
                     dispatch(setActiveFederationId(fed.id))
                     push('/')
@@ -202,7 +201,10 @@ export const JoinFederation: React.FC = () => {
         const welcomeMessage = getFederationWelcomeMessage(
             federationPreview.meta,
         )
-        const memberStatus = federationPreview.returningMemberStatus.type
+        const memberStatus = federationPreview.hasWallet
+            ? federationPreview.returningMemberStatus.type
+            : undefined
+
         const welcomeTitle =
             memberStatus === 'returningMember'
                 ? t('feature.onboarding.welcome-back-to-federation', {

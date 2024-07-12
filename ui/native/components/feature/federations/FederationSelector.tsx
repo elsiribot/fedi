@@ -11,8 +11,8 @@ import {
     DRAWER_NAVIGATION_ID,
     NavigationHook,
 } from '../../../types/navigation'
-import { FederationLogo } from '../../ui/FederationLogo'
 import HoloGradient from '../../ui/HoloGradient'
+import { FederationLogo } from './FederationLogo'
 
 const FederationSelector: React.FC = () => {
     const { theme } = useTheme()
@@ -48,12 +48,17 @@ const FederationSelector: React.FC = () => {
                 <Pressable
                     style={style.container}
                     onPress={openFederationsDrawer}>
-                    <FederationLogo federation={activeFederation} size={24} />
+                    <FederationLogo
+                        federation={activeFederation}
+                        size={24}
+                        hex
+                    />
                     <Text
                         bold
                         caption
                         numberOfLines={1}
                         adjustsFontSizeToFit
+                        minimumFontScale={0.8}
                         style={style.federationName}>
                         {activeFederation?.name}
                     </Text>
@@ -72,12 +77,13 @@ const styles = (theme: Theme) =>
         gradient: {
             padding: theme.spacing.xxs,
             borderRadius: 50,
+            alignSelf: 'center',
         },
         container: {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            alignSelf: 'stretch',
+            alignSelf: 'center',
             paddingVertical: theme.spacing.xs,
             paddingHorizontal: theme.spacing.md,
             // margin: theme.spacing.xxs,

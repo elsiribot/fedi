@@ -23,6 +23,7 @@ export enum SvgImageSize {
 export type SvgImageProps = {
     name: SvgImageName
     size?: SvgImageSize | number
+    dimensions?: { width: number; height: number }
     containerStyle?: ViewStyle
     svgProps?: SvgProps
     color?: string
@@ -32,6 +33,7 @@ export type SvgImageProps = {
 const SvgImage = ({
     name,
     size = SvgImageSize.sm,
+    dimensions,
     containerStyle,
     svgProps,
     color,
@@ -49,13 +51,16 @@ const SvgImage = ({
             maxFontSizeMultiplier || theme.multipliers.defaultMaxFontMultiplier,
         ),
     )
-    const pxSize =
-        (typeof size === 'number' ? size : theme.sizes[size]) * multiplier
+    const { width, height } = dimensions ?? { width: size, height: size }
+    const pxWidth =
+        (typeof width === 'number' ? width : theme.sizes[width]) * multiplier
+    const pxHeight =
+        (typeof height === 'number' ? height : theme.sizes[height]) * multiplier
 
     const defaultSvgProps = {
         color: color || theme.colors.primary,
-        height: pxSize,
-        width: pxSize,
+        height: pxHeight,
+        width: pxWidth,
     }
     const mergedSvgProps = {
         ...defaultSvgProps,

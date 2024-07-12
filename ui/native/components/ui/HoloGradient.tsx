@@ -10,6 +10,10 @@ type HoloGradientProps = {
     level?: keyof typeof fediTheme.holoGradient
     rounded?: boolean
     style?: ViewStyle
+    angle?: number
+    start?: { x: number; y: number }
+    end?: { x: number; y: number }
+    locations?: number[]
     gradientStyle?: ViewStyle
     children?: React.ReactNode
 }
@@ -19,6 +23,9 @@ const HoloGradient: React.FC<HoloGradientProps> = ({
     level = '900',
     rounded = false,
     style: propStyle,
+    start = { x: 0, y: 0.75 },
+    end = { x: 1, y: 0.95 },
+    locations,
     gradientStyle,
     children,
 }: HoloGradientProps) => {
@@ -31,8 +38,9 @@ const HoloGradient: React.FC<HoloGradientProps> = ({
     return (
         <View style={propStyle}>
             <LinearGradient
-                start={{ x: 0, y: 0.75 }}
-                end={{ x: 1, y: 0.95 }}
+                start={start}
+                end={end}
+                locations={locations}
                 colors={fediTheme.holoGradient[level]}
                 style={[style, gradientStyle]}>
                 {children}

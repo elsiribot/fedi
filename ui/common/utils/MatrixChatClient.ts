@@ -169,7 +169,7 @@ export class MatrixChatClient {
         return this.serializeAuth(session)
     }
 
-    async getRoomPreview(roomId: string) {
+    getRoomPreview = async (roomId: string) => {
         let previewInfo: MatrixRoom
         let previewTimeline: MatrixTimelineItem[]
         try {

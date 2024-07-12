@@ -5,6 +5,8 @@ import LinearGradient from 'react-native-linear-gradient'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 
+import { BubbleGradient } from '../components/ui/BubbleView'
+
 const dimensions = Dimensions.get('window')
 
 const colors = {
@@ -26,7 +28,7 @@ const shouldShowDefaultButtonBackground = (props: ButtonProps) => {
     ) {
         defaultBackground = false
     }
-    if (props.day) {
+    if (props.day || props.bubble) {
         defaultBackground = false
     }
     return defaultBackground
@@ -108,16 +110,25 @@ const themeDefaults = {
 
             elevation: 9,
         },
+        bubble: {},
     },
 } as const
 
 const theme = createTheme({
     ...NavigationDefaultTheme,
     components: {
+        Card: props => ({
+            ...(props.bubble
+                ? {
+                      containerStyle: {},
+                  }
+                : {}),
+        }),
         Button: props => ({
             size: 'lg',
             containerStyle: {
                 ...(props.fullWidth ? { width: '100%' } : {}),
+                borderRadius: 60,
             },
             titleStyle: {
                 paddingLeft: 10,
@@ -143,7 +154,7 @@ const theme = createTheme({
                 color: theme.colors?.primary,
             },
             buttonStyle: {
-                borderRadius: 50,
+                // borderRadius: 60,
                 ...(props.loading
                     ? {
                           backgroundColor: 'transparent',
@@ -151,13 +162,27 @@ const theme = createTheme({
                       }
                     : {}),
             },
-            ...(shouldShowDefaultButtonBackground(props)
+            ...(props.night || shouldShowDefaultButtonBackground(props)
                 ? {
                       ViewComponent: LinearGradient,
                       linearGradientProps: {
-                          colors: fediTheme.nightHoloAmbientGradient,
-                          start: { x: 0, y: 0.75 },
-                          end: { x: 1, y: 0.95 },
+                          locations: [0, 1],
+                          colors: fediTheme.nightLinearGradient,
+                          useAngle: true,
+                          angle: 180,
+                      },
+                  }
+                : {}),
+            ...(props.bubble
+                ? {
+                      // Fixes a typescript error due to BubbleView being a
+                      // FC instead of a Class component
+                      ViewComponent:
+                          BubbleGradient as unknown as typeof LinearGradient,
+                      linearGradientProps: {
+                          colors: fediTheme.dayLinearGradient,
+                          start: { x: 0, y: 0 },
+                          end: { x: 0, y: 1 },
                       },
                   }
                 : {}),

@@ -14,8 +14,7 @@ import {
     setActiveFederationId,
     setPublicFederations,
 } from '../redux'
-import { Federation } from '../types'
-import { FederationPreview as FederationPreviewType } from '../types'
+import { ClientConfigMetadata, Federation, JoinPreview } from '../types'
 import dateUtils from '../utils/DateUtils'
 import {
     shouldShowOfflineWallet,
@@ -28,7 +27,7 @@ import {
     shouldEnableStabilityPool,
     shouldEnableFediInternalInjection,
     fetchPublicFederations,
-    getFederationPreview,
+    previewInvite,
 } from '../utils/FederationUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
@@ -57,7 +56,7 @@ export function useIsSocialRecoverySupported() {
 
 export function useIsStabilityPoolSupported() {
     const activeFederation = useCommonSelector(selectActiveFederation)
-    if (!activeFederation) return false
+    if (!activeFederation || !activeFederation.hasWallet) return false
     let supported = false
     if (activeFederation.clientConfig) {
         const { modules } = activeFederation.clientConfig
@@ -131,7 +130,7 @@ export function useIsFediInternalInjectionEnabled() {
     return shouldEnableFediInternalInjection(activeFederation.meta)
 }
 
-export function usePopupFederationInfo(metadata?: Record<string, string>) {
+export function usePopupFederationInfo(metadata?: ClientConfigMetadata) {
     const activeFederationMetadata = useCommonSelector(selectFederationMetadata)
     const meta = metadata || activeFederationMetadata
 
@@ -248,23 +247,22 @@ export function useFederationPreview(
     const federationIds = useCommonSelector(selectFederationIds)
     const [isJoining, setIsJoining] = useState<boolean>(false)
     const [isFetchingPreview, setIsFetchingPreview] = useState(!!invite)
-    const [federationPreview, setFederationPreview] =
-        useState<FederationPreviewType>()
+    const [federationPreview, setFederationPreview] = useState<JoinPreview>()
 
     const handleCode = useCallback(
         async (code: string, onSuccess?: () => void) => {
             setIsFetchingPreview(true)
             try {
-                const fed = await getFederationPreview(code, fedimint)
-                if (federationIds.includes(fed.id)) {
-                    dispatch(setActiveFederationId(fed.id))
+                const preview = await previewInvite(fedimint, code)
+                if (federationIds.includes(preview.id)) {
+                    dispatch(setActiveFederationId(preview.id))
                     toast.show({
                         content: t('errors.you-have-already-joined'),
                         status: 'error',
                     })
                     onSuccess && onSuccess()
                 } else {
-                    setFederationPreview(fed)
+                    setFederationPreview(preview)
                 }
             } catch (err) {
                 log.error('handleCode', err)

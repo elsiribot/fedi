@@ -108,6 +108,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                             ? theme.colors.primary
                             : theme.colors.secondary,
                         borderWidth: 1,
+                        borderRadius: 60,
                     }}
                     loadingProps={{
                         color: button.primary

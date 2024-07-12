@@ -24,6 +24,7 @@ declare module '@rneui/themed' {
             grey: string
             lightGrey: string
             extraLightGrey: string
+            ghost: string
             keyboardGrey: string
             red: string
             white: string
@@ -41,6 +42,7 @@ declare module '@rneui/themed' {
             text: string
             border: string
             notification: string
+            mint: string
         }
         multipliers: {
             [key: string]: number
@@ -87,6 +89,11 @@ declare module '@rneui/themed' {
     export interface ButtonProps {
         fullWidth?: boolean
         day?: boolean
+        night?: boolean
+        bubble?: boolean
+    }
+    export interface CardProps {
+        bubble?: boolean
     }
 
     // Other RNE components can be extended similarly by defining them here

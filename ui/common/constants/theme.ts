@@ -22,6 +22,7 @@ const HEX_COLORS = {
     // TODO: Move these into maps instead of properties, e.g. blue[100] instead of blue100
     blue100: '#BAE0FE',
     blueDropShadow: '#7099B0',
+    mint: '#26A07B',
 }
 
 export const theme = {
@@ -31,6 +32,7 @@ export const theme = {
         primary05: alphaHex(HEX_COLORS.night, 5),
         primaryLight: HEX_COLORS.darkGrey,
         primaryVeryLight: HEX_COLORS.lightGrey,
+        ghost: alphaHex(HEX_COLORS.lightGrey, 60),
         success: HEX_COLORS.green,
         secondary: HEX_COLORS.white,
         ...HEX_COLORS,
@@ -76,6 +78,13 @@ export const theme = {
         '400': makeHoloGradientRgbas(0.3),
         '100': makeHoloGradientRgbas(0.13),
     },
+    holoGradientLocations: {
+        // Used to mimic the radial gradient in figma
+        // with a LinearGradient
+        radial: [
+            0.026, 0.1947, 0.3376, 0.4708, 0.5915, 0.7363, 0.8402, 1,
+        ] as number[],
+    },
     nightHoloAmbientGradient: [
         'rgba(224, 32, 32, 0.075)',
         'rgba(247, 181, 0, 0.075)',
@@ -86,6 +95,7 @@ export const theme = {
         'rgba(98, 54, 255, 0.08)',
         'rgba(182, 32, 224, 0.08)',
     ],
+    nightLinearGradient: ['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0)'],
     // Figma has the gradient using gray on top of white, but we can simplify components
     // by using a flat gradient instead of an overlay on top of white.
     dayLinearGradient: ['rgba(255, 255, 255, 1)', 'rgba(228, 228, 228, 1)'],

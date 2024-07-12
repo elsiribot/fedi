@@ -448,6 +448,8 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                     containerStyle={styles(theme).checkboxContainer}
                 />
                 {activeFederation &&
+                    activeFederation.hasWallet &&
+                    activeFederation.nodes &&
                     Object.entries(activeFederation.nodes).map(entry => {
                         const [index, node] = entry
                         const id = Number(index)

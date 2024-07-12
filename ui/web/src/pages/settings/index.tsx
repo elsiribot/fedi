@@ -22,7 +22,7 @@ import {
     selectMatrixAuth,
     setActiveFederationId,
 } from '@fedi/common/redux'
-import { Federation } from '@fedi/common/types'
+import { Federation, FederationListItem } from '@fedi/common/types'
 import {
     getFederationTosUrl,
     supportsSingleSeed,
@@ -44,10 +44,8 @@ import { useAppDispatch, useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 
-const canLeaveFederation = (federation: Federation | undefined) => {
-    return (
-        typeof federation?.balance === 'number' && federation?.balance < 100_000
-    )
+const canLeaveFederation = (federation: FederationListItem | undefined) => {
+    return federation?.hasWallet && federation.balance < 100_000
 }
 
 function AdminPage() {
@@ -144,8 +142,11 @@ function AdminPage() {
                 {
                     label: t('feature.backup.export-transactions-to-csv'),
                     icon: TableExportIcon,
-                    onClick: () => exportTransactionsAsCsv(federation),
-                    disabled: !!exportingFederationId,
+                    onClick: () =>
+                        federation.hasWallet
+                            ? exportTransactionsAsCsv(federation)
+                            : undefined,
+                    disabled: !federation.hasWallet || !!exportingFederationId,
                 },
                 {
                     label: t('feature.federations.leave-federation'),

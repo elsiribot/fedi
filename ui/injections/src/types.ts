@@ -7,8 +7,12 @@ import type {
     SignMessageResponse,
 } from 'webln'
 
-import { EcashRequest, MSats, SupportedCurrency } from '@fedi/common/types'
-import { RpcFederation } from '@fedi/common/types/bindings'
+import {
+    EcashRequest,
+    FederationListItem,
+    MSats,
+    SupportedCurrency,
+} from '@fedi/common/types'
 
 import { SignedNostrEvent, UnsignedNostrEvent } from './injectables/nostr/types'
 
@@ -84,7 +88,7 @@ export type InjectionMessageResponseMap = {
     }
     [InjectionMessageType.fedi_getActiveFederation]: {
         message: void
-        response: Pick<RpcFederation, 'id' | 'name' | 'network'>
+        response: Pick<FederationListItem, 'id' | 'name' | 'network'>
     }
     [InjectionMessageType.fedi_getCurrencyCode]: {
         message: void

@@ -16,6 +16,8 @@ import {
     RecoveryProgressEvent,
     ObservableUpdate,
     DeviceRegistrationEvent,
+    RpcCommunity,
+    CommunityMetadataUpdatedEvent,
 } from './bindings'
 import { Usd, UsdCents } from './units'
 
@@ -132,6 +134,7 @@ export enum SupportedMetaFields {
     federation_icon_url = 'federation_icon_url',
     federation_name = 'federation_name',
     default_matrix_rooms = 'default_matrix_rooms',
+    default_group_chats = 'default_group_chats',
 }
 
 export type ClientConfigMetadata = Record<string, string | undefined>
@@ -143,10 +146,29 @@ export enum Network {
     regtest = 'regtest',
 }
 
-export type Federation = Omit<RpcFederation, 'network'> & {
+export type Federation = Omit<RpcFederation, 'network' | 'meta'> & {
     meta: ClientConfigMetadata
     network: Network
+    readonly hasWallet: true
 }
+
+export type Community = Omit<RpcCommunity, 'meta'> & {
+    id: Federation['id']
+    meta: ClientConfigMetadata
+    // Added for compatibility with Mods
+    readonly network: undefined
+    readonly hasWallet: false
+}
+
+export type RpcCommunityPreview = RpcCommunity
+
+export type CommunityPreview = Community
+
+export type JoinPreview = FederationPreview | CommunityPreview
+
+// Check if hasWallet is true to determine if it's a wallet type or community
+export type FederationListItem = Federation | Community
+
 export type PublicFederation = Pick<Federation, 'id' | 'name' | 'meta'>
 
 export type SeedWords = RpcResponse<'getMnemonic'>
@@ -165,7 +187,10 @@ export interface FederationApiVersion {
     minor: number
 }
 
-export type FederationPreview = RpcFederationPreview
+export type FederationPreview = Omit<RpcFederationPreview, 'meta'> & {
+    readonly hasWallet: true
+    meta: ClientConfigMetadata
+}
 
 /*
  * Mocked-out social backup and recovery events
@@ -178,6 +203,11 @@ export interface TransactionEvent {
     transaction: Transaction
 }
 
+// TODO: Create a type that derives the map from the `Event` type in bindings.ts
+// so we don't have to manually update it every time we add a new event type
+//
+// ref: https://github.com/sindresorhus/type-fest/blob/main/source/union-to-intersection.d.ts
+//
 // Map of event type name -> event data
 export type FedimintBridgeEventMap = {
     log: LogEvent
@@ -192,6 +222,7 @@ export type FedimintBridgeEventMap = {
     recoveryProgress: RecoveryProgressEvent
     observableUpdate: ObservableUpdate<unknown>
     deviceRegistration: DeviceRegistrationEvent
+    communityMetadataUpdated: CommunityMetadataUpdatedEvent
 }
 
 export type StabilityPoolTxn = {

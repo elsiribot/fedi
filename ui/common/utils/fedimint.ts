@@ -1,7 +1,6 @@
 import { TFunction } from 'i18next'
 
 import type {
-    Federation,
     FedimintBridgeEventMap,
     MSats,
     Sats,
@@ -40,6 +39,10 @@ export class FedimintBridge {
 
     async bridgeStatus() {
         return this.rpcTyped('bridgeStatus', {})
+    }
+
+    async onAppForeground() {
+        return this.rpcTyped('onAppForeground', {})
     }
 
     async federationPreview(inviteCode: string) {
@@ -124,10 +127,7 @@ export class FedimintBridge {
     }
 
     async listFederations() {
-        return this.rpcTyped<'listFederations', Federation[]>(
-            'listFederations',
-            {},
-        )
+        return this.rpcTyped('listFederations', {})
     }
 
     async generateInvoice(
@@ -573,6 +573,24 @@ export class FedimintBridge {
         args: bindings.RpcPayload<'getAccruedPendingFediFeesPerTXType'>,
     ) {
         return this.rpcTyped('getAccruedPendingFediFeesPerTXType', args)
+    }
+
+    /*** COMMUNITIES RPCs ***/
+
+    async communityPreview(args: bindings.RpcPayload<'communityPreview'>) {
+        return this.rpcTyped('communityPreview', args)
+    }
+
+    async joinCommunity(args: bindings.RpcPayload<'joinCommunity'>) {
+        return this.rpcTyped('joinCommunity', args)
+    }
+
+    async leaveCommunity(args: bindings.RpcPayload<'leaveCommunity'>) {
+        return this.rpcTyped('leaveCommunity', args)
+    }
+
+    async listCommunities(args: bindings.RpcPayload<'listCommunities'>) {
+        return this.rpcTyped('listCommunities', args)
     }
 
     /*** BRIDGE EVENTS ***/

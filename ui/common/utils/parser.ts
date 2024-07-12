@@ -22,6 +22,7 @@ import {
     ParsedLegacyFediChatMember,
     ParsedFediChatUser,
     ParsedFediChatRoom,
+    ParsedCommunityInvite,
 } from '../types/parser'
 import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
@@ -75,6 +76,7 @@ export function parseUserInput<T extends TFunction>(
             parseBip21(raw, fedimint, federationId),
             parseFediUri(raw, fedimint),
             parseFedimintInvite(raw),
+            parseCommunityInvite(raw),
             parseFedimintEcash(raw, fedimint),
         ]
 
@@ -473,6 +475,15 @@ function parseFedimintInvite(raw: string): ParsedFederationInvite | undefined {
     // TODO: Consider standard URI prefix?
     if (raw.toLowerCase().startsWith('fed1')) {
         return { type: ParserDataType.FedimintInvite, data: { invite: raw } }
+    }
+}
+
+function parseCommunityInvite(raw: string): ParsedCommunityInvite | undefined {
+    // Federation invite code
+    // TODO: Proper validation
+    // TODO: Consider standard URI prefix?
+    if (raw.toLowerCase().startsWith('fedi:community')) {
+        return { type: ParserDataType.CommunityInvite, data: { invite: raw } }
     }
 }
 
