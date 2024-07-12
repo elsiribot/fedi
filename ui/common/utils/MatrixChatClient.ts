@@ -407,6 +407,10 @@ export class MatrixChatClient {
         return this.fedimint.matrixRoomSendReceipt({ roomId, eventId })
     }
 
+    async markRoomAsUnread(roomId: string, unread: boolean) {
+        return this.fedimint.matrixRoomMarkAsUnread({ roomId, unread })
+    }
+
     async refetchRoomMembers(roomId: string) {
         await this.observeRoomMembers(roomId)
     }
