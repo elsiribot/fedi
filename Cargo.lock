@@ -1851,7 +1851,6 @@ name = "fedi-fedimint-cli"
 version = "0.3.0"
 dependencies = [
  "anyhow",
- "clap",
  "fedi-social-client",
  "fedimint-build",
  "fedimint-cli",
@@ -6519,7 +6518,7 @@ dependencies = [
  "erased-serde",
  "fedimint-core",
  "futures",
- "itertools 0.11.0",
+ "itertools 0.10.5",
  "rand",
  "reqwest 0.11.27",
  "ring 0.17.8",
