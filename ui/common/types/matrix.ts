@@ -51,6 +51,7 @@ export interface MatrixRoom {
     directUserId?: MatrixUser['id']
     broadcastOnly?: boolean
     notificationCount: number | undefined
+    isMarkedUnread?: boolean
     joinedMemberCount?: number
     isPreview?: boolean
     isPublic?: boolean

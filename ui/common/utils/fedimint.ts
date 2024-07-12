@@ -537,6 +537,12 @@ export class FedimintBridge {
         return this.rpcTyped('matrixRoomSendReceipt', args)
     }
 
+    async matrixRoomMarkAsUnread(
+        args: bindings.RpcPayload<'matrixRoomMarkAsUnread'>,
+    ) {
+        return this.rpcTyped('matrixRoomMarkAsUnread', args)
+    }
+
     async matrixSetPusher(args: bindings.RpcPayload<'matrixSetPusher'>) {
         return this.rpcTyped('matrixSetPusher', args)
     }
