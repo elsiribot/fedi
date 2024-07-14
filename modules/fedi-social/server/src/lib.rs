@@ -423,7 +423,12 @@ impl FediSocial {
     ) -> Result<Option<VerificationDocument>, ApiError> {
         debug!(id = %request.0, "Received social recovery verification document request");
 
-        // TODO: guardian auth needed here
+        // TODO: ideally, we would verify this request with guardian pass, but that
+        // would be a breaking change:
+        // verify_req_admin_pass(&req_admin_pass)?;
+        // Fortunately the `RequestId` is already a semi-secret: random and unguessable,
+        // making it not strictly neccessary. Even if the attacker is able to get the
+        // verification document, it is only privacy risk, and not security risk.
 
         let Some(recovery) = dbtx.get_value(&request).await else {
             return Ok(None);
@@ -440,24 +445,7 @@ impl FediSocial {
     ) -> Result<VerificationDocument, ApiError> {
         debug!(id = %request.0, "Received social recovery approval");
 
-        let env_admin_password = if let Ok(pass) = std::env::var("FM_ADMIN_PASSWORD") {
-            pass
-        } else {
-            return Err(ApiError::bad_request(
-                "admin interface configuration error".into(),
-            ));
-        };
-
-        if env_admin_password.is_empty() {
-            return Err(ApiError::bad_request("admin interface not enabled".into()));
-        }
-        if req_admin_pass
-            .as_bytes()
-            .ct_ne(env_admin_password.as_bytes())
-            .into()
-        {
-            return Err(ApiError::bad_request("unauthorized".into()));
-        }
+        verify_req_admin_pass(&req_admin_pass)?;
 
         let Some(recovery) = dbtx.get_value(&RecoveryId(request.0)).await else {
             return Err(ApiError::bad_request(
@@ -501,4 +489,27 @@ impl FediSocial {
 
         Ok(dbtx.get_value(&DecryptionShareId(request.0)).await)
     }
+}
+
+fn verify_req_admin_pass(req_admin_pass: &str) -> Result<(), ApiError> {
+    let env_admin_password = if let Ok(pass) = std::env::var("FM_ADMIN_PASSWORD") {
+        pass
+    } else {
+        return Err(ApiError::bad_request(
+            "admin interface configuration error".into(),
+        ));
+    };
+    if env_admin_password.is_empty() {
+        return Err(ApiError::bad_request("admin interface not enabled".into()));
+    }
+
+    if req_admin_pass
+        .as_bytes()
+        .ct_ne(env_admin_password.as_bytes())
+        .into()
+    {
+        return Err(ApiError::bad_request("unauthorized".into()));
+    }
+
+    Ok(())
 }
