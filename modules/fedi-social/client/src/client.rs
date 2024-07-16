@@ -3,7 +3,7 @@ use std::fmt;
 
 use anyhow::format_err;
 use bitcoin::secp256k1;
-use fedimint_core::api::DynModuleApi;
+use fedimint_api_client::api::DynModuleApi;
 use fedimint_core::config::ClientConfig;
 use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::encoding::{Decodable, Encodable};

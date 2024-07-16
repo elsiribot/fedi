@@ -165,8 +165,8 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
     let id = RpcFederationId(federation.federation_id().to_string());
     let name = federation.federation_name();
     let network = federation.get_network();
-    let client_config = federation.client.get_config();
-    let meta = federation.client.get_config().global.meta.clone();
+    let client_config = federation.client.config().await;
+    let meta = client_config.global.meta.clone();
     let nodes = client_config
         .global
         .api_endpoints
@@ -174,7 +174,7 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
         .iter()
         .map(|(peer_id, peer_url)| (RpcPeerId(*peer_id), peer_url.clone()))
         .collect();
-    let client_config_json = federation.client.get_config_json();
+    let client_config_json = federation.client.get_config_json().await;
     let (invite_code, fedi_fee_schedule, balance) = futures::join!(
         federation.get_invite_code(),
         federation.fedi_fee_schedule(),
@@ -521,14 +521,12 @@ impl RpcLnState {
         opt.map(|state| match state {
             LnPayState::Created => RpcLnState::PayState(RpcLnPayState::Created),
             LnPayState::Canceled => RpcLnState::PayState(RpcLnPayState::Canceled),
-            LnPayState::Funded => RpcLnState::PayState(RpcLnPayState::Funded),
-            LnPayState::WaitingForRefund {
-                block_height,
-                gateway_error,
-            } => RpcLnState::PayState(RpcLnPayState::WaitingForRefund {
-                block_height,
-                gateway_error,
-            }),
+            LnPayState::Funded { block_height } => {
+                RpcLnState::PayState(RpcLnPayState::Funded { block_height })
+            }
+            LnPayState::WaitingForRefund { error_reason } => {
+                RpcLnState::PayState(RpcLnPayState::WaitingForRefund { error_reason })
+            }
             LnPayState::AwaitingChange => RpcLnState::PayState(RpcLnPayState::AwaitingChange),
             LnPayState::Success { preimage } => {
                 RpcLnState::PayState(RpcLnPayState::Success { preimage })
@@ -548,11 +546,11 @@ impl RpcLnState {
 pub enum RpcLnPayState {
     Created,
     Canceled,
-    Funded,
-    WaitingForRefund {
+    Funded {
         block_height: u32,
-        #[ts(type = "string")]
-        gateway_error: GatewayPayError,
+    },
+    WaitingForRefund {
+        error_reason: String,
     },
     AwaitingChange,
     Success {

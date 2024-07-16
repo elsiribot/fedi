@@ -247,8 +247,8 @@ export interface RpcLightningGateway {
 export type RpcLnPayState =
     | { type: 'created' }
     | { type: 'canceled' }
-    | { type: 'funded' }
-    | { type: 'waitingForRefund'; block_height: number; gateway_error: string }
+    | { type: 'funded'; block_height: number }
+    | { type: 'waitingForRefund'; error_reason: string }
     | { type: 'awaitingChange' }
     | { type: 'success'; preimage: string }
     | { type: 'refunded'; gateway_error: string }
@@ -490,7 +490,7 @@ export interface RpcMethods {
         null,
     ]
     signLnurlMessage: [
-        { message: string; domain: string; federationId: RpcFederationId },
+        { message: string; domain: string },
         { signature: string; pubkey: RpcPublicKey },
     ]
     backupStatus: [
@@ -507,10 +507,7 @@ export interface RpcMethods {
     ]
     getNostrPubKey: [Record<string, never>, string]
     getNostrPubKeyBech32: [Record<string, never>, string]
-    signNostrEvent: [
-        { eventHash: string; federationId: RpcFederationId },
-        string,
-    ]
+    signNostrEvent: [{ eventHash: string }, string]
     stabilityPoolAccountInfo: [
         { federationId: RpcFederationId; forceUpdate: boolean },
         {

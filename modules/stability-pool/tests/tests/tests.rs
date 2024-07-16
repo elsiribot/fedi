@@ -615,7 +615,7 @@ impl ForkedClient {
         })
     }
 
-    pub async fn cmd(&self) -> Command {
+    pub fn cmd(&self) -> Command {
         cmd!(
             "fedimint-cli",
             format!("--data-dir={}", self.data_dir_path.display())

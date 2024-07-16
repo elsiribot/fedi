@@ -1,12 +1,12 @@
 {
   inputs = {
     nixpkgs = {
-      url = "github:NixOS/nixpkgs/nixos-23.11";
+      url = "github:NixOS/nixpkgs/nixos-24.05";
     };
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     fedimint-pkgs = {
-      url = "github:fedibtc/fedimint-fedi/2ea651c2da20a0380062109428b43d4702a47bae"; #ref=v0.3.2-rc.0-fed1
+      url = "github:fedibtc/fedimint-fedi/f927c5fadaad79fadb01643e8c037c145cc604de"; #ref=v0.4.0-rc.3-fed0
     };
 
     fenix = {
@@ -14,7 +14,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flakebox = {
-      url = "github:dpc/flakebox?rev=19f4cc696fdd1422cb522fdadbe82df2473cb479";
+      url = "github:dpc/flakebox?rev=12d5ee4f6c47bc01f07ec6f5848a83db265902d3";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.fenix.follows = "fenix";
     };
@@ -285,7 +285,7 @@
               pkgs.binaryen
               pkgs.gnused
               pkgs.yarn
-              pkgs.nodejs_21
+              pkgs.nodejs_22
               pkgs.nodePackages.prettier # for ts-bindgen
               pkgs.jdk17
               pkgs.nodePackages.typescript-language-server

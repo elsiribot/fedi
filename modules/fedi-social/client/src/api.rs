@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use fedi_social_common::common::SignedRecoveryRequest;
 use fedi_social_common::SignedBackupRequest;
-use fedimint_core::api::{FederationApiExt, FederationResult, IRawFederationApi};
+use fedimint_api_client::api::{FederationApiExt, FederationResult, IRawFederationApi};
 use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::module::ApiRequestErased;
 use fedimint_core::task::{MaybeSend, MaybeSync};

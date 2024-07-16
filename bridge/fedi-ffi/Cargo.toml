@@ -8,13 +8,14 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 name = "fediffi"
 
 [dependencies]
-fedi-api-types = { git = "https://x-access-token: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@github.com/fedibtc/devops-automation", rev = "5a38bf5676652ec79abbed92e93414f4ab9bfc8d" }
+fedi-api-types = { git = "https://x-access-token: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@github.com/fedibtc/devops-automation", rev = "1d4ea6e67bb315fa142bbc84b47aa02ddb2b5c78" }
 
 fedi-core = { workspace = true }
 fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
 fedimint-mint-client = { workspace = true }
 fedimint-ln-client = { workspace = true }
+fedimint-api-client = { workspace = true }
 fedimint-ln-common = { workspace = true }
 fedimint-wallet-client = { workspace = true }
 fedi-social-client = { workspace = true }
@@ -33,7 +34,7 @@ serde_json = { workspace = true }
 rand = { workspace = true }
 bitcoin = { workspace = true }
 lazy_static = "1.4.0"
-lightning-invoice = "0.26.0"
+lightning-invoice = "0.31.0"
 futures = "0.3"
 tracing = { workspace = true }
 tracing-serde = "0.1.3"
