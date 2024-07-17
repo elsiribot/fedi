@@ -1461,6 +1461,7 @@ mod tests {
     use bitcoin::Network;
     use devimint::cmd;
     use devimint::util::{ClnLightningCli, FedimintCli, LnCli};
+    use fedi_core::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
     use fedi_social_client::common::VerificationDocument;
     use fedimint_core::core::ModuleKind;
     use fedimint_core::{apply, async_trait_maybe_send, Amount};
@@ -2319,6 +2320,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_social_backup_and_recovery() -> anyhow::Result<()> {
+        std::env::set_var(FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV, "1");
+
         let (original_bridge, federation) = setup().await?;
         let recovery_bridge = setup_bridge().await?;
         let (guardian_bridge, _) = setup().await?;

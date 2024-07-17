@@ -10,6 +10,7 @@ name = "fediffi"
 [dependencies]
 fedi-api-types = { git = "https://x-access-token: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@github.com/fedibtc/devops-automation", rev = "5a38bf5676652ec79abbed92e93414f4ab9bfc8d" }
 
+fedi-core = { workspace = true }
 fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
 fedimint-mint-client = { workspace = true }

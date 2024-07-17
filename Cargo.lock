@@ -1483,6 +1483,7 @@ dependencies = [
  "anyhow",
  "clap",
  "devimint",
+ "fedi-core",
  "futures",
  "tokio",
  "tracing",
@@ -1826,6 +1827,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "fedi-core"
+version = "0.3.0"
+
+[[package]]
 name = "fedi-db-dump"
 version = "0.3.0"
 dependencies = [
@@ -1863,6 +1868,7 @@ name = "fedi-fedimintd"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "fedi-core",
  "fedi-social-common",
  "fedi-social-server",
  "fedimint-build",
@@ -1870,6 +1876,7 @@ dependencies = [
  "fedimintd",
  "stability-pool-server",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -1886,6 +1893,7 @@ dependencies = [
  "eyeball",
  "eyeball-im",
  "fedi-api-types",
+ "fedi-core",
  "fedi-db-dump",
  "fedi-social-client",
  "fedimint-aead",
