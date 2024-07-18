@@ -376,7 +376,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     image={<SvgImage name="Scroll" />}
                     label={t('phrases.fedi-app-terms-of-service')}
                     actionIcon="ExternalLink"
-                    onPress={() => Linking.openURL("https://fedi.xyz/eula-en")}
+                    onPress={() => Linking.openURL('https://fedi.xyz/eula-en')}
                 />
             </View>
 
