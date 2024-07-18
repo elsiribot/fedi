@@ -1118,7 +1118,13 @@ export const selectMatrixChatsList = createSelector(
             result.push(makeChatFromPreview(preview))
             return result
         }, [])
-        const chatList: MatrixRoom[] = [...roomsList, ...defaultGroupsList]
+        // don't include rooms that we have not joined yet this should happen
+        // automatically but we filter here anyway in case the join fails for some reason
+        const joinedRoomsList = roomsList.filter(r => r.roomState === 'Joined')
+        const chatList: MatrixRoom[] = [
+            ...joinedRoomsList,
+            ...defaultGroupsList,
+        ]
         return orderBy(chatList, item => item.preview?.timestamp || 0, 'desc')
     },
 )
