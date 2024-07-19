@@ -55,8 +55,11 @@ export interface MatrixRoom {
     joinedMemberCount?: number
     isPreview?: boolean
     isPublic?: boolean
-    inviteCode?: string
+    inviteCode: string
+    roomState: MatrixRoomState
 }
+
+export type MatrixRoomState = 'Joined' | 'Left' | 'Invited'
 
 export enum MatrixRoomListItemStatus {
     loading = 'loading',

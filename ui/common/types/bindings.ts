@@ -1,6 +1,6 @@
 import { RequestInvoiceArgs } from 'webln'
 
-import { MSats } from '@fedi/common/types'
+import { MSats } from './units'
 
 export type RpcMethodNames = keyof RpcMethods
 export type RpcPayload<M extends RpcMethodNames> = RpcMethods[M][0]
@@ -628,10 +628,6 @@ export interface RpcMethods {
         Observable<RpcSyncIndicator>,
     ]
     matrixRoomList: [Record<string, never>, ObservableVec<RpcRoomListEntry>]
-    matrixRoomListInvites: [
-        Record<string, never>,
-        ObservableVec<RpcRoomListEntry>,
-    ]
     matrixRoomListUpdateRanges: [{ ranges: RpcRanges }, null]
     matrixRoomTimelineItems: [
         { roomId: RpcRoomId },
@@ -892,8 +888,7 @@ export type RpcSyncIndicator = 'hide' | 'show'
 
 export type RpcTimelineEventSendState =
     | { kind: 'notSentYet' }
-    | { kind: 'sendingFailed'; error: string }
-    | { kind: 'cancelled' }
+    | { kind: 'sendingFailed'; error: string; is_recoverable: boolean }
     | { kind: 'sent'; event_id: string }
 
 export type RpcTimelineItem =

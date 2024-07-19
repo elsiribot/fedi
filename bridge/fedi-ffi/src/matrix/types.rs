@@ -12,7 +12,7 @@ use matrix_sdk::ruma::MilliSecondsSinceUnixEpoch;
 use matrix_sdk::RoomListEntry;
 use matrix_sdk_ui::room_list_service::SyncIndicator;
 use matrix_sdk_ui::timeline::{
-    BackPaginationStatus, EventSendState, TimelineItem, TimelineItemContent, TimelineItemKind,
+    EventSendState, LiveBackPaginationStatus, TimelineItem, TimelineItemContent, TimelineItemKind,
     VirtualTimelineItem,
 };
 use serde::{Deserialize, Serialize};
@@ -49,10 +49,8 @@ pub enum RpcTimelineEventSendState {
     SendingFailed {
         /// Details about how sending the event failed.
         error: String,
+        is_recoverable: bool,
     },
-    /// Sending has been cancelled because an earlier event in the
-    /// message-sending queue failed.
-    Cancelled,
     /// The local event has been sent successfully to the server.
     Sent {
         /// The event ID assigned by the server.
@@ -136,12 +134,16 @@ impl RpcMatrixUserDirectorySearchResponse {
     }
 }
 
-impl From<BackPaginationStatus> for RpcBackPaginationStatus {
-    fn from(value: BackPaginationStatus) -> Self {
+impl From<LiveBackPaginationStatus> for RpcBackPaginationStatus {
+    fn from(value: LiveBackPaginationStatus) -> Self {
         match value {
-            BackPaginationStatus::Idle => Self::Idle,
-            BackPaginationStatus::Paginating => Self::Paginating,
-            BackPaginationStatus::TimelineStartReached => Self::TimelineStartReached,
+            LiveBackPaginationStatus::Idle {
+                hit_start_of_timeline: false,
+            } => Self::Idle,
+            LiveBackPaginationStatus::Idle {
+                hit_start_of_timeline: true,
+            } => Self::TimelineStartReached,
+            LiveBackPaginationStatus::Paginating => Self::Paginating,
         }
     }
 }
@@ -168,12 +170,13 @@ impl RpcTimelineItem {
                 };
                 let send_state = e.send_state().map(|s| match s {
                     EventSendState::NotSentYet => RpcTimelineEventSendState::NotSentYet,
-                    EventSendState::SendingFailed { error } => {
-                        RpcTimelineEventSendState::SendingFailed {
-                            error: error.to_string(),
-                        }
-                    }
-                    EventSendState::Cancelled => RpcTimelineEventSendState::Cancelled,
+                    EventSendState::SendingFailed {
+                        error,
+                        is_recoverable,
+                    } => RpcTimelineEventSendState::SendingFailed {
+                        error: error.to_string(),
+                        is_recoverable: *is_recoverable,
+                    },
                     EventSendState::Sent { event_id } => RpcTimelineEventSendState::Sent {
                         event_id: event_id.to_string(),
                     },
