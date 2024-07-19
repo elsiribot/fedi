@@ -348,7 +348,12 @@ export const startMatrixClient = createAsyncThunk<
     client.on('roomListUpdate', updates =>
         dispatch(handleMatrixRoomListObservableUpdates(updates)),
     )
-    client.on('roomInfo', room => dispatch(addMatrixRoomInfo(room)))
+    client.on('roomInfo', room => {
+        dispatch(addMatrixRoomInfo(room))
+        if (room.roomState === 'Invited') {
+            dispatch(joinMatrixRoom({ roomId: room.id }))
+        }
+    })
     client.on('roomMember', member => dispatch(addMatrixRoomMember(member)))
     client.on('roomMembers', ev => dispatch(setMatrixRoomMembers(ev)))
     client.on('roomTimelineUpdate', ev =>
@@ -1113,7 +1118,13 @@ export const selectMatrixChatsList = createSelector(
             result.push(makeChatFromPreview(preview))
             return result
         }, [])
-        const chatList: MatrixRoom[] = [...roomsList, ...defaultGroupsList]
+        // don't include rooms that we have not joined yet this should happen
+        // automatically but we filter here anyway in case the join fails for some reason
+        const joinedRoomsList = roomsList.filter(r => r.roomState === 'Joined')
+        const chatList: MatrixRoom[] = [
+            ...joinedRoomsList,
+            ...defaultGroupsList,
+        ]
         return orderBy(chatList, item => item.preview?.timestamp || 0, 'desc')
     },
 )
