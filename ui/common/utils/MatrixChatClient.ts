@@ -847,7 +847,14 @@ export class MatrixChatClient {
             }
         }
 
-        const roomName = room.base_info.name?.Original?.content?.name
+        // TODO (cleanup): Remove base_info.name fallback
+        // cached_display_name seems to be the best source of truth for the room name
+        // for both groups and DMS assuming matrix-rust-sdk handles computing it correctly
+        // but since it is a newer field we leave the base_info.name as a fallback temporarily
+        const roomName =
+            room.cached_display_name?.Calculated ||
+            room.base_info.name?.Original?.content?.name
+
         return {
             directUserId,
             preview,
