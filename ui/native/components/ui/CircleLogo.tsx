@@ -1,37 +1,29 @@
-import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { ImageBackground, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
-import { Images } from '../../assets/images'
 import SvgImage, { SvgImageSize } from './SvgImage'
 
 const CircleLogo: React.FC = () => {
-    const { theme } = useTheme()
-
     return (
-        <View style={styles(theme).container}>
-            <ImageBackground
-                source={Images.HoloRing}
-                style={styles(theme).holoCircle}
-            />
+        <View style={styles().container}>
             <SvgImage size={SvgImageSize.lg} name="FediLogoIcon" />
         </View>
     )
 }
 
-const styles = (theme: Theme) =>
+const styles = () =>
     StyleSheet.create({
         container: {
             position: 'relative',
             alignItems: 'center',
             justifyContent: 'center',
-            height: theme.sizes.logoRingSize,
-            width: theme.sizes.logoRingSize,
+            height: 32,
+            width: 32,
         },
         holoCircle: {
             position: 'absolute',
-            height: theme.sizes.logoRingSize,
-            width: theme.sizes.logoRingSize,
+            height: 32,
+            width: 32,
             opacity: 1,
         },
     })

@@ -2,9 +2,15 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { StyleSheet, View, useWindowDimensions } from 'react-native'
+import {
+    ImageBackground,
+    StyleSheet,
+    View,
+    useWindowDimensions,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { Images } from '../assets/images'
 import CircleLogo from '../components/ui/CircleLogo'
 import CustomOverlay from '../components/ui/CustomOverlay'
 import { RootStackParamList } from '../types/navigation'
@@ -31,73 +37,85 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
 
     const style = styles(theme, fontScale)
     return (
-        <SafeAreaView style={style.container}>
-            <View style={style.welcomeContainer}>
-                <View style={style.iconContainer}>
-                    <CircleLogo />
+        <ImageBackground
+            source={Images.WelcomeBackground}
+            style={style.container}>
+            <SafeAreaView style={style.content}>
+                <View style={style.welcomeContainer}>
+                    <View style={style.iconContainer}>
+                        <CircleLogo />
+                    </View>
+                    <Text h2 medium style={style.welcomeText}>
+                        {t('feature.onboarding.welcome-to-fedi')}
+                    </Text>
+                    <Text style={style.welcomeText}>
+                        {t('feature.onboarding.guidance-1')}
+                    </Text>
                 </View>
-                <Text h2 medium style={style.welcomeText}>
-                    {t('feature.onboarding.welcome-to-fedi')}
-                </Text>
-                <Text style={style.welcomeText}>
-                    {t('feature.onboarding.guidance-1')}
-                </Text>
-            </View>
 
-            <View style={style.buttonsContainer}>
-                <Button
-                    fullWidth
-                    testID="JoinFederationButton"
-                    title={t('words.continue')}
-                    onPress={handleContinue}
-                />
-                <Text style={style.agreementText} small>
-                    <Trans
-                        i18nKey="feature.onboarding.by-clicking-you-agree-user-agreement"
-                        components={{
-                            anchor: (
-                                <Text
-                                    small
-                                    style={style.agreementLink}
-                                    onPress={() => navigation.navigate('Eula')}
-                                />
-                            ),
-                        }}
+                <View style={style.buttonsContainer}>
+                    <Button
+                        fullWidth
+                        testID="JoinFederationButton"
+                        title={t('words.continue')}
+                        onPress={handleContinue}
                     />
-                </Text>
-            </View>
-            <CustomOverlay
-                show={showOverlay}
-                onBackdropPress={() => setShowOverlay(false)}
-                contents={{
-                    body: (
-                        <View style={style.overlayContainer}>
-                            <Text h1>{'👋'}</Text>
-                            <Text h2>
-                                {t('feature.onboarding.are-you-new')}
-                            </Text>
-                            <View style={style.overlayButtonsContainer}>
-                                <Button fullWidth onPress={handleNewUser}>
-                                    {t('feature.onboarding.yes-create-account')}
-                                </Button>
-                                <Button
-                                    fullWidth
-                                    onPress={handleReturningUser}
-                                    day>
-                                    {t('feature.onboarding.im-returning')}
-                                </Button>
+                    <Text style={style.agreementText} small>
+                        <Trans
+                            i18nKey="feature.onboarding.by-clicking-you-agree-user-agreement"
+                            components={{
+                                anchor: (
+                                    <Text
+                                        small
+                                        style={style.agreementLink}
+                                        onPress={() =>
+                                            navigation.navigate('Eula')
+                                        }
+                                    />
+                                ),
+                            }}
+                        />
+                    </Text>
+                </View>
+                <CustomOverlay
+                    show={showOverlay}
+                    onBackdropPress={() => setShowOverlay(false)}
+                    contents={{
+                        body: (
+                            <View style={style.overlayContainer}>
+                                <Text h1>{'👋'}</Text>
+                                <Text h2>
+                                    {t('feature.onboarding.are-you-new')}
+                                </Text>
+                                <View style={style.overlayButtonsContainer}>
+                                    <Button fullWidth onPress={handleNewUser}>
+                                        {t(
+                                            'feature.onboarding.yes-create-account',
+                                        )}
+                                    </Button>
+                                    <Button
+                                        fullWidth
+                                        onPress={handleReturningUser}
+                                        day>
+                                        {t('feature.onboarding.im-returning')}
+                                    </Button>
+                                </View>
                             </View>
-                        </View>
-                    ),
-                }}
-            />
-        </SafeAreaView>
+                        ),
+                    }}
+                />
+            </SafeAreaView>
+        </ImageBackground>
     )
 }
 
 const styles = (theme: Theme, fontScale: number) =>
     StyleSheet.create({
         container: {
+            flex: 1,
+            justifyContent: 'flex-end',
+        },
+        content: {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'flex-end',
