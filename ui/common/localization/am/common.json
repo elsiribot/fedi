@@ -28,8 +28,6 @@
         "error": "ስህተት",
         "expired": "ጊዜው አልፎበታል።",
         "failed": "አልተሳካም",
-        "federation": "ፌዴሬሽን",
-        "federations": "ፌዴሬሽኖች",
         "fedimint": "Fedimint",
         "fedimods": "FediMods",
         "fee": "ክፍያ",
@@ -119,7 +117,7 @@
         "camera-settings": "የካሜራ ቅንብሮች",
         "changes-may-not-be-saved": "ያደረጓቸው ለውጦች ላይቀመጡ ይችላሉ።",
         "click-for-more-details": "ለተጨማሪ ዝርዝሮች ጠቅ ያድርጉ",
-        "connect-to-federation": "ከሙከራ ፌዴሬሽን ጋር ይገናኙ",
+        "connect-to-federation": "ከሙከራ ማህበረሰብ ጋር ይገናኙ",
         "copied-bitcoin-address": "Bitcoin አድራሻ ተቀድቷል",
         "copied-ecash-token": "ተቀድቷል ecash token",
         "copied-lightning-request": "የተቀዳ lightning ጥያቄ",
@@ -139,8 +137,8 @@
         "hide-details": "ዝርዝሮችን ደብቅ",
         "hold-to-confirm": "ለማረጋገጥ ይያዙ",
         "i-understand": "ገባኝ",
-        "invalid-federation-code": "ልክ ያልሆነ የፌዴሬሽን ኮድ",
-        "join-another-federation": "ሌላ ፌዴሬሽን ተቀላቀሉ",
+        "invalid-federation-code": "ልክ ያልሆነ የማህበረሰብ ኮድ",
+        "join-another-federation": "ሌላ ማህበረሰብ ተቀላቀሉ",
         "last-seen": "ለመጨረሻ ግዜ የታየው",
         "lightning-address": "lightning አድራሻ",
         "lightning-network": "lightning አውታር",
@@ -163,7 +161,7 @@
         "terms-and-conditions": "ውሎች እና ሁኔታዎች",
         "transaction-id": "የግብይት መታወቂያ",
         "transaction-received": "ግብይት ደረሰ",
-        "view-public-federations": "የህዝብ ፌዴሬሽኖችን ይመልከቱ",
+        "view-public-federations": "የህዝብ ማህበረሰቦችን ይመልከቱ",
         "yearly-fee": "ዓመታዊ ክፍያ",
         "you-are-offline": "በአሁኑ ጊዜ ከመስመር ውጭ ሁነታ ላይ ነዎት"
     },
@@ -177,7 +175,7 @@
         "chat-member-not-found": "ይህን ተጠቃሚ ማግኘት አልተቻለም",
         "chat-message-render-error": "ይህን መልእክት በመስራት ላይ ስህተት አጋጥሞታል።",
         "chat-payment-failed": "ያንን የውይይት ክፍያ ማዘመን አልተቻለም",
-        "chat-unavailable": "ይህ ፌዴሬሽን የውይይት አገልጋይ የለውም።",
+        "chat-unavailable": "ይህ ማህበረሰብ የውይይት አገልጋይ የለውም።",
         "failed-to-fetch-gateways": "መግቢያ መንገዶችን ማምጣት አልተሳካም።",
         "failed-to-fetch-guardian-approval": "የአሳዳጊ ማረጋገጫ ማምጣት አልተሳካም።",
         "failed-to-fetch-transactions": "ግብይቶችን ማምጣት አልተሳካም።",
@@ -193,7 +191,7 @@
         "invalid-amount-max": "የምትችለውን ከፍተኛው {{verb}} <suggestion>{{amount}}</suggestion>",
         "invalid-amount-min": "የምትችለውን ዝቅተኛው {{verb}} <suggestion>{{amount}}</suggestion>",
         "invalid-ecash-token": "ልክ ያልሆነ ecash token",
-        "invalid-federation-code": "ልክ ያልሆነ የፌዴሬሽን ኮድ",
+        "invalid-federation-code": "ልክ ያልሆነ የማህበረሰብ ኮድ",
         "invalid-group-code": "ይህ የሚሰራ የቡድን ኮድ አይደለም።",
         "invalid-username": "21 ቁምፊዎች ወይም ከዚያ በታች መሆን አለበት እና አቢይ ሆሄያትን ማካተት አይችልም።",
         "no-lightning-gateways": "ለዚህ ተጠቃሚ ምንም lightning በሮች አልተገኙም።",
@@ -201,7 +199,7 @@
         "only-group-owners-can-change-name": "የቡድን ባለቤቶች ብቻ የቡድኑን ስም መቀየር ይችላሉ",
         "please-force-quit-the-app": "ስህተት ተከስቷል፣ እባክዎ መተግበሪያውን ያስገድዱት እና እንደገና ይሞክሩ",
         "receive-ecash-failed": "ecash መቀበል አልተሳካም።",
-        "receives-have-been-disabled": "ለዚህ ፌዴሬሽን ደረሰኞች ተሰናክለዋል።",
+        "receives-have-been-disabled": "ለዚህ ማህበረሰብ ደረሰኞች ተሰናክለዋል።",
         "recovery-failed": "መልሶ ማግኘት አልተሳካም፣ እባክዎ እንደገና ይሞክሩ",
         "sign-nostr-event-failed": "መልሶ ማግኘት አልተሳካም፣ እባክዎ እንደገና ይሞክሩ",
         "unknown-error": "ያልታወቀ ስህተት ተከስቷል።",
@@ -210,7 +208,7 @@
         "webln-method-not-supported": "{{method}} አይደገፍም።",
         "webln-payment-rejected": "ክፍያ ውድቅ ተደርጓል",
         "webln-payment-request-rejected": "የክፍያ ጥያቄ ተቀባይነት አላገኘም።",
-        "you-have-already-joined": "አስቀድመው ወደዚህ ፌዴሬሽን ተቀላቅለዋል።"
+        "you-have-already-joined": "አስቀድመው ወደዚህ ማህበረሰብ ተቀላቅለዋል።"
     },
     "feature": {
         "backup": {
@@ -246,7 +244,7 @@
             "save-your-wallet-backup-file-where": "ፋይልዎን በተለያዩ ቦታዎች እንዲያስቀምጡ እንመክራለን(messaging apps, email, cloud storage, etc.)",
             "social-backup": "ማህበራዊ ምትኬ",
             "social-backup-instructions": "ማንነትዎን ለማረጋገጥ ቪዲዮ ይቅረጹ። አሳዳጊዎችዎን በደንብ ካወቁ ይህ አማራጭ የተሻለ ነው።",
-            "social-backup-processing-info-1": "ይህ የመልሶ ማግኛ ፋይል የእርስዎን ምትኬ ቪዲዮ እና ስለ ፌዴሬሽንዎ ዝርዝሮች ይዟል።",
+            "social-backup-processing-info-1": "ይህ የመልሶ ማግኛ ፋይል የእርስዎን ምትኬ ቪዲዮ እና ስለ ማህበረሰብዎ ዝርዝሮች ይዟል።",
             "social-backup-processing-info-2": "ይህ ፋይል ብቻውን ገንዘብዎን ለማግኘት ጥቅም ላይ ሊውል አይችልም፣ ምክንያቱም አሳዳጊዎች በዚያ የመልሶ ማገገሚያ ጊዜ ማንነትዎን ስለሚፈትሹ ነው።",
             "social-backup-video-prompt": "Fedi!",
             "start-personal-backup": "የግል ምትኬን ጀምር",
@@ -262,7 +260,7 @@
             "description-label": "ጉዳዩን በዝርዝር ግለጽ",
             "description-placeholder": "ምን ጠበቁ እና በምትኩ ምን ተፈጠረ?",
             "email-label": "ኢሜል (አማራጭ)",
-            "info-label": "ፌዴሬሽን እና የተጠቃሚ ስም Bug ሪፖርት ጋር ይላኩ።",
+            "info-label": "ማህበረሰብ እና የተጠቃሚ ስም Bug ሪፖርት ጋር ይላኩ።",
             "log-disclaimer": "የ Fedi ገንቢዎች ጉዳዩን እንዲያውቁ ለማገዝ የመተግበሪያ ምዝግብ ማስታወሻዎች ከሪፖርትዎ ጋር ይካተታሉ",
             "report-a-bug": "Bug ሪፖርት አድርግ",
             "screenshot-label": "ቅጽበታዊ ገጽ እይታዎችን ወይም ቅጂዎችን ይስቀሉ",
@@ -377,22 +375,22 @@
             "share-state": "የመተግበሪያ ሁኔታን ያጋሩ"
         },
         "federations": {
-            "add-federation": "ፌዴሬሽን ጨምር",
-            "camera-access-information": "ፌዴሬሽንን ለመቀላቀል የፌዴሬሽኑን የግብዣ ኮድ ለመቃኘት ፌዲ ካሜራዎን እንዲደርስ መፍቀድ ያስፈልግዎታል",
-            "copied-federation-invite": "የፌዴሬሽን ግብዣ አገናኝ ተቀድቷል",
-            "enter-federation-code": "የፌዴሬሽን ኮድ አስገባ",
+            "add-federation": "ማህበረሰብ ጨምር",
+            "camera-access-information": "ማህበረሰብን ለመቀላቀል የፌዴሬሽኑን የግብዣ ኮድ ለመቃኘት ፌዲ ካሜራዎን እንዲደርስ መፍቀድ ያስፈልግዎታል",
+            "copied-federation-invite": "የማህበረሰብ ግብዣ አገናኝ ተቀድቷል",
+            "enter-federation-code": "የማህበረሰብ ኮድ አስገባ",
             "federation-details": "የፌዴሬሽኑ ዝርዝሮች",
             "federation-invite": "የፌዴሬሽኑ ግብዣ",
             "federation-terms": "የፌደሬሽን ውሎች",
             "invite-members": "አባላትን ይጋብዙ",
-            "join-federation": "አዲስ ፌዴሬሽን ይቀላቀሉ",
+            "join-federation": "አዲስ ማህበረሰብ ይቀላቀሉ",
             "leave-federation": "ፌዴሬሽኑን ልቀቁ",
-            "leave-federation-confirmation": "እርግጠኛ ነዎት ይህን ፌዴሬሽን መልቀቅ ይፈልጋሉ?",
+            "leave-federation-confirmation": "እርግጠኛ ነዎት ይህን ማህበረሰብ መልቀቅ ይፈልጋሉ?",
             "leave-federation-withdraw-first": "ከመሄድዎ በፊት ገንዘብዎን ማውጣት አለብዎት",
             "leave-federation-withdraw-pending-stable-first": "መውጣትዎ {{currency}} አሁንም በሂደት ላይ ነው። እባክዎ በ10 ደቂቃ ውስጥ እንደገና ይሞክሩ።",
             "leave-federation-withdraw-stable-first": "ከመሄድዎ በፊት ቀሪ ሂሳብዎን በሙሉ {{currency}}  ማውጣት አለብዎት።",
-            "paste-federation-code": "የፌዴሬሽን ኮድ ለጥፍ",
-            "paste-federation-code-instead": "በምትኩ የፌዴሬሽን ኮድ ለጥፍ",
+            "paste-federation-code": "የማህበረሰብ ኮድ ለጥፍ",
+            "paste-federation-code-instead": "በምትኩ የማህበረሰብ ኮድ ለጥፍ",
             "scan-federation-invite": "የፌደሬሽን ግብዣን ይቃኙ"
         },
         "fedimods": {
@@ -416,7 +414,7 @@
             "your-mods": "የእርስዎ Mods"
         },
         "fees": {
-            "guidance-ecash": "ብልህ! በፌዴሬሽን ውስጥ ላሉ ጓደኞች ገንዘብ መላክ ርካሽ እና ቀላል እና ቀዝቃዛ ነው።  😎",
+            "guidance-ecash": "ብልህ! በማህበረሰብ ውስጥ ላሉ ጓደኞች ገንዘብ መላክ ርካሽ እና ቀላል እና ቀዝቃዛ ነው።  😎",
             "guidance-lightning": "🤑  በክፍያ ገንዘብ መቆጠብ ይፈልጋሉ? በምትኩ ወደ ውይይት ላክ!",
             "guidance-onchain": "በሰንሰለት ላይ መላክ Bitcoin ለኔትወርክ ክፍያዎች ተገዢ ነው። እንደ እውነቱ ከሆነ ለስጋ መጠን የተሻለ ነው.",
             "guidance-stable-balance": "ይህንን ሂሳብ ለአንድ አመት ለመያዝ መክፈል የሚችሉት ከፍተኛው ነው። ያነሰ ሊሆን ይችላል! 😉"
@@ -448,7 +446,7 @@
             "camera-permission-denied": "የካሜራ ፈቃዶችን ለመቀየር ወደ ቅንብሮች ይሂዱ።",
             "camera-permission-request": "የካሜራ መዳረሻ እንዲቃኝ ፍቀድ።",
             "confirm-ecash-token": "ይህ eCash token ነው፣ እሱን ማስመለስ ይፈልጋሉ?",
-            "confirm-federation-invite": "ይህ የፌዴሬሽን ግብዣ ነው፣ መቀላቀል ይፈልጋሉ?",
+            "confirm-federation-invite": "ይህ የማህበረሰብ ግብዣ ነው፣ መቀላቀል ይፈልጋሉ?",
             "confirm-fedi-chat": "ይህ የውይይት አገናኝ ነው፣ ወደዚያ መሄድ ትፈልጋለህ?",
             "confirm-lightning-pay": "ይህ lightning ክፍያ ጥያቄ ነው፣ መክፈል ይፈልጋሉ?",
             "confirm-lightning-withdraw": "ይህ መብረቅ መውጣት ነው፣ መውጣት ይፈልጋሉ?",
@@ -462,7 +460,7 @@
             "search-placeholder-username-or-ln": "የተጠቃሚ ስም ወይም lightning አድራሻ ያስገቡ",
             "unsupported-bolt12": "BOLT 12 ቅናሾች እስካሁን አይደገፉም። አዝናለሁ!",
             "unsupported-legacy-chat": "ይህ ውይይት QR ከአሁን በኋላ የማይደገፍ የመተግበሪያው ስሪት ነው። አዝናለሁ!",
-            "unsupported-no-federation": "ፌዴሬሽን ከመቀላቀልዎ በፊት ያንን መጠቀም አይችሉም። በምትኩ የፌዴሬሽን ግብዣን ለመቃኘት ይሞክሩ።",
+            "unsupported-no-federation": "ማህበረሰብ ከመቀላቀልዎ በፊት ያንን መጠቀም አይችሉም። በምትኩ የማህበረሰብ ግብዣን ለመቃኘት ይሞክሩ።",
             "unsupported-on-chain": "በሰንሰለት ላይ ያሉ የBitcoin አድራሻዎች እስካሁን አይደገፉም። አዝናለሁ!",
             "unsupported-unknown": "እም፣ ያ የምናውቀው ቅርጸት አይደለም። አዝናለሁ!"
         },
@@ -486,11 +484,11 @@
             "i-do-not-accept": "አልቀበልም።",
             "join-new-member": "እንደ አዲስ አባል ይቀላቀሉ",
             "join-returning-member": "ተመላሽ አባል ነኝ",
-            "new-users-disabled-notice": "ይቅርታ፣ ይህ ፌዴሬሽን አዲስ ተጠቃሚዎችን እየተቀበለ አይደለም።",
+            "new-users-disabled-notice": "ይቅርታ፣ ይህ ማህበረሰብ አዲስ ተጠቃሚዎችን እየተቀበለ አይደለም።",
             "nice-to-meet-you": "ስለተገናኘን ደስ ብሎኛል {{username}}",
             "simple-and-private": "ቀላል እና ግላዊ",
             "terms-and-conditions": "ውሎች እና ሁኔታዎች",
-            "unsupported-notice": "ይህ ፌዴሬሽን ከእንግዲህ አይደገፍም።መቀላቀል አይቻልም።",
+            "unsupported-notice": "ይህ ማህበረሰብ ከእንግዲህ አይደገፍም።መቀላቀል አይቻልም።",
             "username-guidance": "ይህን በኋላ መቀየር ትችላለህ",
             "username-instructions": "የተጠቃሚ ስምህ ሌሎች አባላት እርስዎን የሚለዩበት መንገድ ይሆናል።",
             "welcome-back-to-federation": "እንኳን በደህና መጡ {{federation}}",
@@ -528,8 +526,8 @@
         },
         "popup": {
             "ended": "አበቃ.",
-            "ended-description": "ይህ ጊዜያዊ ፌዴሬሽን <bold>አብቅቷል{{date}}</bold>.",
-            "ending-description": "ይህ ጊዜያዊ ፌዴሬሽን <bold> ያበቃል{{date}}</bold>። የተቀሩት ገንዘቦች በአሳዳጊዎች ውሳኔ ይተዳደራሉ.",
+            "ended-description": "ይህ ጊዜያዊ ማህበረሰብ <bold>አብቅቷል{{date}}</bold>.",
+            "ending-description": "ይህ ጊዜያዊ ማህበረሰብ <bold> ያበቃል{{date}}</bold>። የተቀሩት ገንዘቦች በአሳዳጊዎች ውሳኔ ይተዳደራሉ.",
             "ending-in": "የሚጨርስ<bold>{{time}}</bold>"
         },
         "receive": {
@@ -614,7 +612,7 @@
             "recovery-assist-instructions-4": "4. በመጠባበቂያ ቪዲዮው ውስጥ አንድ አይነት ሰው መሆናቸውን ያረጋግጡ",
             "recovery-assist-instructions-5": "5. የአባላት መልሶ ማግኛ ጥያቄን ማጽደቅ ወይም መከልከል",
             "recovery-assist-process": "የማገገሚያ እገዛ ሂደት",
-            "recovery-assist-thank-you": "ለአንድ የፌዴሬሽን አባል ገንዘብ መልሰው ስለረዱ እናመሰግናለን",
+            "recovery-assist-thank-you": "ለአንድ የማህበረሰብ አባል ገንዘብ መልሰው ስለረዱ እናመሰግናለን",
             "recovery-confirm-identity-instructions-1": "የአባላትን ማንነት ለማረጋገጥ ቪዲዮ ይመልከቱ።",
             "recovery-confirm-identity-instructions-2": "ይህ ቪዲዮ ያው አባል አሁን ማህበራዊ መልሶ ማግኛን ለማድረግ ሲሞክር ያሳያል?",
             "recovery-confirm-identity-no": "አይ፣ በቪዲዮው ላይ ያለው ሰው ከአባሉ ጋር አንድ አይነት ሰው አይደለም።",
@@ -765,7 +763,7 @@
             "you-withdrew": "ፈቀቅ ብለሃል"
         },
         "wallet": {
-            "network-notice": "ይህ ፌዴሬሽን {{network}} SATS ይጠቀማል",
+            "network-notice": "ይህ ማህበረሰብ {{network}} SATS ይጠቀማል",
             "show-fiat-txn-amounts": "የ ፊአት ግብይት መጠኖችን አሳይ",
             "show-fiat-txn-amounts-info": "የግብይት መጠኖች በተመረጠው የ fiat ምንዛሬ ውስጥ ይታያሉ"
         }
