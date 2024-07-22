@@ -372,6 +372,12 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     label={t('feature.bug.report-a-bug')}
                     onPress={() => navigation.navigate('BugReport')}
                 />
+                <SettingsItem
+                    image={<SvgImage name="Scroll" />}
+                    label={t('phrases.fedi-app-terms-of-service')}
+                    actionIcon="ExternalLink"
+                    onPress={() => Linking.openURL("https://fedi.xyz/eula-en")}
+                />
             </View>
 
             {federationMenus}
