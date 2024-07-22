@@ -23,7 +23,6 @@ import DefaultChatHeader from '../components/feature/chat/DefaultChatHeader'
 import FederationInviteHeader from '../components/feature/federations/FederationInviteHeader'
 import JoinFederationHeader from '../components/feature/federations/JoinFederationHeader'
 import PopupFederationEndedHeader from '../components/feature/federations/PopupFederationEndedHeader'
-import HomeLockScreen from '../components/feature/home/LockScreen'
 import EulaHeader from '../components/feature/onboarding/EulaHeader'
 import NewMemberAvatarImageHeader from '../components/feature/onboarding/NewMemberAvatarImageHeader'
 import NewMemberHeader from '../components/feature/onboarding/NewMemberHeader'
@@ -111,6 +110,7 @@ import JoinFederation from './JoinFederation'
 import LanguageSettings from './LanguageSettings'
 import LegacyChat from './LegacyChat'
 import LocateSocialRecovery from './LocateSocialRecovery'
+import LockScreen from './LockScreen'
 import LockedDevice from './LockedDevice'
 import NewMessage from './NewMessage'
 import PersonalRecovery from './PersonalRecovery'
@@ -970,7 +970,7 @@ export const MainNavigator = () => {
                         }}>
                         <Stack.Screen
                             name="LockScreen"
-                            component={HomeLockScreen}
+                            component={LockScreen}
                             options={{
                                 header: () => <UnlockAppLockScreenHeader />,
                             }}

@@ -7,26 +7,22 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native'
 import { maxPinLength, pinNumbers } from '@fedi/common/constants/security'
 import { numpadButtons } from '@fedi/common/hooks/amount'
 import { useDebounce } from '@fedi/common/hooks/util'
-import { ProtectedFeatures, setFeatureUnlocked } from '@fedi/common/redux'
+import { setFeatureUnlocked } from '@fedi/common/redux'
 
 import PinDot from '../components/feature/pin/PinDot'
 import { NumpadButton } from '../components/ui/NumpadButton'
 import { usePinContext } from '../state/contexts/PinContext'
 import { useAppDispatch } from '../state/hooks'
-import type { NavigationArgs, RootStackParamList } from '../types/navigation'
+import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'LockScreen'>
 
-// App Lock Screen
-const LockScreen = <T extends keyof RootStackParamList>({
-    navigation,
-    feature,
-    screen,
-    route,
-}: Props & {
-    feature: keyof ProtectedFeatures
-    screen: NavigationArgs<T>
-}) => {
+/**
+ * App Lock Screen.
+ * Includes the "Forgot PIN" flow and is specific to unlocking the app.
+ * Also takes an optional `routeParams` prop to navigate to a specific screen after unlocking (e.g. deeplinks)
+ */
+const LockScreen = ({ navigation, route }: Props) => {
     const [pinDigits, setPinDigits] = useState<Array<number>>([])
     const [timeoutSeconds, setTimeoutSeconds] = useState(0)
     const [, setAttempts] = useState(0)
@@ -121,18 +117,17 @@ const LockScreen = <T extends keyof RootStackParamList>({
 
         dispatch(
             setFeatureUnlocked({
-                key: feature,
+                key: 'app',
                 unlocked: true,
             }),
         )
 
-        const resolvedScreen =
-            route.params && 'routeParams' in route.params
-                ? route.params.routeParams
-                : screen
-
-        navigation.navigate(...resolvedScreen)
-    }, [debouncedPin, feature, navigation, dispatch, pin, screen, route.params])
+        if (route.params && 'routeParams' in route.params) {
+            navigation.navigate(...route.params.routeParams)
+        } else {
+            navigation.navigate('TabsNavigator')
+        }
+    }, [debouncedPin, navigation, dispatch, pin, route.params])
 
     useEffect(() => {
         return () => {

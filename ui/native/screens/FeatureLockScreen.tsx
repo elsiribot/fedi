@@ -20,7 +20,11 @@ export type Props = NativeStackScreenProps<
     keyof RootStackParamList
 >
 
-// Reusable Lock Screen for any protected feature
+/**
+ * Reusable Lock Screen for any protected feature except the app.
+ * Is generic and can be used in the place of any other screen component.
+ * Does not include the "Forgot PIN" flow or the ability to navigate with dynamic route parameters after unlocking.
+ */
 const FeatureLockScreen = <T extends keyof RootStackParamList>({
     navigation,
     feature,

@@ -45,7 +45,7 @@ export function PinContextProvider({
 }) {
     const [hasSetPin, setHasSetPin] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
-    const checkRef = useRef<(digits: Array<number>) => boolean>(() => true)
+    const checkRef = useRef<(digits: Array<number>) => boolean>(() => false)
     const deviceId = useAppSelector(selectDeviceId)
     const dispatch = useAppDispatch()
     const protectedFeatures = useAppSelector(selectProtectedFeatures)
@@ -89,15 +89,12 @@ export function PinContextProvider({
         const loadPinCheck = async () => {
             const pin = await Keychain.getGenericPassword({ service: 'pin' })
 
-            setIsLoading(false)
-
             if (
                 pin &&
                 pin.username === deviceId &&
                 pin.service === 'pin' &&
                 typeof pin.password === 'string'
             ) {
-                setHasSetPin(true)
                 checkRef.current = (digits: Array<number>) => {
                     const digitsValidation = z
                         .array(z.number().nonnegative().int().lte(9))
@@ -107,7 +104,10 @@ export function PinContextProvider({
 
                     return digits.join('') === pin.password
                 }
+                setHasSetPin(true)
             }
+
+            setIsLoading(false)
         }
 
         loadPinCheck()
