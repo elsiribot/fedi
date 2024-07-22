@@ -63,7 +63,7 @@ const Initializing: React.FC<Props> = () => {
 
     return (
         <View style={styles(theme).container}>
-            <SvgImage size={SvgImageSize.lg} name="FediLogoGradient" />
+            <SvgImage size={SvgImageSize.lg} name="FediLogoIcon" />
         </View>
     )
 }
