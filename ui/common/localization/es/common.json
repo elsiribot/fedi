@@ -113,7 +113,7 @@
         "add-note": "Agregar nota",
         "allow-camera-access": "Permitir acceso a la cámara",
         "app-settings-security": "Ajustes de la aplicación y seguridad",
-        "app-version": "Versión Fedi Bravo: {{version}}",
+        "app-version": "Versión Fedi: {{version}}",
         "back-to-app": "Volver a la aplicación",
         "backup-your-wallet": "Realizar copia de seguridad de tu cartera",
         "bitcoin-address": "Dirección de Bitcoin",
@@ -560,7 +560,7 @@
             "welcome-instructions-returning": "Como usuario que regresa a la federación, su billetera será restaurada. Esto puede tardar unos minutos.",
             "welcome-instructions-unknown": "Los nuevos usuarios reciben una cartera nueva. A los usuarios que regresen se les pedirá que recuperen su cartera.",
             "welcome-to-federation": "Te damos la bienvenida a {{federation}}",
-            "welcome-to-fedi": "Te damos la bienvenida a Fedi Bravo",
+            "welcome-to-fedi": "Te damos la bienvenida a Fedi",
             "yes-create-account": "Sí, crear una cuenta"
         },
         "parser": {

@@ -108,7 +108,7 @@
         "add-note": "Ku Dar Qoraal",
         "allow-camera-access": "Oggolow gelitaanka kamarada",
         "app-settings-security": "Dejinta abka iyo amniga",
-        "app-version": "Fedi Bravo Version:{{version}}",
+        "app-version": "Fedi Version:{{version}}",
         "back-to-app": "Ku laabo Appka",
         "backup-your-wallet": "Cinwaanka Bitcoin ",
         "bitcoin-address": "Cinwaanka Bitcoin",
@@ -494,7 +494,7 @@
             "welcome-instructions-returning": "Xubin soo noqosho ah oo ka tirsan xiriirka, boorsadaada waa la soo celin doonaa. Tani waxay qaadan kartaa dhowr daqiiqo.",
             "welcome-instructions-unknown": "Xubnaha cusub waxay helayaan boorso cusub. Xubnaha soo noqonaya si toos ah ayaa loogu soo ceshan doonaa jeebkoodii hore.",
             "welcome-to-federation": "Ku soo dhawoow {{federation}}",
-            "welcome-to-fedi": "Ku soo dhawoow Fedi Bravo"
+            "welcome-to-fedi": "Ku soo dhawoow Fedi"
         },
         "parser": {
             "unrecognized": "Qaabka xogta aan la aqoonsan",

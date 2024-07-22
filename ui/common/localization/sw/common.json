@@ -108,7 +108,7 @@
         "add-note": "Ongeza maelezo",
         "allow-camera-access": "Ruhusu Kamera",
         "app-settings-security": "Reglages ya app na usalama",
-        "app-version": "Fedi Bravo Version: {{version}}",
+        "app-version": "Fedi Version: {{version}}",
         "back-to-app": "Rudia ku app",
         "backup-your-wallet": "Buckup mufuko yako",
         "bitcoin-address": "Adresse ya Bitcoin ",
@@ -467,7 +467,7 @@
             "welcome-instructions-returning": "Kama mwanamemba wa Jumuiya anayerudia, mufuko yako utarudishwa. Hii inaweza kuchukua dakika kidogo.",
             "welcome-instructions-unknown": "Wanamemba wa mupya wanapokea mkoba ya mpya. Wanamemba wanao rudia mifuko yao ya zamani itarudishwa automatiquement.",
             "welcome-to-federation": "Karibu kwenye {{Jumuiya}}",
-            "welcome-to-fedi": "Karibu kwenye Fedi Bravo"
+            "welcome-to-fedi": "Karibu kwenye Fedi"
         },
         "parser": {
             "unrecognized": "Format ya data hii ayitambulike",

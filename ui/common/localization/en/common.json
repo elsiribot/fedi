@@ -118,7 +118,7 @@
         "add-note": "Add note",
         "allow-camera-access": "Allow camera access",
         "app-settings-security": "App settings and security",
-        "app-version": "Fedi Bravo Version: {{version}}",
+        "app-version": "Fedi Version: {{version}}",
         "back-to-app": "Back to app",
         "backup-your-wallet": "Bitcoin address",
         "bitcoin-address": "Bitcoin address",

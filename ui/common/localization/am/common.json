@@ -108,7 +108,7 @@
         "add-note": "ማስታወሻ ጨምር",
         "allow-camera-access": "የካሜራ መዳረሻ ፍቀድ",
         "app-settings-security": "የመተግበሪያ ቅንብር እና ደህንነት",
-        "app-version": "Fedi Bravo Version: {{version}}",
+        "app-version": "Fedi Version: {{version}}",
         "back-to-app": "ወደ መተግበሪያ ተመለስ",
         "backup-your-wallet": "Bitcoin አድራሻ",
         "bitcoin-address": "Bitcoin አድራሻ",
@@ -496,7 +496,7 @@
             "welcome-instructions-returning": "ተመላሽ የፌዴሬሽኑ አባል እንደመሆኖ የኪስ ቦርሳዎ ይመለሳል። ይህ ጥቂት ደቂቃዎችን ሊወስድ ይችላል።",
             "welcome-instructions-unknown": "አዲስ አባላት አዲስ የኪስ ቦርሳ ይቀበላሉ። የሚመለሱ አባላት የድሮ የኪስ ቦርሳቸውን በራስ-ሰር ይመለሳሉ።",
             "welcome-to-federation": "እንኩአን ደህና መጡ {{federation}}",
-            "welcome-to-fedi": "ወደ Fedi Bravo እንኳን በደህና መጡ"
+            "welcome-to-fedi": "ወደ Fedi እንኳን በደህና መጡ"
         },
         "parser": {
             "unrecognized": "ያልታወቀ የውሂብ ቅርጸት",

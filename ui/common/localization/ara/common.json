@@ -108,7 +108,7 @@
         "add-note": "Zidu muzakara",
         "allow-camera-access": "Fata teriga le camera",
         "app-settings-security": "Iiedadat altatbiq wal'aman",
-        "app-version": "Fedi Bravo Version: {{version}}",
+        "app-version": "Fedi Version: {{version}}",
         "back-to-app": "Rija Le app",
         "backup-your-wallet": "Anuan ta Bitcoin",
         "bitcoin-address": "Anuan ta Bitcoin",
@@ -496,7 +496,7 @@
             "welcome-instructions-returning": "Ze oudu al gi reja fi federatiom josulan taki bi rejawa .de bi shelu degiga besit",
             "welcome-instructions-unknown": "Adda jedid bi ;ligo josulan jedid .josulan ta adda al jedid be reja tawali ",
             "welcome-to-federation": "Marhab fi {{federation}}",
-            "welcome-to-fedi": "Marhab fi Fedi Bravo"
+            "welcome-to-fedi": "Marhab fi Fedi"
         },
         "parser": {
             "unrecognized": "Teriga ta data al ma maruf",

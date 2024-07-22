@@ -108,7 +108,7 @@
         "add-note": "أضف ملاحظات ",
         "allow-camera-access": "السماح بالوصول إلي الكاميرا ",
         "app-settings-security": "إعداد التطبيق والأمن ",
-        "app-version": "Fedi Bravo Version: {{version}}",
+        "app-version": "Fedi Version: {{version}}",
         "back-to-app": "العودة إلى التطبيق ",
         "backup-your-wallet": "عنوان بيتكوين ",
         "bitcoin-address": "عنوان بيتكوين ",
@@ -495,7 +495,7 @@
             "welcome-instructions-returning": "باعتبارك عضؤا عائد في الاتحاد، سيتم استعادة محفظتك. قد يستغرق هذا بعد دقائق. ",
             "welcome-instructions-unknown": "يحصل الأعضاء الجدد على محفظة جديدة. سيتم استرداد محفظتهم القديمة للاعضاء العائدين تلقائيا. ",
             "welcome-to-federation": "مرحبا بكم  {{federation}}",
-            "welcome-to-fedi": "مرحبا بكم في Fedi Bravo"
+            "welcome-to-fedi": "مرحبا بكم في Fedi"
         },
         "parser": {
             "unrecognized": "تنسيق بيانات غير معروف ",

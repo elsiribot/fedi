@@ -560,7 +560,7 @@
             "welcome-instructions-returning": "En tant que membre de retour de la fédération, votre portefeuille sera restauré. Cela peut prendre quelques minutes.",
             "welcome-instructions-unknown": "Les nouveaux membres reçoivent un portefeuille vierge. Les membres revenant seront invités à récupérer leur portefeuille.",
             "welcome-to-federation": "Bienvenue à {{federation}}",
-            "welcome-to-fedi": "Bienvenue sur Fedi Bravo",
+            "welcome-to-fedi": "Bienvenue sur Fedi",
             "yes-create-account": "Oui, créer un compte"
         },
         "parser": {
