@@ -13,6 +13,7 @@ import {
 } from 'react-native'
 import Share from 'react-native-share'
 
+import { EULA_URL } from '@fedi/common/constants/tos'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useExportTransactions } from '@fedi/common/hooks/transactions'
@@ -371,6 +372,12 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     image={<SvgImage name="Bug" />}
                     label={t('feature.bug.report-a-bug')}
                     onPress={() => navigation.navigate('BugReport')}
+                />
+                <SettingsItem
+                    image={<SvgImage name="Scroll" />}
+                    label={t('phrases.fedi-app-terms-of-service')}
+                    actionIcon="ExternalLink"
+                    onPress={() => Linking.openURL(EULA_URL)}
                 />
             </View>
 

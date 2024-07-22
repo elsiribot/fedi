@@ -3,6 +3,7 @@ import { Trans, useTranslation } from 'react-i18next'
 
 import WorldIllustration from '@fedi/common/assets/images/illustration-world.png'
 import FediLogoIcon from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
+import { EULA_URL } from '@fedi/common/constants/tos'
 
 import { styled, theme } from '../../styles'
 import { Button } from '../Button'
@@ -53,12 +54,7 @@ export const OnboardingHome: React.FC = () => {
                         <Trans
                             i18nKey="feature.onboarding.by-clicking-you-agree-user-agreement"
                             components={{
-                                anchor: (
-                                    <a
-                                        target="_blank"
-                                        href="https://www.fedi.xyz/eula-en"
-                                    />
-                                ),
+                                anchor: <a target="_blank" href={EULA_URL} />,
                             }}
                         />
                     </Text>
