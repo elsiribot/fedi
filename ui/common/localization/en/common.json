@@ -118,7 +118,7 @@
         "add-note": "Add note",
         "allow-camera-access": "Allow camera access",
         "app-settings-security": "App settings and security",
-        "app-version": "Fedi Bravo Version: {{version}}",
+        "app-version": "Fedi Version: {{version}}",
         "back-to-app": "Back to app",
         "backup-your-wallet": "Bitcoin address",
         "bitcoin-address": "Bitcoin address",
@@ -572,7 +572,7 @@
             "welcome-instructions-returning": "As a returning member of the community, your wallet will be restored. This may take a few minutes.",
             "welcome-instructions-unknown": "New members receive a fresh wallet. Returning members will have their old wallet recovered automatically.",
             "welcome-to-federation": "Welcome to {{federation}}",
-            "welcome-to-fedi": "Welcome to Fedi Bravo",
+            "welcome-to-fedi": "Welcome to Fedi",
             "yes-create-account": "Yes, create an account"
         },
         "parser": {

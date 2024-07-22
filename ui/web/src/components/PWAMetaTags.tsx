@@ -7,7 +7,7 @@ const origin =
     typeof window !== 'undefined' && window.location.host
         ? window.location.host
         : ''
-const metaAppName = origin === 'app.fedi.xyz' ? 'Fedi Bravo' : 'Fedi Nightly'
+const metaAppName = origin === 'app.fedi.xyz' ? 'Fedi' : 'Fedi Nightly'
 const metaDescription = 'Fedi in your browser'
 
 export const PWAMetaTags: React.FC = () => {

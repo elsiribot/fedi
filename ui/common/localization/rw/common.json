@@ -108,7 +108,7 @@
         "add-note": "Ongera ho inyandiko",
         "allow-camera-access": "Emera kamera ikoreshwe",
         "app-settings-security": "Pororgaramu y'ikorero n'umutekano",
-        "app-version": "Fedi Bravo Version: {{version}}",
+        "app-version": "Fedi Version: {{version}}",
         "back-to-app": "Garuka kuri App",
         "backup-your-wallet": "Aderesi ya Bitcoin",
         "bitcoin-address": "Aderesi ya Bitcoin",
@@ -495,7 +495,7 @@
             "welcome-instructions-returning": "Nk'umunyamuryango ugarutse w'ishyirahamwe, ububiko bwawe buzasubizwa ho. Ibi bishobora gufata iminota mike",
             "welcome-instructions-unknown": "Abanyamuryango bashya bahabwa ububiko bushya. Abanyamuryango bagarutse bo bazaba bafite ububiko bwabo bwa kera busubizwa ho ubwabwo",
             "welcome-to-federation": "Urakaza neza {{federation}}",
-            "welcome-to-fedi": "Urakaza neza muri Fedi Bravo"
+            "welcome-to-fedi": "Urakaza neza muri Fedi"
         },
         "parser": {
             "unrecognized": "Ubu buryo bwa data ntibuzwi",

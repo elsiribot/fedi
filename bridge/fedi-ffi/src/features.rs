@@ -2,7 +2,7 @@
 /// instantiated. For the Fedi app, this translates to the app flavors:
 /// - Dev = a locally-built developer build of the Fedi app
 /// - Staging = an internal build of the Fedi app, such as the nightly build
-/// - Prod = an external build of the Fedi app, such as the Fedi Bravo build
+/// - Prod = an external build of the Fedi app, such as the Fedi build
 ///
 /// Note the increasing strictness of the runtimes. Dev is the least strict and
 /// can be the most broken. Prod is the most strict and therefore should be the
