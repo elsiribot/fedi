@@ -11,8 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { Images } from '../assets/images'
-import CircleLogo from '../components/ui/CircleLogo'
 import CustomOverlay from '../components/ui/CustomOverlay'
+import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
@@ -43,7 +43,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
             <SafeAreaView style={style.content}>
                 <View style={style.welcomeContainer}>
                     <View style={style.iconContainer}>
-                        <CircleLogo />
+                        <SvgImage size={SvgImageSize.lg} name="FediLogoIcon" />
                     </View>
                     <Text h2 medium style={style.welcomeText}>
                         {t('feature.onboarding.welcome-to-fedi')}
@@ -88,17 +88,21 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                                     {t('feature.onboarding.are-you-new')}
                                 </Text>
                                 <View style={style.overlayButtonsContainer}>
-                                    <Button fullWidth onPress={handleNewUser}>
-                                        {t(
+                                    <Button
+                                        fullWidth
+                                        onPress={handleNewUser}
+                                        title={t(
                                             'feature.onboarding.yes-create-account',
                                         )}
-                                    </Button>
+                                    />
                                     <Button
                                         fullWidth
                                         onPress={handleReturningUser}
-                                        day>
-                                        {t('feature.onboarding.im-returning')}
-                                    </Button>
+                                        day
+                                        title={t(
+                                            'feature.onboarding.im-returning',
+                                        )}
+                                    />
                                 </View>
                             </View>
                         ),
@@ -152,6 +156,8 @@ const styles = (theme: Theme, fontScale: number) =>
         },
         iconContainer: {
             marginBottom: theme.spacing.lg,
+            width: 32,
+            height: 32,
         },
         welcomeText: {
             textAlign: 'center',
