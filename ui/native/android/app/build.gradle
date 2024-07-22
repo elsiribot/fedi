@@ -93,6 +93,17 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'org.webkit:android-jsc:+'
 
+/**
+ * Load the keystore + credentials for release build signing configuration
+ */
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+} else {
+    throw new FileNotFoundException("keystore.properties file not found")
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
 
@@ -130,12 +141,10 @@ android {
             keyPassword 'android'
         }
         release {
-            if (project.hasProperty('FEDI_UPLOAD_STORE_FILE')) {
-                storeFile file(FEDI_UPLOAD_STORE_FILE)
-                storePassword FEDI_UPLOAD_STORE_PASSWORD
-                keyAlias FEDI_UPLOAD_KEY_ALIAS
-                keyPassword FEDI_UPLOAD_KEY_PASSWORD
-            }
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
         }
     }
     buildTypes {
