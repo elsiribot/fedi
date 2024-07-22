@@ -13,10 +13,12 @@ path = "src/main.rs"
 anyhow = { workspace = true }
 fedimintd = { workspace = true }
 tokio = { workspace = true, features = ["full", "tracing"] }
+fedi-core = { workspace = true }
 fedi-social-server = { path = "../modules/fedi-social/server" }
 fedi-social-common = { path = "../modules/fedi-social/common" }
 fedimint-core = { workspace = true }
 stability-pool-server = { path = "../modules/stability-pool/server" }
+tracing = { workspace = true }
 
 [build-dependencies]
 fedimint-build = { workspace = true }

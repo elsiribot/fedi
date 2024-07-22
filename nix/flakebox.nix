@@ -13,6 +13,7 @@ let
     "fedimint-cli"
     "fedi-db-dump"
     "fedi-debug"
+    "fedi-core"
     "devi"
     "modules/fedi-social/client"
     "modules/fedi-social/common"
