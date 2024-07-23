@@ -115,6 +115,9 @@ const themeDefaults = {
 const theme = createTheme({
     ...NavigationDefaultTheme,
     components: {
+        Overlay: () => ({
+            statusBarTranslucent: true,
+        }),
         Card: props => ({
             ...(props.bubble
                 ? {
