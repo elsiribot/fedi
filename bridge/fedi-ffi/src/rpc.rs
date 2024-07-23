@@ -438,9 +438,10 @@ async fn socialRecoveryDownloadVerificationDoc(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
     recovery_id: RpcRecoveryId,
+    peer_id: RpcPeerId,
 ) -> anyhow::Result<Option<PathBuf>> {
     bridge
-        .download_verification_doc(federation_id, recovery_id)
+        .download_verification_doc(federation_id, recovery_id, peer_id)
         .await
 }
 
@@ -2382,6 +2383,7 @@ mod tests {
             guardian_bridge.clone(),
             federation_id.clone(),
             recovery_id,
+            RpcPeerId(fedimint_core::PeerId::from(1)),
         )
         .await?
         .unwrap();

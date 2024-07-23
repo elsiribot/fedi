@@ -1772,10 +1772,11 @@ impl FederationV2 {
     pub async fn download_verification_doc(
         &self,
         recovery_id: &RecoveryId,
+        peer_id: PeerId,
     ) -> Result<Option<Vec<u8>>> {
         tracing::info!("downloading verification doc {}", recovery_id);
         // FIXME: maybe shouldn't download from only one peer?
-        let verification_client = self.social_verification(PeerId::from(0)).await?;
+        let verification_client = self.social_verification(peer_id).await?;
         let verification_doc = verification_client
             .download_verification_doc(*recovery_id)
             .await?;

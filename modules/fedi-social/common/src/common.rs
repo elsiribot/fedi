@@ -242,6 +242,10 @@ impl BackupRequest {
             signature,
         })
     }
+
+    pub fn id(&self) -> BackupId {
+        self.id
+    }
 }
 
 /// Signed [`BackupRequest`]
@@ -253,6 +257,10 @@ pub struct SignedBackupRequest {
 }
 
 impl SignedBackupRequest {
+    pub fn backup_id(&self) -> BackupId {
+        self.request.id()
+    }
+
     pub fn verify_valid<C>(&self, ctx: &Secp256k1<C>) -> Result<&BackupRequest, secp256k1::Error>
     where
         C: Signing + Verification,

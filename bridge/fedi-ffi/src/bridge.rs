@@ -910,9 +910,12 @@ impl Bridge {
         &self,
         federation_id: RpcFederationId,
         recovery_id: RpcRecoveryId,
+        peer_id: RpcPeerId,
     ) -> Result<Option<PathBuf>> {
         let federation = self.get_federation(&federation_id.0).await?;
-        let verification_doc = federation.download_verification_doc(&recovery_id.0).await?;
+        let verification_doc = federation
+            .download_verification_doc(&recovery_id.0, peer_id.0)
+            .await?;
         if let Some(verification_doc) = verification_doc {
             self.storage
                 .write_file(VERIFICATION_FILENAME.as_ref(), verification_doc)

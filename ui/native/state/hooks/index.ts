@@ -195,13 +195,14 @@ export const useBridge = () => {
             [activeFederationId],
         ),
         socialRecoveryDownloadVerificationDoc: useCallback(
-            (recoveryId: string) => {
+            (recoveryId: string, peerId: number) => {
                 if (!activeFederationId)
                     return Promise.reject(new Error('No active federation'))
 
                 return fedimint.socialRecoveryDownloadVerificationDoc(
                     recoveryId,
                     activeFederationId,
+                    peerId,
                 )
             },
             [activeFederationId],

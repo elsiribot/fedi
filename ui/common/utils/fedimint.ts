@@ -334,10 +334,12 @@ export class FedimintBridge {
     async socialRecoveryDownloadVerificationDoc(
         recoveryId: string,
         federationId: string,
+        peerId: number,
     ) {
         return this.rpcTyped('socialRecoveryDownloadVerificationDoc', {
             federationId,
             recoveryId,
+            peerId,
         })
     }
 

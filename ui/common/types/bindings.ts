@@ -477,7 +477,7 @@ export interface RpcMethods {
         }>,
     ]
     socialRecoveryDownloadVerificationDoc: [
-        { federationId: RpcFederationId; recoveryId: RpcRecoveryId },
+        { federationId: RpcFederationId; recoveryId: RpcRecoveryId, peerId: RpcPeerId },
         string | null,
     ]
     approveSocialRecoveryRequest: [
