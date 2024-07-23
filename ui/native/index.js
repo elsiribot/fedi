@@ -1,7 +1,6 @@
 /**
  * @format
  */
-import { Buffer } from '@craftzdog/react-native-buffer'
 import notifee from '@notifee/react-native'
 import messaging from '@react-native-firebase/messaging'
 import { AppRegistry, AppState } from 'react-native'
@@ -24,9 +23,6 @@ import {
 import { storage } from './utils/storage'
 
 install()
-
-global.crypto.getRandomValues
-global.Buffer = Buffer
 
 // Handles FCM notifications when app is open
 messaging().onMessage(m => handleForegroundFCMReceived(m))
