@@ -1,10 +1,13 @@
 /**
  * @format
  */
+import { Buffer } from '@craftzdog/react-native-buffer'
 import notifee from '@notifee/react-native'
 import messaging from '@react-native-firebase/messaging'
 import { AppRegistry, AppState } from 'react-native'
 import 'react-native-gesture-handler'
+import 'react-native-get-random-values'
+import { install } from 'react-native-quick-crypto'
 import 'react-native-reanimated'
 import 'react-native-url-polyfill/auto'
 
@@ -19,6 +22,11 @@ import {
     handleBackgroundNotificationUpdate,
 } from './utils/notifications'
 import { storage } from './utils/storage'
+
+install()
+
+global.crypto.getRandomValues
+global.Buffer = Buffer
 
 // Handles FCM notifications when app is open
 messaging().onMessage(m => handleForegroundFCMReceived(m))
