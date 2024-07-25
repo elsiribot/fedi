@@ -1,8 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import {
-    NativeStackScreenProps,
-    createNativeStackNavigator,
-} from '@react-navigation/native-stack'
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -26,7 +23,6 @@ import DefaultChatHeader from '../components/feature/chat/DefaultChatHeader'
 import FederationInviteHeader from '../components/feature/federations/FederationInviteHeader'
 import JoinFederationHeader from '../components/feature/federations/JoinFederationHeader'
 import PopupFederationEndedHeader from '../components/feature/federations/PopupFederationEndedHeader'
-import HomeLockScreen from '../components/feature/home/LockScreen'
 import EulaHeader from '../components/feature/onboarding/EulaHeader'
 import NewMemberAvatarImageHeader from '../components/feature/onboarding/NewMemberAvatarImageHeader'
 import NewMemberHeader from '../components/feature/onboarding/NewMemberHeader'
@@ -114,6 +110,7 @@ import JoinFederation from './JoinFederation'
 import LanguageSettings from './LanguageSettings'
 import LegacyChat from './LegacyChat'
 import LocateSocialRecovery from './LocateSocialRecovery'
+import LockScreen from './LockScreen'
 import LockedDevice from './LockedDevice'
 import NewMessage from './NewMessage'
 import PersonalRecovery from './PersonalRecovery'
@@ -302,28 +299,7 @@ export const MainNavigator = () => {
                     federation connections in-app, each call requires a
                     Federation to be specified
                 */}
-                {isAppUnlocked === undefined ? (
-                    <Stack.Group
-                        screenOptions={{
-                            animation: 'fade',
-                            animationDuration: 250,
-                        }}>
-                        <Stack.Screen
-                            name="TabsNavigator"
-                            component={
-                                Initializing as unknown as React.FC<
-                                    NativeStackScreenProps<
-                                        RootStackParamList,
-                                        'TabsNavigator'
-                                    >
-                                >
-                            }
-                            options={{
-                                headerShown: false,
-                            }}
-                        />
-                    </Stack.Group>
-                ) : isAppUnlocked ? (
+                {isAppUnlocked ? (
                     <Stack.Group>
                         <Stack.Group
                             screenOptions={{
@@ -993,8 +969,8 @@ export const MainNavigator = () => {
                             animationDuration: 250,
                         }}>
                         <Stack.Screen
-                            name="TabsNavigator"
-                            component={HomeLockScreen}
+                            name="LockScreen"
+                            component={LockScreen}
                             options={{
                                 header: () => <UnlockAppLockScreenHeader />,
                             }}

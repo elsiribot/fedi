@@ -36,13 +36,13 @@ const CreatePinInstructions: React.FC<Props> = ({ navigation }: Props) => {
                 </Text>
             </View>
             <Button
-                style={style.containerButton}
+                containerStyle={style.containerButton}
+                title={t('words.continue')}
                 onPress={() => {
                     dispatch(setIsBackingUpBeforePin(true))
                     navigation.navigate('ChooseBackupMethod')
-                }}>
-                Continue
-            </Button>
+                }}
+            />
         </View>
     )
 }

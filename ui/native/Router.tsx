@@ -5,6 +5,7 @@ import {
 } from '@react-navigation/native'
 import { useTheme } from '@rneui/themed'
 import React, { useCallback, useRef } from 'react'
+import SplashScreen from 'react-native-splash-screen'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
@@ -72,6 +73,9 @@ const Router = () => {
                 log.debug('Navigation is ready', {
                     route: routeRef.current,
                 })
+                // Hide splash screen once we're ready
+                // to show a screen
+                SplashScreen.hide()
             }}
             onStateChange={handleStateChange}>
             <Drawer.Navigator
@@ -92,7 +96,11 @@ const Router = () => {
                     }}
                 />
             </Drawer.Navigator>
-            <OmniLinkHandler />
+            {/*
+                Only show this when the app is unlocked.
+                It handles state from a context provider so it won't drop the state.
+            */}
+            {isAppUnlocked && <OmniLinkHandler />}
         </NavigationContainer>
     )
 }

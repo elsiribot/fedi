@@ -1,34 +1,43 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Theme, useTheme, Text } from '@rneui/themed'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { StyleSheet, View, useWindowDimensions } from 'react-native'
+import { useTheme, Text } from '@rneui/themed'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { View, useWindowDimensions } from 'react-native'
 
 import { maxPinLength, pinNumbers } from '@fedi/common/constants/security'
 import { numpadButtons } from '@fedi/common/hooks/amount'
 import { useDebounce } from '@fedi/common/hooks/util'
-import { setFeatureUnlocked } from '@fedi/common/redux'
+import { ProtectedFeatures, setFeatureUnlocked } from '@fedi/common/redux'
 
 import PinDot from '../components/feature/pin/PinDot'
 import { NumpadButton } from '../components/ui/NumpadButton'
 import { usePinContext } from '../state/contexts/PinContext'
 import { useAppDispatch } from '../state/hooks'
-import type { RootStackParamList } from '../types/navigation'
+import type { NavigationArgs, RootStackParamList } from '../types/navigation'
+import { styles } from './LockScreen'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'LockScreen'>
+export type Props = NativeStackScreenProps<
+    RootStackParamList,
+    keyof RootStackParamList
+>
 
 /**
- * App Lock Screen.
- * Includes the "Forgot PIN" flow and is specific to unlocking the app.
- * Also takes an optional `routeParams` prop to navigate to a specific screen after unlocking (e.g. deeplinks)
+ * Reusable Lock Screen for any protected feature except the app.
+ * Is generic and can be used in the place of any other screen component.
+ * Does not include the "Forgot PIN" flow or the ability to navigate with dynamic route parameters after unlocking.
  */
-const LockScreen = ({ navigation, route }: Props) => {
+const FeatureLockScreen = <T extends keyof RootStackParamList>({
+    navigation,
+    feature,
+    screen,
+}: Props & {
+    feature: keyof ProtectedFeatures
+    screen: NavigationArgs<T>
+}) => {
     const [pinDigits, setPinDigits] = useState<Array<number>>([])
     const [timeoutSeconds, setTimeoutSeconds] = useState(0)
     const [, setAttempts] = useState(0)
 
     const { width } = useWindowDimensions()
-    const { t } = useTranslation()
     const { theme } = useTheme()
 
     const timerRef = useRef<NodeJS.Timer | null>(null)
@@ -37,14 +46,6 @@ const LockScreen = ({ navigation, route }: Props) => {
     const pin = usePinContext()
 
     const style = styles(theme, width)
-
-    const isEnteredPinIncorrect = useMemo(
-        () =>
-            pin.status === 'set' &&
-            !pin.check(pinDigits) &&
-            pinDigits.length === maxPinLength,
-        [pin, pinDigits],
-    )
 
     const setTimedOut = useCallback((attempts: number) => {
         if (timerRef.current) clearInterval(timerRef.current)
@@ -91,11 +92,9 @@ const LockScreen = ({ navigation, route }: Props) => {
     const dotStatus = useCallback(
         (index: number) => {
             if (pinDigits.length === maxPinLength) {
-                if (pin.status === 'set' && pin.check(pinDigits)) {
-                    return 'correct'
-                }
-
-                return 'incorrect'
+                return pin.status === 'set' && pin.check(pinDigits)
+                    ? 'correct'
+                    : 'incorrect'
             }
 
             if (index > pinDigits.length) {
@@ -117,17 +116,13 @@ const LockScreen = ({ navigation, route }: Props) => {
 
         dispatch(
             setFeatureUnlocked({
-                key: 'app',
+                key: feature,
                 unlocked: true,
             }),
         )
 
-        if (route.params && 'routeParams' in route.params) {
-            navigation.navigate(...route.params.routeParams)
-        } else {
-            navigation.navigate('TabsNavigator')
-        }
-    }, [debouncedPin, navigation, dispatch, pin, route.params])
+        navigation.navigate(...screen)
+    }, [debouncedPin, feature, navigation, dispatch, pin, screen])
 
     useEffect(() => {
         return () => {
@@ -139,11 +134,6 @@ const LockScreen = ({ navigation, route }: Props) => {
         <View style={style.container}>
             <View style={style.content}>
                 <View style={style.dots}>
-                    {isEnteredPinIncorrect && (
-                        <Text style={style.incorrectPin}>
-                            {t('feature.pin.pin-doesnt-match')}
-                        </Text>
-                    )}
                     {pinNumbers.map(i => (
                         <PinDot
                             key={i}
@@ -151,22 +141,6 @@ const LockScreen = ({ navigation, route }: Props) => {
                             isLast={i === maxPinLength}
                         />
                     ))}
-                    {isEnteredPinIncorrect && (
-                        <View style={style.forgotPinButtonContainer}>
-                            <Button
-                                day
-                                title={
-                                    <Text caption>
-                                        {t('feature.pin.forgot-your-pin')}
-                                    </Text>
-                                }
-                                buttonStyle={style.forgotPinButton}
-                                onPress={() => {
-                                    navigation.navigate('ResetPinStart')
-                                }}
-                            />
-                        </View>
-                    )}
                 </View>
             </View>
             <View style={style.numpad}>
@@ -190,62 +164,4 @@ const LockScreen = ({ navigation, route }: Props) => {
     )
 }
 
-export const styles = (theme: Theme, width: number) =>
-    StyleSheet.create({
-        container: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: theme.spacing.xl,
-        },
-        dots: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-        },
-        content: {
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 32,
-        },
-        numpad: {
-            width: '100%',
-            maxWidth: Math.min(400, width),
-            paddingHorizontal: theme.spacing.lg,
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            position: 'relative',
-        },
-        forgotPinButtonContainer: {
-            position: 'absolute',
-            display: 'flex',
-            top: 54,
-        },
-        incorrectPin: {
-            position: 'absolute',
-            bottom: 54,
-            color: theme.colors.red,
-        },
-        forgotPinButton: {
-            borderColor: theme.colors.lightGrey,
-            borderWidth: 0.25,
-            paddingHorizontal: 50,
-        },
-        timeoutOverlay: {
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: '#fffc',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-    })
-
-export default LockScreen
+export default FeatureLockScreen

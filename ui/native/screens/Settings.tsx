@@ -45,10 +45,10 @@ import SettingsItem from '../components/feature/admin/SettingsItem'
 import QRCodeContainer from '../components/ui/QRCodeContainer'
 import SvgImage from '../components/ui/SvgImage'
 import { version } from '../package.json'
+import { usePinContext } from '../state/contexts/PinContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { Federation, FederationListItem } from '../types'
 import type { RootStackParamList } from '../types/navigation'
-import { usePin } from '../utils/hooks/security'
 
 const log = makeLog('Settings')
 
@@ -78,7 +78,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     const stableBalance = useAppSelector(selectStableBalance)
     const pendingStableBalance = useAppSelector(selectStableBalancePending)
     const currency = useAppSelector(selectCurrency)
-    const { status } = usePin()
+    const { status } = usePinContext()
     const [hasPerformedPersonalBackup] = useNuxStep(
         'hasPerformedPersonalBackup',
     )

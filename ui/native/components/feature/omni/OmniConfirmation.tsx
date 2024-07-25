@@ -17,7 +17,7 @@ import {
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
 import { AnyParsedData, ParserDataType } from '../../../types'
-import { NavigationHook } from '../../../types/navigation'
+import { NavigationArgs, NavigationHook } from '../../../types/navigation'
 import CustomOverlay, { CustomOverlayContents } from '../../ui/CustomOverlay'
 import RecoveryInProgress from '../recovery/RecoveryInProgress'
 
@@ -50,7 +50,7 @@ export const OmniConfirmation = <T extends AnyParsedData>({
         'replace' in navigation
             ? (navigation as NavigationHook).replace
             : (navigation as NavigationHook).navigate
-    const handleNavigate = (...params: Parameters<typeof navigate>) => {
+    const handleNavigate = (...params: NavigationArgs) => {
         navigate(...params)
         onSuccess(parsedData)
     }

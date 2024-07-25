@@ -159,7 +159,22 @@ export type RootStackParamList = {
     CreatedPin: undefined
     CreatePinInstructions: undefined
     PinAccess: undefined
-    LockScreen: undefined
+    LockScreen:
+        | {
+              routeParams: NavigationArgs
+          }
+        | undefined
+    FeatureLockScreen: undefined
     ResetPinStart: undefined
     ResetPin: undefined
 }
+
+export type NavigationArgs<
+    T extends keyof RootStackParamList = keyof RootStackParamList,
+> = [
+    ...(T extends unknown
+        ? undefined extends RootStackParamList[T]
+            ? [screen: T] | [screen: T, params: RootStackParamList[T]]
+            : [screen: T, params: RootStackParamList[T]]
+        : never),
+]

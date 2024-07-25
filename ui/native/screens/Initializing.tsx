@@ -12,7 +12,11 @@ import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
-import { NavigationHook, RootStackParamList } from '../types/navigation'
+import {
+    NavigationArgs,
+    NavigationHook,
+    RootStackParamList,
+} from '../types/navigation'
 import { useIsFeatureUnlocked } from '../utils/hooks/security'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
@@ -31,23 +35,24 @@ const Initializing: React.FC<Props> = () => {
 
     // once everything has loaded, determine where to navigate
     useEffect(() => {
-        const doNavigation = async () => {
-            if (!hasLoaded || isAppUnlocked === undefined) return
+        if (!hasLoaded || isAppUnlocked === undefined) return
 
-            // make sure there is a display name before navigating to Home
-            if (hasSetDisplayName) {
-                // Otherwise, go Home
-                return navigation.replace('TabsNavigator')
-            } else if (hasLegacyChatData) {
-                // This is to support existing users with legacy chat data and send
-                // them to Home so they can set a display name via the Upgrade Chat UX
-                return navigation.replace('TabsNavigator')
-            } else {
-                // go to splash and have them set a display name
-                return navigation.replace('Splash')
-            }
+        let destination: NavigationArgs = ['TabsNavigator']
+
+        // make sure there is a display name before navigating to Home
+        if (!hasSetDisplayName && !hasLegacyChatData) {
+            // Otherwise, go Home
+            destination = ['Splash']
         }
-        doNavigation()
+
+        // If PIN-protected, navigate to the Lock Screen
+        if (!isAppUnlocked) {
+            return navigation.replace('LockScreen', {
+                routeParams: destination,
+            })
+        }
+
+        navigation.replace(...destination)
     }, [
         hasLegacyChatData,
         hasLoaded,
@@ -58,7 +63,7 @@ const Initializing: React.FC<Props> = () => {
 
     return (
         <View style={styles(theme).container}>
-            <SvgImage size={SvgImageSize.lg} name="FediLogoGradient" />
+            <SvgImage size={SvgImageSize.lg} name="FediLogoIcon" />
         </View>
     )
 }
