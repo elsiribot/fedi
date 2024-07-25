@@ -233,6 +233,11 @@ impl FederationV2 {
         {
             error!("ln gateway service already initialized");
         }
+
+        // We disable the StabilityPoolSweeperService in tests to ensure that staged
+        // seeks don't accidentally disappear if a test takes longer than expected and a
+        // stability pool cycle elapses during the course of the test.
+        #[cfg(not(test))]
         if self
             .client
             .get_first_instance(&stability_pool_client::common::KIND)
