@@ -29,7 +29,6 @@ const FeatureLockScreen = <T extends keyof RootStackParamList>({
     navigation,
     feature,
     screen,
-    route,
 }: Props & {
     feature: keyof ProtectedFeatures
     screen: NavigationArgs<T>
@@ -93,11 +92,9 @@ const FeatureLockScreen = <T extends keyof RootStackParamList>({
     const dotStatus = useCallback(
         (index: number) => {
             if (pinDigits.length === maxPinLength) {
-                if (pin.status === 'set' && pin.check(pinDigits)) {
-                    return 'correct'
-                }
-
-                return 'incorrect'
+                return pin.status === 'set' && pin.check(pinDigits)
+                    ? 'correct'
+                    : 'incorrect'
             }
 
             if (index > pinDigits.length) {
@@ -125,7 +122,7 @@ const FeatureLockScreen = <T extends keyof RootStackParamList>({
         )
 
         navigation.navigate(...screen)
-    }, [debouncedPin, feature, navigation, dispatch, pin, screen, route.params])
+    }, [debouncedPin, feature, navigation, dispatch, pin, screen])
 
     useEffect(() => {
         return () => {

@@ -5,6 +5,7 @@ import {
     useEffect,
     useRef,
     useCallback,
+    useMemo,
 } from 'react'
 import * as Keychain from 'react-native-keychain'
 import { z } from 'zod'
@@ -113,11 +114,15 @@ export function PinContextProvider({
         loadPinCheck()
     }, [deviceId])
 
-    const value: UsePinReturn = isLoading
-        ? { status: 'loading' }
-        : hasSetPin
-        ? { status: 'set', check: checkRef.current, set, unset }
-        : { status: 'unset', set }
+    const value: UsePinReturn = useMemo(
+        () =>
+            isLoading
+                ? { status: 'loading' }
+                : hasSetPin
+                ? { status: 'set', check: checkRef.current, set, unset }
+                : { status: 'unset', set },
+        [isLoading, hasSetPin, checkRef, set, unset],
+    )
 
     return <PinContext.Provider value={value}>{children}</PinContext.Provider>
 }
