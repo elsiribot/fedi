@@ -201,15 +201,10 @@ export class FedimintBridge {
         })
     }
 
-    async signLnurlMessage(
-        message: string,
-        domain: string,
-        federationId: string,
-    ) {
+    async signLnurlMessage(message: string, domain: string) {
         return this.rpcTyped('signLnurlMessage', {
             message,
             domain,
-            federationId,
         })
     }
 
@@ -217,10 +212,9 @@ export class FedimintBridge {
         return this.rpcTyped('getNostrPubKey', {})
     }
 
-    async signNostrEvent(eventHash: string, federationId: string) {
+    async signNostrEvent(eventHash: string) {
         return this.rpcTyped('signNostrEvent', {
             eventHash,
-            federationId,
         })
     }
 
