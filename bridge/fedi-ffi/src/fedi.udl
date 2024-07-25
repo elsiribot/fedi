@@ -4,6 +4,7 @@ enum FedimintError {
 };
 
 namespace fedi {
+  [Async]
   string fedimint_initialize(EventSink event_sink, string init_opts_json);
 
   [Async]

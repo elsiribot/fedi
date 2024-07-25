@@ -1,5 +1,4 @@
 use std::io::Write;
-use std::panic::AssertUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -33,17 +32,26 @@ lazy_static! {
     static ref BRIDGE: Arc<Mutex<Option<Arc<Bridge>>>> = Arc::new(Mutex::new(None));
 }
 
-pub fn fedimint_initialize(event_sink: Box<dyn EventSink>, init_opts_json: String) -> String {
-    let value = std::panic::catch_unwind(AssertUnwindSafe(|| {
-        RUNTIME.block_on(fedimint_initialize_inner(event_sink, init_opts_json))
-    }));
-    match value {
+pub async fn fedimint_initialize(event_sink: Box<dyn EventSink>, init_opts_json: String) -> String {
+    let task_result = RUNTIME
+        .spawn(fedimint_initialize_inner(event_sink, init_opts_json))
+        .await;
+    match task_result {
         Ok(Ok(())) => String::from("{}"),
         Ok(Err(e)) => {
             error!(?e);
             rpc_error(&e)
         }
-        Err(_) => rpc_error(&anyhow::format_err!(ErrorCode::Panic)),
+        Err(join_error) => {
+            if join_error.is_panic() {
+                rpc_error(&anyhow::format_err!(ErrorCode::Panic))
+            } else {
+                // it should unreachable in theory, but didn't want to brick
+                // bridge in that case. currently there are 2 errors - panic or
+                // cancelled and we cancel never this task
+                rpc_error(&anyhow::format_err!("unknown join error"))
+            }
+        }
     }
 }
 
