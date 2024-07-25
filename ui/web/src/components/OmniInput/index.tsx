@@ -77,7 +77,12 @@ export function OmniInput<
 
     const parseInput = useCallback(
         async (input: string) => {
-            if (!input || isLoadingRef.current) return
+            if (isLoadingRef.current) return
+            if (!input)
+                return setInvalidData({
+                    type: ParserDataType.Unknown,
+                    data: { message: t('feature.omni.unsupported-unknown') },
+                })
             setIsParsing(true)
             const parsedData = await parseUserInput(
                 input,
@@ -120,9 +125,7 @@ export function OmniInput<
                 input = prompt(t('feature.omni.action-paste'))
             }
 
-            if (input === null) return
-
-            await parseInput(input)
+            await parseInput(input ?? '')
         } catch (err) {
             toast.error(t, err, 'errors.unknown-error')
         }
