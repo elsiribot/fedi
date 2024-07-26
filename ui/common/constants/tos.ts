@@ -1,1 +1,1 @@
-export const EULA_URL = 'https://fedi.xyz/eula-en'
+export const EULA_URL = 'https://fedi.xyz/tos'
