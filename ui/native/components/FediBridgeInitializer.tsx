@@ -122,8 +122,10 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                     err,
                 )
                 setBridgeError(err)
-                // Hide splash screen so the initializer
-                // ErrorScreen can be shown
+            })
+            .finally(() => {
+                // Hide splash screen once we're ready
+                // to show a screen
                 SplashScreen.hide()
             })
     }, [deviceId, dispatchRef])
@@ -165,9 +167,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             (event: PanicEvent) => {
                 log.error('bridge panic', event)
                 setBridgeError(event)
-                // Hide splash screen so the initializer
-                // ErrorScreen can be shown
-                SplashScreen.hide()
             },
         )
 
