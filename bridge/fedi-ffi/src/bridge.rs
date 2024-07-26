@@ -6,15 +6,17 @@ use std::time::Duration;
 
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::bech32::{self, ToBase32};
+use bitcoin::key::XOnlyPublicKey;
 use bitcoin::secp256k1::{Message, Secp256k1};
 use fedi_social_client::{
     self, FediSocialCommonGen, RecoveryFile, SocialRecoveryClient, SocialRecoveryState,
 };
-use fedimint_core::api::{DynGlobalApi, InviteCode};
+use fedimint_api_client::api::DynGlobalApi;
 use fedimint_core::config::ClientConfig;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::db::{Database, IDatabaseTransactionOpsCore};
 use fedimint_core::encoding::{Decodable, Encodable};
+use fedimint_core::invite_code::InviteCode;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::CommonModuleInit;
 use fedimint_core::task::TaskGroup;
@@ -85,7 +87,7 @@ impl Bridge {
         let fedi_fee_helper = Arc::new(FediFeeHelper::new(
             fedi_api.clone(),
             app_state.clone(),
-            task_group.make_subgroup().await,
+            task_group.make_subgroup(),
         ));
 
         let _device_identifier = app_state
@@ -139,7 +141,7 @@ impl Bridge {
                                     FederationV2::from_db(
                                         db,
                                         event_sink.clone(),
-                                        task_group.make_subgroup().await,
+                                        task_group.make_subgroup(),
                                         &root_mnemonic,
                                         // Always present when join federations exist
                                         device_index.context(
@@ -179,7 +181,7 @@ impl Bridge {
         let communities = Communities::init(
             app_state.clone(),
             event_sink.clone(),
-            task_group.make_subgroup().await,
+            task_group.make_subgroup(),
         )
         .await
         .into();
@@ -316,7 +318,7 @@ impl Bridge {
                 let federation_v2 = FederationV2::from_db(
                     db,
                     this.event_sink.clone(),
-                    this.task_group.make_subgroup().await,
+                    this.task_group.make_subgroup(),
                     &root_mnemonic,
                     device_index,
                     this.fedi_fee_helper.clone(),
@@ -393,7 +395,7 @@ impl Bridge {
         let federation = FederationV2::join(
             invite_code_string,
             self.event_sink.clone(),
-            self.task_group.make_subgroup().await,
+            self.task_group.make_subgroup(),
             db,
             &root_mnemonic,
             device_index,
@@ -443,33 +445,30 @@ impl Bridge {
         let invite_code = invite_code.to_lowercase();
         let root_mnemonic = self.app_state.root_mnemonic().await;
         let device_index = self.app_state.ensure_device_index().await?;
-        let (v2,) = futures::join!(FederationV2::download_client_config(
+        let (config, backup) = FederationV2::download_client_config(
             &invite_code,
             &root_mnemonic,
             device_index,
             self.feature_catalog.override_localhost.is_some(),
-        ));
-        match (v2,) {
-            (Ok((config, backup_snapshots_result)),) => Ok(RpcFederationPreview {
-                id: RpcFederationId(config.global.calculate_federation_id().to_string()),
-                name: config
-                    .global
-                    .federation_name()
-                    .map(|x| x.to_owned())
-                    .unwrap_or(
-                        config.global.calculate_federation_id().to_string()[0..8].to_string(),
-                    ),
-                meta: config.global.meta,
-                invite_code: invite_code.to_string(),
-                version: 2,
-                returning_member_status: match backup_snapshots_result.as_deref() {
-                    Ok([]) => RpcReturningMemberStatus::NewMember,
-                    Ok([_, ..]) => RpcReturningMemberStatus::ReturningMember,
-                    Err(_) => RpcReturningMemberStatus::Unknown,
-                },
-            }),
-            (Err(e),) => Err(e.context("Failed to connect")),
-        }
+        )
+        .await
+        .context("failed to connect")?;
+        Ok(RpcFederationPreview {
+            id: RpcFederationId(config.global.calculate_federation_id().to_string()),
+            name: config
+                .global
+                .federation_name()
+                .map(|x| x.to_owned())
+                .unwrap_or(config.global.calculate_federation_id().to_string()[0..8].to_string()),
+            meta: config.global.meta,
+            invite_code: invite_code.to_string(),
+            version: 2,
+            returning_member_status: match backup {
+                Ok(Some(_)) => RpcReturningMemberStatus::ReturningMember,
+                Ok(None) => RpcReturningMemberStatus::NewMember,
+                Err(_) => RpcReturningMemberStatus::Unknown,
+            },
+        })
     }
 
     /// Look up federation by id from in-memory hashmap
@@ -749,7 +748,15 @@ impl Bridge {
             )
             .expect("needs social recovery module client config");
 
-        let social_api = DynGlobalApi::from_config(&config).with_module(social_module_id);
+        let social_api = DynGlobalApi::from_endpoints(
+            config
+                .global
+                .api_endpoints
+                .iter()
+                .map(|(peer_id, peer_url)| (*peer_id, peer_url.url.clone())),
+            &None, // FIXME: api secret
+        )
+        .with_module(social_module_id);
         let client = SocialRecoveryClient::new_start(
             social_module_id,
             social_cfg.clone(),
@@ -838,7 +845,15 @@ impl Bridge {
                 "fedi-social",
             )
             .expect("needs social recovery module client config");
-        let social_api = DynGlobalApi::from_config(&config).with_module(social_module_id);
+        let social_api = DynGlobalApi::from_endpoints(
+            config
+                .global
+                .api_endpoints
+                .iter()
+                .map(|(peer_id, peer_url)| (*peer_id, peer_url.url.clone())),
+            &None, // FIXME: api secret
+        )
+        .with_module(social_module_id);
         let recovery_client = SocialRecoveryClient::new_continue(
             social_module_id,
             social_cfg.clone(),
@@ -895,9 +910,12 @@ impl Bridge {
         &self,
         federation_id: RpcFederationId,
         recovery_id: RpcRecoveryId,
+        peer_id: RpcPeerId,
     ) -> Result<Option<PathBuf>> {
         let federation = self.get_federation(&federation_id.0).await?;
-        let verification_doc = federation.download_verification_doc(&recovery_id.0).await?;
+        let verification_doc = federation
+            .download_verification_doc(&recovery_id.0, peer_id.0)
+            .await?;
         if let Some(verification_doc) = verification_doc {
             self.storage
                 .write_file(VERIFICATION_FILENAME.as_ref(), verification_doc)
@@ -956,7 +974,7 @@ impl Bridge {
         Ok(bech32::encode("npub", data, bech32::Variant::Bech32)?)
     }
 
-    async fn nostr_pubkey(&self) -> bitcoin::XOnlyPublicKey {
+    async fn nostr_pubkey(&self) -> XOnlyPublicKey {
         let global_root_secret = self.app_state.root_secret().await;
         let secp = Secp256k1::new();
         let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));

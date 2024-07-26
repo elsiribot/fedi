@@ -7,7 +7,7 @@ use std::time::{Duration, UNIX_EPOCH};
 
 use anyhow::Context;
 use bitcoin::secp256k1::Message;
-use bitcoin::{Address, Amount};
+use bitcoin::Amount;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_core::core::OperationId;
 use fedimint_core::timing::TimeReporter;
@@ -293,7 +293,7 @@ async fn previewPayAddress(
     // TODO: parse this as bitcoin::Amount
     sats: u64,
 ) -> anyhow::Result<RpcFeeDetails> {
-    let address: Address = address.trim().parse().context("Invalid Bitcoin Address")?;
+    let address = address.trim().parse().context("Invalid Bitcoin Address")?;
     let amount: Amount = Amount::from_sat(sats);
     federation.preview_pay_address(address, amount).await
 }
@@ -305,7 +305,7 @@ async fn payAddress(
     // TODO: parse this as bitcoin::Amount
     sats: u64,
 ) -> anyhow::Result<RpcPayAddressResponse> {
-    let address: Address = address.trim().parse().context("Invalid Bitcoin Address")?;
+    let address = address.trim().parse().context("Invalid Bitcoin Address")?;
     let amount: Amount = Amount::from_sat(sats);
     federation.pay_address(address, amount).await
 }
@@ -438,9 +438,10 @@ async fn socialRecoveryDownloadVerificationDoc(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
     recovery_id: RpcRecoveryId,
+    peer_id: RpcPeerId,
 ) -> anyhow::Result<Option<PathBuf>> {
     bridge
-        .download_verification_doc(federation_id, recovery_id)
+        .download_verification_doc(federation_id, recovery_id, peer_id)
         .await
 }
 
@@ -1708,7 +1709,7 @@ mod tests {
 
     pub struct BitcoinCli;
     impl BitcoinCli {
-        pub async fn cmd(self) -> devimint::util::Command {
+        pub fn cmd(self) -> devimint::util::Command {
             get_command_for_alias("FM_BTC_CLIENT", "bitcoin-cli")
         }
     }
@@ -2128,6 +2129,8 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    #[ignore]
+    // on chain is marked experimental for 0.4
     async fn test_on_chain() -> anyhow::Result<()> {
         // Vec of tuple of (send_ppm, receive_ppm)
         let fee_ppm_values = vec![(0, 0), (10, 5), (100, 50)];
@@ -2380,6 +2383,7 @@ mod tests {
             guardian_bridge.clone(),
             federation_id.clone(),
             recovery_id,
+            RpcPeerId(fedimint_core::PeerId::from(1)),
         )
         .await?
         .unwrap();

@@ -3,6 +3,7 @@ mod dev;
 
 use std::any::Any;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::pin::pin;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -10,7 +11,8 @@ use std::time::{Duration, SystemTime};
 
 use ::serde::{Deserialize, Serialize};
 use anyhow::{anyhow, bail, Context, Result};
-use bitcoin::secp256k1::{self, PublicKey, Secp256k1};
+use bitcoin::address::NetworkUnchecked;
+use bitcoin::secp256k1::PublicKey;
 use bitcoin::{Address, Network};
 use db::{FediRawClientConfigKey, InviteCodeKey, TransactionNotesKey, XmppUsernameKey};
 use fedi_social_client::common::VerificationDocument;
@@ -18,27 +20,28 @@ use fedi_social_client::{
     FediSocialClientInit, RecoveryFile, RecoveryId, SocialBackup, SocialRecoveryClient,
     SocialRecoveryState, SocialVerification, UserSeedPhrase, SOCIAL_RECOVERY_SECRET_CHILD_ID,
 };
+use fedimint_api_client::api::{
+    DynGlobalApi, DynModuleApi, FederationApiExt as _, StatusResponse, WsFederationApi,
+};
+use fedimint_api_client::download_from_invite_code;
 use fedimint_bip39::Bip39RootSecretStrategy;
-use fedimint_client::backup::Metadata;
+use fedimint_client::backup::{ClientBackup, Metadata};
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_client::module::recovery::RecoveryProgress;
 use fedimint_client::module::ClientModule;
 use fedimint_client::oplog::OperationLogEntry;
-use fedimint_client::secret::{DeriveableSecretClientExt, RootSecretStrategy};
+use fedimint_client::secret::RootSecretStrategy;
 use fedimint_client::{Client, ClientBuilder, ClientHandle, ClientHandleArc};
-use fedimint_core::api::{
-    DynGlobalApi, DynModuleApi, FederationApiExt, FederationResult, InviteCode, StatusResponse,
-    WsFederationApi,
-};
-use fedimint_core::backup::ClientBackupSnapshot;
 use fedimint_core::config::{ClientConfig, FederationId};
 use fedimint_core::core::{ModuleKind, OperationId};
 use fedimint_core::db::{
     Committable, Database, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped,
 };
+use fedimint_core::invite_code::InviteCode;
+use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::ApiRequestErased;
 use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
-use fedimint_core::util::FibonacciBackoff;
+use fedimint_core::util::backon::FibonacciBuilder as FibonacciBackoff;
 use fedimint_core::{maybe_add_send_sync, Amount, PeerId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
@@ -130,6 +133,7 @@ pub fn invite_code_from_client_confing(config: &ClientConfig) -> InviteCode {
         endpoint.url.clone(),
         *peer,
         config.global.calculate_federation_id(),
+        None, // FIXME: api secret
     )
 }
 
@@ -162,9 +166,9 @@ pub struct FederationV2 {
 impl FederationV2 {
     /// Instantiate Federation from FediConfig
     async fn build_client_builder(db: Database) -> anyhow::Result<ClientBuilder> {
-        let mut client_builder = fedimint_client::Client::builder(db);
+        let mut client_builder = fedimint_client::Client::builder(db).await?;
         client_builder.with_module(MintClientInit);
-        client_builder.with_module(LightningClientInit);
+        client_builder.with_module(LightningClientInit::default());
         client_builder.with_module(WalletClientInit(None));
         client_builder.with_module(FediSocialClientInit);
         client_builder.with_module(StabilityPoolClientInit);
@@ -180,7 +184,7 @@ impl FederationV2 {
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
     ) -> Self {
-        let recovering = ng.has_pending_recoveries().await;
+        let recovering = ng.has_pending_recoveries();
         let client = Arc::new(ng);
         let mut federation = Self {
             event_sink,
@@ -229,6 +233,11 @@ impl FederationV2 {
         {
             error!("ln gateway service already initialized");
         }
+
+        // We disable the StabilityPoolSweeperService in tests to ensure that staged
+        // seeks don't accidentally disappear if a test takes longer than expected and a
+        // stability pool cycle elapses during the course of the test.
+        #[cfg(not(test))]
         if self
             .client
             .get_first_instance(&stability_pool_client::common::KIND)
@@ -291,7 +300,7 @@ impl FederationV2 {
         Ok(Self::new(
             client,
             event_sink,
-            task_group.make_subgroup().await,
+            task_group.make_subgroup(),
             auxiliary_secret,
             fedi_fee_helper,
             feature_catalog,
@@ -304,31 +313,25 @@ impl FederationV2 {
         root_mnemonic: &bip39::Mnemonic,
         device_index: u8,
         should_override_localhost: bool,
-    ) -> anyhow::Result<(ClientConfig, FederationResult<Vec<ClientBackupSnapshot>>)> {
+    ) -> anyhow::Result<(ClientConfig, anyhow::Result<Option<ClientBackup>>)> {
         let mut invite_code: InviteCode = InviteCode::from_str(invite_code_string)?;
         if should_override_localhost {
             override_localhost_invite_code(&mut invite_code);
         }
-        let api = DynGlobalApi::from_invite_code(&[invite_code.clone()]);
-        let backup_id_pub_key = {
+        let api = DynGlobalApi::from_invite_code(&invite_code);
+        let client_root_sercet = {
             let federation_id = invite_code.federation_id();
             // We do an additional derivation using `DerivableSecret::federation_key` since
             // that is what fedimint-client does internally
-            let client_root_secret = Self::client_root_secret_from_root_mnemonic(
-                root_mnemonic,
-                &federation_id,
-                device_index,
-            )
-            .federation_key(&federation_id);
-            client_root_secret
-                .derive_backup_secret()
-                .to_secp_key(&Secp256k1::<secp256k1::SignOnly>::gen_new())
-                .public_key()
+            Self::client_root_secret_from_root_mnemonic(root_mnemonic, &federation_id, device_index)
+                .federation_key(&federation_id)
         };
 
+        // we only use this to check if backup exists
+        let decoders = ModuleDecoderRegistry::default().with_fallback();
         let (client_config, backup) = tokio::join!(
-            ClientConfig::download_from_invite_code(&invite_code),
-            api.download_backup(&backup_id_pub_key)
+            download_from_invite_code(&invite_code),
+            Client::download_backup_from_federation_static(&api, &client_root_sercet, &decoders,)
         );
 
         Ok((client_config?, backup))
@@ -352,8 +355,7 @@ impl FederationV2 {
         if feature_catalog.override_localhost.is_some() {
             override_localhost_invite_code(&mut invite_code);
         }
-        let mut client_config: ClientConfig =
-            ClientConfig::download_from_invite_code(&invite_code).await?;
+        let mut client_config: ClientConfig = download_from_invite_code(&invite_code).await?;
         if feature_catalog.override_localhost.is_some() {
             override_localhost_client_config(&mut client_config);
         }
@@ -381,21 +383,23 @@ impl FederationV2 {
         let auxiliary_secret =
             Self::auxiliary_secret_from_root_mnemonic(root_mnemonic, &federation_id, device_index);
         // restore from scratch is not used because it takes too much time.
+        // FIXME: api secret
         if let Some(backup) = client_builder
-            .download_backup_from_federation(&client_secret, &client_config)
+            .download_backup_from_federation(&client_secret, &client_config, None)
             .await?
         {
             // TODO: ensure that if user exists app and re-opens during the restoration,
             // they will still see a spinner
             info!("backup found {:?}", backup);
+            // FIXME: api secret
             let client = client_builder
-                .recover(client_secret, client_config, Some(backup))
+                .recover(client_secret, client_config, None, Some(backup))
                 .await?;
             let metadata = client.get_metadata().await;
             let this = Self::new(
                 client,
                 event_sink,
-                task_group.make_subgroup().await,
+                task_group.make_subgroup(),
                 auxiliary_secret,
                 fedi_fee_helper,
                 feature_catalog,
@@ -405,11 +409,14 @@ impl FederationV2 {
             Ok(this)
         } else {
             info!("backup not found");
-            let client = client_builder.join(client_secret, client_config).await?;
+            // FIXME: add api
+            let client = client_builder
+                .join(client_secret, client_config, None)
+                .await?;
             Ok(Self::new(
                 client,
                 event_sink,
-                task_group.make_subgroup().await,
+                task_group.make_subgroup(),
                 auxiliary_secret,
                 fedi_fee_helper,
                 feature_catalog,
@@ -490,16 +497,18 @@ impl FederationV2 {
     }
 
     pub async fn guardian_status(&self) -> anyhow::Result<Vec<GuardianStatus>> {
+        let api_secret = self.client.api_secret();
         let peer_clients: Vec<_> = self
             .client
-            .get_config()
+            .config()
+            .await
             .global
             .api_endpoints
             .iter() // use iter() instead of into_iter()
             .map(|(&peer_id, endpoint)| {
                 (
                     peer_id,
-                    WsFederationApi::new(vec![(peer_id, endpoint.url.clone())]),
+                    WsFederationApi::new(vec![(peer_id, endpoint.url.clone())], api_secret),
                 )
             })
             .collect();
@@ -598,27 +607,7 @@ impl FederationV2 {
 
     /// Generate bitcoin address
     pub async fn generate_address(&self) -> Result<String> {
-        let fedi_fee_ppm = self
-            .fedi_fee_helper
-            .get_fedi_fee_ppm(
-                self.federation_id().to_string(),
-                fedimint_wallet_client::KIND,
-                RpcTransactionDirection::Receive,
-            )
-            .await?;
-        let expires_at = fedimint_core::time::now() + Duration::from_secs(86400 * 365);
-        let (operation_id, address) = self
-            .client
-            .get_first_module::<WalletClientModule>()
-            .get_deposit_address(expires_at, ())
-            .await?;
-        self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
-            .await?;
-
-        self.subscribe_deposit(operation_id, address.to_string(), expires_at)
-            .await?;
-
-        Ok(address.to_string())
+        bail!("on chain deposit are disabled for now")
     }
 
     /// Generate lightning invoice
@@ -675,69 +664,8 @@ impl FederationV2 {
         address: String,
         expires_at: SystemTime,
     ) -> Result<()> {
-        let fed = self.clone();
-        fed.task_group
-            .clone()
-            .spawn("subscribe deposit", move |_| async move {
-                let mut updates = fed
-                    .client
-                    .get_first_module::<WalletClientModule>()
-                    .subscribe_deposit_updates(operation_id)
-                    .await
-                    .unwrap() // FIXME
-                    .into_stream();
-                while let Some(update) = updates.next().await {
-                    info!("Update: {:?}", update);
-                    fed.update_operation_state(operation_id, update.clone())
-                        .await;
-                    let deposit_outcome = update.clone();
-                    match update {
-                        DepositState::WaitingForConfirmation(data)
-                        | DepositState::Claimed(data)
-                        | DepositState::Confirmed(data) => {
-                            let amount = Amount::from_sats(
-                                data.btc_transaction.output[data.out_idx as usize].value,
-                            );
-                            let fedi_fee_status = fed
-                                .write_success_receive_fedi_fee(operation_id, amount)
-                                .await
-                                .map(|(_, status)| status)
-                                .ok()
-                                .map(Into::into);
-                            let onchain_details = Some(RpcBitcoinDetails {
-                                address: address.clone(),
-                                expires_at: to_unix_time(expires_at)
-                                    .expect("unix time should exist"),
-                            });
-                            let transaction = RpcTransaction {
-                                id: operation_id.to_string(),
-                                created_at: unix_now().expect("unix time should exist"),
-                                amount: RpcAmount(amount),
-                                fedi_fee_status,
-                                direction: RpcTransactionDirection::Receive,
-                                notes: "".into(),
-                                onchain_state: RpcOnchainState::from_deposit_state(Some(
-                                    deposit_outcome,
-                                )),
-                                bitcoin: onchain_details,
-                                ln_state: None,
-                                lightning: None,
-                                oob_state: None,
-                                onchain_withdrawal_details: None,
-                                stability_pool_state: None,
-                            };
-                            info!("send_transaction_event: {:?}", transaction);
-                            fed.send_transaction_event(transaction);
-                        }
-                        DepositState::Failed(reason) => {
-                            let _ = fed.write_failed_receive_fedi_fee(operation_id).await;
-                            // FIXME: handle this
-                            error!("Failed to claim on-chain deposit: {reason}");
-                        }
-                        _ => {}
-                    }
-                }
-            });
+        let _ = (operation_id, address, expires_at);
+        error!("ignoring old on chain deposits");
         Ok(())
     }
 
@@ -772,7 +700,7 @@ impl FederationV2 {
                                 .ok()
                                 .map(Into::into);
                             let transaction = RpcTransaction {
-                                id: operation_id.to_string(),
+                                id: operation_id.fmt_full().to_string(),
                                 created_at: unix_now().expect("unix time should exist"),
                                 amount: RpcAmount(amount),
                                 fedi_fee_status,
@@ -909,7 +837,7 @@ impl FederationV2 {
     // case the amount exceeds the max spendable amount.
     pub async fn preview_pay_address(
         &self,
-        address: Address,
+        address: Address<NetworkUnchecked>,
         amount: bitcoin::Amount,
     ) -> Result<RpcFeeDetails> {
         let fedi_fee_ppm = self
@@ -947,7 +875,7 @@ impl FederationV2 {
     // Pay an onchain address
     pub async fn pay_address(
         &self,
-        address: Address,
+        address: Address<NetworkUnchecked>,
         amount: bitcoin::Amount,
     ) -> Result<RpcPayAddressResponse> {
         let fedi_fee_ppm = self
@@ -1161,8 +1089,12 @@ impl FederationV2 {
                             },
                         ..
                     } => {
-                        self.subscribe_deposit(operation_id, address.to_string(), expires_at)
-                            .await?;
+                        self.subscribe_deposit(
+                            operation_id,
+                            address.assume_checked().to_string(),
+                            expires_at,
+                        )
+                        .await?;
                     }
                     _ => {
                         tracing::debug!(
@@ -1343,9 +1275,8 @@ impl FederationV2 {
     pub async fn wait_for_recovery(&self) -> Result<()> {
         info!("waiting for recovering");
         let mut recovery_complete = pin!(self.client.wait_for_all_recoveries().fuse());
-        let mint_instance_id = self
-            .client
-            .get_config()
+        let client_config = self.client.config().await;
+        let mint_instance_id = client_config
             .modules
             .iter()
             .find(|(_, config)| config.is_kind(&MintClientModule::kind()))
@@ -1533,7 +1464,7 @@ impl FederationV2 {
                     .await
                     .map(Into::into);
                 self.send_transaction_event(RpcTransaction {
-                    id: operation_id.to_string(),
+                    id: operation_id.fmt_full().to_string(),
                     created_at: unix_now().expect("unix time should exist"),
                     direction: RpcTransactionDirection::Receive,
                     notes: "".into(),
@@ -1579,7 +1510,7 @@ impl FederationV2 {
         let (operation_id, notes) = self
             .client
             .get_first_module::<MintClientModule>()
-            .spend_notes(amount, ONE_WEEK, false, ())
+            .spend_notes(amount, ONE_WEEK, ())
             .await?;
         self.write_pending_send_fedi_fee(operation_id, fedi_fee)
             .await?;
@@ -1610,7 +1541,7 @@ impl FederationV2 {
             let (operation_id, new_notes) = self
                 .client
                 .get_first_module::<MintClientModule>()
-                .spend_notes(amount, ONE_WEEK, false, ())
+                .spend_notes(amount, ONE_WEEK, ())
                 .await?;
             drop(spend_guard);
             self.subscribe_to_operation(operation_id).await?;
@@ -1745,7 +1676,7 @@ impl FederationV2 {
     }
 
     pub async fn decoded_config(&self) -> Result<ClientConfig> {
-        let client_config = self.client.get_config().clone();
+        let client_config = self.client.config().await.clone();
         Ok(client_config.redecode_raw(self.client.decoders())?)
     }
 
@@ -1846,10 +1777,11 @@ impl FederationV2 {
     pub async fn download_verification_doc(
         &self,
         recovery_id: &RecoveryId,
+        peer_id: PeerId,
     ) -> Result<Option<Vec<u8>>> {
         tracing::info!("downloading verification doc {}", recovery_id);
         // FIXME: maybe shouldn't download from only one peer?
-        let verification_client = self.social_verification(PeerId::from(0)).await?;
+        let verification_client = self.social_verification(peer_id).await?;
         let verification_doc = verification_client
             .download_verification_doc(*recovery_id)
             .await?;
@@ -1924,36 +1856,9 @@ impl FederationV2 {
         operation_id: OperationId,
         log_entry: OperationLogEntry,
     ) -> Option<DepositState> {
-        let outcome = log_entry.outcome::<DepositState>();
-
-        // Return client's cached outcome if we find it
-        if let Some(outcome) = outcome {
-            return Some(outcome);
-        }
-        // Return our cached outcome if we find it
-        if let Some(outcome) = self.get_operation_state(&operation_id).await {
-            return Some(outcome);
-        }
-
-        // If no cached outcomes, consume the stream to get the outcome and populate
-        // client's cache in future This is only useful for outgoing lightning
-        // payments which fail due to timeout and nothing is subscribed to them
-        let mut updates = match self
-            .client
-            .get_first_module::<WalletClientModule>()
-            .subscribe_deposit_updates(operation_id)
-            .await
-        {
-            Err(_) => return None,
-            Ok(stream) => stream.into_stream(),
-        };
-
-        let mut last_state = None;
-        while let Some(update) = updates.next().await {
-            tracing::info!("update {:?}", update);
-            last_state = Some(update);
-        }
-        last_state
+        let _ = (operation_id, log_entry);
+        error!("ignoring old on chain deposits");
+        None
     }
 
     pub async fn get_client_operation_outcome<O: Clone + DeserializeOwned + 'static>(
@@ -2018,7 +1923,7 @@ impl FederationV2 {
                                         None
                                     } else {
                                         Some(RpcTransaction {
-                                            id: op.0.operation_id.to_string(),
+                                            id: op.0.operation_id.fmt_full().to_string(),
                                             created_at: to_unix_time(op.0.creation_time)
                                                 .expect("unix time should exist"),
                                             amount: RpcAmount(Amount {
@@ -2047,7 +1952,7 @@ impl FederationV2 {
                                         op.1.outcome::<LnReceiveState>(),
                                     );
                                     Some(RpcTransaction {
-                                        id: op.0.operation_id.to_string(),
+                                        id: op.0.operation_id.fmt_full().to_string(),
                                         created_at: to_unix_time(op.0.creation_time)
                                             .expect("unix time should exist"),
                                         amount: RpcAmount(Amount {
@@ -2082,7 +1987,7 @@ impl FederationV2 {
                                     Err(_) => None,
                                 };
                                 Some(RpcTransaction {
-                                id: op.0.operation_id.to_string(),
+                                id: op.0.operation_id.fmt_full().to_string(),
                                 created_at: to_unix_time(op.0.creation_time)
                                     .expect("unix time should exist"),
                                 amount: RpcAmount(amount),
@@ -2102,7 +2007,7 @@ impl FederationV2 {
                                     .get_client_operation_outcome(op.0.operation_id, op.1)
                                     .await;
                                 Some(RpcTransaction {
-                                    id: op.0.operation_id.to_string(),
+                                    id: op.0.operation_id.fmt_full().to_string(),
                                     created_at: to_unix_time(op.0.creation_time)
                                         .expect("unix time should exist"),
                                     amount: match outcome {
@@ -2142,7 +2047,7 @@ impl FederationV2 {
                                     .map_or(false, |x| x.internal);
                                     if !internal {
                                         Some(RpcTransaction {
-                                            id: op.0.operation_id.to_string(),
+                                            id: op.0.operation_id.fmt_full().to_string(),
                                             created_at: to_unix_time(op.0.creation_time)
                                                 .expect("unix time should exist"),
                                             direction: RpcTransactionDirection::Receive,
@@ -2167,7 +2072,7 @@ impl FederationV2 {
                                 MintOperationMetaVariant::SpendOOB {
                                     requested_amount, ..
                                 } => Some(RpcTransaction {
-                                    id: op.0.operation_id.to_string(),
+                                    id: op.0.operation_id.fmt_full().to_string(),
                                     created_at: to_unix_time(op.0.creation_time)
                                         .expect("unix time should exist"),
                                     direction: RpcTransactionDirection::Send,
@@ -2200,14 +2105,14 @@ impl FederationV2 {
                                         RpcOnchainState::from_deposit_state(outcome.clone());
 
                                     Some(RpcTransaction {
-                                        id: op.0.operation_id.to_string(),
+                                        id: op.0.operation_id.fmt_full().to_string(),
                                         created_at: to_unix_time(op.0.creation_time)
                                             .expect("unix time should exist"),
                                         direction: RpcTransactionDirection::Receive,
                                         notes,
                                         onchain_state: onchain_state.clone(),
                                         bitcoin: Some(RpcBitcoinDetails {
-                                            address: address.to_string(),
+                                            address: address.assume_checked().to_string(),
                                             expires_at: to_unix_time(expires_at)
                                                 .expect("unix time should exist"),
                                         }),
@@ -2256,7 +2161,7 @@ impl FederationV2 {
                                     };
 
                                     Some(RpcTransaction {
-                                        id: op.0.operation_id.to_string(),
+                                        id: op.0.operation_id.fmt_full().to_string(),
                                         created_at: to_unix_time(op.0.creation_time)
                                             .expect("unix time should exist"),
                                         amount: rpc_amount,
@@ -2269,7 +2174,7 @@ impl FederationV2 {
                                         lightning: None,
                                         oob_state: None,
                                         onchain_withdrawal_details: Some(WithdrawalDetails {
-                                            address: address.to_string(),
+                                            address: address.assume_checked().to_string(),
                                             txid: txid_str,
                                             fee: RpcAmount(Amount::from_sats(fee.amount().to_sat())),
                                             fee_rate: fee.fee_rate.sats_per_kvb,
@@ -2620,11 +2525,14 @@ impl FederationV2 {
         match res {
             Ok(_) => info!(
                 "Successfully wrote pending send fedi fee for op ID {} with amount {}",
-                operation_id, fedi_fee
+                operation_id.fmt_short(),
+                fedi_fee
             ),
             Err(ref e) => warn!(
                 "Error writing pending send fedi fee for op ID {} with amount {}: {}",
-                operation_id, fedi_fee, e
+                operation_id.fmt_short(),
+                fedi_fee,
+                e
             ),
         }
 
@@ -2716,7 +2624,7 @@ impl FederationV2 {
             Ok((true, _)) => {
                 info!(
                     "Successfully wrote success send fedi fee for op ID {}",
-                    operation_id
+                    operation_id.fmt_short()
                 );
                 if let Some(service) = self.fedi_fee_remittance_service.get() {
                     service
@@ -2730,11 +2638,12 @@ impl FederationV2 {
             }
             Ok((false, _)) => info!(
                 "Already recorded success send fedi fee for op ID {}, nothing overwritten",
-                operation_id
+                operation_id.fmt_short()
             ),
             Err(ref e) => warn!(
                 "Error writing success send fedi fee for op ID {}: {}",
-                operation_id, e
+                operation_id.fmt_short(),
+                e
             ),
         }
 
@@ -2812,15 +2721,16 @@ impl FederationV2 {
         match res {
             Ok((true, _)) => info!(
                 "Successfully wrote failed send fedi fee for op ID {}",
-                operation_id
+                operation_id.fmt_short()
             ),
             Ok((false, _)) => info!(
                 "Already recorded failed send fedi fee for op ID {}, nothing overwritten",
-                operation_id
+                operation_id.fmt_short()
             ),
             Err(ref e) => warn!(
                 "Error writing failed send fedi fee for op ID {}: {}",
-                operation_id, e
+                operation_id.fmt_short(),
+                e
             ),
         }
 
@@ -2862,11 +2772,14 @@ impl FederationV2 {
         match res {
             Ok(_) => info!(
                 "Successfully wrote pending receive fedi fee for op ID {} with ppm {}",
-                operation_id, fedi_fee_ppm
+                operation_id.fmt_short(),
+                fedi_fee_ppm
             ),
             Err(ref e) => warn!(
                 "Error writing pending receive fedi fee for op ID {} with ppm {}: {}",
-                operation_id, fedi_fee_ppm, e
+                operation_id.fmt_short(),
+                fedi_fee_ppm,
+                e
             ),
         }
 
@@ -2947,7 +2860,7 @@ impl FederationV2 {
             Ok((true, _)) => {
                 info!(
                     "Successfully wrote success receive fedi fee for op ID {}",
-                    operation_id
+                    operation_id.fmt_short()
                 );
                 if let Some(service) = self.fedi_fee_remittance_service.get() {
                     service
@@ -2961,11 +2874,12 @@ impl FederationV2 {
             }
             Ok((false, _)) => info!(
                 "Already recorded success receive fedi fee for op ID {}, nothing overwritten",
-                operation_id
+                operation_id.fmt_short()
             ),
             Err(ref e) => warn!(
                 "Error writing success receive fedi fee for op ID {}: {}",
-                operation_id, e
+                operation_id.fmt_short(),
+                e
             ),
         }
 
@@ -3016,15 +2930,16 @@ impl FederationV2 {
         match res {
             Ok((true, _)) => info!(
                 "Successfully wrote failed receive fedi fee for op ID {}",
-                operation_id
+                operation_id.fmt_short()
             ),
             Ok((false, _)) => info!(
                 "Already recorded failed receive fedi fee for op ID {}, nothing overwritten",
-                operation_id
+                operation_id.fmt_short()
             ),
             Err(ref e) => warn!(
                 "Error writing failed receive fedi fee for op ID {}: {}",
-                operation_id, e
+                operation_id.fmt_short(),
+                e
             ),
         }
 

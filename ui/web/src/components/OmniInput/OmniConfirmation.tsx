@@ -43,11 +43,10 @@ export const OmniConfirmation: React.FC<Props> = ({
     const router = useRouter()
 
     const handleAuth = async () => {
-        if (!activeFederationId || parsedData.type !== ParserDataType.LnurlAuth)
-            return
+        if (parsedData.type !== ParserDataType.LnurlAuth) return
         setIsLoading(true)
         try {
-            await lnurlAuth(fedimint, activeFederationId, parsedData.data)
+            await lnurlAuth(fedimint, parsedData.data)
             onSuccess(parsedData)
         } catch (err) {
             toast.error(t, err, 'errors.unknown-error')
