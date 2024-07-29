@@ -4,7 +4,9 @@ import Fedi
 class FedimintFfi: NSObject {
   @objc
   func initialize(_ options: NSString, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) -> Void {
-    resolve(fedimintInitialize(eventSink: EventDispatcher(), initOptsJson: String(options)))
+    Task {
+        resolve(await fedimintInitialize(eventSink: EventDispatcher(), initOptsJson: String(options)))
+    }
   }
 
   @objc

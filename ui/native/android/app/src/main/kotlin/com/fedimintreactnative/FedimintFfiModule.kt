@@ -26,8 +26,10 @@ class FedimintFfiModule(reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun initialize(options: String, promise: Promise) {
-        val response = fedimintInitialize(EventDispatcher, options)
-        promise.resolve(response)
+        GlobalScope.launch {
+            val response = fedimintInitialize(EventDispatcher, options)
+            promise.resolve(response)
+        }
     }
 
     @ReactMethod
