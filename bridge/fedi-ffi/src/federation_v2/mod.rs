@@ -41,6 +41,7 @@ use fedimint_core::invite_code::InviteCode;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::ApiRequestErased;
 use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
+use fedimint_core::timing::TimeReporter;
 use fedimint_core::util::backon::FibonacciBuilder as FibonacciBackoff;
 use fedimint_core::{maybe_add_send_sync, Amount, PeerId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
@@ -288,13 +289,17 @@ impl FederationV2 {
             .await
             .context("config not found in database")?;
         let federation_id = config.calculate_federation_id();
-        let client = client_builder
-            .open(Self::client_root_secret_from_root_mnemonic(
-                root_mnemonic,
-                &federation_id,
-                device_index,
-            ))
-            .await?;
+
+        let client = {
+            let _g = TimeReporter::new("federation loading");
+            client_builder
+                .open(Self::client_root_secret_from_root_mnemonic(
+                    root_mnemonic,
+                    &federation_id,
+                    device_index,
+                ))
+                .await?
+        };
         let auxiliary_secret =
             Self::auxiliary_secret_from_root_mnemonic(root_mnemonic, &federation_id, device_index);
         Ok(Self::new(
