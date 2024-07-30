@@ -27,9 +27,10 @@ const CommunityTile = ({
     const { theme } = useTheme()
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
-    const { formattedSecondaryAmount } = makeFormattedAmountsFromMSats(
-        community.hasWallet ? community.balance : (0 as MSats),
-    )
+    const { formattedSecondaryAmount, formattedPrimaryAmount } =
+        makeFormattedAmountsFromMSats(
+            community.hasWallet ? community.balance : (0 as MSats),
+        )
 
     const showInviteCode = shouldShowInviteCode(community.meta)
 
@@ -48,13 +49,15 @@ const CommunityTile = ({
                         {community.name}
                     </Text>
                     {community.hasWallet && (
-                        <Text
-                            style={style.balance}
-                            caption
-                            numberOfLines={1}
-                            adjustsFontSizeToFit>
-                            {`${formattedSecondaryAmount}`}
-                        </Text>
+                        <View style={style.balanceContainer}>
+                            <Text
+                                style={style.balance}
+                                caption
+                                numberOfLines={1}
+                                adjustsFontSizeToFit>
+                                {`${formattedPrimaryAmount} (${formattedSecondaryAmount})`}
+                            </Text>
+                        </View>
                     )}
                 </View>
             </View>
@@ -101,6 +104,10 @@ const styles = (theme: Theme) =>
             fontSize: theme.sizes.xxs,
             letterSpacing: -0.14,
             lineHeight: 20,
+        },
+        balanceContainer: {
+            flexDirection: 'row',
+            gap: theme.spacing.xs,
         },
         qr: {
             paddingHorizontal: 0,
