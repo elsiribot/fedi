@@ -4,6 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Alert,
+    ImageBackground,
     Linking,
     Platform,
     Pressable,
@@ -40,10 +41,11 @@ import {
 import { makeLog } from '@fedi/common/utils/log'
 import { encodeFediMatrixUserUri } from '@fedi/common/utils/matrix'
 
+import { Images } from '../assets/images'
 import { fedimint } from '../bridge'
 import SettingsItem from '../components/feature/admin/SettingsItem'
 import QRCodeContainer from '../components/ui/QRCodeContainer'
-import SvgImage from '../components/ui/SvgImage'
+import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { version } from '../package.json'
 import { usePinContext } from '../state/contexts/PinContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -270,6 +272,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     <SettingsItem
                         image={<SvgImage name="SocialPeople" />}
                         label={t('feature.backup.social-backup')}
+                        adornment={<BetaBadge />}
                         onPress={() => runSocialBackup()}
                     />
                 )}
@@ -427,8 +430,44 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     )
 }
 
+const BetaBadge = () => {
+    const { theme } = useTheme()
+    const { t } = useTranslation()
+
+    return (
+        <ImageBackground
+            style={styles(theme).betaBadge}
+            source={Images.HoloBackground}>
+            <View style={styles(theme).betaBadgeInner}>
+                <SvgImage name="NorthStar" size={SvgImageSize.xs} />
+                <Text caption medium>
+                    {t('words.beta')}
+                </Text>
+            </View>
+        </ImageBackground>
+    )
+}
+
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        betaBadge: {
+            borderRadius: 12,
+            padding: 2,
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'row',
+        },
+        betaBadgeInner: {
+            borderRadius: 8,
+            padding: 4,
+            backgroundColor: theme.colors.white,
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 4,
+        },
         container: {
             justifyContent: 'space-evenly',
             padding: theme.spacing.lg,

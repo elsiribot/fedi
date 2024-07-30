@@ -18,6 +18,7 @@ export const Images: ImagesMap = {
     FallbackInset: require('@fedi/common/assets/images/fallback-inset.png'),
     AwesomeFedimint: require('@fedi/common/assets/images/awesome-fedimint.png'),
     WelcomeBackground: require('@fedi/common/assets/images/welcome-bg.png'),
+    Red: require('@fedi/common/assets/images/red.png'),
 }
 
 export const FediModImages: ImagesMap = {

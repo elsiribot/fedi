@@ -3,6 +3,7 @@ import {
     ActivityIndicator,
     GestureResponderEvent,
     StyleSheet,
+    View,
 } from 'react-native'
 
 import * as Svgs from '../../../assets/images/svgs'
@@ -16,6 +17,7 @@ type SettingsItemProps = {
     action?: React.ReactNode
     actionIcon?: keyof typeof Svgs
     isLoading?: boolean
+    adornment?: React.ReactNode
     onPress: (event: GestureResponderEvent) => void
 }
 
@@ -27,6 +29,7 @@ const SettingsItem = ({
     actionIcon = 'ChevronRight',
     isLoading = false,
     onPress,
+    adornment = null,
 }: SettingsItemProps) => {
     const { theme } = useTheme()
     return (
@@ -37,12 +40,15 @@ const SettingsItem = ({
             ]}
             onPress={disabled ? undefined : onPress}>
             {image}
-            <Text
-                style={styles(theme).label}
-                adjustsFontSizeToFit
-                numberOfLines={1}>
-                {label}
-            </Text>
+            <View style={styles(theme).content}>
+                <Text
+                    style={styles(theme).label}
+                    adjustsFontSizeToFit
+                    numberOfLines={1}>
+                    {label}
+                </Text>
+                {adornment}
+            </View>
             {isLoading ? (
                 <ActivityIndicator size={theme.sizes.sm} />
             ) : (
@@ -70,10 +76,13 @@ const styles = (theme: Theme) =>
             width: theme.sizes.sm,
         },
         label: {
-            flexGrow: 1,
-            flexShrink: 1,
             color: theme.colors.primary,
             paddingHorizontal: theme.spacing.md,
+        },
+        content: {
+            flexDirection: 'row',
+            flex: 1,
+            alignItems: 'center',
         },
     })
 
