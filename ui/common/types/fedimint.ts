@@ -131,6 +131,7 @@ export enum SupportedMetaFields {
     popup_ended_message = 'popup_ended_message',
     tos_url = 'tos_url',
     welcome_message = 'welcome_message',
+    pinned_message = 'pinned_message',
     federation_icon_url = 'federation_icon_url',
     federation_name = 'federation_name',
     default_matrix_rooms = 'default_matrix_rooms',

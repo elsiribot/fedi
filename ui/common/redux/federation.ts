@@ -39,6 +39,7 @@ import {
     coerceFederationListItem,
     joinFromInvite,
     getFederationWelcomeMessage,
+    getFederationPinnedMessage,
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
 import { makeChatFromPreview } from '../utils/matrix'
@@ -613,4 +614,9 @@ export const selectFederationGroupChats = createSelector(
 export const selectFederationWelcomeMessage = createSelector(
     selectFederationMetadata,
     getFederationWelcomeMessage,
+)
+
+export const selectFederationPinnedMessage = createSelector(
+    selectFederationMetadata,
+    getFederationPinnedMessage,
 )

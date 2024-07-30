@@ -535,6 +535,10 @@ export const getFederationWelcomeMessage = (metadata: ClientConfigMetadata) => {
     return getMetaField(SupportedMetaFields.welcome_message, metadata)
 }
 
+export const getFederationPinnedMessage = (metadata: ClientConfigMetadata) => {
+    return getMetaField(SupportedMetaFields.pinned_message, metadata)
+}
+
 export const getFederationIconUrl = (metadata: ClientConfigMetadata) => {
     return getMetaField(SupportedMetaFields.federation_icon_url, metadata)
 }
