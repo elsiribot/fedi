@@ -740,8 +740,30 @@ impl FederationV2 {
     /// whilst attaching federation-specific fee details to the response
     pub async fn decode_invoice(&self, invoice: String) -> Result<RpcInvoice> {
         let invoice: Bolt11Invoice = invoice.trim().parse().context(ErrorCode::InvalidInvoice)?;
-        let invoice: RpcInvoice = invoice.try_into()?;
-        let amount = invoice.amount.0;
+        let rpc_invoice: RpcInvoice = invoice.clone().try_into()?;
+        let amount = rpc_invoice.amount.0;
+
+        // Logic inside the if statement below is currently copied from
+        // fedimint-ln-client to determine when the destination of a lightning invoice
+        // is within the current federation so that we know to show a 0 gateway fee.
+        if let Ok(markers) = self.client.get_internal_payment_markers() {
+            let mut is_internal_payment = invoice_has_internal_payment_markers(&invoice, markers);
+            if !is_internal_payment {
+                let gateways = self
+                    .client
+                    .get_first_module::<LightningClientModule>()
+                    .list_gateways()
+                    .await
+                    .into_iter()
+                    .map(|g| g.info)
+                    .collect::<Vec<_>>();
+                is_internal_payment = invoice_routes_back_to_federation(&invoice, gateways);
+            }
+
+            if is_internal_payment {
+                return Ok(rpc_invoice);
+            }
+        }
 
         // Calculate the different fee components
         let fedi_fee_ppm = self
@@ -767,7 +789,7 @@ impl FederationV2 {
             federation_fee: RpcAmount(Amount::ZERO),
         });
 
-        Ok(RpcInvoice { fee, ..invoice })
+        Ok(RpcInvoice { fee, ..rpc_invoice })
     }
 
     /// Pay lightning invoice
@@ -3033,4 +3055,38 @@ fn get_max_spendable_amount(
     let numerator_msats = (virtual_balance.msats - gateway_base) * MILLION;
     let denominator_msats = MILLION + fedi_fee_ppm + gateway_ppm;
     Amount::from_msats(numerator_msats / denominator_msats)
+}
+
+// Function below is currently copied from
+// fedimint-ln-client to determine when the destination of a lightning invoice
+// is within the current federation so that we know to show a 0 gateway fee.
+fn invoice_has_internal_payment_markers(
+    invoice: &Bolt11Invoice,
+    markers: (PublicKey, u64),
+) -> bool {
+    // Asserts that the invoice src_node_id and short_channel_id match known
+    // values used as internal payment markers
+    invoice
+        .route_hints()
+        .first()
+        .and_then(|rh| rh.0.last())
+        .map(|hop| (hop.src_node_id, hop.short_channel_id))
+        == Some(markers)
+}
+
+// Function below is currently copied from
+// fedimint-ln-client to determine when the destination of a lightning invoice
+// is within the current federation so that we know to show a 0 gateway fee.
+fn invoice_routes_back_to_federation(
+    invoice: &Bolt11Invoice,
+    gateways: Vec<LightningGateway>,
+) -> bool {
+    gateways.into_iter().any(|gateway| {
+        invoice
+            .route_hints()
+            .first()
+            .and_then(|rh| rh.0.last())
+            .map(|hop| (hop.src_node_id, hop.short_channel_id))
+            == Some((gateway.node_pub_key, gateway.mint_channel_id))
+    })
 }
