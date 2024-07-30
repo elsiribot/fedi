@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Switch, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     ActivityIndicator,
@@ -12,7 +12,7 @@ import {
     useWindowDimensions,
 } from 'react-native'
 import DeviceInfo from 'react-native-device-info'
-import RNFS from 'react-native-fs'
+import { readFile, exists } from 'react-native-fs'
 import { Asset } from 'react-native-image-picker'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { v4 as uuidv4 } from 'uuid'
@@ -101,7 +101,7 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
         }
     }
 
-    const handleSubmit = async () => {
+    const handleSubmit = useCallback(async () => {
         setHasAttemptedSubmit(true)
         if (!isValid) return
         try {
@@ -111,52 +111,53 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
             const attachmentFiles = await attachmentsToFiles(attachments)
 
             if (sendDb) {
-                if (!activeFederation) {
-                    log.warn(
-                        'Cannot include DB dump, no active federation is selected',
-                    )
-                } else {
+                if (activeFederation) {
                     const dumpedDbPath = await fedimint.dumpDb({
                         federationId: activeFederation.id,
                     })
-                    const dumpBuffer = await RNFS.readFile(
-                        dumpedDbPath,
-                        'base64',
+                    if (await exists(dumpedDbPath)) {
+                        const dumpBuffer = await readFile(
+                            dumpedDbPath,
+                            'base64',
+                        )
+                        attachmentFiles.push({
+                            name: 'db.dump',
+                            content: dumpBuffer,
+                        })
+                    }
+                } else {
+                    log.warn(
+                        'Cannot include DB dump, no active federation is selected',
                     )
-                    attachmentFiles.push({
-                        name: 'db.dump',
-                        content: dumpBuffer,
-                    })
                 }
             }
+
             const gzip = await generateLogsExportGzip(attachmentFiles)
             // Upload the logs export gzip to storage
             setStatus('uploading-data')
             await uploadBugReportLogs(id, gzip)
             // Submit bug report
             setStatus('submitting-report')
-            let federationName = undefined
-            let username = undefined
+            const federationName =
+                activeFederation?.name ??
+                activeFederation?.id ??
+                '(no joined federations)'
+            // if user has legacy chat data, attach the xmpp username
+            const legacyUsername = authenticatedMember
+                ? ` (legacy username: ${authenticatedMember?.username})`
+                : ''
+            // this will be the npub if the user has not set a display name yet
+            const matrixDisplayName = matrixAuth?.displayName ?? ''
 
-            if (isSendingUserInfo) {
-                federationName =
-                    activeFederation?.name ||
-                    activeFederation?.id ||
-                    '(no joined federations)'
+            // combine the legacy username and matrix display name
+            const username = matrixDisplayName + legacyUsername
 
-                // this will be the npub if the user has not set a display name yet
-                username = matrixAuth?.displayName || undefined
-                // if user has legacy chat data, attach the xmpp username
-                if (authenticatedMember) {
-                    username += `(legacy username: ${authenticatedMember?.username})`
-                }
-            }
             await submitBugReport({
                 id,
                 description,
                 email,
-                federationName,
-                username,
+                federationName: isSendingUserInfo ? federationName : undefined,
+                username: isSendingUserInfo ? username : undefined,
                 platform: `${DeviceInfo.getApplicationName()} (${Platform.OS})`,
                 version: DeviceInfo.getVersion(),
             })
@@ -167,7 +168,20 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
             toast.error(t, err)
             setStatus('idle')
         }
-    }
+    }, [
+        activeFederation,
+        attachments,
+        authenticatedMember,
+        description,
+        email,
+        isSendingUserInfo,
+        isValid,
+        matrixAuth?.displayName,
+        navigation,
+        sendDb,
+        t,
+        toast,
+    ])
 
     return (
         <ScrollView
