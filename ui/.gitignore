@@ -8,3 +8,6 @@ yarn-error.log
 tsconfig.tsbuildinfo
 .turbo
 dist
+
+# watchman
+.watchman-cookie-*
