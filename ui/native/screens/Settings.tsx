@@ -246,6 +246,15 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                 <Text style={styles(theme).sectionTitle}>
                     {federation.name}
                 </Text>
+                <SettingsItem
+                    image={<SvgImage name="Federation" />}
+                    label={t('feature.federations.federation-details')}
+                    onPress={() => {
+                        navigation.navigate('FederationDetails', {
+                            federationId: federation.id,
+                        })
+                    }}
+                />
                 {shouldShowInviteCode(federation.meta) && (
                     <SettingsItem
                         image={<SvgImage name="Qr" />}

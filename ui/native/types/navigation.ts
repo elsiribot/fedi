@@ -86,6 +86,7 @@ export type RootStackParamList = {
     EditGroup: { roomId: string }
     EditProfileSettings: undefined
     Eula: undefined
+    FederationDetails: { federationId: string }
     FederationInvite: { inviteLink: string }
     FederationGreeting: undefined
     FederationAcceptTerms: { federation: FederationPreview }

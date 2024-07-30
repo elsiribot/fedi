@@ -20,6 +20,7 @@ import BugReportHeader from '../components/feature/bug/BugReportHeader'
 import ChatConversationHeader from '../components/feature/chat/ChatConversationHeader'
 import ConfirmJoinPublicGroupHeader from '../components/feature/chat/ConfirmJoinPublicGroupHeader'
 import DefaultChatHeader from '../components/feature/chat/DefaultChatHeader'
+import FederationDetailsHeader from '../components/feature/federations/FederationDetailsHeader'
 import FederationInviteHeader from '../components/feature/federations/FederationInviteHeader'
 import JoinFederationHeader from '../components/feature/federations/JoinFederationHeader'
 import PopupFederationEndedHeader from '../components/feature/federations/PopupFederationEndedHeader'
@@ -100,6 +101,7 @@ import EditGroup from './EditGroup'
 import EditProfileSettings from './EditProfileSettings'
 import EnterDisplayName from './EnterDisplayName'
 import Eula from './Eula'
+import FederationDetails from './FederationDetails'
 import FederationGreeting from './FederationGreeting'
 import FederationInvite from './FederationInvite'
 import FediModBrowser from './FediModBrowser'
@@ -850,6 +852,13 @@ export const MainNavigator = () => {
                                 component={PinAccess}
                                 options={() => ({
                                     header: () => <PinAccessHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="FederationDetails"
+                                component={FederationDetails}
+                                options={() => ({
+                                    header: () => <FederationDetailsHeader />,
                                 })}
                             />
                             {/* Stability Pools */}
