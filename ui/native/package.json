@@ -85,7 +85,7 @@
         "react-native-video": "5.2.1",
         "react-native-vision-camera": "https://github.com/fedibtc/react-native-vision-camera#patch/rn-reanimated",
         "react-native-webview": "13.2.2",
-        "react-native-worklets": "https://github.com/chrfalch/react-native-worklets",
+        "react-native-worklets": "https://github.com/fedibtc/react-native-worklets-core#0.1-stable",
         "react-redux": "^8.0.5",
         "rn-fetch-blob": "^0.12.0",
         "tweetnacl": "^1.0.3",

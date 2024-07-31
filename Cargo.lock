@@ -4494,7 +4494,7 @@ dependencies = [
 [[package]]
 name = "matrix-sdk"
 version = "0.7.1"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=d8367e3ba79d75a36debbea64c130ddd435898f9#d8367e3ba79d75a36debbea64c130ddd435898f9"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "anymap2",
  "aquamarine",
@@ -4541,7 +4541,7 @@ dependencies = [
 [[package]]
 name = "matrix-sdk-base"
 version = "0.7.0"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=d8367e3ba79d75a36debbea64c130ddd435898f9#d8367e3ba79d75a36debbea64c130ddd435898f9"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "as_variant",
  "async-trait",
@@ -4565,7 +4565,7 @@ dependencies = [
 [[package]]
 name = "matrix-sdk-common"
 version = "0.7.0"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=d8367e3ba79d75a36debbea64c130ddd435898f9#d8367e3ba79d75a36debbea64c130ddd435898f9"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "async-trait",
  "futures-core",
@@ -4587,7 +4587,7 @@ dependencies = [
 [[package]]
 name = "matrix-sdk-crypto"
 version = "0.7.1"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=d8367e3ba79d75a36debbea64c130ddd435898f9#d8367e3ba79d75a36debbea64c130ddd435898f9"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "aes",
  "as_variant",
@@ -4627,7 +4627,7 @@ dependencies = [
 [[package]]
 name = "matrix-sdk-indexeddb"
 version = "0.7.0"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=d8367e3ba79d75a36debbea64c130ddd435898f9#d8367e3ba79d75a36debbea64c130ddd435898f9"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4657,7 +4657,7 @@ dependencies = [
 [[package]]
 name = "matrix-sdk-sqlite"
 version = "0.7.0"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=d8367e3ba79d75a36debbea64c130ddd435898f9#d8367e3ba79d75a36debbea64c130ddd435898f9"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "async-trait",
  "deadpool-sqlite",
@@ -4679,7 +4679,7 @@ dependencies = [
 [[package]]
 name = "matrix-sdk-store-encryption"
 version = "0.7.0"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=d8367e3ba79d75a36debbea64c130ddd435898f9#d8367e3ba79d75a36debbea64c130ddd435898f9"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "base64 0.22.1",
  "blake3",
@@ -4699,7 +4699,7 @@ dependencies = [
 [[package]]
 name = "matrix-sdk-ui"
 version = "0.7.0"
-source = "git+https://github.com/maan2003/matrix-rust-sdk?rev=d8367e3ba79d75a36debbea64c130ddd435898f9#d8367e3ba79d75a36debbea64c130ddd435898f9"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "as_variant",
  "async-once-cell",
@@ -5828,7 +5828,7 @@ checksum = "afab94fb28594581f62d981211a9a4d53cc8130bbcbbb89a0440d9b8e81a7746"
 [[package]]
 name = "ruma"
 version = "0.10.1"
-source = "git+https://github.com/maan2003/ruma?rev=4c3b29be87d412ef25dd1148dac014d09fa3b1e0#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
  "assign",
  "js_int",
@@ -5844,7 +5844,7 @@ dependencies = [
 [[package]]
 name = "ruma-client-api"
 version = "0.18.0"
-source = "git+https://github.com/maan2003/ruma?rev=4c3b29be87d412ef25dd1148dac014d09fa3b1e0#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
  "as_variant",
  "assign",
@@ -5867,7 +5867,7 @@ dependencies = [
 [[package]]
 name = "ruma-common"
 version = "0.13.0"
-source = "git+https://github.com/maan2003/ruma?rev=4c3b29be87d412ef25dd1148dac014d09fa3b1e0#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
  "as_variant",
  "base64 0.22.1",
@@ -5899,7 +5899,7 @@ dependencies = [
 [[package]]
 name = "ruma-events"
 version = "0.28.1"
-source = "git+https://github.com/maan2003/ruma?rev=4c3b29be87d412ef25dd1148dac014d09fa3b1e0#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
  "as_variant",
  "indexmap 2.2.5",
@@ -5922,7 +5922,7 @@ dependencies = [
 [[package]]
 name = "ruma-federation-api"
 version = "0.9.0"
-source = "git+https://github.com/maan2003/ruma?rev=4c3b29be87d412ef25dd1148dac014d09fa3b1e0#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
  "js_int",
  "ruma-common",
@@ -5934,7 +5934,7 @@ dependencies = [
 [[package]]
 name = "ruma-html"
 version = "0.2.0"
-source = "git+https://github.com/maan2003/ruma?rev=4c3b29be87d412ef25dd1148dac014d09fa3b1e0#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
  "as_variant",
  "html5ever",
@@ -5946,7 +5946,7 @@ dependencies = [
 [[package]]
 name = "ruma-identifiers-validation"
 version = "0.9.5"
-source = "git+https://github.com/maan2003/ruma?rev=4c3b29be87d412ef25dd1148dac014d09fa3b1e0#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
  "js_int",
  "thiserror",
@@ -5955,7 +5955,7 @@ dependencies = [
 [[package]]
 name = "ruma-macros"
 version = "0.13.0"
-source = "git+https://github.com/maan2003/ruma?rev=4c3b29be87d412ef25dd1148dac014d09fa3b1e0#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
  "once_cell",
  "proc-macro-crate",
@@ -7352,7 +7352,7 @@ checksum = "3528ecfd12c466c6f163363caf2d02a71161dd5e1cc6ae7b34207ea2d42d81ed"
 [[package]]
 name = "ts-rs"
 version = "7.1.1"
-source = "git+https://github.com/maan2003/ts-rs?branch=fix-allow-rename-all-unit-structs#1caf10367593a459b486e13a10c4b89e8dc478f4"
+source = "git+https://github.com/fedibtc/ts-rs?tag=fedi-0.1#1caf10367593a459b486e13a10c4b89e8dc478f4"
 dependencies = [
  "thiserror",
  "ts-rs-macros",
@@ -7361,7 +7361,7 @@ dependencies = [
 [[package]]
 name = "ts-rs-macros"
 version = "7.1.1"
-source = "git+https://github.com/maan2003/ts-rs?branch=fix-allow-rename-all-unit-structs#1caf10367593a459b486e13a10c4b89e8dc478f4"
+source = "git+https://github.com/fedibtc/ts-rs?tag=fedi-0.1#1caf10367593a459b486e13a10c4b89e8dc478f4"
 dependencies = [
  "Inflector",
  "proc-macro2",
