@@ -13983,9 +13983,9 @@ react-native-webview@13.2.2:
     escape-string-regexp "2.0.0"
     invariant "2.2.4"
 
-"react-native-worklets@https://github.com/chrfalch/react-native-worklets":
+"react-native-worklets@https://github.com/fedibtc/react-native-worklets-core#0.1-stable":
   version "0.1.0"
-  resolved "https://github.com/chrfalch/react-native-worklets#3ac2fbb223ece84308a97b797825f882e3e64002"
+  resolved "https://github.com/fedibtc/react-native-worklets-core#3ac2fbb223ece84308a97b797825f882e3e64002"
 
 react-native@0.72.6:
   version "0.72.6"
