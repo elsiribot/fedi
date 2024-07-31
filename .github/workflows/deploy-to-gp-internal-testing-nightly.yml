@@ -26,10 +26,12 @@ jobs:
             - name: Build UI dependencies
               run: nix develop -c ./scripts/ui/build-deps.sh
 
-            - name: Generate JSON credentials file
+            - name: Generate release credentials
               env:
+                  ANDROID_KEYSTORE_FILE_ENCODED: ${{ secrets.ANDROID_KEYSTORE_FILE_ENCODED }}
+                  ANDROID_KEYSTORE_PROPERTIES_ENCODED: ${{ secrets.ANDROID_KEYSTORE_PROPERTIES_ENCODED }}
                   PLAY_STORE_JSON_CREDENTIALS_ENCODED: ${{ secrets.PLAY_STORE_JSON_CREDENTIALS_ENCODED }}
-              run: nix develop -c ./scripts/ci/make-play-store-creds.sh
+              run: nix develop -c ./scripts/ci/make-android-creds.sh
 
             - name: Execute Fastlane command
               env:

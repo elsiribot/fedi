@@ -42,6 +42,13 @@ jobs:
               id: prep-apk
               run: nix develop -c ./scripts/ci/prep-apk.sh
 
+            - name: Generate release credentials
+              env:
+                  ANDROID_KEYSTORE_FILE_ENCODED: ${{ secrets.ANDROID_KEYSTORE_FILE_ENCODED }}
+                  ANDROID_KEYSTORE_PROPERTIES_ENCODED: ${{ secrets.ANDROID_KEYSTORE_PROPERTIES_ENCODED }}
+                  PLAY_STORE_JSON_CREDENTIALS_ENCODED: ${{ secrets.PLAY_STORE_JSON_CREDENTIALS_ENCODED }}
+              run: nix develop -c ./scripts/ci/make-android-release-creds.sh
+
             - name: Build APK
               env:
                   APK_PATH: ${{ steps.prep-apk.outputs.APK_PATH }}
