@@ -132,6 +132,8 @@ Then base64-encode the JSON file `base64 -i ./path/to/asc-api-key.json > ./asc-a
 
 The deployment workflow will then decode the JSON file at build time.
 
+For iOS signing, a keychain stored on the CI runner is used. The keychain password is provided at build time via Github Actions and not stored on the runner. The keychain password must be provided as the environment variable MATCH_PASSWORD for the fastlane action to succeed.
+
 # Building Locally
 
 If GitHub Actions is not available, fastlane can be used to generate builds locally.
