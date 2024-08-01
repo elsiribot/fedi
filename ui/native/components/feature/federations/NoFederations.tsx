@@ -153,6 +153,7 @@ const styles = (theme: Theme) =>
             gap: 12,
         },
         tileTextContainer: {
+            flex: 1,
             flexDirection: 'column',
             gap: theme.spacing.xs,
         },
