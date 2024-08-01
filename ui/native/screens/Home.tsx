@@ -8,7 +8,7 @@ import { ScrollView, StyleSheet, View } from 'react-native'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import {
     selectActiveFederation,
-    selectFederationWelcomeMessage,
+    selectFederationPinnedMessage,
     selectFederations,
     selectIsActiveFederationRecovering,
 } from '@fedi/common/redux'
@@ -40,7 +40,7 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
         selectIsActiveFederationRecovering,
     )
     const activeFederation = useAppSelector(selectActiveFederation)
-    const welcomeMessage = useAppSelector(selectFederationWelcomeMessage)
+    const pinnedMessage = useAppSelector(selectFederationPinnedMessage)
 
     if (federations.length === 0) {
         return <NoFederations />
@@ -53,9 +53,9 @@ const Home: React.FC<Props> = ({ offline }: Props) => {
             contentContainerStyle={style.container}
             alwaysBounceVertical={false}>
             <View style={style.content}>
-                {welcomeMessage && (
+                {pinnedMessage && (
                     <View style={style.section}>
-                        <WelcomeMessage message={welcomeMessage} />
+                        <WelcomeMessage message={pinnedMessage} />
                     </View>
                 )}
                 {activeFederation?.hasWallet && (
