@@ -179,7 +179,7 @@ export const fetchFederationsExternalMetadata = async (
             return prev
         }, {}),
     )
-    return { ...federationsMeta, ...communitiesMeta }
+    return { ...communitiesMeta, ...federationsMeta }
 }
 
 /**
