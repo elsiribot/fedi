@@ -165,7 +165,10 @@ export class MatrixChatClient {
         return this.serializeAuth(session)
     }
 
-    async getRoomPreview(roomId: string) {
+    // arrow function notation is important here! otherwise this.fedimint is
+    // can be undefined for some reason, idk why exactly...
+    // TODO: consider whether other functions are also at risk of this.fedimint being undefined?
+    getRoomPreview = async (roomId: string) => {
         let previewInfo: MatrixRoom
         let previewTimeline: MatrixTimelineItem[]
         try {
