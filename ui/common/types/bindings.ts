@@ -667,12 +667,16 @@ export interface RpcMethods {
     null,
   ];
   matrixSendAttachment: [
+<<<<<<< HEAD
     {
       roomId: RpcRoomId;
       filename: string;
       filePath: string;
       params: RpcMediaUploadParams;
     },
+=======
+    { roomId: RpcRoomId; filename: string; filePath: string; mimeType: string },
+>>>>>>> 3900e5ea2 (feat(bridge): matrix new rpcs)
     null,
   ];
   matrixRoomCreate: [{ request: CreateRoomRequest }, string];
