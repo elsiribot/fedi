@@ -311,6 +311,8 @@ export interface RpcMatrixUserDirectorySearchUser {
   avatarUrl: string | null;
 }
 
+export type RpcMediaSource = any;
+
 export interface RpcMethods {
   bridgeStatus: [
     Record<string, never>,
@@ -657,6 +659,10 @@ export interface RpcMethods {
     },
     null,
   ];
+  matrixSendAttachment: [
+    { roomId: RpcRoomId; filename: string; filePath: string; mimeType: string },
+    null,
+  ];
   matrixRoomCreate: [{ request: CreateRoomRequest }, string];
   matrixRoomCreateOrGetDm: [{ userId: RpcUserId }, string];
   matrixRoomJoin: [{ roomId: RpcRoomId }, null];
@@ -727,6 +733,24 @@ export interface RpcMethods {
   ];
   matrixPublicRoomInfo: [{ roomId: string }, any];
   matrixRoomMarkAsUnread: [{ roomId: RpcRoomId; unread: boolean }, null];
+  matrixEditMessage: [
+    { roomId: RpcRoomId; eventId: string; newContent: string },
+    null,
+  ];
+  matrixDeleteMessage: [
+    { roomId: RpcRoomId; eventId: string; reason: string | null },
+    null,
+  ];
+  matrixDownloadFile: [{ path: string; mediaSource: RpcMediaSource }, string];
+  matrixStartPoll: [
+    { roomId: RpcRoomId; question: string; answers: Array<string> },
+    null,
+  ];
+  matrixEndPoll: [{ roomId: RpcRoomId; pollStartId: string }, null];
+  matrixRespondToPoll: [
+    { roomId: RpcRoomId; pollStartId: string; selections: Array<string> },
+    null,
+  ];
   communityPreview: [
     { inviteCode: string },
     {

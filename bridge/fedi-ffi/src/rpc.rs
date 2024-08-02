@@ -18,6 +18,8 @@ use matrix_sdk::ruma::api::client::profile::get_profile;
 use matrix_sdk::ruma::api::client::push::Pusher;
 use matrix_sdk::ruma::directory::PublicRoomsChunk;
 use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
+use matrix_sdk::ruma::events::room::MediaSource;
+use matrix_sdk::ruma::OwnedEventId;
 use matrix_sdk::sliding_sync::Ranges;
 use matrix_sdk::RoomInfo;
 use mime::Mime;
@@ -874,6 +876,30 @@ async fn matrixRoomPreviewContent(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn matrixSendAttachment(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    filename: String,
+    file_path: PathBuf,
+    mime_type: String,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    let mime = mime_type.parse::<Mime>().context(ErrorCode::BadRequest)?;
+
+    let file_data = bridge
+        .storage
+        .read_file(&file_path)
+        .await?
+        .ok_or_else(|| anyhow::anyhow!("File not found"))?;
+
+    matrix
+        .send_attachment(&room_id.into_typed()?, filename, mime, file_data)
+        .await?;
+
+    Ok(())
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn matrixRoomTimelineItemsPaginateBackwards(
     bridge: Arc<Bridge>,
     room_id: RpcRoomId,
@@ -1252,6 +1278,93 @@ async fn matrixSetPusher(bridge: Arc<Bridge>, pusher: RpcPusher) -> anyhow::Resu
     let matrix = get_matrix(&bridge).await?;
     matrix.set_pusher(pusher.0).await
 }
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixEditMessage(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    event_id: String,
+    new_content: String,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .edit_message(
+            &room_id.into_typed()?,
+            &event_id.parse::<OwnedEventId>()?,
+            new_content,
+        )
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixDeleteMessage(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    event_id: String,
+    reason: Option<String>,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .delete_message(
+            &room_id.into_typed()?,
+            &event_id.parse::<OwnedEventId>()?,
+            reason,
+        )
+        .await
+}
+
+ts_type_de!(RpcMediaSource: MediaSource = "any");
+#[macro_rules_derive(rpc_method!)]
+async fn matrixDownloadFile(
+    bridge: Arc<Bridge>,
+    path: PathBuf,
+    media_source: RpcMediaSource,
+) -> anyhow::Result<PathBuf> {
+    let matrix = get_matrix(&bridge).await?;
+    let content = matrix.download_file(media_source.0).await?;
+    bridge.storage.write_file(&path, content).await?;
+    Ok(path)
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixStartPoll(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    question: String,
+    answers: Vec<String>,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix
+        .start_poll(&room_id.into_typed()?, question, answers)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixEndPoll(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    poll_start_id: String,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    let poll_start_event_id = OwnedEventId::try_from(poll_start_id)?;
+    matrix
+        .end_poll(&room_id.into_typed()?, &poll_start_event_id)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRespondToPoll(
+    bridge: Arc<Bridge>,
+    room_id: RpcRoomId,
+    poll_start_id: String,
+    selections: Vec<String>,
+) -> anyhow::Result<()> {
+    let matrix = get_matrix(&bridge).await?;
+    let poll_start_event_id = OwnedEventId::try_from(poll_start_id)?;
+    matrix
+        .respond_to_poll(&room_id.into_typed()?, &poll_start_event_id, selections)
+        .await
+}
 // converts from a typed handler into untyped handler
 async fn handle_wrapper<Args, F, Fut, R>(
     f: F,
@@ -1391,6 +1504,7 @@ rpc_methods!(RpcMethods {
     matrixRoomObserveTimelineItemsPaginateBackwards,
     matrixSendMessage,
     matrixSendMessageJson,
+    matrixSendAttachment,
     matrixRoomCreate,
     matrixRoomCreateOrGetDm,
     matrixRoomJoin,
@@ -1420,6 +1534,12 @@ rpc_methods!(RpcMethods {
     matrixRoomPreviewContent,
     matrixPublicRoomInfo,
     matrixRoomMarkAsUnread,
+    matrixEditMessage,
+    matrixDeleteMessage,
+    matrixDownloadFile,
+    matrixStartPoll,
+    matrixEndPoll,
+    matrixRespondToPoll,
 
     // Communities
     communityPreview,

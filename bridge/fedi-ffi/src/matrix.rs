@@ -6,7 +6,9 @@ use anyhow::{bail, Context, Result};
 use fedimint_core::task::TaskGroup;
 use fedimint_derive_secret::DerivableSecret;
 use futures::StreamExt;
+use matrix_sdk::attachment::AttachmentConfig;
 use matrix_sdk::encryption::BackupDownloadStrategy;
+use matrix_sdk::media::{MediaFormat, MediaRequest};
 use matrix_sdk::notification_settings::NotificationSettings;
 pub use matrix_sdk::ruma::api::client::account::register::v3 as register;
 use matrix_sdk::ruma::api::client::directory::get_public_rooms_filtered::v3 as get_public_rooms_filtered;
@@ -19,12 +21,21 @@ use matrix_sdk::ruma::api::client::room::Visibility;
 use matrix_sdk::ruma::api::client::state::send_state_event;
 use matrix_sdk::ruma::api::client::uiaa;
 use matrix_sdk::ruma::directory::PublicRoomsChunk;
+use matrix_sdk::ruma::events::message::TextContentBlock;
+use matrix_sdk::ruma::events::poll::end::PollEndEventContent;
+use matrix_sdk::ruma::events::poll::response::{PollResponseEventContent, SelectionsContentBlock};
+use matrix_sdk::ruma::events::poll::start::{
+    PollAnswer, PollAnswers, PollContentBlock, PollStartEventContent,
+};
 use matrix_sdk::ruma::events::receipt::ReceiptThread;
 use matrix_sdk::ruma::events::room::encryption::RoomEncryptionEventContent;
-use matrix_sdk::ruma::events::room::message::{MessageType, RoomMessageEventContent};
+use matrix_sdk::ruma::events::room::message::{
+    MessageType, RoomMessageEventContent, RoomMessageEventContentWithoutRelation,
+};
 use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
+use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::events::{AnySyncTimelineEvent, InitialStateEvent};
-use matrix_sdk::ruma::{assign, OwnedMxcUri, RoomId, UserId};
+use matrix_sdk::ruma::{assign, EventId, OwnedMxcUri, RoomId, UserId};
 use matrix_sdk::sliding_sync::Ranges;
 use matrix_sdk::{Client, RoomInfo, RoomMemberships};
 use matrix_sdk_ui::sync_service::{self, SyncService};
@@ -763,6 +774,124 @@ impl Matrix {
             .filter_map(RpcTimelineItem::from_preview_item)
             .collect())
     }
+
+    pub async fn send_attachment(
+        &self,
+        room_id: &RoomId,
+        filename: String,
+        mime_type: Mime,
+        data: Vec<u8>,
+    ) -> Result<()> {
+        self.room(room_id)
+            .await?
+            .send_attachment(&filename, &mime_type, data, AttachmentConfig::default())
+            .await?;
+        Ok(())
+    }
+
+    pub async fn edit_message(
+        &self,
+        room_id: &RoomId,
+        event_id: &EventId,
+        new_content: String,
+    ) -> Result<()> {
+        let timeline = self.timeline(room_id).await?;
+        let edit_info = timeline
+            .edit_info_from_event_id(event_id)
+            .await
+            .context("failed to get edit info")?;
+
+        let new_content = RoomMessageEventContentWithoutRelation::text_plain(new_content);
+
+        timeline.edit(new_content, edit_info).await?;
+
+        Ok(())
+    }
+
+    pub async fn delete_message(
+        &self,
+        room_id: &RoomId,
+        event_id: &EventId,
+        reason: Option<String>,
+    ) -> Result<()> {
+        let timeline = self.timeline(room_id).await?;
+        let event = timeline
+            .item_by_event_id(event_id)
+            .await
+            .ok_or_else(|| anyhow::anyhow!("Event not found"))?;
+
+        timeline.redact(&event, reason.as_deref()).await?;
+
+        Ok(())
+    }
+
+    pub async fn download_file(&self, source: MediaSource) -> Result<Vec<u8>> {
+        let request = MediaRequest {
+            source,
+            format: MediaFormat::File,
+        };
+
+        let content = self
+            .client
+            .media()
+            .get_media_content(&request, false)
+            .await?;
+        Ok(content)
+    }
+
+    pub async fn start_poll(
+        &self,
+        room_id: &RoomId,
+        question: String,
+        answers: Vec<String>,
+    ) -> Result<()> {
+        let timeline = self.timeline(room_id).await?;
+
+        let poll_answers: PollAnswers = answers
+            .into_iter()
+            .enumerate()
+            .map(|(i, text)| PollAnswer::new(i.to_string(), TextContentBlock::plain(text)))
+            .collect::<Vec<_>>()
+            .try_into()
+            .map_err(|_| anyhow::anyhow!("Invalid number of poll answers"))?;
+
+        let poll_content =
+            PollContentBlock::new(TextContentBlock::plain(question.clone()), poll_answers);
+
+        let content = PollStartEventContent::new(
+            TextContentBlock::plain(format!("Poll: {}", question)),
+            poll_content,
+        );
+
+        timeline.send(content.into()).await?;
+        Ok(())
+    }
+
+    pub async fn end_poll(&self, room_id: &RoomId, poll_start_id: &EventId) -> Result<()> {
+        let timeline = self.timeline(room_id).await?;
+
+        let content =
+            PollEndEventContent::with_plain_text("This poll has ended", poll_start_id.to_owned());
+
+        timeline.send(content.into()).await?;
+        Ok(())
+    }
+
+    pub async fn respond_to_poll(
+        &self,
+        room_id: &RoomId,
+        poll_start_id: &EventId,
+        selections: Vec<String>,
+    ) -> Result<()> {
+        let timeline = self.timeline(room_id).await?;
+
+        let selections_content = SelectionsContentBlock::from(selections);
+
+        let content = PollResponseEventContent::new(selections_content, poll_start_id.to_owned());
+
+        timeline.send(content.into()).await?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -950,5 +1079,50 @@ mod tests {
             home_server,
         );
         info!("password: {password}");
+    }
+
+    #[ignore]
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_send_and_download_attachment() -> Result<()> {
+        TracingSetup::default().init().unwrap();
+        let (matrix, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
+        let (matrix2, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
+
+        // Create a room
+        let room_id = matrix
+            .create_or_get_dm(matrix2.client.user_id().unwrap())
+            .await?;
+
+        // Prepare attachment data
+        let filename = "test.txt".to_string();
+        let mime_type = "text/plain".parse().unwrap();
+        let data = b"Hello, World!".to_vec();
+
+        // Send attachment
+        matrix
+            .send_attachment(&room_id, filename.clone(), mime_type, data.clone())
+            .await?;
+        fedimint_core::task::sleep(Duration::from_millis(100)).await;
+
+        let timeline = matrix.timeline(&room_id).await?;
+        let event = timeline
+            .latest_event()
+            .await
+            .context("expected last event")?;
+        let source = match event.content().as_message().unwrap().msgtype() {
+            MessageType::File(f) => f.source.clone(),
+            _ => unreachable!(),
+        };
+
+        // Download the file
+        let downloaded_data = matrix.download_file(source).await?;
+
+        // Assert that the downloaded data matches the original data
+        assert_eq!(
+            downloaded_data, data,
+            "Downloaded data does not match original data"
+        );
+
+        Ok(())
     }
 }
