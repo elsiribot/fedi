@@ -10,7 +10,10 @@ import { isPaymentEvent } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../../../state/hooks'
 import { OptionalGradient } from '../../ui/OptionalGradient'
+import ChatFileEvent from './ChatFileEvent'
+import ChatImageEvent from './ChatImageEvent'
 import ChatPaymentEvent from './ChatPaymentEvent'
+import ChatVideoEvent from './ChatVideoEvent'
 import MessageContents from './MessageContents'
 import { MessageItemError } from './MessageItemError'
 
@@ -48,7 +51,12 @@ const ChatEvent: React.FC<Props> = ({ event, last = false }: Props) => {
     if (isPayment) {
         bubbleInnerStyles.push(styles(theme).orangeBubble)
     } else if (isMe) {
-        if (last) {
+        if (
+            last &&
+            event.content.msgtype !== 'm.image' &&
+            event.content.msgtype !== 'm.file' &&
+            event.content.msgtype !== 'm.video'
+        ) {
             bubbleContainerStyles.push(styles(theme).lastSentMessage)
         }
         bubbleGradient = {
@@ -59,12 +67,18 @@ const ChatEvent: React.FC<Props> = ({ event, last = false }: Props) => {
         bubbleInnerStyles.push(styles(theme).blueBubble)
         textStyles.push(styles(theme).sentMessageText)
     } else {
-        if (last) {
+        if (
+            last &&
+            event.content.msgtype !== 'm.image' &&
+            event.content.msgtype !== 'm.file' &&
+            event.content.msgtype !== 'm.video'
+        ) {
             bubbleContainerStyles.push(styles(theme).lastReceivedMessage)
         }
         bubbleInnerStyles.push(styles(theme).greyBubble)
         textStyles.push(styles(theme).receivedMessageText)
     }
+
     return (
         <ErrorBoundary fallback={() => <MessageItemError />}>
             <View
@@ -75,19 +89,27 @@ const ChatEvent: React.FC<Props> = ({ event, last = false }: Props) => {
                 <View style={styles(theme).messageContainer}>
                     <View style={styles(theme).contentContainer}>
                         <View style={bubbleContainerStyles}>
-                            <OptionalGradient
-                                gradient={bubbleGradient}
-                                style={bubbleInnerStyles}>
-                                {isPayment ? (
-                                    <ChatPaymentEvent event={event} />
-                                ) : (
-                                    <MessageContents
-                                        sentByMe={isMe}
-                                        content={event.content.body}
-                                        textStyles={textStyles}
-                                    />
-                                )}
-                            </OptionalGradient>
+                            {event.content.msgtype === 'm.image' ? (
+                                <ChatImageEvent content={event.content} />
+                            ) : event.content.msgtype === 'm.file' ? (
+                                <ChatFileEvent content={event.content} />
+                            ) : event.content.msgtype === 'm.video' ? (
+                                <ChatVideoEvent content={event.content} />
+                            ) : (
+                                <OptionalGradient
+                                    gradient={bubbleGradient}
+                                    style={bubbleInnerStyles}>
+                                    {isPayment ? (
+                                        <ChatPaymentEvent event={event} />
+                                    ) : (
+                                        <MessageContents
+                                            sentByMe={isMe}
+                                            content={event.content.body}
+                                            textStyles={textStyles}
+                                        />
+                                    )}
+                                </OptionalGradient>
+                            )}
                         </View>
                     </View>
                 </View>

@@ -313,6 +313,12 @@ export interface RpcMatrixUserDirectorySearchUser {
 
 export type RpcMediaSource = any;
 
+export interface RpcMediaUploadParams {
+  width: number | null;
+  height: number | null;
+  mimeType: string;
+}
+
 export interface RpcMethods {
   bridgeStatus: [
     Record<string, never>,
@@ -660,7 +666,12 @@ export interface RpcMethods {
     null,
   ];
   matrixSendAttachment: [
-    { roomId: RpcRoomId; filename: string; filePath: string; mimeType: string },
+    {
+      roomId: RpcRoomId;
+      filename: string;
+      filePath: string;
+      params: RpcMediaUploadParams;
+    },
     null,
   ];
   matrixRoomCreate: [{ request: CreateRoomRequest }, string];

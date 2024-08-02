@@ -41,6 +41,17 @@ export const mxcUrlToHttpUrl = (
     return url.toString()
 }
 
+const fileSchema = z
+    .object({
+        hashes: z.object({
+            sha256: z.string(),
+        }),
+        url: z.string().url(),
+        v: z.literal('v2'),
+    })
+    // Don't strip off additional decryption keys from the file object
+    .passthrough()
+
 const contentSchemas = {
     /* Matrix standard events, not an exhaustive list */
     'm.text': z.object({
@@ -60,18 +71,27 @@ const contentSchemas = {
             w: z.number(),
             h: z.number(),
         }),
+        file: fileSchema,
     }),
     'm.video': z.object({
         msgtype: z.literal('m.video'),
         body: z.string(),
-        url: z.string(),
         info: z.object({
             mimetype: z.string(),
             size: z.number(),
             w: z.number(),
             h: z.number(),
-            duration: z.number(),
         }),
+        file: fileSchema,
+    }),
+    'm.file': z.object({
+        msgtype: z.literal('m.file'),
+        body: z.string(),
+        info: z.object({
+            mimetype: z.string(),
+            size: z.number(),
+        }),
+        file: fileSchema,
     }),
     'm.emote': z.object({
         msgtype: z.literal('m.emote'),
@@ -139,6 +159,9 @@ interface MatrixEventUnknownContent {
     body: string
     originalContent: unknown
 }
+
+export type MatrixEventContentType<T extends keyof typeof contentSchemas> =
+    z.infer<(typeof contentSchemas)[T]>
 
 export type MatrixEventContent =
     | z.infer<(typeof contentSchemas)[keyof typeof contentSchemas]>

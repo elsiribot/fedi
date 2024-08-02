@@ -41,10 +41,6 @@ const ChatWalletButton: React.FC<ChatWalletButtonProps> = ({
             <Pressable onPress={handlePress}>
                 <SvgImage
                     name="Wallet"
-                    containerStyle={{
-                        marginRight: theme.spacing.md,
-                        marginBottom: theme.spacing.sm,
-                    }}
                     size={SvgImageSize.md}
                     color={
                         recoveryInProgress
