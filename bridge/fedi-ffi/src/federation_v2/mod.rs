@@ -291,6 +291,7 @@ impl FederationV2 {
         let federation_id = config.calculate_federation_id();
 
         let client = {
+            info!("started federation loading");
             let _g = TimeReporter::new("federation loading").level(Level::INFO);
             client_builder
                 .open(Self::client_root_secret_from_root_mnemonic(
