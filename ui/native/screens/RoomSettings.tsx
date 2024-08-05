@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Switch, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, ScrollView, StyleSheet, View } from 'react-native'
 
@@ -16,7 +16,9 @@ import {
 import { MatrixPowerLevel } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import SettingsItem from '../components/feature/admin/SettingsItem'
+import SettingsItem, {
+    SettingsItemProps,
+} from '../components/feature/admin/SettingsItem'
 import { ChatSettingsAvatar } from '../components/feature/chat/ChatSettingsAvatar'
 import HoloLoader from '../components/ui/HoloLoader'
 import SvgImage from '../components/ui/SvgImage'
@@ -42,10 +44,11 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     const isDefaultGroup = useAppSelector(s =>
         selectDefaultMatrixRoomIds(s).includes(room?.id || ''),
     )
+    const isGroupChat = room?.directUserId === undefined
     const [isTogglingBroadcastOnly, setIsTogglingBroadcastOnly] =
         useState(false)
 
-    const leaveGroup = useCallback(async () => {
+    const leaveChat = useCallback(async () => {
         // Immediately navigate and replace navigation stack on leave
         // attempt, otherwise pressing the back button or useEffects in
         // backgrounded screens may attempt to re-join the group right
@@ -58,21 +61,25 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         }
     }, [dispatch, navigation, roomId, t, toast])
 
-    const handleLeaveGroup = useCallback(() => {
+    const handleLeaveChat = useCallback(() => {
         Alert.alert(
-            t('feature.chat.leave-group'),
-            t('feature.chat.leave-group-confirmation'),
+            isGroupChat
+                ? t('feature.chat.leave-group')
+                : t('feature.chat.leave-chat'),
+            isGroupChat
+                ? t('feature.chat.leave-group-confirmation')
+                : t('feature.chat.leave-chat-confirmation'),
             [
                 {
                     text: t('words.cancel'),
                 },
                 {
                     text: t('words.yes'),
-                    onPress: () => leaveGroup(),
+                    onPress: () => leaveChat(),
                 },
             ],
         )
-    }, [leaveGroup, t])
+    }, [isGroupChat, leaveChat, t])
 
     const handleChangeGroupName = useCallback(() => {
         navigation.navigate('EditGroup', { roomId })
@@ -106,61 +113,93 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         setIsTogglingBroadcastOnly(false)
     }, [isDefaultGroup, isTogglingBroadcastOnly, room, dispatch, toast, t])
 
+    const style = styles(theme)
+    const settingsItems = useMemo(() => {
+        const items: SettingsItemProps[] = []
+        if (isGroupChat) {
+            // don't show members list for direct chats
+            // admins can always see the members list
+            // non-default groups: anyone can see members list
+            if (isAdmin || !isDefaultGroup) {
+                items.push({
+                    image: <SvgImage name="SocialPeople" />,
+                    label: `${amountUtils.formatNumber(memberCount)} ${t(
+                        'words.members',
+                    )}`,
+                    onPress: handleViewMembers,
+                })
+            }
+            items.push(
+                {
+                    image: <SvgImage name="Room" />,
+                    label: t('feature.chat.invite-to-group'),
+                    onPress: handleInviteMember,
+                    disabled: !isAdmin,
+                },
+                {
+                    image: <SvgImage name="LeaveRoom" />,
+                    label: t('feature.chat.leave-group'),
+                    onPress: handleLeaveChat,
+                },
+                {
+                    image: <SvgImage name="Edit" />,
+                    label: t('feature.chat.change-group-name'),
+                    onPress: handleChangeGroupName,
+                    disabled: !isAdmin,
+                },
+                {
+                    image: <SvgImage name="SpeakerPhone" />,
+                    label: t('feature.chat.broadcast-only'),
+                    action: (
+                        <Switch
+                            style={style.switch}
+                            value={room?.broadcastOnly}
+                            disabled={isTogglingBroadcastOnly || !isAdmin}
+                            onValueChange={handleToggleBroadcastOnly}
+                        />
+                    ),
+                    isLoading: isTogglingBroadcastOnly,
+                    disabled: !isAdmin,
+                    onPress: handleToggleBroadcastOnly,
+                },
+            )
+        } else {
+            items.push({
+                image: <SvgImage name="LeaveRoom" />,
+                label: t('feature.chat.leave-chat'),
+                onPress: handleLeaveChat,
+            })
+        }
+        return items
+    }, [
+        handleChangeGroupName,
+        handleInviteMember,
+        handleLeaveChat,
+        handleToggleBroadcastOnly,
+        handleViewMembers,
+        isAdmin,
+        isDefaultGroup,
+        isGroupChat,
+        isTogglingBroadcastOnly,
+        memberCount,
+        room?.broadcastOnly,
+        style.switch,
+        t,
+    ])
+
     if (!room) return <HoloLoader />
 
     return (
-        <View style={styles(theme).container}>
+        <View style={style.container}>
             <ChatSettingsAvatar room={room} />
-            <ScrollView
-                bounces={false}
-                contentContainerStyle={styles(theme).content}>
-                <View style={styles(theme).sectionContainer}>
-                    <Text style={styles(theme).sectionTitle}>
+            <ScrollView bounces={false} contentContainerStyle={style.content}>
+                <View style={style.sectionContainer}>
+                    <Text style={style.sectionTitle}>
                         {t('feature.chat.chat-settings')}
                     </Text>
-                    {(!isDefaultGroup || (isDefaultGroup && isAdmin)) && (
-                        <SettingsItem
-                            image={<SvgImage name="SocialPeople" />}
-                            label={`${amountUtils.formatNumber(
-                                memberCount,
-                            )} ${t('words.members')}`}
-                            onPress={handleViewMembers}
-                        />
-                    )}
-                    <SettingsItem
-                        image={<SvgImage name="Room" />}
-                        label={t('feature.chat.invite-to-group')}
-                        onPress={handleInviteMember}
-                        disabled={!isAdmin}
-                    />
-                    <SettingsItem
-                        image={<SvgImage name="LeaveRoom" />}
-                        label={t('feature.chat.leave-group')}
-                        onPress={handleLeaveGroup}
-                    />
-                    <SettingsItem
-                        image={<SvgImage name="Edit" />}
-                        label={t('feature.chat.change-group-name')}
-                        onPress={handleChangeGroupName}
-                        disabled={!isAdmin}
-                    />
-                    <SettingsItem
-                        image={<SvgImage name="SpeakerPhone" />}
-                        label={t('feature.chat.broadcast-only')}
-                        action={
-                            <Switch
-                                style={styles(theme).switch}
-                                value={room?.broadcastOnly}
-                                disabled={isTogglingBroadcastOnly || !isAdmin}
-                                onValueChange={_ => {
-                                    handleToggleBroadcastOnly()
-                                }}
-                            />
-                        }
-                        isLoading={isTogglingBroadcastOnly}
-                        disabled={!isAdmin}
-                        onPress={handleToggleBroadcastOnly}
-                    />
+                    {settingsItems.map((item, index) => (
+                        <SettingsItem key={`si-${index}`} {...item} />
+                    ))}
                 </View>
             </ScrollView>
         </View>

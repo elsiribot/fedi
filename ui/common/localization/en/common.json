@@ -360,6 +360,8 @@
             "invite-to-group": "Invite to group",
             "join-a-group": "Join a group",
             "join-group": "Join group",
+            "leave-chat": "Leave chat",
+            "leave-chat-confirmation": "Are you sure you want to leave this chat? All message history will be lost.",
             "leave-group": "Leave group",
             "leave-group-confirmation": "Are you sure you want to leave the group? All group message history will be lost.",
             "member-not-found": "Could not find a member with the username '{{username}}'",
