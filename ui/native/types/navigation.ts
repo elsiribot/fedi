@@ -118,7 +118,7 @@ export type RootStackParamList = {
     LockedDevice: undefined
     RecordBackupVideo: undefined
     GroupChat: { groupId: string }
-    GroupAdmin: { roomId: string }
+    RoomSettings: { roomId: string }
     GroupInvite: { groupId: string }
     ScanMemberCode: { inviteToRoomId?: string } | undefined
     ScanSocialRecoveryCode: undefined

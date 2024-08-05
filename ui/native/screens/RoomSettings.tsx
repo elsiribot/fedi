@@ -23,9 +23,9 @@ import SvgImage from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'GroupAdmin'>
+export type Props = NativeStackScreenProps<RootStackParamList, 'RoomSettings'>
 
-const GroupAdmin: React.FC<Props> = ({ navigation, route }: Props) => {
+const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -190,4 +190,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default GroupAdmin
+export default RoomSettings

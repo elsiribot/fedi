@@ -81,7 +81,7 @@ const ChatConversationHeader: React.FC = () => {
                             // make sure we have joined room and its not just a preview to show admin settings
                             // TODO: implement admin settings for 1on1 chat
                             if (isGroupChat && room) {
-                                navigation.navigate('GroupAdmin', { roomId })
+                                navigation.navigate('RoomSettings', { roomId })
                             }
                         }}>
                         {avatar}
