@@ -2,7 +2,7 @@ import { TFunction } from 'i18next'
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 
-import type { ChatMember, ChatMessage, Sats } from '@fedi/common/types'
+import type { ChatMember, Sats } from '@fedi/common/types'
 
 import { INVALID_NAME_PLACEHOLDER } from '../constants/matrix'
 import {
@@ -12,7 +12,6 @@ import {
     selectAuthenticatedMember,
     selectChatClientLastOnlineAt,
     selectChatClientStatus,
-    selectChatLastReadMessageTimestamps,
     selectChatLastSeenMessageTimestamp,
     selectChatMember,
     selectHasSetMatrixDisplayName,
@@ -21,7 +20,6 @@ import {
     selectPayFromFederation,
     sendMatrixPaymentPush,
     sendMatrixPaymentRequest,
-    setLastReadMessageTimestamp,
     setLastSeenMessageTimestamp,
     setMatrixDisplayName,
     selectMatrixPushNotificationToken,
@@ -29,11 +27,7 @@ import {
     startMatrixClient,
     previewDefaultGroupChats,
 } from '../redux'
-import {
-    getDisplayNameValidator,
-    getLatestMessage,
-    parseData,
-} from '../utils/chat'
+import { getDisplayNameValidator, parseData } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { useMinMaxSendAmount, useMinMaxRequestAmount } from './amount'
@@ -128,57 +122,6 @@ export function useUpdateLastMessageSeen(pauseUpdates?: boolean) {
         federationId,
         lastSeenMessageTimestamp,
         latestMessageTimestamp,
-        pauseUpdates,
-    ])
-}
-
-/**
- * Automatically dispatch an update to the last message read in a chat while a
- * component using this hook is mounted.
- *
- * the pauseUpdates param is used by the native app since components remain
- * mounted even when the screen is not in focus. the navigation library
- * returns isFocused = false for any screen using this hook and we can pause it
- * @deprecated XMPP legacy code
- */
-export function useUpdateLastMessageRead(
-    chatId: string,
-    messages: ChatMessage[],
-    pauseUpdates?: boolean,
-) {
-    const dispatch = useCommonDispatch()
-    const federationId = useCommonSelector(selectActiveFederation)?.id
-    const lastReadMessageTimestamps = useCommonSelector(
-        selectChatLastReadMessageTimestamps,
-    )
-    const lastReadTimestampInChat = lastReadMessageTimestamps[chatId]
-    const latestMessageTimestamp = getLatestMessage(messages)?.sentAt
-
-    useEffect(() => {
-        if (!federationId || !chatId || !latestMessageTimestamp || pauseUpdates)
-            return
-
-        // don't dispatch if we already have the latest timestamp
-        if (
-            lastReadTimestampInChat &&
-            lastReadTimestampInChat >= latestMessageTimestamp
-        )
-            return
-
-        dispatch(
-            setLastReadMessageTimestamp({
-                federationId,
-                chatId,
-                timestamp: latestMessageTimestamp,
-            }),
-        )
-    }, [
-        dispatch,
-        chatId,
-        federationId,
-        lastReadMessageTimestamps,
-        latestMessageTimestamp,
-        lastReadTimestampInChat,
         pauseUpdates,
     ])
 }
