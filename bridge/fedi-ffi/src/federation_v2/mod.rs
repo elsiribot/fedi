@@ -67,7 +67,7 @@ use stability_pool_client::{
     StabilityPoolDepositOperationState, StabilityPoolMeta, StabilityPoolWithdrawalOperationState,
 };
 use tokio::sync::{Mutex, OnceCell};
-use tracing::{error, info, warn};
+use tracing::{error, info, warn, Level};
 
 use self::backup_service::BackupService;
 pub use self::backup_service::BackupServiceStatus;
@@ -291,7 +291,7 @@ impl FederationV2 {
         let federation_id = config.calculate_federation_id();
 
         let client = {
-            let _g = TimeReporter::new("federation loading");
+            let _g = TimeReporter::new("federation loading").level(Level::INFO);
             client_builder
                 .open(Self::client_root_secret_from_root_mnemonic(
                     root_mnemonic,
