@@ -14,13 +14,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flakebox = {
-      url = "github:dpc/flakebox?rev=12d5ee4f6c47bc01f07ec6f5848a83db265902d3";
+      url = "github:fedibtc/flakebox?rev=12d5ee4f6c47bc01f07ec6f5848a83db265902d3";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.fenix.follows = "fenix";
     };
 
     fs-dir-cache = {
-      url = "github:dpc/fs-dir-cache?rev=a6371f48f84512ea06a8ac671f9cdc141a732673";
+      url = "github:fedibtc/fs-dir-cache?rev=a6371f48f84512ea06a8ac671f9cdc141a732673";
     };
 
     android-nixpkgs = {

@@ -580,13 +580,13 @@
       "locked": {
         "lastModified": 1719004469,
         "narHash": "sha256-TZSHiEJ3qYgA46vikQKT2bwGCEF2LrJVw7cettqa+/g=",
-        "owner": "dpc",
+        "owner": "fedibtc",
         "repo": "flakebox",
         "rev": "12d5ee4f6c47bc01f07ec6f5848a83db265902d3",
         "type": "github"
       },
       "original": {
-        "owner": "dpc",
+        "owner": "fedibtc",
         "repo": "flakebox",
         "rev": "12d5ee4f6c47bc01f07ec6f5848a83db265902d3",
         "type": "github"
@@ -602,13 +602,13 @@
       "locked": {
         "lastModified": 1693034888,
         "narHash": "sha256-xYzhy2LZ6DvdKNUxHmZRBZW3qhLFizIXSmm6tPQp3h4=",
-        "owner": "dpc",
+        "owner": "fedibtc",
         "repo": "fs-dir-cache",
         "rev": "a6371f48f84512ea06a8ac671f9cdc141a732673",
         "type": "github"
       },
       "original": {
-        "owner": "dpc",
+        "owner": "fedibtc",
         "repo": "fs-dir-cache",
         "rev": "a6371f48f84512ea06a8ac671f9cdc141a732673",
         "type": "github"
