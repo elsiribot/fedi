@@ -50,6 +50,7 @@ use fedimint_ln_client::{
     LightningOperationMetaPay, LightningOperationMetaVariant, LnPayState, LnReceiveState,
     OutgoingLightningPayment, PayType,
 };
+use fedimint_ln_common::config::FeeToAmount;
 use fedimint_ln_common::LightningGateway;
 use fedimint_mint_client::{
     spendable_notes_to_operation_id, MintClientInit, MintClientModule, MintOperationMeta,
@@ -743,11 +744,23 @@ impl FederationV2 {
         let rpc_invoice: RpcInvoice = invoice.clone().try_into()?;
         let amount = rpc_invoice.amount.0;
 
+        // Fedi app fee applies regardless of internal/external payment
+        let fedi_fee_ppm = self
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                fedimint_ln_common::KIND,
+                RpcTransactionDirection::Send,
+            )
+            .await?;
+        let fedi_fee = (amount.msats * fedi_fee_ppm).div_ceil(MILLION);
+
         // Logic inside the if statement below is currently copied from
         // fedimint-ln-client to determine when the destination of a lightning invoice
         // is within the current federation so that we know to show a 0 gateway fee.
+        let mut is_internal_payment = false;
         if let Ok(markers) = self.client.get_internal_payment_markers() {
-            let mut is_internal_payment = invoice_has_internal_payment_markers(&invoice, markers);
+            is_internal_payment = invoice_has_internal_payment_markers(&invoice, markers);
             if !is_internal_payment {
                 let gateways = self
                     .client
@@ -759,33 +772,23 @@ impl FederationV2 {
                     .collect::<Vec<_>>();
                 is_internal_payment = invoice_routes_back_to_federation(&invoice, gateways);
             }
-
-            if is_internal_payment {
-                return Ok(rpc_invoice);
-            }
         }
 
-        // Calculate the different fee components
-        let fedi_fee_ppm = self
-            .fedi_fee_helper
-            .get_fedi_fee_ppm(
-                self.federation_id().to_string(),
-                fedimint_ln_common::KIND,
-                RpcTransactionDirection::Send,
-            )
-            .await?;
-        let fedi_fee = (amount.msats * fedi_fee_ppm).div_ceil(MILLION);
+        let network_fee = if is_internal_payment {
+            RpcAmount(Amount::ZERO)
+        } else {
+            // External payments have a non-0 gateway fee in addition to Fedi app fee
+            let gateway = self
+                .select_gateway()
+                .await?
+                .context("No gateway available")?;
+            let gateway_fees = gateway.fees;
+            RpcAmount(gateway_fees.to_amount(&amount))
+        };
 
-        let gateway = self
-            .select_gateway()
-            .await?
-            .context("No gateway available")?;
-        let gateway_fees = gateway.fees;
-        let network_fee = gateway_fees.base_msat as u64
-            + (amount.msats * gateway_fees.proportional_millionths as u64).div_ceil(MILLION);
         let fee = Some(RpcFeeDetails {
             fedi_fee: RpcAmount(Amount::from_msats(fedi_fee)),
-            network_fee: RpcAmount(Amount::from_msats(network_fee)),
+            network_fee,
             federation_fee: RpcAmount(Amount::ZERO),
         });
 
