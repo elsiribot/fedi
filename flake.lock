@@ -258,13 +258,13 @@
         "lastModified": 1721730496,
         "narHash": "sha256-naXVIjUwOqKGz6T9BFOB3e4G4NAl2kde6n1EApMZP4I=",
         "owner": "fedibtc",
-        "repo": "fedimint-fedi",
+        "repo": "fedimint",
         "rev": "f927c5fadaad79fadb01643e8c037c145cc604de",
         "type": "github"
       },
       "original": {
         "owner": "fedibtc",
-        "repo": "fedimint-fedi",
+        "repo": "fedimint",
         "rev": "f927c5fadaad79fadb01643e8c037c145cc604de",
         "type": "github"
       }
