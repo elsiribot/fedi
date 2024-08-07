@@ -110,7 +110,7 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
                             minimumAmount={minimumAmount}
                             maximumAmount={maximumAmount}
                             readOnly={!!exactAmount}
-                            verb={t('words.request')}
+                            verb={t('words.deposit')}
                             onChangeAmount={amount => {
                                 setSubmitAttempts(0)
                                 setInputAmount(amount)
