@@ -7,7 +7,7 @@ import { RejectionError, RequestInvoiceArgs } from 'webln'
 import { useRequestForm } from '@fedi/common/hooks/amount'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import { selectPayFromFederation } from '@fedi/common/redux'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 import { makeLog } from '@fedi/common/utils/log'
@@ -17,7 +17,6 @@ import { useAppSelector, useBridge } from '../../../state/hooks'
 import { FediMod, ParsedLnurlWithdraw } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
-import FederationWalletSelector from '../send/FederationWalletSelector'
 
 const log = makeLog('MakeInvoiceOverlay')
 
@@ -39,8 +38,8 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const toast = useToast()
-    const { generateInvoice } = useBridge(true)
-    const payFromFederation = useAppSelector(selectPayFromFederation)
+    const { generateInvoice } = useBridge()
+    const federationId = useAppSelector(selectActiveFederationId)
     const onRejectRef = useUpdatingRef(onReject)
     const onAcceptRef = useUpdatingRef(onAccept)
     const [submitAttempts, setSubmitAttempts] = useState(0)
@@ -75,12 +74,12 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
 
         try {
             setIsLoading(true)
-            if (!payFromFederation) throw new Error()
+            if (!federationId) throw new Error()
             const msats = amountUtils.satToMsat(inputAmount)
             const paymentRequest = lnurlWithdrawal
                 ? await lnurlWithdraw(
                       fedimint,
-                      payFromFederation.id,
+                      federationId,
                       lnurlWithdrawal,
                       msats,
                       memo,
@@ -117,14 +116,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
                       }),
                 description: requestInvoiceArgs?.defaultMemo || '',
                 body: (
-                    <View
-                        style={{
-                            flex: 1,
-                            paddingTop: theme.spacing.xl,
-                            alignItems: 'center',
-                            gap: theme.spacing.lg,
-                        }}>
-                        <FederationWalletSelector />
+                    <View style={{ flex: 1, paddingTop: theme.spacing.xl }}>
                         <AmountInput
                             key={amountInputKey}
                             amount={inputAmount}
