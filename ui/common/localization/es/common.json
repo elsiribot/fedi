@@ -462,7 +462,7 @@
             "payment-request": "Solicitud de pago de {{fediMod}}",
             "stable-balance-enabled": "Saldo estable",
             "stable-balance-enabled-info": "Permite la capacidad de convertir sats en moneda estable",
-            "wants-to-pay-you": "{{fedimod}} quiere pagarte",
+            "wants-to-send-you": "{{fediMod}} quiere enviarte",
             "wants-you-to-pay": "{{fediMod}} quiere que pagues",
             "your-mods": "Tus modificaciones"
         },
