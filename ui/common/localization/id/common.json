@@ -462,7 +462,7 @@
             "payment-request": "Permintaan pembayaran dari {{fediMod}}",
             "stable-balance-enabled": "Saldo Stabil",
             "stable-balance-enabled-info": "Memungkinkan kemampuan untuk mengkonversi sats ke mata uang stabil",
-            "wants-to-pay-you": "{{fediMod}} ingin membayar kamu",
+            "wants-to-send-you": "{{fediMod}} ingin mengirimkan Anda",
             "wants-you-to-pay": "{{fediMod}} ingin Anda membayar",
             "your-mods": "Modifikasi Anda"
         },

@@ -108,7 +108,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({
             }
             contents={{
                 title: exactAmount
-                    ? t('feature.fedimods.wants-to-pay-you', {
+                    ? t('feature.fedimods.wants-to-send-you', {
                           fediMod: fediMod.title,
                       })
                     : t('feature.fedimods.enter-amount-to-withdraw', {
