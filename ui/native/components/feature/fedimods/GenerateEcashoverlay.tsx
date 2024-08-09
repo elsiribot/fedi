@@ -45,7 +45,9 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
         useRequestForm({ ecashRequest })
     // Ecash notes are generated from your current balance
     // Instead of an almost-unbound balance from useRequestForm, set the upper bound to the active user's balance
-    const { maximumAmount } = useMinMaxSendAmount(undefined, true)
+    const { maximumAmount } = useMinMaxSendAmount({
+        selectedPaymentFederation: true,
+    })
 
     // Reset form when it appears
     const isShowing = Boolean(ecashRequest)

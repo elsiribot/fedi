@@ -105,10 +105,10 @@ type FediModResolver<T> = (value: T | PromiseLike<T>) => void
 
 const FediModBrowser: React.FC<Props> = ({ route }) => {
     const { fediMod } = route.params
-    const { listGateways, getNostrPubKey } = useBridge()
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const { listGateways, getNostrPubKey } = useBridge(activeFederation?.id)
     const payFromFederation = useAppSelector(selectPayFromFederation)
     const member = useAppSelector(selectMatrixAuth)
     const hasSetMatrixDisplayName = useAppSelector(
@@ -274,10 +274,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             }
             // Wait for user to interact with alert
             return new Promise((resolve, reject) => {
-                if (!payFromFederation)
-                    return reject(new Error('No active federation'))
-                if (!payFromFederation.hasWallet)
-                    return reject(new Error('Active federation has no wallet'))
                 // TODO: Hoist this to respect balance changes
                 if (
                     !payFromFederation.balance ||

@@ -49,6 +49,7 @@ interface SendAmountArgs {
     bip21Payment?: ParsedBip21['data'] | null
     invoice?: Invoice | null
     lnurlPayment?: ParsedLnurlPay['data'] | null
+    selectedPaymentFederation?: boolean
 }
 
 export type FormattedAmounts = {
@@ -460,14 +461,15 @@ export function useMinMaxRequestAmount({
  * Get the minimum and maximum amount you can send. Optionally take in an
  * LNURL pay request as part of the calculation.
  */
-export function useMinMaxSendAmount(
-    { invoice, lnurlPayment }: SendAmountArgs = {},
+export function useMinMaxSendAmount({
+    invoice,
+    lnurlPayment,
     // TODO: Remove this option in favor of always using payFromFederation once
     // https://github.com/fedibtc/fedi/issues/4070 is finished
-    usePayFromFederationBalance = false,
-) {
+    selectedPaymentFederation: payFromFederation,
+}: SendAmountArgs = {}) {
     const balance = useCommonSelector(s =>
-        usePayFromFederationBalance
+        payFromFederation
             ? selectPayFromFederationBalance(s)
             : selectFederationBalance(s),
     )
@@ -632,15 +634,19 @@ function getDefaultRequestMemo({
  * Provide all the state necessary to implement a pay form that generates
  * a Lightning invoice. Optionally provide an LNURL pay request.
  */
-export function useSendForm(
-    { btcAddress, bip21Payment, invoice, lnurlPayment }: SendAmountArgs = {},
-    usePayFromFederationBalance = false,
-) {
+export function useSendForm({
+    btcAddress,
+    bip21Payment,
+    invoice,
+    lnurlPayment,
+    selectedPaymentFederation,
+}: SendAmountArgs = {}) {
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount({
         invoice,
         lnurlPayment,
-    }, usePayFromFederationBalance)
+        selectedPaymentFederation,
+    })
     const minimumAmountRef = useUpdatingRef(minimumAmount)
 
     // Determine if they should be able to change the amount, or if an exact
