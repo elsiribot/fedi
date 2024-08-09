@@ -78,7 +78,12 @@ uniffi = { version = "0.25.3" }
 matrix-sdk = { version = "0.7.1", git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi-0.1", default-features = false, features = [
     "sqlite",
 ] }
-rusqlite = { version = "*", features = ["bundled"] }
+rusqlite = { version = "*" }
+
+# we don't have an easy way to get static sqlite for android targets
+# so we enable bundled feature when compiling for it
+[target.'cfg(target_os = "android")'.dependencies]
+rusqlite = { version = "*", features = [ "bundled" ] }
 
 [build-dependencies]
 uniffi = { version = "0.25.3", features = ["build"] }

@@ -66,9 +66,17 @@ let
       ROCKSDB_STATIC = "true";
       ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
       SNAPPY_LIB_DIR = "${pkgs.pkgsStatic.snappy}/lib/";
+      SQLITE3_STATIC = "true";
+      SQLITE3_LIB_DIR = "${pkgs.pkgsStatic.sqlite.out}/lib/";
+      SQLCIPHER_STATIC = "true";
+      SQLCIPHER_LIB_DIR = "${pkgs.pkgsStatic.sqlcipher}/lib/";
 
       "ROCKSDB_${target_underscores}_STATIC" = "true";
       "ROCKSDB_${target_underscores}_LIB_DIR" = "${pkgs.rocksdb}/lib/";
+      "SQLITE3_${target_underscores}_STATIC" = "true";
+      "SQLITE3_${target_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlite}/lib/";
+      "SQLCIPHER_${target_underscores}_STATIC" = "true";
+      "SQLCIPHER_${target_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlcipher}/lib/";
       "SNAPPY_${target_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.snappy}/lib/";
     } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
       # macos can't static libraries
