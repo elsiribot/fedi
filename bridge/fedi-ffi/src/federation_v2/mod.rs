@@ -53,7 +53,7 @@ use fedimint_ln_client::{
 use fedimint_ln_common::LightningGateway;
 use fedimint_mint_client::{
     spendable_notes_to_operation_id, MintClientInit, MintClientModule, MintOperationMeta,
-    MintOperationMetaVariant, OOBNotes, ReissueExternalNotesState,
+    MintOperationMetaVariant, OOBNotes, ReissueExternalNotesState, SelectNotesWithExactAmount,
 };
 use fedimint_wallet_client::{
     DepositState, PegOutFees, WalletClientInit, WalletClientModule, WalletOperationMeta,
@@ -97,10 +97,11 @@ use crate::features::FeatureCatalog;
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
 use crate::storage::FediFeeSchedule;
 use crate::types::{
-    EcashReceiveMetadata, GuardianStatus, LightningSendMetadata, OperationFediFeeStatus,
-    RpcBitcoinDetails, RpcEcashInfo, RpcFederationId, RpcFeeDetails, RpcGenerateEcashResponse,
-    RpcLightningDetails, RpcLnState, RpcOOBState, RpcOnchainState, RpcPayAddressResponse,
-    RpcStabilityPoolTransactionState, RpcTransaction, RpcTransactionDirection, WithdrawalDetails,
+    EcashReceiveMetadata, EcashSendMetadata, GuardianStatus, LightningSendMetadata,
+    OperationFediFeeStatus, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId, RpcFeeDetails,
+    RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOOBState, RpcOnchainState,
+    RpcPayAddressResponse, RpcStabilityPoolTransactionState, RpcTransaction,
+    RpcTransactionDirection, WithdrawalDetails,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
@@ -1512,49 +1513,69 @@ impl FederationV2 {
             )));
         }
 
+        // If generating EXACT amount works, use those notes. Otherwise, generate using
+        // AT LEAST strategy, marking it as internal TX (so we can filter it out).
+        // Immediately cancel, which will reissue the notes attempting to fill in lower
+        // denominations. And then generate using AT LEAST strategy again, which
+        // will now have a high chance to producing the exact amount.
         let cancel_time = fedimint_core::time::now() + ONE_WEEK;
-        let (operation_id, notes) = self
+        let (spend_guard, operation_id, notes) = match self
             .client
             .get_first_module::<MintClientModule>()
-            .spend_notes(amount, ONE_WEEK, ())
-            .await?;
-        self.write_pending_send_fedi_fee(operation_id, fedi_fee)
-            .await?;
-        drop(spend_guard);
-        self.subscribe_to_operation(operation_id).await?;
-        let notes = if amount != notes.total_amount() {
-            // try to make change (exempt this from fedi app fee)
-            timeout(REISSUE_ECASH_TIMEOUT, async {
-                let notes_amount = notes.total_amount();
-                let operation_id = self
+            .spend_notes_with_selector(
+                &SelectNotesWithExactAmount,
+                amount,
+                ONE_WEEK,
+                EcashSendMetadata { internal: false },
+            )
+            .await
+        {
+            Ok((operation_id, notes)) => (spend_guard, operation_id, notes),
+            Err(_) => {
+                let (_, notes) = self
                     .client
                     .get_first_module::<MintClientModule>()
-                    .reissue_external_notes(notes, EcashReceiveMetadata { internal: true })
+                    .spend_notes(amount, ONE_WEEK, EcashSendMetadata { internal: true })
                     .await?;
-                self.subscribe_to_ecash_reissue(operation_id, notes_amount)
-                    .await
-            })
-            .await
-            .context("Failed to select notes with correct amount")??;
-            let spend_guard = self.spend_guard.lock().await;
-            let virtual_balance = self.get_balance().await;
-            if amount > virtual_balance {
-                self.write_failed_send_fedi_fee(operation_id).await?;
-                bail!(ErrorCode::InsufficientBalance(RpcAmount(
-                    get_max_spendable_amount(virtual_balance, fedi_fee_ppm, None, None)
-                )));
+                drop(spend_guard);
+
+                // try to make change
+                timeout(REISSUE_ECASH_TIMEOUT, async {
+                    let notes_amount = notes.total_amount();
+                    let operation_id = self
+                        .client
+                        .get_first_module::<MintClientModule>()
+                        .reissue_external_notes(notes, EcashReceiveMetadata { internal: true })
+                        .await?;
+                    self.subscribe_to_ecash_reissue(operation_id, notes_amount)
+                        .await
+                })
+                .await
+                .context("Failed to select notes with correct amount")??;
+
+                let spend_guard = self.spend_guard.lock().await;
+                let virtual_balance = self.get_balance().await;
+                if amount + fedi_fee > virtual_balance {
+                    bail!(ErrorCode::InsufficientBalance(RpcAmount(
+                        get_max_spendable_amount(virtual_balance, fedi_fee_ppm, None, None)
+                    )));
+                }
+                let (operation_id, notes) = self
+                    .client
+                    .get_first_module::<MintClientModule>()
+                    .spend_notes(amount, ONE_WEEK, EcashSendMetadata { internal: false })
+                    .await?;
+                (spend_guard, operation_id, notes)
             }
-            let (operation_id, new_notes) = self
-                .client
-                .get_first_module::<MintClientModule>()
-                .spend_notes(amount, ONE_WEEK, ())
-                .await?;
-            drop(spend_guard);
-            self.subscribe_to_operation(operation_id).await?;
-            new_notes
-        } else {
-            notes
         };
+
+        self.write_pending_send_fedi_fee(operation_id, fedi_fee)
+            .await?;
+        // spend_guard must be dropped after writing fee since virtual balance only
+        // updates once fee is written
+        drop(spend_guard);
+        self.subscribe_to_operation(operation_id).await?;
+
         Ok(RpcGenerateEcashResponse {
             ecash: notes.to_string(),
             cancel_at: to_unix_time(cancel_time)?,
@@ -2077,25 +2098,36 @@ impl FederationV2 {
                                 }
                                 MintOperationMetaVariant::SpendOOB {
                                     requested_amount, ..
-                                } => Some(RpcTransaction {
-                                    id: op.0.operation_id.fmt_full().to_string(),
-                                    created_at: to_unix_time(op.0.creation_time)
-                                        .expect("unix time should exist"),
-                                    direction: RpcTransactionDirection::Send,
-                                    notes,
-                                    onchain_state: None,
-                                    bitcoin: None,
-                                    ln_state: None,
-                                    amount: RpcAmount(requested_amount),
-                                    fedi_fee_status,
-                                    lightning: None,
-                                    oob_state: self
-                                        .get_client_operation_outcome(op.0.operation_id, op.1)
-                                        .await
-                                        .map(RpcOOBState::from_spend_v2),
-                                    onchain_withdrawal_details: None,
-                                    stability_pool_state: None,
-                                }),
+                                } => {
+                                    let internal = serde_json::from_value::<EcashSendMetadata>(
+                                        mint_meta.extra_meta,
+                                    )
+                                    .map_or(false, |x| x.internal);
+
+                                    if !internal {
+                                        Some(RpcTransaction {
+                                            id: op.0.operation_id.fmt_full().to_string(),
+                                            created_at: to_unix_time(op.0.creation_time)
+                                                .expect("unix time should exist"),
+                                            direction: RpcTransactionDirection::Send,
+                                            notes,
+                                            onchain_state: None,
+                                            bitcoin: None,
+                                            ln_state: None,
+                                            amount: RpcAmount(requested_amount),
+                                            fedi_fee_status,
+                                            lightning: None,
+                                            oob_state: self
+                                                .get_client_operation_outcome(op.0.operation_id, op.1)
+                                                .await
+                                                .map(RpcOOBState::from_spend_v2),
+                                            onchain_withdrawal_details: None,
+                                            stability_pool_state: None,
+                                        })
+                                    } else {
+                                        None
+                                    }
+                                },
                             }
                         }
                         WALLET_OPERATION_TYPE => {

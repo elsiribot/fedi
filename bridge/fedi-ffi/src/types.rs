@@ -669,6 +669,11 @@ pub struct EcashReceiveMetadata {
     pub internal: bool,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EcashSendMetadata {
+    pub internal: bool,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LightningSendMetadata {
     pub is_fedi_fee_remittance: bool,
