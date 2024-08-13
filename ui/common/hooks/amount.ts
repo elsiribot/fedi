@@ -52,7 +52,7 @@ interface SendAmountArgs {
     lnurlPayment?: ParsedLnurlPay['data'] | null
     selectedPaymentFederation?: boolean
     cashuMeltSummary?: MeltSummary | null
-    t: TFunction
+    t?: TFunction
 }
 
 export type FormattedAmounts = {
@@ -650,13 +650,15 @@ export function useSendForm({
     selectedPaymentFederation,
     cashuMeltSummary,
     t,
-}: SendAmountArgs = {}) {
+}: SendAmountArgs) {
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
+    if (!t) throw new Error('useSendForm requires a t function')
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount({
         invoice,
         lnurlPayment,
         selectedPaymentFederation,
         cashuMeltSummary,
+        t,
     })
     const minimumAmountRef = useUpdatingRef(minimumAmount)
 

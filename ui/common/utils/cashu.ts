@@ -15,14 +15,14 @@ interface Proof {
     C: string
 }
 
-interface Token {
-    mint: string
+type Token = {
     proofs: Proof[]
 }
 
-export interface SerializedToken {
+export type ParsedToken = {
     token: Token[]
     unit?: string
+    mint: string
     memo?: string
 }
 
@@ -63,19 +63,14 @@ export function validateCashuTokens(raw: string) {
             token = token.slice(prefix.length)
         }
     })
-    if (!token.startsWith('cashuA')) {
+    if (!token.startsWith('cashuA') || !token.startsWith('cashuB')) {
         throw new Error('Invalid cashu token')
     }
     return token
 }
 
-// Takes cashu note, parses it into individual tokens for each mint
-// Then, we melt for each mint (convert to lightning invoices and pay self)
-export function decodeCashuTokens(raw: string): SerializedToken {
-    // remove prefixes
-    const token = validateCashuTokens(raw)
+const decodeCashuTokenLegacy = (token: string): ParsedToken => {
     const rawToken = token.replace('cashuA', '')
-
     const parsedTokenBuffer = JSON.parse(
         Buffer.from(rawToken, 'base64').toString(),
     )
@@ -84,9 +79,11 @@ export function decodeCashuTokens(raw: string): SerializedToken {
         'token' in parsedTokenBuffer &&
         Array.isArray(parsedTokenBuffer.token)
     ) {
+        // TODO... coerce with zod
         return parsedTokenBuffer
     }
     // if v2 token return v3 format
+    // TODO... coerce with zod
     if (
         'proofs' in parsedTokenBuffer &&
         'mints' in parsedTokenBuffer &&
@@ -94,20 +91,35 @@ export function decodeCashuTokens(raw: string): SerializedToken {
         parsedTokenBuffer.mints[0].url
     ) {
         return {
+            mint: parsedTokenBuffer.mints[0].url,
             token: [
                 {
                     proofs: parsedTokenBuffer.proofs,
-                    mint: parsedTokenBuffer.mints[0].url,
                 },
             ],
         }
     }
     // check if v1
+    // TODO... coerce with zod
     if (Array.isArray(parsedTokenBuffer)) {
         throw new Error('v1 cashu tokens are not supported')
     }
-
     throw new Error('No valid ecash proofs found')
+}
+
+const decodeCashuTokenV4 = (_: string): ParsedToken => {
+    // const rawToken = token.replace('cashuB', '')
+    throw new Error('Not implemented')
+}
+
+// Takes cashu note, parses it into individual tokens for each mint
+// Then, we melt for each mint (convert to lightning invoices and pay self)
+export function decodeCashuTokens(raw: string): ParsedToken {
+    // remove prefixes
+    const token = validateCashuTokens(raw)
+    return token.startsWith('cashuA')
+        ? decodeCashuTokenLegacy(token)
+        : decodeCashuTokenV4(token)
 }
 
 // Given a lightning invoice, the cashu mint responds with a quoted
@@ -229,7 +241,7 @@ async function getUpdatedMeltQuote(
  * @returns
  */
 export async function getMeltQuotes(
-    tokens: string | SerializedToken,
+    tokens: string | ParsedToken,
     fedimint: FedimintBridge,
     federationId: string | undefined,
 ): Promise<MeltSummary> {
@@ -244,7 +256,7 @@ export async function getMeltQuotes(
 
     // Iterate over each token
     for (const token of decodedTokens.token) {
-        const mintHost = token.mint
+        const mintHost = decodedTokens.mint
         const proofs = token.proofs
         log.debug('token.proofs', token.proofs)
 
