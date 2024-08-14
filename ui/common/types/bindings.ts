@@ -65,6 +65,9 @@ export type ErrorCode =
     | 'timeout'
     | 'recovery'
     | { invalidJson: string }
+    | 'payLnInvoiceAlreadyPaid'
+    | 'payLnInvoiceAlreadyInProgress'
+    | 'noLnGatewayAvailable'
 
 export type Event =
     | { transaction: TransactionEvent }

@@ -48,7 +48,7 @@ use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
     InternalPayState, LightningClientInit, LightningClientModule, LightningOperationMeta,
     LightningOperationMetaPay, LightningOperationMetaVariant, LnPayState, LnReceiveState,
-    OutgoingLightningPayment, PayType,
+    OutgoingLightningPayment, PayBolt11InvoiceError, PayType,
 };
 use fedimint_ln_common::LightningGateway;
 use fedimint_mint_client::{
@@ -823,9 +823,34 @@ impl FederationV2 {
             is_fedi_fee_remittance: false,
         };
         let ln = self.client.get_first_module::<LightningClientModule>();
-        let OutgoingLightningPayment { payment_type, .. } = ln
+        let OutgoingLightningPayment { payment_type, .. } = match ln
             .pay_bolt11_invoice(gateway, invoice.to_owned(), extra_meta.clone())
-            .await?;
+            .await
+        {
+            Ok(v) => v,
+            Err(e) => match e.downcast::<PayBolt11InvoiceError>()? {
+                PayBolt11InvoiceError::PreviousPaymentAttemptStillInProgress { .. }
+                // FundedContractAlreadyExists is also same but with less information.
+                // see https://discord.com/channels/990354215060795454/990354215878688860/1273318556108324904
+                | PayBolt11InvoiceError::FundedContractAlreadyExists { .. } => {
+                    bail!(ErrorCode::PayLnInvoiceAlreadyInProgress)
+                }
+                PayBolt11InvoiceError::NoLnGatewayAvailable => {
+                    bail!(ErrorCode::NoLnGatewayAvailable)
+                }
+            },
+        };
+        // already paid
+        if self
+            .client
+            .operation_log()
+            .get_operation(payment_type.operation_id())
+            .await
+            .map_or(false, |o| o.outcome::<PayState>().is_some())
+        {
+            bail!(ErrorCode::PayLnInvoiceAlreadyPaid);
+        }
+
         self.write_pending_send_fedi_fee(payment_type.operation_id(), Amount::from_msats(fedi_fee))
             .await?;
         drop(spend_guard);
