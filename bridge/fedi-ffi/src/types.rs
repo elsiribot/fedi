@@ -655,13 +655,22 @@ pub struct RpcLightningDetails {
 }
 
 // FIXME: should probaby type these as bytes
-#[derive(Debug, Deserialize, Serialize, TS)]
+#[derive(Deserialize, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcXmppCredentials {
     pub password: String,
     pub keypair_seed: String,
     pub username: Option<String>,
+}
+
+// Implement Debug manually to ignore sensitive fields
+impl std::fmt::Debug for RpcXmppCredentials {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RpcXmppCredentials")
+            .field("username", &self.username)
+            .finish()
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
