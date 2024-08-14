@@ -191,7 +191,7 @@ impl SocialBackup {
 }
 
 /// The state of recovery, that can be serialized and stored
-#[derive(Encodable, Decodable, Clone, Debug, Serialize, Deserialize)]
+#[derive(Encodable, Decodable, Clone, Serialize, Deserialize)]
 pub struct SocialRecoveryState {
     signing_sk: SerdeEncodable<secp256k1::SecretKey>,
     encryption_key: [u8; 32],
@@ -201,6 +201,17 @@ pub struct SocialRecoveryState {
     >,
     shares: BTreeMap<PeerId, SerdeEncodable<fedimint_threshold_crypto::DecryptionShare>>,
     pub client_config: String,
+}
+
+// Implement Debug manually to ignore sensitive fields
+impl fmt::Debug for SocialRecoveryState {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SocialRecoveryState")
+            .field("double_encrypted_seed", &self.double_encrypted_seed)
+            .field("shares", &self.shares)
+            .field("client_config", &self.client_config)
+            .finish()
+    }
 }
 
 impl SocialRecoveryState {
