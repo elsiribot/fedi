@@ -427,6 +427,10 @@ export interface RpcMethods {
     { amount: RpcAmount; federationId: RpcFederationId | null },
   ];
   cancelEcash: [{ federationId: RpcFederationId; ecash: string }, null];
+  updateCachedFiatFXInfo: [
+    { fiatCode: string; btcToFiatHundredths: bigint },
+    null,
+  ];
   listTransactions: [
     {
       federationId: RpcFederationId;

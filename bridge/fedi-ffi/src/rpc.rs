@@ -47,6 +47,7 @@ use crate::matrix::{
     RpcRoomNotificationMode, RpcSyncIndicator, RpcTimelineItem, RpcUserId,
 };
 use crate::observable::{Observable, ObservableVec};
+use crate::storage::FiatFXInfo;
 use crate::types::{
     GuardianStatus, RpcBridgeStatus, RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
     RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
@@ -330,6 +331,20 @@ async fn receiveEcash(
 #[macro_rules_derive(rpc_method!)]
 async fn validateEcash(_bridge: Arc<Bridge>, ecash: String) -> anyhow::Result<RpcEcashInfo> {
     FederationV2::validate_ecash(ecash)
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn updateCachedFiatFXInfo(
+    bridge: Arc<Bridge>,
+    fiat_code: String,
+    btc_to_fiat_hundredths: u64,
+) -> anyhow::Result<()> {
+    bridge
+        .update_cached_fiat_fx_info(FiatFXInfo {
+            fiat_code,
+            btc_to_fiat_hundredths,
+        })
+        .await
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
@@ -1303,6 +1318,7 @@ rpc_methods!(RpcMethods {
     validateEcash,
     cancelEcash,
     // Transactions
+    updateCachedFiatFXInfo,
     listTransactions,
     updateTransactionNotes,
     // Recovery
