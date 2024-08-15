@@ -80,6 +80,7 @@ const fetchExternalMetadata = async (
         if (timeoutId) {
             clearTimeout(timeoutId)
         }
+        onBackgroundSuccess && onBackgroundSuccess(metaJson)
         return metaJson
     }
 
@@ -165,20 +166,22 @@ export const fetchFederationsExternalMetadata = async (
 
     // Assemble all the promises and return the first pass of results. If they
     // provided onBackgroundSuccess, we'll call those as they come in.
-    const federationsMeta = await Promise.all(
-        externalUrls.map(async url =>
-            fetchExternalMetadata(url, handleBackgroundSuccess),
-        ),
-    ).then(results =>
-        results.reduce<ExternalMetaJson>((prev, extMeta) => {
+    const federationsMeta = await Promise.all([
+        ...externalUrls.map(url => {
+            return fetchExternalMetadata(url, res => {
+                return handleBackgroundSuccess && handleBackgroundSuccess(res)
+            })
+        }),
+    ]).then(results => {
+        return results.reduce<ExternalMetaJson>((prev, extMeta) => {
             if (!extMeta) return prev
             const entries = getFederationMetaEntries(extMeta)
             for (const entry of entries) {
                 prev[entry[0]] = entry[1]
             }
             return prev
-        }, {}),
-    )
+        }, {})
+    })
     return { ...communitiesMeta, ...federationsMeta }
 }
 
