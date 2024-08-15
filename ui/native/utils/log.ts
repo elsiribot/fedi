@@ -179,7 +179,8 @@ export function formatBridgeFfiLog(event: LogEvent): string {
         } else if (parsed?.metadata?.is_event && parsed?.message) {
             stringToLog += `> event received from bridge <message>: ${parsed?.message}\n`
         } else {
-            stringToLog += `\n|> full log: ${stripped}\n`
+            // we don't log every event since it just adds a lot of clutter during UI dev
+            stringToLog += `> received unspecified log event. uncomment ui/native/utils/log:formatBridgeFfiLog to view the full log\n`
         }
         // Uncomment this to view full unformatted bridge logs
         // stringToLog += `------ |  > full log: ${stripped}\n`
