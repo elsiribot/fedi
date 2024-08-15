@@ -652,7 +652,7 @@ pub struct RpcLightningDetails {
 // string so that new currency codes added on the front-end side don't require
 // additional bridge work. The value is recorded as hundredths, which would
 // typically correspond to cents.
-#[derive(Debug, Serialize, Deserialize, TS)]
+#[derive(Debug, Serialize, Deserialize, TS, Encodable, Decodable)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct TransactionDateFiatInfo {
