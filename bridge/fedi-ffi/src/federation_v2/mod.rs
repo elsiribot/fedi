@@ -765,6 +765,7 @@ impl FederationV2 {
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
                                 stability_pool_state: None,
+                                tx_date_fiat_info: None,
                             };
                             info!("send_transaction_event: {:?}", transaction);
                             fed.send_transaction_event(transaction);
@@ -828,6 +829,7 @@ impl FederationV2 {
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
                                 stability_pool_state: None,
+                                tx_date_fiat_info: None,
                             };
                             fed.send_transaction_event(transaction);
                         }
@@ -1630,6 +1632,7 @@ impl FederationV2 {
                     onchain_withdrawal_details: None,
                     stability_pool_state: None,
                     fedi_fee_status,
+                    tx_date_fiat_info: None,
                 });
             }
             if let ReissueExternalNotesState::Failed(e) = update {
@@ -2111,6 +2114,7 @@ impl FederationV2 {
                                             oob_state: None,
                                             onchain_withdrawal_details: None,
                                             stability_pool_state: None,
+                                            tx_date_fiat_info: None,
                                         })
                                     }
                                 }
@@ -2138,6 +2142,7 @@ impl FederationV2 {
                                         oob_state: None,
                                         onchain_withdrawal_details: None,
                                         stability_pool_state: None,
+                                        tx_date_fiat_info: None,
                                     })
                                 }
                                 LightningOperationMetaVariant::Claim { .. } => unreachable!("claims are not supported"),
@@ -2168,6 +2173,7 @@ impl FederationV2 {
                                 oob_state: None,
                                 onchain_withdrawal_details: None,
                                 stability_pool_state,
+                                tx_date_fiat_info: None,
                             })},
                             StabilityPoolMeta::Withdrawal { estimated_withdrawal_cents, .. } | StabilityPoolMeta::CancelRenewal { estimated_withdrawal_cents, .. } => {
                                 let outcome = self
@@ -2200,7 +2206,8 @@ impl FederationV2 {
                                         Some(StabilityPoolWithdrawalOperationState::Success(_)) => Some(RpcStabilityPoolTransactionState::CompleteWithdrawal { estimated_withdrawal_cents }),
                                         Some(_) => Some(RpcStabilityPoolTransactionState::PendingWithdrawal { estimated_withdrawal_cents }),
                                         None => None,
-                                    }
+                                    },
+                                    tx_date_fiat_info: None,
                                 })
                             }
                         },
@@ -2231,6 +2238,7 @@ impl FederationV2 {
                                                 .map(RpcOOBState::from_reissue_v2),
                                             onchain_withdrawal_details: None,
                                             stability_pool_state: None,
+                                            tx_date_fiat_info: None,
                                         })
                                     } else {
                                         None
@@ -2263,6 +2271,7 @@ impl FederationV2 {
                                                 .map(RpcOOBState::from_spend_v2),
                                             onchain_withdrawal_details: None,
                                             stability_pool_state: None,
+                                            tx_date_fiat_info: None,
                                         })
                                     } else {
                                         None
@@ -2307,6 +2316,7 @@ impl FederationV2 {
                                         oob_state: None,
                                         onchain_withdrawal_details: None,
                                         stability_pool_state: None,
+                                        tx_date_fiat_info: None,
                                     })
                                 }
                                 WalletOperationMetaVariant::Withdraw {
@@ -2354,6 +2364,7 @@ impl FederationV2 {
                                             fee_rate: fee.fee_rate.sats_per_kvb,
                                         }),
                                         stability_pool_state: None,
+                                        tx_date_fiat_info: None,
                                     })
                                 }
                                 WalletOperationMetaVariant::RbfWithdraw { rbf: _, change: _ } => None,
