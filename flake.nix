@@ -116,8 +116,12 @@
         androidSdk =
           android-nixpkgs.sdk."${system}" (sdkPkgs: with sdkPkgs; [
             cmdline-tools-latest
+            build-tools-30-0-3
+            build-tools-32-0-0
+            build-tools-33-0-0
             build-tools-34-0-0
             platform-tools
+            platforms-android-31
             platforms-android-34
             emulator
             ndk-bundle
