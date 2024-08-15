@@ -23,7 +23,8 @@
         "lint": "yarn lint:tsc && yarn lint:eslint",
         "lint:tsc": "tsc --noEmit",
         "lint:eslint": "eslint . --ext .js,.jsx,.ts,.tsx",
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "devtools": "( npx react-devtools > /dev/null 2>&1 & )"
     },
     "dependencies": {
         "@notifee/react-native": "7.8.0",
