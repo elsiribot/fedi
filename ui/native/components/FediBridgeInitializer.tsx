@@ -36,6 +36,7 @@ import { formatBridgeFfiLog } from '../utils/log'
 import { displayPaymentReceivedNotification } from '../utils/notifications'
 
 const log = makeLog('FediBridgeInitializer')
+const ffiLog = makeLog('ffi')
 
 interface Props {
     children: React.ReactNode
@@ -157,7 +158,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             'log',
             (event: LogEvent) => {
                 const formattedLog = formatBridgeFfiLog(event)
-                log.info(formattedLog)
+                ffiLog.info(formattedLog)
             },
         )
 
