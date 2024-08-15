@@ -32,7 +32,7 @@ import { useAppDispatch, useAppSelector } from '../state/hooks'
 import theme from '../styles/theme'
 import { generateDeviceId } from '../utils/device-info'
 import { useAppIsInForeground } from '../utils/hooks/notifications'
-import { formatBridgeFfiLog } from '../utils/logs-export'
+import { formatBridgeFfiLog } from '../utils/log'
 import { displayPaymentReceivedNotification } from '../utils/notifications'
 
 const log = makeLog('FediBridgeInitializer')

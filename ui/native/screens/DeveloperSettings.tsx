@@ -36,7 +36,7 @@ import CheckBox from '../components/ui/CheckBox'
 import { version } from '../package.json'
 import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
-import { shareLogsExport, shareReduxState } from '../utils/logs-export'
+import { shareLogsExport, shareReduxState } from '../utils/log'
 
 const log = makeLog('DeveloperSettings')
 
