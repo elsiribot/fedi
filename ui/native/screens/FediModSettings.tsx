@@ -14,7 +14,7 @@ import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
     removeCustomMod,
-    selectAllMods,
+    selectConfigurableMods,
     selectModsVisibility,
     setModVisibility,
 } from '@fedi/common/redux/mod'
@@ -34,7 +34,7 @@ const FediModSettings: React.FC = () => {
     const insets = useSafeAreaInsets()
     const navigation = useNavigation()
 
-    const mods = useAppSelector(selectAllMods)
+    const mods = useAppSelector(selectConfigurableMods)
     const modsVisibility = useAppSelector(selectModsVisibility)
 
     const dispatch = useAppDispatch()

@@ -191,20 +191,18 @@ export const selectModsVisibility = (s: CommonState) => s.mod.modVisibility
 export const selectModVisibility = (s: CommonState, id: string) =>
     s.mod.modVisibility[id]
 
-export const selectAllMods = createSelector(
+export const selectConfigurableMods = createSelector(
     selectGlobalMods,
-    selectCommunityMods,
     selectCustomMods,
-    (global, custom, community) =>
+    (global, custom) =>
         // Filter out duplicate mods
-        deduplicate([...global, ...community, ...custom]),
+        deduplicate([...global, ...custom]),
 )
 
 export const selectAllVisibleMods = createSelector(
     selectVisibleGlobalMods,
-    selectVisibleCommunityMods,
     selectVisibleCustomMods,
-    (global, custom, community) =>
+    (global, custom) =>
         // Filter out duplicate mods
-        deduplicate([...global, ...community, ...custom]),
+        deduplicate([...global, ...custom]),
 )
