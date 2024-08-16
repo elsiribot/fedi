@@ -223,7 +223,7 @@ impl FederationV2 {
 
         if self
             .fedi_fee_remittance_service
-            .set(FediFeeRemittanceService::default())
+            .set(FediFeeRemittanceService::init(self))
             .is_err()
         {
             error!("fedi fee remittance service already initialized");
