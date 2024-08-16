@@ -532,9 +532,11 @@ async fn stabilityPoolCycleStartPrice(federation: Arc<FederationV2>) -> anyhow::
 #[macro_rules_derive(federation_rpc_method!)]
 async fn stabilityPoolAverageFeeRate(
     federation: Arc<FederationV2>,
-    num_cycles: u64,
+    num_cycles: u32,
 ) -> anyhow::Result<u64> {
-    federation.stability_pool_average_fee_rate(num_cycles).await
+    federation
+        .stability_pool_average_fee_rate(num_cycles.into())
+        .await
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
