@@ -7,7 +7,7 @@ import { RejectionError } from 'webln'
 import { useMinMaxSendAmount, useRequestForm } from '@fedi/common/hooks/amount'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import { selectPayFromFederation } from '@fedi/common/redux'
+import { selectPaymentFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { BridgeError } from '@fedi/common/utils/fedimint'
 import { makeLog } from '@fedi/common/utils/log'
@@ -35,7 +35,7 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const toast = useToast()
-    const payFromFederation = useAppSelector(selectPayFromFederation)
+    const paymentFederation = useAppSelector(selectPaymentFederation)
     const onRejectRef = useUpdatingRef(onReject)
     const onAcceptRef = useUpdatingRef(onAccept)
     const [submitAttempts, setSubmitAttempts] = useState(0)
@@ -68,12 +68,12 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
 
         try {
             setIsLoading(true)
-            if (!payFromFederation) throw new Error()
+            if (!paymentFederation) throw new Error()
             const msats = amountUtils.satToMsat(inputAmount)
 
             const res = await fedimint.generateEcash(
                 msats as MSats,
-                payFromFederation.id,
+                paymentFederation.id,
             )
 
             onAcceptRef.current(res.ecash)

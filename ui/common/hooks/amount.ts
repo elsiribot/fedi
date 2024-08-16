@@ -13,7 +13,7 @@ import {
     selectMaxStableBalanceSats,
     selectMinimumDepositAmount,
     selectMinimumWithdrawAmountMsats,
-    selectPayFromFederationBalance,
+    selectPaymentFederationBalance,
     selectShowFiatTxnAmounts,
     selectStableBalanceSats,
     selectWithdrawableStableBalanceMsats,
@@ -466,11 +466,11 @@ export function useMinMaxSendAmount({
     lnurlPayment,
     // TODO: Remove this option in favor of always using payFromFederation once
     // https://github.com/fedibtc/fedi/issues/4070 is finished
-    selectedPaymentFederation: payFromFederation,
+    selectedPaymentFederation,
 }: SendAmountArgs = {}) {
     const balance = useCommonSelector(s =>
-        payFromFederation
-            ? selectPayFromFederationBalance(s)
+        selectedPaymentFederation
+            ? selectPaymentFederationBalance(s)
             : selectFederationBalance(s),
     )
 
@@ -533,9 +533,9 @@ export function useMinMaxDepositAmount() {
         maxStableBalanceSats === 0
             ? balanceSats
             : (Math.min(
-                  balanceSats,
-                  Math.max(0, maxStableBalanceSats - stableBalanceSats),
-              ) as Sats)
+                balanceSats,
+                Math.max(0, maxStableBalanceSats - stableBalanceSats),
+            ) as Sats)
 
     return { minimumAmount, maximumAmount }
 }
@@ -565,7 +565,7 @@ export function useRequestForm(args: RequestAmountArgs = {}) {
         args.lnurlWithdrawal &&
         args.lnurlWithdrawal.minWithdrawable &&
         args.lnurlWithdrawal.minWithdrawable ===
-            args.lnurlWithdrawal.maxWithdrawable
+        args.lnurlWithdrawal.maxWithdrawable
     ) {
         exactAmount = amountUtils.msatToSat(
             args.lnurlWithdrawal.minWithdrawable,

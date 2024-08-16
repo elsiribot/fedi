@@ -11,7 +11,7 @@ import {
 } from '@fedi/common/hooks/amount'
 import { useChatPaymentPush } from '@fedi/common/hooks/chat'
 import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
-import { selectMatrixRoom, selectPayFromFederation } from '@fedi/common/redux'
+import { selectMatrixRoom, selectPaymentFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../bridge'
@@ -46,7 +46,7 @@ const ConfirmSendChatPayment: React.FC<Props> = ({ route, navigation }) => {
     const { formattedPrimaryAmount, formattedSecondaryAmount } =
         makeFormattedAmountsFromSats(amount)
 
-    const payFromFederation = useAppSelector(selectPayFromFederation)
+    const paymentFederation = useAppSelector(selectPaymentFederation)
     const existingRoom = useAppSelector(s => selectMatrixRoom(s, roomId))
     const { isProcessing, handleSendPayment } = useChatPaymentPush(
         t,
@@ -78,10 +78,10 @@ const ConfirmSendChatPayment: React.FC<Props> = ({ route, navigation }) => {
                 onSend={onSend}
                 isLoading={isProcessing}
                 senderText={
-                    payFromFederation && (
+                    paymentFederation && (
                         <View style={style.sendFrom}>
                             <FederationLogo
-                                federation={payFromFederation}
+                                federation={paymentFederation}
                                 size={16}
                             />
 
@@ -89,7 +89,7 @@ const ConfirmSendChatPayment: React.FC<Props> = ({ route, navigation }) => {
                                 caption
                                 numberOfLines={1}
                                 style={style.darkGrey}>
-                                {payFromFederation?.name || ''}
+                                {paymentFederation?.name || ''}
                             </Text>
                         </View>
                     )

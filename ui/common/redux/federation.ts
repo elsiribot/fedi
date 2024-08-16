@@ -419,7 +419,7 @@ export const selectActiveFederationId = (s: CommonState) => {
     return selectActiveFederation(s)?.id
 }
 
-export const selectPayFromFederation = createSelector(
+export const selectPaymentFederation = createSelector(
     selectWalletFederations,
     selectActiveFederation,
     (s: CommonState) => s.federation.payFromFederationId,
@@ -516,8 +516,8 @@ export const selectFederationBalance = createSelector(
     },
 )
 
-export const selectPayFromFederationBalance = createSelector(
-    selectPayFromFederation,
+export const selectPaymentFederationBalance = createSelector(
+    selectPaymentFederation,
     payFromFederation => {
         return payFromFederation ? payFromFederation.balance : (0 as MSats)
     },

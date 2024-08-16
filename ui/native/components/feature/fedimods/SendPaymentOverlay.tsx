@@ -7,7 +7,7 @@ import { RejectionError } from 'webln'
 import { useSendForm } from '@fedi/common/hooks/amount'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import { selectPayFromFederation } from '@fedi/common/redux'
+import { selectPaymentFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { BridgeError } from '@fedi/common/utils/fedimint'
 import { lnurlPay } from '@fedi/common/utils/lnurl'
@@ -40,8 +40,8 @@ export const SendPaymentOverlay: React.FC<Props> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const toast = useToast()
-    const payFromFederation = useAppSelector(selectPayFromFederation)
-    const { payInvoice } = useBridge(payFromFederation?.id)
+    const paymentFederation = useAppSelector(selectPaymentFederation)
+    const { payInvoice } = useBridge(paymentFederation?.id)
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const [amountInputKey, setAmountInputKey] = useState(0)
     const [isLoading, setIsLoading] = useState(false)
@@ -73,14 +73,14 @@ export const SendPaymentOverlay: React.FC<Props> = ({
 
         setIsLoading(true)
         try {
-            if (!payFromFederation) throw new Error()
+            if (!paymentFederation) throw new Error()
             if (invoice) {
                 const res = await payInvoice(invoice.invoice)
                 onAcceptRef.current(res)
             } else if (lnurlPayment) {
                 const res = await lnurlPay(
                     fedimint,
-                    payFromFederation.id,
+                    paymentFederation.id,
                     lnurlPayment,
                     amountUtils.satToMsat(inputAmount),
                 )

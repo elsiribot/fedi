@@ -6,7 +6,7 @@ import { ActivityIndicator } from 'react-native'
 
 import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { useToast } from '@fedi/common/hooks/toast'
-import { selectPayFromFederation } from '@fedi/common/redux'
+import { selectPaymentFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { BridgeError } from '@fedi/common/utils/fedimint'
 
@@ -26,7 +26,7 @@ const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
     const toast = useToast()
-    const payFromFederation = useAppSelector(selectPayFromFederation)
+    const paymentFederation = useAppSelector(selectPaymentFederation)
     const { parsedData } = route.params
 
     const {
@@ -37,7 +37,7 @@ const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
         setInputAmount,
         handleOmniInput,
         exactAmount,
-    } = useOmniPaymentState(fedimint, payFromFederation?.id, true)
+    } = useOmniPaymentState(fedimint, paymentFederation?.id, true)
 
     useEffect(() => {
         handleOmniInput(parsedData)
@@ -51,7 +51,7 @@ const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
         if (
             inputAmount > maximumAmount ||
             inputAmount < minimumAmount ||
-            !payFromFederation
+            !paymentFederation
         )
             return
 
@@ -59,7 +59,7 @@ const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
             await fedimint.previewPayAddress(
                 parsedData.data.address,
                 inputAmount,
-                payFromFederation?.id,
+                paymentFederation?.id,
             )
 
             navigationPush('ConfirmSendOnChain', {
@@ -84,7 +84,7 @@ const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
         maximumAmount,
         navigationPush,
         parsedData.data.address,
-        payFromFederation,
+        paymentFederation,
         toast,
         t,
     ])

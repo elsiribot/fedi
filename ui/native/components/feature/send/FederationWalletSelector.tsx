@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import {
-    selectPayFromFederation,
+    selectPaymentFederation,
     selectWalletFederations,
     setPayFromFederationId,
 } from '@fedi/common/redux'
@@ -24,7 +24,7 @@ const FederationWalletSelector: React.FC<{ readonly?: boolean }> = ({
     const [opened, setOpened] = useState<boolean>(false)
     const { t } = useTranslation()
     const style = styles(theme)
-    const payFromFederation = useAppSelector(selectPayFromFederation)
+    const paymentFederation = useAppSelector(selectPaymentFederation)
     const federations = useAppSelector(selectWalletFederations)
 
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
@@ -32,7 +32,7 @@ const FederationWalletSelector: React.FC<{ readonly?: boolean }> = ({
         formattedPrimaryAmount: primaryAmountToSendFrom,
         formattedSecondaryAmount: secondaryAmountToSendFrom,
     } = makeFormattedAmountsFromMSats(
-        payFromFederation?.balance || (0 as MSats),
+        paymentFederation?.balance || (0 as MSats),
     )
 
     const handleFederationSelected = useCallback(
@@ -58,7 +58,7 @@ const FederationWalletSelector: React.FC<{ readonly?: boolean }> = ({
                         {`${formattedPrimaryAmount} (${formattedSecondaryAmount})`}
                     </Text>
                 </View>
-                {payFromFederation?.id === f.id && (
+                {paymentFederation?.id === f.id && (
                     <SvgImage
                         name="Check"
                         size={SvgImageSize.sm}
@@ -79,10 +79,10 @@ const FederationWalletSelector: React.FC<{ readonly?: boolean }> = ({
                 style={style.selectedFederation}
                 onPress={() => setOpened(true)}
                 disabled={readonly}>
-                <FederationLogo federation={payFromFederation} size={32} />
+                <FederationLogo federation={paymentFederation} size={32} />
                 <View style={style.tileTextContainer}>
                     <Text caption bold numberOfLines={1}>
-                        {payFromFederation?.name || ''}
+                        {paymentFederation?.name || ''}
                     </Text>
                     <Text
                         style={{ color: theme.colors.darkGrey }}

@@ -10,7 +10,7 @@ import {
     useBalanceDisplay,
 } from '@fedi/common/hooks/amount'
 import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
-import { selectPayFromFederation } from '@fedi/common/redux'
+import { selectPaymentFederation } from '@fedi/common/redux'
 import { Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { hexToRgba } from '@fedi/common/utils/color'
@@ -38,8 +38,8 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
     const { amount } = route.params
     const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(false)
-    const payFromFederation = useAppSelector(selectPayFromFederation)
-    const { generateEcash } = useBridge(payFromFederation?.id)
+    const paymentFederation = useAppSelector(selectPaymentFederation)
+    const { generateEcash } = useBridge(paymentFederation?.id)
     const balanceDisplay = useBalanceDisplay(t)
     const { feeBreakdownTitle, ecashFeesGuidanceText, makeEcashFeeContent } =
         useFeeDisplayUtils(t)

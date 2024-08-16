@@ -32,7 +32,7 @@ import {
     selectIsActiveFederationRecovering,
     selectLanguage,
     selectMatrixAuth,
-    selectPayFromFederation,
+    selectPaymentFederation,
 } from '@fedi/common/redux'
 import {
     AnyParsedData,
@@ -109,7 +109,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
     const { listGateways, getNostrPubKey } = useBridge(activeFederation?.id)
-    const payFromFederation = useAppSelector(selectPayFromFederation)
+    const paymentFederation = useAppSelector(selectPaymentFederation)
     const member = useAppSelector(selectMatrixAuth)
     const hasSetMatrixDisplayName = useAppSelector(
         selectHasSetMatrixDisplayName,
@@ -251,7 +251,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 setShowRecoveryInProgress(true)
                 throw Error(t('errors.unknown-error'))
             }
-            if (payFromFederation?.id === undefined) {
+            if (paymentFederation?.id === undefined) {
                 log.error('fedi.decodeInvoice', 'No active federation')
                 throw new Error('No active federation')
             }
@@ -262,7 +262,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             try {
                 invoice = await fedimint.decodeInvoice(
                     data,
-                    payFromFederation.id,
+                    paymentFederation.id,
                 )
             } catch (error) {
                 log.error('sendPayment', 'error', error)
@@ -276,12 +276,12 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             return new Promise((resolve, reject) => {
                 // TODO: Hoist this to respect balance changes
                 if (
-                    !payFromFederation.balance ||
-                    payFromFederation.balance < invoice.amount
+                    !paymentFederation.balance ||
+                    paymentFederation.balance < invoice.amount
                 ) {
                     const message = t('errors.insufficient-balance', {
                         balance: `${amountUtils.msatToSat(
-                            payFromFederation?.balance as MSats,
+                            paymentFederation?.balance as MSats,
                         )} SATS`,
                     })
                     toast.show({ content: message, status: 'error' })
