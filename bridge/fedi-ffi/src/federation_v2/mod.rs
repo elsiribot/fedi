@@ -222,18 +222,21 @@ impl FederationV2 {
         self.subscribe_to_all_operations().await;
 
         if self
-            .fedi_fee_remittance_service
-            .set(FediFeeRemittanceService::init(self))
-            .is_err()
-        {
-            error!("fedi fee remittance service already initialized");
-        }
-        if self
             .gateway_service
             .set(LnGatewayService::new(self.client.clone(), &self.task_group))
             .is_err()
         {
             error!("ln gateway service already initialized");
+        }
+
+        // This needs to be initialized after LnGatewayService since remitting fees
+        // happens through lightning and we need a gateway for that.
+        if self
+            .fedi_fee_remittance_service
+            .set(FediFeeRemittanceService::init(self))
+            .is_err()
+        {
+            error!("fedi fee remittance service already initialized");
         }
 
         // We disable the StabilityPoolSweeperService in tests to ensure that staged
