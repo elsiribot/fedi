@@ -12,6 +12,7 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native'
+import { ScrollView } from 'react-native'
 
 import { selectAllVisibleMods, setModVisibility } from '@fedi/common/redux/mod'
 
@@ -118,10 +119,10 @@ const Mods: React.FC = () => {
         <View style={style.container}>
             <ModsHeader />
             {mods.length > 0 ? (
-                <View style={style.listContainer}>
+                <ScrollView contentContainerStyle={style.listContainer}>
                     {renderFediModShortcuts()}
                     {renderBuffers()}
-                </View>
+                </ScrollView>
             ) : (
                 <View style={style.empty}>
                     <Pressable
