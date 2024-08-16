@@ -45,7 +45,7 @@ use fedimint_core::module::ApiRequestErased;
 use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
 use fedimint_core::timing::TimeReporter;
 use fedimint_core::util::backon::FibonacciBuilder as FibonacciBackoff;
-use fedimint_core::{maybe_add_send_sync, Amount, PeerId};
+use fedimint_core::{maybe_add_send_sync, Amount, PeerId, SATS_PER_BITCOIN};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
     InternalPayState, LightningClientInit, LightningClientModule, LightningOperationMeta,
@@ -71,7 +71,7 @@ use stability_pool_client::{
     StabilityPoolDepositOperationState, StabilityPoolMeta, StabilityPoolWithdrawalOperationState,
 };
 use tokio::sync::{Mutex, OnceCell};
-use tracing::{error, info, warn, Level};
+use tracing::{error, info, instrument, warn, Level};
 
 use self::backup_service::BackupService;
 pub use self::backup_service::BackupServiceStatus;
@@ -98,13 +98,13 @@ use crate::error::ErrorCode;
 use crate::event::RecoveryProgressEvent;
 use crate::features::FeatureCatalog;
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
-use crate::storage::FediFeeSchedule;
+use crate::storage::{AppState, FediFeeSchedule};
 use crate::types::{
     EcashReceiveMetadata, EcashSendMetadata, GuardianStatus, LightningSendMetadata,
     OperationFediFeeStatus, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId, RpcFeeDetails,
     RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOOBState, RpcOnchainState,
     RpcOperationFediFeeStatus, RpcPayAddressResponse, RpcStabilityPoolTransactionState,
-    RpcTransaction, RpcTransactionDirection, WithdrawalDetails,
+    RpcTransaction, RpcTransactionDirection, TransactionDateFiatInfo, WithdrawalDetails,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
@@ -166,6 +166,7 @@ pub struct FederationV2 {
     // virtual balance) and the time of use (spending ecash and recording fee).
     pub spend_guard: Arc<Mutex<()>>,
     pub feature_catalog: Arc<FeatureCatalog>,
+    pub app_state: Arc<AppState>,
 }
 
 impl FederationV2 {
@@ -190,6 +191,7 @@ impl FederationV2 {
         secret: DerivableSecret,
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
+        app_state: Arc<AppState>,
     ) -> Self {
         let recovering = ng.has_pending_recoveries();
         let client = Arc::new(ng);
@@ -207,6 +209,7 @@ impl FederationV2 {
             client,
             spend_guard: Default::default(),
             feature_catalog,
+            app_state,
         };
         if !recovering {
             federation.start_background_tasks().await;
@@ -294,6 +297,7 @@ impl FederationV2 {
     }
 
     /// Instantiate Federation from FediConfig
+    #[allow(clippy::too_many_arguments)]
     pub async fn from_db(
         db: Database,
         event_sink: EventSink,
@@ -302,6 +306,7 @@ impl FederationV2 {
         device_index: u8,
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
+        app_state: Arc<AppState>,
     ) -> anyhow::Result<Self> {
         let client_builder = Self::build_client_builder(db.clone()).await?;
         let config = Client::get_config_from_db(&db)
@@ -329,6 +334,7 @@ impl FederationV2 {
             auxiliary_secret,
             fedi_fee_helper,
             feature_catalog,
+            app_state,
         )
         .await)
     }
@@ -374,6 +380,7 @@ impl FederationV2 {
         device_index: u8,
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
+        app_state: Arc<AppState>,
     ) -> Result<Self> {
         let mut invite_code =
             InviteCode::from_str(&invite_code_string).context("invalid invite code")?;
@@ -427,6 +434,7 @@ impl FederationV2 {
                 auxiliary_secret,
                 fedi_fee_helper,
                 feature_catalog,
+                app_state,
             )
             .await;
             Ok(this)
@@ -443,6 +451,7 @@ impl FederationV2 {
                 auxiliary_secret,
                 fedi_fee_helper,
                 feature_catalog,
+                app_state,
             )
             .await)
         }
@@ -697,6 +706,7 @@ impl FederationV2 {
 
         self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
             .await?;
+        let _ = self.record_tx_date_fiat_info(operation_id, amount.0).await;
         self.subscribe_invoice(operation_id, invoice.clone())
             .await?;
 
@@ -746,6 +756,7 @@ impl FederationV2 {
                             //     .map(|(_, status)| status)
                             //     .ok()
                             //     .map(Into::into);
+                            let _ = fed.record_tx_date_fiat_info(operation_id, amount).await;
                             let onchain_details = Some(RpcBitcoinDetails {
                                 address: address.clone(),
                             });
@@ -948,7 +959,8 @@ impl FederationV2 {
 
         let spend_guard = self.spend_guard.lock().await;
         let virtual_balance = self.get_balance().await;
-        if amount.msats + fedi_fee + network_fee > virtual_balance.msats {
+        let est_total_spend = amount.msats + fedi_fee + network_fee;
+        if est_total_spend > virtual_balance.msats {
             bail!(ErrorCode::InsufficientBalance(RpcAmount(
                 get_max_spendable_amount(virtual_balance, fedi_fee_ppm, None, Some(gateway_fees))
             )));
@@ -991,6 +1003,12 @@ impl FederationV2 {
             .await?;
         drop(spend_guard);
 
+        let _ = self
+            .record_tx_date_fiat_info(
+                payment_type.operation_id(),
+                Amount::from_msats(est_total_spend),
+            )
+            .await;
         let response = timeout(
             PAY_INVOICE_TIMEOUT,
             self.subscribe_to_ln_pay(payment_type, extra_meta, invoice.clone()),
@@ -1081,6 +1099,9 @@ impl FederationV2 {
         self.write_pending_send_fedi_fee(operation_id, Amount::from_msats(fedi_fee))
             .await?;
         drop(spend_guard);
+        let _ = self
+            .record_tx_date_fiat_info(operation_id, Amount::from_msats(est_total_spend))
+            .await;
         let mut updates = self
             .client
             .get_first_module::<WalletClientModule>()
@@ -1537,6 +1558,7 @@ impl FederationV2 {
             .await?;
         self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
             .await?;
+        let _ = self.record_tx_date_fiat_info(operation_id, amount).await;
         self.subscribe_to_operation(operation_id).await?;
         Ok(amount)
     }
@@ -1744,6 +1766,10 @@ impl FederationV2 {
         // spend_guard must be dropped after writing fee since virtual balance only
         // updates once fee is written
         drop(spend_guard);
+
+        let _ = self
+            .record_tx_date_fiat_info(operation_id, amount + fedi_fee)
+            .await;
         self.subscribe_to_operation(operation_id).await?;
 
         Ok(RpcGenerateEcashResponse {
@@ -2519,6 +2545,9 @@ impl FederationV2 {
         let operation_id = module.deposit_to_seek(amount).await?;
         self.write_pending_send_fedi_fee(operation_id, fedi_fee)
             .await?;
+        let _ = self
+            .record_tx_date_fiat_info(operation_id, amount + fedi_fee)
+            .await;
         drop(spend_guard);
 
         if let Ok(index) = module.current_cycle_index().await {
@@ -2639,6 +2668,7 @@ impl FederationV2 {
                         let _ = self
                             .write_success_receive_fedi_fee(operation_id, amount)
                             .await;
+                        let _ = self.record_tx_date_fiat_info(operation_id, amount).await;
                     }
                     StabilityPoolWithdrawalOperationState::InvalidOperationType
                     | StabilityPoolWithdrawalOperationState::TxRejected(_)
@@ -3127,6 +3157,51 @@ impl FederationV2 {
         }
 
         res
+    }
+
+    #[instrument(skip(self), fields(fiat_code, fiat_value_hundredths), err, ret)]
+    async fn record_tx_date_fiat_info(
+        &self,
+        operation_id: OperationId,
+        amount: Amount,
+    ) -> anyhow::Result<()> {
+        // Early return if we've already recorded the fiat info for given operation
+        let mut dbtx = self.dbtx().await;
+        let op_db_key = TransactionDateFiatInfoKey(operation_id);
+        if dbtx.get_value(&op_db_key).await.is_some() {
+            info!("Transaction date fiat info already exists for given OP ID, not overwriting");
+            return Ok(());
+        }
+
+        let Some(cached_fiat_fx_info) = self.app_state.get_cached_fiat_fx_info().await else {
+            bail!("No cached fiat FX info present");
+        };
+        let fiat_code = cached_fiat_fx_info.fiat_code.clone();
+        tracing::Span::current().record("fiat_code", &fiat_code);
+
+        // Using cents below for readability
+        // 1 BTC = (btc_to_fiat_hundredths) cents
+        // => 10^8 sats = (btc_to_fiat_hundredths) cents
+        // => 10^11 msats = (btc_to_fiat_hundredths) cents
+        // => 1 msat = (btc_to_fiat_hundredths) / 10^11 cents
+        // => amount msat = amount * (btc_to_fiat_hundredths) / 10^11 cents
+        let fiat_value_hundredths =
+            (amount.msats * cached_fiat_fx_info.btc_to_fiat_hundredths) / (SATS_PER_BITCOIN * 1000);
+        tracing::Span::current().record("fiat_value_hundredths", fiat_value_hundredths);
+        dbtx.insert_entry(
+            &TransactionDateFiatInfoKey(operation_id),
+            &TransactionDateFiatInfo {
+                fiat_code,
+                fiat_value_hundredths,
+            },
+        )
+        .await;
+        match dbtx.commit_tx_result().await {
+            Ok(_) => info!("Successfully logged transaction date fiat info"),
+            Err(e) => error!(?e, "Error logging transaction date fiat info"),
+        };
+
+        Ok(())
     }
 }
 

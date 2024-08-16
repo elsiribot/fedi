@@ -149,6 +149,7 @@ impl Bridge {
                                         )?,
                                         fedi_fee_helper.clone(),
                                         feature_catalog.clone(),
+                                        app_state.clone(),
                                     )
                                     .await
                                     .with_context(|| {
@@ -323,6 +324,7 @@ impl Bridge {
                     device_index,
                     this.fedi_fee_helper.clone(),
                     this.feature_catalog.clone(),
+                    this.app_state.clone(),
                 )
                 .await
                 .with_context(|| format!("loading federation {}", federation_id.clone()))?;
@@ -401,6 +403,7 @@ impl Bridge {
             device_index,
             self.fedi_fee_helper.clone(),
             self.feature_catalog.clone(),
+            self.app_state.clone(),
         )
         .await?;
         let federation_id = federation.federation_id();

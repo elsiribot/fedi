@@ -518,6 +518,11 @@ impl AppState {
         })
         .await
     }
+
+    pub async fn get_cached_fiat_fx_info(&self) -> Option<FiatFXInfo> {
+        self.with_read_lock(|state| state.cached_fiat_fx_info.clone())
+            .await
+    }
 }
 
 #[cfg(test)]
