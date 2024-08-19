@@ -73,7 +73,7 @@ export type ErrorCode =
 export type Event =
   | { transaction: TransactionEvent }
   | { log: LogEvent }
-  | { federation: RpcFederation }
+  | { federation: RpcFederationMaybeLoading }
   | { balance: BalanceEvent }
   | { panic: PanicEvent }
   | { stabilityPoolDeposit: StabilityPoolDepositEvent }
@@ -194,6 +194,11 @@ export interface RpcFederation {
 }
 
 export type RpcFederationId = string;
+
+export type RpcFederationMaybeLoading =
+  | { status: "loading" }
+  | { status: "failed"; error: string }
+  | ({ status: "ready" } & RpcFederation);
 
 export interface RpcFederationPreview {
   id: RpcFederationId;
@@ -359,19 +364,11 @@ export interface RpcMethods {
   leaveFederation: [{ federationId: RpcFederationId }, null];
   listFederations: [
     Record<string, never>,
-    Array<{
-      balance: RpcAmount;
-      id: RpcFederationId;
-      network: string | null;
-      name: string;
-      inviteCode: string;
-      meta: Record<string, string>;
-      recovering: boolean;
-      nodes: Record<string, { url: string; name: string }>;
-      version: number;
-      clientConfig: RpcJsonClientConfig | null;
-      fediFeeSchedule: RpcFediFeeSchedule;
-    }>,
+    Array<
+      | { status: "loading" }
+      | { status: "failed"; error: string }
+      | ({ status: "ready" } & RpcFederation)
+    >,
   ];
   guardianStatus: [
     { federationId: RpcFederationId },
