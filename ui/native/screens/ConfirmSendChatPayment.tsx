@@ -1,6 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Text, Theme } from '@rneui/themed'
-import { useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'

@@ -2,13 +2,13 @@ import { TFunction } from 'i18next'
 import { useCallback } from 'react'
 
 import {
+    makeStabilityTxnAmountText as makeStabilityTxnAmountTextUtil,
+    makeStabilityTxnDetailItems as makeStabilityTxnDetailItemsUtil,
+    makeStabilityTxnFeeDetails as makeStabilityTxnFeeDetailsUtil,
     makeTxnAmountText as makeTxnAmountTextUtil,
     makeTxnDetailItems as makeTxnDetailItemsUtil,
     makeTxnFeeDetails as makeTxnFeeDetailsUtil,
     makeTxnNotesText as makeTxnNotesTextUtil,
-    makeStabilityTxnAmountText as makeStabilityTxnAmountTextUtil,
-    makeStabilityTxnDetailItems as makeStabilityTxnDetailItemsUtil,
-    makeStabilityTxnFeeDetails as makeStabilityTxnFeeDetailsUtil,
 } from '@fedi/common/utils/wallet'
 
 import {
@@ -21,8 +21,8 @@ import {
 } from '../redux'
 import {
     fetchTransactions as reduxFetchTransactions,
-    selectTransactionHistory,
     selectStabilityTransactionHistory,
+    selectTransactionHistory,
 } from '../redux/transactions'
 import { Federation, MSats, Sats, Transaction } from '../types'
 import { RpcFeeDetails } from '../types/bindings'
@@ -217,42 +217,47 @@ export function useExportTransactions(fedimint: FedimintBridge) {
     const { fetchTransactions } = useTransactionHistory(fedimint)
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
-    const exportTransactions = useCallback(async (federation: Federation): Promise<
-        | { success: true; uri: string; fileName: string }
-        | { success: false; message: string }
-    > => {
-        let transactions: Array<Transaction> = []
+    const exportTransactions = useCallback(
+        async (
+            federation: Federation,
+        ): Promise<
+            | { success: true; uri: string; fileName: string }
+            | { success: false; message: string }
+        > => {
+            let transactions: Array<Transaction> = []
 
-        try {
-            transactions = await fetchTransactions({
-                // TODO: find a better way than a hardcoded value
-                limit: 10000,
-            })
+            try {
+                transactions = await fetchTransactions({
+                    // TODO: find a better way than a hardcoded value
+                    limit: 10000,
+                })
 
-            const fileName = makeCSVFilename(
-                federation?.name
-                    ? 'transactions-' + federation?.name
-                    : 'transactions',
-            )
-            const uri = makeBase64CSVUri(
-                makeTransactionHistoryCSV(
-                    transactions,
-                    makeFormattedAmountsFromMSats,
-                ),
-            )
+                const fileName = makeCSVFilename(
+                    federation?.name
+                        ? 'transactions-' + federation?.name
+                        : 'transactions',
+                )
+                const uri = makeBase64CSVUri(
+                    makeTransactionHistoryCSV(
+                        transactions,
+                        makeFormattedAmountsFromMSats,
+                    ),
+                )
 
-            return {
-                success: true,
-                uri,
-                fileName,
+                return {
+                    success: true,
+                    uri,
+                    fileName,
+                }
+            } catch (e) {
+                return {
+                    success: false,
+                    message: (e as Error).message,
+                }
             }
-        } catch (e) {
-            return {
-                success: false,
-                message: (e as Error).message,
-            }
-        }
-    }, [fetchTransactions, makeFormattedAmountsFromMSats])
+        },
+        [fetchTransactions, makeFormattedAmountsFromMSats],
+    )
 
     return exportTransactions
 }

@@ -1,6 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import { Button, Theme } from '@rneui/themed'
-import { Text, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'

@@ -6,15 +6,15 @@ import { XMPP_RESOURCE } from '../constants/xmpp'
 import {
     ClientConfigMetadata,
     Federation,
-    MSats,
+    FederationListItem,
     FediMod,
+    JoinPreview,
+    MSats,
+    Network,
+    PublicFederation,
     SupportedCurrency,
     SupportedMetaFields,
     XmppConnectionOptions,
-    PublicFederation,
-    FederationListItem,
-    Network,
-    JoinPreview,
 } from '../types'
 import { RpcCommunity } from '../types/bindings'
 import { FedimintBridge } from './fedimint'

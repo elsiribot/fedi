@@ -4,7 +4,7 @@
 import { ProtectedFeatures } from '../redux'
 import { ModVisibility } from '../redux/mod'
 import { Chat, ChatGroup, ChatMember, ChatMessage } from './chat'
-import { Federation, Guardian, FediMod, SupportedCurrency } from './fedimint'
+import { Federation, FediMod, Guardian, SupportedCurrency } from './fedimint'
 
 export interface StoredStateV0 {
     version: 0 // Not a real version, just implemented for demonstrative purposes

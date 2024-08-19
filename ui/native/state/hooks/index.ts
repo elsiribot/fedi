@@ -13,12 +13,12 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 
 import { usePublishNotificationToken } from '@fedi/common/hooks/chat'
 import {
+    ensureHealthyMatrixStream,
     refreshActiveStabilityPool,
+    selectActiveFederation,
     selectCurrency,
     selectStableBalance,
     selectStableBalancePending,
-    selectActiveFederation,
-    ensureHealthyMatrixStream,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 

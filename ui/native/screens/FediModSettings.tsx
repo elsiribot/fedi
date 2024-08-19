@@ -3,11 +3,11 @@ import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+    Image,
     Pressable,
     ScrollView,
     StyleSheet,
     View,
-    Image,
     useWindowDimensions,
 } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'

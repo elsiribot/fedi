@@ -9,18 +9,18 @@ import { useIsStabilityPoolSupported } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     changeAuthenticatedGuardian,
-    selectActiveFederation,
-    selectOnchainDepositsEnabled,
-    setOnchainDepositsEnabled,
-    selectStableBalanceEnabled,
-    setStableBalanceEnabled,
-    resetNuxSteps,
-    selectShowFiatTxnAmounts,
-    setShowFiatTxnAmounts,
-    selectStabilityPoolCycleStartPrice,
     refreshActiveStabilityPool,
+    resetNuxSteps,
+    selectActiveFederation,
     selectFediModDebugMode,
+    selectOnchainDepositsEnabled,
+    selectShowFiatTxnAmounts,
+    selectStabilityPoolCycleStartPrice,
+    selectStableBalanceEnabled,
     setFediModDebugMode,
+    setOnchainDepositsEnabled,
+    setShowFiatTxnAmounts,
+    setStableBalanceEnabled,
 } from '@fedi/common/redux'
 import { selectCurrency } from '@fedi/common/redux/currency'
 import {

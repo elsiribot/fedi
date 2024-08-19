@@ -1,26 +1,27 @@
 import { TFunction } from 'i18next'
-import { useState, useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { RequestInvoiceArgs } from 'webln'
 
 import {
-    selectBtcExchangeRate,
-    selectCurrency,
-    selectMaxInvoiceAmount,
-    selectFederationMetadata,
-    selectFederationBalance,
     selectAmountInputType,
-    setAmountInputType,
+    selectBtcExchangeRate,
     selectBtcUsdExchangeRate,
-    selectMinimumDepositAmount,
-    selectWithdrawableStableBalanceMsats,
-    selectMinimumWithdrawAmountMsats,
-    selectShowFiatTxnAmounts,
+    selectCurrency,
+    selectFederationBalance,
+    selectFederationMetadata,
+    selectMaxInvoiceAmount,
     selectMaxStableBalanceSats,
-    selectStableBalanceSats,
+    selectMinimumDepositAmount,
+    selectMinimumWithdrawAmountMsats,
     selectPayFromFederationBalance,
+    selectShowFiatTxnAmounts,
+    selectStableBalanceSats,
+    selectWithdrawableStableBalanceMsats,
+    setAmountInputType,
 } from '../redux'
 import {
     Btc,
+    EcashRequest,
     Invoice,
     MSats,
     ParsedBip21,
@@ -31,7 +32,6 @@ import {
     SupportedCurrency,
     UsdCents,
 } from '../types'
-import { EcashRequest } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationDefaultCurrency } from '../utils/FederationUtils'
 import stringUtils from '../utils/StringUtils'

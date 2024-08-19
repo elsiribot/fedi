@@ -2,7 +2,7 @@ import { jid } from '@xmpp/client'
 import { JID } from '@xmpp/jid'
 import { ImageSourcePropType } from 'react-native'
 
-import { MSats, Invoice } from '@fedi/common/types'
+import { Invoice, MSats } from '@fedi/common/types'
 
 import { FediModImages } from '../assets/images'
 import { DEFAULT_GROUP_NAME } from '../constants'

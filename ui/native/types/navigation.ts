@@ -18,7 +18,7 @@ import {
     Transaction,
 } from '@fedi/common/types'
 
-import { MSats, FediMod } from '.'
+import { FediMod, MSats } from '.'
 
 // This type declaration allows all instances of useNavigation
 // to be aware of type-safety from RootStackParamsList
