@@ -94,6 +94,7 @@ const initialState = {
     errors: [] as MatrixError[],
     pushNotificationToken: null as string | null,
     groupPreviews: {} as Record<MatrixRoom['id'], MatrixGroupPreview>,
+    drafts: {} as Record<string, string>,
 }
 
 export type MatrixState = typeof initialState
@@ -189,6 +190,17 @@ export const matrixSlice = createSlice({
         },
         resetMatrixState() {
             return { ...initialState }
+        },
+        setChatDraft(
+            state,
+            action: PayloadAction<{ roomId: string; text: string }>,
+        ) {
+            const { roomId, text } = action.payload
+            const id = roomId as keyof MatrixState['drafts']
+
+            if (text.length === 0 && state.drafts[id]) delete state.drafts[id]
+
+            state.drafts[id] = text
         },
     },
     extraReducers: builder => {
@@ -324,6 +336,7 @@ export const {
     handleMatrixRoomListObservableUpdates,
     handleMatrixRoomTimelineObservableUpdates,
     resetMatrixState,
+    setChatDraft,
 } = matrixSlice.actions
 
 /*** Async thunk actions ***/
@@ -1424,4 +1437,9 @@ export const selectDefaultMatrixRoomIds = createSelector(
         }
         return defaultMatrixRoomIds
     },
+)
+
+export const selectChatDrafts = createSelector(
+    (s: CommonState) => s.matrix.drafts,
+    drafts => drafts,
 )
