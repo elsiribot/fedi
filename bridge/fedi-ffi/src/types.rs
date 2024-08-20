@@ -70,11 +70,11 @@ pub struct RpcFederation {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[serde(tag = "status")]
+#[serde(tag = "init_state")]
 #[ts(export, export_to = "target/bindings/")]
 pub enum RpcFederationMaybeLoading {
-    Loading,
-    Failed { error: String },
+    Loading { id: RpcFederationId },
+    Failed { error: String, id: RpcFederationId },
     Ready(RpcFederation),
 }
 

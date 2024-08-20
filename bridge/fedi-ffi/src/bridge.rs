@@ -250,6 +250,7 @@ impl Bridge {
                 bridge
                     .send_federation_event(RpcFederationMaybeLoading::Failed {
                         error: err.to_string(),
+                        id: RpcFederationId(federation_id_str.clone()),
                     })
                     .await;
                 bridge.federations.lock().await.insert(
@@ -546,14 +547,17 @@ impl Bridge {
 
     pub async fn list_federations(&self) -> Vec<RpcFederationMaybeLoading> {
         let federations = self.federations.lock().await.clone();
-        join_all(federations.into_values().map(|federation| async move {
+        join_all(federations.into_iter().map(|(id, federation)| async move {
             match federation {
                 FederationMaybeLoading::Ready(fed) => {
                     RpcFederationMaybeLoading::Ready(federation_v2_to_rpc_federation(&fed).await)
                 }
-                FederationMaybeLoading::Loading => RpcFederationMaybeLoading::Loading,
+                FederationMaybeLoading::Loading => RpcFederationMaybeLoading::Loading {
+                    id: RpcFederationId(id),
+                },
                 FederationMaybeLoading::Failed(err) => RpcFederationMaybeLoading::Failed {
                     error: err.to_string(),
+                    id: RpcFederationId(id),
                 },
             }
         }))

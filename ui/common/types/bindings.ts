@@ -196,9 +196,9 @@ export interface RpcFederation {
 export type RpcFederationId = string;
 
 export type RpcFederationMaybeLoading =
-  | { status: "loading" }
-  | { status: "failed"; error: string }
-  | ({ status: "ready" } & RpcFederation);
+  | { init_state: "loading"; id: RpcFederationId }
+  | { init_state: "failed"; error: string; id: RpcFederationId }
+  | ({ init_state: "ready" } & RpcFederation);
 
 export interface RpcFederationPreview {
   id: RpcFederationId;
@@ -365,9 +365,9 @@ export interface RpcMethods {
   listFederations: [
     Record<string, never>,
     Array<
-      | { status: "loading" }
-      | { status: "failed"; error: string }
-      | ({ status: "ready" } & RpcFederation)
+      | { init_state: "loading"; id: RpcFederationId }
+      | { init_state: "failed"; error: string; id: RpcFederationId }
+      | ({ init_state: "ready" } & RpcFederation)
     >,
   ];
   guardianStatus: [
