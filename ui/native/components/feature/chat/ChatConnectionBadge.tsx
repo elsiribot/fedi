@@ -96,7 +96,12 @@ export const ChatConnectionBadge: React.FC<Props> = ({
     const style = styles(theme)
 
     return (
-        <Animated.View style={[style.container, containerStyle]}>
+        <Animated.View
+            style={[
+                style.container,
+                containerStyle,
+                isVisible ? { zIndex: 3 } : { zIndex: -1 },
+            ]}>
             <Animated.View style={[style.badge, badgeStyle]}>
                 <ActivityIndicator size={16} color={theme.colors.primary} />
                 <Text caption medium>
@@ -117,7 +122,6 @@ const styles = (theme: Theme) =>
             justifyContent: 'center',
             alignItems: 'center',
             pointerEvents: 'box-none',
-            zIndex: 3,
             elevation: 3,
         },
         badge: {
