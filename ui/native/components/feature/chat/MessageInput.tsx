@@ -5,10 +5,12 @@ import {
     Insets,
     Keyboard,
     KeyboardEvent,
+    NativeSyntheticEvent,
     Platform,
     Pressable,
     StyleSheet,
     TextInput,
+    TextInputContentSizeChangeEventData,
     View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -52,6 +54,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
     )
     const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
     const [messageText, setMessageText] = useState<string>(drafts[id] ?? '')
+    const directUserId = useMemo(
+        () => existingRoom?.directUserId ?? null,
+        [existingRoom],
+    )
     const inputRef = useRef<TextInput | null>(null)
 
     useDebouncedEffect(
@@ -100,7 +106,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
         }
     }, [inputDisabled])
 
-    const style = styles(theme, insets)
+    const style = useMemo(() => styles(theme, insets), [theme, insets])
+
+    const inputStyle = useMemo(() => {
+        return isReadOnly ? style.textInputReadonly : style.textInputStyle
+    }, [style, isReadOnly])
+
     const placeholder = useMemo(
         () =>
             isReadOnly
@@ -108,6 +119,26 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 : t('words.message'),
         [isReadOnly, t],
     )
+
+    const handleContentSizeChange = useCallback(
+        ({
+            nativeEvent: {
+                contentSize: { height },
+            },
+        }: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) => {
+            if (height > inputHeight) {
+                setInputHeight(
+                    Math.min(theme.sizes.maxMessageInputHeight, height),
+                )
+            } else if (height < inputHeight) {
+                setInputHeight(
+                    Math.max(theme.sizes.minMessageInputHeight, height),
+                )
+            }
+        },
+        [inputHeight, theme],
+    )
+
     return (
         <View
             style={[
@@ -118,9 +149,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 isReadOnly ? { borderTopWidth: 0 } : {},
             ]}>
             {/* in-chat payments only available for DirectChat after a room has already been created with the user */}
-            {existingRoom && existingRoom.directUserId && (
-                <ChatWalletButton recipientId={existingRoom.directUserId} />
-            )}
+            {directUserId && <ChatWalletButton recipientId={directUserId} />}
             <Input
                 onChangeText={setMessageText}
                 value={messageText}
@@ -128,26 +157,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     inputRef.current = ref as TextInput
                 }}
                 placeholder={`${placeholder}`}
-                onContentSizeChange={({
-                    nativeEvent: {
-                        contentSize: { height },
-                    },
-                }) => {
-                    if (height > inputHeight) {
-                        setInputHeight(
-                            Math.min(theme.sizes.maxMessageInputHeight, height),
-                        )
-                    } else if (height < inputHeight) {
-                        setInputHeight(
-                            Math.max(theme.sizes.minMessageInputHeight, height),
-                        )
-                    }
-                }}
+                onContentSizeChange={handleContentSizeChange}
                 containerStyle={[style.textInputOuter, { height: inputHeight }]}
                 inputContainerStyle={style.textInputInner}
-                inputStyle={
-                    isReadOnly ? style.textInputReadonly : style.textInputStyle
-                }
+                inputStyle={inputStyle}
                 multiline
                 numberOfLines={3}
                 blurOnSubmit={false}

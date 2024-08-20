@@ -3,6 +3,7 @@ import React from 'react'
 import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from 'react-native'
 import type { LinearGradientProps } from 'react-native-linear-gradient'
 
+import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectMatrixAuth } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import { isPaymentEvent } from '@fedi/common/utils/matrix'
@@ -11,6 +12,7 @@ import { useAppSelector } from '../../../state/hooks'
 import { OptionalGradient } from '../../ui/OptionalGradient'
 import ChatPaymentEvent from './ChatPaymentEvent'
 import MessageContents from './MessageContents'
+import { MessageItemError } from './MessageItemError'
 
 type Props = {
     event: MatrixEvent
@@ -64,31 +66,33 @@ const ChatEvent: React.FC<Props> = ({ event, last = false }: Props) => {
         textStyles.push(styles(theme).receivedMessageText)
     }
     return (
-        <View
-            style={[
-                styles(theme).container,
-                isQueued && styles(theme).containerQueued,
-            ]}>
-            <View style={styles(theme).messageContainer}>
-                <View style={styles(theme).contentContainer}>
-                    <View style={bubbleContainerStyles}>
-                        <OptionalGradient
-                            gradient={bubbleGradient}
-                            style={bubbleInnerStyles}>
-                            {isPayment ? (
-                                <ChatPaymentEvent event={event} />
-                            ) : (
-                                <MessageContents
-                                    sentByMe={isMe}
-                                    content={event.content.body}
-                                    textStyles={textStyles}
-                                />
-                            )}
-                        </OptionalGradient>
+        <ErrorBoundary fallback={() => <MessageItemError />}>
+            <View
+                style={[
+                    styles(theme).container,
+                    isQueued && styles(theme).containerQueued,
+                ]}>
+                <View style={styles(theme).messageContainer}>
+                    <View style={styles(theme).contentContainer}>
+                        <View style={bubbleContainerStyles}>
+                            <OptionalGradient
+                                gradient={bubbleGradient}
+                                style={bubbleInnerStyles}>
+                                {isPayment ? (
+                                    <ChatPaymentEvent event={event} />
+                                ) : (
+                                    <MessageContents
+                                        sentByMe={isMe}
+                                        content={event.content.body}
+                                        textStyles={textStyles}
+                                    />
+                                )}
+                            </OptionalGradient>
+                        </View>
                     </View>
                 </View>
             </View>
-        </View>
+        </ErrorBoundary>
     )
 }
 

@@ -59,9 +59,12 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
     const dispatch = useAppDispatch()
 
-    const handleSelectMember = useCallback((userId: string) => {
-        setSelectedUserId(userId)
-    }, [])
+    const handleSelectMember = useCallback(
+        (userId: string) => {
+            setSelectedUserId(userId)
+        },
+        [setSelectedUserId],
+    )
 
     // Room is empty if we're the only member
     const isAlone =
@@ -76,10 +79,9 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     const listRef = useRef<FlatList>(null)
     const lastScrolledMessageIdRef = useRef(events?.[0]?.id)
     const isScrolledToBottomRef = useRef(true)
-    const eventGroups = useMemo(
-        () => makeMatrixEventGroups(events, 'desc'),
-        [events],
-    )
+    const eventGroups = useMemo(() => {
+        return makeMatrixEventGroups(events, 'desc')
+    }, [events])
 
     // Any time we get a change in the number of events, we reset hasPaginated
     // so that the user will attempt pagination again.
@@ -87,7 +89,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
         setHasPaginated(false)
     }, [events.length])
 
-    const style = styles(theme)
+    const style = useMemo(() => styles(theme), [theme])
 
     // Animate new message button in and out
     useEffect(() => {
@@ -103,7 +105,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
         // Use scrollToOffset instead of scrollToEnd because the list is inverted
         listRef.current?.scrollToOffset({ offset: 0, animated: true })
         setHasNewMessages(false)
-    }, [])
+    }, [listRef, setHasNewMessages])
 
     // When new messages come in, either scroll to the bottom (if we sent)
     // or pop up a notice that we have new messages.
@@ -130,11 +132,20 @@ const ChatConversation: React.FC<MessagesListProps> = ({
         if (isPaginating || hasPaginated || isAtEnd) return
         setIsPaginating(true)
         setHasPaginated(true)
-        dispatch(paginateMatrixRoomTimeline({ roomId: id, limit: 30 }))
+        await dispatch(paginateMatrixRoomTimeline({ roomId: id, limit: 5 }))
             .unwrap()
             .then(({ end }) => setIsAtEnd(end))
             .finally(() => setIsPaginating(false))
-    }, [id, dispatch, isPaginating, hasPaginated, isAtEnd])
+    }, [
+        dispatch,
+        hasPaginated,
+        id,
+        isAtEnd,
+        isPaginating,
+        setIsPaginating,
+        setHasPaginated,
+        setIsAtEnd,
+    ])
 
     // Mark hasNewMessages as false when we scroll to the bottom, and keep a ref up to date
     const handleScroll = useCallback(
@@ -145,7 +156,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                 setHasNewMessages(false)
             }
         },
-        [],
+        [setHasNewMessages, isScrolledToBottomRef],
     )
 
     const renderEventGroup: ListRenderItem<
@@ -193,15 +204,16 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                     }
                     onScroll={handleScroll}
                     // adjust this for more/less aggressive loading
-                    onEndReachedThreshold={1}
                     inverted={events.length > 0}
+                    onEndReachedThreshold={0.1}
                     onEndReached={handlePaginate}
-                    refreshing={isPaginating}
+                    refreshing={true}
                     maintainVisibleContentPosition={{
                         minIndexForVisible: 1,
                         autoscrollToTopThreshold: 100,
                     }}
                     scrollsToTop={false}
+                    progressViewOffset={100}
                 />
             ) : (
                 <View style={style.center}>
