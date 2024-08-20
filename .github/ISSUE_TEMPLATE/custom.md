@@ -1,6 +1,6 @@
 ---
-name: Custom issue template
-about: Describe this issue template's purpose here.
+name: Bug Report Template
+about: For reporting any bugs/issues with the Fedi app
 title: ''
 labels: ''
 assignees: ''
