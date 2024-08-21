@@ -28,6 +28,7 @@ use fedimint_api_client::download_from_invite_code;
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::backup::{ClientBackup, Metadata};
 use fedimint_client::db::ChronologicalOperationLogKey;
+use fedimint_client::meta::MetaService;
 use fedimint_client::module::recovery::RecoveryProgress;
 use fedimint_client::module::ClientModule;
 use fedimint_client::oplog::OperationLogEntry;
@@ -62,7 +63,7 @@ use fedimint_wallet_client::{
 };
 use futures::{FutureExt, StreamExt};
 use lightning_invoice::{Bolt11Invoice, RoutingFees};
-use meta::{MetaEntries, MetaServiceExt};
+use meta::{LegacyMetaSourceWithExternalUrl, MetaEntries, MetaServiceExt};
 use serde::de::DeserializeOwned;
 use stability_pool_client::{
     ClientAccountInfo, StabilityPoolClientInit, StabilityPoolClientModule,
@@ -171,6 +172,8 @@ impl FederationV2 {
     /// Instantiate Federation from FediConfig
     async fn build_client_builder(db: Database) -> anyhow::Result<ClientBuilder> {
         let mut client_builder = fedimint_client::Client::builder(db).await?;
+        client_builder
+            .with_meta_service(MetaService::new(LegacyMetaSourceWithExternalUrl::default()));
         client_builder.with_module(MintClientInit);
         client_builder.with_module(LightningClientInit::default());
         client_builder.with_module(WalletClientInit(None));
