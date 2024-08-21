@@ -6,6 +6,7 @@ on:
 jobs:
     release-android:
         name: Build Android AAB & Upload to Google Play Dev Console
+        timeout-minutes: 60
         runs-on: [self-hosted, linux]
         steps:
             - name: Checkout repo
