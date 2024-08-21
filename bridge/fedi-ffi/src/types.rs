@@ -166,7 +166,7 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
     let name = federation.federation_name();
     let network = federation.get_network();
     let client_config = federation.client.config().await;
-    let meta = client_config.global.meta.clone();
+    let meta = federation.get_cached_meta().await;
     let nodes = client_config
         .global
         .api_endpoints
