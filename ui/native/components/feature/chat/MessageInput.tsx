@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { useToast } from '@fedi/common/hooks/toast'
+import { useDebouncedEffect } from '@fedi/common/hooks/util'
 import {
     selectChatDrafts,
     selectMatrixRoom,
@@ -50,15 +51,15 @@ const MessageInput: React.FC<MessageInputProps> = ({
         theme.sizes.minMessageInputHeight,
     )
     const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
+    const [messageText, setMessageText] = useState<string>(drafts[id] ?? '')
     const inputRef = useRef<TextInput | null>(null)
 
-    const messageText = drafts[id] ?? ''
-
-    const setMessageText = useCallback(
-        (text: string) => {
-            dispatch(setChatDraft({ roomId: id, text }))
+    useDebouncedEffect(
+        () => {
+            dispatch(setChatDraft({ roomId: id, text: messageText }))
         },
-        [dispatch, id],
+        [messageText, dispatch],
+        500,
     )
 
     useEffect(() => {
