@@ -1554,6 +1554,7 @@ impl FederationV2 {
                 &SelectNotesWithExactAmount,
                 amount,
                 ONE_WEEK,
+                false,
                 EcashSendMetadata { internal: false },
             )
             .await
@@ -1563,7 +1564,12 @@ impl FederationV2 {
                 let (_, notes) = self
                     .client
                     .get_first_module::<MintClientModule>()
-                    .spend_notes(amount, ONE_WEEK, EcashSendMetadata { internal: true })
+                    .spend_notes(
+                        amount,
+                        ONE_WEEK,
+                        false,
+                        EcashSendMetadata { internal: true },
+                    )
                     .await?;
                 drop(spend_guard);
 
@@ -1591,7 +1597,12 @@ impl FederationV2 {
                 let (operation_id, notes) = self
                     .client
                     .get_first_module::<MintClientModule>()
-                    .spend_notes(amount, ONE_WEEK, EcashSendMetadata { internal: false })
+                    .spend_notes(
+                        amount,
+                        ONE_WEEK,
+                        false,
+                        EcashSendMetadata { internal: false },
+                    )
                     .await?;
                 (spend_guard, operation_id, notes)
             }
