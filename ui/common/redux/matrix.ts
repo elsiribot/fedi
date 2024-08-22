@@ -200,7 +200,11 @@ export const matrixSlice = createSlice({
 
             if (text.length === 0 && state.drafts[id]) delete state.drafts[id]
 
-            state.drafts[id] = text
+            state.drafts = upsertRecordEntityId(
+                state.drafts,
+                text,
+                id,
+            )
         },
     },
     extraReducers: builder => {
