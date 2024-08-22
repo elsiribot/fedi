@@ -1,8 +1,8 @@
 import {
-    createSlice,
     PayloadAction,
     createAsyncThunk,
     createSelector,
+    createSlice,
 } from '@reduxjs/toolkit'
 import { TFunction } from 'i18next'
 

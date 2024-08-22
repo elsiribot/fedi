@@ -7,12 +7,12 @@ import {
     Dimensions,
     Linking,
     Pressable,
+    ScrollView,
     StyleSheet,
     Text,
     View,
     useWindowDimensions,
 } from 'react-native'
-import { ScrollView } from 'react-native'
 
 import { selectAllVisibleMods, setModVisibility } from '@fedi/common/redux/mod'
 
@@ -21,7 +21,7 @@ import ShortcutTile from '../components/feature/home/ShortcutTile'
 import SvgImage from '../components/ui/SvgImage'
 import { Tooltip } from '../components/ui/Tooltip'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import { Shortcut, FediMod } from '../types'
+import { FediMod, Shortcut } from '../types'
 import { NavigationHook } from '../types/navigation'
 
 const Mods: React.FC = () => {

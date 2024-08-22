@@ -16,8 +16,8 @@ import {
     StoredStateV4,
 } from '../types/storage'
 import {
-    getLatestMessageIdsForChats,
     getLatestMessage,
+    getLatestMessageIdsForChats,
     getLatestPaymentUpdate,
     getLatestPaymentUpdateIdsForChats,
 } from './chat'

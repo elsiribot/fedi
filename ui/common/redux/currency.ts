@@ -2,8 +2,8 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import {
     CommonState,
-    selectStabilityPoolCycleStartPrice,
     selectFederationMetadata,
+    selectStabilityPoolCycleStartPrice,
 } from '.'
 import { Federation, SupportedCurrency } from '../types'
 import {

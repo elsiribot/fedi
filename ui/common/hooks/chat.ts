@@ -1,5 +1,5 @@
 import { TFunction } from 'i18next'
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 
 import type { ChatMember, Sats } from '@fedi/common/types'
@@ -7,6 +7,7 @@ import type { ChatMember, Sats } from '@fedi/common/types'
 import { INVALID_NAME_PLACEHOLDER } from '../constants/matrix'
 import {
     configureMatrixPushNotifications,
+    previewDefaultGroupChats,
     selectActiveFederation,
     selectActiveFederationId,
     selectAuthenticatedMember,
@@ -15,22 +16,21 @@ import {
     selectChatLastSeenMessageTimestamp,
     selectChatMember,
     selectHasSetMatrixDisplayName,
+    selectIsMatrixReady,
     selectLatestChatMessageTimestamp,
     selectMatrixAuth,
+    selectMatrixPushNotificationToken,
     selectPayFromFederation,
     sendMatrixPaymentPush,
     sendMatrixPaymentRequest,
     setLastSeenMessageTimestamp,
     setMatrixDisplayName,
-    selectMatrixPushNotificationToken,
-    selectIsMatrixReady,
     startMatrixClient,
-    previewDefaultGroupChats,
 } from '../redux'
 import { getDisplayNameValidator, parseData } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
-import { useMinMaxSendAmount, useMinMaxRequestAmount } from './amount'
+import { useMinMaxRequestAmount, useMinMaxSendAmount } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
 

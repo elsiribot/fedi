@@ -1,14 +1,13 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Theme } from '@rneui/themed'
-import { useTheme } from '@rneui/themed'
+import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Keyboard, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
-    useBalanceDisplay,
     useAmountFormatter,
+    useBalanceDisplay,
 } from '@fedi/common/hooks/amount'
 import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import { Sats } from '@fedi/common/types'

@@ -1,8 +1,8 @@
 import {
-    createSlice,
     PayloadAction,
     createAsyncThunk,
     createSelector,
+    createSlice,
 } from '@reduxjs/toolkit'
 import orderBy from 'lodash/orderBy'
 import { v4 as uuidv4 } from 'uuid'
@@ -16,28 +16,28 @@ import {
     selectWalletFederations,
 } from '.'
 import {
-    MatrixUser,
-    MatrixRoom,
-    MatrixAuth,
-    MatrixRoomMember,
-    MatrixError,
-    MatrixPowerLevel,
-    MatrixSearchResults,
-    MatrixPaymentEvent,
-    MSats,
-    MatrixPaymentStatus,
-    MatrixPaymentEventContent,
-    MatrixRoomListObservableUpdates,
-    MatrixTimelineObservableUpdates,
-    MatrixRoomListItem,
-    MatrixTimelineItem,
-    MatrixEvent,
-    MatrixRoomPowerLevels,
-    MatrixSyncStatus,
-    MatrixCreateRoomOptions,
-    Sats,
-    MatrixGroupPreview,
     FederationListItem,
+    MSats,
+    MatrixAuth,
+    MatrixCreateRoomOptions,
+    MatrixError,
+    MatrixEvent,
+    MatrixGroupPreview,
+    MatrixPaymentEvent,
+    MatrixPaymentEventContent,
+    MatrixPaymentStatus,
+    MatrixPowerLevel,
+    MatrixRoom,
+    MatrixRoomListItem,
+    MatrixRoomListObservableUpdates,
+    MatrixRoomMember,
+    MatrixRoomPowerLevels,
+    MatrixSearchResults,
+    MatrixSyncStatus,
+    MatrixTimelineItem,
+    MatrixTimelineObservableUpdates,
+    MatrixUser,
+    Sats,
 } from '../types'
 import { RpcRoomId, RpcRoomNotificationMode } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
@@ -47,6 +47,7 @@ import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import {
     getReceivablePaymentEvents,
+    getRoomEventPowerLevel,
     getUserSuffix,
     isPaymentEvent,
     makeChatFromPreview,
@@ -54,7 +55,6 @@ import {
     mxcUrlToHttpUrl,
     shouldShowUnreadIndicator,
 } from '../utils/matrix'
-import { getRoomEventPowerLevel } from '../utils/matrix'
 import { applyObservableUpdates } from '../utils/observable'
 import { isBolt11 } from '../utils/parser'
 import { upsertListItem, upsertRecordEntity } from '../utils/redux'

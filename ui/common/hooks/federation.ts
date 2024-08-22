@@ -17,17 +17,17 @@ import {
 import { ClientConfigMetadata, Federation, JoinPreview } from '../types'
 import dateUtils from '../utils/DateUtils'
 import {
-    shouldShowOfflineWallet,
-    shouldShowSocialRecovery,
-    shouldShowInviteCode,
-    shouldEnableOnchainDeposits,
-    shouldEnableNostr,
+    fetchPublicFederations,
     getFederationChatServerDomain,
     getFederationPopupInfo,
-    shouldEnableStabilityPool,
-    shouldEnableFediInternalInjection,
-    fetchPublicFederations,
     previewInvite,
+    shouldEnableFediInternalInjection,
+    shouldEnableNostr,
+    shouldEnableOnchainDeposits,
+    shouldEnableStabilityPool,
+    shouldShowInviteCode,
+    shouldShowOfflineWallet,
+    shouldShowSocialRecovery,
 } from '../utils/FederationUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'

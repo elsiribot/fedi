@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text } from '@rneui/themed'
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { selectSocialRecoveryState } from '@fedi/common/redux'

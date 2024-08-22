@@ -15,31 +15,31 @@ import {
 } from '.'
 import { FEDI_GLOBAL_COMMUNITY } from '../constants/community'
 import {
+    ClientConfigMetadata,
     Federation,
+    FederationListItem,
+    FediMod,
     Guardian,
+    MatrixRoom,
     MSats,
+    Network,
     PublicFederation,
     Sats,
-    FediMod,
-    MatrixRoom,
-    FederationListItem,
-    ClientConfigMetadata,
-    Network,
 } from '../types'
 import { RpcJsonClientConfig, RpcStabilityPoolConfig } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import {
+    coerceFederationListItem,
+    fetchFederationsExternalMetadata,
+    getFederationFediMods,
     getFederationGroupChats,
     getFederationMaxBalanceMsats,
     getFederationMaxInvoiceMsats,
-    getFederationFediMods,
-    fetchFederationsExternalMetadata,
-    getFederationName,
     getFederationMaxStableBalanceMsats,
-    coerceFederationListItem,
-    joinFromInvite,
-    getFederationWelcomeMessage,
+    getFederationName,
     getFederationPinnedMessage,
+    getFederationWelcomeMessage,
+    joinFromInvite,
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
 import { makeChatFromPreview } from '../utils/matrix'
