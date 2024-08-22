@@ -56,6 +56,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     useDebouncedEffect(
         () => {
+            console.log(drafts)
             dispatch(setChatDraft({ roomId: id, text: messageText }))
         },
         [messageText, dispatch],

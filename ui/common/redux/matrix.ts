@@ -57,7 +57,7 @@ import {
 } from '../utils/matrix'
 import { applyObservableUpdates } from '../utils/observable'
 import { isBolt11 } from '../utils/parser'
-import { upsertListItem, upsertRecordEntity, upsertRecordEntityId } from '../utils/redux'
+import { upsertListItem, upsertRecordEntity } from '../utils/redux'
 import { loadFromStorage } from './storage'
 
 const log = makeLog('redux/matrix')
@@ -200,11 +200,7 @@ export const matrixSlice = createSlice({
 
             if (text.length === 0 && state.drafts[id]) delete state.drafts[id]
 
-            state.drafts = upsertRecordEntityId(
-                state.drafts,
-                text,
-                id,
-            )
+            state.drafts[id] = text
         },
     },
     extraReducers: builder => {
@@ -701,12 +697,12 @@ export const checkForReceivablePayments = createAsyncThunk<
         const timeline = roomId
             ? state.matrix.roomTimelines[roomId]
             : // flattens all timelines into 1 array
-              Object.values(state.matrix.roomTimelines).reduce<
-                  MatrixTimelineItem[]
-              >((result, t) => {
-                  if (!t) return result
-                  return [...result, ...t]
-              }, [])
+            Object.values(state.matrix.roomTimelines).reduce<
+                MatrixTimelineItem[]
+            >((result, t) => {
+                if (!t) return result
+                return [...result, ...t]
+            }, [])
         if (!myId || !timeline) return
         const walletFederations = selectWalletFederations(getState())
         log.info('Looking for receivable payment events...')
@@ -1045,9 +1041,9 @@ export const selectMatrixRooms = createSelector(
                 ...room,
                 broadcastOnly: powerLevels
                     ? getRoomEventPowerLevel(powerLevels, [
-                          'm.room.message',
-                          'm.room.encrypted',
-                      ]) >= MatrixPowerLevel.Moderator
+                        'm.room.message',
+                        'm.room.encrypted',
+                    ]) >= MatrixPowerLevel.Moderator
                     : false,
             })
         }
@@ -1443,7 +1439,4 @@ export const selectDefaultMatrixRoomIds = createSelector(
     },
 )
 
-export const selectChatDrafts = createSelector(
-    (s: CommonState) => s.matrix.drafts,
-    drafts => drafts,
-)
+export const selectChatDrafts = (s: CommonState) => s.matrix.drafts
