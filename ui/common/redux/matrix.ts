@@ -193,7 +193,7 @@ export const matrixSlice = createSlice({
         },
         setChatDraft(
             state,
-            action: PayloadAction<{ roomId: string; text: string }>,
+            action: PayloadAction<{ roomId: MatrixRoom['id']; text: string }>,
         ) {
             const { roomId, text } = action.payload
             const id = roomId as keyof MatrixState['drafts']
