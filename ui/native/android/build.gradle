@@ -38,8 +38,14 @@ allprojects {
         maven {
             // Required for Detox e2e testing framework
             url("$rootDir/../../node_modules/detox/Detox-android")
+        }
+        maven {
             // Required for fedi-android
-            mavenLocal()
+            def androidBridgeArtifacts = System.getenv('ANDROID_BRIDGE_ARTIFACTS')
+            if (androidBridgeArtifacts == null) {
+                throw new GradleException("ANDROID_BRIDGE_ARTIFACTS environment variable must be set")
+            }
+            url("file://${androidBridgeArtifacts}")
         }
     }
 }
