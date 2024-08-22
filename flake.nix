@@ -321,6 +321,10 @@
             export PATH="''${REPO_ROOT}/nix/cargo-wrapper/:$PATH"
             export RUSTC_WRAPPER=${pkgs.sccache}/bin/sccache
             export CARGO_BUILD_TARGET_DIR="''${CARGO_BUILD_TARGET_DIR:-''${REPO_ROOT}/target-nix}"
+
+            # this is where we publish the android bridge package so the react native app
+            # can find it as a local maven dependency
+            export ANDROID_BRIDGE_ARTIFACTS="''${REPO_ROOT}/bridge/fedi-android/artifacts"
           '';
         });
       in
