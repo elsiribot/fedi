@@ -94,7 +94,7 @@ const initialState = {
     errors: [] as MatrixError[],
     pushNotificationToken: null as string | null,
     groupPreviews: {} as Record<MatrixRoom['id'], MatrixGroupPreview>,
-    drafts: {} as Record<string, string>,
+    drafts: {} as Record<MatrixRoom['id'], string>,
 }
 
 export type MatrixState = typeof initialState
