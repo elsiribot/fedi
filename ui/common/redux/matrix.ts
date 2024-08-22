@@ -57,7 +57,7 @@ import {
 } from '../utils/matrix'
 import { applyObservableUpdates } from '../utils/observable'
 import { isBolt11 } from '../utils/parser'
-import { upsertListItem, upsertRecordEntity } from '../utils/redux'
+import { upsertListItem, upsertRecordEntity, upsertRecordEntityId } from '../utils/redux'
 import { loadFromStorage } from './storage'
 
 const log = makeLog('redux/matrix')
