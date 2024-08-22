@@ -8,7 +8,7 @@ import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { useCommonSelector } from '@fedi/common/hooks/redux'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
-import { selectPayFromFederation } from '@fedi/common/redux'
+import { selectPaymentFederation } from '@fedi/common/redux'
 import type { Sats, Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { BridgeError } from '@fedi/common/utils/fedimint'
@@ -34,7 +34,7 @@ const ConfirmReceiveCashu: React.FC<Props> = ({ route, navigation }: Props) => {
     const { parsedData } = route.params
 
     const activeWalletFederationId =
-        useCommonSelector(selectPayFromFederation)?.id ?? ''
+        useCommonSelector(selectPaymentFederation)?.id ?? ''
     const { feeBreakdownTitle, makeLightningFeeContent } = useFeeDisplayUtils(t)
     const [isPayingInvoice, setIsPayingInvoice] = useState<boolean>(false)
     const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
@@ -48,7 +48,7 @@ const ConfirmReceiveCashu: React.FC<Props> = ({ route, navigation }: Props) => {
         sendTo,
         handleOmniInput,
         handleOmniSend,
-    } = useOmniPaymentState(fedimint, activeWalletFederationId, t)
+    } = useOmniPaymentState(fedimint, activeWalletFederationId, true, t)
 
     const { formattedTotalFee, feeItemsBreakdown } = useMemo(() => {
         return feeDetails

@@ -1,15 +1,34 @@
-import { Buffer } from 'buffer'
-
 import { MSats, Sats } from '@fedi/common/types'
 
 import amountUtils from './AmountUtils'
+import {
+    ResultObject,
+    ResultValue,
+    decodeCBOR,
+    isValidResultType,
+} from './cbor'
 import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
 
 const log = makeLog('common/utils/cashu')
 
-interface Proof {
+type PayloadProof = {
+    amount: number
+    secret: string
+    C: string
     id: string
+}
+
+type PayloadToken = {
+    proofs: PayloadProof[]
+}
+
+type Payload = {
+    token: PayloadToken[]
+    mint: string
+}
+
+type Proof = {
     amount: number
     secret: string
     C: string
@@ -17,6 +36,7 @@ interface Proof {
 
 type Token = {
     proofs: Proof[]
+    id: string
 }
 
 export type ParsedToken = {
@@ -54,6 +74,26 @@ export type MeltResult = {
     mSats: MSats
 }
 
+type CashuV4Proof = {
+    a: number
+    s: string
+    c: Uint8Array
+    d: ResultObject | undefined
+    w: string | undefined
+}
+
+export type CashuV4Token = {
+    i: Uint8Array
+    p: Array<CashuV4Proof>
+}
+
+type ValidCashuV4Token = {
+    m: string
+    u: string
+    d: string | undefined
+    t: Array<CashuV4Token>
+}
+
 // TODO: Add complete validation
 export function validateCashuTokens(raw: string) {
     let token = raw
@@ -63,16 +103,19 @@ export function validateCashuTokens(raw: string) {
             token = token.slice(prefix.length)
         }
     })
-    if (!token.startsWith('cashuA') || !token.startsWith('cashuB')) {
+    if (!token.startsWith('cashuA') && !token.startsWith('cashuB')) {
         throw new Error('Invalid cashu token')
     }
     return token
 }
+const bufferFromBase64Url = (str: string) => {
+    return Buffer.from(str.replace('-', '+').replace('_', '/'), 'base64')
+}
 
-const decodeCashuTokenLegacy = (token: string): ParsedToken => {
+const decodeCashuTokenLegacy = (token: string): Payload => {
     const rawToken = token.replace('cashuA', '')
     const parsedTokenBuffer = JSON.parse(
-        Buffer.from(rawToken, 'base64').toString(),
+        bufferFromBase64Url(rawToken).toString(),
     )
     // check if v3
     if (
@@ -80,7 +123,12 @@ const decodeCashuTokenLegacy = (token: string): ParsedToken => {
         Array.isArray(parsedTokenBuffer.token)
     ) {
         // TODO... coerce with zod
-        return parsedTokenBuffer
+        const mint = parsedTokenBuffer.token[0].mint
+        const proofs = parsedTokenBuffer.token[0].proofs
+        return {
+            mint,
+            token: [{ proofs }],
+        }
     }
     // if v2 token return v3 format
     // TODO... coerce with zod
@@ -90,13 +138,11 @@ const decodeCashuTokenLegacy = (token: string): ParsedToken => {
         parsedTokenBuffer.mints.length > 0 &&
         parsedTokenBuffer.mints[0].url
     ) {
+        const mint = parsedTokenBuffer.token[0].mint
+        const proofs = parsedTokenBuffer.token[0].proofs
         return {
-            mint: parsedTokenBuffer.mints[0].url,
-            token: [
-                {
-                    proofs: parsedTokenBuffer.proofs,
-                },
-            ],
+            mint,
+            token: [{ proofs }],
         }
     }
     // check if v1
@@ -107,14 +153,70 @@ const decodeCashuTokenLegacy = (token: string): ParsedToken => {
     throw new Error('No valid ecash proofs found')
 }
 
-const decodeCashuTokenV4 = (_: string): ParsedToken => {
-    // const rawToken = token.replace('cashuB', '')
-    throw new Error('Not implemented')
+const isValidCashuV4Token = (
+    decodedToken: ResultValue,
+): decodedToken is ValidCashuV4Token => {
+    if (!isValidResultType(decodedToken)) return false
+    if (typeof decodedToken.m !== 'string') return false
+    if (typeof decodedToken.u !== 'string') return false
+    if (typeof decodedToken.d !== 'string' && decodedToken.d !== undefined)
+        return false
+    if (!Array.isArray(decodedToken.t)) return false
+
+    for (const token of decodedToken.t) {
+        if (!isValidResultType(token)) return false
+        if (!('i' in token) || !('p' in token)) return false
+        if (!(token.i instanceof Uint8Array)) return false
+        if (!Array.isArray(token.p)) return false
+
+        for (const proof of token.p) {
+            if (!isValidResultType(proof)) return false
+            if (typeof proof.a !== 'number') return false
+            if (typeof proof.s !== 'string') return false
+            if (!(proof.c instanceof Uint8Array)) return false
+            if (proof.d !== undefined && typeof proof.d !== 'object')
+                return false
+            if (proof.w !== undefined && typeof proof.w !== 'string')
+                return false
+        }
+    }
+    return true
+}
+
+const parseSingleCashuV4Token = (token: CashuV4Token): PayloadToken => {
+    return {
+        proofs: token.p.map(proof => ({
+            id: Buffer.from(token.i).toString('hex'),
+            amount: proof.a,
+            secret: proof.s,
+            C: Buffer.from(proof.c).toString('hex'),
+        })),
+    }
+}
+
+const coerceCashuV4TokensArray = (tokens: CashuV4Token[]): PayloadToken[] => {
+    return tokens.map(parseSingleCashuV4Token)
+}
+
+const decodeCashuTokenV4 = (token: string): Payload => {
+    const rawToken = token.replace('cashuB', '')
+    const parsedToken = decodeCBOR(bufferFromBase64Url(rawToken))
+    if (!isValidResultType(parsedToken)) {
+        throw new Error('Invalid cashu token')
+    }
+    if (!isValidCashuV4Token(parsedToken)) {
+        throw new Error('Invalid cashu token')
+    }
+
+    return {
+        mint: parsedToken.m,
+        token: coerceCashuV4TokensArray(parsedToken.t),
+    }
 }
 
 // Takes cashu note, parses it into individual tokens for each mint
 // Then, we melt for each mint (convert to lightning invoices and pay self)
-export function decodeCashuTokens(raw: string): ParsedToken {
+export function decodeCashuTokens(raw: string): Payload {
     // remove prefixes
     const token = validateCashuTokens(raw)
     return token.startsWith('cashuA')
@@ -241,22 +343,16 @@ async function getUpdatedMeltQuote(
  * @returns
  */
 export async function getMeltQuotes(
-    tokens: string | ParsedToken,
+    tokens: Payload,
     fedimint: FedimintBridge,
     federationId: string | undefined,
 ): Promise<MeltSummary> {
     if (!federationId) throw new Error('No federation id')
-    const decodedTokens =
-        typeof tokens === 'string' ? decodeCashuTokens(tokens) : tokens
-
     const quotes: MeltQuote[] = []
 
-    log.debug('tokens', tokens)
-    log.debug('decodedTokens', decodedTokens)
-
     // Iterate over each token
-    for (const token of decodedTokens.token) {
-        const mintHost = decodedTokens.mint
+    for (const token of tokens.token) {
+        const mintHost = tokens.mint
         const proofs = token.proofs
         log.debug('token.proofs', token.proofs)
 
