@@ -632,17 +632,15 @@ function getDefaultRequestMemo({
  * Provide all the state necessary to implement a pay form that generates
  * a Lightning invoice. Optionally provide an LNURL pay request.
  */
-export function useSendForm({
-    btcAddress,
-    bip21Payment,
-    invoice,
-    lnurlPayment,
-}: SendAmountArgs = {}) {
+export function useSendForm(
+    { btcAddress, bip21Payment, invoice, lnurlPayment }: SendAmountArgs = {},
+    usePayFromFederationBalance = false,
+) {
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount({
         invoice,
         lnurlPayment,
-    })
+    }, usePayFromFederationBalance)
     const minimumAmountRef = useUpdatingRef(minimumAmount)
 
     // Determine if they should be able to change the amount, or if an exact

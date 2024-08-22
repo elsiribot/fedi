@@ -15,6 +15,7 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 import { hexToRgba } from '@fedi/common/utils/color'
 import { makeLog } from '@fedi/common/utils/log'
 
+import FederationWalletSelector from '../components/feature/send/FederationWalletSelector'
 import FeeOverlay from '../components/feature/send/FeeOverlay'
 import SendAmounts from '../components/feature/send/SendAmounts'
 import SendPreviewDetails from '../components/feature/send/SendPreviewDetails'
@@ -35,7 +36,7 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
     const { amount } = route.params
     const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(false)
-    const { generateEcash } = useBridge()
+    const { generateEcash } = useBridge(true)
     const balanceDisplay = useBalanceDisplay(t)
     const { feeBreakdownTitle, ecashFeesGuidanceText, makeEcashFeeContent } =
         useFeeDisplayUtils(t)
@@ -79,6 +80,7 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
 
     return (
         <View style={style.container}>
+            <FederationWalletSelector />
             <SendAmounts
                 balanceDisplay={balanceDisplay}
                 formattedPrimaryAmount={formattedPrimaryAmount}

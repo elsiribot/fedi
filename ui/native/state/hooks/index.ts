@@ -17,6 +17,7 @@ import {
     refreshActiveStabilityPool,
     selectActiveFederation,
     selectCurrency,
+    selectPayFromFederation,
     selectStableBalance,
     selectStableBalancePending,
 } from '@fedi/common/redux'
@@ -46,8 +47,12 @@ export const usePrevious = <T = unknown>(value: T): T | undefined => {
     return ref.current
 }
 
-export const useBridge = () => {
-    const activeFederation = useAppSelector(selectActiveFederation)
+export const useBridge = (usePayFromFederationBalance = false) => {
+    const activeFederation = useAppSelector(
+        usePayFromFederationBalance
+            ? selectPayFromFederation
+            : selectActiveFederation,
+    )
     const activeFederationId = activeFederation?.id
 
     return {

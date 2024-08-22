@@ -32,6 +32,7 @@ import {
     selectIsActiveFederationRecovering,
     selectLanguage,
     selectMatrixAuth,
+    selectPayFromFederation,
 } from '@fedi/common/redux'
 import {
     AnyParsedData,
@@ -108,6 +109,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const payFromFederation = useAppSelector(selectPayFromFederation)
     const member = useAppSelector(selectMatrixAuth)
     const hasSetMatrixDisplayName = useAppSelector(
         selectHasSetMatrixDisplayName,
@@ -249,7 +251,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 setShowRecoveryInProgress(true)
                 throw Error(t('errors.unknown-error'))
             }
-            if (activeFederation?.id === undefined) {
+            if (payFromFederation?.id === undefined) {
                 log.error('fedi.decodeInvoice', 'No active federation')
                 throw new Error('No active federation')
             }
@@ -260,7 +262,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             try {
                 invoice = await fedimint.decodeInvoice(
                     data,
-                    activeFederation.id,
+                    payFromFederation.id,
                 )
             } catch (error) {
                 log.error('sendPayment', 'error', error)
@@ -272,18 +274,18 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             }
             // Wait for user to interact with alert
             return new Promise((resolve, reject) => {
-                if (!activeFederation)
+                if (!payFromFederation)
                     return reject(new Error('No active federation'))
-                if (!activeFederation.hasWallet)
+                if (!payFromFederation.hasWallet)
                     return reject(new Error('Active federation has no wallet'))
                 // TODO: Hoist this to respect balance changes
                 if (
-                    !activeFederation.balance ||
-                    activeFederation.balance < invoice.amount
+                    !payFromFederation.balance ||
+                    payFromFederation.balance < invoice.amount
                 ) {
                     const message = t('errors.insufficient-balance', {
                         balance: `${amountUtils.msatToSat(
-                            activeFederation?.balance as MSats,
+                            payFromFederation?.balance as MSats,
                         )} SATS`,
                     })
                     toast.show({ content: message, status: 'error' })
@@ -343,11 +345,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         },
         [InjectionMessageType.fedi_generateEcash]: async ecashRequestArgs => {
             log.info('fedi.generateEcash', ecashRequestArgs)
-
-            if (activeFederation?.id === undefined) {
-                log.error('fedi.generateEcash', 'No active federation')
-                throw new Error('No active federation')
-            }
 
             // Wait for user to interact with alert
             return new Promise((resolve, reject) => {

@@ -16,7 +16,9 @@ import CustomOverlay from '../../ui/CustomOverlay'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import { FederationLogo } from '../federations/FederationLogo'
 
-const FederationWalletSelector: React.FC = () => {
+const FederationWalletSelector: React.FC<{ readonly?: boolean }> = ({
+    readonly = false,
+}) => {
     const { theme } = useTheme()
     const dispatch = useAppDispatch()
     const [opened, setOpened] = useState<boolean>(false)
@@ -75,7 +77,8 @@ const FederationWalletSelector: React.FC = () => {
         <View style={style.container}>
             <Pressable
                 style={style.selectedFederation}
-                onPress={() => setOpened(true)}>
+                onPress={() => setOpened(true)}
+                disabled={readonly}>
                 <FederationLogo federation={payFromFederation} size={32} />
                 <View style={style.tileTextContainer}>
                     <Text caption bold numberOfLines={1}>
@@ -89,14 +92,16 @@ const FederationWalletSelector: React.FC = () => {
                         {`${primaryAmountToSendFrom} (${secondaryAmountToSendFrom})`}
                     </Text>
                 </View>
-                <SvgImage
-                    name="ChevronRight"
-                    size={SvgImageSize.sm}
-                    containerStyle={{
-                        transform: [{ rotate: '90deg' }],
-                        marginLeft: 'auto',
-                    }}
-                />
+                {readonly ? null : (
+                    <SvgImage
+                        name="ChevronRight"
+                        size={SvgImageSize.sm}
+                        containerStyle={{
+                            transform: [{ rotate: '90deg' }],
+                            marginLeft: 'auto',
+                        }}
+                    />
+                )}
             </Pressable>
             <CustomOverlay
                 show={opened}
