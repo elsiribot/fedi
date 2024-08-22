@@ -20,8 +20,7 @@ import FederationWalletSelector from '../components/feature/send/FederationWalle
 import FeeOverlay from '../components/feature/send/FeeOverlay'
 import SendAmounts from '../components/feature/send/SendAmounts'
 import SendPreviewDetails from '../components/feature/send/SendPreviewDetails'
-import { useBridge } from '../state/hooks'
-import { useAppSelector } from '../state/hooks'
+import { useAppSelector, useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('ConfirmSendEcash')
