@@ -433,10 +433,10 @@ export function useFeeDisplayUtils(t: TFunction) {
         const { formattedPrimaryAmount: formattedTotalFee } =
             makeFormattedAmountsFromMSats(totalFees)
 
-        const maxFeeRatePerCycle = stabilityPoolAverageFeeRate ?? 0
+        const averageFeeRatePerCycle = stabilityPoolAverageFeeRate ?? 0
         // convert parts per billion to decimal
-        const periodicRate = maxFeeRatePerCycle / 1_000_000_000
-        // Number of 10 minute cycles in a year
+        const periodicRate = averageFeeRatePerCycle / 1_000_000_000
+        // Calculate cycles per year based on cycle_duration + seconds in 1 year
         const secondsPerCycle = stabilityConfig?.cycle_duration.secs ?? 0
         const secondsInYear = 365 * 24 * 60 * 60
         const cyclesPerYear = secondsInYear / secondsPerCycle
