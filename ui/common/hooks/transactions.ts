@@ -15,8 +15,9 @@ import {
     selectActiveFederationId,
     selectCurrency,
     selectEcashFeeSchedule,
-    selectMaximumAPR,
+    selectFederationStabilityPoolConfig,
     selectShowFiatTxnAmounts,
+    selectStabilityPoolAverageFeeRate,
     selectStabilityPoolFeeSchedule,
 } from '../redux'
 import {
@@ -274,12 +275,15 @@ export type FeeItem = {
 // Ecash fees are ppm values specified in the federations feeSchedule so we calculate
 // the fee from the amount and provide all formatted UI display content
 export function useFeeDisplayUtils(t: TFunction) {
-    const maxFeeRate = useCommonSelector(selectMaximumAPR)
     const ecashFeeSchedule = useCommonSelector(selectEcashFeeSchedule)
     const stabilityPoolFeeSchedule = useCommonSelector(
         selectStabilityPoolFeeSchedule,
     )
+    const stabilityPoolAverageFeeRate = useCommonSelector(
+        selectStabilityPoolAverageFeeRate,
+    )
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
+    const stabilityConfig = useCommonSelector(selectFederationStabilityPoolConfig)
 
     const makeEcashFeeContent = (amount: MSats) => {
         let fediFee: MSats = 0 as MSats
@@ -317,9 +321,8 @@ export function useFeeDisplayUtils(t: TFunction) {
 
         return {
             feeItemsBreakdown: ecashFeeItems,
-            formattedTotalFee: `${
-                totalFees > 0 ? '+' : ''
-            }${formattedTotalFee}`,
+            formattedTotalFee: `${totalFees > 0 ? '+' : ''
+                }${formattedTotalFee}`,
         }
     }
 
@@ -363,9 +366,8 @@ export function useFeeDisplayUtils(t: TFunction) {
 
         return {
             feeItemsBreakdown: lightningFeeItems,
-            formattedTotalFee: `${
-                lightningSendTotalFeeMsats > 0 ? '+' : ''
-            }${formattedTotalFee}`,
+            formattedTotalFee: `${lightningSendTotalFeeMsats > 0 ? '+' : ''
+                }${formattedTotalFee}`,
         }
     }
 
@@ -401,9 +403,8 @@ export function useFeeDisplayUtils(t: TFunction) {
 
         return {
             feeItemsBreakdown: lightningFeeItems,
-            formattedTotalFee: `${
-                onchainSendTotalFeeMsats > 0 ? '+' : ''
-            }${formattedTotalFee}`,
+            formattedTotalFee: `${onchainSendTotalFeeMsats > 0 ? '+' : ''
+                }${formattedTotalFee}`,
         }
     }
 
@@ -432,7 +433,18 @@ export function useFeeDisplayUtils(t: TFunction) {
         const { formattedPrimaryAmount: formattedTotalFee } =
             makeFormattedAmountsFromMSats(totalFees)
 
-        const ecashFeeItems: FeeItem[] = [
+        const averageFeeRatePerCycle = stabilityPoolAverageFeeRate ?? 0
+        // convert parts per billion to decimal
+        const periodicRate = averageFeeRatePerCycle / 1_000_000_000
+        // Calculate cycles per year based on cycle_duration + seconds in 1 year
+        const secondsPerCycle = stabilityConfig?.cycle_duration.secs ?? 0
+        const secondsInYear = 365 * 24 * 60 * 60
+        const cyclesPerYear = secondsInYear / secondsPerCycle
+        const compoundedAnnualRate =
+            1 - Math.pow(1 - periodicRate, cyclesPerYear)
+        const formattedFeeAverage = Number((compoundedAnnualRate * 100).toFixed(2))
+
+        const stabilityFeeItems: FeeItem[] = [
             {
                 label: t('phrases.fedi-fee'),
                 formattedAmount: `${formattedFediFee} (${formattedFediFeeSecondary})`,
@@ -442,14 +454,22 @@ export function useFeeDisplayUtils(t: TFunction) {
                 formattedAmount: `${formattedFederationFee} (${formattedFederationFeeSecondary})`,
             },
             {
-                label: `${t('phrases.yearly-fee')}*`,
-                formattedAmount: `${maxFeeRate}% max`,
+                label: stabilityPoolAverageFeeRate
+                    ? `${t('phrases.yearly-fee')}*`
+                    : t('words.fees'),
+                formattedAmount:
+                    typeof stabilityPoolAverageFeeRate === 'number'
+                        ? `${formattedFeeAverage}%`
+                        : '-',
             },
         ]
 
         return {
-            feeItemsBreakdown: ecashFeeItems,
-            formattedTotalFee: `${formattedTotalFee} + ${maxFeeRate}% yearly`,
+            feeItemsBreakdown: stabilityFeeItems,
+            formattedTotalFee:
+                formattedFeeAverage > 0
+                    ? `${formattedTotalFee} + ${formattedFeeAverage}% yearly`
+                    : formattedTotalFee,
         }
     }
 

@@ -11,6 +11,7 @@ import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import {
     increaseStableBalance,
     selectFormattedDepositTime,
+    selectStabilityPoolAverageFeeRate,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
@@ -46,6 +47,9 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
         makeFormattedAmountsFromSats(amount)
     const { feeBreakdownTitle, makeStabilityPoolFeeContent } =
         useFeeDisplayUtils(t)
+    const stabilityPoolAverageFeeRate = useAppSelector(
+        selectStabilityPoolAverageFeeRate,
+    )
 
     const handleSubmit = async () => {
         try {
@@ -176,13 +180,15 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
                     title={feeBreakdownTitle}
                     feeItems={feeItemsBreakdown}
                     description={
-                        <Trans
-                            t={t}
-                            i18nKey="feature.fees.guidance-stable-balance"
-                            components={{
-                                br: <LineBreak />,
-                            }}
-                        />
+                        stabilityPoolAverageFeeRate ? (
+                            <Trans
+                                t={t}
+                                i18nKey="feature.fees.guidance-stable-balance"
+                                components={{
+                                    br: <LineBreak />,
+                                }}
+                            />
+                        ) : null
                     }
                     icon={
                         <SvgImage

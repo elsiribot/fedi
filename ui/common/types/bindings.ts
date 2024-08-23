@@ -541,7 +541,7 @@ export interface RpcMethods {
         string,
     ]
     stabilityPoolAverageFeeRate: [
-        { federationId: RpcFederationId; numCycles: bigint },
+        { federationId: RpcFederationId; numCycles: number },
         bigint,
     ]
     stabilityPoolAvailableLiquidity: [{ federationId: RpcFederationId }, MSats]

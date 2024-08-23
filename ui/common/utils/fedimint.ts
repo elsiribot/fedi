@@ -49,6 +49,10 @@ export class FedimintBridge {
         return this.rpcTyped('federationPreview', { inviteCode })
     }
 
+    async stabilityPoolAverageFeeRate(federationId: string, numCycles: number) {
+        return this.rpcTyped('stabilityPoolAverageFeeRate', { federationId, numCycles })
+    }
+
     async stabilityPoolWithdraw(
         lockedBps: number,
         unlockedAmount: RpcAmount,
