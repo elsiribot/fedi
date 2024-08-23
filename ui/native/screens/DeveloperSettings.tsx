@@ -49,7 +49,6 @@ type FeesMap = { [key: string]: number }
 const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { listGateways, switchGateway, guardianStatus } = useBridge()
     const toast = useToast()
     const [isLoadingGateways, setIsLoadingGateways] = useState<boolean>(false)
     const [gateways, setGateways] = useState<LightningGateway[]>([])
@@ -82,6 +81,10 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
     const activeFederation = useAppSelector(selectActiveFederation)
     const authenticatedGuardian = useAppSelector(
         s => s.federation.authenticatedGuardian,
+    )
+
+    const { listGateways, switchGateway, guardianStatus } = useBridge(
+        activeFederation?.id,
     )
 
     useEffect(() => {

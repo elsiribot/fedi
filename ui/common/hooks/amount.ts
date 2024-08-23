@@ -13,7 +13,7 @@ import {
     selectMaxStableBalanceSats,
     selectMinimumDepositAmount,
     selectMinimumWithdrawAmountMsats,
-    selectPayFromFederationBalance,
+    selectPaymentFederationBalance,
     selectShowFiatTxnAmounts,
     selectStableBalanceSats,
     selectWithdrawableStableBalanceMsats,
@@ -49,6 +49,7 @@ interface SendAmountArgs {
     bip21Payment?: ParsedBip21['data'] | null
     invoice?: Invoice | null
     lnurlPayment?: ParsedLnurlPay['data'] | null
+    selectedPaymentFederation?: boolean
 }
 
 export type FormattedAmounts = {
@@ -460,15 +461,16 @@ export function useMinMaxRequestAmount({
  * Get the minimum and maximum amount you can send. Optionally take in an
  * LNURL pay request as part of the calculation.
  */
-export function useMinMaxSendAmount(
-    { invoice, lnurlPayment }: SendAmountArgs = {},
+export function useMinMaxSendAmount({
+    invoice,
+    lnurlPayment,
     // TODO: Remove this option in favor of always using payFromFederation once
     // https://github.com/fedibtc/fedi/issues/4070 is finished
-    usePayFromFederationBalance = false,
-) {
+    selectedPaymentFederation,
+}: SendAmountArgs = {}) {
     const balance = useCommonSelector(s =>
-        usePayFromFederationBalance
-            ? selectPayFromFederationBalance(s)
+        selectedPaymentFederation
+            ? selectPaymentFederationBalance(s)
             : selectFederationBalance(s),
     )
 
@@ -531,9 +533,9 @@ export function useMinMaxDepositAmount() {
         maxStableBalanceSats === 0
             ? balanceSats
             : (Math.min(
-                  balanceSats,
-                  Math.max(0, maxStableBalanceSats - stableBalanceSats),
-              ) as Sats)
+                balanceSats,
+                Math.max(0, maxStableBalanceSats - stableBalanceSats),
+            ) as Sats)
 
     return { minimumAmount, maximumAmount }
 }
@@ -563,7 +565,7 @@ export function useRequestForm(args: RequestAmountArgs = {}) {
         args.lnurlWithdrawal &&
         args.lnurlWithdrawal.minWithdrawable &&
         args.lnurlWithdrawal.minWithdrawable ===
-            args.lnurlWithdrawal.maxWithdrawable
+        args.lnurlWithdrawal.maxWithdrawable
     ) {
         exactAmount = amountUtils.msatToSat(
             args.lnurlWithdrawal.minWithdrawable,
@@ -637,11 +639,13 @@ export function useSendForm({
     bip21Payment,
     invoice,
     lnurlPayment,
+    selectedPaymentFederation,
 }: SendAmountArgs = {}) {
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount({
         invoice,
         lnurlPayment,
+        selectedPaymentFederation,
     })
     const minimumAmountRef = useUpdatingRef(minimumAmount)
 

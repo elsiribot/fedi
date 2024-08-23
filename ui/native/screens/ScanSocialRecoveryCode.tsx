@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import type { SocialRecoveryQrCode } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -23,7 +24,9 @@ export type Props = NativeStackScreenProps<
 
 const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
-    const { socialRecoveryDownloadVerificationDoc } = useBridge()
+    const activeFederationId = useAppSelector(selectActiveFederationId)
+    const { socialRecoveryDownloadVerificationDoc } =
+        useBridge(activeFederationId)
     const { t } = useTranslation()
     const toast = useToast()
     const [downloading, setDownloading] = useState<boolean>(false)

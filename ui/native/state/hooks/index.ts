@@ -15,7 +15,6 @@ import { usePublishNotificationToken } from '@fedi/common/hooks/chat'
 import {
     ensureHealthyMatrixStream,
     refreshActiveStabilityPool,
-    selectActiveFederation,
     selectCurrency,
     selectStableBalance,
     selectStableBalancePending,
@@ -46,10 +45,7 @@ export const usePrevious = <T = unknown>(value: T): T | undefined => {
     return ref.current
 }
 
-export const useBridge = () => {
-    const activeFederation = useAppSelector(selectActiveFederation)
-    const activeFederationId = activeFederation?.id
-
+export const useBridge = (activeFederationId: string | undefined) => {
     return {
         approveSocialRecoveryRequest: useCallback(
             (recoveryId: string, peerId: number, password: string) => {

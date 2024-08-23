@@ -20,7 +20,7 @@ import {
     selectLatestChatMessageTimestamp,
     selectMatrixAuth,
     selectMatrixPushNotificationToken,
-    selectPayFromFederation,
+    selectPaymentFederation,
     sendMatrixPaymentPush,
     sendMatrixPaymentRequest,
     setLastSeenMessageTimestamp,
@@ -222,7 +222,7 @@ export const useChatPaymentPush = (
 ) => {
     const toast = useToast()
     const dispatch = useCommonDispatch()
-    const payFromFederation = useCommonSelector(selectPayFromFederation)
+    const payFromFederation = useCommonSelector(selectPaymentFederation)
     const federationId = payFromFederation?.id || ''
     const [isProcessing, setIsProcessing] = useState<boolean>(false)
 
@@ -265,7 +265,7 @@ export const useChatPaymentUtils = (
     const dispatch = useCommonDispatch()
     const activeFederationId = useCommonSelector(selectActiveFederationId)
     const [federationId] = useState(activeFederationId)
-    const sendMinMax = useMinMaxSendAmount({}, true)
+    const sendMinMax = useMinMaxSendAmount({ selectedPaymentFederation: true })
     const requestMinMax = useMinMaxRequestAmount({ ecashRequest: {} })
     const [amount, setAmount] = useState(0 as Sats)
     const [submitAction, setSubmitAction] = useState<null | 'send' | 'request'>(
@@ -278,8 +278,8 @@ export const useChatPaymentUtils = (
         submitType === 'send'
             ? sendMinMax
             : submitType === 'request'
-            ? requestMinMax
-            : {}
+                ? requestMinMax
+                : {}
 
     const canRequestAmount =
         amount >= requestMinMax.minimumAmount &&
