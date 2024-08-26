@@ -1772,13 +1772,27 @@ mod tests {
         fedi_api: Arc<dyn IFediApi>,
         feature_catalog: Arc<FeatureCatalog>,
     ) -> anyhow::Result<Arc<Bridge>> {
+        setup_bridge_custom_with_data_dir(
+            device_identifier,
+            fedi_api,
+            feature_catalog,
+            create_data_dir(),
+        )
+        .await
+    }
+
+    async fn setup_bridge_custom_with_data_dir(
+        device_identifier: String,
+        fedi_api: Arc<dyn IFediApi>,
+        feature_catalog: Arc<FeatureCatalog>,
+        data_dir: PathBuf,
+    ) -> anyhow::Result<Arc<Bridge>> {
         INIT_TRACING.call_once(|| {
             TracingSetup::default()
                 .init()
                 .expect("Failed to initialize tracing");
         });
         let event_sink = Arc::new(FakeEventSink::new());
-        let data_dir = create_data_dir();
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
         let bridge = match fedimint_initialize_async(
             storage,
