@@ -7,7 +7,7 @@ use std::fmt::Debug;
 use std::pin::pin;
 use std::str::FromStr;
 use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 
 use ::serde::{Deserialize, Serialize};
 use anyhow::{anyhow, bail, Context, Result};
@@ -57,7 +57,7 @@ use fedimint_mint_client::{
     MintOperationMetaVariant, OOBNotes, ReissueExternalNotesState, SelectNotesWithExactAmount,
 };
 use fedimint_wallet_client::{
-    DepositState, PegOutFees, WalletClientInit, WalletClientModule, WalletOperationMeta,
+    DepositStateV2, PegOutFees, WalletClientInit, WalletClientModule, WalletOperationMeta,
     WalletOperationMetaVariant, WithdrawState,
 };
 use futures::{FutureExt, StreamExt};
@@ -618,7 +618,27 @@ impl FederationV2 {
 
     /// Generate bitcoin address
     pub async fn generate_address(&self) -> Result<String> {
-        bail!("on chain deposit are disabled for now")
+        // FIXME: add fedi fees once fedimint await primary module outputs
+        // let fedi_fee_ppm = self
+        //     .fedi_fee_helper
+        //     .get_fedi_fee_ppm(
+        //         self.federation_id().to_string(),
+        //         fedimint_wallet_client::KIND,
+        //         RpcTransactionDirection::Receive,
+        //     )
+        //     .await?;
+        let (operation_id, address, _) = self
+            .client
+            .get_first_module::<WalletClientModule>()
+            .allocate_deposit_address_expert_only(())
+            .await?;
+        // self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
+        //     .await?;
+
+        self.subscribe_deposit(operation_id, address.to_string())
+            .await?;
+
+        Ok(address.to_string())
     }
 
     /// Generate lightning invoice
@@ -669,14 +689,71 @@ impl FederationV2 {
         })
     }
 
-    async fn subscribe_deposit(
-        &self,
-        operation_id: OperationId,
-        address: String,
-        expires_at: SystemTime,
-    ) -> Result<()> {
-        let _ = (operation_id, address, expires_at);
-        error!("ignoring old on chain deposits");
+    async fn subscribe_deposit(&self, operation_id: OperationId, address: String) -> Result<()> {
+        let fed = self.clone();
+        fed.task_group
+            .clone()
+            .spawn_cancellable("subscribe deposit", async move {
+                let wallet = fed.client.get_first_module::<WalletClientModule>();
+                let Ok(mut updates) = wallet
+                    .subscribe_deposit(operation_id)
+                    .await
+                    .map(|x| x.into_stream())
+                    .inspect_err(|e| {
+                        warn!("subscribing to 0.3 deposits is not implemented: {e}");
+                    })
+                else {
+                    return;
+                };
+                while let Some(update) = updates.next().await {
+                    info!("Update: {:?}", update);
+                    fed.update_operation_state(operation_id, update.clone())
+                        .await;
+                    let deposit_outcome = update.clone();
+                    match update {
+                        DepositStateV2::WaitingForConfirmation { btc_deposited, .. }
+                        | DepositStateV2::Claimed { btc_deposited, .. } => {
+                            let fees = wallet.get_fee_consensus().peg_in_abs;
+                            let amount = Amount::from_sats(btc_deposited.to_sat()) - fees;
+                            // FIXME: add fedi fees once fedimint await primary module outputs
+                            // let fedi_fee_status = fed
+                            //     .write_success_receive_fedi_fee(operation_id, amount)
+                            //     .await
+                            //     .map(|(_, status)| status)
+                            //     .ok()
+                            //     .map(Into::into);
+                            let onchain_details = Some(RpcBitcoinDetails {
+                                address: address.clone(),
+                            });
+                            let transaction = RpcTransaction {
+                                id: operation_id.fmt_full().to_string(),
+                                created_at: unix_now().expect("unix time should exist"),
+                                amount: RpcAmount(amount),
+                                fedi_fee_status: None,
+                                direction: RpcTransactionDirection::Receive,
+                                notes: "".into(),
+                                onchain_state: RpcOnchainState::from_deposit_state(Some(
+                                    deposit_outcome,
+                                )),
+                                bitcoin: onchain_details,
+                                ln_state: None,
+                                lightning: None,
+                                oob_state: None,
+                                onchain_withdrawal_details: None,
+                                stability_pool_state: None,
+                            };
+                            info!("send_transaction_event: {:?}", transaction);
+                            fed.send_transaction_event(transaction);
+                        }
+                        DepositStateV2::Failed(reason) => {
+                            let _ = fed.write_failed_receive_fedi_fee(operation_id).await;
+                            // FIXME: handle this
+                            error!("Failed to claim on-chain deposit: {reason}");
+                        }
+                        _ => {}
+                    }
+                }
+            });
         Ok(())
     }
 
@@ -1142,19 +1219,11 @@ impl FederationV2 {
                 let meta = operation.meta::<WalletOperationMeta>();
                 match meta {
                     WalletOperationMeta {
-                        variant:
-                            WalletOperationMetaVariant::Deposit {
-                                address,
-                                expires_at,
-                            },
+                        variant: WalletOperationMetaVariant::Deposit { address, .. },
                         ..
                     } => {
-                        self.subscribe_deposit(
-                            operation_id,
-                            address.assume_checked().to_string(),
-                            expires_at,
-                        )
-                        .await?;
+                        self.subscribe_deposit(operation_id, address.assume_checked().to_string())
+                            .await?;
                     }
                     _ => {
                         tracing::debug!(
@@ -1946,10 +2015,37 @@ impl FederationV2 {
         &self,
         operation_id: OperationId,
         log_entry: OperationLogEntry,
-    ) -> Option<DepositState> {
-        let _ = (operation_id, log_entry);
-        error!("ignoring old on chain deposits");
-        None
+    ) -> Option<DepositStateV2> {
+        let outcome = log_entry.outcome::<DepositStateV2>();
+
+        // Return client's cached outcome if we find it
+        if let Some(outcome) = outcome {
+            return Some(outcome);
+        }
+        // Return our cached outcome if we find it
+        if let Some(outcome) = self.get_operation_state(&operation_id).await {
+            return Some(outcome);
+        }
+
+        // If no cached outcomes, consume the stream to get the outcome and populate
+        // client's cache in future This is only useful for outgoing lightning
+        // payments which fail due to timeout and nothing is subscribed to them
+        let mut updates = match self
+            .client
+            .get_first_module::<WalletClientModule>()
+            .subscribe_deposit(operation_id)
+            .await
+        {
+            Err(_) => return None,
+            Ok(stream) => stream.into_stream(),
+        };
+
+        let mut last_state = None;
+        while let Some(update) = updates.next().await {
+            tracing::info!("update {:?}", update);
+            last_state = Some(update);
+        }
+        last_state
     }
 
     pub async fn get_client_operation_outcome<O: Clone + DeserializeOwned + 'static>(
@@ -2203,7 +2299,7 @@ impl FederationV2 {
                             match wallet_meta.variant {
                                 WalletOperationMetaVariant::Deposit {
                                     address,
-                                    expires_at,
+                                    ..
                                 } => {
                                     let outcome =
                                         self.get_deposit_outcome(op.0.operation_id, op.1).await;
@@ -2219,19 +2315,16 @@ impl FederationV2 {
                                         onchain_state: onchain_state.clone(),
                                         bitcoin: Some(RpcBitcoinDetails {
                                             address: address.assume_checked().to_string(),
-                                            expires_at: to_unix_time(expires_at)
-                                                .expect("unix time should exist"),
                                         }),
                                         ln_state: None,
                                         amount: match outcome {
                                             Some(
-                                                DepositState::WaitingForConfirmation(data)
-                                                | DepositState::Confirmed(data)
-                                                | DepositState::Claimed(data),
-                                            ) => RpcAmount(Amount::from_sats(
-                                                data.btc_transaction.output[data.out_idx as usize]
-                                                    .value,
-                                            )),
+                                                DepositStateV2::WaitingForConfirmation { btc_deposited, ..}
+                                                | DepositStateV2::Claimed { btc_deposited, ..},
+                                            ) => {
+                                                let fees = self.client.get_first_module::<WalletClientModule>().get_fee_consensus().peg_in_abs;
+                                                RpcAmount(Amount::from_sats(btc_deposited.to_sat()) - fees)
+                                            },
                                             _ => RpcAmount(Amount::ZERO),
                                         },
                                         fedi_fee_status,
