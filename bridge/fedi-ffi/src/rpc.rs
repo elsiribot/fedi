@@ -1516,13 +1516,21 @@ mod tests {
     struct MockFediApi {
         // (seed, index) => (device identifier, last registration timestamp)
         registry: Mutex<HashMap<(bip39::Mnemonic, u8), (DeviceIdentifier, SystemTime)>>,
+
+        // Invoice that will be returned whenever fetch_fedi_invoice is called
+        fedi_fee_invoice: Option<Bolt11Invoice>,
     }
 
     impl MockFediApi {
         fn new() -> Self {
             Self {
                 registry: Mutex::new(HashMap::new()),
+                fedi_fee_invoice: None,
             }
+        }
+
+        fn set_fedi_fee_invoice(&mut self, invoice: Bolt11Invoice) {
+            self.fedi_fee_invoice = Some(invoice);
         }
     }
 
@@ -1542,7 +1550,9 @@ mod tests {
             _module: ModuleKind,
             _tx_direction: RpcTransactionDirection,
         ) -> anyhow::Result<Bolt11Invoice> {
-            unimplemented!("TODO shaurya implement when testing");
+            self.fedi_fee_invoice
+                .clone()
+                .ok_or(anyhow!("Invoice not set"))
         }
 
         async fn fetch_registered_devices_for_seed(
@@ -3244,6 +3254,103 @@ mod tests {
             );
             break;
         }
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_fee_remittance_on_startup() -> anyhow::Result<()> {
+        // Setup bridge, join test federation, set SP send fee ppm
+        let device_identifier = "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
+        let (bridge, federation) = setup_custom(
+            device_identifier.clone(),
+            Arc::new(MockFediApi::new()),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+        )
+        .await?;
+        setStabilityPoolModuleFediFeeSchedule(
+            bridge.clone(),
+            federation.rpc_federation_id(),
+            210_000,
+            0,
+        )
+        .await?;
+
+        // Receive ecash, verify no pending or outstanding fees
+        let ecash = cli_generate_ecash(Amount::from_msats(2_000_000)).await?;
+        let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
+        federation.receive_ecash(ecash).await?;
+        wait_for_ecash_reissue(&federation).await?;
+        assert_eq!(ecash_receive_amount, federation.get_balance().await);
+        assert_eq!(Amount::ZERO, federation.get_pending_fedi_fees().await);
+        assert_eq!(Amount::ZERO, federation.get_outstanding_fedi_fees().await);
+
+        // Make SP deposit, verify pending fees
+        let amount_to_deposit = Amount::from_msats(1_000_000);
+        stabilityPoolDepositToSeek(federation.clone(), RpcAmount(amount_to_deposit)).await?;
+        assert_eq!(
+            Amount::from_msats(210_000),
+            federation.get_pending_fedi_fees().await
+        );
+        assert_eq!(Amount::ZERO, federation.get_outstanding_fedi_fees().await);
+
+        // Wait for SP deposit to be accepted, verify outstanding fees
+        loop {
+            // Wait until deposit operation succeeds
+            // Initiated -> TxAccepted -> Success
+            if bridge
+                .event_sink
+                .num_events_of_type("stabilityPoolDeposit".into())
+                == 3
+            {
+                break;
+            }
+
+            fedimint_core::task::sleep(Duration::from_millis(100)).await;
+        }
+        assert_eq!(Amount::ZERO, federation.get_pending_fedi_fees().await);
+        assert_eq!(
+            Amount::from_msats(210_000),
+            federation.get_outstanding_fedi_fees().await
+        );
+
+        // No fee can be remitted just yet cuz we haven't mocked invoice endpoint
+
+        // Extract data dir and drop bridge
+        let federation_id = federation.federation_id();
+        let data_dir = bridge.storage.platform_path(Path::new(""));
+        drop(federation);
+        bridge
+            .task_group
+            .clone()
+            .shutdown_join_all(Duration::from_secs(5))
+            .await?;
+        drop(bridge);
+
+        // Mock fee remittance endpoint
+        let label = "fedi_fee";
+        let fedi_fee_invoice = cli_generate_invoice(label, &Amount::from_msats(210_000)).await?;
+        let mut mock_fedi_api = MockFediApi::new();
+        mock_fedi_api.set_fedi_fee_invoice(fedi_fee_invoice.clone());
+
+        // Create new bridge using same data dir
+        let new_bridge = setup_bridge_custom_with_data_dir(
+            device_identifier,
+            Arc::new(mock_fedi_api),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+            data_dir,
+        )
+        .await?;
+
+        // Wait for fedi fee to be remitted (timeout of 5s)
+        fedimint_core::task::timeout(Duration::from_secs(5), cln_wait_invoice(label)).await??;
+
+        // Ensure outstanding fee has been cleared
+        let federation = new_bridge
+            .get_federation(&federation_id.to_string())
+            .await?;
+        assert_eq!(Amount::ZERO, federation.get_pending_fedi_fees().await);
+        assert_eq!(Amount::ZERO, federation.get_outstanding_fedi_fees().await);
 
         Ok(())
     }

@@ -1315,9 +1315,9 @@ impl FederationV2 {
     /// "federation" events when one is observed
     async fn subscribe_balance_updates(&mut self) {
         let federation = self.clone();
-        self.task_group.spawn(
+        self.task_group.spawn_cancellable(
             format!("{:?} balance subscription", federation.federation_name()),
-            |_| async move {
+            async move {
                 // always send an initial balance event
                 federation.send_balance_event().await;
                 let mut updates = federation.client.subscribe_balance_changes().await;
