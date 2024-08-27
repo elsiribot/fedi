@@ -267,19 +267,32 @@ export const refreshFederations = createAsyncThunk<
         network: f.network as Network,
         hasWallet: true as const,
     }))
-    // TODO Check arguments for listCommunities
     const communities = await fedimint.listCommunities({})
     const communitiesAsFederations = communities.map(coerceFederationListItem)
 
-    const externalMeta = await fetchFederationsExternalMetadata(
-        [
-            ...federations,
-            ...communitiesAsFederations,
-            // For the purposes of gathering metadata, we need to
-            // treat the global community as a "wallet" federation.
-            // The means we'll fetch the external metadata for it.
-            { ...FEDI_GLOBAL_COMMUNITY, hasWallet: true },
-        ],
+    const allFederations = [...federations, ...communitiesAsFederations]
+
+    // Create externalMeta object directly from federation data since
+    // bridge does the external meta URL fetching now
+    const externalMeta = allFederations.reduce((acc, federation) => {
+        acc[federation.id] = federation.meta
+        dispatch(
+            setFederationCustomFediMods({
+                federationId: federation.id,
+                mods: getFederationFediMods(federation.meta),
+            }),
+        )
+        return acc
+    }, {} as Record<Federation['id'], ClientConfigMetadata>)
+    // TODO: Clean up the externalMeta state structure from redux/storage so that
+    // federation/community meta are derived directly from the federations state
+    // note that this refactors will be required to preserve the global/default mods
+    // + global fedi announcements group features that depend on externalMeta
+    const globalCommunityMeta = await fetchFederationsExternalMetadata(
+        // For the purposes of gathering metadata, we need to
+        // treat the global community as a "wallet" federation.
+        // The means we'll fetch the external metadata for it.
+        [{ ...FEDI_GLOBAL_COMMUNITY, hasWallet: true }],
         (federationId, meta) => {
             dispatch(setFederationExternalMeta({ federationId, meta }))
             dispatch(
@@ -290,11 +303,14 @@ export const refreshFederations = createAsyncThunk<
             )
         },
     )
-    // First update the federations with the external meta that
-    // is locally accessible. We update each federation's meta
-    // as the external fetches return in the background
-    dispatch(updateExternalMeta(externalMeta))
-    dispatch(setFederations([...federations, ...communitiesAsFederations]))
+
+    dispatch(
+        updateExternalMeta({
+            ...externalMeta,
+            ...globalCommunityMeta,
+        }),
+    )
+    dispatch(setFederations(allFederations))
     return selectFederations(getState())
 })
 
