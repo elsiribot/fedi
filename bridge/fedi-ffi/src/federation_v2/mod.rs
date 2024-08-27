@@ -57,8 +57,8 @@ use fedimint_mint_client::{
     MintOperationMetaVariant, OOBNotes, ReissueExternalNotesState, SelectNotesWithExactAmount,
 };
 use fedimint_wallet_client::{
-    DepositStateV2, PegOutFees, WalletClientInit, WalletClientModule, WalletOperationMeta,
-    WalletOperationMetaVariant, WithdrawState,
+    DepositStateV1, DepositStateV2, PegOutFees, WalletClientInit, WalletClientModule,
+    WalletOperationMeta, WalletOperationMetaVariant, WithdrawState,
 };
 use futures::{FutureExt, StreamExt};
 use lightning_invoice::{Bolt11Invoice, RoutingFees};
@@ -2011,43 +2011,6 @@ impl FederationV2 {
         None
     }
 
-    pub async fn get_deposit_outcome(
-        &self,
-        operation_id: OperationId,
-        log_entry: OperationLogEntry,
-    ) -> Option<DepositStateV2> {
-        let outcome = log_entry.outcome::<DepositStateV2>();
-
-        // Return client's cached outcome if we find it
-        if let Some(outcome) = outcome {
-            return Some(outcome);
-        }
-        // Return our cached outcome if we find it
-        if let Some(outcome) = self.get_operation_state(&operation_id).await {
-            return Some(outcome);
-        }
-
-        // If no cached outcomes, consume the stream to get the outcome and populate
-        // client's cache in future This is only useful for outgoing lightning
-        // payments which fail due to timeout and nothing is subscribed to them
-        let mut updates = match self
-            .client
-            .get_first_module::<WalletClientModule>()
-            .subscribe_deposit(operation_id)
-            .await
-        {
-            Err(_) => return None,
-            Ok(stream) => stream.into_stream(),
-        };
-
-        let mut last_state = None;
-        while let Some(update) = updates.next().await {
-            tracing::info!("update {:?}", update);
-            last_state = Some(update);
-        }
-        last_state
-    }
-
     pub async fn get_client_operation_outcome<O: Clone + DeserializeOwned + 'static>(
         &self,
         operation_id: OperationId,
@@ -2299,10 +2262,32 @@ impl FederationV2 {
                             match wallet_meta.variant {
                                 WalletOperationMetaVariant::Deposit {
                                     address,
+                                    tweak_idx,
                                     ..
                                 } => {
-                                    let outcome =
-                                        self.get_deposit_outcome(op.0.operation_id, op.1).await;
+                                    // We still need to ensure that:
+                                    // 1. v1 deposits that have reached an outcome can continue to display that outcome
+                                    // 2. v1 deposits that are pending don't cause the TX list to crash
+                                    // So we use the presence of `tweak_idx` to distinguish between v1/v2, and read the outcome using the right struct
+                                    // accordingly.
+                                    let outcome = if tweak_idx.is_none() {
+                                        let outcome_v1 = self.get_client_operation_outcome::<DepositStateV1>(op.0.operation_id, op.1).await;
+                                        match outcome_v1 {
+                                            Some(DepositStateV1::Claimed(tx_info)) => Some(DepositStateV2::Claimed {
+                                                btc_deposited: bitcoin::Amount::from_sat(
+                                                    tx_info.btc_transaction.output[tx_info.out_idx as usize].value,
+                                                ),
+                                                btc_out_point: bitcoin::OutPoint {
+                                                    txid: tx_info.btc_transaction.txid(),
+                                                    vout: tx_info.out_idx,
+                                                },
+                                            }),
+                                            Some(DepositStateV1::Failed(error)) => Some(DepositStateV2::Failed(error)),
+                                            _ => None,
+                                        }
+                                    } else {
+                                        self.get_client_operation_outcome::<DepositStateV2>(op.0.operation_id, op.1).await
+                                    };
                                     let onchain_state =
                                         RpcOnchainState::from_deposit_state(outcome.clone());
 
