@@ -637,6 +637,7 @@
             "join-to-receive": "Join <bold>{{federation}}</bold> to receive",
             "maximum-invoice-amount": "Maximum invoice amount is {{maxAmount}} SATS",
             "onchain-notice": "On-chain deposits take ~10 hours to confirm. Use Lightning for instant transactions",
+            "onchain-expert-only": "For your safety: Keep the transaction size under 40 kB and DO NOT reuse this address in the future. This will help prevent any potential issues with your deposit.",
             "other-methods": "Other methods",
             "pending-transaction": "pending transaction",
             "receive-amount-unit": "Receive {{amount}} {{unit}}",
