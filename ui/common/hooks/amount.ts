@@ -7,6 +7,7 @@ import {
     selectBtcExchangeRate,
     selectBtcUsdExchangeRate,
     selectCurrency,
+    selectCurrencyLocale,
     selectFederationBalance,
     selectFederationMetadata,
     selectMaxInvoiceAmount,
@@ -73,6 +74,7 @@ export type NumpadButtonValue = (typeof numpadButtons)[number]
 
 export const useBtcFiatPrice = () => {
     const selectedFiatCurrency = useCommonSelector(selectCurrency)
+    const currencyLocale = useCommonSelector(selectCurrencyLocale)
     const exchangeRate: number = useCommonSelector(selectBtcExchangeRate)
     const btcUsdExchangeRate: number = useCommonSelector(
         selectBtcUsdExchangeRate,
@@ -88,9 +90,15 @@ export const useBtcFiatPrice = () => {
                 )
                 return amountUtils.formatFiat(amount, selectedFiatCurrency, {
                     symbolPosition,
+                    locale: currencyLocale,
                 })
             },
-            [btcUsdExchangeRate, exchangeRate, selectedFiatCurrency],
+            [
+                btcUsdExchangeRate,
+                currencyLocale,
+                exchangeRate,
+                selectedFiatCurrency,
+            ],
         ),
         convertSatsToFiat: useCallback(
             (sats: Sats) => {
@@ -103,18 +111,20 @@ export const useBtcFiatPrice = () => {
                 const amount = amountUtils.satToFiat(sats, exchangeRate)
                 return amountUtils.formatFiat(amount, selectedFiatCurrency, {
                     symbolPosition,
+                    locale: currencyLocale,
                 })
             },
-            [exchangeRate, selectedFiatCurrency],
+            [exchangeRate, selectedFiatCurrency, currencyLocale],
         ),
         convertSatsToFormattedUsd: useCallback(
             (sats: Sats, symbolPosition: AmountSymbolPosition = 'end') => {
                 const amount = amountUtils.satToFiat(sats, btcUsdExchangeRate)
                 return amountUtils.formatFiat(amount, SupportedCurrency.USD, {
                     symbolPosition,
+                    locale: currencyLocale,
                 })
             },
-            [btcUsdExchangeRate],
+            [btcUsdExchangeRate, currencyLocale],
         ),
     }
 }
@@ -211,6 +221,7 @@ export function useAmountInput(
     const btcToFiatRate = useCommonSelector(selectBtcExchangeRate)
     const btcToFiatRateRef = useUpdatingRef(btcToFiatRate)
     const currency = useCommonSelector(selectCurrency)
+    const currencyLocale = useCommonSelector(selectCurrencyLocale)
     const federationMetadata = useCommonSelector(selectFederationMetadata)
     const defaultAmountInputType = useCommonSelector(selectAmountInputType)
 
@@ -229,7 +240,7 @@ export function useAmountInput(
         amountUtils.formatFiat(
             amountUtils.satToFiat(amount, btcToFiatRate),
             currency,
-            { symbolPosition: 'none' },
+            { symbolPosition: 'none', locale: currencyLocale },
         ),
     )
 
@@ -249,7 +260,9 @@ export function useAmountInput(
     const handleChangeSats = useCallback(
         (value: string) => {
             // can be 1,000 or 1.000 or 1 000
-            const thousandsSeparator = amountUtils.getThousandsSeparator()
+            const thousandsSeparator = amountUtils.getThousandsSeparator({
+                locale: currencyLocale,
+            })
             // replacing periods requires a special regex
             let escapeSeparator = thousandsSeparator
             if (thousandsSeparator === '.') {
@@ -263,22 +276,29 @@ export function useAmountInput(
             setFiatValue(
                 amountUtils.formatFiat(fiat, currency, {
                     symbolPosition: 'none',
+                    locale: currencyLocale,
                 }),
             )
         },
-        [clampSats, onChangeAmount, currency, btcToFiatRateRef],
+        [currencyLocale, clampSats, btcToFiatRateRef, onChangeAmount, currency],
     )
 
     const handleChangeFiat = useCallback(
         (value: string) => {
-            let fiat = amountUtils.parseFiatString(value)
+            let fiat = amountUtils.parseFiatString(value, {
+                locale: currencyLocale,
+            })
             if (Number.isNaN(fiat) || fiat < 0) {
                 fiat = 0
             }
 
             // If they've added or removed a sigdig, offset all numbers by a tens place
-            const decimals = amountUtils.getCurrencyDecimals(currency)
-            const decimalSeparator = amountUtils.getDecimalSeparator()
+            const decimals = amountUtils.getCurrencyDecimals(currency, {
+                locale: currencyLocale,
+            })
+            const decimalSeparator = amountUtils.getDecimalSeparator({
+                locale: currencyLocale,
+            })
             const valueDecimals = value.split(decimalSeparator)[1]?.length || 0
             if (valueDecimals > decimals) {
                 fiat = fiat * 10
@@ -323,11 +343,13 @@ export function useAmountInput(
             setFiatValue(
                 amountUtils.formatFiat(fiat, currency, {
                     symbolPosition: 'none',
+                    locale: currencyLocale,
                 }),
             )
             setSatsValue(amountUtils.formatSats(sats))
         },
         [
+            currencyLocale,
             currency,
             clampSats,
             btcToFiatRateRef,
@@ -390,6 +412,7 @@ export function useAmountInput(
         handleChangeSats,
         currency,
         currencySymbol,
+        currencyLocale,
         numpadButtons,
         handleNumpadPress,
         validation,
