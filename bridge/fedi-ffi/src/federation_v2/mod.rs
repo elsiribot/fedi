@@ -1,5 +1,6 @@
 pub mod db;
 mod dev;
+mod meta;
 
 use std::any::Any;
 use std::collections::HashMap;
@@ -27,6 +28,7 @@ use fedimint_api_client::download_from_invite_code;
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::backup::{ClientBackup, Metadata};
 use fedimint_client::db::ChronologicalOperationLogKey;
+use fedimint_client::meta::MetaService;
 use fedimint_client::module::recovery::RecoveryProgress;
 use fedimint_client::module::ClientModule;
 use fedimint_client::oplog::OperationLogEntry;
@@ -62,6 +64,7 @@ use fedimint_wallet_client::{
 };
 use futures::{FutureExt, StreamExt};
 use lightning_invoice::{Bolt11Invoice, RoutingFees};
+use meta::{LegacyMetaSourceWithExternalUrl, MetaEntries, MetaServiceExt};
 use serde::de::DeserializeOwned;
 use stability_pool_client::{
     ClientAccountInfo, StabilityPoolClientInit, StabilityPoolClientModule,
@@ -170,6 +173,8 @@ impl FederationV2 {
     /// Instantiate Federation from FediConfig
     async fn build_client_builder(db: Database) -> anyhow::Result<ClientBuilder> {
         let mut client_builder = fedimint_client::Client::builder(db).await?;
+        client_builder
+            .with_meta_service(MetaService::new(LegacyMetaSourceWithExternalUrl::default()));
         client_builder.with_module(MintClientInit);
         client_builder.with_module(LightningClientInit::default());
         client_builder.with_module(WalletClientInit(None));
@@ -239,6 +244,16 @@ impl FederationV2 {
         {
             error!("fedi fee remittance service already initialized");
         }
+
+        let federation = self.clone();
+        self.task_group
+            .spawn_cancellable("send_meta_updates", async move {
+                let mut subscribe_to_updates =
+                    std::pin::pin!(federation.client.meta_service().subscribe_to_updates());
+                while subscribe_to_updates.next().await.is_some() {
+                    federation.send_federation_event().await;
+                }
+            });
 
         // We disable the StabilityPoolSweeperService in tests to ensure that staged
         // seeks don't accidentally disappear if a test takes longer than expected and a
@@ -474,6 +489,18 @@ impl FederationV2 {
         self.client
             .get_meta("federation_name")
             .unwrap_or(self.federation_id().to_string()[0..8].to_string())
+    }
+
+    pub async fn get_cached_meta(&self) -> MetaEntries {
+        match self
+            .client
+            .meta_service()
+            .entries_from_db(self.client.db())
+            .await
+        {
+            Some(entries) => entries,
+            None => self.client.config().await.global.meta,
+        }
     }
 
     /// Create database transaction
