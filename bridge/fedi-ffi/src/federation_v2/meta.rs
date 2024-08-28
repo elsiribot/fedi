@@ -13,11 +13,28 @@ pub type MetaEntries = BTreeMap<String, String>;
 
 #[apply(async_trait_maybe_send)]
 pub trait MetaServiceExt {
+    async fn entries(&self, db: &Database) -> Option<MetaEntries>;
     async fn entries_from_db(&self, db: &Database) -> Option<MetaEntries>;
 }
 
 #[apply(async_trait_maybe_send)]
 impl MetaServiceExt for MetaService {
+    /// Get all meta entries.
+    ///
+    /// This may wait for significant time on first run when there is no cached
+    /// data.
+    async fn entries(&self, db: &Database) -> Option<MetaEntries> {
+        if let Some(value) = self.entries_from_db(db).await {
+            // might be from in old cache.
+            // TODO: maybe old cache should have a ttl?
+            Some(value)
+        } else {
+            // wait for initial value
+            self.wait_initialization().await;
+            self.entries_from_db(db).await
+        }
+    }
+
     /// Retrieve all meta entries from the database
     async fn entries_from_db(&self, db: &Database) -> Option<MetaEntries> {
         let dbtx = &mut db.begin_transaction_nc().await;
