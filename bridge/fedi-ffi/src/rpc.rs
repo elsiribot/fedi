@@ -2158,6 +2158,12 @@ mod tests {
         let address = generateAddress(federation.clone()).await?;
         bitcoin_cli_send_to_address(&address, "0.1").await?;
 
+        assert!(matches!(
+            listTransactions(federation.clone(), None, None).await?[0].onchain_state,
+            Some(crate::types::RpcOnchainState::DepositState(
+                RpcOnchainDepositState::WaitingForTransaction
+            ))
+        ),);
         // check for event of type transaction that has onchain_state of
         // DepositState::Claimed
         'check: loop {
@@ -2188,6 +2194,12 @@ mod tests {
             )
             .await;
         }
+        assert!(matches!(
+            listTransactions(federation.clone(), None, None).await?[0].onchain_state,
+            Some(crate::types::RpcOnchainState::DepositState(
+                RpcOnchainDepositState::Claimed(_)
+            ))
+        ),);
 
         let btc_amount = Amount::from_sats(10_000_000);
         let pegin_fees = federation

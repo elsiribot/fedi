@@ -29,7 +29,7 @@ use fedimint_client::backup::{ClientBackup, Metadata};
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_client::module::recovery::RecoveryProgress;
 use fedimint_client::module::ClientModule;
-use fedimint_client::oplog::OperationLogEntry;
+use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_client::{Client, ClientBuilder, ClientHandle, ClientHandleArc};
 use fedimint_core::config::{ClientConfig, FederationId};
@@ -57,8 +57,8 @@ use fedimint_mint_client::{
     MintOperationMetaVariant, OOBNotes, ReissueExternalNotesState, SelectNotesWithExactAmount,
 };
 use fedimint_wallet_client::{
-    DepositStateV1, DepositStateV2, PegOutFees, WalletClientInit, WalletClientModule,
-    WalletOperationMeta, WalletOperationMetaVariant, WithdrawState,
+    DepositStateV2, PegOutFees, WalletClientInit, WalletClientModule, WalletOperationMeta,
+    WalletOperationMetaVariant, WithdrawState,
 };
 use futures::{FutureExt, StreamExt};
 use lightning_invoice::{Bolt11Invoice, RoutingFees};
@@ -2011,6 +2011,28 @@ impl FederationV2 {
         None
     }
 
+    pub async fn get_deposit_outcome(&self, operation_id: OperationId) -> Option<DepositStateV2> {
+        // Return our cached outcome if we find it
+        if let Some(outcome) = self
+            .get_operation_state::<DepositStateV2>(&operation_id)
+            .await
+        {
+            return Some(outcome);
+        }
+
+        match self
+            .client
+            .get_first_module::<WalletClientModule>()
+            .subscribe_deposit(operation_id)
+            .await
+        {
+            Err(_) => None,
+            Ok(UpdateStreamOrOutcome::Outcome(outcome)) => Some(outcome),
+            // don't block
+            Ok(UpdateStreamOrOutcome::UpdateStream(_)) => None,
+        }
+    }
+
     pub async fn get_client_operation_outcome<O: Clone + DeserializeOwned + 'static>(
         &self,
         operation_id: OperationId,
@@ -2262,32 +2284,9 @@ impl FederationV2 {
                             match wallet_meta.variant {
                                 WalletOperationMetaVariant::Deposit {
                                     address,
-                                    tweak_idx,
                                     ..
                                 } => {
-                                    // We still need to ensure that:
-                                    // 1. v1 deposits that have reached an outcome can continue to display that outcome
-                                    // 2. v1 deposits that are pending don't cause the TX list to crash
-                                    // So we use the presence of `tweak_idx` to distinguish between v1/v2, and read the outcome using the right struct
-                                    // accordingly.
-                                    let outcome = if tweak_idx.is_none() {
-                                        let outcome_v1 = self.get_client_operation_outcome::<DepositStateV1>(op.0.operation_id, op.1).await;
-                                        match outcome_v1 {
-                                            Some(DepositStateV1::Claimed(tx_info)) => Some(DepositStateV2::Claimed {
-                                                btc_deposited: bitcoin::Amount::from_sat(
-                                                    tx_info.btc_transaction.output[tx_info.out_idx as usize].value,
-                                                ),
-                                                btc_out_point: bitcoin::OutPoint {
-                                                    txid: tx_info.btc_transaction.txid(),
-                                                    vout: tx_info.out_idx,
-                                                },
-                                            }),
-                                            Some(DepositStateV1::Failed(error)) => Some(DepositStateV2::Failed(error)),
-                                            _ => None,
-                                        }
-                                    } else {
-                                        self.get_client_operation_outcome::<DepositStateV2>(op.0.operation_id, op.1).await
-                                    };
+                                    let outcome = self.get_deposit_outcome(op.0.operation_id).await;
                                     let onchain_state =
                                         RpcOnchainState::from_deposit_state(outcome.clone());
 
