@@ -202,9 +202,15 @@ async fn guardianStatus(federation: Arc<FederationV2>) -> anyhow::Result<Vec<Gua
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn joinFederation(bridge: Arc<Bridge>, invite_code: String) -> anyhow::Result<RpcFederation> {
+async fn joinFederation(
+    bridge: Arc<Bridge>,
+    invite_code: String,
+    recover_from_scratch: bool,
+) -> anyhow::Result<RpcFederation> {
     info!("joining federation {:?}", invite_code);
-    bridge.join_federation(invite_code).await
+    bridge
+        .join_federation(invite_code, recover_from_scratch)
+        .await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1838,7 +1844,7 @@ mod tests {
 
     async fn join_test_fed(bridge: &Arc<Bridge>) -> Result<Arc<FederationV2>, anyhow::Error> {
         let invite_code = std::env::var("FM_INVITE_CODE").unwrap();
-        let fedimint_federation = joinFederation(bridge.clone(), invite_code).await?;
+        let fedimint_federation = joinFederation(bridge.clone(), invite_code, false).await?;
         let federation = bridge
             .get_federation_maybe_recovering(&fedimint_federation.id.0)
             .await?;
@@ -1848,9 +1854,11 @@ mod tests {
 
     async fn join_test_fed_recovery(
         bridge: &Arc<Bridge>,
+        recover_from_scratch: bool,
     ) -> Result<Arc<FederationV2>, anyhow::Error> {
         let invite_code = std::env::var("FM_INVITE_CODE").unwrap();
-        let fedimint_federation = joinFederation(bridge.clone(), invite_code).await?;
+        let fedimint_federation =
+            joinFederation(bridge.clone(), invite_code, recover_from_scratch).await?;
         let federation = bridge
             .get_federation_maybe_recovering(&fedimint_federation.id.0)
             .await?;
@@ -1926,9 +1934,11 @@ mod tests {
         let env_invite_code = std::env::var("FM_INVITE_CODE").unwrap();
 
         // Can't re-join a federation we're already a member of
-        assert!(joinFederation(bridge.clone(), env_invite_code.clone())
-            .await
-            .is_err());
+        assert!(
+            joinFederation(bridge.clone(), env_invite_code.clone(), false)
+                .await
+                .is_err()
+        );
 
         // listTransactions works
         let federations = listFederations(bridge.clone()).await?;
@@ -1940,7 +1950,7 @@ mod tests {
         assert_eq!(listFederations(bridge.clone()).await?.len(), 0);
 
         // rejoin without any rocksdb locking problems
-        joinFederation(bridge.clone(), env_invite_code).await?;
+        joinFederation(bridge.clone(), env_invite_code, false).await?;
         assert_eq!(listFederations(bridge).await?.len(), 1);
 
         Ok(())
@@ -2297,6 +2307,15 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_backup_and_recovery() -> anyhow::Result<()> {
+        test_backup_and_recovery_inner(false).await
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_backup_and_recovery_from_scratch() -> anyhow::Result<()> {
+        test_backup_and_recovery_inner(true).await
+    }
+
+    async fn test_backup_and_recovery_inner(from_scratch: bool) -> anyhow::Result<()> {
         let (backup_bridge, federation) = setup().await?;
 
         // receive ecash
@@ -2339,7 +2358,7 @@ mod tests {
         transferExistingDeviceRegistration(recovery_bridge.clone(), 0).await?;
 
         // Rejoin federation and assert that balances are correct
-        let recovery_federation = join_test_fed_recovery(&recovery_bridge).await?;
+        let recovery_federation = join_test_fed_recovery(&recovery_bridge, from_scratch).await?;
         assert!(recovery_federation.recovering());
         let id = recovery_federation.rpc_federation_id();
         drop(recovery_federation);
@@ -2357,6 +2376,13 @@ mod tests {
         }
         let recovery_federation = recovery_bridge.get_federation(&id.0).await?;
         // Currently, accrued fedi fee is merged back into balance upon recovery
+        // wait atmost 10s
+        for _ in 0..100 {
+            if ecash_balance_before + expected_fedi_fee == recovery_federation.get_balance().await {
+                break;
+            }
+            fedimint_core::task::sleep(Duration::from_millis(100)).await;
+        }
         assert_eq!(
             ecash_balance_before + expected_fedi_fee,
             recovery_federation.get_balance().await
@@ -2688,7 +2714,8 @@ mod tests {
         ));
 
         // join
-        let fedimint_federation = joinFederation(bridge.clone(), invite_code.clone()).await?;
+        let fedimint_federation =
+            joinFederation(bridge.clone(), invite_code.clone(), false).await?;
         let federation = bridge.get_federation(&fedimint_federation.id.0).await?;
         use_lnd_gateway(&federation).await?;
 
@@ -2764,7 +2791,9 @@ mod tests {
         ));
 
         // Rejoining federation should fail since device index wasn't assigned
-        assert!(join_test_fed_recovery(&recovery_bridge).await.is_err());
+        assert!(join_test_fed_recovery(&recovery_bridge, false)
+            .await
+            .is_err());
         Ok(())
     }
 
@@ -2898,7 +2927,7 @@ mod tests {
         transferExistingDeviceRegistration(recovery_bridge.clone(), 0).await?;
 
         // Rejoin federation and assert that balances are correct
-        let recovery_federation = join_test_fed_recovery(&recovery_bridge).await?;
+        let recovery_federation = join_test_fed_recovery(&recovery_bridge, false).await?;
         assert!(recovery_federation.recovering());
         let id = recovery_federation.rpc_federation_id();
         drop(recovery_federation);
@@ -2999,7 +3028,7 @@ mod tests {
 
         // Rejoin federation and assert that balances don't carry over (and there is no
         // backup)
-        let recovery_federation = join_test_fed_recovery(&recovery_bridge).await?;
+        let recovery_federation = join_test_fed_recovery(&recovery_bridge, false).await?;
         assert!(!recovery_federation.recovering());
         assert_eq!(Amount::ZERO, recovery_federation.get_balance().await);
 

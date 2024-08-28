@@ -122,8 +122,8 @@ export class FedimintBridge {
         })
     }
 
-    async joinFederation(inviteCode: string) {
-        return this.rpcTyped('joinFederation', { inviteCode })
+    async joinFederation(inviteCode: string, recoverFromScratch = false) {
+        return this.rpcTyped('joinFederation', { inviteCode, recoverFromScratch })
     }
 
     async leaveFederation(federationId: string) {

@@ -329,6 +329,9 @@ impl Bridge {
                 .await
                 .with_context(|| format!("loading federation {}", federation_id.clone()))?;
                 let fed_network = federation_v2.get_network();
+                if federation_v2.recovering() {
+                    error!(%federation_id, "federation must be recovered after restart on recovery completed once");
+                }
                 federation_lock.insert(federation_id.clone(), Arc::new(federation_v2));
                 info!(%federation_id, "reinserted to federation list");
                 drop(federation_lock);
@@ -352,11 +355,18 @@ impl Bridge {
     ///
     /// Federation ID saved to global database, new rocksdb database created for
     /// it, and it is saved to local hashmap by ID
-    pub async fn join_federation(&self, invite_code_string: String) -> Result<RpcFederation> {
+    pub async fn join_federation(
+        &self,
+        invite_code_string: String,
+        recover_from_scratch: bool,
+    ) -> Result<RpcFederation> {
         let invite_code = invite_code_string.to_lowercase();
         // FIXME: this is kinda unreliable
         let mut error_code = None;
-        match self.join_federation_inner(invite_code.clone()).await {
+        match self
+            .join_federation_inner(invite_code.clone(), recover_from_scratch)
+            .await
+        {
             Ok(federation) => {
                 info!("Joined v2 federation");
                 return Ok(federation_v2_to_rpc_federation(&federation).await);
@@ -372,7 +382,11 @@ impl Bridge {
         bail!("failed to join")
     }
 
-    async fn join_federation_inner(&self, invite_code_string: String) -> Result<Arc<FederationV2>> {
+    async fn join_federation_inner(
+        &self,
+        invite_code_string: String,
+        recover_from_scratch: bool,
+    ) -> Result<Arc<FederationV2>> {
         // Check if we've already joined this federation
         let invite_code = InviteCode::from_str(&invite_code_string)?;
         if self
@@ -401,6 +415,7 @@ impl Bridge {
             db,
             &root_mnemonic,
             device_index,
+            recover_from_scratch,
             self.fedi_fee_helper.clone(),
             self.feature_catalog.clone(),
             self.app_state.clone(),
@@ -678,6 +693,7 @@ impl Bridge {
                     )?,
                 )
                 .to_string(),
+                false,
             )
             .await
             .map(Some)

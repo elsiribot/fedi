@@ -321,7 +321,7 @@ export interface RpcMethods {
   ];
   onAppForeground: [Record<string, never>, null];
   joinFederation: [
-    { inviteCode: string },
+    { inviteCode: string; recoverFromScratch: boolean },
     {
       balance: RpcAmount;
       id: RpcFederationId;
