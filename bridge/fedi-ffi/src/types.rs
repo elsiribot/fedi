@@ -9,7 +9,7 @@ use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::Amount;
 use fedimint_ln_client::pay::GatewayPayError;
 use fedimint_ln_client::{LnPayState, LnReceiveState};
-use fedimint_wallet_client::{BitcoinTransactionData, DepositState, WithdrawState};
+use fedimint_wallet_client::{DepositStateV2, WithdrawState};
 use serde::{Deserialize, Serialize};
 use stability_pool_client::ClientAccountInfo;
 use ts_rs::TS;
@@ -409,21 +409,18 @@ pub enum RpcOnchainState {
 }
 
 impl RpcOnchainState {
-    pub fn from_deposit_state(opt: Option<DepositState>) -> Option<RpcOnchainState> {
+    pub fn from_deposit_state(opt: Option<DepositStateV2>) -> Option<RpcOnchainState> {
         let state = match opt? {
-            DepositState::WaitingForTransaction => RpcOnchainDepositState::WaitingForTransaction,
-            DepositState::WaitingForConfirmation(data) => {
+            DepositStateV2::WaitingForTransaction => RpcOnchainDepositState::WaitingForTransaction,
+            DepositStateV2::WaitingForConfirmation { btc_out_point, .. } => {
                 RpcOnchainDepositState::WaitingForConfirmation(
-                    RpcOnchainDepositTransactionData::new(&data),
+                    RpcOnchainDepositTransactionData::new(&btc_out_point),
                 )
             }
-            DepositState::Confirmed(data) => {
-                RpcOnchainDepositState::Confirmed(RpcOnchainDepositTransactionData::new(&data))
-            }
-            DepositState::Claimed(data) => {
-                RpcOnchainDepositState::Claimed(RpcOnchainDepositTransactionData::new(&data))
-            }
-            DepositState::Failed(_) => RpcOnchainDepositState::Failed,
+            DepositStateV2::Claimed { btc_out_point, .. } => RpcOnchainDepositState::Claimed(
+                RpcOnchainDepositTransactionData::new(&btc_out_point),
+            ),
+            DepositStateV2::Failed(_) => RpcOnchainDepositState::Failed,
         };
         Some(Self::DepositState(state))
     }
@@ -450,7 +447,6 @@ impl RpcOnchainState {
 pub enum RpcOnchainDepositState {
     WaitingForTransaction,
     WaitingForConfirmation(RpcOnchainDepositTransactionData),
-    Confirmed(RpcOnchainDepositTransactionData),
     Claimed(RpcOnchainDepositTransactionData),
     Failed,
 }
@@ -463,9 +459,9 @@ pub struct RpcOnchainDepositTransactionData {
 }
 
 impl RpcOnchainDepositTransactionData {
-    pub fn new(data: &BitcoinTransactionData) -> Self {
+    pub fn new(outpoint: &bitcoin::OutPoint) -> Self {
         Self {
-            txid: data.btc_transaction.txid().to_string(),
+            txid: outpoint.txid.to_string(),
         }
     }
 }
@@ -485,8 +481,6 @@ pub enum RpcOnchainWithdrawState {
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcBitcoinDetails {
     pub address: String,
-    #[ts(type = "number")]
-    pub expires_at: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]
