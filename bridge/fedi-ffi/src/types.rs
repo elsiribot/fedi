@@ -447,7 +447,6 @@ impl RpcOnchainState {
 pub enum RpcOnchainDepositState {
     WaitingForTransaction,
     WaitingForConfirmation(RpcOnchainDepositTransactionData),
-    Confirmed(RpcOnchainDepositTransactionData),
     Claimed(RpcOnchainDepositTransactionData),
     Failed,
 }

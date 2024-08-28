@@ -147,7 +147,6 @@ export type RpcBackPaginationStatus =
 
 export interface RpcBitcoinDetails {
     address: string
-    expiresAt: number
 }
 
 export interface RpcBridgeStatus {
@@ -779,7 +778,6 @@ export type RpcOOBState = RpcOOBSpendState | RpcOOBReissueState
 export type RpcOnchainDepositState =
     | { type: 'waitingForTransaction' }
     | ({ type: 'waitingForConfirmation' } & RpcOnchainDepositTransactionData)
-    | ({ type: 'confirmed' } & RpcOnchainDepositTransactionData)
     | ({ type: 'claimed' } & RpcOnchainDepositTransactionData)
     | { type: 'failed' }
 
