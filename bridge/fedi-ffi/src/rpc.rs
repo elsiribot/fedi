@@ -1485,6 +1485,7 @@ mod tests {
     use crate::features::RuntimeEnvironment;
     use crate::federation_v2::FederationV2;
     use crate::ffi::PathBasedStorage;
+    use crate::logging::default_log_filter;
     use crate::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
     use crate::types::{
         RpcLnReceiveState, RpcLnState, RpcOOBReissueState, RpcOOBState, RpcOnchainDepositState,
@@ -1810,6 +1811,7 @@ mod tests {
     ) -> anyhow::Result<Arc<Bridge>> {
         INIT_TRACING.call_once(|| {
             TracingSetup::default()
+                .with_directive(&default_log_filter())
                 .init()
                 .expect("Failed to initialize tracing");
         });
