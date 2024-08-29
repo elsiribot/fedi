@@ -48,10 +48,8 @@ export const makeTxnDetailStatusText = (
                 switch (txn.lnState?.type) {
                     case 'waitingForRefund':
                         return t('feature.send.waiting-for-refund')
-                    case 'refunded':
-                        return t('words.refund')
                     case 'canceled':
-                        return t('words.expired')
+                    case 'refunded':
                     case 'failed':
                         return t('words.failed')
                     default:
@@ -271,10 +269,8 @@ export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
                 switch (txn.lnState?.type) {
                     case 'waitingForRefund':
                         return t('phrases.refund-pending')
-                    case 'refunded':
-                        return t('words.refund')
                     case 'canceled':
-                        return t('words.expired')
+                    case 'refunded':
                     case 'failed':
                         return t('words.failed')
                     default:
