@@ -454,9 +454,7 @@ export function useFeeDisplayUtils(t: TFunction) {
                 formattedAmount: `${formattedFederationFee} (${formattedFederationFeeSecondary})`,
             },
             {
-                label: stabilityPoolAverageFeeRate
-                    ? `${t('phrases.yearly-fee')}*`
-                    : t('words.fees'),
+                label: `${t('phrases.yearly-fee')}*`,
                 formattedAmount:
                     typeof stabilityPoolAverageFeeRate === 'number'
                         ? `${formattedFeeAverage}%`
