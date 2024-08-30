@@ -33,7 +33,7 @@ use super::storage::Storage;
 use super::types::{
     RpcAmount, RpcFederation, RpcFederationId, RpcInvoice, RpcOperationId, RpcPayInvoiceResponse,
     RpcPeerId, RpcPublicKey, RpcRecoveryId, RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo,
-    RpcTransaction, RpcXmppCredentials, SocialRecoveryQr,
+    RpcTransaction, SocialRecoveryQr,
 };
 use crate::api::IFediApi;
 use crate::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
@@ -475,16 +475,8 @@ async fn signLnurlMessage(
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
-async fn xmppCredentials(federation: Arc<FederationV2>) -> anyhow::Result<RpcXmppCredentials> {
-    Ok(federation.get_xmpp_credentials().await)
-}
-
-#[macro_rules_derive(federation_rpc_method!)]
-async fn backupXmppUsername(federation: Arc<FederationV2>, username: String) -> anyhow::Result<()> {
-    federation.save_xmpp_username(&username).await?;
-    if !federation.recovering() {
-        federation.backup().await?;
-    }
+async fn backupNow(federation: Arc<FederationV2>) -> anyhow::Result<()> {
+    federation.backup().await?;
     Ok(())
 }
 
@@ -1314,6 +1306,7 @@ rpc_methods!(RpcMethods {
     listTransactions,
     updateTransactionNotes,
     // Recovery
+    backupNow,
     getMnemonic,
     checkMnemonic,
     recoverFromMnemonic,
@@ -1331,9 +1324,6 @@ rpc_methods!(RpcMethods {
     signLnurlMessage,
     // backup
     backupStatus,
-    // XMPP
-    xmppCredentials,
-    backupXmppUsername,
     // Nostr
     getNostrPubKey,
     getNostrPubKeyBech32,
@@ -2311,9 +2301,7 @@ mod tests {
 
         let ecash_balance_before = federation.get_balance().await;
 
-        // set username and do a backup
-        let username = "satoshi".to_string();
-        backupXmppUsername(federation.clone(), username.clone()).await?;
+        backupNow(federation.clone()).await?;
         // give some time for backup to complete before shutting down the bridge
         fedimint_core::task::sleep(Duration::from_secs(1)).await;
 
@@ -2351,10 +2339,6 @@ mod tests {
         assert_eq!(
             ecash_balance_before + expected_fedi_fee,
             recovery_federation.get_balance().await
-        );
-        assert_eq!(
-            Some(username),
-            recovery_federation.get_xmpp_username().await
         );
 
         let account_info = stabilityPoolAccountInfo(recovery_federation.clone(), true).await?;
@@ -2406,8 +2390,7 @@ mod tests {
 
         // set username and do a backup
         let federation_id = federation.rpc_federation_id();
-        let username = "satoshi".to_string();
-        backupXmppUsername(federation.clone(), username.clone()).await?;
+        backupNow(federation.clone()).await?;
 
         // Get original mnemonic (for comparison later)
         let initial_words = getMnemonic(original_bridge.clone()).await?;
@@ -2693,8 +2676,7 @@ mod tests {
         federation.receive_ecash(ecash).await?;
         wait_for_ecash_reissue(&federation).await?;
         let federation_id = federation.rpc_federation_id();
-        let username = "satoshi".to_string();
-        backupXmppUsername(federation.clone(), username.clone()).await?;
+        backupNow(federation.clone()).await?;
 
         // extract mnemonic, leave federation and drop bridge
         let mnemonic = getMnemonic(bridge.clone()).await?;
@@ -2736,9 +2718,7 @@ mod tests {
             RpcDeviceIndexAssignmentStatus::Assigned(0)
         ));
 
-        // set username and do a backup
-        let username = "satoshi".to_string();
-        backupXmppUsername(federation.clone(), username.clone()).await?;
+        backupNow(federation.clone()).await?;
         // give some time for backup to complete before shutting down the bridge
         fedimint_core::task::sleep(Duration::from_secs(1)).await;
 
@@ -2874,9 +2854,7 @@ mod tests {
 
         let ecash_balance_before = federation.get_balance().await;
 
-        // set username and do a backup
-        let username = "satoshi".to_string();
-        backupXmppUsername(federation.clone(), username.clone()).await?;
+        backupNow(federation.clone()).await?;
         // give some time for backup to complete before shutting down the bridge
         fedimint_core::task::sleep(Duration::from_secs(1)).await;
 
@@ -2920,10 +2898,6 @@ mod tests {
         assert_eq!(
             ecash_balance_before + expected_fedi_fee,
             recovery_federation.get_balance().await
-        );
-        assert_eq!(
-            Some(username),
-            recovery_federation.get_xmpp_username().await
         );
 
         let account_info = stabilityPoolAccountInfo(recovery_federation.clone(), true).await?;
@@ -2980,9 +2954,7 @@ mod tests {
         let amount_to_deposit = Amount::from_msats(110_000);
         stabilityPoolDepositToSeek(federation.clone(), RpcAmount(amount_to_deposit)).await?;
 
-        // set username and do a backup
-        let username = "satoshi".to_string();
-        backupXmppUsername(federation.clone(), username.clone()).await?;
+        backupNow(federation.clone()).await?;
         // give some time for backup to complete before shutting down the bridge
         fedimint_core::task::sleep(Duration::from_secs(1)).await;
 
@@ -3009,7 +2981,6 @@ mod tests {
         let recovery_federation = join_test_fed_recovery(&recovery_bridge).await?;
         assert!(!recovery_federation.recovering());
         assert_eq!(Amount::ZERO, recovery_federation.get_balance().await);
-        assert_eq!(None, recovery_federation.get_xmpp_username().await);
 
         let account_info = stabilityPoolAccountInfo(recovery_federation.clone(), true).await?;
         assert_eq!(account_info.idle_balance.0, Amount::ZERO);

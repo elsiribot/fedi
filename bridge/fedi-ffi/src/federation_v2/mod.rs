@@ -15,7 +15,7 @@ use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::address::NetworkUnchecked;
 use bitcoin::secp256k1::PublicKey;
 use bitcoin::{Address, Network};
-use db::{FediRawClientConfigKey, InviteCodeKey, TransactionNotesKey, XmppUsernameKey};
+use db::{FediRawClientConfigKey, InviteCodeKey, TransactionNotesKey};
 use fedi_social_client::common::VerificationDocument;
 use fedi_social_client::{
     FediSocialClientInit, RecoveryFile, RecoveryId, SocialBackup, SocialRecoveryClient,
@@ -26,7 +26,7 @@ use fedimint_api_client::api::{
 };
 use fedimint_api_client::download_from_invite_code;
 use fedimint_bip39::Bip39RootSecretStrategy;
-use fedimint_client::backup::{ClientBackup, Metadata};
+use fedimint_client::backup::ClientBackup;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_client::meta::MetaService;
 use fedimint_client::module::recovery::RecoveryProgress;
@@ -87,13 +87,12 @@ use self::ln_gateway_service::LnGatewayService;
 use self::stability_pool_sweeper_service::StabilityPoolSweeperService;
 use super::constants::{
     LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE, ONE_WEEK, PAY_INVOICE_TIMEOUT,
-    REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE, XMPP_CHILD_ID,
-    XMPP_KEYPAIR_SEED, XMPP_PASSWORD,
+    REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE,
 };
 use super::event::{Event, EventSink, TypedEventExt};
 use super::types::{
-    federation_v2_to_rpc_federation, FediBackupMetadata, RpcAmount, RpcInvoice,
-    RpcLightningGateway, RpcPayInvoiceResponse, RpcPublicKey, RpcXmppCredentials,
+    federation_v2_to_rpc_federation, RpcAmount, RpcInvoice, RpcLightningGateway,
+    RpcPayInvoiceResponse, RpcPublicKey,
 };
 use crate::error::ErrorCode;
 use crate::event::RecoveryProgressEvent;
@@ -421,7 +420,6 @@ impl FederationV2 {
             let client = client_builder
                 .recover(client_secret, client_config, None, Some(backup))
                 .await?;
-            let metadata = client.get_metadata().await;
             let this = Self::new(
                 client,
                 event_sink,
@@ -431,7 +429,6 @@ impl FederationV2 {
                 feature_catalog,
             )
             .await;
-            this.save_restored_metadata(metadata).await?;
             Ok(this)
         } else {
             info!("backup not found");
@@ -1831,19 +1828,6 @@ impl FederationV2 {
         Ok(self.backup_service.status(&self.client).await)
     }
 
-    /// Extract username (and potentially more in future) from recovered
-    /// metadata and save it to database
-    pub async fn save_restored_metadata(&self, metadata: Metadata) -> Result<()> {
-        if let Ok(fedi_backup_metadata) = metadata.to_json_deserialized::<FediBackupMetadata>() {
-            if let Some(username) = fedi_backup_metadata.username {
-                self.save_xmpp_username(&username).await?;
-            }
-        } else {
-            warn!("failed to parse metadata");
-        };
-        Ok(())
-    }
-
     //
     // Social Recovery
     //
@@ -1994,26 +1978,6 @@ impl FederationV2 {
             .approve_recovery(*recovery_id, password)
             .await?;
         Ok(())
-    }
-
-    /// Returns an XMPP password derived from client secret. This enables
-    /// recovery of XMPP account after recovering wallet.
-    pub async fn get_xmpp_credentials(&self) -> RpcXmppCredentials {
-        let root_secret = self.root_secret();
-        let xmpp_secret = root_secret.child_key(ChildId(XMPP_CHILD_ID));
-        let password_bytes: [u8; 16] = xmpp_secret
-            .child_key(ChildId(XMPP_PASSWORD))
-            .to_random_bytes();
-        let keypair_seed_bytes: [u8; 32] = xmpp_secret
-            .child_key(ChildId(XMPP_KEYPAIR_SEED))
-            .to_random_bytes();
-        let username = self.get_xmpp_username().await;
-
-        RpcXmppCredentials {
-            password: hex::encode(password_bytes),
-            keypair_seed: hex::encode(keypair_seed_bytes),
-            username,
-        }
     }
 
     pub async fn get_ln_pay_outcome(
@@ -2418,19 +2382,6 @@ impl FederationV2 {
     ) -> Result<()> {
         let mut dbtx = self.dbtx().await;
         dbtx.insert_entry(&TransactionNotesKey(transaction), &notes)
-            .await;
-        dbtx.commit_tx_result().await
-    }
-
-    // Database
-
-    pub async fn get_xmpp_username(&self) -> Option<String> {
-        self.dbtx().await.get_value(&XmppUsernameKey).await
-    }
-
-    pub async fn save_xmpp_username(&self, username: &str) -> Result<()> {
-        let mut dbtx = self.dbtx().await;
-        dbtx.insert_entry(&XmppUsernameKey, &username.to_owned())
             .await;
         dbtx.commit_tx_result().await
     }
