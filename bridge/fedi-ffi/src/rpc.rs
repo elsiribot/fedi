@@ -155,6 +155,7 @@ macro_rules! federation_rpc_method {
             pub type Return = $ret;
             pub async fn handle(bridge: Arc<Bridge>, $name::Args { federation_id, $( $arg_name ),* }: $name::Args) -> anyhow::Result<$ret> {
                 let $federation = bridge.get_federation(&federation_id.0).await?;
+                tracing::Span::current().record("federation_id", &federation_id.0);
                 super::$name($federation, $($arg_name),*).await
             }
         }
@@ -187,6 +188,7 @@ macro_rules! federation_recovering_rpc_method {
             pub type Return = $ret;
             pub async fn handle(bridge: Arc<Bridge>, $name::Args { federation_id, $( $arg_name ),* }: $name::Args) -> anyhow::Result<$ret> {
                 let $federation = bridge.get_federation_maybe_recovering(&federation_id.0).await?;
+                tracing::Span::current().record("federation_id", &federation_id.0);
                 super::$name($federation, $($arg_name),*).await
             }
         }
@@ -1420,7 +1422,8 @@ rpc_methods!(RpcMethods {
         request_id = %{
             static REQUEST_ID: AtomicU64 = AtomicU64::new(0);
             REQUEST_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
-        }
+        },
+        federation_id,
     )
 )]
 pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: String) -> String {
