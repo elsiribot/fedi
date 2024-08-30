@@ -1,6 +1,5 @@
 import type { Status } from '@xmpp/connection'
 
-import { RpcResponse } from './bindings'
 import type { Invoice } from './fedimint'
 import type { MSats } from './units'
 
