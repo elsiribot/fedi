@@ -26,7 +26,6 @@ import {
     Federation,
     Keypair,
     XmppClientStatus,
-    XmppCredentials,
 } from '../types'
 import {
     getFederationChatServerDomain,

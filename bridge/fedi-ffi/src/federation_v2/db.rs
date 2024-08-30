@@ -15,6 +15,7 @@ pub enum BridgeDbPrefix {
     #[allow(dead_code)]
     FedimintUserData = 0xb0,
     ClientConfig = 0xb1,
+    #[deprecated]
     XmppUsername = 0xb2,
     InviteCode = 0xb3,
     LastBackupTimestamp = 0xb4,
@@ -56,15 +57,6 @@ impl_db_record!(
     key = FediRawClientConfigKey,
     value = String,
     db_prefix = BridgeDbPrefix::ClientConfig,
-);
-
-#[derive(Debug, Decodable, Encodable)]
-pub struct XmppUsernameKey;
-
-impl_db_record!(
-    key = XmppUsernameKey,
-    value = String,
-    db_prefix = BridgeDbPrefix::XmppUsername,
 );
 
 #[derive(Debug, Decodable, Encodable)]

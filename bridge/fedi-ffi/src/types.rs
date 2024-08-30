@@ -286,18 +286,16 @@ pub struct RpcLightningGateway {
     pub active: bool,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct FediBackupMetadata {
-    // TODO: would be nice to rename this to xmpp_username but would need to basically migrate the
-    // backups
-    pub username: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    // don't use this field
+    username: Option<String>,
 }
 
 impl FediBackupMetadata {
-    pub fn new(xmpp_username: Option<String>) -> Self {
-        Self {
-            username: xmpp_username,
-        }
+    pub fn new() -> Self {
+        Self { username: None }
     }
 }
 
@@ -646,25 +644,6 @@ impl RpcOOBState {
 pub struct RpcLightningDetails {
     pub invoice: String,
     pub fee: Option<RpcAmount>,
-}
-
-// FIXME: should probaby type these as bytes
-#[derive(Deserialize, Serialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
-pub struct RpcXmppCredentials {
-    pub password: String,
-    pub keypair_seed: String,
-    pub username: Option<String>,
-}
-
-// Implement Debug manually to ignore sensitive fields
-impl std::fmt::Debug for RpcXmppCredentials {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("RpcXmppCredentials")
-            .field("username", &self.username)
-            .finish()
-    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]

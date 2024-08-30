@@ -222,13 +222,6 @@ export class FedimintBridge {
         })
     }
 
-    async getXmppCredentials(federationId: string) {
-        return this.rpcTyped('xmppCredentials', { federationId })
-    }
-
-    async backupXmppUsername(username: string, federationId: string) {
-        return this.rpcTyped('backupXmppUsername', { username, federationId })
-    }
 
     async listGateways(federationId: string) {
         return this.rpcTyped('listGateways', { federationId })

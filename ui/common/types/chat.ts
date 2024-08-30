@@ -125,9 +125,6 @@ export interface ChatGroupSettings {
 export type XmppClientStatus = Status
 
 /** @deprecated XMPP legacy code */
-export type XmppCredentials = RpcResponse<'xmppCredentials'>
-
-/** @deprecated XMPP legacy code */
 export interface XmppConnectionOptions {
     // The domain where the Prosody chat server is hosted
     domain?: string
