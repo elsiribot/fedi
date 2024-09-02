@@ -419,6 +419,9 @@ impl RpcOnchainState {
             DepositStateV2::Claimed { btc_out_point, .. } => RpcOnchainDepositState::Claimed(
                 RpcOnchainDepositTransactionData::new(&btc_out_point),
             ),
+            DepositStateV2::Confirmed { btc_out_point, .. } => RpcOnchainDepositState::Confirmed(
+                RpcOnchainDepositTransactionData::new(&btc_out_point),
+            ),
             DepositStateV2::Failed(_) => RpcOnchainDepositState::Failed,
         };
         Some(Self::DepositState(state))
@@ -446,6 +449,7 @@ impl RpcOnchainState {
 pub enum RpcOnchainDepositState {
     WaitingForTransaction,
     WaitingForConfirmation(RpcOnchainDepositTransactionData),
+    Confirmed(RpcOnchainDepositTransactionData),
     Claimed(RpcOnchainDepositTransactionData),
     Failed,
 }
@@ -754,7 +758,7 @@ impl From<ClientAccountInfo> for RpcStabilityPoolAccountInfo {
 /// is to be debited) is not in the user's possession until the
 /// operation completes. So for receives, we just record the ppm, and when the
 /// operation succeeds, we debit the fee.
-#[derive(Debug, Encodable, Decodable)]
+#[derive(Debug, Encodable, Decodable, Clone)]
 pub enum OperationFediFeeStatus {
     PendingSend { fedi_fee: Amount },
     PendingReceive { fedi_fee_ppm: u64 },

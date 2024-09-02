@@ -781,6 +781,7 @@ export type RpcOOBState = RpcOOBSpendState | RpcOOBReissueState;
 export type RpcOnchainDepositState =
   | { type: "waitingForTransaction" }
   | ({ type: "waitingForConfirmation" } & RpcOnchainDepositTransactionData)
+  | ({ type: "confirmed" } & RpcOnchainDepositTransactionData)
   | ({ type: "claimed" } & RpcOnchainDepositTransactionData)
   | { type: "failed" };
 
