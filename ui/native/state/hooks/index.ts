@@ -16,6 +16,7 @@ import {
     ensureHealthyMatrixStream,
     refreshActiveStabilityPool,
     selectCurrency,
+    selectCurrencyLocale,
     selectStableBalance,
     selectStableBalancePending,
 } from '@fedi/common/redux'
@@ -268,6 +269,7 @@ export const useStabilityPool = () => {
     const stableBalance = useAppSelector(selectStableBalance)
     const stableBalancePending = useAppSelector(selectStableBalancePending)
     const selectedCurrency = useAppSelector(selectCurrency)
+    const currencyLocale = useAppSelector(selectCurrencyLocale)
 
     const refreshBalance = useCallback(() => {
         dispatch(
@@ -292,12 +294,12 @@ export const useStabilityPool = () => {
     const formattedStableBalance = amountUtils.formatFiat(
         stableBalance,
         selectedCurrency,
-        { symbolPosition: 'end' },
+        { symbolPosition: 'end', locale: currencyLocale },
     )
     const formattedStableBalancePending = amountUtils.formatFiat(
         stableBalancePending,
         selectedCurrency,
-        { symbolPosition: 'end' },
+        { symbolPosition: 'end', locale: currencyLocale },
     )
 
     return {

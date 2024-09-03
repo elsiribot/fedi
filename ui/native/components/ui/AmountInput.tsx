@@ -61,6 +61,7 @@ const AmountInput: React.FC<Props> = ({
         validation,
         numpadButtons,
         handleNumpadPress,
+        currencyLocale,
     } = useAmountInput(amount, onChangeAmount, minimumAmount, maximumAmount)
     const inputRef = useRef<TextInput>(null)
     const { height, width } = useWindowDimensions()
@@ -114,7 +115,10 @@ const AmountInput: React.FC<Props> = ({
                                 ? amountUtils.formatFiat(
                                       validation.fiatValue,
                                       currency,
-                                      { symbolPosition: 'end' },
+                                      {
+                                          symbolPosition: 'end',
+                                          locale: currencyLocale,
+                                      },
                                   )
                                 : `${amountUtils.formatSats(
                                       validation.amount,
