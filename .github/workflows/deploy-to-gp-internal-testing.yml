@@ -6,7 +6,7 @@ on:
 jobs:
     release-android:
         name: Build Android AAB & Upload to Google Play Dev Console
-        timeout-minutes: 60
+        timeout-minutes: 80
         runs-on: [self-hosted, linux]
         steps:
             - name: Checkout repo
@@ -29,7 +29,7 @@ jobs:
               run: nix develop -c ./scripts/ci/make-android-release-creds.sh
 
             - name: Execute Fastlane command
-              timeout-minutes: 40
+              timeout-minutes: 60
               env:
                   BUILD_BRIDGE: 1
                   BUILD_UI_DEPS: 1
