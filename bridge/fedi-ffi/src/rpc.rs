@@ -2238,8 +2238,7 @@ mod tests {
 
         let btc_amount = Amount::from_sats(10_000_000);
         let pegin_fees = federation
-            .client
-            .get_first_module::<WalletClientModule>()
+            .try_get_first_module::<WalletClientModule>()?
             .get_fee_consensus()
             .peg_in_abs;
         let receive_fedi_fee = Amount::ZERO;

@@ -352,7 +352,7 @@ impl FediFeeRemittanceService {
         let extra_meta = LightningSendMetadata {
             is_fedi_fee_remittance: true,
         };
-        let ln = fed.client.get_first_module::<LightningClientModule>();
+        let ln = fed.try_get_first_module::<LightningClientModule>()?;
         let OutgoingLightningPayment { payment_type, .. } = ln
             .pay_bolt11_invoice(gateway, invoice.to_owned(), extra_meta.clone())
             .await?;
