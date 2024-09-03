@@ -38,6 +38,7 @@ import UnlockAppLockScreenHeader from '../components/feature/pin/UnlockAppLockSc
 import BitcoinRequestHeader from '../components/feature/receive/BitcoinRequestHeader'
 import ReceiveBitcoinHeader from '../components/feature/receive/ReceiveBitcoinHeader'
 import ReceiveBitcoinOfflineHeader from '../components/feature/receive/ReceiveBitcoinOfflineHeader'
+import ReceiveCashuHeader from '../components/feature/receive/ReceiveCashuHeader'
 import ReceiveLightningHeader from '../components/feature/receive/ReceiveLightningHeader'
 import ChooseRecoveryMethodHeader from '../components/feature/recovery/ChooseRecoveryMethodHeader'
 import PersonalRecoveryHeader from '../components/feature/recovery/PersonalRecoveryHeader'
@@ -86,6 +87,7 @@ import CompleteRecoveryAssist from './CompleteRecoveryAssist'
 import CompleteSocialBackup from './CompleteSocialBackup'
 import CompleteSocialRecovery from './CompleteSocialRecovery'
 import ConfirmJoinPublicGroup from './ConfirmJoinPublicGroup'
+import ConfirmReceiveCashu from './ConfirmReceiveCashu'
 import ConfirmReceiveOffline from './ConfirmReceiveOffline'
 import ConfirmRecoveryAssist from './ConfirmRecoveryAssist'
 import ConfirmSendChatPayment from './ConfirmSendChatPayment'
@@ -566,6 +568,13 @@ export const MainNavigator = () => {
                                     header: () => (
                                         <ReceiveBitcoinOfflineHeader />
                                     ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ConfirmReceiveCashu"
+                                component={ConfirmReceiveCashu}
+                                options={() => ({
+                                    header: () => <ReceiveCashuHeader />,
                                 })}
                             />
                             <Stack.Screen
