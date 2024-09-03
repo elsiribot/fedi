@@ -9,6 +9,9 @@
     <!-- For older Android versions -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
+    <!-- Required to use @notifee/react-native -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
     <application
         android:name=".MainApplication"
         android:label="@string/app_name"
