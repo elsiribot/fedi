@@ -514,8 +514,8 @@ export interface RpcMethods {
     { federationId: RpcFederationId },
     { lastBackupTimestamp: number | null; state: BackupServiceState },
   ];
-  getNostrPubKey: [Record<string, never>, string];
-  getNostrPubKeyBech32: [Record<string, never>, string];
+  getNostrPubkey: [Record<string, never>, { hex: string; npub: string }];
+  getNostrSecret: [Record<string, never>, { hex: string; nsec: string }];
   signNostrEvent: [{ eventHash: string }, string];
   stabilityPoolAccountInfo: [
     { federationId: RpcFederationId; forceUpdate: boolean },
@@ -760,6 +760,16 @@ export interface RpcMethods {
 export interface RpcModuleFediFeeSchedule {
   sendPpm: number;
   receivePpm: number;
+}
+
+export interface RpcNostrPubkey {
+  hex: string;
+  npub: string;
+}
+
+export interface RpcNostrSecret {
+  hex: string;
+  nsec: string;
 }
 
 export type RpcOOBReissueState =

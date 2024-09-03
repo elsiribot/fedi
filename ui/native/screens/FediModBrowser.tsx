@@ -19,10 +19,6 @@ import {
     UnsupportedMethodError,
 } from 'webln'
 
-import {
-    useIsFediInternalInjectionEnabled,
-    useIsNostrEnabled,
-} from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectActiveFederation,
@@ -108,7 +104,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
-    const { listGateways, getNostrPubKey } = useBridge(activeFederation?.id)
+    const { listGateways, getNostrPubkey } = useBridge(activeFederation?.id)
     const paymentFederation = useAppSelector(selectPaymentFederation)
     const member = useAppSelector(selectMatrixAuth)
     const hasSetMatrixDisplayName = useAppSelector(
@@ -117,8 +113,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
     const currency = useAppSelector(selectCurrency)
     const language = useAppSelector(selectLanguage)
-    const nostrEnabled = useIsNostrEnabled()
-    const fediInternalEnabled = useIsFediInternalInjectionEnabled()
     const toast = useToast()
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
@@ -322,8 +316,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         [InjectionMessageType.nostr_getPublicKey]: async () => {
             log.info('nostr.getPublicKey')
             try {
-                const pub_key = await getNostrPubKey()
-                return pub_key
+                const { npub } = await getNostrPubkey()
+                return npub
             } catch (err) {
                 log.warn('nostr.getPublicKey', err)
                 throw new Error(t('errors.get-nostr-pubkey-failed'))
@@ -499,8 +493,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 injectedJavaScriptBeforeContentLoaded={generateInjectionJs({
                     webln: true,
                     eruda: fediModDebugMode,
-                    nostr: nostrEnabled,
-                    fediInternal: fediInternalEnabled,
+                    nostr: true,
+                    fediInternal: true,
                 })}
                 allowsInlineMediaPlayback
                 onMessage={onMessage}

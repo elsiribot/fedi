@@ -507,6 +507,9 @@
             "kind-zap": "Zap",
             "kind-zap-request": "Zap request",
             "log-in-to-mod": "Log in to <bold>{{fediMod}}</bold> with <bold>{{method}}</bold>",
+            "nostr-keys": "Nostr Keys",
+            "nostr-public-key": "Nostr Public Key",
+            "nostr-secret-key": "Nostr Secret Key",
             "wants-you-to-sign": "{{fediMod}} wants you to sign"
         },
         "notifications": {

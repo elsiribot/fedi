@@ -24,11 +24,13 @@ import FederationDetailsHeader from '../components/feature/federations/Federatio
 import FederationInviteHeader from '../components/feature/federations/FederationInviteHeader'
 import JoinFederationHeader from '../components/feature/federations/JoinFederationHeader'
 import PopupFederationEndedHeader from '../components/feature/federations/PopupFederationEndedHeader'
+import NostrKeysHeader from '../components/feature/fedimods/NostrKeysHeader'
 import EulaHeader from '../components/feature/onboarding/EulaHeader'
 import NewMemberAvatarImageHeader from '../components/feature/onboarding/NewMemberAvatarImageHeader'
 import NewMemberHeader from '../components/feature/onboarding/NewMemberHeader'
 import ChangePinLockScreenHeader from '../components/feature/pin/ChangePinLockScreenHeader'
 import CreatePinInstructionsHeader from '../components/feature/pin/CreatePinInstructionsHeader'
+import NostrKeysLockScreen from '../components/feature/pin/NostrKeysLockScreen'
 import PinAccessHeader from '../components/feature/pin/PinAccessHeader'
 import ResetPinHeader from '../components/feature/pin/ResetPinHeader'
 import ResetPinStartHeader from '../components/feature/pin/ResetPinStartHeader'
@@ -116,6 +118,7 @@ import LocateSocialRecovery from './LocateSocialRecovery'
 import LockScreen from './LockScreen'
 import LockedDevice from './LockedDevice'
 import NewMessage from './NewMessage'
+import NostrKeys from './NostrKeys'
 import PersonalRecovery from './PersonalRecovery'
 import PersonalRecoverySuccess from './PersonalRecoverySuccess'
 import PinAccess from './PinAccess'
@@ -174,6 +177,7 @@ export const MainNavigator = () => {
     const { t } = useTranslation()
     const isAppUnlocked = useIsFeatureUnlocked('app')
     const isChangePinUnlocked = useIsFeatureUnlocked('changePin')
+    const isNostrKeysUnlocked = useIsFeatureUnlocked('nostrKeys')
     const socialRecoveryState = useAppSelector(selectSocialRecoveryState)
     const deviceIndexRequired = useAppSelector(
         s => s.recovery.deviceIndexRequired,
@@ -947,6 +951,29 @@ export const MainNavigator = () => {
                                 component={BugReportSuccess}
                                 options={{ headerShown: false }}
                             />
+                            {isNostrKeysUnlocked ? (
+                                <Stack.Group>
+                                    <Stack.Screen
+                                        name="NostrKeys"
+                                        component={NostrKeys}
+                                        options={() => ({
+                                            header: () => <NostrKeysHeader />,
+                                        })}
+                                    />
+                                </Stack.Group>
+                            ) : (
+                                <Stack.Group>
+                                    <Stack.Screen
+                                        name="NostrKeys"
+                                        component={NostrKeysLockScreen}
+                                        options={() => ({
+                                            header: () => (
+                                                <ChangePinLockScreenHeader />
+                                            ),
+                                        })}
+                                    />
+                                </Stack.Group>
+                            )}
                             {/* Developer-only */}
                             <Stack.Screen
                                 name="DeveloperSettings"

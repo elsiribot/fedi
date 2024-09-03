@@ -98,6 +98,7 @@ export type RootStackParamList = {
     LanguageSettings: undefined
     MemberQrCode: undefined
     NewMessage: undefined
+    NostrKeys: undefined
     NotificationsPermission:
         | { nextScreen: keyof RootStackParamList }
         | undefined

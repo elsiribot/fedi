@@ -381,6 +381,11 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={createOrManagePin}
                 />
                 <SettingsItem
+                    image={<SvgImage name="Nostr" />}
+                    label={t('feature.nostr.nostr-keys')}
+                    onPress={() => navigation.navigate('NostrKeys')}
+                />
+                <SettingsItem
                     image={<SvgImage name="Bug" />}
                     label={t('feature.bug.report-a-bug')}
                     onPress={() => navigation.navigate('BugReport')}

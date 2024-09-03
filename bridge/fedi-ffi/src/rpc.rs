@@ -51,7 +51,8 @@ use crate::storage::FiatFXInfo;
 use crate::types::{
     GuardianStatus, RpcBridgeStatus, RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
     RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
-    RpcPayAddressResponse, RpcRegisteredDevice, RpcTransactionDirection,
+    RpcNostrPubkey, RpcNostrSecret, RpcPayAddressResponse, RpcRegisteredDevice,
+    RpcTransactionDirection,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -509,13 +510,13 @@ async fn backupStatus(federation: Arc<FederationV2>) -> anyhow::Result<BackupSer
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn getNostrPubKey(bridge: Arc<Bridge>) -> anyhow::Result<String> {
-    bridge.get_nostr_pub_key_hex().await
+async fn getNostrSecret(bridge: Arc<Bridge>) -> anyhow::Result<RpcNostrSecret> {
+    bridge.get_nostr_secret().await
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn getNostrPubKeyBech32(bridge: Arc<Bridge>) -> anyhow::Result<String> {
-    bridge.get_nostr_pub_key().await
+async fn getNostrPubkey(bridge: Arc<Bridge>) -> anyhow::Result<RpcNostrPubkey> {
+    bridge.get_nostr_pubkey().await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -696,7 +697,7 @@ async fn matrixInit(bridge: Arc<Bridge>) -> anyhow::Result<()> {
     if bridge.matrix.initialized() {
         return Ok(());
     }
-    let nostr_pubkey = bridge.get_nostr_pub_key().await?;
+    let nostr_pubkey = bridge.get_nostr_pubkey().await?.npub;
     let matrix_secret = bridge.get_matrix_secret().await;
     bridge
         .matrix
@@ -1349,8 +1350,8 @@ rpc_methods!(RpcMethods {
     // backup
     backupStatus,
     // Nostr
-    getNostrPubKey,
-    getNostrPubKeyBech32,
+    getNostrPubkey,
+    getNostrSecret,
     signNostrEvent,
     // Stability Pool
     stabilityPoolAccountInfo,
