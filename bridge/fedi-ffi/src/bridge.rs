@@ -43,7 +43,7 @@ use crate::federation_v2::{self, FederationV2};
 use crate::fedi_fee::FediFeeHelper;
 use crate::matrix::Matrix;
 use crate::storage::{
-    AppState, DatabaseInfo, FederationInfo, FediFeeSchedule, ModuleFediFeeSchedule,
+    AppState, DatabaseInfo, FederationInfo, FediFeeSchedule, FiatFXInfo, ModuleFediFeeSchedule,
 };
 use crate::types::{
     RpcBridgeStatus, RpcDeviceIndexAssignmentStatus, RpcFederationPreview, RpcRegisteredDevice,
@@ -149,6 +149,7 @@ impl Bridge {
                                         )?,
                                         fedi_fee_helper.clone(),
                                         feature_catalog.clone(),
+                                        app_state.clone(),
                                     )
                                     .await
                                     .with_context(|| {
@@ -323,6 +324,7 @@ impl Bridge {
                     device_index,
                     this.fedi_fee_helper.clone(),
                     this.feature_catalog.clone(),
+                    this.app_state.clone(),
                 )
                 .await
                 .with_context(|| format!("loading federation {}", federation_id.clone()))?;
@@ -401,6 +403,7 @@ impl Bridge {
             device_index,
             self.fedi_fee_helper.clone(),
             self.feature_catalog.clone(),
+            self.app_state.clone(),
         )
         .await?;
         let federation_id = federation.federation_id();
@@ -586,6 +589,12 @@ impl Bridge {
             .word_iter()
             .map(|x| x.to_owned())
             .collect())
+    }
+
+    pub async fn update_cached_fiat_fx_info(&self, info: FiatFXInfo) -> anyhow::Result<()> {
+        self.app_state
+            .with_write_lock(|state| state.cached_fiat_fx_info = Some(info))
+            .await
     }
 
     /// Enable logging of potentially sensitive information.

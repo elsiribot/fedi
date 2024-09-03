@@ -427,6 +427,10 @@ export interface RpcMethods {
     { amount: RpcAmount; federationId: RpcFederationId | null },
   ];
   cancelEcash: [{ federationId: RpcFederationId; ecash: string }, null];
+  updateCachedFiatFXInfo: [
+    { fiatCode: string; btcToFiatHundredths: bigint },
+    null,
+  ];
   listTransactions: [
     {
       federationId: RpcFederationId;
@@ -447,6 +451,7 @@ export interface RpcMethods {
       oobState: RpcOOBState | null;
       onchainWithdrawalDetails: WithdrawalDetails | null;
       stabilityPoolState: RpcStabilityPoolTransactionState | null;
+      txDateFiatInfo: TransactionDateFiatInfo | null;
     }>,
   ];
   updateTransactionNotes: [
@@ -928,6 +933,7 @@ export interface RpcTransaction {
   oobState: RpcOOBState | null;
   onchainWithdrawalDetails: WithdrawalDetails | null;
   stabilityPoolState: RpcStabilityPoolTransactionState | null;
+  txDateFiatInfo: TransactionDateFiatInfo | null;
 }
 
 export type RpcTransactionDirection = "receive" | "send";
@@ -994,6 +1000,11 @@ export type StabilityPoolWithdrawalState =
   | { withdrawIdleSubmissionFailure: string }
   | "withdrawIdleInitiated"
   | "withdrawIdleAccepted";
+
+export interface TransactionDateFiatInfo {
+  fiatCode: string;
+  fiatValueHundredths: number;
+}
 
 export interface TransactionEvent {
   federationId: RpcFederationId;
