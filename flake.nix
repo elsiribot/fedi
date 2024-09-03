@@ -122,6 +122,7 @@
             build-tools-34-0-0
             platform-tools
             platforms-android-31
+            platforms-android-33
             platforms-android-34
             emulator
             ndk-bundle
