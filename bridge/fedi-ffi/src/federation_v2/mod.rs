@@ -378,6 +378,7 @@ impl FederationV2 {
         db: Database,
         root_mnemonic: &bip39::Mnemonic,
         device_index: u8,
+        recover_from_scratch: bool,
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
         app_state: Arc<AppState>,
@@ -416,45 +417,37 @@ impl FederationV2 {
             Self::auxiliary_secret_from_root_mnemonic(root_mnemonic, &federation_id, device_index);
         // restore from scratch is not used because it takes too much time.
         // FIXME: api secret
-        if let Some(backup) = client_builder
+        let client_backup = client_builder
             .download_backup_from_federation(&client_secret, &client_config, None)
-            .await?
-        {
-            // TODO: ensure that if user exists app and re-opens during the restoration,
-            // they will still see a spinner
-            info!("backup found {:?}", backup);
-            // FIXME: api secret
-            let client = client_builder
-                .recover(client_secret, client_config, None, Some(backup))
-                .await?;
-            let this = Self::new(
-                client,
-                event_sink,
-                task_group.make_subgroup(),
-                auxiliary_secret,
-                fedi_fee_helper,
-                feature_catalog,
-                app_state,
-            )
-            .await;
-            Ok(this)
+            .await?;
+        let client = if recover_from_scratch {
+            info!("recovering from scratch");
+            client_builder
+                .recover(client_secret, client_config, None, None)
+                .await?
+        } else if let Some(client_backup) = client_backup {
+            info!("backup found {:?}", client_backup);
+            client_builder
+                .recover(client_secret, client_config, None, Some(client_backup))
+                .await?
         } else {
             info!("backup not found");
-            // FIXME: add api
-            let client = client_builder
+            // FIXME: api secret
+            client_builder
                 .join(client_secret, client_config, None)
-                .await?;
-            Ok(Self::new(
-                client,
-                event_sink,
-                task_group.make_subgroup(),
-                auxiliary_secret,
-                fedi_fee_helper,
-                feature_catalog,
-                app_state,
-            )
-            .await)
-        }
+                .await?
+        };
+        let this = Self::new(
+            client,
+            event_sink,
+            task_group.make_subgroup(),
+            auxiliary_secret,
+            fedi_fee_helper,
+            feature_catalog,
+            app_state,
+        )
+        .await;
+        Ok(this)
     }
 
     /// Get federation ID
