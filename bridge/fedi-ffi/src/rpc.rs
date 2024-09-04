@@ -1473,7 +1473,6 @@ mod tests {
     use fedimint_core::task::sleep_in_test;
     use fedimint_core::{apply, async_trait_maybe_send, Amount};
     use fedimint_logging::TracingSetup;
-    use fedimint_wallet_client::WalletClientModule;
     use tokio::sync::Mutex;
     use tracing::{error, info};
 
@@ -1483,6 +1482,7 @@ mod tests {
     use crate::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_PATH, MILLION};
     use crate::event::{DeviceRegistrationEvent, TransactionEvent};
     use crate::features::RuntimeEnvironment;
+    use crate::federation_v2::client::ClientExt;
     use crate::federation_v2::FederationV2;
     use crate::ffi::PathBasedStorage;
     use crate::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
@@ -2237,10 +2237,7 @@ mod tests {
         ),);
 
         let btc_amount = Amount::from_sats(10_000_000);
-        let pegin_fees = federation
-            .try_get_first_module::<WalletClientModule>()?
-            .get_fee_consensus()
-            .peg_in_abs;
+        let pegin_fees = federation.client.wallet()?.get_fee_consensus().peg_in_abs;
         let receive_fedi_fee = Amount::ZERO;
         // FIXME: implement fedi fees
         // let receive_fedi_fee = Amount::from_msats(

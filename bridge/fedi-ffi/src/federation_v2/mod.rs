@@ -1,3 +1,4 @@
+pub mod client;
 pub mod db;
 mod dev;
 mod meta;
@@ -5,7 +6,6 @@ mod meta;
 use std::any::Any;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::panic::{self, AssertUnwindSafe};
 use std::pin::pin;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -16,6 +16,7 @@ use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::address::NetworkUnchecked;
 use bitcoin::secp256k1::PublicKey;
 use bitcoin::{Address, Network};
+use client::ClientExt;
 use db::{FediRawClientConfigKey, InviteCodeKey, TransactionNotesKey};
 use fedi_social_client::common::VerificationDocument;
 use fedi_social_client::{
@@ -34,7 +35,7 @@ use fedimint_client::module::recovery::RecoveryProgress;
 use fedimint_client::module::ClientModule;
 use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
 use fedimint_client::secret::RootSecretStrategy;
-use fedimint_client::{Client, ClientBuilder, ClientHandle, ClientHandleArc, ClientModuleInstance};
+use fedimint_client::{Client, ClientBuilder, ClientHandle, ClientHandleArc};
 use fedimint_core::config::{ClientConfig, FederationId};
 use fedimint_core::core::{ModuleKind, OperationId};
 use fedimint_core::db::{
@@ -49,9 +50,9 @@ use fedimint_core::util::backon::FibonacciBuilder as FibonacciBackoff;
 use fedimint_core::{maybe_add_send_sync, Amount, PeerId, SATS_PER_BITCOIN};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
-    InternalPayState, LightningClientInit, LightningClientModule, LightningOperationMeta,
-    LightningOperationMetaPay, LightningOperationMetaVariant, LnPayState, LnReceiveState,
-    OutgoingLightningPayment, PayBolt11InvoiceError, PayType,
+    InternalPayState, LightningClientInit, LightningOperationMeta, LightningOperationMetaPay,
+    LightningOperationMetaVariant, LnPayState, LnReceiveState, OutgoingLightningPayment,
+    PayBolt11InvoiceError, PayType,
 };
 use fedimint_ln_common::config::FeeToAmount;
 use fedimint_ln_common::LightningGateway;
@@ -60,16 +61,16 @@ use fedimint_mint_client::{
     MintOperationMetaVariant, OOBNotes, ReissueExternalNotesState, SelectNotesWithExactAmount,
 };
 use fedimint_wallet_client::{
-    DepositStateV2, PegOutFees, WalletClientInit, WalletClientModule, WalletOperationMeta,
-    WalletOperationMetaVariant, WithdrawState,
+    DepositStateV2, PegOutFees, WalletClientInit, WalletOperationMeta, WalletOperationMetaVariant,
+    WithdrawState,
 };
 use futures::{FutureExt, StreamExt};
 use lightning_invoice::{Bolt11Invoice, RoutingFees};
 use meta::{LegacyMetaSourceWithExternalUrl, MetaEntries, MetaServiceExt};
 use serde::de::DeserializeOwned;
 use stability_pool_client::{
-    ClientAccountInfo, StabilityPoolClientInit, StabilityPoolClientModule,
-    StabilityPoolDepositOperationState, StabilityPoolMeta, StabilityPoolWithdrawalOperationState,
+    ClientAccountInfo, StabilityPoolClientInit, StabilityPoolDepositOperationState,
+    StabilityPoolMeta, StabilityPoolWithdrawalOperationState,
 };
 use tokio::sync::{Mutex, OnceCell};
 use tracing::{error, info, instrument, warn, Level};
@@ -262,10 +263,7 @@ impl FederationV2 {
         // seeks don't accidentally disappear if a test takes longer than expected and a
         // stability pool cycle elapses during the course of the test.
         #[cfg(not(test))]
-        if self
-            .client
-            .get_first_instance(&stability_pool_client::common::KIND)
-            .is_some()
+        if self.client.sp().is_ok()
             && self
                 .stability_pool_sweeper_service
                 .set(StabilityPoolSweeperService::new(
@@ -482,9 +480,7 @@ impl FederationV2 {
         if self.recovering() {
             None
         } else {
-            self.try_get_first_module::<WalletClientModule>()
-                .map(|module| module.get_network())
-                .ok()
+            self.client.wallet().map(|module| module.get_network()).ok()
         }
     }
 
@@ -530,7 +526,7 @@ impl FederationV2 {
         if self.recovering() {
             return Amount::ZERO;
         }
-        let Ok(mint_client) = self.try_get_first_module::<MintClientModule>() else {
+        let Ok(mint_client) = self.client.mint() else {
             return Amount::ZERO;
         };
         let mut dbtx = mint_client.db.begin_transaction_nc().await;
@@ -662,7 +658,8 @@ impl FederationV2 {
         //     )
         //     .await?;
         let (operation_id, address, _) = self
-            .try_get_first_module::<WalletClientModule>()?
+            .client
+            .wallet()?
             .allocate_deposit_address_expert_only(())
             .await?;
         // self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
@@ -691,7 +688,8 @@ impl FederationV2 {
             .await?;
         let gateway = self.select_gateway().await?;
         let (operation_id, invoice, _) = self
-            .try_get_first_module::<LightningClientModule>()?
+            .client
+            .ln()?
             .create_bolt11_invoice(
                 amount.0,
                 lightning_invoice::Bolt11InvoiceDescription::Direct(
@@ -727,7 +725,7 @@ impl FederationV2 {
         fed.task_group
             .clone()
             .spawn_cancellable("subscribe deposit", async move {
-                let Ok(wallet) = fed.try_get_first_module::<WalletClientModule>() else {
+                let Ok(wallet) = fed.client.wallet() else {
                     error!("Wallet module not present!");
                     return;
                 };
@@ -805,7 +803,7 @@ impl FederationV2 {
         self.task_group
             .clone()
             .spawn("subscribe invoice", move |_| async move {
-                let Ok(ln) = fed.try_get_first_module::<LightningClientModule>() else {
+                let Ok(ln) = fed.client.ln() else {
                     error!("Lightning module not found!");
                     return;
                 };
@@ -891,7 +889,8 @@ impl FederationV2 {
             is_internal_payment = invoice_has_internal_payment_markers(&invoice, markers);
             if !is_internal_payment {
                 let gateways = self
-                    .try_get_first_module::<LightningClientModule>()?
+                    .client
+                    .ln()?
                     .list_gateways()
                     .await
                     .into_iter()
@@ -973,7 +972,7 @@ impl FederationV2 {
         let extra_meta = LightningSendMetadata {
             is_fedi_fee_remittance: false,
         };
-        let ln = self.try_get_first_module::<LightningClientModule>()?;
+        let ln = self.client.ln()?;
         let OutgoingLightningPayment { payment_type, .. } = match ln
             .pay_bolt11_invoice(gateway, invoice.to_owned(), extra_meta.clone())
             .await
@@ -1038,7 +1037,8 @@ impl FederationV2 {
             )
             .await?;
         let network_fees = self
-            .try_get_first_module::<WalletClientModule>()?
+            .client
+            .wallet()?
             .get_withdraw_fees(address.clone(), amount)
             .await?;
 
@@ -1066,6 +1066,7 @@ impl FederationV2 {
         address: Address<NetworkUnchecked>,
         amount: bitcoin::Amount,
     ) -> Result<RpcPayAddressResponse> {
+        let wallet = self.client.wallet()?;
         let fedi_fee_ppm = self
             .fedi_fee_helper
             .get_fedi_fee_ppm(
@@ -1074,10 +1075,7 @@ impl FederationV2 {
                 RpcTransactionDirection::Send,
             )
             .await?;
-        let network_fees = self
-            .try_get_first_module::<WalletClientModule>()?
-            .get_withdraw_fees(address.clone(), amount)
-            .await?;
+        let network_fees = wallet.get_withdraw_fees(address.clone(), amount).await?;
 
         let amount_msat = amount.to_sat() * 1000;
         let fedi_fee = (amount_msat * fedi_fee_ppm).div_ceil(MILLION);
@@ -1092,18 +1090,14 @@ impl FederationV2 {
             )));
         }
 
-        let operation_id = self
-            .try_get_first_module::<WalletClientModule>()?
-            .withdraw(address, amount, network_fees, ())
-            .await?;
+        let operation_id = wallet.withdraw(address, amount, network_fees, ()).await?;
         self.write_pending_send_fedi_fee(operation_id, Amount::from_msats(fedi_fee))
             .await?;
         drop(spend_guard);
         let _ = self
             .record_tx_date_fiat_info(operation_id, Amount::from_msats(est_total_spend))
             .await;
-        let mut updates = self
-            .try_get_first_module::<WalletClientModule>()?
+        let mut updates = wallet
             .subscribe_withdraw_updates(operation_id)
             .await?
             .into_stream();
@@ -1134,7 +1128,7 @@ impl FederationV2 {
         &self,
         operation_id: OperationId,
     ) -> Option<(WithdrawState, Option<bitcoin::Txid>)> {
-        let Ok(wallet) = self.try_get_first_module::<WalletClientModule>() else {
+        let Ok(wallet) = self.client.wallet() else {
             return None;
         };
         let mut updates = match wallet.subscribe_withdraw_updates(operation_id).await {
@@ -1323,13 +1317,10 @@ impl FederationV2 {
         extra_meta: LightningSendMetadata,
         _invoice: Bolt11Invoice,
     ) -> Result<RpcPayInvoiceResponse> {
+        let ln = self.client.ln()?;
         match pay_type {
             PayType::Internal(operation_id) => {
-                let mut updates = self
-                    .try_get_first_module::<LightningClientModule>()?
-                    .subscribe_internal_pay(operation_id)
-                    .await?
-                    .into_stream();
+                let mut updates = ln.subscribe_internal_pay(operation_id).await?.into_stream();
 
                 while let Some(update) = updates.next().await {
                     // Skip updating fee status if payment is for fee remittance
@@ -1376,11 +1367,7 @@ impl FederationV2 {
                 Err(anyhow!("Internal lightning payment failed"))
             }
             PayType::Lightning(operation_id) => {
-                let mut updates = self
-                    .try_get_first_module::<LightningClientModule>()?
-                    .subscribe_ln_pay(operation_id)
-                    .await?
-                    .into_stream();
+                let mut updates = ln.subscribe_ln_pay(operation_id).await?.into_stream();
                 while let Some(update) = updates.next().await {
                     self.update_operation_state(operation_id, update.clone())
                         .await;
@@ -1511,10 +1498,7 @@ impl FederationV2 {
 
     /// List all lightning gateways registered with the federation
     pub async fn list_gateways(&self) -> anyhow::Result<Vec<RpcLightningGateway>> {
-        let gateways = self
-            .try_get_first_module::<LightningClientModule>()?
-            .list_gateways()
-            .await;
+        let gateways = self.client.ln()?.list_gateways().await;
         let active_gw = self
             .gateway_service()?
             .get_active_gateway(&self.client)
@@ -1546,7 +1530,8 @@ impl FederationV2 {
         let amount = ecash.total_amount();
         // TODO: include metadata as 2nd argument
         let operation_id = self
-            .try_get_first_module::<MintClientModule>()?
+            .client
+            .mint()?
             .reissue_external_notes(ecash, meta)
             .await?;
         self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
@@ -1604,7 +1589,8 @@ impl FederationV2 {
             serde_json::from_value::<EcashReceiveMetadata>(meta.extra_meta)
                 .map_or(false, |x| x.internal);
         let mut updates = self
-            .try_get_first_module::<MintClientModule>()?
+            .client
+            .mint()?
             .subscribe_reissue_external_notes(operation_id)
             .await
             .unwrap()
@@ -1686,14 +1672,15 @@ impl FederationV2 {
             )));
         }
 
+        let mint = self.client.mint()?;
+
         // If generating EXACT amount works, use those notes. Otherwise, generate using
         // AT LEAST strategy, marking it as internal TX (so we can filter it out).
         // Immediately cancel, which will reissue the notes attempting to fill in lower
         // denominations. And then generate using AT LEAST strategy again, which
         // will now have a high chance to producing the exact amount.
         let cancel_time = fedimint_core::time::now() + ONE_WEEK;
-        let (spend_guard, operation_id, notes) = match self
-            .try_get_first_module::<MintClientModule>()?
+        let (spend_guard, operation_id, notes) = match mint
             .spend_notes_with_selector(
                 &SelectNotesWithExactAmount,
                 amount,
@@ -1705,8 +1692,7 @@ impl FederationV2 {
         {
             Ok((operation_id, notes)) => (spend_guard, operation_id, notes),
             Err(_) => {
-                let (_, notes) = self
-                    .try_get_first_module::<MintClientModule>()?
+                let (_, notes) = mint
                     .spend_notes(
                         amount,
                         ONE_WEEK,
@@ -1719,8 +1705,7 @@ impl FederationV2 {
                 // try to make change
                 timeout(REISSUE_ECASH_TIMEOUT, async {
                     let notes_amount = notes.total_amount();
-                    let operation_id = self
-                        .try_get_first_module::<MintClientModule>()?
+                    let operation_id = mint
                         .reissue_external_notes(notes, EcashReceiveMetadata { internal: true })
                         .await?;
                     self.subscribe_to_ecash_reissue(operation_id, notes_amount)
@@ -1736,8 +1721,7 @@ impl FederationV2 {
                         get_max_spendable_amount(virtual_balance, fedi_fee_ppm, None, None)
                     )));
                 }
-                let (operation_id, notes) = self
-                    .try_get_first_module::<MintClientModule>()?
+                let (operation_id, notes) = mint
                     .spend_notes(
                         amount,
                         ONE_WEEK,
@@ -1770,16 +1754,15 @@ impl FederationV2 {
         let op_id = spendable_notes_to_operation_id(ecash.notes());
         // NOTE: try_cancel_spend_notes itself is not presisted across restarts.
         // it uses inmemory channel.
-        self.try_get_first_module::<MintClientModule>()?
-            .try_cancel_spend_notes(op_id)
-            .await;
+        self.client.mint()?.try_cancel_spend_notes(op_id).await;
         self.subscribe_oob_spend(op_id).await?;
         Ok(())
     }
 
     async fn subscribe_oob_spend(&self, op_id: OperationId) -> Result<(), anyhow::Error> {
         let mut updates = self
-            .try_get_first_module::<MintClientModule>()?
+            .client
+            .mint()?
             .subscribe_spend_notes(op_id)
             .await?
             .into_stream();
@@ -1865,8 +1848,9 @@ impl FederationV2 {
     }
 
     fn social_api(&self) -> anyhow::Result<DynModuleApi> {
-        let social_module =
-            self.try_get_first_module::<fedi_social_client::FediSocialClientModule>()?;
+        let social_module = self
+            .client
+            .try_get_first_module::<fedi_social_client::FediSocialClientModule>()?;
         Ok(social_module.api)
     }
 
@@ -2047,7 +2031,7 @@ impl FederationV2 {
             return Some(outcome);
         }
 
-        let Ok(wallet) = self.try_get_first_module::<WalletClientModule>() else {
+        let Ok(wallet) = self.client.wallet() else {
             return None;
         };
 
@@ -2339,7 +2323,7 @@ impl FederationV2 {
                                                 DepositStateV2::WaitingForConfirmation { btc_deposited, ..}
                                                 | DepositStateV2::Claimed { btc_deposited, ..},
                                             ) => {
-                                                let wallet = self.try_get_first_module::<WalletClientModule>();
+                                                let wallet = self.client.wallet();
                                                 let fees = wallet.map(|w| w.get_fee_consensus().peg_in_abs).unwrap_or(Amount::ZERO);
                                                 RpcAmount(Amount::from_sats(btc_deposited.to_sat()) - fees)
                                             },
@@ -2472,28 +2456,32 @@ impl FederationV2 {
         &self,
         force_update: bool,
     ) -> Result<ClientAccountInfo> {
-        self.try_get_first_module::<StabilityPoolClientModule>()?
+        self.client
+            .sp()?
             .account_info(force_update)
             .await
             .context("Error when fetching account info")
     }
 
     pub async fn stability_pool_next_cycle_start_time(&self) -> Result<u64> {
-        self.try_get_first_module::<StabilityPoolClientModule>()?
+        self.client
+            .sp()?
             .next_cycle_start_time()
             .await
             .context("Error when fetching next cycle start time")
     }
 
     pub async fn stability_pool_cycle_start_price(&self) -> Result<u64> {
-        self.try_get_first_module::<StabilityPoolClientModule>()?
+        self.client
+            .sp()?
             .cycle_start_price()
             .await
             .context("Error when fetching cycle start price")
     }
 
     pub async fn stability_pool_average_fee_rate(&self, num_cycles: u64) -> Result<u64> {
-        self.try_get_first_module::<StabilityPoolClientModule>()?
+        self.client
+            .sp()?
             .average_fee_rate(num_cycles)
             .await
             .context("Error when fetching average fee rate")
@@ -2501,7 +2489,8 @@ impl FederationV2 {
 
     pub async fn stability_pool_available_liquidity(&self) -> Result<RpcAmount> {
         let stats = self
-            .try_get_first_module::<StabilityPoolClientModule>()?
+            .client
+            .sp()?
             .liquidity_stats()
             .await
             .context("Error when fetching liquidity stats")?;
@@ -2533,7 +2522,7 @@ impl FederationV2 {
             )));
         }
 
-        let module = self.try_get_first_module::<StabilityPoolClientModule>()?;
+        let module = self.client.sp()?;
         let operation_id = module.deposit_to_seek(amount).await?;
         self.write_pending_send_fedi_fee(operation_id, fedi_fee)
             .await?;
@@ -2596,7 +2585,8 @@ impl FederationV2 {
             )
             .await?;
         let (operation_id, _) = self
-            .try_get_first_module::<StabilityPoolClientModule>()?
+            .client
+            .sp()?
             .withdraw(unlocked_amount, locked_bps)
             .await?;
         self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
@@ -2611,7 +2601,7 @@ impl FederationV2 {
     }
 
     async fn subscribe_stability_pool_deposit_to_seek(&self, operation_id: OperationId) {
-        let Ok(stability_pool) = self.try_get_first_module::<StabilityPoolClientModule>() else {
+        let Ok(stability_pool) = self.client.sp() else {
             return;
         };
 
@@ -2646,7 +2636,7 @@ impl FederationV2 {
     }
 
     async fn subscribe_stability_pool_withdraw(&self, operation_id: OperationId) {
-        let Ok(stability_pool) = self.try_get_first_module::<StabilityPoolClientModule>() else {
+        let Ok(stability_pool) = self.client.sp() else {
             return;
         };
 
@@ -3195,13 +3185,6 @@ impl FederationV2 {
         };
 
         Ok(())
-    }
-
-    // Wrapper around Client::get_first_module that handles panics using the Result
-    // type
-    pub fn try_get_first_module<M: ClientModule>(&self) -> anyhow::Result<ClientModuleInstance<M>> {
-        panic::catch_unwind(AssertUnwindSafe(|| self.client.get_first_module::<M>()))
-            .map_err(|_| anyhow!(ErrorCode::ModuleNotFound(M::kind().to_string())))
     }
 }
 
