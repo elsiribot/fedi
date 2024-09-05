@@ -100,6 +100,9 @@ export const ChatConnectionBadge: React.FC<Props> = ({
             style={[
                 style.container,
                 containerStyle,
+                // When the badge is invisible, it should be
+                // rendered behind the other components... otherwise,
+                // it will swallow press events
                 isVisible ? { zIndex: 3 } : { zIndex: -1 },
             ]}>
             <Animated.View style={[style.badge, badgeStyle]}>

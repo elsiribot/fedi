@@ -34,7 +34,7 @@ const ChatWalletButton: React.FC<ChatWalletButtonProps> = ({
         navigation.navigate('ChatWallet', {
             recipientId,
         })
-    }, [recoveryInProgress, navigation, recipientId, setShowOverlay])
+    }, [recoveryInProgress, recipientId, navigation])
 
     return (
         <>
