@@ -468,7 +468,7 @@ impl Matrix {
         &self,
         room_id: &RoomId,
     ) -> Result<room_list_service::Room, room_list_service::Error> {
-        Ok(self.room_list_service.room(room_id)?)
+        self.room_list_service.room(room_id)
     }
 
     /// See [`matrix_sdk_ui::Timeline`].
@@ -925,8 +925,8 @@ mod tests {
     use crate::event::IEventSink;
     use crate::ffi::PathBasedStorage;
 
-    const TEST_HOME_SERVER: &str = "matrix-synapse-homeserver2.dev.fedibtc.com";
-    const TEST_SLIDING_SYNC: &str = "https://sliding.matrix-synapse-homeserver2.dev.fedibtc.com";
+    const TEST_HOME_SERVER: &str = "staging.m1.8fa.in";
+    const TEST_SLIDING_SYNC: &str = "https://staging.sliding.m1.8fa.in";
 
     async fn mk_matrix_login(
         user_name: &str,
