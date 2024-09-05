@@ -245,6 +245,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         },
         [inputHeight, theme],
     )
+
     const formatSize = (bytes: number) => {
         if (bytes < 1024) return `${bytes} bytes`
         else if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} kb`
