@@ -464,12 +464,18 @@ impl Matrix {
         .await
     }
 
-    async fn room(&self, room_id: &RoomId) -> Result<room_list_service::Room, anyhow::Error> {
+    async fn room(
+        &self,
+        room_id: &RoomId,
+    ) -> Result<room_list_service::Room, room_list_service::Error> {
         Ok(self.room_list_service.room(room_id)?)
     }
 
     /// See [`matrix_sdk_ui::Timeline`].
-    async fn timeline(&self, room_id: &RoomId) -> Result<Arc<matrix_sdk_ui::Timeline>> {
+    async fn timeline(
+        &self,
+        room_id: &RoomId,
+    ) -> Result<Arc<matrix_sdk_ui::Timeline>, room_list_service::Error> {
         let room = self.room(room_id).await?;
         if !room.is_timeline_initialized() {
             room.init_timeline_with_builder(
@@ -593,7 +599,7 @@ impl Matrix {
     pub async fn wait_for_room_id(&self, room_id: &RoomId) -> Result<()> {
         fedimint_core::task::timeout(Duration::from_secs(20), async {
             loop {
-                match self.room_list_service.room(room_id) {
+                match self.timeline(room_id).await {
                     Ok(_) => return Ok(()),
                     Err(room_list_service::Error::RoomNotFound(_)) => {
                         fedimint_core::task::sleep(Duration::from_millis(100)).await;
