@@ -380,6 +380,8 @@ rec {
           fedi-fedimint-pkgs
           pkgs.bash
           pkgs.coreutils
+          pkgs.busybox
+          pkgs.curl
         ];
         config = {
           Cmd = [ ]; # entrypoint will handle empty vs non-empty cmd
@@ -402,7 +404,7 @@ rec {
 
       fedi-fedimint-cli = pkgs.dockerTools.buildLayeredImage {
         name = "fedi-fedimint-cli";
-        contents = [ fedi-fedimint-cli pkgs.bash pkgs.coreutils ];
+        contents = [ fedi-fedimint-cli pkgs.bash pkgs.coreutils pkgs.busybox pkgs.curl ];
         config = {
           Cmd = [
             "${fedimint-pkgs}/bin/fedimint-cli"
