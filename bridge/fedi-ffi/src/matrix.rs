@@ -35,9 +35,7 @@ use tracing::{error, info, warn};
 
 use crate::error::ErrorCode;
 use crate::event::EventSink;
-use crate::observable::{
-    Observable, ObservablePool, ObservableUpdate, ObservableVec, ObservableVecUpdate,
-};
+use crate::observable::{Observable, ObservablePool, ObservableVec};
 use crate::storage::AppState;
 
 mod types;
@@ -328,29 +326,9 @@ impl Matrix {
         &self,
         list: room_list_service::RoomList,
     ) -> Result<Observable<imbl::Vector<RpcRoomListEntry>>> {
-        let (initial, mut stream) = list.entries();
+        let (initial, stream) = list.entries();
         self.observable_pool
-            .make_observable(
-                initial.into_iter().map(RpcRoomListEntry::from).collect(),
-                move |this, id| async move {
-                    let mut update_index = 0;
-                    while let Some(diffs) = stream.next().await {
-                        this.send_observable_update(
-                            ObservableVecUpdate::<RpcRoomListEntry>::new_diffs(
-                                id,
-                                update_index,
-                                diffs
-                                    .into_iter()
-                                    .map(|x| x.map(RpcRoomListEntry::from))
-                                    .collect(),
-                            ),
-                        )
-                        .await;
-                        update_index += 1;
-                    }
-                    Ok(())
-                },
-            )
+            .make_observable_from_vec_diff_stream(initial, stream)
             .await
     }
 
@@ -366,32 +344,11 @@ impl Matrix {
     ///
     /// We delay the events by 2 seconds to avoid flickering.
     pub async fn observe_sync_status(&self) -> Result<Observable<RpcSyncIndicator>> {
-        let mut stream = Box::pin(
-            self.room_list_service
-                .sync_indicator(Duration::from_secs(2), Duration::from_secs(2)),
-        );
-        // first item is emitted immediately
         self.observable_pool
-            .make_observable(
-                stream
-                    .next()
-                    .await
-                    .map(|x| x.into())
-                    .context("first element not found in stream")?,
-                |this, id| async move {
-                    let mut index = 0;
-                    while let Some(item) = stream.next().await {
-                        info!("matrix sync status: {item:?}");
-                        this.send_observable_update(ObservableUpdate::new(
-                            id,
-                            index,
-                            RpcSyncIndicator::from(item),
-                        ))
-                        .await;
-                        index += 1;
-                    }
-                    Ok(())
-                },
+            .make_observable_from_stream(
+                None,
+                self.room_list_service
+                    .sync_indicator(Duration::from_secs(2), Duration::from_secs(2)),
             )
             .await
     }
@@ -435,30 +392,9 @@ impl Matrix {
         room_id: &RoomId,
     ) -> Result<ObservableVec<RpcTimelineItem>> {
         let timeline = self.timeline(room_id).await?;
-        let (initial, mut stream) = timeline.subscribe_batched().await;
+        let (initial, stream) = timeline.subscribe_batched().await;
         self.observable_pool
-            .make_observable(
-                initial
-                    .into_iter()
-                    .map(RpcTimelineItem::from_timeline_item)
-                    .collect(),
-                move |this, id| async move {
-                    let mut update_index = 0;
-                    while let Some(diffs) = stream.next().await {
-                        this.send_observable_update(ObservableVecUpdate::new_diffs(
-                            id,
-                            update_index,
-                            diffs
-                                .into_iter()
-                                .map(|x| x.map(RpcTimelineItem::from_timeline_item))
-                                .collect(),
-                        ))
-                        .await;
-                        update_index += 1;
-                    }
-                    Ok(())
-                },
-            )
+            .make_observable_from_vec_diff_stream(initial, stream)
             .await
     }
 
@@ -482,23 +418,7 @@ impl Matrix {
             .await
             .context("we only have live rooms")?;
         self.observable_pool
-            .make_observable(
-                RpcBackPaginationStatus::from(current),
-                move |this, id| async move {
-                    let mut stream = std::pin::pin!(stream);
-                    let mut update_index = 0;
-                    while let Some(value) = stream.next().await {
-                        this.send_observable_update(ObservableUpdate::new(
-                            id,
-                            update_index,
-                            RpcBackPaginationStatus::from(value),
-                        ))
-                        .await;
-                        update_index += 1;
-                    }
-                    Ok(())
-                },
-            )
+            .make_observable_from_stream(Some(current), stream)
             .await
     }
 

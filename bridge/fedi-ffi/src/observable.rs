@@ -2,11 +2,11 @@ use std::collections::HashMap;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use eyeball::Subscriber;
 use eyeball_im::VectorDiff;
 use fedimint_core::task::{MaybeSend, MaybeSync, TaskGroup};
-use futures::Future;
+use futures::{Future, Stream, StreamExt};
 use imbl::Vector;
 use serde::Serialize;
 use tokio::sync::Mutex;
@@ -156,6 +156,75 @@ impl ObservablePool {
             func(this, id),
         );
         Ok(observable)
+    }
+
+    /// Helper function to make an observable using a stream. Typically T will
+    /// be the type used within Rust code and R will be the corresponding RPC
+    /// type. If an initial value is not provided, attempts to get the first
+    /// item from the stream.
+    pub async fn make_observable_from_stream<T, R>(
+        &self,
+        initial: Option<T>,
+        stream: impl Stream<Item = T> + MaybeSync + MaybeSend + 'static,
+    ) -> Result<Observable<R>>
+    where
+        T: std::fmt::Debug + MaybeSend + MaybeSync + 'static,
+        R: 'static + Clone + Serialize + std::fmt::Debug + MaybeSend + MaybeSync + From<T>,
+    {
+        let mut stream = Box::pin(stream);
+        let initial = initial.unwrap_or(
+            stream
+                .next()
+                .await
+                .context("first element not found in stream")?,
+        );
+        self.make_observable(R::from(initial), move |this, id| async move {
+            let mut update_index = 0;
+            while let Some(value) = stream.next().await {
+                this.send_observable_update(ObservableUpdate::new(
+                    id,
+                    update_index,
+                    R::from(value),
+                ))
+                .await;
+                update_index += 1;
+            }
+            Ok(())
+        })
+        .await
+    }
+
+    /// Helper function to make an observable using a stream of vector diffs.
+    /// Typically T will be the type used within Rust code and R will be the
+    /// corresponding RPC type. If an initial is not provided, attempts to
+    /// get the first item from the stream.
+    pub async fn make_observable_from_vec_diff_stream<T, R>(
+        &self,
+        initial: Vector<T>,
+        stream: impl Stream<Item = Vec<VectorDiff<T>>> + MaybeSync + MaybeSend + 'static,
+    ) -> Result<ObservableVec<R>>
+    where
+        T: std::fmt::Debug + Clone + MaybeSend + MaybeSync + 'static,
+        R: 'static + Clone + Serialize + std::fmt::Debug + MaybeSend + MaybeSync + From<T>,
+    {
+        self.make_observable(
+            initial.into_iter().map(|t| R::from(t)).collect(),
+            move |this, id| async move {
+                let mut update_index = 0;
+                let mut stream = std::pin::pin!(stream);
+                while let Some(diffs) = stream.next().await {
+                    this.send_observable_update(ObservableVecUpdate::new_diffs(
+                        id,
+                        update_index,
+                        diffs.into_iter().map(|diff| diff.map(R::from)).collect(),
+                    ))
+                    .await;
+                    update_index += 1;
+                }
+                Ok(())
+            },
+        )
+        .await
     }
 
     /// Convert eyeball::Subscriber to rpc Observable type.
