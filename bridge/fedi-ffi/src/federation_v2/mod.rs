@@ -642,21 +642,21 @@ impl FederationV2 {
     /// Generate bitcoin address
     pub async fn generate_address(&self) -> Result<String> {
         // FIXME: add fedi fees once fedimint await primary module outputs
-        // let fedi_fee_ppm = self
-        //     .fedi_fee_helper
-        //     .get_fedi_fee_ppm(
-        //         self.federation_id().to_string(),
-        //         fedimint_wallet_client::KIND,
-        //         RpcTransactionDirection::Receive,
-        //     )
-        //     .await?;
+        let fedi_fee_ppm = self
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                fedimint_wallet_client::KIND,
+                RpcTransactionDirection::Receive,
+            )
+            .await?;
         let (operation_id, address, _) = self
             .client
             .wallet()?
             .allocate_deposit_address_expert_only(())
             .await?;
-        // self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
-        //     .await?;
+        self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
+            .await?;
 
         self.subscribe_deposit(operation_id, address.to_string())
             .await?;
@@ -732,6 +732,13 @@ impl FederationV2 {
                 else {
                     return;
                 };
+                let pending_fedi_fee_status = fed
+                    .client
+                    .db()
+                    .begin_transaction_nc()
+                    .await
+                    .get_value(&OperationFediFeeStatusKey(operation_id))
+                    .await;
                 while let Some(update) = updates.next().await {
                     info!("Update: {:?}", update);
                     fed.update_operation_state(operation_id, update.clone())
@@ -739,16 +746,20 @@ impl FederationV2 {
                     let deposit_outcome = update.clone();
                     match update {
                         DepositStateV2::WaitingForConfirmation { btc_deposited, .. }
+                        | DepositStateV2::Confirmed { btc_deposited, .. }
                         | DepositStateV2::Claimed { btc_deposited, .. } => {
-                            let fees = wallet.get_fee_consensus().peg_in_abs;
-                            let amount = Amount::from_sats(btc_deposited.to_sat()) - fees;
+                            let federation_fees = wallet.get_fee_consensus().peg_in_abs;
+                            let amount =
+                                Amount::from_sats(btc_deposited.to_sat()) - federation_fees;
                             // FIXME: add fedi fees once fedimint await primary module outputs
-                            // let fedi_fee_status = fed
-                            //     .write_success_receive_fedi_fee(operation_id, amount)
-                            //     .await
-                            //     .map(|(_, status)| status)
-                            //     .ok()
-                            //     .map(Into::into);
+                            let fedi_fee_status = if let DepositStateV2::Claimed { .. } = &update {
+                                fed.write_success_receive_fedi_fee(operation_id, amount)
+                                    .await
+                                    .map(|(_, status)| status)
+                                    .ok()
+                            } else {
+                                pending_fedi_fee_status.clone()
+                            };
                             let _ = fed.record_tx_date_fiat_info(operation_id, amount).await;
                             let onchain_details = Some(RpcBitcoinDetails {
                                 address: address.clone(),
@@ -757,7 +768,7 @@ impl FederationV2 {
                                 id: operation_id.fmt_full().to_string(),
                                 created_at: unix_now().expect("unix time should exist"),
                                 amount: RpcAmount(amount),
-                                fedi_fee_status: None,
+                                fedi_fee_status: fedi_fee_status.map(Into::into),
                                 direction: RpcTransactionDirection::Receive,
                                 notes: "".into(),
                                 onchain_state: RpcOnchainState::from_deposit_state(Some(

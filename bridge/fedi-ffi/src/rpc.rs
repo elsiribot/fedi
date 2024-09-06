@@ -1476,7 +1476,6 @@ mod tests {
     use fedi_core::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
     use fedi_social_client::common::VerificationDocument;
     use fedimint_core::core::ModuleKind;
-    use fedimint_core::task::sleep_in_test;
     use fedimint_core::{apply, async_trait_maybe_send, Amount};
     use fedimint_logging::TracingSetup;
     use tokio::sync::Mutex;
@@ -2250,22 +2249,9 @@ mod tests {
 
         let btc_amount = Amount::from_sats(10_000_000);
         let pegin_fees = federation.client.wallet()?.get_fee_consensus().peg_in_abs;
-        let receive_fedi_fee = Amount::ZERO;
-        // FIXME: implement fedi fees
-        // let receive_fedi_fee = Amount::from_msats(
-        //     ((btc_amount.msats - pegin_fees.msats) *
-        // fedi_fees_receive_ppm).div_ceil(MILLION), );
-        // wait for balance to trickle in atmost 10s
-        for _ in 0..100 {
-            if btc_amount == federation.get_balance().await + receive_fedi_fee + pegin_fees {
-                break;
-            }
-            sleep_in_test(
-                "waiting for balance to trickle in",
-                Duration::from_millis(100),
-            )
-            .await;
-        }
+        let receive_fedi_fee = Amount::from_msats(
+            ((btc_amount.msats - pegin_fees.msats) * fedi_fees_receive_ppm).div_ceil(MILLION),
+        );
         assert_eq!(
             btc_amount,
             federation.get_balance().await + receive_fedi_fee + pegin_fees,
