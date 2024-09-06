@@ -101,6 +101,8 @@ export const makeTxnDetailStatusText = (
                         return t('words.pending')
                     case 'waitingForConfirmation':
                         return t('words.seen')
+                    case 'confirmed':
+                        return t('words.seen')
                     case 'claimed':
                         return t('words.complete')
                     default:
