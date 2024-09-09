@@ -9,12 +9,12 @@ const initialState: PinState = {
     protectedFeatures: {
         app: true,
         changePin: true,
-        nostrKeys: true,
+        nostrSettings: true,
     },
     unlockedFeatures: {
         app: false,
         changePin: false,
-        nostrKeys: false,
+        nostrSettings: false,
     },
     isBackingUpBeforePin: false,
 }
@@ -22,7 +22,7 @@ const initialState: PinState = {
 export interface ProtectedFeatures {
     app: boolean
     changePin: boolean
-    nostrKeys: boolean
+    nostrSettings: boolean
 }
 
 export type PinState = {

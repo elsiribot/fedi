@@ -131,12 +131,6 @@ export const useBridge = (activeFederationId: string | undefined) => {
             },
             [activeFederationId],
         ),
-        getNostrPubkey: useCallback(() => {
-            return fedimint.getNostrPubkey()
-        }, []),
-        getNostrSecret: useCallback(() => {
-            return fedimint.getNostrSecret()
-        }, []),
         signNostrEvent: useCallback((eventHash: string) => {
             return fedimint.signNostrEvent(eventHash)
         }, []),

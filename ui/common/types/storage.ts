@@ -195,7 +195,7 @@ export interface StoredStateV20 extends Omit<StoredStateV19, 'version'> {
     version: 20
     protectedFeatures: Pick<
         ProtectedFeatures,
-        'app' | 'changePin' | 'nostrKeys'
+        'app' | 'changePin' | 'nostrSettings'
     >
 }
 

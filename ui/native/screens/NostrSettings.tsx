@@ -1,4 +1,3 @@
-import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
@@ -6,35 +5,33 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useToast } from '@fedi/common/hooks/toast'
-
-import { selectActiveFederationId } from '@fedi/common/redux'
+import {
+    initializeNostrKeys,
+    selectNostrNpub,
+    selectNostrNsec,
+} from '@fedi/common/redux'
+import { fedimint } from '../bridge'
+import { CopyButton } from '../components/ui/CopyButton'
 import HoloLoader from '../components/ui/HoloLoader'
 import { PressableIcon } from '../components/ui/PressableIcon'
-import { useAppSelector, useBridge } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
-export type Props = NativeStackScreenProps<RootStackParamList, 'NostrKeys'>
+export type Props = NativeStackScreenProps<RootStackParamList, 'NostrSettings'>
 
-const NostrKeys: React.FC<Props> = (_: Props) => {
+const NostrSettings: React.FC<Props> = (_: Props) => {
     const { t } = useTranslation()
-    const activeFederationId = useAppSelector(selectActiveFederationId)
-    const { getNostrSecret, getNostrPubkey } = useBridge(activeFederationId)
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
 
-    const [npub, setNpub] = useState<null | string>(null)
-    const [nsec, setNsec] = useState<null | string>(null)
+    const dispatch = useAppDispatch()
+    const nostrPublic = useAppSelector(selectNostrNpub)
+    const nostrSecret = useAppSelector(selectNostrNsec)
     const [showNsec, setShowNsec] = useState(false)
 
     useEffect(() => {
-        Promise.all([getNostrSecret(), getNostrPubkey()]).then(
-            ([{ nsec: fediNsec }, { npub: fediNpub }]) => {
-                setNsec(fediNsec)
-                setNpub(fediNpub)
-            },
-        )
-    }, [getNostrSecret, getNostrPubkey])
+        dispatch(initializeNostrKeys({ fedimint }))
+    }, [dispatch])
 
     const style = styles(theme, insets)
 
@@ -43,15 +40,15 @@ const NostrKeys: React.FC<Props> = (_: Props) => {
             <View style={style.section}>
                 <View style={style.header}>
                     <Text medium>{t('feature.nostr.nostr-public-key')}</Text>
-                    <CopyButton value={npub ?? ''} />
+                    {nostrPublic && <CopyButton value={nostrPublic.npub} />}
                 </View>
-                {typeof npub === 'string' ? (
+                {nostrPublic ? (
                     <Text
                         caption
                         color={theme.colors.darkGrey}
                         numberOfLines={1}
                         ellipsizeMode="middle">
-                        {npub}
+                        {nostrPublic.npub}
                     </Text>
                 ) : (
                     <HoloLoader size={32} />
@@ -60,7 +57,7 @@ const NostrKeys: React.FC<Props> = (_: Props) => {
             <View style={style.section}>
                 <View style={style.header}>
                     <Text medium>{t('feature.nostr.nostr-secret-key')}</Text>
-                    {typeof nsec === 'string' && (
+                    {nostrSecret && (
                         <View style={style.iconSpacer}>
                             <PressableIcon
                                 onPress={() => setShowNsec(!showNsec)}
@@ -71,44 +68,23 @@ const NostrKeys: React.FC<Props> = (_: Props) => {
                                 svgName={showNsec ? 'EyeClosed' : 'Eye'}
                                 containerStyle={style.pressableIcon}
                             />
-                            <CopyButton value={nsec} />
+                            <CopyButton value={nostrSecret.nsec || ''} />
                         </View>
                     )}
                 </View>
-                {typeof nsec === 'string' ? (
+                {nostrSecret ? (
                     <Text
                         caption
                         color={theme.colors.darkGrey}
                         numberOfLines={1}
                         ellipsizeMode={showNsec ? 'middle' : 'clip'}>
-                        {showNsec ? nsec : '•'.repeat(63)}
+                        {showNsec ? nostrSecret.nsec : '•'.repeat(63)}
                     </Text>
                 ) : (
                     <HoloLoader size={32} />
                 )}
             </View>
         </View>
-    )
-}
-
-function CopyButton({ value }: { value: string }) {
-    const { t } = useTranslation()
-    const { theme } = useTheme()
-    const toast = useToast()
-
-    return (
-        <PressableIcon
-            svgName="Copy"
-            svgProps={{ size: 16, color: theme.colors.grey }}
-            onPress={() => {
-                if (!value) return
-                Clipboard.setString(value)
-                toast.show({
-                    status: 'success',
-                    content: t('phrases.copied-to-clipboard'),
-                })
-            }}
-        />
     )
 }
 
@@ -193,4 +169,4 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
     })
 
-export default NostrKeys
+export default NostrSettings

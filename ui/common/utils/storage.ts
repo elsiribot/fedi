@@ -588,7 +588,7 @@ async function migrateStoredState(
             version: 20,
             protectedFeatures: {
                 ...migrationState.protectedFeatures,
-                nostrKeys: true,
+                nostrSettings: true,
             },
         }
     }

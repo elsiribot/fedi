@@ -4,18 +4,18 @@ import { useTranslation } from 'react-i18next'
 
 import Header from '../../ui/Header'
 
-const NostrKeysHeader: React.FC = () => {
+const NostrSettingsHeader: React.FC = () => {
     const { t } = useTranslation()
     return (
         <Header
             backButton
             headerCenter={
                 <Text bold numberOfLines={1} adjustsFontSizeToFit>
-                    {t('feature.nostr.nostr-keys')}
+                    {t('feature.nostr.nostr-settings')}
                 </Text>
             }
         />
     )
 }
 
-export default NostrKeysHeader
+export default NostrSettingsHeader

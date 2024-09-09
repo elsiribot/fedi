@@ -382,8 +382,8 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                 />
                 <SettingsItem
                     image={<SvgImage name="Nostr" />}
-                    label={t('feature.nostr.nostr-keys')}
-                    onPress={() => navigation.navigate('NostrKeys')}
+                    label={t('feature.nostr.nostr-settings')}
+                    onPress={() => navigation.navigate('NostrSettings')}
                 />
                 <SettingsItem
                     image={<SvgImage name="Bug" />}

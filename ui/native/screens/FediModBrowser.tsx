@@ -28,6 +28,7 @@ import {
     selectIsActiveFederationRecovering,
     selectLanguage,
     selectMatrixAuth,
+    selectNostrNpub,
     selectPaymentFederation,
 } from '@fedi/common/redux'
 import {
@@ -104,7 +105,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
-    const { listGateways, getNostrPubkey } = useBridge(activeFederation?.id)
+    const { listGateways } = useBridge(activeFederation?.id)
+    const nostrPublic = useAppSelector(selectNostrNpub)
     const paymentFederation = useAppSelector(selectPaymentFederation)
     const member = useAppSelector(selectMatrixAuth)
     const hasSetMatrixDisplayName = useAppSelector(
@@ -315,13 +317,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         },
         [InjectionMessageType.nostr_getPublicKey]: async () => {
             log.info('nostr.getPublicKey')
-            try {
-                const { npub } = await getNostrPubkey()
-                return npub
-            } catch (err) {
-                log.warn('nostr.getPublicKey', err)
+            if (!nostrPublic)
                 throw new Error(t('errors.get-nostr-pubkey-failed'))
-            }
+
+            return nostrPublic.npub
         },
         [InjectionMessageType.nostr_signEvent]: async evt => {
             log.info('nostr.signEvent', evt)

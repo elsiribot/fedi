@@ -1,11 +1,11 @@
 import FeatureLockScreen, { Props } from '../../../screens/FeatureLockScreen'
 
-export default function NostrKeysLockScreen(props: Props) {
+export default function NostrSettingsLockScreen(props: Props) {
     return (
         <FeatureLockScreen
             {...props}
-            feature="nostrKeys"
-            screen={['NostrKeys']}
+            feature="nostrSettings"
+            screen={['NostrSettings']}
         />
     )
 }
