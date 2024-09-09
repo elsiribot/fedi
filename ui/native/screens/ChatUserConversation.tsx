@@ -12,6 +12,7 @@ import {
 
 import MessageInput from '../components/feature/chat/MessageInput'
 import NoMessagesNotice from '../components/feature/chat/NoMessagesNotice'
+import SelectedMessageOverlay from '../components/feature/chat/SelectedMessageOverlay'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { ChatType } from '../types'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
@@ -83,6 +84,7 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
                     id={userId}
                 />
             </>
+            <SelectedMessageOverlay />
         </View>
     )
 }

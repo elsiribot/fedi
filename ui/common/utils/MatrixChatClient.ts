@@ -940,9 +940,7 @@ export class MatrixChatClient {
             return null
         // ignore deleted messages
         if (
-            item.value.content.kind === 'json' &&
-            item.value.content.value &&
-            'redacted_because' in item.value.content.value
+            item.value.content.kind === 'redactedMessage'
         )
             return null
 

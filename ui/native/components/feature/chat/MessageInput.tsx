@@ -32,11 +32,14 @@ import {
     selectChatDrafts,
     selectMatrixRoom,
     selectMatrixRoomIsReadOnly,
+    selectMessageToEdit,
     setChatDraft,
+    setMessageToEdit,
 } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { DocumentDirectoryPath, downloadFile } from 'react-native-fs'
+import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { Attachments } from '../../ui/Attachments'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
@@ -86,6 +89,9 @@ const MessageInput: React.FC<MessageInputProps> = ({
         [existingRoom],
     )
     const inputRef = useRef<TextInput | null>(null)
+    const editingMessage = useAppSelector(selectMessageToEdit)
+
+    const isEditingMessage = !!editingMessage
 
     useDebouncedEffect(
         () => {
@@ -158,6 +164,22 @@ const MessageInput: React.FC<MessageInputProps> = ({
         }
     }, [attachments])
 
+    const handleEdit = useCallback(async () => {
+        if (!isEditingMessage || !messageText || !editingMessage.eventId) return
+
+        try {
+            await fedimint.matrixEditMessage(
+                editingMessage.roomId,
+                editingMessage.eventId,
+                messageText,
+            )
+            setMessageText('')
+            dispatch(setMessageToEdit(null))
+        } catch (err) {
+            toast.error(t, err, 'errors.chat-unavailable')
+        }
+    }, [editingMessage, isEditingMessage, messageText, t, toast, dispatch])
+
     useEffect(() => {
         const keyboardShownListener = Keyboard.addListener(
             'keyboardWillShow',
@@ -177,6 +199,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
             keyboardHiddenListener.remove()
         }
     }, [])
+
+    useEffect(() => {
+        if (editingMessage) {
+            setMessageText(editingMessage.content.body)
+        }
+    }, [editingMessage])
 
     const handleSend = useCallback(async () => {
         if (
@@ -351,20 +379,48 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         </Pressable>
                     </View>
                     {!isReadOnly && (
-                        <Pressable
-                            style={style.sendButton}
-                            onPress={handleSend}
-                            disabled={inputDisabled}>
-                            <SvgImage
-                                name="SendArrowUpCircle"
-                                size={SvgImageSize.md}
-                                color={
-                                    inputDisabled
-                                        ? theme.colors.primaryVeryLight
-                                        : theme.colors.blue
-                                }
-                            />
-                        </Pressable>
+                        <>
+                            {isEditingMessage ? (
+                                <View style={style.editButtonsEnd}>
+                                    <Pressable
+                                        style={style.cancelButton}
+                                        onPress={() => {
+                                            dispatch(setMessageToEdit(null))
+                                            setMessageText('')
+                                        }}
+                                        disabled={inputDisabled}>
+                                        <SvgImage
+                                            name="Close"
+                                            color={theme.colors.white}
+                                        />
+                                    </Pressable>
+                                    <Pressable
+                                        style={style.saveButton}
+                                        onPress={handleEdit}
+                                        disabled={inputDisabled}>
+                                        <SvgImage
+                                            name="Check"
+                                            color={theme.colors.white}
+                                        />
+                                    </Pressable>
+                                </View>
+                            ) : (
+                                <Pressable
+                                    style={style.sendButton}
+                                    onPress={handleSend}
+                                    disabled={inputDisabled}>
+                                    <SvgImage
+                                        name="SendArrowUpCircle"
+                                        size={SvgImageSize.md}
+                                        color={
+                                            inputDisabled
+                                                ? theme.colors.primaryVeryLight
+                                                : theme.colors.blue
+                                        }
+                                    />
+                                </Pressable>
+                            )}
+                        </>
                     )}
                 </View>
             )}
@@ -467,6 +523,32 @@ const styles = (theme: Theme, insets: Insets) =>
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: theme.spacing.lg,
+        },
+        saveButton: {
+            flexShrink: 0,
+            width: 24,
+            height: 24,
+            backgroundColor: theme.colors.blue,
+            borderRadius: 24,
+            color: theme.colors.white,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        cancelButton: {
+            flexShrink: 0,
+            width: 24,
+            height: 24,
+            backgroundColor: theme.colors.red,
+            borderRadius: 12,
+            color: theme.colors.white,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        editButtonsEnd: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: theme.spacing.md,
         },
     })
 
