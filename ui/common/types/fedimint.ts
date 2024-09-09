@@ -147,9 +147,20 @@ export enum Network {
     regtest = 'regtest',
 }
 
+/**
+ * Connection Status of a federation's guardians
+ *
+ * - online: all guardians are online
+ * - unstable: At least one guardian is offline, but
+ *   consensus is still met
+ * - offline: Consensus is not met
+ */
+export type FederationStatus = 'online' | 'unstable' | 'offline'
+
 export type Federation = Omit<RpcFederation, 'network' | 'meta'> & {
     meta: ClientConfigMetadata
     network: Network
+    status: FederationStatus
     readonly hasWallet: true
 }
 

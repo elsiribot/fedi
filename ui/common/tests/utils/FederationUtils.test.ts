@@ -31,6 +31,7 @@ const baseFed: Federation = {
         modules: {},
     },
     hasWallet: true,
+    status: 'online',
 }
 
 const fedWithNoMetadata: Federation = {

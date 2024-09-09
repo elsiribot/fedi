@@ -7,6 +7,7 @@ import {
     ClientConfigMetadata,
     Federation,
     FederationListItem,
+    FederationStatus,
     FediMod,
     JoinPreview,
     MSats,
@@ -641,10 +642,12 @@ export const joinFromInvite = async (
             code,
             recoverFromScratch,
         )
+        const status = await getFederationStatus(fedimint, federation.id)
         return {
             ...federation,
             hasWallet: true,
             network: network as Network,
+            status,
         }
     } else {
         // community
@@ -668,4 +671,23 @@ export const previewInvite = async (
         })
         return coerceJoinPreview(preview)
     }
+}
+
+export const getFederationStatus = async (
+    fedimint: FedimintBridge,
+    federationId: string,
+): Promise<FederationStatus> => {
+    const guardianStatuses = await fedimint.guardianStatus(federationId)
+    const offlineGuardians = guardianStatuses.filter(
+        status => !('online' in status),
+    )
+    if (offlineGuardians.length === 0) {
+        return 'online'
+    }
+    // A federation can achieve consensus if 3f + 1 guardians are online,
+    // where f is the number of "faulty" guardians.
+    if (3 * offlineGuardians.length + 1 <= guardianStatuses.length) {
+        return 'unstable'
+    }
+    return 'offline'
 }
