@@ -1443,7 +1443,8 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
     let _g = TimeReporter::new(format!("fedimint_rpc {method}")).level(Level::INFO);
     let sensitive_log = bridge.sensitive_log().await;
     if sensitive_log {
-        tracing::info!(%payload);
+        let trunc_fmt = format!("{payload:.1000}");
+        tracing::info!(payload = %trunc_fmt);
     } else {
         info!("rpc call");
     }
@@ -1451,8 +1452,18 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
     let result = RpcMethods::handle(bridge, &method, payload).await;
 
     if sensitive_log {
-        tracing::info!(?result);
+        match &result {
+            Ok(ok) => {
+                let trunc_fmt = format!("{ok:.1000}");
+                tracing::info!(result_ok = %trunc_fmt);
+            }
+            Err(err) => {
+                let trunc_fmt = format!("{err:.1000}");
+                tracing::info!(result_err = %trunc_fmt);
+            }
+        }
     }
+
     result.unwrap_or_else(|error| {
         error!(%error, "rpc_error");
         rpc_error(&error)
