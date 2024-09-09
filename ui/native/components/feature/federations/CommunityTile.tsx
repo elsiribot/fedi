@@ -8,6 +8,7 @@ import { FederationListItem, MSats } from '../../../types'
 import { Pressable } from '../../ui/Pressable'
 import { PressableIcon } from '../../ui/PressableIcon'
 import { FederationLogo } from '../federations/FederationLogo'
+import { ConnectionTag } from './ConnectionTag'
 
 type CommunityTileProps = {
     community: FederationListItem
@@ -58,6 +59,9 @@ const CommunityTile = ({
                             </Text>
                         </View>
                     )}
+                    {community.hasWallet && community.status !== 'online' && (
+                        <ConnectionTag status={community.status} size="small" />
+                    )}
                 </View>
             </View>
             {showInviteCode && (
@@ -78,7 +82,6 @@ const styles = (theme: Theme) =>
             justifyContent: 'space-between',
             borderRadius: 0,
             paddingHorizontal: theme.spacing.lg,
-            paddingVertical: theme.spacing.lg,
             alignItems: 'center',
             flexDirection: 'row',
             gap: theme.spacing.lg,

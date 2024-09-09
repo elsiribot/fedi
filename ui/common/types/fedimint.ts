@@ -167,6 +167,7 @@ export type Federation = Omit<RpcFederation, 'network' | 'meta'> & {
 export type Community = Omit<RpcCommunity, 'meta'> & {
     id: Federation['id']
     meta: ClientConfigMetadata
+    status: FederationStatus
     // Added for compatibility with Mods
     readonly network: undefined
     readonly hasWallet: false

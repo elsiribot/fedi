@@ -12,6 +12,7 @@ import {
     NavigationHook,
 } from '../../../types/navigation'
 import HoloGradient from '../../ui/HoloGradient'
+import { ConnectionIcon } from './ConnectionIcon'
 import { FederationLogo } from './FederationLogo'
 
 const FederationSelector: React.FC = () => {
@@ -62,6 +63,10 @@ const FederationSelector: React.FC = () => {
                         style={style.federationName}>
                         {activeFederation?.name}
                     </Text>
+                    <ConnectionIcon
+                        status={activeFederation.status}
+                        size={18}
+                    />
                 </Pressable>
             </HoloGradient>
         </>

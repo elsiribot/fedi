@@ -586,6 +586,7 @@ export const coerceFederationListItem = (
     return {
         hasWallet: false as const,
         network: undefined,
+        status: 'online',
 
         // We cannot really guarantee unique IDs in the body since community creators
         // have free reign to modify the JSON as they see fit. So to prevent erroneous
@@ -606,6 +607,7 @@ export const coerceJoinPreview = (preview: RpcCommunity): JoinPreview => {
         hasWallet: false as const,
         id: inviteCode,
         inviteCode,
+        status: 'online',
         network: undefined,
         ...rest,
     }
