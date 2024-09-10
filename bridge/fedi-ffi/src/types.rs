@@ -393,6 +393,93 @@ pub struct RpcTransaction {
     pub tx_date_fiat_info: Option<TransactionDateFiatInfo>,
 }
 
+impl RpcTransaction {
+    pub fn new(
+        id: String,
+        created_at: u64,
+        amount: RpcAmount,
+        direction: RpcTransactionDirection,
+        fedi_fee_status: Option<RpcOperationFediFeeStatus>,
+        tx_date_fiat_info: Option<TransactionDateFiatInfo>,
+    ) -> Self {
+        Self {
+            id,
+            created_at,
+            amount,
+            direction,
+            fedi_fee_status,
+            notes: Default::default(),
+            onchain_state: Default::default(),
+            bitcoin: Default::default(),
+            ln_state: Default::default(),
+            lightning: Default::default(),
+            oob_state: Default::default(),
+            onchain_withdrawal_details: Default::default(),
+            stability_pool_state: Default::default(),
+            tx_date_fiat_info,
+        }
+    }
+
+    pub fn with_notes(self, notes: String) -> Self {
+        Self { notes, ..self }
+    }
+
+    pub fn with_onchain_state(self, onchain_state: RpcOnchainState) -> Self {
+        Self {
+            onchain_state: Some(onchain_state),
+            ..self
+        }
+    }
+
+    pub fn with_bitcoin(self, bitcoin: RpcBitcoinDetails) -> Self {
+        Self {
+            bitcoin: Some(bitcoin),
+            ..self
+        }
+    }
+
+    pub fn with_ln_state(self, ln_state: RpcLnState) -> Self {
+        Self {
+            ln_state: Some(ln_state),
+            ..self
+        }
+    }
+
+    pub fn with_lightning(self, lightning: RpcLightningDetails) -> Self {
+        Self {
+            lightning: Some(lightning),
+            ..self
+        }
+    }
+
+    pub fn with_oob_state(self, oob_state: RpcOOBState) -> Self {
+        Self {
+            oob_state: Some(oob_state),
+            ..self
+        }
+    }
+
+    pub fn with_onchain_withdrawal_details(
+        self,
+        onchain_withdrawal_details: WithdrawalDetails,
+    ) -> Self {
+        Self {
+            onchain_withdrawal_details: Some(onchain_withdrawal_details),
+            ..self
+        }
+    }
+
+    pub fn with_stability_pool_state(
+        self,
+        stability_pool_state: RpcStabilityPoolTransactionState,
+    ) -> Self {
+        Self {
+            stability_pool_state: Some(stability_pool_state),
+            ..self
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
@@ -424,8 +511,8 @@ pub enum RpcOnchainState {
 }
 
 impl RpcOnchainState {
-    pub fn from_deposit_state(opt: Option<DepositStateV2>) -> Option<RpcOnchainState> {
-        let state = match opt? {
+    pub fn from_deposit_state(state: DepositStateV2) -> RpcOnchainState {
+        Self::DepositState(match state {
             DepositStateV2::WaitingForTransaction => RpcOnchainDepositState::WaitingForTransaction,
             DepositStateV2::WaitingForConfirmation { btc_out_point, .. } => {
                 RpcOnchainDepositState::WaitingForConfirmation(
@@ -439,12 +526,11 @@ impl RpcOnchainState {
                 RpcOnchainDepositTransactionData::new(&btc_out_point),
             ),
             DepositStateV2::Failed(_) => RpcOnchainDepositState::Failed,
-        };
-        Some(Self::DepositState(state))
+        })
     }
 
-    pub fn from_withdraw_state(opt: Option<WithdrawState>) -> Option<RpcOnchainState> {
-        opt.map(|state| match state {
+    pub fn from_withdraw_state(state: WithdrawState) -> RpcOnchainState {
+        match state {
             WithdrawState::Created => {
                 RpcOnchainState::WithdrawState(RpcOnchainWithdrawState::Created)
             }
@@ -454,7 +540,7 @@ impl RpcOnchainState {
             WithdrawState::Failed(_) => {
                 RpcOnchainState::WithdrawState(RpcOnchainWithdrawState::Failed)
             }
-        })
+        }
     }
 }
 
@@ -512,8 +598,8 @@ pub enum RpcLnState {
 }
 
 impl RpcLnState {
-    pub fn from_ln_recv_state(opt: Option<LnReceiveState>) -> Option<RpcLnState> {
-        opt.map(|state| match state {
+    pub fn from_ln_recv_state(state: LnReceiveState) -> RpcLnState {
+        match state {
             LnReceiveState::Created => RpcLnState::RecvState(RpcLnReceiveState::Created),
             LnReceiveState::WaitingForPayment { invoice, timeout } => {
                 RpcLnState::RecvState(RpcLnReceiveState::WaitingForPayment { invoice, timeout })
@@ -528,10 +614,10 @@ impl RpcLnState {
                 RpcLnState::RecvState(RpcLnReceiveState::AwaitingFunds)
             }
             LnReceiveState::Claimed => RpcLnState::RecvState(RpcLnReceiveState::Claimed),
-        })
+        }
     }
-    pub fn from_ln_pay_state(opt: Option<LnPayState>) -> Option<RpcLnState> {
-        opt.map(|state| match state {
+    pub fn from_ln_pay_state(state: LnPayState) -> RpcLnState {
+        match state {
             LnPayState::Created => RpcLnState::PayState(RpcLnPayState::Created),
             LnPayState::Canceled => RpcLnState::PayState(RpcLnPayState::Canceled),
             LnPayState::Funded { block_height } => {
@@ -548,7 +634,7 @@ impl RpcLnState {
                 RpcLnState::PayState(RpcLnPayState::Refunded { gateway_error })
             }
             LnPayState::UnexpectedError { .. } => RpcLnState::PayState(RpcLnPayState::Failed),
-        })
+        }
     }
 }
 

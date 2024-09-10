@@ -1,14 +1,11 @@
-use std::collections::HashMap;
 use std::path::Path;
-use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
-use eyeball::Subscriber;
-use fedimint_core::task::{MaybeSend, MaybeSync, TaskGroup};
+use fedimint_core::task::TaskGroup;
 use fedimint_derive_secret::DerivableSecret;
-use futures::{Future, StreamExt};
+use futures::StreamExt;
 use matrix_sdk::encryption::BackupDownloadStrategy;
 use matrix_sdk::notification_settings::NotificationSettings;
 pub use matrix_sdk::ruma::api::client::account::register::v3 as register;
@@ -34,13 +31,11 @@ use matrix_sdk_ui::sync_service::{self, SyncService};
 use matrix_sdk_ui::timeline::default_event_filter;
 use matrix_sdk_ui::{room_list_service, RoomListService};
 use mime::Mime;
-use serde::Serialize;
-use tokio::sync::Mutex;
 use tracing::{error, info, warn};
 
 use crate::error::ErrorCode;
-use crate::event::{EventSink, TypedEventExt};
-use crate::observable::{Observable, ObservableUpdate, ObservableVec, ObservableVecUpdate};
+use crate::event::EventSink;
+use crate::observable::{Observable, ObservablePool, ObservableVec};
 use crate::storage::AppState;
 
 mod types;
@@ -54,11 +49,9 @@ pub struct Matrix {
     sync_service: Arc<SyncService>,
     /// manages list of room visible to user.
     room_list_service: Arc<RoomListService>,
-    event_sink: EventSink,
     task_group: TaskGroup,
     notification_settings: NotificationSettings,
-    /// list of active observables
-    observables: Arc<Mutex<HashMap<u64, TaskGroup>>>,
+    observable_pool: ObservablePool,
 }
 
 impl Matrix {
@@ -130,9 +123,8 @@ impl Matrix {
             client,
             room_list_service: sync_service.room_list_service(),
             sync_service: Arc::new(sync_service),
-            event_sink,
+            observable_pool: ObservablePool::new(event_sink, task_group.clone()),
             task_group,
-            observables: Default::default(),
         };
         let encryption_passphrase = Self::encryption_passphrase(matrix_secret);
         matrix
@@ -320,72 +312,8 @@ impl Matrix {
         })
     }
 
-    /// make observable with `initial` value and run `func` in a task group.
-    /// `func` can send observable updates.
-    pub async fn make_observable<T, Fut>(
-        &self,
-        initial: T,
-        func: impl FnOnce(Self, u64) -> Fut + MaybeSend + 'static,
-    ) -> Result<Observable<T>>
-    where
-        T: 'static,
-        Fut: Future<Output = Result<()>> + MaybeSend + MaybeSync + 'static,
-    {
-        static OBSERVABLE_ID: AtomicU64 = AtomicU64::new(0);
-        let id = OBSERVABLE_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        let observable = Observable::new(id, initial);
-        let tg = self.task_group.make_subgroup();
-        {
-            let mut observables = self.observables.lock().await;
-            observables.insert(id, tg.clone());
-            // should be independent of number of rooms and number of messages
-            const OBSERVABLE_WARN_LIMIT: usize = 20;
-            let observable_counts = observables.len();
-            if OBSERVABLE_WARN_LIMIT < observable_counts {
-                warn!(%observable_counts, "frontend is using too many observabes, likely forgot to unsubscribe");
-            }
-        };
-        let this = self.clone();
-        tg.spawn_cancellable(
-            format!("observable type={}", std::any::type_name::<T>()),
-            func(this, id),
-        );
-        Ok(observable)
-    }
-
-    /// Convert eyeball::Subscriber to rpc Observable type.
-    pub async fn make_observable_from_subscriber<T>(
-        &self,
-        mut sub: Subscriber<T>,
-    ) -> Result<Observable<T>>
-    where
-        T: std::fmt::Debug + Clone + Serialize + MaybeSend + MaybeSync + 'static,
-    {
-        self.make_observable(sub.get(), move |this, id| async move {
-            let mut update_index = 0;
-            while let Some(value) = sub.next().await {
-                this.send_observable_update(ObservableUpdate::new(id, update_index, value))
-                    .await;
-                update_index += 1;
-            }
-            Ok(())
-        })
-        .await
-    }
-
     pub async fn observable_cancel(&self, id: u64) -> Result<()> {
-        let Some(tg) = self.observables.lock().await.remove(&id) else {
-            bail!(ErrorCode::UnknownObservable);
-        };
-        tg.shutdown_join_all(None).await?;
-        Ok(())
-    }
-
-    pub async fn send_observable_update<T: Clone + Serialize + std::fmt::Debug>(
-        &self,
-        event: ObservableUpdate<T>,
-    ) {
-        self.event_sink.observable_update(event);
+        self.observable_pool.observable_cancel(id).await
     }
 
     /// All chats in matrix are rooms, whether DM or group chats.
@@ -398,29 +326,10 @@ impl Matrix {
         &self,
         list: room_list_service::RoomList,
     ) -> Result<Observable<imbl::Vector<RpcRoomListEntry>>> {
-        let (initial, mut stream) = list.entries();
-        self.make_observable(
-            initial.into_iter().map(RpcRoomListEntry::from).collect(),
-            move |this, id| async move {
-                let mut update_index = 0;
-                while let Some(diffs) = stream.next().await {
-                    this.send_observable_update(
-                        ObservableVecUpdate::<RpcRoomListEntry>::new_diffs(
-                            id,
-                            update_index,
-                            diffs
-                                .into_iter()
-                                .map(|x| x.map(RpcRoomListEntry::from))
-                                .collect(),
-                        ),
-                    )
-                    .await;
-                    update_index += 1;
-                }
-                Ok(())
-            },
-        )
-        .await
+        let (initial, stream) = list.entries();
+        self.observable_pool
+            .make_observable_from_vec_diff_stream(initial, stream)
+            .await
     }
 
     pub async fn room_list_update_ranges(&self, ranges: Ranges) -> Result<()> {
@@ -435,33 +344,13 @@ impl Matrix {
     ///
     /// We delay the events by 2 seconds to avoid flickering.
     pub async fn observe_sync_status(&self) -> Result<Observable<RpcSyncIndicator>> {
-        let mut stream = Box::pin(
-            self.room_list_service
-                .sync_indicator(Duration::from_secs(2), Duration::from_secs(2)),
-        );
-        // first item is emitted immediately
-        self.make_observable(
-            stream
-                .next()
-                .await
-                .map(|x| x.into())
-                .context("first element not found in stream")?,
-            |this, id| async move {
-                let mut index = 0;
-                while let Some(item) = stream.next().await {
-                    info!("matrix sync status: {item:?}");
-                    this.send_observable_update(ObservableUpdate::new(
-                        id,
-                        index,
-                        RpcSyncIndicator::from(item),
-                    ))
-                    .await;
-                    index += 1;
-                }
-                Ok(())
-            },
-        )
-        .await
+        self.observable_pool
+            .make_observable_from_stream(
+                None,
+                self.room_list_service
+                    .sync_indicator(Duration::from_secs(2), Duration::from_secs(2)),
+            )
+            .await
     }
 
     async fn room(
@@ -503,30 +392,10 @@ impl Matrix {
         room_id: &RoomId,
     ) -> Result<ObservableVec<RpcTimelineItem>> {
         let timeline = self.timeline(room_id).await?;
-        let (initial, mut stream) = timeline.subscribe_batched().await;
-        self.make_observable(
-            initial
-                .into_iter()
-                .map(RpcTimelineItem::from_timeline_item)
-                .collect(),
-            move |this, id| async move {
-                let mut update_index = 0;
-                while let Some(diffs) = stream.next().await {
-                    this.send_observable_update(ObservableVecUpdate::new_diffs(
-                        id,
-                        update_index,
-                        diffs
-                            .into_iter()
-                            .map(|x| x.map(RpcTimelineItem::from_timeline_item))
-                            .collect(),
-                    ))
-                    .await;
-                    update_index += 1;
-                }
-                Ok(())
-            },
-        )
-        .await
+        let (initial, stream) = timeline.subscribe_batched().await;
+        self.observable_pool
+            .make_observable_from_vec_diff_stream(initial, stream)
+            .await
     }
 
     pub async fn room_timeline_items_paginate_backwards(
@@ -548,24 +417,9 @@ impl Matrix {
             .live_back_pagination_status()
             .await
             .context("we only have live rooms")?;
-        self.make_observable(
-            RpcBackPaginationStatus::from(current),
-            move |this, id| async move {
-                let mut stream = std::pin::pin!(stream);
-                let mut update_index = 0;
-                while let Some(value) = stream.next().await {
-                    this.send_observable_update(ObservableUpdate::new(
-                        id,
-                        update_index,
-                        RpcBackPaginationStatus::from(value),
-                    ))
-                    .await;
-                    update_index += 1;
-                }
-                Ok(())
-            },
-        )
-        .await
+        self.observable_pool
+            .make_observable_from_stream(Some(current), stream)
+            .await
     }
 
     pub async fn send_message_text(&self, room_id: &RoomId, message: String) -> anyhow::Result<()> {
@@ -660,7 +514,9 @@ impl Matrix {
 
     pub async fn room_observe_info(&self, room_id: &RoomId) -> Result<Observable<RoomInfo>> {
         let sub = self.room(room_id).await?.inner_room().subscribe_info();
-        self.make_observable_from_subscriber(sub).await
+        self.observable_pool
+            .make_observable_from_subscriber(sub)
+            .await
     }
 
     pub async fn room_invite_user_by_id(&self, room_id: &RoomId, user_id: &UserId) -> Result<()> {
