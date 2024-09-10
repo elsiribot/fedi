@@ -228,12 +228,6 @@ export class MatrixChatClient {
         this.observeRoomPowerLevels(roomId).catch(err => {
             log.warn('Failed to observe room power levels', { roomId, err })
         })
-        this.observeRoomNotificationMode(roomId).catch(err => {
-            log.warn('Failed to observe room notification mode', {
-                roomId,
-                err,
-            })
-        })
     }
 
     unobserveRoom(roomId: string) {
@@ -337,6 +331,7 @@ export class MatrixChatClient {
         await new Promise(resolve => setTimeout(resolve, 500))
         await this.sendMessage(roomId, content)
         await this.observeRoomTimeline(roomId)
+        await this.observeRoomPowerLevels(roomId)
         return { roomId }
     }
 
@@ -637,6 +632,18 @@ export class MatrixChatClient {
                         err,
                     }),
                 )
+                this.observeRoomPowerLevels(roomId).catch(err =>
+                    log.warn('Failed to observe room power levels', {
+                        roomId,
+                        err,
+                    }),
+                )
+                this.observeRoomNotificationMode(roomId).catch(err =>
+                    log.warn('Failed to observe room notification mode', {
+                        roomId,
+                        err,
+                    }),
+                )
             })
         })
 
@@ -645,6 +652,8 @@ export class MatrixChatClient {
             initial.map(async room => {
                 if ('value' in room) {
                     await this.observeRoomInfo(room.value)
+                    await this.observeRoomPowerLevels(room.value)
+                    await this.observeRoomNotificationMode(room.value)
                 }
             }),
         )
@@ -679,21 +688,6 @@ export class MatrixChatClient {
         // All updates are merged too
 
         this.emit('roomInfo', room)
-
-        // TODO: HACK - remove this once observables are
-        // implemented for power levels
-        this.observeRoomPowerLevels(roomId).catch(err =>
-            log.warn('Failed to observe room power levels', {
-                roomId,
-                err,
-            }),
-        )
-        this.observeRoomNotificationMode(roomId).catch(err =>
-            log.warn('Failed to observe room notification mode', {
-                roomId,
-                err,
-            }),
-        )
 
         // If it's a DM, fetch the member since it's small and we use recent DM users.
         if (room.directUserId) {
