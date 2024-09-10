@@ -97,7 +97,7 @@ const styles = (theme: Theme) =>
         },
         federationName: {
             flexGrow: 1,
-            maxWidth: '80%',
+            maxWidth: '75%',
         },
     })
 
