@@ -534,15 +534,13 @@ impl FederationV2 {
         let api_secret = self.client.api_secret();
         let peer_clients: Vec<_> = self
             .client
-            .config()
+            .get_peer_urls()
             .await
-            .global
-            .api_endpoints
             .iter() // use iter() instead of into_iter()
             .map(|(&peer_id, endpoint)| {
                 (
                     peer_id,
-                    WsFederationApi::new(vec![(peer_id, endpoint.url.clone())], api_secret),
+                    WsFederationApi::new(vec![(peer_id, endpoint.clone())], api_secret),
                 )
             })
             .collect();
