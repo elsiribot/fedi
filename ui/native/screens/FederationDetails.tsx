@@ -69,7 +69,11 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
             <View style={style.content}>
                 <FederationLogo federation={federation} size={72} />
                 <View style={style.textContainer}>
-                    <Text h2 medium maxFontSizeMultiplier={1.2}>
+                    <Text
+                        h2
+                        medium
+                        maxFontSizeMultiplier={1.2}
+                        style={style.title}>
                         {federation.name}
                     </Text>
                     {popupInfo && (
@@ -188,6 +192,9 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         balanceContainer: {
             alignItems: 'center',
+        },
+        title: {
+            textAlign: 'center',
         },
         textStyle: {
             lineHeight: 20,

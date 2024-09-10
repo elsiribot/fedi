@@ -39,6 +39,7 @@ const styles = (theme: Theme) =>
             borderRadius: 20,
             display: 'flex',
             alignItems: 'center',
+            alignSelf: 'stretch',
         },
         content: {
             display: 'flex',

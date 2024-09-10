@@ -1,5 +1,5 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import { StyleSheet, View } from 'react-native'
+import { Pressable as NativePressable, StyleSheet, View } from 'react-native'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
@@ -14,6 +14,7 @@ type CommunityTileProps = {
     community: FederationListItem
     onSelect?: () => void
     onSelectQr?: () => void
+    onSelectStatus?: () => void
     showQr?: boolean
     isActiveCommunity?: boolean
 }
@@ -22,6 +23,7 @@ const CommunityTile = ({
     community,
     onSelect = () => null,
     onSelectQr = () => null,
+    onSelectStatus = () => null,
     isActiveCommunity = false,
 }: CommunityTileProps) => {
     const { theme } = useTheme()
@@ -59,8 +61,13 @@ const CommunityTile = ({
                             </Text>
                         </View>
                     )}
-                    {community.hasWallet && community.status !== 'online' && (
-                        <ConnectionTag status={community.status} size="small" />
+                    {community.status !== 'online' && (
+                        <NativePressable onPress={onSelectStatus}>
+                            <ConnectionTag
+                                status={community.status}
+                                size="small"
+                            />
+                        </NativePressable>
                     )}
                 </View>
             </View>

@@ -2,6 +2,7 @@ import { FederationStatus } from '@fedi/common/types'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+import SvgImage from '../../ui/SvgImage'
 import { ConnectionIcon } from './ConnectionIcon'
 
 type Props = {
@@ -32,6 +33,12 @@ export const ConnectionTag = ({ status, size = 'small' }: Props) => {
                 style={size === 'small' ? style.smallText : style.largeText}>
                 {localeStatus}
             </Text>
+            <SvgImage
+                size={12}
+                name={'ChevronRight'}
+                // color={color}
+                // containerStyle={status === 'online' ? style.shadow : {}}
+            />
         </View>
     )
 }

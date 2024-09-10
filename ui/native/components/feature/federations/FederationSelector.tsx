@@ -63,10 +63,12 @@ const FederationSelector: React.FC = () => {
                         style={style.federationName}>
                         {activeFederation?.name}
                     </Text>
-                    <ConnectionIcon
-                        status={activeFederation.status}
-                        size={18}
-                    />
+                    {activeFederation.status !== 'online' && (
+                        <ConnectionIcon
+                            status={activeFederation.status}
+                            size={18}
+                        />
+                    )}
                 </Pressable>
             </HoloGradient>
         </>
@@ -97,7 +99,7 @@ const styles = (theme: Theme) =>
         },
         federationName: {
             flexGrow: 1,
-            maxWidth: '75%',
+            maxWidth: '85%',
         },
     })
 
