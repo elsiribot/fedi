@@ -210,6 +210,7 @@ export const MainNavigator = () => {
         <Stack.Navigator
             screenOptions={{
                 orientation: 'portrait',
+                freezeOnBlur: true,
             }}
             initialRouteName={'Initializing'}
             id={MAIN_NAVIGATOR_ID}>

@@ -38,7 +38,7 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const groupPreview = useAppSelector(s => selectGroupPreview(s, roomId))
     const toast = useToast()
 
-    const directUserId = room?.directUserId
+    const directUserId = useMemo(() => room?.directUserId, [room])
 
     const handleSend = useCallback(
         async (body: string) => {
@@ -75,7 +75,7 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
         )
     }, [roomId, directUserId, chatType, handleSend])
 
-    const style = styles(theme)
+    const style = useMemo(() => styles(theme), [theme])
 
     if (!room) {
         if (groupPreview) {
