@@ -1,5 +1,3 @@
-use std::panic::{self, AssertUnwindSafe};
-
 use anyhow::anyhow;
 use fedimint_client::module::ClientModule;
 use fedimint_client::{Client, ClientModuleInstance};
@@ -30,9 +28,24 @@ pub trait ClientExt {
 }
 
 impl ClientExt for Client {
+    // Copied from fedimint-client
+    // TODO: check during fedimint upgrade and remove if unnecessary
     fn try_get_first_module<M: ClientModule>(&self) -> anyhow::Result<ClientModuleInstance<M>> {
-        panic::catch_unwind(AssertUnwindSafe(|| self.get_first_module::<M>()))
-            .map_err(|_| anyhow!(ErrorCode::ModuleNotFound(M::kind().to_string())))
+        let module_kind = M::kind();
+        let id = self
+            .get_first_instance(&module_kind)
+            .ok_or(anyhow!(ErrorCode::ModuleNotFound(module_kind.to_string())))?;
+        self.get_module_client_dyn(id)
+            .map_err(|_| anyhow!(ErrorCode::ModuleNotFound(module_kind.to_string())))?
+            .as_any()
+            .downcast_ref::<M>()
+            .ok_or(anyhow!(ErrorCode::ModuleNotFound(module_kind.to_string())))?;
+
+        // We cannot construct an instance of ClientModuleInstance ourselves since the
+        // module field is private. However, at this point, we've verified that
+        // the module exists. So calling Client::get_first_module should
+        // be successful.
+        Ok(self.get_first_module::<M>())
     }
 
     fn ln(&self) -> anyhow::Result<ClientModuleInstance<LightningClientModule>> {
