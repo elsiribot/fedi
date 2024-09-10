@@ -1011,12 +1011,7 @@ impl Bridge {
         let secp = Secp256k1::new();
         let bytes = self.nostr_secret_key(&secp).await?.secret_bytes();
         let nsec = bech32::encode("nsec", bytes.to_base32(), bech32::Variant::Bech32)?;
-        let mut hex = String::with_capacity(bytes.len() * 2);
-
-        for byte in bytes.iter() {
-            use std::fmt::Write;
-            write!(&mut hex, "{:02x}", byte).unwrap();
-        }
+        let hex = hex::encode(bytes);
 
         Ok(RpcNostrSecret { hex, nsec })
     }
