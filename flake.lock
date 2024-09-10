@@ -255,16 +255,16 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1725301553,
-        "narHash": "sha256-UO/fDBjKfPcDEq0wEOKX4tTtypFefMyFqfHUx2hCNok=",
+        "lastModified": 1725986533,
+        "narHash": "sha256-8JVGyWDe01nHRitP0ggeCfDI/CAjpcTkK3DHrP3yQwY=",
         "owner": "fedibtc",
         "repo": "fedimint",
-        "rev": "15939b311c7b3599051105e2af2a527d5660ef9f",
+        "rev": "52cb0366c7111cee038994e0c3e7220d0af4840d",
         "type": "github"
       },
       "original": {
         "owner": "fedibtc",
-        "ref": "v0.4.2-rc.4-fed",
+        "ref": "v0.4.2-rc.4-fed1",
         "repo": "fedimint",
         "type": "github"
       }
