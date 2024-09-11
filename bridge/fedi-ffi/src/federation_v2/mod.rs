@@ -1198,7 +1198,11 @@ impl FederationV2 {
                             // FIXME: what happens if it fails?
                             if let Err(e) = fed
                                 .subscribe_to_ln_pay(
-                                    PayType::Lightning(operation_id),
+                                    if pay_meta.is_internal_payment {
+                                        PayType::Internal(operation_id)
+                                    } else {
+                                        PayType::Lightning(operation_id)
+                                    },
                                     extra_meta,
                                     pay_meta.invoice,
                                 )
