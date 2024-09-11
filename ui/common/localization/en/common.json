@@ -463,6 +463,8 @@
             "leave-federation-withdraw-stable-first": "You must withdraw your entire {{currency}} balance before leaving.",
             "paste-federation-code": "Paste community code",
             "paste-federation-code-instead": "Paste community code instead",
+            "recover-from-scratch": "Recover from scratch",
+            "recover-from-scratch-warning": "Warning: This takes a long time. You should NOT select this option unless instructed by Fedi support.",
             "scan-federation-invite": "Scan a Community Invite"
         },
         "fedimods": {

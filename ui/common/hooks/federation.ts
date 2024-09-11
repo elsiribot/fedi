@@ -260,7 +260,7 @@ export function useFederationPreview(
     )
 
     const handleJoin = useCallback(
-        async (onSuccess?: () => void) => {
+        async (onSuccess?: () => void, recoverFromScratch = false) => {
             setIsJoining(true)
             try {
                 if (!federationPreview) throw new Error()
@@ -268,6 +268,7 @@ export function useFederationPreview(
                     joinFederation({
                         fedimint,
                         code: federationPreview.inviteCode,
+                        recoverFromScratch,
                     }),
                 ).unwrap()
                 onSuccess && onSuccess()

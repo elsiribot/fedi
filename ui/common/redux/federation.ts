@@ -300,12 +300,19 @@ export const refreshFederations = createAsyncThunk<
 
 export const joinFederation = createAsyncThunk<
     FederationListItem,
-    { fedimint: FedimintBridge; code: string },
+    { fedimint: FedimintBridge; code: string; recoverFromScratch?: boolean },
     { state: CommonState }
 >(
     'federation/joinFederation',
-    async ({ fedimint, code }, { dispatch, getState }) => {
-        const federation = await joinFromInvite(fedimint, code)
+    async (
+        { fedimint, code, recoverFromScratch = false },
+        { dispatch, getState },
+    ) => {
+        const federation = await joinFromInvite(
+            fedimint,
+            code,
+            recoverFromScratch,
+        )
 
         await dispatch(refreshFederations(fedimint))
         dispatch(setActiveFederationId(federation.id))

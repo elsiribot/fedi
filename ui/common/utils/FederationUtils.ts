@@ -638,11 +638,15 @@ export const detectInviteCodeType = (
 export const joinFromInvite = async (
     fedimint: FedimintBridge,
     code: string,
+    recoverFromScratch = false,
 ): Promise<FederationListItem> => {
     const codeType = detectInviteCodeType(code)
     if (codeType === 'federation') {
         log.info(`joinFromInvite: joining federation with code '${code}'`)
-        const { network, ...federation } = await fedimint.joinFederation(code)
+        const { network, ...federation } = await fedimint.joinFederation(
+            code,
+            recoverFromScratch,
+        )
         return {
             ...federation,
             hasWallet: true,
