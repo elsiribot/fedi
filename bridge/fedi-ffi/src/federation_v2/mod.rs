@@ -486,14 +486,32 @@ impl FederationV2 {
     }
 
     pub async fn get_cached_meta(&self) -> MetaEntries {
-        match self
-            .client
-            .meta_service()
-            .entries_from_db(self.client.db())
-            .await
+        let cfg_fetcher = async { self.client.config().await.global.meta };
+
+        // Wait at most 2s for very first meta fetching
+        match timeout(
+            Duration::from_secs(2),
+            self.client.meta_service().entries(self.client.db()),
+        )
+        .await
         {
-            Some(entries) => entries,
-            None => self.client.config().await.global.meta,
+            Ok(Some(entries)) => entries,
+            Ok(None) => cfg_fetcher.await,
+            Err(_) => {
+                warn!(
+                    "Timeout when fetching meta for federation ID {}",
+                    self.federation_id()
+                );
+                match self
+                    .client
+                    .meta_service()
+                    .entries_from_db(self.client.db())
+                    .await
+                {
+                    Some(entries) => entries,
+                    None => cfg_fetcher.await,
+                }
+            }
         }
     }
 
