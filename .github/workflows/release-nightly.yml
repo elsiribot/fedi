@@ -1,7 +1,7 @@
 name: Release Fedi Nightly
 on:
     workflow_dispatch:
-    schedule:
+    schedule: # runs every day at 5am UTC
         - cron: '0 5 * * *'
 
 jobs:

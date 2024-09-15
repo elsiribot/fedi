@@ -1,20 +1,9 @@
 name: Upload APK to GitHub
 on:
     workflow_dispatch:
-    pull_request:
-        types:
-            - closed
-        branches:
-            - 'master'
 
 jobs:
     release-android:
-        if: >
-            (github.event_name == 'workflow_dispatch') ||
-            (
-              github.event.pull_request.merged == true &&
-              startsWith(github.head_ref, 'release/')
-            )
         name: Build Android APK and publish in GitHub draft release
         runs-on: [self-hosted, linux]
         steps:
@@ -74,11 +63,3 @@ jobs:
                   draft: true
                   append_body: true
                   files: ${{ steps.prep-apk.outputs.APK_PATH }}
-
-    call-deployment-workflow:
-        name: Trigger deployment to Google Play for Internal Testing
-        needs: release-android
-        uses: ./.github/workflows/deploy-to-gp-internal-testing.yml
-        secrets: inherit
-        if: >-
-            startsWith(github.head_ref, 'release/')
