@@ -56,30 +56,11 @@ const styles = (theme: Theme) =>
         blueBubble: {
             backgroundColor: theme.colors.blue,
         },
-        messageText: {
-            textAlign: 'left',
-            lineHeight: 20,
-        },
-        receivedMessageText: {
-            color: theme.colors.primary,
-        },
-        sentMessageText: {
-            color: theme.colors.secondary,
-        },
-        topPaddedText: {
-            marginTop: theme.spacing.sm,
-        },
-        bottomPaddedText: {
-            marginBottom: theme.spacing.sm,
-        },
         incomingText: {
             color: theme.colors.primary,
         },
         outgoingText: {
             color: theme.colors.secondary,
-        },
-        underline: {
-            textDecorationLine: 'underline',
         },
     })
 

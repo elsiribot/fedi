@@ -6,7 +6,7 @@ import {
 } from '@fedi/common/redux'
 import Clipboard from '@react-native-clipboard/clipboard'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { fedimint } from '../../../bridge'
@@ -27,7 +27,11 @@ const SelectedMessageOverlay: React.FC = () => {
     const { theme } = useTheme()
     const toast = useToast()
 
-    const confirmDeleteMessage = async () => {
+    const closeOverlay = useCallback(() => {
+        dispatch(setSelectedChatMessage(null))
+    }, [dispatch])
+
+    const confirmDeleteMessage = useCallback(async () => {
         if (!selectedMessage || !selectedMessage.eventId) return
 
         setIsDeleting(true)
@@ -45,13 +49,9 @@ const SelectedMessageOverlay: React.FC = () => {
         } finally {
             setIsDeleting(false)
         }
-    }
+    }, [t, toast, closeOverlay, selectedMessage])
 
-    const closeOverlay = () => {
-        dispatch(setSelectedChatMessage(null))
-    }
-
-    const handleCopy = () => {
+    const handleCopy = useCallback(() => {
         if (!selectedMessage) return
 
         Clipboard.setString(selectedMessage.content.body)
@@ -60,12 +60,12 @@ const SelectedMessageOverlay: React.FC = () => {
             content: t('phrases.copied-to-clipboard'),
             status: 'success',
         })
-    }
+    }, [t, toast, closeOverlay, selectedMessage])
 
-    const handleEdit = () => {
+    const handleEdit = useCallback(() => {
         dispatch(setMessageToEdit(selectedMessage))
         closeOverlay()
-    }
+    }, [dispatch, closeOverlay, selectedMessage])
 
     useEffect(() => {
         setDeleteMessage(false)
