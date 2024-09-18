@@ -313,6 +313,13 @@ rec {
     ];
   };
 
+  fedi-ffi = fediBuildPackageGroup {
+    pname = "fedi-ffi";
+    packages = [
+      "fedi-ffi"
+    ];
+  };
+
   testStabilityPool = craneLib.buildCommand (commonTestArgs // {
     pname = "fedi-test-stability-pool";
     cargoArtifacts = workspaceBuild;
