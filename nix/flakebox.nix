@@ -61,59 +61,19 @@ let
   };
   commonEnvsShellRocksdbLink =
     let
-      target_underscores = lib.strings.replaceStrings [ "-" ] [ "_" ] pkgs.stdenv.buildPlatform.config;
+      build_arch_underscores = lib.strings.replaceStrings [ "-" ] [ "_" ] pkgs.stdenv.buildPlatform.config;
     in
     {
-      ROCKSDB_STATIC = "true";
-      ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
-      SNAPPY_LIB_DIR = "${pkgs.pkgsStatic.snappy}/lib/";
-      SQLITE3_STATIC = "true";
-      SQLITE3_LIB_DIR = "${pkgs.pkgsStatic.sqlite.out}/lib/";
-      SQLCIPHER_STATIC = "true";
-      SQLCIPHER_LIB_DIR = "${pkgs.pkgsStatic.sqlcipher}/lib/";
-
-      "ROCKSDB_${target_underscores}_STATIC" = "true";
-      "ROCKSDB_${target_underscores}_LIB_DIR" = "${pkgs.rocksdb}/lib/";
-      "SQLITE3_${target_underscores}_STATIC" = "true";
-      "SQLITE3_${target_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlite}/lib/";
-      "SQLCIPHER_${target_underscores}_STATIC" = "true";
-      "SQLCIPHER_${target_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlcipher}/lib/";
-      "SNAPPY_${target_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.snappy}/lib/";
+      "ROCKSDB_${build_arch_underscores}_LIB_DIR" = "${pkgs.rocksdb}/lib/";
+      "SQLCIPHER_${build_arch_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlcipher}/lib/";
+      "SNAPPY_${build_arch_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.snappy}/lib/";
+      "SQLITE3_${build_arch_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlite.out}/lib/";
     } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
       # macos can't static libraries
-      SNAPPY_STATIC = "true";
-      "SNAPPY_${target_underscores}_STATIC" = "true";
-    } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-      # TODO: could we used the android-nixpkgs toolchain instead of another one?
-      # BROKEN: seems to produce binaries that crash; needs investigation
-      # ROCKSDB_aarch64_linux_android_STATIC = "true";
-      # SNAPPY_aarch64_linux_android_STATIC = "true";
-      # ROCKSDB_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android-prebuilt.rocksdb}/lib/";
-      # SNAPPY_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android-prebuilt.pkgsStatic.snappy}/lib/";
-
-      # BROKEN
-      # error: "No timer implementation for this platform"
-      # ROCKSDB_armv7_linux_androideabi_STATIC = "true";
-      # SNAPPY_armv7_linux_androideabi_STATIC = "true";
-      # ROCKSDB_armv7_linux_androideabi_LIB_DIR = "${pkgs-unstable.pkgsCross.armv7a-android-prebuilt.rocksdb}/lib/";
-      # SNAPPY_armv7_linux_androideabi_LIB_DIR = "${pkgs-unstable.pkgsCross.armv7a-android-prebuilt.pkgsStatic.snappy}/lib/";
-
-      # x86-64-linux-android doesn't have a toolchain in nixpkgs
-    } // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
-      # broken: fails to compile with:
-      # `linux-headers-android-common> sh: line 1: gcc: command not found`
-      # ROCKSDB_aarch64_linux_android_STATIC = "true";
-      # SNAPPY_aarch64_linux_android_STATIC = "true";
-      # ROCKSDB_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android.rocksdb}/lib/";
-      # SNAPPY_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android.pkgsStatic.snappy}/lib/";
-
-      # requires downloading Xcode manually and adding to /nix/store
-      # then running with `env NIXPKGS_ALLOW_UNFREE=1 nix develop -L --impure`
-      # maybe we could live with it?
-      # ROCKSDB_aarch64_apple_ios_STATIC = "true";
-      # SNAPPY_aarch64_apple_ios_STATIC = "true";
-      # ROCKSDB_aarch64_apple_ios_LIB_DIR = "${pkgs-unstable.pkgsCross.iphone64.rocksdb}/lib/";
-      # SNAPPY_aarch64_apple_ios_LIB_DIR = "${pkgs-unstable.pkgsCross.iphone64.pkgsStatic.snappy}/lib/";
+      "SNAPPY_${build_arch_underscores}_STATIC" = "true";
+      "ROCKSDB_${build_arch_underscores}_STATIC" = "true";
+      "SQLCIPHER_${build_arch_underscores}_STATIC" = "true";
+      "SQLITE3_${build_arch_underscores}_STATIC" = "true";
     };
 
   commonArgs =
