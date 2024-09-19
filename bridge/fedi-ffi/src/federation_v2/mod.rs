@@ -1210,6 +1210,14 @@ impl FederationV2 {
                         .unwrap_or(LightningSendMetadata {
                             is_fedi_fee_remittance: false,
                         });
+                    // HACK: our code accidentally subscribed using wrong function in past.
+                    if pay_meta.is_internal_payment
+                        && operation
+                            .outcome::<serde_json::Value>()
+                            .map_or(false, internal_pay_is_bad_state)
+                    {
+                        anyhow::bail!("not subscribe to failed transaction");
+                    }
                     self.task_group
                         .clone()
                         .spawn("subscribe_to_ln_pay", move |_| async move {
@@ -3279,4 +3287,21 @@ fn invoice_routes_back_to_federation(
             .map(|hop| (hop.src_node_id, hop.short_channel_id))
             == Some((gateway.node_pub_key, gateway.mint_channel_id))
     })
+}
+
+fn internal_pay_is_bad_state(outcome: serde_json::Value) -> bool {
+    serde_json::from_value::<InternalPayState>(outcome).is_err()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pay_state_is_getting_parsed() {
+        let state = LnPayState::Canceled;
+        let json = serde_json::to_string(&state).unwrap();
+        let value = serde_json::from_str::<serde_json::Value>(&json).unwrap();
+        assert!(internal_pay_is_bad_state(value));
+    }
 }
