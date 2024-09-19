@@ -492,3 +492,7 @@ export function shouldShowUnreadIndicator(
     if (isMarkedUnread) return true
     return false
 }
+
+export function isTextEvent(event: MatrixEvent): event is MatrixEvent<MatrixEventContentType<'m.text'>> {
+    return event.content.msgtype === 'm.text'
+}

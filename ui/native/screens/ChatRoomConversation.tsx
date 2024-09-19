@@ -20,6 +20,7 @@ import { fedimint } from '../bridge'
 import ChatConversation from '../components/feature/chat/ChatConversation'
 import ChatPreviewConversation from '../components/feature/chat/ChatPreviewConversation'
 import MessageInput from '../components/feature/chat/MessageInput'
+import SelectedMessageOverlay from '../components/feature/chat/SelectedMessageOverlay'
 import HoloLoader from '../components/ui/HoloLoader'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -147,7 +148,12 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
         )
     }
 
-    return <View style={style.container}>{content}</View>
+    return (
+        <>
+            <View style={style.container}>{content}</View>
+            <SelectedMessageOverlay />
+        </>
+    )
 }
 
 const styles = (_: Theme) =>

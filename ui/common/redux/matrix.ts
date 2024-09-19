@@ -46,6 +46,7 @@ import { MatrixChatClient } from '../utils/MatrixChatClient'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import {
+    MatrixEventContentType,
     getReceivablePaymentEvents,
     getRoomEventPowerLevel,
     getUserSuffix,
@@ -95,6 +96,10 @@ const initialState = {
     pushNotificationToken: null as string | null,
     groupPreviews: {} as Record<MatrixRoom['id'], MatrixGroupPreview>,
     drafts: {} as Record<MatrixRoom['id'], string>,
+    selectedChatMessage: null as MatrixEvent<
+        MatrixEventContentType<'m.text'>
+    > | null,
+    messageToEdit: null as MatrixEvent<MatrixEventContentType<'m.text'>> | null,
 }
 
 export type MatrixState = typeof initialState
@@ -201,6 +206,22 @@ export const matrixSlice = createSlice({
             if (text.length === 0 && state.drafts[id]) delete state.drafts[id]
 
             state.drafts[id] = text
+        },
+        setSelectedChatMessage(
+            state,
+            action: PayloadAction<MatrixEvent<
+                MatrixEventContentType<'m.text'>
+            > | null>,
+        ) {
+            state.selectedChatMessage = action.payload
+        },
+        setMessageToEdit(
+            state,
+            action: PayloadAction<MatrixEvent<
+                MatrixEventContentType<'m.text'>
+            > | null>,
+        ) {
+            state.messageToEdit = action.payload
         },
     },
     extraReducers: builder => {
@@ -337,6 +358,8 @@ export const {
     handleMatrixRoomTimelineObservableUpdates,
     resetMatrixState,
     setChatDraft,
+    setSelectedChatMessage,
+    setMessageToEdit,
 } = matrixSlice.actions
 
 /*** Async thunk actions ***/
@@ -1440,3 +1463,6 @@ export const selectDefaultMatrixRoomIds = createSelector(
 )
 
 export const selectChatDrafts = (s: CommonState) => s.matrix.drafts
+export const selectSelectedChatMessage = (s: CommonState) =>
+    s.matrix.selectedChatMessage
+export const selectMessageToEdit = (s: CommonState) => s.matrix.messageToEdit

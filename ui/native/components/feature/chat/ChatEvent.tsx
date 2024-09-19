@@ -1,20 +1,18 @@
 import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from 'react-native'
-import type { LinearGradientProps } from 'react-native-linear-gradient'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectMatrixAuth } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
-import { isPaymentEvent } from '@fedi/common/utils/matrix'
+import { isPaymentEvent, isTextEvent } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../../../state/hooks'
-import { OptionalGradient } from '../../ui/OptionalGradient'
 import ChatFileEvent from './ChatFileEvent'
 import ChatImageEvent from './ChatImageEvent'
 import ChatPaymentEvent from './ChatPaymentEvent'
+import ChatTextEvent from './ChatTextEvent'
 import ChatVideoEvent from './ChatVideoEvent'
-import MessageContents from './MessageContents'
 import { MessageItemError } from './MessageItemError'
 
 type Props = {
@@ -29,16 +27,10 @@ const ChatEvent: React.FC<Props> = ({ event, last = false }: Props) => {
     const isMe = event.senderId === matrixAuth?.userId
     const isQueued = false
     const isPayment = isPaymentEvent(event)
+    const isText = isTextEvent(event)
 
-    let bubbleGradient: LinearGradientProps | undefined
     const bubbleContainerStyles: StyleProp<ViewStyle | TextStyle>[] = [
         styles(theme).bubbleContainer,
-    ]
-    const bubbleInnerStyles: StyleProp<ViewStyle | TextStyle>[] = [
-        styles(theme).bubbleInner,
-    ]
-    const textStyles: StyleProp<ViewStyle | TextStyle>[] = [
-        styles(theme).messageText,
     ]
 
     // Set alignment (left/right) based on sender
@@ -48,35 +40,12 @@ const ChatEvent: React.FC<Props> = ({ event, last = false }: Props) => {
         bubbleContainerStyles.push(styles(theme).leftAlignedMessage)
     }
 
-    if (isPayment) {
-        bubbleInnerStyles.push(styles(theme).orangeBubble)
-    } else if (isMe) {
-        if (
-            last &&
-            event.content.msgtype !== 'm.image' &&
-            event.content.msgtype !== 'm.file' &&
-            event.content.msgtype !== 'm.video'
-        ) {
-            bubbleContainerStyles.push(styles(theme).lastSentMessage)
-        }
-        bubbleGradient = {
-            colors: ['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0)'],
-            start: { x: 0, y: 0 },
-            end: { x: 0, y: 1 },
-        }
-        bubbleInnerStyles.push(styles(theme).blueBubble)
-        textStyles.push(styles(theme).sentMessageText)
-    } else {
-        if (
-            last &&
-            event.content.msgtype !== 'm.image' &&
-            event.content.msgtype !== 'm.file' &&
-            event.content.msgtype !== 'm.video'
-        ) {
-            bubbleContainerStyles.push(styles(theme).lastReceivedMessage)
-        }
-        bubbleInnerStyles.push(styles(theme).greyBubble)
-        textStyles.push(styles(theme).receivedMessageText)
+    if (last && isText) {
+        bubbleContainerStyles.push(
+            isMe
+                ? styles(theme).lastSentMessage
+                : styles(theme).lastReceivedMessage,
+        )
     }
 
     return (
@@ -89,27 +58,17 @@ const ChatEvent: React.FC<Props> = ({ event, last = false }: Props) => {
                 <View style={styles(theme).messageContainer}>
                     <View style={styles(theme).contentContainer}>
                         <View style={bubbleContainerStyles}>
-                            {event.content.msgtype === 'm.image' ? (
+                            {isPayment ? (
+                                <ChatPaymentEvent event={event} />
+                            ) : isText ? (
+                                <ChatTextEvent event={event} />
+                            ) : event.content.msgtype === 'm.image' ? (
                                 <ChatImageEvent content={event.content} />
                             ) : event.content.msgtype === 'm.file' ? (
                                 <ChatFileEvent content={event.content} />
                             ) : event.content.msgtype === 'm.video' ? (
                                 <ChatVideoEvent content={event.content} />
-                            ) : (
-                                <OptionalGradient
-                                    gradient={bubbleGradient}
-                                    style={bubbleInnerStyles}>
-                                    {isPayment ? (
-                                        <ChatPaymentEvent event={event} />
-                                    ) : (
-                                        <MessageContents
-                                            sentByMe={isMe}
-                                            content={event.content.body}
-                                            textStyles={textStyles}
-                                        />
-                                    )}
-                                </OptionalGradient>
-                            )}
+                            ) : null}
                         </View>
                     </View>
                 </View>
@@ -130,9 +89,6 @@ const styles = (theme: Theme) =>
             borderRadius: 16,
             maxWidth: theme.sizes.maxMessageWidth,
             overflow: 'hidden',
-        },
-        bubbleInner: {
-            padding: 10,
         },
         contentContainer: {
             flexDirection: 'column',
@@ -155,25 +111,6 @@ const styles = (theme: Theme) =>
         lastSentMessage: {
             borderBottomRightRadius: 4,
         },
-        greyBubble: {
-            backgroundColor: theme.colors.extraLightGrey,
-        },
-        blueBubble: {
-            backgroundColor: theme.colors.blue,
-        },
-        orangeBubble: {
-            backgroundColor: theme.colors.orange,
-        },
-        messageText: {
-            textAlign: 'left',
-            lineHeight: 20,
-        },
-        receivedMessageText: {
-            color: theme.colors.primary,
-        },
-        sentMessageText: {
-            color: theme.colors.secondary,
-        },
     })
 
 const areEqual = (prev: Props, curr: Props) => {
@@ -188,8 +125,17 @@ const areEqual = (prev: Props, curr: Props) => {
             prev.event.content.status === curr.event.content.status
         )
     } else {
-        return prev.event.eventId === curr.event.eventId
+        return (
+            prev.event.eventId === curr.event.eventId &&
+            prev.event.content.body === curr.event.content.body
+        )
     }
+}
+
+export const bubbleGradient = {
+    colors: ['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0)'],
+    start: { x: 0, y: 0 },
+    end: { x: 0, y: 1 },
 }
 
 export default React.memo(ChatEvent, areEqual)
