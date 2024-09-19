@@ -67,7 +67,8 @@ export type ErrorCode =
   | { invalidJson: string }
   | "payLnInvoiceAlreadyPaid"
   | "payLnInvoiceAlreadyInProgress"
-  | "noLnGatewayAvailable";
+  | "noLnGatewayAvailable"
+  | { moduleNotFound: string };
 
 export type Event =
   | { transaction: TransactionEvent }
