@@ -53,8 +53,8 @@ use crate::storage::FiatFXInfo;
 use crate::types::{
     GuardianStatus, RpcBridgeStatus, RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
     RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
-    RpcNostrPubkey, RpcNostrSecret, RpcPayAddressResponse, RpcRegisteredDevice,
-    RpcTransactionDirection,
+    RpcMediaUploadParams, RpcNostrPubkey, RpcNostrSecret, RpcPayAddressResponse,
+    RpcRegisteredDevice, RpcTransactionDirection,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -881,10 +881,9 @@ async fn matrixSendAttachment(
     room_id: RpcRoomId,
     filename: String,
     file_path: PathBuf,
-    mime_type: String,
+    params: RpcMediaUploadParams,
 ) -> anyhow::Result<()> {
     let matrix = get_matrix(&bridge).await?;
-    let mime = mime_type.parse::<Mime>().context(ErrorCode::BadRequest)?;
 
     let file_data = bridge
         .storage
@@ -893,7 +892,7 @@ async fn matrixSendAttachment(
         .ok_or_else(|| anyhow::anyhow!("File not found"))?;
 
     matrix
-        .send_attachment(&room_id.into_typed()?, filename, mime, file_data)
+        .send_attachment(&room_id.into_typed()?, filename, params, file_data)
         .await?;
 
     Ok(())
@@ -1323,7 +1322,7 @@ async fn matrixDownloadFile(
     let matrix = get_matrix(&bridge).await?;
     let content = matrix.download_file(media_source.0).await?;
     bridge.storage.write_file(&path, content).await?;
-    Ok(path)
+    Ok(bridge.storage.platform_path(&path))
 }
 
 #[macro_rules_derive(rpc_method!)]

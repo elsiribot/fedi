@@ -351,6 +351,15 @@ pub struct RpcSignedLnurlMessage {
     pub pubkey: RpcPublicKey,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
+pub struct RpcMediaUploadParams {
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    pub mime_type: String,
+}
+
 #[derive(
     Debug, Clone, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize, TS, Encodable, Decodable,
 )]

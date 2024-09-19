@@ -6,7 +6,9 @@ use anyhow::{bail, Context, Result};
 use fedimint_core::task::TaskGroup;
 use fedimint_derive_secret::DerivableSecret;
 use futures::StreamExt;
-use matrix_sdk::attachment::AttachmentConfig;
+use matrix_sdk::attachment::{
+    AttachmentConfig, AttachmentInfo, BaseFileInfo, BaseImageInfo, BaseVideoInfo,
+};
 use matrix_sdk::encryption::BackupDownloadStrategy;
 use matrix_sdk::media::{MediaFormat, MediaRequest};
 use matrix_sdk::notification_settings::NotificationSettings;
@@ -35,7 +37,7 @@ use matrix_sdk::ruma::events::room::message::{
 use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
 use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::events::{AnySyncTimelineEvent, InitialStateEvent};
-use matrix_sdk::ruma::{assign, EventId, OwnedMxcUri, RoomId, UserId};
+use matrix_sdk::ruma::{assign, EventId, OwnedMxcUri, RoomId, UInt, UserId};
 use matrix_sdk::sliding_sync::Ranges;
 use matrix_sdk::{Client, RoomInfo, RoomMemberships};
 use matrix_sdk_ui::sync_service::{self, SyncService};
@@ -48,6 +50,7 @@ use crate::error::ErrorCode;
 use crate::event::EventSink;
 use crate::observable::{Observable, ObservablePool, ObservableVec};
 use crate::storage::AppState;
+use crate::types::RpcMediaUploadParams;
 
 mod types;
 pub use types::*;
@@ -779,12 +782,42 @@ impl Matrix {
         &self,
         room_id: &RoomId,
         filename: String,
-        mime_type: Mime,
+        params: RpcMediaUploadParams,
         data: Vec<u8>,
     ) -> Result<()> {
+        let mime = params
+            .mime_type
+            .parse::<Mime>()
+            .context(ErrorCode::BadRequest)?;
+
+        let size = Some(UInt::from(data.len() as u32));
+
+        let width = params.width.map(UInt::from);
+
+        let height = params.height.map(UInt::from);
+
+        let info = match mime.type_() {
+            mime::IMAGE => AttachmentInfo::Image(BaseImageInfo {
+                width,
+                height,
+                size,
+                blurhash: None,
+            }),
+            mime::VIDEO => AttachmentInfo::Video(BaseVideoInfo {
+                width,
+                height,
+                size,
+                duration: None,
+                blurhash: None,
+            }),
+            _ => AttachmentInfo::File(BaseFileInfo { size }),
+        };
+
+        let config = AttachmentConfig::default().info(info);
+
         self.room(room_id)
             .await?
-            .send_attachment(&filename, &mime_type, data, AttachmentConfig::default())
+            .send_attachment(&filename, &mime, data, config)
             .await?;
         Ok(())
     }
@@ -1095,12 +1128,21 @@ mod tests {
 
         // Prepare attachment data
         let filename = "test.txt".to_string();
-        let mime_type = "text/plain".parse().unwrap();
+        let mime_type = "text/plain".to_string();
         let data = b"Hello, World!".to_vec();
 
         // Send attachment
         matrix
-            .send_attachment(&room_id, filename.clone(), mime_type, data.clone())
+            .send_attachment(
+                &room_id,
+                filename.clone(),
+                RpcMediaUploadParams {
+                    mime_type,
+                    width: None,
+                    height: None,
+                },
+                data.clone(),
+            )
             .await?;
         fedimint_core::task::sleep(Duration::from_millis(100)).await;
 

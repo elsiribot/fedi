@@ -3109,6 +3109,11 @@
   resolved "https://registry.yarnpkg.com/@keystonehq/alias-sampling/-/alias-sampling-0.1.2.tgz#63af931ffe6500aef4c0d87775a5b279189abf8d"
   integrity sha512-5ukLB3bcgltgaFfQfYKYwHDUbwHicekYo53fSEa7xhVkAEqsA74kxdIwoBIURmGUtXe3EVIRm4SYlgcrt2Ri0w==
 
+"@likashefqet/react-native-image-zoom@^4.1.0":
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/@likashefqet/react-native-image-zoom/-/react-native-image-zoom-4.1.0.tgz#f34a2b4a415e34e33a043dd60a8be14ef5707d16"
+  integrity sha512-8OQSM1spoHiXcIp++rDZvTqet5TJegA3mGj09kc+/aXIR9DCPhZd2vDlTbqOXehS9AI/IXJAqMISnB0oDXEsRA==
+
 "@mobily/ts-belt@3.13.1":
   version "3.13.1"
   resolved "https://registry.npmjs.org/@mobily/ts-belt/-/ts-belt-3.13.1.tgz"

@@ -67,7 +67,8 @@ export type ErrorCode =
   | { invalidJson: string }
   | "payLnInvoiceAlreadyPaid"
   | "payLnInvoiceAlreadyInProgress"
-  | "noLnGatewayAvailable";
+  | "noLnGatewayAvailable"
+  | { moduleNotFound: string };
 
 export type Event =
   | { transaction: TransactionEvent }
@@ -312,6 +313,12 @@ export interface RpcMatrixUserDirectorySearchUser {
 }
 
 export type RpcMediaSource = any;
+
+export interface RpcMediaUploadParams {
+  width: number | null;
+  height: number | null;
+  mimeType: string;
+}
 
 export interface RpcMethods {
   bridgeStatus: [
@@ -660,7 +667,12 @@ export interface RpcMethods {
     null,
   ];
   matrixSendAttachment: [
-    { roomId: RpcRoomId; filename: string; filePath: string; mimeType: string },
+    {
+      roomId: RpcRoomId;
+      filename: string;
+      filePath: string;
+      params: RpcMediaUploadParams;
+    },
     null,
   ];
   matrixRoomCreate: [{ request: CreateRoomRequest }, string];

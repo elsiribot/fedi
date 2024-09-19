@@ -3,6 +3,9 @@ import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+import { DocumentPickerResponse } from 'react-native-document-picker'
+import RNFS from 'react-native-fs'
+import { Asset } from 'react-native-image-picker'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import {
@@ -41,24 +44,77 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const directUserId = useMemo(() => room?.directUserId, [room])
 
     const handleSend = useCallback(
-        async (body: string) => {
-            if (!body || isSending) return
+        async (
+            body: string,
+            attachments: Array<Asset | DocumentPickerResponse> = [],
+        ) => {
+            if ((!body && !attachments.length) || isSending) return
+
             setIsSending(true)
             try {
-                await dispatch(
-                    sendMatrixMessage({
-                        fedimint,
+                if (body) {
+                    await dispatch(
+                        sendMatrixMessage({
+                            fedimint,
+                            roomId,
+                            body,
+                            // TODO: support intercepting bolt11 for group chats
+                            options: { interceptBolt11: chatType === 'direct' },
+                        }),
+                    ).unwrap()
+                }
+
+                for (const att of attachments) {
+                    if (!att.uri) continue
+
+                    let attName: string
+                    let fileName: string
+
+                    if ('fileName' in att && att.fileName) {
+                        attName = att.fileName.split('.')[0]
+                        fileName = att.fileName
+                    } else if ('name' in att && att.name) {
+                        attName = att.name.split('.')[0]
+                        fileName = att.name
+                    } else {
+                        continue
+                    }
+
+                    // Has to be a directory so the file can be copied into it
+                    const fileDestination = `${RNFS.TemporaryDirectoryPath}/${attName}`
+
+                    // Delete the temporary file if it already exists
+                    if (await RNFS.exists(fileDestination)) {
+                        await RNFS.unlink(fileDestination)
+                    }
+
+                    await RNFS.copyFile(att.uri, fileDestination)
+
+                    await fedimint.matrixSendAttachment({
                         roomId,
-                        body,
-                        // TODO: support intercepting bolt11 for group chats
-                        options: { interceptBolt11: chatType === 'direct' },
-                    }),
-                ).unwrap()
+                        // Generates a random string in base 36 if no filename is provided
+                        filename: fileName,
+                        params:
+                            'width' in att
+                                ? {
+                                      mimeType: att.type || '',
+                                      width: att.width || 0,
+                                      height: att.height || 0,
+                                  }
+                                : {
+                                      mimeType: att.type || '',
+                                      width: null,
+                                      height: null,
+                                  },
+                        filePath: fileDestination,
+                    })
+                }
             } catch (err) {
                 log.error('error sending message', err)
                 toast.error(t, 'errors.unknown-error')
+            } finally {
+                setIsSending(false)
             }
-            setIsSending(false)
         },
         [chatType, dispatch, isSending, roomId, t, toast],
     )

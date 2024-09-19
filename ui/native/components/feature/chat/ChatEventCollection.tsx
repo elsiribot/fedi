@@ -108,7 +108,7 @@ const ChatEventCollection: React.FC<Props> = memo(
                                     <View style={style.senderMessages}>
                                         {events.map((event, eindex) => (
                                             <ChatEvent
-                                                key={`ceci-eb-${event.id}-${eindex}`}
+                                                key={`ceci-eb-${event.id}`}
                                                 event={event}
                                                 last={eindex === 0}
                                             />
