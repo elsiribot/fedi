@@ -1,31 +1,42 @@
 import { useToast } from '@fedi/common/hooks/toast'
 import {
+    selectMatrixAuth,
     selectSelectedChatMessage,
     setMessageToEdit,
     setSelectedChatMessage,
 } from '@fedi/common/redux'
+import { TypedMatrixEvent } from '@fedi/common/utils/matrix'
+import { CameraRoll } from '@react-native-camera-roll/camera-roll'
 import Clipboard from '@react-native-clipboard/clipboard'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native'
+import { exists } from 'react-native-fs'
+import { RESULTS } from 'react-native-permissions'
+import Share from 'react-native-share'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
+import { useStoragePermission } from '../../../utils/hooks'
 import CustomOverlay from '../../ui/CustomOverlay'
-import { OptionalGradient } from '../../ui/OptionalGradient'
 import { Pressable } from '../../ui/Pressable'
 import SvgImage from '../../ui/SvgImage'
-import { bubbleGradient } from './ChatEvent'
-import MessageContents from './MessageContents'
+import ChatEvent from './ChatEvent'
 
 const SelectedMessageOverlay: React.FC = () => {
     const [deleteMessage, setDeleteMessage] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [isDownloading, setIsDownloading] = useState(false)
     const selectedMessage = useAppSelector(selectSelectedChatMessage)
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { theme } = useTheme()
     const toast = useToast()
+    const matrixAuth = useAppSelector(selectMatrixAuth)
+    const { storagePermission, requestStoragePermission } =
+        useStoragePermission()
+
+    const isMe = selectedMessage?.senderId === matrixAuth?.userId
 
     const closeOverlay = useCallback(() => {
         dispatch(setSelectedChatMessage(null))
@@ -52,7 +63,8 @@ const SelectedMessageOverlay: React.FC = () => {
     }, [t, toast, closeOverlay, selectedMessage])
 
     const handleCopy = useCallback(() => {
-        if (!selectedMessage) return
+        if (!selectedMessage || selectedMessage.content.msgtype !== 'm.text')
+            return
 
         Clipboard.setString(selectedMessage.content.body)
         closeOverlay()
@@ -63,9 +75,93 @@ const SelectedMessageOverlay: React.FC = () => {
     }, [t, toast, closeOverlay, selectedMessage])
 
     const handleEdit = useCallback(() => {
-        dispatch(setMessageToEdit(selectedMessage))
+        if (!selectedMessage || selectedMessage.content.msgtype !== 'm.text')
+            return
+
+        dispatch(
+            setMessageToEdit(selectedMessage as TypedMatrixEvent<'m.text'>),
+        )
+
         closeOverlay()
     }, [dispatch, closeOverlay, selectedMessage])
+
+    const handleDownload = useCallback(async () => {
+        if (
+            !selectedMessage ||
+            (selectedMessage.content.msgtype !== 'm.file' &&
+                selectedMessage.content.msgtype !== 'm.image' &&
+                selectedMessage.content.msgtype !== 'm.video')
+        )
+            return
+
+        setIsDownloading(true)
+
+        try {
+            const pathName = `${Buffer.from(
+                selectedMessage.content.file.hashes.sha256,
+            ).toString('hex')}.${
+                selectedMessage.content.info.mimetype.split('/')[1]
+            }`
+
+            const path = await fedimint.matrixDownloadFile(
+                pathName,
+                selectedMessage.content,
+            )
+
+            if (!(await exists(path))) {
+                throw new Error('Image does not exist in fs')
+            }
+
+            if (selectedMessage.content.msgtype === 'm.file') {
+                const mime = selectedMessage.content.info.mimetype.split('/')[1]
+                try {
+                    await Share.open({
+                        filename:
+                            Platform.OS === 'android'
+                                ? selectedMessage.content.body.slice(
+                                      0,
+                                      -mime.length,
+                                  )
+                                : selectedMessage.content.body,
+                        type: selectedMessage.content.info.mimetype,
+                        url: path,
+                    })
+
+                    toast.show({
+                        content: t('feature.chat.file-saved'),
+                        status: 'success',
+                    })
+                } catch {
+                    /* no-op*/
+                }
+            } else {
+                if (storagePermission !== RESULTS.GRANTED) {
+                    await requestStoragePermission()
+                }
+
+                await CameraRoll.save(path, {
+                    type: 'auto',
+                })
+
+                toast.show({
+                    content: t('feature.chat.saved-to-photos'),
+                    status: 'success',
+                })
+            }
+        } catch (err) {
+            toast.error(t, err, 'errors.unknown-error')
+        } finally {
+            setIsDownloading(false)
+            closeOverlay()
+        }
+    }, [
+        selectedMessage,
+        t,
+        toast,
+        closeOverlay,
+        storagePermission,
+        requestStoragePermission,
+    ])
 
     useEffect(() => {
         setDeleteMessage(false)
@@ -81,17 +177,20 @@ const SelectedMessageOverlay: React.FC = () => {
                 body: deleteMessage ? (
                     <View style={style.confirmDeleteContainer}>
                         <View style={style.previewMessageContainer}>
-                            <OptionalGradient
-                                gradient={bubbleGradient}
-                                style={style.messageBubble}>
-                                <MessageContents
-                                    content={
-                                        selectedMessage?.content.body || ''
-                                    }
-                                    sentByMe={true}
-                                    textStyles={[styles(theme).outgoingText]}
-                                />
-                            </OptionalGradient>
+                            <ChatEvent
+                                event={
+                                    selectedMessage as TypedMatrixEvent<
+                                        | 'm.text'
+                                        | 'm.image'
+                                        | 'm.video'
+                                        | 'm.file'
+                                    >
+                                }
+                                last
+                                fullWidth={false}
+                            />
+                            {/* prevent user from interacting with the chat event */}
+                            <View style={style.previewMessageOverlay} />
                         </View>
                         <Text medium>
                             {t('feature.chat.confirm-delete-message')}
@@ -99,26 +198,51 @@ const SelectedMessageOverlay: React.FC = () => {
                     </View>
                 ) : (
                     <View style={style.optionsContainer}>
-                        <Pressable
-                            onPress={handleCopy}
-                            containerStyle={style.action}>
-                            <SvgImage name="Copy" />
-                            <Text bold>{t('phrases.copy-text')}</Text>
-                        </Pressable>
-                        <Pressable
-                            onPress={handleEdit}
-                            containerStyle={style.action}>
-                            <SvgImage name="Edit" />
-                            <Text bold>{t('words.edit')}</Text>
-                        </Pressable>
-                        <Pressable
-                            onPress={() => setDeleteMessage(true)}
-                            containerStyle={style.action}>
-                            <SvgImage color={theme.colors.red} name="Trash" />
-                            <Text bold style={style.danger}>
-                                {t('words.delete')}
-                            </Text>
-                        </Pressable>
+                        {selectedMessage?.content.msgtype === 'm.text' && (
+                            <>
+                                <Pressable
+                                    onPress={handleCopy}
+                                    containerStyle={style.action}>
+                                    <SvgImage name="Copy" />
+                                    <Text bold>{t('phrases.copy-text')}</Text>
+                                </Pressable>
+                                {isMe && (
+                                    <Pressable
+                                        onPress={handleEdit}
+                                        containerStyle={style.action}>
+                                        <SvgImage name="Edit" />
+                                        <Text bold>{t('words.edit')}</Text>
+                                    </Pressable>
+                                )}
+                            </>
+                        )}
+                        {(selectedMessage?.content.msgtype === 'm.image' ||
+                            selectedMessage?.content.msgtype === 'm.video' ||
+                            selectedMessage?.content.msgtype === 'm.file') && (
+                            <Pressable
+                                onPress={handleDownload}
+                                containerStyle={style.action}>
+                                {isDownloading ? (
+                                    <ActivityIndicator />
+                                ) : (
+                                    <SvgImage name="Download" />
+                                )}
+                                <Text bold>{t('words.download')}</Text>
+                            </Pressable>
+                        )}
+                        {isMe && (
+                            <Pressable
+                                onPress={() => setDeleteMessage(true)}
+                                containerStyle={style.action}>
+                                <SvgImage
+                                    color={theme.colors.red}
+                                    name="Trash"
+                                />
+                                <Text bold style={style.danger}>
+                                    {t('words.delete')}
+                                </Text>
+                            </Pressable>
+                        )}
                     </View>
                 ),
                 buttons: deleteMessage
@@ -162,6 +286,11 @@ const styles = (theme: Theme) =>
             borderRadius: 16,
             borderBottomRightRadius: 4,
             overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            justifyContent: 'center',
+            maxWidth: theme.sizes.maxMessageWidth,
         },
         outgoingText: {
             color: theme.colors.secondary,
@@ -171,6 +300,14 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             paddingVertical: theme.spacing.lg,
             gap: theme.spacing.xl,
+        },
+        previewMessageOverlay: {
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1,
         },
     })
 

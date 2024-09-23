@@ -167,6 +167,9 @@ export type MatrixEventContent =
     | z.infer<(typeof contentSchemas)[keyof typeof contentSchemas]>
     | MatrixEventUnknownContent
 
+export type TypedMatrixEvent<T extends keyof typeof contentSchemas> =
+    MatrixEvent<z.infer<(typeof contentSchemas)[T]>>
+
 export function formatMatrixEventContent(content: unknown): MatrixEventContent {
     try {
         const msgType = (content as { msgtype: keyof typeof contentSchemas })

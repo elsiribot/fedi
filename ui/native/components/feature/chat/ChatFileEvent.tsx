@@ -12,48 +12,60 @@ import { exists } from 'react-native-fs'
 import Share from 'react-native-share'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import { MatrixEventContentType } from '@fedi/common/utils/matrix'
+import { TypedMatrixEvent } from '@fedi/common/utils/matrix'
 import { formatFileSize } from '@fedi/common/utils/media'
 
+import { setSelectedChatMessage } from '@fedi/common/redux'
 import { fedimint } from '../../../bridge'
+import { useAppDispatch } from '../../../state/hooks'
 import SvgImage from '../../ui/SvgImage'
 
 type ChatImageEventProps = {
-    content: MatrixEventContentType<'m.file'>
+    event: TypedMatrixEvent<'m.file'>
 }
 
-const ChatImageEvent: React.FC<ChatImageEventProps> = ({
-    content,
+const ChatFileEvent: React.FC<ChatImageEventProps> = ({
+    event,
 }: ChatImageEventProps) => {
     const [isLoading, setIsLoading] = useState(false)
     const { theme } = useTheme()
     const toast = useToast()
     const { t } = useTranslation()
+    const dispatch = useAppDispatch()
+
+    const handleLongPress = () => {
+        dispatch(setSelectedChatMessage(event))
+    }
 
     const handleDownload = useCallback(async () => {
         setIsLoading(true)
 
         try {
-            const path = `${Buffer.from(content.file.hashes.sha256).toString(
-                'hex',
-            )}.${content.info.mimetype.split('/')[1]}`
+            const path = `${Buffer.from(
+                event.content.file.hashes.sha256,
+            ).toString('hex')}.${event.content.info.mimetype.split('/')[1]}`
 
             const filePath = await fedimint.matrixDownloadFile(
                 path,
-                content.file,
+                event.content.file,
             )
 
             if (await exists(filePath)) {
-                const mime = content.info.mimetype.split('/')[1]
+                const mime = event.content.info.mimetype.split('/')[1]
 
                 try {
                     await Share.open({
                         filename:
                             Platform.OS === 'android'
-                                ? content.body.slice(0, -mime.length)
-                                : content.body,
-                        type: content.info.mimetype,
+                                ? event.content.body.slice(0, -mime.length)
+                                : event.content.body,
+                        type: event.content.info.mimetype,
                         url: filePath,
+                    })
+
+                    toast.show({
+                        content: t('feature.chat.file-saved'),
+                        status: 'success',
                     })
                 } catch {
                     /* no-op*/
@@ -64,22 +76,22 @@ const ChatImageEvent: React.FC<ChatImageEventProps> = ({
         } finally {
             setIsLoading(false)
         }
-    }, [content, t, toast])
+    }, [event.content, t, toast])
 
     const style = styles(theme)
 
     return (
-        <View style={style.attachment}>
+        <Pressable style={style.attachment} onLongPress={handleLongPress}>
             <View style={style.attachmentContentGutter}>
                 <View style={style.attachmentIcon}>
                     <SvgImage name="File" />
                 </View>
                 <View style={style.attachmentContent}>
                     <Text medium ellipsizeMode="middle" numberOfLines={1}>
-                        {content.body}
+                        {event.content.body}
                     </Text>
                     <Text style={style.attachmentSize} caption>
-                        {formatFileSize(content.info.size ?? 0)}
+                        {formatFileSize(event.content.info.size ?? 0)}
                     </Text>
                 </View>
             </View>
@@ -92,7 +104,7 @@ const ChatImageEvent: React.FC<ChatImageEventProps> = ({
                     )}
                 </View>
             </Pressable>
-        </View>
+        </Pressable>
     )
 }
 
@@ -143,4 +155,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default ChatImageEvent
+export default ChatFileEvent
