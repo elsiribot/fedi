@@ -56,6 +56,7 @@ use fedimint_ln_client::{
 };
 use fedimint_ln_common::config::FeeToAmount;
 use fedimint_ln_common::LightningGateway;
+use fedimint_meta_client::MetaModuleMetaSourceWithFallback;
 use fedimint_mint_client::{
     spendable_notes_to_operation_id, MintClientInit, MintClientModule, MintOperationMeta,
     MintOperationMetaVariant, OOBNotes, ReissueExternalNotesState, SelectNotesWithExactAmount,
@@ -175,8 +176,9 @@ impl FederationV2 {
     /// Instantiate Federation from FediConfig
     async fn build_client_builder(db: Database) -> anyhow::Result<ClientBuilder> {
         let mut client_builder = fedimint_client::Client::builder(db).await?;
-        client_builder
-            .with_meta_service(MetaService::new(LegacyMetaSourceWithExternalUrl::default()));
+        client_builder.with_meta_service(MetaService::new(MetaModuleMetaSourceWithFallback::new(
+            LegacyMetaSourceWithExternalUrl::default(),
+        )));
         client_builder.with_module(MintClientInit);
         client_builder.with_module(LightningClientInit::default());
         client_builder.with_module(WalletClientInit(None));
