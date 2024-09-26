@@ -171,7 +171,7 @@
         };
 
         toolchainArgs = let llvmPackages = pkgs.llvmPackages_11; in {
-          extraRustFlags = "--cfg tokio_unstable -Z threads=0 --cfg=curve25519_dalek_backend=\"serial\"";
+          extraRustFlags = "--cfg tokio_unstable -Z threads=0 --cfg=curve25519_dalek_backend=\"serial\" -Csymbol-mangling-version=v0";
 
           components = [
             "rustc"
