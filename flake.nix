@@ -24,7 +24,7 @@
     };
 
     android-nixpkgs = {
-      url = "github:tadfisher/android-nixpkgs?rev=6370a3aafe37ed453bfdc4af578eb26339f8fee0"; # stable
+      url = "github:tadfisher/android-nixpkgs?rev=522d86121cbd413aff922c54f38106ecf8740107"; # stable
       # inputs.nixpkgs.follows = "fedimint-pkgs/nixpkgs";
     };
   };
@@ -125,10 +125,8 @@
             platforms-android-33
             platforms-android-34
             emulator
-            ndk-bundle
-            ndk-23-1-7779620
+            ndk-27-1-12297006
             cmake-3-22-1
-            patcher-v4
             tools
           ]);
 
