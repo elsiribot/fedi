@@ -1400,15 +1400,16 @@ macro_rules! rpc_methods {
 
         impl $name {
             pub async fn handle(bridge: Arc<Bridge>, method: &str, payload: String) -> anyhow::Result<String> {
-                match method {
+                let future = match method {
                 $(
-                    stringify!($method) => handle_wrapper($method::handle, bridge, payload).await,
+                    stringify!($method) => Box::pin(handle_wrapper($method::handle, bridge, payload)) as fedimint_core::util::BoxFuture<_>,
                 )*
-                    other => Err(anyhow::anyhow!(format!(
+                    other => return Err(anyhow::anyhow!(format!(
                         "Unrecognized RPC command: {}",
                         other
                     ))),
-                }
+                };
+                future.await
             }
         }
     };
