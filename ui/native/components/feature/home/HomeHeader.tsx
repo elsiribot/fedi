@@ -53,6 +53,7 @@ const HomeHeader: React.FC = () => {
                 }
                 headerRight={<HeaderAvatar onPress={openSettings} />}
                 headerCenter={<FederationSelector />}
+                centerContainerStyle={style.centerContainer}
             />
             <NetworkBanner />
             {popupInfo && <PopupFederationCountdown />}
@@ -72,6 +73,9 @@ const styles = (theme: Theme) =>
         container: {
             paddingBottom: theme.spacing.md,
             justifyContent: 'space-between',
+        },
+        centerContainer: {
+            maxWidth: '80%',
         },
         nightly: {
             position: 'absolute',

@@ -60,6 +60,14 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
         [mainNavigation],
     )
 
+    const handleStatusPress = useCallback(
+        (c: FederationListItem) => {
+            mainNavigation.navigate('FederationDetails', {
+                federationId: c.id,
+            })
+        },
+        [mainNavigation],
+    )
     const style = styles(theme)
     return (
         <HoloGradient
@@ -96,6 +104,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                                 community={f}
                                 onSelect={() => handleTilePress(f)}
                                 onSelectQr={() => handleQrPress(f)}
+                                onSelectStatus={() => handleStatusPress(f)}
                                 isActiveCommunity={
                                     activeFederation?.id === f.id
                                 }

@@ -38,6 +38,7 @@ import {
     getFederationMaxStableBalanceMsats,
     getFederationName,
     getFederationPinnedMessage,
+    getFederationStatus,
     getFederationWelcomeMessage,
     joinFromInvite,
 } from '../utils/FederationUtils'
@@ -262,11 +263,19 @@ export const refreshFederations = createAsyncThunk<
     { state: CommonState }
 >('federation/refreshFederations', async (fedimint, { dispatch, getState }) => {
     const federationsList = await fedimint.listFederations()
-    const federations: FederationListItem[] = federationsList.map(f => ({
-        ...f,
-        network: f.network as Network,
-        hasWallet: true as const,
-    }))
+    const federationPromises: Promise<Federation>[] = federationsList.map(
+        async f => {
+            const federationStatus = await getFederationStatus(fedimint, f.id)
+            return {
+                ...f,
+                status: federationStatus,
+                network: f.network as Network,
+                hasWallet: true as const,
+            }
+        },
+    )
+    const federations = await Promise.all(federationPromises)
+
     const communities = await fedimint.listCommunities({})
     const communitiesAsFederations = communities.map(coerceFederationListItem)
 
