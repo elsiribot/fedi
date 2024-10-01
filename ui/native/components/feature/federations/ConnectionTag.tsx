@@ -33,12 +33,7 @@ export const ConnectionTag = ({ status, size = 'small' }: Props) => {
                 style={size === 'small' ? style.smallText : style.largeText}>
                 {localeStatus}
             </Text>
-            <SvgImage
-                size={12}
-                name={'ChevronRight'}
-                // color={color}
-                // containerStyle={status === 'online' ? style.shadow : {}}
-            />
+            <SvgImage size={12} name={'ChevronRight'} />
         </View>
     )
 }
