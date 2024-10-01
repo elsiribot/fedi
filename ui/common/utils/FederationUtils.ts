@@ -117,6 +117,9 @@ const fetchExternalMetadata = async (
  * Runs `fetchFederationExternalMetadata` on a list of federations and assembles
  * the results as a map of federation id -> meta. Optional callback is called with
  * (federationId, meta).
+ *
+ * TODO: Remove this function entirely when the bridge can provide us with the global
+ * community meta and we don't hav to fetch it ourselves
  */
 export const fetchFederationsExternalMetadata = async (
     federations: Pick<FederationListItem, 'id' | 'meta' | 'hasWallet'>[],
@@ -148,15 +151,6 @@ export const fetchFederationsExternalMetadata = async (
           }
         : undefined
 
-    const communitiesMeta = federations
-        .filter(f => !f.hasWallet)
-        .reduce<ExternalMetaJson>((prev, community) => {
-            if (!community || !community.id) return prev
-            prev[community.id] = community.meta
-            handleBackgroundSuccess && handleBackgroundSuccess(prev)
-            return prev
-        }, {})
-
     // Collect & deduplicate external meta URLs
     const externalUrls = federations
         .map(f => getMetaUrl(f.meta))
@@ -166,7 +160,7 @@ export const fetchFederationsExternalMetadata = async (
 
     // Assemble all the promises and return the first pass of results. If they
     // provided onBackgroundSuccess, we'll call those as they come in.
-    const federationsMeta = await Promise.all([
+    const communitiesMeta = await Promise.all([
         ...externalUrls.map(url => {
             return fetchExternalMetadata(url, res => {
                 return handleBackgroundSuccess && handleBackgroundSuccess(res)
@@ -182,7 +176,7 @@ export const fetchFederationsExternalMetadata = async (
             return prev
         }, {})
     })
-    return { ...communitiesMeta, ...federationsMeta }
+    return communitiesMeta
 }
 
 /**

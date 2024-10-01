@@ -9,8 +9,7 @@ import type { i18n as I18n } from 'i18next'
 import type { AnyAction } from 'redux'
 import type { ThunkDispatch } from 'redux-thunk'
 
-import { Federation, StorageApi } from '../types'
-import { getMetaUrl } from '../utils/FederationUtils'
+import { ClientConfigMetadata, Federation, StorageApi } from '../types'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { hasStorageStateChanged } from '../utils/storage'
@@ -21,6 +20,7 @@ import {
     federationSlice,
     joinFederation,
     refreshFederations,
+    updateExternalMeta,
     updateFederation,
     updateFederationBalance,
 } from './federation'
@@ -110,13 +110,21 @@ export function initializeCommonStore({
 
     // Update federation on bridge events
     const unsubscribeFederation = fedimint.addListener('federation', event => {
-        // If they have an external meta configured, exclude name and meta from update
+        // if the federation_name is found in the meta, exclude name from update
         const federation: Partial<Federation> = { ...event }
-        if (getMetaUrl(event.meta)) {
+        if (event.meta.federation_name) {
             delete federation.name
-            delete federation.meta
         }
         dispatch(updateFederation(federation))
+        // This is needed to update our local redux state with the new federation
+        // metadata whenever the bridge emits an event that meta has been updated.
+        // TODO: Remove this along with the refactor to use federation.federations
+        // as the source of truth for all metadata and can remove the externalMeta slice entirely
+        if (federation.id && federation.meta) {
+            const meta: Record<string, ClientConfigMetadata> = {}
+            meta[federation.id] = federation.meta
+            dispatch(updateExternalMeta(meta))
+        }
     })
 
     // Update communities on bridge events
