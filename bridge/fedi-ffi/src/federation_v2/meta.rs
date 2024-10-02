@@ -1,9 +1,10 @@
 use std::collections::BTreeMap;
 use std::time::Duration;
 
+use fedimint_api_client::api::DynGlobalApi;
 use fedimint_client::db::{MetaFieldKey, MetaFieldPrefix, MetaFieldValue, MetaServiceInfoKey};
 use fedimint_client::meta::{fetch_meta_overrides, FetchKind, MetaService, MetaSource, MetaValues};
-use fedimint_client::Client;
+use fedimint_core::config::ClientConfig;
 use fedimint_core::db::{Database, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::util::{backon, retry};
 use fedimint_core::{apply, async_trait_maybe_send};
@@ -71,16 +72,15 @@ impl MetaSource for LegacyMetaSourceWithExternalUrl {
 
     async fn fetch(
         &self,
-        client: &Client,
+        client_config: &ClientConfig,
+        _api: &DynGlobalApi,
         fetch_kind: FetchKind,
         last_revision: Option<u64>,
     ) -> anyhow::Result<MetaValues> {
-        let config_iter = client
-            .config()
-            .await
+        let config_iter = client_config
             .global
             .meta
-            .into_iter()
+            .iter()
             .map(|(key, value)| (MetaFieldKey(key.clone()), MetaFieldValue(value.clone())));
         let backoff = match fetch_kind {
             // need to be fast the first time.
@@ -94,11 +94,11 @@ impl MetaSource for LegacyMetaSourceWithExternalUrl {
                 .with_max_times(usize::MAX),
         };
         let overrides = retry("fetch_meta_overrides", backoff, || async {
-            let static_meta = &client.config().await.global.meta;
+            let static_meta = &client_config.global.meta;
             if static_meta.contains_key(META_OVERRIDE_URL_FIELD) {
-                fetch_meta_overrides(&self.reqwest, client, META_OVERRIDE_URL_FIELD).await
+                fetch_meta_overrides(&self.reqwest, client_config, META_OVERRIDE_URL_FIELD).await
             } else {
-                fetch_meta_overrides(&self.reqwest, client, META_EXTERNAL_URL_FIELD).await
+                fetch_meta_overrides(&self.reqwest, client_config, META_EXTERNAL_URL_FIELD).await
             }
         })
         .await?;

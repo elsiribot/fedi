@@ -28,9 +28,8 @@ use fedimint_api_client::api::{
 };
 use fedimint_api_client::download_from_invite_code;
 use fedimint_bip39::Bip39RootSecretStrategy;
-use fedimint_client::backup::ClientBackup;
 use fedimint_client::db::ChronologicalOperationLogKey;
-use fedimint_client::meta::MetaService;
+use fedimint_client::meta::{FetchKind, MetaService, MetaSource};
 use fedimint_client::module::recovery::RecoveryProgress;
 use fedimint_client::module::ClientModule;
 use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
@@ -104,10 +103,11 @@ use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
 use crate::storage::{AppState, FediFeeSchedule};
 use crate::types::{
     EcashReceiveMetadata, EcashSendMetadata, GuardianStatus, LightningSendMetadata,
-    OperationFediFeeStatus, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId, RpcFeeDetails,
-    RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOOBState, RpcOnchainState,
-    RpcOperationFediFeeStatus, RpcPayAddressResponse, RpcStabilityPoolTransactionState,
-    RpcTransaction, RpcTransactionDirection, TransactionDateFiatInfo, WithdrawalDetails,
+    OperationFediFeeStatus, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId, RpcFederationPreview,
+    RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOOBState,
+    RpcOnchainState, RpcOperationFediFeeStatus, RpcPayAddressResponse, RpcReturningMemberStatus,
+    RpcStabilityPoolTransactionState, RpcTransaction, RpcTransactionDirection,
+    TransactionDateFiatInfo, WithdrawalDetails,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
@@ -340,17 +340,18 @@ impl FederationV2 {
         .await)
     }
 
-    pub async fn download_client_config(
-        invite_code_string: &str,
+    pub async fn federation_preview(
+        invite_code: &str,
         root_mnemonic: &bip39::Mnemonic,
         device_index: u8,
         should_override_localhost: bool,
-    ) -> anyhow::Result<(ClientConfig, anyhow::Result<Option<ClientBackup>>)> {
-        let mut invite_code: InviteCode = InviteCode::from_str(invite_code_string)?;
+    ) -> Result<RpcFederationPreview> {
+        let invite_code = invite_code.to_lowercase();
+        let mut invite_code = InviteCode::from_str(&invite_code)?;
         if should_override_localhost {
             override_localhost_invite_code(&mut invite_code);
         }
-        let api = DynGlobalApi::from_invite_code(&invite_code);
+        let api_single_gaurdian = DynGlobalApi::from_invite_code(&invite_code);
         let client_root_sercet = {
             let federation_id = invite_code.federation_id();
             // We do an additional derivation using `DerivableSecret::federation_key` since
@@ -358,17 +359,44 @@ impl FederationV2 {
             Self::client_root_secret_from_root_mnemonic(root_mnemonic, &federation_id, device_index)
                 .federation_key(&federation_id)
         };
-
-        // we only use this to check if backup exists
         let decoders = ModuleDecoderRegistry::default().with_fallback();
         let (client_config, backup) = tokio::join!(
             download_from_invite_code(&invite_code),
-            Client::download_backup_from_federation_static(&api, &client_root_sercet, &decoders,)
+            Client::download_backup_from_federation_static(
+                &api_single_gaurdian,
+                &client_root_sercet,
+                &decoders,
+            )
         );
+        let config = client_config.context("failed to connect")?;
 
-        Ok((client_config?, backup))
+        let meta_source =
+            MetaModuleMetaSourceWithFallback::new(LegacyMetaSourceWithExternalUrl::default());
+        let meta = meta_source
+            .fetch(&config, &api_single_gaurdian, FetchKind::Initial, None)
+            .await?
+            .values
+            .into_iter()
+            .map(|(k, v)| (k.0, v.0))
+            .collect();
+
+        Ok(RpcFederationPreview {
+            id: RpcFederationId(config.global.calculate_federation_id().to_string()),
+            name: config
+                .global
+                .federation_name()
+                .map(|x| x.to_owned())
+                .unwrap_or(config.global.calculate_federation_id().to_string()[0..8].to_string()),
+            meta,
+            invite_code: invite_code.to_string(),
+            version: 2,
+            returning_member_status: match backup {
+                Ok(Some(_)) => RpcReturningMemberStatus::ReturningMember,
+                Ok(None) => RpcReturningMemberStatus::NewMember,
+                Err(_) => RpcReturningMemberStatus::Unknown,
+            },
+        })
     }
-
     /// Download federation configs using an invite code. Save client config to
     /// correct database with Storage.
     #[allow(clippy::too_many_arguments)]
