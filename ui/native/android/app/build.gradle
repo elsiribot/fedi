@@ -193,22 +193,6 @@ android {
     }
     flavorDimensions "env"
     productFlavors {
-        bitcoinlake {
-            dimension "env"
-            applicationIdSuffix ".bitcoinlake"
-        }
-        bitcoinjungle {
-            dimension "env"
-            applicationIdSuffix ".bitcoinjungle"
-        }
-        bitcoinekasi {
-            dimension "env"
-            applicationIdSuffix ".bitcoinekasi"
-        }
-        bravo {
-            dimension "env"
-            applicationIdSuffix ".bravo"
-        }
         nightly {
             dimension "env"
             applicationIdSuffix ".nightly"
