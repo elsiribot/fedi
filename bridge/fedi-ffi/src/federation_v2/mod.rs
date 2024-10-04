@@ -254,6 +254,8 @@ impl FederationV2 {
         let federation = self.clone();
         self.task_group
             .spawn_cancellable("send_meta_updates", async move {
+                federation.client.meta_service().wait_initialization().await;
+                federation.send_federation_event().await;
                 let mut subscribe_to_updates =
                     std::pin::pin!(federation.client.meta_service().subscribe_to_updates());
                 while subscribe_to_updates.next().await.is_some() {
