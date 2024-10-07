@@ -680,8 +680,12 @@ export const getFederationStatus = async (
     federationId: string,
 ): Promise<FederationStatus> => {
     const guardianStatuses = await fedimint.guardianStatus(federationId)
+    // Make sure guardians are not considered offline if we see a timeout field
+    // because this is more likely due to a client-side network failure
+    // Seems possible that a timeout could also be due to a server-side network failure
+    // but this is probably very rare and we'd need a way to distinguish between the two cases
     const offlineGuardians = guardianStatuses.filter(
-        status => !('online' in status),
+        status => !('online' in status) && !('timeout' in status),
     )
     if (offlineGuardians.length === 0) {
         return 'online'
