@@ -84,6 +84,8 @@
 	<string>Fedi needs access to your microphone to record a social backup video</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Fedi needs access to your photo library to select media for attachments</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Fedi needs access to save photos to your photo library</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>FontAwesome.ttf</string>
