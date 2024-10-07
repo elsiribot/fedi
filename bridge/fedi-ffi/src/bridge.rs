@@ -47,7 +47,7 @@ use crate::storage::{
 };
 use crate::types::{
     RpcBridgeStatus, RpcDeviceIndexAssignmentStatus, RpcFederationPreview, RpcNostrPubkey,
-    RpcNostrSecret, RpcRegisteredDevice, RpcReturningMemberStatus,
+    RpcNostrSecret, RpcRegisteredDevice,
 };
 use crate::utils::required_threashold_of;
 
@@ -463,30 +463,13 @@ impl Bridge {
         let invite_code = invite_code.to_lowercase();
         let root_mnemonic = self.app_state.root_mnemonic().await;
         let device_index = self.app_state.ensure_device_index().await?;
-        let (config, backup) = FederationV2::download_client_config(
+        FederationV2::federation_preview(
             &invite_code,
             &root_mnemonic,
             device_index,
             self.feature_catalog.override_localhost.is_some(),
         )
         .await
-        .context("failed to connect")?;
-        Ok(RpcFederationPreview {
-            id: RpcFederationId(config.global.calculate_federation_id().to_string()),
-            name: config
-                .global
-                .federation_name()
-                .map(|x| x.to_owned())
-                .unwrap_or(config.global.calculate_federation_id().to_string()[0..8].to_string()),
-            meta: config.global.meta,
-            invite_code: invite_code.to_string(),
-            version: 2,
-            returning_member_status: match backup {
-                Ok(Some(_)) => RpcReturningMemberStatus::ReturningMember,
-                Ok(None) => RpcReturningMemberStatus::NewMember,
-                Err(_) => RpcReturningMemberStatus::Unknown,
-            },
-        })
     }
 
     /// Look up federation by id from in-memory hashmap
