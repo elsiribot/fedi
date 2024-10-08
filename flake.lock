@@ -578,17 +578,17 @@
         "systems": "systems_10"
       },
       "locked": {
-        "lastModified": 1719004469,
-        "narHash": "sha256-TZSHiEJ3qYgA46vikQKT2bwGCEF2LrJVw7cettqa+/g=",
+        "lastModified": 1728418516,
+        "narHash": "sha256-3UF5d2cOxcpY3H68OyjZfWXvKWYCrJaCe5hjHjUqDUA=",
         "owner": "fedibtc",
         "repo": "flakebox",
-        "rev": "12d5ee4f6c47bc01f07ec6f5848a83db265902d3",
+        "rev": "675075a4049253289e7cce634b1b6443b046ed1b",
         "type": "github"
       },
       "original": {
         "owner": "fedibtc",
         "repo": "flakebox",
-        "rev": "12d5ee4f6c47bc01f07ec6f5848a83db265902d3",
+        "rev": "675075a4049253289e7cce634b1b6443b046ed1b",
         "type": "github"
       }
     },

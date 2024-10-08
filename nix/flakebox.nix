@@ -47,6 +47,40 @@ let
         "misc"
       ];
     };
+
+  cargoWrapper = pkgs.stdenv.mkDerivation {
+      pname = "cargo-wrapper";
+      version = "1.0.0";
+
+      # Use the local directory as the source
+      src = ../nix/cargo-wrapper/.;
+
+      buildInputs = [
+        pkgs.bash
+      ];
+
+      nativeBuildInputs = [
+        pkgs.makeWrapper
+      ];
+
+      buildPhase = ''
+        mkdir -p $out/bin
+        cp -a ./cargo $out/bin/cargo
+        wrapProgram $out/bin/cargo \
+          --run "export CARGO_WRAPPER_PATH=\"\$0\"" \
+          --suffix PATH : ${
+            lib.makeBinPath [
+              pkgs.bash
+              pkgs.gawk
+              pkgs.which
+              pkgs.coreutils
+              pkgs.jq
+            ]
+          }
+      '';
+
+    };
+
 in
 (flakeboxLib.craneMultiBuild { inherit toolchains profiles; }) (craneLib':
 let
@@ -83,6 +117,12 @@ let
       moreutils-ts = pkgs.writeShellScriptBin "ts" "exec ${pkgs.moreutils}/bin/ts \"$@\"";
     in
     {
+      packages = [
+        # flakebox adds toolchains via `packages`, which seems to always take precedence
+        # `nativeBuildInputs` in `mkShell`, so we need to add it here as well.
+        (lib.hiPrio cargoWrapper)
+      ];
+
       buildInputs = builtins.attrValues
         {
           inherit (pkgs) openssl;
@@ -97,6 +137,8 @@ let
         inherit (pkgs) perl;
         inherit moreutils-ts;
       }) ++ [
+        (lib.hiPrio cargoWrapper)
+
         # add a command that can be used to lower both CPU and IO priority
         # of a command to help make it more friendly to other things
         # potentially sharing the CI or dev machine

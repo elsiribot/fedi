@@ -5,8 +5,15 @@
 # https://github.com/rust-rocksdb/rust-rocksdb/issues/823
 
 
-if [ -z "$CARGO_ORIG_BIN" ]; then
-  >&2 echo "CARGO_ORIG_BIN not set"
+# Get the real path of the script
+our_script_path="${CARGO_WRAPPER_PATH:-$(realpath "$0")}"
+our_script_basename=$(basename "$our_script_path")
+
+# Find the next match after the script's path
+next_script_path=$(which -a "$our_script_basename" | awk -v script="$our_script_path" 'found { print; exit } $0 == script { found=1 }')
+
+if [ -z "$next_script_path" ]; then
+  >&2 echo "Did not find the original script to call"
   exit 1
 fi
 
@@ -18,6 +25,8 @@ package=""
 bin=""
 # cargo command (e.g. 'run' in 'cargo run')
 cmd=""
+
+target=${CARGO_BUILD_TARGET:-$(rustc -Z unstable-options --print target-spec-json | jq -r '."llvm-target"' | tr '-' '_')}
 args=()
 
 # iterate over all arguments, collect them into 'args' and set some env vars
@@ -91,6 +100,7 @@ if [ -n "$target" ]; then
   snappy_lib_dir="SNAPPY_${target}_LIB_DIR"
   sqlite3_lib_dir="SQLITE3_${target}_LIB_DIR"
   sqlcipher_lib_dir="SQLCIPHER_${target}_LIB_DIR"
+
   rocksdb_static="ROCKSDB_${target}_STATIC"
   sqlite3_static="SQLITE3_${target}_STATIC"
   sqlcipher_static="SQLCIPHER_${target}_STATIC"
@@ -116,6 +126,7 @@ if [ -n "$target" ]; then
   else
     unset SQLCIPHER_LIB_DIR
   fi
+
   if [ -n "${!rocksdb_static}" ]; then
     export ROCKSDB_STATIC="${!rocksdb_static}"
   else
@@ -165,4 +176,6 @@ if [ -n "$cmd_accepts_target_dir" ] && [ -n "$custom_target" ] && [ -z "$target_
   args+=("--target-dir" "$custom_target")
 fi
 
-exec "$CARGO_ORIG_BIN" "${args[@]}"
+# >&2 echo "cargo-wrapper will call $next_script_path for target=$target"
+# export | grep -E "STATIC|LIB_DIR" >&2 
+exec "$next_script_path" "${args[@]}"

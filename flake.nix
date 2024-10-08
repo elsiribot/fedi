@@ -14,7 +14,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flakebox = {
-      url = "github:fedibtc/flakebox?rev=12d5ee4f6c47bc01f07ec6f5848a83db265902d3";
+      url = "github:fedibtc/flakebox?rev=675075a4049253289e7cce634b1b6443b046ed1b";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.fenix.follows = "fenix";
     };
@@ -317,10 +317,7 @@
             alias create-avd="avdmanager create avd --force --name phone --package 'system-images;android-32;google_apis;arm64-v8a' --path $PWD/avd";
             alias emulator="emulator -avd phone"
 
-            # hijack cargo for our evil purposes
-            export CARGO_ORIG_BIN="$(${pkgs.which}/bin/which cargo)"
             export REPO_ROOT="$(git rev-parse --show-toplevel)"
-            export PATH="''${REPO_ROOT}/nix/cargo-wrapper/:$PATH"
             export RUSTC_WRAPPER=${pkgs.sccache}/bin/sccache
             export CARGO_BUILD_TARGET_DIR="''${CARGO_BUILD_TARGET_DIR:-''${REPO_ROOT}/target-nix}"
 
