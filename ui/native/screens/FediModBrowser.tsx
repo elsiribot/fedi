@@ -21,7 +21,6 @@ import {
 
 import { useToast } from '@fedi/common/hooks/toast'
 import {
-    initializeNostrKeys,
     selectActiveFederation,
     selectCurrency,
     selectFediModDebugMode,
@@ -69,7 +68,7 @@ import {
     useOmniLinkContext,
     useOmniLinkInterceptor,
 } from '../state/contexts/OmniLinkContext'
-import { useAppDispatch, useAppSelector, useBridge } from '../state/hooks'
+import { useAppSelector, useBridge } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('FediModBrowser')
@@ -125,7 +124,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         FediModResolver<FediModResponse> | undefined
     >() as MutableRefObject<FediModResolver<FediModResponse> | undefined>
     const overlayRejectRef = useRef<(reason: Error) => void>()
-    const dispatch = useAppDispatch()
 
     const [requestInvoiceArgs, setRequestInvoiceArgs] =
         useState<RequestInvoiceArgs | null>(null)
@@ -321,14 +319,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             log.info('nostr.getPublicKey')
 
             if (!nostrPublic) {
-                const { pubkey } = await dispatch(
-                    initializeNostrKeys({ fedimint }),
-                ).unwrap()
-
-                if (!pubkey)
-                    throw new Error(t('errors.get-nostr-pubkey-failed'))
-
-                return pubkey.hex
+                throw new Error(t('errors.get-nostr-pubkey-failed'))
             }
 
             return nostrPublic.hex

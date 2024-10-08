@@ -1,20 +1,15 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import {
-    initializeNostrKeys,
-    selectNostrNpub,
-    selectNostrNsec,
-} from '@fedi/common/redux'
-import { fedimint } from '../bridge'
+import { selectNostrNpub, selectNostrNsec } from '@fedi/common/redux'
 import { CopyButton } from '../components/ui/CopyButton'
 import HoloLoader from '../components/ui/HoloLoader'
 import { PressableIcon } from '../components/ui/PressableIcon'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'NostrSettings'>
@@ -24,14 +19,9 @@ const NostrSettings: React.FC<Props> = (_: Props) => {
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
 
-    const dispatch = useAppDispatch()
     const nostrPublic = useAppSelector(selectNostrNpub)
     const nostrSecret = useAppSelector(selectNostrNsec)
     const [showNsec, setShowNsec] = useState(false)
-
-    useEffect(() => {
-        dispatch(initializeNostrKeys({ fedimint }))
-    }, [dispatch])
 
     const style = styles(theme, insets)
 
