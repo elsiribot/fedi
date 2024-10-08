@@ -12,8 +12,9 @@ import {
 import { exists } from 'react-native-fs'
 
 import { setSelectedChatMessage } from '@fedi/common/redux'
+import { MatrixEvent } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
-import { TypedMatrixEvent } from '@fedi/common/utils/matrix'
+import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 import { scaleAttachment } from '@fedi/common/utils/media'
 import { CameraRoll } from '@react-native-camera-roll/camera-roll'
 import { useTranslation } from 'react-i18next'
@@ -26,7 +27,7 @@ import { useStoragePermission } from '../../../utils/hooks'
 import SvgImage from '../../ui/SvgImage'
 
 type ChatVideoEventProps = {
-    event: TypedMatrixEvent<'m.video'>
+    event: MatrixEvent<MatrixEventContentType<'m.video'>>
 }
 
 const log = makeLog('ChatVideoEvent')

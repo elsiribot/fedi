@@ -5,7 +5,8 @@ import {
     setMessageToEdit,
     setSelectedChatMessage,
 } from '@fedi/common/redux'
-import { TypedMatrixEvent } from '@fedi/common/utils/matrix'
+import { MatrixEvent } from '@fedi/common/types'
+import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 import { CameraRoll } from '@react-native-camera-roll/camera-roll'
 import Clipboard from '@react-native-clipboard/clipboard'
 import { Text, Theme, useTheme } from '@rneui/themed'
@@ -79,7 +80,11 @@ const SelectedMessageOverlay: React.FC = () => {
             return
 
         dispatch(
-            setMessageToEdit(selectedMessage as TypedMatrixEvent<'m.text'>),
+            setMessageToEdit(
+                selectedMessage as MatrixEvent<
+                    MatrixEventContentType<'m.text'>
+                >,
+            ),
         )
 
         closeOverlay()
@@ -179,11 +184,13 @@ const SelectedMessageOverlay: React.FC = () => {
                         <View style={style.previewMessageContainer}>
                             <ChatEvent
                                 event={
-                                    selectedMessage as TypedMatrixEvent<
-                                        | 'm.text'
-                                        | 'm.image'
-                                        | 'm.video'
-                                        | 'm.file'
+                                    selectedMessage as MatrixEvent<
+                                        MatrixEventContentType<
+                                            | 'm.text'
+                                            | 'm.image'
+                                            | 'm.video'
+                                            | 'm.file'
+                                        >
                                     >
                                 }
                                 last

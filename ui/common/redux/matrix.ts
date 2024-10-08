@@ -46,7 +46,7 @@ import { MatrixChatClient } from '../utils/MatrixChatClient'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import {
-    TypedMatrixEvent,
+    MatrixEventContentType,
     getReceivablePaymentEvents,
     getRoomEventPowerLevel,
     getUserSuffix,
@@ -96,10 +96,10 @@ const initialState = {
     pushNotificationToken: null as string | null,
     groupPreviews: {} as Record<MatrixRoom['id'], MatrixGroupPreview>,
     drafts: {} as Record<MatrixRoom['id'], string>,
-    selectedChatMessage: null as TypedMatrixEvent<
-        'm.text' | 'm.image' | 'm.video' | 'm.file'
+    selectedChatMessage: null as MatrixEvent<
+        MatrixEventContentType<'m.text' | 'm.image' | 'm.video' | 'm.file'>
     > | null,
-    messageToEdit: null as TypedMatrixEvent<'m.text'> | null,
+    messageToEdit: null as MatrixEvent<MatrixEventContentType<'m.text'>> | null,
 }
 
 export type MatrixState = typeof initialState
@@ -209,15 +209,19 @@ export const matrixSlice = createSlice({
         },
         setSelectedChatMessage(
             state,
-            action: PayloadAction<TypedMatrixEvent<
-                'm.text' | 'm.image' | 'm.video' | 'm.file'
+            action: PayloadAction<MatrixEvent<
+                MatrixEventContentType<
+                    'm.text' | 'm.image' | 'm.video' | 'm.file'
+                >
             > | null>,
         ) {
             state.selectedChatMessage = action.payload
         },
         setMessageToEdit(
             state,
-            action: PayloadAction<TypedMatrixEvent<'m.text'> | null>,
+            action: PayloadAction<MatrixEvent<
+                MatrixEventContentType<'m.text'>
+            > | null>,
         ) {
             state.messageToEdit = action.payload
         },

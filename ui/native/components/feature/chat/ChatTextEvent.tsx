@@ -1,5 +1,6 @@
 import { selectMatrixAuth, setSelectedChatMessage } from '@fedi/common/redux'
-import { TypedMatrixEvent } from '@fedi/common/utils/matrix'
+import { MatrixEvent } from '@fedi/common/types'
+import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 import { Theme, useTheme } from '@rneui/themed'
 import { Pressable, StyleSheet } from 'react-native'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
@@ -8,7 +9,7 @@ import { bubbleGradient } from './ChatEvent'
 import MessageContents from './MessageContents'
 
 type Props = {
-    event: TypedMatrixEvent<'m.text'>
+    event: MatrixEvent<MatrixEventContentType<'m.text'>>
 }
 
 const ChatTextEvent: React.FC<Props> = ({ event }) => {

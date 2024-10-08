@@ -6,9 +6,11 @@ import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectMatrixAuth } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import {
-    TypedMatrixEvent,
+    isFileEvent,
+    isImageEvent,
     isPaymentEvent,
     isTextEvent,
+    isVideoEvent,
 } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../../../state/hooks'
@@ -35,7 +37,6 @@ const ChatEvent: React.FC<Props> = ({
 
     const isMe = event.senderId === matrixAuth?.userId
     const isQueued = false
-    const isPayment = isPaymentEvent(event)
     const isText = isTextEvent(event)
 
     const bubbleContainerStyles: StyleProp<ViewStyle | TextStyle>[] = [
@@ -71,22 +72,16 @@ const ChatEvent: React.FC<Props> = ({
                             fullWidth && styles(theme).fullWidth,
                         ]}>
                         <View style={bubbleContainerStyles}>
-                            {isPayment ? (
-                                <ChatPaymentEvent event={event} />
-                            ) : isText ? (
+                            {isText ? (
                                 <ChatTextEvent event={event} />
-                            ) : event.content.msgtype === 'm.image' ? (
-                                <ChatImageEvent
-                                    event={event as TypedMatrixEvent<'m.image'>}
-                                />
-                            ) : event.content.msgtype === 'm.file' ? (
-                                <ChatFileEvent
-                                    event={event as TypedMatrixEvent<'m.file'>}
-                                />
-                            ) : event.content.msgtype === 'm.video' ? (
-                                <ChatVideoEvent
-                                    event={event as TypedMatrixEvent<'m.video'>}
-                                />
+                            ) : isPaymentEvent(event) ? (
+                                <ChatPaymentEvent event={event} />
+                            ) : isImageEvent(event) ? (
+                                <ChatImageEvent event={event} />
+                            ) : isFileEvent(event) ? (
+                                <ChatFileEvent event={event} />
+                            ) : isVideoEvent(event) ? (
+                                <ChatVideoEvent event={event} />
                             ) : null}
                         </View>
                     </View>
