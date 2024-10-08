@@ -2,9 +2,9 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 import type { i18n } from 'i18next'
 
 import { CommonState } from '.'
-import { loadFromStorage } from './storage'
-import { FedimintBridge } from '../utils/fedimint'
 import { RpcNostrPubkey, RpcNostrSecret } from '../types/bindings'
+import { FedimintBridge } from '../utils/fedimint'
+import { loadFromStorage } from './storage'
 
 /*** Initial State ***/
 
@@ -127,15 +127,23 @@ export const initializeDeviceId = createAsyncThunk<
 )
 
 export const initializeNostrKeys = createAsyncThunk<
-    void,
+    { pubkey: RpcNostrPubkey },
     { fedimint: FedimintBridge },
     { state: CommonState }
 >(
     'environment/initializeNostrKeys',
     async ({ fedimint }, { getState, dispatch }) => {
-        if (getState().environment.nostrNpub) return
-        dispatch(setNostrNpub(await fedimint.getNostrPubkey()))
-        dispatch(setNostrNsec(await fedimint.getNostrSecret()))
+        const existingPubkey = getState().environment.nostrNpub
+
+        if (existingPubkey) return { pubkey: existingPubkey }
+
+        const pubkey = await fedimint.getNostrPubkey()
+        const secret = await fedimint.getNostrSecret()
+
+        dispatch(setNostrNpub(pubkey))
+        dispatch(setNostrNsec(secret))
+
+        return { pubkey }
     },
 )
 

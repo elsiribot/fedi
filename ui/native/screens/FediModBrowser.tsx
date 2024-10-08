@@ -320,13 +320,18 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         [InjectionMessageType.nostr_getPublicKey]: async () => {
             log.info('nostr.getPublicKey')
 
-            await dispatch(initializeNostrKeys({ fedimint })).unwrap()
-
             if (!nostrPublic) {
-                throw new Error(t('errors.get-nostr-pubkey-failed'))
+                const { pubkey } = await dispatch(
+                    initializeNostrKeys({ fedimint }),
+                ).unwrap()
+
+                if (!pubkey)
+                    throw new Error(t('errors.get-nostr-pubkey-failed'))
+
+                return pubkey.hex
             }
 
-            return nostrPublic.npub
+            return nostrPublic.hex
         },
         [InjectionMessageType.nostr_signEvent]: async evt => {
             log.info('nostr.signEvent', evt)
