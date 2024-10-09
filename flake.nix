@@ -45,20 +45,16 @@
               fs-dir-cache = fs-dir-cache.packages.${system}.default;
               fastlane = pkgs-unstable.fastlane;
               convco = pkgs-unstable.convco;
-              snappy = pkgs-unstable.snappy;
-
-              mprocs = prev.mprocs.overrideAttrs (final: prev: {
-                patches = prev.patches ++ [
-                  (builtins.fetchurl {
-                    url = "https://github.com/pvolok/mprocs/pull/88.patch";
-                    name = "clipboard-fix.patch";
-                    sha256 = "sha256-9dx1vaEQ6kD66M+vsJLIq1FK+nEObuXSi3cmpSZuQWk=";
-                  })
-                ];
+              snappy = prev.snappy.overrideAttrs (f: p: rec {
+                version = "1.2.1";
+                  src = prev.fetchFromGitHub {
+                  owner = "google";
+                  repo = "snappy";
+                  rev = version;
+                  hash = "sha256-IzKzrMDjh+Weor+OrKdX62cAKYTdDXgldxCgNE2/8vk=";
+                };
               });
-
             })
-            fedimint-pkgs.overlays.all
           ];
         };
 

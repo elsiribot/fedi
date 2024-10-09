@@ -106,6 +106,8 @@ if [ -n "$target" ]; then
   sqlcipher_static="SQLCIPHER_${target}_STATIC"
   snappy_static="SNAPPY_${target}_STATIC"
 
+  snappy_compile="SNAPPY_${target}_COMPILE"
+
   if [ -n "${!rocksdb_lib_dir}" ]; then
     export ROCKSDB_LIB_DIR="${!rocksdb_lib_dir}"
   else
@@ -147,6 +149,12 @@ if [ -n "$target" ]; then
   else
     unset SQLCIPHER_STATIC
   fi
+
+  if [ -n "${!snappy_compile}" ]; then
+    export SNAPPY_COMPILE="${!snappy_compile}"
+  else
+    unset SNAPPY_COMPILE
+  fi
 fi
 
 cmd_accepts_target_dir=""
@@ -177,5 +185,5 @@ if [ -n "$cmd_accepts_target_dir" ] && [ -n "$custom_target" ] ; then
 fi
 
 # >&2 echo "cargo-wrapper will call $next_script_path for target=$target"
-# export | grep -E "STATIC|LIB_DIR" >&2 
+# export | grep -E "STATIC|LIB_DIR" >&2
 exec "$next_script_path" "${args[@]}"
