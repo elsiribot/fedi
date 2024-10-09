@@ -45,6 +45,7 @@
               fs-dir-cache = fs-dir-cache.packages.${system}.default;
               fastlane = pkgs-unstable.fastlane;
               convco = pkgs-unstable.convco;
+              snappy = pkgs-unstable.snappy;
 
               mprocs = prev.mprocs.overrideAttrs (final: prev: {
                 patches = prev.patches ++ [
