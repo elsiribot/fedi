@@ -102,12 +102,13 @@ let
       "SQLCIPHER_${build_arch_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlcipher}/lib/";
       "SNAPPY_${build_arch_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.snappy}/lib/";
       "SQLITE3_${build_arch_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlite.out}/lib/";
-    } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-      # macos can't static libraries
-      "SNAPPY_${build_arch_underscores}_STATIC" = "true";
+
       "ROCKSDB_${build_arch_underscores}_STATIC" = "true";
       "SQLCIPHER_${build_arch_underscores}_STATIC" = "true";
       "SQLITE3_${build_arch_underscores}_STATIC" = "true";
+    } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
+      # macos can't static libraries on this one
+      "SNAPPY_${build_arch_underscores}_STATIC" = "true";
     };
 
   commonArgs =
