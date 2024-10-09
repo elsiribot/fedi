@@ -18,7 +18,7 @@ if [ -z "$next_script_path" ]; then
 fi
 
 # value of '--target-dir'
-target_dir=""
+target_dir="${CARGO_BUILD_TARGET_DIR:-target}"
 # combined strings of packages selected via '-p'/'--package'
 package=""
 # combined strings of bins/examples selected via '--bin/'--example'
@@ -161,15 +161,15 @@ esac
 # if `--package` is empty, but `--bin` was used
 custom_target=""
 if [ -n "$package" ]; then
-  custom_target="target/pkg/$package"
+  custom_target="${target_dir}/pkg/$package"
 elif [ -n "$bin" ]; then
-  custom_target="target/bin/$bin"
+  custom_target="${target_dir}/bin/$bin"
 fi
 
 # If building with '--package <pkg>' use a custom '--target-dir'
 # to avoid invalidating all the existing build artifacts, just because
 # package set changed.
-if [ -n "$cmd_accepts_target_dir" ] && [ -n "$custom_target" ] && [ -z "$target_dir" ]; then
+if [ -n "$cmd_accepts_target_dir" ] && [ -n "$custom_target" ] ; then
   >&2 echo "cargo-wrapper: Using custom target dir: $custom_target"
   # if 'target-dir' was not specificaly set, and '--package <pkgs>' is used
   # compile everything to a target's subdir to avoid causing rebuilds
