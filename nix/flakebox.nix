@@ -98,17 +98,23 @@ let
       build_arch_underscores = lib.strings.replaceStrings [ "-" ] [ "_" ] pkgs.stdenv.buildPlatform.config;
     in
     {
+    } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
+      "ROCKSDB_${build_arch_underscores}_STATIC" = "true";
       "ROCKSDB_${build_arch_underscores}_LIB_DIR" = "${pkgs.rocksdb}/lib/";
-      "SQLCIPHER_${build_arch_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlcipher}/lib/";
+
+      "SNAPPY_${build_arch_underscores}_STATIC" = "true";
       "SNAPPY_${build_arch_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.snappy}/lib/";
+
+      "SQLITE3_${build_arch_underscores}_STATIC" = "true";
       "SQLITE3_${build_arch_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlite.out}/lib/";
 
-      "ROCKSDB_${build_arch_underscores}_STATIC" = "true";
+      "SQLCIPHER_${build_arch_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlcipher}/lib/";
       "SQLCIPHER_${build_arch_underscores}_STATIC" = "true";
-      "SQLITE3_${build_arch_underscores}_STATIC" = "true";
-    } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-      # macos can't static libraries on this one
-      "SNAPPY_${build_arch_underscores}_STATIC" = "true";
+    } // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
+      "SNAPPY_${build_arch_underscores}_LIB_DIR" = "${pkgs.snappy}/lib/";
+
+      "SQLITE3_${build_arch_underscores}_LIB_DIR" = "${pkgs.sqlite.out}/lib/";
+      "SQLCIPHER_${build_arch_underscores}_LIB_DIR" = "${pkgs.sqlcipher}/lib/";
     };
 
   commonArgs =

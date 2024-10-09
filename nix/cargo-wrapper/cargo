@@ -26,7 +26,7 @@ bin=""
 # cargo command (e.g. 'run' in 'cargo run')
 cmd=""
 
-target=${CARGO_BUILD_TARGET:-$(rustc -Z unstable-options --print target-spec-json | jq -r '."llvm-target"' | tr '-' '_')}
+target=${CARGO_BUILD_TARGET:-$(rustc -vV | sed -n 's|host: ||p' | tr '-' '_')}
 args=()
 
 # iterate over all arguments, collect them into 'args' and set some env vars
