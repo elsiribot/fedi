@@ -89,10 +89,16 @@ export function useStoragePermission() {
 
             case 'android':
                 if (Platform.Version >= 33) {
-                    return [PERMISSIONS.ANDROID.READ_MEDIA_IMAGES]
+                    return [
+                        PERMISSIONS.ANDROID.READ_MEDIA_IMAGES,
+                        PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE,
+                    ]
                 }
 
-                return [PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE]
+                return [
+                    PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE,
+                    PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE,
+                ]
 
             default:
                 return null

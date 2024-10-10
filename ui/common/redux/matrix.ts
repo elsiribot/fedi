@@ -97,7 +97,7 @@ const initialState = {
     groupPreviews: {} as Record<MatrixRoom['id'], MatrixGroupPreview>,
     drafts: {} as Record<MatrixRoom['id'], string>,
     selectedChatMessage: null as MatrixEvent<
-        MatrixEventContentType<'m.text'>
+        MatrixEventContentType<'m.text' | 'm.image' | 'm.video' | 'm.file'>
     > | null,
     messageToEdit: null as MatrixEvent<MatrixEventContentType<'m.text'>> | null,
 }
@@ -210,7 +210,9 @@ export const matrixSlice = createSlice({
         setSelectedChatMessage(
             state,
             action: PayloadAction<MatrixEvent<
-                MatrixEventContentType<'m.text'>
+                MatrixEventContentType<
+                    'm.text' | 'm.image' | 'm.video' | 'm.file'
+                >
             > | null>,
         ) {
             state.selectedChatMessage = action.payload

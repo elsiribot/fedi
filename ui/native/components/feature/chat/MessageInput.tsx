@@ -38,7 +38,7 @@ import {
 } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { DocumentDirectoryPath, downloadFile } from 'react-native-fs'
+import { TemporaryDirectoryPath, copyFile, downloadFile } from 'react-native-fs'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { Attachments } from '../../ui/Attachments'
@@ -112,17 +112,29 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
                 await Promise.all(
                     res.assets.map(async asset => {
-                        const toUri = `${DocumentDirectoryPath}/${Date.now()}-${Math.random()
+                        const toUri = `${TemporaryDirectoryPath}/${Date.now()}-${Math.random()
                             .toString(36)
                             .slice(2)}.${asset.type?.split('/')[1]}`
 
                         try {
-                            await downloadFile({
-                                fromUrl: asset.uri as string,
-                                toFile: toUri,
-                            }).promise
+                            const resolvedUri = toUri.startsWith('file://')
+                                ? toUri
+                                : `file://${toUri}`
 
-                            assets.push({ ...asset, uri: toUri })
+                            // Videos don't get copied correctly on iOS
+                            if (
+                                Platform.OS === 'ios' &&
+                                asset.type?.includes('video/')
+                            ) {
+                                await downloadFile({
+                                    fromUrl: asset.uri as string,
+                                    toFile: resolvedUri,
+                                }).promise
+                            } else {
+                                await copyFile(asset.uri as string, resolvedUri)
+                            }
+
+                            assets.push({ ...asset, uri: resolvedUri })
                         } catch (downloadError) {
                             log.error(
                                 'Download error for:',
@@ -143,7 +155,19 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const handleUploadAttachment = useCallback(async () => {
         try {
             const response = await DocumentPicker.pick({
-                type: types.allFiles,
+                // Allow all supported file extensions except for images, audio, and video
+                type: [
+                    types.csv,
+                    types.doc,
+                    types.docx,
+                    types.pdf,
+                    types.plainText,
+                    types.ppt,
+                    types.pptx,
+                    types.xls,
+                    types.xlsx,
+                    types.zip,
+                ],
                 allowMultiSelection: true,
             })
 
