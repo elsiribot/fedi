@@ -11,6 +11,7 @@ let
     "bridge"
     "fedimintd"
     "fedimint-cli"
+    "fedi-api-types"
     "fedi-db-dump"
     "fedi-debug"
     "fedi-core"
