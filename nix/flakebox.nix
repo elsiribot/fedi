@@ -299,6 +299,13 @@ rec {
   fedi-fedimintd = flakeboxLib.pickBinary { bin = "fedimintd"; pkg = fedi-fedimint-pkgs; };
   fedi-fedimint-cli = flakeboxLib.pickBinary { bin = "fedimint-cli"; pkg = fedi-fedimint-pkgs; };
 
+  fedi-api-types = fediBuildPackageGroup {
+    pname = "fedi-api-types";
+    packages = [
+      "fedi-api-types"
+    ];
+  };
+
   fedi-wasm = fediBuildPackageGroup {
     pname = "fedi-wasm";
     packages = [
