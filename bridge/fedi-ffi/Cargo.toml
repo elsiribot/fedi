@@ -8,8 +8,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 name = "fediffi"
 
 [dependencies]
-fedi-api-types = { git = "https://x-access-token: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@github.com/fedibtc/devops-automation", rev = "1d4ea6e67bb315fa142bbc84b47aa02ddb2b5c78" }
-
+fedi-api-types = { workspace = true }
 fedi-core = { workspace = true }
 fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
