@@ -128,12 +128,12 @@ export const initializeDeviceId = createAsyncThunk<
 
 export const initializeNostrKeys = createAsyncThunk<
     void,
-    { fedimint: FedimintBridge },
+    { fedimint: FedimintBridge; forceRefresh?: boolean },
     { state: CommonState }
 >(
     'environment/initializeNostrKeys',
-    async ({ fedimint }, { getState, dispatch }) => {
-        if (getState().environment.nostrNpub) return
+    async ({ fedimint, forceRefresh }, { getState, dispatch }) => {
+        if (!forceRefresh && getState().environment.nostrNpub) return
         dispatch(setNostrNpub(await fedimint.getNostrPubkey()))
         dispatch(setNostrNsec(await fedimint.getNostrSecret()))
     },
