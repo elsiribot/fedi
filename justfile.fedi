@@ -118,11 +118,6 @@ test-ui:
 fedimint-cli REF REV *ARGS:
   @nix run "git+https://github.com/fedimint/fedimint.git?ref={{REF}}&rev={{REV}}#ci.fedimint-cli" -- {{ARGS}}
 
-fedi-fedimint-cli REF REV *ARGS:
-  @# TODO: --no-write-lock-file bug? https://discourse.nixos.org/t/nix-flake-registry-error-error-cannot-write-modified-lock-file-of-flake-flake-nur/12853
-  @ if [ "{{ARGS}}" = "version-hash" ] ; then >&2 echo "Warning: version-hash is broken here" ; fi
-  @ nix run  --no-write-lock-file "git+https://x-access-token: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@github.com/fedibtc/fedi.git?ref={{REF}}&rev={{REV}}#ci.fedi-fedimint-cli" -- {{ARGS}}
-
 fedimint-cli-v0_2_1 *ARGS:
   @just fedimint-cli "refs/tags/v0.2.1" a8422b84102ab5fc768307215d5b20d807143f27 {{ARGS}}
 
@@ -131,12 +126,6 @@ fedimint-cli-v0_2_2-rc7 *ARGS:
 
 fedimint-cli-v0_2_2-rc8 *ARGS:
   @just fedimint-cli "refs/tags/v0.2.2-rc8" d3e154ef0ea2fde064d6f3c3d40b9800c9a9a3ce {{ARGS}}
-
-fedi-fedimint-cli-v0_2_2-rc8 *ARGS:
-  @just fedi-fedimint-cli "deployments/v0.2.2-rc8" 719a96d26e67f39d00ca37c1c160b0556ae20622 {{ARGS}}
-
-fedi-fedimint-cli-master *ARGS:
-  @just fedi-fedimint-cli "master" 38447bb77b28c95874fcb03d6e66dc2f357c1953 {{ARGS}}
 
 tidy-up:
   @./scripts/tidy-up.sh
