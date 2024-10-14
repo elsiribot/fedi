@@ -268,46 +268,43 @@ export const refreshFederations = createAsyncThunk<
     const federationsList = await fedimint.listFederations()
 
     log.info(`refreshing ${federationsList.length} federations`)
-    const federationPromises: Promise<Federation>[] = federationsList.map(
-        async f => {
-            /*
+    const federations: Federation[] = federationsList.map(f => {
+        /*
                 Client-side network failure will cause getFederationStatus to
                 hang and timeout after 10 seconds so we assume online by default
                 and instead fetch the status in the background. This should mean
                 a smoother UX since we avoid flickering indicators and don't block
                 the initial app load.
             */
-            const federation: Federation = {
-                ...f,
-                status: 'online',
-                network: f.network as Network,
-                hasWallet: true as const,
-            }
-            getFederationStatus(fedimint, f.id)
-                .then(updatedStatus => {
-                    if (updatedStatus !== federation.status) {
-                        log.info(
-                            `updating federation status for ${f.id} to ${updatedStatus}`,
-                        )
-                        dispatch(
-                            updateFederation({
-                                id: f.id,
-                                status: updatedStatus,
-                            }),
-                        )
-                    }
-                })
-                .catch(error => {
-                    log.error(
-                        `Error in background status fetch for federation ${f.id}:`,
-                        error,
+        const federation: Federation = {
+            ...f,
+            status: 'online',
+            network: f.network as Network,
+            hasWallet: true as const,
+        }
+        getFederationStatus(fedimint, f.id)
+            .then(updatedStatus => {
+                if (updatedStatus !== federation.status) {
+                    log.info(
+                        `updating federation status for ${f.id} to ${updatedStatus}`,
                     )
-                })
+                    dispatch(
+                        updateFederation({
+                            id: f.id,
+                            status: updatedStatus,
+                        }),
+                    )
+                }
+            })
+            .catch(error => {
+                log.error(
+                    `Error in background status fetch for federation ${f.id}:`,
+                    error,
+                )
+            })
 
-            return federation
-        },
-    )
-    const federations = await Promise.all(federationPromises)
+        return federation
+    })
 
     const communities = await fedimint.listCommunities({})
     const communitiesAsFederations = communities.map(coerceFederationListItem)
