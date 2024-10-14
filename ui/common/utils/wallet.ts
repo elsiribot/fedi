@@ -457,6 +457,16 @@ export const makeTxnDetailItems = (
             copyable: true,
             truncated: true,
         })
+
+        if (txn.lnState?.type === 'success' && txn.direction === 'send') {
+            items.push({
+                label: t('words.preimage'),
+                value: txn.lnState.preimage,
+                copiedMessage: t('phrases.copied-to-clipboard'),
+                copyable: true,
+                truncated: true,
+            })
+        }
     }
     if (txn.bitcoin) {
         items.push({
