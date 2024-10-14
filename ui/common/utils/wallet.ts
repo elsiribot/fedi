@@ -269,12 +269,18 @@ export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
                 switch (txn.lnState?.type) {
                     case 'waitingForRefund':
                         return t('phrases.refund-pending')
+                    case 'success':
+                        return t('phrases.sent-bitcoin')
+                    case 'created':
+                    case 'funded':
+                        return t('words.pending')
                     case 'canceled':
                     case 'refunded':
                     case 'failed':
                         return t('words.failed')
+                    // Should never happen
                     default:
-                        return t('phrases.sent-bitcoin')
+                        return t('words.failed')
                 }
             } else if (txn.bitcoin) {
                 switch (txn.onchainState?.type) {
