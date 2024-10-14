@@ -2,6 +2,7 @@
 .next/
 out/
 .env.local
+next-env.d.ts
 
 # next-pwa
 **/public/workbox*
