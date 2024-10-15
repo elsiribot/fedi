@@ -316,7 +316,7 @@ export const matrixSlice = createSlice({
                     action.payload
             },
         )
-        builder.addCase(previewDefaultGroupChats.fulfilled, (state, action) => {
+        builder.addCase(previewAllDefaultChats.fulfilled, (state, action) => {
             const updatedDefaultGroups = action.payload.reduce(
                 (
                     result: Record<RpcRoomId, MatrixGroupPreview>,
@@ -984,11 +984,11 @@ export const previewCommunityDefaultChats = createAsyncThunk<
     })
 })
 
-export const previewDefaultGroupChats = createAsyncThunk<
+export const previewAllDefaultChats = createAsyncThunk<
     MatrixGroupPreview[],
     void,
     { state: CommonState }
->('matrix/previewDefaultGroupChats', async (_, { getState, dispatch }) => {
+>('matrix/previewAllDefaultChats', async (_, { getState, dispatch }) => {
     const client = getMatrixClient()
     const federations = getState().federation.federations
     // Previews default chats for each federation
