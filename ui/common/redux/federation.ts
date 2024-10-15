@@ -9,11 +9,7 @@ import omit from 'lodash/omit'
 import orderBy from 'lodash/orderBy'
 import { makeLog } from '../utils/log'
 
-import {
-    CommonState,
-    previewCommunityDefaultChats,
-    previewDefaultGroupChats,
-} from '.'
+import { CommonState, previewCommunityDefaultChats } from '.'
 import { FEDI_GLOBAL_COMMUNITY } from '../constants/community'
 import {
     ClientConfigMetadata,
@@ -373,7 +369,7 @@ export const joinFederation = createAsyncThunk<
         dispatch(setActiveFederationId(federation.id))
         // matrix client should be initialized by now
         // so we can join default groups
-        dispatch(previewDefaultGroupChats())
+        dispatch(previewCommunityDefaultChats(federation.id))
 
         const activeFederation = selectActiveFederation(getState())
         if (!activeFederation) throw new Error('errors.unknown-error')

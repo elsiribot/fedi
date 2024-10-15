@@ -3,6 +3,7 @@ import {
     createAsyncThunk,
     createSelector,
     createSlice,
+    isAnyOf,
 } from '@reduxjs/toolkit'
 import orderBy from 'lodash/orderBy'
 import { v4 as uuidv4 } from 'uuid'
@@ -316,22 +317,6 @@ export const matrixSlice = createSlice({
                     action.payload
             },
         )
-        builder.addCase(previewAllDefaultChats.fulfilled, (state, action) => {
-            const updatedDefaultGroups = action.payload.reduce(
-                (
-                    result: Record<RpcRoomId, MatrixGroupPreview>,
-                    preview: MatrixGroupPreview,
-                ) => {
-                    result[preview.info.id] = {
-                        ...preview,
-                        isDefaultGroup: true,
-                    }
-                    return result
-                },
-                {},
-            )
-            state.groupPreviews = updatedDefaultGroups
-        })
         builder.addCase(getMatrixRoomPreview.fulfilled, (state, action) => {
             if (!action.payload) return
             const existingPreview = state.groupPreviews[action.meta.arg] || {}
@@ -340,6 +325,28 @@ export const matrixSlice = createSlice({
                 ...action.payload,
             }
         })
+        builder.addMatcher(
+            isAnyOf(
+                previewCommunityDefaultChats.fulfilled,
+                previewAllDefaultChats.fulfilled,
+            ),
+            (state, action) => {
+                const updatedDefaultGroups = action.payload.reduce(
+                    (
+                        result: Record<RpcRoomId, MatrixGroupPreview>,
+                        preview: MatrixGroupPreview,
+                    ) => {
+                        result[preview.info.id] = {
+                            ...preview,
+                            isDefaultGroup: true,
+                        }
+                        return result
+                    },
+                    state.groupPreviews,
+                )
+                state.groupPreviews = updatedDefaultGroups
+            },
+        )
     },
 })
 
