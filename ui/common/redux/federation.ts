@@ -412,20 +412,15 @@ export const leaveFederation = createAsyncThunk<
 
 export const selectWalletFederations = createSelector(
     (s: CommonState) => s.federation.federations,
-    (s: CommonState) => s.federation.externalMeta,
-    (federationListItems, externalMeta) =>
+    federationListItems =>
         federationListItems.flatMap(f => {
             // Only include wallet federations
             if (!f.hasWallet) return []
 
-            const meta = externalMeta[f.id]
-            if (!meta) return [f]
-
             return [
                 {
                     ...f,
-                    meta,
-                    name: getFederationName(meta) || f.name,
+                    name: getFederationName(f.meta) || f.name,
                 },
             ]
         }) as Federation[],
@@ -433,17 +428,11 @@ export const selectWalletFederations = createSelector(
 
 export const selectFederations = createSelector(
     (s: CommonState) => s.federation.federations,
-    (s: CommonState) => s.federation.externalMeta,
-    (federations, externalMeta) =>
+    (federations): FederationListItem[] =>
         federations.map(f => {
-            const meta = externalMeta[f.id]
-            if (!meta) {
-                return f
-            }
             return {
                 ...f,
-                meta,
-                name: getFederationName(meta) || f.name,
+                name: getFederationName(f.meta) || f.name || '',
             }
         }),
 )
@@ -453,7 +442,7 @@ export const selectAlphabeticallySortedFederations = createSelector(
     federations => {
         return orderBy(
             federations,
-            federation => federation.name.toLowerCase(),
+            federation => federation.name?.toLowerCase() || '',
             'asc',
         )
     },
