@@ -573,11 +573,21 @@ impl FederationV2 {
             return Amount::ZERO;
         };
         let mut dbtx = mint_client.db.begin_transaction_nc().await;
-        mint_client
+        let raw_fedimint_balance = mint_client
             .get_wallet_summary(&mut dbtx)
             .await
-            .total_amount()
-            - (self.get_outstanding_fedi_fees().await + self.get_pending_fedi_fees().await)
+            .total_amount();
+        let fedi_fee_sum =
+            self.get_outstanding_fedi_fees().await + self.get_pending_fedi_fees().await;
+        if raw_fedimint_balance < fedi_fee_sum {
+            warn!(
+                "Fee {} is somehow greater than fm balance {} for federation {}",
+                fedi_fee_sum,
+                raw_fedimint_balance,
+                self.federation_id()
+            );
+        }
+        raw_fedimint_balance.saturating_sub(fedi_fee_sum)
     }
 
     pub async fn guardian_status(&self) -> anyhow::Result<Vec<GuardianStatus>> {
