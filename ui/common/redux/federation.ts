@@ -70,8 +70,56 @@ export const federationSlice = createSlice({
     name: 'federation',
     initialState,
     reducers: {
-        setFederations(state, action: PayloadAction<FederationListItem[]>) {
-            state.federations = action.payload
+        setFederations(
+            state,
+            action: PayloadAction<Partial<FederationListItem>[]>,
+        ) {
+            let hasAnyUpdates = false
+
+            const updatedFederations = state.federations.map(
+                existingFederation => {
+                    const federationToUpsert = action.payload.find(
+                        f => f.id === existingFederation.id,
+                    )
+                    if (!federationToUpsert) return existingFederation
+
+                    // Merge meta objects, preserving existing fields
+                    const mergedMeta = {
+                        ...existingFederation.meta,
+                        ...federationToUpsert.meta,
+                    }
+                    const updatedFederation = {
+                        ...existingFederation,
+                        ...federationToUpsert,
+                        meta: mergedMeta,
+                    } as FederationListItem
+
+                    const hasUpdates = !isEqual(
+                        existingFederation,
+                        updatedFederation,
+                    )
+                    if (hasUpdates) hasAnyUpdates = true
+
+                    return hasUpdates ? updatedFederation : existingFederation
+                },
+            )
+
+            // Add new federations that don't exist in the current state
+            const newFederations = action.payload.filter(
+                newFed =>
+                    !state.federations.some(
+                        existingFed => existingFed.id === newFed.id,
+                    ),
+            ) as FederationListItem[]
+
+            if (newFederations.length > 0) {
+                hasAnyUpdates = true
+            }
+
+            // Only update state if there were changes
+            if (hasAnyUpdates) {
+                state.federations = [...updatedFederations, ...newFederations]
+            }
         },
         setPublicFederations(state, action: PayloadAction<PublicFederation[]>) {
             state.publicFederations = action.payload
@@ -243,6 +291,7 @@ export const federationSlice = createSlice({
 export const {
     setFederations,
     setPublicFederations,
+    upsertFederation,
     updateFederation,
     updateFederationBalance,
     setActiveFederationId,
