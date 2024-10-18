@@ -23,7 +23,9 @@ async fn main() -> anyhow::Result<()> {
         Cmd::Devimint(cmd) => {
             std::env::set_var("FM_DISBALE_META_MODULE", "1");
             std::env::set_var("FM_USE_UNKNOWN_MODULE", "0");
-            std::env::set_var(FM_FEDIMINTD_BASE_EXECUTABLE_ENV, "fedi-fedimintd");
+            if std::env::var("USE_STOCK_FEDIMINTD").is_err() {
+                std::env::set_var(FM_FEDIMINTD_BASE_EXECUTABLE_ENV, "fedi-fedimintd");
+            }
             devimint::cli::handle_command(cmd, args.common).await?;
         }
     }
