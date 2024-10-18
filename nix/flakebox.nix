@@ -47,6 +47,40 @@ let
         "misc"
       ];
     };
+
+  cargoWrapper = pkgs.stdenv.mkDerivation {
+      pname = "cargo-wrapper";
+      version = "1.0.0";
+
+      # Use the local directory as the source
+      src = ../nix/cargo-wrapper/.;
+
+      buildInputs = [
+        pkgs.bash
+      ];
+
+      nativeBuildInputs = [
+        pkgs.makeWrapper
+      ];
+
+      buildPhase = ''
+        mkdir -p $out/bin
+        cp -a ./cargo $out/bin/cargo
+        wrapProgram $out/bin/cargo \
+          --run "export CARGO_WRAPPER_PATH=\"\$0\"" \
+          --suffix PATH : ${
+            lib.makeBinPath [
+              pkgs.bash
+              pkgs.gawk
+              pkgs.which
+              pkgs.coreutils
+              pkgs.jq
+            ]
+          }
+      '';
+
+    };
+
 in
 (flakeboxLib.craneMultiBuild { inherit toolchains profiles; }) (craneLib':
 let
@@ -61,59 +95,31 @@ let
   };
   commonEnvsShellRocksdbLink =
     let
-      target_underscores = lib.strings.replaceStrings [ "-" ] [ "_" ] pkgs.stdenv.buildPlatform.config;
+      build_arch_underscores = lib.strings.replaceStrings [ "-" ] [ "_" ] pkgs.stdenv.buildPlatform.config;
     in
     {
-      ROCKSDB_STATIC = "true";
-      ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
-      SNAPPY_LIB_DIR = "${pkgs.pkgsStatic.snappy}/lib/";
-      SQLITE3_STATIC = "true";
-      SQLITE3_LIB_DIR = "${pkgs.pkgsStatic.sqlite.out}/lib/";
-      SQLCIPHER_STATIC = "true";
-      SQLCIPHER_LIB_DIR = "${pkgs.pkgsStatic.sqlcipher}/lib/";
-
-      "ROCKSDB_${target_underscores}_STATIC" = "true";
-      "ROCKSDB_${target_underscores}_LIB_DIR" = "${pkgs.rocksdb}/lib/";
-      "SQLITE3_${target_underscores}_STATIC" = "true";
-      "SQLITE3_${target_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlite}/lib/";
-      "SQLCIPHER_${target_underscores}_STATIC" = "true";
-      "SQLCIPHER_${target_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlcipher}/lib/";
-      "SNAPPY_${target_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.snappy}/lib/";
     } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-      # macos can't static libraries
-      SNAPPY_STATIC = "true";
-      "SNAPPY_${target_underscores}_STATIC" = "true";
-    } // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-      # TODO: could we used the android-nixpkgs toolchain instead of another one?
-      # BROKEN: seems to produce binaries that crash; needs investigation
-      # ROCKSDB_aarch64_linux_android_STATIC = "true";
-      # SNAPPY_aarch64_linux_android_STATIC = "true";
-      # ROCKSDB_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android-prebuilt.rocksdb}/lib/";
-      # SNAPPY_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android-prebuilt.pkgsStatic.snappy}/lib/";
+      "ROCKSDB_${build_arch_underscores}_STATIC" = "true";
+      "ROCKSDB_${build_arch_underscores}_LIB_DIR" = "${pkgs.rocksdb}/lib/";
 
-      # BROKEN
-      # error: "No timer implementation for this platform"
-      # ROCKSDB_armv7_linux_androideabi_STATIC = "true";
-      # SNAPPY_armv7_linux_androideabi_STATIC = "true";
-      # ROCKSDB_armv7_linux_androideabi_LIB_DIR = "${pkgs-unstable.pkgsCross.armv7a-android-prebuilt.rocksdb}/lib/";
-      # SNAPPY_armv7_linux_androideabi_LIB_DIR = "${pkgs-unstable.pkgsCross.armv7a-android-prebuilt.pkgsStatic.snappy}/lib/";
+      # does not produce static lib in most versions
+      "SNAPPY_${build_arch_underscores}_STATIC" = "true";
+      "SNAPPY_${build_arch_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.snappy}/lib/";
+      # "SNAPPY_${build_arch_underscores}_COMPILE" = "true";
 
-      # x86-64-linux-android doesn't have a toolchain in nixpkgs
+
+      "SQLITE3_${build_arch_underscores}_STATIC" = "true";
+      "SQLITE3_${build_arch_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlite.out}/lib/";
+
+      "SQLCIPHER_${build_arch_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlcipher}/lib/";
+      "SQLCIPHER_${build_arch_underscores}_STATIC" = "true";
     } // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
-      # broken: fails to compile with:
-      # `linux-headers-android-common> sh: line 1: gcc: command not found`
-      # ROCKSDB_aarch64_linux_android_STATIC = "true";
-      # SNAPPY_aarch64_linux_android_STATIC = "true";
-      # ROCKSDB_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android.rocksdb}/lib/";
-      # SNAPPY_aarch64_linux_android_LIB_DIR = "${pkgs-unstable.pkgsCross.aarch64-android.pkgsStatic.snappy}/lib/";
+      # tons of problems, just compile
+      # "SNAPPY_${build_arch_underscores}_LIB_DIR" = "${pkgs.snappy}/lib/";
+      "SNAPPY_${build_arch_underscores}_COMPILE" = "true";
 
-      # requires downloading Xcode manually and adding to /nix/store
-      # then running with `env NIXPKGS_ALLOW_UNFREE=1 nix develop -L --impure`
-      # maybe we could live with it?
-      # ROCKSDB_aarch64_apple_ios_STATIC = "true";
-      # SNAPPY_aarch64_apple_ios_STATIC = "true";
-      # ROCKSDB_aarch64_apple_ios_LIB_DIR = "${pkgs-unstable.pkgsCross.iphone64.rocksdb}/lib/";
-      # SNAPPY_aarch64_apple_ios_LIB_DIR = "${pkgs-unstable.pkgsCross.iphone64.pkgsStatic.snappy}/lib/";
+      "SQLITE3_${build_arch_underscores}_LIB_DIR" = "${pkgs.sqlite.out}/lib/";
+      "SQLCIPHER_${build_arch_underscores}_LIB_DIR" = "${pkgs.sqlcipher}/lib/";
     };
 
   commonArgs =
@@ -123,6 +129,12 @@ let
       moreutils-ts = pkgs.writeShellScriptBin "ts" "exec ${pkgs.moreutils}/bin/ts \"$@\"";
     in
     {
+      packages = [
+        # flakebox adds toolchains via `packages`, which seems to always take precedence
+        # `nativeBuildInputs` in `mkShell`, so we need to add it here as well.
+        (lib.hiPrio cargoWrapper)
+      ];
+
       buildInputs = builtins.attrValues
         {
           inherit (pkgs) openssl;
@@ -137,6 +149,8 @@ let
         inherit (pkgs) perl;
         inherit moreutils-ts;
       }) ++ [
+        (lib.hiPrio cargoWrapper)
+
         # add a command that can be used to lower both CPU and IO priority
         # of a command to help make it more friendly to other things
         # potentially sharing the CI or dev machine
@@ -310,6 +324,13 @@ rec {
     pname = "fedi-wasm";
     packages = [
       "fedi-wasm"
+    ];
+  };
+
+  fedi-ffi = fediBuildPackageGroup {
+    pname = "fedi-ffi";
+    packages = [
+      "fedi-ffi"
     ];
   };
 

@@ -5,19 +5,29 @@
 # https://github.com/rust-rocksdb/rust-rocksdb/issues/823
 
 
-if [ -z "$CARGO_ORIG_BIN" ]; then
-  >&2 echo "CARGO_ORIG_BIN not set"
+# Get the real path of the script
+our_script_path="${CARGO_WRAPPER_PATH:-$(realpath "$0")}"
+our_script_basename=$(basename "$our_script_path")
+
+# Find the next match after the script's path
+next_script_path=$(which -a "$our_script_basename" | awk -v script="$our_script_path" 'found { print; exit } $0 == script { found=1 }')
+
+if [ -z "$next_script_path" ]; then
+  >&2 echo "Did not find the original script to call"
   exit 1
 fi
 
 # value of '--target-dir'
-target_dir=""
+target_dir="${CARGO_BUILD_TARGET_DIR:-target}"
+target_dir_explicit=""
 # combined strings of packages selected via '-p'/'--package'
 package=""
 # combined strings of bins/examples selected via '--bin/'--example'
 bin=""
 # cargo command (e.g. 'run' in 'cargo run')
 cmd=""
+
+target=${CARGO_BUILD_TARGET:-$(rustc -vV | sed -n 's|host: ||p' | tr '-' '_')}
 args=()
 
 # iterate over all arguments, collect them into 'args' and set some env vars
@@ -52,6 +62,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --target-dir)
       target_dir="${2}"
+      target_dir_explicit=1
       args+=("$1")
       args+=("$2")
       shift
@@ -91,10 +102,13 @@ if [ -n "$target" ]; then
   snappy_lib_dir="SNAPPY_${target}_LIB_DIR"
   sqlite3_lib_dir="SQLITE3_${target}_LIB_DIR"
   sqlcipher_lib_dir="SQLCIPHER_${target}_LIB_DIR"
+
   rocksdb_static="ROCKSDB_${target}_STATIC"
   sqlite3_static="SQLITE3_${target}_STATIC"
   sqlcipher_static="SQLCIPHER_${target}_STATIC"
   snappy_static="SNAPPY_${target}_STATIC"
+
+  snappy_compile="SNAPPY_${target}_COMPILE"
 
   if [ -n "${!rocksdb_lib_dir}" ]; then
     export ROCKSDB_LIB_DIR="${!rocksdb_lib_dir}"
@@ -116,6 +130,7 @@ if [ -n "$target" ]; then
   else
     unset SQLCIPHER_LIB_DIR
   fi
+
   if [ -n "${!rocksdb_static}" ]; then
     export ROCKSDB_STATIC="${!rocksdb_static}"
   else
@@ -136,6 +151,12 @@ if [ -n "$target" ]; then
   else
     unset SQLCIPHER_STATIC
   fi
+
+  if [ -n "${!snappy_compile}" ]; then
+    export SNAPPY_COMPILE="${!snappy_compile}"
+  else
+    unset SNAPPY_COMPILE
+  fi
 fi
 
 cmd_accepts_target_dir=""
@@ -150,19 +171,21 @@ esac
 # if `--package` is empty, but `--bin` was used
 custom_target=""
 if [ -n "$package" ]; then
-  custom_target="target/pkg/$package"
+  custom_target="${target_dir}/pkg/$package"
 elif [ -n "$bin" ]; then
-  custom_target="target/bin/$bin"
+  custom_target="${target_dir}/bin/$bin"
 fi
 
 # If building with '--package <pkg>' use a custom '--target-dir'
 # to avoid invalidating all the existing build artifacts, just because
 # package set changed.
-if [ -n "$cmd_accepts_target_dir" ] && [ -n "$custom_target" ] && [ -z "$target_dir" ]; then
+if [ -n "$cmd_accepts_target_dir" ] && [ -n "$custom_target" ] && [ -z "$target_dir_explicit" ]; then
   >&2 echo "cargo-wrapper: Using custom target dir: $custom_target"
   # if 'target-dir' was not specificaly set, and '--package <pkgs>' is used
   # compile everything to a target's subdir to avoid causing rebuilds
   args+=("--target-dir" "$custom_target")
 fi
 
-exec "$CARGO_ORIG_BIN" "${args[@]}"
+# >&2 echo "cargo-wrapper will call $next_script_path for target=$target"
+# export | grep -E "STATIC|LIB_DIR" >&2
+exec "$next_script_path" "${args[@]}"
