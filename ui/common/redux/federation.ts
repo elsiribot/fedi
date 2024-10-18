@@ -444,6 +444,12 @@ export const selectAlphabeticallySortedFederations = createSelector(
     },
 )
 
+export const selectFederationsWithMeta = createSelector(
+    (s: CommonState) => s.federation.federations,
+    federations =>
+        federations.filter(f => f.meta && Object.keys(f.meta).length > 0),
+)
+
 export const selectFederationIds = createSelector(
     selectFederations,
     federations => federations.map(f => f.id),

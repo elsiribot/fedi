@@ -11,7 +11,6 @@ import {
     fetchSocialRecovery,
     initializeDeviceId,
     initializeNostrKeys,
-    previewAllDefaultChats,
     refreshFederations,
     selectDeviceId,
     setDeviceIndexRequired,
@@ -118,7 +117,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             })
             .then(() => {
                 setBridgeIsReady(true)
-                dispatchRef.current(previewAllDefaultChats())
             })
             .catch(err => {
                 log.error(
