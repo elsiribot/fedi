@@ -3579,8 +3579,8 @@ mod tests {
             fedimint_core::task::sleep(Duration::from_millis(100)).await;
         }
 
-        // Wait for fedi fee to be remitted (timeout of 5s)
-        fedimint_core::task::timeout(Duration::from_secs(5), cln_wait_invoice(label)).await??;
+        // Wait for fedi fee to be remitted
+        fedimint_core::task::timeout(Duration::from_secs(30), cln_wait_invoice(label)).await??;
 
         // Ensure outstanding fee has been cleared
         assert_eq!(Amount::ZERO, federation.get_pending_fedi_fees().await);

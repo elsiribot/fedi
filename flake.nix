@@ -23,13 +23,18 @@
       url = "github:fedibtc/fs-dir-cache?rev=a6371f48f84512ea06a8ac671f9cdc141a732673";
     };
 
+    cargo-deluxe = {
+      url = "github:rustshop/cargo-deluxe?rev=da124f8fffa731a647420065f204601f9a20b289";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     android-nixpkgs = {
       url = "github:tadfisher/android-nixpkgs?rev=6370a3aafe37ed453bfdc4af578eb26339f8fee0"; # stable
       # inputs.nixpkgs.follows = "fedimint-pkgs/nixpkgs";
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, fedimint-pkgs, fs-dir-cache, android-nixpkgs, flakebox, ... }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, fedimint-pkgs, fs-dir-cache, cargo-deluxe, android-nixpkgs, flakebox, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs-unstable = import nixpkgs-unstable {
@@ -45,6 +50,7 @@
               fs-dir-cache = fs-dir-cache.packages.${system}.default;
               fastlane = pkgs-unstable.fastlane;
               convco = pkgs-unstable.convco;
+              cargo-deluxe = cargo-deluxe.packages.${system}.default;
               snappy = prev.snappy.overrideAttrs (f: p: rec {
                 version = "1.2.1";
                   src = prev.fetchFromGitHub {
