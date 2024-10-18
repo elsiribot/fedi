@@ -364,7 +364,6 @@ rec {
 
     cmd = ''
       patchShebangs ./scripts
-      export CARGO_DENY_COMPILATION=1
 
       export HOME=/tmp
       export FM_TEST_CI_ALL_TIMES=${builtins.toString 1}
