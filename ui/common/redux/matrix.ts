@@ -7,6 +7,7 @@ import {
 } from '@reduxjs/toolkit'
 import orderBy from 'lodash/orderBy'
 import { v4 as uuidv4 } from 'uuid'
+import isEqual from 'lodash/isEqual'
 
 import {
     CommonState,
@@ -333,20 +334,34 @@ export const matrixSlice = createSlice({
                 previewAllDefaultChats.fulfilled,
             ),
             (state, action) => {
+                let hasUpdates = false
                 const updatedDefaultGroups = action.payload.reduce(
                     (
                         result: Record<RpcRoomId, MatrixGroupPreview>,
                         preview: MatrixGroupPreview,
                     ) => {
-                        result[preview.info.id] = {
+                        const existingPreview = result[preview.info.id]
+                        const updatedPreview = {
                             ...preview,
                             isDefaultGroup: true,
                         }
+
+                        if (
+                            !existingPreview ||
+                            !isEqual(existingPreview, updatedPreview)
+                        ) {
+                            hasUpdates = true
+                            result[preview.info.id] = updatedPreview
+                        }
+
                         return result
                     },
-                    state.groupPreviews,
+                    { ...state.groupPreviews },
                 )
-                state.groupPreviews = updatedDefaultGroups
+
+                if (hasUpdates) {
+                    state.groupPreviews = updatedDefaultGroups
+                }
             },
         )
     },
