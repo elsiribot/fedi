@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use devimint::cli::CommonArgs;
+use devimint::envs::FM_FEDIMINTD_BASE_EXECUTABLE_ENV;
 
 #[derive(Parser)]
 struct Args {
@@ -22,6 +23,7 @@ async fn main() -> anyhow::Result<()> {
         Cmd::Devimint(cmd) => {
             std::env::set_var("FM_DISBALE_META_MODULE", "1");
             std::env::set_var("FM_USE_UNKNOWN_MODULE", "0");
+            std::env::set_var(FM_FEDIMINTD_BASE_EXECUTABLE_ENV, "fedi-fedimintd");
             devimint::cli::handle_command(cmd, args.common).await?;
         }
     }

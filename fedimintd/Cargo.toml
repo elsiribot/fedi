@@ -6,7 +6,7 @@ edition = "2021"
 description = "fedimintd with custom fedi modules"
 
 [[bin]]
-name = "fedimintd"
+name = "fedi-fedimintd"
 path = "src/main.rs"
 
 [dependencies]
