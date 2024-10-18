@@ -1995,6 +1995,16 @@ mod tests {
             .await?;
         Ok(federation)
     }
+
+    fn should_skip_test_using_stock_fedimintd() -> bool {
+        if std::env::var("USE_STOCK_FEDIMINTD").is_ok() {
+            info!("Skipping test as we're using stock/upstream fedimintd binary");
+            true
+        } else {
+            false
+        }
+    }
+
     #[tokio::test(flavor = "multi_thread")]
     async fn test_doesnt_overwrite_seed_in_invalid_fedi_file() -> anyhow::Result<()> {
         INIT_TRACING.call_once(|| {
@@ -2421,11 +2431,17 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_backup_and_recovery() -> anyhow::Result<()> {
+        if should_skip_test_using_stock_fedimintd() {
+            return Ok(());
+        }
         test_backup_and_recovery_inner(false).await
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_backup_and_recovery_from_scratch() -> anyhow::Result<()> {
+        if should_skip_test_using_stock_fedimintd() {
+            return Ok(());
+        }
         test_backup_and_recovery_inner(true).await
     }
 
@@ -2520,6 +2536,10 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_social_backup_and_recovery() -> anyhow::Result<()> {
+        if should_skip_test_using_stock_fedimintd() {
+            return Ok(());
+        }
+
         std::env::set_var(FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV, "1");
 
         let (original_bridge, federation) = setup().await?;
@@ -2672,6 +2692,10 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_stability_pool() -> anyhow::Result<()> {
+        if should_skip_test_using_stock_fedimintd() {
+            return Ok(());
+        }
+
         // Vec of tuple of (send_ppm, receive_ppm)
         let fee_ppm_values = vec![(0, 0), (10, 5), (100, 50)];
         for (send_ppm, receive_ppm) in fee_ppm_values {
@@ -2913,6 +2937,10 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_transfer_device_registration_no_feds() -> anyhow::Result<()> {
+        if should_skip_test_using_stock_fedimintd() {
+            return Ok(());
+        }
+
         let device_identifier_1 = "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
         let bridge_1 = setup_bridge_custom(
@@ -2986,6 +3014,10 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_transfer_device_registration_post_recovery() -> anyhow::Result<()> {
+        if should_skip_test_using_stock_fedimintd() {
+            return Ok(());
+        }
+
         let device_identifier_1 = "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
         let (backup_bridge, federation) = setup_custom(
@@ -3098,6 +3130,10 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_new_device_registration_post_recovery() -> anyhow::Result<()> {
+        if should_skip_test_using_stock_fedimintd() {
+            return Ok(());
+        }
+
         let device_identifier_1 = "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
         let (backup_bridge, federation) = setup_custom(
@@ -3427,6 +3463,10 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_fee_remittance_on_startup() -> anyhow::Result<()> {
+        if should_skip_test_using_stock_fedimintd() {
+            return Ok(());
+        }
+
         // Setup bridge, join test federation, set SP send fee ppm
         let device_identifier = "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
         let (bridge, federation) = setup_custom(
@@ -3524,6 +3564,10 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_fee_remittance_post_successful_tx() -> anyhow::Result<()> {
+        if should_skip_test_using_stock_fedimintd() {
+            return Ok(());
+        }
+
         // Mock fee remittance endpoint
         let label = "fedi_fee_post_tx";
         let fedi_fee_invoice = cli_generate_invoice(label, &Amount::from_msats(210_000)).await?;
