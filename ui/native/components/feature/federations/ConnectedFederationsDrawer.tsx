@@ -17,6 +17,7 @@ import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import HoloGradient from '../../ui/HoloGradient'
 import CommunityTile from './CommunityTile'
+import CommunityTileLoading from './CommunityTileLoading'
 
 const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     props: DrawerContentComponentProps,
@@ -98,18 +99,32 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                         {t('words.communities')}
                     </Text>
                     <View style={style.communitiesList}>
-                        {federations.map((f, i) => (
-                            <CommunityTile
-                                key={`di-${i}`}
-                                community={f}
-                                onSelect={() => handleTilePress(f)}
-                                onSelectQr={() => handleQrPress(f)}
-                                onSelectStatus={() => handleStatusPress(f)}
-                                isActiveCommunity={
-                                    activeFederation?.id === f.id
-                                }
-                            />
-                        ))}
+                        {federations.map((f, i) => {
+                            if (f.init_state === 'ready') {
+                                const community = f as FederationListItem
+                                return (
+                                    <CommunityTile
+                                        key={`di-${i}`}
+                                        community={community}
+                                        onSelect={() =>
+                                            handleTilePress(community)
+                                        }
+                                        onSelectQr={() =>
+                                            handleQrPress(community)
+                                        }
+                                        onSelectStatus={() =>
+                                            handleStatusPress(community)
+                                        }
+                                        isActiveCommunity={
+                                            activeFederation?.id ===
+                                            community.id
+                                        }
+                                    />
+                                )
+                            } else {
+                                return <CommunityTileLoading />
+                            }
+                        })}
                     </View>
                 </View>
             </DrawerContentScrollView>
