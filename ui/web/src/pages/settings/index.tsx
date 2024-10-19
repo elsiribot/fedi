@@ -22,7 +22,7 @@ import {
     selectMatrixAuth,
     setActiveFederationId,
 } from '@fedi/common/redux'
-import { Federation, FederationListItem } from '@fedi/common/types'
+import { Federation, FederationMaybeLoading } from '@fedi/common/types'
 import {
     getFederationTosUrl,
     supportsSingleSeed,
@@ -44,8 +44,12 @@ import { useAppDispatch, useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 
-const canLeaveFederation = (federation: FederationListItem | undefined) => {
-    return federation?.hasWallet && federation.balance < 100_000
+const canLeaveFederation = (federation: FederationMaybeLoading | undefined) => {
+    return (
+        federation?.hasWallet &&
+        federation?.balance &&
+        federation.balance < 100_000
+    )
 }
 
 function AdminPage() {

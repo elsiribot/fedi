@@ -11,6 +11,7 @@ import {
     fetchSocialRecovery,
     initializeDeviceId,
     initializeNostrKeys,
+    previewAllDefaultChats,
     refreshFederations,
     selectDeviceId,
     setDeviceIndexRequired,
@@ -124,6 +125,8 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             })
             .then(() => {
                 setBridgeIsReady(true)
+                // preview chats after matrix client has finished initializing
+                dispatchRef.current(previewAllDefaultChats())
             })
             .catch(err => {
                 log.error(

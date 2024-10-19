@@ -9,14 +9,20 @@ import omit from 'lodash/omit'
 import orderBy from 'lodash/orderBy'
 import { makeLog } from '../utils/log'
 
-import { CommonState, previewCommunityDefaultChats } from '.'
+import {
+    CommonState,
+    previewCommunityDefaultChats,
+    previewGlobalDefaultChats,
+} from '.'
 import { FEDI_GLOBAL_COMMUNITY } from '../constants/community'
 import {
     ClientConfigMetadata,
     Federation,
     FederationListItem,
+    FederationMaybeLoading,
     FediMod,
     Guardian,
+    LoadedFederation,
     MatrixRoom,
     MSats,
     Network,
@@ -49,7 +55,7 @@ const log = makeLog('common/redux/federation')
 /*** Initial State ***/
 
 const initialState = {
-    federations: [] as FederationListItem[],
+    federations: [] as FederationMaybeLoading[],
     publicFederations: [] as PublicFederation[],
     activeFederationId: null as string | null,
     payFromFederationId: null as string | null,
@@ -70,10 +76,7 @@ export const federationSlice = createSlice({
     name: 'federation',
     initialState,
     reducers: {
-        setFederations(
-            state,
-            action: PayloadAction<Partial<FederationListItem>[]>,
-        ) {
+        setFederations(state, action: PayloadAction<FederationMaybeLoading[]>) {
             let hasAnyUpdates = false
 
             const updatedFederations = state.federations.map(
@@ -88,11 +91,11 @@ export const federationSlice = createSlice({
                         ...existingFederation.meta,
                         ...federationToUpsert.meta,
                     }
-                    const updatedFederation = {
+                    const updatedFederation: FederationMaybeLoading = {
                         ...existingFederation,
                         ...federationToUpsert,
                         meta: mergedMeta,
-                    } as FederationListItem
+                    }
 
                     const hasUpdates = !isEqual(
                         existingFederation,
@@ -110,7 +113,7 @@ export const federationSlice = createSlice({
                     !state.federations.some(
                         existingFed => existingFed.id === newFed.id,
                     ),
-            ) as FederationListItem[]
+            )
 
             if (newFederations.length > 0) {
                 hasAnyUpdates = true
@@ -124,27 +127,46 @@ export const federationSlice = createSlice({
         setPublicFederations(state, action: PayloadAction<PublicFederation[]>) {
             state.publicFederations = action.payload
         },
-        updateFederation(
+        upsertFederation(
             state,
-            action: PayloadAction<Partial<FederationListItem>>,
+            action: PayloadAction<Partial<FederationMaybeLoading>>,
         ) {
-            // Only update the array if there were meaningful changes to the federation
-            let hasUpdates = false
-            const updatedFederations = state.federations.map(federation => {
-                if (action.payload.id !== federation.id) return federation
+            if (!action.payload.id) return
+            const federationToUpsert: FederationMaybeLoading = {
+                id: action.payload.id,
+                init_state: 'ready',
+                ...action.payload,
+            }
+            const existingFederation = state.federations.find(
+                f => f.id === federationToUpsert.id,
+            )
 
-                const updatedFederation = {
-                    ...federation,
-                    ...action.payload,
+            if (existingFederation) {
+                let hasUpdates = false
+                const updatedFederations = state.federations.map(f => {
+                    if (f.id !== federationToUpsert.id) return f
 
-                    // TODO: update reducer to prevent updating a non-wallet
-                    // community with wallet-only properties
-                } as FederationListItem
-                hasUpdates = !isEqual(federation, updatedFederation)
-                return updatedFederation
-            })
-            if (hasUpdates) {
-                state.federations = updatedFederations
+                    // Merge meta objects, preserving existing fields
+                    const mergedMeta = {
+                        ...f.meta,
+                        ...federationToUpsert.meta,
+                    }
+                    const updatedFederation = {
+                        ...f,
+                        ...federationToUpsert,
+                        meta: mergedMeta,
+                    }
+                    hasUpdates = !isEqual(f, updatedFederation)
+                    return updatedFederation
+                })
+
+                // Only update state if there were changes
+                if (hasUpdates) {
+                    state.federations = updatedFederations
+                }
+            } else {
+                // Federation doesn't exist, add it to the array
+                state.federations = [...state.federations, federationToUpsert]
             }
         },
         updateFederationBalance(
@@ -176,19 +198,6 @@ export const federationSlice = createSlice({
         },
         setPayFromFederationId(state, action: PayloadAction<string | null>) {
             state.payFromFederationId = action.payload
-        },
-        updateExternalMeta(
-            state,
-            action: PayloadAction<FederationState['externalMeta']>,
-        ) {
-            const newMeta = {
-                ...state.externalMeta,
-                ...action.payload,
-            }
-            if (isEqual(newMeta, state.externalMeta)) {
-                return
-            }
-            state.externalMeta = newMeta
         },
         setFederationCustomFediMods(
             state,
@@ -292,12 +301,10 @@ export const {
     setFederations,
     setPublicFederations,
     upsertFederation,
-    updateFederation,
     updateFederationBalance,
     setActiveFederationId,
     setPayFromFederationId,
     setFederationCustomFediMods,
-    updateExternalMeta,
     setFederationExternalMeta,
     changeAuthenticatedGuardian,
     removeCustomFediMod,
@@ -306,48 +313,51 @@ export const {
 /*** Async thunk actions */
 
 export const refreshFederations = createAsyncThunk<
-    FederationListItem[],
+    FederationMaybeLoading[],
     FedimintBridge,
     { state: CommonState }
 >('federation/refreshFederations', async (fedimint, { dispatch, getState }) => {
     const federationsList = await fedimint.listFederations()
 
     log.info(`refreshing ${federationsList.length} federations`)
-    const federations: Federation[] = federationsList.map(f => {
-        /*
+
+    const federations: FederationMaybeLoading[] = federationsList.map(f => {
+        const federation: FederationMaybeLoading = {
+            id: f.id,
+            init_state: f.init_state,
+            status: 'online',
+            network: undefined,
+            hasWallet: true as const,
+        }
+        if (f.init_state === 'ready') {
+            /*
                 Client-side network failure will cause getFederationStatus to
                 hang and timeout after 10 seconds so we assume online by default
                 and instead fetch the status in the background. This should mean
                 a smoother UX since we avoid flickering indicators and don't block
                 the initial app load.
             */
-        const federation: Federation = {
-            ...f,
-            status: 'online',
-            network: f.network as Network,
-            hasWallet: true as const,
-        }
-        getFederationStatus(fedimint, f.id)
-            .then(updatedStatus => {
-                if (updatedStatus !== federation.status) {
-                    log.info(
-                        `updating federation status for ${f.id} to ${updatedStatus}`,
-                    )
+            getFederationStatus(fedimint, f.id)
+                .then(updatedStatus => {
                     dispatch(
-                        updateFederation({
+                        upsertFederation({
                             id: f.id,
                             status: updatedStatus,
                         }),
                     )
-                }
-            })
-            .catch(error => {
-                log.error(
-                    `Error in background status fetch for federation ${f.id}:`,
-                    error,
-                )
-            })
-
+                })
+                .catch(error => {
+                    log.error(
+                        `Error in background status fetch for federation ${f.id}:`,
+                        error,
+                    )
+                })
+            // network will not be known unless init_state = ready
+            return {
+                ...federation,
+                network: f.network as Network,
+            }
+        }
         return federation
     })
 
@@ -355,47 +365,72 @@ export const refreshFederations = createAsyncThunk<
     const communitiesAsFederations = communities.map(coerceFederationListItem)
 
     const allFederations = [...federations, ...communitiesAsFederations]
+    dispatch(setFederations(allFederations))
 
     // Create externalMeta object directly from federation data since
     // bridge does the external meta URL fetching now
-    const externalMeta = allFederations.reduce((acc, federation) => {
-        acc[federation.id] = federation.meta
-        dispatch(
-            setFederationCustomFediMods({
-                federationId: federation.id,
-                mods: getFederationFediMods(federation.meta),
-            }),
-        )
-        return acc
-    }, {} as Record<Federation['id'], ClientConfigMetadata>)
-    // TODO: Clean up the externalMeta state structure from redux/storage so that
-    // federation/community meta are derived directly from the federations state
-    // note that this refactors will be required to preserve the global/default mods
-    // + global fedi announcements group features that depend on externalMeta
-    const globalCommunityMeta = await fetchFederationsExternalMetadata(
+    // TODO: Remove this along with the refactor to use federation.federations
+    // as the source of truth for all metadata and can remove the need to maintain
+    // and update this externalMeta slice in redux
+    allFederations.map(federation => {
+        if (federation.meta && Object.keys(federation.meta).length > 0) {
+            dispatch(
+                processFederationMeta({
+                    federation,
+                }),
+            )
+        }
+    })
+    // note: this await should only block for 2 seconds maximum. if internet is slow
+    // it will abort and retry in the background
+    // TODO: Move the global community meta fetch to the bridge
+    await fetchFederationsExternalMetadata(
         // For the purposes of gathering metadata, we need to
         // treat the global community as a "wallet" federation.
         // The means we'll fetch the external metadata for it.
         [{ ...FEDI_GLOBAL_COMMUNITY, hasWallet: true }],
         (federationId, meta) => {
-            dispatch(setFederationExternalMeta({ federationId, meta }))
             dispatch(
-                setFederationCustomFediMods({
-                    federationId,
-                    mods: getFederationFediMods(meta),
+                processFederationMeta({
+                    federation: { id: federationId, init_state: 'ready', meta },
                 }),
             )
         },
     )
+    return selectFederations(getState())
+})
 
+export const processFederationMeta = createAsyncThunk<
+    void,
+    { federation: FederationMaybeLoading },
+    { state: CommonState }
+>('federation/processFederationMeta', async ({ federation }, { dispatch }) => {
+    if (!federation.meta) return
+
+    // TODO: Remove this along with the refactor to use federation.federations
+    // as the source of truth for all metadata and can remove the need to maintain
+    // and update this externalMeta slice in redux for federation meta
     dispatch(
-        updateExternalMeta({
-            ...externalMeta,
-            ...globalCommunityMeta,
+        setFederationExternalMeta({
+            federationId: federation.id,
+            meta: federation.meta,
         }),
     )
-    dispatch(setFederations(allFederations))
-    return selectFederations(getState())
+
+    // fedimods & default chats are derived from the federation meta
+    dispatch(
+        setFederationCustomFediMods({
+            federationId: federation.id,
+            mods: getFederationFediMods(federation.meta),
+        }),
+    )
+    // use a special preview action for the global community since it is
+    // not stored in redux
+    if (federation.id === FEDI_GLOBAL_COMMUNITY.id) {
+        dispatch(previewGlobalDefaultChats())
+    } else {
+        dispatch(previewCommunityDefaultChats(federation.id))
+    }
 })
 
 export const joinFederation = createAsyncThunk<
@@ -455,10 +490,29 @@ export const leaveFederation = createAsyncThunk<
 
 /*** Selectors ***/
 
-export const selectWalletFederations = createSelector(
+export const selectLoadedFederations = createSelector(
     (s: CommonState) => s.federation.federations,
-    federationListItems =>
-        federationListItems.flatMap(f => {
+    federations =>
+        federations.reduce(
+            (acc: LoadedFederation[], f: FederationMaybeLoading) => {
+                if (f.init_state === 'ready') {
+                    const loadedFederation: LoadedFederation = {
+                        ...f,
+                        init_state: 'ready',
+                        name: getFederationName(f.meta || {}) || f.name || '',
+                    } as LoadedFederation
+                    acc.push(loadedFederation)
+                }
+                return acc
+            },
+            [],
+        ),
+)
+
+export const selectWalletFederations = createSelector(
+    selectLoadedFederations,
+    loadedFederations =>
+        loadedFederations.flatMap(f => {
             // Only include wallet federations
             if (!f.hasWallet) return []
 
@@ -468,22 +522,20 @@ export const selectWalletFederations = createSelector(
                     name: getFederationName(f.meta) || f.name,
                 },
             ]
-        }) as Federation[],
+        }),
 )
 
 export const selectFederations = createSelector(
     (s: CommonState) => s.federation.federations,
-    (federations): FederationListItem[] =>
-        federations.map(f => {
-            return {
-                ...f,
-                name: getFederationName(f.meta) || f.name || '',
-            }
-        }),
+    federations =>
+        federations.map((f: FederationMaybeLoading) => ({
+            ...f,
+            name: getFederationName(f.meta || {}) || f.name || '',
+        })),
 )
 
 export const selectAlphabeticallySortedFederations = createSelector(
-    selectFederations,
+    selectLoadedFederations,
     federations => {
         return orderBy(
             federations,
@@ -493,19 +545,13 @@ export const selectAlphabeticallySortedFederations = createSelector(
     },
 )
 
-export const selectFederationsWithMeta = createSelector(
-    (s: CommonState) => s.federation.federations,
-    federations =>
-        federations.filter(f => f.meta && Object.keys(f.meta).length > 0),
-)
-
 export const selectFederationIds = createSelector(
     selectFederations,
     federations => federations.map(f => f.id),
 )
 
 export const selectActiveFederation = createSelector(
-    selectFederations,
+    selectLoadedFederations,
     (s: CommonState) => s.federation.activeFederationId,
     (federations, activeFederationId): FederationListItem | undefined =>
         activeFederationId
@@ -516,6 +562,9 @@ export const selectActiveFederation = createSelector(
 
 export const selectFederation = (s: CommonState, id: string) =>
     selectFederations(s).find(f => f.id === id)
+
+export const selectLoadedFederation = (s: CommonState, id: string) =>
+    selectLoadedFederations(s).find(f => f.id === id)
 
 export const selectActiveFederationId = (s: CommonState) => {
     return selectActiveFederation(s)?.id
@@ -654,7 +703,7 @@ export const selectFederationCustomFediMods = (
     s: CommonState,
     federationId: Federation['id'],
 ) => {
-    const federation = selectFederation(s, federationId)
+    const federation = selectLoadedFederation(s, federationId)
     return federation ? s.federation.customFediMods[federation?.id] || [] : []
 }
 

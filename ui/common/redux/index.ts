@@ -9,7 +9,12 @@ import type { i18n as I18n } from 'i18next'
 import type { AnyAction } from 'redux'
 import type { ThunkDispatch } from 'redux-thunk'
 
-import { ClientConfigMetadata, Federation, StorageApi } from '../types'
+import { FederationMaybeLoading, Network, StorageApi } from '../types'
+import { RpcFederationMaybeLoading } from '../types/bindings'
+import {
+    coerceFederationListItem,
+    getFederationStatus,
+} from '../utils/FederationUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { hasStorageStateChanged } from '../utils/storage'
@@ -19,10 +24,10 @@ import { environmentSlice, selectLanguage } from './environment'
 import {
     federationSlice,
     joinFederation,
+    processFederationMeta,
     refreshFederations,
-    updateExternalMeta,
-    updateFederation,
     updateFederationBalance,
+    upsertFederation,
 } from './federation'
 import {
     checkForReceivablePayments,
@@ -109,28 +114,54 @@ export function initializeCommonStore({
     })
 
     // Update federation on bridge events
-    const unsubscribeFederation = fedimint.addListener('federation', event => {
-        // if the federation_name is found in the meta, exclude name from update
-        const federation: Partial<Federation> = { ...event }
-        if (event.meta.federation_name) {
-            delete federation.name
-        }
-        dispatch(updateFederation(federation))
-        // This is needed to update our local redux state with the new federation
-        // metadata whenever the bridge emits an event that meta has been updated.
-        // TODO: Remove this along with the refactor to use federation.federations
-        // as the source of truth for all metadata and can remove the externalMeta slice entirely
-        if (federation.id && federation.meta) {
-            const meta: Record<string, ClientConfigMetadata> = {}
-            meta[federation.id] = federation.meta
-            dispatch(updateExternalMeta(meta))
-        }
-    })
+    const unsubscribeFederation = fedimint.addListener(
+        'federation',
+        async (event: RpcFederationMaybeLoading) => {
+            // don't both updating if the federation isn't ready
+            // TODO: Should we remove failed federations from the UI?
+            if (event.init_state !== 'ready') return
+            const federation: FederationMaybeLoading = {
+                ...event,
+                network: event.network as Network,
+            }
+            // just in case an erroneous event fires with no id
+            if (!federation.id) return
+            // if the federation_name is found in the meta, exclude name from update
+            if (event.meta.federation_name) {
+                delete federation.name
+            }
+            dispatch(upsertFederation(federation))
+            dispatch(processFederationMeta({ federation }))
+            // also refresh the guardian status when we get a federation update
+            // TODO: move this logic to the bridge?
+            getFederationStatus(fedimint, federation.id)
+                .then(updatedStatus => {
+                    dispatch(
+                        upsertFederation({
+                            id: federation.id,
+                            status: updatedStatus,
+                        }),
+                    )
+                })
+                .catch(error => {
+                    log.error(
+                        `Error in background status fetch for federation ${federation.id}:`,
+                        error,
+                    )
+                })
+        },
+    )
 
     // Update communities on bridge events
     const unsubscribeCommunities = fedimint.addListener(
         'communityMetadataUpdated',
-        event => dispatch(updateFederation(event.newCommunity)),
+        event => {
+            dispatch(upsertFederation(event.newCommunity))
+            const federation: FederationMaybeLoading = coerceFederationListItem(
+                event.newCommunity,
+            )
+            dispatch(processFederationMeta({ federation }))
+        },
     )
 
     // Update balance on bridge events

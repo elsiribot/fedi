@@ -7,6 +7,7 @@ import {
     ClientConfigMetadata,
     Federation,
     FederationListItem,
+    FederationMaybeLoading,
     FederationStatus,
     FediMod,
     JoinPreview,
@@ -582,11 +583,12 @@ async function getFederationPreview(
 
 export const coerceFederationListItem = (
     community: RpcCommunity,
-): FederationListItem => {
+): FederationMaybeLoading => {
     return {
         hasWallet: false as const,
         network: undefined,
         status: 'online',
+        init_state: 'ready',
 
         // We cannot really guarantee unique IDs in the body since community creators
         // have free reign to modify the JSON as they see fit. So to prevent erroneous
@@ -636,7 +638,7 @@ export const joinFromInvite = async (
     fedimint: FedimintBridge,
     code: string,
     recoverFromScratch = false,
-): Promise<FederationListItem> => {
+): Promise<FederationMaybeLoading> => {
     const codeType = detectInviteCodeType(code)
     if (codeType === 'federation') {
         log.info(`joinFromInvite: joining federation with code '${code}'`)
@@ -645,11 +647,13 @@ export const joinFromInvite = async (
             recoverFromScratch,
         )
         const status = await getFederationStatus(fedimint, federation.id)
+        // TODO: Show a warning to the user depending on the status
         return {
             ...federation,
             hasWallet: true,
             network: network as Network,
             status,
+            init_state: 'ready',
         }
     } else {
         // community

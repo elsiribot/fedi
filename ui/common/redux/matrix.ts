@@ -12,10 +12,9 @@ import isEqual from 'lodash/isEqual'
 import {
     CommonState,
     selectAuthenticatedMember,
-    selectFederation,
-    selectFederations,
-    selectFederationsWithMeta,
+    selectLoadedFederation,
     selectGlobalCommunityMeta,
+    selectLoadedFederations,
     selectWalletFederations,
 } from '.'
 import {
@@ -646,7 +645,7 @@ export const sendMatrixPaymentPush = createAsyncThunk<
         { getState },
     ) => {
         const state = getState()
-        const federation = selectFederation(state, federationId)
+        const federation = selectLoadedFederation(state, federationId)
         const matrixAuth = selectMatrixAuth(state)
         if (!matrixAuth) throw new Error('Not authenticated')
         if (!federation) throw new Error('Federation not found')
@@ -746,12 +745,12 @@ export const checkForReceivablePayments = createAsyncThunk<
         const timeline = roomId
             ? state.matrix.roomTimelines[roomId]
             : // flattens all timelines into 1 array
-            Object.values(state.matrix.roomTimelines).reduce<
-                MatrixTimelineItem[]
-            >((result, t) => {
-                if (!t) return result
-                return [...result, ...t]
-            }, [])
+              Object.values(state.matrix.roomTimelines).reduce<
+                  MatrixTimelineItem[]
+              >((result, t) => {
+                  if (!t) return result
+                  return [...result, ...t]
+              }, [])
         if (!myId || !timeline) return
         const walletFederations = selectWalletFederations(getState())
         log.info('Looking for receivable payment events...')
@@ -1015,7 +1014,7 @@ export const previewCommunityDefaultChats = createAsyncThunk<
     const client = getMatrixClient()
     // can't fetch previews if matrix isn't ready
     if (!selectIsMatrixReady(getState())) return []
-    const federation = selectFederation(getState(), federationId)
+    const federation = selectLoadedFederation(getState(), federationId)
     // can't fetch preview if the federation is not loaded yet
     if (!federation) return []
     const defaultChats = getFederationGroupChats(federation.meta)
@@ -1044,13 +1043,13 @@ export const previewAllDefaultChats = createAsyncThunk<
     void,
     { state: CommonState }
 >('matrix/previewAllDefaultChats', async (_, { getState, dispatch }) => {
-    const federations = selectFederationsWithMeta(getState())
+    const federations = selectLoadedFederations(getState())
     // Previews default chats for each federation
     const federationDefaultChatResults = await Promise.allSettled(
         // For each federation, return a promise that that resolves to
         // the result of the dispatched previewCommunityDefaultChats action
         federations.map(f => {
-            const federation = selectFederation(getState(), f.id)
+            const federation = selectLoadedFederation(getState(), f.id)
             if (!federation) return Promise.reject()
             return dispatch(
                 previewCommunityDefaultChats(federation.id),
@@ -1434,7 +1433,7 @@ export const selectLatestMatrixRoomEventId = (
 }
 
 export const selectCanPayFromOtherFeds = createSelector(
-    (s: CommonState) => selectFederations(s),
+    (s: CommonState) => selectLoadedFederations(s),
     (s: CommonState, chatPayment: MatrixPaymentEvent) => chatPayment,
     (federations, chatPayment): boolean => {
         return !!federations.find(
@@ -1447,7 +1446,7 @@ export const selectCanPayFromOtherFeds = createSelector(
 )
 
 export const selectCanSendPayment = createSelector(
-    (s: CommonState) => selectFederations(s),
+    (s: CommonState) => selectLoadedFederations(s),
     (s: CommonState, chatPayment: MatrixPaymentEvent) => chatPayment,
     (federations, chatPayment): boolean => {
         return !!federations.find(
@@ -1461,7 +1460,7 @@ export const selectCanSendPayment = createSelector(
 )
 
 export const selectCanClaimPayment = createSelector(
-    (s: CommonState) => selectFederations(s),
+    (s: CommonState) => selectLoadedFederations(s),
     (s: CommonState, chatPayment: MatrixPaymentEvent) => chatPayment,
     (federations, chatPayment): boolean => {
         return !!federations.find(
@@ -1471,7 +1470,8 @@ export const selectCanClaimPayment = createSelector(
 )
 
 export const selectCommunityDefaultRoomIds = createSelector(
-    (s: CommonState, federationId: string) => selectFederation(s, federationId),
+    (s: CommonState, federationId: string) =>
+        selectLoadedFederation(s, federationId),
     federation => {
         if (!federation) return []
         return getFederationGroupChats(federation.meta)
@@ -1479,7 +1479,7 @@ export const selectCommunityDefaultRoomIds = createSelector(
 )
 
 export const selectDefaultMatrixRoomIds = createSelector(
-    (s: CommonState) => selectFederations(s),
+    (s: CommonState) => selectLoadedFederations(s),
     (s: CommonState) => selectGlobalCommunityMeta(s),
     (federations, globalCommunityMeta) => {
         let defaultMatrixRoomIds: MatrixRoom['id'][] = federations.reduce(

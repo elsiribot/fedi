@@ -9,6 +9,7 @@ import {
     RecoveryProgressEvent,
     RpcCommunity,
     RpcFederation,
+    RpcFederationMaybeLoading,
     RpcFederationPreview,
     RpcInvoice,
     RpcLightningGateway,
@@ -159,9 +160,9 @@ export type FederationStatus = 'online' | 'unstable' | 'offline'
 
 export type Federation = Omit<RpcFederation, 'network' | 'meta'> & {
     meta: ClientConfigMetadata
-    network: Network
+    network: Network | undefined
     status: FederationStatus
-    readonly hasWallet: true
+    hasWallet?: boolean
 }
 
 export type Community = Omit<RpcCommunity, 'meta'> & {
@@ -181,6 +182,19 @@ export type JoinPreview = FederationPreview | CommunityPreview
 
 // Check if hasWallet is true to determine if it's a wallet type or community
 export type FederationListItem = Federation | Community
+
+export type LoadedFederation = {
+    id: string
+    init_state: 'ready'
+} & FederationListItem
+
+export type FederationMaybeLoading =
+    | LoadedFederation
+    | ({
+          id: string
+          init_state: string
+          error?: string
+      } & Partial<FederationListItem>)
 
 export type PublicFederation = Pick<Federation, 'id' | 'name' | 'meta'>
 
@@ -209,7 +223,7 @@ export type FederationPreview = Omit<RpcFederationPreview, 'meta'> & {
  * Mocked-out social backup and recovery events
  */
 
-export type FederationEvent = Federation
+export type FederationEvent = RpcFederationMaybeLoading
 
 export interface TransactionEvent {
     federationId: string
