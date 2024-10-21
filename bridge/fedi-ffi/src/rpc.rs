@@ -1780,7 +1780,11 @@ mod tests {
             .unwrap()
             .parse()
             .unwrap();
-        let gateways = federation.list_gateways().await?;
+        let mut gateways = federation.list_gateways().await?;
+        if gateways.is_empty() {
+            federation.select_gateway().await?;
+            gateways = federation.list_gateways().await?;
+        }
         for gateway in gateways {
             if gateway.node_pub_key.0 == lnd_node_pubkey {
                 federation.switch_gateway(&gateway.gateway_id.0).await?;
@@ -1980,17 +1984,6 @@ mod tests {
         let federation = bridge
             .get_federation_maybe_recovering(&fedimint_federation.id.0)
             .await?;
-        // ensure federation's gateway cache is populated
-        loop {
-            if !federation.list_gateways().await?.is_empty() {
-                break;
-            }
-            fedimint_core::task::sleep_in_test(
-                "waiting for gateway cache to be populated",
-                Duration::from_millis(10),
-            )
-            .await;
-        }
         use_lnd_gateway(&federation).await?;
         Ok(federation)
     }
@@ -2867,17 +2860,6 @@ mod tests {
         let fedimint_federation =
             joinFederation(bridge.clone(), invite_code.clone(), false).await?;
         let federation = bridge.get_federation(&fedimint_federation.id.0).await?;
-        // ensure federation's gateway cache is populated
-        loop {
-            if !federation.list_gateways().await?.is_empty() {
-                break;
-            }
-            fedimint_core::task::sleep_in_test(
-                "waiting for gateway cache to be populated",
-                Duration::from_millis(10),
-            )
-            .await;
-        }
         use_lnd_gateway(&federation).await?;
 
         // receive ecash and backup
