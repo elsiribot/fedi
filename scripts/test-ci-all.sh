@@ -54,6 +54,11 @@ function test_bridge_current() {
 }
 export -f test_bridge_current
 
+function test_bridge_current_use_upstream_fedimintd() {
+  USE_UPSTREAM_FEDIMINTD=1 fm-run-test "${FUNCNAME[0]}" ./scripts/test-bridge-current.sh
+}
+export -f test_bridge_current_use_upstream_fedimintd
+
 tests_to_run_in_parallel=()
 for _ in $(seq "${FM_TEST_CI_ALL_TIMES:-1}"); do
 # NOTE: try to keep the slowest tests first, except 'always_success_test',
@@ -61,6 +66,7 @@ for _ in $(seq "${FM_TEST_CI_ALL_TIMES:-1}"); do
 tests_to_run_in_parallel+=(
   test_stability_pool
   test_bridge_current
+  test_bridge_current_use_upstream_fedimintd
 )
 done
 
