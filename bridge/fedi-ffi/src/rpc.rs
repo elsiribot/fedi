@@ -1617,6 +1617,7 @@ mod tests {
     use crate::api::{RegisterDeviceError, RegisteredDevice};
     use crate::community::CommunityInvite;
     use crate::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_PATH, MILLION};
+    use crate::envs::USE_UPSTREAM_FEDIMINTD_ENV;
     use crate::event::{DeviceRegistrationEvent, TransactionEvent};
     use crate::features::RuntimeEnvironment;
     use crate::federation_v2::client::ClientExt;
@@ -1979,6 +1980,17 @@ mod tests {
         let federation = bridge
             .get_federation_maybe_recovering(&fedimint_federation.id.0)
             .await?;
+        // ensure federation's gateway cache is populated
+        loop {
+            if !federation.list_gateways().await?.is_empty() {
+                break;
+            }
+            fedimint_core::task::sleep_in_test(
+                "waiting for gateway cache to be populated",
+                Duration::from_millis(10),
+            )
+            .await;
+        }
         use_lnd_gateway(&federation).await?;
         Ok(federation)
     }
@@ -1997,7 +2009,7 @@ mod tests {
     }
 
     fn should_skip_test_using_stock_fedimintd() -> bool {
-        if std::env::var("USE_STOCK_FEDIMINTD").is_ok() {
+        if std::env::var(USE_UPSTREAM_FEDIMINTD_ENV).is_ok() {
             info!("Skipping test as we're using stock/upstream fedimintd binary");
             true
         } else {
@@ -2855,6 +2867,17 @@ mod tests {
         let fedimint_federation =
             joinFederation(bridge.clone(), invite_code.clone(), false).await?;
         let federation = bridge.get_federation(&fedimint_federation.id.0).await?;
+        // ensure federation's gateway cache is populated
+        loop {
+            if !federation.list_gateways().await?.is_empty() {
+                break;
+            }
+            fedimint_core::task::sleep_in_test(
+                "waiting for gateway cache to be populated",
+                Duration::from_millis(10),
+            )
+            .await;
+        }
         use_lnd_gateway(&federation).await?;
 
         // receive ecash and backup

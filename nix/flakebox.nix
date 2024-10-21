@@ -370,7 +370,7 @@ rec {
       export HOME=/tmp
       export FM_TEST_CI_ALL_TIMES=${builtins.toString 1}
       export FM_TEST_CI_ALL_DISABLE_ETA=1
-      export UPSTREAM_FEDIMINTD_NIX_PKGS=${fedimint-pkgs.packages.${system}.fedimintd}
+      export UPSTREAM_FEDIMINTD_NIX_PKG=${fedimint-pkgs.packages.${system}.fedimintd}
       ./scripts/test-ci-all.sh
     '';
   });
