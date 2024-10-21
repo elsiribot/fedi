@@ -528,10 +528,13 @@ export const selectWalletFederations = createSelector(
 export const selectFederations = createSelector(
     (s: CommonState) => s.federation.federations,
     federations =>
-        federations.map((f: FederationMaybeLoading) => ({
-            ...f,
-            name: getFederationName(f.meta || {}) || f.name || '',
-        })),
+        federations
+            .map((f: FederationMaybeLoading) => ({
+                ...f,
+                name: getFederationName(f.meta || {}) || f.name || '',
+            }))
+            // We temporarily filter out failed federations until we have UI designs for this state
+            .filter(f => f.init_state !== 'failed'),
 )
 
 export const selectAlphabeticallySortedFederations = createSelector(
