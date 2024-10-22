@@ -9,7 +9,12 @@ import type { i18n as I18n } from 'i18next'
 import type { AnyAction } from 'redux'
 import type { ThunkDispatch } from 'redux-thunk'
 
-import { FederationMaybeLoading, Network, StorageApi } from '../types'
+import {
+    FederationListItem,
+    LoadedFederation,
+    Network,
+    StorageApi,
+} from '../types'
 import { RpcFederationMaybeLoading } from '../types/bindings'
 import {
     coerceFederationListItem,
@@ -119,36 +124,62 @@ export function initializeCommonStore({
         async (event: RpcFederationMaybeLoading) => {
             // don't both updating if the federation isn't ready
             // TODO: Should we remove failed federations from the UI?
-            if (event.init_state !== 'ready') return
-            const federation: FederationMaybeLoading = {
-                ...event,
-                network: event.network as Network,
-            }
+            // if (event.init_state !== 'ready') return
             // just in case an erroneous event fires with no id
-            if (!federation.id) return
-            // if the federation_name is found in the meta, exclude name from update
-            if (event.meta.federation_name) {
-                delete federation.name
+            if (!event.id) return
+            let federation: FederationListItem
+            switch (event.init_state) {
+                // For loading and failes states we just pass it along as-is with hasWallet
+                case 'loading':
+                case 'failed':
+                    federation = {
+                        ...event,
+                        hasWallet: true,
+                    }
+                    dispatch(upsertFederation(federation))
+                    break
+                // For ready states we prepare the full loaded federation with meta + status updates
+                case 'ready': {
+                    const loadedFederation: LoadedFederation = {
+                        ...event,
+                        init_state: 'ready',
+                        hasWallet: true,
+                        status: 'online',
+                        network: event.network as Network,
+                    }
+                    dispatch(upsertFederation(loadedFederation))
+                    if ('meta' in loadedFederation) {
+                        // if the federation_name is found in the meta, overwrite top-level name field
+                        if (loadedFederation.meta.federation_name) {
+                            loadedFederation.name =
+                                loadedFederation.meta.federation_name
+                        }
+                        dispatch(
+                            processFederationMeta({
+                                federation: loadedFederation,
+                            }),
+                        )
+                    }
+                    // also refresh the guardian status when we get a federation update
+                    // TODO: move this logic to the bridge?
+                    getFederationStatus(fedimint, loadedFederation.id)
+                        .then(updatedStatus => {
+                            dispatch(
+                                upsertFederation({
+                                    ...loadedFederation,
+                                    status: updatedStatus,
+                                }),
+                            )
+                        })
+                        .catch(error => {
+                            log.error(
+                                `Error in background status fetch for federation ${loadedFederation.id}:`,
+                                error,
+                            )
+                        })
+                    break
+                }
             }
-            dispatch(upsertFederation(federation))
-            dispatch(processFederationMeta({ federation }))
-            // also refresh the guardian status when we get a federation update
-            // TODO: move this logic to the bridge?
-            getFederationStatus(fedimint, federation.id)
-                .then(updatedStatus => {
-                    dispatch(
-                        upsertFederation({
-                            id: federation.id,
-                            status: updatedStatus,
-                        }),
-                    )
-                })
-                .catch(error => {
-                    log.error(
-                        `Error in background status fetch for federation ${federation.id}:`,
-                        error,
-                    )
-                })
         },
     )
 
@@ -156,10 +187,10 @@ export function initializeCommonStore({
     const unsubscribeCommunities = fedimint.addListener(
         'communityMetadataUpdated',
         event => {
-            dispatch(upsertFederation(event.newCommunity))
-            const federation: FederationMaybeLoading = coerceFederationListItem(
+            const federation: FederationListItem = coerceFederationListItem(
                 event.newCommunity,
             )
+            dispatch(upsertFederation(federation))
             dispatch(processFederationMeta({ federation }))
         },
     )

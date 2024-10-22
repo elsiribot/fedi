@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { selectActiveFederation, selectFederations } from '@fedi/common/redux'
-import { FederationListItem } from '@fedi/common/types'
+import { LoadedFederationListItem } from '@fedi/common/types'
 
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
@@ -32,7 +32,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     const insets = useSafeAreaInsets()
 
     const handleTilePress = useCallback(
-        (c: FederationListItem) => {
+        (c: LoadedFederationListItem) => {
             // Dismiss drawer if active federation is clicked
             if (c.id === activeFederation?.id) {
                 return drawerNavigation.closeDrawer()
@@ -53,7 +53,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     )
 
     const handleQrPress = useCallback(
-        (c: FederationListItem) => {
+        (c: LoadedFederationListItem) => {
             mainNavigation.navigate('FederationInvite', {
                 inviteLink: c.inviteCode,
             })
@@ -62,7 +62,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
     )
 
     const handleStatusPress = useCallback(
-        (c: FederationListItem) => {
+        (c: LoadedFederationListItem) => {
             mainNavigation.navigate('FederationDetails', {
                 federationId: c.id,
             })
@@ -101,7 +101,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                     <View style={style.communitiesList}>
                         {federations.map((f, i) => {
                             if (f.init_state === 'ready') {
-                                const community = f as FederationListItem
+                                const community: LoadedFederationListItem = f
                                 return (
                                     <CommunityTile
                                         key={`di-${i}`}

@@ -158,12 +158,32 @@ export enum Network {
  */
 export type FederationStatus = 'online' | 'unstable' | 'offline'
 
-export type Federation = Omit<RpcFederation, 'network' | 'meta'> & {
+export interface LoadingFederation {
+    id: string
+    meta?: never
+    readonly init_state: 'loading'
+    readonly hasWallet: true
+}
+export interface FederationInitFailure {
+    id: string
+    error: string
+    meta?: never
+    readonly init_state: 'failed'
+    readonly hasWallet: true
+}
+
+export type LoadedFederation = Omit<RpcFederation, 'network' | 'meta'> & {
     meta: ClientConfigMetadata
     network: Network | undefined
     status: FederationStatus
-    hasWallet?: boolean
+    readonly init_state: 'ready'
+    readonly hasWallet: true
 }
+
+export type Federation =
+    | LoadingFederation
+    | FederationInitFailure
+    | LoadedFederation
 
 export type Community = Omit<RpcCommunity, 'meta'> & {
     id: Federation['id']
@@ -172,6 +192,7 @@ export type Community = Omit<RpcCommunity, 'meta'> & {
     // Added for compatibility with Mods
     readonly network: undefined
     readonly hasWallet: false
+    readonly init_state: 'ready'
 }
 
 export type RpcCommunityPreview = RpcCommunity
@@ -183,20 +204,9 @@ export type JoinPreview = FederationPreview | CommunityPreview
 // Check if hasWallet is true to determine if it's a wallet type or community
 export type FederationListItem = Federation | Community
 
-export type LoadedFederation = {
-    id: string
-    init_state: 'ready'
-} & FederationListItem
+export type LoadedFederationListItem = LoadedFederation | Community
 
-export type FederationMaybeLoading =
-    | LoadedFederation
-    | ({
-          id: string
-          init_state: string
-          error?: string
-      } & Partial<FederationListItem>)
-
-export type PublicFederation = Pick<Federation, 'id' | 'name' | 'meta'>
+export type PublicFederation = Pick<LoadedFederation, 'id' | 'name' | 'meta'>
 
 export type SeedWords = RpcResponse<'getMnemonic'>
 

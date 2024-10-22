@@ -1,6 +1,7 @@
 import {
     Federation,
     FediMod,
+    LoadedFederation,
     MSats,
     Network,
     SupportedCurrency,
@@ -15,7 +16,7 @@ import {
 
 const SAMPLE_CHAT_SERVER_DOMAIN = 'chat.dev.fedibtc.com'
 
-const baseFed: Federation = {
+const baseFed: LoadedFederation = {
     id: 'fedid',
     name: 'testfed',
     inviteCode: 'tesfedinvitecode',
@@ -32,6 +33,7 @@ const baseFed: Federation = {
     },
     hasWallet: true,
     status: 'online',
+    init_state: 'ready',
 }
 
 const fedWithNoMetadata: Federation = {

@@ -1484,7 +1484,7 @@ export const selectDefaultMatrixRoomIds = createSelector(
     (federations, globalCommunityMeta) => {
         let defaultMatrixRoomIds: MatrixRoom['id'][] = federations.reduce(
             (result: MatrixRoom['id'][], f: FederationListItem) => {
-                const defaultRoomIds = getFederationGroupChats(f.meta)
+                const defaultRoomIds = getFederationGroupChats(f.meta || {})
                 return [...result, ...defaultRoomIds]
             },
             [],

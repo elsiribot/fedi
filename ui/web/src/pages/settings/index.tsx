@@ -22,7 +22,7 @@ import {
     selectMatrixAuth,
     setActiveFederationId,
 } from '@fedi/common/redux'
-import { Federation, FederationMaybeLoading } from '@fedi/common/types'
+import { FederationListItem, LoadedFederation } from '@fedi/common/types'
 import {
     getFederationTosUrl,
     supportsSingleSeed,
@@ -44,9 +44,10 @@ import { useAppDispatch, useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 
-const canLeaveFederation = (federation: FederationMaybeLoading | undefined) => {
+const canLeaveFederation = (federation: FederationListItem | undefined) => {
     return (
         federation?.hasWallet &&
+        'balance' in federation &&
         federation?.balance &&
         federation.balance < 100_000
     )
@@ -93,7 +94,7 @@ function AdminPage() {
         setLeavingFederationId('')
     }, [leavingFederation, dispatch, toast, t])
 
-    const exportTransactionsAsCsv = async (federation: Federation) => {
+    const exportTransactionsAsCsv = async (federation: LoadedFederation) => {
         setExportingFederationId(federation.id)
 
         const res = await exportTransactions(federation)

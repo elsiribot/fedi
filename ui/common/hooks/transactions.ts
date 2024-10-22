@@ -25,7 +25,7 @@ import {
     selectStabilityTransactionHistory,
     selectTransactionHistory,
 } from '../redux/transactions'
-import { Federation, MSats, Sats, Transaction } from '../types'
+import { LoadedFederation, MSats, Sats, Transaction } from '../types'
 import { RpcFeeDetails } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import {
@@ -220,7 +220,7 @@ export function useExportTransactions(fedimint: FedimintBridge) {
 
     const exportTransactions = useCallback(
         async (
-            federation: Federation,
+            federation: LoadedFederation,
         ): Promise<
             | { success: true; uri: string; fileName: string }
             | { success: false; message: string }
