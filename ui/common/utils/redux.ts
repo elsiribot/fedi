@@ -13,6 +13,8 @@ export function upsertListItem<T extends { id: string }>(
      * If the item has nested fields, pass in the keys of the nested fields to
      * merge so we don't overwrite the entire object.
      * needed for federation.meta for example
+     * You should NOT pass in fields that are not objects like federation.init_state
+     * for example would be useless
      */
     nestedFields?: (keyof T)[],
     /**
