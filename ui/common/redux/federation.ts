@@ -486,7 +486,7 @@ export const selectLoadedFederations = createSelector(
                 const loadedFederation: LoadedFederation = {
                     ...f,
                     init_state: 'ready',
-                    name: getFederationName(f.meta || {}) || f.name || '',
+                    name: getFederationName(f),
                 } as LoadedFederation
                 acc.push(loadedFederation)
             }
@@ -504,7 +504,7 @@ export const selectWalletFederations = createSelector(
             return [
                 {
                     ...f,
-                    name: getFederationName(f.meta) || f.name,
+                    name: getFederationName(f),
                 },
             ]
         }),
@@ -517,7 +517,7 @@ export const selectFederations = createSelector(
             .map((f: FederationListItem) => {
                 return {
                     ...f,
-                    name: 'name' in f ? f.name : '',
+                    name: getFederationName(f),
                 }
             })
             // We temporarily filter out failed federations until we have UI designs for this state

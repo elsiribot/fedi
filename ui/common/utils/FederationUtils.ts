@@ -511,8 +511,25 @@ export const getFederationTosUrl = (metadata: ClientConfigMetadata) => {
     return getMetaField(SupportedMetaFields.tos_url, metadata)
 }
 
-export const getFederationName = (metadata: ClientConfigMetadata) => {
-    return getMetaField(SupportedMetaFields.federation_name, metadata)
+export const getFederationName = (
+    federation: FederationListItem | JoinPreview,
+): string => {
+    if ('meta' in federation && federation.meta) {
+        return (
+            getMetaField(
+                SupportedMetaFields.federation_name,
+                federation.meta,
+            ) || ''
+        )
+    } else if (
+        'name' in federation &&
+        federation.name &&
+        typeof federation.name === 'string'
+    ) {
+        return federation.name
+    } else {
+        return ''
+    }
 }
 
 export const getFederationWelcomeMessage = (metadata: ClientConfigMetadata) => {
@@ -545,7 +562,7 @@ async function getFederationPreview(
     inviteCode: string,
     fedimint: FedimintBridge,
 ): Promise<JoinPreview> {
-    let externalMeta = {}
+    let externalMeta: ClientConfigMetadata = {}
     // The federation preview may have an external URL where the meta
     // fields need to be fetched from... otherwise we won't know about chat
     // servers after joining which will break onboarding
@@ -575,8 +592,8 @@ async function getFederationPreview(
     return {
         ...preview,
         name:
-            getFederationName(externalMeta) ||
-            getFederationName(preview.meta) ||
+            externalMeta.federation_name ||
+            preview.meta.federation_name ||
             preview.name,
         meta: {
             ...preview.meta,
