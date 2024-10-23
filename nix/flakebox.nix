@@ -369,6 +369,7 @@ rec {
       export FM_TEST_CI_ALL_TIMES=${builtins.toString 1}
       export FM_TEST_CI_ALL_DISABLE_ETA=1
       export UPSTREAM_FEDIMINTD_NIX_PKG=${fedimint-pkgs.packages.${system}.fedimintd}
+      export FEDIMINT_LOAD_TEST_TOOL_NIX_PKG=${fedimint-pkgs.packages.${system}.fedimint-load-test-tool}
       ./scripts/test-ci-all.sh
     '';
   });

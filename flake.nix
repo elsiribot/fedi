@@ -324,6 +324,7 @@
             export RUSTC_WRAPPER=${pkgs.sccache}/bin/sccache
             export CARGO_BUILD_TARGET_DIR="''${CARGO_BUILD_TARGET_DIR:-''${REPO_ROOT}/target-nix}"
             export UPSTREAM_FEDIMINTD_NIX_PKG=${fedimint-pkgs.packages.${system}.fedimintd}
+            export FEDIMINT_LOAD_TEST_TOOL_NIX_PKG=${fedimint-pkgs.packages.${system}.fedimint-load-test-tool}
 
             # this is where we publish the android bridge package so the react native app
             # can find it as a local maven dependency
