@@ -1,9 +1,8 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
     ActivityIndicator,
     Image,
-    Modal,
     Pressable,
     StyleSheet,
     View,
@@ -15,14 +14,10 @@ import { MatrixEvent } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 import { scaleAttachment } from '@fedi/common/utils/media'
-import { ImageZoom } from '@likashefqet/react-native-image-zoom'
-import { CameraRoll } from '@react-native-camera-roll/camera-roll'
+import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
-import { RESULTS } from 'react-native-permissions'
-import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch } from '../../../state/hooks'
-import { useStoragePermission } from '../../../utils/hooks'
 import SvgImage from '../../ui/SvgImage'
 
 type ChatImageEventProps = {
@@ -37,42 +32,16 @@ const ChatImageEvent: React.FC<ChatImageEventProps> = ({
     const [isLoading, setIsLoading] = useState(true)
     const [isError, setIsError] = useState(false)
     const [uri, setURI] = useState<string>('')
-    const [imageViewer, setImageViewer] = useState(false)
-    const [isDownloading, setIsDownloading] = useState(false)
-    const [hasDownloaded, setHasDownloaded] = useState(false)
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const insets = useSafeAreaInsets()
     const dispatch = useAppDispatch()
-    const { storagePermission, requestStoragePermission } =
-        useStoragePermission()
+    const navigation = useNavigation()
 
     const resolvedUri = uri.startsWith('file://') ? uri : `file://${uri}`
 
     const handleLongPress = () => {
         dispatch(setSelectedChatMessage(event))
     }
-
-    const handleDownload = useCallback(async () => {
-        if (!resolvedUri || !(await exists(resolvedUri))) return
-
-        setIsDownloading(true)
-
-        try {
-            if (storagePermission !== RESULTS.GRANTED) {
-                await requestStoragePermission()
-            }
-
-            await CameraRoll.saveAsset(resolvedUri, { type: 'photo' })
-
-            setHasDownloaded(true)
-            setTimeout(() => setHasDownloaded(false), 1000)
-        } catch (e) {
-            log.error('Failed to download image', e)
-        } finally {
-            setIsDownloading(false)
-        }
-    }, [resolvedUri, storagePermission, requestStoragePermission])
 
     useEffect(() => {
         const loadImage = async () => {
@@ -102,7 +71,7 @@ const ChatImageEvent: React.FC<ChatImageEventProps> = ({
         loadImage()
     }, [event.content])
 
-    const style = styles(theme, insets)
+    const style = styles(theme)
 
     const dimensions = scaleAttachment(
         event.content.info.w,
@@ -127,52 +96,21 @@ const ChatImageEvent: React.FC<ChatImageEventProps> = ({
             )}
         </View>
     ) : (
-        <>
-            <Pressable
-                onPress={() => setImageViewer(true)}
-                onLongPress={handleLongPress}>
-                <Image
-                    source={{ uri: resolvedUri }}
-                    style={imageBaseStyle}
-                    onError={() => setIsError(true)}
-                />
-            </Pressable>
-            <Modal visible={imageViewer}>
-                <View style={style.imageViewerContainer}>
-                    <View style={style.imageViewerHeader}>
-                        <Pressable onPress={() => setImageViewer(false)}>
-                            <SvgImage
-                                name="Close"
-                                color={theme.colors.secondary}
-                            />
-                        </Pressable>
-                        <Pressable onPress={handleDownload}>
-                            {isDownloading ? (
-                                <ActivityIndicator />
-                            ) : hasDownloaded ? (
-                                <SvgImage
-                                    name="Check"
-                                    color={theme.colors.green}
-                                />
-                            ) : (
-                                <SvgImage
-                                    name="Download"
-                                    color={theme.colors.secondary}
-                                />
-                            )}
-                        </Pressable>
-                    </View>
-                    <ImageZoom
-                        uri={resolvedUri}
-                        style={style.imageZoomContainer}
-                    />
-                </View>
-            </Modal>
-        </>
+        <Pressable
+            onPress={() =>
+                navigation.navigate('ChatImageViewer', { uri: resolvedUri })
+            }
+            onLongPress={handleLongPress}>
+            <Image
+                source={{ uri: resolvedUri }}
+                style={imageBaseStyle}
+                onError={() => setIsError(true)}
+            />
+        </Pressable>
     )
 }
 
-const styles = (theme: Theme, insets: EdgeInsets) =>
+const styles = (theme: Theme) =>
     StyleSheet.create({
         imageBase: {
             maxWidth: theme.sizes.maxMessageWidth,
@@ -190,22 +128,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         },
         errorCaption: {
             color: theme.colors.darkGrey,
-        },
-        imageViewerContainer: {
-            paddingTop: Math.max(insets.top, theme.spacing.sm),
-            paddingBottom: Math.max(insets.bottom, theme.spacing.sm),
-            display: 'flex',
-            flex: 1,
-            backgroundColor: theme.colors.night,
-        },
-        imageZoomContainer: {
-            flex: 1,
-        },
-        imageViewerHeader: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingHorizontal: theme.spacing.lg,
         },
     })
 

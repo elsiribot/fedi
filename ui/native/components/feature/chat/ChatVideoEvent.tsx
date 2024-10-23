@@ -1,10 +1,8 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
     ActivityIndicator,
-    Modal,
     Platform,
-    Pressable,
     StyleSheet,
     TouchableOpacity,
     View,
@@ -16,14 +14,11 @@ import { MatrixEvent } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 import { scaleAttachment } from '@fedi/common/utils/media'
-import { CameraRoll } from '@react-native-camera-roll/camera-roll'
+import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
-import { RESULTS } from 'react-native-permissions'
-import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Video from 'react-native-video'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch } from '../../../state/hooks'
-import { useStoragePermission } from '../../../utils/hooks'
 import SvgImage from '../../ui/SvgImage'
 
 type ChatVideoEventProps = {
@@ -39,39 +34,13 @@ const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
     const [isError, setIsError] = useState(false)
     const [uri, setURI] = useState<string>('')
     const [paused, setPaused] = useState(true)
-    const [isFullscreenAndroid, setIsFullscreenAndroid] = useState(false)
-    const [isDownloading, setIsDownloading] = useState(false)
-    const [hasDownloaded, setHasDownloaded] = useState(false)
     const { theme } = useTheme()
     const { t } = useTranslation()
     const videoRef = useRef<Video | null>(null)
     const dispatch = useAppDispatch()
-    const insets = useSafeAreaInsets()
-    const { storagePermission, requestStoragePermission } =
-        useStoragePermission()
+    const navigation = useNavigation()
 
     const resolvedUri = uri.startsWith('file://') ? uri : `file://${uri}`
-
-    const handleDownload = useCallback(async () => {
-        if (!resolvedUri || !(await exists(resolvedUri))) return
-
-        setIsDownloading(true)
-
-        try {
-            if (storagePermission !== RESULTS.GRANTED) {
-                await requestStoragePermission()
-            }
-
-            await CameraRoll.saveAsset(resolvedUri, { type: 'video' })
-
-            setHasDownloaded(true)
-            setTimeout(() => setHasDownloaded(false), 1000)
-        } catch (e) {
-            log.error('Failed to download video', e)
-        } finally {
-            setIsDownloading(false)
-        }
-    }, [resolvedUri, storagePermission, requestStoragePermission])
 
     const handleLongPress = () => {
         dispatch(setSelectedChatMessage(event))
@@ -105,7 +74,7 @@ const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
         loadVideo()
     }, [event.content])
 
-    const style = styles(theme, insets)
+    const style = styles(theme)
 
     const dimensions = scaleAttachment(
         event.content.info.w,
@@ -149,8 +118,7 @@ const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
                 onPress={() => {
                     // Android doesn't have a native fullscreen video player
                     if (Platform.OS === 'android') {
-                        setIsFullscreenAndroid(true)
-                        setPaused(false)
+                        navigation.navigate('ChatVideoViewer', { uri })
                     } else {
                         // iOS has a native fullscreen video player
                         videoRef.current?.presentFullscreenPlayer()
@@ -161,54 +129,11 @@ const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
                     <SvgImage name="Play" color={theme.colors.white} />
                 </View>
             </TouchableOpacity>
-
-            {/* Android-only fullscreen video player */}
-            {Platform.OS === 'android' && (
-                <Modal visible={isFullscreenAndroid}>
-                    <View style={style.fullScreenContainer}>
-                        <View style={style.fullScreenVideoHeader}>
-                            <Pressable
-                                onPress={() => {
-                                    setIsFullscreenAndroid(false)
-                                    setPaused(true)
-                                }}>
-                                <SvgImage
-                                    name="Close"
-                                    color={theme.colors.secondary}
-                                />
-                            </Pressable>
-                            <Pressable onPress={handleDownload}>
-                                {isDownloading ? (
-                                    <ActivityIndicator />
-                                ) : hasDownloaded ? (
-                                    <SvgImage
-                                        name="Check"
-                                        color={theme.colors.green}
-                                    />
-                                ) : (
-                                    <SvgImage
-                                        name="Download"
-                                        color={theme.colors.secondary}
-                                    />
-                                )}
-                            </Pressable>
-                        </View>
-                        <Video
-                            source={{ uri: resolvedUri }}
-                            style={style.fullScreenVideo}
-                            onError={() => setIsError(true)}
-                            paused={paused}
-                            controls
-                            resizeMode="contain"
-                        />
-                    </View>
-                </Modal>
-            )}
         </View>
     )
 }
 
-const styles = (theme: Theme, insets: EdgeInsets) =>
+const styles = (theme: Theme) =>
     StyleSheet.create({
         videoBase: {
             maxWidth: theme.sizes.maxMessageWidth,
@@ -218,22 +143,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-        },
-        fullScreenContainer: {
-            paddingTop: Math.max(insets.top, theme.spacing.sm),
-            paddingBottom: Math.max(insets.bottom, theme.spacing.sm),
-            display: 'flex',
-            flex: 1,
-            backgroundColor: theme.colors.night,
-        },
-        fullScreenVideo: {
-            flex: 1,
-        },
-        fullScreenVideoHeader: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingHorizontal: theme.spacing.lg,
         },
         videoStyle: {
             flexDirection: 'column',
