@@ -8,9 +8,14 @@ import { ConnectionIcon } from './ConnectionIcon'
 type Props = {
     status: FederationStatus
     size?: 'small' | 'large'
+    hideArrow?: boolean
 }
 
-export const ConnectionTag = ({ status, size = 'small' }: Props) => {
+export const ConnectionTag = ({
+    status,
+    size = 'small',
+    hideArrow = false,
+}: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const localeStatus = t(`words.${status}`)
@@ -33,7 +38,7 @@ export const ConnectionTag = ({ status, size = 'small' }: Props) => {
                 style={size === 'small' ? style.smallText : style.largeText}>
                 {localeStatus}
             </Text>
-            <SvgImage size={12} name={'ChevronRight'} />
+            {!hideArrow && <SvgImage size={12} name={'ChevronRight'} />}
         </View>
     )
 }

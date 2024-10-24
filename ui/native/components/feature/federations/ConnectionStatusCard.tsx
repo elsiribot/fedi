@@ -7,9 +7,10 @@ import { ConnectionTag } from './ConnectionTag'
 
 type Props = {
     status: FederationStatus
+    hideArrow?: boolean
 }
 
-const ConnectionStatusCard = ({ status }: Props) => {
+const ConnectionStatusCard = ({ status, hideArrow = false }: Props) => {
     const { theme } = useTheme()
     const style = styles(theme)
     const { t } = useTranslation()
@@ -17,7 +18,7 @@ const ConnectionStatusCard = ({ status }: Props) => {
 
     return (
         <View style={style.card}>
-            <ConnectionTag status={status} size="large" />
+            <ConnectionTag status={status} size="large" hideArrow={hideArrow} />
             <Text
                 caption
                 medium
