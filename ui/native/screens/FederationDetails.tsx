@@ -106,7 +106,10 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
                         </Text>
                     </View>
                 </View>
-                <ConnectionStatusCard status={federation.status} />
+                <ConnectionStatusCard
+                    status={federation.status}
+                    hideArrow={true}
+                />
             </View>
             {tosUrl && (
                 <Pressable
