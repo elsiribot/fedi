@@ -9,7 +9,17 @@ import type { i18n as I18n } from 'i18next'
 import type { AnyAction } from 'redux'
 import type { ThunkDispatch } from 'redux-thunk'
 
-import { ClientConfigMetadata, Federation, StorageApi } from '../types'
+import {
+    FederationListItem,
+    LoadedFederation,
+    Network,
+    StorageApi,
+} from '../types'
+import { RpcFederationMaybeLoading } from '../types/bindings'
+import {
+    coerceFederationListItem,
+    getFederationStatus,
+} from '../utils/FederationUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { hasStorageStateChanged } from '../utils/storage'
@@ -19,10 +29,10 @@ import { environmentSlice, selectLanguage } from './environment'
 import {
     federationSlice,
     joinFederation,
+    processFederationMeta,
     refreshFederations,
-    updateExternalMeta,
-    updateFederation,
     updateFederationBalance,
+    upsertFederation,
 } from './federation'
 import {
     checkForReceivablePayments,
@@ -109,28 +119,80 @@ export function initializeCommonStore({
     })
 
     // Update federation on bridge events
-    const unsubscribeFederation = fedimint.addListener('federation', event => {
-        // if the federation_name is found in the meta, exclude name from update
-        const federation: Partial<Federation> = { ...event }
-        if (event.meta.federation_name) {
-            delete federation.name
-        }
-        dispatch(updateFederation(federation))
-        // This is needed to update our local redux state with the new federation
-        // metadata whenever the bridge emits an event that meta has been updated.
-        // TODO: Remove this along with the refactor to use federation.federations
-        // as the source of truth for all metadata and can remove the externalMeta slice entirely
-        if (federation.id && federation.meta) {
-            const meta: Record<string, ClientConfigMetadata> = {}
-            meta[federation.id] = federation.meta
-            dispatch(updateExternalMeta(meta))
-        }
-    })
+    const unsubscribeFederation = fedimint.addListener(
+        'federation',
+        async (event: RpcFederationMaybeLoading) => {
+            // don't both updating if the federation isn't ready
+            // TODO: Should we remove failed federations from the UI?
+            // if (event.init_state !== 'ready') return
+            // just in case an erroneous event fires with no id
+            if (!event.id) return
+            let federation: FederationListItem
+            switch (event.init_state) {
+                // For loading and failes states we just pass it along as-is with hasWallet
+                case 'loading':
+                case 'failed':
+                    federation = {
+                        ...event,
+                        hasWallet: true,
+                    }
+                    dispatch(upsertFederation(federation))
+                    break
+                // For ready states we prepare the full loaded federation with meta + status updates
+                case 'ready': {
+                    const loadedFederation: LoadedFederation = {
+                        ...event,
+                        init_state: 'ready',
+                        hasWallet: true,
+                        status: 'online',
+                        network: event.network as Network,
+                    }
+                    dispatch(upsertFederation(loadedFederation))
+                    if ('meta' in loadedFederation) {
+                        // if the federation_name is found in the meta, overwrite top-level name field
+                        if (loadedFederation.meta.federation_name) {
+                            loadedFederation.name =
+                                loadedFederation.meta.federation_name
+                        }
+                        dispatch(
+                            processFederationMeta({
+                                federation: loadedFederation,
+                            }),
+                        )
+                    }
+                    // also refresh the guardian status when we get a federation update
+                    // TODO: move this logic to the bridge?
+                    getFederationStatus(fedimint, loadedFederation.id)
+                        .then(updatedStatus => {
+                            dispatch(
+                                upsertFederation({
+                                    ...loadedFederation,
+                                    status: updatedStatus,
+                                }),
+                            )
+                        })
+                        .catch(error => {
+                            log.error(
+                                `Error in background status fetch for federation ${loadedFederation.id}:`,
+                                error,
+                            )
+                        })
+                    break
+                }
+            }
+        },
+    )
 
     // Update communities on bridge events
     const unsubscribeCommunities = fedimint.addListener(
         'communityMetadataUpdated',
-        event => dispatch(updateFederation(event.newCommunity)),
+        event => {
+            const federation: FederationListItem = coerceFederationListItem(
+                event.newCommunity,
+            )
+            dispatch(upsertFederation(federation))
+            dispatch(processFederationMeta({ federation }))
+        },
     )
 
     // Update balance on bridge events

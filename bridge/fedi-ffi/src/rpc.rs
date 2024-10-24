@@ -52,9 +52,9 @@ use crate::observable::{Observable, ObservableVec};
 use crate::storage::FiatFXInfo;
 use crate::types::{
     GuardianStatus, RpcBridgeStatus, RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
-    RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
-    RpcMediaUploadParams, RpcNostrPubkey, RpcNostrSecret, RpcPayAddressResponse,
-    RpcRegisteredDevice, RpcTransactionDirection,
+    RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
+    RpcLightningGateway, RpcMediaUploadParams, RpcNostrPubkey, RpcNostrSecret,
+    RpcPayAddressResponse, RpcRegisteredDevice, RpcTransactionDirection,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -225,7 +225,7 @@ async fn federationPreview(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn listFederations(bridge: Arc<Bridge>) -> anyhow::Result<Vec<RpcFederation>> {
+async fn listFederations(bridge: Arc<Bridge>) -> anyhow::Result<Vec<RpcFederationMaybeLoading>> {
     Ok(bridge.list_federations().await)
 }
 
@@ -2089,7 +2089,10 @@ mod tests {
         // listTransactions works
         let federations = listFederations(bridge.clone()).await?;
         assert_eq!(federations.len(), 1);
-        assert_eq!(env_invite_code.clone(), federations[0].invite_code);
+        let RpcFederationMaybeLoading::Ready(rpc_federation) = &federations[0] else {
+            panic!("federation is not loaded");
+        };
+        assert_eq!(env_invite_code.clone(), rpc_federation.invite_code);
 
         // leaveFederation works
         leaveFederation(bridge.clone(), federation.rpc_federation_id()).await?;
@@ -2657,13 +2660,8 @@ mod tests {
 
         // Assert that balances are correct
         let recovery_federation = recovery_bridge
-            .federations
-            .lock()
-            .await
-            .clone()
-            .into_values()
-            .next()
-            .ok_or(anyhow!("Rejoined federation must exist"))?;
+            .get_federation_maybe_recovering(&federation_id.0)
+            .await?;
         assert!(recovery_federation.recovering());
         let id = recovery_federation.rpc_federation_id();
         drop(recovery_federation);

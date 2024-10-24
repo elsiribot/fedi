@@ -103,11 +103,11 @@ use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
 use crate::storage::{AppState, FediFeeSchedule};
 use crate::types::{
     EcashReceiveMetadata, EcashSendMetadata, GuardianStatus, LightningSendMetadata,
-    OperationFediFeeStatus, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId, RpcFederationPreview,
-    RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningDetails, RpcLnState, RpcOOBState,
-    RpcOnchainState, RpcOperationFediFeeStatus, RpcPayAddressResponse, RpcReturningMemberStatus,
-    RpcStabilityPoolTransactionState, RpcTransaction, RpcTransactionDirection,
-    TransactionDateFiatInfo, WithdrawalDetails,
+    OperationFediFeeStatus, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId,
+    RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
+    RpcLightningDetails, RpcLnState, RpcOOBState, RpcOnchainState, RpcOperationFediFeeStatus,
+    RpcPayAddressResponse, RpcReturningMemberStatus, RpcStabilityPoolTransactionState,
+    RpcTransaction, RpcTransactionDirection, TransactionDateFiatInfo, WithdrawalDetails,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
@@ -1551,10 +1551,10 @@ impl FederationV2 {
         ));
     }
 
-    /// Send whenever social recovery state changes
+    /// Send whenever federation meta keys change
     pub async fn send_federation_event(&self) {
         let rpc_federation = federation_v2_to_rpc_federation(&Arc::new(self.clone())).await;
-        let event = Event::federation(rpc_federation);
+        let event = Event::federation(RpcFederationMaybeLoading::Ready(rpc_federation));
         self.event_sink.typed_event(&event);
     }
 

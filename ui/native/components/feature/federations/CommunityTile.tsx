@@ -4,14 +4,14 @@ import { Pressable as NativePressable, StyleSheet, View } from 'react-native'
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
 
-import { FederationListItem, MSats } from '../../../types'
+import { LoadedFederationListItem, MSats } from '../../../types'
 import { Pressable } from '../../ui/Pressable'
 import { PressableIcon } from '../../ui/PressableIcon'
 import { FederationLogo } from '../federations/FederationLogo'
 import { ConnectionTag } from './ConnectionTag'
 
 type CommunityTileProps = {
-    community: FederationListItem
+    community: LoadedFederationListItem
     onSelect?: () => void
     onSelectQr?: () => void
     onSelectStatus?: () => void

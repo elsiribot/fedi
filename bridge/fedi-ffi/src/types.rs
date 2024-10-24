@@ -70,6 +70,16 @@ pub struct RpcFederation {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[serde(tag = "init_state")]
+#[ts(export, export_to = "target/bindings/")]
+pub enum RpcFederationMaybeLoading {
+    Loading { id: RpcFederationId },
+    Failed { error: String, id: RpcFederationId },
+    Ready(RpcFederation),
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcBridgeStatus {
     pub matrix_setup: bool,
