@@ -500,6 +500,8 @@ PODS:
   - react-native-mmkv (2.11.0):
     - MMKV (>= 1.2.13)
     - React-Core
+  - react-native-netinfo (11.4.0):
+    - React-Core
   - react-native-pager-view (6.1.2):
     - React-Core
   - react-native-quick-base64 (2.0.5):
@@ -777,6 +779,7 @@ DEPENDENCIES:
   - react-native-get-random-values (from `../../node_modules/react-native-get-random-values`)
   - react-native-image-picker (from `../../node_modules/react-native-image-picker`)
   - react-native-mmkv (from `../../node_modules/react-native-mmkv`)
+  - "react-native-netinfo (from `../../node_modules/@react-native-community/netinfo`)"
   - react-native-pager-view (from `../../node_modules/react-native-pager-view`)
   - react-native-quick-base64 (from `../../node_modules/react-native-quick-base64`)
   - react-native-quick-crypto (from `../../node_modules/react-native-quick-crypto`)
@@ -917,6 +920,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native-image-picker"
   react-native-mmkv:
     :path: "../../node_modules/react-native-mmkv"
+  react-native-netinfo:
+    :path: "../../node_modules/@react-native-community/netinfo"
   react-native-pager-view:
     :path: "../../node_modules/react-native-pager-view"
   react-native-quick-base64:
@@ -1070,6 +1075,7 @@ SPEC CHECKSUMS:
   react-native-get-random-values: 21325b2244dfa6b58878f51f9aa42821e7ba3d06
   react-native-image-picker: 2e2e82aba9b6a91a7c78f7d9afde341a2659c7b8
   react-native-mmkv: e97c0c79403fb94577e5d902ab1ebd42b0715b43
+  react-native-netinfo: e8e9cf28ede012e47603c9b35b2fa5b19b7bd71d
   react-native-pager-view: 54bed894cecebe28cede54c01038d9d1e122de43
   react-native-quick-base64: e657e9197e61b60a9dec49807843052b830da254
   react-native-quick-crypto: 2f44f5d04eef5d925f7a1c24074d711b4f3c99d1

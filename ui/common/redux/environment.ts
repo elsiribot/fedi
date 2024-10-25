@@ -1,4 +1,10 @@
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { NetInfoState } from '@react-native-community/netinfo'
+import {
+    createAsyncThunk,
+    createSelector,
+    createSlice,
+    PayloadAction,
+} from '@reduxjs/toolkit'
 import type { i18n } from 'i18next'
 
 import { CommonState } from '.'
@@ -9,6 +15,7 @@ import { loadFromStorage } from './storage'
 /*** Initial State ***/
 
 const initialState = {
+    networkInfo: null as NetInfoState | null,
     developerMode: false,
     fedimodDebugMode: false,
     onchainDepositsEnabled: false,
@@ -29,6 +36,9 @@ export const environmentSlice = createSlice({
     name: 'environment',
     initialState,
     reducers: {
+        setNetworkInfo(state, action: PayloadAction<NetInfoState>) {
+            state.networkInfo = action.payload
+        },
         setDeveloperMode(state, action: PayloadAction<boolean>) {
             state.developerMode = action.payload
         },
@@ -94,6 +104,7 @@ export const environmentSlice = createSlice({
 /*** Basic actions ***/
 
 export const {
+    setNetworkInfo,
     setDeveloperMode,
     setFediModDebugMode,
     setAmountInputType,
@@ -140,6 +151,13 @@ export const initializeNostrKeys = createAsyncThunk<
 )
 
 /*** Selectors ***/
+
+export const selectNetworkInfo = (s: CommonState) => s.environment.networkInfo
+
+export const selectIsNetworkConnected = createSelector(
+    selectNetworkInfo,
+    networkInfo => networkInfo?.isConnected,
+)
 
 export const selectDeveloperMode = (s: CommonState) =>
     s.environment.developerMode

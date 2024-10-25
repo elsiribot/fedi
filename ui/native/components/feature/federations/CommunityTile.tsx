@@ -2,8 +2,10 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import { Pressable as NativePressable, StyleSheet, View } from 'react-native'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
+import { selectIsNetworkConnected } from '@fedi/common/redux'
 import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
 
+import { useAppSelector } from '../../../state/hooks'
 import { LoadedFederationListItem, MSats } from '../../../types'
 import { Pressable } from '../../ui/Pressable'
 import { PressableIcon } from '../../ui/PressableIcon'
@@ -28,6 +30,7 @@ const CommunityTile = ({
 }: CommunityTileProps) => {
     const { theme } = useTheme()
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
+    const isNetworkConnected = useAppSelector(selectIsNetworkConnected)
 
     const { formattedSecondaryAmount, formattedPrimaryAmount } =
         makeFormattedAmountsFromMSats(
@@ -61,7 +64,8 @@ const CommunityTile = ({
                             </Text>
                         </View>
                     )}
-                    {community.status !== 'online' && (
+                    {/* Only show this tag if the device has a network connection */}
+                    {community.status !== 'online' && isNetworkConnected && (
                         <NativePressable onPress={onSelectStatus}>
                             <ConnectionTag
                                 status={community.status}
