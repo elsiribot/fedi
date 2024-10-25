@@ -102,18 +102,18 @@ const SelectedMessageOverlay: React.FC = () => {
         setIsDownloading(true)
 
         try {
-            const pathName = `${Buffer.from(
+            const hashHex = Buffer.from(
                 selectedMessage.content.file.hashes.sha256,
-            ).toString('hex')}.${
-                selectedMessage.content.info.mimetype.split('/')[1]
-            }`
+            ).toString('hex')
+            const extension = selectedMessage.content.body.split('.')[1] || ''
+            const path = `${hashHex}.${extension}`
 
-            const path = await fedimint.matrixDownloadFile(
-                pathName,
+            const downloadedFilePath = await fedimint.matrixDownloadFile(
+                path,
                 selectedMessage.content,
             )
 
-            if (!(await exists(path))) {
+            if (!(await exists(downloadedFilePath))) {
                 throw new Error('Image does not exist in fs')
             }
 
@@ -129,7 +129,9 @@ const SelectedMessageOverlay: React.FC = () => {
                                   )
                                 : selectedMessage.content.body,
                         type: selectedMessage.content.info.mimetype,
-                        url: path,
+                        url: downloadedFilePath.startsWith('file://')
+                            ? downloadedFilePath
+                            : `file://${downloadedFilePath}`,
                     })
 
                     toast.show({
@@ -144,7 +146,7 @@ const SelectedMessageOverlay: React.FC = () => {
                     await requestStoragePermission()
                 }
 
-                await CameraRoll.save(path, {
+                await CameraRoll.save(downloadedFilePath, {
                     type: 'auto',
                 })
 
