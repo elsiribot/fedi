@@ -42,26 +42,30 @@ const ChatFileEvent: React.FC<ChatImageEventProps> = ({
         setIsLoading(true)
 
         try {
-            const path = `${Buffer.from(
+            const hashHex = Buffer.from(
                 event.content.file.hashes.sha256,
-            ).toString('hex')}.${event.content.info.mimetype.split('/')[1]}`
+            ).toString('hex')
+            const extension = event.content.body.split('.')[1] || ''
+            const path = `${hashHex}.${extension}`
 
-            const filePath = await fedimint.matrixDownloadFile(
+            // bridge downloads the file to the path we provide
+            const downloadedFilePath = await fedimint.matrixDownloadFile(
                 path,
                 event.content.file,
             )
 
-            if (await exists(filePath)) {
-                const mime = event.content.info.mimetype.split('/')[1]
+            if (await exists(downloadedFilePath)) {
+                const mime = event.content.info.mimetype
+                const filename =
+                    Platform.OS === 'android'
+                        ? event.content.body.slice(0, -extension.length - 1)
+                        : event.content.body
 
                 try {
                     await Share.open({
-                        filename:
-                            Platform.OS === 'android'
-                                ? event.content.body.slice(0, -mime.length)
-                                : event.content.body,
-                        type: event.content.info.mimetype,
-                        url: filePath,
+                        filename,
+                        type: mime,
+                        url: `file://${downloadedFilePath}`,
                     })
 
                     toast.show({
