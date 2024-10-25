@@ -707,9 +707,7 @@ export const getFederationStatus = async (
     federationId: string,
 ): Promise<FederationStatus> => {
     const guardianStatuses = await fedimint.guardianStatus(federationId)
-    // Make sure guardians are not considered offline if we see:
-    // 1) a timeout field
-    // 2) an error field with 'failed to lookup address information'
+    // Make sure guardians are not considered offline if we see a timeout field
     // because these responses are more likely due to a client-side network failure
     // Seems possible that a timeout could also be due to a server-side network failure
     // but this is probably very rare and we'd need a way to distinguish between the two cases
@@ -720,13 +718,6 @@ export const getFederationStatus = async (
         if ('online' in status) return false
         // Guardian may be online but we don't know due to client-side network failure
         else if ('timeout' in status) return false
-        // Guardian may be online but we don't know due to client-side DNS resolution failure
-        else if (
-            'error' in status &&
-            status.error.error.includes('failed to lookup address information')
-        )
-            return false
-        // Otherwise assume guardian is offline
         else return true
     })
     if (offlineGuardians.length === 0) {

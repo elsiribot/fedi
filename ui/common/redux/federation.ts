@@ -316,8 +316,7 @@ export const refreshFederations = createAsyncThunk<
                     Client-side network failure will cause getFederationStatus to
                     hang and timeout after 10 seconds so we assume online by default
                     and instead fetch the status in the background. This should mean
-                    a smoother UX since we avoid flickering indicators and don't block
-                    the initial app load.
+                    a smoother UX since we avoid flickering indicators
                 */
                 const loadedFederation: LoadedFederation = {
                     ...f,
