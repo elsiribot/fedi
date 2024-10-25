@@ -3,7 +3,10 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    selectActiveFederation,
+    selectIsNetworkConnected,
+} from '@fedi/common/redux'
 
 import { useAppSelector, usePrevious } from '../../../state/hooks'
 import {
@@ -19,6 +22,7 @@ const FederationSelector: React.FC = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const isNetworkConnected = useAppSelector(selectIsNetworkConnected)
     const previousActiveFederation = usePrevious(activeFederation)
     const drawerNavigator = navigation.getParent(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,12 +67,14 @@ const FederationSelector: React.FC = () => {
                         style={style.federationName}>
                         {activeFederation?.name}
                     </Text>
-                    {activeFederation.status !== 'online' && (
-                        <ConnectionIcon
-                            status={activeFederation.status}
-                            size={18}
-                        />
-                    )}
+                    {/* Only show this tag if the device has a network connection */}
+                    {activeFederation.status !== 'online' &&
+                        isNetworkConnected && (
+                            <ConnectionIcon
+                                status={activeFederation.status}
+                                size={18}
+                            />
+                        )}
                 </Pressable>
             </HoloGradient>
         </>
