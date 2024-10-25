@@ -5,15 +5,15 @@ import {
     createSlice,
     isAnyOf,
 } from '@reduxjs/toolkit'
+import isEqual from 'lodash/isEqual'
 import orderBy from 'lodash/orderBy'
 import { v4 as uuidv4 } from 'uuid'
-import isEqual from 'lodash/isEqual'
 
 import {
     CommonState,
     selectAuthenticatedMember,
-    selectLoadedFederation,
     selectGlobalCommunityMeta,
+    selectLoadedFederation,
     selectLoadedFederations,
     selectWalletFederations,
 } from '.'
@@ -1012,8 +1012,8 @@ export const previewCommunityDefaultChats = createAsyncThunk<
     { state: CommonState }
 >('matrix/previewCommunityDefaultChats', async (federationId, { getState }) => {
     const client = getMatrixClient()
-    // can't fetch previews if matrix isn't ready
-    if (!selectIsMatrixReady(getState())) return []
+    // can't fetch previews if matrix init hasn't completed yet
+    if (!selectMatrixAuth(getState())) return []
     const federation = selectLoadedFederation(getState(), federationId)
     // can't fetch preview if the federation is not loaded yet
     if (!federation) return []
