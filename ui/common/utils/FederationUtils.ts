@@ -514,22 +514,24 @@ export const getFederationTosUrl = (metadata: ClientConfigMetadata) => {
 export const getFederationName = (
     federation: FederationListItem | JoinPreview,
 ): string => {
+    let name = ''
     if ('meta' in federation && federation.meta) {
-        return (
+        name =
             getMetaField(
                 SupportedMetaFields.federation_name,
                 federation.meta,
             ) || ''
-        )
-    } else if (
+    }
+    // if no name is found in meta, try the name directly on the federation
+    if (
+        !name &&
         'name' in federation &&
         federation.name &&
         typeof federation.name === 'string'
     ) {
-        return federation.name
-    } else {
-        return ''
+        name = federation.name || ''
     }
+    return name
 }
 
 export const getFederationWelcomeMessage = (metadata: ClientConfigMetadata) => {
