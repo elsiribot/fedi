@@ -51,7 +51,7 @@ const ChatFileEvent: React.FC<ChatImageEventProps> = ({
             // bridge downloads the file to the path we provide
             const downloadedFilePath = await fedimint.matrixDownloadFile(
                 path,
-                event.content.file,
+                event.content,
             )
 
             if (await exists(downloadedFilePath)) {
@@ -65,7 +65,9 @@ const ChatFileEvent: React.FC<ChatImageEventProps> = ({
                     await Share.open({
                         filename,
                         type: mime,
-                        url: `file://${downloadedFilePath}`,
+                        url: downloadedFilePath.startsWith('file://')
+                            ? downloadedFilePath
+                            : `file://${downloadedFilePath}`,
                     })
 
                     toast.show({
