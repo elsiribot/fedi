@@ -129,7 +129,9 @@ const SelectedMessageOverlay: React.FC = () => {
                                   )
                                 : selectedMessage.content.body,
                         type: selectedMessage.content.info.mimetype,
-                        url: downloadedFilePath.startsWith("file://") ? downloadedFilePath : `file://${downloadedFilePath}`,
+                        url: downloadedFilePath.startsWith('file://')
+                            ? downloadedFilePath
+                            : `file://${downloadedFilePath}`,
                     })
 
                     toast.show({
