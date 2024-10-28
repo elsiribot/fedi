@@ -223,6 +223,7 @@
         "failed-to-remove-user": "Failed to remove user",
         "failed-to-switch-gateways": "Failed to switch gateways",
         "failed-to-update-notification": "Failed to update notification setting for this chat",
+        "files-may-not-exceed-20mb": "Files may not exceed 20MB",
         "get-nostr-pubkey-failed": "Failed to get nostr pub key",
         "history-render-error": "Encountered an error rendering this item",
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",

@@ -111,6 +111,17 @@ const MessageInput: React.FC<MessageInputProps> = ({
             const res = await launchImageLibrary(imageOptions)
 
             if (res.assets) {
+                if (
+                    // Not 20M because images/videos are often in binary format
+                    res.assets.some(asset => (asset.fileSize ?? 0) > 20971520)
+                ) {
+                    toast.show({
+                        content: t('errors.files-may-not-exceed-20mb'),
+                        status: 'error',
+                    })
+                    return
+                }
+
                 const assets: Array<Asset> = []
 
                 await Promise.all(
@@ -175,6 +186,17 @@ const MessageInput: React.FC<MessageInputProps> = ({
             })
 
             if (response) {
+                if (
+                    // Not 20M because images/videos are often in binary format
+                    response.some(asset => (asset.size ?? 0) > 20971520)
+                ) {
+                    toast.show({
+                        content: t('errors.files-may-not-exceed-20mb'),
+                        status: 'error',
+                    })
+                    return
+                }
+
                 // Exclude duplicates
                 setAttachments(
                     [...attachments, ...response].filter(
@@ -189,7 +211,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
             // Hiding this because it shows the toast when user closes the dialogue ...
             // toast?.show(typedError?.message, 3000)
         }
-    }, [attachments])
+    }, [attachments, t, toast])
 
     const handleEdit = useCallback(async () => {
         if (!isEditingMessage || !messageText || !editingMessage.eventId) return

@@ -49,9 +49,14 @@ const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
     useEffect(() => {
         const loadVideo = async () => {
             try {
+                const mimeExtension = event.content.info.mimetype.split('/')[1]
+
                 const path = `${Buffer.from(
                     event.content.file.hashes.sha256,
-                ).toString('hex')}.${event.content.info.mimetype.split('/')[1]}`
+                    // .mov files have a mime type of 'video/quicktime'
+                ).toString('hex')}.${
+                    mimeExtension === 'quicktime' ? 'mov' : mimeExtension
+                }`
 
                 const videoPath = await fedimint.matrixDownloadFile(
                     path,
@@ -111,6 +116,9 @@ const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
                 }}
                 onFullscreenPlayerDidDismiss={() => {
                     setPaused(true)
+                }}
+                onLoad={() => {
+                    videoRef.current?.seek(0)
                 }}
             />
             <TouchableOpacity
