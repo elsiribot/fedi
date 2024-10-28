@@ -62,6 +62,9 @@ module.exports = async ({ github, context, core }) => {
                 },
             });
 
+            // Copy buffer into `ui/apk/fedi.apk`
+            fs.writeFileSync('ui/apk/fedi.apk', apkBuffer.data);
+
             // Upload the APK to the target repository
             await github.rest.repos.uploadReleaseAsset({
                 url: `https://uploads.github.com/repos/${context.repo.owner
