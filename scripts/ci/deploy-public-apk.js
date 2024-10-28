@@ -1,3 +1,4 @@
+const fs = require('fs');
 // TODO: rename fedi-alpha to fedi-bravo after renaming the github repo to fedi-bravo
 module.exports = async ({ github, context, core }) => {
     const { RELEASE_ID } = process.env;
@@ -51,8 +52,8 @@ module.exports = async ({ github, context, core }) => {
         });
 
         // Function to upload a new APK to a release
-        async function uploadNewApk(releaseId) {
-            // Download the APK from the source repository
+        async function uploadNewApk() {
+            console.log('Downloading APK from source repository...');
             const apkBuffer = await github.rest.repos.getReleaseAsset({
                 owner: context.repo.owner,
                 repo: 'fedi',
@@ -62,79 +63,94 @@ module.exports = async ({ github, context, core }) => {
                 },
             });
 
-            // Copy buffer into `ui/apk/fedi.apk`
-            fs.writeFileSync('ui/apk/fedi.apk', apkBuffer.data);
+            // Convert ArrayBuffer to Buffer
+            const buffer = Buffer.from(apkBuffer.data);
 
-            // Upload the APK to the target repository
-            await github.rest.repos.uploadReleaseAsset({
-                url: `https://uploads.github.com/repos/${context.repo.owner
-                    }/fedi-alpha/releases/${releaseId}/assets?name=${encodeURIComponent(newFileName)}`,
-                headers: {
-                    'content-type': 'application/vnd.android.package-archive',
-                    'content-length': apkBuffer.data.length,
-                },
-                data: apkBuffer.data,
-                name: newFileName,
-            });
+            console.log(`Writing APK to ui/apk/${newFileName}...`);
+            fs.writeFileSync(`ui/apk/${newFileName}`, buffer);
+
+            console.log('Reading and updating APK index.html...');
+            const apkIndexHtml = fs.readFileSync("ui/apk/index.html").toString();
+            const replacedHtml = apkIndexHtml.replace(
+                "{{path_to_apk}}",
+                `./${newFileName}`
+            );
+
+            console.log('Writing updated index.html...');
+            fs.writeFileSync("ui/apk/index.html", replacedHtml);
+
+            // console.log('Uploading APK to target repository...');
+            // await github.rest.repos.uploadReleaseAsset({
+            //     url: `https://uploads.github.com/repos/${context.repo.owner
+            //         }/fedi-alpha/releases/${releaseId}/assets?name=${encodeURIComponent(newFileName)}`,
+            //     headers: {
+            //         'content-type': 'application/vnd.android.package-archive',
+            //         'content-length': apkBuffer.data.length,
+            //     },
+            //     data: apkBuffer.data,
+            //     name: newFileName,
+            // });
         }
+
+        uploadNewApk()
 
         // Function to delete old APK from a release
-        async function deleteOldApk(releaseId) {
-            const assets = await github.rest.repos.listReleaseAssets({
-                owner: context.repo.owner,
-                repo: 'fedi-alpha',
-                release_id: releaseId,
-            });
+        // async function deleteOldApk(releaseId) {
+        //     const assets = await github.rest.repos.listReleaseAssets({
+        //         owner: context.repo.owner,
+        //         repo: 'fedi-alpha',
+        //         release_id: releaseId,
+        //     });
 
-            const oldApkAsset = assets.data.find((asset) => asset.name.endsWith('.apk'));
-            if (oldApkAsset) {
-                await github.rest.repos.deleteReleaseAsset({
-                    owner: context.repo.owner,
-                    repo: 'fedi-alpha',
-                    asset_id: oldApkAsset.id,
-                });
-            }
-        }
+        //     const oldApkAsset = assets.data.find((asset) => asset.name.endsWith('.apk'));
+        //     if (oldApkAsset) {
+        //         await github.rest.repos.deleteReleaseAsset({
+        //             owner: context.repo.owner,
+        //             repo: 'fedi-alpha',
+        //             asset_id: oldApkAsset.id,
+        //         });
+        //     }
+        // }
 
-        const existingRelease = releases.data.find((release) => release.name === newTitle);
+        // const existingRelease = releases.data.find((release) => release.name === newTitle);
 
-        if (existingRelease) {
-            console.log('Existing release found, updating description & download link...');
+        // if (existingRelease) {
+        //     console.log('Existing release found, updating description & download link...');
 
-            // Update existing release
-            await github.rest.repos.updateRelease({
-                owner: context.repo.owner,
-                repo: 'fedi-alpha',
-                release_id: existingRelease.id,
-                tag_name: newTagName,
-                name: newTitle,
-                body: newDescription,
-            });
+        //     // Update existing release
+        //     await github.rest.repos.updateRelease({
+        //         owner: context.repo.owner,
+        //         repo: 'fedi-alpha',
+        //         release_id: existingRelease.id,
+        //         tag_name: newTagName,
+        //         name: newTitle,
+        //         body: newDescription,
+        //     });
 
-            console.log('Existing release updated, proceeding to update APK.');
+        //     console.log('Existing release updated, proceeding to update APK.');
 
-            // Upload new APK and delete old APK
-            await deleteOldApk(existingRelease.id);
-            await uploadNewApk(existingRelease.id);
-            console.log('Existing release updated with new APK.');
-        } else {
-            console.log('No existing release found, creating a new one.');
+        //     // Upload new APK and delete old APK
+        //     await deleteOldApk(existingRelease.id);
+        //     await uploadNewApk(existingRelease.id);
+        //     console.log('Existing release updated with new APK.');
+        // } else {
+        //     console.log('No existing release found, creating a new one.');
 
-            // Create a new release
-            const newRelease = await github.rest.repos.createRelease({
-                owner: context.repo.owner,
-                repo: 'fedi-alpha',
-                tag_name: newTagName,
-                name: newTitle,
-                body: newDescription,
-            });
+        //     // Create a new release
+        //     const newRelease = await github.rest.repos.createRelease({
+        //         owner: context.repo.owner,
+        //         repo: 'fedi-alpha',
+        //         tag_name: newTagName,
+        //         name: newTitle,
+        //         body: newDescription,
+        //     });
 
-            console.log('New release created, proceeding to upload APK.');
+        //     console.log('New release created, proceeding to upload APK.');
 
-            // Upload APK
-            await uploadNewApk(newRelease.data.id);
-            console.log('New release created with uploaded APK.');
-        }
+        //     // Upload APK
+        //     await uploadNewApk(newRelease.data.id);
+        //     console.log('New release created with uploaded APK.');
+        // }
     };
 
     try {

@@ -1,6 +1,8 @@
 name: Deploy Public APK to Github
 env:
     TEST_RELEASE_ID: '179645236'
+    VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+    VERCEL_PROJECT_ID: ${{ secrets.VERCEL_APK_PROJECT_ID }}
 on:
     workflow_dispatch:
     release:
@@ -20,8 +22,21 @@ jobs:
               env:
                   RELEASE_ID: ${{ github.event.release.id || env.TEST_RELEASE_ID }}
               with:
-                  github-token: ${{ secrets.DEPLOY_APK_ACCESS_TOKEN }}
+                  github-token: ${{ secrets.DOWNLOAD_APK_ACCESS_TOKEN }}
                   result-encoding: string
                   script: |
                       const script = require('./scripts/ci/deploy-public-apk.js')
                       await script({github, context, core})
+
+            - uses: cachix/install-nix-action@v30
+              with:
+                  nix_path: nixpkgs=channel:nixos-23.05
+
+            - uses: cachix/cachix-action@v15
+              with:
+                  name: fedibtc
+                  authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+            - name: Deploy APK to Vercel
+              id: deploy
+              run: nix develop .#vercel -c env VERCEL_TOKEN=${{ secrets.VERCEL_TOKEN }} ./scripts/ci/vercel-apk.sh
