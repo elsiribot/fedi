@@ -6,6 +6,7 @@ import {
     setSelectedChatMessage,
 } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
+import { makeLog } from '@fedi/common/utils/log'
 import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 import { CameraRoll } from '@react-native-camera-roll/camera-roll'
 import Clipboard from '@react-native-clipboard/clipboard'
@@ -14,7 +15,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native'
 import { TemporaryDirectoryPath, exists } from 'react-native-fs'
-import { RESULTS } from 'react-native-permissions'
+import { PERMISSIONS, RESULTS, check } from 'react-native-permissions'
 import Share from 'react-native-share'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
@@ -24,6 +25,8 @@ import CustomOverlay from '../../ui/CustomOverlay'
 import { Pressable } from '../../ui/Pressable'
 import SvgImage from '../../ui/SvgImage'
 import ChatEvent from './ChatEvent'
+
+const log = makeLog('feature/chat/SelectedMessageOverlay')
 
 const SelectedMessageOverlay: React.FC = () => {
     const [deleteMessage, setDeleteMessage] = useState(false)
@@ -144,9 +147,18 @@ const SelectedMessageOverlay: React.FC = () => {
                     await requestStoragePermission()
                 }
 
-                await CameraRoll.saveAsset(downloadedFileUri, {
-                    type: 'auto',
-                })
+                const writePermission =
+                    Platform.OS === 'ios'
+                        ? PERMISSIONS.IOS.PHOTO_LIBRARY
+                        : PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE
+
+                if ((await check(writePermission)) === RESULTS.GRANTED) {
+                    await CameraRoll.saveAsset(downloadedFileUri, {
+                        type: 'auto',
+                    })
+                } else {
+                    throw new Error(t('errors.please-grant-photos-permission'))
+                }
 
                 toast.show({
                     content: t('feature.chat.saved-to-photos'),
@@ -155,6 +167,7 @@ const SelectedMessageOverlay: React.FC = () => {
             }
         } catch (err) {
             toast.error(t, err, 'errors.unknown-error')
+            log.error('failed to save file', err)
         } finally {
             setIsDownloading(false)
             closeOverlay()

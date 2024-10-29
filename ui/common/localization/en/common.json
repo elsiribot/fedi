@@ -239,6 +239,7 @@
         "onchain-deposits-disabled": "Onchain deposits have been disabled for this community",
         "only-group-owners-can-change-name": "Only group owners can change the group name",
         "please-force-quit-the-app": "An error occurred, please force quit the app and try again",
+        "please-grant-photos-permission": "Please grant photos permission to save this file",
         "please-join-a-federation": "Please join a community before making chat payments",
         "receive-ecash-failed": "Failed to receive ecash",
         "receives-have-been-disabled": "Receives have been disabled for this community",
