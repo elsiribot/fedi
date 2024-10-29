@@ -1603,20 +1603,15 @@ mod tests {
     use bitcoin::bech32::{self, ToBase32};
     use bitcoin::secp256k1::PublicKey;
     use bitcoin::Network;
-    use clap::Parser;
-    use devimint::cli::CommonArgs;
-    use devimint::devfed::DevJitFed;
-    use devimint::envs::FM_INVITE_CODE_ENV;
+    use devimint::cmd;
     use devimint::util::{ClnLightningCli, FedimintCli, LnCli};
-    use devimint::{cmd, DevFed};
     use fedi_core::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
     use fedi_social_client::common::VerificationDocument;
     use fedimint_core::core::ModuleKind;
     use fedimint_core::{apply, async_trait_maybe_send, Amount};
-    use fedimint_logging::{TracingSetup, LOG_DEVIMINT};
+    use fedimint_logging::TracingSetup;
     use tokio::sync::Mutex;
-    use tokio::task::JoinSet;
-    use tracing::{debug, error, info, trace};
+    use tracing::{error, info};
 
     use super::*;
     use crate::api::{RegisterDeviceError, RegisteredDevice};
@@ -1628,6 +1623,7 @@ mod tests {
     use crate::federation_v2::client::ClientExt;
     use crate::federation_v2::FederationV2;
     use crate::ffi::PathBasedStorage;
+    use crate::logging::default_log_filter;
     use crate::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
     use crate::types::{
         RpcLnReceiveState, RpcLnState, RpcOOBReissueState, RpcOOBState, RpcOnchainDepositState,
@@ -1955,6 +1951,12 @@ mod tests {
         feature_catalog: Arc<FeatureCatalog>,
         data_dir: PathBuf,
     ) -> anyhow::Result<Arc<Bridge>> {
+        INIT_TRACING.call_once(|| {
+            TracingSetup::default()
+                .with_directive(&default_log_filter())
+                .init()
+                .expect("Failed to initialize tracing");
+        });
         let event_sink = Arc::new(FakeEventSink::new());
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
         let bridge = match fedimint_initialize_async(
@@ -2006,118 +2008,6 @@ mod tests {
         } else {
             false
         }
-    }
-
-    macro_rules! spawn_and_attach_name {
-        ($tests_set:expr, $test_name:ident) => {
-            $tests_set.spawn(async move { (stringify!($test_name), $test_name().await) })
-        };
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
-        let _dev_fed = dev_fed().await?;
-        let mut tests_set = JoinSet::new();
-        spawn_and_attach_name!(tests_set, test_join_and_leave_and_join);
-        spawn_and_attach_name!(tests_set, test_lightning_send_and_receive);
-        spawn_and_attach_name!(tests_set, test_lightning_send_and_receive);
-        spawn_and_attach_name!(tests_set, test_ecash);
-        spawn_and_attach_name!(tests_set, test_ecash_overissue);
-        spawn_and_attach_name!(tests_set, test_on_chain);
-        spawn_and_attach_name!(tests_set, test_ecash_cancel);
-        spawn_and_attach_name!(tests_set, test_backup_and_recovery);
-        spawn_and_attach_name!(tests_set, test_backup_and_recovery_from_scratch);
-        spawn_and_attach_name!(tests_set, test_validate_ecash);
-        spawn_and_attach_name!(tests_set, test_social_backup_and_recovery);
-        spawn_and_attach_name!(tests_set, test_stability_pool);
-        spawn_and_attach_name!(tests_set, test_lnurl_sign_message);
-        spawn_and_attach_name!(tests_set, test_federation_preview);
-        spawn_and_attach_name!(tests_set, test_join_fails_post_recovery_index_unassigned);
-        spawn_and_attach_name!(tests_set, test_transfer_device_registration_post_recovery);
-        spawn_and_attach_name!(tests_set, test_new_device_registration_post_recovery);
-        spawn_and_attach_name!(tests_set, test_fee_remittance_on_startup);
-        spawn_and_attach_name!(tests_set, test_fee_remittance_post_successful_tx);
-
-        while let Some(res) = tests_set.join_next().await {
-            match res {
-                Err(e) => {
-                    bail!("test task failed: {:?}", e);
-                }
-                Ok((name, Err(e))) => {
-                    bail!("test {} failed: {:?}", name, e);
-                }
-                Ok((name, Ok(_))) => {
-                    info!("test {} OK", name);
-                }
-            }
-        }
-        Ok(())
-    }
-
-    async fn dev_fed() -> anyhow::Result<DevFed> {
-        trace!(target: LOG_DEVIMINT, "Starting dev fed");
-        let (process_mgr, _) = devimint::cli::setup(CommonArgs::parse_from([
-            "program_name", // First argument simulates the program's name
-        ]))
-        .await?;
-        let dev_fed = DevJitFed::new(&process_mgr, false)?;
-
-        debug!(target: LOG_DEVIMINT, "Peging in client and gateways");
-
-        let gw_pegin_amount = 1_000_000;
-        let client_pegin_amount = 1_000_000;
-        let ((), _, _) = tokio::try_join!(
-            async {
-                let (address, operation_id) =
-                    dev_fed.internal_client().await?.get_deposit_addr().await?;
-                dev_fed
-                    .bitcoind()
-                    .await?
-                    .send_to(address, client_pegin_amount)
-                    .await?;
-                dev_fed.bitcoind().await?.mine_blocks_no_wait(11).await?;
-                dev_fed
-                    .internal_client()
-                    .await?
-                    .await_deposit(&operation_id)
-                    .await
-            },
-            async {
-                let pegin_addr = dev_fed
-                    .gw_cln_registered()
-                    .await?
-                    .get_pegin_addr(&dev_fed.fed().await?.calculate_federation_id())
-                    .await?;
-                dev_fed
-                    .bitcoind()
-                    .await?
-                    .send_to(pegin_addr, gw_pegin_amount)
-                    .await?;
-                dev_fed.bitcoind().await?.mine_blocks_no_wait(11).await
-            },
-            async {
-                let pegin_addr = dev_fed
-                    .gw_lnd_registered()
-                    .await?
-                    .get_pegin_addr(&dev_fed.fed().await?.calculate_federation_id())
-                    .await?;
-                dev_fed
-                    .bitcoind()
-                    .await?
-                    .send_to(pegin_addr, gw_pegin_amount)
-                    .await?;
-                dev_fed.bitcoind().await?.mine_blocks_no_wait(11).await
-            },
-        )?;
-
-        info!(target: LOG_DEVIMINT, "Pegins completed");
-
-        std::env::set_var(FM_INVITE_CODE_ENV, dev_fed.fed().await?.invite_code()?);
-
-        dev_fed.finalize(&process_mgr).await?;
-        info!(target: LOG_DEVIMINT, "Devfed ready");
-
-        dev_fed.to_dev_fed(&process_mgr).await
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -2184,6 +2074,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_join_and_leave_and_join() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
         let env_invite_code = std::env::var("FM_INVITE_CODE").unwrap();
@@ -2214,6 +2105,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_lightning_send_and_receive() -> anyhow::Result<()> {
         // Vec of tuple of (send_ppm, receive_ppm)
         let fee_ppm_values = vec![(0, 0), (10, 5), (100, 50)];
@@ -2299,6 +2191,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_ecash() -> anyhow::Result<()> {
         // Vec of tuple of (send_ppm, receive_ppm)
         let fee_ppm_values = vec![(0, 0), (10, 5), (100, 50)];
@@ -2392,6 +2285,7 @@ mod tests {
         .await
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_ecash_overissue() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
 
@@ -2432,6 +2326,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     // on chain is marked experimental for 0.4
     async fn test_on_chain() -> anyhow::Result<()> {
         // Vec of tuple of (send_ppm, receive_ppm)
@@ -2515,6 +2410,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_ecash_cancel() -> anyhow::Result<()> {
         let (_bridge, federation) = setup().await?;
 
@@ -2541,6 +2437,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_backup_and_recovery() -> anyhow::Result<()> {
         if should_skip_test_using_stock_fedimintd() {
             return Ok(());
@@ -2548,6 +2445,7 @@ mod tests {
         test_backup_and_recovery_inner(false).await
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_backup_and_recovery_from_scratch() -> anyhow::Result<()> {
         if should_skip_test_using_stock_fedimintd() {
             return Ok(());
@@ -2636,6 +2534,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_validate_ecash() -> anyhow::Result<()> {
         let (bridge, _) = setup().await?;
         let v2_ecash = "AgEEsuFO5gD3AwQBmW/h68gy6W5cgnl93aTdduN1OnnFofSCqjth03Q6CA+fXnKlVXQSIVSLqcHzsbhozAuo2q5jPMsO6XMZZZXaYvZyIdXzCUIuDNhdCHkGJWAgAa9M5zsSPPVWDVeCWgkerg0Z+Xv8IQGMh7rsgpLh77NCSVRKA2i4fBYNwPglSbkGs42Yllmz6HJtgmmtl/tdjcyVSR30Nc2cfkZYTJcEEnRjQAGC8ZX5eLYQB8rCAZiX5/gQX2QtjasZMy+BJ67kJ0klVqsS9G1IVWhea6ILISOd9H1MJElma8aHBiWBaWeGjrCXru8Ns7Lz4J18CbxFdHyWEQ==";
@@ -2643,6 +2542,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_social_backup_and_recovery() -> anyhow::Result<()> {
         if should_skip_test_using_stock_fedimintd() {
             return Ok(());
@@ -2793,6 +2693,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_stability_pool() -> anyhow::Result<()> {
         if should_skip_test_using_stock_fedimintd() {
             return Ok(());
@@ -2904,6 +2805,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_lnurl_sign_message() -> anyhow::Result<()> {
         let (bridge, _federation) = setup().await?;
         let k1 = String::from("cfcb7616d615252180e392f509207e1f610f8d6106588c61c3e7bbe8577e4c4c");
@@ -2936,6 +2838,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_federation_preview() -> anyhow::Result<()> {
         let (bridge, federation) = setup().await?;
         let invite_code = std::env::var("FM_INVITE_CODE").unwrap();
@@ -2987,6 +2890,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_join_fails_post_recovery_index_unassigned() -> anyhow::Result<()> {
         let device_identifier = "bridge:test:fd3e4705-f453-45ee-9e84-4bd4fdc6c22a".to_string();
         let mock_fedi_api = Arc::new(MockFediApi::new());
@@ -3111,6 +3015,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_transfer_device_registration_post_recovery() -> anyhow::Result<()> {
         if should_skip_test_using_stock_fedimintd() {
             return Ok(());
@@ -3226,6 +3131,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_new_device_registration_post_recovery() -> anyhow::Result<()> {
         if should_skip_test_using_stock_fedimintd() {
             return Ok(());
@@ -3558,6 +3464,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_fee_remittance_on_startup() -> anyhow::Result<()> {
         if should_skip_test_using_stock_fedimintd() {
             return Ok(());
@@ -3658,6 +3565,7 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_fee_remittance_post_successful_tx() -> anyhow::Result<()> {
         if should_skip_test_using_stock_fedimintd() {
             return Ok(());
