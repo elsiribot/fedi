@@ -172,12 +172,14 @@ impl ObservablePool {
         R: 'static + Clone + Serialize + std::fmt::Debug + MaybeSend + MaybeSync + From<T>,
     {
         let mut stream = Box::pin(stream);
-        let initial = initial.unwrap_or(
+        let initial = if let Some(initial) = initial {
+            initial
+        } else {
             stream
                 .next()
                 .await
-                .context("first element not found in stream")?,
-        );
+                .context("first element not found in stream")?
+        };
         self.make_observable(R::from(initial), move |this, id| async move {
             let mut update_index = 0;
             while let Some(value) = stream.next().await {
