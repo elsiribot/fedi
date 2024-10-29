@@ -7,7 +7,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
-import { exists } from 'react-native-fs'
+import { TemporaryDirectoryPath, exists } from 'react-native-fs'
 
 import { setSelectedChatMessage } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next'
 import Video from 'react-native-video'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch } from '../../../state/hooks'
-import { prefixFileUri } from '../../../utils/media'
+import { pathJoin, prefixFileUri } from '../../../utils/media'
 import SvgImage from '../../ui/SvgImage'
 
 type ChatVideoEventProps = {
@@ -50,22 +50,20 @@ const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
     useEffect(() => {
         const loadVideo = async () => {
             try {
-                const mimeExtension = event.content.info.mimetype.split('/')[1]
-
-                const path = `${Buffer.from(
-                    event.content.file.hashes.sha256,
-                    // .mov files have a mime type of 'video/quicktime'
-                ).toString('hex')}.${
-                    mimeExtension === 'quicktime' ? 'mov' : mimeExtension
-                }`
+                const destinationPath = pathJoin(
+                    TemporaryDirectoryPath,
+                    event.content.body,
+                )
 
                 const videoPath = await fedimint.matrixDownloadFile(
-                    path,
+                    destinationPath,
                     event.content,
                 )
 
-                if (await exists(videoPath)) {
-                    setURI(videoPath)
+                const videoUri = prefixFileUri(videoPath)
+
+                if (await exists(videoUri)) {
+                    setURI(videoUri)
                 } else {
                     throw new Error('Video does not exist in fs')
                 }

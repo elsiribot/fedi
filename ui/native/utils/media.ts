@@ -41,3 +41,10 @@ export const scaleAttachment = (
  */
 export const prefixFileUri = (uri: string) =>
     uri.startsWith('file://') ? uri : `file://${uri}`
+
+/**
+ * Joins paths together with a forward slash.
+ */
+export function pathJoin(...paths: string[]): string {
+    return paths.join('/').replace(/\/+/g, '/')
+}

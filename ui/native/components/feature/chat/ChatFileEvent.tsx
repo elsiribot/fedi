@@ -8,7 +8,7 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
-import { exists } from 'react-native-fs'
+import { TemporaryDirectoryPath, exists } from 'react-native-fs'
 import Share from 'react-native-share'
 
 import { useToast } from '@fedi/common/hooks/toast'
@@ -19,7 +19,7 @@ import { setSelectedChatMessage } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch } from '../../../state/hooks'
-import { prefixFileUri } from '../../../utils/media'
+import { pathJoin, prefixFileUri } from '../../../utils/media'
 import SvgImage from '../../ui/SvgImage'
 
 type ChatImageEventProps = {
@@ -43,11 +43,7 @@ const ChatFileEvent: React.FC<ChatImageEventProps> = ({
         setIsLoading(true)
 
         try {
-            const hashHex = Buffer.from(
-                event.content.file.hashes.sha256,
-            ).toString('hex')
-            const extension = event.content.body.split('.')[1] || ''
-            const path = `${hashHex}.${extension}`
+            const path = pathJoin(TemporaryDirectoryPath, event.content.body)
 
             // bridge downloads the file to the path we provide
             const downloadedFilePath = await fedimint.matrixDownloadFile(
@@ -55,18 +51,19 @@ const ChatFileEvent: React.FC<ChatImageEventProps> = ({
                 event.content,
             )
 
-            if (await exists(downloadedFilePath)) {
-                const mime = event.content.info.mimetype
+            const downloadedFileUri = prefixFileUri(downloadedFilePath)
+
+            if (await exists(downloadedFileUri)) {
                 const filename =
                     Platform.OS === 'android'
-                        ? event.content.body.slice(0, -extension.length - 1)
+                        ? event.content.body.replace(/\.[a-z]+$/, '')
                         : event.content.body
 
                 try {
                     await Share.open({
                         filename,
-                        type: mime,
-                        url: prefixFileUri(downloadedFilePath),
+                        type: event.content.info.mimetype,
+                        url: downloadedFileUri,
                     })
 
                     toast.show({

@@ -7,7 +7,7 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
-import { exists } from 'react-native-fs'
+import { TemporaryDirectoryPath, exists } from 'react-native-fs'
 
 import { setSelectedChatMessage } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
@@ -18,7 +18,7 @@ import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch } from '../../../state/hooks'
-import { prefixFileUri } from '../../../utils/media'
+import { pathJoin, prefixFileUri } from '../../../utils/media'
 import SvgImage from '../../ui/SvgImage'
 
 type ChatImageEventProps = {
@@ -47,17 +47,20 @@ const ChatImageEvent: React.FC<ChatImageEventProps> = ({
     useEffect(() => {
         const loadImage = async () => {
             try {
-                const path = `${Buffer.from(
-                    event.content.file.hashes.sha256,
-                ).toString('hex')}.${event.content.info.mimetype.split('/')[1]}`
+                const path = pathJoin(
+                    TemporaryDirectoryPath,
+                    event.content.body,
+                )
 
                 const imagePath = await fedimint.matrixDownloadFile(
                     path,
                     event.content,
                 )
 
-                if (await exists(imagePath)) {
-                    setURI(imagePath)
+                const imageUri = prefixFileUri(imagePath)
+
+                if (await exists(imageUri)) {
+                    setURI(imageUri)
                 } else {
                     throw new Error('Image does not exist in fs')
                 }

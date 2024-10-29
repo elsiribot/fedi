@@ -13,13 +13,13 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native'
-import { exists } from 'react-native-fs'
+import { TemporaryDirectoryPath, exists } from 'react-native-fs'
 import { RESULTS } from 'react-native-permissions'
 import Share from 'react-native-share'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { useStoragePermission } from '../../../utils/hooks'
-import { prefixFileUri } from '../../../utils/media'
+import { pathJoin, prefixFileUri } from '../../../utils/media'
 import CustomOverlay from '../../ui/CustomOverlay'
 import { Pressable } from '../../ui/Pressable'
 import SvgImage from '../../ui/SvgImage'
@@ -103,34 +103,33 @@ const SelectedMessageOverlay: React.FC = () => {
         setIsDownloading(true)
 
         try {
-            const hashHex = Buffer.from(
-                selectedMessage.content.file.hashes.sha256,
-            ).toString('hex')
-            const extension = selectedMessage.content.body.split('.')[1] || ''
-            const path = `${hashHex}.${extension}`
+            const path = pathJoin(
+                TemporaryDirectoryPath,
+                selectedMessage.content.body,
+            )
 
             const downloadedFilePath = await fedimint.matrixDownloadFile(
                 path,
                 selectedMessage.content,
             )
 
+            const downloadedFileUri = prefixFileUri(downloadedFilePath)
+
             if (!(await exists(downloadedFilePath))) {
-                throw new Error('Image does not exist in fs')
+                throw new Error('File does not exist in fs')
             }
 
             if (selectedMessage.content.msgtype === 'm.file') {
-                const mime = selectedMessage.content.info.mimetype.split('/')[1]
+                const filename =
+                    Platform.OS === 'android'
+                        ? selectedMessage.content.body.replace(/\.[a-z]+$/, '')
+                        : selectedMessage.content.body
+
                 try {
                     await Share.open({
-                        filename:
-                            Platform.OS === 'android'
-                                ? selectedMessage.content.body.slice(
-                                      0,
-                                      -mime.length,
-                                  )
-                                : selectedMessage.content.body,
+                        filename,
                         type: selectedMessage.content.info.mimetype,
-                        url: prefixFileUri(downloadedFilePath),
+                        url: downloadedFileUri,
                     })
 
                     toast.show({
@@ -145,7 +144,7 @@ const SelectedMessageOverlay: React.FC = () => {
                     await requestStoragePermission()
                 }
 
-                await CameraRoll.save(downloadedFilePath, {
+                await CameraRoll.saveAsset(downloadedFileUri, {
                     type: 'auto',
                 })
 

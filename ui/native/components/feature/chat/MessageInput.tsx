@@ -47,7 +47,7 @@ import {
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { isNightly } from '../../../utils/device-info'
-import { prefixFileUri } from '../../../utils/media'
+import { pathJoin, prefixFileUri } from '../../../utils/media'
 import { Attachments } from '../../ui/Attachments'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import ChatWalletButton from './ChatWalletButton'
@@ -137,9 +137,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         const uniqueDirName = `${Date.now()}-${Math.random()
                             .toString(16)
                             .slice(2)}`
-                        const uniqueDirPath = `${TemporaryDirectoryPath}${uniqueDirName}`
+                        const uniqueDirPath = pathJoin(
+                            TemporaryDirectoryPath,
+                            uniqueDirName,
+                        )
                         const resolvedUri = prefixFileUri(
-                            `${uniqueDirPath}/${asset.fileName}`,
+                            pathJoin(uniqueDirPath, asset.fileName),
                         )
                         const assetUri = prefixFileUri(asset.uri)
 
