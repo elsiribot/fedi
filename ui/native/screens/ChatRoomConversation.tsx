@@ -3,9 +3,6 @@ import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import { DocumentPickerResponse } from 'react-native-document-picker'
-import RNFS from 'react-native-fs'
-import { Asset } from 'react-native-image-picker'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import {
@@ -19,7 +16,10 @@ import { makeLog } from '@fedi/common/utils/log'
 import { fedimint } from '../bridge'
 import ChatConversation from '../components/feature/chat/ChatConversation'
 import ChatPreviewConversation from '../components/feature/chat/ChatPreviewConversation'
-import MessageInput from '../components/feature/chat/MessageInput'
+import MessageInput, {
+    InputAttachment,
+    InputMedia,
+} from '../components/feature/chat/MessageInput'
 import SelectedMessageOverlay from '../components/feature/chat/SelectedMessageOverlay'
 import HoloLoader from '../components/ui/HoloLoader'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -47,7 +47,7 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const handleSend = useCallback(
         async (
             body: string,
-            attachments: Array<Asset | DocumentPickerResponse> = [],
+            attachments: Array<InputAttachment | InputMedia> = [],
         ) => {
             if ((!body && !attachments.length) || isSending) return
 
@@ -66,48 +66,20 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
                 }
 
                 for (const att of attachments) {
-                    if (!att.uri) continue
-
-                    let attName: string
-                    let fileName: string
-
-                    if ('fileName' in att && att.fileName) {
-                        attName = att.fileName.split('.')[0]
-                        fileName = att.fileName
-                    } else if ('name' in att && att.name) {
-                        attName = att.name.split('.')[0]
-                        fileName = att.name
-                    } else {
-                        continue
-                    }
-
-                    // Has to be a directory so the file can be copied into it
-                    const fileDestination = `${RNFS.TemporaryDirectoryPath}/${attName}`
-
-                    // Delete the temporary file if it already exists
-                    if (await RNFS.exists(fileDestination)) {
-                        await RNFS.unlink(fileDestination)
-                    }
-
-                    await RNFS.copyFile(att.uri, fileDestination)
+                    const resolvedUri = decodeURI(att.uri)
+                    const filePath = resolvedUri.startsWith('file://')
+                        ? resolvedUri.slice(7)
+                        : resolvedUri
 
                     await fedimint.matrixSendAttachment({
                         roomId,
-                        // Generates a random string in base 36 if no filename is provided
-                        filename: fileName,
-                        params:
-                            'width' in att
-                                ? {
-                                      mimeType: att.type || '',
-                                      width: att.width || 0,
-                                      height: att.height || 0,
-                                  }
-                                : {
-                                      mimeType: att.type || '',
-                                      width: null,
-                                      height: null,
-                                  },
-                        filePath: fileDestination,
+                        filename: att.fileName,
+                        params: {
+                            mimeType: att.mimeType,
+                            width: 'width' in att ? att.width : null,
+                            height: 'height' in att ? att.height : null,
+                        },
+                        filePath,
                     })
                 }
             } catch (err) {

@@ -19,6 +19,7 @@ import Share from 'react-native-share'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { useStoragePermission } from '../../../utils/hooks'
+import { prefixFileUri } from '../../../utils/media'
 import CustomOverlay from '../../ui/CustomOverlay'
 import { Pressable } from '../../ui/Pressable'
 import SvgImage from '../../ui/SvgImage'
@@ -129,9 +130,7 @@ const SelectedMessageOverlay: React.FC = () => {
                                   )
                                 : selectedMessage.content.body,
                         type: selectedMessage.content.info.mimetype,
-                        url: downloadedFilePath.startsWith('file://')
-                            ? downloadedFilePath
-                            : `file://${downloadedFilePath}`,
+                        url: prefixFileUri(downloadedFilePath),
                     })
 
                     toast.show({

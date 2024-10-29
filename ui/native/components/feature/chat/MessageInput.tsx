@@ -38,10 +38,16 @@ import {
 } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { TemporaryDirectoryPath, copyFile, downloadFile } from 'react-native-fs'
+import {
+    TemporaryDirectoryPath,
+    copyFile,
+    downloadFile,
+    mkdir,
+} from 'react-native-fs'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { isNightly } from '../../../utils/device-info'
+import { prefixFileUri } from '../../../utils/media'
 import { Attachments } from '../../ui/Attachments'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import ChatWalletButton from './ChatWalletButton'
@@ -49,7 +55,7 @@ import ChatWalletButton from './ChatWalletButton'
 type MessageInputProps = {
     onMessageSubmitted: (
         message: string,
-        attachments?: Array<Asset | DocumentPickerResponse>,
+        attachments?: Array<InputAttachment | InputMedia>,
     ) => Promise<void>
     id: string
     isSending?: boolean
@@ -126,14 +132,19 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
                 await Promise.all(
                     res.assets.map(async asset => {
-                        const toUri = `${TemporaryDirectoryPath}/${Date.now()}-${Math.random()
-                            .toString(36)
-                            .slice(2)}.${asset.type?.split('/')[1]}`
+                        if (!asset.uri || !asset.fileName) return
+
+                        const uniqueDirName = `${Date.now()}-${Math.random()
+                            .toString(16)
+                            .slice(2)}`
+                        const uniqueDirPath = `${TemporaryDirectoryPath}${uniqueDirName}`
+                        const resolvedUri = prefixFileUri(
+                            `${uniqueDirPath}/${asset.fileName}`,
+                        )
+                        const assetUri = prefixFileUri(asset.uri)
 
                         try {
-                            const resolvedUri = toUri.startsWith('file://')
-                                ? toUri
-                                : `file://${toUri}`
+                            await mkdir(uniqueDirPath)
 
                             // Videos don't get copied correctly on iOS
                             if (
@@ -141,18 +152,18 @@ const MessageInput: React.FC<MessageInputProps> = ({
                                 asset.type?.includes('video/')
                             ) {
                                 await downloadFile({
-                                    fromUrl: asset.uri as string,
+                                    fromUrl: assetUri,
                                     toFile: resolvedUri,
                                 }).promise
                             } else {
-                                await copyFile(asset.uri as string, resolvedUri)
+                                await copyFile(assetUri, resolvedUri)
                             }
 
                             assets.push({ ...asset, uri: resolvedUri })
                         } catch (downloadError) {
                             log.error(
                                 'Download error for:',
-                                asset.uri,
+                                assetUri,
                                 downloadError,
                             )
                         }
@@ -263,7 +274,35 @@ const MessageInput: React.FC<MessageInputProps> = ({
             return
 
         try {
-            const allAttachments = [...attachments, ...images]
+            const allAttachments: Array<InputMedia | InputAttachment> = []
+
+            for (const att of attachments) {
+                if (!att.name || !att.type) continue
+                allAttachments.push({
+                    fileName: att.name,
+                    mimeType: att.type,
+                    uri: prefixFileUri(att.uri),
+                })
+            }
+
+            for (const att of images) {
+                if (
+                    !att.fileName ||
+                    !att.type ||
+                    !att.uri ||
+                    !att.width ||
+                    !att.height
+                )
+                    continue
+
+                allAttachments.push({
+                    fileName: att.fileName,
+                    mimeType: att.type,
+                    uri: att.uri,
+                    width: att.width,
+                    height: att.height,
+                })
+            }
 
             await onMessageSubmitted(messageText, allAttachments)
             setMessageText('')
@@ -606,3 +645,11 @@ const styles = (theme: Theme, insets: Insets) =>
     })
 
 export default MessageInput
+
+export type InputAttachment = {
+    fileName: string
+    uri: string
+    mimeType: string
+}
+
+export type InputMedia = InputAttachment & { width: number; height: number }

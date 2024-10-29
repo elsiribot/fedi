@@ -18,6 +18,7 @@ import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch } from '../../../state/hooks'
+import { prefixFileUri } from '../../../utils/media'
 import SvgImage from '../../ui/SvgImage'
 
 type ChatImageEventProps = {
@@ -37,7 +38,7 @@ const ChatImageEvent: React.FC<ChatImageEventProps> = ({
     const dispatch = useAppDispatch()
     const navigation = useNavigation()
 
-    const resolvedUri = uri.startsWith('file://') ? uri : `file://${uri}`
+    const resolvedUri = prefixFileUri(uri)
 
     const handleLongPress = () => {
         dispatch(setSelectedChatMessage(event))

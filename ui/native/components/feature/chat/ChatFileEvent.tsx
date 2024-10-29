@@ -19,6 +19,7 @@ import { setSelectedChatMessage } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch } from '../../../state/hooks'
+import { prefixFileUri } from '../../../utils/media'
 import SvgImage from '../../ui/SvgImage'
 
 type ChatImageEventProps = {
@@ -65,9 +66,7 @@ const ChatFileEvent: React.FC<ChatImageEventProps> = ({
                     await Share.open({
                         filename,
                         type: mime,
-                        url: downloadedFilePath.startsWith('file://')
-                            ? downloadedFilePath
-                            : `file://${downloadedFilePath}`,
+                        url: prefixFileUri(downloadedFilePath),
                     })
 
                     toast.show({

@@ -35,3 +35,9 @@ export const scaleAttachment = (
 
     return { width, height }
 }
+
+/**
+ * Ensures that the file URI is prefixed with `file://` if it is not already.
+ */
+export const prefixFileUri = (uri: string) =>
+    uri.startsWith('file://') ? uri : `file://${uri}`
