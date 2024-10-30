@@ -154,9 +154,20 @@ export const initializeNostrKeys = createAsyncThunk<
 
 export const selectNetworkInfo = (s: CommonState) => s.environment.networkInfo
 
-export const selectIsNetworkConnected = createSelector(
+/*
+ * This seemingly complex selector is necessary because we want certainty that
+ * either there is no network connection or the internet is definitely unreachable.
+ */
+export const selectIsInternetUnreachable = createSelector(
     selectNetworkInfo,
-    networkInfo => networkInfo?.isConnected,
+    networkInfo => {
+        if (!networkInfo) return false
+        if (networkInfo.isConnected === false) return true
+        // sometimes isInternetReachable is null which does not definitively
+        // mean the internet is unreachable so explicitly check for false
+        if (networkInfo.isInternetReachable === false) return true
+        else return false
+    },
 )
 
 export const selectDeveloperMode = (s: CommonState) =>

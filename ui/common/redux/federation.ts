@@ -13,6 +13,7 @@ import {
     CommonState,
     previewCommunityDefaultChats,
     previewGlobalDefaultChats,
+    selectIsInternetUnreachable,
 } from '.'
 import { FEDI_GLOBAL_COMMUNITY } from '../constants/community'
 import {
@@ -547,6 +548,22 @@ export const selectActiveFederation = createSelector(
             ? federations.find(f => f.id === activeFederationId) ||
               federations[0]
             : federations[0],
+)
+
+export const selectShouldShowDegradedStatus = createSelector(
+    selectIsInternetUnreachable,
+    (_s: CommonState, federation: FederationListItem | undefined) => federation,
+    (isInternetUnreachable, federation) => {
+        // dont show if there is a local internet problem
+        if (isInternetUnreachable) return false
+        const federationStatus =
+            federation && 'status' in federation ? federation.status : undefined
+        // dont show if we dont know the status yet
+        if (!federationStatus) return false
+        // dont show if the federation is online
+        if (federationStatus === 'online') return false
+        else return true
+    },
 )
 
 export const selectFederation = (s: CommonState, id: string) =>

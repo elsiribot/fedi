@@ -50,7 +50,7 @@ export function initializeNativeStore() {
         }
     })
 
-    // Whenever the app is brought back into the foreground, refresh prices.
+    // Whenever the app changes its network state, update the store
     const networkSubscription = NetInfo.addEventListener(state => {
         log.debug('Network status changed', state)
         store.dispatch(setNetworkInfo(state))

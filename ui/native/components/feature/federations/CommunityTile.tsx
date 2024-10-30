@@ -2,7 +2,7 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import { Pressable as NativePressable, StyleSheet, View } from 'react-native'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
-import { selectIsNetworkConnected } from '@fedi/common/redux'
+import { selectShouldShowDegradedStatus } from '@fedi/common/redux'
 import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
 
 import { useAppSelector } from '../../../state/hooks'
@@ -30,7 +30,9 @@ const CommunityTile = ({
 }: CommunityTileProps) => {
     const { theme } = useTheme()
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
-    const isNetworkConnected = useAppSelector(selectIsNetworkConnected)
+    const shouldShowDegradedStatus = useAppSelector(s =>
+        selectShouldShowDegradedStatus(s, community),
+    )
 
     const { formattedSecondaryAmount, formattedPrimaryAmount } =
         makeFormattedAmountsFromMSats(
@@ -64,8 +66,8 @@ const CommunityTile = ({
                             </Text>
                         </View>
                     )}
-                    {/* Only show this tag if the device has a network connection */}
-                    {community.status !== 'online' && isNetworkConnected && (
+                    {/* Hides this tag if there is a local internet problem */}
+                    {shouldShowDegradedStatus && (
                         <NativePressable onPress={onSelectStatus}>
                             <ConnectionTag
                                 status={community.status}

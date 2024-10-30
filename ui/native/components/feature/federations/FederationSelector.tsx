@@ -5,7 +5,7 @@ import { Pressable, StyleSheet } from 'react-native'
 
 import {
     selectActiveFederation,
-    selectIsNetworkConnected,
+    selectShouldShowDegradedStatus,
 } from '@fedi/common/redux'
 
 import { useAppSelector, usePrevious } from '../../../state/hooks'
@@ -22,7 +22,11 @@ const FederationSelector: React.FC = () => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const activeFederation = useAppSelector(selectActiveFederation)
-    const isNetworkConnected = useAppSelector(selectIsNetworkConnected)
+    const shouldShowDegradedStatus = useAppSelector(s =>
+        activeFederation
+            ? selectShouldShowDegradedStatus(s, activeFederation)
+            : false,
+    )
     const previousActiveFederation = usePrevious(activeFederation)
     const drawerNavigator = navigation.getParent(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -67,14 +71,13 @@ const FederationSelector: React.FC = () => {
                         style={style.federationName}>
                         {activeFederation?.name}
                     </Text>
-                    {/* Only show this tag if the device has a network connection */}
-                    {activeFederation.status !== 'online' &&
-                        isNetworkConnected && (
-                            <ConnectionIcon
-                                status={activeFederation.status}
-                                size={18}
-                            />
-                        )}
+                    {/* Hides this tag if there is a local internet problem */}
+                    {shouldShowDegradedStatus && (
+                        <ConnectionIcon
+                            status={activeFederation.status}
+                            size={18}
+                        />
+                    )}
                 </Pressable>
             </HoloGradient>
         </>
