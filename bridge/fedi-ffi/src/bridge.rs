@@ -419,7 +419,7 @@ impl Bridge {
                 return Ok(federation_v2_to_rpc_federation(&federation).await);
             }
             Err(e) => {
-                error!("failed to join v2 federation {e:?}");
+                error!(%e, "failed to join v2 federation");
                 error_code = error_code.or(get_error_code(&e));
             }
         }
