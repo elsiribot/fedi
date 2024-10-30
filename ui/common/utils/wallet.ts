@@ -278,9 +278,8 @@ export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
                     case 'refunded':
                     case 'failed':
                         return t('words.failed')
-                    // Should never happen
                     default:
-                        return t('words.failed')
+                        return t('phrases.sent-bitcoin')
                 }
             } else if (txn.bitcoin) {
                 switch (txn.onchainState?.type) {
