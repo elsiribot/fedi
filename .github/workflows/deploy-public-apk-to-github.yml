@@ -1,5 +1,8 @@
 name: Deploy Public APK to Github
+env:
+    TEST_RELEASE_ID: '179645236'
 on:
+    workflow_dispatch:
     release:
         # these events will not fire for draft releases
         types: [published, edited]
@@ -15,7 +18,7 @@ jobs:
               uses: actions/github-script@v7
               id: publish-release
               env:
-                  RELEASE_ID: ${{ github.event.release.id }}
+                  RELEASE_ID: ${{ github.event.release.id || env.TEST_RELEASE_ID }}
               with:
                   github-token: ${{ secrets.DEPLOY_APK_ACCESS_TOKEN }}
                   result-encoding: string
