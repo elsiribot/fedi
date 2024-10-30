@@ -5,9 +5,11 @@ import {
     PERMISSIONS,
     PermissionStatus,
     RESULTS,
+    check,
     checkMultiple,
     checkNotifications,
     check as checkPermission,
+    request,
     requestMultiple,
     requestNotifications,
     request as requestPermission,
@@ -78,6 +80,47 @@ export function useNotificationsPermission() {
     return { notificationsPermission, requestNotificationsPermission }
 }
 
+export function usePhotosPermission() {
+    const [photosPermission, setPhotosPermission] = useState<PermissionStatus>()
+
+    useEffect(() => {
+        if (Platform.OS === 'android') {
+            if (Platform.Version >= 33) {
+                setPhotosPermission(RESULTS.GRANTED)
+            } else {
+                check(PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE).then(
+                    setPhotosPermission,
+                )
+            }
+        } else {
+            check(PERMISSIONS.IOS.PHOTO_LIBRARY).then(setPhotosPermission)
+        }
+    }, [])
+
+    const requestPhotosPermission = useCallback(async () => {
+        let permissionStatus: PermissionStatus
+
+        if (Platform.OS === 'android') {
+            if (Platform.Version >= 33) {
+                // Android 13 and above don't need WRITE_EXTERNAL_STORAGE permission
+                permissionStatus = RESULTS.GRANTED
+            } else {
+                permissionStatus = await request(
+                    PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE,
+                )
+            }
+        } else {
+            permissionStatus = await request(PERMISSIONS.IOS.PHOTO_LIBRARY)
+        }
+
+        setPhotosPermission(permissionStatus)
+
+        return permissionStatus
+    }, [])
+
+    return { photosPermission, requestPhotosPermission }
+}
+
 export function useStoragePermission() {
     const [storagePermission, setStoragePermission] =
         useState<PermissionStatus>()
@@ -89,16 +132,10 @@ export function useStoragePermission() {
 
             case 'android':
                 if (Platform.Version >= 33) {
-                    return [
-                        PERMISSIONS.ANDROID.READ_MEDIA_IMAGES,
-                        PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE,
-                    ]
+                    return [PERMISSIONS.ANDROID.READ_MEDIA_IMAGES]
                 }
 
-                return [
-                    PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE,
-                    PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE,
-                ]
+                return [PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE]
 
             default:
                 return null

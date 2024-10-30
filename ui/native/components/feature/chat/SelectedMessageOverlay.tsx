@@ -15,11 +15,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native'
 import { TemporaryDirectoryPath, exists } from 'react-native-fs'
-import { PERMISSIONS, RESULTS, check } from 'react-native-permissions'
+import { PermissionStatus, RESULTS } from 'react-native-permissions'
 import Share from 'react-native-share'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
-import { useStoragePermission } from '../../../utils/hooks'
+import { usePhotosPermission } from '../../../utils/hooks'
 import { pathJoin, prefixFileUri } from '../../../utils/media'
 import CustomOverlay from '../../ui/CustomOverlay'
 import { Pressable } from '../../ui/Pressable'
@@ -38,8 +38,7 @@ const SelectedMessageOverlay: React.FC = () => {
     const { theme } = useTheme()
     const toast = useToast()
     const matrixAuth = useAppSelector(selectMatrixAuth)
-    const { storagePermission, requestStoragePermission } =
-        useStoragePermission()
+    const { photosPermission, requestPhotosPermission } = usePhotosPermission()
 
     const isMe = selectedMessage?.senderId === matrixAuth?.userId
 
@@ -143,16 +142,13 @@ const SelectedMessageOverlay: React.FC = () => {
                     /* no-op*/
                 }
             } else {
-                if (storagePermission !== RESULTS.GRANTED) {
-                    await requestStoragePermission()
-                }
+                let permissionStatus: PermissionStatus | undefined =
+                    photosPermission
 
-                const writePermission =
-                    Platform.OS === 'ios'
-                        ? PERMISSIONS.IOS.PHOTO_LIBRARY
-                        : PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE
+                if (permissionStatus !== RESULTS.GRANTED)
+                    permissionStatus = await requestPhotosPermission()
 
-                if ((await check(writePermission)) === RESULTS.GRANTED) {
+                if (permissionStatus === RESULTS.GRANTED) {
                     await CameraRoll.saveAsset(downloadedFileUri, {
                         type: 'auto',
                     })
@@ -160,8 +156,17 @@ const SelectedMessageOverlay: React.FC = () => {
                     throw new Error(t('errors.please-grant-photos-permission'))
                 }
 
+                let message = t('feature.chat.saved-to-photos')
+
+                if (Platform.OS === 'android') {
+                    message =
+                        selectedMessage.content.msgtype === 'm.video'
+                            ? t('feature.chat.saved-to-movies')
+                            : t('feature.chat.saved-to-pictures')
+                }
+
                 toast.show({
-                    content: t('feature.chat.saved-to-photos'),
+                    content: message,
                     status: 'success',
                 })
             }
@@ -177,8 +182,8 @@ const SelectedMessageOverlay: React.FC = () => {
         t,
         toast,
         closeOverlay,
-        storagePermission,
-        requestStoragePermission,
+        requestPhotosPermission,
+        photosPermission,
     ])
 
     useEffect(() => {

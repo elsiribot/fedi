@@ -407,6 +407,8 @@
             "removed-admin-from-group": "Removed {{username}} as an admin",
             "removed-member": "Removed Member",
             "saved-to-photos": "Saved to photos",
+            "saved-to-pictures": "Saved to pictures",
+            "saved-to-movies": "Saved to movies",
             "scan-chat-invite": "Scan chat invite",
             "scan-group-invite": "Scan a group invite",
             "scan-member-code-notice": "Show QR to share your username",

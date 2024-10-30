@@ -2,18 +2,24 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
+import {
+    ActivityIndicator,
+    Platform,
+    Pressable,
+    StyleSheet,
+    View,
+} from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
 import { CameraRoll } from '@react-native-camera-roll/camera-roll'
 import { exists } from 'react-native-fs'
-import { RESULTS } from 'react-native-permissions'
+import { PermissionStatus, RESULTS } from 'react-native-permissions'
 import Video from 'react-native-video'
 import SvgImage from '../components/ui/SvgImage'
 import type { RootStackParamList } from '../types/navigation'
-import { useStoragePermission } from '../utils/hooks'
+import { usePhotosPermission } from '../utils/hooks'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -29,8 +35,7 @@ const ChatVideoViewer: React.FC<Props> = ({ route, navigation }: Props) => {
     const { uri } = route.params
     const toast = useToast()
     const [isDownloading, setIsDownloading] = useState(false)
-    const { storagePermission, requestStoragePermission } =
-        useStoragePermission()
+    const { photosPermission, requestPhotosPermission } = usePhotosPermission()
 
     const handleDownload = useCallback(async () => {
         if (!uri || !(await exists(uri))) return
@@ -38,22 +43,31 @@ const ChatVideoViewer: React.FC<Props> = ({ route, navigation }: Props) => {
         setIsDownloading(true)
 
         try {
-            if (storagePermission !== RESULTS.GRANTED) {
-                await requestStoragePermission()
-            }
+            let permissionStatus: PermissionStatus | undefined =
+                photosPermission
 
-            await CameraRoll.saveAsset(uri, { type: 'video' })
+            if (permissionStatus !== RESULTS.GRANTED)
+                permissionStatus = await requestPhotosPermission()
+
+            if (permissionStatus === RESULTS.GRANTED) {
+                await CameraRoll.saveAsset(uri, { type: 'video' })
+            } else {
+                throw new Error(t('errors.please-grant-photos-permission'))
+            }
 
             toast.show({
                 status: 'success',
-                content: t('feature.chat.saved-to-photos'),
+                content:
+                    Platform.OS === 'ios'
+                        ? t('feature.chat.saved-to-photos')
+                        : t('feature.chat.saved-to-movies'),
             })
         } catch (e) {
             log.error('Failed to download video', e)
         } finally {
             setIsDownloading(false)
         }
-    }, [uri, storagePermission, requestStoragePermission, t, toast])
+    }, [uri, photosPermission, requestPhotosPermission, t, toast])
 
     const style = styles(theme, insets)
 
