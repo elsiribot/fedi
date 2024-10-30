@@ -1,9 +1,8 @@
 import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
-import DeviceInfo from 'react-native-device-info'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 
@@ -12,6 +11,7 @@ import {
     DrawerNavigationHook,
     NavigationHook,
 } from '../../../types/navigation'
+import { isNightly } from '../../../utils/device-info'
 import Header from '../../ui/Header'
 import { PressableIcon } from '../../ui/PressableIcon'
 import HeaderAvatar from '../chat/HeaderAvatar'
@@ -24,6 +24,7 @@ const HomeHeader: React.FC = () => {
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
     const popupInfo = usePopupFederationInfo()
+    const showNightlyBanner = useMemo(() => isNightly(), [])
 
     const style = styles(theme)
 
@@ -57,7 +58,7 @@ const HomeHeader: React.FC = () => {
             />
             <NetworkBanner />
             {popupInfo && <PopupFederationCountdown />}
-            {DeviceInfo.getBundleId().includes('nightly') && (
+            {showNightlyBanner && (
                 <View style={style.nightly}>
                     <Text small style={style.nightlyText} adjustsFontSizeToFit>
                         {t('feature.developer.nightly')}

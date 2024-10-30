@@ -176,3 +176,7 @@ export function getNumberFormatLocale() {
     }
     return derivedLocale
 }
+
+export const isNightly = () => {
+    return RNDI.getBundleId().includes('nightly')
+}
