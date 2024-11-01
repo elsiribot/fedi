@@ -229,11 +229,7 @@ impl IStorage for PathBasedStorage {
     }
 
     async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()> {
-        let path = if path.is_absolute() {
-            path.to_owned()
-        } else {
-            self.data_dir.join(path)
-        };
+        let path = self.platform_path(path);
         // tokio::fs::write is bad, creates a second copy of data
         Ok(tokio::task::spawn_blocking(move || {
             let tmp_path = path.with_extension("tmp");
@@ -249,6 +245,21 @@ impl IStorage for PathBasedStorage {
             std::fs::rename(tmp_path, path)
         })
         .await??)
+    }
+
+    fn write_file_sync(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()> {
+        let path = self.platform_path(path);
+        let tmp_path = path.with_extension("tmp");
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open(&tmp_path)?;
+        file.write_all(&data)?;
+        file.flush()?;
+        file.sync_data()?;
+        drop(file);
+        Ok(std::fs::rename(tmp_path, path)?)
     }
 
     fn platform_path(&self, path: &Path) -> PathBuf {

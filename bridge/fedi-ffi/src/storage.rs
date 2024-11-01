@@ -33,6 +33,8 @@ pub trait IStorage: 'static + MaybeSend + MaybeSync {
     async fn delete_federation_db(&self, db_name: &str) -> anyhow::Result<()>;
     async fn read_file(&self, path: &Path) -> anyhow::Result<Option<Vec<u8>>>;
     async fn write_file(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()>;
+    #[cfg(not(target_family = "wasm"))]
+    fn write_file_sync(&self, path: &Path, data: Vec<u8>) -> anyhow::Result<()>;
     /// convert a relative path to a path understood by the platform.
     fn platform_path(&self, path: &Path) -> PathBuf;
 }
@@ -299,7 +301,9 @@ pub struct FiatFXInfo {
 }
 
 pub struct AppState {
-    raw: RwLock<Arc<AppStateRaw>>,
+    // Arc surrounding RwLock<AppStateRaw> is required to be able to move the (owned) write lock
+    // within the spawn_blocking task in the with_write_lock() function.
+    raw: Arc<RwLock<AppStateRaw>>,
     storage: Storage,
 }
 
@@ -328,7 +332,7 @@ impl AppState {
         };
 
         Ok(Some(Self {
-            raw: RwLock::new(Arc::new(value)),
+            raw: RwLock::new(value).into(),
             storage,
         }))
     }
@@ -348,7 +352,7 @@ impl AppState {
 
     async fn default_with_storage(storage: Storage) -> Self {
         Self {
-            raw: RwLock::new(Arc::new(AppStateRaw {
+            raw: RwLock::new(AppStateRaw {
                 format_version: 0,
                 root_mnemonic: Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng()),
                 joined_federations: BTreeMap::new(),
@@ -363,7 +367,8 @@ impl AppState {
                 next_federation_db_prefix: default_next_federation_prefix(),
                 matrix_display_name: None,
                 cached_fiat_fx_info: None,
-            })),
+            })
+            .into(),
             storage,
         }
     }
@@ -372,26 +377,43 @@ impl AppState {
     where
         F: FnOnce(&AppStateRaw) -> T,
     {
-        let app_state_raw = self.raw.read().await.clone();
-        closure(&app_state_raw)
+        let app_state_read_lock = self.raw.read().await;
+        closure(&app_state_read_lock)
     }
 
     pub async fn with_write_lock<F, T>(&self, closure: F) -> anyhow::Result<T>
     where
         F: FnOnce(&mut AppStateRaw) -> T,
     {
-        let mut app_state_in_memory = self.raw.write().await;
+        let mut app_state_write_lock = self.raw.clone().write_owned().await;
+        let mut app_state_copy = app_state_write_lock.clone();
+        let result = closure(&mut app_state_copy);
 
-        let mut app_state_raw_new = app_state_in_memory.as_ref().clone();
-        let result = closure(&mut app_state_raw_new);
+        #[cfg(not(target_family = "wasm"))]
+        {
+            let storage = self.storage.clone();
+            tokio::task::spawn_blocking(move || {
+                storage.write_file_sync(
+                    Path::new(FEDI_FILE_PATH),
+                    serde_json::to_vec::<AppStateRaw>(&app_state_copy)?,
+                )?;
+                *app_state_write_lock = app_state_copy;
+                Ok::<(), anyhow::Error>(())
+            })
+            .await??;
+        }
+        // wasm has async storage
+        #[cfg(target_family = "wasm")]
+        {
+            self.storage
+                .write_file(
+                    Path::new(FEDI_FILE_PATH),
+                    serde_json::to_vec::<AppStateRaw>(&app_state_copy)?,
+                )
+                .await?;
+            *app_state_write_lock = app_state_copy;
+        }
 
-        self.storage
-            .write_file(
-                Path::new(FEDI_FILE_PATH),
-                serde_json::to_vec::<AppStateRaw>(&app_state_raw_new)?,
-            )
-            .await?;
-        *app_state_in_memory = Arc::new(app_state_raw_new);
         Ok(result)
     }
 
