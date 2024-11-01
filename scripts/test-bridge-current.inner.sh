@@ -16,15 +16,8 @@ echo "Running in temporary directory $FM_TEST_DIR"
 
 export FM_ADMIN_PASSWORD=p
 
-function run_tests() {
-    FM_INVITE_CODE=$(cat $FM_CLIENT_DIR/invite-code)
-    export FM_INVITE_CODE
-    cargo nextest run -v --locked --cargo-profile "${CARGO_PROFILE}" -E 'package(fedi-ffi)' "$@"
-}
-export -f run_tests
-
 echo "## Ensuring everything built"
 cargo build --profile "${CARGO_PROFILE}" --all-targets
 echo "## Running v2 bridge tests"
-devi dev-fed --exec bash -c run_tests
+cargo nextest run -v --locked --cargo-profile "${CARGO_PROFILE}" -E 'package(fedi-ffi)' "$@"
 echo "## Tests Passed"

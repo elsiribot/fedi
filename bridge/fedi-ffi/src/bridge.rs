@@ -305,10 +305,12 @@ impl Bridge {
         // RPC calls might clone the federation Arc before we acquire the lock.
         for attempt in 0.. {
             let reference_count = Arc::strong_count(&federation);
-            info!(
-                reference_count,
-                attempt, "waiting for RPCs to drop the federation object"
-            );
+            if attempt % 1000 == 0 {
+                info!(
+                    reference_count,
+                    attempt, "waiting for RPCs to drop the federation object"
+                );
+            }
             if reference_count == 1 {
                 break;
             }
