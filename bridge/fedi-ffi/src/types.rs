@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::fmt;
 use std::time::Duration;
 
 use anyhow::anyhow;
@@ -10,7 +11,8 @@ use fedimint_core::Amount;
 use fedimint_ln_client::pay::GatewayPayError;
 use fedimint_ln_client::{LnPayState, LnReceiveState};
 use fedimint_wallet_client::{DepositStateV2, WithdrawState};
-use serde::{Deserialize, Serialize};
+use serde::de::{self, MapAccess, Visitor};
+use serde::{Deserialize, Deserializer, Serialize};
 use stability_pool_client::ClientAccountInfo;
 use ts_rs::TS;
 
@@ -134,7 +136,41 @@ pub struct RpcJsonClientConfig {
     #[ts(type = "unknown")]
     global: GlobalClientConfig,
     #[ts(type = "Record<string, unknown>")]
+    #[serde(deserialize_with = "deserialize_string_keys_to_u16")]
     modules: BTreeMap<u16, JsonWithKind>,
+}
+
+// Custom deserialization function for fields with u16 keys that may be in
+// string format
+fn deserialize_string_keys_to_u16<'de, D>(
+    deserializer: D,
+) -> Result<BTreeMap<u16, JsonWithKind>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct StringKeysToU16Map;
+
+    impl<'de> Visitor<'de> for StringKeysToU16Map {
+        type Value = BTreeMap<u16, JsonWithKind>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a map with u16 keys that may be strings")
+        }
+
+        fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
+        where
+            M: MapAccess<'de>,
+        {
+            let mut result = BTreeMap::new();
+            while let Some((key, value)) = map.next_entry::<String, JsonWithKind>()? {
+                let key: u16 = key.parse().map_err(de::Error::custom)?;
+                result.insert(key, value);
+            }
+            Ok(result)
+        }
+    }
+
+    deserializer.deserialize_map(StringKeysToU16Map)
 }
 
 #[derive(Clone, Debug, Serialize, TS)]
@@ -328,9 +364,28 @@ pub struct SocialRecoveryApproval {
     pub approved: bool,
 }
 
-#[derive(Debug, Eq, Ord, PartialOrd, PartialEq, Serialize, Deserialize, Clone, Copy, TS)]
+#[derive(Debug, Eq, Ord, PartialOrd, PartialEq, Serialize, Clone, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcPeerId(#[ts(type = "number")] pub fedimint_core::PeerId);
+
+impl<'de> Deserialize<'de> for RpcPeerId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+        value
+            .parse::<u16>()
+            .map(|arg0: u16| RpcPeerId(arg0.into()))
+            .map_err(serde::de::Error::custom)
+    }
+}
+
+impl fmt::Display for RpcPeerId {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
 #[ts(export, export_to = "target/bindings/")]
