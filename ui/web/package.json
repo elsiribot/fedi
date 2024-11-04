@@ -7,7 +7,7 @@
         "build": "next build",
         "build:analyze": "ANALYZE_BUILD=1 next build",
         "start": "next start",
-        "lint": "yarn lint:tsc && yarn lint:next",
+        "lint": "yarn lint:next && yarn lint:tsc",
         "lint:next": "next lint",
         "lint:tsc": "tsc --noEmit",
         "test": "echo 'No tests yet!'",
