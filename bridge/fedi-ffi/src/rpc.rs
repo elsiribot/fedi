@@ -1603,17 +1603,19 @@ mod tests {
     use bitcoin::bech32::{self, ToBase32};
     use bitcoin::secp256k1::PublicKey;
     use bitcoin::Network;
-    use clap::Parser;
-    use devimint::cli::CommonArgs;
     use devimint::devfed::DevJitFed;
     use devimint::envs::FM_INVITE_CODE_ENV;
-    use devimint::util::{ClnLightningCli, FedimintCli, LnCli};
+    use devimint::util::{ClnLightningCli, FedimintCli, LnCli, ProcessManager};
+    use devimint::vars::{self, mkdir};
     use devimint::{cmd, DevFed};
     use fedi_core::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
     use fedi_social_client::common::VerificationDocument;
     use fedimint_core::core::ModuleKind;
+    use fedimint_core::task::TaskGroup;
     use fedimint_core::{apply, async_trait_maybe_send, Amount};
     use fedimint_logging::{TracingSetup, LOG_DEVIMINT};
+    use rand::distributions::Alphanumeric;
+    use rand::Rng;
     use tokio::sync::Mutex;
     use tokio::task::JoinSet;
     use tracing::{debug, error, info, trace};
@@ -2054,12 +2056,43 @@ mod tests {
         Ok(())
     }
 
+    async fn process_setup(fed_size: usize) -> anyhow::Result<(ProcessManager, TaskGroup)> {
+        let test_dir = std::env::temp_dir().join(format!(
+            "devimint-{}-{}",
+            std::process::id(),
+            rand::thread_rng()
+                .sample_iter(&Alphanumeric)
+                .filter(u8::is_ascii_digit)
+                .take(3)
+                .map(char::from)
+                .collect::<String>()
+        ));
+        mkdir(test_dir.clone()).await?;
+        let logs_dir: PathBuf = test_dir.join("logs");
+        mkdir(logs_dir.clone()).await?;
+
+        INIT_TRACING.call_once(|| {
+            TracingSetup::default()
+                .init()
+                .expect("Failed to initialize tracing");
+        });
+
+        let globals = vars::Global::new(&test_dir, fed_size, 0).await?;
+
+        info!(target: LOG_DEVIMINT, path=%globals.FM_DATA_DIR.display() , "Devimint data dir");
+
+        for (var, value) in globals.vars() {
+            debug!(var, value, "Env variable set");
+            std::env::set_var(var, value);
+        }
+        let process_mgr = ProcessManager::new(globals);
+        let task_group = TaskGroup::new();
+        Ok((process_mgr, task_group))
+    }
+
     async fn dev_fed() -> anyhow::Result<DevFed> {
         trace!(target: LOG_DEVIMINT, "Starting dev fed");
-        let (process_mgr, _) = devimint::cli::setup(CommonArgs::parse_from([
-            "program_name", // First argument simulates the program's name
-        ]))
-        .await?;
+        let (process_mgr, _) = process_setup(4).await?;
         let dev_fed = DevJitFed::new(&process_mgr, false)?;
 
         debug!(target: LOG_DEVIMINT, "Peging in client and gateways");
@@ -3725,6 +3758,94 @@ mod tests {
         assert_eq!(Amount::ZERO, federation.get_pending_fedi_fees().await);
         assert_eq!(Amount::ZERO, federation.get_outstanding_fedi_fees().await);
 
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_bridge_handles_federation_offline() -> anyhow::Result<()> {
+        let mut dev_fed = dev_fed().await?;
+        let invite_code = dev_fed.fed.invite_code()?;
+
+        // Create data directory and initialize bridge
+        let device_identifier = "bridge:test:d4d743a7-b343-48e3-a5f9-90d032af3e98".to_owned();
+        let fedi_api = Arc::new(MockFediApi::new());
+        let data_dir = create_data_dir();
+        let bridge = setup_bridge_custom_with_data_dir(
+            device_identifier.clone(),
+            fedi_api.clone(),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+            data_dir.clone(),
+        )
+        .await?;
+
+        // Join federation
+        let rpc_federation = joinFederation(bridge.clone(), invite_code.clone(), false).await?;
+        let federation = bridge
+            .get_federation_maybe_recovering(&rpc_federation.id.0)
+            .await?;
+        use_lnd_gateway(&federation).await?;
+
+        // receive ecash
+        let ecash_receive_amount = fedimint_core::Amount::from_msats(10000);
+        let ecash = cli_generate_ecash(ecash_receive_amount).await?;
+        receiveEcash(federation.clone(), ecash).await?;
+        wait_for_ecash_reissue(&federation).await?;
+        let original_balance = federation.get_balance().await;
+        assert!(original_balance.msats != 0);
+
+        // Clean shutdown of bridge
+        drop(federation);
+        bridge
+            .task_group
+            .clone()
+            .shutdown_join_all(Duration::from_secs(5))
+            .await?;
+        drop(bridge);
+
+        // Stop federation
+        dev_fed.fed.terminate_all_servers().await?;
+
+        // Initialize new bridge with same data dir
+        let bridge = setup_bridge_custom_with_data_dir(
+            device_identifier,
+            fedi_api,
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+            data_dir,
+        )
+        .await?;
+
+        // Bridge should initialize successfully even though federation is down
+        assert!(bridge.list_federations().await.len() == 1);
+
+        // Wait for federation ready event for a max of 2s
+        let rpc_federation = fedimint_core::task::timeout(Duration::from_secs(2), async move {
+            'check: loop {
+                let events = bridge.event_sink.events();
+                for (_, ev_body) in events.iter().rev().filter(|(kind, _)| kind == "federation") {
+                    let ev_body =
+                        serde_json::from_str::<RpcFederationMaybeLoading>(ev_body).unwrap();
+                    match ev_body {
+                        RpcFederationMaybeLoading::Loading { .. } => (),
+                        RpcFederationMaybeLoading::Failed { error, id } => {
+                            bail!("federation {:?} loading failed: {}", id, error)
+                        }
+                        RpcFederationMaybeLoading::Ready(rpc_federation) => {
+                            assert!(rpc_federation.invite_code == invite_code);
+                            break 'check Ok::<_, anyhow::Error>(rpc_federation);
+                        }
+                    }
+                }
+                fedimint_core::task::sleep_in_test(
+                    "waiting for federation ready event",
+                    Duration::from_millis(100),
+                )
+                .await;
+            }
+        })
+        .await??;
+
+        // Ensure balance is still the same
+        assert!(rpc_federation.balance.0 == original_balance);
         Ok(())
     }
 }
