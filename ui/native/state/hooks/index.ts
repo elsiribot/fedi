@@ -23,7 +23,7 @@ import {
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../../bridge'
-import { MSats, Sats } from '../../types'
+import { MSats } from '../../types'
 import { NavigationHook } from '../../types/navigation'
 import { useNotificationsPermission } from '../../utils/hooks'
 import type { AppDispatch, AppState } from '../store'
@@ -62,15 +62,6 @@ export const useBridge = (activeFederationId: string | undefined) => {
             },
             [activeFederationId],
         ),
-        listFederations: useCallback(() => {
-            return fedimint.listFederations()
-        }, []),
-        leaveFederation: useCallback(() => {
-            if (!activeFederationId)
-                return Promise.reject(new Error('No active federation'))
-
-            return fedimint.leaveFederation(activeFederationId)
-        }, [activeFederationId]),
         generateAddress: useCallback(() => {
             if (!activeFederationId)
                 return Promise.reject(new Error('No active federation'))
@@ -99,41 +90,12 @@ export const useBridge = (activeFederationId: string | undefined) => {
             },
             [activeFederationId],
         ),
-        listTransactions: useCallback(
-            (startTime?: number, limit?: number) => {
-                if (!activeFederationId)
-                    return Promise.reject(new Error('No active federation'))
-
-                return fedimint.listTransactions(
-                    activeFederationId,
-                    startTime,
-                    limit,
-                )
-            },
-            [activeFederationId],
-        ),
         guardianStatus: useCallback(() => {
             if (!activeFederationId)
                 return Promise.reject(new Error('No active federation'))
 
             return fedimint.guardianStatus(activeFederationId)
         }, [activeFederationId]),
-        updateTransactionNotes: useCallback(
-            (transactionId: string, notes: string) => {
-                if (!activeFederationId)
-                    return Promise.reject(new Error('No active federation'))
-
-                return fedimint.updateTransactionNotes(
-                    transactionId,
-                    notes,
-                    activeFederationId,
-                )
-            },
-            [activeFederationId],
-        ),
-        signNostrEvent: useCallback((eventHash: string) => {
-            return fedimint.signNostrEvent(eventHash)
-        }, []),
         listGateways: useCallback(() => {
             if (!activeFederationId)
                 return Promise.reject(new Error('No active federation'))
@@ -158,15 +120,6 @@ export const useBridge = (activeFederationId: string | undefined) => {
                     return Promise.reject(new Error('No active federation'))
 
                 return fedimint.payInvoice(invoice, activeFederationId)
-            },
-            [activeFederationId],
-        ),
-        payAddress: useCallback(
-            (address: string, sats: Sats) => {
-                if (!activeFederationId)
-                    return Promise.reject(new Error('No active federation'))
-
-                return fedimint.payAddress(address, sats, activeFederationId)
             },
             [activeFederationId],
         ),
