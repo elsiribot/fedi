@@ -46,7 +46,6 @@ import {
 } from 'react-native-fs'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
-import { isNightly } from '../../../utils/device-info'
 import { pathJoin, prefixFileUri } from '../../../utils/media'
 import { Attachments } from '../../ui/Attachments'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
@@ -82,8 +81,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const insets = useSafeAreaInsets()
     const existingRoom = useAppSelector(s => selectMatrixRoom(s, id))
     const dispatch = useAppDispatch()
-    // Chat attachments are only available on Nightly until we fix some bugs
-    const attachmentsEnabled = useMemo(() => isNightly(), [])
 
     const toast = useToast()
     const isReadOnly = useAppSelector(s => selectMatrixRoomIsReadOnly(s, id))
@@ -462,16 +459,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         {directUserId && (
                             <ChatWalletButton recipientId={directUserId} />
                         )}
-                        {attachmentsEnabled && (
-                            <>
-                                <Pressable onPress={handleUploadImage}>
-                                    <SvgImage name="Image" />
-                                </Pressable>
-                                <Pressable onPress={handleUploadAttachment}>
-                                    <SvgImage name="Plus" />
-                                </Pressable>
-                            </>
-                        )}
+                        <Pressable onPress={handleUploadImage}>
+                            <SvgImage name="Image" />
+                        </Pressable>
+                        <Pressable onPress={handleUploadAttachment}>
+                            <SvgImage name="Plus" />
+                        </Pressable>
                     </View>
                     {!isReadOnly && (
                         <>
