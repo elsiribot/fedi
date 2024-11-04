@@ -19,7 +19,7 @@ import { exists } from 'react-native-fs'
 import { PermissionStatus, RESULTS } from 'react-native-permissions'
 import SvgImage from '../components/ui/SvgImage'
 import type { RootStackParamList } from '../types/navigation'
-import { usePhotosPermission } from '../utils/hooks'
+import { useDownloadPermission } from '../utils/hooks'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -35,7 +35,8 @@ const ChatImageViewer: React.FC<Props> = ({ route, navigation }: Props) => {
     const { uri } = route.params
     const toast = useToast()
     const [isDownloading, setIsDownloading] = useState(false)
-    const { photosPermission, requestPhotosPermission } = usePhotosPermission()
+    const { downloadPermission, requestDownloadPermission } =
+        useDownloadPermission()
 
     const handleDownload = useCallback(async () => {
         if (!uri || !(await exists(uri))) return
@@ -44,22 +45,22 @@ const ChatImageViewer: React.FC<Props> = ({ route, navigation }: Props) => {
 
         try {
             let permissionStatus: PermissionStatus | undefined =
-                photosPermission
+                downloadPermission
 
-            if (permissionStatus !== RESULTS.GRANTED)
-                permissionStatus = await requestPhotosPermission()
+            if (downloadPermission !== RESULTS.GRANTED)
+                permissionStatus = await requestDownloadPermission()
 
             if (permissionStatus === RESULTS.GRANTED) {
                 await CameraRoll.saveAsset(uri, { type: 'photo' })
             } else {
-                throw new Error(t('errors.please-grant-photos-permission'))
+                throw new Error(t('errors.please-grant-permission'))
             }
 
             toast.show({
                 status: 'success',
                 content:
                     Platform.OS === 'ios'
-                        ? t('feature.chat.saved-to-photos')
+                        ? t('feature.chat.saved-to-photo-library')
                         : t('feature.chat.saved-to-pictures'),
             })
         } catch (e) {
@@ -67,7 +68,7 @@ const ChatImageViewer: React.FC<Props> = ({ route, navigation }: Props) => {
         } finally {
             setIsDownloading(false)
         }
-    }, [uri, photosPermission, requestPhotosPermission, t, toast])
+    }, [uri, downloadPermission, requestDownloadPermission, t, toast])
 
     const style = styles(theme, insets)
 

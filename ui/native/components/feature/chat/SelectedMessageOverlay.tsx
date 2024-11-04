@@ -19,7 +19,7 @@ import { PermissionStatus, RESULTS } from 'react-native-permissions'
 import Share from 'react-native-share'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
-import { usePhotosPermission } from '../../../utils/hooks'
+import { useDownloadPermission } from '../../../utils/hooks'
 import { pathJoin, prefixFileUri } from '../../../utils/media'
 import CustomOverlay from '../../ui/CustomOverlay'
 import { Pressable } from '../../ui/Pressable'
@@ -38,7 +38,8 @@ const SelectedMessageOverlay: React.FC = () => {
     const { theme } = useTheme()
     const toast = useToast()
     const matrixAuth = useAppSelector(selectMatrixAuth)
-    const { photosPermission, requestPhotosPermission } = usePhotosPermission()
+    const { downloadPermission, requestDownloadPermission } =
+        useDownloadPermission()
 
     const isMe = selectedMessage?.senderId === matrixAuth?.userId
 
@@ -118,9 +119,11 @@ const SelectedMessageOverlay: React.FC = () => {
             const downloadedFileUri = prefixFileUri(downloadedFilePath)
 
             if (!(await exists(downloadedFilePath))) {
-                throw new Error('File does not exist in fs')
+                throw new Error(t('errors.failed-to-download-file'))
             }
 
+            // Downloading files does not require a permissions request
+            // since are using the Share.open dialog
             if (selectedMessage.content.msgtype === 'm.file') {
                 const filename =
                     Platform.OS === 'android'
@@ -142,22 +145,25 @@ const SelectedMessageOverlay: React.FC = () => {
                     /* no-op*/
                 }
             } else {
+                // Downloading images and videos requires permissions
                 let permissionStatus: PermissionStatus | undefined =
-                    photosPermission
+                    downloadPermission
 
                 if (permissionStatus !== RESULTS.GRANTED)
-                    permissionStatus = await requestPhotosPermission()
+                    permissionStatus = await requestDownloadPermission()
 
                 if (permissionStatus === RESULTS.GRANTED) {
                     await CameraRoll.saveAsset(downloadedFileUri, {
                         type: 'auto',
                     })
                 } else {
-                    throw new Error(t('errors.please-grant-photos-permission'))
+                    throw new Error(t('errors.please-grant-permission'))
                 }
 
-                let message = t('feature.chat.saved-to-photos')
-
+                // Customize the message by OS:
+                // - iOS saves both pictures and videos to the photos library
+                // - Android saves videos and photos in different folders
+                let message = t('feature.chat.saved-to-photo-library')
                 if (Platform.OS === 'android') {
                     message =
                         selectedMessage.content.msgtype === 'm.video'
@@ -182,8 +188,8 @@ const SelectedMessageOverlay: React.FC = () => {
         t,
         toast,
         closeOverlay,
-        requestPhotosPermission,
-        photosPermission,
+        requestDownloadPermission,
+        downloadPermission,
     ])
 
     useEffect(() => {
