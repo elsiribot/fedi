@@ -46,7 +46,11 @@ import {
 } from 'react-native-fs'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
-import { pathJoin, prefixFileUri } from '../../../utils/media'
+import {
+    getUriFromAttachment,
+    pathJoin,
+    prefixFileUri,
+} from '../../../utils/media'
 import { Attachments } from '../../ui/Attachments'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import ChatWalletButton from './ChatWalletButton'
@@ -278,10 +282,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
             for (const att of attachments) {
                 if (!att.name || !att.type) continue
+                const uri = await getUriFromAttachment(att)
                 allAttachments.push({
                     fileName: att.name,
                     mimeType: att.type,
-                    uri: prefixFileUri(att.uri),
+                    uri,
                 })
             }
 
