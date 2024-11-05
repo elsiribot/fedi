@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Alert,
@@ -72,6 +72,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         useState<string>('')
 
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
+    const [fedimintVersion, setFedimintVersion] = useState<string | null>(null)
 
     const authenticatedGuardian = useAppSelector(
         s => s.federation.authenticatedGuardian,
@@ -305,6 +306,14 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
 
     const qrValue = encodeFediMatrixUserUri(matrixAuth?.userId || '')
 
+    useEffect(() => {
+        async function setVersion() {
+            setFedimintVersion(await fedimint.fedimintVersion())
+        }
+
+        setVersion()
+    }, [])
+
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
             {hasSetMatrixDisplayName && (
@@ -429,6 +438,13 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     <Text adjustsFontSizeToFit numberOfLines={1}>
                         {t('phrases.app-version', { version })}
                     </Text>
+                    {fedimintVersion && (
+                        <Text adjustsFontSizeToFit numberOfLines={1}>
+                            {t('phrases.fedimint-version', {
+                                version: fedimintVersion,
+                            })}
+                        </Text>
+                    )}
                 </Pressable>
             </View>
         </ScrollView>

@@ -138,6 +138,10 @@ export class FedimintBridge {
         return this.rpcTyped('leaveFederation', { federationId })
     }
 
+    async fedimintVersion() {
+        return this.rpcTyped('fedimintVersion', {})
+    }
+
     async listFederations() {
         return this.rpcTyped('listFederations', {})
     }
