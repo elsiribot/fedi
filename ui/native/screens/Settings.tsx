@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Alert,
@@ -24,6 +24,7 @@ import {
     selectAlphabeticallySortedFederations,
     selectCurrency,
     selectDeveloperMode,
+    selectFedimintVersion,
     selectHasSetMatrixDisplayName,
     selectMatrixAuth,
     selectMatrixDisplayNameSuffix,
@@ -67,12 +68,12 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         selectHasSetMatrixDisplayName,
     )
     const displayNameSuffix = useAppSelector(selectMatrixDisplayNameSuffix)
+    const fedimintVersion = useAppSelector(selectFedimintVersion)
 
     const [exportingFederationId, setExportingFederationId] =
         useState<string>('')
 
     const [unlockDevModeCount, setUnlockDevModeCount] = useState<number>(0)
-    const [fedimintVersion, setFedimintVersion] = useState<string | null>(null)
 
     const authenticatedGuardian = useAppSelector(
         s => s.federation.authenticatedGuardian,
@@ -305,14 +306,6 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
     })
 
     const qrValue = encodeFediMatrixUserUri(matrixAuth?.userId || '')
-
-    useEffect(() => {
-        async function setVersion() {
-            setFedimintVersion(await fedimint.fedimintVersion())
-        }
-
-        setVersion()
-    }, [])
 
     return (
         <ScrollView contentContainerStyle={styles(theme).container}>
