@@ -121,7 +121,7 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
 
             generateOnchainAddress()
         }
-    }, [onchainAddress, requestType])
+    }, [onchainAddress, requestType, federationId, dispatch])
 
     const showOnchainDeposits = isOnchainSupported
 

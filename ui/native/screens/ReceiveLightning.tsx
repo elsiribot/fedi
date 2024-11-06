@@ -43,8 +43,8 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const insets = useSafeAreaInsets()
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const dispatch = useAppDispatch()
+    const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const {
         inputAmount: amount,
         setInputAmount: setAmount,
@@ -94,10 +94,10 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
         t,
         toast,
         amount,
-        generateInvoice,
         generatingInvoice,
         memo,
         activeFederationId,
+        dispatch,
     ])
 
     useEffect(() => {
@@ -132,7 +132,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
 
             generateOnchainAddress()
         }
-    }, [generateAddress, onchainAddress, requestType, activeFederationId])
+    }, [onchainAddress, requestType, activeFederationId, dispatch])
 
     const onChangeAmount = (updatedValue: Sats) => {
         setSubmitAttempts(0)

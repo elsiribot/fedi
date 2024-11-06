@@ -494,6 +494,19 @@ export const leaveFederation = createAsyncThunk<
     },
 )
 
+export const listGateways = createAsyncThunk<
+    {
+        nodePubKey: string
+        gatewayId: string
+        api: string
+        active: boolean
+    }[],
+    { fedimint: FedimintBridge; federationId: string },
+    { state: CommonState }
+>('federation/listGateways', async ({ fedimint, federationId }) => {
+    return await fedimint.listGateways(federationId)
+})
+
 /*** Selectors ***/
 
 export const selectLoadedFederations = createSelector(

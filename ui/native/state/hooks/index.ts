@@ -45,32 +45,6 @@ export const usePrevious = <T = unknown>(value: T): T | undefined => {
     return ref.current
 }
 
-export const useBridge = (activeFederationId: string | undefined) => {
-    return {
-        guardianStatus: useCallback(() => {
-            if (!activeFederationId)
-                return Promise.reject(new Error('No active federation'))
-
-            return fedimint.guardianStatus(activeFederationId)
-        }, [activeFederationId]),
-        listGateways: useCallback(() => {
-            if (!activeFederationId)
-                return Promise.reject(new Error('No active federation'))
-
-            return fedimint.listGateways(activeFederationId)
-        }, [activeFederationId]),
-        switchGateway: useCallback(
-            (nodePubKey: string) => {
-                if (!activeFederationId)
-                    return Promise.reject(new Error('No active federation'))
-
-                return fedimint.switchGateway(nodePubKey, activeFederationId)
-            },
-            [activeFederationId],
-        ),
-    }
-}
-
 export const useMatrixHealthCheck = () => {
     const appStateRef = useRef<AppStateStatus>(
         RNAppState.currentState,

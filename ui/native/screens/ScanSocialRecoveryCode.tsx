@@ -89,8 +89,9 @@ const ScanSocialRecoveryCode: React.FC<Props> = ({ navigation }: Props) => {
             navigation,
             toast,
             t,
-            socialRecoveryDownloadVerificationDoc,
             authenticatedGuardian,
+            activeFederationId,
+            dispatch,
         ],
     )
 

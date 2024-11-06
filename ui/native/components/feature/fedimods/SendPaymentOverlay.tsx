@@ -41,12 +41,12 @@ export const SendPaymentOverlay: React.FC<Props> = ({
     const { theme } = useTheme()
     const toast = useToast()
     const paymentFederation = useAppSelector(selectPaymentFederation)
-    const dispatch = useAppDispatch()
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const [amountInputKey, setAmountInputKey] = useState(0)
     const [isLoading, setIsLoading] = useState(false)
     const onRejectRef = useUpdatingRef(onReject)
     const onAcceptRef = useUpdatingRef(onAccept)
+    const dispatch = useAppDispatch()
     const {
         inputAmount,
         setInputAmount,

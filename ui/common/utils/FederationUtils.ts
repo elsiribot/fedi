@@ -702,6 +702,21 @@ export const previewInvite = async (
     }
 }
 
+export const getGuardianStatuses = async (
+    fedimint: FedimintBridge,
+    federationId: string,
+): Promise<GuardianStatus[]> => {
+    return await fedimint.guardianStatus(federationId)
+}
+
+export const switchGateway = async (
+    fedimint: FedimintBridge,
+    federationId: string,
+    nodePubKey: string,
+): Promise<void> => {
+    await fedimint.switchGateway(nodePubKey, federationId)
+}
+
 export const getFederationStatus = async (
     fedimint: FedimintBridge,
     federationId: FederationListItem['id'],
@@ -722,13 +737,6 @@ export const getFederationStatus = async (
         return 'unstable'
     }
     return 'offline'
-}
-
-export const getGuardianStatuses = async (
-    fedimint: FedimintBridge,
-    federationId: string,
-): Promise<GuardianStatus[]> => {
-    return await fedimint.guardianStatus(federationId)
 }
 
 export const getGatewaysList = async (

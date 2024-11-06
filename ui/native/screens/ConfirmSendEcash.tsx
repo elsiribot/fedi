@@ -36,10 +36,10 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const { amount } = route.params
+    const dispatch = useAppDispatch()
     const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const paymentFederation = useAppSelector(selectPaymentFederation)
-    const dispatch = useAppDispatch()
     const balanceDisplay = useBalanceDisplay(t)
     const { feeBreakdownTitle, ecashFeesGuidanceText, makeEcashFeeContent } =
         useFeeDisplayUtils(t)
@@ -68,7 +68,7 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
             log.error('onGenerateEcash', error)
         }
         setIsLoading(false)
-    }, [amount, generateEcash, navigation])
+    }, [amount, navigation, paymentFederation, dispatch])
 
     const handleConfirm = useCallback(() => {
         Alert.alert(

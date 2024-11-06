@@ -60,9 +60,10 @@ const SocialBackupProcessing: React.FC<Props> = ({
     }, [
         navigation,
         toast,
-        uploadBackupFile,
         videoFilePath,
         uploadStarted,
+        dispatch,
+        activeFederationId,
         setUploadStarted,
         t,
     ])

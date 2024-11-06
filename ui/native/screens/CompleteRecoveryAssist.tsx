@@ -80,12 +80,13 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
         }
     }, [
         approvalInProgress,
-        approveSocialRecoveryRequest,
         authenticatedGuardian,
         navigation,
         recoveryId,
         toast,
         t,
+        dispatch,
+        federationId,
     ])
 
     return (

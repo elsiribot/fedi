@@ -31,8 +31,8 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
     const { theme } = useTheme()
     const { t } = useTranslation()
     const federationId = useAppSelector(selectPaymentFederation)?.id
-    const dispatch = useAppDispatch()
     const toast = useToast()
+    const dispatch = useAppDispatch()
     const { ecash } = route.params
     const [amount, setAmount] = useState(0 as MSats)
     const [error, setError] = useState<Error>()
@@ -51,7 +51,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
             .catch(() => {
                 setError(new Error('errors.invalid-ecash-token'))
             })
-    }, [ecash, validateEcash])
+    }, [ecash, dispatch])
 
     useEffect(() => {
         if (error) {
