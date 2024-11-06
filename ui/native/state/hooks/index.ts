@@ -48,20 +48,6 @@ export const usePrevious = <T = unknown>(value: T): T | undefined => {
 
 export const useBridge = (activeFederationId: string | undefined) => {
     return {
-        approveSocialRecoveryRequest: useCallback(
-            (recoveryId: string, peerId: number, password: string) => {
-                if (!activeFederationId)
-                    return Promise.reject(new Error('No active federation'))
-
-                return fedimint.approveSocialRecoveryRequest(
-                    recoveryId,
-                    peerId,
-                    password,
-                    activeFederationId,
-                )
-            },
-            [activeFederationId],
-        ),
         generateAddress: useCallback(() => {
             if (!activeFederationId)
                 return Promise.reject(new Error('No active federation'))
@@ -111,9 +97,6 @@ export const useBridge = (activeFederationId: string | undefined) => {
             },
             [activeFederationId],
         ),
-        locateRecoveryFile: useCallback(() => {
-            return fedimint.locateRecoveryFile()
-        }, []),
         payInvoice: useCallback(
             (invoice: string) => {
                 if (!activeFederationId)
@@ -129,19 +112,6 @@ export const useBridge = (activeFederationId: string | undefined) => {
                     return Promise.reject(new Error('No active federation'))
 
                 return fedimint.receiveEcash(ecash, activeFederationId)
-            },
-            [activeFederationId],
-        ),
-        socialRecoveryDownloadVerificationDoc: useCallback(
-            (recoveryId: string, peerId: number) => {
-                if (!activeFederationId)
-                    return Promise.reject(new Error('No active federation'))
-
-                return fedimint.socialRecoveryDownloadVerificationDoc(
-                    recoveryId,
-                    activeFederationId,
-                    peerId,
-                )
             },
             [activeFederationId],
         ),
