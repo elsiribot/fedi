@@ -159,6 +159,22 @@ const MessageInput: React.FC<MessageInputProps> = ({
                                     fromUrl: assetUri,
                                     toFile: resolvedUri,
                                 }).promise
+                            } else if (
+                                // On Android, the react-native-image-picker library is breaking the gif animation
+                                // somehow when it produces the file URI, so we copy the gif from the original path.
+                                // https://github.com/react-native-image-picker/react-native-image-picker/issues/2064#issuecomment-2460501473
+                                // TODO: Check if this is fixed upstream (perhaps in the turbo module) and remove this workaround
+                                Platform.OS === 'android' &&
+                                asset.originalPath &&
+                                // sometimes animated pics are webp files so we include webp in this workaround
+                                // even though some webp files are not animated and wouldn't be broken
+                                // but using the original path works either way, perhaps a small perf hit
+                                // if rn image-picker is optimizing when producing the file URI
+                                (asset.type?.includes('gif') ||
+                                    asset.type?.includes('webp'))
+                            ) {
+                                const gifUri = prefixFileUri(asset.originalPath)
+                                await copyFile(gifUri, resolvedUri)
                             } else {
                                 await copyFile(assetUri, resolvedUri)
                             }
