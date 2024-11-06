@@ -23,7 +23,6 @@ import {
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../../bridge'
-import { MSats } from '../../types'
 import { NavigationHook } from '../../types/navigation'
 import { useNotificationsPermission } from '../../utils/hooks'
 import type { AppDispatch, AppState } from '../store'
@@ -48,34 +47,6 @@ export const usePrevious = <T = unknown>(value: T): T | undefined => {
 
 export const useBridge = (activeFederationId: string | undefined) => {
     return {
-        generateAddress: useCallback(() => {
-            if (!activeFederationId)
-                return Promise.reject(new Error('No active federation'))
-
-            return fedimint.generateAddress(activeFederationId)
-        }, [activeFederationId]),
-        generateEcash: useCallback(
-            (amount: MSats) => {
-                if (!activeFederationId)
-                    return Promise.reject(new Error('No active federation'))
-
-                return fedimint.generateEcash(amount, activeFederationId)
-            },
-            [activeFederationId],
-        ),
-        generateInvoice: useCallback(
-            (amount: MSats, description: string) => {
-                if (!activeFederationId)
-                    return Promise.reject(new Error('No active federation'))
-
-                return fedimint.generateInvoice(
-                    amount,
-                    description,
-                    activeFederationId,
-                )
-            },
-            [activeFederationId],
-        ),
         guardianStatus: useCallback(() => {
             if (!activeFederationId)
                 return Promise.reject(new Error('No active federation'))
@@ -94,39 +65,6 @@ export const useBridge = (activeFederationId: string | undefined) => {
                     return Promise.reject(new Error('No active federation'))
 
                 return fedimint.switchGateway(nodePubKey, activeFederationId)
-            },
-            [activeFederationId],
-        ),
-        payInvoice: useCallback(
-            (invoice: string) => {
-                if (!activeFederationId)
-                    return Promise.reject(new Error('No active federation'))
-
-                return fedimint.payInvoice(invoice, activeFederationId)
-            },
-            [activeFederationId],
-        ),
-        receiveEcash: useCallback(
-            (ecash: string) => {
-                if (!activeFederationId)
-                    return Promise.reject(new Error('No active federation'))
-
-                return fedimint.receiveEcash(ecash, activeFederationId)
-            },
-            [activeFederationId],
-        ),
-        validateEcash: useCallback((ecash: string) => {
-            return fedimint.validateEcash(ecash)
-        }, []),
-        uploadBackupFile: useCallback(
-            (videoFilePath: string) => {
-                if (!activeFederationId)
-                    return Promise.reject(new Error('No active federation'))
-
-                return fedimint.uploadBackupFile(
-                    videoFilePath,
-                    activeFederationId,
-                )
             },
             [activeFederationId],
         ),

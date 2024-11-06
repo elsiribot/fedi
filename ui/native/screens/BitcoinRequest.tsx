@@ -6,7 +6,7 @@ import { ActivityIndicator, Insets, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
-import { selectActiveFederationId } from '@fedi/common/redux'
+import { generateAddress, selectActiveFederationId } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -14,7 +14,7 @@ import { fedimint } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import RequestTypeSwitcher from '../components/feature/receive/RequestTypeSwitcher'
 import FiatAmount from '../components/feature/wallet/FiatAmount'
-import { useAppSelector, useBridge } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -27,7 +27,7 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const insets = useSafeAreaInsets()
     const federationId = useAppSelector(selectActiveFederationId)
-    const { generateAddress } = useBridge(federationId)
+    const dispatch = useAppDispatch()
     const { uri } = route.params
     const isOnchainSupported = useIsOnchainDepositSupported()
 
@@ -104,7 +104,13 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
             const generateOnchainAddress = async () => {
                 try {
                     setIsLoading(true)
-                    const newAddress = await generateAddress()
+                    if (!federationId) throw new Error('No active federation')
+                    const newAddress = await dispatch(
+                        generateAddress({
+                            fedimint,
+                            federationId,
+                        }),
+                    ).unwrap()
 
                     setOnchainAddress(newAddress)
                 } catch (error) {
@@ -115,7 +121,7 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
 
             generateOnchainAddress()
         }
-    }, [generateAddress, onchainAddress, requestType])
+    }, [onchainAddress, requestType])
 
     const showOnchainDeposits = isOnchainSupported
 

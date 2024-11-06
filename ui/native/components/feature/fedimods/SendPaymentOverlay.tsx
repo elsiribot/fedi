@@ -7,14 +7,14 @@ import { RejectionError } from 'webln'
 import { useSendForm } from '@fedi/common/hooks/amount'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import { selectPaymentFederation } from '@fedi/common/redux'
+import { payInvoice, selectPaymentFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { BridgeError } from '@fedi/common/utils/fedimint'
 import { lnurlPay } from '@fedi/common/utils/lnurl'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
-import { useAppSelector, useBridge } from '../../../state/hooks'
+import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { FediMod, Invoice, ParsedLnurlPay } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
@@ -41,7 +41,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({
     const { theme } = useTheme()
     const toast = useToast()
     const paymentFederation = useAppSelector(selectPaymentFederation)
-    const { payInvoice } = useBridge(paymentFederation?.id)
+    const dispatch = useAppDispatch()
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const [amountInputKey, setAmountInputKey] = useState(0)
     const [isLoading, setIsLoading] = useState(false)
@@ -75,7 +75,13 @@ export const SendPaymentOverlay: React.FC<Props> = ({
         try {
             if (!paymentFederation) throw new Error()
             if (invoice) {
-                const res = await payInvoice(invoice.invoice)
+                const res = await dispatch(
+                    payInvoice({
+                        fedimint,
+                        federationId: paymentFederation.id,
+                        invoice: invoice.invoice,
+                    }),
+                ).unwrap()
                 onAcceptRef.current(res)
             } else if (lnurlPayment) {
                 const res = await lnurlPay(

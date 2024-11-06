@@ -5,13 +5,18 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import { selectActiveFederationId } from '@fedi/common/redux'
+import {
+    receiveEcash,
+    selectPaymentFederation,
+    validateEcash,
+} from '@fedi/common/redux'
 import type { MSats, Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
+import { fedimint } from '../bridge'
 import FiatAmount from '../components/feature/wallet/FiatAmount'
 import SvgImage from '../components/ui/SvgImage'
-import { useAppSelector, useBridge } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -25,8 +30,8 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
 }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const federationId = useAppSelector(selectActiveFederationId)
-    const { receiveEcash, validateEcash } = useBridge(federationId)
+    const federationId = useAppSelector(selectPaymentFederation)?.id
+    const dispatch = useAppDispatch()
     const toast = useToast()
     const { ecash } = route.params
     const [amount, setAmount] = useState(0 as MSats)
@@ -35,7 +40,13 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
     const [receiving, setReceiving] = useState(false)
 
     useEffect(() => {
-        validateEcash(ecash)
+        dispatch(
+            validateEcash({
+                fedimint,
+                ecash,
+            }),
+        )
+            .unwrap()
             .then(({ amount: amt }) => setAmount(amt))
             .catch(() => {
                 setError(new Error('errors.invalid-ecash-token'))
@@ -53,7 +64,16 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
         if (!receiving) {
             setReceiving(true)
             try {
-                await receiveEcash(ecash)
+                if (!federationId) {
+                    throw new Error('errors.invalid-ecash-token')
+                }
+                await dispatch(
+                    receiveEcash({
+                        fedimint,
+                        federationId,
+                        ecash,
+                    }),
+                ).unwrap()
                 setReceiving(false)
                 navigation.navigate('ReceiveSuccess', {
                     // TODO: Fill out other fields? Missing some required Transaction fields.
