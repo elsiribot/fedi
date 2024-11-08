@@ -15,22 +15,18 @@ clean_node_modules() {
 
 delete_xcode_derived_data() {
     echo "Deleting DerivedData for a clean build directory..."
-    if [[ -n "$CI" ]]; then
-        rm -rf /Users/runner/Library/Developer/Xcode/DerivedData
-    else
-        rm -rf ~/Library/Developer/Xcode/DerivedData
-    fi
+    rm -rf ~/Library/Developer/Xcode/DerivedData
 }
 
 clean_ios() {
-    echo "Cleaning iOS build files..."
+    echo "Deleting ios/build & ios/Pods..."
     rm -rf "$REPO_ROOT/ui/native/ios/build"
     rm -rf "$REPO_ROOT/ui/native/ios/Pods"
     delete_xcode_derived_data
 }
 
 clean_android() {
-    echo "Cleaning Android build files..."
+    echo "Deleting android/build & android/app/build..."
     rm -rf "$REPO_ROOT/ui/native/android/build"
     rm -rf "$REPO_ROOT/ui/native/android/app/build"
 }
@@ -54,22 +50,22 @@ while true; do
     
     case $input in
         i)
-            echo "Cleaning iOS build files..."
+            echo "Cleaning iOS build files only..."
             clean_ios
             exit 0
             ;;
         x)
-            echo "Deleting Xcode DerivedData..."
+            echo "Deleting Xcode DerivedData only..."
             delete_xcode_derived_data
             exit 0
             ;;
         a)
-            echo "Cleaning Android build files..."
+            echo "Cleaning Android build files only..."
             clean_android
             exit 0
             ;;
         n)
-            echo "Cleaning node_modules folders..."
+            echo "Cleaning node_modules folders only..."
             clean_node_modules
             exit 0
             ;;
