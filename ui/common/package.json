@@ -36,6 +36,7 @@
     },
     "devDependencies": {
         "@google-cloud/translate": "^8.0.1",
+        "@react-native-community/netinfo": "^11.4.0",
         "@trivago/prettier-plugin-sort-imports": "^4.1.1",
         "@types/crypto-js": "^4.1.1",
         "@types/jest": "^29.5.0",
