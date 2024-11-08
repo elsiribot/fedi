@@ -355,15 +355,29 @@ export class FedimintBridge {
 
     /*** MATRIX ***/
 
-    async matrixSendAttachment(args: bindings.RpcPayload<'matrixSendAttachment'>) {
+    async matrixSendAttachment(
+        args: bindings.RpcPayload<'matrixSendAttachment'>,
+    ) {
         return this.rpcTyped('matrixSendAttachment', args)
     }
 
-    async matrixEditMessage(roomId: RpcRoomId, eventId: string, newContent: string) {
-        return this.rpcTyped('matrixEditMessage', { roomId, eventId, newContent })
+    async matrixEditMessage(
+        roomId: RpcRoomId,
+        eventId: string,
+        newContent: string,
+    ) {
+        return this.rpcTyped('matrixEditMessage', {
+            roomId,
+            eventId,
+            newContent,
+        })
     }
 
-    async matrixDeleteMessage(roomId: RpcRoomId, eventId: string, reason: string | null) {
+    async matrixDeleteMessage(
+        roomId: RpcRoomId,
+        eventId: string,
+        reason: string | null,
+    ) {
         return this.rpcTyped('matrixDeleteMessage', { roomId, eventId, reason })
     }
 
@@ -371,7 +385,11 @@ export class FedimintBridge {
         return this.rpcTyped('matrixDownloadFile', { path, mediaSource })
     }
 
-    async matrixStartPoll(roomId: RpcRoomId, question: string, answers: Array<string>) {
+    async matrixStartPoll(
+        roomId: RpcRoomId,
+        question: string,
+        answers: Array<string>,
+    ) {
         return this.rpcTyped('matrixStartPoll', { roomId, question, answers })
     }
 
@@ -379,8 +397,16 @@ export class FedimintBridge {
         return this.rpcTyped('matrixEndPoll', { roomId, pollStartId })
     }
 
-    async matrixRespondToPoll(roomId: RpcRoomId, pollStartId: string, selections: Array<string>) {
-        return this.rpcTyped('matrixRespondToPoll', { roomId, pollStartId, selections })
+    async matrixRespondToPoll(
+        roomId: RpcRoomId,
+        pollStartId: string,
+        selections: Array<string>,
+    ) {
+        return this.rpcTyped('matrixRespondToPoll', {
+            roomId,
+            pollStartId,
+            selections,
+        })
     }
 
     async matrixInit() {
@@ -436,7 +462,6 @@ export class FedimintBridge {
         )
     }
 
-    /** @deprecated */
     async matrixSendMessage(args: bindings.RpcPayload<'matrixSendMessage'>) {
         return this.rpcTyped('matrixSendMessage', args)
     }

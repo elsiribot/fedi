@@ -11,7 +11,6 @@ import { v4 as uuidv4 } from 'uuid'
 
 import {
     CommonState,
-    selectAuthenticatedMember,
     selectGlobalCommunityMeta,
     selectLoadedFederation,
     selectLoadedFederations,
@@ -1103,9 +1102,9 @@ export const selectMatrixRooms = createSelector(
                 ...room,
                 broadcastOnly: powerLevels
                     ? getRoomEventPowerLevel(powerLevels, [
-                        'm.room.message',
-                        'm.room.encrypted',
-                    ]) >= MatrixPowerLevel.Moderator
+                          'm.room.message',
+                          'm.room.encrypted',
+                      ]) >= MatrixPowerLevel.Moderator
                     : false,
             })
         }
@@ -1152,15 +1151,6 @@ export const selectNeedsMatrixRegistration = createSelector(
         if (!auth) return true
         if (!hasSetMatrixDisplayName) return true
         return false
-    },
-)
-
-// TODO: Consider deprecating this after a long enough time has passed and no users exist with old legacy XMPP state
-export const selectShouldShowUpgradeChat = createSelector(
-    selectNeedsMatrixRegistration,
-    (s: CommonState) => selectAuthenticatedMember(s),
-    (needsChatRegistration, xmppAuth) => {
-        return needsChatRegistration && xmppAuth !== null
     },
 )
 

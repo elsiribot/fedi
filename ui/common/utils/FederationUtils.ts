@@ -2,7 +2,6 @@ import { z } from 'zod'
 
 import { DEFAULT_FEDIMODS } from '@fedi/common/constants/fedimods'
 
-import { XMPP_RESOURCE } from '../constants/xmpp'
 import {
     ClientConfigMetadata,
     Community,
@@ -17,7 +16,6 @@ import {
     PublicFederation,
     SupportedCurrency,
     SupportedMetaFields,
-    XmppConnectionOptions,
 } from '../types'
 import { RpcCommunity } from '../types/bindings'
 import { FedimintBridge } from './fedimint'
@@ -274,24 +272,6 @@ export const getFederationFixedExchangeRate = (
     if (typeof exchangeRate !== 'string') return null
 
     return Number(exchangeRate)
-}
-
-/** @deprecated xmpp */
-export const getFederationChatServerDomain = (
-    metadata: ClientConfigMetadata,
-) => {
-    return getMetaField(SupportedMetaFields.chat_server_domain, metadata)
-}
-
-export const makeChatServerOptions = (
-    domain: string,
-): XmppConnectionOptions => {
-    return {
-        domain,
-        mucDomain: `muc.${domain}`,
-        resource: XMPP_RESOURCE,
-        service: `wss://${domain}/xmpp-websocket`,
-    }
 }
 
 export const getFederationMaxBalanceMsats = (

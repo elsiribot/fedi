@@ -9,7 +9,6 @@ import {
     initializeDeviceId,
     previewAllDefaultChats,
     refreshFederations,
-    selectAuthenticatedMember,
     selectDeviceId,
     selectHasSetMatrixDisplayName,
     selectSocialRecoveryQr,
@@ -39,15 +38,12 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const deviceId = useAppSelector(selectDeviceId)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const socialRecoveryId = useAppSelector(selectSocialRecoveryQr)
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
     const [isInitialized, setIsInitialized] = useState(false)
     const [isShowingLoading, setIsShowingLoading] = useState(false)
     const [error, setError] = useState<string>()
     const tRef = useUpdatingRef(t)
     const dispatchRef = useUpdatingRef(dispatch)
-
-    const hasLegacyChatData = !!authenticatedMember
 
     // Initialize device ID
     useEffect(() => {
@@ -117,11 +113,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             return <Redirect path="/onboarding/recover/social" />
         }
         // If they haven't set a display name, force them into onboarding
-        if (
-            !hasSetDisplayName &&
-            !hasLegacyChatData &&
-            !asPath.startsWith('/onboarding')
-        ) {
+        if (!hasSetDisplayName && !asPath.startsWith('/onboarding')) {
             return <Redirect path="/onboarding" />
         }
         // Otherwise render the page as normal

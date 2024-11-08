@@ -4,10 +4,7 @@ import { Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 
-import {
-    selectAuthenticatedMember,
-    selectHasSetMatrixDisplayName,
-} from '@fedi/common/redux'
+import { selectHasSetMatrixDisplayName } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
@@ -25,13 +22,11 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
 const Initializing: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
     const hasStorageLoaded = useAppSelector(selectHasLoadedFromStorage)
     const isAppUnlocked = useIsFeatureUnlocked('app')
 
     const hasLoaded = hasStorageLoaded
-    const hasLegacyChatData = !!authenticatedMember
 
     // once everything has loaded, determine where to navigate
     useEffect(() => {
@@ -40,7 +35,7 @@ const Initializing: React.FC<Props> = () => {
         let destination: NavigationArgs = ['TabsNavigator']
 
         // make sure there is a display name before navigating to Home
-        if (!hasSetDisplayName && !hasLegacyChatData) {
+        if (!hasSetDisplayName) {
             // Otherwise, go Home
             destination = ['Splash']
         }
@@ -53,13 +48,7 @@ const Initializing: React.FC<Props> = () => {
         }
 
         navigation.replace(...destination)
-    }, [
-        hasLegacyChatData,
-        hasLoaded,
-        hasSetDisplayName,
-        navigation,
-        isAppUnlocked,
-    ])
+    }, [hasLoaded, hasSetDisplayName, navigation, isAppUnlocked])
 
     return (
         <View style={styles(theme).container}>

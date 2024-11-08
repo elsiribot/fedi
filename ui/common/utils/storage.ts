@@ -1,6 +1,5 @@
 import get from 'lodash/get'
 import omit from 'lodash/omit'
-import uniq from 'lodash/uniq'
 
 import { CommonState } from '../redux'
 import { ModVisibility } from '../redux/mod'
@@ -29,7 +28,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     return {
-        version: 20,
+        version: 21,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
@@ -45,27 +44,6 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         externalMeta: state.federation.externalMeta,
         customFediMods: state.federation.customFediMods,
         nuxSteps: state.nux.steps,
-        chat: Object.entries(state.chat).reduce<LatestStoredState['chat']>(
-            (stored, [federationId, chatState]) => {
-                if (chatState) {
-                    stored[federationId] = {
-                        authenticatedMember: chatState.authenticatedMember,
-                        messages: chatState.messages,
-                        groups: chatState.groups,
-                        groupRoles: chatState.groupRoles,
-                        groupAffiliations: chatState.groupAffiliations,
-                        members: chatState.membersSeen,
-                        lastFetchedMessageId: chatState.lastFetchedMessageId,
-                        lastReadMessageTimestamps:
-                            chatState.lastReadMessageTimestamps,
-                        lastSeenMessageTimestamp:
-                            chatState.lastSeenMessageTimestamp,
-                    }
-                }
-                return stored
-            },
-            {},
-        ),
         matrixAuth: state.matrix.auth,
         protectedFeatures: state.security.protectedFeatures,
         customGlobalMods: state.mod.customGlobalMods,
@@ -119,22 +97,6 @@ export function hasStorageStateChanged(
         ['mod', 'customGlobalMods'],
         ['mod', 'modVisibility'],
     ]
-
-    // Check all federation's chat states, including old and new.
-    const chatStateFedIds = uniq([
-        ...Object.keys(oldState.chat),
-        ...Object.keys(newState.chat),
-    ])
-    chatStateFedIds.forEach(federationId => {
-        keysetsToCheck.push(['chat', federationId, 'authenticatedMember'])
-        keysetsToCheck.push(['chat', federationId, 'messages'])
-        keysetsToCheck.push(['chat', federationId, 'groups'])
-        keysetsToCheck.push(['chat', federationId, 'groupRoles'])
-        keysetsToCheck.push(['chat', federationId, 'membersSeen'])
-        keysetsToCheck.push(['chat', federationId, 'lastFetchedMessageId'])
-        keysetsToCheck.push(['chat', federationId, 'lastReadMessageTimestamps'])
-        keysetsToCheck.push(['chat', federationId, 'lastSeenMessageTimestamp'])
-    })
 
     for (const keysToCheck of keysetsToCheck) {
         if (get(oldState, keysToCheck) !== get(newState, keysToCheck)) {
@@ -590,6 +552,15 @@ async function migrateStoredState(
                 ...migrationState.protectedFeatures,
                 nostrSettings: true,
             },
+        }
+    }
+
+    if (migrationState.version === 20) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { chat, ...rest } = migrationState
+        migrationState = {
+            ...rest,
+            version: 21,
         }
     }
 

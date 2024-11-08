@@ -115,7 +115,6 @@ import FediModSettings from './FediModSettings'
 import Initializing from './Initializing'
 import JoinFederation from './JoinFederation'
 import LanguageSettings from './LanguageSettings'
-import LegacyChat from './LegacyChat'
 import LocateSocialRecovery from './LocateSocialRecovery'
 import LockScreen from './LockScreen'
 import LockedDevice from './LockedDevice'
@@ -464,19 +463,6 @@ export const MainNavigator = () => {
                                             <DefaultChatHeader
                                                 title={t(
                                                     'phrases.confirm-chat-send',
-                                                )}
-                                            />
-                                        ),
-                                    })}
-                                />
-                                <Stack.Screen
-                                    name="LegacyChat"
-                                    component={LegacyChat}
-                                    options={() => ({
-                                        header: () => (
-                                            <DefaultChatHeader
-                                                title={t(
-                                                    'feature.chat.archived-chats',
                                                 )}
                                             />
                                         ),

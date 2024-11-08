@@ -19,11 +19,7 @@ import { v4 as uuidv4 } from 'uuid'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { useToast } from '@fedi/common/hooks/toast'
-import {
-    selectActiveFederation,
-    selectAuthenticatedMember,
-    selectMatrixAuth,
-} from '@fedi/common/redux'
+import { selectActiveFederation, selectMatrixAuth } from '@fedi/common/redux'
 import {
     submitBugReport,
     uploadBugReportLogs,
@@ -55,7 +51,6 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
     const { fontScale } = useWindowDimensions()
     const activeFederation = useAppSelector(selectActiveFederation)
     const matrixAuth = useAppSelector(selectMatrixAuth)
-    const authenticatedMember = useAppSelector(selectAuthenticatedMember)
     const [description, setDescription] = useState('')
     const [isSendingUserInfo, setIsSendingUserInfo] = useState(true)
     const [email, setEmail] = useState('')
@@ -139,15 +134,8 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
                 activeFederation?.name ??
                 activeFederation?.id ??
                 '(no joined federations)'
-            // if user has legacy chat data, attach the xmpp username
-            const legacyUsername = authenticatedMember
-                ? ` (legacy username: ${authenticatedMember?.username})`
-                : ''
             // this will be the npub if the user has not set a display name yet
-            const matrixDisplayName = matrixAuth?.displayName ?? ''
-
-            // combine the legacy username and matrix display name
-            const username = matrixDisplayName + legacyUsername
+            const username = matrixAuth?.displayName ?? ''
 
             await submitBugReport({
                 id,
@@ -168,7 +156,6 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
     }, [
         activeFederation,
         attachments,
-        authenticatedMember,
         description,
         email,
         isSendingUserInfo,

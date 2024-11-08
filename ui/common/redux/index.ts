@@ -23,7 +23,6 @@ import {
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { hasStorageStateChanged } from '../utils/storage'
-import { chatSlice } from './chat'
 import { currencySlice, fetchCurrencyPrices } from './currency'
 import { environmentSlice, selectLanguage } from './environment'
 import {
@@ -50,7 +49,6 @@ import { walletSlice } from './wallet'
 
 const log = makeLog('common/redux/index')
 
-export * from './chat'
 export * from './currency'
 export * from './environment'
 export * from './federation'
@@ -62,7 +60,6 @@ export * from './toast'
 export * from './wallet'
 
 export const commonReducers = {
-    chat: chatSlice.reducer,
     currency: currencySlice.reducer,
     environment: environmentSlice.reducer,
     federation: federationSlice.reducer,

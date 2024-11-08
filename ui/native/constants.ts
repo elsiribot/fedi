@@ -3,7 +3,6 @@ import { Group } from './types'
 
 export * from '@fedi/common/constants/bip39'
 export * from '@fedi/common/constants/fedimods'
-export * from '@fedi/common/constants/xmpp'
 
 /*
     -----

@@ -30,7 +30,10 @@ import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
 import { decodeFediMatrixRoomUri, decodeFediMatrixUserUri } from './matrix'
 import { isValidInternetIdentifier } from './validation'
-import { decodeDirectChatLink, decodeGroupInvitationLink } from './xmpp'
+import {
+    decodeLegacyDirectChatLink,
+    decodeLegacyGroupInvitationLink,
+} from './xmpp'
 
 const log = makeLog('common/utils/parser')
 
@@ -451,7 +454,7 @@ async function parseFediUri(
 
     // Legacy Chat member
     try {
-        const id = decodeDirectChatLink(raw)
+        const id = decodeLegacyDirectChatLink(raw)
         return {
             type: ParserDataType.LegacyFediChatMember,
             data: { id },
@@ -462,7 +465,7 @@ async function parseFediUri(
 
     // Legacy Chat group
     try {
-        const id = decodeGroupInvitationLink(raw)
+        const id = decodeLegacyGroupInvitationLink(raw)
         return {
             type: ParserDataType.LegacyFediChatGroup,
             data: { id },

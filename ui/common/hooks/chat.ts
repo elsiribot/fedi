@@ -1,29 +1,20 @@
 import { TFunction } from 'i18next'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useSelector } from 'react-redux'
 
-import type { ChatMember, Sats } from '@fedi/common/types'
+import type { Sats } from '@fedi/common/types'
 
 import { INVALID_NAME_PLACEHOLDER } from '../constants/matrix'
 import {
     configureMatrixPushNotifications,
     previewAllDefaultChats,
-    selectActiveFederation,
     selectActiveFederationId,
-    selectAuthenticatedMember,
-    selectChatClientLastOnlineAt,
-    selectChatClientStatus,
-    selectChatLastSeenMessageTimestamp,
-    selectChatMember,
     selectHasSetMatrixDisplayName,
     selectIsMatrixReady,
-    selectLatestChatMessageTimestamp,
     selectMatrixAuth,
     selectMatrixPushNotificationToken,
     selectPaymentFederation,
     sendMatrixPaymentPush,
     sendMatrixPaymentRequest,
-    setLastSeenMessageTimestamp,
     setMatrixDisplayName,
     startMatrixClient,
 } from '../redux'
@@ -35,96 +26,6 @@ import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
 
 const log = makeLog('common/hooks/chat')
-
-/** @deprecated XMPP legacy code */
-export function useChatMemberSearch(members: ChatMember[]) {
-    const [query, setQuery] = useState('')
-
-    const authenticatedMember = useSelector(selectAuthenticatedMember)
-    const searchedMembers = useMemo(() => {
-        if (!query) return members.filter(m => m.id !== authenticatedMember?.id)
-        const lowerQuery = query.toLowerCase()
-        const filteredMembers = members.filter(
-            m =>
-                m.username.toLowerCase().includes(lowerQuery) &&
-                m.id !== authenticatedMember?.id,
-        )
-        return filteredMembers.sort((m1, m2) => {
-            const m1Name = m1.username.toLowerCase()
-            const m2Name = m2.username.toLowerCase()
-            if (m1Name === lowerQuery) {
-                return -1
-            }
-            if (m2Name === lowerQuery) {
-                return 1
-            }
-            if (m1Name.startsWith(lowerQuery)) {
-                return -1
-            }
-            if (m2Name.startsWith(lowerQuery)) {
-                return 1
-            }
-            return m1Name.localeCompare(m2Name)
-        })
-    }, [members, query, authenticatedMember])
-
-    const isExactMatch =
-        searchedMembers[0]?.username.toLowerCase() === query.toLowerCase() &&
-        searchedMembers[0]?.id !== authenticatedMember?.id
-
-    return {
-        query,
-        setQuery,
-        searchedMembers,
-        isExactMatch,
-    }
-}
-
-// TODO: Reimplement unseen logic with matrix
-/**
- * Automatically dispatch an update to the last message seen
- * while a component using this hook is mounted.
- *
- * the pauseUpdates param is used by the native app since components remain
- * mounted even when the screen is not in focus. the navigation library
- * returns isFocused = false for any screen using this hook and we can pause it
- *
- * @deprecated XMPP legacy code
- */
-export function useUpdateLastMessageSeen(pauseUpdates?: boolean) {
-    const dispatch = useCommonDispatch()
-    const federationId = useCommonSelector(selectActiveFederation)?.id
-    const lastSeenMessageTimestamp = useCommonSelector(
-        selectChatLastSeenMessageTimestamp,
-    )
-    const latestMessageTimestamp = useCommonSelector(
-        selectLatestChatMessageTimestamp,
-    )
-
-    useEffect(() => {
-        if (!latestMessageTimestamp || !federationId || pauseUpdates) return
-
-        // don't dispatch if we already have the latest timestamp
-        if (
-            lastSeenMessageTimestamp &&
-            lastSeenMessageTimestamp >= latestMessageTimestamp
-        )
-            return
-
-        dispatch(
-            setLastSeenMessageTimestamp({
-                federationId,
-                timestamp: latestMessageTimestamp,
-            }),
-        )
-    }, [
-        dispatch,
-        federationId,
-        lastSeenMessageTimestamp,
-        latestMessageTimestamp,
-        pauseUpdates,
-    ])
-}
 
 // This hook sets a given device token to be published to the Matrix Sygnal Push server
 // so it can process push notifications for timeline events
@@ -176,42 +77,6 @@ export function usePublishNotificationToken(
         getToken,
         pushNotificationToken,
     ])
-}
-
-/**
- * Given a member id, return the chat member and whether or not we're actively
- * fetching the chat member. If the chat member is not found in the redux store,
- * attempt to fetch information about them from the chat server.
- * @deprecated
- */
-export function useChatMember(memberId: string) {
-    const member = useCommonSelector(s => selectChatMember(s, memberId))
-
-    return { member }
-}
-
-/** @deprecated */
-export const useIsChatConnected = () => {
-    const chatStatus = useCommonSelector(selectChatClientStatus)
-    const lastOnlineAt = useCommonSelector(selectChatClientLastOnlineAt)
-
-    const isOffline = chatStatus !== 'online'
-    const [showOffline, setShowOffline] = useState(isOffline)
-
-    // Show offline badge after initial render if we go offline for more than
-    // 3 seconds. Initial render will show immediately if we're offline.
-    useEffect(() => {
-        if (!isOffline) {
-            setShowOffline(false)
-            return
-        }
-        const now = Date.now()
-        const delay = lastOnlineAt - now + 3000
-        const timeout = setTimeout(() => setShowOffline(true), delay)
-        return () => clearTimeout(timeout)
-    }, [isOffline, lastOnlineAt])
-
-    return !showOffline
 }
 
 export const useChatPaymentPush = (
@@ -278,8 +143,8 @@ export const useChatPaymentUtils = (
         submitType === 'send'
             ? sendMinMax
             : submitType === 'request'
-                ? requestMinMax
-                : {}
+            ? requestMinMax
+            : {}
 
     const canRequestAmount =
         amount >= requestMinMax.minimumAmount &&
