@@ -835,18 +835,24 @@ export class MatrixChatClient {
         const directUserId = room.base_info.dm_targets?.[0]
         let preview: MatrixRoom['preview']
         if (room.latest_event) {
+            const { event, sender_profile } = room.latest_event
+            const isDeleted = !!event.event.unsigned?.redacted_because
+            // Try to use the redaction timestamp if found, fallback to event timestamp
+            const timestamp = isDeleted
+                ? event.event.unsigned?.redacted_because.origin_server_ts ||
+                  event.event.origin_server_ts
+                : event.event.origin_server_ts
             preview = {
-                eventId: room.latest_event.event.event.event_id,
-                senderId: room.latest_event.sender_profile.Original.content.id,
+                eventId: event.event.event_id,
+                senderId: sender_profile.Original.content.id,
                 displayName: this.ensureDisplayName(
-                    room.latest_event.sender_profile.Original.content
-                        .displayname,
+                    sender_profile.Original.content.displayname,
                 ),
-                avatarUrl:
-                    room.latest_event.sender_profile.Original.content
-                        .avatar_url,
-                body: room.latest_event.event.event.content.body,
-                timestamp: room.latest_event.event.event.origin_server_ts,
+                avatarUrl: sender_profile.Original.content.avatar_url,
+                body: event.event.content.body,
+                // Deleted/redacted messages have this in the unsigned field
+                isDeleted,
+                timestamp,
             }
         }
 

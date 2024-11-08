@@ -261,6 +261,8 @@ export function makeChatFromPreview(preview: MatrixGroupPreview) {
             // TODO: get this from members list if we have them
             displayName: previewContent?.senderId || '',
             senderId: previewContent?.senderId || '',
+            // TODO: handle if deleted messages are returned in public group previews
+            isDeleted: false,
         }
     }
 
