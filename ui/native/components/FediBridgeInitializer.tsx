@@ -96,9 +96,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                 return Promise.all([
                     dispatchRef.current(fetchSocialRecovery(fedimint)),
                     dispatchRef.current(initializeNostrKeys({ fedimint })),
-                    dispatchRef.current(
-                        initializeFedimintVersion({ fedimint }),
-                    ),
                     // this happens when the user entered seed words but quit the app
                     // before completing device index selection so we fetch devices
                     // again since that typically gets fetched from recoverFromMnemonic
@@ -131,6 +128,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                 setBridgeIsReady(true)
                 // preview chats after matrix client has finished initializing
                 dispatchRef.current(previewAllDefaultChats())
+                dispatchRef.current(initializeFedimintVersion({ fedimint }))
             })
             .catch(err => {
                 log.error(
