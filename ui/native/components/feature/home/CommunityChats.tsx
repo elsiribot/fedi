@@ -10,8 +10,8 @@ import {
 } from '@fedi/common/redux'
 import { getFederationGroupChats } from '@fedi/common/utils/FederationUtils'
 
+import { ChatType, MatrixRoom } from '@fedi/common/types'
 import { useAppSelector } from '../../../state/hooks'
-import { ChatType, MatrixRoom } from '../../../types'
 import CommunityChatTile from './CommunityChatTile'
 
 const CommunityChats = () => {
