@@ -6,6 +6,7 @@ import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectMatrixAuth } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import {
+    isDeletedEvent,
     isFileEvent,
     isImageEvent,
     isPaymentEvent,
@@ -14,6 +15,7 @@ import {
 } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../../../state/hooks'
+import ChatDeletedEvent from './ChatDeletedEvent'
 import ChatFileEvent from './ChatFileEvent'
 import ChatImageEvent from './ChatImageEvent'
 import ChatPaymentEvent from './ChatPaymentEvent'
@@ -82,6 +84,8 @@ const ChatEvent: React.FC<Props> = ({
                                 <ChatFileEvent event={event} />
                             ) : isVideoEvent(event) ? (
                                 <ChatVideoEvent event={event} />
+                            ) : isDeletedEvent(event) ? (
+                                <ChatDeletedEvent event={event} />
                             ) : null}
                         </View>
                     </View>

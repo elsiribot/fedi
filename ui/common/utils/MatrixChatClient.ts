@@ -944,11 +944,6 @@ export class MatrixChatClient {
             item.value.content.value.type !== 'm.room.message'
         )
             return null
-        // ignore deleted messages
-        if (
-            item.value.content.kind === 'redactedMessage'
-        )
-            return null
 
         // Map the status to an enum, include the error if it failed
         let status: MatrixEventStatus
@@ -972,16 +967,50 @@ export class MatrixChatClient {
             }
         }
 
+        const eventContent = item.value.content
+        let content: MatrixEventContent | undefined
+        if (eventContent.kind === 'json') {
+            content = eventContent.value.content
+        } else {
+            content = item.value.content
+        }
+        /*
+         * We detect and handle redacted messages in two ways:
+         * 1) when a message is deleted in real-time, a timeline update fires a redactedMessage event kind
+         * 2) when we load a timeline and find a deleted message, the event content contains the unsigned.redacted_because fields
+         */
+        if (eventContent.kind === 'redactedMessage') {
+            content = {
+                msgtype: 'xyz.fedi.deleted',
+                body: '',
+                redacts: item.value.eventId,
+            }
+        } else if (
+            'unsigned' in eventContent.value &&
+            'redacted_because' in eventContent.value.unsigned
+        ) {
+            content = {
+                msgtype: 'xyz.fedi.deleted',
+                body: '',
+                ...eventContent.value.unsigned.redacted_because.content,
+            }
+        }
+
+        if (!content) return null
+
+        if (roomId === '!wtRHgcDfnuvWGdHBTx:m1.8fa.in') {
+            log.debug(
+                'serializeTimelineItem item.value.content',
+                JSON.stringify(content),
+            )
+        }
+        // const content =
         return {
             roomId,
             id: item.value.id,
             txnId: item.value.txnId,
             eventId: item.value.eventId,
-            content: formatMatrixEventContent(
-                item.value.content.kind === 'json'
-                    ? item.value.content.value.content
-                    : item.value.content.value,
-            ),
+            content: formatMatrixEventContent(content),
             timestamp: item.value.timestamp,
             senderId: item.value.sender,
             status,

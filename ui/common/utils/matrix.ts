@@ -152,6 +152,12 @@ const contentSchemas = {
         // invites enabled, and allow people to join to accept ecash?
         inviteCode: z.string().optional(),
     }),
+    'xyz.fedi.deleted': z.object({
+        msgtype: z.literal('xyz.fedi.deleted'),
+        body: z.string(),
+        redacts: z.string(),
+        reason: z.string().optional(),
+    }),
 }
 
 interface MatrixEventUnknownContent {
@@ -493,6 +499,12 @@ export function shouldShowUnreadIndicator(
     if (notificationCount && notificationCount > 0) return true
     if (isMarkedUnread) return true
     return false
+}
+
+export function isDeletedEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<MatrixEventContentType<'xyz.fedi.deleted'>> {
+    return event.content.msgtype === 'xyz.fedi.deleted'
 }
 
 export function isTextEvent(event: MatrixEvent): event is MatrixEvent<MatrixEventContentType<'m.text'>> {
