@@ -9,16 +9,11 @@ import type { i18n as I18n } from 'i18next'
 import type { AnyAction } from 'redux'
 import type { ThunkDispatch } from 'redux-thunk'
 
-import {
-    FederationListItem,
-    LoadedFederation,
-    Network,
-    StorageApi,
-} from '../types'
+import { FederationListItem, StorageApi } from '../types'
 import { RpcFederationMaybeLoading } from '../types/bindings'
 import {
     coerceFederationListItem,
-    getFederationStatus,
+    coerceLoadedFederation,
 } from '../utils/FederationUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
@@ -30,6 +25,7 @@ import {
     joinFederation,
     processFederationMeta,
     refreshFederations,
+    refreshGuardianStatuses,
     updateFederationBalance,
     upsertFederation,
 } from './federation'
@@ -151,23 +147,14 @@ export function initializeCommonStore({
                             }),
                         )
                     }
+
                     // also refresh the guardian status when we get a federation update
-                    // TODO: move this logic to the bridge?
-                    getFederationStatus(fedimint, loadedFederation.id)
-                        .then(updatedStatus => {
-                            dispatch(
-                                upsertFederation({
-                                    ...loadedFederation,
-                                    status: updatedStatus,
-                                }),
-                            )
-                        })
-                        .catch(error => {
-                            log.error(
-                                `Error in background status fetch for federation ${loadedFederation.id}:`,
-                                error,
-                            )
-                        })
+                    dispatch(
+                        refreshGuardianStatuses({
+                            fedimint,
+                            federation: loadedFederation,
+                        }),
+                    )
                     break
                 }
             }

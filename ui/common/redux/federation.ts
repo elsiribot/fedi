@@ -315,21 +315,12 @@ export const refreshFederations = createAsyncThunk<
             case 'ready': {
                 const loadedFederation = coerceLoadedFederation(f)
 
-                getFederationStatus(fedimint, f.id)
-                    .then(updatedStatus => {
-                        dispatch(
-                            upsertFederation({
-                                ...loadedFederation,
-                                status: updatedStatus,
-                            }),
-                        )
-                    })
-                    .catch(error => {
-                        log.error(
-                            `Error in background status fetch for federation ${f.id}:`,
-                            error,
-                        )
-                    })
+                dispatch(
+                    refreshGuardianStatuses({
+                        fedimint,
+                        federation: loadedFederation,
+                    }),
+                )
                 return loadedFederation
             }
         }
@@ -377,6 +368,43 @@ export const refreshFederations = createAsyncThunk<
     )
     return selectFederations(getState())
 })
+
+export const refreshGuardianStatuses = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge; federation: LoadedFederation },
+    { state: CommonState }
+>(
+    'federation/refreshGuardianStatuses',
+    async ({ fedimint, federation }, { dispatch, getState }) => {
+        // Don't bother refreshing if we know internet is unreachable
+        const isInternetUnreachable = selectIsInternetUnreachable(getState())
+        log.info(
+            `refreshing guardian statuses for federation ${getFederationName(
+                federation,
+            )}: internet unreachable: ${isInternetUnreachable}`,
+        )
+        if (isInternetUnreachable) return
+
+        // TODO: move this logic to the bridge?
+        try {
+            const updatedStatus = await getFederationStatus(
+                fedimint,
+                federation.id,
+            )
+            dispatch(
+                upsertFederation({
+                    ...federation,
+                    status: updatedStatus,
+                }),
+            )
+        } catch (error) {
+            log.error(
+                `Error in guardian status fetch for federation ${federation.id}:`,
+                error,
+            )
+        }
+    },
+)
 
 export const processFederationMeta = createAsyncThunk<
     void,
