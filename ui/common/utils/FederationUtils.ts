@@ -17,7 +17,7 @@ import {
     SupportedCurrency,
     SupportedMetaFields,
 } from '../types'
-import { RpcCommunity } from '../types/bindings'
+import { RpcCommunity, RpcFederation } from '../types/bindings'
 import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
 
@@ -585,6 +585,23 @@ async function getFederationPreview(
     }
 }
 
+export const coerceLoadedFederation = (
+    federation: { init_state: 'ready' } & RpcFederation,
+): LoadedFederation => {
+    /*
+     *  Client-side network failure will cause getFederationStatus to
+     *  hang and timeout after 10 seconds so we assume online by default
+     *  and instead fetch the status in the background. This should mean
+     *  a smoother UX since we avoid flickering indicators
+     */
+    return {
+        ...federation,
+        status: 'online',
+        network: federation.network as Network,
+        hasWallet: true,
+    }
+}
+
 export const coerceFederationListItem = (
     community: RpcCommunity,
 ): FederationListItem => {
@@ -686,7 +703,7 @@ export const previewInvite = async (
 
 export const getFederationStatus = async (
     fedimint: FedimintBridge,
-    federationId: string,
+    federationId: FederationListItem['id'],
 ): Promise<FederationStatus> => {
     const guardianStatuses = await fedimint.guardianStatus(federationId)
     const offlineGuardians = guardianStatuses.filter(status => {

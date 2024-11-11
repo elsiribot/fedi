@@ -25,7 +25,6 @@ import {
     LoadedFederation,
     MatrixRoom,
     MSats,
-    Network,
     PublicFederation,
     Sats,
 } from '../types'
@@ -33,6 +32,7 @@ import { RpcJsonClientConfig, RpcStabilityPoolConfig } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import {
     coerceFederationListItem,
+    coerceLoadedFederation,
     fetchFederationsExternalMetadata,
     getFederationFediMods,
     getFederationGroupChats,
@@ -313,18 +313,8 @@ export const refreshFederations = createAsyncThunk<
                 }
                 return federation
             case 'ready': {
-                /*
-                    Client-side network failure will cause getFederationStatus to
-                    hang and timeout after 10 seconds so we assume online by default
-                    and instead fetch the status in the background. This should mean
-                    a smoother UX since we avoid flickering indicators
-                */
-                const loadedFederation: LoadedFederation = {
-                    ...f,
-                    status: 'online',
-                    network: f.network as Network,
-                    hasWallet: true as const,
-                }
+                const loadedFederation = coerceLoadedFederation(f)
+
                 getFederationStatus(fedimint, f.id)
                     .then(updatedStatus => {
                         dispatch(

@@ -137,13 +137,7 @@ export function initializeCommonStore({
                     break
                 // For ready states we prepare the full loaded federation with meta + status updates
                 case 'ready': {
-                    const loadedFederation: LoadedFederation = {
-                        ...event,
-                        init_state: 'ready',
-                        hasWallet: true,
-                        status: 'online',
-                        network: event.network as Network,
-                    }
+                    const loadedFederation = coerceLoadedFederation(event)
                     dispatch(upsertFederation(loadedFederation))
                     if ('meta' in loadedFederation) {
                         // if the federation_name is found in the meta, overwrite top-level name field
