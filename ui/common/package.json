@@ -15,15 +15,13 @@
         "i18n:import-csv": "ts-node ./scripts/i18n-import-csv.ts"
     },
     "dependencies": {
-        "@ngraveio/bc-ur": "^1.1.13",
         "@reduxjs/toolkit": "^1.9.3",
-        "@xmpp/client": "^0.13.1",
-        "@xmpp/debug": "^0.13.0",
         "accounting": "^0.4.1",
         "bech32": "^2.0.0",
         "bitcoin-address-validation": "^2.2.1",
         "crypto-js": "^4.2.0",
         "date-fns": "^2.29.3",
+        "fast-text-encoding": "^1.0.6",
         "i18next": "^23.0.1",
         "js-lnurl": "^0.6.0",
         "lodash": "^4.17.21",
@@ -32,12 +30,15 @@
         "react": "^18.2.0",
         "react-redux": "^8.0.5",
         "tar-stream": "^3.1.6",
+        "tweetnacl": "^1.0.3",
+        "tweetnacl-util": "^0.15.1",
         "uuid": "^9.0.0"
     },
     "devDependencies": {
         "@google-cloud/translate": "^8.0.1",
         "@react-native-community/netinfo": "^11.4.0",
         "@trivago/prettier-plugin-sort-imports": "^4.1.1",
+        "@types/accounting": "^0.4.2",
         "@types/crypto-js": "^4.1.1",
         "@types/jest": "^29.5.0",
         "@types/json-stable-stringify": "^1.0.34",
