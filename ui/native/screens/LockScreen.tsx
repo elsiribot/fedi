@@ -31,7 +31,7 @@ const LockScreen = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 
-    const timerRef = useRef<NodeJS.Timer | null>(null)
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const debouncedPin = useDebounce(pinDigits, 500)
     const dispatch = useAppDispatch()
     const pin = usePinContext()
