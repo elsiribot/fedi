@@ -197,7 +197,7 @@ pub struct RpcStabilityPoolConfig {
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcFederationId(pub String);
 
-#[derive(Debug, TS, Serialize)]
+#[derive(Debug, TS, Serialize, Deserialize)]
 #[ts(export, export_to = "target/bindings/")]
 pub struct RpcOperationId(#[ts(type = "string")] pub fedimint_core::core::OperationId);
 

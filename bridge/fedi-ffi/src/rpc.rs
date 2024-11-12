@@ -299,6 +299,14 @@ async fn generateAddress(federation: Arc<FederationV2>) -> anyhow::Result<String
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
+async fn recheckPeginAddress(
+    federation: Arc<FederationV2>,
+    operation_id: RpcOperationId,
+) -> anyhow::Result<()> {
+    federation.recheck_pegin_address(operation_id.0).await
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
 async fn previewPayAddress(
     federation: Arc<FederationV2>,
     address: String,
@@ -1432,6 +1440,7 @@ rpc_methods!(RpcMethods {
     switchGateway,
     // On-Chain
     generateAddress,
+    recheckPeginAddress,
     previewPayAddress,
     payAddress,
     // Ecash
