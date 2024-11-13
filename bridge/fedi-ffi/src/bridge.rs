@@ -36,7 +36,7 @@ use crate::api::IFediApi;
 use crate::community::Communities;
 use crate::constants::{LNURL_CHILD_ID, MATRIX_CHILD_ID, NOSTR_CHILD_ID};
 use crate::device_registration::{self, DeviceRegistrationService};
-use crate::error::{get_error_code, ErrorCode};
+use crate::error::ErrorCode;
 use crate::event::{Event, SocialRecoveryEvent, TypedEventExt as _};
 use crate::features::FeatureCatalog;
 use crate::federation_v2::{self, FederationV2};
@@ -409,37 +409,11 @@ impl Bridge {
         invite_code_string: String,
         recover_from_scratch: bool,
     ) -> Result<RpcFederation> {
-        let invite_code = invite_code_string.to_lowercase();
-        // FIXME: this is kinda unreliable
-        let mut error_code = None;
-        match self
-            .join_federation_inner(invite_code.clone(), recover_from_scratch)
-            .await
-        {
-            Ok(federation) => {
-                info!("Joined v2 federation");
-                return Ok(federation_v2_to_rpc_federation(&federation).await);
-            }
-            Err(e) => {
-                error!(%e, "failed to join v2 federation");
-                error_code = error_code.or(get_error_code(&e));
-            }
-        }
-        if let Some(error_code) = error_code {
-            bail!(error_code);
-        }
-        bail!("failed to join")
-    }
-
-    async fn join_federation_inner(
-        &self,
-        invite_code_string: String,
-        recover_from_scratch: bool,
-    ) -> Result<Arc<FederationV2>> {
+        let invite_code = InviteCode::from_str(&invite_code_string.to_lowercase())?;
+        let federation_id = invite_code.federation_id().to_string();
         // Check if we've already joined this federation
-        let invite_code = InviteCode::from_str(&invite_code_string)?;
         if self
-            .get_federation_maybe_loading(&invite_code.federation_id().to_string())
+            .get_federation_maybe_loading(&federation_id)
             .await
             .is_ok()
         {
@@ -503,7 +477,7 @@ impl Bridge {
         // state
         self.update_fedi_fees_schedule().await;
 
-        Ok(federation_arc)
+        Ok(federation_v2_to_rpc_federation(&federation_arc).await)
     }
 
     pub async fn federation_preview(&self, invite_code: &str) -> Result<RpcFederationPreview> {
