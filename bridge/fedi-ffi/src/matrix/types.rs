@@ -247,7 +247,7 @@ impl From<matrix_sdk::ruma::OwnedRoomId> for RpcRoomId {
 
 #[derive(Clone, Debug, Serialize, Deserialize, ts_rs::TS)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RpcUserId(String);
+pub struct RpcUserId(pub String);
 
 impl RpcUserId {
     pub fn into_typed(&self) -> Result<matrix_sdk::ruma::OwnedUserId> {

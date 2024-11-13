@@ -1078,6 +1078,12 @@ async fn matrixUnignoreUser(bridge: Arc<Bridge>, user_id: RpcUserId) -> anyhow::
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn matrixListIgnoredUsers(bridge: Arc<Bridge>) -> anyhow::Result<Vec<RpcUserId>> {
+    let matrix = get_matrix(&bridge).await?;
+    matrix.list_ignored_users().await
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn matrixRoomKickUser(
     bridge: Arc<Bridge>,
     room_id: RpcRoomId,
@@ -1531,6 +1537,7 @@ rpc_methods!(RpcMethods {
     matrixRoomUnbanUser,
     matrixIgnoreUser,
     matrixUnignoreUser,
+    matrixListIgnoredUsers,
     matrixRoomPreviewContent,
     matrixPublicRoomInfo,
     matrixRoomMarkAsUnread,
