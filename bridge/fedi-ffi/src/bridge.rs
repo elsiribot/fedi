@@ -445,7 +445,6 @@ impl Bridge {
         {
             bail!(ErrorCode::AlreadyJoined)
         }
-
         let root_mnemonic = self.app_state.root_mnemonic().await;
         let device_index = self.app_state.ensure_device_index().await?;
 
@@ -473,6 +472,7 @@ impl Bridge {
         let federation_id = federation.federation_id();
         let mut federations = self.federations.lock().await;
 
+        let federation_arc = Arc::new(federation);
         // If the phone dies here, it's still ok because the federation wouldn't
         // exist in the app_state, and we'd reattempt to join it. And the name of the
         // DB file is random so there shouldn't be any collisions.
@@ -486,13 +486,14 @@ impl Bridge {
                         fedi_fee_schedule: FediFeeSchedule::default(),
                     },
                 );
-                debug_assert!(old_value.is_none());
+                assert!(old_value.is_none(), "must not override a federation");
             })
             .await?;
-        let federation_arc = Arc::new(federation);
-        federations
-            .entry(federation_id.to_string())
-            .or_insert_with(|| FederationMaybeLoading::Ready(federation_arc.clone()));
+        let old_value = federations.insert(
+            federation_id.to_string(),
+            FederationMaybeLoading::Ready(federation_arc.clone()),
+        );
+        assert!(old_value.is_none(), "must not override a federation");
         drop(federations);
         if federation_arc.recovering() {
             Self::restart_federation_on_recovery(self.clone(), federation_arc.clone()).await;
