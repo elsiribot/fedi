@@ -2252,8 +2252,10 @@ mod tests {
         };
         assert_eq!(env_invite_code.clone(), rpc_federation.invite_code);
 
+        let id = federation.rpc_federation_id();
+        drop(federation);
         // leaveFederation works
-        leaveFederation(bridge.clone(), federation.rpc_federation_id()).await?;
+        leaveFederation(bridge.clone(), id).await?;
         assert_eq!(listFederations(bridge.clone()).await?.len(), 0);
 
         // rejoin without any rocksdb locking problems
@@ -3012,6 +3014,7 @@ mod tests {
         wait_for_ecash_reissue(&federation).await?;
         let federation_id = federation.rpc_federation_id();
         backupNow(federation.clone()).await?;
+        drop(federation);
 
         // extract mnemonic, leave federation and drop bridge
         let mnemonic = getMnemonic(bridge.clone()).await?;
