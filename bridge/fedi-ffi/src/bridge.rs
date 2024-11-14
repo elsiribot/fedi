@@ -230,19 +230,18 @@ impl Bridge {
 
         match federation_result {
             Ok(federation) => {
-                let federation_arc = Arc::new(federation);
                 bridge.federations.lock().await.insert(
                     federation_id_str.clone(),
-                    FederationMaybeLoading::Ready(federation_arc.clone()),
+                    FederationMaybeLoading::Ready(federation.clone()),
                 );
 
                 bridge
                     .send_federation_event(RpcFederationMaybeLoading::Ready(
-                        federation_v2_to_rpc_federation(&federation_arc).await,
+                        federation_v2_to_rpc_federation(&federation).await,
                     ))
                     .await;
-                if federation_arc.recovering() {
-                    Self::restart_federation_on_recovery(bridge.clone(), federation_arc).await;
+                if federation.recovering() {
+                    Self::restart_federation_on_recovery(bridge.clone(), federation).await;
                 }
             }
             Err(err) => {
@@ -301,68 +300,60 @@ impl Bridge {
     }
 
     /// Wait until all clones of federation are dropped.
-    pub async fn wait_till_fully_dropped(federation: Arc<FederationV2>) {
+    pub async fn wait_for_unique(mut federation: Arc<FederationV2>) -> FederationV2 {
         // RPC calls might clone the federation Arc before we acquire the lock.
-        for attempt in 0.. {
-            let reference_count = Arc::strong_count(&federation);
-            if attempt % 1000 == 0 {
-                info!(
-                    reference_count,
-                    attempt, "waiting for RPCs to drop the federation object"
-                );
+        let mut attempt = 0u64;
+        loop {
+            match Arc::try_unwrap(federation) {
+                Ok(fed) => return fed,
+                Err(fed_arc) => {
+                    federation = fed_arc;
+                    if attempt % 1000 == 0 {
+                        info!(attempt, "waiting for RPCs to drop the federation object");
+                    }
+                    attempt += 1;
+                    fedimint_core::task::sleep(Duration::from_millis(10)).await;
+                }
             }
-            if reference_count == 1 {
-                break;
-            }
-            fedimint_core::task::sleep(Duration::from_millis(10)).await;
         }
     }
 
     /// Restart the federation on recovery if the federation is recovering.
-    async fn restart_federation_on_recovery(this: Self, federation: Arc<FederationV2>) {
-        this.task_group.clone().spawn(
+    async fn restart_federation_on_recovery(this: Self, federation_arc: Arc<FederationV2>) {
+        this.task_group.clone().spawn_cancellable(
             "waiting for recovery to replace federation",
-            move |_| async move {
-                let inner_federation = &*federation;
-                if let Err(error) = inner_federation.wait_for_recovery().await {
+            async move {
+                if let Err(error) = federation_arc.wait_for_recovery().await {
                     // this federation will stay as "recovering" till next restart.
                     error!(%error, "recovery failed");
                     return Ok(());
                 }
-                let tg = inner_federation.task_group.clone();
-                let federation_id = inner_federation.federation_id().to_string();
-                let client = inner_federation.client.clone();
+                let fed_tg = federation_arc.task_group.clone();
+                let federation_id = federation_arc.federation_id().to_string();
                 let mut federation_lock = this.federations.lock().await;
-                let db = client.db().clone();
-                drop(
-                    federation_lock.insert(federation_id.clone(), FederationMaybeLoading::Loading),
+                let db = federation_arc.client.db().clone();
+                assert!(
+                    matches!(federation_lock.insert(federation_id.clone(), FederationMaybeLoading::Loading), Some(FederationMaybeLoading::Ready(_))),
                 );
                 info!(%federation_id, "removed from federation list");
 
-                if let Err(error) = tg.shutdown_join_all(None).await {
+                if let Err(error) = fed_tg.shutdown_join_all(None).await {
                     warn!(%error, "failed to shutdown task group cleanly");
                 }
                 // some slow RPCs may take ~10 seconds
-                if fedimint_core::task::timeout(
+                let Ok(federation) = fedimint_core::task::timeout(
                     Duration::from_secs(20),
-                    Self::wait_till_fully_dropped(federation),
+                    Self::wait_for_unique(federation_arc),
                 )
-                .await
-                .is_err()
+                .await else
                 {
                     info!("failed to drop federation, not reinserting the federation");
                     return Ok(());
-                }
+                };
                 info!("manually shuting down the client");
-                if let Some(client) = Arc::into_inner(client) {
-                    // only Federation object stores the client handle, so this should always
-                    // pass.
-                    client.shutdown().await;
-                    info!("manually shut down client complete");
-                } else {
-                    error!("ClientHandleArc is not unique, not reinserting the federation in list");
-                    return Ok(());
-                }
+                let FederationV2 { client, .. } = federation;
+                client.shutdown().await;
+                info!("manually shut down client complete");
                 let root_mnemonic = this.app_state.root_mnemonic().await;
                 let device_index = this.app_state.ensure_device_index().await?;
                 let federation_v2 = FederationV2::from_db(
@@ -381,7 +372,7 @@ impl Bridge {
                 if federation_v2.recovering() {
                     error!(%federation_id, "federation must be recovered after restart on recovery completed once");
                 }
-                federation_lock.insert(federation_id.clone(), FederationMaybeLoading::Ready(Arc::new(federation_v2)));
+                federation_lock.insert(federation_id.clone(), FederationMaybeLoading::Ready(federation_v2));
                 info!(%federation_id, "reinserted to federation list");
                 drop(federation_lock);
 
@@ -430,7 +421,7 @@ impl Bridge {
         let db = self
             .global_db
             .with_prefix(db_prefix.consensus_encode_to_vec());
-        let federation = FederationV2::join(
+        let federation_arc = FederationV2::join(
             invite_code_string,
             self.event_sink.clone(),
             self.task_group.make_subgroup(),
@@ -443,10 +434,9 @@ impl Bridge {
             self.app_state.clone(),
         )
         .await?;
-        let federation_id = federation.federation_id();
+        let federation_id = federation_arc.federation_id();
         let mut federations = self.federations.lock().await;
 
-        let federation_arc = Arc::new(federation);
         // If the phone dies here, it's still ok because the federation wouldn't
         // exist in the app_state, and we'd reattempt to join it. And the name of the
         // DB file is random so there shouldn't be any collisions.
@@ -580,7 +570,7 @@ impl Bridge {
 
             if fedimint_core::task::timeout(
                 Duration::from_secs(20),
-                Self::wait_till_fully_dropped(federation),
+                Self::wait_for_unique(federation),
             )
             .await
             .is_err()

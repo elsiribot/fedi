@@ -6,9 +6,10 @@ mod meta;
 use std::any::Any;
 use std::collections::HashMap;
 use std::fmt::Debug;
+use std::future::Future;
 use std::pin::pin;
 use std::str::FromStr;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 use std::time::Duration;
 
 use ::serde::{Deserialize, Serialize};
@@ -34,7 +35,7 @@ use fedimint_client::module::recovery::RecoveryProgress;
 use fedimint_client::module::ClientModule;
 use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
 use fedimint_client::secret::RootSecretStrategy;
-use fedimint_client::{Client, ClientBuilder, ClientHandle, ClientHandleArc};
+use fedimint_client::{Client, ClientBuilder, ClientHandle};
 use fedimint_core::config::{ClientConfig, FederationId};
 use fedimint_core::core::{ModuleKind, OperationId};
 use fedimint_core::db::{
@@ -146,9 +147,8 @@ pub fn invite_code_from_client_confing(config: &ClientConfig) -> InviteCode {
 }
 
 /// Federation is a wrapper of "client ng" to assist with handling RPC commands
-#[derive(Clone)]
 pub struct FederationV2 {
-    pub client: ClientHandleArc,
+    pub client: ClientHandle,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
     pub operation_states:
@@ -170,6 +170,7 @@ pub struct FederationV2 {
     pub spend_guard: Arc<Mutex<()>>,
     pub feature_catalog: Arc<FeatureCatalog>,
     pub app_state: Arc<AppState>,
+    pub this_weak: Weak<Self>,
 }
 
 impl FederationV2 {
@@ -189,17 +190,16 @@ impl FederationV2 {
     }
 
     pub async fn new(
-        ng: ClientHandle,
+        client: ClientHandle,
         event_sink: EventSink,
         task_group: TaskGroup,
         secret: DerivableSecret,
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
         app_state: Arc<AppState>,
-    ) -> Self {
-        let recovering = ng.has_pending_recoveries();
-        let client = Arc::new(ng);
-        let mut federation = Self {
+    ) -> Arc<Self> {
+        let recovering = client.has_pending_recoveries();
+        let federation = Arc::new_cyclic(|weak| Self {
             event_sink,
             task_group: task_group.clone(),
             operation_states: Default::default(),
@@ -214,28 +214,44 @@ impl FederationV2 {
             spend_guard: Default::default(),
             feature_catalog,
             app_state,
-        };
+            this_weak: weak.clone(),
+        });
         if !recovering {
             federation.start_background_tasks().await;
         }
         federation
     }
 
+    pub fn spawn_cancellable<Fut>(
+        &self,
+        task: impl Into<String>,
+        f: impl FnOnce(Arc<Self>) -> Fut + MaybeSend + 'static,
+    ) where
+        Fut: Future + MaybeSend + 'static,
+        Fut::Output: MaybeSend + 'static,
+    {
+        let weak = self.this_weak.clone();
+        self.task_group.spawn_cancellable(task, async move {
+            let Some(this) = weak.upgrade() else {
+                return;
+            };
+            f(this).await;
+        });
+    }
+
     /// Starts a bunch of async tasks and ensures username is
     /// saved to db (e.g. after recovery)
-    async fn start_background_tasks(&mut self) {
+    async fn start_background_tasks(&self) {
         self.subscribe_balance_updates().await;
         let backup_service = self.backup_service.clone();
-        let client = self.client.clone();
-        self.task_group
-            .spawn_cancellable("backup_service", async move {
-                backup_service.run_continuously(&client).await;
-            });
+        self.spawn_cancellable("backup_service", move |fed| async move {
+            backup_service.run_continuously(&fed.client).await;
+        });
         self.subscribe_to_all_operations().await;
 
         if self
             .gateway_service
-            .set(LnGatewayService::new(self.client.clone(), &self.task_group))
+            .set(LnGatewayService::new(self))
             .is_err()
         {
             error!("ln gateway service already initialized");
@@ -251,17 +267,15 @@ impl FederationV2 {
             error!("fedi fee remittance service already initialized");
         }
 
-        let federation = self.clone();
-        self.task_group
-            .spawn_cancellable("send_meta_updates", async move {
-                federation.client.meta_service().wait_initialization().await;
-                federation.send_federation_event().await;
-                let mut subscribe_to_updates =
-                    std::pin::pin!(federation.client.meta_service().subscribe_to_updates());
-                while subscribe_to_updates.next().await.is_some() {
-                    federation.send_federation_event().await;
-                }
-            });
+        self.spawn_cancellable("send_meta_updates", |fed| async move {
+            fed.client.meta_service().wait_initialization().await;
+            fed.send_federation_event().await;
+            let mut subscribe_to_updates =
+                std::pin::pin!(fed.client.meta_service().subscribe_to_updates());
+            while subscribe_to_updates.next().await.is_some() {
+                fed.send_federation_event().await;
+            }
+        });
 
         // We disable the StabilityPoolSweeperService in tests to ensure that staged
         // seeks don't accidentally disappear if a test takes longer than expected and a
@@ -270,11 +284,7 @@ impl FederationV2 {
         if self.client.sp().is_ok()
             && self
                 .stability_pool_sweeper_service
-                .set(StabilityPoolSweeperService::new(
-                    self.client.clone(),
-                    &self.task_group,
-                    self.event_sink.clone(),
-                ))
+                .set(StabilityPoolSweeperService::new(self))
                 .is_err()
         {
             error!("stability pool sweeper service already initialized");
@@ -310,7 +320,7 @@ impl FederationV2 {
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
         app_state: Arc<AppState>,
-    ) -> anyhow::Result<Self> {
+    ) -> anyhow::Result<Arc<Self>> {
         let client_builder = Self::build_client_builder(db.clone()).await?;
         let config = Client::get_config_from_db(&db)
             .await
@@ -413,7 +423,7 @@ impl FederationV2 {
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
         app_state: Arc<AppState>,
-    ) -> Result<Self> {
+    ) -> Result<Arc<Self>> {
         let mut invite_code =
             InviteCode::from_str(&invite_code_string).context("invalid invite code")?;
         if feature_catalog.override_localhost.is_some() {
@@ -772,84 +782,78 @@ impl FederationV2 {
     }
 
     async fn subscribe_deposit(&self, operation_id: OperationId, address: String) -> Result<()> {
-        let fed = self.clone();
-        fed.task_group
-            .clone()
-            .spawn_cancellable("subscribe deposit", async move {
-                let Ok(wallet) = fed.client.wallet() else {
-                    error!("Wallet module not present!");
-                    return;
-                };
-                let Ok(mut updates) = wallet
-                    .subscribe_deposit(operation_id)
-                    .await
-                    .map(|x| x.into_stream())
-                    .inspect_err(|e| {
-                        warn!("subscribing to 0.3 deposits is not implemented: {e}");
-                    })
-                else {
-                    return;
-                };
-                let pending_fedi_fee_status = fed
-                    .client
-                    .db()
-                    .begin_transaction_nc()
-                    .await
-                    .get_value(&OperationFediFeeStatusKey(operation_id))
+        self.spawn_cancellable("subscribe deposit", move |fed| async move {
+            let Ok(wallet) = fed.client.wallet() else {
+                error!("Wallet module not present!");
+                return;
+            };
+            let Ok(mut updates) = wallet
+                .subscribe_deposit(operation_id)
+                .await
+                .map(|x| x.into_stream())
+                .inspect_err(|e| {
+                    warn!("subscribing to 0.3 deposits is not implemented: {e}");
+                })
+            else {
+                return;
+            };
+            let pending_fedi_fee_status = fed
+                .client
+                .db()
+                .begin_transaction_nc()
+                .await
+                .get_value(&OperationFediFeeStatusKey(operation_id))
+                .await;
+            while let Some(update) = updates.next().await {
+                info!("Update: {:?}", update);
+                fed.update_operation_state(operation_id, update.clone())
                     .await;
-                while let Some(update) = updates.next().await {
-                    info!("Update: {:?}", update);
-                    fed.update_operation_state(operation_id, update.clone())
-                        .await;
-                    let deposit_outcome = update.clone();
-                    match update {
-                        DepositStateV2::WaitingForConfirmation { btc_deposited, .. }
-                        | DepositStateV2::Confirmed { btc_deposited, .. }
-                        | DepositStateV2::Claimed { btc_deposited, .. } => {
-                            let federation_fees = wallet.get_fee_consensus().peg_in_abs;
-                            let amount =
-                                Amount::from_sats(btc_deposited.to_sat()) - federation_fees;
-                            // FIXME: add fedi fees once fedimint await primary module outputs
-                            let fedi_fee_status = if let DepositStateV2::Claimed { .. } = &update {
-                                fed.write_success_receive_fedi_fee(operation_id, amount)
-                                    .await
-                                    .map(|(_, status)| status)
-                                    .ok()
-                            } else {
-                                pending_fedi_fee_status.clone()
-                            };
-                            let _ = fed.record_tx_date_fiat_info(operation_id, amount).await;
-                            let tx_date_fiat_info = fed
-                                .dbtx()
+                let deposit_outcome = update.clone();
+                match update {
+                    DepositStateV2::WaitingForConfirmation { btc_deposited, .. }
+                    | DepositStateV2::Confirmed { btc_deposited, .. }
+                    | DepositStateV2::Claimed { btc_deposited, .. } => {
+                        let federation_fees = wallet.get_fee_consensus().peg_in_abs;
+                        let amount = Amount::from_sats(btc_deposited.to_sat()) - federation_fees;
+                        // FIXME: add fedi fees once fedimint await primary module outputs
+                        let fedi_fee_status = if let DepositStateV2::Claimed { .. } = &update {
+                            fed.write_success_receive_fedi_fee(operation_id, amount)
                                 .await
-                                .get_value(&TransactionDateFiatInfoKey(operation_id))
-                                .await;
-                            let transaction = RpcTransaction::new(
-                                operation_id.fmt_full().to_string(),
-                                unix_now().expect("unix time should exist"),
-                                RpcAmount(amount),
-                                RpcTransactionDirection::Receive,
-                                fedi_fee_status.map(Into::into),
-                                tx_date_fiat_info,
-                            )
-                            .with_onchain_state(RpcOnchainState::from_deposit_state(
-                                deposit_outcome,
-                            ))
-                            .with_bitcoin(RpcBitcoinDetails {
-                                address: address.clone(),
-                            });
-                            info!("send_transaction_event: {:?}", transaction);
-                            fed.send_transaction_event(transaction);
-                        }
-                        DepositStateV2::Failed(reason) => {
-                            let _ = fed.write_failed_receive_fedi_fee(operation_id).await;
-                            // FIXME: handle this
-                            error!("Failed to claim on-chain deposit: {reason}");
-                        }
-                        _ => {}
+                                .map(|(_, status)| status)
+                                .ok()
+                        } else {
+                            pending_fedi_fee_status.clone()
+                        };
+                        let _ = fed.record_tx_date_fiat_info(operation_id, amount).await;
+                        let tx_date_fiat_info = fed
+                            .dbtx()
+                            .await
+                            .get_value(&TransactionDateFiatInfoKey(operation_id))
+                            .await;
+                        let transaction = RpcTransaction::new(
+                            operation_id.fmt_full().to_string(),
+                            unix_now().expect("unix time should exist"),
+                            RpcAmount(amount),
+                            RpcTransactionDirection::Receive,
+                            fedi_fee_status.map(Into::into),
+                            tx_date_fiat_info,
+                        )
+                        .with_onchain_state(RpcOnchainState::from_deposit_state(deposit_outcome))
+                        .with_bitcoin(RpcBitcoinDetails {
+                            address: address.clone(),
+                        });
+                        info!("send_transaction_event: {:?}", transaction);
+                        fed.send_transaction_event(transaction);
                     }
+                    DepositStateV2::Failed(reason) => {
+                        let _ = fed.write_failed_receive_fedi_fee(operation_id).await;
+                        // FIXME: handle this
+                        error!("Failed to claim on-chain deposit: {reason}");
+                    }
+                    _ => {}
                 }
-            });
+            }
+        });
         Ok(())
     }
 
@@ -865,61 +869,58 @@ impl FederationV2 {
         operation_id: OperationId,
         invoice: Bolt11Invoice, // TODO: fetch the invoice from the db
     ) -> Result<()> {
-        let fed = self.clone();
-        self.task_group
-            .clone()
-            .spawn_cancellable("subscribe invoice", async move {
-                let Ok(ln) = fed.client.ln() else {
-                    error!("Lightning module not found!");
-                    return;
-                };
-                let Ok(updates) = ln.subscribe_ln_receive(operation_id).await else {
-                    error!("Lightning operation with ID {:?} not found!", operation_id);
-                    return;
-                };
-                let mut updates = updates.into_stream();
-                while let Some(update) = updates.next().await {
-                    info!("Update: {:?}", update);
-                    match update {
-                        LnReceiveState::Claimed => {
-                            let amount = Amount {
-                                msats: invoice.amount_milli_satoshis().unwrap(),
-                            };
-                            let fedi_fee_status = fed
-                                .write_success_receive_fedi_fee(operation_id, amount)
-                                .await
-                                .map(|(_, status)| status)
-                                .ok()
-                                .map(Into::into);
-                            let tx_date_fiat_info = fed
-                                .dbtx()
-                                .await
-                                .get_value(&TransactionDateFiatInfoKey(operation_id))
-                                .await;
-                            let transaction = RpcTransaction::new(
-                                operation_id.fmt_full().to_string(),
-                                unix_now().expect("unix time should exist"),
-                                RpcAmount(amount),
-                                RpcTransactionDirection::Receive,
-                                fedi_fee_status,
-                                tx_date_fiat_info,
-                            )
-                            .with_ln_state(RpcLnState::from_ln_recv_state(update))
-                            .with_lightning(RpcLightningDetails {
-                                invoice: invoice.to_string(),
-                                fee: None,
-                            });
-                            fed.send_transaction_event(transaction);
-                        }
-                        LnReceiveState::Canceled { reason } => {
-                            let _ = fed.write_failed_receive_fedi_fee(operation_id).await;
-                            // FIXME: handle this
-                            error!("Failed to claim incoming contract: {reason}");
-                        }
-                        _ => {}
+        self.spawn_cancellable("subscribe invoice", move |fed| async move {
+            let Ok(ln) = fed.client.ln() else {
+                error!("Lightning module not found!");
+                return;
+            };
+            let Ok(updates) = ln.subscribe_ln_receive(operation_id).await else {
+                error!("Lightning operation with ID {:?} not found!", operation_id);
+                return;
+            };
+            let mut updates = updates.into_stream();
+            while let Some(update) = updates.next().await {
+                info!("Update: {:?}", update);
+                match update {
+                    LnReceiveState::Claimed => {
+                        let amount = Amount {
+                            msats: invoice.amount_milli_satoshis().unwrap(),
+                        };
+                        let fedi_fee_status = fed
+                            .write_success_receive_fedi_fee(operation_id, amount)
+                            .await
+                            .map(|(_, status)| status)
+                            .ok()
+                            .map(Into::into);
+                        let tx_date_fiat_info = fed
+                            .dbtx()
+                            .await
+                            .get_value(&TransactionDateFiatInfoKey(operation_id))
+                            .await;
+                        let transaction = RpcTransaction::new(
+                            operation_id.fmt_full().to_string(),
+                            unix_now().expect("unix time should exist"),
+                            RpcAmount(amount),
+                            RpcTransactionDirection::Receive,
+                            fedi_fee_status,
+                            tx_date_fiat_info,
+                        )
+                        .with_ln_state(RpcLnState::from_ln_recv_state(update))
+                        .with_lightning(RpcLightningDetails {
+                            invoice: invoice.to_string(),
+                            fee: None,
+                        });
+                        fed.send_transaction_event(transaction);
                     }
+                    LnReceiveState::Canceled { reason } => {
+                        let _ = fed.write_failed_receive_fedi_fee(operation_id).await;
+                        // FIXME: handle this
+                        error!("Failed to claim incoming contract: {reason}");
+                    }
+                    _ => {}
                 }
-            });
+            }
+        });
         Ok(())
     }
 
@@ -1253,7 +1254,6 @@ impl FederationV2 {
                     variant: LightningOperationMetaVariant::Pay(pay_meta),
                     extra_meta,
                 } => {
-                    let fed = self.clone();
                     let extra_meta = serde_json::from_value::<LightningSendMetadata>(extra_meta)
                         .unwrap_or(LightningSendMetadata {
                             is_fedi_fee_remittance: false,
@@ -1266,40 +1266,34 @@ impl FederationV2 {
                     {
                         anyhow::bail!("not subscribe to failed transaction");
                     }
-                    self.task_group
-                        .clone()
-                        .spawn_cancellable("subscribe_to_ln_pay", async move {
-                            // FIXME: what happens if it fails?
-                            if let Err(e) = fed
-                                .subscribe_to_ln_pay(
-                                    if pay_meta.is_internal_payment {
-                                        PayType::Internal(operation_id)
-                                    } else {
-                                        PayType::Lightning(operation_id)
-                                    },
-                                    extra_meta,
-                                    pay_meta.invoice,
-                                )
-                                .await
-                            {
-                                warn!("subscribe_to_ln_pay error: {e:?}")
-                            }
-                        });
+                    self.spawn_cancellable("subscribe_to_ln_pay", move |fed| async move {
+                        // FIXME: what happens if it fails?
+                        if let Err(e) = fed
+                            .subscribe_to_ln_pay(
+                                if pay_meta.is_internal_payment {
+                                    PayType::Internal(operation_id)
+                                } else {
+                                    PayType::Lightning(operation_id)
+                                },
+                                extra_meta,
+                                pay_meta.invoice,
+                            )
+                            .await
+                        {
+                            warn!("subscribe_to_ln_pay error: {e:?}")
+                        }
+                    });
                 }
                 LightningOperationMeta {
                     variant: LightningOperationMetaVariant::Receive { invoice, .. },
                     ..
                 } => {
-                    let fed = self.clone();
-                    self.task_group.clone().spawn_cancellable(
-                        "subscribe_to_ln_receive",
-                        async move {
-                            // FIXME: what happens if it fails?
-                            if let Err(e) = fed.subscribe_invoice(operation_id, invoice).await {
-                                warn!("subscribe_to_ln_receive error: {e:?}")
-                            }
-                        },
-                    );
+                    self.spawn_cancellable("subscribe_to_ln_receive", move |fed| async move {
+                        // FIXME: what happens if it fails?
+                        if let Err(e) = fed.subscribe_invoice(operation_id, invoice).await {
+                            warn!("subscribe_to_ln_receive error: {e:?}")
+                        }
+                    });
                 }
                 LightningOperationMeta {
                     variant: LightningOperationMetaVariant::Claim { .. },
@@ -1310,20 +1304,15 @@ impl FederationV2 {
                 let meta = operation.meta::<MintOperationMeta>();
                 match meta.variant {
                     MintOperationMetaVariant::SpendOOB { .. } => {
-                        let fed = self.clone();
-                        self.task_group.clone().spawn_cancellable(
-                            "subscribe_oob_spend",
-                            async move {
-                                // FIXME: what happens if it fails?
-                                fed.subscribe_oob_spend(operation_id).await
-                            },
-                        );
+                        self.spawn_cancellable("subscribe_oob_spend", move |fed| async move {
+                            // FIXME: what happens if it fails?
+                            fed.subscribe_oob_spend(operation_id).await
+                        });
                     }
                     MintOperationMetaVariant::Reissuance { .. } => {
-                        let fed = self.clone();
-                        self.task_group.clone().spawn_cancellable(
+                        self.spawn_cancellable(
                             "subscribe_to_ecash_reissue",
-                            async move {
+                            move |fed| async move {
                                 // FIXME: what happens if it fails?
                                 fed.subscribe_to_ecash_reissue(operation_id, meta.amount)
                                     .await
@@ -1350,28 +1339,25 @@ impl FederationV2 {
                     }
                 }
             }
-            STABILITY_POOL_OPERATION_TYPE => {
-                let fed = self.clone();
-                match operation.meta::<StabilityPoolMeta>() {
-                    StabilityPoolMeta::Deposit { .. } => {
-                        self.task_group.clone().spawn_cancellable(
-                            "subscribe_stability_pool_deposit",
-                            async move {
-                                fed.subscribe_stability_pool_deposit_to_seek(operation_id)
-                                    .await
-                            },
-                        );
-                    }
-                    StabilityPoolMeta::CancelRenewal { .. }
-                    | StabilityPoolMeta::Withdrawal { .. } => {
-                        self.task_group
-                            .clone()
-                            .spawn_cancellable("subscribe_stability_pool_withdraw", async move {
-                                fed.subscribe_stability_pool_withdraw(operation_id).await
-                            });
-                    }
+            STABILITY_POOL_OPERATION_TYPE => match operation.meta::<StabilityPoolMeta>() {
+                StabilityPoolMeta::Deposit { .. } => {
+                    self.spawn_cancellable(
+                        "subscribe_stability_pool_deposit",
+                        move |fed| async move {
+                            fed.subscribe_stability_pool_deposit_to_seek(operation_id)
+                                .await
+                        },
+                    );
                 }
-            }
+                StabilityPoolMeta::CancelRenewal { .. } | StabilityPoolMeta::Withdrawal { .. } => {
+                    self.spawn_cancellable(
+                        "subscribe_stability_pool_withdraw",
+                        move |fed| async move {
+                            fed.subscribe_stability_pool_withdraw(operation_id).await
+                        },
+                    );
+                }
+            },
             // FIXME: should I return an error or just log something?
             _ => {
                 tracing::debug!(
@@ -1489,16 +1475,15 @@ impl FederationV2 {
 
     /// Start background task to listen for balance updates and emit
     /// "federation" events when one is observed
-    async fn subscribe_balance_updates(&mut self) {
-        let federation = self.clone();
-        self.task_group.spawn_cancellable(
-            format!("{:?} balance subscription", federation.federation_name()),
-            async move {
+    async fn subscribe_balance_updates(&self) {
+        self.spawn_cancellable(
+            format!("{:?} balance subscription", self.federation_name()),
+            |fed| async move {
                 // always send an initial balance event
-                federation.send_balance_event().await;
-                let mut updates = federation.client.subscribe_balance_changes().await;
+                fed.send_balance_event().await;
+                let mut updates = fed.client.subscribe_balance_changes().await;
                 while (updates.next().await).is_some() {
-                    federation.send_balance_event().await;
+                    fed.send_balance_event().await;
                 }
             },
         );
@@ -1560,7 +1545,7 @@ impl FederationV2 {
 
     /// Send whenever federation meta keys change
     pub async fn send_federation_event(&self) {
-        let rpc_federation = federation_v2_to_rpc_federation(&Arc::new(self.clone())).await;
+        let rpc_federation = federation_v2_to_rpc_federation(self).await;
         let event = Event::federation(RpcFederationMaybeLoading::Ready(rpc_federation));
         self.event_sink.typed_event(&event);
     }
@@ -2586,13 +2571,10 @@ impl FederationV2 {
             }
         }
 
-        let fed = self.clone();
-        self.task_group
-            .clone()
-            .spawn_cancellable("subscribe_stability_pool_deposit", async move {
-                fed.subscribe_stability_pool_deposit_to_seek(operation_id)
-                    .await
-            });
+        self.spawn_cancellable("subscribe_stability_pool_deposit", move |fed| async move {
+            fed.subscribe_stability_pool_deposit_to_seek(operation_id)
+                .await
+        });
         Ok(operation_id)
     }
 
@@ -2624,12 +2606,9 @@ impl FederationV2 {
             .await?;
         self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
             .await?;
-        let fed = self.clone();
-        self.task_group
-            .clone()
-            .spawn_cancellable("subscribe_stability_pool_withdraw", async move {
-                fed.subscribe_stability_pool_withdraw(operation_id).await
-            });
+        self.spawn_cancellable("subscribe_stability_pool_withdraw", move |fed| async move {
+            fed.subscribe_stability_pool_withdraw(operation_id).await
+        });
         Ok(operation_id)
     }
 

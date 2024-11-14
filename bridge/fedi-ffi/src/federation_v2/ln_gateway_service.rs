@@ -1,13 +1,11 @@
 use std::collections::HashSet;
 use std::str::FromStr;
-use std::sync::Arc;
 use std::time::Duration;
 
 use bitcoin::secp256k1::{self, PublicKey};
-use fedimint_client::{Client, ClientHandle};
+use fedimint_client::Client;
 use fedimint_core::config::META_VETTED_GATEWAYS_KEY;
 use fedimint_core::db::{AutocommitError, IDatabaseTransactionOpsCoreTyped};
-use fedimint_core::task::TaskGroup;
 use fedimint_ln_common::{LightningGateway, LightningGatewayAnnouncement};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -15,6 +13,7 @@ use tracing::warn;
 
 use super::client::ClientExt;
 use super::db::LastActiveGatewayKey;
+use super::FederationV2;
 
 #[derive(Debug, Clone)]
 pub struct LnGatewayService {}
@@ -23,11 +22,11 @@ pub struct LnGatewayService {}
 const ABOUT_TO_EXPIRE_DURATION: Duration = Duration::from_secs(30);
 
 impl LnGatewayService {
-    pub fn new(client: Arc<ClientHandle>, task_group: &TaskGroup) -> Self {
-        task_group.spawn_cancellable("gateway_update_cache", async move {
-            if let Ok(ln) = client.ln() {
+    pub fn new(fed: &FederationV2) -> Self {
+        fed.spawn_cancellable("gateway_update_cache", |fed| async move {
+            if let Ok(ln) = fed.client.ln() {
                 ln.update_gateway_cache_continuously(|gws| {
-                    Self::maybe_filter_vetted_gateways(&client, gws)
+                    Self::maybe_filter_vetted_gateways(&fed.client, gws)
                 })
                 .await
             }
