@@ -853,6 +853,12 @@ impl FederationV2 {
         Ok(())
     }
 
+    pub async fn recheck_pegin_address(&self, operation_id: OperationId) -> Result<()> {
+        self.client
+            .wallet()?
+            .recheck_pegin_address_by_op_id(operation_id)
+            .await
+    }
     /// Subscribe to state updates for a given lightning invoice
     pub async fn subscribe_invoice(
         &self,
