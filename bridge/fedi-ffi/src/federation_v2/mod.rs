@@ -868,7 +868,7 @@ impl FederationV2 {
         let fed = self.clone();
         self.task_group
             .clone()
-            .spawn("subscribe invoice", move |_| async move {
+            .spawn_cancellable("subscribe invoice", async move {
                 let Ok(ln) = fed.client.ln() else {
                     error!("Lightning module not found!");
                     return;
@@ -1268,7 +1268,7 @@ impl FederationV2 {
                     }
                     self.task_group
                         .clone()
-                        .spawn("subscribe_to_ln_pay", move |_| async move {
+                        .spawn_cancellable("subscribe_to_ln_pay", async move {
                             // FIXME: what happens if it fails?
                             if let Err(e) = fed
                                 .subscribe_to_ln_pay(
@@ -1291,14 +1291,15 @@ impl FederationV2 {
                     ..
                 } => {
                     let fed = self.clone();
-                    self.task_group
-                        .clone()
-                        .spawn("subscribe_to_ln_receive", move |_| async move {
+                    self.task_group.clone().spawn_cancellable(
+                        "subscribe_to_ln_receive",
+                        async move {
                             // FIXME: what happens if it fails?
                             if let Err(e) = fed.subscribe_invoice(operation_id, invoice).await {
                                 warn!("subscribe_to_ln_receive error: {e:?}")
                             }
-                        });
+                        },
+                    );
                 }
                 LightningOperationMeta {
                     variant: LightningOperationMetaVariant::Claim { .. },
@@ -1310,18 +1311,19 @@ impl FederationV2 {
                 match meta.variant {
                     MintOperationMetaVariant::SpendOOB { .. } => {
                         let fed = self.clone();
-                        self.task_group
-                            .clone()
-                            .spawn("subscribe_oob_spend", move |_| async move {
+                        self.task_group.clone().spawn_cancellable(
+                            "subscribe_oob_spend",
+                            async move {
                                 // FIXME: what happens if it fails?
                                 fed.subscribe_oob_spend(operation_id).await
-                            });
+                            },
+                        );
                     }
                     MintOperationMetaVariant::Reissuance { .. } => {
                         let fed = self.clone();
-                        self.task_group.clone().spawn(
+                        self.task_group.clone().spawn_cancellable(
                             "subscribe_to_ecash_reissue",
-                            move |_| async move {
+                            async move {
                                 // FIXME: what happens if it fails?
                                 fed.subscribe_to_ecash_reissue(operation_id, meta.amount)
                                     .await
@@ -1352,9 +1354,9 @@ impl FederationV2 {
                 let fed = self.clone();
                 match operation.meta::<StabilityPoolMeta>() {
                     StabilityPoolMeta::Deposit { .. } => {
-                        self.task_group.clone().spawn(
+                        self.task_group.clone().spawn_cancellable(
                             "subscribe_stability_pool_deposit",
-                            move |_| async move {
+                            async move {
                                 fed.subscribe_stability_pool_deposit_to_seek(operation_id)
                                     .await
                             },
@@ -1362,12 +1364,11 @@ impl FederationV2 {
                     }
                     StabilityPoolMeta::CancelRenewal { .. }
                     | StabilityPoolMeta::Withdrawal { .. } => {
-                        self.task_group.clone().spawn(
-                            "subscribe_stability_pool_withdraw",
-                            move |_| async move {
+                        self.task_group
+                            .clone()
+                            .spawn_cancellable("subscribe_stability_pool_withdraw", async move {
                                 fed.subscribe_stability_pool_withdraw(operation_id).await
-                            },
-                        );
+                            });
                     }
                 }
             }
@@ -2588,7 +2589,7 @@ impl FederationV2 {
         let fed = self.clone();
         self.task_group
             .clone()
-            .spawn("subscribe_stability_pool_deposit", move |_| async move {
+            .spawn_cancellable("subscribe_stability_pool_deposit", async move {
                 fed.subscribe_stability_pool_deposit_to_seek(operation_id)
                     .await
             });
@@ -2626,7 +2627,7 @@ impl FederationV2 {
         let fed = self.clone();
         self.task_group
             .clone()
-            .spawn("subscribe_stability_pool_withdraw", move |_| async move {
+            .spawn_cancellable("subscribe_stability_pool_withdraw", async move {
                 fed.subscribe_stability_pool_withdraw(operation_id).await
             });
         Ok(operation_id)
