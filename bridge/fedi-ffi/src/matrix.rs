@@ -602,6 +602,15 @@ impl Matrix {
         Ok(self.client.account().unignore_user(user_id).await?)
     }
 
+    pub async fn list_ignored_users(&self) -> Result<Vec<RpcUserId>> {
+        Ok(self
+            .client
+            .subscribe_to_ignore_user_list_changes()
+            .get()
+            .into_iter()
+            .map(RpcUserId)
+            .collect())
+    }
     pub async fn room_kick_user(
         &self,
         room_id: &RoomId,

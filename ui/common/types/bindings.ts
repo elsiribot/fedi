@@ -687,6 +687,7 @@ export interface RpcMethods {
       userId: RpcUserId;
       displayName: string | null;
       avatarUrl: string | null;
+      ignored: boolean;
       powerLevel: number;
       membership: RpcMatrixMembership;
     }>,
@@ -731,6 +732,7 @@ export interface RpcMethods {
   ];
   matrixIgnoreUser: [{ userId: RpcUserId }, null];
   matrixUnignoreUser: [{ userId: RpcUserId }, null];
+  matrixListIgnoredUsers: [Record<string, never>, Array<string>];
   matrixRoomPreviewContent: [
     { roomId: RpcRoomId },
     Array<
@@ -890,6 +892,7 @@ export interface RpcRoomMember {
   userId: RpcUserId;
   displayName: string | null;
   avatarUrl: string | null;
+  ignored: boolean;
   powerLevel: number;
   membership: RpcMatrixMembership;
 }

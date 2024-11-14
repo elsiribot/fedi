@@ -247,7 +247,7 @@ impl From<matrix_sdk::ruma::OwnedRoomId> for RpcRoomId {
 
 #[derive(Clone, Debug, Serialize, Deserialize, ts_rs::TS)]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RpcUserId(String);
+pub struct RpcUserId(pub String);
 
 impl RpcUserId {
     pub fn into_typed(&self) -> Result<matrix_sdk::ruma::OwnedUserId> {
@@ -340,6 +340,7 @@ pub struct RpcRoomMember {
     pub user_id: RpcUserId,
     pub display_name: Option<String>,
     pub avatar_url: Option<String>,
+    pub ignored: bool,
     #[ts(type = "number")]
     pub power_level: i64,
     pub membership: RpcMatrixMembership,
@@ -361,6 +362,7 @@ impl From<RoomMember> for RpcRoomMember {
             avatar_url: member.avatar_url().map(|uri| uri.to_string()),
             display_name: member.display_name().map(|s| s.to_string()),
             power_level: member.power_level(),
+            ignored: member.is_ignored(),
             membership,
         }
     }
