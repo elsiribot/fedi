@@ -62,6 +62,7 @@ type MessageInputProps = {
     ) => Promise<void>
     id: string
     isSending?: boolean
+    isPublic?: boolean
 }
 
 const log = makeLog('MessageInput')
@@ -79,6 +80,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     onMessageSubmitted,
     id,
     isSending,
+    isPublic = true,
 }: MessageInputProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -456,30 +458,60 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     blurOnSubmit={false}
                     disabled={inputDisabled}
                 />
-                {!isReadOnly && !existingRoom && (
-                    <Pressable
-                        style={style.sendButton}
-                        onPress={handleSend}
-                        disabled={inputDisabled}>
-                        <SvgImage
-                            name="SendArrowUpCircle"
-                            size={SvgImageSize.md}
-                            color={
-                                inputDisabled
-                                    ? theme.colors.primaryVeryLight
-                                    : theme.colors.blue
-                            }
-                        />
-                    </Pressable>
+                {!isReadOnly && isPublic && (
+                    <>
+                        {isEditingMessage ? (
+                            <View style={style.editButtonsEnd}>
+                                <Pressable
+                                    style={style.cancelButton}
+                                    onPress={() => {
+                                        dispatch(setMessageToEdit(null))
+                                        setMessageText('')
+                                    }}
+                                    disabled={inputDisabled}>
+                                    <SvgImage
+                                        name="Close"
+                                        color={theme.colors.white}
+                                    />
+                                </Pressable>
+                                <Pressable
+                                    style={style.saveButton}
+                                    onPress={handleEdit}
+                                    disabled={inputDisabled}>
+                                    <SvgImage
+                                        name="Check"
+                                        color={theme.colors.white}
+                                    />
+                                </Pressable>
+                            </View>
+                        ) : (
+                            <Pressable
+                                style={style.sendButton}
+                                onPress={handleSend}
+                                hitSlop={10}
+                                disabled={inputDisabled}>
+                                <SvgImage
+                                    name="SendArrowUpCircle"
+                                    size={SvgImageSize.md}
+                                    color={
+                                        inputDisabled
+                                            ? theme.colors.primaryVeryLight
+                                            : theme.colors.blue
+                                    }
+                                />
+                            </Pressable>
+                        )}
+                    </>
                 )}
             </View>
-            {existingRoom && (
+            {existingRoom && !isPublic && (
                 <View style={style.buttonContainer}>
                     <View style={style.chatControls}>
                         {/* in-chat payments only available for DirectChat after a room has already been created with the user */}
                         {directUserId && (
                             <ChatWalletButton recipientId={directUserId} />
                         )}
+                        {/* uploading media only available for DirectChat to prevent unencrypted media uploads */}
                         <Pressable onPress={handleUploadImage} hitSlop={10}>
                             <SvgImage name="Image" />
                         </Pressable>

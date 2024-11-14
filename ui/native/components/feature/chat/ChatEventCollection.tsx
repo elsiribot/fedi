@@ -18,10 +18,11 @@ interface Props {
     collection: MatrixEvent[][]
     onSelect: (userId: string) => void
     showUsernames?: boolean
+    isPublic?: boolean
 }
 
 const ChatEventCollection: React.FC<Props> = memo(
-    ({ roomId, collection, onSelect, showUsernames }: Props) => {
+    ({ roomId, collection, onSelect, showUsernames, isPublic }: Props) => {
         const { theme } = useTheme()
         const { t } = useTranslation()
 
@@ -111,6 +112,7 @@ const ChatEventCollection: React.FC<Props> = memo(
                                                 key={`ceci-eb-${event.id}`}
                                                 event={event}
                                                 last={eindex === 0}
+                                                isPublic={isPublic}
                                             />
                                         ))}
                                     </View>

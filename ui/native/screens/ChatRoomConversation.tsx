@@ -95,14 +95,19 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const content = useMemo(() => {
         return (
             <>
-                <ChatConversation type={chatType} id={roomId || ''} />
+                <ChatConversation
+                    type={chatType}
+                    id={roomId || ''}
+                    isPublic={room?.isPublic}
+                />
                 <MessageInput
                     onMessageSubmitted={handleSend}
                     id={roomId || directUserId || ''}
+                    isPublic={room?.isPublic}
                 />
             </>
         )
-    }, [roomId, directUserId, chatType, handleSend])
+    }, [roomId, directUserId, chatType, handleSend, room])
 
     const style = useMemo(() => styles(theme), [theme])
 
@@ -123,7 +128,7 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     return (
         <>
             <View style={style.container}>{content}</View>
-            <SelectedMessageOverlay />
+            <SelectedMessageOverlay isPublic={!!room.isPublic} />
         </>
     )
 }

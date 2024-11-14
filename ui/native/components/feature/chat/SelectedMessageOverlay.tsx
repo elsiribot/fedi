@@ -28,7 +28,10 @@ import ChatEvent from './ChatEvent'
 
 const log = makeLog('feature/chat/SelectedMessageOverlay')
 
-const SelectedMessageOverlay: React.FC = () => {
+const SelectedMessageOverlay: React.FC<{ isPublic?: boolean }> = ({
+    // Defaults to true so we don't default to loading chat events with media
+    isPublic = true,
+}) => {
     const [deleteMessage, setDeleteMessage] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
     const [isDownloading, setIsDownloading] = useState(false)
@@ -219,6 +222,7 @@ const SelectedMessageOverlay: React.FC = () => {
                                 }
                                 last
                                 fullWidth={false}
+                                isPublic={isPublic}
                             />
                             {/* prevent user from interacting with the chat event */}
                             <View style={style.previewMessageOverlay} />

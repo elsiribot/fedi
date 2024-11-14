@@ -27,12 +27,15 @@ type Props = {
     event: MatrixEvent
     last?: boolean
     fullWidth?: boolean
+    isPublic?: boolean
 }
 
 const ChatEvent: React.FC<Props> = ({
     event,
     last = false,
     fullWidth = true,
+    // Defaults to true so we don't default to loading chat events with media
+    isPublic = true,
 }: Props) => {
     const { theme } = useTheme()
     const matrixAuth = useAppSelector(selectMatrixAuth)
@@ -58,6 +61,13 @@ const ChatEvent: React.FC<Props> = ({
                 ? styles(theme).lastSentMessage
                 : styles(theme).lastReceivedMessage,
         )
+    }
+
+    if (
+        isPublic &&
+        (isImageEvent(event) || isFileEvent(event) || isVideoEvent(event))
+    ) {
+        return null
     }
 
     return (
