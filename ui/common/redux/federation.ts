@@ -569,7 +569,7 @@ export const selectActiveFederation = createSelector(
 )
 
 export const selectShouldShowDegradedStatus = createSelector(
-    selectIsInternetUnreachable,
+    (s: CommonState) => selectIsInternetUnreachable(s),
     (_s: CommonState, federation: FederationListItem | undefined) => federation,
     (isInternetUnreachable, federation) => {
         // dont show if there is a local internet problem
