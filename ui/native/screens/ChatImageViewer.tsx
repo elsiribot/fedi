@@ -75,10 +75,10 @@ const ChatImageViewer: React.FC<Props> = ({ route, navigation }: Props) => {
     return (
         <View style={style.imageViewerContainer}>
             <View style={style.imageViewerHeader}>
-                <Pressable onPress={() => navigation.goBack()}>
+                <Pressable hitSlop={10} onPress={() => navigation.goBack()}>
                     <SvgImage name="Close" color={theme.colors.secondary} />
                 </Pressable>
-                <Pressable onPress={handleDownload}>
+                <Pressable hitSlop={10} onPress={handleDownload}>
                     {isDownloading ? (
                         <ActivityIndicator />
                     ) : (

@@ -38,7 +38,7 @@ const ChatWalletButton: React.FC<ChatWalletButtonProps> = ({
 
     return (
         <>
-            <Pressable onPress={handlePress}>
+            <Pressable onPress={handlePress} hitSlop={10}>
                 <SvgImage
                     name="Wallet"
                     size={SvgImageSize.md}
