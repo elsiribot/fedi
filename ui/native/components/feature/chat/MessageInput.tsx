@@ -480,10 +480,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         {directUserId && (
                             <ChatWalletButton recipientId={directUserId} />
                         )}
-                        <Pressable onPress={handleUploadImage}>
+                        <Pressable onPress={handleUploadImage} hitSlop={10}>
                             <SvgImage name="Image" />
                         </Pressable>
-                        <Pressable onPress={handleUploadAttachment}>
+                        <Pressable
+                            onPress={handleUploadAttachment}
+                            hitSlop={10}>
                             <SvgImage name="Plus" />
                         </Pressable>
                     </View>
@@ -517,6 +519,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                                 <Pressable
                                     style={style.sendButton}
                                     onPress={handleSend}
+                                    hitSlop={10}
                                     disabled={inputDisabled}>
                                     <SvgImage
                                         name="SendArrowUpCircle"
