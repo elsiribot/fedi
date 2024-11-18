@@ -456,7 +456,6 @@
             "search-no-results": "Ma jiro isticmaale u dhigma \"\"{{query}}\"\"",
             "search-placeholder-ln-address": "Gali ciwaanka hillaaca",
             "search-placeholder-username": "Geli magaca isticmaale",
-            "search-placeholder-username-or-ln": "Geli magaca isticmaale ama ciwaanka hillaaca",
             "unsupported-bolt12": "Soo jeedinta BOLT 12 lama taageero weli. Waan ka xumahay!",
             "unsupported-legacy-chat": "Sheekadan QR waxay ka timid nooca abka oo aan hadda la taageerin. Waan ka xumahay!",
             "unsupported-no-federation": "Taas ma isticmaali kartid ka hor inta aadan ku biirin federaalka. Isku day inaad iskaan ka sameyso martiqaadka xiriirka.",

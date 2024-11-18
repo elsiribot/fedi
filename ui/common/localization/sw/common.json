@@ -432,7 +432,6 @@
             "search-no-history-header": "Hakuna historia na huyu mtumiaji",
             "search-no-results": "Hakuna watumiaji wana fanana na  “{{query}}”",
             "search-placeholder-username": "Ingiza jina la mtumiaji",
-            "search-placeholder-username-or-ln": "Ingiza jina la mtumiaji au anwani ya lightning",
             "unsupported-bolt12": "Ofa za BOLT 12 bado hazitumiki. Pole!",
             "unsupported-unknown": "Hmm, hiyo haiko format inatumika kwetu. Pole!"
         },

@@ -569,7 +569,6 @@
             "search-no-results": "No users match “{{query}}”",
             "search-placeholder-ln-address": "Enter a lightning address",
             "search-placeholder-username": "Enter a username",
-            "search-placeholder-username-or-ln": "Enter a username or lightning address",
             "unsupported-bolt12": "BOLT 12 offers aren’t supported yet. Sorry!",
             "unsupported-chat-invite": "This is a chat room code. Your username must be invited to a chat room before joining.",
             "unsupported-legacy-chat": "This chat QR is from a version of the app that is no longer supported. Sorry!",
