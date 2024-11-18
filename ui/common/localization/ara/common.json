@@ -457,7 +457,6 @@
             "search-no-results": "Mafi mustakdim ze de  “{{query}}”",
             "search-placeholder-ln-address": "Dakalu inuan ta lightning",
             "search-placeholder-username": "Dakalu username",
-            "search-placeholder-username-or-ln": "Dakalu user username wele inuan ta lightning",
             "unsupported-bolt12": "Musada ta BOLT 12 mafi lisa. Asif!",
             "unsupported-legacy-chat": "Wonusa ta QR mean verson ta app de min verson al ma shakal. asif",
             "unsupported-no-federation": "Inta be mabi stagdim dak gubal inta ma dumu fi Mugtama. jeribu sahan inta bi fetisu trhib ta Mugtama akeri ",

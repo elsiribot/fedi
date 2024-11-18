@@ -457,7 +457,6 @@
             "search-no-results": "ምንም ተጠቃሚዎች አይዛመዱም። “{{query}}”",
             "search-placeholder-ln-address": "lightning አድራሻ ያስገቡ",
             "search-placeholder-username": "የተጠቃሚ ስም አስገባ",
-            "search-placeholder-username-or-ln": "የተጠቃሚ ስም ወይም lightning አድራሻ ያስገቡ",
             "unsupported-bolt12": "BOLT 12 ቅናሾች እስካሁን አይደገፉም። አዝናለሁ!",
             "unsupported-legacy-chat": "ይህ ውይይት QR ከአሁን በኋላ የማይደገፍ የመተግበሪያው ስሪት ነው። አዝናለሁ!",
             "unsupported-no-federation": "ማህበረሰብ ከመቀላቀልዎ በፊት ያንን መጠቀም አይችሉም። በምትኩ የማህበረሰብ ግብዣን ለመቃኘት ይሞክሩ።",

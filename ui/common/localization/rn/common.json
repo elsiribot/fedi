@@ -457,7 +457,6 @@
             "search-no-results": "nta zina dutoye “{{query}}”",
             "search-placeholder-ln-address": "Injiza aho lightning ibarizwa",
             "search-placeholder-username": "Injiza izina",
-            "search-placeholder-username-or-ln": "Injiza izina canke aho lightning ibarizwa",
             "unsupported-bolt12": "Ingabire za BOLT 12 ntiziremerwa. Mpore!",
             "unsupported-legacy-chat": "Ubu butumwa QR buvuye kuri app itacemewe. Mpore!",
             "unsupported-no-federation": "Ntushobora gukoresha ivyo utarinjira ishirahamwe. Ahubwo gerageza usuzume ubutumire bw'ishirahamwe",
