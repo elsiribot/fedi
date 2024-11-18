@@ -24,6 +24,7 @@ import {
     selectAlphabeticallySortedFederations,
     selectCurrency,
     selectDeveloperMode,
+    selectFedimintVersion,
     selectHasSetMatrixDisplayName,
     selectMatrixAuth,
     selectMatrixDisplayNameSuffix,
@@ -67,6 +68,7 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
         selectHasSetMatrixDisplayName,
     )
     const displayNameSuffix = useAppSelector(selectMatrixDisplayNameSuffix)
+    const fedimintVersion = useAppSelector(selectFedimintVersion)
 
     const [exportingFederationId, setExportingFederationId] =
         useState<string>('')
@@ -429,6 +431,13 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     <Text adjustsFontSizeToFit numberOfLines={1}>
                         {t('phrases.app-version', { version })}
                     </Text>
+                    {fedimintVersion && (
+                        <Text adjustsFontSizeToFit numberOfLines={1}>
+                            {t('phrases.fedimint-version', {
+                                version: fedimintVersion,
+                            })}
+                        </Text>
+                    )}
                 </Pressable>
             </View>
         </ScrollView>
