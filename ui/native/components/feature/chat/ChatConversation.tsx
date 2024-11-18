@@ -39,11 +39,13 @@ type MessagesListProps = {
     type: ChatType
     id: string
     multiUserChat?: boolean
+    isPublic?: boolean
 }
 
 const ChatConversation: React.FC<MessagesListProps> = ({
     type,
     id,
+    isPublic = true,
 }: MessagesListProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -155,10 +157,11 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                     collection={item}
                     showUsernames={type === ChatType.group}
                     onSelect={setSelectedUserId}
+                    isPublic={isPublic}
                 />
             )
         },
-        [id, type],
+        [id, type, isPublic],
     )
 
     return (

@@ -82,9 +82,10 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
                     isSending={isSending}
                     onMessageSubmitted={handleSend}
                     id={userId}
+                    isPublic={false}
                 />
             </>
-            <SelectedMessageOverlay />
+            <SelectedMessageOverlay isPublic={false} />
         </View>
     )
 }
