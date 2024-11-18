@@ -507,18 +507,26 @@ export function isDeletedEvent(
     return event.content.msgtype === 'xyz.fedi.deleted'
 }
 
-export function isTextEvent(event: MatrixEvent): event is MatrixEvent<MatrixEventContentType<'m.text'>> {
+export function isTextEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<MatrixEventContentType<'m.text'>> {
     return event.content.msgtype === 'm.text'
 }
 
-export function isImageEvent(event: MatrixEvent): event is MatrixEvent<MatrixEventContentType<'m.image'>> {
+export function isImageEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<MatrixEventContentType<'m.image'>> {
     return event.content.msgtype === 'm.image'
 }
 
-export function isFileEvent(event: MatrixEvent): event is MatrixEvent<MatrixEventContentType<'m.file'>> {
+export function isFileEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<MatrixEventContentType<'m.file'>> {
     return event.content.msgtype === 'm.file'
 }
 
-export function isVideoEvent(event: MatrixEvent): event is MatrixEvent<MatrixEventContentType<'m.video'>> {
+export function isVideoEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<MatrixEventContentType<'m.video'>> {
     return event.content.msgtype === 'm.video'
 }

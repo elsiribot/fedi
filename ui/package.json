@@ -21,6 +21,7 @@
         "dev:native": "turbo run dev --parallel --filter=native...",
         "lint": "turbo run lint",
         "format": "turbo run format",
+        "format:check": "turbo run format:check --parallel",
         "test": "turbo run test"
     },
     "devDependencies": {

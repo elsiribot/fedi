@@ -24,6 +24,7 @@
         "lint:tsc": "tsc --noEmit",
         "lint:eslint": "eslint . --ext .js,.jsx,.ts,.tsx",
         "format": "prettier --write .",
+        "format:check": "prettier --check .",
         "devtools": "( npx react-devtools > /dev/null 2>&1 & )"
     },
     "dependencies": {
