@@ -1,9 +1,7 @@
 use std::time::Duration;
 
 use anyhow::anyhow;
-use fedimint_client::ClientHandleArc;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
-use fedimint_core::task::TaskGroup;
 use fedimint_core::Amount;
 use futures::StreamExt;
 use stability_pool_client::{
@@ -12,6 +10,7 @@ use stability_pool_client::{
 use tracing::{error, info};
 
 use super::db::LastStabilityPoolDepositCycleKey;
+use super::FederationV2;
 use crate::event::{Event, EventSink, TypedEventExt};
 use crate::types::RpcAmount;
 
@@ -23,17 +22,20 @@ use crate::types::RpcAmount;
 pub struct StabilityPoolSweeperService {}
 
 impl StabilityPoolSweeperService {
-    pub fn new(client: ClientHandleArc, task_group: &TaskGroup, event_sink: EventSink) -> Self {
-        task_group.spawn_cancellable("stability_pool_sweeper_service", async move {
-            continuously_sweep_stability_pool(client, event_sink).await
+    pub fn new(fed: &FederationV2) -> Self {
+        fed.spawn_cancellable("stability_pool_sweeper_service", |fed| async move {
+            continuously_sweep_stability_pool(&fed.client, fed.event_sink.clone()).await
         });
         Self {}
     }
 }
 
-async fn continuously_sweep_stability_pool(client: ClientHandleArc, event_sink: EventSink) {
+async fn continuously_sweep_stability_pool(
+    client: &fedimint_client::Client,
+    event_sink: EventSink,
+) {
     loop {
-        if let Err(e) = sweep_stability_pool_inner(&client, &event_sink).await {
+        if let Err(e) = sweep_stability_pool_inner(client, &event_sink).await {
             error!(%e, "Error sweeping stability pool, will retry next cycle if needed");
         }
 
@@ -51,7 +53,7 @@ async fn continuously_sweep_stability_pool(client: ClientHandleArc, event_sink: 
 }
 
 async fn sweep_stability_pool_inner(
-    client: &ClientHandleArc,
+    client: &fedimint_client::Client,
     event_sink: &EventSink,
 ) -> anyhow::Result<()> {
     // In order to sweep a staged seeker deposit back into e-cash, two
