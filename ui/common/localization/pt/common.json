@@ -517,6 +517,7 @@
             "search-no-results": "Nenhum usuário corresponde a “{{query}}”",
             "search-placeholder-ln-address": "Introduzir uma fatura lightning",
             "search-placeholder-username": "Introduzir um nome de utilizador",
+            "search-placeholder-username-or-ln": "Introduzir um nome de utilizador ou uma fatura lightning",
             "unsupported-bolt12": "As ofertas BOLT 12 ainda não são suportadas. Lamentamos!",
             "unsupported-chat-invite": "Este é um código de sala de chat. Seu usuário deve ser convidado para uma sala de chat antes de entrar.",
             "unsupported-legacy-chat": "Este QR de chat pertence a uma versão do aplicativo que não é mais compatível. Desculpe!",

@@ -115,7 +115,11 @@ export function OmniInput<
         const contextualActions: OmniInputAction[] = []
         if (inputMethod !== 'search' && canMemberSearch) {
             contextualActions.push({
-                label: t('feature.omni.action-enter-username'),
+                label: t(
+                    canLnurlPay
+                        ? 'feature.omni.action-enter-username-or-ln'
+                        : 'feature.omni.action-enter-username',
+                ),
                 icon: 'Keyboard',
                 onPress: () => setInputMethod('search'),
             })
@@ -141,6 +145,7 @@ export function OmniInput<
         customActions,
         inputMethod,
         canMemberSearch,
+        canLnurlPay,
         pasteLabel,
         handlePaste,
         t,

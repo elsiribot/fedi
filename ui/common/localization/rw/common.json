@@ -456,6 +456,7 @@
             "search-no-results": "Nta benshi bayikoresha “{{query}}”",
             "search-placeholder-ln-address": "Injiza aderesi lightning",
             "search-placeholder-username": "Injiza izina akoresha",
+            "search-placeholder-username-or-ln": "Injiza izina akoresha cyangwa aderesi yihuta",
             "unsupported-bolt12": "Amahirwe atangwa na BOLT 12 si benshi bayashyigikiye kugeza ubu. Ihangane",
             "unsupported-legacy-chat": "Iki kiganiro QR iva muri version ya porogaramu itagishyigikiwe. Ihangane",
             "unsupported-no-federation": "ntushobora kuyikoresha mbere y'uko winjira mu ishyirahamwe. Ahubwo gerageza kugenzura ubutumire bw'ishyirahamwe",
