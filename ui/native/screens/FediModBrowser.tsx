@@ -21,6 +21,7 @@ import {
 
 import { useToast } from '@fedi/common/hooks/toast'
 import {
+    listGateways,
     selectActiveFederation,
     selectCurrency,
     selectFediModDebugMode,
@@ -68,7 +69,7 @@ import {
     useOmniLinkContext,
     useOmniLinkInterceptor,
 } from '../state/contexts/OmniLinkContext'
-import { useAppSelector, useBridge } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('FediModBrowser')
@@ -105,7 +106,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
-    const { listGateways } = useBridge(activeFederation?.id)
+    const dispatch = useAppDispatch()
     const nostrPublic = useAppSelector(selectNostrNpub)
     const paymentFederation = useAppSelector(selectPaymentFederation)
     const member = useAppSelector(selectMatrixAuth)
@@ -181,13 +182,22 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         log.info('getActiveGatewayOrThrow')
         if (getActiveGatewayPromiseRef.current)
             return getActiveGatewayPromiseRef.current
-        getActiveGatewayPromiseRef.current = listGateways().then(gateways => {
-            if (!gateways.length) {
-                log.info('No available lightning gateways')
-                throw new Error('No available lightning gateways')
-            }
-            return gateways.find(g => g.active) || gateways[0]
-        })
+        if (!activeFederation?.id)
+            throw new Error('No available lightning gateways')
+        getActiveGatewayPromiseRef.current = dispatch(
+            listGateways({
+                fedimint,
+                federationId: activeFederation?.id,
+            }),
+        )
+            .unwrap()
+            .then(gateways => {
+                if (!gateways.length) {
+                    log.info('No available lightning gateways')
+                    throw new Error('No available lightning gateways')
+                }
+                return gateways.find(g => g.active) || gateways[0]
+            })
         return getActiveGatewayPromiseRef.current
     }
 

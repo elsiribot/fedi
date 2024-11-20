@@ -10,6 +10,7 @@ import {
     FederationStatus,
     FediMod,
     JoinPreview,
+    LightningGateway,
     LoadedFederation,
     MSats,
     Network,
@@ -17,7 +18,7 @@ import {
     SupportedCurrency,
     SupportedMetaFields,
 } from '../types'
-import { RpcCommunity, RpcFederation } from '../types/bindings'
+import { GuardianStatus, RpcCommunity, RpcFederation } from '../types/bindings'
 import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
 
@@ -701,6 +702,21 @@ export const previewInvite = async (
     }
 }
 
+export const getGuardianStatuses = async (
+    fedimint: FedimintBridge,
+    federationId: string,
+): Promise<GuardianStatus[]> => {
+    return fedimint.guardianStatus(federationId)
+}
+
+export const switchGateway = async (
+    fedimint: FedimintBridge,
+    federationId: string,
+    nodePubKey: string,
+): Promise<void> => {
+    await fedimint.switchGateway(nodePubKey, federationId)
+}
+
 export const getFederationStatus = async (
     fedimint: FedimintBridge,
     federationId: FederationListItem['id'],
@@ -721,4 +737,11 @@ export const getFederationStatus = async (
         return 'unstable'
     }
     return 'offline'
+}
+
+export const getGatewaysList = async (
+    fedimint: FedimintBridge,
+    federationId: string,
+): Promise<LightningGateway[]> => {
+    return fedimint.listGateways(federationId)
 }

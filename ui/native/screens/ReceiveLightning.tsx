@@ -14,7 +14,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRequestForm } from '@fedi/common/hooks/amount'
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    generateAddress,
+    generateInvoice,
+    selectActiveFederation,
+} from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 import { makeLog } from '@fedi/common/utils/log'
@@ -23,7 +27,7 @@ import { fedimint } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import RequestTypeSwitcher from '../components/feature/receive/RequestTypeSwitcher'
 import { AmountScreen } from '../components/ui/AmountScreen'
-import { useAppSelector, useBridge } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -39,8 +43,8 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const insets = useSafeAreaInsets()
+    const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
-    const { generateAddress, generateInvoice } = useBridge(activeFederationId)
     const {
         inputAmount: amount,
         setInputAmount: setAmount,
@@ -65,11 +69,16 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
 
     useEffect(() => {
         const createNewInvoice = async () => {
+            if (!activeFederationId) return
             try {
-                const newInvoice = await generateInvoice(
-                    amountUtils.satToMsat(amount),
-                    memo,
-                )
+                const newInvoice = await dispatch(
+                    generateInvoice({
+                        fedimint,
+                        federationId: activeFederationId,
+                        amount: amountUtils.satToMsat(amount),
+                        description: memo,
+                    }),
+                ).unwrap()
                 setInvoice(newInvoice)
             } catch (error) {
                 toast.show({
@@ -81,7 +90,15 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
         if (generatingInvoice) {
             createNewInvoice()
         }
-    }, [t, toast, amount, generateInvoice, generatingInvoice, memo])
+    }, [
+        t,
+        toast,
+        amount,
+        generatingInvoice,
+        memo,
+        activeFederationId,
+        dispatch,
+    ])
 
     useEffect(() => {
         if (invoice) {
@@ -96,9 +113,15 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
     useEffect(() => {
         if (requestType === BitcoinOrLightning.bitcoin && !onchainAddress) {
             const generateOnchainAddress = async () => {
+                if (!activeFederationId) return
                 try {
                     setIsLoading(true)
-                    const newAddress = await generateAddress()
+                    const newAddress = await dispatch(
+                        generateAddress({
+                            fedimint,
+                            federationId: activeFederationId,
+                        }),
+                    ).unwrap()
 
                     setOnchainAddress(newAddress)
                 } catch (error) {
@@ -109,7 +132,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
 
             generateOnchainAddress()
         }
-    }, [generateAddress, onchainAddress, requestType])
+    }, [onchainAddress, requestType, activeFederationId, dispatch])
 
     const onChangeAmount = (updatedValue: Sats) => {
         setSubmitAttempts(0)

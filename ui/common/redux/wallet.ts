@@ -132,6 +132,62 @@ export const {
 
 /*** Async thunk actions ***/
 
+export const generateAddress = createAsyncThunk<
+    string,
+    { fedimint: FedimintBridge; federationId: string },
+    { state: CommonState }
+>('wallet/generateAddress', async ({ fedimint, federationId }) => {
+    return fedimint.generateAddress(federationId)
+})
+
+export const generateEcash = createAsyncThunk<
+    { ecash: string; cancelAt: number },
+    { fedimint: FedimintBridge; federationId: string; amount: MSats },
+    { state: CommonState }
+>('wallet/generateEcash', async ({ fedimint, federationId, amount }) => {
+    return fedimint.generateEcash(amount, federationId)
+})
+
+export const generateInvoice = createAsyncThunk<
+    string,
+    {
+        fedimint: FedimintBridge
+        federationId: string
+        amount: MSats
+        description: string
+    },
+    { state: CommonState }
+>(
+    'wallet/generateInvoice',
+    async ({ fedimint, federationId, amount, description }) => {
+        return fedimint.generateInvoice(amount, description, federationId)
+    },
+)
+
+export const payInvoice = createAsyncThunk<
+    { preimage: string },
+    { fedimint: FedimintBridge; federationId: string; invoice: string },
+    { state: CommonState }
+>('wallet/payInvoice', async ({ fedimint, federationId, invoice }) => {
+    return fedimint.payInvoice(invoice, federationId)
+})
+
+export const receiveEcash = createAsyncThunk<
+    MSats,
+    { fedimint: FedimintBridge; federationId: string; ecash: string },
+    { state: CommonState }
+>('wallet/receiveEcash', async ({ fedimint, federationId, ecash }) => {
+    return fedimint.receiveEcash(ecash, federationId)
+})
+
+export const validateEcash = createAsyncThunk<
+    { amount: MSats; federationId: string | null },
+    { fedimint: FedimintBridge; ecash: string },
+    { state: CommonState }
+>('wallet/validateEcash', async ({ fedimint, ecash }) => {
+    return fedimint.validateEcash(ecash)
+})
+
 export const fetchStabilityPoolAccountInfo = createAsyncThunk<
     RpcStabilityPoolAccountInfo,
     { fedimint: FedimintBridge; federationId: string },
