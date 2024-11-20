@@ -146,7 +146,11 @@ export const OmniMemberSearch: React.FC<Props> = ({
                     inputContainerStyle={style.inputContainerInner}
                     style={style.input}
                     value={query}
-                    placeholder={t('feature.omni.search-placeholder-username')}
+                    placeholder={t(
+                        canLnurlPay
+                            ? 'feature.omni.search-placeholder-username-or-ln'
+                            : 'feature.omni.search-placeholder-username',
+                    )}
                     onChangeText={setQuery}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}

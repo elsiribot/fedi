@@ -456,6 +456,7 @@
             "search-no-results": "لا يوجد مستخدمون متطابقون  “{{query}}”",
             "search-placeholder-ln-address": "ادخل عنوان البرق ",
             "search-placeholder-username": "ادخل اسم المستخدم ",
+            "search-placeholder-username-or-ln": "ادخل اسم المستخدم أو عنوان البرق ",
             "unsupported-bolt12": "عروض 12 BOLT غير مدعومة حاليًا. آسف ",
             "unsupported-legacy-chat": "هذه الدردشة QR هي من أصدار التطبيق الذي لم يعد مدعوما.اسف!",
             "unsupported-no-federation": "لا يمكنك استخدام ذلك قبل الإنضمام إلي الاتحاد. حاول مسح دعوة مجتمعبدلا من ذلك. ",

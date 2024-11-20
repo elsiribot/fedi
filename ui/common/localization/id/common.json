@@ -517,6 +517,7 @@
             "search-no-results": "Tidak ada pengguna yang cocok dengan “{{query}}”",
             "search-placeholder-ln-address": "Masukkan alamat kilat",
             "search-placeholder-username": "Masukkan nama pengguna",
+            "search-placeholder-username-or-ln": "Masukkan nama pengguna atau alamat kilat",
             "unsupported-bolt12": "Penawaran BOLT 12 belum didukung. Maaf!",
             "unsupported-chat-invite": "Ini adalah kode ruang obrolan. Nama pengguna kamu harus diundang ke ruang obrolan sebelum bergabung.",
             "unsupported-legacy-chat": "QR obrolan ini berasal dari versi aplikasi yang tidak lagi didukung. Maaf!",

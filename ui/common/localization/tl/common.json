@@ -438,6 +438,7 @@
             "search-no-results": "Walang gumagamit na tumutugma sa “{{query}}”",
             "search-placeholder-ln-address": "Maglagay ng lightning address",
             "search-placeholder-username": "Maglagay ng username",
+            "search-placeholder-username-or-ln": "Maglagay ng username o lightning address",
             "unsupported-bolt12": "Hindi pa suportado ang mga alok ng BOLT 12. Sorry!",
             "unsupported-legacy-chat": "Ang chat QR na ito ay mula sa bersyon ng app na hindi na suportado. Sorry!",
             "unsupported-no-federation": "Hindi mo magagamit iyon bago sumali sa isang pederasyon. Subukang i-scan ang isang federation invite sa halip.",
