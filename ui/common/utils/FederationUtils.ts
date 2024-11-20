@@ -706,7 +706,7 @@ export const getGuardianStatuses = async (
     fedimint: FedimintBridge,
     federationId: string,
 ): Promise<GuardianStatus[]> => {
-    return await fedimint.guardianStatus(federationId)
+    return fedimint.guardianStatus(federationId)
 }
 
 export const switchGateway = async (
@@ -743,5 +743,5 @@ export const getGatewaysList = async (
     fedimint: FedimintBridge,
     federationId: string,
 ): Promise<LightningGateway[]> => {
-    return await fedimint.listGateways(federationId)
+    return fedimint.listGateways(federationId)
 }

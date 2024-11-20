@@ -137,7 +137,7 @@ export const generateAddress = createAsyncThunk<
     { fedimint: FedimintBridge; federationId: string },
     { state: CommonState }
 >('wallet/generateAddress', async ({ fedimint, federationId }) => {
-    return await fedimint.generateAddress(federationId)
+    return fedimint.generateAddress(federationId)
 })
 
 export const generateEcash = createAsyncThunk<
@@ -145,7 +145,7 @@ export const generateEcash = createAsyncThunk<
     { fedimint: FedimintBridge; federationId: string; amount: MSats },
     { state: CommonState }
 >('wallet/generateEcash', async ({ fedimint, federationId, amount }) => {
-    return await fedimint.generateEcash(amount, federationId)
+    return fedimint.generateEcash(amount, federationId)
 })
 
 export const generateInvoice = createAsyncThunk<
@@ -160,7 +160,7 @@ export const generateInvoice = createAsyncThunk<
 >(
     'wallet/generateInvoice',
     async ({ fedimint, federationId, amount, description }) => {
-        return await fedimint.generateInvoice(amount, description, federationId)
+        return fedimint.generateInvoice(amount, description, federationId)
     },
 )
 
@@ -169,7 +169,7 @@ export const payInvoice = createAsyncThunk<
     { fedimint: FedimintBridge; federationId: string; invoice: string },
     { state: CommonState }
 >('wallet/payInvoice', async ({ fedimint, federationId, invoice }) => {
-    return await fedimint.payInvoice(invoice, federationId)
+    return fedimint.payInvoice(invoice, federationId)
 })
 
 export const receiveEcash = createAsyncThunk<
@@ -177,7 +177,7 @@ export const receiveEcash = createAsyncThunk<
     { fedimint: FedimintBridge; federationId: string; ecash: string },
     { state: CommonState }
 >('wallet/receiveEcash', async ({ fedimint, federationId, ecash }) => {
-    return await fedimint.receiveEcash(ecash, federationId)
+    return fedimint.receiveEcash(ecash, federationId)
 })
 
 export const validateEcash = createAsyncThunk<
@@ -185,7 +185,7 @@ export const validateEcash = createAsyncThunk<
     { fedimint: FedimintBridge; ecash: string },
     { state: CommonState }
 >('wallet/validateEcash', async ({ fedimint, ecash }) => {
-    return await fedimint.validateEcash(ecash)
+    return fedimint.validateEcash(ecash)
 })
 
 export const fetchStabilityPoolAccountInfo = createAsyncThunk<

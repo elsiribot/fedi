@@ -504,7 +504,7 @@ export const listGateways = createAsyncThunk<
     { fedimint: FedimintBridge; federationId: string },
     { state: CommonState }
 >('federation/listGateways', async ({ fedimint, federationId }) => {
-    return await fedimint.listGateways(federationId)
+    return fedimint.listGateways(federationId)
 })
 
 /*** Selectors ***/
