@@ -458,68 +458,46 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     blurOnSubmit={false}
                     disabled={inputDisabled}
                 />
-                {!isReadOnly && isPublic && (
-                    <>
-                        {isEditingMessage ? (
-                            <View style={style.editButtonsEnd}>
-                                <Pressable
-                                    style={style.cancelButton}
-                                    onPress={() => {
-                                        dispatch(setMessageToEdit(null))
-                                        setMessageText('')
-                                    }}
-                                    disabled={inputDisabled}>
-                                    <SvgImage
-                                        name="Close"
-                                        color={theme.colors.white}
-                                    />
-                                </Pressable>
-                                <Pressable
-                                    style={style.saveButton}
-                                    onPress={handleEdit}
-                                    disabled={inputDisabled}>
-                                    <SvgImage
-                                        name="Check"
-                                        color={theme.colors.white}
-                                    />
-                                </Pressable>
-                            </View>
-                        ) : (
-                            <Pressable
-                                style={style.sendButton}
-                                onPress={handleSend}
-                                hitSlop={10}
-                                disabled={inputDisabled}>
-                                <SvgImage
-                                    name="SendArrowUpCircle"
-                                    size={SvgImageSize.md}
-                                    color={
-                                        inputDisabled
-                                            ? theme.colors.primaryVeryLight
-                                            : theme.colors.blue
-                                    }
-                                />
-                            </Pressable>
-                        )}
-                    </>
+                {!isReadOnly && !existingRoom && (
+                    <Pressable
+                        style={style.sendButton}
+                        onPress={handleSend}
+                        hitSlop={10}
+                        disabled={inputDisabled}>
+                        <SvgImage
+                            name="SendArrowUpCircle"
+                            size={SvgImageSize.md}
+                            color={
+                                inputDisabled
+                                    ? theme.colors.primaryVeryLight
+                                    : theme.colors.blue
+                            }
+                        />
+                    </Pressable>
                 )}
             </View>
-            {existingRoom && !isPublic && (
+            {existingRoom && (
                 <View style={style.buttonContainer}>
                     <View style={style.chatControls}>
                         {/* in-chat payments only available for DirectChat after a room has already been created with the user */}
                         {directUserId && (
                             <ChatWalletButton recipientId={directUserId} />
                         )}
-                        {/* uploading media only available for DirectChat to prevent unencrypted media uploads */}
-                        <Pressable onPress={handleUploadImage} hitSlop={10}>
-                            <SvgImage name="Image" />
-                        </Pressable>
-                        <Pressable
-                            onPress={handleUploadAttachment}
-                            hitSlop={10}>
-                            <SvgImage name="Plus" />
-                        </Pressable>
+                        {/* uploading media only available in DMs and private groups to prevent unencrypted media uploads */}
+                        {!isPublic && (
+                            <>
+                                <Pressable
+                                    onPress={handleUploadImage}
+                                    hitSlop={10}>
+                                    <SvgImage name="Image" />
+                                </Pressable>
+                                <Pressable
+                                    onPress={handleUploadAttachment}
+                                    hitSlop={10}>
+                                    <SvgImage name="Plus" />
+                                </Pressable>
+                            </>
+                        )}
                     </View>
                     {!isReadOnly && (
                         <>
@@ -531,6 +509,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                                             dispatch(setMessageToEdit(null))
                                             setMessageText('')
                                         }}
+                                        hitSlop={10}
                                         disabled={inputDisabled}>
                                         <SvgImage
                                             name="Close"
@@ -540,6 +519,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                                     <Pressable
                                         style={style.saveButton}
                                         onPress={handleEdit}
+                                        hitSlop={10}
                                         disabled={inputDisabled}>
                                         <SvgImage
                                             name="Check"
