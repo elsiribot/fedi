@@ -541,7 +541,8 @@
         },
         "notifications": {
             "new-messages": "You have new messages",
-            "new-messages-count": "You have {{unread}} new messages"
+            "new-messages-count": "You have {{unread}} new messages",
+            "notification-settings": "Notification Settings"
         },
         "omni": {
             "action-enter-ln-address": "Enter lightning address",

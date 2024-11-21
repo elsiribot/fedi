@@ -393,6 +393,11 @@ const Settings: React.FC<Props> = ({ navigation }: Props) => {
                     onPress={() => navigation.navigate('BugReport')}
                 />
                 <SettingsItem
+                    image={<SvgImage name="SpeakerPhone" />}
+                    label={t('feature.notifications.notification-settings')}
+                    onPress={() => Linking.openSettings()}
+                />
+                <SettingsItem
                     image={<SvgImage name="Scroll" />}
                     label={t('phrases.fedi-app-terms-of-service')}
                     actionIcon="ExternalLink"
