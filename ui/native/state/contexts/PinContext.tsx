@@ -119,8 +119,8 @@ export function PinContextProvider({
             isLoading
                 ? { status: 'loading' }
                 : hasSetPin
-                ? { status: 'set', check: checkRef.current, set, unset }
-                : { status: 'unset', set },
+                  ? { status: 'set', check: checkRef.current, set, unset }
+                  : { status: 'unset', set },
         [isLoading, hasSetPin, checkRef, set, unset],
     )
 

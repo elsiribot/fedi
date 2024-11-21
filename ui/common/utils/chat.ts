@@ -73,13 +73,16 @@ export const getLatestMessageIdsForChats = (
     myId: string,
 ) => {
     const sortedMessages = orderBy(messages, 'sentAt', 'desc')
-    const lastReadMessageIds = sortedMessages.reduce((readMsgIds, msg) => {
-        const chatId = getChatInfoFromMessage(msg, myId).id
-        if (!readMsgIds[chatId]) {
-            readMsgIds[chatId] = msg.id
-        }
-        return readMsgIds
-    }, {} as Record<Chat['id'], string | undefined>)
+    const lastReadMessageIds = sortedMessages.reduce(
+        (readMsgIds, msg) => {
+            const chatId = getChatInfoFromMessage(msg, myId).id
+            if (!readMsgIds[chatId]) {
+                readMsgIds[chatId] = msg.id
+            }
+            return readMsgIds
+        },
+        {} as Record<Chat['id'], string | undefined>,
+    )
     return lastReadMessageIds
 }
 

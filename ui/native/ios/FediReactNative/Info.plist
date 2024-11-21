@@ -67,14 +67,10 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>localhost</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-		</dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Fedi needs access to the camera to scan QR codes</string>
@@ -82,10 +78,10 @@
 	<string></string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Fedi needs access to your microphone to record a social backup video</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Fedi needs access to save photos to your photo library</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Fedi needs access to your photo library to select media for attachments</string>
-    <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>Fedi needs access to save photos to your photo library</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>FontAwesome.ttf</string>
@@ -122,7 +118,7 @@
 	<string>SimpleLaunch.storyboard</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
-		<string>armv7</string>
+		<string>arm64</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>

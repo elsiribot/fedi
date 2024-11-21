@@ -196,12 +196,15 @@ async function migrateStoredState(
                 if (!chatState.groupRoles) return prevChat
                 const groupAffiliations = Object.entries(
                     chatState.groupRoles,
-                ).reduce((prevGroup, [groupId, role]) => {
-                    if (!role) return prevGroup
-                    return {
-                        [groupId]: role === 'moderator' ? 'owner' : 'none',
-                    }
-                }, {} as Record<Chat['id'], string | undefined>)
+                ).reduce(
+                    (prevGroup, [groupId, role]) => {
+                        if (!role) return prevGroup
+                        return {
+                            [groupId]: role === 'moderator' ? 'owner' : 'none',
+                        }
+                    },
+                    {} as Record<Chat['id'], string | undefined>,
+                )
                 return {
                     ...prevChat,
                     [federationId]: {
@@ -376,30 +379,33 @@ async function migrateStoredState(
                 // Find the last read message and extract its timestamp
                 const lastReadMessageTimestamps = Object.keys(
                     lastReadMessageIds,
-                ).reduce((result, chatId) => {
-                    const msgId = lastReadMessageIds[chatId]
-                    const paymentUpdateId = lastReadPaymentUpdateIds[chatId]
-                    const lastReadMessage = chatState.messages.find(
-                        m => m.id === msgId,
-                    )
-                    // If the last read payment update has a later timestamp, use that instead
-                    const lastReadPaymentUpdate = chatState.messages.find(
-                        m => m.id === paymentUpdateId,
-                    )
-                    if (lastReadMessage) {
-                        result[chatId] = lastReadMessage.sentAt
-                        if (
-                            lastReadPaymentUpdate &&
-                            lastReadPaymentUpdate.payment?.updatedAt &&
-                            lastReadPaymentUpdate.payment?.updatedAt >
-                                lastReadMessage.sentAt
-                        ) {
-                            result[chatId] =
-                                lastReadPaymentUpdate.payment?.updatedAt
+                ).reduce(
+                    (result, chatId) => {
+                        const msgId = lastReadMessageIds[chatId]
+                        const paymentUpdateId = lastReadPaymentUpdateIds[chatId]
+                        const lastReadMessage = chatState.messages.find(
+                            m => m.id === msgId,
+                        )
+                        // If the last read payment update has a later timestamp, use that instead
+                        const lastReadPaymentUpdate = chatState.messages.find(
+                            m => m.id === paymentUpdateId,
+                        )
+                        if (lastReadMessage) {
+                            result[chatId] = lastReadMessage.sentAt
+                            if (
+                                lastReadPaymentUpdate &&
+                                lastReadPaymentUpdate.payment?.updatedAt &&
+                                lastReadPaymentUpdate.payment?.updatedAt >
+                                    lastReadMessage.sentAt
+                            ) {
+                                result[chatId] =
+                                    lastReadPaymentUpdate.payment?.updatedAt
+                            }
                         }
-                    }
-                    return result
-                }, {} as Record<Chat['id'], number>)
+                        return result
+                    },
+                    {} as Record<Chat['id'], number>,
+                )
 
                 // Find the last seen message and extract its timestamp
                 let lastSeenMessageTimestamp = null

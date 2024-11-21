@@ -1,7 +1,7 @@
 apply plugin: "com.android.application"
+apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 apply plugin: "kotlin-android"
-apply plugin: "kotlin-android-extensions"
 // needed for push notifications
 apply plugin: "com.google.gms.google-services"
 
@@ -51,6 +51,8 @@ apply plugin: "com.google.gms.google-services"
     //
     //   The list of flags to pass to the Hermes compiler. By default is "-O", "-output-source-map"
     // hermesFlags = ["-O", "-output-source-map"]
+    /* Autolinking */
+    autolinkLibrariesWithApp()
 }
 
 project.ext.vectoricons = [
@@ -106,7 +108,12 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     ndkVersion rootProject.ext.ndkVersion
+    lintOptions {
+        // To ignore specific warnings/errors
+        disable 'UnspecifiedRegisterReceiverFlag' // Disables the specific lint check
+    }
 
+    buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdkVersion rootProject.ext.compileSdkVersion
 
     namespace "com.fedi"
@@ -203,6 +210,20 @@ android {
     }
 }
 
+afterEvaluate {
+    if (tasks.findByName('generateDebugLintReportModel')) {
+        tasks.named('generateDebugLintReportModel').configure {
+            dependsOn tasks.named('copyReactNativeVectorIconFonts')
+        }
+    }
+
+    if (tasks.findByName('lintAnalyzeDebug')) {
+        tasks.named('lintAnalyzeDebug').configure {
+            dependsOn tasks.named('copyReactNativeVectorIconFonts')
+        }
+    }
+}
+
 dependencies {
     // Configuration for Detox e2e testing framework
     androidTestImplementation('com.wix:detox:+')
@@ -241,11 +262,6 @@ dependencies {
 
     implementation project(':react-native-splash-screen')
 
-    debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}")
-    debugImplementation("com.facebook.flipper:flipper-network-plugin:${FLIPPER_VERSION}") {
-        exclude group:'com.squareup.okhttp3', module:'okhttp'
-    }
-    debugImplementation("com.facebook.flipper:flipper-fresco-plugin:${FLIPPER_VERSION}")
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
@@ -254,4 +270,13 @@ dependencies {
     }
 }
 
-apply from: file("../../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
+tasks.configureEach {
+     if (name == 'generateReleaseLintVitalReportModel' ||
+            name == 'generateDebugLintReportModel' ||
+            name == 'generateNightlyReleaseLintReportModel' ||
+            name == 'generateNightlyDebugLintReportModel' ||
+            name == 'lintAnalyzeDebug' ||
+            name == 'lintAnalyzeNightlyDebug') {
+            dependsOn('copyReactNativeVectorIconFonts')
+        }
+}

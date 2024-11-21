@@ -65,10 +65,10 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
         status === 'generating-data'
             ? t('feature.bug.submit-generating-data')
             : status === 'uploading-data'
-            ? t('feature.bug.submit-uploading-data')
-            : status === 'submitting-report'
-            ? t('feature.bug.submit-submitting-report')
-            : t('words.submit')
+              ? t('feature.bug.submit-uploading-data')
+              : status === 'submitting-report'
+                ? t('feature.bug.submit-submitting-report')
+                : t('words.submit')
     const submitTextColor = isSubmitDisabled
         ? theme.colors.primary
         : theme.colors.white

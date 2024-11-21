@@ -128,8 +128,8 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
         federation.returningMemberStatus.type === 'newMember'
             ? t('feature.onboarding.welcome-instructions-new')
             : isReturningMember
-            ? t('feature.onboarding.welcome-instructions-returning')
-            : t('feature.onboarding.welcome-instructions-unknown')
+              ? t('feature.onboarding.welcome-instructions-returning')
+              : t('feature.onboarding.welcome-instructions-unknown')
 
     return (
         <View style={style.container}>

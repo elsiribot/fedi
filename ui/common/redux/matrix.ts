@@ -1259,10 +1259,13 @@ export const selectMatrixRoomMembersCount = (
 export const selectMatrixRoomMemberMap = createSelector(
     selectMatrixRoomMembers,
     members =>
-        members.reduce((acc, member) => {
-            acc[member.id] = member
-            return acc
-        }, {} as Record<MatrixRoomMember['id'], MatrixRoomMember | undefined>),
+        members.reduce(
+            (acc, member) => {
+                acc[member.id] = member
+                return acc
+            },
+            {} as Record<MatrixRoomMember['id'], MatrixRoomMember | undefined>,
+        ),
 )
 
 export const selectMatrixRoomMember = createSelector(

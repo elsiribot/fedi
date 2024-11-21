@@ -26,9 +26,13 @@ clean_ios() {
 }
 
 clean_android() {
-    echo "Deleting android/build & android/app/build..."
-    rm -rf "$REPO_ROOT/ui/native/android/build"
-    rm -rf "$REPO_ROOT/ui/native/android/app/build"
+    echo "Running gradlew clean & deleting android build files..."
+    pushd "$REPO_ROOT/ui/native/android"
+    ./gradlew clean
+    rm -rf ./.gradle
+    rm -rf ./build
+    rm -rf ./app/build
+    popd
 }
 
 clean_all() {
@@ -41,7 +45,7 @@ while true; do
     echo -e "\nUI Cleaning Utils: Select an option:"
     echo "i - delete iOS build files only (ios/build, ios/Pods, and DerivedData)"
     echo "x - delete Xcode DerivedData only"
-    echo "a - delete Android build files only"
+    echo "a - clean Android build files only ('gradlew clean' + removes android/build, android/app/build, and android/.gradle)"
     echo "n - delete all node_modules folders only"
     echo "f - full clean (all of the above)"
     echo "b - back"

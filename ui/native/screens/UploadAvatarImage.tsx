@@ -63,7 +63,6 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
             setIsUploading(true)
 
             await RNFS.copyFile(file.uri, fileDestination)
-
             await dispatch(
                 uploadAndSetMatrixAvatarUrl({
                     fedimint,

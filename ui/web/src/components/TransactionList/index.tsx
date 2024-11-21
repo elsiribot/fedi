@@ -44,8 +44,8 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                     txn.lnState?.type === 'canceled'
                         ? undefined
                         : txn.direction === 'receive'
-                        ? 'incoming'
-                        : 'outgoing',
+                          ? 'incoming'
+                          : 'outgoing',
                 timestamp: txn.createdAt,
                 notes: txn.notes,
             })}

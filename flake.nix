@@ -29,7 +29,7 @@
     };
 
     android-nixpkgs = {
-      url = "github:tadfisher/android-nixpkgs?rev=6370a3aafe37ed453bfdc4af578eb26339f8fee0"; # stable
+      url = "github:fedibtc/android-nixpkgs?rev=f89ea2d6f9dbc4014c6a0d189ffe94d445bfbd25"; # stable
       # inputs.nixpkgs.follows = "fedimint-pkgs/nixpkgs";
     };
   };
@@ -128,10 +128,8 @@
             platforms-android-33
             platforms-android-34
             emulator
-            ndk-bundle
-            ndk-23-1-7779620
+            ndk-26-1-10909125
             cmake-3-22-1
-            patcher-v4
             tools
           ]);
 
@@ -256,7 +254,7 @@
         # this symlinks binaries needed to run xcode-specific commands assuming
         # xcode is already installed on the machine (can't be nixified normally)
         xcode-wrapper = stdenv.mkDerivation {
-          name = "xcode-wrapper-15.0.1";
+          name = "xcode-wrapper-16";
           buildCommand = ''
             mkdir -p $out/bin
 
@@ -266,9 +264,9 @@
             ln -s /usr/bin/xcrun $out/bin/xcrun
 
             # Check if we have the xcodebuild version that we want
-            if [ -z "$($out/bin/xcodebuild -version | grep 15.0.1)" ]
+            if [ -z "$($out/bin/xcodebuild -version | grep '15.0.1')" ] && [ -z "$($out/bin/xcodebuild -version | grep '16.')" ]
             then
-                echo "xcodebuild version: 15.0.1 is required"
+                echo "xcodebuild version: either v15.0.1 or v16.0+ is required"
                 echo "run: \`just install-xcode\` to install Xcode.app from the CLI"
                 exit 1
             fi
@@ -312,13 +310,14 @@
 
           buildInputs = craneMultiBuild.commonArgs.buildInputs ++ [ pkgs.openssl ];
 
-          # Use old ESLINT config format
-          ESLINT_USE_FLAT_CONFIG = false;
           FEDI_CROSS_DEV_SHELL = "1";
           shellHook = ''
             export PATH=$PATH:''${ANDROID_SDK_ROOT}/../../bin
             alias create-avd="avdmanager create avd --force --name phone --package 'system-images;android-32;google_apis;arm64-v8a' --path $PWD/avd";
             alias emulator="emulator -avd phone"
+
+            # Use old ESLINT config format until we upgrade to v9+
+            export ESLINT_USE_FLAT_CONFIG=false
 
             export REPO_ROOT="$(git rev-parse --show-toplevel)"
             export RUSTC_WRAPPER=${pkgs.sccache}/bin/sccache

@@ -23,17 +23,17 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1694118199,
-        "narHash": "sha256-/DFkc3itzzQUcD/tu3zkjXNVZH1cZU7ZOuAVzanI9Ok=",
-        "owner": "tadfisher",
+        "lastModified": 1731010724,
+        "narHash": "sha256-/1LEt04+D20Mc3Zk8CiIEEI71P2TzArxmEmS2mKNQes=",
+        "owner": "fedibtc",
         "repo": "android-nixpkgs",
-        "rev": "6370a3aafe37ed453bfdc4af578eb26339f8fee0",
+        "rev": "f89ea2d6f9dbc4014c6a0d189ffe94d445bfbd25",
         "type": "github"
       },
       "original": {
-        "owner": "tadfisher",
+        "owner": "fedibtc",
         "repo": "android-nixpkgs",
-        "rev": "6370a3aafe37ed453bfdc4af578eb26339f8fee0",
+        "rev": "f89ea2d6f9dbc4014c6a0d189ffe94d445bfbd25",
         "type": "github"
       }
     },

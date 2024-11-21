@@ -59,10 +59,10 @@ export default function BugReport() {
         status === 'generating-data'
             ? t('feature.bug.submit-generating-data')
             : status === 'uploading-data'
-            ? t('feature.bug.submit-uploading-data')
-            : status === 'submitting-report'
-            ? t('feature.bug.submit-submitting-report')
-            : t('words.submit')
+              ? t('feature.bug.submit-uploading-data')
+              : status === 'submitting-report'
+                ? t('feature.bug.submit-submitting-report')
+                : t('words.submit')
 
     const redirectToHome = () => {
         router.push('/')

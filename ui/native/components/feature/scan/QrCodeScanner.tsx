@@ -10,7 +10,7 @@ import {
 } from 'qrloop'
 import React, { useRef, useState } from 'react'
 import { StyleSheet, Vibration, View } from 'react-native'
-import { Camera, CameraType } from 'react-native-camera-kit'
+import { Camera, CameraApi, CameraType } from 'react-native-camera-kit'
 
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { getBufferEncoding } from '@fedi/common/utils/istextorbinary'
@@ -36,7 +36,7 @@ const QrCodeScanner: React.FC<Props> = ({ processing, onQrCodeDetected }) => {
     const [urFrames, setUrFrames] = useState<string[] | null>(null)
     const [progress, setProgress] = useState(0)
     const isFocused = useIsFocused()
-    const cameraRef = useRef<Camera>(null)
+    const cameraRef = useRef<CameraApi | null>(null)
     const previousDataRef = useRef<string | null>(null)
     const previousDataTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
     const framesRef = useUpdatingRef(frames)

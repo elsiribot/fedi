@@ -16,7 +16,7 @@
   // They will be passed down to the ViewController used by React Native.
   self.initialProps = @{};
 
-  //  for push notifications
+  // for push notifications
   [FIRApp configure];
 
   [super application:application didFinishLaunchingWithOptions:launchOptions];
@@ -26,8 +26,13 @@
 
   return YES;
 }
-
 - (NSURL *)sourceURLForBridge:(RCTBridge *)bridge
+{
+  return [self bundleURL];
+}
+
+// New getBundleURL method for compatibility with RN 0.74.0
+- (NSURL *)bundleURL
 {
 #if DEBUG
   return [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:@"index"];

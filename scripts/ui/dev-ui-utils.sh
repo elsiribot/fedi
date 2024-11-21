@@ -63,7 +63,7 @@ while true; do
             echo "Building ios bridge artifacts & reinstalling app"
             $REPO_ROOT/scripts/bridge/build-bridge-ios.sh
             echo -e "\x1B[32;1mRebuilt ios bridge artifacts successfully\x1B[0m"
-            $REPO_ROOT/scripts/ui/start-ios.sh
+            nix develop .#xcode --command $REPO_ROOT/scripts/ui/start-ios.sh
             ;;
         b)
             echo "Building android bridge artifacts"
@@ -78,7 +78,7 @@ while true; do
             $REPO_ROOT/scripts/bridge/build-bridge-ios.sh
             echo -e "\x1B[32;1mRebuilt android + ios bridge artifacts successfully\x1B[0m"
             $REPO_ROOT/scripts/ui/start-android.sh
-            $REPO_ROOT/scripts/ui/start-ios.sh
+            nix develop .#xcode --command $REPO_ROOT/scripts/ui/start-ios.sh
             ;;
         w)
             echo "Building wasm bundle"

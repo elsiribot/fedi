@@ -23,10 +23,10 @@ import {
 import { Usd, UsdCents } from './units'
 
 export type {
-    SocialRecoveryEvent,
     SocialRecoveryApproval as GuardianApproval,
     RpcInvoice as Invoice,
     RpcLightningGateway as LightningGateway,
+    SocialRecoveryEvent,
 }
 export type SocialRecoveryQrCode = RpcResponse<'recoveryQr'>
 

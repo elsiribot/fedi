@@ -956,10 +956,10 @@ export class MatrixChatClient {
                 kind === 'sent'
                     ? MatrixEventStatus.sent
                     : kind === 'cancelled'
-                    ? MatrixEventStatus.cancelled
-                    : kind === 'sendingFailed'
-                    ? MatrixEventStatus.failed
-                    : MatrixEventStatus.pending
+                      ? MatrixEventStatus.cancelled
+                      : kind === 'sendingFailed'
+                        ? MatrixEventStatus.failed
+                        : MatrixEventStatus.pending
             if (status === MatrixEventStatus.failed) {
                 error = new Error(
                     item.value.sendState?.error || 'Unknown error',

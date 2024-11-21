@@ -23,7 +23,7 @@ const Initializing: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const { theme } = useTheme()
     const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
-    const hasStorageLoaded = useAppSelector(selectHasLoadedFromStorage)
+    const hasStorageLoaded = useAppSelector(selectHasLoadedFromStorage || false)
     const isAppUnlocked = useIsFeatureUnlocked('app')
 
     const hasLoaded = hasStorageLoaded

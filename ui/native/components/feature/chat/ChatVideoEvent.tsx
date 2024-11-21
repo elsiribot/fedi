@@ -16,7 +16,7 @@ import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 import { scaleAttachment } from '@fedi/common/utils/media'
 import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
-import Video from 'react-native-video'
+import Video, { VideoRef } from 'react-native-video'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch } from '../../../state/hooks'
 import { pathJoin, prefixFileUri } from '../../../utils/media'
@@ -37,7 +37,7 @@ const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
     const [paused, setPaused] = useState(true)
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const videoRef = useRef<Video | null>(null)
+    const videoRef = useRef<VideoRef | null>(null)
     const dispatch = useAppDispatch()
     const navigation = useNavigation()
 
