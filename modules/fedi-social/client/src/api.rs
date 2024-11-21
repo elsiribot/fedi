@@ -1,3 +1,4 @@
+#![allow(dependency_on_unit_never_type_fallback)]
 use std::time::Duration;
 
 use async_trait::async_trait;

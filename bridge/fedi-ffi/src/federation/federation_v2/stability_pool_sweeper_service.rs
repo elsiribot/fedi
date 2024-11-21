@@ -4,11 +4,10 @@ use anyhow::anyhow;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
 use fedimint_core::Amount;
 use futures::StreamExt;
-use stability_pool_client::{
-    ClientAccountInfo, StabilityPoolClientModule, StabilityPoolWithdrawalOperationState,
-};
+use stability_pool_client::{ClientAccountInfo, StabilityPoolWithdrawalOperationState};
 use tracing::{error, info};
 
+use super::client::ClientExt;
 use super::db::LastStabilityPoolDepositCycleKey;
 use super::FederationV2;
 use crate::event::{Event, EventSink, TypedEventExt};
@@ -39,7 +38,10 @@ async fn continuously_sweep_stability_pool(
             error!(%e, "Error sweeping stability pool, will retry next cycle if needed");
         }
 
-        let module = client.get_first_module::<StabilityPoolClientModule>();
+        let Ok(module) = client.sp() else {
+            error!("stability pool module not available");
+            return;
+        };
         let next_cycle_start_time = module.next_cycle_start_time().await.unwrap_or(
             fedimint_core::time::duration_since_epoch().as_secs()
                 + module.cfg.cycle_duration.as_secs(),
@@ -63,7 +65,7 @@ async fn sweep_stability_pool_inner(
     //
     // If the above conditions are true, we withdraw all of the user's
     // unlocked balance back to e-cash.
-    let module = client.get_first_module::<StabilityPoolClientModule>();
+    let module = client.sp()?;
     let current_cycle_index = module.current_cycle_index().await?;
     let last_deposit_cycle_index = client
         .db()

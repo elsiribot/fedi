@@ -25,10 +25,10 @@ use fedi_social_client::{
     FediSocialClientInit, RecoveryFile, RecoveryId, SocialBackup, SocialRecoveryClient,
     SocialRecoveryState, SocialVerification, UserSeedPhrase, SOCIAL_RECOVERY_SECRET_CHILD_ID,
 };
+use fedimint_api_client::api::net::Connector;
 use fedimint_api_client::api::{
     DynGlobalApi, DynModuleApi, FederationApiExt as _, StatusResponse, WsFederationApi,
 };
-use fedimint_api_client::download_from_invite_code;
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_client::meta::{FetchKind, MetaService, MetaSource};
@@ -47,7 +47,7 @@ use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::ApiRequestErased;
 use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
 use fedimint_core::timing::TimeReporter;
-use fedimint_core::util::backon::FibonacciBuilder as FibonacciBackoff;
+use fedimint_core::util::backoff_util::aggressive_backoff;
 use fedimint_core::{maybe_add_send_sync, Amount, PeerId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
@@ -372,7 +372,7 @@ impl FederationV2 {
         if should_override_localhost {
             override_localhost_invite_code(&mut invite_code);
         }
-        let api_single_gaurdian = DynGlobalApi::from_invite_code(&invite_code);
+        let api_single_gaurdian = DynGlobalApi::from_invite_code(&Connector::Tcp, &invite_code);
         let client_root_sercet = {
             let federation_id = invite_code.federation_id();
             // We do an additional derivation using `DerivableSecret::federation_key` since
@@ -595,7 +595,7 @@ impl FederationV2 {
         };
         let mut dbtx = mint_client.db.begin_transaction_nc().await;
         let raw_fedimint_balance = mint_client
-            .get_wallet_summary(&mut dbtx)
+            .get_note_counts_by_denomination(&mut dbtx)
             .await
             .total_amount();
         let fedi_fee_sum =
@@ -621,7 +621,11 @@ impl FederationV2 {
             .map(|(&peer_id, endpoint)| {
                 (
                     peer_id,
-                    WsFederationApi::new(vec![(peer_id, endpoint.clone())], api_secret),
+                    WsFederationApi::new(
+                        &Connector::Tcp,
+                        vec![(peer_id, endpoint.clone())],
+                        api_secret,
+                    ),
                 )
             })
             .collect();
@@ -1864,14 +1868,8 @@ impl FederationV2 {
         // continue retry.
         fedimint_core::task::timeout(
             Duration::from_secs(60),
-            self.backup_service.backup(
-                &self.client,
-                FibonacciBackoff::default()
-                    .with_min_delay(Duration::from_millis(200))
-                    .with_max_delay(Duration::from_secs(5))
-                    .with_max_times(10)
-                    .with_jitter(),
-            ),
+            self.backup_service
+                .backup(&self.client, aggressive_backoff()),
         )
         .await
         .context(ErrorCode::Timeout)??;
@@ -1896,7 +1894,7 @@ impl FederationV2 {
     fn social_api(&self) -> anyhow::Result<DynModuleApi> {
         let social_module = self
             .client
-            .try_get_first_module::<fedi_social_client::FediSocialClientModule>()?;
+            .get_first_module::<fedi_social_client::FediSocialClientModule>()?;
         Ok(social_module.api)
     }
 
@@ -1992,7 +1990,7 @@ impl FederationV2 {
 
         let seed_phrase = UserSeedPhrase::from(
             root_seed
-                .word_iter()
+                .words()
                 .map(|x| x.to_string())
                 .collect::<Vec<_>>()
                 .join(" "),
@@ -3298,12 +3296,17 @@ fn invoice_routes_back_to_federation(
             .first()
             .and_then(|rh| rh.0.last())
             .map(|hop| (hop.src_node_id, hop.short_channel_id))
-            == Some((gateway.node_pub_key, gateway.mint_channel_id))
+            == Some((gateway.node_pub_key, gateway.federation_index))
     })
 }
 
 fn internal_pay_is_bad_state(outcome: serde_json::Value) -> bool {
     serde_json::from_value::<InternalPayState>(outcome).is_err()
+}
+
+pub async fn download_from_invite_code(invite_code: &InviteCode) -> anyhow::Result<ClientConfig> {
+    let connector = Connector::Tcp;
+    connector.download_from_invite_code(invite_code).await
 }
 
 #[cfg(test)]

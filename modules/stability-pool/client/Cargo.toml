@@ -15,7 +15,7 @@ futures = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 bitcoin = { workspace = true, features = ["rand", "serde"] }
 tracing = { workspace = true }
-secp256k1-zkp = { workspace = true, features = ["serde", "bitcoin_hashes"] }
+secp256k1 = { workspace = true }
 serde_json = { workspace = true }
 erased-serde = { workspace = true }
 stability-pool-common = { path = "../common" }

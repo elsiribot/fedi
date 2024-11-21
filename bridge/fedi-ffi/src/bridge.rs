@@ -5,12 +5,14 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, bail, Context, Result};
-use bitcoin::bech32::{self, ToBase32};
-use bitcoin::key::{KeyPair, XOnlyPublicKey};
+use bech32::{self, Bech32};
+use bitcoin::key::{Keypair, XOnlyPublicKey};
 use bitcoin::secp256k1::{Message, Secp256k1};
+use data_encoding::BASE32;
 use fedi_social_client::{
     self, FediSocialCommonGen, RecoveryFile, SocialRecoveryClient, SocialRecoveryState,
 };
+use fedimint_api_client::api::net::Connector;
 use fedimint_api_client::api::DynGlobalApi;
 use fedimint_core::config::ClientConfig;
 use fedimint_core::core::ModuleKind;
@@ -103,7 +105,7 @@ impl BridgeRuntime {
             .app_state
             .root_mnemonic()
             .await
-            .word_iter()
+            .words()
             .map(|x| x.to_owned())
             .collect())
     }
@@ -154,9 +156,10 @@ impl BridgeRuntime {
 
     pub async fn get_nostr_pubkey(&self) -> Result<RpcNostrPubkey> {
         let nostr_pubkey = self.nostr_pubkey().await;
-        let data = nostr_pubkey.serialize().to_base32();
+        let hrp = bech32::Hrp::parse_unchecked("npub");
+        let data = BASE32.encode(&nostr_pubkey.serialize());
         Ok(RpcNostrPubkey {
-            npub: bech32::encode("npub", data, bech32::Variant::Bech32)?,
+            npub: bech32::encode::<Bech32>(hrp, data.as_bytes())?,
             hex: nostr_pubkey.to_string(),
         })
     }
@@ -173,7 +176,8 @@ impl BridgeRuntime {
     pub async fn get_nostr_secret(&self) -> Result<RpcNostrSecret> {
         let secp = Secp256k1::new();
         let bytes = self.nostr_secret_key(&secp).await?.secret_bytes();
-        let nsec = bech32::encode("nsec", bytes.to_base32(), bech32::Variant::Bech32)?;
+        let hrp = bech32::Hrp::parse_unchecked("nsec");
+        let nsec = bech32::encode::<Bech32>(hrp, BASE32.encode(&bytes).as_bytes())?;
         let hex = hex::encode(bytes);
 
         Ok(RpcNostrSecret { hex, nsec })
@@ -182,7 +186,7 @@ impl BridgeRuntime {
     async fn nostr_secret_key<Ctx: bitcoin::secp256k1::Context + bitcoin::secp256k1::Signing>(
         &self,
         secp: &Secp256k1<Ctx>,
-    ) -> anyhow::Result<KeyPair> {
+    ) -> anyhow::Result<Keypair> {
         let global_root_secret = self.app_state.root_secret().await;
         let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
         let nostr_keypair = nostr_secret.to_secp_key(secp);
@@ -196,7 +200,7 @@ impl BridgeRuntime {
         let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
         let nostr_keypair = nostr_secret.to_secp_key(&secp);
         let data = &hex::decode(event_hash)?;
-        let message = Message::from_slice(data)?;
+        let message = Message::from_digest_slice(data)?;
         let sig = secp.sign_schnorr(&message, &nostr_keypair);
         // Return hex-encoded string
         Ok(format!("{}", sig))
@@ -483,6 +487,7 @@ impl BridgeFull {
                 .iter()
                 .map(|(peer_id, peer_url)| (*peer_id, peer_url.url.clone())),
             &None, // FIXME: api secret
+            &Connector::Tcp,
         )
         .with_module(social_module_id);
         let client = SocialRecoveryClient::new_start(
@@ -581,6 +586,7 @@ impl BridgeFull {
                 .iter()
                 .map(|(peer_id, peer_url)| (*peer_id, peer_url.url.clone())),
             &None, // FIXME: api secret
+            &Connector::Tcp,
         )
         .with_module(social_module_id);
         let recovery_client = SocialRecoveryClient::new_continue(

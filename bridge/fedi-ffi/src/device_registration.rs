@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use anyhow::{anyhow, bail};
 use fedimint_core::task::TaskGroup;
-use fedimint_core::util::backon::FibonacciBuilder as FibonacciBackoff;
+use fedimint_core::util::backoff_util::custom_backoff;
 use fedimint_core::util::retry;
 use tracing::{error, info};
 
@@ -120,11 +120,7 @@ pub async fn get_registered_devices_with_backoff(
 ) -> anyhow::Result<Vec<RegisteredDevice>> {
     retry(
         "fetch_registered_devices",
-        FibonacciBackoff::default()
-            .with_min_delay(Duration::from_secs(1))
-            .with_max_delay(Duration::from_secs(20 * 60))
-            .with_max_times(usize::MAX)
-            .with_jitter(),
+        custom_backoff(Duration::from_secs(1), Duration::from_secs(20 * 60), None),
         || fedi_api.fetch_registered_devices_for_seed(seed.clone()),
     )
     .await
@@ -158,11 +154,7 @@ pub async fn register_device_with_backoff(
     ) -> anyhow::Result<RegisterDeviceRetryOk> {
         retry(
             "register_device",
-            FibonacciBackoff::default()
-                .with_min_delay(Duration::from_secs(1))
-                .with_max_delay(Duration::from_secs(20 * 60))
-                .with_max_times(usize::MAX)
-                .with_jitter(),
+            custom_backoff(Duration::from_secs(1), Duration::from_secs(20 * 60), None),
             || async {
                 match fedi_api
                     .register_device_for_seed(

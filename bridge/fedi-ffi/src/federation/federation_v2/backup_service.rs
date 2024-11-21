@@ -4,7 +4,7 @@ use anyhow::Result;
 use fedimint_client::backup::Metadata;
 use fedimint_client::Client;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
-use fedimint_core::util::backon::{BackoffBuilder, FibonacciBuilder as FibonacciBackoff};
+use fedimint_core::util::backoff_util::{custom_backoff, FibonacciBackoff};
 use fedimint_core::util::retry;
 use fedimint_core::util::update_merge::UpdateMerge;
 use futures::lock::Mutex;
@@ -65,7 +65,7 @@ impl BackupService {
     }
 
     #[instrument(err, ret, skip_all)]
-    pub async fn backup<B: BackoffBuilder>(&self, client: &Client, backoff: B) -> Result<()> {
+    pub async fn backup(&self, client: &Client, backoff: FibonacciBackoff) -> Result<()> {
         self.update_merge
             .merge(retry("fedimint_backup", backoff, || {
                 self.backup_inner(client)
@@ -112,11 +112,7 @@ impl BackupService {
             *self.state.lock().await = BackupServiceState::Running;
             self.backup(
                 client,
-                FibonacciBackoff::default()
-                    .with_min_delay(Duration::from_secs(1))
-                    .with_max_delay(Duration::from_secs(20 * 60))
-                    .with_max_times(usize::MAX)
-                    .with_jitter(),
+                custom_backoff(Duration::from_secs(1), Duration::from_secs(20 * 60), None),
             )
             .await
             .expect("must not fail with usize::MAX retries");

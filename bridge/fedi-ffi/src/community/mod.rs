@@ -5,9 +5,10 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{bail, Context};
-use bitcoin::bech32::{self, FromBase32};
+use bech32;
+use data_encoding::BASE32;
 use fedimint_core::task::TaskGroup;
-use fedimint_core::util::backon::FibonacciBuilder as FibonacciBackoff;
+use fedimint_core::util::backoff_util::aggressive_backoff;
 use fedimint_core::util::update_merge::UpdateMerge;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
@@ -187,12 +188,12 @@ impl FromStr for CommunityInvite {
         let invite_code = s.to_lowercase();
 
         // TODO shaurya ok to ignore bech32 variant here?
-        let (hrp, data, _) = bech32::decode(&invite_code)?;
+        let (hrp, data) = bech32::decode(&invite_code)?;
         if hrp != COMMUNITY_INVITE_CODE_HRP {
             bail!("Unexpected hrp: {hrp}");
         }
 
-        let decoded = Vec::from_base32(&data)?;
+        let decoded = BASE32.decode(&data)?;
         let decoded_str = String::from_utf8(decoded)?;
         Ok(serde_json::from_str(&decoded_str)?)
     }
@@ -235,20 +236,12 @@ impl Community {
         // minute
         fedimint_core::task::timeout(
             Duration::from_secs(60),
-            fedimint_core::util::retry(
-                "fetch community meta",
-                FibonacciBackoff::default()
-                    .with_min_delay(Duration::from_millis(100))
-                    .with_max_delay(Duration::from_secs(3))
-                    .with_max_times(usize::MAX)
-                    .with_jitter(),
-                || {
-                    fetch_community_meta_json(
-                        http_client.clone(),
-                        community_invite.community_meta_url.clone(),
-                    )
-                },
-            ),
+            fedimint_core::util::retry("fetch community meta", aggressive_backoff(), || {
+                fetch_community_meta_json(
+                    http_client.clone(),
+                    community_invite.community_meta_url.clone(),
+                )
+            }),
         )
         .await?
     }

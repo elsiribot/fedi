@@ -9,7 +9,7 @@ use fedimint_core::module::{CommonModuleInit, ModuleCommon, ModuleConsensusVersi
 use fedimint_core::{
     extensible_associated_module_type, plugin_types_trait_impl_common, Amount, TransactionId,
 };
-use secp256k1_zkp::PublicKey;
+use secp256k1::PublicKey;
 use serde::{Deserialize, Serialize};
 
 pub mod config;
@@ -321,6 +321,7 @@ impl CommonModuleInit for StabilityPoolCommonGen {
 }
 
 plugin_types_trait_impl_common!(
+    KIND,
     StabilityPoolModuleTypes,
     StabilityPoolClientConfig,
     StabilityPoolInput,

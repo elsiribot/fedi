@@ -6,7 +6,7 @@ use fedimint_client::db::{MetaFieldKey, MetaFieldPrefix, MetaFieldValue, MetaSer
 use fedimint_client::meta::{fetch_meta_overrides, FetchKind, MetaService, MetaSource, MetaValues};
 use fedimint_core::config::ClientConfig;
 use fedimint_core::db::{Database, IDatabaseTransactionOpsCoreTyped};
-use fedimint_core::util::{backon, retry};
+use fedimint_core::util::{backoff_util, retry};
 use fedimint_core::{apply, async_trait_maybe_send};
 use futures::StreamExt;
 
@@ -84,14 +84,12 @@ impl MetaSource for LegacyMetaSourceWithExternalUrl {
             .map(|(key, value)| (MetaFieldKey(key.clone()), MetaFieldValue(value.clone())));
         let backoff = match fetch_kind {
             // need to be fast the first time.
-            FetchKind::Initial => backon::FibonacciBuilder::default()
-                .with_min_delay(Duration::from_millis(300))
-                .with_max_delay(Duration::from_secs(3))
-                .with_max_times(10),
-            FetchKind::Background => backon::FibonacciBuilder::default()
-                .with_min_delay(Duration::from_secs(10))
-                .with_max_delay(Duration::from_secs(10 * 60))
-                .with_max_times(usize::MAX),
+            FetchKind::Initial => backoff_util::aggressive_backoff(),
+            FetchKind::Background => backoff_util::custom_backoff(
+                Duration::from_secs(10),
+                Duration::from_secs(10 * 60),
+                None,
+            ),
         };
         let overrides = retry("fetch_meta_overrides", backoff, || async {
             let static_meta = &client_config.global.meta;

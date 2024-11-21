@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use std::panic::PanicInfo;
+use std::panic::PanicHookInfo;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::atomic::AtomicU64;
@@ -103,7 +103,7 @@ pub fn rpc_error(error: &anyhow::Error) -> String {
     json!({ "error": error.to_string(), "code": code, "detail": format!("{error:?}") }).to_string()
 }
 
-pub fn panic_hook(info: &PanicInfo, event_sink: &dyn IEventSink) {
+pub fn panic_hook(info: &PanicHookInfo, event_sink: &dyn IEventSink) {
     event_sink.typed_event(&Event::Panic(PanicEvent {
         message: info.to_string(),
     }))
@@ -572,7 +572,7 @@ async fn signLnurlMessage(
     message: String,
     domain: String,
 ) -> anyhow::Result<RpcSignedLnurlMessage> {
-    let message = Message::from_slice(&hex::decode(message)?)?;
+    let message = Message::from_digest_slice(&hex::decode(message)?)?;
     runtime.sign_lnurl_message(message, domain).await
 }
 
@@ -1654,9 +1654,10 @@ pub mod tests {
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
     use anyhow::{anyhow, bail};
-    use bitcoin::bech32::{self, ToBase32};
+    use bech32::{self, Bech32m};
     use bitcoin::secp256k1::PublicKey;
     use bitcoin::Network;
+    use data_encoding::BASE32;
     use devimint::devfed::DevJitFed;
     use devimint::envs::FM_INVITE_CODE_ENV;
     use devimint::util::{ClnLightningCli, FedimintCli, LnCli, ProcessManager};
@@ -3092,7 +3093,7 @@ pub mod tests {
     async fn test_lnurl_sign_message() -> anyhow::Result<()> {
         let (bridge, _federation) = setup().await?;
         let k1 = String::from("cfcb7616d615252180e392f509207e1f610f8d6106588c61c3e7bbe8577e4c4c");
-        let message = Message::from_slice(&hex::decode(k1)?)?;
+        let message = Message::from_digest_slice(&hex::decode(k1)?)?;
         let domain1 = String::from("fedi.xyz");
         let domain2 = String::from("fedimint.com");
 
@@ -3527,10 +3528,9 @@ pub mod tests {
         };
         let invite_json_str = serde_json::to_string(&community_invite)?;
         let invite_bytes = invite_json_str.as_bytes();
-        let invite_code = bech32::encode(
+        let invite_code = bech32::encode::<Bech32m>(
             COMMUNITY_INVITE_CODE_HRP,
-            invite_bytes.to_base32(),
-            bitcoin::bech32::Variant::Bech32m,
+            BASE32.encode(invite_bytes).as_bytes(),
         )?;
 
         let mock = server
@@ -3589,10 +3589,9 @@ pub mod tests {
         };
         let invite_json_str = serde_json::to_string(&community_invite)?;
         let invite_bytes = invite_json_str.as_bytes();
-        let invite_code_0 = bech32::encode(
+        let invite_code_0 = bech32::encode::<Bech32m>(
             COMMUNITY_INVITE_CODE_HRP,
-            invite_bytes.to_base32(),
-            bitcoin::bech32::Variant::Bech32m,
+            BASE32.encode(invite_bytes).as_bytes(),
         )?;
 
         server
@@ -3609,10 +3608,9 @@ pub mod tests {
         };
         let invite_json_str = serde_json::to_string(&community_invite)?;
         let invite_bytes = invite_json_str.as_bytes();
-        let invite_code_1 = bech32::encode(
+        let invite_code_1 = bech32::encode::<Bech32m>(
             COMMUNITY_INVITE_CODE_HRP,
-            invite_bytes.to_base32(),
-            bitcoin::bech32::Variant::Bech32m,
+            BASE32.encode(invite_bytes).as_bytes(),
         )?;
 
         server
@@ -3680,10 +3678,9 @@ pub mod tests {
         };
         let invite_json_str = serde_json::to_string(&community_invite)?;
         let invite_bytes = invite_json_str.as_bytes();
-        let invite_code = bech32::encode(
+        let invite_code = bech32::encode::<Bech32m>(
             COMMUNITY_INVITE_CODE_HRP,
-            invite_bytes.to_base32(),
-            bitcoin::bech32::Variant::Bech32m,
+            BASE32.encode(invite_bytes).as_bytes(),
         )?;
 
         server

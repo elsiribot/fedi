@@ -42,7 +42,7 @@ use fedimint_core::{Amount, NumPeersExt, OutPoint, PeerId, ServerModule, Transac
 use futures::{stream, FutureExt, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
-use secp256k1_zkp::PublicKey;
+use secp256k1::PublicKey;
 pub use stability_pool_common as common;
 use tokio::sync::{Mutex, RwLock};
 use tracing::{info, warn};
@@ -55,7 +55,6 @@ pub struct StabilityPoolInit;
 
 impl ModuleInit for StabilityPoolInit {
     type Common = StabilityPoolCommonGen;
-    const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(2);
 
     // TODO shaurya handle stability pool DB dump
     async fn dump_database(
