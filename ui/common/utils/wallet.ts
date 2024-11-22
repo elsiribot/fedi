@@ -87,6 +87,8 @@ export const makeTxnDetailStatusText = (
                         return t('words.refund')
                     case 'userCanceledProcessing':
                         return t('words.pending')
+                    default:
+                        return ''
                 }
             } else {
                 return t('phrases.sent-bitcoin')
@@ -140,6 +142,8 @@ export const makeTxnDetailStatusText = (
                         return t('words.pending')
                     case 'issuing':
                         return t('words.pending')
+                    default:
+                        return ''
                 }
             } else {
                 return t('words.received')
