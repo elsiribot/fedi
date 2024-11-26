@@ -42,7 +42,8 @@ use crate::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
 use crate::error::get_error_code;
 use crate::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use crate::features::FeatureCatalog;
-use crate::federation_v2::{BackupServiceStatus, FederationV2};
+use crate::federation::federation_sm::FederationState;
+use crate::federation::federation_v2::{BackupServiceStatus, FederationV2};
 use crate::matrix::{
     self, Matrix, RpcBackPaginationStatus, RpcMatrixAccountSession, RpcMatrixUploadResult,
     RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomListEntry, RpcRoomMember,
@@ -51,10 +52,11 @@ use crate::matrix::{
 use crate::observable::{Observable, ObservableVec};
 use crate::storage::FiatFXInfo;
 use crate::types::{
-    GuardianStatus, RpcBridgeStatus, RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
-    RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
-    RpcLightningGateway, RpcMediaUploadParams, RpcNostrPubkey, RpcNostrSecret,
-    RpcPayAddressResponse, RpcRegisteredDevice, RpcTransactionDirection,
+    federation_v2_to_rpc_federation, GuardianStatus, RpcBridgeStatus, RpcCommunity,
+    RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederationMaybeLoading, RpcFederationPreview,
+    RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway, RpcMediaUploadParams,
+    RpcNostrPubkey, RpcNostrSecret, RpcPayAddressResponse, RpcRegisteredDevice,
+    RpcTransactionDirection,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -85,7 +87,7 @@ pub async fn fedimint_initialize_async(
     )
     .await
     .context("could not create a bridge")?;
-    Ok(Arc::new(bridge))
+    Ok(bridge)
 }
 
 pub fn rpc_error(error: &anyhow::Error) -> String {
@@ -158,7 +160,7 @@ macro_rules! federation_rpc_method {
 
             pub type Return = $ret;
             pub async fn handle(bridge: Arc<Bridge>, $name::Args { federation_id, $( $arg_name ),* }: $name::Args) -> anyhow::Result<$ret> {
-                let $federation = bridge.get_federation(&federation_id.0).await?;
+                let $federation = bridge.get_federation(&federation_id.0)?;
                 tracing::Span::current().record("federation_id", &federation_id.0);
                 super::$name($federation, $($arg_name),*).await
             }
@@ -191,7 +193,7 @@ macro_rules! federation_recovering_rpc_method {
 
             pub type Return = $ret;
             pub async fn handle(bridge: Arc<Bridge>, $name::Args { federation_id, $( $arg_name ),* }: $name::Args) -> anyhow::Result<$ret> {
-                let $federation = bridge.get_federation_maybe_recovering(&federation_id.0).await?;
+                let $federation = bridge.get_federation_maybe_recovering(&federation_id.0)?;
                 tracing::Span::current().record("federation_id", &federation_id.0);
                 super::$name($federation, $($arg_name),*).await
             }
@@ -211,9 +213,11 @@ async fn joinFederation(
     recover_from_scratch: bool,
 ) -> anyhow::Result<RpcFederation> {
     info!("joining federation {:?}", invite_code);
-    bridge
+    let fed_arc = bridge
+        .federations
         .join_federation(invite_code, recover_from_scratch)
-        .await
+        .await?;
+    Ok(federation_v2_to_rpc_federation(&fed_arc).await)
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -226,7 +230,24 @@ async fn federationPreview(
 
 #[macro_rules_derive(rpc_method!)]
 async fn listFederations(bridge: Arc<Bridge>) -> anyhow::Result<Vec<RpcFederationMaybeLoading>> {
-    Ok(bridge.list_federations().await)
+    let feds_map = bridge.federations.get_federations_map();
+    let mut feds_list = vec![];
+
+    for (id, fed_state) in feds_map {
+        let id = RpcFederationId(id);
+        feds_list.push(match fed_state {
+            FederationState::Loading => RpcFederationMaybeLoading::Loading { id },
+            FederationState::Ready(fed_arc) | FederationState::Recovering(fed_arc) => {
+                RpcFederationMaybeLoading::Ready(federation_v2_to_rpc_federation(&fed_arc).await)
+            }
+            FederationState::Failed(err_arc) => RpcFederationMaybeLoading::Failed {
+                id,
+                error: err_arc.to_string(),
+            },
+        });
+    }
+
+    Ok(feds_list)
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -234,7 +255,7 @@ async fn leaveFederation(
     bridge: Arc<Bridge>,
     federation_id: RpcFederationId,
 ) -> anyhow::Result<()> {
-    bridge.leave_federation(&federation_id.0).await
+    bridge.federations.leave_federation(&federation_id.0).await
 }
 
 // TODO: generateInvoice should return OperationId
@@ -262,7 +283,7 @@ async fn decodeInvoice(
 ) -> anyhow::Result<RpcInvoice> {
     // TODO: validate the invoice (same network, haven't already paid, etc)
     if let Some(federation_id) = federation_id {
-        let federation = bridge.get_federation(&federation_id.0).await?;
+        let federation = bridge.get_federation(&federation_id.0)?;
         federation.decode_invoice(invoice).await
     } else {
         let invoice: Bolt11Invoice = invoice.trim().parse().context(ErrorCode::InvalidInvoice)?;
@@ -1633,7 +1654,7 @@ mod tests {
     use fedi_core::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
     use fedi_social_client::common::VerificationDocument;
     use fedimint_core::core::ModuleKind;
-    use fedimint_core::task::TaskGroup;
+    use fedimint_core::task::{sleep_in_test, TaskGroup};
     use fedimint_core::{apply, async_trait_maybe_send, Amount};
     use fedimint_logging::{TracingSetup, LOG_DEVIMINT};
     use rand::distributions::Alphanumeric;
@@ -1649,8 +1670,9 @@ mod tests {
     use crate::envs::USE_UPSTREAM_FEDIMINTD_ENV;
     use crate::event::{DeviceRegistrationEvent, TransactionEvent};
     use crate::features::RuntimeEnvironment;
-    use crate::federation_v2::client::ClientExt;
-    use crate::federation_v2::FederationV2;
+    use crate::federation::federation_sm::FederationState;
+    use crate::federation::federation_v2::client::ClientExt;
+    use crate::federation::federation_v2::FederationV2;
     use crate::ffi::PathBasedStorage;
     use crate::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
     use crate::types::{
@@ -2003,9 +2025,7 @@ mod tests {
     async fn join_test_fed(bridge: &Arc<Bridge>) -> Result<Arc<FederationV2>, anyhow::Error> {
         let invite_code = std::env::var("FM_INVITE_CODE").unwrap();
         let fedimint_federation = joinFederation(bridge.clone(), invite_code, false).await?;
-        let federation = bridge
-            .get_federation_maybe_recovering(&fedimint_federation.id.0)
-            .await?;
+        let federation = bridge.get_federation_maybe_recovering(&fedimint_federation.id.0)?;
         use_lnd_gateway(&federation).await?;
         Ok(federation)
     }
@@ -2017,9 +2037,7 @@ mod tests {
         let invite_code = std::env::var("FM_INVITE_CODE").unwrap();
         let fedimint_federation =
             joinFederation(bridge.clone(), invite_code, recover_from_scratch).await?;
-        let federation = bridge
-            .get_federation_maybe_recovering(&fedimint_federation.id.0)
-            .await?;
+        let federation = bridge.get_federation_maybe_recovering(&fedimint_federation.id.0)?;
         Ok(federation)
     }
 
@@ -2043,6 +2061,7 @@ mod tests {
         let _dev_fed = dev_fed().await?;
         let mut tests_set = JoinSet::new();
         spawn_and_attach_name!(tests_set, test_join_and_leave_and_join);
+        spawn_and_attach_name!(tests_set, test_join_concurrent);
         spawn_and_attach_name!(tests_set, test_lightning_send_and_receive);
         spawn_and_attach_name!(tests_set, test_lightning_send_and_receive);
         spawn_and_attach_name!(tests_set, test_ecash);
@@ -2269,6 +2288,75 @@ mod tests {
         assert_eq!(listFederations(bridge).await?.len(), 1);
 
         Ok(())
+    }
+
+    async fn test_join_concurrent() -> anyhow::Result<()> {
+        let device_identifier = "bridge:test:70c2ad23-bfac-4aa2-81c3-d6f5e79ae724".to_string();
+
+        let mock_fedi_api = Arc::new(MockFediApi::new());
+        let data_dir = create_data_dir();
+        let federation_id;
+        let amount;
+        // first app launch
+        {
+            let bridge = setup_bridge_custom_with_data_dir(
+                device_identifier.clone(),
+                mock_fedi_api.clone(),
+                FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+                data_dir.clone(),
+            )
+            .await?;
+            let env_invite_code = std::env::var("FM_INVITE_CODE").unwrap();
+
+            // Can't re-join a federation we're already a member of
+            let (res1, res2) = tokio::join!(
+                joinFederation(bridge.clone(), env_invite_code.clone(), false),
+                joinFederation(bridge.clone(), env_invite_code.clone(), false),
+            );
+            federation_id = match (res1, res2) {
+                (Ok(f), Err(_)) | (Err(_), Ok(f)) => f.id.0,
+                _ => panic!("exactly one of two concurrent join federation must fail"),
+            };
+
+            let federation = bridge.get_federation(&federation_id)?;
+            let ecash = cli_generate_ecash(fedimint_core::Amount::from_msats(10_000)).await?;
+            amount = receiveEcash(federation.clone(), ecash).await?.0;
+            wait_for_ecash_reissue(&federation).await?;
+            bridge
+                .task_group
+                .clone()
+                .shutdown_join_all(Duration::from_secs(5))
+                .await?;
+        }
+
+        // second app launch
+        {
+            let bridge = setup_bridge_custom_with_data_dir(
+                device_identifier,
+                mock_fedi_api.clone(),
+                FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+                data_dir.clone(),
+            )
+            .await?;
+            let federation = wait_for_federation_loading(&bridge, &federation_id).await?;
+            assert_eq!(federation.get_balance().await, amount);
+        }
+        Ok(())
+    }
+
+    async fn wait_for_federation_loading(
+        bridge: &Bridge,
+        federation_id: &str,
+    ) -> anyhow::Result<Arc<FederationV2>> {
+        loop {
+            match bridge.federations.get_federation_state(federation_id)? {
+                FederationState::Loading => {
+                    sleep_in_test("loading federation", Duration::from_millis(10)).await
+                }
+                FederationState::Ready(f) | FederationState::Recovering(f) => return Ok(f),
+                FederationState::Failed(err) => bail!(err),
+            }
+        }
     }
 
     async fn test_lightning_send_and_receive() -> anyhow::Result<()> {
@@ -2671,7 +2759,7 @@ mod tests {
 
             fedimint_core::task::sleep(Duration::from_millis(100)).await;
         }
-        let recovery_federation = recovery_bridge.get_federation(&id.0).await?;
+        let recovery_federation = recovery_bridge.get_federation(&id.0)?;
         // Currently, accrued fedi fee is merged back into balance upon recovery
         // wait atmost 10s
         for _ in 0..100 {
@@ -2816,9 +2904,8 @@ mod tests {
         assert_eq!(initial_words, final_words);
 
         // Assert that balances are correct
-        let recovery_federation = recovery_bridge
-            .get_federation_maybe_recovering(&federation_id.0)
-            .await?;
+        let recovery_federation =
+            recovery_bridge.get_federation_maybe_recovering(&federation_id.0)?;
         assert!(recovery_federation.recovering());
         let id = recovery_federation.rpc_federation_id();
         drop(recovery_federation);
@@ -2834,7 +2921,7 @@ mod tests {
 
             fedimint_core::task::sleep(Duration::from_millis(100)).await;
         }
-        let recovery_federation = recovery_bridge.get_federation(&id.0).await?;
+        let recovery_federation = recovery_bridge.get_federation(&id.0)?;
         // Currently, accrued fedi fee is merged back into balance upon recovery
         assert_eq!(
             ecash_balance_before + expected_fedi_fee,
@@ -3011,7 +3098,7 @@ mod tests {
         // join
         let fedimint_federation =
             joinFederation(bridge.clone(), invite_code.clone(), false).await?;
-        let federation = bridge.get_federation(&fedimint_federation.id.0).await?;
+        let federation = bridge.get_federation(&fedimint_federation.id.0)?;
         use_lnd_gateway(&federation).await?;
 
         // receive ecash and backup
@@ -3245,7 +3332,7 @@ mod tests {
 
             fedimint_core::task::sleep(Duration::from_millis(100)).await;
         }
-        let recovery_federation = recovery_bridge.get_federation(&id.0).await?;
+        let recovery_federation = recovery_bridge.get_federation(&id.0)?;
         // Currently, accrued fedi fee is merged back into balance upon recovery
         assert_eq!(
             ecash_balance_before + expected_fedi_fee,
@@ -3707,9 +3794,7 @@ mod tests {
         fedimint_core::task::timeout(Duration::from_secs(5), cln_wait_invoice(label)).await??;
 
         // Ensure outstanding fee has been cleared
-        let federation = new_bridge
-            .get_federation(&federation_id.to_string())
-            .await?;
+        let federation = new_bridge.get_federation(&federation_id.to_string())?;
         assert_eq!(Amount::ZERO, federation.get_pending_fedi_fees().await);
         assert_eq!(Amount::ZERO, federation.get_outstanding_fedi_fees().await);
 
@@ -3805,9 +3890,7 @@ mod tests {
 
         // Join federation
         let rpc_federation = joinFederation(bridge.clone(), invite_code.clone(), false).await?;
-        let federation = bridge
-            .get_federation_maybe_recovering(&rpc_federation.id.0)
-            .await?;
+        let federation = bridge.get_federation_maybe_recovering(&rpc_federation.id.0)?;
         use_lnd_gateway(&federation).await?;
 
         // receive ecash
@@ -3820,11 +3903,7 @@ mod tests {
 
         // Clean shutdown of bridge
         drop(federation);
-        bridge
-            .task_group
-            .clone()
-            .shutdown_join_all(Duration::from_secs(5))
-            .await?;
+        bridge.task_group.clone().shutdown_join_all(None).await?;
         drop(bridge);
 
         // Stop federation
@@ -3840,7 +3919,7 @@ mod tests {
         .await?;
 
         // Bridge should initialize successfully even though federation is down
-        assert!(bridge.list_federations().await.len() == 1);
+        assert!(bridge.federations.get_federations_map().len() == 1);
 
         // Wait for federation ready event for a max of 2s
         let rpc_federation = fedimint_core::task::timeout(Duration::from_secs(2), async move {

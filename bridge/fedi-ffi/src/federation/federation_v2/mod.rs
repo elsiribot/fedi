@@ -88,27 +88,25 @@ use self::dev::{
 };
 use self::ln_gateway_service::LnGatewayService;
 use self::stability_pool_sweeper_service::StabilityPoolSweeperService;
-use super::constants::{
+use super::federations_locker::FederationLockGuard;
+use crate::constants::{
     LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE, ONE_WEEK, PAY_INVOICE_TIMEOUT,
     REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE, WALLET_OPERATION_TYPE,
 };
-use super::event::{Event, EventSink, TypedEventExt};
-use super::types::{
-    federation_v2_to_rpc_federation, RpcAmount, RpcInvoice, RpcLightningGateway,
-    RpcPayInvoiceResponse, RpcPublicKey,
-};
 use crate::error::ErrorCode;
-use crate::event::RecoveryProgressEvent;
+use crate::event::{Event, EventSink, RecoveryProgressEvent, TypedEventExt};
 use crate::features::FeatureCatalog;
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
 use crate::storage::{AppState, FediFeeSchedule};
 use crate::types::{
-    EcashReceiveMetadata, EcashSendMetadata, GuardianStatus, LightningSendMetadata,
-    OperationFediFeeStatus, RpcBitcoinDetails, RpcEcashInfo, RpcFederationId,
-    RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
-    RpcLightningDetails, RpcLnState, RpcOOBState, RpcOnchainState, RpcOperationFediFeeStatus,
-    RpcPayAddressResponse, RpcReturningMemberStatus, RpcStabilityPoolTransactionState,
-    RpcTransaction, RpcTransactionDirection, TransactionDateFiatInfo, WithdrawalDetails,
+    federation_v2_to_rpc_federation, EcashReceiveMetadata, EcashSendMetadata, GuardianStatus,
+    LightningSendMetadata, OperationFediFeeStatus, RpcAmount, RpcBitcoinDetails, RpcEcashInfo,
+    RpcFederationId, RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails,
+    RpcGenerateEcashResponse, RpcInvoice, RpcLightningDetails, RpcLightningGateway, RpcLnState,
+    RpcOOBState, RpcOnchainState, RpcOperationFediFeeStatus, RpcPayAddressResponse,
+    RpcPayInvoiceResponse, RpcPublicKey, RpcReturningMemberStatus,
+    RpcStabilityPoolTransactionState, RpcTransaction, RpcTransactionDirection,
+    TransactionDateFiatInfo, WithdrawalDetails,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
@@ -171,6 +169,7 @@ pub struct FederationV2 {
     pub feature_catalog: Arc<FeatureCatalog>,
     pub app_state: Arc<AppState>,
     pub this_weak: Weak<Self>,
+    pub guard: FederationLockGuard,
 }
 
 impl FederationV2 {
@@ -189,8 +188,10 @@ impl FederationV2 {
         Ok(client_builder)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn new(
         client: ClientHandle,
+        guard: FederationLockGuard,
         event_sink: EventSink,
         task_group: TaskGroup,
         secret: DerivableSecret,
@@ -215,6 +216,7 @@ impl FederationV2 {
             feature_catalog,
             app_state,
             this_weak: weak.clone(),
+            guard,
         });
         if !recovering {
             federation.start_background_tasks().await;
@@ -313,6 +315,7 @@ impl FederationV2 {
     #[allow(clippy::too_many_arguments)]
     pub async fn from_db(
         db: Database,
+        guard: FederationLockGuard,
         event_sink: EventSink,
         task_group: TaskGroup,
         root_mnemonic: &bip39::Mnemonic,
@@ -342,6 +345,7 @@ impl FederationV2 {
             Self::auxiliary_secret_from_root_mnemonic(root_mnemonic, &federation_id, device_index);
         Ok(Self::new(
             client,
+            guard,
             event_sink,
             task_group.make_subgroup(),
             auxiliary_secret,
@@ -414,6 +418,7 @@ impl FederationV2 {
     #[allow(clippy::too_many_arguments)]
     pub async fn join(
         invite_code_string: String,
+        guard: FederationLockGuard,
         event_sink: EventSink,
         task_group: TaskGroup,
         db: Database,
@@ -480,6 +485,7 @@ impl FederationV2 {
         };
         let this = Self::new(
             client,
+            guard,
             event_sink,
             task_group.make_subgroup(),
             auxiliary_secret,

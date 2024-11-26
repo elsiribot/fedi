@@ -16,7 +16,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use stability_pool_client::ClientAccountInfo;
 use ts_rs::TS;
 
-use super::federation_v2::FederationV2;
+use super::federation::federation_v2::FederationV2;
 use super::utils::to_unix_time;
 use crate::api::RegisteredDevice;
 use crate::storage::FediFeeSchedule;

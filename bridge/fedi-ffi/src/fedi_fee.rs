@@ -16,11 +16,11 @@ use tracing::{error, info, instrument, warn};
 
 use crate::api::IFediApi;
 use crate::constants::MILLION;
-use crate::federation_v2::client::ClientExt;
-use crate::federation_v2::db::{
+use crate::federation::federation_v2::client::ClientExt;
+use crate::federation::federation_v2::db::{
     OutstandingFediFeesPerTXTypeKey, OutstandingFediFeesPerTXTypeKeyPrefix,
 };
-use crate::federation_v2::{zero_gateway_fees, FederationV2};
+use crate::federation::federation_v2::{zero_gateway_fees, FederationV2};
 use crate::storage::{AppState, FediFeeSchedule, ModuleFediFeeSchedule};
 use crate::types::{LightningSendMetadata, RpcTransactionDirection};
 

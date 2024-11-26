@@ -12,9 +12,9 @@ use serde::Serialize;
 use tracing::{error, info, instrument};
 use ts_rs::TS;
 
-use super::super::constants::BACKUP_FREQUENCY;
-use super::super::types::FediBackupMetadata;
 use super::db::LastBackupTimestampKey;
+use crate::constants::BACKUP_FREQUENCY;
+use crate::types::FediBackupMetadata;
 use crate::utils::to_unix_time;
 
 #[derive(Default)]
