@@ -1808,11 +1808,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fedi-core"
-version = "0.3.0"
-
-[[package]]
-name = "fedi-db-dump"
+name = "fedi-bug-report"
 version = "0.3.0"
 dependencies = [
  "anyhow",
@@ -1821,12 +1817,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "fedi-core"
+version = "0.3.0"
+
+[[package]]
 name = "fedi-debug"
 version = "0.0.0"
 dependencies = [
  "anyhow",
  "clap",
- "fedi-db-dump",
+ "fedi-bug-report",
  "fedimint-core",
  "fedimint-rocksdb",
  "tokio",
@@ -1874,8 +1874,8 @@ dependencies = [
  "eyeball",
  "eyeball-im",
  "fedi-api-types",
+ "fedi-bug-report",
  "fedi-core",
- "fedi-db-dump",
  "fedi-social-client",
  "fedimint-aead",
  "fedimint-api-client",
@@ -1890,6 +1890,7 @@ dependencies = [
  "fedimint-meta-client",
  "fedimint-mint-client",
  "fedimint-rocksdb",
+ "fedimint-tbs",
  "fedimint-threshold-crypto",
  "fedimint-wallet-client",
  "futures",
