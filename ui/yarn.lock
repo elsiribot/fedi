@@ -12034,10 +12034,9 @@ react-native-vision-camera@4.6.1:
   resolved "https://registry.yarnpkg.com/react-native-vision-camera/-/react-native-vision-camera-4.6.1.tgz#f08a2192ee18f2ae58c11d9525fa8260d48ed637"
   integrity sha512-USp7g+Q/H7nzIS2XBJTWVdzZArxgZu+IFafgswVzxdmr0iSpLjLUtoUp+SUWxZ+nLhJriYYvqg8hfZrJtnpnlw==
 
-react-native-webview@^13.12.3:
+"react-native-webview@https://github.com/tian000/react-native-webview.git":
   version "13.12.4"
-  resolved "https://registry.yarnpkg.com/react-native-webview/-/react-native-webview-13.12.4.tgz#1a563a7fbd6bf53d688388d46708f273ed0ebb94"
-  integrity sha512-8lWeYPVWeOj0ya9ZpDesOQPRgczuN3ogQHlhS21sNXndd4kvfPG+WjlRdrvxYgj//udpwmzcWzagwLnEp60Aqg==
+  resolved "https://github.com/tian000/react-native-webview.git#e9391b8487b808b539bfb2fa121850950a2f53ee"
   dependencies:
     escape-string-regexp "^4.0.0"
     invariant "2.2.4"
