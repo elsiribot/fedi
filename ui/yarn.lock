@@ -11814,11 +11814,6 @@ react-is@^18.0.0:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-18.3.1.tgz#e83557dc12eae63a99e003a46388b1dcbb44db7e"
   integrity sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==
 
-react-native-camera-kit@^14.0.0:
-  version "14.1.0"
-  resolved "https://registry.yarnpkg.com/react-native-camera-kit/-/react-native-camera-kit-14.1.0.tgz#1e05039cc4b2c8db30320cfb6e9f4348e20f4e0d"
-  integrity sha512-idkg+Sa2KbGvF6SUqmuAr2U12qBELdiuUJ6fxgB4whUC2AyYHi5jBxiGv6whY/eTB3is7nW1S+TjyM9pEBzNzw==
-
 react-native-codegen@^0.70.7:
   version "0.70.7"
   resolved "https://registry.yarnpkg.com/react-native-codegen/-/react-native-codegen-0.70.7.tgz#8f6b47a88740ae703209d57b7605538d86dacfa6"
@@ -12029,12 +12024,12 @@ react-native-video@^6.7.0:
   resolved "https://registry.yarnpkg.com/react-native-video/-/react-native-video-6.8.0.tgz#59153558ae014bd3e555f9fc184e1dde16917b60"
   integrity sha512-4Q4ccIXcPWG4Xm239DyLfTOTP01DYzrlXV4dBkuygINsrGTqua5E4jedkDRjj/KOOjIqDjO1elstZq2sfS2lOg==
 
-react-native-vision-camera@4.6.1:
-  version "4.6.1"
-  resolved "https://registry.yarnpkg.com/react-native-vision-camera/-/react-native-vision-camera-4.6.1.tgz#f08a2192ee18f2ae58c11d9525fa8260d48ed637"
-  integrity sha512-USp7g+Q/H7nzIS2XBJTWVdzZArxgZu+IFafgswVzxdmr0iSpLjLUtoUp+SUWxZ+nLhJriYYvqg8hfZrJtnpnlw==
+react-native-vision-camera@4.6.3:
+  version "4.6.3"
+  resolved "https://registry.yarnpkg.com/react-native-vision-camera/-/react-native-vision-camera-4.6.3.tgz#4454ec5a00d529dde6e4d96e29cdb49fc37a3b7f"
+  integrity sha512-fVHww4cNFrxvMYOlUZcjl3iYmR3vcUtvLZKW9NHlKZ3o4zsspwYjbw2vheZvHrHtJ30OrE3N2NFqT6CxgPvRCw==
 
-"react-native-webview@https://github.com/tian000/react-native-webview.git":
+"react-native-webview@https://github.com/tian000/react-native-webview.git#e9391b8487b808b539bfb2fa121850950a2f53ee":
   version "13.12.4"
   resolved "https://github.com/tian000/react-native-webview.git#e9391b8487b808b539bfb2fa121850950a2f53ee"
   dependencies:
