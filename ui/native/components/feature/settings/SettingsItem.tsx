@@ -37,11 +37,14 @@ const SettingsItem = ({
         <Pressable
             style={({ pressed }) => [
                 style.container,
-                {
-                    backgroundColor: pressed
-                        ? theme.colors.primary05
-                        : 'transparent',
-                },
+                // dont react to presses if disabled
+                disabled
+                    ? style.disabled
+                    : {
+                          backgroundColor: pressed
+                              ? theme.colors.primary05
+                              : 'transparent',
+                      },
             ]}
             onPress={disabled ? undefined : onPress}>
             <>
@@ -87,6 +90,9 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             gap: theme.spacing.sm,
+        },
+        disabled: {
+            opacity: 0.3,
         },
     })
 
