@@ -22,12 +22,12 @@ base64_serde_type!(
 /// JSON encoding for proofs with human readable total amount
 #[derive(Serialize, Deserialize)]
 pub struct SerializedReusedEcashProofs {
-    total_amount_msats: Amount,
+    pub total_amount_msats: Amount,
     #[serde(with = "Base64UrlSafe")]
-    reused_ecash_proofs: Vec<u8>,
+    pub reused_ecash_proofs: Vec<u8>,
 }
 
-type ReusedEcashProofs = Vec<ReusedEcashProof>;
+pub type ReusedEcashProofs = Vec<ReusedEcashProof>;
 
 pub async fn generate(mint: &MintClientModule) -> anyhow::Result<SerializedReusedEcashProofs> {
     let secrets = mint.reused_note_secrets().await;
@@ -40,6 +40,15 @@ pub async fn generate(mint: &MintClientModule) -> anyhow::Result<SerializedReuse
         total_amount_msats: total_amount,
         reused_ecash_proofs: proofs.consensus_encode_to_vec(),
     })
+}
+
+impl SerializedReusedEcashProofs {
+    pub fn deserialize(&self) -> anyhow::Result<ReusedEcashProofs> {
+        Ok(ReusedEcashProofs::consensus_decode_vec(
+            self.reused_ecash_proofs.clone(),
+            &Default::default(),
+        )?)
+    }
 }
 
 #[derive(Encodable, Decodable)]
