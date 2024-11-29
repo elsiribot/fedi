@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use std::panic::PanicHookInfo;
+use std::panic::PanicInfo;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::atomic::AtomicU64;
@@ -103,7 +103,7 @@ pub fn rpc_error(error: &anyhow::Error) -> String {
     json!({ "error": error.to_string(), "code": code, "detail": format!("{error:?}") }).to_string()
 }
 
-pub fn panic_hook(info: &PanicHookInfo, event_sink: &dyn IEventSink) {
+pub fn panic_hook(info: &PanicInfo, event_sink: &dyn IEventSink) {
     event_sink.typed_event(&Event::Panic(PanicEvent {
         message: info.to_string(),
     }))

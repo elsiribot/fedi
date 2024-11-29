@@ -6,7 +6,7 @@
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     fedimint-pkgs = {
-      url = "github:fedibtc/fedimint?ref=v0.4.3-rc.2-fed4";
+      url = "github:fedibtc/fedimint?ref=v0.5.0-rc.2-fed0";
     };
 
     fenix = {
