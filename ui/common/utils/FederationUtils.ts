@@ -104,8 +104,7 @@ const fetchExternalMetadata = async (
                 log.error('Failed to fetch metadata from external url', error)
                 retryDelay += 3000
                 log.info(
-                    `Retrying fetch metadata in ${
-                        retryDelay / 1000
+                    `Retrying fetch metadata in ${retryDelay / 1000
                     } seconds...`,
                 )
                 retryInBackground() // Recursive call
@@ -152,11 +151,11 @@ export const fetchFederationsExternalMetadata = async (
     // When results come in in the background, hit the callback for relevant federations
     const handleBackgroundSuccess = onBackgroundSuccess
         ? (externalMeta: ExternalMetaJson) => {
-              const entries = getMetaEntries(externalMeta)
-              entries.forEach(
-                  ([id, meta]) => meta && onBackgroundSuccess(id, meta),
-              )
-          }
+            const entries = getMetaEntries(externalMeta)
+            entries.forEach(
+                ([id, meta]) => meta && onBackgroundSuccess(id, meta),
+            )
+        }
         : undefined
 
     // Collect & deduplicate external meta URLs
@@ -244,6 +243,16 @@ const getMetaField = (
 
     if (field === 'default_matrix_rooms') {
         return metadata[`fedi:default_matrix_rooms`] ?? metadata[field] ?? null
+    }
+
+    if (field === 'popup_end_timestamp') {
+        return (
+            // Prioritizes federation_expiry_timestamp over popup_end_timestamp since it's a fedimint-specific field
+            metadata['federation_expiry_timestamp'] ??
+            metadata[`fedi:${field}`] ??
+            metadata[field] ??
+            null
+        )
     }
 
     if (Object.values(SupportedMetaFields).some(x => x === field)) {
