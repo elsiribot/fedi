@@ -16,7 +16,7 @@ import {
 
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
-import { AnyParsedData, ParserDataType } from '../../../types'
+import { AnyParsedData, ParsedError, ParserDataType } from '../../../types'
 import { NavigationArgs, NavigationHook } from '../../../types/navigation'
 import CustomOverlay, { CustomOverlayContents } from '../../ui/CustomOverlay'
 import RecoveryInProgress from '../recovery/RecoveryInProgress'
@@ -67,6 +67,10 @@ export const OmniConfirmation = <T extends AnyParsedData>({
         setIsLoading(false)
     }
 
+    function isParsedError(data: AnyParsedData): data is ParsedError {
+        return (data as ParsedError).data?.goBackText !== undefined
+    }
+
     const {
         contents,
         continueText = t('words.continue'),
@@ -108,6 +112,13 @@ export const OmniConfirmation = <T extends AnyParsedData>({
         }
 
         switch (parsedData.type) {
+            case ParserDataType.Error:
+                return {
+                    contents: {
+                        icon: 'Warning',
+                        title: parsedData.data.title,
+                    },
+                }
             case ParserDataType.Bolt11:
             case ParserDataType.LnurlPay:
                 return {
@@ -264,12 +275,18 @@ export const OmniConfirmation = <T extends AnyParsedData>({
         }
     })()
 
-    const goBackText = propsGoBackText || t('phrases.go-back')
+    const goBackText =
+        propsGoBackText ||
+        (isParsedError(parsedData) ? parsedData.data.goBackText : undefined) ||
+        t('phrases.go-back')
     const buttons = useMemo(() => {
         const b = [
             {
                 text: goBackText,
-                onPress: () => onGoBack(),
+                onPress: () => {
+                    setIsLoading(false)
+                    onGoBack()
+                },
                 primary: !continueOnPress,
             },
         ]
