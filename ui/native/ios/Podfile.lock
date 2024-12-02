@@ -1780,27 +1780,6 @@ PODS:
     - React-logger (= 0.75.4)
     - React-perflogger (= 0.75.4)
     - React-utils (= 0.75.4)
-  - ReactNativeCameraKit (14.1.0):
-    - DoubleConversion
-    - glog
-    - hermes-engine
-    - RCT-Folly (= 2024.01.01.00)
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - Yoga
   - rn-fetch-blob (0.12.0):
     - React-Core
   - RNCAsyncStorage (2.1.0):
@@ -2024,16 +2003,16 @@ PODS:
     - ReactCommon/turbomodule/core
     - Yoga
   - SocketRocket (0.7.0)
-  - VisionCamera (4.6.1):
-    - VisionCamera/Core (= 4.6.1)
-    - VisionCamera/FrameProcessors (= 4.6.1)
-    - VisionCamera/React (= 4.6.1)
-  - VisionCamera/Core (4.6.1)
-  - VisionCamera/FrameProcessors (4.6.1):
+  - VisionCamera (4.6.3):
+    - VisionCamera/Core (= 4.6.3)
+    - VisionCamera/FrameProcessors (= 4.6.3)
+    - VisionCamera/React (= 4.6.3)
+  - VisionCamera/Core (4.6.3)
+  - VisionCamera/FrameProcessors (4.6.3):
     - React
     - React-callinvoker
     - react-native-worklets-core
-  - VisionCamera/React (4.6.1):
+  - VisionCamera/React (4.6.3):
     - React-Core
     - VisionCamera/FrameProcessors
   - VisionCameraCodeScanner (0.11.2):
@@ -2141,7 +2120,6 @@ DEPENDENCIES:
   - React-utils (from `../../node_modules/react-native/ReactCommon/react/utils`)
   - ReactCodegen (from `build/generated/ios`)
   - ReactCommon/turbomodule/core (from `../../node_modules/react-native/ReactCommon`)
-  - ReactNativeCameraKit (from `../../node_modules/react-native-camera-kit`)
   - rn-fetch-blob (from `../../node_modules/rn-fetch-blob`)
   - "RNCAsyncStorage (from `../../node_modules/@react-native-async-storage/async-storage`)"
   - "RNCClipboard (from `../../node_modules/@react-native-clipboard/clipboard`)"
@@ -2330,8 +2308,6 @@ EXTERNAL SOURCES:
     :path: build/generated/ios
   ReactCommon:
     :path: "../../node_modules/react-native/ReactCommon"
-  ReactNativeCameraKit:
-    :path: "../../node_modules/react-native-camera-kit"
   rn-fetch-blob:
     :path: "../../node_modules/rn-fetch-blob"
   RNCAsyncStorage:
@@ -2461,7 +2437,6 @@ SPEC CHECKSUMS:
   React-utils: cbe8b8b3d7b2ac282e018e46f0e7b25cdc87c5a0
   ReactCodegen: d81fb52765155a5a3c41465e71ee547ce2bc1b7a
   ReactCommon: 6a952e50c2a4b694731d7682aaa6c79bc156e4ad
-  ReactNativeCameraKit: 39214a93aab0fb0dd4d760a0442bb64e7cd5c97a
   rn-fetch-blob: f065bb7ab7fb48dd002629f8bdcb0336602d3cba
   RNCAsyncStorage: cc6479c4acd84cc7004946946c8afe30b018184d
   RNCClipboard: 69ab8e51324d5b351f6ba72bbdb72478087a2c64
@@ -2480,7 +2455,7 @@ SPEC CHECKSUMS:
   RNSVG: 3d2bdcaef51c8071880a9c0072fe324f4423a3ba
   RNVectorIcons: 6382277afab3c54658e9d555ee0faa7a37827136
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
-  VisionCamera: ec141897a88c2e95e8b83cf97b8e4db801e02fd6
+  VisionCamera: 88df4dae7196c93ecd331f105f0e5d7d95702cb3
   VisionCameraCodeScanner: a104d55c13dccce4229c4d8a81b7af93c6300e4c
   Yoga: 055f92ad73f8c8600a93f0e25ac0b2344c3b07e6
 
