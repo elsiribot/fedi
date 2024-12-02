@@ -245,12 +245,12 @@ const getMetaField = (
         return metadata[`fedi:default_matrix_rooms`] ?? metadata[field] ?? null
     }
 
+    // this allows the fedimint-specific meta field `federation_expiry_timestamp` to trigger the expiring federation logic
     if (field === 'popup_end_timestamp') {
         return (
-            // Prioritizes federation_expiry_timestamp over popup_end_timestamp since it's a fedimint-specific field
-            metadata['federation_expiry_timestamp'] ??
             metadata[`fedi:${field}`] ??
             metadata[field] ??
+            metadata['federation_expiry_timestamp'] ??
             null
         )
     }
