@@ -224,10 +224,12 @@ impl Bridge {
         match id {
             Some(id) => Ok(RpcEcashInfo::Joined {
                 federation_id: RpcFederationId(id),
+                federation_id_prefix: prefix.clone(),
                 amount: RpcAmount(oob.total_amount()),
             }),
             None => Ok(RpcEcashInfo::NotJoined {
                 federation_invite: oob.federation_invite().map(|invite| invite.to_string()),
+                federation_id_prefix: prefix.clone(),
                 amount: RpcAmount(oob.total_amount()),
             }),
         }

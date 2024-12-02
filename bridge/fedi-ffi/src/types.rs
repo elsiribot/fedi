@@ -251,10 +251,12 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
 pub enum RpcEcashInfo {
     Joined {
         federation_id: RpcFederationId,
+        federation_id_prefix: String,
         amount: RpcAmount,
     },
     NotJoined {
         federation_invite: Option<String>,
+        federation_id_prefix: String,
         amount: RpcAmount,
     },
 }

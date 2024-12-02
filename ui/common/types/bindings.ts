@@ -188,11 +188,13 @@ export type RpcEcashInfo =
   | {
       federation_type: "joined";
       federation_id: RpcFederationId;
+      federation_id_prefix: string;
       amount: RpcAmount;
     }
   | {
       federation_type: "notJoined";
       federation_invite: string | null;
+      federation_id_prefix: string;
       amount: RpcAmount;
     };
 
@@ -460,11 +462,13 @@ export interface RpcMethods {
       | {
           federation_type: "joined";
           federation_id: RpcFederationId;
+          federation_id_prefix: string;
           amount: RpcAmount;
         }
       | {
           federation_type: "notJoined";
           federation_invite: string | null;
+          federation_id_prefix: string;
           amount: RpcAmount;
         }
     ),

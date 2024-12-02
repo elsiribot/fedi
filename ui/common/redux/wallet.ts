@@ -19,6 +19,7 @@ import {
 import { Federation, MSats, Usd, UsdCents } from '../types'
 import {
     RpcAmount,
+    RpcEcashInfo,
     RpcLockedSeek,
     RpcStabilityPoolAccountInfo,
     StabilityPoolDepositEvent,
@@ -181,7 +182,7 @@ export const receiveEcash = createAsyncThunk<
 })
 
 export const validateEcash = createAsyncThunk<
-    { amount: MSats; federationId: string | null },
+    RpcEcashInfo,
     { fedimint: FedimintBridge; ecash: string },
     { state: CommonState }
 >('wallet/validateEcash', async ({ fedimint, ecash }) => {
