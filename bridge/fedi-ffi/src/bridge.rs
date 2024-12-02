@@ -166,7 +166,7 @@ impl Bridge {
         let federation = self.get_federation(federation_id)?;
         let db = federation.client.db().clone();
         let mut buffer = Vec::new();
-        fedi_db_dump::dump_db(&db, &mut buffer).await?;
+        fedi_bug_report::db_dump::dump_db(&db, &mut buffer).await?;
         self.storage
             .write_file(db_dump_path.as_ref(), buffer)
             .await?;

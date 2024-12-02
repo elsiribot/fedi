@@ -19,6 +19,7 @@ use bitcoin::secp256k1::PublicKey;
 use bitcoin::{Address, Network};
 use client::ClientExt;
 use db::{FediRawClientConfigKey, InviteCodeKey, TransactionNotesKey};
+use fedi_bug_report::reused_ecash_proofs::{self, SerializedReusedEcashProofs};
 use fedi_social_client::common::VerificationDocument;
 use fedi_social_client::{
     FediSocialClientInit, RecoveryFile, RecoveryId, SocialBackup, SocialRecoveryClient,
@@ -2689,6 +2690,12 @@ impl FederationV2 {
                     ))
             }
         }
+    }
+
+    pub async fn generate_reused_ecash_proofs(
+        &self,
+    ) -> anyhow::Result<SerializedReusedEcashProofs> {
+        reused_ecash_proofs::generate(&*self.client.mint()?).await
     }
 
     /// We record the fee within the pending counter. On success, we move the

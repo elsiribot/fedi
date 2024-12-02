@@ -610,6 +610,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
+name = "base64-serde"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77c6d128af408d8ebd08331f0331cf2cf20d19e6c44a7aec58791641ecc8c0b5"
+
+[[package]]
 name = "base64-url"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1507,8 +1513,8 @@ dependencies = [
 
 [[package]]
 name = "devimint"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "axum 0.7.5",
@@ -1808,17 +1814,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "fedi-core"
-version = "0.3.0"
-
-[[package]]
-name = "fedi-db-dump"
+name = "fedi-bug-report"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
+ "base64-serde",
  "fedimint-core",
+ "fedimint-derive-secret",
+ "fedimint-mint-client",
+ "fedimint-tbs",
  "futures",
+ "serde",
 ]
+
+[[package]]
+name = "fedi-core"
+version = "0.3.0"
 
 [[package]]
 name = "fedi-debug"
@@ -1826,7 +1838,7 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "clap",
- "fedi-db-dump",
+ "fedi-bug-report",
  "fedimint-core",
  "fedimint-rocksdb",
  "tokio",
@@ -1874,8 +1886,8 @@ dependencies = [
  "eyeball",
  "eyeball-im",
  "fedi-api-types",
+ "fedi-bug-report",
  "fedi-core",
- "fedi-db-dump",
  "fedi-social-client",
  "fedimint-aead",
  "fedimint-api-client",
@@ -1890,6 +1902,7 @@ dependencies = [
  "fedimint-meta-client",
  "fedimint-mint-client",
  "fedimint-rocksdb",
+ "fedimint-tbs",
  "fedimint-threshold-crypto",
  "fedimint-wallet-client",
  "futures",
@@ -2051,8 +2064,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-aead"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "argon2",
@@ -2084,8 +2097,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-api-client"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "async-lock",
@@ -2116,8 +2129,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-bip39"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "bip39",
  "fedimint-client",
@@ -2127,8 +2140,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-bitcoind"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2149,16 +2162,16 @@ dependencies = [
 
 [[package]]
 name = "fedimint-build"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "serde_json",
 ]
 
 [[package]]
 name = "fedimint-cli"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2203,8 +2216,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-client"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -2235,8 +2248,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-core"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "async-lock",
@@ -2289,8 +2302,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-derive"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "itertools 0.12.1",
  "proc-macro2",
@@ -2300,8 +2313,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-derive-secret"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "bitcoin_hashes 0.11.0",
@@ -2314,16 +2327,16 @@ dependencies = [
 
 [[package]]
 name = "fedimint-hkdf"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "bitcoin_hashes 0.12.0",
 ]
 
 [[package]]
 name = "fedimint-ln-client"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -2355,8 +2368,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-ln-common"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "bitcoin 0.30.2",
@@ -2376,8 +2389,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-ln-gateway"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -2428,8 +2441,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-ln-server"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2454,8 +2467,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-lnv2-client"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -2483,8 +2496,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-lnv2-common"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "bitcoin 0.30.2",
@@ -2502,8 +2515,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-lnv2-server"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2524,8 +2537,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-logging"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "console-subscriber",
@@ -2537,8 +2550,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-meta-client"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2559,8 +2572,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-meta-common"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "fedimint-core",
@@ -2572,8 +2585,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-meta-server"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2591,8 +2604,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-metrics"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "axum 0.7.5",
@@ -2605,8 +2618,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-mint-client"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -2644,8 +2657,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-mint-common"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "bincode",
@@ -2660,8 +2673,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-mint-server"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2686,8 +2699,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-portalloc"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "dirs",
@@ -2701,8 +2714,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-rocksdb"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2715,8 +2728,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-server"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "aleph-bft-types 0.13.0",
  "anyhow",
@@ -2726,11 +2739,13 @@ dependencies = [
  "bincode",
  "bitcoin 0.30.2",
  "bitcoin_hashes 0.12.0",
+ "bitcoincore-rpc",
  "bls12_381",
  "bytes",
  "fedimint-aead",
  "fedimint-aleph-bft",
  "fedimint-api-client",
+ "fedimint-bitcoind",
  "fedimint-build",
  "fedimint-core",
  "fedimint-logging",
@@ -2768,8 +2783,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-tbs"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "bls12_381",
  "fedimint-core",
@@ -2783,8 +2798,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-testing"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -2861,8 +2876,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-tpe"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "bitcoin_hashes 0.12.0",
  "bls12_381",
@@ -2876,8 +2891,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-unknown-common"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "fedimint-core",
@@ -2887,8 +2902,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-unknown-server"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2901,8 +2916,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-wallet-client"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "aquamarine",
@@ -2930,8 +2945,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-wallet-common"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "bitcoin 0.30.2",
@@ -2947,8 +2962,8 @@ dependencies = [
 
 [[package]]
 name = "fedimint-wallet-server"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2975,8 +2990,8 @@ dependencies = [
 
 [[package]]
 name = "fedimintd"
-version = "0.4.3-rc.2"
-source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.3-rc.2-fed4#eb40053b816c86192fbfd5e2a61f6d9c1670d789"
+version = "0.4.4"
+source = "git+https://github.com/fedibtc/fedimint?tag=v0.4.4-fed1#03d024a96046983f88556e25a3d0e71b58df877c"
 dependencies = [
  "anyhow",
  "async-trait",
