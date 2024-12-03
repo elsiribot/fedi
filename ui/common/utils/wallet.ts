@@ -73,6 +73,21 @@ export const makeTxnDetailStatusText = (
                     default:
                         return t('phrases.sent-bitcoin')
                 }
+            } else if (txn.oobState) {
+                switch (txn.oobState.type) {
+                    case 'created':
+                        return t('phrases.sent-bitcoin')
+                    case 'success':
+                        return t('phrases.sent-bitcoin')
+                    case 'userCanceledFailure':
+                        return t('phrases.sent-bitcoin')
+                    case 'refunded':
+                        return t('words.refund')
+                    case 'userCanceledSuccess':
+                        return t('words.refund')
+                    case 'userCanceledProcessing':
+                        return t('words.pending')
+                }
             } else {
                 return t('phrases.sent-bitcoin')
             }
@@ -114,6 +129,17 @@ export const makeTxnDetailStatusText = (
                         return t('words.complete')
                     default:
                         return ''
+                }
+            } else if (txn.oobState) {
+                switch (txn.oobState.type) {
+                    case 'done':
+                        return t('words.complete')
+                    case 'failed':
+                        return t('words.failed')
+                    case 'created':
+                        return t('words.pending')
+                    case 'issuing':
+                        return t('words.pending')
                 }
             } else {
                 return t('words.received')
