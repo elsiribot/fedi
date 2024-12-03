@@ -73,27 +73,31 @@ target 'FediReactNative' do
   end
 
   post_install do |installer|
+    # This is where the bitcode stripping script goes - required in Xcode 16 / Sequoia - https://stackoverflow.com/questions/79018593/asset-validation-failed-invalid-executable-the-executable-myapp-app-frameworks/79030093#79030093
+    bitcode_strip_path = `xcrun --find bitcode_strip`.chop!
+
+    def strip_bitcode_from_framework(bitcode_strip_path, framework_relative_path)
+      framework_path = File.join(Dir.pwd, framework_relative_path)
+      command = "#{bitcode_strip_path} #{framework_path} -r -o #{framework_path}"
+      puts "Stripping bitcode: #{command}"
+      system(command)
+    end
+
+    # Add the full path for OpenSSL.xcframework
+    framework_paths = [
+      "Pods/OpenSSL-Universal/Frameworks/OpenSSL.xcframework/ios-arm64/OpenSSL.framework/OpenSSL"  # Adjusted path for OpenSSL
+    ]
+
+    framework_paths.each do |framework_relative_path|
+      strip_bitcode_from_framework(bitcode_strip_path, framework_relative_path)
+    end
+    # end bitcode stripping
+
     react_native_post_install(
       installer,
       config[:reactNativePath],
       :mac_catalyst_enabled => false,
     )
 
-    # Here we make sure every pod has a deployment target of at least 12.0
-    # and includes some extra settings to prevent build errors 
-    installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |config|
-        deployment_target = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f
-        should_upgrade = deployment_target < 12.0 && deployment_target != 0.0
-        if should_upgrade
-          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
-        end
-
-      end
-    end
-
-    # Modify Time.h to remove problematic conditional code
-    time_header = "#{Pod::Config.instance.installation_root.to_s}/Pods/RCT-Folly/folly/portability/Time.h"
-    `sed -i -e  $'s/ && (__IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_10_0)//' #{time_header}`
   end
 end

@@ -72,10 +72,12 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>MinimumOSVersion</key>
+	<string>13.0</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Fedi needs access to the camera to scan QR codes</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>Fedi does not use your location</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Fedi needs access to your microphone to record a social backup video</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

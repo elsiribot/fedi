@@ -7,7 +7,7 @@
     <key>CFBundleExecutable</key>
     <string>fediFFI</string>
     <key>CFBundleIdentifier</key>
-    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <string>org.fedi.fediFFI</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
@@ -25,5 +25,7 @@
         <string>arm64</string>
         <string>x86_64</string>
     </array>
+    <key>MinimumOSVersion</key>
+	<string>15.0</string>
 </dict>
 </plist>
