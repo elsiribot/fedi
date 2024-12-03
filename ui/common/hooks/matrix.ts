@@ -47,14 +47,16 @@ export function useMatrixUserSearch() {
     const [searchError, setSearchError] = useState<unknown>()
     const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
 
+    const queryTrimmed = query.trim()
+
     // If the user types in a valid matrix user ID, or a valid fedi matrix user URI,
     // then use that as the exact match user.
     let queryUserId: string | undefined
-    if (isValidMatrixUserId(query)) {
-        queryUserId = query
+    if (isValidMatrixUserId(queryTrimmed)) {
+        queryUserId = queryTrimmed
     } else {
         try {
-            queryUserId = decodeFediMatrixUserUri(query)
+            queryUserId = decodeFediMatrixUserUri(queryTrimmed)
         } catch {
             // no-op
         }
@@ -75,21 +77,21 @@ export function useMatrixUserSearch() {
     // Search for users, debounced by 500ms
     useEffect(() => {
         setSearchError(undefined)
-        if (!query) {
+        if (!queryTrimmed) {
             setIsSearching(false)
             setSearchedUsers([])
             return
         }
         setIsSearching(true)
         timeoutRef.current = setTimeout(() => {
-            dispatch(searchMatrixUsers(query))
+            dispatch(searchMatrixUsers(queryTrimmed))
                 .unwrap()
                 .then(res => {
                     // HACK: half-measure to prevent users in public groups from appearing
                     // in these search results. for now we do this UI-only filter until we
                     // can migrate default groups to use room previews
                     const filteredUsers = res.results.filter(
-                        r => r.displayName === query,
+                        r => r.displayName === queryTrimmed,
                     )
                     setSearchedUsers(filteredUsers)
                 })
@@ -97,7 +99,7 @@ export function useMatrixUserSearch() {
                 .finally(() => setIsSearching(false))
         }, 500)
         return () => clearTimeout(timeoutRef.current)
-    }, [dispatch, query])
+    }, [dispatch, queryTrimmed])
 
     return {
         query,
