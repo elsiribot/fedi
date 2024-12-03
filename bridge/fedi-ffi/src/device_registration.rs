@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 
 use anyhow::{anyhow, bail};
 use fedimint_core::task::TaskGroup;
@@ -145,19 +145,7 @@ async fn renew_registration_periodically(
             break;
         }
 
-        let last_registration_timestamp = app_state
-            .with_read_lock(|state| state.last_device_registration_timestamp)
-            .await
-            .unwrap_or(SystemTime::UNIX_EPOCH);
-
-        let now = fedimint_core::time::now();
-        let next_registration_timestamp =
-            last_registration_timestamp + DEVICE_REGISTRATION_FREQUENCY;
-        let sleep_duration = next_registration_timestamp
-            .duration_since(now)
-            .unwrap_or_default();
-
-        fedimint_core::task::sleep(sleep_duration).await;
+        fedimint_core::task::sleep(DEVICE_REGISTRATION_FREQUENCY).await;
     }
 }
 
@@ -219,7 +207,8 @@ pub async fn register_device_with_backoff(
                             state.last_device_registration_timestamp =
                                 Some(fedimint_core::time::now());
                         })
-                        .await;
+                        .await
+                        .inspect_err(|e| error!(?e, "failed to write to app state"));
                     event_sink.typed_event(&Event::device_registration(
                         crate::event::DeviceRegistrationState::Success,
                     ));
