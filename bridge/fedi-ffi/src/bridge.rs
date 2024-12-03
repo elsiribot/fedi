@@ -20,6 +20,7 @@ use fedimint_core::module::CommonModuleInit;
 use fedimint_core::task::TaskGroup;
 use fedimint_core::PeerId;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
+use fedimint_mint_client::OOBNotes;
 use tokio::sync::{Mutex, OnceCell};
 use tracing::debug;
 
@@ -43,8 +44,9 @@ use crate::fedi_fee::FediFeeHelper;
 use crate::matrix::Matrix;
 use crate::storage::{AppState, FiatFXInfo, ModuleFediFeeSchedule};
 use crate::types::{
-    RpcBridgeStatus, RpcDeviceIndexAssignmentStatus, RpcFederationMaybeLoading,
-    RpcFederationPreview, RpcNostrPubkey, RpcNostrSecret, RpcRegisteredDevice,
+    RpcAmount, RpcBridgeStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
+    RpcFederationMaybeLoading, RpcFederationPreview, RpcNostrPubkey, RpcNostrSecret,
+    RpcRegisteredDevice,
 };
 use crate::utils::required_threashold_of;
 
@@ -207,6 +209,27 @@ impl Bridge {
             }
             FederationState::Loading => bail!("Federation is still loading"),
             FederationState::Failed(e) => bail!("Federation failed to load: {}", e),
+        }
+    }
+
+    pub async fn validate_ecash(&self, ecash: String) -> Result<RpcEcashInfo> {
+        let oob = OOBNotes::from_str(&ecash)?;
+        let prefix = oob.federation_id_prefix().to_string();
+        let id = self
+            .federations
+            .get_federations_map()
+            .keys()
+            .find(|x| x.starts_with(&prefix))
+            .cloned();
+        match id {
+            Some(id) => Ok(RpcEcashInfo::Joined {
+                federation_id: RpcFederationId(id),
+                amount: RpcAmount(oob.total_amount()),
+            }),
+            None => Ok(RpcEcashInfo::NotJoined {
+                federation_invite: oob.federation_invite().map(|invite| invite.to_string()),
+                amount: RpcAmount(oob.total_amount()),
+            }),
         }
     }
 

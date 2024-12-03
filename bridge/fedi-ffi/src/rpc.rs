@@ -356,8 +356,9 @@ async fn payAddress(
 async fn generateEcash(
     federation: Arc<FederationV2>,
     amount: RpcAmount,
+    include_invite: bool,
 ) -> anyhow::Result<RpcGenerateEcashResponse> {
-    federation.generate_ecash(amount.0).await
+    federation.generate_ecash(amount.0, include_invite).await
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
@@ -370,8 +371,8 @@ async fn receiveEcash(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn validateEcash(_bridge: Arc<Bridge>, ecash: String) -> anyhow::Result<RpcEcashInfo> {
-    FederationV2::validate_ecash(ecash)
+async fn validateEcash(bridge: Arc<Bridge>, ecash: String) -> anyhow::Result<RpcEcashInfo> {
+    bridge.validate_ecash(ecash).await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -2520,7 +2521,7 @@ mod tests {
         // ecash_receive_amount
         if receive_fedi_fee != Amount::ZERO {
             assert!(
-                generateEcash(federation.clone(), RpcAmount(ecash_receive_amount))
+                generateEcash(federation.clone(), RpcAmount(ecash_receive_amount), false)
                     .await
                     .is_err()
             );
@@ -2528,7 +2529,7 @@ mod tests {
         let ecash_send_amount = Amount::from_msats(ecash_receive_amount.msats / 2);
         let send_fedi_fee =
             Amount::from_msats((ecash_send_amount.msats * fedi_fees_send_ppm).div_ceil(MILLION));
-        let send_ecash = generateEcash(federation.clone(), RpcAmount(ecash_send_amount))
+        let send_ecash = generateEcash(federation.clone(), RpcAmount(ecash_send_amount), false)
             .await?
             .ecash;
 
@@ -2599,7 +2600,7 @@ mod tests {
             Amount::from_msats((fedi_fee_ppm * iteration_amount.msats).div_ceil(MILLION));
 
         for _ in 0..iterations {
-            generateEcash(federation.clone(), RpcAmount(iteration_amount))
+            generateEcash(federation.clone(), RpcAmount(iteration_amount), false)
                 .await
                 .context("generateEcash")?;
         }
@@ -2712,6 +2713,7 @@ mod tests {
         let send_ecash = generateEcash(
             federation.clone(),
             RpcAmount(Amount::from_msats(ecash_receive_amount.msats / 2)),
+            false,
         )
         .await?
         .ecash;

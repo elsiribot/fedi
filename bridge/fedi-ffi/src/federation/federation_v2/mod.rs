@@ -102,13 +102,12 @@ use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
 use crate::storage::{AppState, FediFeeSchedule};
 use crate::types::{
     federation_v2_to_rpc_federation, EcashReceiveMetadata, EcashSendMetadata, GuardianStatus,
-    LightningSendMetadata, OperationFediFeeStatus, RpcAmount, RpcBitcoinDetails, RpcEcashInfo,
-    RpcFederationId, RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails,
-    RpcGenerateEcashResponse, RpcInvoice, RpcLightningDetails, RpcLightningGateway, RpcLnState,
-    RpcOOBState, RpcOnchainState, RpcOperationFediFeeStatus, RpcPayAddressResponse,
-    RpcPayInvoiceResponse, RpcPublicKey, RpcReturningMemberStatus,
-    RpcStabilityPoolTransactionState, RpcTransaction, RpcTransactionDirection,
-    TransactionDateFiatInfo, WithdrawalDetails,
+    LightningSendMetadata, OperationFediFeeStatus, RpcAmount, RpcBitcoinDetails, RpcFederationId,
+    RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
+    RpcInvoice, RpcLightningDetails, RpcLightningGateway, RpcLnState, RpcOOBState, RpcOnchainState,
+    RpcOperationFediFeeStatus, RpcPayAddressResponse, RpcPayInvoiceResponse, RpcPublicKey,
+    RpcReturningMemberStatus, RpcStabilityPoolTransactionState, RpcTransaction,
+    RpcTransactionDirection, TransactionDateFiatInfo, WithdrawalDetails,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
@@ -1629,16 +1628,6 @@ impl FederationV2 {
         Ok(amt)
     }
 
-    pub fn validate_ecash(ecash: String) -> Result<RpcEcashInfo> {
-        let oob = OOBNotes::from_str(&ecash)?;
-        Ok(RpcEcashInfo {
-            amount: RpcAmount(oob.total_amount()),
-            // FIXME: change this type? Make `federation_id` optional? Add optional
-            // `federation_id_prefix`? Or enum
-            federation_id: None,
-        })
-    }
-
     pub async fn subscribe_to_ecash_reissue(
         &self,
         operation_id: OperationId,
@@ -1714,7 +1703,11 @@ impl FederationV2 {
     }
 
     /// Generate ecash
-    pub async fn generate_ecash(&self, amount: Amount) -> Result<RpcGenerateEcashResponse> {
+    pub async fn generate_ecash(
+        &self,
+        amount: Amount,
+        include_invite: bool,
+    ) -> Result<RpcGenerateEcashResponse> {
         let fedi_fee_ppm = self
             .fedi_fee_helper
             .get_fedi_fee_ppm(
@@ -1745,7 +1738,7 @@ impl FederationV2 {
                 &SelectNotesWithExactAmount,
                 amount,
                 ECASH_AUTO_CANCEL_DURATION,
-                false,
+                include_invite,
                 EcashSendMetadata { internal: false },
             )
             .await
@@ -1756,7 +1749,7 @@ impl FederationV2 {
                     .spend_notes(
                         amount,
                         ECASH_AUTO_CANCEL_DURATION,
-                        false,
+                        include_invite,
                         EcashSendMetadata { internal: true },
                     )
                     .await?;
@@ -1785,7 +1778,7 @@ impl FederationV2 {
                     .spend_notes(
                         amount,
                         ECASH_AUTO_CANCEL_DURATION,
-                        false,
+                        include_invite,
                         EcashSendMetadata { internal: false },
                     )
                     .await?;
