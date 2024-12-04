@@ -23,7 +23,7 @@ import {
 import {
     fetchTransactions as reduxFetchTransactions,
     selectStabilityTransactionHistory,
-    selectTransactionHistory,
+    selectTransactions,
 } from '../redux/transactions'
 import { LoadedFederation, MSats, Sats, Transaction } from '../types'
 import { RpcFeeDetails } from '../types/bindings'
@@ -40,7 +40,7 @@ import { useCommonDispatch, useCommonSelector } from './redux'
 export function useTransactionHistory(fedimint: FedimintBridge) {
     const dispatch = useCommonDispatch()
     const activeFederationId = useCommonSelector(selectActiveFederationId)
-    const transactions = useCommonSelector(selectTransactionHistory)
+    const transactions = useCommonSelector(selectTransactions)
     const stabilityPoolTxns = useCommonSelector(
         selectStabilityTransactionHistory,
     )
