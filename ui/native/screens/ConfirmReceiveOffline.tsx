@@ -5,11 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import {
-    receiveEcash,
-    selectFederationIds,
-    validateEcash,
-} from '@fedi/common/redux'
+import { receiveEcash, validateEcash } from '@fedi/common/redux'
 import type { MSats, Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
@@ -17,7 +13,7 @@ import { RpcEcashInfo } from '@fedi/common/types/bindings'
 import { fedimint } from '../bridge'
 import FiatAmount from '../components/feature/wallet/FiatAmount'
 import SvgImage from '../components/ui/SvgImage'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { useAppDispatch } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -31,7 +27,6 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
 }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const federationIds = useAppSelector(selectFederationIds)
     const toast = useToast()
     const dispatch = useAppDispatch()
     const { ecash } = route.params
@@ -71,12 +66,8 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
         if (!receiving) {
             setReceiving(true)
             try {
-                const federationIdWithPrefix = federationIds.find(id =>
-                    id.startsWith(validatedEcash.federation_id_prefix),
-                )
-
                 // Check to see if the user has joined a federation with a matching `validatedEcash.federationId`
-                if (!federationIdWithPrefix) {
+                if (validatedEcash.federation_type !== 'joined') {
                     throw new Error('errors.invalid-ecash-token')
                 }
 
@@ -84,7 +75,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                     receiveEcash({
                         fedimint,
                         // If so, join from that federation
-                        federationId: federationIdWithPrefix,
+                        federationId: validatedEcash.federation_id,
                         ecash,
                     }),
                 ).unwrap()
