@@ -41,22 +41,22 @@ import { useUpdatingRef } from './util'
 
 export function useMatrixUserSearch() {
     const dispatch = useCommonDispatch()
-    const [query, setQuery] = useState('')
+    const [searchQuery, setSearchQuery] = useState('')
     const [searchedUsers, setSearchedUsers] = useState<MatrixUser[]>([])
     const [isSearching, setIsSearching] = useState(false)
     const [searchError, setSearchError] = useState<unknown>()
     const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
 
-    const queryTrimmed = query.trim()
+    const query = searchQuery.trim()
 
     // If the user types in a valid matrix user ID, or a valid fedi matrix user URI,
     // then use that as the exact match user.
     let queryUserId: string | undefined
-    if (isValidMatrixUserId(queryTrimmed)) {
-        queryUserId = queryTrimmed
+    if (isValidMatrixUserId(query)) {
+        queryUserId = query
     } else {
         try {
-            queryUserId = decodeFediMatrixUserUri(queryTrimmed)
+            queryUserId = decodeFediMatrixUserUri(query)
         } catch {
             // no-op
         }
@@ -77,21 +77,21 @@ export function useMatrixUserSearch() {
     // Search for users, debounced by 500ms
     useEffect(() => {
         setSearchError(undefined)
-        if (!queryTrimmed) {
+        if (!query) {
             setIsSearching(false)
             setSearchedUsers([])
             return
         }
         setIsSearching(true)
         timeoutRef.current = setTimeout(() => {
-            dispatch(searchMatrixUsers(queryTrimmed))
+            dispatch(searchMatrixUsers(query))
                 .unwrap()
                 .then(res => {
                     // HACK: half-measure to prevent users in public groups from appearing
                     // in these search results. for now we do this UI-only filter until we
                     // can migrate default groups to use room previews
                     const filteredUsers = res.results.filter(
-                        r => r.displayName === queryTrimmed,
+                        r => r.displayName === query,
                     )
                     setSearchedUsers(filteredUsers)
                 })
@@ -99,11 +99,11 @@ export function useMatrixUserSearch() {
                 .finally(() => setIsSearching(false))
         }, 500)
         return () => clearTimeout(timeoutRef.current)
-    }, [dispatch, queryTrimmed])
+    }, [dispatch, query])
 
     return {
-        query,
-        setQuery,
+        query: searchQuery,
+        setQuery: setSearchQuery,
         isSearching: exactMatchUsers ? false : isSearching,
         searchedUsers: exactMatchUsers || searchedUsers,
         searchError,
