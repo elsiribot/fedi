@@ -1666,6 +1666,8 @@ mod tests {
     use devimint::{cmd, DevFed};
     use fedi_core::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
     use fedi_social_client::common::VerificationDocument;
+    use fedimint_bip39::Bip39RootSecretStrategy;
+    use fedimint_client::secret::RootSecretStrategy;
     use fedimint_core::core::ModuleKind;
     use fedimint_core::task::{sleep_in_test, TaskGroup};
     use fedimint_core::{apply, async_trait_maybe_send, Amount};
@@ -1727,8 +1729,8 @@ mod tests {
     }
 
     struct MockFediApi {
-        // (seed, index) => (device identifier, last registration timestamp)
-        registry: Mutex<HashMap<(bip39::Mnemonic, u8), (DeviceIdentifier, SystemTime)>>,
+        // (seed, index) => (encrypted device identifier, last registration timestamp)
+        registry: Mutex<HashMap<(bip39::Mnemonic, u8), (String, SystemTime)>>,
 
         // Invoice that will be returned whenever fetch_fedi_invoice is called
         fedi_fee_invoice: Option<Bolt11Invoice>,
@@ -1772,6 +1774,7 @@ mod tests {
             &self,
             seed: bip39::Mnemonic,
         ) -> anyhow::Result<Vec<RegisteredDevice>> {
+            let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&seed);
             let mut devices = self
                 .registry
                 .lock()
@@ -1779,16 +1782,21 @@ mod tests {
                 .iter()
                 .filter_map(|(k, v)| {
                     if k.0 == seed {
-                        Some(RegisteredDevice {
-                            index: k.1,
-                            identifier: v.0.clone(),
-                            last_renewed: v.1,
-                        })
+                        Some(
+                            match DeviceIdentifier::from_encrypted_string(&v.0, &root_secret) {
+                                Ok(identifier) => Ok(RegisteredDevice {
+                                    index: k.1,
+                                    identifier,
+                                    last_renewed: v.1,
+                                }),
+                                Err(e) => Err(e),
+                            },
+                        )
                     } else {
                         None
                     }
                 })
-                .collect::<Vec<_>>();
+                .collect::<anyhow::Result<Vec<_>>>()?;
 
             devices.sort_by_key(|r| r.index);
             Ok(devices)
@@ -1798,14 +1806,13 @@ mod tests {
             &self,
             seed: bip39::Mnemonic,
             device_index: u8,
-            device_identifier: DeviceIdentifier,
-            _encrypted_device_identifier: String,
+            encrypted_device_identifier: String,
             force_overwrite: bool,
         ) -> anyhow::Result<(), RegisterDeviceError> {
             let mut registry = self.registry.lock().await;
             if let Some(value) = registry.get_mut(&(seed.clone(), device_index)) {
-                if force_overwrite || device_identifier == value.0 {
-                    value.0 = device_identifier;
+                if force_overwrite || encrypted_device_identifier == value.0 {
+                    value.0 = encrypted_device_identifier;
                     value.1 = fedimint_core::time::now();
                     Ok(())
                 } else {
@@ -1817,7 +1824,7 @@ mod tests {
             } else {
                 registry.insert(
                     (seed, device_index),
-                    (device_identifier, fedimint_core::time::now()),
+                    (encrypted_device_identifier, fedimint_core::time::now()),
                 );
                 Ok(())
             }
