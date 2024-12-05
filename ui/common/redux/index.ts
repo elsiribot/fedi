@@ -253,8 +253,6 @@ export function initializeCommonStore({
                 else i18n.changeLanguage(language)
             })
         } else if (language) i18n.changeLanguage(language)
-
-        unsubscribeInitialLang()
     })
 
     return () => {
@@ -265,5 +263,6 @@ export function initializeCommonStore({
         unsubscribeRecovery()
         unsubscribeStorage()
         unsubscribeMatrixPayments()
+        unsubscribeInitialLang()
     }
 }
