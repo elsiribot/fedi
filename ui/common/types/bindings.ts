@@ -480,6 +480,7 @@ export interface RpcMethods {
       lastRegistrationTimestamp: number;
     }>,
   ];
+  generateReusedEcashProofs: [{ federationId: RpcFederationId }, any];
   uploadBackupFile: [
     { federationId: RpcFederationId; videoFilePath: string },
     string,
@@ -885,6 +886,8 @@ export type RpcReturningMemberStatus =
   | { type: "unknown" }
   | { type: "newMember" }
   | { type: "returningMember" };
+
+export type RpcReusedEcashProofs = any;
 
 export type RpcRoomId = string;
 
