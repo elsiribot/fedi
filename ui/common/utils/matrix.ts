@@ -160,10 +160,10 @@ const contentSchemas = {
     }),
 }
 
-interface MatrixEventUnknownContent {
+type MatrixEventUnknownContent = {
     msgtype: 'm.unknown'
     body: string
-    originalContent: unknown
+    originalContent: MatrixEventContent
 }
 
 export type MatrixEventContentType<T extends keyof typeof contentSchemas> =
@@ -173,7 +173,9 @@ export type MatrixEventContent =
     | z.infer<(typeof contentSchemas)[keyof typeof contentSchemas]>
     | MatrixEventUnknownContent
 
-export function formatMatrixEventContent(content: unknown): MatrixEventContent {
+export function formatMatrixEventContent(
+    content: MatrixEventContent,
+): MatrixEventContent {
     try {
         const msgType = (content as { msgtype: keyof typeof contentSchemas })
             .msgtype

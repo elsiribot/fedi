@@ -859,7 +859,7 @@ macro_rules! ts_type_serde {
     };
 }
 
-ts_type_ser!(RpcReusedEcashProofs: SerializedReusedEcashProofs = "any");
+ts_type_ser!(RpcReusedEcashProofs: SerializedReusedEcashProofs = "JSONObject");
 
 #[macro_rules_derive(federation_rpc_method!)]
 async fn generateReusedEcashProofs(
@@ -994,7 +994,7 @@ async fn matrixSendMessage(
         .await
 }
 
-ts_type_de!(CustomMessageData: serde_json::Map<String, serde_json::Value> = "Record<string, any>");
+ts_type_de!(CustomMessageData: serde_json::Map<String, serde_json::Value> = "Record<string, JSONValue>");
 #[macro_rules_derive(rpc_method!)]
 async fn matrixSendMessageJson(
     bridge: Arc<Bridge>,
@@ -1009,7 +1009,7 @@ async fn matrixSendMessageJson(
         .await
 }
 
-ts_type_de!(CreateRoomRequest: matrix::create_room::Request = "any");
+ts_type_de!(CreateRoomRequest: matrix::create_room::Request = "JSONObject");
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomCreate(
@@ -1050,8 +1050,7 @@ async fn matrixRoomLeave(bridge: Arc<Bridge>, room_id: RpcRoomId) -> anyhow::Res
     matrix.room_leave(&room_id.into_typed()?).await
 }
 
-// sorry for any
-ts_type_ser!(ObservableRoomInfo: Observable<RoomInfo> = "Observable<any>");
+ts_type_ser!(ObservableRoomInfo: Observable<RoomInfo> = "Observable<JSONObject>");
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomObserveInfo(
@@ -1204,7 +1203,7 @@ async fn matrixUserDirectorySearch(
         .await
 }
 
-ts_type_ser!(RpcPublicRoomChunk: PublicRoomsChunk = "any");
+ts_type_ser!(RpcPublicRoomChunk: PublicRoomsChunk = "JSONObject");
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixPublicRoomInfo(
@@ -1241,7 +1240,7 @@ async fn matrixUploadMedia(
     matrix.upload_file(mime, file).await
 }
 
-ts_type_serde!(RpcRoomPowerLevelsEventContent: RoomPowerLevelsEventContent = "any");
+ts_type_serde!(RpcRoomPowerLevelsEventContent: RoomPowerLevelsEventContent = "JSONObject");
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomGetPowerLevels(
     bridge: Arc<Bridge>,
@@ -1312,7 +1311,7 @@ async fn matrixRoomMarkAsUnread(
         .await
 }
 
-ts_type_ser!(UserProfile: get_profile::v3::Response = "any");
+ts_type_ser!(UserProfile: get_profile::v3::Response = "JSONObject");
 #[macro_rules_derive(rpc_method!)]
 async fn matrixUserProfile(bridge: Arc<Bridge>, user_id: RpcUserId) -> anyhow::Result<UserProfile> {
     let matrix = get_matrix(&bridge).await?;
@@ -1322,7 +1321,7 @@ async fn matrixUserProfile(bridge: Arc<Bridge>, user_id: RpcUserId) -> anyhow::R
         .map(UserProfile)
 }
 
-ts_type_de!(RpcPusher: Pusher = "any");
+ts_type_de!(RpcPusher: Pusher = "JSONObject");
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixSetPusher(bridge: Arc<Bridge>, pusher: RpcPusher) -> anyhow::Result<()> {
@@ -1364,7 +1363,7 @@ async fn matrixDeleteMessage(
         .await
 }
 
-ts_type_de!(RpcMediaSource: MediaSource = "any");
+ts_type_de!(RpcMediaSource: MediaSource = "JSONObject");
 #[macro_rules_derive(rpc_method!)]
 async fn matrixDownloadFile(
     bridge: Arc<Bridge>,
