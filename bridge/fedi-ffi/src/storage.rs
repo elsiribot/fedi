@@ -5,7 +5,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::time::SystemTime;
 
-use anyhow::{anyhow, bail, ensure};
+use anyhow::{anyhow, bail, ensure, Context};
 use fedi_social_client::SocialRecoveryState;
 use fedimint_aead::{decrypt, LessSafeKey};
 use fedimint_bip39::Bip39RootSecretStrategy;
@@ -18,7 +18,7 @@ use fedimint_derive_secret::DerivableSecret;
 use matrix_sdk::matrix_auth::MatrixSession;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
-use tracing::{error, info, warn};
+use tracing::error;
 use ts_rs::TS;
 
 use crate::community::CommunityJson;
@@ -64,14 +64,43 @@ pub struct AppStateRaw {
     pub sensitive_log: Option<bool>,
     pub matrix_session: Option<MatrixSession>,
 
+    // NOTE: DO NOT REUSE
+    // TODO shaurya cover test case
+    #[allow(dead_code)]
+    #[deprecated = "Now we only store encrypted device ID. Do not reuse this field name."]
+    #[serde(skip)]
+    device_identifier: (),
+
     // Device identifier is used to give this device a name that Fedi's device registration service
     // can store. We store an encrypted string version of it so that we can reuse the
     // same ciphertext when communicating with Fedi's device registration service regarding this
     // device's registration status.
+    // encrypted_device_identifier_v1 is an optional type because it's not guaranteed to exist on
+    // disk (in case user started recovery and didn't complete it).
+    //
+    // If registering with encrypted_device_identifier_v2 fails and encrypted_device_identifier_v1
+    // is Some(), then we will attempt to verify this device's ownership of device_index using
+    // encrypted_device_identifier_v1 before transferring ownership to
+    // encrypted_device_identifier_v2. After this "transfer of ownership" has been
+    // completed, we will set encrypted_device_identifier_v1 to None so that it will never be of
+    // any use to us again.
+    #[deprecated = "Post-migration, only use encrypted_device_identifier_v2"]
+    #[serde(rename = "encrypted_device_identifier")]
+    encrypted_device_identifier_v1: Option<String>,
 
-    // NOTE: DO NOT REUSE
-    // device_identifier: Option<DeviceIdentifier>,
-    encrypted_device_identifier: Option<String>,
+    // V2 of the encrypted device identifier comes with new guarantees from the front-end.
+    // Specifically:
+    // - A device ID is always generated at start-up (no reading/writing to disk)
+    // - The generated device ID is always the same for the same handset
+    // - The generated device ID is never the same for two handsets (encompasses the device
+    //   migration case)
+    // V2 is migration-aware whereas V1 is not. With V1 we'd have problems whereby transfering
+    // storage from an iPhone 15 to an iPhone 16 (for example) would make both phones behave the
+    // exact same with the same device ID and device index. V2 would help us fix such situations.
+    // Note that even though this field is delcared Option<String>, we will enforce its
+    // non-optionality in the code, because device ID is provided as non-optional to
+    // Bridge::new()
+    encrypted_device_identifier_v2: Option<String>,
 
     // Device index identifies which device number this is under the same root seed as registered
     // with Fedi's device registration service. This index is used in the derivation path for the
@@ -320,18 +349,23 @@ impl AppState {
     /// Loads from existing file if present. If not, attempts to read from
     /// legacy global DB and writes to a new file (migration). If migration
     /// results in error, just loads a default empty file.
-    pub async fn load(storage: Storage) -> anyhow::Result<Self> {
-        if let Some(state) = AppState::existing_from_storage(storage.clone()).await? {
+    pub async fn load(
+        storage: Storage,
+        new_identifier_v2: DeviceIdentifier,
+    ) -> anyhow::Result<Self> {
+        if let Some(state) =
+            AppState::existing_from_storage(storage.clone(), new_identifier_v2.clone()).await?
+        {
             Ok(state)
         } else {
-            let app_state = Self::default_with_storage(storage).await;
-            // write the app state to storage
-            app_state.with_write_lock(|_| ()).await?;
-            Ok(app_state)
+            Self::default_with_storage(storage, new_identifier_v2).await
         }
     }
 
-    async fn existing_from_storage(storage: Storage) -> anyhow::Result<Option<Self>> {
+    async fn existing_from_storage(
+        storage: Storage,
+        device_identifier_v2: DeviceIdentifier,
+    ) -> anyhow::Result<Option<Self>> {
         let Some(app_state_raw) = storage.read_file(Path::new(FEDI_FILE_PATH)).await? else {
             return Ok(None);
         };
@@ -340,10 +374,30 @@ impl AppState {
             return Ok(None);
         };
 
-        Ok(Some(Self {
+        let app_state = Self {
             raw: RwLock::new(value).into(),
             storage,
-        }))
+        };
+
+        // If encrypted_device_identifier_v2 is missing in JSON file on disk,
+        // immediately fill it in and write it to disk
+        if app_state
+            .with_read_lock(|state| state.encrypted_device_identifier_v2.clone())
+            .await
+            .is_none()
+        {
+            let root_secret = app_state.root_secret().await;
+            let encrypted_device_identifier = device_identifier_v2
+                .encrypt_and_hex_encode(&root_secret)
+                .context("Encrypting a valid device identifier must not fail")?;
+            app_state
+                .with_write_lock(|state| {
+                    state.encrypted_device_identifier_v2 = Some(encrypted_device_identifier)
+                })
+                .await?;
+        }
+
+        Ok(Some(app_state))
     }
 
     fn parse(app_state_raw: Vec<u8>) -> Result<Option<AppStateRaw>, anyhow::Error> {
@@ -359,17 +413,31 @@ impl AppState {
         Ok(Some(serde_json::from_slice(&app_state_raw)?))
     }
 
-    async fn default_with_storage(storage: Storage) -> Self {
-        Self {
+    async fn default_with_storage(
+        storage: Storage,
+        device_identifier_v2: DeviceIdentifier,
+    ) -> anyhow::Result<Self> {
+        let root_mnemonic = Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
+        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&root_mnemonic);
+        let encrypted_device_identifier = device_identifier_v2
+            .encrypt_and_hex_encode(&root_secret)
+            .context("Encrypting a valid device identifier must not fail")?;
+        #[allow(deprecated)]
+        let app_state = Self {
             raw: RwLock::new(AppStateRaw {
                 format_version: 0,
-                root_mnemonic: Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng()),
+                root_mnemonic,
                 joined_federations: BTreeMap::new(),
                 joined_communities: BTreeMap::new(),
                 social_recovery_state: None,
                 sensitive_log: None,
                 matrix_session: None,
-                encrypted_device_identifier: None,
+                device_identifier: (),
+                // When setting up a new AppState (fresh install), set
+                // encrypted_device_identifier_v1 as None which marks the transfer of ownership as
+                // complete.
+                encrypted_device_identifier_v1: None,
+                encrypted_device_identifier_v2: Some(encrypted_device_identifier),
                 device_index: default_device_index(),
                 last_device_registration_timestamp: None,
                 next_federation_db_prefix: default_next_federation_prefix(),
@@ -378,7 +446,11 @@ impl AppState {
             })
             .into(),
             storage,
-        }
+        };
+
+        // Write immediately before returning
+        app_state.with_write_lock(|_| ()).await?;
+        Ok(app_state)
     }
 
     pub async fn with_read_lock<T, F>(&self, closure: F) -> T
@@ -396,6 +468,12 @@ impl AppState {
         let mut app_state_write_lock = self.raw.clone().write_owned().await;
         let mut app_state_copy = app_state_write_lock.clone();
         let result = closure(&mut app_state_copy);
+
+        // Ensure no caller of with_write_lock has the ability to set device ID as none
+        assert!(
+            app_state_copy.encrypted_device_identifier_v2.is_some(),
+            "Cannot clear device ID from AppState!"
+        );
 
         #[cfg(not(target_family = "wasm"))]
         {
@@ -425,54 +503,30 @@ impl AppState {
         Ok(result)
     }
 
-    /// Compares the given new device identifier with the existing device
-    /// identifier. If no existing device identifier, sets is as the new
-    /// device identifier. Otherwise, logs the comparison and returns the
-    /// existing device identifier.
-    pub async fn process_device_identifier(
-        &self,
-        new_identifier: DeviceIdentifier,
-    ) -> anyhow::Result<()> {
+    pub async fn device_identifier(&self) -> DeviceIdentifier {
         let root_secret = self.root_secret().await;
-
-        if let Some(enc_device_identifier) = self
-            .with_read_lock(|state| state.encrypted_device_identifier.clone())
-            .await
-        {
-            let identifier =
-                DeviceIdentifier::from_encrypted_string(&enc_device_identifier, &root_secret)?;
-            if identifier != new_identifier {
-                warn!("New device identifier ({new_identifier}) doesn't match existing one ({identifier})");
-            } else {
-                info!("Device identifier unchaged: {identifier}");
-            }
-        } else {
-            info!("Device identifier absent, setting as: {new_identifier}");
-            let new_enc_device_identifier = new_identifier.encrypt_and_hex_encode(&root_secret)?;
-            self.with_write_lock(|state| {
-                state.encrypted_device_identifier = Some(new_enc_device_identifier);
-            })
-            .await?;
-        }
-
-        Ok(())
+        let enc = self.encrypted_device_identifier().await;
+        DeviceIdentifier::from_encrypted_string(&enc, &root_secret)
+            .expect("Device ID decryption from disk must never fail")
     }
 
-    pub async fn device_identifier(&self) -> Option<DeviceIdentifier> {
-        let root_secret = self.root_secret().await;
-        self.with_read_lock(|state| state.encrypted_device_identifier.clone())
+    pub async fn encrypted_device_identifier(&self) -> String {
+        self.with_read_lock(|state| state.encrypted_device_identifier_v2.clone())
             .await
-            .map(|enc| {
-                DeviceIdentifier::from_encrypted_string(&enc, &root_secret)
-                    .expect("Device ID decryption from disk must never fail")
-            })
+            .expect("encrypted_device_identifier_v2 must exist in AppState")
     }
 
-    // If an encrypted_device_identifier is set in AppState, returns it. If not,
-    // computes the ciphertext using the root_mnemonic, stores it, and returns it.
-    // However if device_identifier is not set to begin with, returns an error.
-    pub async fn encrypted_device_identifier(&self) -> Option<String> {
-        self.with_read_lock(|state| state.encrypted_device_identifier.clone())
+    #[deprecated = "Only use as part of v1->v2 registration migration"]
+    pub async fn encrypted_device_identifier_v1(&self) -> Option<String> {
+        #[allow(deprecated)]
+        self.with_read_lock(|state| state.encrypted_device_identifier_v1.clone())
+            .await
+    }
+
+    #[deprecated = "Only use as part of v1->v2 registration migration"]
+    pub async fn clear_encrypted_device_identifier_v1(&self) -> anyhow::Result<()> {
+        #[allow(deprecated)]
+        self.with_write_lock(|state| state.encrypted_device_identifier_v1 = None)
             .await
     }
 
@@ -526,15 +580,15 @@ impl AppState {
             // Re-encrypt device identifier using new root secret
             let device_identifier = DeviceIdentifier::from_encrypted_string(
                 &state
-                    .encrypted_device_identifier
+                    .encrypted_device_identifier_v2
                     .clone()
-                    .ok_or(anyhow!("Encrypted device identifier must be present"))?,
+                    .expect("encrypted_device_identifier_v2 must exist in AppState"),
                 &old_root_secret,
             )?;
 
             let new_root_secret =
                 Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic);
-            state.encrypted_device_identifier =
+            state.encrypted_device_identifier_v2 =
                 Some(device_identifier.encrypt_and_hex_encode(&new_root_secret)?);
 
             // Device index needs to be cleared, one will be assigned at the end of the

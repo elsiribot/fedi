@@ -16,7 +16,6 @@ use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send, Amount};
-use fedimint_derive_secret::DerivableSecret;
 use lightning_invoice::Bolt11Invoice;
 use reqwest::{Client, StatusCode};
 
@@ -285,55 +284,44 @@ impl IFediApi for LiveFediApi {
         encrypted_device_identifier: String,
         force_overwrite: bool,
     ) -> Result<(), RegisterDeviceError> {
-        let registration_closure = |secret: DerivableSecret, identifier, overwrite| async move {
-            let seed_commitment = SeedCommitmentV0::new(secret.to_random_bytes());
+        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&seed);
+        let seed_commitment = SeedCommitmentV0::new(root_secret.to_random_bytes());
 
-            // Timeout of 2 minutes here since this request will either be performed during
-            // onboarding and it's important for it to succeed, or it will be performed in a
-            // background task without blocking anything.
-            let timeout_res = fedimint_core::task::timeout(Duration::from_secs(120), async {
-                self.client
-                    .post(format!(
-                        "{FEDI_DEVICE_REGISTRATION_URL}/register_device_for_seed"
-                    ))
-                    .json(&RegisterDeviceRequestV0 {
-                        seed_commitment,
-                        device_index: DeviceIndexV0(device_index),
-                        device_identifier: DeviceIdentifierV0 {
-                            device_name: identifier,
-                        },
-                        force: force_overwrite || overwrite,
-                    })
-                    .send()
-                    .await
-            })
-            .await;
+        // Timeout of 2 minutes here since this request will either be performed during
+        // onboarding and it's important for it to succeed, or it will be performed in a
+        // background task without blocking anything.
+        let timeout_res = fedimint_core::task::timeout(Duration::from_secs(120), async {
+            self.client
+                .post(format!(
+                    "{FEDI_DEVICE_REGISTRATION_URL}/register_device_for_seed"
+                ))
+                .json(&RegisterDeviceRequestV0 {
+                    seed_commitment,
+                    device_index: DeviceIndexV0(device_index),
+                    device_identifier: DeviceIdentifierV0 {
+                        device_name: encrypted_device_identifier,
+                    },
+                    force: force_overwrite,
+                })
+                .send()
+                .await
+        })
+        .await;
 
-            let Ok(register_device_result_v0) = timeout_res else {
-                return Err(RegisterDeviceError::RequestTimeout);
-            };
-
-            match register_device_result_v0 {
-                Ok(resp) if resp.status().is_success() => Ok(()),
-                Ok(resp) if resp.status() == StatusCode::CONFLICT => {
-                    Err(RegisterDeviceError::AnotherDeviceOwnsIndex(
-                        resp.text().await.unwrap_or_default(),
-                    ))
-                }
-                Ok(resp) => Err(RegisterDeviceError::OtherServerError(
-                    resp.text().await.unwrap_or_default(),
-                )),
-                Err(e) => Err(RegisterDeviceError::ErrorSendingRequest(e.to_string())),
-            }
+        let Ok(register_device_result_v0) = timeout_res else {
+            return Err(RegisterDeviceError::RequestTimeout);
         };
 
-        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&seed);
-        registration_closure(
-            root_secret.clone(),
-            encrypted_device_identifier.clone(),
-            false,
-        )
-        .await
+        match register_device_result_v0 {
+            Ok(resp) if resp.status().is_success() => Ok(()),
+            Ok(resp) if resp.status() == StatusCode::CONFLICT => Err(
+                RegisterDeviceError::AnotherDeviceOwnsIndex(resp.text().await.unwrap_or_default()),
+            ),
+            Ok(resp) => Err(RegisterDeviceError::OtherServerError(
+                resp.text().await.unwrap_or_default(),
+            )),
+            Err(e) => Err(RegisterDeviceError::ErrorSendingRequest(e.to_string())),
+        }
     }
 }
 

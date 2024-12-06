@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 use std::panic::PanicInfo;
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
@@ -53,7 +54,7 @@ use crate::matrix::{
     RpcRoomNotificationMode, RpcSyncIndicator, RpcTimelineItem, RpcUserId,
 };
 use crate::observable::{Observable, ObservableVec};
-use crate::storage::FiatFXInfo;
+use crate::storage::{DeviceIdentifier, FiatFXInfo};
 use crate::types::{
     federation_v2_to_rpc_federation, GuardianStatus, RpcBridgeStatus, RpcCommunity,
     RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederationMaybeLoading, RpcFederationPreview,
@@ -81,6 +82,7 @@ pub async fn fedimint_initialize_async(
     );
     let _g = TimeReporter::new("fedimint_initialize").level(Level::INFO);
 
+    let device_identifier = DeviceIdentifier::from_str(&device_identifier)?;
     let runtime = BridgeRuntime::new(
         storage,
         event_sink,
@@ -2013,6 +2015,7 @@ pub mod tests {
     ) -> anyhow::Result<Arc<BridgeFull>> {
         let event_sink = Arc::new(FakeEventSink::new());
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
+        let device_identifier = DeviceIdentifier::from_str(&device_identifier)?;
         let runtime = BridgeRuntime::new(
             storage,
             event_sink,
@@ -2023,7 +2026,9 @@ pub mod tests {
         .await
         .context("Failed to create runtime for bridge")?;
 
-        let bridge = BridgeFull::new(runtime.into(), device_identifier).await?;
+        let bridge = BridgeFull::new(runtime.into(), device_identifier)
+            .await
+            .map_err(|e| anyhow!(e.to_string()))?;
         Ok(bridge.into())
     }
 
