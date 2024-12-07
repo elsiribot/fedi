@@ -85,11 +85,13 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({ uri, type }: ReceiveQrProps) => {
         <View style={style.container}>
             <Card containerStyle={style.roundedCardContainer}>
                 {uri.fullString && (
-                    <QRCode
-                        value={uri.fullString}
-                        size={QR_CODE_SIZE}
-                        logo={Images.FediQrLogo}
-                    />
+                    <View style={style.centered}>
+                        <QRCode
+                            value={uri.fullString}
+                            size={QR_CODE_SIZE}
+                            logo={Images.FediQrLogo}
+                        />
+                    </View>
                 )}
                 <View style={style.uriInfoContainer}>
                     <Text style={style.uriTypeText}>
@@ -102,7 +104,7 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({ uri, type }: ReceiveQrProps) => {
                     </Text>
                 </View>
                 {type === BitcoinOrLightning.bitcoin && (
-                    <View style={style.warningContainer}>
+                    <View style={style.centered}>
                         <OnchainDepositInfo />
                     </View>
                 )}
@@ -156,8 +158,9 @@ const styles = (theme: Theme) =>
         roundedCardContainer: {
             borderRadius: 20,
             width: '100%',
+            paddingTop: theme.spacing.xl,
         },
-        warningContainer: {
+        centered: {
             alignItems: 'center',
             justifyContent: 'center',
         },
