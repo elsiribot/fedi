@@ -1,8 +1,9 @@
-import dateUtils from '@fedi/common/utils/DateUtils'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import isEqual from 'lodash/isEqual'
 import React, { memo, useMemo } from 'react'
 import { StyleSheet, View } from 'react-native'
+
+import dateUtils from '@fedi/common/utils/DateUtils'
 
 import { MatrixEvent } from '../../../types'
 import ChatEventTimeFrame from './ChatEventTimeFrame'

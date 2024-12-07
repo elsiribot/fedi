@@ -1,11 +1,13 @@
+import { Text, Theme, useTheme } from '@rneui/themed'
+import { useTranslation } from 'react-i18next'
+import { Pressable, StyleSheet, View } from 'react-native'
+
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectFedimintVersion,
     setDeveloperMode,
 } from '@fedi/common/redux/environment'
-import { Text, Theme, useTheme } from '@rneui/themed'
-import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, View } from 'react-native'
+
 import { version } from '../../../package.json'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import SvgImage from '../../ui/SvgImage'

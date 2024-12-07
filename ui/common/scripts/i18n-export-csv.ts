@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import fs from 'fs'
 import path from 'path'
+
 import { flattenObject, getLangJson, localizationPath } from './i18n-utils'
 
 const languages = {

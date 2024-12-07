@@ -10,5 +10,5 @@ module.exports = {
     trailingComma: 'all',
     importOrder: ['<THIRD_PARTY_MODULES>', '^@fedi/(.*)$', '^[./]'],
     importOrderSeparation: true,
-    plugins: ['prettier-plugin-organize-imports'],
+    plugins: ['@trivago/prettier-plugin-sort-imports'],
 }

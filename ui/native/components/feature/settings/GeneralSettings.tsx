@@ -1,10 +1,12 @@
-import { EULA_URL } from '@fedi/common/constants/tos'
-import { useNuxStep } from '@fedi/common/hooks/nux'
-import { selectDeveloperMode } from '@fedi/common/redux/environment'
 import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, View } from 'react-native'
+
+import { EULA_URL } from '@fedi/common/constants/tos'
+import { useNuxStep } from '@fedi/common/hooks/nux'
+import { selectDeveloperMode } from '@fedi/common/redux/environment'
+
 import { usePinContext } from '../../../state/contexts/PinContext'
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'

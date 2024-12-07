@@ -4,6 +4,7 @@ import { lstatSync, readdirSync, writeFileSync } from 'fs'
 import unset from 'lodash/unset'
 import path from 'path'
 import process from 'process'
+
 import {
     LanguageJson,
     flattenObject,
