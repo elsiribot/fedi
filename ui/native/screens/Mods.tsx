@@ -82,7 +82,7 @@ const Mods: React.FC = () => {
                         }
                         closeOnlyOnBackdropPress
                         withOverlay
-                        overlayColor="#0004"
+                        overlayColor={theme.colors.overlay}
                         width={96}
                         backgroundColor={theme.colors.blue100}>
                         <ShortcutTile
