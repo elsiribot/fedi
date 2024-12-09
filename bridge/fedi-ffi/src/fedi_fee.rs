@@ -15,6 +15,7 @@ use tokio::sync::{Mutex, OwnedMutexGuard};
 use tracing::{error, info, instrument, warn};
 
 use crate::api::IFediApi;
+use crate::bridge::BridgeRuntime;
 use crate::constants::MILLION;
 use crate::federation::federation_v2::client::ClientExt;
 use crate::federation::federation_v2::db::{
@@ -42,15 +43,11 @@ pub enum FediFeeHelperError {
 }
 
 impl FediFeeHelper {
-    pub fn new(
-        fedi_api: Arc<dyn IFediApi>,
-        app_state: Arc<AppState>,
-        task_group: TaskGroup,
-    ) -> Self {
+    pub fn new(runtime: Arc<BridgeRuntime>) -> Self {
         Self {
-            fedi_api,
-            app_state,
-            task_group,
+            fedi_api: runtime.fedi_api.clone(),
+            app_state: runtime.app_state.clone(),
+            task_group: runtime.task_group.clone(),
         }
     }
 

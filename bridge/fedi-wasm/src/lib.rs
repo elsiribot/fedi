@@ -119,6 +119,7 @@ pub async fn fedimint_read_file(path: String) -> Result<Uint8Array, JsError> {
         return Err(JsError::new("bridge not initialized"));
     };
     let data = bridge
+        .runtime()
         .storage
         .read_file(path.as_ref())
         .await
@@ -134,6 +135,7 @@ pub async fn fedimint_write_file(path: String, data: Uint8Array) -> Result<(), J
         return Err(JsError::new("bridge not initialized"));
     };
     bridge
+        .runtime()
         .storage
         .write_file(path.as_ref(), data.to_vec())
         .await

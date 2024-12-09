@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 use std::str::FromStr;
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::{Arc, Mutex};
 
-use anyhow::{anyhow, Context};
+use anyhow::{bail, Context};
 use federation_sm::{FederationState, FederationStateMachine};
 use federation_v2::FederationV2;
 use federations_locker::FederationsLocker;
@@ -10,8 +10,10 @@ use fedimint_core::encoding::Encodable;
 use fedimint_core::invite_code::InviteCode;
 use tracing::error;
 
-use crate::bridge::Bridge;
+use crate::bridge::BridgeRuntime;
+use crate::fedi_fee::FediFeeHelper;
 use crate::storage::{DatabaseInfo, FederationInfo};
+use crate::types::RpcFederationPreview;
 
 pub mod federation_sm;
 pub mod federation_v2;
@@ -19,26 +21,25 @@ pub mod federations_locker;
 
 #[derive(Clone)]
 pub struct Federations {
-    bridge: Weak<Bridge>,
+    runtime: Arc<BridgeRuntime>,
+    fedi_fee_helper: Arc<FediFeeHelper>,
     federations: Arc<Mutex<BTreeMap<String, FederationStateMachine>>>,
     federations_locker: FederationsLocker,
 }
 
 impl Federations {
-    pub fn new(bridge: Weak<Bridge>) -> Self {
+    pub fn new(runtime: Arc<BridgeRuntime>, fedi_fee_helper: Arc<FediFeeHelper>) -> Self {
         Federations {
-            bridge,
+            runtime,
+            fedi_fee_helper,
             federations: Default::default(),
             federations_locker: Default::default(),
         }
     }
 
-    pub async fn load_joined_federations_in_background(&self) -> anyhow::Result<()> {
-        let bridge = self
-            .bridge
-            .upgrade()
-            .ok_or(anyhow!("unexpected: bridge dropped?"))?;
-        let joined_federations = bridge
+    pub async fn load_joined_federations_in_background(&self) {
+        let joined_federations = self
+            .runtime
             .app_state
             .with_read_lock(|state| state.joined_federations.clone())
             .await;
@@ -54,7 +55,8 @@ impl Federations {
             federations.insert(federation_id.clone(), fed_sm.clone());
 
             futures.push(load_federation(
-                bridge.clone(),
+                self.runtime.clone(),
+                self.fedi_fee_helper.clone(),
                 self.federations_locker.clone(),
                 federation_id.clone(),
                 federation_info,
@@ -65,15 +67,29 @@ impl Federations {
 
         // FIXME: update after each federation is loaded.
         let this = self.clone();
-        bridge.task_group.clone().spawn_cancellable(
+        self.runtime.task_group.clone().spawn_cancellable(
             "load federation and update fedi fee schedule",
             async move {
                 futures::future::join_all(futures).await;
                 this.update_fedi_fees_schedule().await;
             },
         );
+    }
 
-        Ok(())
+    pub async fn federation_preview(
+        &self,
+        invite_code: &str,
+    ) -> anyhow::Result<RpcFederationPreview> {
+        let invite_code = invite_code.to_lowercase();
+        let root_mnemonic = self.runtime.app_state.root_mnemonic().await;
+        let device_index = self.runtime.app_state.ensure_device_index().await?;
+        FederationV2::federation_preview(
+            &invite_code,
+            &root_mnemonic,
+            device_index,
+            self.runtime.feature_catalog.override_localhost.is_some(),
+        )
+        .await
     }
 
     /// Joins federation from invite code
@@ -88,19 +104,17 @@ impl Federations {
         let invite_code = InviteCode::from_str(&invite_code_string.to_lowercase())?;
         let federation_id = invite_code.federation_id().to_string();
 
-        let bridge = self
-            .bridge
-            .upgrade()
-            .ok_or(anyhow!("unexpected: bridge dropped?"))?;
-        let root_mnemonic = bridge.app_state.root_mnemonic().await;
-        let device_index = bridge.app_state.ensure_device_index().await?;
+        let root_mnemonic = self.runtime.app_state.root_mnemonic().await;
+        let device_index = self.runtime.app_state.ensure_device_index().await?;
 
-        let db_prefix = bridge
+        let db_prefix = self
+            .runtime
             .app_state
             .new_federation_db_prefix()
             .await
             .context("failed to write AppState")?;
-        let db = bridge
+        let db = self
+            .runtime
             .global_db
             .with_prefix(db_prefix.consensus_encode_to_vec());
         let fed_sm = self
@@ -115,19 +129,43 @@ impl Federations {
                 federation_id,
                 invite_code_string,
                 &self.federations_locker,
-                &bridge.event_sink,
-                &bridge.task_group,
+                &self.runtime.event_sink,
+                &self.runtime.task_group,
                 db,
                 DatabaseInfo::DatabasePrefix(db_prefix),
                 root_mnemonic,
                 device_index,
                 recover_from_scratch,
-                &bridge.fedi_fee_helper,
-                &bridge.app_state,
-                &bridge.feature_catalog,
+                &self.fedi_fee_helper,
+                &self.runtime.app_state,
+                &self.runtime.feature_catalog,
             )
             .await?;
         Ok(federation_arc)
+    }
+
+    /// Look up federation by id from in-memory hashmap
+    pub fn get_federation(&self, federation_id: &str) -> anyhow::Result<Arc<FederationV2>> {
+        match self.get_federation_state(federation_id)? {
+            FederationState::Ready(federation) => Ok(federation),
+            FederationState::Recovering(_) => bail!("client is still recovering"),
+            FederationState::Loading => bail!("Federation is still loading"),
+            FederationState::Failed(e) => bail!("Federation failed to load: {}", e),
+        }
+    }
+
+    /// Look up federation by id from in-memory hashmap
+    pub fn get_federation_maybe_recovering(
+        &self,
+        federation_id: &str,
+    ) -> anyhow::Result<Arc<FederationV2>> {
+        match self.get_federation_state(federation_id)? {
+            FederationState::Ready(federation) | FederationState::Recovering(federation) => {
+                Ok(federation)
+            }
+            FederationState::Loading => bail!("Federation is still loading"),
+            FederationState::Failed(e) => bail!("Federation failed to load: {}", e),
+        }
     }
 
     pub fn get_federation_state(&self, federation_id: &str) -> anyhow::Result<FederationState> {
@@ -151,10 +189,6 @@ impl Federations {
     }
 
     pub async fn leave_federation(&self, federation_id_str: &str) -> anyhow::Result<()> {
-        let bridge = self
-            .bridge
-            .upgrade()
-            .ok_or(anyhow!("unexpected: bridge dropped?"))?;
         let fed_sm = self
             .federations
             .lock()
@@ -162,7 +196,9 @@ impl Federations {
             .get(federation_id_str)
             .context("Federation not found")?
             .clone();
-        fed_sm.leave(&bridge.storage, &bridge.global_db).await?;
+        fed_sm
+            .leave(&self.runtime.storage, &self.runtime.global_db)
+            .await?;
         Ok(())
     }
 
@@ -182,25 +218,23 @@ impl Federations {
             })
             .collect();
 
-        if let Some(bridge) = self.bridge.upgrade() {
-            bridge
-                .fedi_fee_helper
-                .fetch_and_update_fedi_fee_schedule(fed_network_map)
-                .await;
-        }
+        self.fedi_fee_helper
+            .fetch_and_update_fedi_fee_schedule(fed_network_map)
+            .await;
     }
 }
 
 #[tracing::instrument(skip_all, err, fields(federation_id = federation_id_str))]
 async fn load_federation(
-    bridge: Arc<Bridge>,
+    runtime: Arc<BridgeRuntime>,
+    fedi_fee_helper: Arc<FediFeeHelper>,
     federations_locker: FederationsLocker,
     federation_id_str: String,
     federation_info: FederationInfo,
     fed_sm: FederationStateMachine,
 ) -> anyhow::Result<()> {
-    let root_mnemonic = bridge.app_state.root_mnemonic().await;
-    let device_index = bridge
+    let root_mnemonic = runtime.app_state.root_mnemonic().await;
+    let device_index = runtime
         .app_state
         .device_index()
         .await
@@ -208,9 +242,9 @@ async fn load_federation(
 
     let db = match &federation_info.database {
         DatabaseInfo::DatabaseName(db_name) => {
-            bridge.storage.federation_database_v2(db_name).await?
+            runtime.storage.federation_database_v2(db_name).await?
         }
-        DatabaseInfo::DatabasePrefix(prefix) => bridge
+        DatabaseInfo::DatabasePrefix(prefix) => runtime
             .global_db
             .with_prefix(prefix.consensus_encode_to_vec()),
     };
@@ -220,13 +254,13 @@ async fn load_federation(
             federation_id_str,
             db,
             &federations_locker,
-            &bridge.event_sink,
-            &bridge.task_group,
+            &runtime.event_sink,
+            &runtime.task_group,
             root_mnemonic,
             device_index,
-            &bridge.fedi_fee_helper,
-            &bridge.feature_catalog,
-            &bridge.app_state,
+            &fedi_fee_helper,
+            &runtime.feature_catalog,
+            &runtime.app_state,
         )
         .await;
     Ok(())
