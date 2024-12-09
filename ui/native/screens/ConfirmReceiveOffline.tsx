@@ -68,7 +68,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
             try {
                 // Check to see if the user has joined a federation with a matching `validatedEcash.federationId`
                 if (validatedEcash.federation_type !== 'joined') {
-                    throw new Error('errors.invalid-ecash-token')
+                    throw new Error('errors.unknown-ecash-issuer')
                 }
 
                 await dispatch(
