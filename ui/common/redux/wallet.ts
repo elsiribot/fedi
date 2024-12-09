@@ -38,6 +38,7 @@ type FederationPayloadAction<T = object> = PayloadAction<
 
 const initialFederationWalletState = {
     stabilityPoolAccountInfo: null as RpcStabilityPoolAccountInfo | null,
+    stabilityPoolAvailableLiquidity: null as MSats | null,
     cycleStartPrice: null as number | null,
     averageFeeRate: null as number | null,
 }
@@ -74,6 +75,19 @@ export const walletSlice = createSlice({
                 stabilityPoolAccountInfo,
             }
         },
+        setStabilityPoolAvailableLiquidity(
+            state,
+            action: FederationPayloadAction<{
+                stabilityPoolAvailableLiquidity: MSats
+            }>,
+        ) {
+            const { federationId, stabilityPoolAvailableLiquidity } =
+                action.payload
+            state[federationId] = {
+                ...getFederationWalletState(state, federationId),
+                stabilityPoolAvailableLiquidity,
+            }
+        },
         resetFederationWalletState(state, action: FederationPayloadAction) {
             state[action.payload.federationId] = {
                 ...initialFederationWalletState,
@@ -92,6 +106,17 @@ export const walletSlice = createSlice({
                 state[federationId] = {
                     ...federation,
                     ...action.payload,
+                }
+            },
+        )
+        builder.addCase(
+            fetchStabilityPoolAvailableLiquidity.fulfilled,
+            (state, action) => {
+                const { federationId } = action.meta.arg
+                const federation = getFederationWalletState(state, federationId)
+                state[federationId] = {
+                    ...federation,
+                    stabilityPoolAvailableLiquidity: action.payload,
                 }
             },
         )
@@ -126,6 +151,7 @@ export const walletSlice = createSlice({
 
 export const {
     setStabilityPoolAccountInfo,
+    setStabilityPoolAvailableLiquidity,
     resetFederationWalletState,
     resetWalletState,
 } = walletSlice.actions
@@ -208,6 +234,19 @@ export const fetchStabilityPoolAccountInfo = createAsyncThunk<
     },
 )
 
+export const fetchStabilityPoolAvailableLiquidity = createAsyncThunk<
+    MSats,
+    { fedimint: FedimintBridge; federationId: string }
+>(
+    'wallet/fetchStabilityPoolAvailableLiquidity',
+    async ({ fedimint, federationId }) => {
+        const liquidity =
+            await fedimint.stabilityPoolAvailableLiquidity(federationId)
+        log.info('stabilityPoolAvailableLiquidity', liquidity)
+        return liquidity
+    },
+)
+
 export const fetchStabilityPoolCycleStartPrice = createAsyncThunk<
     number,
     { fedimint: FedimintBridge; federationId: string }
@@ -258,6 +297,13 @@ export const refreshActiveStabilityPool = createAsyncThunk<
                 fedimint,
                 federationId,
                 numCycles: 10,
+            }),
+        )
+
+        dispatch(
+            fetchStabilityPoolAvailableLiquidity({
+                fedimint,
+                federationId,
             }),
         )
 
@@ -803,4 +849,12 @@ export const selectStabilityPoolAverageFeeRate = (
     return federationId
         ? selectFederationWalletState(s, federationId).averageFeeRate
         : null
+}
+
+export const selectStabilityPoolAvailableLiquidity = (
+    s: CommonState,
+    federationId?: Federation['id'],
+) => {
+    return selectFederationWalletState(s, federationId)
+        .stabilityPoolAvailableLiquidity
 }

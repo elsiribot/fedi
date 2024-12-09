@@ -16,6 +16,7 @@ import {
     selectMinimumWithdrawAmountMsats,
     selectPaymentFederationBalance,
     selectShowFiatTxnAmounts,
+    selectStabilityPoolAvailableLiquidity,
     selectStableBalanceSats,
     selectWithdrawableStableBalanceMsats,
     setAmountInputType,
@@ -559,14 +560,22 @@ export function useMinMaxDepositAmount() {
     const balanceSats = amountUtils.msatToSat(balanceMSats)
     const stableBalanceSats = useCommonSelector(selectStableBalanceSats)
     const maxStableBalanceSats = useCommonSelector(selectMaxStableBalanceSats)
+    const stabilityPoolAvailableLiquidity = useCommonSelector(
+        selectStabilityPoolAvailableLiquidity,
+    )
+    const availableLiquiditySats = stabilityPoolAvailableLiquidity
+        ? amountUtils.msatToSat(stabilityPoolAvailableLiquidity)
+        : 0
 
-    const maximumAmount =
-        maxStableBalanceSats === 0
-            ? balanceSats
-            : (Math.min(
-                  balanceSats,
-                  Math.max(0, maxStableBalanceSats - stableBalanceSats),
-              ) as Sats)
+    // ref: https://github.com/fedibtc/fedi/pull/5654/files#r1842633164
+    const maximumAmount = Math.min(
+        // User's current bitcoin wallet balance
+        balanceSats,
+        // Available liquidity in the stability pool
+        availableLiquiditySats,
+        // Maximum stable balance allowed minus the user's current stable balance
+        maxStableBalanceSats - stableBalanceSats,
+    ) as Sats
 
     return { minimumAmount, maximumAmount }
 }

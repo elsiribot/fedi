@@ -83,6 +83,13 @@ export class FedimintBridge {
         >('stabilityPoolAccountInfo', { federationId, forceUpdate })
     }
 
+    async stabilityPoolAvailableLiquidity(federationId: string) {
+        return this.rpcTyped<'stabilityPoolAvailableLiquidity', MSats>(
+            'stabilityPoolAvailableLiquidity',
+            { federationId },
+        )
+    }
+
     async stabilityPoolCycleStartPrice(federationId: string) {
         return this.rpcTyped('stabilityPoolCycleStartPrice', { federationId })
     }
