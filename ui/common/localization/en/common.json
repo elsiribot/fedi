@@ -466,6 +466,7 @@
             "action-enter-text": "Enter Text",
             "action-enter-url": "Enter URL",
             "action-enter-username": "Enter Username",
+            "action-enter-username-or-ln": "Enter Username / Lightning Address",
             "action-paste": "Paste",
             "action-scan": "Scan QR",
             "action-upload": "Upload QR image",
