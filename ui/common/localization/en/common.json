@@ -213,6 +213,7 @@
         "please-force-quit-the-app": "An error occurred, please force quit the app and try again",
         "please-grant-permission": "Please grant permission to download this file",
         "please-join-a-federation": "Please join a community before making chat payments",
+        "please-join-wallet-community": "Please join a wallet community before making payments",
         "receive-ecash-failed": "Failed to receive ecash",
         "receives-have-been-disabled": "Receives have been disabled for this community",
         "recovery-failed": "Recovery failed, please try again",

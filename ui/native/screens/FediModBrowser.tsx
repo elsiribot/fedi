@@ -31,19 +31,18 @@ import {
     selectMatrixAuth,
     selectNostrNpub,
     selectPaymentFederation,
+    selectWalletFederations,
 } from '@fedi/common/redux'
 import {
     AnyParsedData,
     EcashRequest,
     Invoice,
-    MSats,
     ParsedLnurlAuth,
     ParsedLnurlPay,
     ParsedLnurlWithdraw,
     ParserDataType,
 } from '@fedi/common/types'
 import { RpcLightningGateway } from '@fedi/common/types/bindings'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 import { parseUserInput } from '@fedi/common/utils/parser'
 import {
@@ -120,6 +119,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
     )
+    const walletFederations = useAppSelector(selectWalletFederations)
     const webview = useRef<WebView>() as MutableRefObject<WebView>
     const overlayResolveRef = useRef<
         FediModResolver<FediModResponse> | undefined
@@ -257,18 +257,20 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 setShowRecoveryInProgress(true)
                 throw Error(t('errors.unknown-error'))
             }
-            if (paymentFederation?.id === undefined) {
-                log.error('fedi.decodeInvoice', 'No active federation')
-                throw new Error('No active federation')
+
+            if (walletFederations.length === 0) {
+                toast.show({
+                    content: t('errors.please-join-wallet-community'),
+                    status: 'error',
+                })
+                throw new Error(t('errors.please-join-wallet-community'))
             }
-            // Check for an active gateway or throw error
-            await getActiveGatewayOrThrow()
 
             let invoice: Invoice
             try {
                 invoice = await fedimint.decodeInvoice(
                     data,
-                    paymentFederation.id,
+                    paymentFederation?.id ?? null,
                 )
             } catch (error) {
                 log.error('sendPayment', 'error', error)
@@ -280,25 +282,10 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             }
             // Wait for user to interact with alert
             return new Promise((resolve, reject) => {
-                // TODO: Hoist this to respect balance changes
-                if (
-                    !paymentFederation.balance ||
-                    paymentFederation.balance < invoice.amount
-                ) {
-                    const message = t('errors.insufficient-balance', {
-                        balance: `${amountUtils.msatToSat(
-                            paymentFederation?.balance as MSats,
-                        )} SATS`,
-                    })
-                    toast.show({ content: message, status: 'error' })
-                    reject(new Error(message))
-                } else {
-                    // Save these refs to we can resolve / reject elsewhere
-                    overlayRejectRef.current = reject
-                    overlayResolveRef.current =
-                        resolve as FediModResolver<FediModResponse>
-                    setInvoiceToPay(invoice)
-                }
+                overlayRejectRef.current = reject
+                overlayResolveRef.current =
+                    resolve as FediModResolver<FediModResponse>
+                setInvoiceToPay(invoice)
             })
         },
         [InjectionMessageType.webln_signMessage]: async () => {
