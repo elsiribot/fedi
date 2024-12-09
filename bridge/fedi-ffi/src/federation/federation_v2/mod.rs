@@ -1587,29 +1587,9 @@ impl FederationV2 {
             .await
     }
 
-    pub async fn receive_ecash_with_meta(
-        &self,
-        ecash: OOBNotes,
-        meta: EcashReceiveMetadata,
-        fedi_fee_ppm: u64,
-    ) -> Result<Amount> {
-        let amount = ecash.total_amount();
-        // TODO: include metadata as 2nd argument
-        let operation_id = self
-            .client
-            .mint()?
-            .reissue_external_notes(ecash, meta)
-            .await?;
-        self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
-            .await?;
-        let _ = self.record_tx_date_fiat_info(operation_id, amount).await;
-        self.subscribe_to_operation(operation_id).await?;
-        Ok(amount)
-    }
-
     /// Receive ecash
     /// TODO: user a better type than String
-    pub async fn receive_ecash(&self, ecash: String) -> Result<Amount> {
+    pub async fn receive_ecash(&self, ecash: String) -> Result<(Amount, OperationId)> {
         let ecash = OOBNotes::from_str(&ecash)?;
         let fedi_fee_ppm = self
             .fedi_fee_helper
@@ -1619,14 +1599,17 @@ impl FederationV2 {
                 RpcTransactionDirection::Receive,
             )
             .await?;
-        let amt = self
-            .receive_ecash_with_meta(
-                ecash,
-                EcashReceiveMetadata { internal: false },
-                fedi_fee_ppm,
-            )
+        let amount = ecash.total_amount();
+        let operation_id = self
+            .client
+            .mint()?
+            .reissue_external_notes(ecash, EcashReceiveMetadata { internal: false })
             .await?;
-        Ok(amt)
+        self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
+            .await?;
+        let _ = self.record_tx_date_fiat_info(operation_id, amount).await;
+        self.subscribe_to_operation(operation_id).await?;
+        Ok((amount, operation_id))
     }
 
     pub fn validate_ecash(ecash: String) -> Result<RpcEcashInfo> {

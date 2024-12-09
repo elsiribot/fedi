@@ -365,8 +365,11 @@ async fn receiveEcash(
     federation: Arc<FederationV2>,
     // TODO: better type
     ecash: String,
-) -> anyhow::Result<RpcAmount> {
-    federation.receive_ecash(ecash).await.map(RpcAmount)
+) -> anyhow::Result<(RpcAmount, RpcOperationId)> {
+    federation
+        .receive_ecash(ecash)
+        .await
+        .map(|(amt, op)| (RpcAmount(amt), RpcOperationId(op)))
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -2346,7 +2349,7 @@ mod tests {
 
             let federation = bridge.get_federation(&federation_id)?;
             let ecash = cli_generate_ecash(fedimint_core::Amount::from_msats(10_000)).await?;
-            amount = receiveEcash(federation.clone(), ecash).await?.0;
+            amount = receiveEcash(federation.clone(), ecash).await?.0 .0;
             wait_for_ecash_reissue(&federation).await?;
             bridge
                 .task_group
@@ -3003,7 +3006,7 @@ mod tests {
         // Receive some ecash first
         let initial_balance = Amount::from_msats(500_000);
         let ecash = cli_generate_ecash(initial_balance).await?;
-        let receive_amount = federation.receive_ecash(ecash).await?;
+        let (receive_amount, _) = federation.receive_ecash(ecash).await?;
         wait_for_ecash_reissue(&federation).await?;
 
         // Deposit to seek and verify account info

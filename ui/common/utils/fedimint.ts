@@ -198,10 +198,10 @@ export class FedimintBridge {
     }
 
     async receiveEcash(ecash: string, federationId: string) {
-        return this.rpcTyped('receiveEcash', {
+        return (await this.rpcTyped('receiveEcash', {
             federationId,
             ecash,
-        })
+        }))[0]
     }
 
     async validateEcash(ecash: string) {
