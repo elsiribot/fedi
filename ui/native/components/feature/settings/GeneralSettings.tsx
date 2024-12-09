@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { Theme, useTheme } from '@rneui/themed'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, View } from 'react-native'
 import { requestNotifications } from 'react-native-permissions'
@@ -39,7 +40,7 @@ export const GeneralSettings = () => {
         }
     }
 
-    const handleNotificationSettings = async () => {
+    const handleNotificationSettings = useCallback(async () => {
         // If not granted, ask for permission
         if (notificationsPermission !== 'granted') {
             // Request Permission
@@ -56,7 +57,7 @@ export const GeneralSettings = () => {
             // If already granted, open settings
             Linking.openSettings()
         }
-    }
+    }, [notificationsPermission])
 
     return (
         <View style={style.container}>
