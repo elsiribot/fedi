@@ -11,7 +11,6 @@ use fedi_api_types::fee_schedule::FeesV0;
 use fedi_api_types::invoice_generator::{
     GenerateInvoiceRequestV1, GenerateInvoiceResponseV1, TransactionDirection,
 };
-use fedimint_aead::{decrypt, LessSafeKey};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::core::ModuleKind;
@@ -22,8 +21,8 @@ use lightning_invoice::Bolt11Invoice;
 use reqwest::{Client, StatusCode};
 
 use crate::constants::{
-    DEVICE_REGISTRATION_CHILD_ID, FEDI_DEVICE_REGISTRATION_URL, FEDI_FEE_API_URL_MAINNET,
-    FEDI_FEE_API_URL_MUTINYNET, FEDI_INVOICE_API_URL_MAINNET, FEDI_INVOICE_API_URL_MUTINYNET,
+    FEDI_DEVICE_REGISTRATION_URL, FEDI_FEE_API_URL_MAINNET, FEDI_FEE_API_URL_MUTINYNET,
+    FEDI_INVOICE_API_URL_MAINNET, FEDI_INVOICE_API_URL_MUTINYNET,
 };
 use crate::storage::{DeviceIdentifier, FediFeeSchedule, ModuleFediFeeSchedule};
 use crate::types::RpcTransactionDirection;
@@ -124,7 +123,6 @@ pub trait IFediApi: MaybeSend + MaybeSync + 'static {
         &self,
         seed: bip39::Mnemonic,
         device_index: u8,
-        device_identifier: DeviceIdentifier,
         encrypted_device_identifier: String,
         force_overwrite: bool,
     ) -> anyhow::Result<(), RegisterDeviceError>;
@@ -268,14 +266,11 @@ impl IFediApi for LiveFediApi {
             .devices
             .into_iter()
             .map(|info| {
-                // If decrypting device identifier fails, attempt to use it as-is. It likely
-                // means that the original registration happened before encryption was
-                // implemented.
                 Ok(RegisteredDevice {
                     index: info.device_index.0,
-                    identifier: process_device_identifier(
+                    identifier: DeviceIdentifier::from_encrypted_string(
+                        &info.device_identifier.device_name,
                         &root_secret,
-                        info.device_identifier.device_name,
                     )?,
                     last_renewed: info.timestamp.0.into(),
                 })
@@ -287,7 +282,6 @@ impl IFediApi for LiveFediApi {
         &self,
         seed: bip39::Mnemonic,
         device_index: u8,
-        device_identifier: DeviceIdentifier,
         encrypted_device_identifier: String,
         force_overwrite: bool,
     ) -> Result<(), RegisterDeviceError> {
@@ -333,62 +327,14 @@ impl IFediApi for LiveFediApi {
             }
         };
 
-        // First try registering with an encrypted device identifier.
-        // If an encrypted device identifier results in conflict, retry
-        // with unencrypted device identifier. It likely
-        // means that the original registration happened before
-        // encryption was implemented.
         let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&seed);
-        match registration_closure(
+        registration_closure(
             root_secret.clone(),
             encrypted_device_identifier.clone(),
             false,
         )
         .await
-        {
-            Err(RegisterDeviceError::AnotherDeviceOwnsIndex(_)) => {
-                // If registration first fails with encrypted device identifier, but then
-                // succeeds with the unencrypted device identifier, we go ahead and re-register
-                // with force_overwrite using the encrypted version. This is sort of like a DB
-                // migration.
-                registration_closure(root_secret.clone(), device_identifier.to_string(), false)
-                    .await?;
-                registration_closure(
-                    root_secret.clone(),
-                    encrypted_device_identifier.clone(),
-                    true,
-                )
-                .await
-            }
-            res => res,
-        }
     }
-}
-
-fn process_device_identifier(
-    root_secret: &DerivableSecret,
-    maybe_encrypted_device_identifier: String,
-) -> anyhow::Result<DeviceIdentifier> {
-    match decrypt_device_identifier(root_secret, &maybe_encrypted_device_identifier) {
-        Err(_) => FromStr::from_str(&maybe_encrypted_device_identifier),
-        res @ Ok(_) => res,
-    }
-}
-
-fn decrypt_device_identifier(
-    root_secret: &DerivableSecret,
-    encrypted_device_identifier: &str,
-) -> anyhow::Result<DeviceIdentifier> {
-    let device_id_encryption_secret = root_secret.child_key(DEVICE_REGISTRATION_CHILD_ID);
-    // Hex-decode -> decrypt -> trim padding
-    let mut decoded = hex::decode(encrypted_device_identifier)?;
-    let decrypted_bytes = decrypt(
-        &mut decoded,
-        &LessSafeKey::new(device_id_encryption_secret.to_chacha20_poly1305_key()),
-    )?;
-    let decrypted_string = String::from_utf8(decrypted_bytes.to_vec())?;
-    let unpadded_string = decrypted_string.trim_end();
-    FromStr::from_str(unpadded_string)
 }
 
 #[cfg(test)]
@@ -406,22 +352,7 @@ mod tests {
         let encrypted_device_identifier = device_identifier.encrypt_and_hex_encode(&root_secret)?;
         assert_eq!(
             device_identifier,
-            process_device_identifier(&root_secret, encrypted_device_identifier)?
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn test_process_unencrypted_device_identifier() -> anyhow::Result<()> {
-        let device_identifier_str =
-            "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
-        let device_identifier: DeviceIdentifier = FromStr::from_str(&device_identifier_str)?;
-        let mnemonic = Bip39RootSecretStrategy::<12>::random(&mut rand::thread_rng());
-        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&mnemonic);
-
-        assert_eq!(
-            device_identifier,
-            process_device_identifier(&root_secret, device_identifier_str)?
+            DeviceIdentifier::from_encrypted_string(&encrypted_device_identifier, &root_secret)?
         );
         Ok(())
     }

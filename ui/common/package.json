@@ -13,7 +13,8 @@
         "format:check": "prettier --check .",
         "i18n:autotranslate": "ts-node ./scripts/autotranslate.ts",
         "i18n:export-csv": "ts-node ./scripts/i18n-export-csv.ts",
-        "i18n:import-csv": "ts-node ./scripts/i18n-import-csv.ts"
+        "i18n:import-csv": "ts-node ./scripts/i18n-import-csv.ts",
+        "i18n:unused": "ts-node ./scripts/i18n-unused.ts"
     },
     "dependencies": {
         "@reduxjs/toolkit": "^1.9.3",
@@ -40,6 +41,7 @@
         "@react-native-community/netinfo": "^11.4.0",
         "@trivago/prettier-plugin-sort-imports": "^4.1.1",
         "@types/accounting": "^0.4.2",
+        "@types/cross-spawn": "^6.0.6",
         "@types/crypto-js": "^4.1.1",
         "@types/jest": "^29.5.0",
         "@types/json-stable-stringify": "^1.0.34",
@@ -49,6 +51,7 @@
         "@types/uuid": "^9.0.1",
         "@typescript-eslint/eslint-plugin": "^5.56.0",
         "@typescript-eslint/parser": "^5.56.0",
+        "cross-spawn": "^7.0.6",
         "eslint": "^8.41.0",
         "eslint-plugin-react-hooks": "^4.6.0",
         "html-entities": "^2.4.0",

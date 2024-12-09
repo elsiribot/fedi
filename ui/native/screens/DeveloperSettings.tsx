@@ -30,12 +30,12 @@ import {
     SupportedCurrency,
 } from '@fedi/common/types'
 import { GuardianStatus } from '@fedi/common/types/bindings'
-import { makeLog } from '@fedi/common/utils/log'
-
 import {
     getGuardianStatuses,
     switchGateway,
 } from '@fedi/common/utils/FederationUtils'
+import { makeLog } from '@fedi/common/utils/log'
+
 import { fedimint } from '../bridge'
 import CheckBox from '../components/ui/CheckBox'
 import { version } from '../package.json'

@@ -7,8 +7,8 @@ import Share from 'react-native-share'
 
 import { locateRecoveryFile } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
-import { fedimint } from '../bridge'
 
+import { fedimint } from '../bridge'
 import HoloGuidance from '../components/ui/HoloGuidance'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useAppDispatch } from '../state/hooks'

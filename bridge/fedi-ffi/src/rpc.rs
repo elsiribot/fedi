@@ -859,7 +859,7 @@ macro_rules! ts_type_serde {
     };
 }
 
-ts_type_ser!(RpcReusedEcashProofs: SerializedReusedEcashProofs = "any");
+ts_type_ser!(RpcReusedEcashProofs: SerializedReusedEcashProofs = "JSONObject");
 
 #[macro_rules_derive(federation_rpc_method!)]
 async fn generateReusedEcashProofs(
@@ -994,7 +994,7 @@ async fn matrixSendMessage(
         .await
 }
 
-ts_type_de!(CustomMessageData: serde_json::Map<String, serde_json::Value> = "Record<string, any>");
+ts_type_de!(CustomMessageData: serde_json::Map<String, serde_json::Value> = "Record<string, JSONValue>");
 #[macro_rules_derive(rpc_method!)]
 async fn matrixSendMessageJson(
     bridge: Arc<Bridge>,
@@ -1009,7 +1009,7 @@ async fn matrixSendMessageJson(
         .await
 }
 
-ts_type_de!(CreateRoomRequest: matrix::create_room::Request = "any");
+ts_type_de!(CreateRoomRequest: matrix::create_room::Request = "JSONObject");
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomCreate(
@@ -1050,8 +1050,7 @@ async fn matrixRoomLeave(bridge: Arc<Bridge>, room_id: RpcRoomId) -> anyhow::Res
     matrix.room_leave(&room_id.into_typed()?).await
 }
 
-// sorry for any
-ts_type_ser!(ObservableRoomInfo: Observable<RoomInfo> = "Observable<any>");
+ts_type_ser!(ObservableRoomInfo: Observable<RoomInfo> = "Observable<JSONObject>");
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomObserveInfo(
@@ -1204,7 +1203,7 @@ async fn matrixUserDirectorySearch(
         .await
 }
 
-ts_type_ser!(RpcPublicRoomChunk: PublicRoomsChunk = "any");
+ts_type_ser!(RpcPublicRoomChunk: PublicRoomsChunk = "JSONObject");
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixPublicRoomInfo(
@@ -1241,7 +1240,7 @@ async fn matrixUploadMedia(
     matrix.upload_file(mime, file).await
 }
 
-ts_type_serde!(RpcRoomPowerLevelsEventContent: RoomPowerLevelsEventContent = "any");
+ts_type_serde!(RpcRoomPowerLevelsEventContent: RoomPowerLevelsEventContent = "JSONObject");
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomGetPowerLevels(
     bridge: Arc<Bridge>,
@@ -1312,7 +1311,7 @@ async fn matrixRoomMarkAsUnread(
         .await
 }
 
-ts_type_ser!(UserProfile: get_profile::v3::Response = "any");
+ts_type_ser!(UserProfile: get_profile::v3::Response = "JSONObject");
 #[macro_rules_derive(rpc_method!)]
 async fn matrixUserProfile(bridge: Arc<Bridge>, user_id: RpcUserId) -> anyhow::Result<UserProfile> {
     let matrix = get_matrix(&bridge).await?;
@@ -1322,7 +1321,7 @@ async fn matrixUserProfile(bridge: Arc<Bridge>, user_id: RpcUserId) -> anyhow::R
         .map(UserProfile)
 }
 
-ts_type_de!(RpcPusher: Pusher = "any");
+ts_type_de!(RpcPusher: Pusher = "JSONObject");
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixSetPusher(bridge: Arc<Bridge>, pusher: RpcPusher) -> anyhow::Result<()> {
@@ -1364,7 +1363,7 @@ async fn matrixDeleteMessage(
         .await
 }
 
-ts_type_de!(RpcMediaSource: MediaSource = "any");
+ts_type_de!(RpcMediaSource: MediaSource = "JSONObject");
 #[macro_rules_derive(rpc_method!)]
 async fn matrixDownloadFile(
     bridge: Arc<Bridge>,
@@ -1666,6 +1665,8 @@ mod tests {
     use devimint::{cmd, DevFed};
     use fedi_core::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
     use fedi_social_client::common::VerificationDocument;
+    use fedimint_bip39::Bip39RootSecretStrategy;
+    use fedimint_client::secret::RootSecretStrategy;
     use fedimint_core::core::ModuleKind;
     use fedimint_core::task::{sleep_in_test, TaskGroup};
     use fedimint_core::{apply, async_trait_maybe_send, Amount};
@@ -1727,8 +1728,8 @@ mod tests {
     }
 
     struct MockFediApi {
-        // (seed, index) => (device identifier, last registration timestamp)
-        registry: Mutex<HashMap<(bip39::Mnemonic, u8), (DeviceIdentifier, SystemTime)>>,
+        // (seed, index) => (encrypted device identifier, last registration timestamp)
+        registry: Mutex<HashMap<(bip39::Mnemonic, u8), (String, SystemTime)>>,
 
         // Invoice that will be returned whenever fetch_fedi_invoice is called
         fedi_fee_invoice: Option<Bolt11Invoice>,
@@ -1772,6 +1773,7 @@ mod tests {
             &self,
             seed: bip39::Mnemonic,
         ) -> anyhow::Result<Vec<RegisteredDevice>> {
+            let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&seed);
             let mut devices = self
                 .registry
                 .lock()
@@ -1779,16 +1781,21 @@ mod tests {
                 .iter()
                 .filter_map(|(k, v)| {
                     if k.0 == seed {
-                        Some(RegisteredDevice {
-                            index: k.1,
-                            identifier: v.0.clone(),
-                            last_renewed: v.1,
-                        })
+                        Some(
+                            match DeviceIdentifier::from_encrypted_string(&v.0, &root_secret) {
+                                Ok(identifier) => Ok(RegisteredDevice {
+                                    index: k.1,
+                                    identifier,
+                                    last_renewed: v.1,
+                                }),
+                                Err(e) => Err(e),
+                            },
+                        )
                     } else {
                         None
                     }
                 })
-                .collect::<Vec<_>>();
+                .collect::<anyhow::Result<Vec<_>>>()?;
 
             devices.sort_by_key(|r| r.index);
             Ok(devices)
@@ -1798,14 +1805,13 @@ mod tests {
             &self,
             seed: bip39::Mnemonic,
             device_index: u8,
-            device_identifier: DeviceIdentifier,
-            _encrypted_device_identifier: String,
+            encrypted_device_identifier: String,
             force_overwrite: bool,
         ) -> anyhow::Result<(), RegisterDeviceError> {
             let mut registry = self.registry.lock().await;
             if let Some(value) = registry.get_mut(&(seed.clone(), device_index)) {
-                if force_overwrite || device_identifier == value.0 {
-                    value.0 = device_identifier;
+                if force_overwrite || encrypted_device_identifier == value.0 {
+                    value.0 = encrypted_device_identifier;
                     value.1 = fedimint_core::time::now();
                     Ok(())
                 } else {
@@ -1817,7 +1823,7 @@ mod tests {
             } else {
                 registry.insert(
                     (seed, device_index),
-                    (device_identifier, fedimint_core::time::now()),
+                    (encrypted_device_identifier, fedimint_core::time::now()),
                 );
                 Ok(())
             }

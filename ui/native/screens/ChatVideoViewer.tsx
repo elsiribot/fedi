@@ -1,3 +1,4 @@
+import { CameraRoll } from '@react-native-camera-roll/camera-roll'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
@@ -9,14 +10,14 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
+import { exists } from 'react-native-fs'
+import { PermissionStatus, RESULTS } from 'react-native-permissions'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
+import Video from 'react-native-video'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
-import { CameraRoll } from '@react-native-camera-roll/camera-roll'
-import { exists } from 'react-native-fs'
-import { PermissionStatus, RESULTS } from 'react-native-permissions'
-import Video from 'react-native-video'
+
 import SvgImage from '../components/ui/SvgImage'
 import type { RootStackParamList } from '../types/navigation'
 import { useDownloadPermission } from '../utils/hooks'

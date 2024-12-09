@@ -160,10 +160,10 @@ const contentSchemas = {
     }),
 }
 
-interface MatrixEventUnknownContent {
+type MatrixEventUnknownContent = {
     msgtype: 'm.unknown'
     body: string
-    originalContent: unknown
+    originalContent: MatrixEventContent
 }
 
 export type MatrixEventContentType<T extends keyof typeof contentSchemas> =
@@ -173,7 +173,9 @@ export type MatrixEventContent =
     | z.infer<(typeof contentSchemas)[keyof typeof contentSchemas]>
     | MatrixEventUnknownContent
 
-export function formatMatrixEventContent(content: unknown): MatrixEventContent {
+export function formatMatrixEventContent(
+    content: MatrixEventContent,
+): MatrixEventContent {
     try {
         const msgType = (content as { msgtype: keyof typeof contentSchemas })
             .msgtype
@@ -430,6 +432,9 @@ export function encodeFediMatrixRoomUri(id: MatrixRoom['id'], deep = false) {
 }
 
 export function decodeFediMatrixRoomUri(uri: string) {
+    // Some mobile apps treat the matrix homeserver as a URL and prefix it with https://, breaking the parser
+    const cleaned = uri.replace(/https?:\/\//g, '')
+
     // Decode both fedi:room:{id} and fedi://room:{id}
     // Regex breakdown:
     // ^fedi           - Ensures the string starts with "fedi".
@@ -438,7 +443,7 @@ export function decodeFediMatrixRoomUri(uri: string) {
     // (.+?)           - Non-greedy capture of the room ID (which contains a single colon)
     // (?:::|$)        - Ensures the room ID is followed either by ":::” or the end of the string
     // /i              - Case-insensitive matching.
-    const match = uri.match(/^fedi(?::|:\/\/)room:(.+?)(?:::|$)/i)
+    const match = cleaned.match(/^fedi(?::|:\/\/)room:(.+?)(?:::|$)/i)
     if (!match) throw new Error('feature.chat.invalid-room')
 
     const decodedId = match[1]
@@ -449,9 +454,12 @@ export function decodeFediMatrixRoomUri(uri: string) {
 }
 
 export function decodeFediMatrixUserUri(uri: string) {
+    // See decodeFediMatrixRoomUri
+    const cleaned = uri.replace(/https?:\/\//g, '')
+
     // Decode both fedi:user:{id} and fedi://user:{id}
     // const match = uri.match(FEDI_USER)
-    const match = uri.match(/^fedi(?::|:\/\/)user:(.+)$/i)
+    const match = cleaned.match(/^fedi(?::|:\/\/)user:(.+)$/i)
     if (!match) throw new Error('feature.chat.invalid-member')
 
     // Validate that it's a valid matrix user id

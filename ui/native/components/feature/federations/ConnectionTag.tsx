@@ -1,7 +1,9 @@
-import { FederationStatus } from '@fedi/common/types'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
+
+import { FederationStatus } from '@fedi/common/types'
+
 import SvgImage from '../../ui/SvgImage'
 import { ConnectionIcon } from './ConnectionIcon'
 
@@ -18,7 +20,14 @@ export const ConnectionTag = ({
 }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const localeStatus = t(`words.${status}`)
+    const localeStatus = t(
+        // Avoid using template strings in the t() function to prevent unused i18n keys from being stripped out
+        status === 'unstable'
+            ? 'words.unstable'
+            : status === 'online'
+              ? 'words.online'
+              : 'words.offline',
+    )
     const style = styles(theme)
     const iconSize = size === 'small' ? 12 : 16
     return (

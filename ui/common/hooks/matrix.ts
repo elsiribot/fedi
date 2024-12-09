@@ -41,11 +41,13 @@ import { useUpdatingRef } from './util'
 
 export function useMatrixUserSearch() {
     const dispatch = useCommonDispatch()
-    const [query, setQuery] = useState('')
+    const [searchQuery, setSearchQuery] = useState('')
     const [searchedUsers, setSearchedUsers] = useState<MatrixUser[]>([])
     const [isSearching, setIsSearching] = useState(false)
     const [searchError, setSearchError] = useState<unknown>()
     const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
+
+    const query = searchQuery.trim()
 
     // If the user types in a valid matrix user ID, or a valid fedi matrix user URI,
     // then use that as the exact match user.
@@ -100,8 +102,8 @@ export function useMatrixUserSearch() {
     }, [dispatch, query])
 
     return {
-        query,
-        setQuery,
+        query: searchQuery,
+        setQuery: setSearchQuery,
         isSearching: exactMatchUsers ? false : isSearching,
         searchedUsers: exactMatchUsers || searchedUsers,
         searchError,

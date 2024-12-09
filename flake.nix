@@ -304,6 +304,7 @@
               pkgs.clightning
               pkgs.lnd
               pkgs.sccache
+              pkgs.ripgrep
 
               androidSdk
             ];

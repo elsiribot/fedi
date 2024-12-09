@@ -29,7 +29,6 @@
         "@types/node": "^22.9.0",
         "knip": "^5.36.5",
         "prettier": "^3.3.3",
-        "prettier-plugin-organize-imports": "^4.0.0",
         "syncpack": "^9.8.4",
         "turbo": "^1.10.7"
     }

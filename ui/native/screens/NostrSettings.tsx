@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { selectNostrNpub, selectNostrNsec } from '@fedi/common/redux'
+
 import { CopyButton } from '../components/ui/CopyButton'
 import HoloLoader from '../components/ui/HoloLoader'
 import { PressableIcon } from '../components/ui/PressableIcon'

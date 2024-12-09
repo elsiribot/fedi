@@ -6,6 +6,7 @@ import { RpcInitOpts } from '@fedi/common/types/bindings'
 import { isDev } from '@fedi/common/utils/environment'
 import { BridgeError, FedimintBridge } from '@fedi/common/utils/fedimint'
 import { makeLog } from '@fedi/common/utils/log'
+
 import { isNightly } from './utils/device-info'
 
 const { BridgeNativeEventEmitter, FedimintFfi } = NativeModules

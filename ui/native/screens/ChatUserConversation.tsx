@@ -9,8 +9,8 @@ import {
     selectMatrixDirectMessageRoom,
     sendMatrixDirectMessage,
 } from '@fedi/common/redux'
-
 import { ChatType } from '@fedi/common/types'
+
 import MessageInput from '../components/feature/chat/MessageInput'
 import NoMessagesNotice from '../components/feature/chat/NoMessagesNotice'
 import SelectedMessageOverlay from '../components/feature/chat/SelectedMessageOverlay'

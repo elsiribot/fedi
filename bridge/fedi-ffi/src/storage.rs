@@ -7,7 +7,7 @@ use std::time::SystemTime;
 
 use anyhow::{anyhow, bail, ensure};
 use fedi_social_client::SocialRecoveryState;
-use fedimint_aead::LessSafeKey;
+use fedimint_aead::{decrypt, LessSafeKey};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::core::ModuleKind;
@@ -63,10 +63,12 @@ pub struct AppStateRaw {
     pub matrix_session: Option<MatrixSession>,
 
     // Device identifier is used to give this device a name that Fedi's device registration service
-    // can store. We store an encrypted string version of it separately so that we can reuse the
+    // can store. We store an encrypted string version of it so that we can reuse the
     // same ciphertext when communicating with Fedi's device registration service regarding this
     // device's registration status.
-    device_identifier: Option<DeviceIdentifier>,
+
+    // NOTE: DO NOT REUSE
+    // device_identifier: Option<DeviceIdentifier>,
     encrypted_device_identifier: Option<String>,
 
     // Device index identifies which device number this is under the same root seed as registered
@@ -150,25 +152,6 @@ impl Display for DeviceIdentifier {
     }
 }
 
-impl Serialize for DeviceIdentifier {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
-    }
-}
-
-impl<'de> Deserialize<'de> for DeviceIdentifier {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        FromStr::from_str(&s).map_err(serde::de::Error::custom)
-    }
-}
-
 impl DeviceIdentifier {
     pub fn encrypt_and_hex_encode(&self, root_secret: &DerivableSecret) -> anyhow::Result<String> {
         let device_id_encryption_secret = root_secret.child_key(DEVICE_REGISTRATION_CHILD_ID);
@@ -179,6 +162,22 @@ impl DeviceIdentifier {
             &LessSafeKey::new(device_id_encryption_secret.to_chacha20_poly1305_key()),
         )?;
         Ok(hex::encode(encrypted))
+    }
+
+    pub fn from_encrypted_string(
+        encrypted_device_identifier: &str,
+        root_secret: &DerivableSecret,
+    ) -> anyhow::Result<Self> {
+        let device_id_encryption_secret = root_secret.child_key(DEVICE_REGISTRATION_CHILD_ID);
+        // Hex-decode -> decrypt -> trim padding
+        let mut decoded = hex::decode(encrypted_device_identifier)?;
+        let decrypted_bytes = decrypt(
+            &mut decoded,
+            &LessSafeKey::new(device_id_encryption_secret.to_chacha20_poly1305_key()),
+        )?;
+        let decrypted_string = String::from_utf8(decrypted_bytes.to_vec())?;
+        let unpadded_string = decrypted_string.trim_end();
+        FromStr::from_str(unpadded_string)
     }
 }
 
@@ -360,7 +359,6 @@ impl AppState {
                 social_recovery_state: None,
                 sensitive_log: None,
                 matrix_session: None,
-                device_identifier: None,
                 encrypted_device_identifier: None,
                 device_index: default_device_index(),
                 last_device_registration_timestamp: None,
@@ -421,61 +419,51 @@ impl AppState {
     /// identifier. If no existing device identifier, sets is as the new
     /// device identifier. Otherwise, logs the comparison and returns the
     /// existing device identifier.
-    pub async fn verify_and_return_device_identifier(
+    pub async fn process_device_identifier(
         &self,
         new_identifier: DeviceIdentifier,
-    ) -> anyhow::Result<DeviceIdentifier> {
-        match self
-            .with_read_lock(|state| state.device_identifier.clone())
+    ) -> anyhow::Result<()> {
+        let root_secret = self.root_secret().await;
+
+        if let Some(enc_device_identifier) = self
+            .with_read_lock(|state| state.encrypted_device_identifier.clone())
             .await
         {
-            Some(id) if id != new_identifier => {
-                warn!("New device identifier ({new_identifier}) doesn't match existing one ({id})");
-                Ok(id)
+            let identifier =
+                DeviceIdentifier::from_encrypted_string(&enc_device_identifier, &root_secret)?;
+            if identifier != new_identifier {
+                warn!("New device identifier ({new_identifier}) doesn't match existing one ({identifier})");
+            } else {
+                info!("Device identifier unchaged: {identifier}");
             }
-            Some(id) => {
-                info!("Device identifier unchaged: {id}");
-                Ok(id)
-            }
-            None => {
-                info!("Device identifier absent, setting as: {new_identifier}");
-                self.with_write_lock(|state| {
-                    state.device_identifier = Some(new_identifier.clone())
-                })
-                .await?;
-                Ok(new_identifier)
-            }
+        } else {
+            info!("Device identifier absent, setting as: {new_identifier}");
+            let new_enc_device_identifier = new_identifier.encrypt_and_hex_encode(&root_secret)?;
+            self.with_write_lock(|state| {
+                state.encrypted_device_identifier = Some(new_enc_device_identifier);
+            })
+            .await?;
         }
+
+        Ok(())
     }
 
     pub async fn device_identifier(&self) -> Option<DeviceIdentifier> {
-        self.with_read_lock(|state| state.device_identifier.clone())
+        let root_secret = self.root_secret().await;
+        self.with_read_lock(|state| state.encrypted_device_identifier.clone())
             .await
+            .map(|enc| {
+                DeviceIdentifier::from_encrypted_string(&enc, &root_secret)
+                    .expect("Device ID decryption from disk must never fail")
+            })
     }
 
     // If an encrypted_device_identifier is set in AppState, returns it. If not,
     // computes the ciphertext using the root_mnemonic, stores it, and returns it.
     // However if device_identifier is not set to begin with, returns an error.
-    pub async fn encrypted_device_identifier(&self) -> anyhow::Result<String> {
-        match self
-            .with_read_lock(|state| state.encrypted_device_identifier.clone())
+    pub async fn encrypted_device_identifier(&self) -> Option<String> {
+        self.with_read_lock(|state| state.encrypted_device_identifier.clone())
             .await
-        {
-            Some(enc) => Ok(enc),
-            None => match self.device_identifier().await {
-                Some(identifier) => {
-                    let enc = identifier.encrypt_and_hex_encode(&self.root_secret().await)?;
-                    self.with_write_lock(|state| {
-                        state.encrypted_device_identifier = Some(enc.clone())
-                    })
-                    .await?;
-                    Ok(enc)
-                }
-                None => Err(anyhow!(
-                    "Device identifier must be set prior to requesting encryption"
-                )),
-            },
-        }
     }
 
     /// Always present if federations are present.
@@ -516,14 +504,31 @@ impl AppState {
     /// Recover to a seed, fails if state has joined any federation.
     /// Also resets the device index.
     pub async fn recover_mnemonic(&self, mnemonic: bip39::Mnemonic) -> anyhow::Result<()> {
+        let old_root_secret = self.root_secret().await;
         self.with_write_lock(|state| {
             if !state.joined_federations.is_empty() {
                 bail!("Cannot recover while joined federations exist");
             }
+
+            // Update mnemonic
             state.root_mnemonic = mnemonic;
-            // Clear encrypted device identifier since the seed has changed. It will be
-            // re-encrypted and stored when queried for again.
-            state.encrypted_device_identifier = None;
+
+            // Re-encrypt device identifier using new root secret
+            let device_identifier = DeviceIdentifier::from_encrypted_string(
+                &state
+                    .encrypted_device_identifier
+                    .clone()
+                    .ok_or(anyhow!("Encrypted device identifier must be present"))?,
+                &old_root_secret,
+            )?;
+
+            let new_root_secret =
+                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic);
+            state.encrypted_device_identifier =
+                Some(device_identifier.encrypt_and_hex_encode(&new_root_secret)?);
+
+            // Device index needs to be cleared, one will be assigned at the end of the
+            // recovery flow
             state.device_index = None;
             Ok(())
         })

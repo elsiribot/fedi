@@ -1,11 +1,11 @@
 import RNDI from 'react-native-device-info'
+import { getNumberFormatSettings, getTimeZone } from 'react-native-localize'
 import { v4 as uuidv4 } from 'uuid'
 
 import { RpcRegisteredDevice } from '@fedi/common/types/bindings'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { getNumberFormatSettings, getTimeZone } from 'react-native-localize'
 import { SvgImageName } from '../components/ui/SvgImage'
 
 const log = makeLog('native/utils/device-info')

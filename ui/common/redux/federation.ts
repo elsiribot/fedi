@@ -7,7 +7,6 @@ import {
 import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
 import orderBy from 'lodash/orderBy'
-import { makeLog } from '../utils/log'
 
 import {
     CommonState,
@@ -46,6 +45,7 @@ import {
     joinFromInvite,
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
+import { makeLog } from '../utils/log'
 import { makeChatFromPreview } from '../utils/matrix'
 import { upsertListItem, upsertRecordEntityId } from '../utils/redux'
 import { loadFromStorage } from './storage'

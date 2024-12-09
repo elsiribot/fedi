@@ -10,7 +10,7 @@ use tracing::{error, info};
 use crate::api::{IFediApi, RegisterDeviceError, RegisteredDevice};
 use crate::constants::{DEVICE_REGISTRATION_FREQUENCY, DEVICE_REGISTRATION_OVERDUE};
 use crate::event::{Event, EventSink, TypedEventExt};
-use crate::storage::{AppState, DeviceIdentifier};
+use crate::storage::AppState;
 
 pub struct DeviceRegistrationService {
     app_state: Arc<AppState>,
@@ -31,14 +31,12 @@ impl DeviceRegistrationService {
             active_task_subgroup: None,
         };
 
-        if let (Some(device_identifier), Ok(encrypted_device_identifier), Some(device_index)) = (
-            app_state.device_identifier().await,
+        if let (Some(encrypted_device_identifier), Some(device_index)) = (
             app_state.encrypted_device_identifier().await,
             app_state.device_index().await,
         ) {
             service
                 .start_periodic_registration_inner(
-                    device_identifier,
                     encrypted_device_identifier,
                     device_index,
                     task_group,
@@ -69,13 +67,9 @@ impl DeviceRegistrationService {
             bail!("Stop currently ongoing device registration task first");
         }
 
-        match (
-            self.app_state.device_identifier().await,
-            self.app_state.encrypted_device_identifier().await,
-        ) {
-            (Some(device_identifier), Ok(encrypted_device_identifier)) => {
+        match self.app_state.encrypted_device_identifier().await {
+            Some(encrypted_device_identifier) => {
                 self.start_periodic_registration_inner(
-                    device_identifier,
                     encrypted_device_identifier,
                     device_index,
                     task_group,
@@ -91,7 +85,6 @@ impl DeviceRegistrationService {
 
     async fn start_periodic_registration_inner(
         &mut self,
-        device_identifier: DeviceIdentifier,
         encrypted_device_identifier: String,
         device_index: u8,
         task_group: &TaskGroup,
@@ -101,7 +94,6 @@ impl DeviceRegistrationService {
         subgroup.spawn_cancellable(
             "device_registration_service",
             renew_registration_periodically(
-                device_identifier,
                 encrypted_device_identifier,
                 device_index,
                 self.app_state.clone(),
@@ -114,7 +106,6 @@ impl DeviceRegistrationService {
 }
 
 async fn renew_registration_periodically(
-    device_identifier: DeviceIdentifier,
     encrypted_device_identifier: String,
     device_index: u8,
     app_state: Arc<AppState>,
@@ -135,7 +126,6 @@ async fn renew_registration_periodically(
             event_sink.clone(),
             seed.clone(),
             device_index,
-            device_identifier.clone(),
             encrypted_device_identifier.clone(),
             false,
         )
@@ -172,7 +162,6 @@ pub async fn register_device_with_backoff(
     event_sink: EventSink,
     seed: bip39::Mnemonic,
     device_index: u8,
-    device_identifier: DeviceIdentifier,
     encrypted_device_identifier: String,
     force_overwrite: bool,
 ) -> anyhow::Result<()> {
@@ -193,7 +182,6 @@ pub async fn register_device_with_backoff(
                 .register_device_for_seed(
                     seed.clone(),
                     device_index,
-                    device_identifier.clone(),
                     encrypted_device_identifier.clone(),
                     force_overwrite,
                 )
