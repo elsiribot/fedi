@@ -183,4 +183,4 @@ debug = false
 [patch.crates-io]
 # https://github.com/mozilla/uniffi-rs/issues/1938
 uniffi = { git = "https://github.com/mozilla/uniffi-rs", rev = "f5fc9d7e9aa08889aedc45dd81ae9b4d3ec4cbe8" }
-ldk-node = { git = "https://github.com/lightningdevkit/ldk-node", rev = "b6fd4f42fcb3ff056fbc81b8c7d53ad782dfb32a" }
+ldk-node = { git = "https://github.com/fedibtc/ldk-node", tag = "v0.4.2-fed" }
