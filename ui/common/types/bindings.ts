@@ -201,6 +201,7 @@ export interface RpcFederation {
   version: number;
   clientConfig: RpcJsonClientConfig | null;
   fediFeeSchedule: RpcFediFeeSchedule;
+  hadReusedEcash: boolean;
 }
 
 export type RpcFederationId = string;
@@ -359,6 +360,7 @@ export interface RpcMethods {
       version: number;
       clientConfig: RpcJsonClientConfig | null;
       fediFeeSchedule: RpcFediFeeSchedule;
+      hadReusedEcash: boolean;
     },
   ];
   federationPreview: [
@@ -618,6 +620,7 @@ export interface RpcMethods {
       version: number;
       clientConfig: RpcJsonClientConfig | null;
       fediFeeSchedule: RpcFediFeeSchedule;
+      hadReusedEcash: boolean;
     } | null,
   ];
   transferExistingDeviceRegistration: [
@@ -634,6 +637,7 @@ export interface RpcMethods {
       version: number;
       clientConfig: RpcJsonClientConfig | null;
       fediFeeSchedule: RpcFediFeeSchedule;
+      hadReusedEcash: boolean;
     } | null,
   ];
   deviceIndexAssignmentStatus: [

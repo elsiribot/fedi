@@ -3922,23 +3922,7 @@ mod tests {
                 bridge_dir1.clone(),
             )
             .await?;
-            bridge1
-                .task_group
-                .clone()
-                .shutdown_join_all(Duration::from_secs(5))
-                .await?;
-            // shutdown after generate seed
-            drop(bridge1);
-            // copy the seed
-            copy_recursively(&bridge_dir1, &bridge_dir2).await?;
-
-            let bridge1 = setup_bridge_custom_with_data_dir(
-                device_identifier1.clone(),
-                fedi_api.clone(),
-                FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
-                bridge_dir1.clone(),
-            )
-            .await?;
+            mnemonic = getMnemonic(bridge1.clone()).await?;
 
             // trigger seed reuse: a second bridge with same seed and same device identifier
             let bridge2 = setup_bridge_custom_with_data_dir(
@@ -3948,6 +3932,9 @@ mod tests {
                 bridge_dir2.clone(),
             )
             .await?;
+            recoverFromMnemonic(bridge2.clone(), mnemonic.clone()).await?;
+            transferExistingDeviceRegistration(bridge2.clone(), 0).await?;
+
             let (federation_b1, federation_b2) =
                 tokio::try_join!(join_test_fed(&bridge1), join_test_fed(&bridge2))?;
             let ecash_receive_amount = fedimint_core::Amount::from_msats(10000);
@@ -3963,7 +3950,6 @@ mod tests {
             // this will still pass but federation will have unspendable ecash
             wait_for_ecash_reissue(&federation_b2).await?;
 
-            mnemonic = getMnemonic(bridge1.clone()).await?;
             // kill both bridges
             drop(federation_b1);
             drop(federation_b2);
