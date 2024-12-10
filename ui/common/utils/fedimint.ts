@@ -200,8 +200,16 @@ export class FedimintBridge {
         })
     }
 
-    async generateEcash(amount: MSats, federationId: string) {
-        return this.rpcTyped('generateEcash', { federationId, amount })
+    async generateEcash(
+        amount: MSats,
+        federationId: string,
+        includeInvite = false,
+    ) {
+        return this.rpcTyped('generateEcash', {
+            federationId,
+            amount,
+            includeInvite,
+        })
     }
 
     async receiveEcash(ecash: string, federationId: string) {

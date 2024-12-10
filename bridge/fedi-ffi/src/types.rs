@@ -253,12 +253,19 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
     }
 }
 
-#[derive(Clone, Debug, Serialize, TS)]
+#[derive(Debug, Serialize, Deserialize, TS, Clone)]
 #[serde(rename_all = "camelCase")]
+#[serde(tag = "federation_type")]
 #[ts(export, export_to = "target/bindings/")]
-pub struct RpcEcashInfo {
-    pub amount: RpcAmount,
-    pub federation_id: Option<RpcFederationId>,
+pub enum RpcEcashInfo {
+    Joined {
+        federation_id: RpcFederationId,
+        amount: RpcAmount,
+    },
+    NotJoined {
+        federation_invite: Option<String>,
+        amount: RpcAmount,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, TS)]

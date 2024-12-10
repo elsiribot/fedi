@@ -5,18 +5,15 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import {
-    receiveEcash,
-    selectPaymentFederation,
-    validateEcash,
-} from '@fedi/common/redux'
+import { receiveEcash, validateEcash } from '@fedi/common/redux'
 import type { MSats, Transaction } from '@fedi/common/types'
+import { RpcEcashInfo } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../bridge'
 import FiatAmount from '../components/feature/wallet/FiatAmount'
 import SvgImage from '../components/ui/SvgImage'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { useAppDispatch } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -30,11 +27,12 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
 }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const federationId = useAppSelector(selectPaymentFederation)?.id
     const toast = useToast()
     const dispatch = useAppDispatch()
     const { ecash } = route.params
-    const [amount, setAmount] = useState(0 as MSats)
+    const [validatedEcash, setValidatedEcash] = useState<RpcEcashInfo | null>(
+        null,
+    )
     const [error, setError] = useState<Error>()
     const [note, setNote] = useState('')
     const [receiving, setReceiving] = useState(false)
@@ -47,7 +45,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
             }),
         )
             .unwrap()
-            .then(({ amount: amt }) => setAmount(amt))
+            .then(setValidatedEcash)
             .catch(() => {
                 setError(new Error('errors.invalid-ecash-token'))
             })
@@ -59,18 +57,25 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
         }
     }, [error, t, toast])
 
+    const amount = validatedEcash?.amount ?? (0 as MSats)
+
     const onReceive = async () => {
+        if (!validatedEcash) return
+
         // Don't call multiple times
         if (!receiving) {
             setReceiving(true)
             try {
-                if (!federationId) {
-                    throw new Error('errors.invalid-ecash-token')
+                // Check to see if the user has joined a federation with a matching `validatedEcash.federationId`
+                if (validatedEcash.federation_type !== 'joined') {
+                    throw new Error('errors.unknown-ecash-issuer')
                 }
+
                 await dispatch(
                     receiveEcash({
                         fedimint,
-                        federationId,
+                        // If so, join from that federation
+                        federationId: validatedEcash.federation_id,
                         ecash,
                     }),
                 ).unwrap()
@@ -164,6 +169,7 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: theme.spacing.xl,
+            gap: theme.spacing.sm,
         },
         offlineIcon: {
             height: theme.sizes.sm,

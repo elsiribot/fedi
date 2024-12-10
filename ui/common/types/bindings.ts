@@ -184,10 +184,17 @@ export interface RpcDuration {
   secs: number;
 }
 
-export interface RpcEcashInfo {
-  amount: RpcAmount;
-  federationId: RpcFederationId | null;
-}
+export type RpcEcashInfo =
+  | {
+      federation_type: "joined";
+      federation_id: RpcFederationId;
+      amount: RpcAmount;
+    }
+  | {
+      federation_type: "notJoined";
+      federation_invite: string | null;
+      amount: RpcAmount;
+    };
 
 export interface RpcFederation {
   balance: RpcAmount;
@@ -441,13 +448,28 @@ export interface RpcMethods {
     { txid: string },
   ];
   generateEcash: [
-    { federationId: RpcFederationId; amount: RpcAmount },
+    {
+      federationId: RpcFederationId;
+      amount: RpcAmount;
+      includeInvite: boolean;
+    },
     { ecash: string; cancelAt: number },
   ];
   receiveEcash: [{ federationId: RpcFederationId; ecash: string }, MSats];
   validateEcash: [
     { ecash: string },
-    { amount: RpcAmount; federationId: RpcFederationId | null },
+    (
+      | {
+          federation_type: "joined";
+          federation_id: RpcFederationId;
+          amount: RpcAmount;
+        }
+      | {
+          federation_type: "notJoined";
+          federation_invite: string | null;
+          amount: RpcAmount;
+        }
+    ),
   ];
   cancelEcash: [{ federationId: RpcFederationId; ecash: string }, null];
   updateCachedFiatFXInfo: [
