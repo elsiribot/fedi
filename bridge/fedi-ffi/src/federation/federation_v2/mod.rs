@@ -48,7 +48,9 @@ use fedimint_core::module::ApiRequestErased;
 use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
 use fedimint_core::timing::TimeReporter;
 use fedimint_core::util::backon::FibonacciBuilder as FibonacciBackoff;
-use fedimint_core::{maybe_add_send_sync, Amount, PeerId};
+use fedimint_core::{
+    apply, async_trait_maybe_send, maybe_add_send_sync, Amount, PeerId, TieredMulti,
+};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
     InternalPayState, LightningClientInit, LightningOperationMeta, LightningOperationMetaPay,
@@ -60,7 +62,8 @@ use fedimint_ln_common::LightningGateway;
 use fedimint_meta_client::MetaModuleMetaSourceWithFallback;
 use fedimint_mint_client::{
     spendable_notes_to_operation_id, MintClientInit, MintClientModule, MintOperationMeta,
-    MintOperationMetaVariant, OOBNotes, ReissueExternalNotesState, SelectNotesWithExactAmount,
+    MintOperationMetaVariant, NotesSelector, OOBNotes, ReissueExternalNotesState,
+    SelectNotesWithAtleastAmount, SelectNotesWithExactAmount,
 };
 use fedimint_wallet_client::{
     DepositStateV2, PegOutFees, WalletClientInit, WalletOperationMeta, WalletOperationMetaVariant,
@@ -167,6 +170,8 @@ pub struct FederationV2 {
     // balance would allow. We hold the mutex over a span that covers the time of check (recording
     // virtual balance) and the time of use (spending ecash and recording fee).
     pub spend_guard: Arc<Mutex<()>>,
+    // Mutex to prevent concurrent generate_ecash because logic is very fragile.
+    pub generate_ecash_lock: Arc<Mutex<()>>,
     pub feature_catalog: Arc<FeatureCatalog>,
     pub app_state: Arc<AppState>,
     pub this_weak: Weak<Self>,
@@ -214,6 +219,7 @@ impl FederationV2 {
             stability_pool_sweeper_service: OnceCell::new(),
             client,
             spend_guard: Default::default(),
+            generate_ecash_lock: Default::default(),
             feature_catalog,
             app_state,
             this_weak: weak.clone(),
@@ -1708,6 +1714,7 @@ impl FederationV2 {
         amount: Amount,
         include_invite: bool,
     ) -> Result<RpcGenerateEcashResponse> {
+        let _guard = self.generate_ecash_lock.lock().await;
         let fedi_fee_ppm = self
             .fedi_fee_helper
             .get_fedi_fee_ppm(
@@ -1775,7 +1782,8 @@ impl FederationV2 {
                     )));
                 }
                 let (operation_id, notes) = mint
-                    .spend_notes(
+                    .spend_notes_with_selector(
+                        &SelectNotesAllowLimitedOverpay,
                         amount,
                         ECASH_AUTO_CANCEL_DURATION,
                         include_invite,
@@ -3311,6 +3319,34 @@ fn invoice_routes_back_to_federation(
 
 fn internal_pay_is_bad_state(outcome: serde_json::Value) -> bool {
     serde_json::from_value::<InternalPayState>(outcome).is_err()
+}
+
+/// Selector that allows overpaying upto 10 sats.
+pub struct SelectNotesAllowLimitedOverpay;
+
+#[apply(async_trait_maybe_send!)]
+impl<Note: Send> NotesSelector<Note> for SelectNotesAllowLimitedOverpay {
+    async fn select_notes(
+        &self,
+        #[cfg(not(target_family = "wasm"))] stream: impl futures::Stream<Item = (Amount, Note)> + Send,
+        #[cfg(target_family = "wasm")] stream: impl futures::Stream<Item = (Amount, Note)>,
+        requested_amount: Amount,
+        note_fee: Amount,
+    ) -> anyhow::Result<TieredMulti<Note>> {
+        let notes = SelectNotesWithAtleastAmount
+            .select_notes(stream, requested_amount, note_fee)
+            .await?;
+
+        if notes.total_amount() > requested_amount + Amount::from_sats(10) {
+            bail!(
+                "Could not select amount. Requested amount: {}. Selected amount: {}",
+                requested_amount,
+                notes.total_amount()
+            );
+        }
+
+        Ok(notes)
+    }
 }
 
 #[cfg(test)]
