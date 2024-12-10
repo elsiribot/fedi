@@ -96,6 +96,11 @@ export type Event =
     }
   | { communityMetadataUpdated: CommunityMetadataUpdatedEvent };
 
+export interface FiatFXInfo {
+  fiatCode: string;
+  btcToFiatHundredths: number;
+}
+
 export type GuardianStatus =
   | { online: { guardian: string; latency_ms: number } }
   | { error: { guardian: string; error: string } }
@@ -496,7 +501,7 @@ export interface RpcMethods {
       oobState: RpcOOBState | null;
       onchainWithdrawalDetails: WithdrawalDetails | null;
       stabilityPoolState: RpcStabilityPoolTransactionState | null;
-      txDateFiatInfo: TransactionDateFiatInfo | null;
+      txDateFiatInfo: FiatFXInfo | null;
     }>,
   ];
   updateTransactionNotes: [
@@ -1024,7 +1029,7 @@ export interface RpcTransaction {
   oobState: RpcOOBState | null;
   onchainWithdrawalDetails: WithdrawalDetails | null;
   stabilityPoolState: RpcStabilityPoolTransactionState | null;
-  txDateFiatInfo: TransactionDateFiatInfo | null;
+  txDateFiatInfo: FiatFXInfo | null;
 }
 
 export type RpcTransactionDirection = "receive" | "send";
@@ -1091,11 +1096,6 @@ export type StabilityPoolWithdrawalState =
   | { withdrawIdleSubmissionFailure: string }
   | "withdrawIdleInitiated"
   | "withdrawIdleAccepted";
-
-export interface TransactionDateFiatInfo {
-  fiatCode: string;
-  fiatValueHundredths: number;
-}
 
 export interface TransactionEvent {
   federationId: RpcFederationId;

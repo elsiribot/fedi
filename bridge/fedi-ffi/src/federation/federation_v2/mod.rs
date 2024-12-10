@@ -48,7 +48,7 @@ use fedimint_core::module::ApiRequestErased;
 use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
 use fedimint_core::timing::TimeReporter;
 use fedimint_core::util::backon::FibonacciBuilder as FibonacciBackoff;
-use fedimint_core::{maybe_add_send_sync, Amount, PeerId, SATS_PER_BITCOIN};
+use fedimint_core::{maybe_add_send_sync, Amount, PeerId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
     InternalPayState, LightningClientInit, LightningOperationMeta, LightningOperationMetaPay,
@@ -107,7 +107,7 @@ use crate::types::{
     RpcInvoice, RpcLightningDetails, RpcLightningGateway, RpcLnState, RpcOOBState, RpcOnchainState,
     RpcOperationFediFeeStatus, RpcPayAddressResponse, RpcPayInvoiceResponse, RpcPublicKey,
     RpcReturningMemberStatus, RpcStabilityPoolTransactionState, RpcTransaction,
-    RpcTransactionDirection, TransactionDateFiatInfo, WithdrawalDetails,
+    RpcTransactionDirection, WithdrawalDetails,
 };
 use crate::utils::{display_currency, to_unix_time, unix_now};
 
@@ -3161,7 +3161,7 @@ impl FederationV2 {
         res
     }
 
-    #[instrument(skip(self), fields(fiat_code, fiat_value_hundredths), err, ret)]
+    #[instrument(skip(self), err, ret)]
     async fn record_tx_date_fiat_info(
         &self,
         operation_id: OperationId,
@@ -3178,24 +3178,9 @@ impl FederationV2 {
         let Some(cached_fiat_fx_info) = self.app_state.get_cached_fiat_fx_info().await else {
             bail!("No cached fiat FX info present");
         };
-        let fiat_code = cached_fiat_fx_info.fiat_code.clone();
-        tracing::Span::current().record("fiat_code", &fiat_code);
-
-        // Using cents below for readability
-        // 1 BTC = (btc_to_fiat_hundredths) cents
-        // => 10^8 sats = (btc_to_fiat_hundredths) cents
-        // => 10^11 msats = (btc_to_fiat_hundredths) cents
-        // => 1 msat = (btc_to_fiat_hundredths) / 10^11 cents
-        // => amount msat = amount * (btc_to_fiat_hundredths) / 10^11 cents
-        let fiat_value_hundredths =
-            (amount.msats * cached_fiat_fx_info.btc_to_fiat_hundredths) / (SATS_PER_BITCOIN * 1000);
-        tracing::Span::current().record("fiat_value_hundredths", fiat_value_hundredths);
         dbtx.insert_entry(
             &TransactionDateFiatInfoKey(operation_id),
-            &TransactionDateFiatInfo {
-                fiat_code,
-                fiat_value_hundredths,
-            },
+            &cached_fiat_fx_info,
         )
         .await;
         match dbtx.commit_tx_result().await {
