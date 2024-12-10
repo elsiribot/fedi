@@ -1,15 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    ActivityIndicator,
-    Insets,
-    Keyboard,
-    StyleSheet,
-    View,
-} from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ActivityIndicator, Keyboard, StyleSheet, View } from 'react-native'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
@@ -27,6 +19,7 @@ import { fedimint } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import RequestTypeSwitcher from '../components/feature/receive/RequestTypeSwitcher'
 import { AmountScreen } from '../components/ui/AmountScreen'
+import { SafeScrollArea } from '../components/ui/SafeArea'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -40,9 +33,7 @@ export type Props = NativeStackScreenProps<
 
 const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
     const lnurlWithdrawal = route.params?.parsedData?.data
-    const { theme } = useTheme()
     const { t } = useTranslation()
-    const insets = useSafeAreaInsets()
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const {
@@ -181,10 +172,8 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
         }
     }
 
-    const style = styles(theme, insets)
-
     return (
-        <View style={style.container}>
+        <SafeScrollArea edges="all">
             {showOnchainDeposits && (
                 <RequestTypeSwitcher
                     requestType={requestType}
@@ -196,7 +185,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
                 />
             )}
             {requestType === BitcoinOrLightning.bitcoin && onchainAddress ? (
-                <View style={style.onchainContainer}>
+                <View style={style.qrContainer}>
                     {isLoading ? (
                         <ActivityIndicator />
                     ) : (
@@ -236,23 +225,17 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
                             },
                         },
                     ]}
+                    isIndependent={false}
                 />
             )}
-        </View>
+        </SafeScrollArea>
     )
 }
 
-const styles = (theme: Theme, insets: Insets) =>
-    StyleSheet.create({
-        container: {
-            flex: 1,
-            alignItems: 'center',
-            padding: theme.spacing.xl,
-        },
-        onchainContainer: {
-            marginTop: 'auto',
-            paddingBottom: Math.max(theme.spacing.xl, insets.bottom || 0),
-        },
-    })
+const style = StyleSheet.create({
+    qrContainer: {
+        flex: 1,
+    },
+})
 
 export default ReceiveLightning

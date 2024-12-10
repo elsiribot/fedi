@@ -2,8 +2,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Keyboard, StyleSheet, View } from 'react-native'
-import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Alert, Keyboard, StyleSheet } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 import {
     useAmountFormatter,
@@ -34,7 +34,6 @@ export type Props = NativeStackScreenProps<
 
 const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
     const { theme } = useTheme()
-    const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const { amount } = route.params
     const dispatch = useAppDispatch()
@@ -89,10 +88,12 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
         )
     }, [handleSend, t])
 
-    const style = styles(theme, insets)
+    const style = styles(theme)
 
     return (
-        <View style={style.container}>
+        <SafeAreaView
+            style={style.container}
+            edges={{ left: 'additive', right: 'additive', bottom: 'maximum' }}>
             <FederationWalletSelector />
             <SendAmounts
                 balanceDisplay={balanceDisplay}
@@ -113,20 +114,17 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
                 feeItems={feeItemsBreakdown}
                 description={ecashFeesGuidanceText}
             />
-        </View>
+        </SafeAreaView>
     )
 }
 
-const styles = (theme: Theme, insets: EdgeInsets) =>
+const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flexDirection: 'column',
             flex: 1,
             alignItems: 'center',
-            paddingTop: theme.spacing.lg,
-            paddingLeft: theme.spacing.lg + insets.left,
-            paddingRight: theme.spacing.lg + insets.right,
-            paddingBottom: Math.max(theme.spacing.lg, insets.bottom),
+            padding: theme.spacing.lg,
         },
         amountContainer: {
             marginTop: 'auto',

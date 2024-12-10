@@ -2,8 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Insets, StyleSheet, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
 import { generateAddress, selectActiveFederationId } from '@fedi/common/redux'
@@ -14,6 +13,7 @@ import { fedimint } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import RequestTypeSwitcher from '../components/feature/receive/RequestTypeSwitcher'
 import FiatAmount from '../components/feature/wallet/FiatAmount'
+import { SafeScrollArea } from '../components/ui/SafeArea'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, MSats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -25,7 +25,6 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'BitcoinRequest'>
 const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const insets = useSafeAreaInsets()
     const federationId = useAppSelector(selectActiveFederationId)
     const dispatch = useAppDispatch()
     const { uri } = route.params
@@ -129,9 +128,13 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
         return <ActivityIndicator />
     }
 
-    const style = styles(theme, insets)
+    const style = styles(theme)
+
     return (
-        <View style={style.container}>
+        <SafeScrollArea
+            contentContainerStyle={style.container}
+            edges="all"
+            padding="xl">
             {showOnchainDeposits && (
                 <RequestTypeSwitcher
                     requestType={requestType}
@@ -142,7 +145,6 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
                     }}
                 />
             )}
-
             <View style={style.detailsContainer}>
                 {requestAmount && (
                     <>
@@ -178,22 +180,20 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
                     type={requestType}
                 />
             )}
-        </View>
+        </SafeScrollArea>
     )
 }
 
-const styles = (theme: Theme, insets: Insets) =>
+const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
             alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingTop: theme.spacing.xl,
-            paddingHorizontal: theme.spacing.xl,
-            paddingBottom: Math.max(theme.spacing.xl, insets.bottom || 0),
+            justifyContent: 'center',
         },
         detailsContainer: {
             paddingVertical: theme.spacing.md,
+            alignItems: 'center',
+            justifyContent: 'center',
         },
     })
 

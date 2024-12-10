@@ -6,7 +6,6 @@ import {
     ActivityIndicator,
     Platform,
     Pressable,
-    ScrollView,
     StyleSheet,
     View,
     useWindowDimensions,
@@ -14,7 +13,6 @@ import {
 import DeviceInfo from 'react-native-device-info'
 import { exists, readFile } from 'react-native-fs'
 import { Asset } from 'react-native-image-picker'
-import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { v4 as uuidv4 } from 'uuid'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
@@ -28,6 +26,7 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import { Attachments } from '../components/ui/Attachments'
+import { SafeScrollArea } from '../components/ui/SafeArea'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
@@ -46,7 +45,6 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'BugReport'>
 const BugReport: React.FC<Props> = ({ navigation }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const insets = useSafeAreaInsets()
     const toast = useToast()
     const { fontScale } = useWindowDimensions()
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -73,7 +71,7 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
         ? theme.colors.primary
         : theme.colors.white
 
-    const style = styles(theme, insets, fontScale)
+    const style = styles(theme, fontScale)
     const inputProps = {
         containerStyle: style.fieldContainerStyle,
         inputContainerStyle: style.fieldInputContainerStyle,
@@ -168,10 +166,7 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
     ])
 
     return (
-        <ScrollView
-            style={style.scrollContainer}
-            contentContainerStyle={style.contentContainer}
-            overScrollMode="auto">
+        <SafeScrollArea>
             <View style={style.form}>
                 <Input
                     {...inputProps}
@@ -197,6 +192,7 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
                             ? style.fieldInputContainerError
                             : undefined,
                     ]}
+                    style={style.descriptionInput}
                 />
                 <View style={style.switchWrapper}>
                     <Text caption medium style={style.switchLabel}>
@@ -277,30 +273,16 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
                     onPress={handleSubmit}
                 />
             </View>
-        </ScrollView>
+        </SafeScrollArea>
     )
 }
 
-const styles = (theme: Theme, insets: EdgeInsets, fontScale: number) =>
+const styles = (theme: Theme, fontScale: number) =>
     StyleSheet.create({
-        scrollContainer: {
-            flex: 1,
-        },
-        contentContainer: {
-            flexGrow: 1,
-            paddingTop: theme.spacing.lg,
-            paddingLeft: insets.left + theme.spacing.lg,
-            paddingRight: insets.right + theme.spacing.lg,
-            paddingBottom: Math.max(insets.bottom, theme.spacing.lg),
-            gap: theme.spacing.lg,
-        },
-        container: {
-            flex: 1,
-            flexDirection: 'column',
-        },
         form: {
             flex: 1,
             gap: theme.spacing.lg,
+            paddingTop: theme.spacing.lg,
         },
         fieldContainerStyle: {
             height: 'auto',
@@ -396,6 +378,9 @@ const styles = (theme: Theme, insets: EdgeInsets, fontScale: number) =>
             alignItems: 'center',
             borderRadius: 12,
             width: '100%',
+        },
+        descriptionInput: {
+            textAlignVertical: 'top',
         },
     })
 
