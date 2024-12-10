@@ -11,6 +11,7 @@ use fedimint_aead::{decrypt, LessSafeKey};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::core::ModuleKind;
+use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send};
 use fedimint_derive_secret::DerivableSecret;
@@ -18,6 +19,7 @@ use matrix_sdk::matrix_auth::MatrixSession;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
+use ts_rs::TS;
 
 use crate::community::CommunityJson;
 use crate::constants::{
@@ -289,13 +291,21 @@ pub struct CommunityInfo {
     pub meta: CommunityJson,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+// In order to display time-of-transaction fiat rate and currency, we need to
+// store this info for each transaction. We store the currency code as simply a
+// string so that new currency codes added on the front-end side don't require
+// additional bridge work. The rate is recorded as hundredths per btc, which
+// would typically correspond to cents per btc.
+#[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "target/bindings/")]
 pub struct FiatFXInfo {
     /// Code of the currency that's set as display currency in the app.
     pub fiat_code: String,
 
     /// 1 BTC equivalent in the display currency. This value is recorded in
     /// hundredths, such as cents.
+    #[ts(type = "number")]
     pub btc_to_fiat_hundredths: u64,
 }
 

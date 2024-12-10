@@ -5,7 +5,8 @@ use fedimint_core::core::{ModuleKind, OperationId};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record, Amount};
 
-use crate::types::{OperationFediFeeStatus, RpcTransactionDirection, TransactionDateFiatInfo};
+use crate::storage::FiatFXInfo;
+use crate::types::{OperationFediFeeStatus, RpcTransactionDirection};
 
 #[repr(u8)]
 pub enum BridgeDbPrefix {
@@ -47,7 +48,10 @@ pub enum BridgeDbPrefix {
     // For each TX, we record the fiat display currency and the fiat value at the time of the TX.
     // This is so that we can display historical values in the TX list as opposed to constantly
     // updating live fiat values.
-    TransactionDateFiatInfo = 0xbf,
+    TransactionDateFiatInfo = 0xc0,
+    // Old one had absolute fiat transaction value.
+    #[deprecated]
+    TransactionDateFiatInfoOld = 0xbf,
 
     // Do not use anything after this key (inclusive)
     // see https://github.com/fedimint/fedimint/pull/4445
@@ -175,6 +179,6 @@ pub struct TransactionDateFiatInfoKey(pub OperationId);
 
 impl_db_record!(
     key = TransactionDateFiatInfoKey,
-    value = TransactionDateFiatInfo,
+    value = FiatFXInfo,
     db_prefix = BridgeDbPrefix::TransactionDateFiatInfo,
 );

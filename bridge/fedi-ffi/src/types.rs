@@ -21,7 +21,7 @@ use super::federation::federation_v2::FederationV2;
 use super::utils::to_unix_time;
 use crate::api::RegisteredDevice;
 use crate::federation::federation_v2::client::ClientExt;
-use crate::storage::FediFeeSchedule;
+use crate::storage::{FediFeeSchedule, FiatFXInfo};
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -480,7 +480,7 @@ pub struct RpcTransaction {
     pub oob_state: Option<RpcOOBState>,
     pub onchain_withdrawal_details: Option<WithdrawalDetails>,
     pub stability_pool_state: Option<RpcStabilityPoolTransactionState>,
-    pub tx_date_fiat_info: Option<TransactionDateFiatInfo>,
+    pub tx_date_fiat_info: Option<FiatFXInfo>,
 }
 
 impl RpcTransaction {
@@ -490,7 +490,7 @@ impl RpcTransaction {
         amount: RpcAmount,
         direction: RpcTransactionDirection,
         fedi_fee_status: Option<RpcOperationFediFeeStatus>,
-        tx_date_fiat_info: Option<TransactionDateFiatInfo>,
+        tx_date_fiat_info: Option<FiatFXInfo>,
     ) -> Self {
         Self {
             id,
@@ -841,20 +841,6 @@ impl RpcOOBState {
 pub struct RpcLightningDetails {
     pub invoice: String,
     pub fee: Option<RpcAmount>,
-}
-
-// In order to display time-of-transaction fiat value and currency, we need to
-// store this info for each transaction. We store the currency code as simply a
-// string so that new currency codes added on the front-end side don't require
-// additional bridge work. The value is recorded as hundredths, which would
-// typically correspond to cents.
-#[derive(Debug, Serialize, Deserialize, TS, Encodable, Decodable)]
-#[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
-pub struct TransactionDateFiatInfo {
-    pub fiat_code: String,
-    #[ts(type = "number")]
-    pub fiat_value_hundredths: u64,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
