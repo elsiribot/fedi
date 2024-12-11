@@ -76,7 +76,9 @@ export const GeneralSettings = () => {
             <SettingsItem
                 icon="Apps"
                 label={t('feature.fedimods.fedi-mods')}
-                onPress={() => navigation.navigate('FediModSettings')}
+                onPress={() =>
+                    navigation.navigate('FediModSettings', { type: 'fedi' })
+                }
             />
             <SettingsItem
                 icon="Language"

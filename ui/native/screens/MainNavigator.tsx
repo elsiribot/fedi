@@ -900,6 +900,20 @@ export const MainNavigator = () => {
                                     header: () => <FederationDetailsHeader />,
                                 })}
                             />
+                            <Stack.Screen
+                                name="FederationModSettings"
+                                component={FediModSettings}
+                                options={() => ({
+                                    header: () => (
+                                        <CenteredHeader
+                                            backButton
+                                            title={t(
+                                                'feature.federations.federation-mods',
+                                            )}
+                                        />
+                                    ),
+                                })}
+                            />
                             {/* Stability Pools */}
                             <Stack.Screen
                                 name="StabilityHome"

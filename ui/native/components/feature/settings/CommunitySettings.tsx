@@ -88,6 +88,15 @@ export const CommunitySettings = ({ community }: CommunityMenuProps) => {
                             })
                         }}
                     />
+                    <SettingsItem
+                        icon="Apps"
+                        label={t('feature.federations.federation-mods')}
+                        onPress={() => {
+                            navigation.navigate('FederationModSettings', {
+                                type: 'community',
+                            })
+                        }}
+                    />
                     {shouldShowInviteCode(community.meta) && (
                         <SettingsItem
                             icon="Qr"

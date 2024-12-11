@@ -63,9 +63,9 @@ const Mods: React.FC = () => {
 
     const renderFediModShortcuts = () => {
         const fediModShortcuts = mods.map(s => new FediMod(s))
-        return fediModShortcuts.map((s: FediMod) => {
+        return fediModShortcuts.map((s: FediMod, i) => {
             return (
-                <View key={`fediMod-s-${s.id}`} style={style.shortcut}>
+                <View key={`fediMod-s-${i}`} style={style.shortcut}>
                     <Tooltip
                         visible={actionsMod?.id === s.id}
                         onClose={() => setActionsMod(undefined)}
