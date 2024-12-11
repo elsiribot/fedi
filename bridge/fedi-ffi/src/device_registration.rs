@@ -8,6 +8,7 @@ use fedimint_core::util::retry;
 use tracing::{error, info};
 
 use crate::api::{IFediApi, RegisterDeviceError, RegisteredDevice};
+use crate::bridge::BridgeRuntime;
 use crate::constants::{DEVICE_REGISTRATION_FREQUENCY, DEVICE_REGISTRATION_OVERDUE};
 use crate::event::{Event, EventSink, TypedEventExt};
 use crate::storage::AppState;
@@ -19,28 +20,23 @@ pub struct DeviceRegistrationService {
 }
 
 impl DeviceRegistrationService {
-    pub async fn new(
-        app_state: Arc<AppState>,
-        event_sink: EventSink,
-        task_group: &TaskGroup,
-        fedi_api: Arc<dyn IFediApi>,
-    ) -> Self {
+    pub async fn new(runtime: Arc<BridgeRuntime>) -> Self {
         let mut service = Self {
-            app_state: app_state.clone(),
-            fedi_api: fedi_api.clone(),
+            app_state: runtime.app_state.clone(),
+            fedi_api: runtime.fedi_api.clone(),
             active_task_subgroup: None,
         };
 
         if let (Some(encrypted_device_identifier), Some(device_index)) = (
-            app_state.encrypted_device_identifier().await,
-            app_state.device_index().await,
+            service.app_state.encrypted_device_identifier().await,
+            service.app_state.device_index().await,
         ) {
             service
                 .start_periodic_registration_inner(
                     encrypted_device_identifier,
                     device_index,
-                    task_group,
-                    event_sink,
+                    &runtime.task_group,
+                    runtime.event_sink.clone(),
                 )
                 .await;
         }

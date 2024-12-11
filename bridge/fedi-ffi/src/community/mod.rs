@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
 use tracing::info;
 
+use crate::bridge::BridgeRuntime;
 use crate::constants::COMMUNITY_INVITE_CODE_HRP;
 use crate::error::ErrorCode;
 use crate::event::{Event, EventSink, TypedEventExt};
@@ -34,14 +35,11 @@ pub struct Communities {
 }
 
 impl Communities {
-    pub async fn init(
-        app_state: Arc<AppState>,
-        event_sink: EventSink,
-        task_group: TaskGroup,
-    ) -> Self {
+    pub async fn init(runtime: Arc<BridgeRuntime>) -> Self {
         let http_client = reqwest::Client::new();
 
-        let joined_communities = app_state
+        let joined_communities = runtime
+            .app_state
             .with_read_lock(|state| state.joined_communities.clone())
             .await
             .into_iter()
@@ -51,8 +49,8 @@ impl Communities {
                     Community::from_local_meta(
                         invite,
                         info,
-                        app_state.clone(),
-                        event_sink.clone(),
+                        runtime.app_state.clone(),
+                        runtime.event_sink.clone(),
                         http_client.clone(),
                     ),
                 )
@@ -67,9 +65,9 @@ impl Communities {
 
         let this = Self {
             communities,
-            app_state,
-            event_sink,
-            task_group,
+            app_state: runtime.app_state.clone(),
+            event_sink: runtime.event_sink.clone(),
+            task_group: runtime.task_group.clone(),
             http_client: reqwest::Client::new(),
             bg_refresh_lock: Default::default(),
         };

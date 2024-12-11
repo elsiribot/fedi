@@ -3,7 +3,6 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
-use fedimint_core::task::TaskGroup;
 use fedimint_derive_secret::DerivableSecret;
 use futures::StreamExt;
 use matrix_sdk::attachment::{
@@ -46,8 +45,8 @@ use matrix_sdk_ui::{room_list_service, RoomListService};
 use mime::Mime;
 use tracing::{error, info, warn};
 
+use crate::bridge::BridgeRuntime;
 use crate::error::ErrorCode;
-use crate::event::EventSink;
 use crate::observable::{Observable, ObservablePool, ObservableVec};
 use crate::storage::AppState;
 use crate::types::RpcMediaUploadParams;
@@ -63,7 +62,7 @@ pub struct Matrix {
     sync_service: Arc<SyncService>,
     /// manages list of room visible to user.
     room_list_service: Arc<RoomListService>,
-    task_group: TaskGroup,
+    pub runtime: Arc<BridgeRuntime>,
     notification_settings: NotificationSettings,
     observable_pool: ObservablePool,
 }
@@ -109,16 +108,17 @@ impl Matrix {
     /// Start the matrix service.
     #[allow(clippy::too_many_arguments)]
     pub async fn init(
-        event_sink: EventSink,
-        task_group: TaskGroup,
+        runtime: Arc<BridgeRuntime>,
         base_dir: &Path,
         matrix_secret: &DerivableSecret,
         user_name: &str,
         home_server: String,
         sliding_sync_proxy: String,
-        app_state: Arc<AppState>,
     ) -> Result<Self> {
-        let matrix_session = app_state.with_read_lock(|r| r.matrix_session.clone()).await;
+        let matrix_session = runtime
+            .app_state
+            .with_read_lock(|r| r.matrix_session.clone())
+            .await;
         let user_password = &Self::home_server_password(matrix_secret, &home_server);
         let encryption_passphrase = Self::encryption_passphrase(matrix_secret);
         let client = Self::build_client(base_dir, home_server, &encryption_passphrase).await?;
@@ -126,8 +126,14 @@ impl Matrix {
         if let Some(session) = matrix_session {
             client.restore_session(session).await?;
         } else {
-            Self::login_or_register(&client, user_name, user_password, matrix_secret, &app_state)
-                .await?;
+            Self::login_or_register(
+                &client,
+                user_name,
+                user_password,
+                matrix_secret,
+                &runtime.app_state,
+            )
+            .await?;
         };
 
         client.set_sliding_sync_proxy(Some(url::Url::parse(&sliding_sync_proxy)?));
@@ -137,23 +143,21 @@ impl Matrix {
             client,
             room_list_service: sync_service.room_list_service(),
             sync_service: Arc::new(sync_service),
-            observable_pool: ObservablePool::new(event_sink, task_group.clone()),
-            task_group,
+            observable_pool: ObservablePool::new(
+                runtime.event_sink.clone(),
+                runtime.task_group.clone(),
+            ),
+            runtime,
         };
         let encryption_passphrase = Self::encryption_passphrase(matrix_secret);
-        matrix
-            .start_background(encryption_passphrase, app_state)
-            .await?;
+        matrix.start_background(encryption_passphrase).await?;
         Ok(matrix)
     }
 
-    pub async fn start_background(
-        &self,
-        encryption_passphrase: String,
-        app_state: Arc<AppState>,
-    ) -> Result<()> {
+    pub async fn start_background(&self, encryption_passphrase: String) -> Result<()> {
         let this = self.clone();
-        self.task_group
+        self.runtime
+            .task_group
             .spawn_cancellable("matrix::start_sync", async move {
                 this.sync_service.start().await;
                 let mut state_subscriber = this.sync_service.state();
@@ -169,7 +173,8 @@ impl Matrix {
             });
 
         let this = self.clone();
-        self.task_group
+        self.runtime
+            .task_group
             .spawn_cancellable("matrix::Recovery::enable", {
                 async move {
                     // if there are no backups on server, enable backups
@@ -197,7 +202,8 @@ impl Matrix {
             });
         let this = self.clone();
         // use session token changed stream to update the token in app state
-        self.task_group
+        self.runtime
+            .task_group
             .spawn_cancellable("matrix::session_token_changed", async move {
                 let Some(mut session_token_changed) =
                     this.client.matrix_auth().session_tokens_stream()
@@ -205,7 +211,9 @@ impl Matrix {
                     return;
                 };
                 while let Some(token) = session_token_changed.next().await {
-                    if let Err(err) = app_state
+                    if let Err(err) = this
+                        .runtime
+                        .app_state
                         .with_write_lock(|w| {
                             if let Some(session) = w.matrix_session.as_mut() {
                                 session.tokens = token;
@@ -699,12 +707,13 @@ impl Matrix {
         ))
     }
 
-    pub async fn set_display_name(&self, display_name: String, app_state: &AppState) -> Result<()> {
+    pub async fn set_display_name(&self, display_name: String) -> Result<()> {
         self.client
             .account()
             .set_display_name(Some(&display_name))
             .await?;
-        app_state
+        self.runtime
+            .app_state
             .with_write_lock(|r| r.matrix_display_name = Some(display_name.clone()))
             .await?;
         Ok(())
@@ -937,6 +946,8 @@ impl Matrix {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use fedimint_bip39::Bip39RootSecretStrategy;
     use fedimint_client::secret::RootSecretStrategy as _;
     use fedimint_derive_secret::ChildId;
@@ -949,7 +960,9 @@ mod tests {
     use super::*;
     use crate::constants::MATRIX_CHILD_ID;
     use crate::event::IEventSink;
+    use crate::features::{FeatureCatalog, RuntimeEnvironment};
     use crate::ffi::PathBasedStorage;
+    use crate::rpc::tests::MockFediApi;
 
     const TEST_HOME_SERVER: &str = "staging.m1.8fa.in";
     const TEST_SLIDING_SYNC: &str = "https://staging.sliding.m1.8fa.in";
@@ -967,18 +980,23 @@ mod tests {
 
         let (event_tx, event_rx) = mpsc::channel(1000);
         let event_sink = Arc::new(TestEventSink(event_tx));
-        let tg = TaskGroup::new();
         let tmp_dir = TempDir::new()?;
         let storage = PathBasedStorage::new(tmp_dir.as_ref().to_path_buf()).await?;
-        let matrix = Matrix::init(
+        let runtime = BridgeRuntime::new(
+            Arc::new(storage),
             event_sink,
-            tg,
+            Arc::new(MockFediApi::default()),
+            FromStr::from_str("bridge:test:70c2ad23-bfac-4aa2-81c3-d6f5e79ae724")?,
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+        )
+        .await?;
+        let matrix = Matrix::init(
+            Arc::new(runtime),
             tmp_dir.as_ref(),
             secret,
             user_name,
             format!("https://{TEST_HOME_SERVER}"),
             TEST_SLIDING_SYNC.to_string(),
-            Arc::new(AppState::load(Arc::new(storage)).await?),
         )
         .await?;
         Ok((matrix, event_rx, tmp_dir))

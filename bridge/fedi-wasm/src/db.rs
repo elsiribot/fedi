@@ -12,7 +12,6 @@ use futures::lock::Mutex;
 use futures::stream;
 use imbl::OrdMap;
 use rexie::{Rexie, TransactionMode};
-use tracing::error;
 use wasm_bindgen::JsCast;
 
 pub fn rexie_to_anyhow(e: rexie::Error) -> anyhow::Error {

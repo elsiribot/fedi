@@ -35,18 +35,15 @@ use crate::community::Communities;
 use crate::constants::{LNURL_CHILD_ID, MATRIX_CHILD_ID, NOSTR_CHILD_ID};
 use crate::device_registration::{self, DeviceRegistrationService};
 use crate::error::ErrorCode;
-use crate::event::{Event, SocialRecoveryEvent, TypedEventExt as _};
+use crate::event::SocialRecoveryEvent;
 use crate::features::FeatureCatalog;
-use crate::federation::federation_sm::FederationState;
-use crate::federation::federation_v2::{self, FederationV2};
-use crate::federation::Federations;
+use crate::federation::{federation_v2, Federations};
 use crate::fedi_fee::FediFeeHelper;
 use crate::matrix::Matrix;
 use crate::storage::{AppState, FiatFXInfo, ModuleFediFeeSchedule};
 use crate::types::{
-    RpcAmount, RpcBridgeStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
-    RpcFederationMaybeLoading, RpcFederationPreview, RpcNostrPubkey, RpcNostrSecret,
-    RpcRegisteredDevice,
+    RpcAmount, RpcBridgeStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcNostrPubkey,
+    RpcNostrSecret, RpcRegisteredDevice,
 };
 use crate::utils::required_threashold_of;
 
@@ -54,202 +51,50 @@ use crate::utils::required_threashold_of;
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
 pub const VERIFICATION_FILENAME: &str = "verification.mp4";
 
-/// This is instantiated once as a global. When RPC commands come in, this
-/// struct is used as a router to look up the federation and handle the RPC
-/// command using it.
+/// This struct encapsulates runtime dependencies like storage, event pipe, task
+/// manager etc. that all the bridge services like Federations or Communities
+/// need to properly function.
 #[derive(Clone)]
-pub struct Bridge {
+pub struct BridgeRuntime {
     pub storage: Storage,
     pub app_state: Arc<AppState>,
-    pub federations: Federations,
-    pub communities: Arc<Communities>,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
     pub fedi_api: Arc<dyn IFediApi>,
-    pub fedi_fee_helper: Arc<FediFeeHelper>,
-    pub matrix: OnceCell<Matrix>,
-    pub device_registration_service: Arc<Mutex<DeviceRegistrationService>>,
     pub global_db: Database,
     pub feature_catalog: Arc<FeatureCatalog>,
 }
 
-impl Bridge {
+impl BridgeRuntime {
     pub async fn new(
         storage: Storage,
         event_sink: EventSink,
         fedi_api: Arc<dyn IFediApi>,
-        device_identifier: String,
+        _device_identifier: String,
         feature_catalog: Arc<FeatureCatalog>,
-    ) -> Result<Arc<Self>> {
+    ) -> anyhow::Result<Self> {
         let task_group = TaskGroup::new();
         let app_state = Arc::new(AppState::load(storage.clone()).await?);
-        let fedi_fee_helper = Arc::new(FediFeeHelper::new(
-            fedi_api.clone(),
-            app_state.clone(),
-            task_group.make_subgroup(),
-        ));
-
-        app_state
-            .process_device_identifier(FromStr::from_str(&device_identifier)?)
-            .await?;
-        let device_registration_service = Mutex::new(
-            DeviceRegistrationService::new(
-                app_state.clone(),
-                event_sink.clone(),
-                &task_group,
-                fedi_api.clone(),
-            )
-            .await,
-        )
-        .into();
-
         let global_db = storage.federation_database_v2("global").await?;
 
-        // Load communities module
-        let communities = Communities::init(
-            app_state.clone(),
-            event_sink.clone(),
-            task_group.make_subgroup(),
-        )
-        .await
-        .into();
-
-        let bridge = Arc::new_cyclic(|weak_bridge| {
-            let federations = Federations::new(weak_bridge.clone());
-            Self {
-                storage,
-                app_state,
-                federations,
-                communities,
-                event_sink,
-                task_group,
-                fedi_api,
-                fedi_fee_helper,
-                matrix: OnceCell::default(),
-                device_registration_service,
-                global_db,
-                feature_catalog,
-            }
-        });
-        bridge
-            .federations
-            .load_joined_federations_in_background()
-            .await?;
-        Ok(bridge)
-    }
-
-    /// Send whenever federation is loaded.
-    pub async fn send_federation_event(&self, rpc_federation: RpcFederationMaybeLoading) {
-        let event = Event::federation(rpc_federation);
-        self.event_sink.typed_event(&event);
-    }
-
-    pub async fn bridge_status(&self) -> anyhow::Result<RpcBridgeStatus> {
-        let matrix_setup = self
-            .app_state
-            .with_read_lock(|x| x.matrix_session.is_some())
-            .await;
-        let device_index_assignment_status = self.device_index_assignment_status().await?;
-        Ok(RpcBridgeStatus {
-            matrix_setup,
-            device_index_assignment_status,
+        Ok(Self {
+            storage,
+            app_state,
+            event_sink,
+            task_group,
+            fedi_api,
+            global_db,
+            feature_catalog,
         })
     }
 
-    /// Kick-off tasks that should be performed whenever the app returns to the
-    /// foreground.
-    pub async fn on_app_foreground(&self) {
-        self.communities.refresh_metas_in_background();
-    }
-
-    /// Dump the database for a given federation.
-    pub async fn dump_db(&self, federation_id: &str) -> anyhow::Result<PathBuf> {
-        let db_dump_path = format!("db-{federation_id}.dump");
-        let federation = self.get_federation(federation_id)?;
-        let db = federation.client.db().clone();
-        let mut buffer = Vec::new();
-        fedi_bug_report::db_dump::dump_db(&db, &mut buffer).await?;
-        self.storage
-            .write_file(db_dump_path.as_ref(), buffer)
-            .await?;
-        Ok(self.storage.platform_path(db_dump_path.as_ref()))
-    }
-
-    pub async fn federation_preview(&self, invite_code: &str) -> Result<RpcFederationPreview> {
-        let invite_code = invite_code.to_lowercase();
-        let root_mnemonic = self.app_state.root_mnemonic().await;
-        let device_index = self.app_state.ensure_device_index().await?;
-        FederationV2::federation_preview(
-            &invite_code,
-            &root_mnemonic,
-            device_index,
-            self.feature_catalog.override_localhost.is_some(),
-        )
-        .await
-    }
-
-    /// Look up federation by id from in-memory hashmap
-    pub fn get_federation(&self, federation_id: &str) -> Result<Arc<FederationV2>> {
-        match self.federations.get_federation_state(federation_id)? {
-            FederationState::Ready(federation) => Ok(federation),
-            FederationState::Recovering(_) => bail!("client is still recovering"),
-            FederationState::Loading => bail!("Federation is still loading"),
-            FederationState::Failed(e) => bail!("Federation failed to load: {}", e),
-        }
-    }
-
-    /// Look up federation by id from in-memory hashmap
-    pub fn get_federation_maybe_recovering(
+    pub async fn device_index_assignment_status(
         &self,
-        federation_id: &str,
-    ) -> Result<Arc<FederationV2>> {
-        match self.federations.get_federation_state(federation_id)? {
-            FederationState::Ready(federation) | FederationState::Recovering(federation) => {
-                Ok(federation)
-            }
-            FederationState::Loading => bail!("Federation is still loading"),
-            FederationState::Failed(e) => bail!("Federation failed to load: {}", e),
-        }
-    }
-
-    pub async fn validate_ecash(&self, ecash: String) -> Result<RpcEcashInfo> {
-        let oob = OOBNotes::from_str(&ecash)?;
-        let prefix = oob.federation_id_prefix().to_string();
-        let id = self
-            .federations
-            .get_federations_map()
-            .keys()
-            .find(|x| x.starts_with(&prefix))
-            .cloned();
-        match id {
-            Some(id) => Ok(RpcEcashInfo::Joined {
-                federation_id: RpcFederationId(id),
-                amount: RpcAmount(oob.total_amount()),
-            }),
-            None => Ok(RpcEcashInfo::NotJoined {
-                federation_invite: oob.federation_invite().map(|invite| invite.to_string()),
-                amount: RpcAmount(oob.total_amount()),
-            }),
-        }
-    }
-
-    // FIXME: doesn't need result
-    async fn get_social_recovery_state(&self) -> anyhow::Result<Option<SocialRecoveryState>> {
-        Ok(self
-            .app_state
-            .with_read_lock(|state| state.social_recovery_state.clone())
-            .await)
-    }
-
-    async fn set_social_recovery_state(
-        &self,
-        social_recovery_state: Option<SocialRecoveryState>,
-    ) -> anyhow::Result<()> {
-        self.app_state
-            .with_write_lock(|state| {
-                state.social_recovery_state = social_recovery_state;
-            })
-            .await
+    ) -> anyhow::Result<RpcDeviceIndexAssignmentStatus> {
+        Ok(match self.app_state.ensure_device_index().await {
+            Ok(index) => RpcDeviceIndexAssignmentStatus::Assigned(index),
+            Err(_) => RpcDeviceIndexAssignmentStatus::Unassigned,
+        })
     }
 
     pub async fn get_mnemonic_words(&self) -> anyhow::Result<Vec<String>> {
@@ -284,10 +129,193 @@ impl Bridge {
         Ok(())
     }
 
+    pub async fn sign_lnurl_message(
+        &self,
+        message: Message,
+        domain: String,
+    ) -> Result<RpcSignedLnurlMessage> {
+        let secp = Secp256k1::new();
+        let lnurl_secret = self
+            .app_state
+            .root_secret()
+            .await
+            .child_key(ChildId(LNURL_CHILD_ID));
+        let lnurl_secret_bytes: [u8; 32] = lnurl_secret.to_random_bytes();
+        let lnurl_domain_secret = DerivableSecret::new_root(&lnurl_secret_bytes, domain.as_bytes());
+        let lnurl_domain_keypair = lnurl_domain_secret.to_secp_key(&secp);
+        let lnurl_domain_pubkey = lnurl_domain_keypair.public_key();
+        let signature = secp.sign_ecdsa(&message, &lnurl_domain_keypair.secret_key());
+        Ok(RpcSignedLnurlMessage {
+            signature,
+            pubkey: RpcPublicKey(lnurl_domain_pubkey),
+        })
+    }
+
+    pub async fn get_nostr_pubkey(&self) -> Result<RpcNostrPubkey> {
+        let nostr_pubkey = self.nostr_pubkey().await;
+        let data = nostr_pubkey.serialize().to_base32();
+        Ok(RpcNostrPubkey {
+            npub: bech32::encode("npub", data, bech32::Variant::Bech32)?,
+            hex: nostr_pubkey.to_string(),
+        })
+    }
+
+    async fn nostr_pubkey(&self) -> XOnlyPublicKey {
+        let global_root_secret = self.app_state.root_secret().await;
+        let secp = Secp256k1::new();
+        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+        let nostr_keypair = nostr_secret.to_secp_key(&secp);
+
+        nostr_keypair.x_only_public_key().0
+    }
+
+    pub async fn get_nostr_secret(&self) -> Result<RpcNostrSecret> {
+        let secp = Secp256k1::new();
+        let bytes = self.nostr_secret_key(&secp).await?.secret_bytes();
+        let nsec = bech32::encode("nsec", bytes.to_base32(), bech32::Variant::Bech32)?;
+        let hex = hex::encode(bytes);
+
+        Ok(RpcNostrSecret { hex, nsec })
+    }
+
+    async fn nostr_secret_key<Ctx: bitcoin::secp256k1::Context + bitcoin::secp256k1::Signing>(
+        &self,
+        secp: &Secp256k1<Ctx>,
+    ) -> anyhow::Result<KeyPair> {
+        let global_root_secret = self.app_state.root_secret().await;
+        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+        let nostr_keypair = nostr_secret.to_secp_key(secp);
+
+        Ok(nostr_keypair)
+    }
+
+    pub async fn sign_nostr_event(&self, event_hash: String) -> Result<String> {
+        let global_root_secret = self.app_state.root_secret().await;
+        let secp = Secp256k1::new();
+        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+        let nostr_keypair = nostr_secret.to_secp_key(&secp);
+        let data = &hex::decode(event_hash)?;
+        let message = Message::from_slice(data)?;
+        let sig = secp.sign_schnorr(&message, &nostr_keypair);
+        // Return hex-encoded string
+        Ok(format!("{}", sig))
+    }
+
+    pub async fn get_matrix_secret(&self) -> DerivableSecret {
+        let global_root_secret = self.app_state.root_secret().await;
+        global_root_secret.child_key(ChildId(MATRIX_CHILD_ID))
+    }
+
+    pub async fn get_matrix_media_file(&self, path: PathBuf) -> Result<Vec<u8>> {
+        let media_file = self
+            .storage
+            .read_file(&path)
+            .await?
+            .ok_or(anyhow!("media file not found"))?;
+        Ok(media_file)
+    }
+}
+
+/// This struct encapulsates the feature services of the Bridge like Federations
+/// or Communities etc.
+pub struct BridgeFull {
+    pub runtime: Arc<BridgeRuntime>,
+    pub federations: Federations,
+    pub communities: Arc<Communities>,
+    pub fedi_fee_helper: Arc<FediFeeHelper>,
+    pub matrix: OnceCell<Matrix>,
+    pub device_registration_service: Arc<Mutex<DeviceRegistrationService>>,
+}
+
+impl BridgeFull {
+    pub async fn new(
+        runtime: Arc<BridgeRuntime>,
+        device_identifier: String,
+    ) -> anyhow::Result<Self> {
+        runtime
+            .app_state
+            .process_device_identifier(FromStr::from_str(&device_identifier)?)
+            .await?;
+
+        let fedi_fee_helper = Arc::new(FediFeeHelper::new(runtime.clone()));
+        let device_registration_service =
+            Mutex::new(DeviceRegistrationService::new(runtime.clone()).await).into();
+
+        // Load communities and federations services
+        let communities = Communities::init(runtime.clone()).await.into();
+        let federations = Federations::new(runtime.clone(), fedi_fee_helper.clone());
+        federations.load_joined_federations_in_background().await;
+
+        Ok(Self {
+            runtime,
+            federations,
+            communities,
+            fedi_fee_helper,
+            matrix: Default::default(),
+            device_registration_service,
+        })
+    }
+
+    /// Dump the database for a given federation.
+    pub async fn dump_db(&self, federation_id: &str) -> anyhow::Result<PathBuf> {
+        let db_dump_path = format!("db-{federation_id}.dump");
+        let federation = self.federations.get_federation(federation_id)?;
+        let db = federation.client.db().clone();
+        let mut buffer = Vec::new();
+        fedi_bug_report::db_dump::dump_db(&db, &mut buffer).await?;
+        self.runtime
+            .storage
+            .write_file(db_dump_path.as_ref(), buffer)
+            .await?;
+        Ok(self.runtime.storage.platform_path(db_dump_path.as_ref()))
+    }
+
+    pub async fn validate_ecash(&self, ecash: String) -> Result<RpcEcashInfo> {
+        let oob = OOBNotes::from_str(&ecash)?;
+        let prefix = oob.federation_id_prefix().to_string();
+        let id = self
+            .federations
+            .get_federations_map()
+            .keys()
+            .find(|x| x.starts_with(&prefix))
+            .cloned();
+        match id {
+            Some(id) => Ok(RpcEcashInfo::Joined {
+                federation_id: RpcFederationId(id),
+                amount: RpcAmount(oob.total_amount()),
+            }),
+            None => Ok(RpcEcashInfo::NotJoined {
+                federation_invite: oob.federation_invite().map(|invite| invite.to_string()),
+                amount: RpcAmount(oob.total_amount()),
+            }),
+        }
+    }
+
+    // FIXME: doesn't need result
+    async fn get_social_recovery_state(&self) -> anyhow::Result<Option<SocialRecoveryState>> {
+        Ok(self
+            .runtime
+            .app_state
+            .with_read_lock(|state| state.social_recovery_state.clone())
+            .await)
+    }
+
+    async fn set_social_recovery_state(
+        &self,
+        social_recovery_state: Option<SocialRecoveryState>,
+    ) -> anyhow::Result<()> {
+        self.runtime
+            .app_state
+            .with_write_lock(|state| {
+                state.social_recovery_state = social_recovery_state;
+            })
+            .await
+    }
+
     pub async fn fetch_registered_devices(&self) -> anyhow::Result<Vec<RpcRegisteredDevice>> {
-        let mnemonic = self.app_state.root_mnemonic().await;
+        let mnemonic = self.runtime.app_state.root_mnemonic().await;
         let registered_devices_fut = device_registration::get_registered_devices_with_backoff(
-            self.fedi_api.clone(),
+            self.runtime.fedi_api.clone(),
             mnemonic,
         );
         let registered_devices =
@@ -305,16 +333,17 @@ impl Bridge {
         index: u8,
         force_overwrite: bool,
     ) -> anyhow::Result<Option<RpcFederation>> {
-        let seed = self.app_state.root_mnemonic().await;
+        let seed = self.runtime.app_state.root_mnemonic().await;
         let enc_identifier = self
+            .runtime
             .app_state
             .encrypted_device_identifier()
             .await
             .ok_or(anyhow!("device identifier must be present"))?;
         let register_device_fut = device_registration::register_device_with_backoff(
-            self.app_state.clone(),
-            self.fedi_api.clone(),
-            self.event_sink.clone(),
+            self.runtime.app_state.clone(),
+            self.runtime.fedi_api.clone(),
+            self.runtime.event_sink.clone(),
             seed,
             index,
             enc_identifier,
@@ -324,14 +353,19 @@ impl Bridge {
             .await
             .context("registering device timed out")??;
 
-        self.app_state.set_device_index(index).await?;
+        self.runtime.app_state.set_device_index(index).await?;
         self.device_registration_service
             .lock()
             .await
-            .start_ongoing_periodic_registration(index, &self.task_group, self.event_sink.clone())
+            .start_ongoing_periodic_registration(
+                index,
+                &self.runtime.task_group,
+                self.runtime.event_sink.clone(),
+            )
             .await?;
 
         if self
+            .runtime
             .app_state
             .with_read_lock(|state| state.social_recovery_state.clone())
             .await
@@ -361,15 +395,6 @@ impl Bridge {
         }
     }
 
-    pub async fn device_index_assignment_status(
-        &self,
-    ) -> anyhow::Result<RpcDeviceIndexAssignmentStatus> {
-        Ok(match self.app_state.ensure_device_index().await {
-            Ok(index) => RpcDeviceIndexAssignmentStatus::Assigned(index),
-            Err(_) => RpcDeviceIndexAssignmentStatus::Unassigned,
-        })
-    }
-
     // FIXME: this function has weird name now that it doesn't do any recovery
     pub async fn recover_from_mnemonic(
         &self,
@@ -380,7 +405,7 @@ impl Bridge {
             .await
             .stop_ongoing_periodic_registration()
             .await?;
-        self.app_state.recover_mnemonic(mnemonic).await?;
+        self.runtime.app_state.recover_mnemonic(mnemonic).await?;
         self.fetch_registered_devices().await
     }
 
@@ -389,14 +414,14 @@ impl Bridge {
         federation_id: RpcFederationId,
         video_file_path: PathBuf,
     ) -> Result<PathBuf> {
-        let federation = self.get_federation(&federation_id.0)?;
-        let storage = self.storage.clone();
+        let federation = self.federations.get_federation(&federation_id.0)?;
+        let storage = self.runtime.storage.clone();
         // if remote bridge, copy with adb? maybe storage trait could do this?
         let video_file = storage
             .read_file(&video_file_path)
             .await?
             .ok_or(anyhow!("video file not found"))?;
-        let root_mnemonic = self.app_state.root_mnemonic().await;
+        let root_mnemonic = self.runtime.app_state.root_mnemonic().await;
         let recovery_file = federation
             .upload_backup_file(video_file, root_mnemonic)
             .await?;
@@ -485,6 +510,7 @@ impl Bridge {
 
         // These 2 lines validate
         let recovery_file_bytes = self
+            .runtime
             .storage
             .read_file(&recovery_file_path)
             .await?
@@ -596,17 +622,20 @@ impl Bridge {
         recovery_id: RpcRecoveryId,
         peer_id: RpcPeerId,
     ) -> Result<Option<PathBuf>> {
-        let federation = self.get_federation(&federation_id.0)?;
+        let federation = self.federations.get_federation(&federation_id.0)?;
         let verification_doc = federation
             .download_verification_doc(&recovery_id.0, peer_id.0)
             .await?;
         if let Some(verification_doc) = verification_doc {
-            self.storage
+            self.runtime
+                .storage
                 .write_file(VERIFICATION_FILENAME.as_ref(), verification_doc)
                 .await?;
             tracing::info!("saved verificaiton doc");
             Ok(Some(
-                self.storage.platform_path(VERIFICATION_FILENAME.as_ref()),
+                self.runtime
+                    .storage
+                    .platform_path(VERIFICATION_FILENAME.as_ref()),
             ))
         } else {
             Ok(None)
@@ -620,96 +649,10 @@ impl Bridge {
         peer_id: RpcPeerId,
         password: String,
     ) -> Result<()> {
-        let federation = self.get_federation(&federation_id.0)?;
+        let federation = self.federations.get_federation(&federation_id.0)?;
         federation
             .approve_social_recovery_request(&recovery_id.0, peer_id.0, &password)
             .await
-    }
-
-    pub async fn sign_lnurl_message(
-        &self,
-        message: Message,
-        domain: String,
-    ) -> Result<RpcSignedLnurlMessage> {
-        let secp = Secp256k1::new();
-        let lnurl_secret = self
-            .app_state
-            .root_secret()
-            .await
-            .child_key(ChildId(LNURL_CHILD_ID));
-        let lnurl_secret_bytes: [u8; 32] = lnurl_secret.to_random_bytes();
-        let lnurl_domain_secret = DerivableSecret::new_root(&lnurl_secret_bytes, domain.as_bytes());
-        let lnurl_domain_keypair = lnurl_domain_secret.to_secp_key(&secp);
-        let lnurl_domain_pubkey = lnurl_domain_keypair.public_key();
-        let signature = secp.sign_ecdsa(&message, &lnurl_domain_keypair.secret_key());
-        Ok(RpcSignedLnurlMessage {
-            signature,
-            pubkey: RpcPublicKey(lnurl_domain_pubkey),
-        })
-    }
-
-    pub async fn get_nostr_pubkey(&self) -> Result<RpcNostrPubkey> {
-        let nostr_pubkey = self.nostr_pubkey().await;
-        let data = nostr_pubkey.serialize().to_base32();
-        Ok(RpcNostrPubkey {
-            npub: bech32::encode("npub", data, bech32::Variant::Bech32)?,
-            hex: nostr_pubkey.to_string(),
-        })
-    }
-
-    async fn nostr_pubkey(&self) -> XOnlyPublicKey {
-        let global_root_secret = self.app_state.root_secret().await;
-        let secp = Secp256k1::new();
-        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
-        let nostr_keypair = nostr_secret.to_secp_key(&secp);
-
-        nostr_keypair.x_only_public_key().0
-    }
-
-    pub async fn get_nostr_secret(&self) -> Result<RpcNostrSecret> {
-        let secp = Secp256k1::new();
-        let bytes = self.nostr_secret_key(&secp).await?.secret_bytes();
-        let nsec = bech32::encode("nsec", bytes.to_base32(), bech32::Variant::Bech32)?;
-        let hex = hex::encode(bytes);
-
-        Ok(RpcNostrSecret { hex, nsec })
-    }
-
-    async fn nostr_secret_key<Ctx: bitcoin::secp256k1::Context + bitcoin::secp256k1::Signing>(
-        &self,
-        secp: &Secp256k1<Ctx>,
-    ) -> anyhow::Result<KeyPair> {
-        let global_root_secret = self.app_state.root_secret().await;
-        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
-        let nostr_keypair = nostr_secret.to_secp_key(secp);
-
-        Ok(nostr_keypair)
-    }
-
-    pub async fn sign_nostr_event(&self, event_hash: String) -> Result<String> {
-        let global_root_secret = self.app_state.root_secret().await;
-        let secp = Secp256k1::new();
-        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
-        let nostr_keypair = nostr_secret.to_secp_key(&secp);
-        let data = &hex::decode(event_hash)?;
-        let message = Message::from_slice(data)?;
-        let sig = secp.sign_schnorr(&message, &nostr_keypair);
-        // Return hex-encoded string
-        Ok(format!("{}", sig))
-    }
-
-    pub async fn get_matrix_secret(&self) -> DerivableSecret {
-        let global_root_secret = self.app_state.root_secret().await;
-        global_root_secret.child_key(ChildId(MATRIX_CHILD_ID))
-    }
-
-    pub async fn get_matrix_media_file(&self, path: PathBuf) -> Result<Vec<u8>> {
-        let media_file = self
-            .storage
-            .read_file(&path)
-            .await?
-            .ok_or(anyhow!("media file not found"))?;
-        Ok(media_file)
     }
 
     pub async fn set_module_fedi_fee_schedule(
@@ -729,5 +672,68 @@ impl Bridge {
                 },
             )
             .await
+    }
+    pub fn on_app_foreground(&self) {
+        self.communities.refresh_metas_in_background();
+    }
+}
+
+/// This is instantiated once as a global. When RPC commands come in, this
+/// struct is used as a router to look up the federation and handle the RPC
+/// command using it.
+///
+/// Bridge is not always guaranteed to exist as "Full", for
+/// example if the device index has been taken over by another device.
+/// There may also be other scenarios for these services to not be
+/// available. In such scenarios only the BridgeRuntime is available.
+pub enum Bridge {
+    RuntimeOnly {
+        runtime: Arc<BridgeRuntime>,
+        error: anyhow::Error,
+    },
+    Full(BridgeFull),
+}
+
+impl Bridge {
+    pub async fn new(runtime: Arc<BridgeRuntime>, device_identifier: String) -> Arc<Self> {
+        match BridgeFull::new(runtime.clone(), device_identifier).await {
+            Ok(full) => Self::Full(full),
+            Err(error) => Self::RuntimeOnly { runtime, error },
+        }
+        .into()
+    }
+
+    pub fn runtime(&self) -> &Arc<BridgeRuntime> {
+        match self {
+            Bridge::RuntimeOnly { runtime, error: _ } => runtime,
+            Bridge::Full(bridge_full) => &bridge_full.runtime,
+        }
+    }
+
+    pub fn full(&self) -> anyhow::Result<&BridgeFull> {
+        match self {
+            Bridge::RuntimeOnly { runtime: _, error } => Err(anyhow!(error.to_string())),
+            Bridge::Full(bridge_full) => Ok(bridge_full),
+        }
+    }
+
+    pub fn on_app_foreground(&self) {
+        if let Ok(full) = self.full() {
+            full.on_app_foreground();
+        }
+    }
+
+    pub async fn bridge_status(&self) -> anyhow::Result<RpcBridgeStatus> {
+        let matrix_setup = self
+            .runtime()
+            .app_state
+            .with_read_lock(|x| x.matrix_session.is_some())
+            .await;
+        let device_index_assignment_status =
+            self.runtime().device_index_assignment_status().await?;
+        Ok(RpcBridgeStatus {
+            matrix_setup,
+            device_index_assignment_status,
+        })
     }
 }
