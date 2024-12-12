@@ -43,6 +43,13 @@ pub trait IStorage: 'static + MaybeSend + MaybeSync {
 
 pub type Storage = Arc<dyn IStorage>;
 
+/// Rust representation of the JSON schema of the app state file. Contains all
+/// necessary information related to joined federations and communities, device
+/// registration, as well as matrix.
+///
+/// NOTE: when removing a field, we want to ensure that the field is never
+/// reused for anything else. So it's preferable to change the type of the field
+/// to () and mark it as deprecated.
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AppStateRaw {
     /// Version indicator for the app state
@@ -64,60 +71,66 @@ pub struct AppStateRaw {
     pub sensitive_log: Option<bool>,
     pub matrix_session: Option<MatrixSession>,
 
-    // NOTE: DO NOT REUSE
-    // TODO shaurya cover test case
     #[allow(dead_code)]
     #[deprecated = "Now we only store encrypted device ID. Do not reuse this field name."]
     #[serde(skip)]
     device_identifier: (),
 
-    // Device identifier is used to give this device a name that Fedi's device registration service
-    // can store. We store an encrypted string version of it so that we can reuse the
-    // same ciphertext when communicating with Fedi's device registration service regarding this
-    // device's registration status.
-    // encrypted_device_identifier_v1 is an optional type because it's not guaranteed to exist on
-    // disk (in case user started recovery and didn't complete it).
-    //
-    // If registering with encrypted_device_identifier_v2 fails and encrypted_device_identifier_v1
-    // is Some(), then we will attempt to verify this device's ownership of device_index using
-    // encrypted_device_identifier_v1 before transferring ownership to
-    // encrypted_device_identifier_v2. After this "transfer of ownership" has been
-    // completed, we will set encrypted_device_identifier_v1 to None so that it will never be of
-    // any use to us again.
+    /// Device identifier is used to give this device a name that Fedi's device
+    /// registration service can store. We store an encrypted string version
+    /// of it so that we can reuse the same ciphertext when communicating
+    /// with Fedi's device registration service regarding this
+    /// device's registration status.
+    /// encrypted_device_identifier_v1 is an optional type because it's not
+    /// guaranteed to exist on disk (in case user started recovery and
+    /// didn't complete it).
+    ///
+    /// If registering with encrypted_device_identifier_v2 fails and
+    /// encrypted_device_identifier_v1 is Some(), then we will attempt to
+    /// verify this device's ownership of device_index using
+    /// encrypted_device_identifier_v1 before transferring ownership to
+    /// encrypted_device_identifier_v2. After this "transfer of ownership" has
+    /// been completed, we will set encrypted_device_identifier_v1 to None
+    /// so that it will never be of any use to us again.
     #[deprecated = "Post-migration, only use encrypted_device_identifier_v2"]
     #[serde(rename = "encrypted_device_identifier")]
     encrypted_device_identifier_v1: Option<String>,
 
-    // V2 of the encrypted device identifier comes with new guarantees from the front-end.
-    // Specifically:
-    // - A device ID is always generated at start-up (no reading/writing to disk)
-    // - The generated device ID is always the same for the same handset
-    // - The generated device ID is never the same for two handsets (encompasses the device
-    //   migration case)
-    // V2 is migration-aware whereas V1 is not. With V1 we'd have problems whereby transfering
-    // storage from an iPhone 15 to an iPhone 16 (for example) would make both phones behave the
-    // exact same with the same device ID and device index. V2 would help us fix such situations.
-    // Note that even though this field is delcared Option<String>, we will enforce its
-    // non-optionality in the code, because device ID is provided as non-optional to
-    // Bridge::new()
+    /// V2 of the encrypted device identifier comes with new guarantees from the
+    /// front-end. Specifically:
+    /// - A device ID is always generated at start-up (no reading/writing to
+    ///   disk)
+    /// - The generated device ID is always the same for the same handset
+    /// - The generated device ID is never the same for two handsets
+    ///   (encompasses the device migration case)
+    ///
+    /// V2 is migration-aware whereas V1 is not. With V1 we'd have problems
+    /// whereby transfering storage from an iPhone 15 to an iPhone 16 (for
+    /// example) would make both phones behave the exact same with the same
+    /// device ID and device index. V2 would help us fix such situations.
+    /// Note that even though this field is delcared Option<String>, we will
+    /// enforce its non-optionality in the code, because device ID is
+    /// provided as non-optional to Bridge::new()
     encrypted_device_identifier_v2: Option<String>,
 
-    // Device index identifies which device number this is under the same root seed as registered
-    // with Fedi's device registration service. This index is used in the derivation path for the
-    // fedimint-client root secret. So in a way, it's a way of ensuring that a user's/seed's
-    // different per-federation "accounts" (across multiple devices) don't conflict with each
-    // other.
-    //
-    // The default value for existing users, as well as for new users with fresh seed is 0. But
-    // this value is an Option because in the case of recovery, we need to guide the user
-    // through the flow of setting up a device index before they can continue using the app as
-    // usual.
+    /// Device index identifies which device number this is under the same root
+    /// seed as registered with Fedi's device registration service. This
+    /// index is used in the derivation path for the fedimint-client root
+    /// secret. So in a way, it's a way of ensuring that a user's/seed's
+    /// different per-federation "accounts" (across multiple devices) don't
+    /// conflict with each other.
+    ///
+    /// The default value for existing users, as well as for new users with
+    /// fresh seed is 0. But this value is an Option because in the case of
+    /// recovery, we need to guide the user through the flow of setting up a
+    /// device index before they can continue using the app as usual.
     #[serde(default = "default_device_index")]
     device_index: Option<u8>,
 
-    // Every so often, we renew this device's registration against the given seed + device
-    // identifier + device index with Fedi's device registration service. Here we store the
-    // timestamp of the last successful registration renewal.
+    /// Every so often, we renew this device's registration against the given
+    /// seed + device identifier + device index with Fedi's device
+    /// registration service. Here we store the timestamp of the last
+    /// successful registration renewal.
     pub last_device_registration_timestamp: Option<SystemTime>,
 
     /// Always incrementing counter for [`DatabaseInfo::DatabasePrefix`].
@@ -126,12 +139,10 @@ pub struct AppStateRaw {
     next_federation_db_prefix: u64,
 
     pub matrix_display_name: Option<String>,
-    // NOTE: if you ever remove fields from AppState, don't delete the field.
-    // just comment it out to prevent field reuse in future.
 
-    // App State stores a cached copy of the app's display currency along with the BTC -> display
-    // currency exchange rate. This cached info is used to attach historical fiat values to TXs as
-    // they are recorded.
+    /// App State stores a cached copy of the app's display currency along with
+    /// the BTC -> display currency exchange rate. This cached info is used
+    /// to attach historical fiat values to TXs as they are recorded.
     pub cached_fiat_fx_info: Option<FiatFXInfo>,
 }
 
@@ -379,23 +390,22 @@ impl AppState {
             storage,
         };
 
-        // If encrypted_device_identifier_v2 is missing in JSON file on disk,
-        // immediately fill it in and write it to disk
-        if app_state
-            .with_read_lock(|state| state.encrypted_device_identifier_v2.clone())
-            .await
-            .is_none()
-        {
-            let root_secret = app_state.root_secret().await;
-            let encrypted_device_identifier = device_identifier_v2
-                .encrypt_and_hex_encode(&root_secret)
-                .context("Encrypting a valid device identifier must not fail")?;
-            app_state
-                .with_write_lock(|state| {
+        app_state
+            .with_write_lock(|state| {
+                // If encrypted_device_identifier_v2 is missing in JSON file on disk,
+                // immediately fill it in and write it to disk
+                if state.encrypted_device_identifier_v2.is_none() {
+                    let root_secret =
+                        Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic);
+                    let encrypted_device_identifier = device_identifier_v2
+                        .encrypt_and_hex_encode(&root_secret)
+                        .context("Encrypting a valid device identifier must not fail")?;
                     state.encrypted_device_identifier_v2 = Some(encrypted_device_identifier)
-                })
-                .await?;
-        }
+                }
+
+                Ok::<_, anyhow::Error>(())
+            })
+            .await??;
 
         Ok(Some(app_state))
     }

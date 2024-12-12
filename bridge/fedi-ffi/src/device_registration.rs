@@ -146,13 +146,16 @@ pub async fn register_device_with_backoff(
         Conflict(String),
     }
 
-    let registration_closure = |app_state: Arc<AppState>,
-                                fedi_api: Arc<dyn IFediApi>,
-                                event_sink: EventSink,
-                                seed: bip39::Mnemonic,
-                                enc_device_id: String,
-                                force_overwrite: bool,
-                                emit_event_on_conflict: bool| async move {
+    async fn register_device_inner(
+        app_state: Arc<AppState>,
+        fedi_api: Arc<dyn IFediApi>,
+        event_sink: EventSink,
+        seed: bip39::Mnemonic,
+        enc_device_id: String,
+        device_index: u8,
+        force_overwrite: bool,
+        emit_event_on_conflict: bool,
+    ) -> anyhow::Result<RegisterDeviceRetryOk> {
         retry(
             "register_device",
             FibonacciBackoff::default()
@@ -219,7 +222,7 @@ pub async fn register_device_with_backoff(
             },
         )
         .await
-    };
+    }
 
     // If encrypted_device_identifier_v1 is Some(_), then there's the possibility
     // that an ownership transfer to encrypted_device_identifier_v2 is still needed.
@@ -229,12 +232,13 @@ pub async fn register_device_with_backoff(
     let encrypted_device_identifier_v1 = app_state.encrypted_device_identifier_v1().await;
     let emit_event_on_conflict = encrypted_device_identifier_v1.is_none();
 
-    match registration_closure(
+    match register_device_inner(
         app_state.clone(),
         fedi_api.clone(),
         event_sink.clone(),
         seed.clone(),
         encrypted_device_identifier_v2.clone(),
+        device_index,
         force_overwrite,
         emit_event_on_conflict,
     )
@@ -250,12 +254,13 @@ pub async fn register_device_with_backoff(
                 return Err(anyhow!(error));
             };
 
-            match registration_closure(
+            match register_device_inner(
                 app_state.clone(),
                 fedi_api.clone(),
                 event_sink.clone(),
                 seed.clone(),
                 encrypted_device_identifier_v1,
+                device_index,
                 force_overwrite,
                 true,
             )
@@ -265,12 +270,13 @@ pub async fn register_device_with_backoff(
                     // If registering with encrypted_device_identifier_v1 is
                     // successful, attempt to sliently transfer the ownership
                     // to encrypted_device_identifier_v2.
-                    match registration_closure(
+                    match register_device_inner(
                         app_state.clone(),
                         fedi_api.clone(),
                         event_sink.clone(),
                         seed.clone(),
                         encrypted_device_identifier_v2,
+                        device_index,
                         true,
                         true,
                     )
