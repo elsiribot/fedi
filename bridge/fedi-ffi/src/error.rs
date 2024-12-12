@@ -31,6 +31,8 @@ pub enum ErrorCode {
     MatrixNotInitialized,
     #[error("Unknown Observable")]
     UnknownObservable,
+    #[error("Observable with ID {0} already exists")]
+    DuplicateObservableID(u64),
     #[error("Operation timed out")]
     Timeout,
     #[error("Not allowed while recovering")]

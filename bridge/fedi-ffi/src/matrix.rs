@@ -338,18 +338,19 @@ impl Matrix {
     }
 
     /// All chats in matrix are rooms, whether DM or group chats.
-    pub async fn room_list(&self) -> Result<ObservableVec<RpcRoomListEntry>> {
-        self.room_list_to_observable(self.room_list_service.all_rooms().await?)
+    pub async fn room_list(&self, observable_id: u64) -> Result<ObservableVec<RpcRoomListEntry>> {
+        self.room_list_to_observable(observable_id, self.room_list_service.all_rooms().await?)
             .await
     }
 
     async fn room_list_to_observable(
         &self,
+        observable_id: u64,
         list: room_list_service::RoomList,
     ) -> Result<Observable<imbl::Vector<RpcRoomListEntry>>> {
         let (initial, stream) = list.entries();
         self.observable_pool
-            .make_observable_from_vec_diff_stream(initial, stream)
+            .make_observable_from_vec_diff_stream(observable_id, initial, stream)
             .await
     }
 
@@ -364,9 +365,13 @@ impl Matrix {
     /// frontend.
     ///
     /// We delay the events by 2 seconds to avoid flickering.
-    pub async fn observe_sync_status(&self) -> Result<Observable<RpcSyncIndicator>> {
+    pub async fn observe_sync_status(
+        &self,
+        observable_id: u64,
+    ) -> Result<Observable<RpcSyncIndicator>> {
         self.observable_pool
             .make_observable_from_stream(
+                observable_id,
                 None,
                 self.room_list_service
                     .sync_indicator(Duration::from_secs(2), Duration::from_secs(2)),
@@ -410,12 +415,13 @@ impl Matrix {
 
     pub async fn room_timeline_items(
         &self,
+        observable_id: u64,
         room_id: &RoomId,
     ) -> Result<ObservableVec<RpcTimelineItem>> {
         let timeline = self.timeline(room_id).await?;
         let (initial, stream) = timeline.subscribe_batched().await;
         self.observable_pool
-            .make_observable_from_vec_diff_stream(initial, stream)
+            .make_observable_from_vec_diff_stream(observable_id, initial, stream)
             .await
     }
 
@@ -431,6 +437,7 @@ impl Matrix {
 
     pub async fn room_observe_timeline_items_paginate_backwards_status(
         &self,
+        observable_id: u64,
         room_id: &RoomId,
     ) -> Result<Observable<RpcBackPaginationStatus>> {
         let timeline = self.timeline(room_id).await?;
@@ -439,7 +446,7 @@ impl Matrix {
             .await
             .context("we only have live rooms")?;
         self.observable_pool
-            .make_observable_from_stream(Some(current), stream)
+            .make_observable_from_stream(observable_id, Some(current), stream)
             .await
     }
 
@@ -533,10 +540,14 @@ impl Matrix {
         Ok(())
     }
 
-    pub async fn room_observe_info(&self, room_id: &RoomId) -> Result<Observable<RoomInfo>> {
+    pub async fn room_observe_info(
+        &self,
+        observable_id: u64,
+        room_id: &RoomId,
+    ) -> Result<Observable<RoomInfo>> {
         let sub = self.room(room_id).await?.inner_room().subscribe_info();
         self.observable_pool
-            .make_observable_from_subscriber(sub)
+            .make_observable_from_subscriber(observable_id, sub)
             .await
     }
 
@@ -947,6 +958,7 @@ impl Matrix {
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
+    use std::sync::atomic::{AtomicU64, Ordering};
 
     use fedimint_bip39::Bip39RootSecretStrategy;
     use fedimint_client::secret::RootSecretStrategy as _;
@@ -1034,8 +1046,13 @@ mod tests {
         let user2 = matrix2.client.user_id().unwrap();
         let room_id = matrix1.create_or_get_dm(user2).await?;
         matrix2.room_join(&room_id).await?;
-        let items1 = matrix1.room_timeline_items(&room_id).await?;
-        let items2 = matrix2.room_timeline_items(&room_id).await?;
+        let id_gen = AtomicU64::new(0);
+        let items1 = matrix1
+            .room_timeline_items(id_gen.fetch_add(1, Ordering::Relaxed), &room_id)
+            .await?;
+        let items2 = matrix2
+            .room_timeline_items(id_gen.fetch_add(1, Ordering::Relaxed), &room_id)
+            .await?;
         info!(?items1, ?items2, "### initial items");
         matrix1
             .send_message_text(&room_id, "hello from bridge".into())
@@ -1096,7 +1113,10 @@ mod tests {
             mk_matrix_login(&username, &secret).await?;
 
         matrix1_new.wait_for_room_id(&room_id).await?;
-        let initial_item = matrix1_new.room_timeline_items(&room_id).await?;
+        let id_gen = AtomicU64::new(0);
+        let initial_item = matrix1_new
+            .room_timeline_items(id_gen.fetch_add(1, Ordering::Relaxed), &room_id)
+            .await?;
         info!("### waiting for user 2 message");
         if !serde_json::to_string(&initial_item)?.contains("hello from user2") {
             while let Some((ev, body)) = event_rx1_new.recv().await {

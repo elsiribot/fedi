@@ -924,8 +924,10 @@ async fn matrixGetAccountSession(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixRoomList(matrix: &Matrix) -> anyhow::Result<ObservableRoomList> {
-    Ok(ObservableRoomList(matrix.room_list().await?))
+async fn matrixRoomList(matrix: &Matrix, observable_id: u32) -> anyhow::Result<ObservableRoomList> {
+    Ok(ObservableRoomList(
+        matrix.room_list(observable_id.into()).await?,
+    ))
 }
 
 // inclusive on both sides
@@ -942,9 +944,12 @@ ts_type_ser!(
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomTimelineItems(
     matrix: &Matrix,
+    observable_id: u32,
     room_id: RpcRoomId,
 ) -> anyhow::Result<ObservableTimelineItems> {
-    let items = matrix.room_timeline_items(&room_id.into_typed()?).await?;
+    let items = matrix
+        .room_timeline_items(observable_id.into(), &room_id.into_typed()?)
+        .await?;
     Ok(ObservableTimelineItems(items))
 }
 
@@ -998,18 +1003,22 @@ ts_type_ser!(
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomObserveTimelineItemsPaginateBackwards(
     matrix: &Matrix,
+    observable_id: u32,
     room_id: RpcRoomId,
 ) -> anyhow::Result<ObservableBackPaginationStatus> {
     Ok(ObservableBackPaginationStatus(
         matrix
-            .room_observe_timeline_items_paginate_backwards_status(&room_id.into_typed()?)
+            .room_observe_timeline_items_paginate_backwards_status(
+                observable_id.into(),
+                &room_id.into_typed()?,
+            )
             .await?,
     ))
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixObserverCancel(matrix: &Matrix, id: u64) -> anyhow::Result<()> {
-    matrix.observable_cancel(id).await?;
+async fn matrixObservableCancel(matrix: &Matrix, observable_id: u32) -> anyhow::Result<()> {
+    matrix.observable_cancel(observable_id.into()).await?;
     Ok(())
 }
 
@@ -1076,21 +1085,28 @@ ts_type_ser!(ObservableRoomInfo: Observable<RoomInfo> = "Observable<JSONObject>"
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomObserveInfo(
     matrix: &Matrix,
+    observable_id: u32,
     room_id: RpcRoomId,
 ) -> anyhow::Result<ObservableRoomInfo> {
     Ok(ObservableRoomInfo(
-        matrix.room_observe_info(&room_id.into_typed()?).await?,
+        matrix
+            .room_observe_info(observable_id.into(), &room_id.into_typed()?)
+            .await?,
     ))
 }
 
 ts_type_ser!(ObservableRpcSyncIndicator: Observable<RpcSyncIndicator> = "Observable<RpcSyncIndicator>");
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixObserveSyncIndicator(matrix: &Matrix) -> anyhow::Result<ObservableRpcSyncIndicator> {
+async fn matrixObserveSyncIndicator(
+    matrix: &Matrix,
+    observable_id: u32,
+) -> anyhow::Result<ObservableRpcSyncIndicator> {
     Ok(ObservableRpcSyncIndicator(
-        matrix.observe_sync_status().await?,
+        matrix.observe_sync_status(observable_id.into()).await?,
     ))
 }
+
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomInviteUserById(
     matrix: &Matrix,
@@ -1526,7 +1542,7 @@ rpc_methods!(RpcMethods {
     transferExistingDeviceRegistration,
     deviceIndexAssignmentStatus,
 
-    matrixObserverCancel,
+    matrixObservableCancel,
 
     // Matrix
     matrixInit,

@@ -72,6 +72,7 @@ export type ErrorCode =
   | { insufficientBalance: RpcAmount }
   | "matrixNotInitialized"
   | "unknownObservable"
+  | { duplicateObservableID: bigint }
   | "timeout"
   | "recovery"
   | { invalidJson: string }
@@ -671,7 +672,7 @@ export interface RpcMethods {
     Record<string, never>,
     { assigned: number } | "unassigned",
   ];
-  matrixObserverCancel: [{ id: bigint }, null];
+  matrixObservableCancel: [{ observableId: number }, null];
   matrixInit: [Record<string, never>, null];
   matrixGetAccountSession: [
     { cached: boolean },
@@ -683,13 +684,13 @@ export interface RpcMethods {
     },
   ];
   matrixObserveSyncIndicator: [
-    Record<string, never>,
+    { observableId: number },
     Observable<RpcSyncIndicator>,
   ];
-  matrixRoomList: [Record<string, never>, ObservableVec<RpcRoomListEntry>];
+  matrixRoomList: [{ observableId: number }, ObservableVec<RpcRoomListEntry>];
   matrixRoomListUpdateRanges: [{ ranges: RpcRanges }, null];
   matrixRoomTimelineItems: [
-    { roomId: RpcRoomId },
+    { observableId: number; roomId: RpcRoomId },
     ObservableVec<RpcTimelineItem>,
   ];
   matrixRoomTimelineItemsPaginateBackwards: [
@@ -697,7 +698,7 @@ export interface RpcMethods {
     null,
   ];
   matrixRoomObserveTimelineItemsPaginateBackwards: [
-    { roomId: RpcRoomId },
+    { observableId: number; roomId: RpcRoomId },
     Observable<RpcBackPaginationStatus>,
   ];
   matrixSendMessage: [{ roomId: RpcRoomId; message: string }, null];
@@ -724,7 +725,10 @@ export interface RpcMethods {
   matrixRoomJoin: [{ roomId: RpcRoomId }, null];
   matrixRoomJoinPublic: [{ roomId: RpcRoomId }, null];
   matrixRoomLeave: [{ roomId: RpcRoomId }, null];
-  matrixRoomObserveInfo: [{ roomId: RpcRoomId }, Observable<JSONObject>];
+  matrixRoomObserveInfo: [
+    { observableId: number; roomId: RpcRoomId },
+    Observable<JSONObject>,
+  ];
   matrixRoomInviteUserById: [{ roomId: RpcRoomId; userId: RpcUserId }, null];
   matrixRoomSetName: [{ roomId: RpcRoomId; name: string }, null];
   matrixRoomSetTopic: [{ roomId: RpcRoomId; topic: string }, null];
