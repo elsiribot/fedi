@@ -13,6 +13,7 @@ import PinDot from '../components/feature/pin/PinDot'
 import { NumpadButton } from '../components/ui/NumpadButton'
 import { usePinContext } from '../state/contexts/PinContext'
 import { useAppDispatch } from '../state/hooks'
+import { reset } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'LockScreen'>
@@ -125,7 +126,7 @@ const LockScreen = ({ navigation, route }: Props) => {
         if (route.params && 'routeParams' in route.params) {
             navigation.navigate(...route.params.routeParams)
         } else {
-            navigation.navigate('TabsNavigator')
+            navigation.dispatch(reset('TabsNavigator'))
         }
     }, [debouncedPin, navigation, dispatch, pin, route.params])
 

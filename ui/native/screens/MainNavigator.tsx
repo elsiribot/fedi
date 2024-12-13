@@ -805,7 +805,7 @@ export const MainNavigator = () => {
                                         <CenteredHeader
                                             backButton
                                             title={t(
-                                                'feature.fedimods.fedi-mods',
+                                                'feature.fedimods.add-a-mod',
                                             )}
                                         />
                                     ),
