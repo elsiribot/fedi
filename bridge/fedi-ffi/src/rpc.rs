@@ -4119,6 +4119,12 @@ pub mod tests {
             return Ok(());
         }
 
+        INIT_TRACING.call_once(|| {
+            TracingSetup::default()
+                .init()
+                .expect("Failed to initialize tracing");
+        });
+
         // Test: existing device, successfully registered with ID v1
         //         ownership transfer to ID v2 successful
         //         recreate bridge with same ID, all good
@@ -4160,6 +4166,13 @@ pub mod tests {
 
         // Write tweaked AppStateRaw
         let storage = bridge.runtime.storage.clone();
+        bridge
+            .runtime
+            .task_group
+            .clone()
+            .shutdown_join_all(Duration::from_secs(5))
+            .await?;
+        drop(bridge);
         tokio::task::spawn_blocking(move || {
             storage.write_file_sync(
                 Path::new(FEDI_FILE_PATH),
@@ -4168,13 +4181,6 @@ pub mod tests {
             Ok::<(), anyhow::Error>(())
         })
         .await??;
-        bridge
-            .runtime
-            .task_group
-            .clone()
-            .shutdown_join_all(Duration::from_secs(5))
-            .await?;
-        drop(bridge);
 
         // Set up bridge again using same data_dir but now pass in v2 identifier
         let device_identifier_v2 = "bridge_2:test:70c25d23-bfac-4aa2-81c3-d6f5e79ae724".to_string();

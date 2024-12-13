@@ -819,7 +819,7 @@ impl StabilityPoolClientModule {
                                         operation_id,
                                         withdraw_unlocked_outpoints,
                                     ).await {
-                                        Ok(amount) => yield StabilityPoolWithdrawalOperationState::Success(amount),
+                                        Ok(()) => yield StabilityPoolWithdrawalOperationState::Success(withdraw_unlocked_amount),
                                         Err(e) => yield StabilityPoolWithdrawalOperationState::PrimaryOutputError(e.to_string()),
                                     }
                                 },
@@ -909,7 +909,7 @@ impl StabilityPoolClientModule {
                                                 operation_id,
                                                 withdraw_unlocked_outpoints,
                                             ).await {
-                                                Ok(amount) => yield StabilityPoolWithdrawalOperationState::Success(unlocked_amount + amount),
+                                                Ok(()) => yield StabilityPoolWithdrawalOperationState::Success(unlocked_amount + withdraw_unlocked_amount),
                                                 Err(e) => yield StabilityPoolWithdrawalOperationState::PrimaryOutputError(e.to_string()),
                                             }
                                         },
@@ -926,7 +926,7 @@ impl StabilityPoolClientModule {
                                         operation_id,
                                         outpoints,
                                     ).await {
-                                        Ok(amount) => yield StabilityPoolWithdrawalOperationState::Success(amount),
+                                        Ok(()) => yield StabilityPoolWithdrawalOperationState::Success(unlocked_amount),
                                         Err(e) => yield StabilityPoolWithdrawalOperationState::PrimaryOutputError(e.to_string()),
                                     }
                                 },

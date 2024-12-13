@@ -188,7 +188,7 @@ impl FederationV2 {
         client_builder.with_module(WalletClientInit(None));
         client_builder.with_module(FediSocialClientInit);
         client_builder.with_module(StabilityPoolClientInit);
-        client_builder.with_primary_module(1);
+        client_builder.with_primary_module_kind(fedimint_mint_client::KIND);
         Ok(client_builder)
     }
 
