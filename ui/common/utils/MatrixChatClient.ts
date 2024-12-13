@@ -898,7 +898,10 @@ export class MatrixChatClient {
         if (item.kind !== 'event') return null
         if (
             item.value.content.kind === 'json' &&
-            item.value.content.value.type !== 'm.room.message'
+            item.value.content.value.type !== 'm.room.message' &&
+            // deleted messages are not decrypted so they have this type
+            // we keep them so we can display the 'message deleted' placeholder
+            item.value.content.value.type !== 'm.room.encrypted'
         )
             return null
 
