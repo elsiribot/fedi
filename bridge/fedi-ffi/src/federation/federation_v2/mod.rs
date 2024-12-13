@@ -48,9 +48,7 @@ use fedimint_core::module::ApiRequestErased;
 use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
 use fedimint_core::timing::TimeReporter;
 use fedimint_core::util::backon::FibonacciBuilder as FibonacciBackoff;
-use fedimint_core::{
-    apply, async_trait_maybe_send, maybe_add_send_sync, Amount, PeerId, TieredMulti,
-};
+use fedimint_core::{maybe_add_send_sync, Amount, PeerId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
     InternalPayState, LightningClientInit, LightningOperationMeta, LightningOperationMetaPay,
@@ -62,8 +60,8 @@ use fedimint_ln_common::LightningGateway;
 use fedimint_meta_client::MetaModuleMetaSourceWithFallback;
 use fedimint_mint_client::{
     spendable_notes_to_operation_id, MintClientInit, MintClientModule, MintOperationMeta,
-    MintOperationMetaVariant, NotesSelector, OOBNotes, ReissueExternalNotesState,
-    SelectNotesWithAtleastAmount, SelectNotesWithExactAmount,
+    MintOperationMetaVariant, OOBNotes, ReissueExternalNotesState, SelectNotesWithAtleastAmount,
+    SelectNotesWithExactAmount,
 };
 use fedimint_wallet_client::{
     DepositStateV2, PegOutFees, WalletClientInit, WalletOperationMeta, WalletOperationMetaVariant,
@@ -1724,13 +1722,6 @@ impl FederationV2 {
             )
             .await?;
         let fedi_fee = Amount::from_msats((amount.msats * fedi_fee_ppm).div_ceil(MILLION));
-        let spend_guard = self.spend_guard.lock().await;
-        let virtual_balance = self.get_balance().await;
-        if amount + fedi_fee > virtual_balance {
-            bail!(ErrorCode::InsufficientBalance(RpcAmount(
-                get_max_spendable_amount(virtual_balance, fedi_fee_ppm, None, None)
-            )));
-        }
 
         let mint = self.client.mint()?;
 
@@ -1740,58 +1731,52 @@ impl FederationV2 {
         // denominations. And then generate using AT LEAST strategy again, which
         // will now have a high chance to producing the exact amount.
         let cancel_time = fedimint_core::time::now() + ECASH_AUTO_CANCEL_DURATION;
-        let (spend_guard, operation_id, notes) = match mint
-            .spend_notes_with_selector(
-                &SelectNotesWithExactAmount,
-                amount,
-                ECASH_AUTO_CANCEL_DURATION,
-                include_invite,
-                EcashSendMetadata { internal: false },
-            )
-            .await
-        {
-            Ok((operation_id, notes)) => (spend_guard, operation_id, notes),
-            Err(_) => {
-                let (_, notes) = mint
-                    .spend_notes(
-                        amount,
-                        ECASH_AUTO_CANCEL_DURATION,
-                        include_invite,
-                        EcashSendMetadata { internal: true },
-                    )
-                    .await?;
-                drop(spend_guard);
-
-                // try to make change
-                timeout(REISSUE_ECASH_TIMEOUT, async {
-                    let notes_amount = notes.total_amount();
-                    let operation_id = mint
-                        .reissue_external_notes(notes, EcashReceiveMetadata { internal: true })
-                        .await?;
-                    self.subscribe_to_ecash_reissue(operation_id, notes_amount)
-                        .await
-                })
-                .await
-                .context("Failed to select notes with correct amount")??;
-
-                let spend_guard = self.spend_guard.lock().await;
-                let virtual_balance = self.get_balance().await;
-                if amount + fedi_fee > virtual_balance {
-                    bail!(ErrorCode::InsufficientBalance(RpcAmount(
-                        get_max_spendable_amount(virtual_balance, fedi_fee_ppm, None, None)
-                    )));
-                }
-                let (operation_id, notes) = mint
-                    .spend_notes_with_selector(
-                        &SelectNotesAllowLimitedOverpay,
-                        amount,
-                        ECASH_AUTO_CANCEL_DURATION,
-                        include_invite,
-                        EcashSendMetadata { internal: false },
-                    )
-                    .await?;
-                (spend_guard, operation_id, notes)
+        let (spend_guard, operation_id, notes) = loop {
+            let spend_guard = self.spend_guard.lock().await;
+            let virtual_balance = self.get_balance().await;
+            if amount + fedi_fee > virtual_balance {
+                bail!(ErrorCode::InsufficientBalance(RpcAmount(
+                    get_max_spendable_amount(virtual_balance, fedi_fee_ppm, None, None)
+                )));
             }
+
+            if let Ok((operation_id, notes)) = mint
+                .spend_notes_with_selector(
+                    &SelectNotesWithExactAmount,
+                    amount,
+                    ECASH_AUTO_CANCEL_DURATION,
+                    include_invite,
+                    EcashSendMetadata { internal: false },
+                )
+                .await
+            {
+                assert_eq!(notes.total_amount(), amount);
+                break (spend_guard, operation_id, notes);
+            };
+
+            let (_, notes) = mint
+                .spend_notes_with_selector(
+                    &SelectNotesWithAtleastAmount,
+                    amount,
+                    ECASH_AUTO_CANCEL_DURATION,
+                    include_invite,
+                    EcashSendMetadata { internal: true },
+                )
+                .await?;
+            drop(spend_guard);
+
+            // try to make change
+            timeout(REISSUE_ECASH_TIMEOUT, async {
+                let notes_amount = notes.total_amount();
+                let operation_id = mint
+                    .reissue_external_notes(notes, EcashReceiveMetadata { internal: true })
+                    .await?;
+                self.subscribe_to_ecash_reissue(operation_id, notes_amount)
+                    .await
+            })
+            .await
+            .context("Failed to select notes with correct amount")??;
+            // and retry
         };
 
         self.write_pending_send_fedi_fee(operation_id, fedi_fee)
@@ -3319,34 +3304,6 @@ fn invoice_routes_back_to_federation(
 
 fn internal_pay_is_bad_state(outcome: serde_json::Value) -> bool {
     serde_json::from_value::<InternalPayState>(outcome).is_err()
-}
-
-/// Selector that allows overpaying upto 10 sats.
-pub struct SelectNotesAllowLimitedOverpay;
-
-#[apply(async_trait_maybe_send!)]
-impl<Note: Send> NotesSelector<Note> for SelectNotesAllowLimitedOverpay {
-    async fn select_notes(
-        &self,
-        #[cfg(not(target_family = "wasm"))] stream: impl futures::Stream<Item = (Amount, Note)> + Send,
-        #[cfg(target_family = "wasm")] stream: impl futures::Stream<Item = (Amount, Note)>,
-        requested_amount: Amount,
-        note_fee: Amount,
-    ) -> anyhow::Result<TieredMulti<Note>> {
-        let notes = SelectNotesWithAtleastAmount
-            .select_notes(stream, requested_amount, note_fee)
-            .await?;
-
-        if notes.total_amount() > requested_amount + Amount::from_sats(10) {
-            bail!(
-                "Could not select amount. Requested amount: {}. Selected amount: {}",
-                requested_amount,
-                notes.total_amount()
-            );
-        }
-
-        Ok(notes)
-    }
 }
 
 #[cfg(test)]
