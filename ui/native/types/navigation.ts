@@ -91,11 +91,11 @@ export type RootStackParamList = {
     EditProfileSettings: undefined
     Eula: undefined
     FederationDetails: { federationId: string }
-    FederationModSettings: { type?: string }
+    FederationModSettings: { type?: string; federationId?: string }
     FederationInvite: { inviteLink: string }
     FederationGreeting: undefined
     FederationAcceptTerms: { federation: FederationPreview }
-    FediModSettings: { type?: string }
+    FediModSettings: { type?: string; federationId?: string }
     Initializing: undefined
     JoinFederation: { invite?: string }
     LanguageSettings: undefined

@@ -13,7 +13,7 @@ import {
 } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { selectActiveFederationFediMods } from '@fedi/common/redux'
+import { selectFederationFediModsById } from '@fedi/common/redux'
 import {
     removeCustomMod,
     selectConfigurableMods,
@@ -43,13 +43,15 @@ const FediModSettingsScreen: React.FC<Props> = ({ route }: Props) => {
     const navigation = useNavigation()
 
     const dispatch = useAppDispatch()
-    const { type } = route.params
+    const { type, federationId } = route.params
 
     const selectConfigMods = useAppSelector(selectConfigurableMods)
-    const selectActiveFedMods = useAppSelector(selectActiveFederationFediMods)
+    const federationMods = useAppSelector(state =>
+        federationId ? selectFederationFediModsById(state, federationId) : [],
+    )
 
     // Select the correct data based on the type
-    const mods = type === 'fedi' ? selectConfigMods : selectActiveFedMods
+    const mods = type === 'fedi' ? selectConfigMods : federationMods
 
     const modsVisibility = useAppSelector(selectModsVisibility)
 
@@ -76,10 +78,11 @@ const FediModSettingsScreen: React.FC<Props> = ({ route }: Props) => {
                 setModVisibility({
                     modId: mod.id,
                     [visibilityKey]: !modsVisibility[mod.id]?.[visibilityKey],
+                    federationId: federationId,
                 }),
             )
         },
-        [modsVisibility, dispatch, type],
+        [modsVisibility, dispatch, type, federationId],
     )
 
     const confirmationContent: CustomOverlayContents = useMemo(() => {
@@ -120,10 +123,20 @@ const FediModSettingsScreen: React.FC<Props> = ({ route }: Props) => {
 
     const renderMods = useCallback(() => {
         return mods.map(mod => {
-            const visibilityKey =
-                type === 'fedi' ? 'isHidden' : 'isHiddenCommunity'
-            const isHidden = modsVisibility[mod.id]?.[visibilityKey]
-            const canDelete = modsVisibility[mod.id]?.isCustom
+            const visibility = modsVisibility[mod.id]
+            let isHidden = false
+
+            if (type === 'fedi') {
+                isHidden = !!visibility?.isHidden
+            } else {
+                // Only consider the mod hidden in this federation if federationId matches
+                isHidden = !!(
+                    visibility?.isHiddenCommunity &&
+                    visibility?.federationId === federationId
+                )
+            }
+
+            const canDelete = visibility?.isCustom
 
             return (
                 <ModRow
@@ -139,7 +152,7 @@ const FediModSettingsScreen: React.FC<Props> = ({ route }: Props) => {
                 />
             )
         })
-    }, [mods, modsVisibility, handleToggleVisibility, type])
+    }, [mods, modsVisibility, handleToggleVisibility, type, federationId])
 
     return (
         <View style={style.container}>
