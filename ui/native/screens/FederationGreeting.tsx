@@ -26,7 +26,7 @@ const FederationGreeting: React.FC<Props> = ({ navigation }: Props) => {
 
     return (
         <NotificationsPermissionGate>
-            <SafeAreaContainer style={style.container}>
+            <SafeAreaContainer style={style.container} edges="notop">
                 <View style={style.contentContainer}>
                     <View style={style.avatarContainer}>
                         <Avatar

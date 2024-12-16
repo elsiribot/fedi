@@ -30,7 +30,7 @@ export const PermissionGate: React.FC<Props> = ({
     const style = styles(theme)
 
     return (
-        <SafeAreaContainer style={style.container}>
+        <SafeAreaContainer style={style.container} edges="notop">
             <View style={style.content}>
                 <HoloGradient level="400" gradientStyle={style.iconGradient}>
                     <SvgImage name={icon} size={SvgImageSize.md} />

@@ -26,7 +26,7 @@ const NostrSettings: React.FC<Props> = (_: Props) => {
     const style = styles(theme)
 
     return (
-        <SafeAreaContainer style={style.container}>
+        <SafeAreaContainer style={style.container} edges="notop">
             <View style={style.section}>
                 <View style={style.header}>
                     <Text medium>{t('feature.nostr.nostr-public-key')}</Text>

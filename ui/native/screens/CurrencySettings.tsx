@@ -25,7 +25,7 @@ const CurrencySettings: React.FC = () => {
     const style = styles(theme)
 
     return (
-        <SafeScrollArea style={style.container}>
+        <SafeScrollArea style={style.container} edges="notop">
             {Object.values(currencies).map(currency => (
                 <CheckBox
                     key={currency}

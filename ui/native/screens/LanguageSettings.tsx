@@ -36,7 +36,7 @@ const LanguageSettings: React.FC = () => {
     }
 
     return (
-        <SafeScrollArea style={style.container}>
+        <SafeScrollArea style={style.container} edges="notop">
             {Object.entries(languages).map(([lang, display]) => (
                 <CheckBox
                     key={lang}

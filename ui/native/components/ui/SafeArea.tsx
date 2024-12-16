@@ -1,12 +1,13 @@
 import { ThemeSpacing } from '@rneui/base'
 import { useTheme } from '@rneui/themed'
-import { forwardRef, useMemo, useState } from 'react'
+import { forwardRef, useCallback, useMemo, useState } from 'react'
 import {
     ScrollView,
     StyleSheet,
     SafeAreaView as NativeSafeAreaView,
     ViewStyle,
     StyleProp,
+    LayoutChangeEvent,
 } from 'react-native'
 import { EdgeRecord, Edges, SafeAreaView } from 'react-native-safe-area-context'
 
@@ -38,7 +39,7 @@ export type EdgePreset =
     | 'none'
 
 interface SafeAreaContainerProps {
-    edges?: Edges | EdgePreset
+    edges: Edges | EdgePreset
     padding?: keyof ThemeSpacing
 }
 
@@ -76,20 +77,26 @@ export const SafeScrollArea = forwardRef<
             ? props.safeAreaContainerStyle
             : [props.safeAreaContainerStyle]
 
+        const onLayout = useCallback(
+            (e: LayoutChangeEvent) => {
+                if (typeof viewHeight === 'number') return
+
+                setViewHeight(e.nativeEvent.layout.height)
+            },
+            [viewHeight],
+        )
+
         return (
             <ScrollView
                 ref={ref}
                 style={[style.scrollContainer, iterableStyle]}
-                onLayout={e => {
-                    if (typeof viewHeight === 'number') return
-
-                    setViewHeight(e.nativeEvent.layout.height)
-                }}
+                onLayout={onLayout}
                 contentContainerStyle={[
                     viewHeight ? { minHeight: viewHeight } : null,
                     iterableContentContainerStyle,
                 ]}
                 overScrollMode="auto"
+                alwaysBounceVertical={false}
                 {...props}>
                 <SafeAreaContainer
                     // Try to span the screen height so content doesn't look squashed to the minimum
@@ -117,74 +124,66 @@ export const SafeAreaContainer = forwardRef<
     NativeSafeAreaView,
     Omit<React.ComponentProps<typeof SafeAreaView>, 'edges'> &
         SafeAreaContainerProps
->(({ style: styleProp, padding = 'lg', edges = 'notop', ...props }, ref) => {
+>(({ style: styleProp, padding = 'lg', edges, ...props }, ref) => {
     const { theme } = useTheme()
 
     const iterableStyle = Array.isArray(styleProp) ? styleProp : [styleProp]
 
-    let resolvedEdges: Edges
-
-    switch (edges) {
-        case 'horizontal':
-            resolvedEdges = {
-                left: 'additive',
-                right: 'additive',
-                bottom: 'off',
-                top: 'off',
-            }
-            break
-        case 'vertical':
-            resolvedEdges = {
-                left: 'off',
-                right: 'off',
-                bottom: 'maximum',
-                top: 'maximum',
-            }
-            break
-        case 'bottom':
-            resolvedEdges = {
-                left: 'off',
-                right: 'off',
-                bottom: 'maximum',
-                top: 'off',
-            }
-            break
-        case 'top':
-            resolvedEdges = {
-                left: 'off',
-                right: 'off',
-                bottom: 'off',
-                top: 'maximum',
-            }
-            break
-        case 'all':
-            resolvedEdges = {
-                left: 'additive',
-                right: 'additive',
-                bottom: 'maximum',
-                top: 'maximum',
-            }
-            break
-        case 'notop':
-            resolvedEdges = {
-                left: 'additive',
-                right: 'additive',
-                bottom: 'maximum',
-                top: 'off',
-            }
-            break
-        case 'none':
-            resolvedEdges = {
-                left: 'off',
-                right: 'off',
-                bottom: 'off',
-                top: 'off',
-            }
-            break
-        default:
-            resolvedEdges = edges
-            break
-    }
+    const resolvedEdges = useMemo<Edges>(() => {
+        switch (edges) {
+            case 'horizontal':
+                return {
+                    left: 'additive',
+                    right: 'additive',
+                    bottom: 'off',
+                    top: 'off',
+                }
+            case 'vertical':
+                return {
+                    left: 'off',
+                    right: 'off',
+                    bottom: 'maximum',
+                    top: 'maximum',
+                }
+            case 'bottom':
+                return {
+                    left: 'off',
+                    right: 'off',
+                    bottom: 'maximum',
+                    top: 'off',
+                }
+            case 'top':
+                return {
+                    left: 'off',
+                    right: 'off',
+                    bottom: 'off',
+                    top: 'maximum',
+                }
+            case 'all':
+                return {
+                    left: 'additive',
+                    right: 'additive',
+                    bottom: 'maximum',
+                    top: 'maximum',
+                }
+            case 'notop':
+                return {
+                    left: 'additive',
+                    right: 'additive',
+                    bottom: 'maximum',
+                    top: 'off',
+                }
+            case 'none':
+                return {
+                    left: 'off',
+                    right: 'off',
+                    bottom: 'off',
+                    top: 'off',
+                }
+            default:
+                return edges
+        }
+    }, [edges])
 
     const resolvedPadding = useMemo(() => {
         if (Array.isArray(resolvedEdges)) return null

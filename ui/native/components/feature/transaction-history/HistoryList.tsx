@@ -86,7 +86,7 @@ export function HistoryList<T extends { id: string }>({
     }
 
     return (
-        <SafeAreaContainer style={style.container} edges="vertical">
+        <SafeAreaContainer style={style.container} edges="bottom">
             <FlatList
                 data={rows}
                 renderItem={renderRow}
@@ -123,10 +123,10 @@ const styles = (theme: Theme) =>
         container: {
             flex: 1,
             width: '100%',
+            paddingBottom: 0,
         },
         content: {
             paddingTop: theme.spacing.xl,
-            paddingBottom: theme.spacing.lg,
         },
         emptyContainer: {
             flex: 1,

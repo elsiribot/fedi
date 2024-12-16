@@ -133,7 +133,7 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
                     type="clear"
                 />
             }>
-            <SafeAreaContainer style={style.container}>
+            <SafeAreaContainer style={style.container} edges="notop">
                 <View style={style.avatarContainer}>
                     <Avatar
                         id={matrixAuth?.userId || ''}

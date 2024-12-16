@@ -166,7 +166,7 @@ const BugReport: React.FC<Props> = ({ navigation }) => {
     ])
 
     return (
-        <SafeScrollArea>
+        <SafeScrollArea edges="notop">
             <View style={style.form}>
                 <Input
                     {...inputProps}

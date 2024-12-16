@@ -64,7 +64,7 @@ const ConfirmSendChatPayment: React.FC<Props> = ({ route, navigation }) => {
     const style = styles(theme)
 
     return (
-        <SafeAreaContainer style={style.container}>
+        <SafeAreaContainer style={style.container} edges="notop">
             <FederationWalletSelector />
             <SendAmounts
                 balanceDisplay={balanceDisplay}

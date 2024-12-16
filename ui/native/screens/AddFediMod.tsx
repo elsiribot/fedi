@@ -120,7 +120,7 @@ const AddFediMod: React.FC = () => {
     }
 
     return (
-        <SafeAreaContainer style={style.container}>
+        <SafeAreaContainer style={style.container} edges="notop">
             <View style={style.content}>
                 <Input
                     value={url}

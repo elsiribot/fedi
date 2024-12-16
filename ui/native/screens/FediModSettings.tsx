@@ -154,7 +154,7 @@ const FediModSettingsScreen: React.FC<Props> = ({ route }: Props) => {
     }, [mods, modsVisibility, handleToggleVisibility, type, federationId])
 
     return (
-        <SafeAreaContainer style={style.container}>
+        <SafeAreaContainer style={style.container} edges="notop">
             <ScrollView
                 style={style.scrollContainer}
                 contentContainerStyle={style.contentContainer}

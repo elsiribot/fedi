@@ -64,7 +64,7 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
     const style = styles(theme)
 
     return (
-        <SafeAreaContainer>
+        <SafeAreaContainer edges="notop">
             <View style={style.content}>
                 <FederationLogo federation={federation} size={72} />
                 <View style={style.textContainer}>

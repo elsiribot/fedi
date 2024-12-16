@@ -163,7 +163,7 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
 
     return (
         <KeyboardAwareWrapper>
-            <SafeAreaContainer style={style.container}>
+            <SafeAreaContainer style={style.container} edges="notop">
                 <View style={style.inputWrapper}>
                     <ChatSettingsAvatar room={room} />
                     <Text bold style={style.inputLabel}>

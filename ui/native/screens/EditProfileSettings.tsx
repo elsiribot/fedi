@@ -141,7 +141,7 @@ const EditProfileSettings: React.FC = () => {
         errorMessage !== null
 
     return (
-        <SafeAreaContainer style={style.container}>
+        <SafeAreaContainer style={style.container} edges="notop">
             <View>
                 <Pressable
                     onPress={handleAvatarPress}

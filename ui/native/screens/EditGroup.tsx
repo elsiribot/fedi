@@ -50,7 +50,7 @@ const EditGroup: React.FC<Props> = ({ navigation, route }: Props) => {
 
     return (
         <KeyboardAwareWrapper>
-            <SafeAreaContainer style={style.container}>
+            <SafeAreaContainer style={style.container} edges="notop">
                 <ChatSettingsAvatar room={room} />
                 <View style={style.inputWrapper}>
                     <Text caption style={style.inputLabel}>
