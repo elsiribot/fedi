@@ -21,3 +21,6 @@ bridge/fedi-android/plugins/bin/
 
 # FIXME don't merge this into master
 /ui/common/wasm/fedi_wasm*
+
+# make-android-release-creds.sh uses this
+/tmp
