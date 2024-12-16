@@ -1,5 +1,4 @@
 import { useNavigation } from '@react-navigation/native'
-import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { ListItem, Text, Theme, useTheme } from '@rneui/themed'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -15,7 +14,6 @@ import {
 } from '@fedi/common/utils/FederationUtils'
 
 import { useAppDispatch } from '../../../state/hooks'
-import { RootStackParamList } from '../../../types/navigation'
 import { useNativeExport } from '../../../utils/hooks/export'
 import { useNativeLeaveFederation } from '../../../utils/hooks/leaveFederation'
 import SvgImage from '../../ui/SvgImage'
@@ -32,13 +30,10 @@ export const CommunitySettings = ({ community }: CommunityMenuProps) => {
     const { t } = useTranslation()
     const style = styles(theme)
     const dispatch = useAppDispatch()
-    const navigation =
-        useNavigation<
-            NativeStackNavigationProp<RootStackParamList, 'Settings'>
-        >()
+    const navigation = useNavigation()
 
     const { exportTransactionsAsCsv, exportingFederationId } = useNativeExport()
-    const { confirmLeaveFederation } = useNativeLeaveFederation(navigation)
+    const { confirmLeaveFederation } = useNativeLeaveFederation()
 
     const [isExpanded, setIsExpanded] = useState(false)
 

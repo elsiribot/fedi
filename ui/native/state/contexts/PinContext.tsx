@@ -62,6 +62,8 @@ export function PinContextProvider({
             await Keychain.setGenericPassword(deviceId, parsedDigits.join(''), {
                 service: 'pin',
             })
+
+            setHasSetPin(true)
         },
         [deviceId],
     )
@@ -84,6 +86,8 @@ export function PinContextProvider({
                 }),
             )
         }
+
+        setHasSetPin(false)
     }, [deviceId, dispatch, protectedFeatures])
 
     useEffect(() => {

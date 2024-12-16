@@ -99,7 +99,6 @@ export type RootStackParamList = {
     Initializing: undefined
     JoinFederation: { invite?: string }
     LanguageSettings: undefined
-    MemberQrCode: undefined
     NewMessage: undefined
     NostrSettings: undefined
     NotificationsPermission:
