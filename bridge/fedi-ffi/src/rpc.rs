@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 use std::panic::PanicInfo;
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
@@ -53,7 +54,7 @@ use crate::matrix::{
     RpcRoomNotificationMode, RpcSyncIndicator, RpcTimelineItem, RpcUserId,
 };
 use crate::observable::{Observable, ObservableVec};
-use crate::storage::FiatFXInfo;
+use crate::storage::{DeviceIdentifier, FiatFXInfo};
 use crate::types::{
     federation_v2_to_rpc_federation, GuardianStatus, RpcBridgeStatus, RpcCommunity,
     RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederationMaybeLoading, RpcFederationPreview,
@@ -81,6 +82,7 @@ pub async fn fedimint_initialize_async(
     );
     let _g = TimeReporter::new("fedimint_initialize").level(Level::INFO);
 
+    let device_identifier = DeviceIdentifier::from_str(&device_identifier)?;
     let runtime = BridgeRuntime::new(
         storage,
         event_sink,
@@ -2029,6 +2031,7 @@ pub mod tests {
     ) -> anyhow::Result<Arc<BridgeFull>> {
         let event_sink = Arc::new(FakeEventSink::new());
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
+        let device_identifier = DeviceIdentifier::from_str(&device_identifier)?;
         let runtime = BridgeRuntime::new(
             storage,
             event_sink,
@@ -2039,7 +2042,9 @@ pub mod tests {
         .await
         .context("Failed to create runtime for bridge")?;
 
-        let bridge = BridgeFull::new(runtime.into(), device_identifier).await?;
+        let bridge = BridgeFull::new(runtime.into(), device_identifier)
+            .await
+            .map_err(|e| anyhow!(e.to_string()))?;
         Ok(bridge.into())
     }
 
@@ -4108,6 +4113,134 @@ pub mod tests {
 
         // Ensure balance is still the same
         assert!(rpc_federation.balance.0 == original_balance);
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_existing_device_identifier_v2_migration() -> anyhow::Result<()> {
+        if should_skip_test_using_stock_fedimintd() {
+            return Ok(());
+        }
+
+        // Test: existing device, successfully registered with ID v1
+        //         ownership transfer to ID v2 successful
+        //         recreate bridge with same ID, all good
+        //         recreate bridge with different ID, borked
+
+        // Create data directory and initialize bridge
+        let device_identifier_v1 = "bridge:test:d4d743a7-b343-48e3-a5f9-90d032af3e98".to_owned();
+        let fedi_api = Arc::new(MockFediApi::default());
+        let data_dir = create_data_dir();
+        let bridge = setup_bridge_custom_with_data_dir(
+            device_identifier_v1.clone(),
+            fedi_api.clone(),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+            data_dir.clone(),
+        )
+        .await?;
+
+        // Tweak AppState to simulate existing install with only v1 identifier.
+        // Transforms a freshly-created AppStateRaw that only has an
+        // encrypted_device_identifier_v2 to look like an existing AppStateRaw
+        // that only has an encrypted_device_identifier_v1.
+        let app_state_raw_clone = bridge
+            .runtime
+            .app_state
+            .with_read_lock(|state| state.clone())
+            .await;
+        let mut app_state_raw_json = serde_json::to_value(app_state_raw_clone)?;
+        let app_state_raw_object = app_state_raw_json
+            .as_object_mut()
+            .ok_or(anyhow!("App state must be valid JSON object"))?;
+        app_state_raw_object.insert(
+            "encrypted_device_identifier_v1".to_string(),
+            serde_json::Value::String(bridge.runtime.app_state.encrypted_device_identifier().await),
+        );
+        app_state_raw_object.insert(
+            "encrypted_device_identifier_v2".to_string(),
+            serde_json::Value::Null,
+        );
+
+        // Write tweaked AppStateRaw
+        let storage = bridge.runtime.storage.clone();
+        tokio::task::spawn_blocking(move || {
+            storage.write_file_sync(
+                Path::new(FEDI_FILE_PATH),
+                serde_json::to_vec(&app_state_raw_json)?,
+            )?;
+            Ok::<(), anyhow::Error>(())
+        })
+        .await??;
+        bridge
+            .runtime
+            .task_group
+            .clone()
+            .shutdown_join_all(Duration::from_secs(5))
+            .await?;
+        drop(bridge);
+
+        // Set up bridge again using same data_dir but now pass in v2 identifier
+        let device_identifier_v2 = "bridge_2:test:70c25d23-bfac-4aa2-81c3-d6f5e79ae724".to_string();
+        let bridge = setup_bridge_custom_with_data_dir(
+            device_identifier_v2.clone(),
+            fedi_api.clone(),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+            data_dir.clone(),
+        )
+        .await?;
+
+        // Verify ownership transfer to v2 identifier is successful (v1 must be None)
+        fedimint_core::task::timeout(Duration::from_secs(2), async {
+            loop {
+                #[allow(deprecated)]
+                if bridge
+                    .runtime
+                    .app_state
+                    .encrypted_device_identifier_v1()
+                    .await
+                    .is_none()
+                {
+                    break Ok::<_, anyhow::Error>(());
+                }
+            }
+        })
+        .await??;
+        bridge
+            .runtime
+            .task_group
+            .clone()
+            .shutdown_join_all(Duration::from_secs(5))
+            .await?;
+        drop(bridge);
+
+        // Recreate bridge with same v2 ID, full bridge init should be successful
+        let bridge = setup_bridge_custom_with_data_dir(
+            device_identifier_v2.clone(),
+            fedi_api.clone(),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+            data_dir.clone(),
+        )
+        .await?;
+        bridge
+            .runtime
+            .task_group
+            .clone()
+            .shutdown_join_all(Duration::from_secs(5))
+            .await?;
+        drop(bridge);
+
+        // Try to recreate bridge with different v2 ID, full bridge init should fail
+        let device_identifier_v2_2 =
+            "bridge_3:test:70c25d23-bfac-4aa2-81c3-d6f5e79ae724".to_string();
+        assert!(setup_bridge_custom_with_data_dir(
+            device_identifier_v2_2,
+            fedi_api.clone(),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+            data_dir.clone(),
+        )
+        .await
+        .is_err());
+
         Ok(())
     }
 }

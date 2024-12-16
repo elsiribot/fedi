@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -40,7 +41,7 @@ use crate::features::FeatureCatalog;
 use crate::federation::{federation_v2, Federations};
 use crate::fedi_fee::FediFeeHelper;
 use crate::matrix::Matrix;
-use crate::storage::{AppState, FiatFXInfo, ModuleFediFeeSchedule};
+use crate::storage::{AppState, DeviceIdentifier, FiatFXInfo, ModuleFediFeeSchedule};
 use crate::types::{
     RpcAmount, RpcBridgeStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcNostrPubkey,
     RpcNostrSecret, RpcRegisteredDevice,
@@ -70,11 +71,11 @@ impl BridgeRuntime {
         storage: Storage,
         event_sink: EventSink,
         fedi_api: Arc<dyn IFediApi>,
-        _device_identifier: String,
+        device_identifier: DeviceIdentifier,
         feature_catalog: Arc<FeatureCatalog>,
     ) -> anyhow::Result<Self> {
         let task_group = TaskGroup::new();
-        let app_state = Arc::new(AppState::load(storage.clone()).await?);
+        let app_state = Arc::new(AppState::load(storage.clone(), device_identifier).await?);
         let global_db = storage.federation_database_v2("global").await?;
 
         Ok(Self {
@@ -227,15 +228,42 @@ pub struct BridgeFull {
     pub device_registration_service: Arc<Mutex<DeviceRegistrationService>>,
 }
 
+#[derive(Debug)]
+pub enum BridgeFullInitError {
+    V2IdentifierMismatch {
+        existing: DeviceIdentifier,
+        new: DeviceIdentifier,
+    },
+    Other(anyhow::Error),
+}
+
+impl Display for BridgeFullInitError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let message =
+            match self {
+                Self::V2IdentifierMismatch { existing, new } => format!("Expected device ID {} but received {}. Likely app has been cloned on a new device.", existing, new),
+                Self::Other(e) => e.to_string(),
+            };
+        write!(f, "{message}")
+    }
+}
+
 impl BridgeFull {
     pub async fn new(
         runtime: Arc<BridgeRuntime>,
-        device_identifier: String,
-    ) -> anyhow::Result<Self> {
-        runtime
-            .app_state
-            .process_device_identifier(FromStr::from_str(&device_identifier)?)
-            .await?;
+        device_identifier: DeviceIdentifier,
+    ) -> anyhow::Result<Self, BridgeFullInitError> {
+        // If the provided v2 identifier is not the same as the existing v2 identifier,
+        // then under the guarantees of the v2 identifier, the user's phone
+        // storage has been cloned (as part of a new device set up process,
+        // perhaps). In this case, we notify the caller with a special type of error.
+        let existing_identifier_v2 = runtime.app_state.device_identifier().await;
+        if existing_identifier_v2 != device_identifier {
+            return Err(BridgeFullInitError::V2IdentifierMismatch {
+                existing: existing_identifier_v2,
+                new: device_identifier,
+            });
+        }
 
         let fedi_fee_helper = Arc::new(FediFeeHelper::new(runtime.clone()));
         let device_registration_service =
@@ -333,20 +361,11 @@ impl BridgeFull {
         index: u8,
         force_overwrite: bool,
     ) -> anyhow::Result<Option<RpcFederation>> {
-        let seed = self.runtime.app_state.root_mnemonic().await;
-        let enc_identifier = self
-            .runtime
-            .app_state
-            .encrypted_device_identifier()
-            .await
-            .ok_or(anyhow!("device identifier must be present"))?;
         let register_device_fut = device_registration::register_device_with_backoff(
             self.runtime.app_state.clone(),
             self.runtime.fedi_api.clone(),
             self.runtime.event_sink.clone(),
-            seed,
             index,
-            enc_identifier,
             force_overwrite,
         );
         fedimint_core::task::timeout(Duration::from_secs(120), register_device_fut)
@@ -689,13 +708,16 @@ impl BridgeFull {
 pub enum Bridge {
     RuntimeOnly {
         runtime: Arc<BridgeRuntime>,
-        error: anyhow::Error,
+        error: BridgeFullInitError,
     },
     Full(BridgeFull),
 }
 
 impl Bridge {
-    pub async fn new(runtime: Arc<BridgeRuntime>, device_identifier: String) -> Arc<Self> {
+    pub async fn new(
+        runtime: Arc<BridgeRuntime>,
+        device_identifier: DeviceIdentifier,
+    ) -> Arc<Self> {
         match BridgeFull::new(runtime.clone(), device_identifier).await {
             Ok(full) => Self::Full(full),
             Err(error) => Self::RuntimeOnly { runtime, error },
@@ -731,9 +753,14 @@ impl Bridge {
             .await;
         let device_index_assignment_status =
             self.runtime().device_index_assignment_status().await?;
+        let bridge_full_init_error = match self {
+            Bridge::RuntimeOnly { error, .. } => Some(error.into()),
+            Bridge::Full(_) => None,
+        };
         Ok(RpcBridgeStatus {
             matrix_setup,
             device_index_assignment_status,
+            bridge_full_init_error,
         })
     }
 }

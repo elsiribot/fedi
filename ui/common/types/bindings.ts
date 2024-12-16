@@ -169,9 +169,14 @@ export interface RpcBitcoinDetails {
   address: string;
 }
 
+export type RpcBridgeFullInitError =
+  | { type: "v2IdentifierMismatch"; existing: string; new: string }
+  | ({ type: "other" } & string);
+
 export interface RpcBridgeStatus {
   matrixSetup: boolean;
   deviceIndexAssignmentStatus: RpcDeviceIndexAssignmentStatus;
+  bridgeFullInitError: RpcBridgeFullInitError | null;
 }
 
 export interface RpcCommunity {
@@ -355,6 +360,7 @@ export interface RpcMethods {
     {
       matrixSetup: boolean;
       deviceIndexAssignmentStatus: RpcDeviceIndexAssignmentStatus;
+      bridgeFullInitError: RpcBridgeFullInitError | null;
     },
   ];
   onAppForeground: [Record<string, never>, null];
