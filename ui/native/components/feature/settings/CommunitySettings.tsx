@@ -89,6 +89,7 @@ export const CommunitySettings = ({ community }: CommunityMenuProps) => {
                         onPress={() => {
                             navigation.navigate('FederationModSettings', {
                                 type: 'community',
+                                federationId: community.id,
                             })
                         }}
                     />
