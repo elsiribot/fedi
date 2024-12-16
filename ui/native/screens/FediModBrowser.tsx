@@ -9,7 +9,6 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
-import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { WebView } from 'react-native-webview'
 import { OnShouldStartLoadWithRequest } from 'react-native-webview/lib/WebViewTypes'
 import {
@@ -64,6 +63,7 @@ import { MakeInvoiceOverlay } from '../components/feature/fedimods/MakeInvoiceOv
 import { NostrSignOverlay } from '../components/feature/fedimods/NostrSignOverlay'
 import { SendPaymentOverlay } from '../components/feature/fedimods/SendPaymentOverlay'
 import { RecoveryInProgressOverlay } from '../components/feature/recovery/RecoveryInProgressOverlay'
+import { SafeAreaContainer } from '../components/ui/SafeArea'
 import {
     useOmniLinkContext,
     useOmniLinkInterceptor,
@@ -102,7 +102,6 @@ type FediModResolver<T> = (value: T | PromiseLike<T>) => void
 
 const FediModBrowser: React.FC<Props> = ({ route }) => {
     const { fediMod } = route.params
-    const insets = useSafeAreaInsets()
     const { t } = useTranslation()
     const activeFederation = useAppSelector(selectActiveFederation)
     const dispatch = useAppDispatch()
@@ -463,8 +462,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         uri = `${uri}${uri.includes('?') ? '&' : '?'}webln=1`
     }
 
-    const style = styles(insets)
-
     // Handle back button press on Android
     useEffect(() => {
         const backAction = () => {
@@ -482,7 +479,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     }, [navigation, t])
 
     return (
-        <View style={style.container}>
+        <SafeAreaContainer edges="bottom">
             <FediModBrowserHeader webViewRef={webview} fediMod={fediMod} />
             <WebView
                 ref={webview}
@@ -537,26 +534,21 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 open={confirmLeaveOpen}
                 onOpenChange={setConfirmLeaveOpen}
             />
-        </View>
+        </SafeAreaContainer>
     )
 }
 
-const styles = (insets: EdgeInsets) =>
-    StyleSheet.create({
-        container: {
-            flex: 1,
-            paddingBottom: insets.bottom,
-        },
-        loadingOverlay: {
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: 'rgba(0, 0, 0, 0.4)',
-        },
-    })
+const style = StyleSheet.create({
+    loadingOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    },
+})
 
 export default FediModBrowser

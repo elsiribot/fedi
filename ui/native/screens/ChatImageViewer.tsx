@@ -13,11 +13,11 @@ import {
 } from 'react-native'
 import { exists } from 'react-native-fs'
 import { PermissionStatus, RESULTS } from 'react-native-permissions'
-import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
 
+import { SafeAreaContainer } from '../components/ui/SafeArea'
 import SvgImage from '../components/ui/SvgImage'
 import type { RootStackParamList } from '../types/navigation'
 import { useDownloadPermission } from '../utils/hooks'
@@ -30,7 +30,6 @@ export type Props = NativeStackScreenProps<
 const log = makeLog('ChatImageViewer')
 
 const ChatImageViewer: React.FC<Props> = ({ route, navigation }: Props) => {
-    const insets = useSafeAreaInsets()
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { uri } = route.params
@@ -71,10 +70,10 @@ const ChatImageViewer: React.FC<Props> = ({ route, navigation }: Props) => {
         }
     }, [uri, downloadPermission, requestDownloadPermission, t, toast])
 
-    const style = styles(theme, insets)
+    const style = styles(theme)
 
     return (
-        <View style={style.imageViewerContainer}>
+        <SafeAreaContainer style={style.imageViewerContainer} edges="vertical">
             <View style={style.imageViewerHeader}>
                 <Pressable hitSlop={10} onPress={() => navigation.goBack()}>
                     <SvgImage name="Close" color={theme.colors.secondary} />
@@ -91,17 +90,13 @@ const ChatImageViewer: React.FC<Props> = ({ route, navigation }: Props) => {
                 </Pressable>
             </View>
             <ImageZoom uri={uri} style={style.imageZoomContainer} />
-        </View>
+        </SafeAreaContainer>
     )
 }
 
-const styles = (theme: Theme, insets: EdgeInsets) =>
+const styles = (theme: Theme) =>
     StyleSheet.create({
         imageViewerContainer: {
-            paddingTop: insets.top,
-            paddingBottom: insets.bottom,
-            display: 'flex',
-            flex: 1,
             backgroundColor: theme.colors.night,
         },
         imageZoomContainer: {
