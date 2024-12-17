@@ -1,5 +1,3 @@
-cargo-features = ["trim-paths"]
-
 [workspace]
 members = [
     "fedimintd",
@@ -39,7 +37,6 @@ default-members = [
 resolver = "2"
 
 [profile.release]
-trim-paths = "all"
 lto = "fat"
 codegen-units = 1
 # we need debug symbols for debugging panics and such, at least on the backend
@@ -141,7 +138,6 @@ ln-gateway = { git = "https://github.com/fedibtc/fedimint", tag = "v0.4.4-fed1" 
 
 [profile.dev]
 debug = "line-tables-only"
-trim-paths = "object"
 
 # in dev mode optimize crates that are perf-critical (usually just crypto crates)
 [profile.dev.package]
