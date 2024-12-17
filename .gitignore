@@ -24,3 +24,4 @@ bridge/fedi-android/plugins/bin/
 
 # make-android-release-creds.sh uses this
 /tmp
+/ui/native/android/keystore.properties
