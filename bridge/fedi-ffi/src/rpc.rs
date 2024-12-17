@@ -1651,7 +1651,7 @@ pub mod tests {
     use std::path::Path;
     use std::str::{self, FromStr};
     use std::sync::{Once, RwLock};
-    use std::time::{Duration, SystemTime, UNIX_EPOCH};
+    use std::time::{Duration, SystemTime};
 
     use anyhow::{anyhow, bail};
     use bech32::{self, Bech32m};
@@ -1888,14 +1888,15 @@ pub mod tests {
         Ok(ecash_string)
     }
 
-    async fn cli_generate_invoice(label: &str, amount: &Amount) -> anyhow::Result<Bolt11Invoice> {
-        let invoice_string = cmd!(ClnLightningCli, "invoice", amount.msats, label, label)
+    async fn cli_generate_invoice(amount: &Amount) -> anyhow::Result<(Bolt11Invoice, String)> {
+        let label = format!("bridge-tests-{}", rand::random::<u128>());
+        let invoice_string = cmd!(ClnLightningCli, "invoice", amount.msats, &label, &label)
             .out_json()
             .await?["bolt11"]
             .as_str()
             .map(|s| s.to_owned())
             .unwrap();
-        Ok(Bolt11Invoice::from_str(&invoice_string)?)
+        Ok((Bolt11Invoice::from_str(&invoice_string)?, label))
     }
 
     async fn cli_receive_ecash(ecash: String) -> anyhow::Result<()> {
@@ -2082,12 +2083,9 @@ pub mod tests {
     }
 
     macro_rules! spawn_and_attach_name {
-        ($tests_set:expr, $test_name:ident) => {
-            $tests_set.spawn(async move {
-                // split into separate statement to get rust analyzer completions
-                let future = $test_name().await;
-                (stringify!($test_name), future)
-            })
+        ($tests_set:expr, $tests_names:expr, $test_name:ident) => {
+            let id = $tests_set.spawn($test_name()).id();
+            $tests_names.insert(id, stringify!($test_name).to_owned());
         };
     }
 
@@ -2095,38 +2093,59 @@ pub mod tests {
     async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
         let _dev_fed = dev_fed().await?;
         let mut tests_set = JoinSet::new();
-        spawn_and_attach_name!(tests_set, test_join_and_leave_and_join);
-        spawn_and_attach_name!(tests_set, test_join_concurrent);
-        spawn_and_attach_name!(tests_set, test_lightning_send_and_receive);
-        spawn_and_attach_name!(tests_set, test_lightning_send_and_receive);
-        spawn_and_attach_name!(tests_set, test_ecash);
-        spawn_and_attach_name!(tests_set, test_ecash_overissue);
-        spawn_and_attach_name!(tests_set, test_on_chain);
-        spawn_and_attach_name!(tests_set, test_ecash_cancel);
-        spawn_and_attach_name!(tests_set, test_backup_and_recovery);
-        spawn_and_attach_name!(tests_set, test_backup_and_recovery_from_scratch);
-        spawn_and_attach_name!(tests_set, test_validate_ecash);
-        spawn_and_attach_name!(tests_set, test_social_backup_and_recovery);
-        spawn_and_attach_name!(tests_set, test_stability_pool);
-        spawn_and_attach_name!(tests_set, test_lnurl_sign_message);
-        spawn_and_attach_name!(tests_set, test_federation_preview);
-        spawn_and_attach_name!(tests_set, test_join_fails_post_recovery_index_unassigned);
-        spawn_and_attach_name!(tests_set, test_transfer_device_registration_post_recovery);
-        spawn_and_attach_name!(tests_set, test_new_device_registration_post_recovery);
-        spawn_and_attach_name!(tests_set, test_fee_remittance_on_startup);
-        spawn_and_attach_name!(tests_set, test_reused_ecash_proofs);
-        spawn_and_attach_name!(tests_set, test_fee_remittance_post_successful_tx);
+        let mut tests_names: HashMap<tokio::task::Id, String> = HashMap::new();
+        spawn_and_attach_name!(tests_set, tests_names, test_join_and_leave_and_join);
+        spawn_and_attach_name!(tests_set, tests_names, test_join_concurrent);
+        spawn_and_attach_name!(tests_set, tests_names, test_lightning_send_and_receive);
+        spawn_and_attach_name!(tests_set, tests_names, test_lightning_send_and_receive);
+        spawn_and_attach_name!(tests_set, tests_names, test_ecash);
+        spawn_and_attach_name!(tests_set, tests_names, test_ecash_overissue);
+        spawn_and_attach_name!(tests_set, tests_names, test_on_chain);
+        spawn_and_attach_name!(tests_set, tests_names, test_ecash_cancel);
+        spawn_and_attach_name!(tests_set, tests_names, test_backup_and_recovery);
+        spawn_and_attach_name!(
+            tests_set,
+            tests_names,
+            test_backup_and_recovery_from_scratch
+        );
+        spawn_and_attach_name!(tests_set, tests_names, test_validate_ecash);
+        spawn_and_attach_name!(tests_set, tests_names, test_social_backup_and_recovery);
+        spawn_and_attach_name!(tests_set, tests_names, test_stability_pool);
+        spawn_and_attach_name!(tests_set, tests_names, test_lnurl_sign_message);
+        spawn_and_attach_name!(tests_set, tests_names, test_federation_preview);
+        spawn_and_attach_name!(
+            tests_set,
+            tests_names,
+            test_join_fails_post_recovery_index_unassigned
+        );
+        spawn_and_attach_name!(
+            tests_set,
+            tests_names,
+            test_transfer_device_registration_post_recovery
+        );
+        spawn_and_attach_name!(
+            tests_set,
+            tests_names,
+            test_new_device_registration_post_recovery
+        );
+        spawn_and_attach_name!(tests_set, tests_names, test_fee_remittance_on_startup);
+        spawn_and_attach_name!(tests_set, tests_names, test_reused_ecash_proofs);
+        spawn_and_attach_name!(
+            tests_set,
+            tests_names,
+            test_fee_remittance_post_successful_tx
+        );
 
-        while let Some(res) = tests_set.join_next().await {
+        while let Some(res) = tests_set.join_next_with_id().await {
             match res {
                 Err(e) => {
-                    bail!("test task failed: {:?}", e);
+                    bail!("test {} failed: {:?}", &tests_names[&e.id()], e);
                 }
-                Ok((name, Err(e))) => {
-                    bail!("test {} failed: {:?}", name, e);
+                Ok((id, Err(e))) => {
+                    bail!("test {} failed: {:?}", &tests_names[&id], e);
                 }
-                Ok((name, Ok(_))) => {
-                    info!("test {} OK", name);
+                Ok((id, Ok(_))) => {
+                    info!("test {} OK", &tests_names[&id]);
                 }
             }
         }
@@ -2458,16 +2477,9 @@ pub mod tests {
 
         assert_eq!(receive_amount - fedi_fee, federation.get_balance().await);
 
-        let label = fedimint_core::time::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_millis()
-            .to_string();
-        let label = format!("foo-{label}");
-
         // get invoice
         let send_amount = Amount::from_sats(50);
-        let invoice = cli_generate_invoice(&label, &send_amount).await?;
+        let (invoice, label) = cli_generate_invoice(&send_amount).await?;
         let invoice_string = invoice.to_string();
 
         // check balance
@@ -3831,8 +3843,7 @@ pub mod tests {
         drop(bridge);
 
         // Mock fee remittance endpoint
-        let label = "fedi_fee_app_startup";
-        let fedi_fee_invoice = cli_generate_invoice(label, &Amount::from_msats(210_000)).await?;
+        let (fedi_fee_invoice, label) = cli_generate_invoice(&Amount::from_msats(210_000)).await?;
         let mut mock_fedi_api = MockFediApi::default();
         mock_fedi_api.set_fedi_fee_invoice(fedi_fee_invoice.clone());
 
@@ -3846,7 +3857,7 @@ pub mod tests {
         .await?;
 
         // Wait for fedi fee to be remitted (timeout of 5s)
-        fedimint_core::task::timeout(Duration::from_secs(5), cln_wait_invoice(label)).await??;
+        fedimint_core::task::timeout(Duration::from_secs(5), cln_wait_invoice(&label)).await??;
 
         // Ensure outstanding fee has been cleared
         let federation = new_bridge
@@ -3864,8 +3875,7 @@ pub mod tests {
         }
 
         // Mock fee remittance endpoint
-        let label = "fedi_fee_post_tx";
-        let fedi_fee_invoice = cli_generate_invoice(label, &Amount::from_msats(210_000)).await?;
+        let (fedi_fee_invoice, label) = cli_generate_invoice(&Amount::from_msats(210_000)).await?;
         let mut mock_fedi_api = MockFediApi::default();
         mock_fedi_api.set_fedi_fee_invoice(fedi_fee_invoice.clone());
 
@@ -3915,7 +3925,7 @@ pub mod tests {
         }
 
         // Wait for fedi fee to be remitted
-        fedimint_core::task::timeout(Duration::from_secs(30), cln_wait_invoice(label)).await??;
+        fedimint_core::task::timeout(Duration::from_secs(30), cln_wait_invoice(&label)).await??;
 
         // Ensure outstanding fee has been cleared
         assert_eq!(Amount::ZERO, federation.get_pending_fedi_fees().await);
