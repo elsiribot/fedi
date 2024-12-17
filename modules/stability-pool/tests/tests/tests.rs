@@ -30,6 +30,7 @@ async fn starter_test() -> anyhow::Result<()> {
         fed,
         gw_cln,
         gw_lnd,
+        gw_ldk,
         electrs,
         esplora,
     } = dev_fed(&process_mgr).await?;

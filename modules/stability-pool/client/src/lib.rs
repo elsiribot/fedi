@@ -22,12 +22,13 @@ use fedimint_client::sm::util::MapStateTransitions;
 use fedimint_client::sm::{
     ClientSMDatabaseTransaction, Context, DynState, ModuleNotifier, State, StateTransition,
 };
-use fedimint_client::transaction::{ClientInput, ClientOutput, TransactionBuilder};
-use fedimint_client::{sm_enum_variant_translation, DynGlobalClientContext};
-use fedimint_core::core::{IntoDynInstance, ModuleInstanceId, OperationId};
-use fedimint_core::db::{
-    Database, DatabaseTransaction, DatabaseVersion, IDatabaseTransactionOpsCoreTyped,
+use fedimint_client::transaction::{
+    ClientInput, ClientInputBundle, ClientInputSM, ClientOutput, ClientOutputBundle,
+    ClientOutputSM, TransactionBuilder,
 };
+use fedimint_client::{sm_enum_variant_translation, DynGlobalClientContext};
+use fedimint_core::core::{IntoDynInstance, ModuleInstanceId, ModuleKind, OperationId};
+use fedimint_core::db::{Database, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::module::{
     ApiRequestErased, ApiVersion, CommonModuleInit, ModuleInit, MultiApiVersion,
@@ -35,9 +36,10 @@ use fedimint_core::module::{
 use fedimint_core::task::timeout;
 use fedimint_core::{apply, async_trait_maybe_send, Amount, OutPoint, TransactionId};
 use futures::{Stream, StreamExt};
-use secp256k1_zkp::{KeyPair, Secp256k1};
+use secp256k1::{Keypair, Secp256k1};
 use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
+use stability_pool_common::KIND;
 use tokio::sync::Mutex;
 use tracing::{error, info};
 
@@ -48,7 +50,6 @@ pub struct StabilityPoolClientInit;
 
 impl ModuleInit for StabilityPoolClientInit {
     type Common = StabilityPoolCommonGen;
-    const DATABASE_VERSION: DatabaseVersion = DatabaseVersion(0);
 
     // No client-side database for stability pool
     async fn dump_database(
@@ -88,7 +89,7 @@ impl ClientModuleInit for StabilityPoolClientInit {
 #[derive(Debug, Clone)]
 pub struct StabilityPoolClientModule {
     pub cfg: StabilityPoolClientConfig,
-    client_key_pair: KeyPair,
+    client_key_pair: Keypair,
     module_api: DynModuleApi,
     client_ctx: ClientContext<Self>,
     notifier: ModuleNotifier<StabilityPoolStateMachines>,
@@ -102,7 +103,9 @@ pub struct StabilityPoolClientContext {
     module: StabilityPoolClientModule,
 }
 
-impl Context for StabilityPoolClientContext {}
+impl Context for StabilityPoolClientContext {
+    const KIND: Option<ModuleKind> = Some(KIND);
+}
 
 #[apply(async_trait_maybe_send!)]
 impl ClientModule for StabilityPoolClientModule {
@@ -118,12 +121,20 @@ impl ClientModule for StabilityPoolClientModule {
         }
     }
 
-    fn input_fee(&self, _input: &StabilityPoolInput) -> Option<fedimint_core::Amount> {
+    fn input_fee(
+        &self,
+        _amount: Amount,
+        _input: &StabilityPoolInput,
+    ) -> Option<fedimint_core::Amount> {
         // TODO shaurya figure out fees
         Some(Amount::ZERO)
     }
 
-    fn output_fee(&self, _output: &StabilityPoolOutput) -> Option<fedimint_core::Amount> {
+    fn output_fee(
+        &self,
+        _amount: Amount,
+        _output: &StabilityPoolOutput,
+    ) -> Option<fedimint_core::Amount> {
         // TODO shaurya figure out fees
         Some(Amount::ZERO)
     }
@@ -654,7 +665,7 @@ impl StabilityPoolClientModule {
 
         let client_ctx = self.client_ctx.clone();
         Ok(
-            operation.outcome_or_updates(&self.client_ctx.global_db(), operation_id, move || {
+            self.client_ctx.outcome_or_updates(&operation, operation_id, move || {
                 stream! {
                     yield StabilityPoolDepositOperationState::Initiated;
 
@@ -700,11 +711,13 @@ impl StabilityPoolClientModule {
                     unlocked_amount,
                 ),
                 keys: vec![self.client_key_pair],
-                state_machines: Arc::new(move |transaction_id, _| {
+            };
+            let sm = ClientInputSM {
+                state_machines: Arc::new(move |out_point_range| {
                     vec![StabilityPoolStateMachines::WithdrawUnlocked(
                         StabilityPoolWithdrawUnlockedStateMachine {
                             operation_id,
-                            transaction_id,
+                            transaction_id: out_point_range.txid(),
                             state: StabilityPoolWithdrawUnlockedState::Created,
                             maybe_cancel_locked_bps: match locked_bps {
                                 0 => None,
@@ -714,7 +727,10 @@ impl StabilityPoolClientModule {
                     )]
                 }),
             };
-            let tx = TransactionBuilder::new().with_input(self.client_ctx.make_client_input(input));
+            let tx = TransactionBuilder::new().with_inputs(
+                self.client_ctx
+                    .make_client_inputs(ClientInputBundle::new(vec![input], vec![sm])),
+            );
             let estimated_withdrawal_cents =
                 estimated_withdrawal_cents(self, unlocked_amount, locked_bps).await?;
             let withdrawal_meta_gen = |txid, outpoints| StabilityPoolMeta::Withdrawal {
@@ -753,7 +769,7 @@ impl StabilityPoolClientModule {
         let module = self.clone();
 
         Ok(
-            operation.outcome_or_updates(&self.client_ctx.global_db(), operation_id, move || {
+            self.client_ctx.outcome_or_updates(&operation, operation_id, move || {
                 stream! {
                     match operation_meta {
                         StabilityPoolMeta::Deposit { .. } => {
@@ -803,7 +819,7 @@ impl StabilityPoolClientModule {
                                         operation_id,
                                         withdraw_unlocked_outpoints,
                                     ).await {
-                                        Ok(amount) => yield StabilityPoolWithdrawalOperationState::Success(amount),
+                                        Ok(()) => yield StabilityPoolWithdrawalOperationState::Success(withdraw_unlocked_amount),
                                         Err(e) => yield StabilityPoolWithdrawalOperationState::PrimaryOutputError(e.to_string()),
                                     }
                                 },
@@ -893,7 +909,7 @@ impl StabilityPoolClientModule {
                                                 operation_id,
                                                 withdraw_unlocked_outpoints,
                                             ).await {
-                                                Ok(amount) => yield StabilityPoolWithdrawalOperationState::Success(unlocked_amount + amount),
+                                                Ok(()) => yield StabilityPoolWithdrawalOperationState::Success(unlocked_amount + withdraw_unlocked_amount),
                                                 Err(e) => yield StabilityPoolWithdrawalOperationState::PrimaryOutputError(e.to_string()),
                                             }
                                         },
@@ -910,7 +926,7 @@ impl StabilityPoolClientModule {
                                         operation_id,
                                         outpoints,
                                     ).await {
-                                        Ok(amount) => yield StabilityPoolWithdrawalOperationState::Success(amount),
+                                        Ok(()) => yield StabilityPoolWithdrawalOperationState::Success(unlocked_amount),
                                         Err(e) => yield StabilityPoolWithdrawalOperationState::PrimaryOutputError(e.to_string()),
                                     }
                                 },
@@ -952,12 +968,16 @@ async fn submit_tx_with_intended_action(
 
     let (transaction_id, _) = match intended_action {
         IntendedAction::Seek(Seek(amount)) | IntendedAction::Provide(Provide { amount, .. }) => {
-            let output = ClientOutput {
-                amount,
-                output: stability_pool_output,
-                state_machines: Arc::new(move |_, _| Vec::<StabilityPoolStateMachines>::new()),
-            };
-            let tx = TransactionBuilder::new().with_output(client_ctx.make_client_output(output));
+            let output = ClientOutputBundle::new(
+                vec![ClientOutput {
+                    amount,
+                    output: stability_pool_output,
+                }],
+                vec![ClientOutputSM {
+                    state_machines: Arc::new(move |_| Vec::<StabilityPoolStateMachines>::new()),
+                }],
+            );
+            let tx = TransactionBuilder::new().with_outputs(client_ctx.make_client_outputs(output));
             let deposit_meta_gen = |txid, change_outpoints| StabilityPoolMeta::Deposit {
                 txid,
                 change_outpoints,
@@ -973,20 +993,24 @@ async fn submit_tx_with_intended_action(
                 .await?
         }
         IntendedAction::CancelRenewal(CancelRenewal { bps }) => {
-            let output = ClientOutput {
-                amount: Amount::ZERO,
-                output: stability_pool_output,
-                state_machines: Arc::new(move |transaction_id, _| {
-                    vec![StabilityPoolStateMachines::CancelLocked(
-                        StabilityPoolCancelLockedStateMachine {
-                            operation_id,
-                            transaction_id,
-                            state: StabilityPoolCancelLockedState::Created,
-                        },
-                    )]
-                }),
-            };
-            let tx = TransactionBuilder::new().with_output(client_ctx.make_client_output(output));
+            let output = ClientOutputBundle::new(
+                vec![ClientOutput {
+                    amount: Amount::ZERO,
+                    output: stability_pool_output,
+                }],
+                vec![ClientOutputSM {
+                    state_machines: Arc::new(move |out_point_range| {
+                        vec![StabilityPoolStateMachines::CancelLocked(
+                            StabilityPoolCancelLockedStateMachine {
+                                operation_id,
+                                transaction_id: out_point_range.txid(),
+                                state: StabilityPoolCancelLockedState::Created,
+                            },
+                        )]
+                    }),
+                }],
+            );
+            let tx = TransactionBuilder::new().with_outputs(client_ctx.make_client_outputs(output));
             let estimated_withdrawal_cents =
                 estimated_withdrawal_cents(module, Amount::ZERO, bps).await?;
             let cancellation_meta_gen = |txid, _| StabilityPoolMeta::CancelRenewal {
@@ -1078,10 +1102,18 @@ async fn claim_idle_balance_input(
             idle_balance,
         ),
         keys: vec![context.module.client_key_pair],
-        state_machines: Arc::new(move |_, _| Vec::<StabilityPoolStateMachines>::new()),
+    };
+    let state_machines = ClientInputSM {
+        state_machines: Arc::new(move |_| Vec::<StabilityPoolStateMachines>::new()),
     };
 
-    let (tx_id, outpoints) = global_context.claim_input(dbtx, input).await;
+    let (tx_id, outpoints) = global_context
+        .claim_inputs(
+            dbtx,
+            ClientInputBundle::new(vec![input], vec![state_machines]),
+        )
+        .await
+        .expect("Cannot claim input, additional funding needed");
 
     StabilityPoolCancelLockedStateMachine {
         operation_id: old_state.operation_id,
@@ -1105,22 +1137,26 @@ async fn maybe_fund_cancellation_output(
         transaction_id: old_state.transaction_id,
         state: match old_state.maybe_cancel_locked_bps {
             Some(bps) => {
-                let output = ClientOutput {
-                    amount: Amount::ZERO,
-                    output: StabilityPoolOutput::new_v0(
-                        context.module.client_key_pair.public_key(),
-                        IntendedAction::CancelRenewal(CancelRenewal { bps }),
-                    ),
-                    state_machines: Arc::new(move |transaction_id, _| {
-                        vec![StabilityPoolStateMachines::CancelLocked(
-                            StabilityPoolCancelLockedStateMachine {
-                                operation_id: old_state.operation_id,
-                                transaction_id,
-                                state: StabilityPoolCancelLockedState::Created,
-                            },
-                        )]
-                    }),
-                };
+                let output = ClientOutputBundle::new(
+                    vec![ClientOutput {
+                        amount: Amount::ZERO,
+                        output: StabilityPoolOutput::new_v0(
+                            context.module.client_key_pair.public_key(),
+                            IntendedAction::CancelRenewal(CancelRenewal { bps }),
+                        ),
+                    }],
+                    vec![ClientOutputSM {
+                        state_machines: Arc::new(move |out_point_range| {
+                            vec![StabilityPoolStateMachines::CancelLocked(
+                                StabilityPoolCancelLockedStateMachine {
+                                    operation_id: old_state.operation_id,
+                                    transaction_id: out_point_range.txid(),
+                                    state: StabilityPoolCancelLockedState::Created,
+                                },
+                            )]
+                        }),
+                    }],
+                );
 
                 match global_context.fund_output(dbtx, output).await {
                     Ok((tx_id, _)) => StabilityPoolWithdrawUnlockedState::Accepted {

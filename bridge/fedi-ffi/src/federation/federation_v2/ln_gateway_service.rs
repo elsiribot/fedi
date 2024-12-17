@@ -4,7 +4,6 @@ use std::time::Duration;
 
 use bitcoin::secp256k1::{self, PublicKey};
 use fedimint_client::Client;
-use fedimint_core::config::META_VETTED_GATEWAYS_KEY;
 use fedimint_core::db::{AutocommitError, IDatabaseTransactionOpsCoreTyped};
 use fedimint_ln_common::{LightningGateway, LightningGatewayAnnouncement};
 use rand::seq::SliceRandom;
@@ -14,6 +13,8 @@ use tracing::warn;
 use super::client::ClientExt;
 use super::db::LastActiveGatewayKey;
 use super::FederationV2;
+
+pub const META_VETTED_GATEWAYS_KEY: &str = "vetted_gateways";
 
 #[derive(Debug, Clone)]
 pub struct LnGatewayService {}

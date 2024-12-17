@@ -4,7 +4,7 @@ use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiError, ApiVersion};
 use fedimint_core::Amount;
 use futures::{stream, StreamExt};
-use secp256k1_zkp::PublicKey;
+use secp256k1::PublicKey;
 use stability_pool_common::{AccountInfo, LiquidityStats};
 
 use crate::db::{
