@@ -93,7 +93,6 @@ const AddFediMod: React.FC = () => {
                     populateFieldsWithMetadata(validUrl)
                 } catch {
                     setIsValidUrl(false)
-                    setUrl('') //to allow the debounce to retrigger
                 }
             }
         },

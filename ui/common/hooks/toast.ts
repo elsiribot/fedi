@@ -14,20 +14,9 @@ export function useToast() {
     const dispatch = useCommonDispatch()
 
     const show = useCallback(
-        (toast: string | ToastArgs, timeout?: number) => {
+        (toast: string | ToastArgs) => {
             const args = typeof toast === 'string' ? { content: toast } : toast
-
-            // Ensure a key is always set
-            args.key = args.key || Math.random().toString(36).substring(2, 15)
-
             dispatch(reduxShowToast(args))
-
-            // Auto-close if timeout is provided
-            if (timeout && timeout > 0) {
-                setTimeout(() => {
-                    dispatch(reduxCloseToast(args.key))
-                }, timeout)
-            }
         },
         [dispatch],
     )

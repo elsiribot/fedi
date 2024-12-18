@@ -1,24 +1,22 @@
 import Clipboard from '@react-native-clipboard/clipboard'
-import NetInfo, { NetInfoState } from '@react-native-community/netinfo'
 import { Theme, useTheme } from '@rneui/themed'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View, ActivityIndicator, Pressable } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectActiveFederationId } from '@fedi/common/redux'
-import {
-    AnyParsedData,
-    ParsedError,
-    ParsedUnknownData,
-    ParserDataType,
-} from '@fedi/common/types'
 import { parseUserInput } from '@fedi/common/utils/parser'
-import { SvgImageName } from '@fedi/native/components/ui/SvgImage'
 
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
+import {
+    AnyParsedData,
+    ParsedUnknownData,
+    ParserDataType,
+} from '../../../types'
+import { SvgImageName } from '../../ui/SvgImage'
 import { OmniConfirmation } from './OmniConfirmation'
 import { OmniMemberSearch } from './OmniMemberSearch'
 import { OmniQrScanner } from './OmniQrScanner'
@@ -51,18 +49,12 @@ export function OmniInput<
     const { t } = useTranslation()
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const toast = useToast()
-    const [showActivityIndicator, setShowActivityIndicator] = useState(false)
     const [inputMethod, setInputMethod] = useState<'scan' | 'search'>('scan')
     const [isParsing, setIsParsing] = useState(false)
     const [unexpectedData, setUnexpectedData] = useState<AnyParsedData>()
-    const emptyString = ''
-    const [omniError, setOmniError] = useState(emptyString)
-    const omniTimeoutMs = 10000
-    const omniNetworkError = 'NetworkError'
-    const [invalidData, setInvalidData] = useState<
-        ParsedUnknownData | ParsedError
-    >()
+    const [invalidData, setInvalidData] = useState<ParsedUnknownData>()
     const isParsingRef = useUpdatingRef(isParsing)
+
     const {
         expectedInputTypes,
         customActions,
@@ -79,22 +71,6 @@ export function OmniInput<
         ParserDataType.FediChatUser as T,
     )
 
-    // Centralized error handling using useEffect
-    useEffect(() => {
-        if (omniError !== emptyString) {
-            const errorData: ParsedError = {
-                type: ParserDataType.Error,
-                data: {
-                    title: t('feature.omni.error-network-title'),
-                    message: t('feature.omni.error-network-message'),
-                    goBackText: 'Retry',
-                },
-            }
-            setInvalidData(errorData)
-            setOmniError(emptyString)
-        }
-    }, [omniError, invalidData, unexpectedData, t])
-
     // TODO: Implement Room search for matrix (knocking)
     // const canRoomSearch = expectedInputTypes.includes(
     //     ParserDataType.FediChatRoom as T,
@@ -102,66 +78,25 @@ export function OmniInput<
 
     const parseInput = useCallback(
         async (input: string) => {
-            setShowActivityIndicator(true)
-            if (!input || isParsingRef.current) {
-                const errorData: ParsedError = {
-                    type: ParserDataType.Error,
-                    data: {
-                        title: t('feature.omni.error-parsing-title'),
-                        message: t('feature.omni.error-parsing-message'),
-                        goBackText: 'Retry',
-                    },
-                }
-                setInvalidData(errorData) // Treat this as invalid data
-                setIsParsing(false)
-                setShowActivityIndicator(false)
-                return
-            }
+            if (!input || isParsingRef.current) return
             setIsParsing(true)
-            const handleWithNetworkCheck = async (
-                callback: () => void,
-                errorMessage: string,
-            ) => {
-                const state: NetInfoState = await NetInfo.fetch()
-                !state.isConnected ? setOmniError(errorMessage) : callback()
-            }
+            const parsedData = await parseUserInput(
+                input,
+                fedimint,
+                t,
+                activeFederationId,
+            )
+            setIsParsing(false)
 
-            // Start timeout logic, to show network error if we can't parse within 'omniTimeoutMs'
-            const timeoutId = setTimeout(() => {
-                setOmniError(omniNetworkError)
-                setIsParsing(false)
-                setShowActivityIndicator(false)
-            }, omniTimeoutMs)
+            const expectedTypes = propsRef.current
+                .expectedInputTypes as readonly string[]
 
-            try {
-                const parsedData = await parseUserInput(
-                    input,
-                    fedimint,
-                    t,
-                    activeFederationId,
-                )
-                const expectedTypes = propsRef.current
-                    .expectedInputTypes as readonly string[]
-
-                if (expectedTypes.includes(parsedData.type)) {
-                    propsRef.current.onExpectedInput(parsedData as ExpectedData)
-                    setIsParsing(false)
-                } else if (parsedData.type === ParserDataType.Unknown) {
-                    await handleWithNetworkCheck(
-                        () => setInvalidData(parsedData),
-                        t('feature.omni.error-network-message'),
-                    )
-                } else {
-                    await handleWithNetworkCheck(
-                        () => setUnexpectedData(parsedData),
-                        t('feature.omni.error-network-message'),
-                    )
-                }
-            } catch (err) {
-                setOmniError(t('feature.omni.error-network-message'))
-            } finally {
-                clearTimeout(timeoutId)
-                setShowActivityIndicator(false)
+            if (expectedTypes.includes(parsedData.type)) {
+                propsRef.current.onExpectedInput(parsedData as ExpectedData)
+            } else if (parsedData.type === ParserDataType.Unknown) {
+                setInvalidData(parsedData)
+            } else {
+                setUnexpectedData(parsedData)
             }
         },
         [propsRef, isParsingRef, t, activeFederationId],
@@ -169,13 +104,10 @@ export function OmniInput<
 
     const handlePaste = useCallback(async () => {
         try {
-            setShowActivityIndicator(true)
             const input = await Clipboard.getString()
             await parseInput(input)
         } catch (err) {
             toast.error(t, err)
-        } finally {
-            setShowActivityIndicator(false)
         }
     }, [parseInput, toast, t])
 
@@ -227,7 +159,6 @@ export function OmniInput<
                 onGoBack={() => {
                     setInvalidData(undefined)
                     setUnexpectedData(undefined)
-                    setIsParsing(false)
                 }}
                 onSuccess={onUnexpectedSuccess}
             />
@@ -237,16 +168,6 @@ export function OmniInput<
     const style = styles(theme)
     return (
         <View style={style.container}>
-            {showActivityIndicator && (
-                <Pressable
-                    onPress={() => setShowActivityIndicator(false)}
-                    style={style.overlay}>
-                    <ActivityIndicator
-                        size="large"
-                        color={theme.colors.primary}
-                    />
-                </Pressable>
-            )}
             {inputMethod === 'scan' && (
                 <OmniQrScanner
                     onInput={parseInput}
@@ -274,16 +195,5 @@ const styles = (theme: Theme) =>
             width: '100%',
             flexDirection: 'column',
             gap: theme.spacing.lg,
-        },
-        overlay: {
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: 'rgba(0, 0, 0, 0.3)', // Semi-transparent background
-            zIndex: 2,
         },
     })
