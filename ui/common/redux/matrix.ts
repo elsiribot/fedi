@@ -1065,11 +1065,19 @@ export const previewAllDefaultChats = createAsyncThunk<
     return [...federationChats]
 })
 
-export const ensureHealthyMatrixStream = createAsyncThunk<void, void>(
-    'chat/ensureHealthyMatrixStream',
-    () => {
+export const observeMatrixSyncStatus = createAsyncThunk<void>(
+    'matrix/observeMatrixSyncStatus',
+    async () => {
         const client = getMatrixClient()
-        client.refreshSyncStatus()
+        client.observeSyncStatus()
+    },
+)
+
+export const unsubscribeMatrixSyncStatus = createAsyncThunk<void>(
+    'matrix/unsubscribeMatrixSyncStatus',
+    async () => {
+        const client = getMatrixClient()
+        client.unsubscribeSyncStatus()
     },
 )
 

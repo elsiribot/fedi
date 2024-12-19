@@ -5,6 +5,7 @@ import { Platform } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import SplashScreen from 'react-native-splash-screen'
 
+import { useObserveMatrixSyncStatus } from '@fedi/common/hooks/matrix'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     fetchRegisteredDevices,
@@ -53,6 +54,8 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const dispatchRef = useUpdatingRef(dispatch)
     const isForeground = useAppIsInForeground()
+
+    useObserveMatrixSyncStatus(bridgeIsReady)
 
     // Initialize device ID
     useEffect(() => {

@@ -6,6 +6,7 @@ import {
     cancelMatrixPayment,
     joinMatrixRoom,
     observeMatrixRoom,
+    observeMatrixSyncStatus,
     rejectMatrixPaymentRequest,
     searchMatrixUsers,
     selectCanClaimPayment,
@@ -19,6 +20,7 @@ import {
     selectMatrixUser,
     sendMatrixReadReceipt,
     unobserveMatrixRoom,
+    unsubscribeMatrixSyncStatus,
 } from '../redux'
 import {
     MatrixPaymentEvent,
@@ -404,4 +406,16 @@ export function useMatrixChatInvites(t: TFunction) {
     return {
         joinPublicGroup,
     }
+}
+
+export function useObserveMatrixSyncStatus(isBridgeReady: boolean) {
+    const dispatch = useCommonDispatch()
+    useEffect(() => {
+        if (!isBridgeReady) return
+        dispatch(observeMatrixSyncStatus())
+
+        return () => {
+            dispatch(unsubscribeMatrixSyncStatus())
+        }
+    }, [isBridgeReady, dispatch])
 }
