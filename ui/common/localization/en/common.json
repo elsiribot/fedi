@@ -209,6 +209,7 @@
         "invalid-username": "Must be 21 characters or less and cannot include uppercase letters",
         "invalid-username-banned": "Please enter a different display name",
         "invoice-already-paid": "This invoice has already been paid.",
+        "no-address-lnurlp": "This address does not support lightning payments",
         "no-lightning-gateways": "No lightning gateways found for this user",
         "please-force-quit-the-app": "An error occurred, please force quit the app and try again",
         "please-grant-permission": "Please grant permission to download this file",
