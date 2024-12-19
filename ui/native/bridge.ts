@@ -45,6 +45,12 @@ export async function subscribeToBridgeEvents() {
     )
 }
 
+export async function unsubscribeFromBridgeEvents(
+    subscriptions: Awaited<ReturnType<typeof subscribeToBridgeEvents>>,
+) {
+    subscriptions.forEach(s => s.remove())
+}
+
 export async function initializeBridge(deviceId: string) {
     const options: RpcInitOpts = {
         dataDir: RNFS.DocumentDirectoryPath,
