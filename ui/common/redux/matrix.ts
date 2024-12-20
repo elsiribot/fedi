@@ -987,6 +987,8 @@ export const previewGlobalDefaultChats = createAsyncThunk<
     { state: CommonState }
 >('matrix/previewGlobalDefaultChats', async (_, { getState }) => {
     const client = getMatrixClient()
+    // can't fetch preview until after matrix init + registration
+    if (!selectMatrixAuth(getState())) return []
     // Check the Fedi Global community for default groups
     const globalCommunityMeta = selectGlobalCommunityMeta(getState())
 
@@ -1011,7 +1013,7 @@ export const previewCommunityDefaultChats = createAsyncThunk<
     { state: CommonState }
 >('matrix/previewCommunityDefaultChats', async (federationId, { getState }) => {
     const client = getMatrixClient()
-    // can't fetch previews if matrix init hasn't completed yet
+    // can't fetch preview until after matrix init + registration
     if (!selectMatrixAuth(getState())) return []
     const federation = selectLoadedFederation(getState(), federationId)
     // can't fetch preview if the federation is not loaded yet
