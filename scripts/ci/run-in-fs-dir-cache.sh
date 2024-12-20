@@ -17,7 +17,7 @@ export FS_DIR_CACHE_LOCK_TIMEOUT_SECS="$((60 * 60))" # unlock after timeout in c
 
 log_file="$FS_DIR_CACHE_ROOT/log"
 
-fs-dir-cache gc unused --seconds "$((5 * 24 * 60 * 60))" # delete caches not used in more than a 5 days
+fs-dir-cache gc unused --seconds "$((3 * 24 * 60 * 60))" # delete caches not used in more than a 5 days
 
 # create/reuse cache (sub-directory) and lock it (wait if already locked)
 cache_dir=$(fs-dir-cache lock --key-file Cargo.lock --key-str "${CARGO_PROFILE-:dev}" --key-file flake.lock)
