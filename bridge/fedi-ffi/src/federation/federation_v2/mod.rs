@@ -767,8 +767,7 @@ impl FederationV2 {
         self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
             .await?;
 
-        self.subscribe_deposit(operation_id, address.to_string())
-            .await?;
+        self.subscribe_deposit(operation_id).await?;
 
         Ok(address.to_string())
     }
@@ -822,7 +821,7 @@ impl FederationV2 {
         })
     }
 
-    async fn subscribe_deposit(&self, operation_id: OperationId, address: String) -> Result<()> {
+    async fn subscribe_deposit(&self, operation_id: OperationId) -> Result<()> {
         self.spawn_cancellable("subscribe deposit", move |fed| async move {
             let Ok(wallet) = fed.client.wallet() else {
                 error!("Wallet module not present!");
@@ -838,18 +837,10 @@ impl FederationV2 {
             else {
                 return;
             };
-            let pending_fedi_fee_status = fed
-                .client
-                .db()
-                .begin_transaction_nc()
-                .await
-                .get_value(&OperationFediFeeStatusKey(operation_id))
-                .await;
             while let Some(update) = updates.next().await {
                 info!("Update: {:?}", update);
                 fed.update_operation_state(operation_id, update.clone())
                     .await;
-                let deposit_outcome = update.clone();
                 match update {
                     DepositStateV2::WaitingForConfirmation { btc_deposited, .. }
                     | DepositStateV2::Confirmed { btc_deposited, .. }
@@ -857,33 +848,14 @@ impl FederationV2 {
                         let federation_fees = wallet.get_fee_consensus().peg_in_abs;
                         let amount = Amount::from_sats(btc_deposited.to_sat()) - federation_fees;
                         // FIXME: add fedi fees once fedimint await primary module outputs
-                        let fedi_fee_status = if let DepositStateV2::Claimed { .. } = &update {
+                        if let DepositStateV2::Claimed { .. } = &update {
                             fed.write_success_receive_fedi_fee(operation_id, amount)
                                 .await
                                 .map(|(_, status)| status)
-                                .ok()
-                        } else {
-                            pending_fedi_fee_status.clone()
-                        };
+                                .ok();
+                        }
                         let _ = fed.record_tx_date_fiat_info(operation_id, amount).await;
-                        let tx_date_fiat_info = fed
-                            .dbtx()
-                            .await
-                            .get_value(&TransactionDateFiatInfoKey(operation_id))
-                            .await;
-                        let transaction = RpcTransaction::new(
-                            operation_id.fmt_full().to_string(),
-                            RpcAmount(amount),
-                            fedi_fee_status.map(Into::into),
-                            tx_date_fiat_info,
-                            String::new(), // no notes
-                            RpcTransactionKind::OnchainDeposit {
-                                onchain_address: address.clone(),
-                                state: Some(deposit_outcome.into()),
-                            },
-                        );
-                        info!("send_transaction_event: {:?}", transaction);
-                        fed.send_transaction_event(transaction);
+                        fed.send_transaction_event(operation_id).await;
                     }
                     DepositStateV2::Failed(reason) => {
                         let _ = fed.write_failed_receive_fedi_fee(operation_id).await;
@@ -926,29 +898,11 @@ impl FederationV2 {
                         let amount = Amount {
                             msats: invoice.amount_milli_satoshis().unwrap(),
                         };
-                        let fedi_fee_status = fed
-                            .write_success_receive_fedi_fee(operation_id, amount)
+                        fed.write_success_receive_fedi_fee(operation_id, amount)
                             .await
                             .map(|(_, status)| status)
-                            .ok()
-                            .map(Into::into);
-                        let tx_date_fiat_info = fed
-                            .dbtx()
-                            .await
-                            .get_value(&TransactionDateFiatInfoKey(operation_id))
-                            .await;
-                        let transaction = RpcTransaction::new(
-                            operation_id.fmt_full().to_string(),
-                            RpcAmount(amount),
-                            fedi_fee_status,
-                            tx_date_fiat_info,
-                            String::new(), // no notes
-                            RpcTransactionKind::LnReceive {
-                                ln_invoice: invoice.to_string(),
-                                state: Some(update.into()),
-                            },
-                        );
-                        fed.send_transaction_event(transaction);
+                            .ok();
+                        fed.send_transaction_event(operation_id).await;
                     }
                     LnReceiveState::Canceled { reason } => {
                         let _ = fed.write_failed_receive_fedi_fee(operation_id).await;
@@ -1363,11 +1317,10 @@ impl FederationV2 {
                 let meta = operation.meta::<WalletOperationMeta>();
                 match meta {
                     WalletOperationMeta {
-                        variant: WalletOperationMetaVariant::Deposit { address, .. },
+                        variant: WalletOperationMetaVariant::Deposit { .. },
                         ..
                     } => {
-                        self.subscribe_deposit(operation_id, address.assume_checked().to_string())
-                            .await?;
+                        self.subscribe_deposit(operation_id).await?;
                     }
                     _ => {
                         tracing::debug!(
@@ -1627,9 +1580,19 @@ impl FederationV2 {
         }
     }
 
-    fn send_transaction_event(&self, transaction: RpcTransaction) {
-        let event = Event::transaction(self.federation_id().to_string(), transaction);
-        self.event_sink.typed_event(&event);
+    async fn send_transaction_event(&self, operation_id: OperationId) {
+        match self.get_transaction(operation_id).await {
+            Ok(transaction) => {
+                let event = Event::transaction(
+                    self.federation_id().to_string(),
+                    transaction,
+                );
+                self.event_sink.typed_event(&event);
+            }
+            Err(e) => {
+                tracing::error!("Failed to get transaction details: {}", e);
+            }
+        }
     }
 
     fn send_recovery_progress(&self, progress: RecoveryProgress) {
@@ -1752,30 +1715,7 @@ impl FederationV2 {
                 _ => (),
             }
             if !is_overissue_correction {
-                let fedi_fee_status = self
-                    .client
-                    .db()
-                    .begin_transaction_nc()
-                    .await
-                    .get_value(&OperationFediFeeStatusKey(operation_id))
-                    .await
-                    .map(Into::into);
-                let tx_date_fiat_info = self
-                    .dbtx()
-                    .await
-                    .get_value(&TransactionDateFiatInfoKey(operation_id))
-                    .await;
-                let transaction = RpcTransaction::new(
-                    operation_id.fmt_full().to_string(),
-                    RpcAmount(meta.amount),
-                    fedi_fee_status,
-                    tx_date_fiat_info,
-                    String::new(), // notes
-                    RpcTransactionKind::OobReceive {
-                        state: Some(update.clone().into()),
-                    },
-                );
-                self.send_transaction_event(transaction);
+                self.send_transaction_event(operation_id).await;
             }
             if let ReissueExternalNotesState::Failed(e) = update {
                 updates.next().await;
