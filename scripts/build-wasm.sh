@@ -31,10 +31,7 @@ fi
 # note: --out-dir is relative, so this doesn't control anything
 pack_out="$CARGO_BUILD_TARGET_DIR/wasm-pack-out"
 
-(
-  cd "$REPO_ROOT/bridge/fedi-wasm"
-  wasm-pack build --target web --out-dir "$pack_out" "${args[@]}" "$@"
-)
+wasm-pack build bridge/fedi-wasm --target web --out-dir "$pack_out" "${args[@]}" "$@"
 
 # replace broken import
 sed 's:import \*:// import \*:g' -i "$pack_out/fedi_wasm.js"
