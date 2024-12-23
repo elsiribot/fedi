@@ -4,7 +4,7 @@ use ts_rs::TS;
 
 use crate::types::RpcAmount;
 #[derive(Debug, Error, Clone, PartialEq, Eq, Serialize, TS)]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub enum ErrorCode {
     #[error("Intialization failed")]

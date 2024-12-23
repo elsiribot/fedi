@@ -25,7 +25,7 @@ pub struct BackupService {
 
 #[derive(Clone, Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct BackupServiceStatus {
     #[ts(type = "number | null")]
     last_backup_timestamp: Option<u64>,
@@ -35,7 +35,7 @@ pub struct BackupServiceStatus {
 #[derive(Clone, Debug, Serialize, TS, Default)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum BackupServiceState {
     #[default]
     Initializing,
