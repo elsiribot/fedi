@@ -76,17 +76,13 @@ impl ReusedEcashProof {
         let spend_key = request.spend_key();
         let message = Self::signing_message(blind_nonce, blinding_key, amount);
         let signature = spend_key.sign_schnorr(message);
-        let this = Self {
+        Self {
             blind_nonce,
             blinding_key,
             amount,
             signature,
             spend_pubkey: spend_key.public_key(),
-        };
-        // FIXME: remove this for final release, but keep this as runtime test for now.
-        this.verify()
-            .expect("verification must pass after generating");
-        this
+        }
     }
 
     pub fn verify(&self) -> anyhow::Result<()> {
