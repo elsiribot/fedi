@@ -94,7 +94,7 @@ export const useMatrixPushNotifications = () => {
                         throw new Error(errorMsgNotGranted)
                     }
                 } else {
-                    log.warn('Notification permissions are not granted')
+                    log.info('Notification permissions are not granted')
                 }
 
                 if (!messaging().isDeviceRegisteredForRemoteMessages) {
