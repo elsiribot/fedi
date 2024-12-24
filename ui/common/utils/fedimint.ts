@@ -239,6 +239,10 @@ export class FedimintBridge {
         })
     }
 
+    async generateReusedEcashProofs(federationId: string) {
+        return this.rpcTyped('generateReusedEcashProofs', { federationId })
+    }
+
     async signLnurlMessage(message: string, domain: string) {
         return this.rpcTyped('signLnurlMessage', {
             message,

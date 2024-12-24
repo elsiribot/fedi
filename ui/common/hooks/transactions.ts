@@ -53,7 +53,7 @@ export function useTransactionHistory(fedimint: FedimintBridge) {
             > & { federationId?: string },
         ) => {
             const federationId = args?.federationId ?? activeFederationId
-            if (!federationId) throw new Error('errors.unknown-error')
+            if (!federationId) return []
             return dispatch(
                 reduxFetchTransactions({
                     federationId,

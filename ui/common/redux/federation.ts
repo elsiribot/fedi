@@ -607,6 +607,13 @@ export const selectActiveFederationId = (s: CommonState) => {
     return selectActiveFederation(s)?.id
 }
 
+export const selectReusedEcashFederations = createSelector(
+    selectLoadedFederations,
+    federations => {
+        return federations.filter(f => f.hadReusedEcash)
+    },
+)
+
 export const selectPaymentFederation = createSelector(
     selectWalletFederations,
     selectActiveFederation,

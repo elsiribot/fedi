@@ -274,7 +274,7 @@
             "description-placeholder": "What did you expect and what happened instead?",
             "email-label": "Email (optional)",
             "info-label": "Send Community and Username with bug report",
-            "log-disclaimer": "Application logs will be included with your report to help Fedi developers diagnose the issue",
+            "log-disclaimer": "Do not use this form unless explicitly directed to by the Fedi Council. Please first report any issues to our team <anchor>here</anchor>.",
             "report-a-bug": "Report a Bug",
             "screenshot-label": "Upload screenshots or recordings",
             "submit-generating-data": "Generating report data...",
@@ -745,6 +745,12 @@
                 "zar": "South African Rand",
                 "zmw": "Zambian Kwacha"
             }
+        },
+        "support": {
+            "share-logs-warning": "Do not use this form unless explicitly directed to by the Fedi Council. Please report any issues to our team by going to Mods > Support.",
+            "enter-ticket-number": "Enter the support ticket number given to you by our team.",
+            "support-ticket-number": "Support Ticket Number (e.g. #1234)",
+            "invalid-ticket-number": "Invalid support ticket number. (e.g. #1234)"
         },
         "stabilitypool": {
             "amount-may-vary": "Amount may vary",

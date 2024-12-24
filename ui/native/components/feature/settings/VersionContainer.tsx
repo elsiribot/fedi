@@ -1,4 +1,5 @@
-import { Text, Theme, useTheme } from '@rneui/themed'
+import { useNavigation } from '@react-navigation/native'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
@@ -27,6 +28,7 @@ export const VersionContainer = ({
     const { t } = useTranslation()
     const toast = useToast()
     const dispatch = useAppDispatch()
+    const navigation = useNavigation()
     const style = styles(theme)
     const fedimintVersion = useAppSelector(selectFedimintVersion)
 
@@ -52,16 +54,34 @@ export const VersionContainer = ({
                         }
                     }
                 }}>
-                <Text adjustsFontSizeToFit numberOfLines={1}>
+                <Text
+                    adjustsFontSizeToFit
+                    numberOfLines={1}
+                    caption
+                    medium
+                    color={theme.colors.darkGrey}>
                     {t('phrases.app-version', { version })}
                 </Text>
                 {fedimintVersion && (
-                    <Text adjustsFontSizeToFit numberOfLines={1}>
+                    <Text
+                        adjustsFontSizeToFit
+                        numberOfLines={1}
+                        caption
+                        medium
+                        color={theme.colors.darkGrey}>
                         {t('phrases.fedimint-version', {
                             version: fedimintVersion,
                         })}
                     </Text>
                 )}
+                <Button
+                    type="clear"
+                    onPress={() => navigation.navigate('ShareLogs')}
+                    buttonStyle={style.shareLogsButton}>
+                    <Text caption medium adjustsFontSizeToFit numberOfLines={1}>
+                        {t('feature.developer.share-logs')}
+                    </Text>
+                </Button>
             </Pressable>
         </View>
     )
@@ -73,11 +93,16 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: theme.colors.offWhite100,
-            padding: theme.spacing.md,
+            padding: theme.spacing.lg,
             borderRadius: theme.borders.defaultRadius,
             marginVertical: theme.spacing.xl,
         },
         logo: {
             marginBottom: theme.spacing.sm,
+        },
+        shareLogsButton: {
+            padding: 0,
+            paddingTop: theme.spacing.sm,
+            margin: 0,
         },
     })

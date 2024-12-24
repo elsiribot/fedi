@@ -526,7 +526,7 @@ export interface RpcMethods {
       lastRegistrationTimestamp: number;
     }>,
   ];
-  generateReusedEcashProofs: [{ federationId: RpcFederationId }, any];
+  generateReusedEcashProofs: [{ federationId: RpcFederationId }, JSONObject];
   uploadBackupFile: [
     { federationId: RpcFederationId; videoFilePath: string },
     string,

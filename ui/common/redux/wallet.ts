@@ -15,9 +15,11 @@ import {
     selectBtcUsdExchangeRate,
     selectFederationBalance,
     selectFederationStabilityPoolConfig,
+    selectReusedEcashFederations,
 } from '.'
 import { Federation, MSats, Usd, UsdCents } from '../types'
 import {
+    JSONObject,
     RpcAmount,
     RpcEcashInfo,
     RpcLockedSeek,
@@ -213,6 +215,36 @@ export const validateEcash = createAsyncThunk<
     { state: CommonState }
 >('wallet/validateEcash', async ({ fedimint, ecash }) => {
     return fedimint.validateEcash(ecash)
+})
+
+export const generateReusedEcashProofs = createAsyncThunk<
+    JSONObject[],
+    { fedimint: FedimintBridge },
+    { state: CommonState }
+>('wallet/generateReusedEcashProofs', async ({ fedimint }, { getState }) => {
+    const state = getState()
+    const reusedEcashFederations = selectReusedEcashFederations(state)
+
+    const proofs = await Promise.allSettled(
+        reusedEcashFederations.map(f =>
+            fedimint.generateReusedEcashProofs(f.id),
+        ),
+    )
+
+    const errors = proofs.filter(p => p.status === 'rejected')
+    if (errors.length > 0) {
+        log.error(
+            'Failed to generate reused ecash proofs',
+            JSON.stringify(errors),
+        )
+    }
+
+    const settledProofs = proofs.filter(
+        (p): p is PromiseFulfilledResult<JSONObject> =>
+            p.status === 'fulfilled',
+    )
+
+    return settledProofs.map(p => p.value)
 })
 
 export const fetchStabilityPoolAccountInfo = createAsyncThunk<

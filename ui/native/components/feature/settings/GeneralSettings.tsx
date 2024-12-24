@@ -115,11 +115,6 @@ export const GeneralSettings = () => {
                 onPress={() => navigation.navigate('NostrSettings')}
             />
             <SettingsItem
-                icon="Bug"
-                label={t('feature.bug.report-a-bug')}
-                onPress={() => navigation.navigate('BugReport')}
-            />
-            <SettingsItem
                 icon="SpeakerPhone"
                 label={t('feature.notifications.notification-settings')}
                 onPress={handleNotificationSettings}

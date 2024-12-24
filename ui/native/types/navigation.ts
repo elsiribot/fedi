@@ -55,7 +55,6 @@ export type TabsNavigatorParamList = {
 export type RootStackParamList = {
     AddFediMod: undefined
     BitcoinRequest: { uri: string }
-    BugReport: undefined
     BugReportSuccess: undefined
     CameraPermission: { nextScreen: keyof RootStackParamList } | undefined
     ChatImageViewer: { uri: string }
@@ -135,6 +134,7 @@ export type RootStackParamList = {
     SendOnChainAmount: { parsedData: ParsedBip21 | ParsedBitcoinAddress }
     SendSuccess: { amount: MSats; unit: string }
     Settings: undefined
+    ShareLogs: undefined
     FediModBrowser: { fediMod: FediMod }
     Splash: undefined
     StabilityConfirmDeposit: { amount: Sats }
