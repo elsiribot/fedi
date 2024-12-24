@@ -7,7 +7,7 @@ import {
     useMemo,
     useRef,
 } from 'react'
-import { AppStateStatus, AppState as RNAppState } from 'react-native'
+import { AppStateStatus, Platform, AppState as RNAppState } from 'react-native'
 import DeviceInfo from 'react-native-device-info'
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 
@@ -21,6 +21,7 @@ import {
     selectStableBalancePending,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../bridge'
 import { NavigationHook } from '../../types/navigation'
@@ -72,16 +73,64 @@ export const useMatrixHealthCheck = () => {
 
 // This hook gets the device's FCM token and publishes it
 // to the Matrix Sygnal server
-export const useMatrixPushNotifications = async () => {
+export const useMatrixPushNotifications = () => {
     const { notificationsPermission } = useNotificationsPermission()
-    const getDeviceToken = useMemo(() => {
+    const log = makeLog('useMatrixPushNotifications')
+
+    const getDeviceToken = useMemo<() => Promise<string>>(() => {
         return async () => {
-            if (!messaging().isDeviceRegisteredForRemoteMessages) {
-                await messaging().registerDeviceForRemoteMessages()
+            try {
+                // Check and request notification permissions if needed
+                if (notificationsPermission !== 'granted') {
+                    const authStatus = await messaging().requestPermission()
+                    if (
+                        authStatus !==
+                            messaging.AuthorizationStatus.AUTHORIZED &&
+                        authStatus !== messaging.AuthorizationStatus.PROVISIONAL
+                    ) {
+                        const errorMsgNotGranted =
+                            'Notification permission were not granted.'
+                        log.warn(errorMsgNotGranted)
+                        throw new Error(errorMsgNotGranted)
+                    }
+                } else {
+                    log.warn('Notification permissions are not granted')
+                }
+
+                if (!messaging().isDeviceRegisteredForRemoteMessages) {
+                    await messaging().registerDeviceForRemoteMessages()
+                }
+
+                // Fetch the APNs token (iOS only)
+                if (Platform.OS === 'ios') {
+                    // Ensure the device is registered for remote messages
+                    const apnsToken = await messaging().getAPNSToken()
+                    if (apnsToken) {
+                        log.debug(`APNs Token: ${apnsToken}`)
+                    } else {
+                        log.warn('APNs Token not available.')
+                    }
+                }
+
+                // Fetch the FCM token
+                const fcmToken = await messaging().getToken()
+                if (!fcmToken) {
+                    const errorMsgTokenNotFetched =
+                        "FCM Token couldn't be fetched."
+                    log.warn(errorMsgTokenNotFetched)
+                    throw new Error(errorMsgTokenNotFetched)
+                }
+
+                return fcmToken
+            } catch (error) {
+                log.error(
+                    `Error fetching device tokens: ${JSON.stringify(error)}`,
+                )
+                throw error // Propagate the error if token cannot be retrieved
             }
-            return messaging().getToken()
         }
-    }, [])
+    }, [notificationsPermission, log])
+
     usePublishNotificationToken(
         getDeviceToken,
         notificationsPermission !== 'granted',

@@ -245,8 +245,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.1")
 
     // for push notifications from Firebase
-    // implementation platform('com.google.firebase:firebase-bom:32.0.0')
-    // implementation 'com.google.firebase:firebase-messaging'
+    implementation platform('com.google.firebase:firebase-bom:33.7.0')
+    implementation 'com.google.firebase:firebase-messaging'
 
     // Make sure to use the latest camera libraries for video recording
     // react-native-vision-camera uses 1.1.0 so we need to override here

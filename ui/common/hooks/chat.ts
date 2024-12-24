@@ -11,7 +11,6 @@ import {
     selectHasSetMatrixDisplayName,
     selectIsMatrixReady,
     selectMatrixAuth,
-    selectMatrixPushNotificationToken,
     selectPaymentFederation,
     sendMatrixPaymentPush,
     sendMatrixPaymentRequest,
@@ -35,39 +34,70 @@ export function usePublishNotificationToken(
     appId: string,
     appName: string,
 ) {
+    const emptyToken = ''
     const dispatch = useCommonDispatch()
-    const pushNotificationToken = useCommonSelector(
-        selectMatrixPushNotificationToken,
-    )
     const isMatrixReady = useCommonSelector(selectIsMatrixReady)
+    const [latestToken, setLatestToken] = useState<string | null>(null) //we publish the first token if this is empty, then if it changes
 
     useEffect(() => {
-        // Can't publish if we don't have permission to get the token.
-        if (needsPermission) return
+        const publishToken = async () => {
+            // Permissions check
+            if (needsPermission) {
+                log.debug(
+                    'Permissions check is not passed. Skipping publish token.',
+                )
+                return
+            }
 
-        // Don't publish the token again if we already did it
-        if (pushNotificationToken) {
-            log.info('Already published and stored notification token')
-            return
+            // Check if matrix is ready
+            if (!isMatrixReady) {
+                log.warn('Matrix is not ready. Skipping publish token.')
+                return
+            }
+
+            // Fetch the token
+            let newToken = ''
+            try {
+                newToken = await getToken()
+            } catch (err) {
+                log.error('Failed to get push notification token', err)
+                return
+            }
+
+            // Skip publishing if the token hasn't changed or is empty
+            if (!newToken || newToken === emptyToken) {
+                log.error('Token is empty or invalid. Skipping publish.')
+                return
+            }
+
+            if (newToken === latestToken) {
+                log.debug(
+                    'Token matches the last published token. No update needed.',
+                )
+                return
+            }
+
+            // Publish the token
+            log.debug('Publishing push notification token:', newToken)
+            dispatch(
+                configureMatrixPushNotifications({ getToken, appId, appName }),
+            )
+                .unwrap()
+                .then(() => {
+                    setLatestToken(newToken)
+                    log.debug(
+                        'Successfully published matrix push notification token',
+                    )
+                })
+                .catch(err => {
+                    log.error(
+                        'Failed to publish matrix push notification token',
+                        err,
+                    )
+                })
         }
 
-        // Can't publish if matrix isn't ready
-        if (!isMatrixReady) return
-
-        log.info('Publishing push notification token')
-        dispatch(configureMatrixPushNotifications({ getToken, appId, appName }))
-            .unwrap()
-            .then(() => {
-                log.info(
-                    'Successfully published matrix push notification token',
-                )
-            })
-            .catch(err => {
-                log.error(
-                    'Failed to publish matrix push notification token',
-                    err,
-                )
-            })
+        publishToken()
     }, [
         appId,
         appName,
@@ -75,8 +105,10 @@ export function usePublishNotificationToken(
         isMatrixReady,
         dispatch,
         getToken,
-        pushNotificationToken,
+        latestToken,
     ])
+
+    return null
 }
 
 export const useChatPaymentPush = (

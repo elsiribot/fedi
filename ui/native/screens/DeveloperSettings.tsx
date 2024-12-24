@@ -3,7 +3,13 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Switch, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
+import {
+    ActivityIndicator,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    View,
+} from 'react-native'
 
 import { useIsStabilityPoolSupported } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
@@ -234,8 +240,38 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
     }
 
     const logFCMToken = async () => {
-        const fcmToken = await messaging().getToken()
-        log.info(`FCM Notification Token - ${fcmToken}`)
+        try {
+            // Request notification permissions
+            const authStatus = await messaging().requestPermission()
+            const enabled =
+                authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+                authStatus === messaging.AuthorizationStatus.PROVISIONAL
+
+            if (!enabled) {
+                log.warn('Notifications are not enabled.')
+                return
+            }
+
+            // Wait for APNs token to be available
+            if (Platform.OS === 'ios') {
+                const apnsToken = await messaging().getAPNSToken()
+                if (apnsToken) {
+                    log.info(`APNs Token: ${apnsToken}`)
+                } else {
+                    log.warn('APNs Token not available.')
+                }
+            }
+
+            // Fetch FCM token
+            const fcmToken = await messaging().getToken()
+            if (fcmToken) {
+                log.info(`FCM Notification Token: ${fcmToken}`)
+            } else {
+                log.warn("FCM Token - Couldn't fetch token.")
+            }
+        } catch (error) {
+            log.error(`Error fetching tokens: ${JSON.stringify(error)}`)
+        }
     }
 
     return (
