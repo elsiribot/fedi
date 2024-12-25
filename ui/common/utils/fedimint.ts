@@ -197,13 +197,19 @@ export class FedimintBridge {
         return this.rpcTyped('generateEcash', { federationId, amount })
     }
 
+    // Attempts to reissues ecash, can be started offline but requires
+    // a connection to guardians to actually redeem the ecash.
+    // Will retry in the background.
     async receiveEcash(ecash: string, federationId: string) {
-        return (await this.rpcTyped('receiveEcash', {
-            federationId,
-            ecash,
-        }))[0]
+        return (
+            await this.rpcTyped('receiveEcash', {
+                federationId,
+                ecash,
+            })
+        )[0]
     }
 
+    // Parses ecash, works offline
     async validateEcash(ecash: string) {
         return this.rpcTyped('validateEcash', {
             ecash,
