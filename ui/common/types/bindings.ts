@@ -467,7 +467,10 @@ export interface RpcMethods {
     },
     { ecash: string; cancelAt: number },
   ];
-  receiveEcash: [{ federationId: RpcFederationId; ecash: string }, MSats];
+  receiveEcash: [
+    { federationId: RpcFederationId; ecash: string },
+    [MSats, string],
+  ];
   validateEcash: [
     { ecash: string },
     (
