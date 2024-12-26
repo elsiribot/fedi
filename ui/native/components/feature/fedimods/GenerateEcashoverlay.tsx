@@ -7,32 +7,31 @@ import { RejectionError } from 'webln'
 import { useMinMaxSendAmount, useRequestForm } from '@fedi/common/hooks/amount'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import { selectActiveFederation } from '@fedi/common/redux'
+import { selectActiveFederation, selectEcashRequest } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
-import { EcashRequest, MSats } from '../../../types'
+import { MSats } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
 
 const log = makeLog('MakeInvoiceOverlay')
 
 interface Props {
-    ecashRequest?: EcashRequest | null
     onReject: (err: Error) => void
     onAccept: (ecash: string) => void
 }
 
 export const GenerateEcashOverlay: React.FC<Props> = ({
-    ecashRequest,
     onReject,
     onAccept,
 }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const toast = useToast()
+    const ecashRequest = useAppSelector(selectEcashRequest)
     const activeFederation = useAppSelector(selectActiveFederation)
     const onRejectRef = useUpdatingRef(onReject)
     const onAcceptRef = useUpdatingRef(onAccept)

@@ -49,7 +49,7 @@ const ShortcutsList: React.FC = () => {
         ) {
             Linking.openURL(fediMod.url)
         } else {
-            navigation.navigate('FediModBrowser', { fediMod })
+            navigation.navigate('FediModBrowser', { url: fediMod.url })
         }
     }
 

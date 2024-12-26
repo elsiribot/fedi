@@ -40,9 +40,7 @@ const AddFediMod: React.FC = () => {
         try {
             const validUrl = new URL(
                 /^https?:\/\//.test(url) ? url : `https://${url}`,
-            )
-                .toString()
-                .toLowerCase()
+            ).toString()
 
             dispatch(
                 addCustomMod({
@@ -85,9 +83,7 @@ const AddFediMod: React.FC = () => {
                 try {
                     const validUrl = new URL(
                         /^https?:\/\//.test(url) ? url : `https://${url}`,
-                    )
-                        .toString()
-                        .toLowerCase()
+                    ).toString()
 
                     setIsValidUrl(true)
                     populateFieldsWithMetadata(validUrl)
@@ -129,6 +125,7 @@ const AddFediMod: React.FC = () => {
                     inputContainerStyle={style.innerInputContainer}
                     containerStyle={style.inputContainer}
                     keyboardType="url"
+                    autoCapitalize="none"
                 />
                 <Input
                     value={title}

@@ -18,6 +18,7 @@ import {
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { hasStorageStateChanged } from '../utils/storage'
+import { browserSlice } from './browser'
 import { currencySlice, fetchCurrencyPrices } from './currency'
 import { environmentSlice, selectLanguage } from './environment'
 import {
@@ -54,6 +55,7 @@ export * from './recovery'
 export * from './security'
 export * from './toast'
 export * from './wallet'
+export * from './browser'
 
 export const commonReducers = {
     currency: currencySlice.reducer,
@@ -68,6 +70,7 @@ export const commonReducers = {
     transactions: transactionsSlice.reducer,
     wallet: walletSlice.reducer,
     security: securitySlice.reducer,
+    browser: browserSlice.reducer,
 }
 
 type CommonReducers = typeof commonReducers

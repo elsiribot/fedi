@@ -4,30 +4,26 @@ import { Trans, useTranslation } from 'react-i18next'
 import { RejectionError } from 'webln'
 
 import { useToast } from '@fedi/common/hooks/toast'
+import { selectLnurlAuthRequest, selectSiteInfo } from '@fedi/common/redux'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
-import { FediMod, ParsedLnurlAuth } from '../../../types'
+import { useAppSelector } from '../../../state/hooks'
 import CustomOverlay from '../../ui/CustomOverlay'
 
 const log = makeLog('AuthOverlay')
 
 interface Props {
-    fediMod: FediMod
-    lnurlAuthRequest?: ParsedLnurlAuth['data'] | null
     onReject: (err: Error) => void
     onAccept: () => void
 }
 
-export const AuthOverlay: React.FC<Props> = ({
-    fediMod,
-    lnurlAuthRequest,
-    onReject,
-    onAccept,
-}) => {
+export const AuthOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
     const { t } = useTranslation()
     const toast = useToast()
+    const lnurlAuthRequest = useAppSelector(selectLnurlAuthRequest)
+    const siteInfo = useAppSelector(selectSiteInfo)
     const [isLoading, setIsLoading] = useState(false)
 
     // Overlay components for LNURL-Auth UX
@@ -66,7 +62,7 @@ export const AuthOverlay: React.FC<Props> = ({
                             t={t}
                             i18nKey="feature.nostr.log-in-to-mod"
                             values={{
-                                fediMod: fediMod.title,
+                                fediMod: siteInfo?.title,
                                 method: t('words.lightning'),
                             }}
                             components={{ bold: <Text caption bold /> }}

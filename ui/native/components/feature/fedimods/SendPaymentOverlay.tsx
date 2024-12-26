@@ -8,7 +8,10 @@ import { useSendForm } from '@fedi/common/hooks/amount'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     payInvoice,
+    selectInvoiceToPay,
+    selectLnurlPayment,
     selectPaymentFederation,
+    selectSiteInfo,
     selectWalletFederations,
     setPayFromFederationId,
 } from '@fedi/common/redux'
@@ -19,13 +22,7 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
-import {
-    FediMod,
-    Invoice,
-    MSats,
-    Network,
-    ParsedLnurlPay,
-} from '../../../types'
+import { MSats, Network } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
 import FederationWalletSelector from '../send/FederationWalletSelector'
@@ -33,24 +30,18 @@ import FederationWalletSelector from '../send/FederationWalletSelector'
 const log = makeLog('SendPaymentOverlay')
 
 interface Props {
-    fediMod: FediMod
-    invoice?: Invoice | null
-    lnurlPayment?: ParsedLnurlPay['data'] | null
     onReject: (err: Error) => void
     onAccept: (res: { preimage: string }) => void
 }
 
-export const SendPaymentOverlay: React.FC<Props> = ({
-    fediMod,
-    invoice,
-    lnurlPayment,
-    onReject,
-    onAccept,
-}) => {
+export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const paymentFederation = useAppSelector(selectPaymentFederation)
     const walletFederations = useAppSelector(selectWalletFederations)
+    const lnurlPayment = useAppSelector(selectLnurlPayment)
+    const invoice = useAppSelector(selectInvoiceToPay)
+    const siteInfo = useAppSelector(selectSiteInfo)
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const [amountInputKey, setAmountInputKey] = useState(0)
     const [isLoading, setIsLoading] = useState(false)
@@ -162,7 +153,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({
             }
             contents={{
                 title: t('feature.fedimods.payment-request', {
-                    fediMod: fediMod.title,
+                    fediMod: siteInfo?.title,
                 }),
                 body: (
                     <View

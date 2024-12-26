@@ -40,13 +40,14 @@ const Mods: React.FC = () => {
         setActionsMod(undefined)
         const fediMod = shortcut as FediMod
         // Handle telegram and whatsapp links natively
+        // TODO: check URL HEAD status to see if it's a redirect and open with Linking if it's a 301 or 302
         if (
             fediMod.url.includes('https://t.me') ||
             fediMod.url.includes('https://wa.me')
         ) {
             Linking.openURL(fediMod.url)
         } else {
-            navigation.navigate('FediModBrowser', { fediMod })
+            navigation.navigate('FediModBrowser', { url: fediMod.url })
         }
     }
 

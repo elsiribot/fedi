@@ -19,7 +19,7 @@ import {
     Transaction,
 } from '@fedi/common/types'
 
-import { FediMod, MSats } from '.'
+import { MSats } from '.'
 
 // This type declaration allows all instances of useNavigation
 // to be aware of type-safety from RootStackParamsList
@@ -135,7 +135,7 @@ export type RootStackParamList = {
     SendSuccess: { amount: MSats; unit: string }
     Settings: undefined
     ShareLogs: undefined
-    FediModBrowser: { fediMod: FediMod }
+    FediModBrowser: { url: string }
     Splash: undefined
     StabilityConfirmDeposit: { amount: Sats }
     StabilityConfirmWithdraw: { amount: Sats }
