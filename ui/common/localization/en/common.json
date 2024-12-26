@@ -218,6 +218,8 @@
         "receive-ecash-failed": "Failed to receive ecash",
         "receives-have-been-disabled": "Receives have been disabled for this community",
         "recovery-failed": "Recovery failed, please try again",
+        "title-too-short": "Title must be at least 3 characters",
+        "title-too-long": "Title cannot exceed 24 characters",
         "unknown-ecash-issuer": "This ecash token was issued by a community you are not a member of",
         "unknown-error": "An unknown error occurred",
         "webln-canceled": "Canceled request",
