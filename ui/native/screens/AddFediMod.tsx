@@ -167,10 +167,9 @@ const AddFediMod: React.FC = () => {
                         style.inputContainer,
                         style.modTitleContainer,
                     ]}
-                    inputStyle={{ textAlignVertical: 'top', paddingTop: 0 }}
+                    inputStyle={{ paddingTop: theme.spacing.sm }}
                     disabled={isFetching}
                     multiline
-                    numberOfLines={2}
                 />
                 <Input
                     value={imageUrl}
@@ -210,12 +209,9 @@ const styles = (theme: Theme) =>
             justifyContent: 'space-between',
         },
         modTitle: {
-            height: 64,
             alignItems: 'flex-start',
-            paddingVertical: theme.spacing.sm,
         },
         modTitleContainer: {
-            height: 64 + theme.spacing.sm * 2,
             display: 'flex',
         },
         omniContainer: {
