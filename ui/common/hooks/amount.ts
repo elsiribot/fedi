@@ -368,13 +368,29 @@ export function useAmountInput(
             if (button === null) return
             const value = isFiat ? fiatValue : satsValue
             const handleChange = isFiat ? handleChangeFiat : handleChangeSats
+            const maxSatLength = maximumAmount?.toString().length
+            const satsValueLength = satsValue
+                .split('')
+                .filter(c => /[0-9]/.test(c)).length
+
             if (button === 'backspace') {
                 handleChange(value.slice(0, -1))
-            } else {
+            } else if (
+                typeof maxSatLength === 'number'
+                    ? satsValueLength <= maxSatLength
+                    : true
+            ) {
                 handleChange(`${value}${button}`)
             }
         },
-        [isFiat, fiatValue, satsValue, handleChangeFiat, handleChangeSats],
+        [
+            isFiat,
+            fiatValue,
+            satsValue,
+            handleChangeFiat,
+            handleChangeSats,
+            maximumAmount,
+        ],
     )
 
     const currencySymbol = useMemo(
