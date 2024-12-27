@@ -477,7 +477,8 @@ export type RpcMethods = {
   validateEcash: [validateEcash, RpcEcashInfo];
   cancelEcash: [cancelEcash, null];
   updateCachedFiatFXInfo: [updateCachedFiatFXInfo, null];
-  listTransactions: [listTransactions, Array<RpcTransaction>];
+  listTransactions: [listTransactions, Array<RpcTransactionListEntry>];
+  getTransaction: [getTransaction, RpcTransaction];
   updateTransactionNotes: [updateTransactionNotes, null];
   backupNow: [backupNow, null];
   getMnemonic: [getMnemonic, Array<string>];
@@ -790,7 +791,6 @@ export type RpcTimelineItemEvent = {
 
 export type RpcTransaction = {
   id: string;
-  createdAt: number;
   amount: RpcAmount;
   fediFeeStatus: RpcOperationFediFeeStatus | null;
   txnNotes: string;
@@ -853,6 +853,44 @@ export type RpcTransactionKind =
   | { kind: "oobReceive"; state: RpcOOBReissueState | null }
   | { kind: "spDeposit"; state: RpcSPDepositState }
   | { kind: "spWithdraw"; state: RpcSPWithdrawState | null };
+
+export type RpcTransactionListEntry = {
+  createdAt: number;
+  id: string;
+  amount: RpcAmount;
+  fediFeeStatus: RpcOperationFediFeeStatus | null;
+  txnNotes: string;
+  txDateFiatInfo: FiatFXInfo | null;
+  /**
+   * time when this operation was settled.
+   */
+  outcomeTime: number | null;
+} & (
+  | {
+      kind: "lnPay";
+      ln_invoice: string;
+      lightning_fees: RpcAmount;
+      state: RpcLnPayState | null;
+    }
+  | { kind: "lnReceive"; ln_invoice: string; state: RpcLnReceiveState | null }
+  | {
+      kind: "onchainWithdraw";
+      onchain_address: string;
+      onchain_txid: string;
+      onchain_fees: RpcAmount;
+      onchain_fee_rate: number;
+      state: RpcOnchainWithdrawState | null;
+    }
+  | {
+      kind: "onchainDeposit";
+      onchain_address: string;
+      state: RpcOnchainDepositState | null;
+    }
+  | { kind: "oobSend"; state: RpcOOBSpendState | null }
+  | { kind: "oobReceive"; state: RpcOOBReissueState | null }
+  | { kind: "spDeposit"; state: RpcSPDepositState }
+  | { kind: "spWithdraw"; state: RpcSPWithdrawState | null }
+);
 
 export type RpcUserId = string;
 
@@ -1065,6 +1103,11 @@ export type getNostrPubkey = {};
 export type getNostrSecret = {};
 
 export type getSensitiveLog = {};
+
+export type getTransaction = {
+  federationId: RpcFederationId;
+  operationId: RpcOperationId;
+};
 
 export type joinCommunity = { inviteCode: string };
 

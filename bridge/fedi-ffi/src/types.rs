@@ -519,8 +519,6 @@ pub enum RpcTransactionDirection {
 #[ts(export)]
 pub struct RpcTransaction {
     pub id: String,
-    #[ts(type = "number")]
-    pub created_at: u64,
     pub amount: RpcAmount,
     pub fedi_fee_status: Option<RpcOperationFediFeeStatus>,
     pub txn_notes: String,
@@ -530,6 +528,16 @@ pub struct RpcTransaction {
     /// time when this operation was settled.
     #[ts(type = "number | null")]
     pub outcome_time: Option<u64>,
+}
+
+#[derive(Debug, Deserialize, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RpcTransactionListEntry {
+    #[ts(type = "number")]
+    pub created_at: u64,
+    #[serde(flatten)]
+    pub transaction: RpcTransaction,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -575,7 +583,6 @@ pub enum RpcTransactionKind {
 impl RpcTransaction {
     pub fn new(
         id: String,
-        created_at: u64,
         amount: RpcAmount,
         fedi_fee_status: Option<RpcOperationFediFeeStatus>,
         tx_date_fiat_info: Option<FiatFXInfo>,
@@ -584,7 +591,6 @@ impl RpcTransaction {
     ) -> Self {
         Self {
             id,
-            created_at,
             amount,
             fedi_fee_status,
             txn_notes,

@@ -36,7 +36,7 @@ use super::storage::Storage;
 use super::types::{
     RpcAmount, RpcFederation, RpcFederationId, RpcInvoice, RpcOperationId, RpcPayInvoiceResponse,
     RpcPeerId, RpcPublicKey, RpcRecoveryId, RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo,
-    RpcTransaction, SocialRecoveryQr,
+    SocialRecoveryQr,
 };
 use crate::api::IFediApi;
 use crate::bridge::{BridgeFull, BridgeRuntime};
@@ -58,8 +58,8 @@ use crate::types::{
     federation_v2_to_rpc_federation, GuardianStatus, RpcBridgeStatus, RpcCommunity,
     RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederationMaybeLoading, RpcFederationPreview,
     RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway, RpcMediaUploadParams,
-    RpcNostrPubkey, RpcNostrSecret, RpcPayAddressResponse, RpcRegisteredDevice,
-    RpcTransactionDirection,
+    RpcNostrPubkey, RpcNostrSecret, RpcPayAddressResponse, RpcRegisteredDevice, RpcTransaction,
+    RpcTransactionDirection, RpcTransactionListEntry,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -453,11 +453,19 @@ async fn updateCachedFiatFXInfo(
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
+async fn getTransaction(
+    federation: Arc<FederationV2>,
+    operation_id: RpcOperationId,
+) -> anyhow::Result<RpcTransaction> {
+    federation.get_transaction(operation_id.0).await
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
 async fn listTransactions(
     federation: Arc<FederationV2>,
     start_time: Option<u32>,
     limit: Option<u32>,
-) -> anyhow::Result<Vec<RpcTransaction>> {
+) -> anyhow::Result<Vec<RpcTransactionListEntry>> {
     let txs = federation
         .list_transactions(
             limit.map_or(usize::MAX, |l| l as usize),
@@ -1546,6 +1554,7 @@ rpc_methods!(RpcMethods {
     // Transactions
     updateCachedFiatFXInfo,
     listTransactions,
+    getTransaction,
     updateTransactionNotes,
     // Recovery
     backupNow,
@@ -2619,6 +2628,7 @@ pub mod tests {
                 .first()
                 .context("transaction not found")
                 .map_err(ControlFlow::Continue)?
+                .transaction
                 .kind
                 .clone()
             else {
@@ -2703,7 +2713,9 @@ pub mod tests {
         bitcoin_cli_send_to_address(&address, "0.1").await?;
 
         assert!(matches!(
-            listTransactions(federation.clone(), None, None).await?[0].kind,
+            listTransactions(federation.clone(), None, None).await?[0]
+                .transaction
+                .kind,
             RpcTransactionKind::OnchainDeposit {
                 state: Some(RpcOnchainDepositState::WaitingForTransaction),
                 ..
@@ -2738,7 +2750,9 @@ pub mod tests {
             .await;
         }
         assert!(matches!(
-            listTransactions(federation.clone(), None, None).await?[0].kind,
+            listTransactions(federation.clone(), None, None).await?[0]
+                .transaction
+                .kind,
             RpcTransactionKind::OnchainDeposit {
                 state: Some(RpcOnchainDepositState::Claimed(_)),
                 ..
