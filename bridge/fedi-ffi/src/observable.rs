@@ -124,6 +124,12 @@ impl ObservablePool {
         }
     }
 
+    pub async fn reset(&self) {
+        let mut lock = self.observables.lock().await;
+        for (_, tg) in lock.drain() {
+            tg.shutdown();
+        }
+    }
     /// make observable with provided `id` and `initial` value and run `func` in
     /// a task group. `func` can send observable updates. Returns error if
     /// Observable with `id` already exists.

@@ -64,7 +64,7 @@ pub struct Matrix {
     room_list_service: Arc<RoomListService>,
     pub runtime: Arc<BridgeRuntime>,
     notification_settings: NotificationSettings,
-    observable_pool: ObservablePool,
+    pub observable_pool: ObservablePool,
 }
 
 impl Matrix {

@@ -86,9 +86,23 @@ pub async fn fedimint_initialize_inner(
     if option_env!("FEDI_BRIDGE_REMOTE").is_some() {
         return fedimint_remote_initialize(event_sink).await;
     }
-    // return if bridge already is initialized
-    if BRIDGE.lock().await.is_some() {
-        warn!("bridge is already initialized");
+    if let Some(bridge) = BRIDGE.lock().await.clone() {
+        match init_opts.app_flavor {
+            RpcAppFlavor::Dev => {
+                // reset observables
+                if let Ok(full) = bridge.full() {
+                    if let Some(matrix) = full.matrix.get() {
+                        matrix.observable_pool.reset().await;
+                    }
+                }
+            }
+            RpcAppFlavor::Nightly => {
+                panic!("reinitializing bridge is only allowed during development");
+            }
+            RpcAppFlavor::Bravo => {
+                warn!("reinitializing bridge is only allowed during development, ignoring request");
+            }
+        }
         return Ok(());
     }
     let event_sink: Arc<dyn EventSink> = event_sink.into();
