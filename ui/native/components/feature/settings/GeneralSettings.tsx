@@ -122,11 +122,6 @@ export const GeneralSettings = () => {
                 onPress={() => navigation.navigate('LanguageSettings')}
             />
             <SettingsItem
-                icon="Usd"
-                label={t('phrases.display-currency')}
-                onPress={() => navigation.navigate('CurrencySettings')}
-            />
-            <SettingsItem
                 icon="Note"
                 label={t('feature.backup.personal-backup')}
                 onPress={() => navigation.navigate('StartPersonalBackup')}

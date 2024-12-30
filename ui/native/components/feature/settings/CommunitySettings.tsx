@@ -105,6 +105,15 @@ export const CommunitySettings = ({ community }: CommunityMenuProps) => {
                             }}
                         />
                     )}
+                    <SettingsItem
+                        icon="Usd"
+                        label={t('words.currency')}
+                        onPress={() => {
+                            navigation.navigate('FederationCurrency', {
+                                federationId: community.id,
+                            })
+                        }}
+                    />
                     {shouldShowInviteCode(community.meta) && (
                         <SettingsItem
                             icon="Qr"

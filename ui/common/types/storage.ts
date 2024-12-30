@@ -212,6 +212,11 @@ export interface StoredStateV22 extends Omit<StoredStateV21, 'version'> {
     }
 }
 
+export interface StoredStateV23 extends Omit<StoredStateV22, 'version'> {
+    version: 23
+    customFederationCurrencies: Record<string, SupportedCurrency>
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -237,9 +242,10 @@ export type AnyStoredState =
     | StoredStateV20
     | StoredStateV21
     | StoredStateV22
+    | StoredStateV23
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV22
+export type LatestStoredState = StoredStateV23
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

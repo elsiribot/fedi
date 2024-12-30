@@ -27,7 +27,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     const transformedState: LatestStoredState = {
-        version: 22,
+        version: 23,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
@@ -38,6 +38,7 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         currency: state.currency.selectedFiatCurrency,
         btcUsdRate: state.currency.btcUsdRate,
         fiatUsdRates: state.currency.fiatUsdRates,
+        customFederationCurrencies: state.currency.customFederationCurrencies,
         activeFederationId: state.federation.activeFederationId,
         authenticatedGuardian: state.federation.authenticatedGuardian,
         externalMeta: state.federation.externalMeta,
@@ -295,9 +296,8 @@ async function migrateStoredState(
                     chatState.messages,
                 )
                 const lastSeenPaymentUpdateId = lastSeenPaymentUpdate?.id
-                    ? `${lastSeenPaymentUpdate?.id}_${
-                          lastSeenPaymentUpdate?.payment?.updatedAt || 0
-                      }`
+                    ? `${lastSeenPaymentUpdate?.id}_${lastSeenPaymentUpdate?.payment?.updatedAt || 0
+                    }`
                     : null
                 return {
                     ...prevChat,
@@ -403,7 +403,7 @@ async function migrateStoredState(
                                 lastReadPaymentUpdate &&
                                 lastReadPaymentUpdate.payment?.updatedAt &&
                                 lastReadPaymentUpdate.payment?.updatedAt >
-                                    lastReadMessage.sentAt
+                                lastReadMessage.sentAt
                             ) {
                                 result[chatId] =
                                     lastReadPaymentUpdate.payment?.updatedAt
@@ -429,7 +429,7 @@ async function migrateStoredState(
                         lastSeenPaymentUpdate &&
                         lastSeenPaymentUpdate.payment?.updatedAt &&
                         lastSeenPaymentUpdate.payment?.updatedAt >
-                            lastSeenMessage.sentAt
+                        lastSeenMessage.sentAt
                     ) {
                         lastSeenMessageTimestamp =
                             lastSeenPaymentUpdate.payment?.updatedAt
@@ -585,6 +585,14 @@ async function migrateStoredState(
                 supportPermissionGranted: false,
                 zendeskPushNotificationToken: null,
             },
+        }
+    }
+
+    if (migrationState.version === 22) {
+        migrationState = {
+            ...migrationState,
+            version: 23,
+            customFederationCurrencies: {},
         }
     }
 

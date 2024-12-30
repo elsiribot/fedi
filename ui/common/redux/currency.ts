@@ -2,7 +2,9 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import {
     CommonState,
+    selectActiveFederationId,
     selectFederationMetadata,
+    selectLoadedFederations,
     selectStabilityPoolCycleStartPrice,
 } from '.'
 import { Federation, SupportedCurrency } from '../types'
@@ -22,6 +24,7 @@ const initialState = {
     fiatUsdRates: {} as Record<string, number | undefined>,
     selectedFiatCurrency: null as SupportedCurrency | null,
     currencyLocale: undefined as string | undefined,
+    customFederationCurrencies: {} as Record<string, SupportedCurrency>,
 }
 
 export type CurrencyState = typeof initialState
@@ -44,6 +47,18 @@ export const currencySlice = createSlice({
         resetCurrencyState() {
             return { ...initialState }
         },
+        setFederationCurrency(
+            state,
+            action: PayloadAction<{
+                federationId: Federation['id']
+                currency: SupportedCurrency
+            }>,
+        ) {
+            state.customFederationCurrencies = {
+                ...state.customFederationCurrencies,
+                [action.payload.federationId]: action.payload.currency,
+            }
+        },
     },
     extraReducers: builder => {
         builder.addCase(fetchCurrencyPrices.fulfilled, (state, action) => {
@@ -59,6 +74,8 @@ export const currencySlice = createSlice({
             state.selectedFiatCurrency = action.payload.currency
             state.btcUsdRate = action.payload.btcUsdRate
             state.fiatUsdRates = action.payload.fiatUsdRates
+            state.customFederationCurrencies =
+                action.payload.customFederationCurrencies
         })
     },
 })
@@ -69,6 +86,7 @@ export const {
     changeSelectedFiatCurrency,
     setCurrencyLocale,
     resetCurrencyState,
+    setFederationCurrency,
 } = currencySlice.actions
 
 /*** Async thunk actions ***/
@@ -109,27 +127,50 @@ export const selectCurrencyLocale = (s: CommonState) =>
     s.currency.currencyLocale
 
 export const selectCurrency = (s: CommonState) => {
-    if (s.currency.selectedFiatCurrency) return s.currency.selectedFiatCurrency
+    const federationId = selectActiveFederationId(s)
 
-    const metadata = selectFederationMetadata(s)
-    if (metadata) {
-        const federationDefaultCurrency = getFederationDefaultCurrency(metadata)
-        if (federationDefaultCurrency) return federationDefaultCurrency
+    if (!federationId) return SupportedCurrency.USD
+
+    return selectFederationCurrency(s, federationId)
+}
+
+export const selectFederationDefaultCurrency = (
+    s: CommonState,
+    federationId: Federation['id'],
+) => {
+    const loadedFederations = selectLoadedFederations(s)
+    const federation = loadedFederations.find(f => f.id === federationId)
+
+    if (federation) {
+        return (
+            getFederationDefaultCurrency(federation.meta) ??
+            SupportedCurrency.USD
+        )
     }
 
     return SupportedCurrency.USD
 }
 
-export const selectCurrencies = (s: CommonState) => {
-    const metadata = selectFederationMetadata(s)
-    const defaultCurrency =
-        getFederationDefaultCurrency(metadata) || SupportedCurrency.USD
+export const selectFederationCurrency = (
+    s: CommonState,
+    federationId: string,
+) => {
+    const defaultCurrency = selectFederationDefaultCurrency(s, federationId)
+
+    return (
+        s.currency.customFederationCurrencies[federationId] ?? defaultCurrency
+    )
+}
+
+export const selectFederationCurrencies = (
+    s: CommonState,
+    federationId: Federation['id'],
+) => {
+    const defaultCurrency = selectFederationDefaultCurrency(s, federationId)
 
     const sortedCurrencies = Object.entries(SupportedCurrency)
+        .filter(([a]) => a !== defaultCurrency)
         .sort(([, a], [, b]) => a.localeCompare(b))
-        .sort(([, a], [, b]) =>
-            a === defaultCurrency ? -1 : b === defaultCurrency ? 1 : 0,
-        )
 
     return Object.fromEntries(sortedCurrencies)
 }

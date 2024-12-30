@@ -1,0 +1,144 @@
+import { TFunction } from 'i18next';
+import type { FedimintBridgeEventMap, MSats, Sats, bindings } from '../types';
+import { ErrorCode, Observable, ObservableVec, RpcAmount, RpcMediaSource, RpcRoomId } from '../types/bindings';
+export type UnsubscribeFn = () => void;
+export declare class FedimintBridge {
+    private readonly rpc;
+    constructor(rpc: <T = void>(method: string, payload: object) => Promise<T>);
+    rpcTyped<M extends bindings.RpcMethodNames, R extends bindings.RpcResponse<M>>(method: M, payload: bindings.RpcPayload<M>): Promise<R>;
+    /*** RPC METHODS ***/
+    bridgeStatus(): Promise<bindings.RpcBridgeStatus>;
+    onAppForeground(): Promise<null>;
+    federationPreview(inviteCode: string): Promise<bindings.RpcFederationPreview>;
+    stabilityPoolAverageFeeRate(federationId: string, numCycles: number): Promise<bigint>;
+    stabilityPoolWithdraw(lockedBps: number, unlockedAmount: RpcAmount, federationId: string): Promise<string>;
+    stabilityPoolDepositToSeek(amount: RpcAmount, federationId: string): Promise<string>;
+    stabilityPoolAccountInfo(federationId: string, forceUpdate?: boolean): Promise<bindings.RpcStabilityPoolAccountInfo>;
+    stabilityPoolAvailableLiquidity(federationId: string): Promise<MSats>;
+    stabilityPoolCycleStartPrice(federationId: string): Promise<bigint>;
+    stabilityPoolNextCycleStartTime(federationId: string): Promise<bigint>;
+    listTransactions(federationId: string, startTime?: number, limit?: number): Promise<bindings.RpcTransaction[]>;
+    getGuardianStatus(federationId: string): Promise<bindings.GuardianStatus[]>;
+    updateTransactionNotes(transactionId: string, notes: string, federationId: string): Promise<null>;
+    joinFederation(inviteCode: string, recoverFromScratch?: boolean): Promise<bindings.RpcFederation>;
+    leaveFederation(federationId: string): Promise<null>;
+    fedimintVersion(): Promise<string>;
+    listFederations(): Promise<bindings.RpcFederationMaybeLoading[]>;
+    generateInvoice(amount: MSats, description: string, federationId: string, expiry?: number | null): Promise<string>;
+    decodeInvoice(invoice: string, federationId?: string | null): Promise<bindings.RpcInvoice>;
+    payInvoice(invoice: string, federationId: string): Promise<bindings.RpcPayInvoiceResponse>;
+    generateAddress(federationId: string): Promise<string>;
+    previewPayAddress(address: string, sats: Sats, federationId: string): Promise<bindings.RpcFeeDetails>;
+    payAddress(address: string, sats: Sats, federationId: string): Promise<bindings.RpcPayAddressResponse>;
+    generateEcash(amount: MSats, federationId: string, includeInvite?: boolean): Promise<bindings.RpcGenerateEcashResponse>;
+    receiveEcash(ecash: string, federationId: string): Promise<MSats>;
+    validateEcash(ecash: string): Promise<bindings.RpcEcashInfo>;
+    cancelEcash(ecash: string, federationId: string): Promise<null>;
+    generateReusedEcashProofs(federationId: string): Promise<bindings.JSONObject>;
+    signLnurlMessage(message: string, domain: string): Promise<bindings.RpcSignedLnurlMessage>;
+    getNostrPubkey(): Promise<bindings.RpcNostrPubkey>;
+    getNostrSecret(): Promise<bindings.RpcNostrSecret>;
+    signNostrEvent(eventHash: string): Promise<string>;
+    listGateways(federationId: string): Promise<bindings.RpcLightningGateway[]>;
+    switchGateway(gatewayId: bindings.RpcPublicKey, federationId: string): Promise<null>;
+    getMnemonic(): Promise<string[]>;
+    checkMnemonic(mnemonic: Array<string>): Promise<boolean>;
+    recoverFromMnemonic(mnemonic: string[]): Promise<bindings.RpcRegisteredDevice[]>;
+    registerAsNewDevice(): Promise<bindings.RpcFederation | null>;
+    transferExistingDeviceRegistration(index: number): Promise<bindings.RpcFederation | null>;
+    deviceIndexAssignmentStatus(): Promise<bindings.RpcDeviceIndexAssignmentStatus>;
+    fetchRegisteredDevices(): Promise<bindings.RpcRegisteredDevice[]>;
+    uploadBackupFile(videoFilePath: string, federationId: string): Promise<string>;
+    locateRecoveryFile(): Promise<string>;
+    validateRecoveryFile(path: string): Promise<void>;
+    recoveryQr(): Promise<bindings.SocialRecoveryQr | null>;
+    socialRecoveryApprovals(): Promise<bindings.SocialRecoveryEvent>;
+    getSensitiveLog(): Promise<boolean>;
+    setSensitiveLog(enable: boolean): Promise<null>;
+    approveSocialRecoveryRequest(recoveryId: string, peerId: number, password: string, federationId: string): Promise<null>;
+    socialRecoveryDownloadVerificationDoc(recoveryId: string, federationId: string, peerId: number): Promise<string | null>;
+    completeSocialRecovery(): Promise<bindings.RpcRegisteredDevice[]>;
+    cancelSocialRecovery(): Promise<null>;
+    /*** MATRIX ***/
+    matrixSendAttachment(args: bindings.RpcPayload<'matrixSendAttachment'>): Promise<null>;
+    matrixEditMessage(roomId: RpcRoomId, eventId: string, newContent: string): Promise<null>;
+    matrixDeleteMessage(roomId: RpcRoomId, eventId: string, reason: string | null): Promise<null>;
+    matrixDownloadFile(path: string, mediaSource: RpcMediaSource): Promise<string>;
+    matrixStartPoll(roomId: RpcRoomId, question: string, answers: Array<string>): Promise<null>;
+    matrixEndPoll(roomId: RpcRoomId, pollStartId: string): Promise<null>;
+    matrixRespondToPoll(roomId: RpcRoomId, pollStartId: string, selections: Array<string>): Promise<null>;
+    matrixInit(): Promise<null>;
+    matrixGetAccountSession(args: bindings.RpcPayload<'matrixGetAccountSession'>): Promise<bindings.RpcMatrixAccountSession>;
+    matrixPublicRoomInfo(args: bindings.RpcPayload<'matrixPublicRoomInfo'>): Promise<bindings.JSONObject>;
+    matrixRoomPreviewContent(args: bindings.RpcPayload<'matrixRoomPreviewContent'>): Promise<bindings.RpcTimelineItem[]>;
+    matrixRoomList(args: bindings.RpcPayload<'matrixRoomList'>): Promise<bindings.ObservableRoomList>;
+    matrixRoomListUpdateRanges(args: bindings.RpcPayload<'matrixRoomListUpdateRanges'>): Promise<null>;
+    matrixRoomTimelineItems(args: bindings.RpcPayload<'matrixRoomTimelineItems'>): Promise<bindings.ObservableTimelineItems>;
+    matrixRoomTimelineItemsPaginateBackwards(args: bindings.RpcPayload<'matrixRoomTimelineItemsPaginateBackwards'>): Promise<null>;
+    matrixRoomObserveTimelineItemsPaginateBackwards(args: bindings.RpcPayload<'matrixRoomObserveTimelineItemsPaginateBackwards'>): Promise<bindings.ObservableBackPaginationStatus>;
+    matrixSendMessage(args: bindings.RpcPayload<'matrixSendMessage'>): Promise<null>;
+    matrixSendMessageJson(args: bindings.RpcPayload<'matrixSendMessageJson'>): Promise<null>;
+    matrixRoomCreate(args: bindings.RpcPayload<'matrixRoomCreate'>): Promise<string>;
+    matrixRoomCreateOrGetDm(args: bindings.RpcPayload<'matrixRoomCreateOrGetDm'>): Promise<string>;
+    matrixRoomJoin(args: bindings.RpcPayload<'matrixRoomJoin'>): Promise<null>;
+    matrixRoomJoinPublic(args: bindings.RpcPayload<'matrixRoomJoinPublic'>): Promise<null>;
+    matrixRoomLeave(args: bindings.RpcPayload<'matrixRoomLeave'>): Promise<null>;
+    matrixIgnoreUser(args: bindings.RpcPayload<'matrixIgnoreUser'>): Promise<null>;
+    matrixUnignoreUser(args: bindings.RpcPayload<'matrixUnignoreUser'>): Promise<null>;
+    matrixRoomKickUser(args: bindings.RpcPayload<'matrixRoomKickUser'>): Promise<null>;
+    matrixRoomBanUser(args: bindings.RpcPayload<'matrixRoomBanUser'>): Promise<null>;
+    matrixRoomUnbanUser(args: bindings.RpcPayload<'matrixRoomUnbanUser'>): Promise<null>;
+    matrixRoomObserveInfo(args: bindings.RpcPayload<'matrixRoomObserveInfo'>): Promise<bindings.ObservableRoomInfo>;
+    matrixRoomInviteUserById(args: bindings.RpcPayload<'matrixRoomInviteUserById'>): Promise<null>;
+    matrixRoomSetName(args: bindings.RpcPayload<'matrixRoomSetName'>): Promise<null>;
+    matrixRoomSetTopic(args: bindings.RpcPayload<'matrixRoomSetTopic'>): Promise<null>;
+    matrixRoomGetMembers(args: bindings.RpcPayload<'matrixRoomGetMembers'>): Promise<bindings.RpcRoomMember[]>;
+    matrixRoomGetPowerLevels(args: bindings.RpcPayload<'matrixRoomGetPowerLevels'>): Promise<bindings.JSONObject>;
+    matrixRoomSetPowerLevels(args: bindings.RpcPayload<'matrixRoomSetPowerLevels'>): Promise<null>;
+    matrixUserDirectorySearch(args: bindings.RpcPayload<'matrixUserDirectorySearch'>): Promise<bindings.RpcMatrixUserDirectorySearchResponse>;
+    matrixUserProfile(args: bindings.RpcPayload<'matrixUserProfile'>): Promise<bindings.JSONObject>;
+    matrixSetDisplayName(args: bindings.RpcPayload<'matrixSetDisplayName'>): Promise<null>;
+    matrixSetAvatarUrl(args: bindings.RpcPayload<'matrixSetAvatarUrl'>): Promise<null>;
+    matrixUploadMedia(args: bindings.RpcPayload<'matrixUploadMedia'>): Promise<bindings.RpcMatrixUploadResult>;
+    matrixObserveSyncIndicator(args: bindings.RpcPayload<'matrixObserveSyncIndicator'>): Promise<bindings.ObservableRpcSyncIndicator>;
+    matrixRoomSendReceipt(args: bindings.RpcPayload<'matrixRoomSendReceipt'>): Promise<boolean>;
+    matrixRoomMarkAsUnread(args: bindings.RpcPayload<'matrixRoomMarkAsUnread'>): Promise<null>;
+    matrixSetPusher(args: bindings.RpcPayload<'matrixSetPusher'>): Promise<null>;
+    matrixRoomGetNotificationMode(args: bindings.RpcPayload<'matrixRoomGetNotificationMode'>): Promise<bindings.RpcRoomNotificationMode | null>;
+    matrixRoomSetNotificationMode(args: bindings.RpcPayload<'matrixRoomSetNotificationMode'>): Promise<null>;
+    matrixObserverCancel(args: bindings.RpcPayload<'matrixObservableCancel'>): Promise<null>;
+    dumpDb(args: bindings.RpcPayload<'dumpDb'>): Promise<string>;
+    getAccruedOutstandingFediFeesPerTXType(args: bindings.RpcPayload<'getAccruedOutstandingFediFeesPerTXType'>): Promise<[string, bindings.RpcTransactionDirection, MSats][]>;
+    getAccruedPendingFediFeesPerTXType(args: bindings.RpcPayload<'getAccruedPendingFediFeesPerTXType'>): Promise<[string, bindings.RpcTransactionDirection, MSats][]>;
+    /*** COMMUNITIES RPCs ***/
+    communityPreview(args: bindings.RpcPayload<'communityPreview'>): Promise<bindings.RpcCommunity>;
+    joinCommunity(args: bindings.RpcPayload<'joinCommunity'>): Promise<bindings.RpcCommunity>;
+    leaveCommunity(args: bindings.RpcPayload<'leaveCommunity'>): Promise<null>;
+    listCommunities(args: bindings.RpcPayload<'listCommunities'>): Promise<bindings.RpcCommunity[]>;
+    /*** EVIL RPCs ***/
+    evilSpamInvoices(args: bindings.RpcPayload<'evilSpamInvoices'>): Promise<null>;
+    evilSpamAddress(args: bindings.RpcPayload<'evilSpamAddress'>): Promise<null>;
+    /*** BRIDGE EVENTS ***/
+    private listeners;
+    private observableHandlers;
+    emit(eventType: string, data: unknown): void;
+    private observableId;
+    subscribeObservable<T, U>(init: (id: number) => Promise<Observable<T>>, initCallback: (value: T) => void, updateCallback: (value: U) => void): UnsubscribeFn;
+    subscribeObservableSimple<T>(init: (id: number) => Promise<Observable<T>>, callback: (value: T, isInitialUpdate: boolean) => void): UnsubscribeFn;
+    subscribeObservableVec<T>(init: (id: number) => Promise<ObservableVec<T>>, callback: (value: T[], isInitialUpdate: boolean) => void): UnsubscribeFn;
+    /**
+     * Subscribe to bridge events. Returns an unsubscribe function.
+     */
+    addListener<K extends keyof FedimintBridgeEventMap>(eventType: K, listener: (data: FedimintBridgeEventMap[K]) => void): () => void;
+}
+export declare class BridgeError extends Error {
+    detail: string;
+    error: string;
+    code: ErrorCode | null;
+    constructor(json: {
+        detail: string;
+        error: string;
+        code: ErrorCode | null;
+    });
+    format(t: TFunction): string;
+}

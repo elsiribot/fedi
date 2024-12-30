@@ -1,0 +1,202 @@
+import { BalanceEvent, CommunityMetadataUpdatedEvent, DeviceRegistrationEvent, LogEvent, ObservableUpdate, PanicEvent, RecoveryCompleteEvent, RecoveryProgressEvent, RpcCommunity, RpcFederation, RpcFederationMaybeLoading, RpcFederationPreview, RpcInvoice, RpcLightningGateway, RpcResponse, RpcTransaction, SocialRecoveryApproval, SocialRecoveryEvent, StabilityPoolDepositEvent, StabilityPoolWithdrawalEvent } from './bindings';
+import { MSats, Usd, UsdCents } from './units';
+export type { SocialRecoveryApproval as GuardianApproval, RpcInvoice as Invoice, RpcLightningGateway as LightningGateway, SocialRecoveryEvent, };
+export type SocialRecoveryQrCode = RpcResponse<'recoveryQr'>;
+export declare enum TransactionDirection {
+    send = "send",
+    receive = "receive"
+}
+export type Transaction = RpcTransaction;
+export interface Node {
+    name: string;
+    url: string;
+}
+export interface NodeMap {
+    [index: string]: Node;
+}
+export interface Guardian extends Node {
+    peerId: number;
+    password: string;
+}
+export interface FederationCredentials {
+    username: string;
+    password: string;
+    keypairSeed: string;
+}
+export declare enum SupportedCurrency {
+    USD = "USD",
+    ARS = "ARS",
+    AUD = "AUD",
+    BDT = "BDT",
+    BIF = "BIF",
+    BRL = "BRL",
+    BWP = "BWP",
+    CAD = "CAD",
+    CDF = "CDF",
+    CFA = "CFA",
+    CLP = "CLP",
+    COP = "COP",
+    CRC = "CRC",
+    CUP = "CUP",
+    CZK = "CZK",
+    DJF = "DJF",
+    ERN = "ERN",
+    ETB = "ETB",
+    EUR = "EUR",
+    GBP = "GBP",
+    GHS = "GHS",
+    GTQ = "GTQ",
+    HKD = "HKD",
+    HNL = "HNL",
+    IDR = "IDR",
+    INR = "INR",
+    KES = "KES",
+    KRW = "KRW",
+    LBP = "LBP",
+    MMK = "MMK",
+    MWK = "MWK",
+    MXN = "MXN",
+    MYR = "MYR",
+    NAD = "NAD",
+    NGN = "NGN",
+    NIO = "NIO",
+    PEN = "PEN",
+    PHP = "PHP",
+    PKR = "PKR",
+    RWF = "RWF",
+    SDG = "SDG",
+    SOS = "SOS",
+    SRD = "SRD",
+    SSP = "SSP",
+    THB = "THB",
+    UGX = "UGX",
+    UYU = "UYU",
+    VES = "VES",
+    VND = "VND",
+    XAF = "XAF",
+    ZAR = "ZAR",
+    ZMW = "ZMW"
+}
+export declare enum SupportedMetaFields {
+    default_currency = "default_currency",
+    fixed_exchange_rate = "fixed_exchange_rate",
+    chat_server_domain = "chat_server_domain",
+    invite_codes_disabled = "invite_codes_disabled",
+    new_members_disabled = "new_members_disabled",
+    social_recovery_disabled = "social_recovery_disabled",
+    offline_wallet_disabled = "offline_wallet_disabled",
+    onchain_deposits_disabled = "onchain_deposits_disabled",
+    fedi_internal_injection_disabled = "fedi_internal_injection_disabled",
+    stability_pool_disabled = "stability_pool_disabled",
+    max_stable_balance_msats = "max_stable_balance_msats",
+    max_balance_msats = "max_balance_msats",
+    max_invoice_msats = "max_invoice_msats",
+    nostr_enabled = "nostr_enabled",
+    popup_end_timestamp = "popup_end_timestamp",
+    federation_expiry_timestamp = "federation_expiry_timestamp",
+    popup_countdown_message = "popup_countdown_message",
+    popup_ended_message = "popup_ended_message",
+    tos_url = "tos_url",
+    welcome_message = "welcome_message",
+    pinned_message = "pinned_message",
+    federation_icon_url = "federation_icon_url",
+    federation_name = "federation_name",
+    default_matrix_rooms = "default_matrix_rooms",
+    default_group_chats = "default_group_chats"
+}
+export type FederationMetadata = RpcFederation['meta'];
+/**
+ * Connection Status of a federation's guardians
+ *
+ * - online: all guardians are online
+ * - unstable: At least one guardian is offline, but
+ *   consensus is still met
+ * - offline: Consensus is not met
+ */
+export type FederationStatus = 'online' | 'unstable' | 'offline';
+export type LoadingFederation = RpcFederationMaybeLoading & {
+    meta?: never;
+    readonly init_state: 'loading';
+    readonly hasWallet: true;
+};
+export type FederationInitFailure = RpcFederationMaybeLoading & {
+    meta?: never;
+    readonly init_state: 'failed';
+    readonly hasWallet: true;
+};
+export type LoadedFederation = RpcFederation & {
+    status: FederationStatus;
+    readonly init_state: 'ready';
+    readonly hasWallet: true;
+};
+export type Federation = LoadingFederation | FederationInitFailure | LoadedFederation;
+export type Community = RpcCommunity & {
+    id: Federation['id'];
+    status: 'online';
+    readonly network: undefined;
+    readonly hasWallet: false;
+    readonly init_state: 'ready';
+};
+export type RpcCommunityPreview = RpcCommunity;
+export type CommunityPreview = Community;
+export type JoinPreview = FederationPreview | CommunityPreview;
+export type FederationListItem = Federation | Community;
+export type LoadedFederationListItem = LoadedFederation | Community;
+export type PublicFederation = Pick<LoadedFederation, 'id' | 'name' | 'meta'>;
+export type SeedWords = RpcResponse<'getMnemonic'>;
+export interface FediMod {
+    id: string;
+    title: string;
+    url: string;
+    imageUrl?: string | null;
+    description?: string;
+    color?: string;
+}
+export interface FederationApiVersion {
+    major: number;
+    minor: number;
+}
+export type FederationPreview = RpcFederationPreview & {
+    hasWallet: true;
+};
+export type FederationEvent = RpcFederationMaybeLoading;
+export interface TransactionEvent {
+    federationId: string;
+    transaction: Transaction;
+}
+export type FedimintBridgeEventMap = {
+    log: LogEvent;
+    federation: FederationEvent;
+    transaction: TransactionEvent;
+    socialRecovery: SocialRecoveryEvent;
+    balance: BalanceEvent;
+    panic: PanicEvent;
+    stabilityPoolDeposit: StabilityPoolDepositEvent;
+    stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent;
+    recoveryComplete: RecoveryCompleteEvent;
+    recoveryProgress: RecoveryProgressEvent;
+    observableUpdate: ObservableUpdate<unknown>;
+    deviceRegistration: DeviceRegistrationEvent;
+    communityMetadataUpdated: CommunityMetadataUpdatedEvent;
+};
+export type StabilityPoolTxn = {
+    id: string;
+    timestamp: number | null;
+    amountCents: UsdCents;
+    amountUsd: Usd;
+    direction: 'deposit' | 'withdraw';
+    status: 'pending' | 'complete';
+};
+export type ReceiveSuccessStatus = 'success' | 'pending';
+export type ReceiveSuccessData = {
+    amount: Transaction['amount'];
+    bitcoin?: Transaction['bitcoin'];
+};
+export type ReceiveEcashResult = {
+    amount: MSats;
+    status: ReceiveSuccessStatus;
+} | {
+    amount: MSats;
+    status: 'failed';
+    error: string;
+};

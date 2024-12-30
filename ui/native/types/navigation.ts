@@ -68,6 +68,7 @@ export type RootStackParamList = {
     ChatWallet: { recipientId: string }
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined
+    FederationCurrency: { federationId: string }
     CompleteRecoveryAssist: { videoPath: string; recoveryId: string }
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined
@@ -83,7 +84,6 @@ export type RootStackParamList = {
     ConfirmSendLightning: { parsedData: ParsedBolt11 | ParsedLnurlPay }
     ConfirmSendOnChain: { parsedData: ParsedBip21 }
     ConnectedFederationsDrawer: undefined
-    CurrencySettings: undefined
     CreateGroup: { defaultGroup?: boolean }
     EnterDisplayName: undefined
     DirectChat: { memberId: string }

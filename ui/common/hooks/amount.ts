@@ -68,21 +68,23 @@ export type AmountSymbolPosition = 'start' | 'end' | 'none'
 
 // prettier-ignore
 export const numpadButtons = [
-    1, 2, 3,
-    4, 5, 6,
-    7, 8, 9,
-    null, 0, 'backspace',
+  1, 2, 3,
+  4, 5, 6,
+  7, 8, 9,
+  null, 0, 'backspace',
 ] as const
 
 export type NumpadButtonValue = (typeof numpadButtons)[number]
 
-export const useBtcFiatPrice = () => {
+export const useBtcFiatPrice = (currency?: SupportedCurrency) => {
     const selectedFiatCurrency = useCommonSelector(selectCurrency)
     const currencyLocale = useCommonSelector(selectCurrencyLocale)
     const exchangeRate: number = useCommonSelector(selectBtcExchangeRate)
     const btcUsdExchangeRate: number = useCommonSelector(
         selectBtcUsdExchangeRate,
     )
+
+    const fiatCurrency = currency ?? selectedFiatCurrency
 
     return {
         convertCentsToFormattedFiat: useCallback(
@@ -92,17 +94,12 @@ export const useBtcFiatPrice = () => {
                     btcUsdExchangeRate,
                     exchangeRate,
                 )
-                return amountUtils.formatFiat(amount, selectedFiatCurrency, {
+                return amountUtils.formatFiat(amount, fiatCurrency, {
                     symbolPosition,
                     locale: currencyLocale,
                 })
             },
-            [
-                btcUsdExchangeRate,
-                currencyLocale,
-                exchangeRate,
-                selectedFiatCurrency,
-            ],
+            [btcUsdExchangeRate, currencyLocale, exchangeRate, fiatCurrency],
         ),
         convertSatsToFiat: useCallback(
             (sats: Sats) => {
@@ -113,12 +110,12 @@ export const useBtcFiatPrice = () => {
         convertSatsToFormattedFiat: useCallback(
             (sats: Sats, symbolPosition: AmountSymbolPosition = 'end') => {
                 const amount = amountUtils.satToFiat(sats, exchangeRate)
-                return amountUtils.formatFiat(amount, selectedFiatCurrency, {
+                return amountUtils.formatFiat(amount, fiatCurrency, {
                     symbolPosition,
                     locale: currencyLocale,
                 })
             },
-            [exchangeRate, selectedFiatCurrency, currencyLocale],
+            [exchangeRate, fiatCurrency, currencyLocale],
         ),
         convertSatsToFormattedUsd: useCallback(
             (sats: Sats, symbolPosition: AmountSymbolPosition = 'end') => {
@@ -132,9 +129,9 @@ export const useBtcFiatPrice = () => {
         ),
     }
 }
-export const useAmountFormatter = () => {
+export const useAmountFormatter = (currency?: SupportedCurrency) => {
     const { convertSatsToFormattedUsd, convertSatsToFormattedFiat } =
-        useBtcFiatPrice()
+        useBtcFiatPrice(currency)
     const showFiatTxnAmounts = useCommonSelector(selectShowFiatTxnAmounts)
 
     const makeFormattedAmountsFromSats = useCallback(

@@ -1,0 +1,1288 @@
+import { RequestInvoiceArgs } from "webln";
+import { MSats } from "@fedi/common/types";
+export type RpcMethodNames = keyof RpcMethods;
+export type RpcPayload<M extends RpcMethodNames> = RpcMethods[M][0];
+export type RpcResponse<M extends RpcMethodNames> = RpcMethods[M][1];
+declare const __opaque_type__: unique symbol;
+export type Opaque<BaseType, TagName> = BaseType & {
+    readonly [__opaque_type__]: TagName;
+};
+export type EcashRequest = Omit<RequestInvoiceArgs, "defaultMemo">;
+export type JSONValue = string | number | boolean | null | {
+    [key: string]: JSONValue;
+} | JSONValue[];
+export type JSONObject = Record<string, JSONValue>;
+export type BackupServiceState = {
+    type: "initializing";
+} | {
+    type: "waiting";
+    next_backup_timestamp: number | null;
+} | {
+    type: "running";
+};
+export type BackupServiceStatus = {
+    lastBackupTimestamp: number | null;
+    state: BackupServiceState;
+};
+export type BalanceEvent = {
+    federationId: RpcFederationId;
+    balance: RpcAmount;
+};
+/**
+ * Notify front-end that a particular community's metadata has updated
+ */
+export type CommunityMetadataUpdatedEvent = {
+    newCommunity: RpcCommunity;
+};
+export type CreateRoomRequest = JSONObject;
+export type CustomMessageData = Record<string, JSONValue>;
+/**
+ * Status of device registration with Fedi's server
+ */
+export type DeviceRegistrationEvent = {
+    state: DeviceRegistrationState;
+};
+/**
+ * States representing the different outcomes for device registration requests
+ * sent to Fedi's servers
+ */
+export type DeviceRegistrationState = "newDeviceNeedsAssignment" | "conflict" | "success" | "overdue";
+export type ErrorCode = "initializationFailed" | "notInialized" | "badRequest" | "alreadyJoined" | "invalidInvoice" | "invalidMnemonic" | "ecashCancelFailed" | "panic" | "invalidSocialRecoveryFile" | {
+    insufficientBalance: RpcAmount;
+} | "matrixNotInitialized" | "unknownObservable" | {
+    duplicateObservableID: bigint;
+} | "timeout" | "recovery" | {
+    invalidJson: string;
+} | "payLnInvoiceAlreadyPaid" | "payLnInvoiceAlreadyInProgress" | "noLnGatewayAvailable" | {
+    moduleNotFound: string;
+};
+export type Event = {
+    transaction: TransactionEvent;
+} | {
+    log: LogEvent;
+} | {
+    federation: RpcFederationMaybeLoading;
+} | {
+    balance: BalanceEvent;
+} | {
+    panic: PanicEvent;
+} | {
+    stabilityPoolDeposit: StabilityPoolDepositEvent;
+} | {
+    stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent;
+} | {
+    recoveryComplete: RecoveryCompleteEvent;
+} | {
+    recoveryProgress: RecoveryProgressEvent;
+} | {
+    deviceRegistration: DeviceRegistrationEvent;
+} | {
+    stabilityPoolUnfilledDepositSwept: StabilityPoolUnfilledDepositSweptEvent;
+} | {
+    communityMetadataUpdated: CommunityMetadataUpdatedEvent;
+};
+export type FiatFXInfo = {
+    /**
+     * Code of the currency that's set as display currency in the app.
+     */
+    fiatCode: string;
+    /**
+     * 1 BTC equivalent in the display currency. This value is recorded in
+     * hundredths, such as cents.
+     */
+    btcToFiatHundredths: number;
+};
+export type LogEvent = {
+    log: string;
+};
+/**
+ * An Observable contains a value that updates over time.
+ *
+ * The frontend must call `cancelObservable` to free up the resources
+ * utilized by the Observable.
+ */
+export type Observable<T> = {
+    /**
+     * `id` is used to match `ObservableUpdate`.
+     */
+    id: number;
+    /**
+     * Initial value of the observable.
+     */
+    initial: T;
+};
+export type ObservableBackPaginationStatus = Observable<RpcBackPaginationStatus>;
+export type ObservableRoomInfo = Observable<JSONObject>;
+export type ObservableRoomList = ObservableVec<RpcRoomListEntry>;
+export type ObservableRpcSyncIndicator = Observable<RpcSyncIndicator>;
+export type ObservableTimelineItems = ObservableVec<RpcTimelineItem>;
+/**
+ * ObservableUpdate contains the change to original Observable.
+ *
+ * `T` will only match the Observable<T> in simple observable.
+ */
+export type ObservableUpdate<T> = {
+    /**
+     * id matches the id in Observable.
+     * Frontend must store ObservableUpdate with unknown, because you may
+     * receive the ObservableUpdate event before the corresponding Observable
+     * object.
+     */
+    id: number;
+    /**
+     * ObservableUpdate events are highly sensitive to the order
+     * in which they occur. Events may be reordered during RPC or
+     * processing phases. Use this field to correct their order.
+     */
+    update_index: number;
+    update: T;
+};
+export type ObservableVec<T> = Observable<Array<T>>;
+export type ObservableVecUpdate<T> = ObservableUpdate<Array<SerdeVectorDiff<T>>>;
+export type PanicEvent = {
+    message: string;
+};
+export type RecoveryCompleteEvent = {
+    federationId: RpcFederationId;
+};
+/**
+ * Progress of the recovery
+ *
+ * This includes "magic" value: if `total` is `0` the progress is "not started
+ * yet"/"empty"/"none"
+ *
+ * total and complete are unitless.
+ */
+export type RecoveryProgressEvent = {
+    federationId: RpcFederationId;
+    /**
+     * completed units of work
+     */
+    complete: number;
+    /**
+     * total units of work that are to be completed
+     */
+    total: number;
+};
+export type RpcAmount = MSats;
+export type RpcAppFlavor = {
+    type: "dev";
+} | {
+    type: "nightly";
+} | {
+    type: "bravo";
+};
+export type RpcBackPaginationStatus = "idle" | "paginating" | "timelineStartReached";
+export type RpcBitcoinDetails = {
+    address: string;
+};
+export type RpcBitcoinNetwork = "bitcoin" | "testnet" | "testnet4" | "signet" | "regtest" | "unknown";
+export type RpcBridgeFullInitError = {
+    type: "v2IdentifierMismatch";
+    existing: string;
+    new: string;
+} | ({
+    type: "other";
+} & string);
+export type RpcBridgeStatus = {
+    matrixSetup: boolean;
+    deviceIndexAssignmentStatus: RpcDeviceIndexAssignmentStatus;
+    bridgeFullInitError: RpcBridgeFullInitError | null;
+};
+export type RpcCommunity = {
+    inviteCode: string;
+    name: string;
+    version: number;
+    meta: {
+        [key in string]?: string;
+    };
+};
+export type RpcDeviceIndexAssignmentStatus = {
+    assigned: number;
+} | "unassigned";
+export type RpcDuration = {
+    nanos: number;
+    secs: number;
+};
+export type RpcEcashInfo = {
+    federation_type: "joined";
+    federation_id: RpcFederationId;
+    amount: RpcAmount;
+} | {
+    federation_type: "notJoined";
+    federation_invite: string | null;
+    amount: RpcAmount;
+};
+export type RpcError = {
+    error: string;
+    detail: string;
+    errorCode: ErrorCode | null;
+};
+export type RpcFederation = {
+    balance: RpcAmount;
+    id: RpcFederationId;
+    network: RpcBitcoinNetwork | null;
+    name: string;
+    inviteCode: string;
+    meta: {
+        [key in string]?: string;
+    };
+    recovering: boolean;
+    nodes: Record<string, {
+        url: string;
+        name: string;
+    }>;
+    version: number;
+    clientConfig: RpcJsonClientConfig | null;
+    fediFeeSchedule: RpcFediFeeSchedule;
+    hadReusedEcash: boolean;
+};
+export type RpcFederationId = string;
+export type RpcFederationMaybeLoading = {
+    init_state: "loading";
+    id: RpcFederationId;
+} | {
+    init_state: "failed";
+    error: RpcError;
+    id: RpcFederationId;
+} | ({
+    init_state: "ready";
+} & RpcFederation);
+export type RpcFederationPreview = {
+    id: RpcFederationId;
+    name: string;
+    meta: {
+        [key in string]?: string;
+    };
+    inviteCode: string;
+    version: number;
+    returningMemberStatus: RpcReturningMemberStatus;
+};
+export type RpcFediFeeSchedule = {
+    remittanceThresholdMsat: number;
+    modules: {
+        [key in string]?: RpcModuleFediFeeSchedule;
+    };
+};
+export type RpcFeeDetails = {
+    fediFee: RpcAmount;
+    networkFee: RpcAmount;
+    federationFee: RpcAmount;
+};
+export type RpcGenerateEcashResponse = {
+    ecash: string;
+    cancelAt: number;
+};
+export type RpcInitOpts = {
+    dataDir: string | null;
+    logLevel: string | null;
+    deviceIdentifier: string;
+    appFlavor: RpcAppFlavor;
+};
+export type RpcInvoice = {
+    paymentHash: string;
+    amount: RpcAmount;
+    fee: RpcFeeDetails | null;
+    description: string;
+    invoice: string;
+};
+export type RpcJsonClientConfig = {
+    global: unknown;
+    modules: Record<string, unknown>;
+};
+export type RpcLightningDetails = {
+    invoice: string;
+    fee: RpcAmount | null;
+};
+export type RpcLightningGateway = {
+    nodePubKey: RpcPublicKey;
+    gatewayId: RpcPublicKey;
+    api: string;
+    active: boolean;
+};
+export type RpcLnPayState = {
+    type: "created";
+} | {
+    type: "canceled";
+} | {
+    type: "funded";
+    block_height: number;
+} | {
+    type: "waitingForRefund";
+    error_reason: string;
+} | {
+    type: "awaitingChange";
+} | {
+    type: "success";
+    preimage: string;
+} | {
+    type: "refunded";
+    gateway_error: string;
+} | {
+    type: "failed";
+};
+export type RpcLnReceiveState = {
+    type: "created";
+} | {
+    type: "waitingForPayment";
+    invoice: string;
+    timeout: string;
+} | {
+    type: "canceled";
+    reason: string;
+} | {
+    type: "funded";
+} | {
+    type: "awaitingFunds";
+} | {
+    type: "claimed";
+};
+export type RpcLnState = RpcLnPayState | RpcLnReceiveState;
+export type RpcLockedSeek = {
+    currCycleBeginningLockedAmount: RpcAmount;
+    initialAmount: RpcAmount;
+    initialAmountCents: number;
+    withdrawnAmount: RpcAmount;
+    withdrawnAmountCents: number;
+    feesPaidSoFar: RpcAmount;
+    firstLockStartTime: number;
+};
+export type RpcMatrixAccountSession = {
+    userId: string;
+    deviceId: string;
+    displayName: string | null;
+    avatarUrl: string | null;
+};
+export type RpcMatrixMembership = "ban" | "invite" | "join" | "knock" | "leave" | "unknown";
+export type RpcMatrixUploadResult = {
+    contentUri: string;
+};
+export type RpcMatrixUserDirectorySearchResponse = {
+    results: Array<RpcMatrixUserDirectorySearchUser>;
+    limited: boolean;
+};
+export type RpcMatrixUserDirectorySearchUser = {
+    userId: RpcUserId;
+    displayName: string | null;
+    avatarUrl: string | null;
+};
+export type RpcMediaSource = JSONObject;
+export type RpcMediaUploadParams = {
+    width: number | null;
+    height: number | null;
+    mimeType: string;
+};
+export type RpcMethods = {
+    bridgeStatus: [bridgeStatus, RpcBridgeStatus];
+    onAppForeground: [onAppForeground, null];
+    fedimintVersion: [fedimintVersion, string];
+    joinFederation: [joinFederation, RpcFederation];
+    federationPreview: [federationPreview, RpcFederationPreview];
+    leaveFederation: [leaveFederation, null];
+    listFederations: [listFederations, Array<RpcFederationMaybeLoading>];
+    getGuardianStatus: [getGuardianStatus, Array<GuardianStatus>];
+    generateInvoice: [generateInvoice, string];
+    decodeInvoice: [decodeInvoice, RpcInvoice];
+    payInvoice: [payInvoice, RpcPayInvoiceResponse];
+    listGateways: [listGateways, Array<RpcLightningGateway>];
+    switchGateway: [switchGateway, null];
+    generateAddress: [generateAddress, string];
+    recheckPeginAddress: [recheckPeginAddress, null];
+    previewPayAddress: [previewPayAddress, RpcFeeDetails];
+    payAddress: [payAddress, RpcPayAddressResponse];
+    generateEcash: [generateEcash, RpcGenerateEcashResponse];
+    receiveEcash: [receiveEcash, [RpcAmount, RpcOperationId]];
+    validateEcash: [validateEcash, RpcEcashInfo];
+    cancelEcash: [cancelEcash, null];
+    updateCachedFiatFXInfo: [updateCachedFiatFXInfo, null];
+    listTransactions: [listTransactions, Array<RpcTransaction>];
+    updateTransactionNotes: [updateTransactionNotes, null];
+    backupNow: [backupNow, null];
+    getMnemonic: [getMnemonic, Array<string>];
+    checkMnemonic: [checkMnemonic, boolean];
+    recoverFromMnemonic: [recoverFromMnemonic, Array<RpcRegisteredDevice>];
+    generateReusedEcashProofs: [generateReusedEcashProofs, RpcReusedEcashProofs];
+    uploadBackupFile: [uploadBackupFile, string];
+    locateRecoveryFile: [locateRecoveryFile, string];
+    validateRecoveryFile: [validateRecoveryFile, null];
+    recoveryQr: [recoveryQr, SocialRecoveryQr | null];
+    cancelSocialRecovery: [cancelSocialRecovery, null];
+    socialRecoveryApprovals: [socialRecoveryApprovals, SocialRecoveryEvent];
+    completeSocialRecovery: [completeSocialRecovery, Array<RpcRegisteredDevice>];
+    socialRecoveryDownloadVerificationDoc: [
+        socialRecoveryDownloadVerificationDoc,
+        string | null
+    ];
+    approveSocialRecoveryRequest: [approveSocialRecoveryRequest, null];
+    signLnurlMessage: [signLnurlMessage, RpcSignedLnurlMessage];
+    backupStatus: [backupStatus, BackupServiceStatus];
+    getNostrPubkey: [getNostrPubkey, RpcNostrPubkey];
+    getNostrSecret: [getNostrSecret, RpcNostrSecret];
+    signNostrEvent: [signNostrEvent, string];
+    stabilityPoolAccountInfo: [
+        stabilityPoolAccountInfo,
+        RpcStabilityPoolAccountInfo
+    ];
+    stabilityPoolNextCycleStartTime: [stabilityPoolNextCycleStartTime, bigint];
+    stabilityPoolCycleStartPrice: [stabilityPoolCycleStartPrice, bigint];
+    stabilityPoolDepositToSeek: [stabilityPoolDepositToSeek, RpcOperationId];
+    stabilityPoolWithdraw: [stabilityPoolWithdraw, RpcOperationId];
+    stabilityPoolAverageFeeRate: [stabilityPoolAverageFeeRate, bigint];
+    stabilityPoolAvailableLiquidity: [stabilityPoolAvailableLiquidity, RpcAmount];
+    getSensitiveLog: [getSensitiveLog, boolean];
+    setSensitiveLog: [setSensitiveLog, null];
+    setMintModuleFediFeeSchedule: [setMintModuleFediFeeSchedule, null];
+    setWalletModuleFediFeeSchedule: [setWalletModuleFediFeeSchedule, null];
+    setLightningModuleFediFeeSchedule: [setLightningModuleFediFeeSchedule, null];
+    setStabilityPoolModuleFediFeeSchedule: [
+        setStabilityPoolModuleFediFeeSchedule,
+        null
+    ];
+    getAccruedOutstandingFediFeesPerTXType: [
+        getAccruedOutstandingFediFeesPerTXType,
+        Array<[string, RpcTransactionDirection, RpcAmount]>
+    ];
+    getAccruedPendingFediFeesPerTXType: [
+        getAccruedPendingFediFeesPerTXType,
+        Array<[string, RpcTransactionDirection, RpcAmount]>
+    ];
+    dumpDb: [dumpDb, string];
+    fetchRegisteredDevices: [fetchRegisteredDevices, Array<RpcRegisteredDevice>];
+    registerAsNewDevice: [registerAsNewDevice, RpcFederation | null];
+    transferExistingDeviceRegistration: [
+        transferExistingDeviceRegistration,
+        RpcFederation | null
+    ];
+    deviceIndexAssignmentStatus: [
+        deviceIndexAssignmentStatus,
+        RpcDeviceIndexAssignmentStatus
+    ];
+    matrixObservableCancel: [matrixObservableCancel, null];
+    matrixInit: [matrixInit, null];
+    matrixGetAccountSession: [matrixGetAccountSession, RpcMatrixAccountSession];
+    matrixObserveSyncIndicator: [
+        matrixObserveSyncIndicator,
+        ObservableRpcSyncIndicator
+    ];
+    matrixRoomList: [matrixRoomList, ObservableRoomList];
+    matrixRoomListUpdateRanges: [matrixRoomListUpdateRanges, null];
+    matrixRoomTimelineItems: [matrixRoomTimelineItems, ObservableTimelineItems];
+    matrixRoomTimelineItemsPaginateBackwards: [
+        matrixRoomTimelineItemsPaginateBackwards,
+        null
+    ];
+    matrixRoomObserveTimelineItemsPaginateBackwards: [
+        matrixRoomObserveTimelineItemsPaginateBackwards,
+        ObservableBackPaginationStatus
+    ];
+    matrixSendMessage: [matrixSendMessage, null];
+    matrixSendMessageJson: [matrixSendMessageJson, null];
+    matrixSendAttachment: [matrixSendAttachment, null];
+    matrixRoomCreate: [matrixRoomCreate, RpcRoomId];
+    matrixRoomCreateOrGetDm: [matrixRoomCreateOrGetDm, RpcRoomId];
+    matrixRoomJoin: [matrixRoomJoin, null];
+    matrixRoomJoinPublic: [matrixRoomJoinPublic, null];
+    matrixRoomLeave: [matrixRoomLeave, null];
+    matrixRoomObserveInfo: [matrixRoomObserveInfo, ObservableRoomInfo];
+    matrixRoomInviteUserById: [matrixRoomInviteUserById, null];
+    matrixRoomSetName: [matrixRoomSetName, null];
+    matrixRoomSetTopic: [matrixRoomSetTopic, null];
+    matrixRoomGetMembers: [matrixRoomGetMembers, Array<RpcRoomMember>];
+    matrixUserDirectorySearch: [
+        matrixUserDirectorySearch,
+        RpcMatrixUserDirectorySearchResponse
+    ];
+    matrixSetDisplayName: [matrixSetDisplayName, null];
+    matrixSetAvatarUrl: [matrixSetAvatarUrl, null];
+    matrixUploadMedia: [matrixUploadMedia, RpcMatrixUploadResult];
+    matrixRoomGetPowerLevels: [
+        matrixRoomGetPowerLevels,
+        RpcRoomPowerLevelsEventContent
+    ];
+    matrixRoomSetPowerLevels: [matrixRoomSetPowerLevels, null];
+    matrixRoomSendReceipt: [matrixRoomSendReceipt, boolean];
+    matrixRoomSetNotificationMode: [matrixRoomSetNotificationMode, null];
+    matrixRoomGetNotificationMode: [
+        matrixRoomGetNotificationMode,
+        RpcRoomNotificationMode | null
+    ];
+    matrixSetPusher: [matrixSetPusher, null];
+    matrixUserProfile: [matrixUserProfile, UserProfile];
+    matrixRoomKickUser: [matrixRoomKickUser, null];
+    matrixRoomBanUser: [matrixRoomBanUser, null];
+    matrixRoomUnbanUser: [matrixRoomUnbanUser, null];
+    matrixIgnoreUser: [matrixIgnoreUser, null];
+    matrixUnignoreUser: [matrixUnignoreUser, null];
+    matrixListIgnoredUsers: [matrixListIgnoredUsers, Array<RpcUserId>];
+    matrixRoomPreviewContent: [matrixRoomPreviewContent, Array<RpcTimelineItem>];
+    matrixPublicRoomInfo: [matrixPublicRoomInfo, RpcPublicRoomChunk];
+    matrixRoomMarkAsUnread: [matrixRoomMarkAsUnread, null];
+    matrixEditMessage: [matrixEditMessage, null];
+    matrixDeleteMessage: [matrixDeleteMessage, null];
+    matrixDownloadFile: [matrixDownloadFile, string];
+    matrixStartPoll: [matrixStartPoll, null];
+    matrixEndPoll: [matrixEndPoll, null];
+    matrixRespondToPoll: [matrixRespondToPoll, null];
+    communityPreview: [communityPreview, RpcCommunity];
+    joinCommunity: [joinCommunity, RpcCommunity];
+    leaveCommunity: [leaveCommunity, null];
+    listCommunities: [listCommunities, Array<RpcCommunity>];
+    evilSpamInvoices: [evilSpamInvoices, null];
+    evilSpamAddress: [evilSpamAddress, null];
+};
+export type RpcModuleFediFeeSchedule = {
+    sendPpm: number;
+    receivePpm: number;
+};
+export type RpcNostrPubkey = {
+    hex: string;
+    npub: string;
+};
+export type RpcNostrSecret = {
+    hex: string;
+    nsec: string;
+};
+export type RpcOOBReissueState = {
+    type: "created";
+} | {
+    type: "issuing";
+} | {
+    type: "done";
+} | {
+    type: "failed";
+    error: string;
+};
+export type RpcOOBSpendState = {
+    type: "created";
+} | {
+    type: "userCanceledProcessing";
+} | {
+    type: "userCanceledSuccess";
+} | {
+    type: "userCanceledFailure";
+} | {
+    type: "refunded";
+} | {
+    type: "success";
+};
+export type RpcOOBState = RpcOOBSpendState | RpcOOBReissueState;
+export type RpcOnchainDepositState = {
+    type: "waitingForTransaction";
+} | ({
+    type: "waitingForConfirmation";
+} & RpcOnchainDepositTransactionData) | ({
+    type: "confirmed";
+} & RpcOnchainDepositTransactionData) | ({
+    type: "claimed";
+} & RpcOnchainDepositTransactionData) | {
+    type: "failed";
+};
+export type RpcOnchainDepositTransactionData = {
+    txid: string;
+};
+export type RpcOnchainState = RpcOnchainDepositState | RpcOnchainWithdrawState;
+export type RpcOnchainWithdrawState = {
+    type: "created";
+} | {
+    type: "succeeded";
+} | {
+    type: "failed";
+};
+export type RpcOperationFediFeeStatus = {
+    type: "pendingSend";
+    fedi_fee: RpcAmount;
+} | {
+    type: "pendingReceive";
+    fedi_fee_ppm: number;
+} | {
+    type: "success";
+    fedi_fee: RpcAmount;
+} | {
+    type: "failedSend";
+    fedi_fee: RpcAmount;
+} | {
+    type: "failedReceive";
+    fedi_fee_ppm: number;
+};
+export type RpcOperationId = string;
+export type RpcPayAddressResponse = {
+    txid: string;
+};
+export type RpcPayInvoiceResponse = {
+    preimage: string;
+};
+export type RpcPeerId = number;
+export type RpcPublicKey = string;
+export type RpcPublicRoomChunk = JSONObject;
+export type RpcPusher = JSONObject;
+export type RpcRanges = Array<{
+    start: number;
+    end: number;
+}>;
+export type RpcRecoveryId = string;
+export type RpcRegisteredDevice = {
+    deviceIndex: number;
+    deviceIdentifier: string;
+    lastRegistrationTimestamp: number;
+};
+export type RpcReturningMemberStatus = {
+    type: "unknown";
+} | {
+    type: "newMember";
+} | {
+    type: "returningMember";
+};
+export type RpcReusedEcashProofs = JSONObject;
+export type RpcRoomId = string;
+export type RpcRoomListEntry = {
+    kind: "empty";
+} | {
+    kind: "invalidated";
+    value: string;
+} | {
+    kind: "filled";
+    value: string;
+};
+export type RpcRoomMember = {
+    userId: RpcUserId;
+    displayName: string | null;
+    avatarUrl: string | null;
+    ignored: boolean;
+    powerLevel: number;
+    membership: RpcMatrixMembership;
+};
+/**
+ * Enum representing the push notification modes for a room.
+ */
+export type RpcRoomNotificationMode = "allMessages" | "mentionsAndKeywordsOnly" | "mute";
+export type RpcRoomPowerLevelsEventContent = JSONObject;
+export type RpcSignedLnurlMessage = {
+    signature: string;
+    pubkey: RpcPublicKey;
+};
+export type RpcStabilityPoolAccountInfo = {
+    idleBalance: RpcAmount;
+    stagedSeeks: Array<RpcAmount>;
+    stagedCancellation: number | null;
+    lockedSeeks: Array<RpcLockedSeek>;
+    timestamp: number;
+    isFetchedFromServer: boolean;
+};
+export type RpcStabilityPoolConfig = {
+    kind: string;
+    min_allowed_seek: RpcAmount;
+    max_allowed_provide_fee_rate_ppb: number | null;
+    min_allowed_cancellation_bps: number | null;
+    cycle_duration: RpcDuration;
+};
+export type RpcStabilityPoolTransactionState = {
+    type: "pendingDeposit";
+} | {
+    type: "completeDeposit";
+    initial_amount_cents: number;
+    fees_paid_so_far: RpcAmount;
+} | {
+    type: "pendingWithdrawal";
+    estimated_withdrawal_cents: number;
+} | {
+    type: "completeWithdrawal";
+    estimated_withdrawal_cents: number;
+};
+export type RpcSyncIndicator = "hide" | "show";
+/**
+ * This type represents the "send state" of a local event timeline item.
+ */
+export type RpcTimelineEventSendState = {
+    kind: "notSentYet";
+} | {
+    kind: "sendingFailed";
+    /**
+     * Details about how sending the event failed.
+     */
+    error: string;
+    is_recoverable: boolean;
+} | {
+    kind: "sent";
+    /**
+     * The event ID assigned by the server.
+     */
+    event_id: string;
+};
+export type RpcTimelineItem = {
+    kind: "event";
+    value: RpcTimelineItemEvent;
+} | {
+    kind: "dayDivider";
+    value: number;
+} | {
+    kind: "readMarker";
+} | {
+    kind: "unknown";
+};
+export type RpcTimelineItemContent = {
+    kind: "message";
+    value: JSONObject;
+} | {
+    kind: "json";
+    value: JSONValue;
+} | {
+    kind: "redactedMessage";
+} | {
+    kind: "unknown";
+};
+export type RpcTimelineItemEvent = {
+    id: string;
+    txnId: string | null;
+    eventId: string | null;
+    content: RpcTimelineItemContent;
+    localEcho: boolean;
+    timestamp: number;
+    sender: string;
+    sendState: RpcTimelineEventSendState | null;
+};
+export type RpcTransaction = {
+    id: string;
+    createdAt: number;
+    amount: RpcAmount;
+    fediFeeStatus: RpcOperationFediFeeStatus | null;
+    direction: RpcTransactionDirection;
+    notes: string;
+    onchainState: RpcOnchainState | null;
+    bitcoin: RpcBitcoinDetails | null;
+    lnState: RpcLnState | null;
+    lightning: RpcLightningDetails | null;
+    oobState: RpcOOBState | null;
+    onchainWithdrawalDetails: WithdrawalDetails | null;
+    stabilityPoolState: RpcStabilityPoolTransactionState | null;
+    txDateFiatInfo: FiatFXInfo | null;
+};
+export type RpcTransactionDirection = "receive" | "send";
+export type RpcUserId = string;
+export type SerdeVectorDiff<T> = {
+    kind: "append";
+    /**
+     * The appended elements.
+     */
+    values: T[];
+} | {
+    kind: "clear";
+} | {
+    kind: "pushFront";
+    /**
+     * The new element.
+     */
+    value: T;
+} | {
+    kind: "pushBack";
+    /**
+     * The new element.
+     */
+    value: T;
+} | {
+    kind: "popFront";
+} | {
+    kind: "popBack";
+} | {
+    kind: "insert";
+    /**
+     * The index of the new element.
+     *
+     * The element that was previously at that index as well as all the
+     * ones after it were shifted to the right.
+     */
+    index: number;
+    /**
+     * The new element.
+     */
+    value: T;
+} | {
+    kind: "set";
+    /**
+     * The index of the element that was replaced.
+     */
+    index: number;
+    /**
+     * The new element.
+     */
+    value: T;
+} | {
+    kind: "remove";
+    /**
+     * The index that the removed element had.
+     */
+    index: number;
+} | {
+    kind: "truncate";
+    /**
+     * The number of elements that remain.
+     */
+    length: number;
+} | {
+    kind: "reset";
+    /**
+     * The full list of elements.
+     */
+    values: T[];
+};
+export type SocialRecoveryApproval = {
+    guardianName: string;
+    approved: boolean;
+};
+export type SocialRecoveryEvent = {
+    approvals: Array<SocialRecoveryApproval>;
+    remaining: number;
+};
+export type SocialRecoveryQr = {
+    recoveryId: RpcRecoveryId;
+};
+export type StabilityPoolDepositEvent = {
+    federationId: RpcFederationId;
+    operationId: RpcOperationId;
+    state: StabilityPoolDepositState;
+};
+export type StabilityPoolDepositState = "initiated" | "txAccepted" | {
+    txRejected: string;
+} | {
+    primaryOutputError: string;
+} | "success";
+/**
+ * Notifier for partial/whole unfilled stability pool deposit having been
+ * claimed back as e-cash.
+ */
+export type StabilityPoolUnfilledDepositSweptEvent = {
+    amount: RpcAmount;
+};
+export type StabilityPoolWithdrawalEvent = {
+    federationId: RpcFederationId;
+    operationId: RpcOperationId;
+    state: StabilityPoolWithdrawalState;
+};
+export type StabilityPoolWithdrawalState = "invalidOperationType" | "withdrawUnlockedInitiated" | {
+    txRejected: string;
+} | "withdrawUnlockedAccepted" | {
+    primaryOutputError: string;
+} | "success" | {
+    cancellationSubmissionFailure: string;
+} | "cancellationInitiated" | "cancellationAccepted" | {
+    awaitCycleTurnoverError: string;
+} | {
+    withdrawIdleSubmissionFailure: string;
+} | "withdrawIdleInitiated" | "withdrawIdleAccepted";
+export type TransactionEvent = {
+    federationId: RpcFederationId;
+    transaction: RpcTransaction;
+};
+export type UserProfile = JSONObject;
+export type WithdrawalDetails = {
+    address: string;
+    txid: string;
+    fee: RpcAmount;
+    feeRate: number;
+};
+export type approveSocialRecoveryRequest = {
+    federationId: RpcFederationId;
+    recoveryId: RpcRecoveryId;
+    peerId: RpcPeerId;
+    password: string;
+};
+export type backupNow = {
+    federationId: RpcFederationId;
+};
+export type backupStatus = {
+    federationId: RpcFederationId;
+};
+export type bridgeStatus = {};
+export type cancelEcash = {
+    federationId: RpcFederationId;
+    ecash: string;
+};
+export type cancelSocialRecovery = {};
+export type checkMnemonic = {
+    mnemonic: Array<string>;
+};
+export type communityPreview = {
+    inviteCode: string;
+};
+export type completeSocialRecovery = {};
+export type decodeInvoice = {
+    federationId: RpcFederationId | null;
+    invoice: string;
+};
+export type deviceIndexAssignmentStatus = {};
+export type dumpDb = {
+    federationId: string;
+};
+export type evilSpamAddress = {
+    federationId: RpcFederationId;
+};
+export type evilSpamInvoices = {
+    federationId: RpcFederationId;
+};
+export type federationPreview = {
+    inviteCode: string;
+};
+export type fedimintVersion = {};
+export type fetchRegisteredDevices = {};
+export type generateAddress = {
+    federationId: RpcFederationId;
+};
+export type generateEcash = {
+    federationId: RpcFederationId;
+    amount: RpcAmount;
+    includeInvite: boolean;
+};
+export type generateInvoice = {
+    federationId: RpcFederationId;
+    amount: RpcAmount;
+    description: string;
+    expiry: number | null;
+};
+export type generateReusedEcashProofs = {
+    federationId: RpcFederationId;
+};
+export type getAccruedOutstandingFediFeesPerTXType = {
+    federationId: RpcFederationId;
+};
+export type getAccruedPendingFediFeesPerTXType = {
+    federationId: RpcFederationId;
+};
+export type getGuardianStatus = {
+    federationId: RpcFederationId;
+};
+export type getMnemonic = {};
+export type getNostrPubkey = {};
+export type getNostrSecret = {};
+export type getSensitiveLog = {};
+export type GuardianStatus = {
+    online: {
+        guardian: string;
+        latency_ms: number;
+    };
+} | {
+    error: {
+        guardian: string;
+        error: string;
+    };
+} | {
+    timeout: {
+        guardian: string;
+        elapsed: string;
+    };
+};
+export type joinCommunity = {
+    inviteCode: string;
+};
+export type joinFederation = {
+    inviteCode: string;
+    recoverFromScratch: boolean;
+};
+export type leaveCommunity = {
+    inviteCode: string;
+};
+export type leaveFederation = {
+    federationId: RpcFederationId;
+};
+export type listCommunities = {};
+export type listFederations = {};
+export type listGateways = {
+    federationId: RpcFederationId;
+};
+export type listTransactions = {
+    federationId: RpcFederationId;
+    startTime: number | null;
+    limit: number | null;
+};
+export type locateRecoveryFile = {};
+export type matrixDeleteMessage = {
+    roomId: RpcRoomId;
+    eventId: string;
+    reason: string | null;
+};
+export type matrixDownloadFile = {
+    path: string;
+    mediaSource: RpcMediaSource;
+};
+export type matrixEditMessage = {
+    roomId: RpcRoomId;
+    eventId: string;
+    newContent: string;
+};
+export type matrixEndPoll = {
+    roomId: RpcRoomId;
+    pollStartId: string;
+};
+export type matrixGetAccountSession = {
+    cached: boolean;
+};
+export type matrixIgnoreUser = {
+    userId: RpcUserId;
+};
+export type matrixInit = {};
+export type matrixListIgnoredUsers = {};
+export type matrixObservableCancel = {
+    observableId: number;
+};
+export type matrixObserveSyncIndicator = {
+    observableId: number;
+};
+export type matrixPublicRoomInfo = {
+    roomId: string;
+};
+export type matrixRespondToPoll = {
+    roomId: RpcRoomId;
+    pollStartId: string;
+    selections: Array<string>;
+};
+export type matrixRoomBanUser = {
+    roomId: RpcRoomId;
+    userId: RpcUserId;
+    reason: string | null;
+};
+export type matrixRoomCreate = {
+    request: CreateRoomRequest;
+};
+export type matrixRoomCreateOrGetDm = {
+    userId: RpcUserId;
+};
+export type matrixRoomGetMembers = {
+    roomId: RpcRoomId;
+};
+export type matrixRoomGetNotificationMode = {
+    roomId: RpcRoomId;
+};
+export type matrixRoomGetPowerLevels = {
+    roomId: RpcRoomId;
+};
+export type matrixRoomInviteUserById = {
+    roomId: RpcRoomId;
+    userId: RpcUserId;
+};
+export type matrixRoomJoin = {
+    roomId: RpcRoomId;
+};
+export type matrixRoomJoinPublic = {
+    roomId: RpcRoomId;
+};
+export type matrixRoomKickUser = {
+    roomId: RpcRoomId;
+    userId: RpcUserId;
+    reason: string | null;
+};
+export type matrixRoomLeave = {
+    roomId: RpcRoomId;
+};
+export type matrixRoomList = {
+    observableId: number;
+};
+export type matrixRoomListUpdateRanges = {
+    ranges: RpcRanges;
+};
+export type matrixRoomMarkAsUnread = {
+    roomId: RpcRoomId;
+    unread: boolean;
+};
+export type matrixRoomObserveInfo = {
+    observableId: number;
+    roomId: RpcRoomId;
+};
+export type matrixRoomObserveTimelineItemsPaginateBackwards = {
+    observableId: number;
+    roomId: RpcRoomId;
+};
+export type matrixRoomPreviewContent = {
+    roomId: RpcRoomId;
+};
+export type matrixRoomSendReceipt = {
+    roomId: RpcRoomId;
+    eventId: string;
+};
+export type matrixRoomSetName = {
+    roomId: RpcRoomId;
+    name: string;
+};
+export type matrixRoomSetNotificationMode = {
+    roomId: RpcRoomId;
+    mode: RpcRoomNotificationMode;
+};
+export type matrixRoomSetPowerLevels = {
+    roomId: RpcRoomId;
+    new: RpcRoomPowerLevelsEventContent;
+};
+export type matrixRoomSetTopic = {
+    roomId: RpcRoomId;
+    topic: string;
+};
+export type matrixRoomTimelineItems = {
+    observableId: number;
+    roomId: RpcRoomId;
+};
+export type matrixRoomTimelineItemsPaginateBackwards = {
+    roomId: RpcRoomId;
+    eventNum: number;
+};
+export type matrixRoomUnbanUser = {
+    roomId: RpcRoomId;
+    userId: RpcUserId;
+    reason: string | null;
+};
+export type matrixSendAttachment = {
+    roomId: RpcRoomId;
+    filename: string;
+    filePath: string;
+    params: RpcMediaUploadParams;
+};
+export type matrixSendMessage = {
+    roomId: RpcRoomId;
+    message: string;
+};
+export type matrixSendMessageJson = {
+    roomId: RpcRoomId;
+    msgtype: string;
+    body: string;
+    data: CustomMessageData;
+};
+export type matrixSetAvatarUrl = {
+    avatarUrl: string;
+};
+export type matrixSetDisplayName = {
+    displayName: string;
+};
+export type matrixSetPusher = {
+    pusher: RpcPusher;
+};
+export type matrixStartPoll = {
+    roomId: RpcRoomId;
+    question: string;
+    answers: Array<string>;
+};
+export type matrixUnignoreUser = {
+    userId: RpcUserId;
+};
+export type matrixUploadMedia = {
+    path: string;
+    mimeType: string;
+};
+export type matrixUserDirectorySearch = {
+    searchTerm: string;
+    limit: number;
+};
+export type matrixUserProfile = {
+    userId: RpcUserId;
+};
+export type onAppForeground = {};
+export type payAddress = {
+    federationId: RpcFederationId;
+    address: string;
+    sats: bigint;
+};
+export type payInvoice = {
+    federationId: RpcFederationId;
+    invoice: string;
+};
+export type previewPayAddress = {
+    federationId: RpcFederationId;
+    address: string;
+    sats: bigint;
+};
+export type receiveEcash = {
+    federationId: RpcFederationId;
+    ecash: string;
+};
+export type recheckPeginAddress = {
+    federationId: RpcFederationId;
+    operationId: RpcOperationId;
+};
+export type recoverFromMnemonic = {
+    mnemonic: Array<string>;
+};
+export type recoveryQr = {};
+export type registerAsNewDevice = {};
+export type setLightningModuleFediFeeSchedule = {
+    federationId: RpcFederationId;
+    sendPpm: bigint;
+    receivePpm: bigint;
+};
+export type setMintModuleFediFeeSchedule = {
+    federationId: RpcFederationId;
+    sendPpm: bigint;
+    receivePpm: bigint;
+};
+export type setSensitiveLog = {
+    enable: boolean;
+};
+export type setStabilityPoolModuleFediFeeSchedule = {
+    federationId: RpcFederationId;
+    sendPpm: bigint;
+    receivePpm: bigint;
+};
+export type setWalletModuleFediFeeSchedule = {
+    federationId: RpcFederationId;
+    sendPpm: bigint;
+    receivePpm: bigint;
+};
+export type signLnurlMessage = {
+    message: string;
+    domain: string;
+};
+export type signNostrEvent = {
+    eventHash: string;
+};
+export type socialRecoveryApprovals = {};
+export type socialRecoveryDownloadVerificationDoc = {
+    federationId: RpcFederationId;
+    recoveryId: RpcRecoveryId;
+    peerId: RpcPeerId;
+};
+export type stabilityPoolAccountInfo = {
+    federationId: RpcFederationId;
+    forceUpdate: boolean;
+};
+export type stabilityPoolAvailableLiquidity = {
+    federationId: RpcFederationId;
+};
+export type stabilityPoolAverageFeeRate = {
+    federationId: RpcFederationId;
+    numCycles: number;
+};
+export type stabilityPoolCycleStartPrice = {
+    federationId: RpcFederationId;
+};
+export type stabilityPoolDepositToSeek = {
+    federationId: RpcFederationId;
+    amount: RpcAmount;
+};
+export type stabilityPoolNextCycleStartTime = {
+    federationId: RpcFederationId;
+};
+export type stabilityPoolWithdraw = {
+    federationId: RpcFederationId;
+    unlockedAmount: RpcAmount;
+    lockedBps: number;
+};
+export type switchGateway = {
+    federationId: RpcFederationId;
+    gatewayId: RpcPublicKey;
+};
+export type transferExistingDeviceRegistration = {
+    index: number;
+};
+export type updateCachedFiatFXInfo = {
+    fiatCode: string;
+    btcToFiatHundredths: bigint;
+};
+export type updateTransactionNotes = {
+    federationId: RpcFederationId;
+    transactionId: string;
+    notes: string;
+};
+export type uploadBackupFile = {
+    federationId: RpcFederationId;
+    videoFilePath: string;
+};
+export type validateEcash = {
+    ecash: string;
+};
+export type validateRecoveryFile = {
+    path: string;
+};
+export {};
