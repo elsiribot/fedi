@@ -5,6 +5,7 @@ import {
 } from '@react-navigation/native'
 import { useTheme } from '@rneui/themed'
 import { useCallback, useRef } from 'react'
+import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
@@ -12,6 +13,7 @@ import { makeLog } from '@fedi/common/utils/log'
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
 import { OmniLinkHandler } from './components/feature/omni/OmniLinkHandler'
 import Header from './components/ui/Header'
+import SvgImage, { SvgImageSize } from './components/ui/SvgImage'
 import { MainNavigator } from './screens/MainNavigator'
 import SwitchingFederations from './screens/SwitchingFederations'
 import { useOmniLinkContext } from './state/contexts/OmniLinkContext'
@@ -69,10 +71,15 @@ const Router = () => {
             linking={linkingConfig}
             onReady={() => {
                 routeRef.current = navigation.getCurrentRoute()?.name
-                log.debug('Navigation is ready', {
+                log.info('Navigation is ready', {
                     route: routeRef.current,
                 })
             }}
+            fallback={
+                <View style={style.container}>
+                    <SvgImage size={SvgImageSize.lg} name="FediLogoIcon" />
+                </View>
+            }
             onStateChange={handleStateChange}>
             <Drawer.Navigator
                 id={DRAWER_NAVIGATION_ID}
@@ -103,5 +110,15 @@ const Router = () => {
         </NavigationContainer>
     )
 }
+
+const style = StyleSheet.create({
+    container: {
+        height: '100%',
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'white',
+    },
+})
 
 export default Router
