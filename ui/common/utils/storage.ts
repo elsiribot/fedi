@@ -296,8 +296,9 @@ async function migrateStoredState(
                     chatState.messages,
                 )
                 const lastSeenPaymentUpdateId = lastSeenPaymentUpdate?.id
-                    ? `${lastSeenPaymentUpdate?.id}_${lastSeenPaymentUpdate?.payment?.updatedAt || 0
-                    }`
+                    ? `${lastSeenPaymentUpdate?.id}_${
+                          lastSeenPaymentUpdate?.payment?.updatedAt || 0
+                      }`
                     : null
                 return {
                     ...prevChat,
@@ -403,7 +404,7 @@ async function migrateStoredState(
                                 lastReadPaymentUpdate &&
                                 lastReadPaymentUpdate.payment?.updatedAt &&
                                 lastReadPaymentUpdate.payment?.updatedAt >
-                                lastReadMessage.sentAt
+                                    lastReadMessage.sentAt
                             ) {
                                 result[chatId] =
                                     lastReadPaymentUpdate.payment?.updatedAt
@@ -429,7 +430,7 @@ async function migrateStoredState(
                         lastSeenPaymentUpdate &&
                         lastSeenPaymentUpdate.payment?.updatedAt &&
                         lastSeenPaymentUpdate.payment?.updatedAt >
-                        lastSeenMessage.sentAt
+                            lastSeenMessage.sentAt
                     ) {
                         lastSeenMessageTimestamp =
                             lastSeenPaymentUpdate.payment?.updatedAt

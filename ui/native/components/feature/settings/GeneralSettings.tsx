@@ -13,6 +13,7 @@ import {
     useZendeskInitialization,
 } from '@fedi/common/hooks/support'
 import { ToastHandler, useToast } from '@fedi/common/hooks/toast'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import { selectDeveloperMode } from '@fedi/common/redux/environment'
 
 import { usePinContext } from '../../../state/contexts/PinContext'
@@ -31,6 +32,7 @@ export const GeneralSettings = () => {
     const { t } = useTranslation()
     const style = styles(theme)
     const navigation = useNavigation<NavigationHook>()
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const { notificationsPermission } = useNotificationsPermission()
 
     const { supportPermissionGranted } = useSupportPermission()
@@ -121,6 +123,17 @@ export const GeneralSettings = () => {
                 label={t('words.language')}
                 onPress={() => navigation.navigate('LanguageSettings')}
             />
+            {activeFederationId && (
+                <SettingsItem
+                    icon="Usd"
+                    label={t('phrases.display-currency')}
+                    onPress={() =>
+                        navigation.navigate('FederationCurrency', {
+                            federationId: activeFederationId,
+                        })
+                    }
+                />
+            )}
             <SettingsItem
                 icon="Note"
                 label={t('feature.backup.personal-backup')}

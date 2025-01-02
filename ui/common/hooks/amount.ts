@@ -68,10 +68,10 @@ export type AmountSymbolPosition = 'start' | 'end' | 'none'
 
 // prettier-ignore
 export const numpadButtons = [
-  1, 2, 3,
-  4, 5, 6,
-  7, 8, 9,
-  null, 0, 'backspace',
+    1, 2, 3,
+    4, 5, 6,
+    7, 8, 9,
+    null, 0, 'backspace',
 ] as const
 
 export type NumpadButtonValue = (typeof numpadButtons)[number]
