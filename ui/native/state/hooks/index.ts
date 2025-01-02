@@ -133,7 +133,7 @@ export const useMatrixPushNotifications = () => {
 
     usePublishNotificationToken(
         getDeviceToken,
-        notificationsPermission !== 'granted',
+        notificationsPermission == 'granted',
         DeviceInfo.getBundleId(),
         DeviceInfo.getApplicationName(),
     )
