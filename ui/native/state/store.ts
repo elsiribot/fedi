@@ -1,5 +1,6 @@
 import NetInfo from '@react-native-community/netinfo'
 import { configureStore, ThunkDispatch, UnknownAction } from '@reduxjs/toolkit'
+import debounce from 'lodash/debounce'
 import { AppState as RNAppState } from 'react-native'
 
 import {
@@ -56,10 +57,12 @@ export function initializeNativeStore() {
     })
 
     // Whenever the app changes its network state, update the store
-    const networkSubscription = NetInfo.addEventListener(state => {
-        log.debug('Network status changed', state)
-        store.dispatch(setNetworkInfo(state))
-    })
+    const networkSubscription = NetInfo.addEventListener(
+        debounce(state => {
+            log.debug('Network status changed (debounced)', state)
+            store.dispatch(setNetworkInfo(state))
+        }, 1350),
+    )
 
     return () => {
         unsubscribe()
