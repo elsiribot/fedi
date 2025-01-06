@@ -85,7 +85,8 @@ export type ErrorCode =
   | "payLnInvoiceAlreadyPaid"
   | "payLnInvoiceAlreadyInProgress"
   | "noLnGatewayAvailable"
-  | { moduleNotFound: string };
+  | { moduleNotFound: string }
+  | { federationPendingRejoinFromScratch: string };
 
 export type Event =
   | { transaction: TransactionEvent }
@@ -101,7 +102,8 @@ export type Event =
   | {
       stabilityPoolUnfilledDepositSwept: StabilityPoolUnfilledDepositSweptEvent;
     }
-  | { communityMetadataUpdated: CommunityMetadataUpdatedEvent };
+  | { communityMetadataUpdated: CommunityMetadataUpdatedEvent }
+  | { nonceReuseCheckFailed: NonceReuseCheckFailedEvent };
 
 export type FiatFXInfo = {
   /**
@@ -121,6 +123,12 @@ export type GuardianStatus =
   | { timeout: { guardian: string; elapsed: string } };
 
 export type LogEvent = { log: string };
+
+/**
+ * Notify front-end that given federation has failed the e-cash blind nonce
+ * reuse check and must be rejoined using a recovery-from-scratch.
+ */
+export type NonceReuseCheckFailedEvent = { federationId: RpcFederationId };
 
 /**
  * An Observable contains a value that updates over time.
@@ -407,6 +415,10 @@ export type RpcMethods = {
   leaveFederation: [leaveFederation, null];
   listFederations: [listFederations, Array<RpcFederationMaybeLoading>];
   getGuardianStatus: [getGuardianStatus, Array<GuardianStatus>];
+  listFederationsPendingRejoinFromScratch: [
+    listFederationsPendingRejoinFromScratch,
+    Array<string>,
+  ];
   generateInvoice: [generateInvoice, string];
   decodeInvoice: [decodeInvoice, RpcInvoice];
   payInvoice: [payInvoice, RpcPayInvoiceResponse];
@@ -1021,6 +1033,8 @@ export type leaveFederation = { federationId: RpcFederationId };
 export type listCommunities = {};
 
 export type listFederations = {};
+
+export type listFederationsPendingRejoinFromScratch = {};
 
 export type listGateways = { federationId: RpcFederationId };
 

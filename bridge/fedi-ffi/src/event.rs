@@ -176,6 +176,15 @@ pub struct CommunityMetadataUpdatedEvent {
     pub new_community: RpcCommunity,
 }
 
+/// Notify front-end that given federation has failed the e-cash blind nonce
+/// reuse check and must be rejoined using a recovery-from-scratch.
+#[derive(Serialize, Debug, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct NonceReuseCheckFailedEvent {
+    pub federation_id: RpcFederationId,
+}
+
 #[derive(Debug, TS)]
 #[ts(export)]
 #[ts(rename_all = "camelCase")]
@@ -192,6 +201,7 @@ pub enum Event {
     DeviceRegistration(DeviceRegistrationEvent),
     StabilityPoolUnfilledDepositSwept(StabilityPoolUnfilledDepositSweptEvent),
     CommunityMetadataUpdated(CommunityMetadataUpdatedEvent),
+    NonceReuseCheckFailed(NonceReuseCheckFailedEvent),
 }
 
 impl Event {
@@ -284,6 +294,10 @@ impl Event {
     pub fn community_metadata_updated(new_community: RpcCommunity) -> Self {
         Self::CommunityMetadataUpdated(CommunityMetadataUpdatedEvent { new_community })
     }
+
+    pub fn nonce_reuse_check_failed(federation_id: RpcFederationId) -> Self {
+        Self::NonceReuseCheckFailed(NonceReuseCheckFailedEvent { federation_id })
+    }
 }
 
 /// Sends events to iOS / Android layer
@@ -358,6 +372,10 @@ pub trait TypedEventExt: IEventSink {
             Event::CommunityMetadataUpdated(event) => {
                 let body = serde_json::to_string(&event).expect("failed to json serialize");
                 IEventSink::event(self, "communityMetadataUpdated".into(), body);
+            }
+            Event::NonceReuseCheckFailed(event) => {
+                let body = serde_json::to_string(&event).expect("failed to json serialize");
+                IEventSink::event(self, "nonceReuseCheckFailed".into(), body);
             }
         };
     }

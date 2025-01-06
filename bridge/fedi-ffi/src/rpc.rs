@@ -919,6 +919,13 @@ async fn evilSpamAddress(federation: Arc<FederationV2>) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn listFederationsPendingRejoinFromScratch(
+    bridge: Arc<BridgeRuntime>,
+) -> anyhow::Result<Vec<String>> {
+    Ok(bridge.list_federations_pending_rejoin_from_scratch().await)
+}
+
 macro_rules! ts_type_ser {
     ($name:ident: $ty:ty = $ts_ty:literal) => {
         #[derive(serde::Serialize, ts_rs::TS)]
@@ -1502,6 +1509,7 @@ rpc_methods!(RpcMethods {
     leaveFederation,
     listFederations,
     getGuardianStatus,
+    listFederationsPendingRejoinFromScratch,
     // Lightning
     generateInvoice,
     decodeInvoice,
