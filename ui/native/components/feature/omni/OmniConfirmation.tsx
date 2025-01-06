@@ -20,6 +20,7 @@ import { AnyParsedData, ParserDataType } from '../../../types'
 import { NavigationArgs, NavigationHook } from '../../../types/navigation'
 import CustomOverlay, { CustomOverlayContents } from '../../ui/CustomOverlay'
 import RecoveryInProgress from '../recovery/RecoveryInProgress'
+import OmniReceiveEcash from './OmniReceiveEcash'
 
 interface Props<T extends AnyParsedData> {
     parsedData: T
@@ -164,13 +165,16 @@ export const OmniConfirmation = <T extends AnyParsedData>({
             case ParserDataType.FedimintEcash:
                 return {
                     contents: {
-                        icon: 'Bolt',
-                        title: t('feature.omni.confirm-ecash-token'),
+                        title: t('feature.omni.confirm-receive-ecash'),
+                        body: <OmniReceiveEcash {...parsedData.data} />,
+                        buttons: parsedData.data.parsed.federation_type === 'joined' ? undefined : [],
                     },
-                    continueOnPress: () =>
-                        handleNavigate('ConfirmReceiveOffline', {
-                            ecash: parsedData.data.token,
-                        }),
+                    continueOnPress: parsedData.data.parsed.federation_type === 'joined'
+                        ? () =>
+                              handleNavigate('ConfirmReceiveOffline', {
+                                  ecash: parsedData.data.token,
+                              })
+                        : undefined,
                 }
             case ParserDataType.LnurlAuth:
                 return {
@@ -286,7 +290,7 @@ export const OmniConfirmation = <T extends AnyParsedData>({
     return (
         <CustomOverlay
             show={!!contents}
-            contents={{ ...contents, buttons }}
+            contents={{ buttons, ...contents }}
             loading={isLoading}
             onBackdropPress={onGoBack}
         />

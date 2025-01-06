@@ -1,3 +1,4 @@
+import { RpcEcashInfo } from './bindings'
 import { Invoice } from './fedimint'
 import { Btc, MSats } from './units'
 
@@ -95,6 +96,7 @@ export type ParsedFedimintEcash = ParsedData<
     ParserDataType.FedimintEcash,
     {
         token: string
+        parsed: RpcEcashInfo
     }
 >
 

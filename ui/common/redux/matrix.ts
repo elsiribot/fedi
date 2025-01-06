@@ -708,7 +708,7 @@ export const sendMatrixPaymentPush = createAsyncThunk<
         const msats = amountUtils.satToMsat(amount)
 
         const client = getMatrixClient()
-        const { ecash } = await fedimint.generateEcash(msats, federationId)
+        const { ecash } = await fedimint.generateEcash(msats, federationId, true)
 
         await client.sendMessage(roomId, {
             msgtype: 'xyz.fedi.payment',
@@ -876,6 +876,7 @@ export const acceptMatrixPaymentRequest = createAsyncThunk<
         const { ecash } = await fedimint.generateEcash(
             amount as MSats,
             federationId,
+            true,
         )
         await client.sendMessage(event.roomId, {
             ...event.content,
