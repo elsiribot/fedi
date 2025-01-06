@@ -9,7 +9,6 @@ import { isValidSupportTicketNumber } from '@fedi/common/utils/validation'
 
 import { SafeScrollArea } from '../components/ui/SafeArea'
 import SvgImage from '../components/ui/SvgImage'
-import { FediMod } from '../types'
 import { RootStackParamList } from '../types/navigation'
 import { useShareLogs } from '../utils/hooks/export'
 
@@ -27,11 +26,7 @@ const ShareLogs: React.FC<Props> = ({ navigation }) => {
 
     const handleOpenSupport = useCallback(() => {
         navigation.navigate('FediModBrowser', {
-            fediMod: new FediMod({
-                id: 'support',
-                title: 'Support',
-                url: 'https://support.fedi.xyz',
-            }),
+            url: 'https://support.fedi.xyz',
         })
     }, [navigation])
 
