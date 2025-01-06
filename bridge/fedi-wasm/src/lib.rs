@@ -10,7 +10,7 @@ use fediffi::bridge::Bridge;
 use fediffi::error::ErrorCode;
 use fediffi::event::IEventSink;
 use fediffi::features::{FeatureCatalog, RuntimeEnvironment};
-use fediffi::rpc::rpc_error;
+use fediffi::rpc::rpc_error_json;
 use fediffi::types::{RpcAppFlavor, RpcInitOpts};
 use futures::FutureExt;
 use js_sys::Uint8Array;
@@ -49,8 +49,8 @@ pub async fn fedimint_initialize(event_sink: EventSink, init_opts_json: String) 
         .await;
     match value {
         Ok(Ok(())) => String::from("{}"),
-        Ok(Err(e)) => rpc_error(&e),
-        Err(_) => rpc_error(&anyhow::format_err!(ErrorCode::Panic)),
+        Ok(Err(e)) => rpc_error_json(&e),
+        Err(_) => rpc_error_json(&anyhow::format_err!(ErrorCode::Panic)),
     }
 }
 
@@ -108,7 +108,7 @@ pub async fn fedimint_rpc(method: String, payload: String) -> String {
 
     match value {
         Ok(value) => value,
-        Err(_) => rpc_error(&anyhow::format_err!(ErrorCode::Panic)),
+        Err(_) => rpc_error_json(&anyhow::format_err!(ErrorCode::Panic)),
     }
 }
 

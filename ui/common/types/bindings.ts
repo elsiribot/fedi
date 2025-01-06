@@ -251,6 +251,12 @@ export type RpcEcashInfo =
       amount: RpcAmount;
     };
 
+export type RpcError = {
+  error: string;
+  detail: string;
+  errorCode: ErrorCode | null;
+};
+
 export type RpcFederation = {
   balance: RpcAmount;
   id: RpcFederationId;
@@ -270,7 +276,7 @@ export type RpcFederationId = string;
 
 export type RpcFederationMaybeLoading =
   | { init_state: "loading"; id: RpcFederationId }
-  | { init_state: "failed"; error: string; id: RpcFederationId }
+  | { init_state: "failed"; error: RpcError; id: RpcFederationId }
   | ({ init_state: "ready" } & RpcFederation);
 
 export type RpcFederationPreview = {

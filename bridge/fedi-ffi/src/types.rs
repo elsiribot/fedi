@@ -21,6 +21,7 @@ use super::federation::federation_v2::FederationV2;
 use super::utils::to_unix_time;
 use crate::api::RegisteredDevice;
 use crate::bridge::BridgeFullInitError;
+use crate::error::RpcError;
 use crate::federation::federation_v2::client::ClientExt;
 use crate::storage::{FediFeeSchedule, FiatFXInfo};
 
@@ -79,8 +80,13 @@ pub struct RpcFederation {
 #[serde(tag = "init_state")]
 #[ts(export)]
 pub enum RpcFederationMaybeLoading {
-    Loading { id: RpcFederationId },
-    Failed { error: String, id: RpcFederationId },
+    Loading {
+        id: RpcFederationId,
+    },
+    Failed {
+        error: RpcError,
+        id: RpcFederationId,
+    },
     Ready(RpcFederation),
 }
 

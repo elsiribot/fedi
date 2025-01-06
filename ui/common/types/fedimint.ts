@@ -8,6 +8,7 @@ import {
     RecoveryCompleteEvent,
     RecoveryProgressEvent,
     RpcCommunity,
+    RpcError,
     RpcFederation,
     RpcFederationMaybeLoading,
     RpcFederationPreview,
@@ -167,7 +168,7 @@ export interface LoadingFederation {
 }
 export interface FederationInitFailure {
     id: string
-    error: string
+    error: RpcError
     meta?: never
     readonly init_state: 'failed'
     readonly hasWallet: true

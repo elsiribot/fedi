@@ -27,7 +27,6 @@ use matrix_sdk::RoomInfo;
 use mime::Mime;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 pub use tokio;
 use tracing::{error, info, instrument, Level};
 
@@ -42,7 +41,7 @@ use super::types::{
 use crate::api::IFediApi;
 use crate::bridge::{BridgeFull, BridgeRuntime};
 use crate::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
-use crate::error::get_error_code;
+use crate::error::RpcError;
 use crate::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use crate::features::FeatureCatalog;
 use crate::federation::federation_sm::FederationState;
@@ -97,10 +96,8 @@ pub async fn fedimint_initialize_async(
     Ok(bridge)
 }
 
-pub fn rpc_error(error: &anyhow::Error) -> String {
-    let code = get_error_code(error);
-
-    json!({ "error": error.to_string(), "code": code, "detail": format!("{error:?}") }).to_string()
+pub fn rpc_error_json(error: &anyhow::Error) -> String {
+    serde_json::to_string(&RpcError::from_anyhow(error)).unwrap()
 }
 
 pub fn panic_hook(info: &PanicInfo, event_sink: &dyn IEventSink) {
@@ -306,7 +303,7 @@ async fn listFederations(
             }
             FederationState::Failed(err_arc) => RpcFederationMaybeLoading::Failed {
                 id,
-                error: err_arc.to_string(),
+                error: RpcError::from_anyhow(&err_arc),
             },
         });
     }
@@ -1660,7 +1657,7 @@ pub async fn fedimint_rpc_async(bridge: Arc<Bridge>, method: String, payload: St
 
     result.unwrap_or_else(|error| {
         error!(%error, "rpc_error");
-        rpc_error(&error)
+        rpc_error_json(&error)
     })
 }
 
@@ -4121,7 +4118,7 @@ pub mod tests {
                     match ev_body {
                         RpcFederationMaybeLoading::Loading { .. } => (),
                         RpcFederationMaybeLoading::Failed { error, id } => {
-                            bail!("federation {:?} loading failed: {}", id, error)
+                            bail!("federation {:?} loading failed: {}", id, error.detail)
                         }
                         RpcFederationMaybeLoading::Ready(rpc_federation) => {
                             assert!(rpc_federation.invite_code == invite_code);
