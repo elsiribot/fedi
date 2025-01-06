@@ -8,7 +8,6 @@ import {
     RecoveryCompleteEvent,
     RecoveryProgressEvent,
     RpcCommunity,
-    RpcError,
     RpcFederation,
     RpcFederationMaybeLoading,
     RpcFederationPreview,
@@ -153,15 +152,12 @@ export type FederationMetadata = RpcFederation['meta']
  */
 export type FederationStatus = 'online' | 'unstable' | 'offline'
 
-export interface LoadingFederation {
-    id: string
+export type LoadingFederation = RpcFederationMaybeLoading & {
     meta?: never
     readonly init_state: 'loading'
     readonly hasWallet: true
 }
-export interface FederationInitFailure {
-    id: string
-    error: RpcError
+export type FederationInitFailure = RpcFederationMaybeLoading & {
     meta?: never
     readonly init_state: 'failed'
     readonly hasWallet: true
@@ -178,10 +174,9 @@ export type Federation =
     | FederationInitFailure
     | LoadedFederation
 
-export type Community = Omit<RpcCommunity, 'meta'> & {
+export type Community = RpcCommunity & {
     id: Federation['id']
-    meta: FederationMetadata
-    status: FederationStatus
+    status: 'online'
     // Added for compatibility with Mods
     readonly network: undefined
     readonly hasWallet: false

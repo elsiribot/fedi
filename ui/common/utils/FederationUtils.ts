@@ -609,7 +609,7 @@ export const coerceFederationListItem = (
     community: RpcCommunity,
 ): FederationListItem => {
     return {
-        hasWallet: false as const,
+        hasWallet: false,
         network: undefined,
         status: 'online',
         init_state: 'ready',
@@ -630,7 +630,7 @@ export const coerceJoinPreview = (preview: RpcCommunity): JoinPreview => {
     const { inviteCode, ...rest } = preview
 
     return {
-        hasWallet: false as const,
+        hasWallet: false,
         id: inviteCode,
         inviteCode,
         status: 'online',
