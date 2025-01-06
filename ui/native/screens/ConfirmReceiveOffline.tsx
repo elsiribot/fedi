@@ -109,6 +109,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                 // Should never happen since validateEcash is called in OmniInput,
                 // which is the only way to get here
                 log.error('PANIC: ecash validation failed')
+                toast.error(t, 'errors.invalid-ecash-token')
             })
     }, [ecash, dispatch])
 
