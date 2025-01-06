@@ -432,6 +432,7 @@
             "leave-page-confirmation": "Are you sure you want to leave this page? Changes may not be saved",
             "login-failed": "Login failed",
             "mod-title": "Mod title",
+            "no-mods-available": "No community mods available",
             "payment-request": "Payment request from {{fediMod}}",
             "stable-balance-enabled": "Stable Balance",
             "stable-balance-enabled-info": "Enables ability to convert sats to stable currency",
