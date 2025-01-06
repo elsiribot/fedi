@@ -44,6 +44,7 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import CheckBox from '../components/ui/CheckBox'
+import SvgImage from '../components/ui/SvgImage'
 import { version } from '../package.json'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
@@ -418,6 +419,8 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                     <View key={gw.nodePubKey}>
                         <CheckBox
                             key={index}
+                            checkedIcon={<SvgImage name="RadioSelected" />}
+                            uncheckedIcon={<SvgImage name="RadioUnselected" />}
                             title={
                                 <Text
                                     style={styles(theme).checkboxText}
@@ -485,6 +488,8 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
             </SettingsSection>
             <SettingsSection title="Select a node to simulate Guardian Mode">
                 <CheckBox
+                    checkedIcon={<SvgImage name="RadioSelected" />}
+                    uncheckedIcon={<SvgImage name="RadioUnselected" />}
                     title={
                         <Text
                             caption
@@ -517,6 +522,10 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                         return (
                             <CheckBox
                                 key={id}
+                                checkedIcon={<SvgImage name="RadioSelected" />}
+                                uncheckedIcon={
+                                    <SvgImage name="RadioUnselected" />
+                                }
                                 title={<Text caption>{guardian.name}</Text>}
                                 checked={
                                     authenticatedGuardian?.name ===
