@@ -338,7 +338,7 @@ pub struct CommunityInfo {
 // would typically correspond to cents per btc.
 #[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct FiatFXInfo {
     /// Code of the currency that's set as display currency in the app.
     pub fiat_code: String,

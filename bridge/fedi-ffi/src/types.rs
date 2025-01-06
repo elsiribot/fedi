@@ -26,7 +26,7 @@ use crate::storage::{FediFeeSchedule, FiatFXInfo};
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcInitOpts {
     pub data_dir: Option<String>,
     pub log_level: Option<String>,
@@ -37,7 +37,7 @@ pub struct RpcInitOpts {
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcAppFlavor {
     Dev,
     Nightly,
@@ -45,7 +45,7 @@ pub enum RpcAppFlavor {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Copy, TS)]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcAmount(#[ts(type = "MSats")] pub fedimint_core::Amount);
 
 impl std::fmt::Display for RpcAmount {
@@ -56,7 +56,7 @@ impl std::fmt::Display for RpcAmount {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcFederation {
     pub balance: RpcAmount,
     pub id: RpcFederationId,
@@ -77,7 +77,7 @@ pub struct RpcFederation {
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "init_state")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcFederationMaybeLoading {
     Loading { id: RpcFederationId },
     Failed { error: String, id: RpcFederationId },
@@ -87,7 +87,7 @@ pub enum RpcFederationMaybeLoading {
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcBridgeFullInitError {
     V2IdentifierMismatch { existing: String, new: String },
     Other(String),
@@ -109,7 +109,7 @@ impl From<&BridgeFullInitError> for RpcBridgeFullInitError {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcBridgeStatus {
     pub matrix_setup: bool,
     pub device_index_assignment_status: RpcDeviceIndexAssignmentStatus,
@@ -119,7 +119,7 @@ pub struct RpcBridgeStatus {
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcReturningMemberStatus {
     Unknown,
     NewMember,
@@ -128,7 +128,7 @@ pub enum RpcReturningMemberStatus {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcFederationPreview {
     pub id: RpcFederationId,
     pub name: String,
@@ -140,7 +140,7 @@ pub struct RpcFederationPreview {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcCommunity {
     pub invite_code: String,
     pub name: String,
@@ -150,7 +150,7 @@ pub struct RpcCommunity {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum GuardianStatus {
     Online { guardian: String, latency_ms: u32 },
     Error { guardian: String, error: String },
@@ -159,7 +159,7 @@ pub enum GuardianStatus {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcJsonClientConfig {
     #[ts(type = "unknown")]
     global: GlobalClientConfig,
@@ -203,7 +203,7 @@ where
 
 #[derive(Clone, Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcDuration {
     #[ts(type = "number")]
     pub nanos: u64,
@@ -212,7 +212,7 @@ pub struct RpcDuration {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcStabilityPoolConfig {
     pub kind: String,
     pub min_allowed_seek: RpcAmount,
@@ -222,11 +222,11 @@ pub struct RpcStabilityPoolConfig {
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Clone, TS)]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcFederationId(pub String);
 
 #[derive(Debug, TS, Serialize, Deserialize)]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcOperationId(#[ts(type = "string")] pub fedimint_core::core::OperationId);
 
 impl From<fedimint_core::core::OperationId> for RpcOperationId {
@@ -281,7 +281,7 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
 #[derive(Debug, Serialize, Deserialize, TS, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "federation_type")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcEcashInfo {
     Joined {
         federation_id: RpcFederationId,
@@ -295,7 +295,7 @@ pub enum RpcEcashInfo {
 
 #[derive(Clone, Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcInvoice {
     pub payment_hash: String,
     pub amount: RpcAmount,
@@ -333,7 +333,7 @@ impl TryFrom<lightning_invoice::Bolt11Invoice> for RpcInvoice {
 
 #[derive(Clone, Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcFeeDetails {
     pub fedi_fee: RpcAmount,
     pub network_fee: RpcAmount,
@@ -342,14 +342,14 @@ pub struct RpcFeeDetails {
 
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcPayInvoiceResponse {
     pub preimage: String,
 }
 
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcGenerateEcashResponse {
     pub ecash: String,
     #[ts(type = "number")]
@@ -358,14 +358,14 @@ pub struct RpcGenerateEcashResponse {
 
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcPayAddressResponse {
     pub txid: String,
 }
 
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcLightningGateway {
     pub node_pub_key: RpcPublicKey,
     pub gateway_id: RpcPublicKey,
@@ -387,7 +387,7 @@ impl FediBackupMetadata {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcRecoveryId(#[ts(type = "string")] pub fedi_social_client::common::RecoveryId);
 
 #[derive(Serialize, Deserialize, TS)]
@@ -398,7 +398,7 @@ pub struct SocialRecoveryQr {
 
 #[derive(Serialize, Deserialize, Clone, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct SocialRecoveryApproval {
     // FIXME: perhaps this should be peer id and client can look up the name ???
     pub guardian_name: String,
@@ -406,7 +406,7 @@ pub struct SocialRecoveryApproval {
 }
 
 #[derive(Debug, Eq, Ord, PartialOrd, PartialEq, Serialize, Clone, Copy, TS)]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcPeerId(#[ts(type = "number")] pub fedimint_core::PeerId);
 
 impl<'de> Deserialize<'de> for RpcPeerId {
@@ -429,12 +429,12 @@ impl fmt::Display for RpcPeerId {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcPublicKey(#[ts(type = "string")] pub bitcoin::secp256k1::PublicKey);
 
 #[derive(Debug, Serialize, Deserialize, Clone, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcNostrSecret {
     pub hex: String,
     pub nsec: String,
@@ -442,7 +442,7 @@ pub struct RpcNostrSecret {
 
 #[derive(Debug, Serialize, Deserialize, Clone, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcNostrPubkey {
     pub hex: String,
     pub npub: String,
@@ -450,7 +450,7 @@ pub struct RpcNostrPubkey {
 
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcSignedLnurlMessage {
     #[ts(type = "string")]
     pub signature: Signature,
@@ -459,7 +459,7 @@ pub struct RpcSignedLnurlMessage {
 
 #[derive(Debug, Serialize, Deserialize, Clone, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcMediaUploadParams {
     pub width: Option<u32>,
     pub height: Option<u32>,
@@ -470,7 +470,7 @@ pub struct RpcMediaUploadParams {
     Debug, Clone, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize, TS, Encodable, Decodable,
 )]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcTransactionDirection {
     Receive,
     Send,
@@ -478,7 +478,7 @@ pub enum RpcTransactionDirection {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct WithdrawalDetails {
     pub address: String,
     pub txid: String,
@@ -489,7 +489,7 @@ pub struct WithdrawalDetails {
 
 #[derive(Debug, Deserialize, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcTransaction {
     pub id: String,
     #[ts(type = "number")]
@@ -598,7 +598,7 @@ impl RpcTransaction {
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcStabilityPoolTransactionState {
     PendingDeposit,
     CompleteDeposit {
@@ -619,7 +619,7 @@ pub enum RpcStabilityPoolTransactionState {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[serde(untagged)]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcOnchainState {
     DepositState(RpcOnchainDepositState),
     WithdrawState(RpcOnchainWithdrawState),
@@ -662,7 +662,7 @@ impl RpcOnchainState {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcOnchainDepositState {
     WaitingForTransaction,
     WaitingForConfirmation(RpcOnchainDepositTransactionData),
@@ -673,7 +673,7 @@ pub enum RpcOnchainDepositState {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcOnchainDepositTransactionData {
     txid: String,
 }
@@ -689,7 +689,7 @@ impl RpcOnchainDepositTransactionData {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcOnchainWithdrawState {
     Created,
     Succeeded,
@@ -698,7 +698,7 @@ pub enum RpcOnchainWithdrawState {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcBitcoinDetails {
     pub address: String,
 }
@@ -706,7 +706,7 @@ pub struct RpcBitcoinDetails {
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[serde(untagged)]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcLnState {
     PayState(RpcLnPayState),
     RecvState(RpcLnReceiveState),
@@ -756,7 +756,7 @@ impl RpcLnState {
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcLnPayState {
     Created,
     Canceled,
@@ -780,7 +780,7 @@ pub enum RpcLnPayState {
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcLnReceiveState {
     Created,
     WaitingForPayment {
@@ -799,7 +799,7 @@ pub enum RpcLnReceiveState {
 #[derive(Debug, Serialize, Deserialize, TS, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(untagged)]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcOOBState {
     Spend(RpcOOBSpendState),
     Reissue(RpcOOBReissueState),
@@ -807,7 +807,7 @@ pub enum RpcOOBState {
 #[derive(Debug, Serialize, Deserialize, TS, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcOOBSpendState {
     Created,
     UserCanceledProcessing,
@@ -820,7 +820,7 @@ pub enum RpcOOBSpendState {
 #[derive(Debug, Serialize, Deserialize, TS, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcOOBReissueState {
     Created,
     Issuing,
@@ -862,7 +862,7 @@ impl RpcOOBState {
 
 #[derive(Debug, Deserialize, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcLightningDetails {
     pub invoice: String,
     pub fee: Option<RpcAmount>,
@@ -885,7 +885,7 @@ pub struct LightningSendMetadata {
 
 #[derive(Debug, Deserialize, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcStabilityPoolAccountInfo {
     pub idle_balance: RpcAmount,
     pub staged_seeks: Vec<RpcAmount>,
@@ -898,7 +898,7 @@ pub struct RpcStabilityPoolAccountInfo {
 
 #[derive(Debug, Deserialize, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcLockedSeek {
     pub curr_cycle_beginning_locked_amount: RpcAmount,
     pub initial_amount: RpcAmount,
@@ -973,7 +973,7 @@ pub enum OperationFediFeeStatus {
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcOperationFediFeeStatus {
     PendingSend {
         fedi_fee: RpcAmount,
@@ -1022,7 +1022,7 @@ impl From<OperationFediFeeStatus> for RpcOperationFediFeeStatus {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcFediFeeSchedule {
     #[ts(type = "number")]
     pub remittance_threshold_msat: u64,
@@ -1031,7 +1031,7 @@ pub struct RpcFediFeeSchedule {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcModuleFediFeeSchedule {
     #[ts(type = "number")]
     pub send_ppm: u64,
@@ -1062,7 +1062,7 @@ impl From<FediFeeSchedule> for RpcFediFeeSchedule {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RpcRegisteredDevice {
     pub device_index: u8,
     pub device_identifier: String,
@@ -1083,7 +1083,7 @@ impl From<RegisteredDevice> for RpcRegisteredDevice {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum RpcDeviceIndexAssignmentStatus {
     Assigned(u8),
     Unassigned,

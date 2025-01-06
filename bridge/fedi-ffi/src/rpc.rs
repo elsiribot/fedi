@@ -1,4 +1,4 @@
-#![allow(non_snake_case)]
+#![allow(non_snake_case, non_camel_case_types)]
 use std::panic::PanicInfo;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -163,16 +163,22 @@ macro_rules! rpc_method {
     ) => {
         mod $name {
             use super::*;
-            #[derive(Debug, Deserialize, TS)]
-            #[serde(rename_all = "camelCase")]
-            pub struct Args {
-            $(
-                pub $arg_name: $arg_ty,
-            )*
+            pub mod args {
+                use super::*;
+                #[derive(Debug, Deserialize, TS)]
+                #[serde(rename_all = "camelCase")]
+                #[ts(export)]
+                pub struct $name {
+                    // ts-rs doesn't like empty structs, so we add empty field
+                    #[serde(skip)]
+                    pub _empty: (),
+                $(
+                    pub $arg_name: $arg_ty,
+                )*
+                }
             }
-
             pub type Return = $ret;
-            pub async fn handle(bridge: Arc<Bridge>, $name::Args { $( $arg_name ),* }: $name::Args) -> anyhow::Result<$ret> {
+            pub async fn handle(bridge: Arc<Bridge>, $name::args::$name { $( $arg_name, )* .. }: $name::args::$name) -> anyhow::Result<$ret> {
                 super::$name(bridge.try_get()?, $($arg_name),*).await
             }
         }
@@ -194,17 +200,23 @@ macro_rules! federation_rpc_method {
     ) => {
         mod $name {
             use super::*;
-            #[derive(Debug, Deserialize, TS)]
-            #[serde(rename_all = "camelCase")]
-            pub struct Args {
-                federation_id: RpcFederationId,
-            $(
-                pub $arg_name: $arg_ty,
-            )*
+            pub mod args {
+                use super::*;
+                #[derive(Debug, Deserialize, TS)]
+                #[serde(rename_all = "camelCase")]
+                #[ts(export)]
+                pub struct $name {
+                    pub federation_id: RpcFederationId,
+                    #[serde(skip)]
+                    pub _empty: (),
+                $(
+                    pub $arg_name: $arg_ty,
+                )*
+                }
             }
 
             pub type Return = $ret;
-            pub async fn handle(bridge: Arc<Bridge>, $name::Args { federation_id, $( $arg_name ),* }: $name::Args) -> anyhow::Result<$ret> {
+            pub async fn handle(bridge: Arc<Bridge>, $name::args::$name { federation_id, $( $arg_name, )* .. }: $name::args::$name) -> anyhow::Result<$ret> {
                 let $federation = bridge.full()?.federations.get_federation(&federation_id.0)?;
                 tracing::Span::current().record("federation_id", &federation_id.0);
                 super::$name($federation, $($arg_name),*).await
@@ -227,17 +239,23 @@ macro_rules! federation_recovering_rpc_method {
     ) => {
         mod $name {
             use super::*;
-            #[derive(Debug, Deserialize, TS)]
-            #[serde(rename_all = "camelCase")]
-            pub struct Args {
-                federation_id: RpcFederationId,
-            $(
-                pub $arg_name: $arg_ty,
-            )*
+            pub mod args {
+                use super::*;
+                #[derive(Debug, Deserialize, TS)]
+                #[serde(rename_all = "camelCase")]
+                #[ts(export)]
+                pub struct $name {
+                    pub federation_id: RpcFederationId,
+                    #[serde(skip)]
+                    pub _empty: (),
+                $(
+                    pub $arg_name: $arg_ty,
+                )*
+                }
             }
 
             pub type Return = $ret;
-            pub async fn handle(bridge: Arc<Bridge>, $name::Args { federation_id, $( $arg_name ),* }: $name::Args) -> anyhow::Result<$ret> {
+            pub async fn handle(bridge: Arc<Bridge>, $name::args::$name { federation_id, $( $arg_name, )* .. }: $name::args::$name) -> anyhow::Result<$ret> {
                 let $federation = bridge.full()?.federations.get_federation_maybe_recovering(&federation_id.0)?;
                 tracing::Span::current().record("federation_id", &federation_id.0);
                 super::$name($federation, $($arg_name),*).await
@@ -881,7 +899,7 @@ async fn onAppForeground(bridge: &Bridge) -> anyhow::Result<()> {
 macro_rules! ts_type_ser {
     ($name:ident: $ty:ty = $ts_ty:literal) => {
         #[derive(serde::Serialize, ts_rs::TS)]
-        #[ts(export, export_to = "target/bindings/")]
+        #[ts(export)]
         pub struct $name(#[ts(type = $ts_ty)] pub $ty);
     };
 }
@@ -889,7 +907,7 @@ macro_rules! ts_type_ser {
 macro_rules! ts_type_de {
     ($name:ident: $ty:ty = $ts_ty:literal) => {
         #[derive(Debug, serde::Deserialize, ts_rs::TS)]
-        #[ts(export, export_to = "target/bindings/")]
+        #[ts(export)]
         pub struct $name(#[ts(type = $ts_ty)] pub $ty);
     };
 }
@@ -897,7 +915,7 @@ macro_rules! ts_type_de {
 macro_rules! ts_type_serde {
     ($name:ident: $ty:ty = $ts_ty:literal) => {
         #[derive(Debug, serde::Deserialize, serde::Serialize, ts_rs::TS)]
-        #[ts(export, export_to = "target/bindings/")]
+        #[ts(export)]
         pub struct $name(#[ts(type = $ts_ty)] pub $ty);
     };
 }
@@ -1443,11 +1461,10 @@ macro_rules! rpc_methods {
         // just used for typeshare
         #[allow(unused)]
         #[derive(TS)]
-        #[ts(export, export_to = "target/bindings/")]
+        #[ts(export)]
         pub struct $name {
         $(
-            #[ts(inline)]
-            $method: ($method::Args, $method::Return),
+            $method: ($method::args::$method, $method::Return),
         )*
         }
 

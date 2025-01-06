@@ -38,11 +38,11 @@ mod __hidden {
     use super::*;
 
     #[derive(Debug, Clone, ts_rs::TS)]
-    #[ts(export, export_to = "target/bindings/")]
+    #[ts(export)]
     pub struct ObservableVec<T>(Observable<Vec<T>>);
 
     #[derive(Debug, Clone, ts_rs::TS)]
-    #[ts(export, export_to = "target/bindings/")]
+    #[ts(export)]
     pub struct ObservableVecUpdate<T: Clone>(ObservableUpdate<Vec<SerdeVectorDiff<T>>>);
 }
 
@@ -51,7 +51,7 @@ mod __hidden {
 /// The frontend must call `cancelObservable` to free up the resources
 /// utilized by the Observable.
 #[derive(Debug, Serialize, Clone, ts_rs::TS)]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct Observable<T> {
     /// `id` is used to match `ObservableUpdate`.
     // 2^53 is pretty big for number of observable objects
@@ -71,7 +71,7 @@ impl<T> Observable<T> {
 ///
 /// `T` will only match the Observable<T> in simple observable.
 #[derive(Serialize, Clone, Debug, ts_rs::TS)]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct ObservableUpdate<T> {
     /// id matches the id in Observable.
     /// Frontend must store ObservableUpdate with unknown, because you may

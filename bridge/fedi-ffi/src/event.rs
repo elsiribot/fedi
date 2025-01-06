@@ -10,7 +10,7 @@ use crate::types::{RpcAmount, RpcCommunity, RpcFederationMaybeLoading};
 
 #[derive(Serialize, Deserialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct TransactionEvent {
     pub federation_id: RpcFederationId,
     pub transaction: RpcTransaction,
@@ -18,14 +18,14 @@ pub struct TransactionEvent {
 
 #[derive(Serialize, Clone, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct LogEvent {
     pub log: String,
 }
 
 #[derive(Serialize, Clone, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct SocialRecoveryEvent {
     pub approvals: Vec<SocialRecoveryApproval>,
     pub remaining: usize,
@@ -33,14 +33,14 @@ pub struct SocialRecoveryEvent {
 
 #[derive(Serialize, Clone, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct PanicEvent {
     pub message: String,
 }
 
 #[derive(Serialize, Clone, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct BalanceEvent {
     pub federation_id: RpcFederationId,
     pub balance: RpcAmount,
@@ -48,7 +48,7 @@ pub struct BalanceEvent {
 
 #[derive(Serialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct StabilityPoolDepositEvent {
     pub federation_id: RpcFederationId,
     pub operation_id: RpcOperationId,
@@ -57,7 +57,7 @@ pub struct StabilityPoolDepositEvent {
 
 #[derive(Serialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum StabilityPoolDepositState {
     Initiated,
     TxAccepted,
@@ -68,7 +68,7 @@ pub enum StabilityPoolDepositState {
 
 #[derive(Serialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct StabilityPoolWithdrawalEvent {
     pub federation_id: RpcFederationId,
     pub operation_id: RpcOperationId,
@@ -77,7 +77,7 @@ pub struct StabilityPoolWithdrawalEvent {
 
 #[derive(Serialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum StabilityPoolWithdrawalState {
     InvalidOperationType,
     WithdrawUnlockedInitiated,
@@ -96,7 +96,7 @@ pub enum StabilityPoolWithdrawalState {
 
 #[derive(Serialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RecoveryCompleteEvent {
     pub federation_id: RpcFederationId,
 }
@@ -109,7 +109,7 @@ pub struct RecoveryCompleteEvent {
 /// total and complete are unitless.
 #[derive(Serialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct RecoveryProgressEvent {
     pub federation_id: RpcFederationId,
     /// completed units of work
@@ -121,7 +121,7 @@ pub struct RecoveryProgressEvent {
 /// Status of device registration with Fedi's server
 #[derive(Serialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct DeviceRegistrationEvent {
     pub state: DeviceRegistrationState,
 }
@@ -130,7 +130,7 @@ pub struct DeviceRegistrationEvent {
 /// claimed back as e-cash.
 #[derive(Serialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct StabilityPoolUnfilledDepositSweptEvent {
     pub amount: RpcAmount,
 }
@@ -139,7 +139,7 @@ pub struct StabilityPoolUnfilledDepositSweptEvent {
 /// sent to Fedi's servers
 #[derive(Serialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub enum DeviceRegistrationState {
     /// This is a fresh device because we do not have a device index set within
     /// AppState. Moreover, the list of registered devices per Fedi's servers is
@@ -171,13 +171,13 @@ pub enum DeviceRegistrationState {
 /// Notify front-end that a particular community's metadata has updated
 #[derive(Serialize, Debug, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 pub struct CommunityMetadataUpdatedEvent {
     pub new_community: RpcCommunity,
 }
 
 #[derive(Debug, TS)]
-#[ts(export, export_to = "target/bindings/")]
+#[ts(export)]
 #[ts(rename_all = "camelCase")]
 pub enum Event {
     Transaction(Box<TransactionEvent>),
