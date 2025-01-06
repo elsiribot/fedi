@@ -9,7 +9,6 @@ import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
-    payInvoice,
     selectInvoiceToPay,
     selectLnurlPayment,
     selectPaymentFederation,
@@ -147,13 +146,10 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                     )
                 }
 
-                const res = await dispatch(
-                    payInvoice({
-                        fedimint,
-                        federationId: paymentFederation.id,
-                        invoice: invoice.invoice,
-                    }),
-                ).unwrap()
+                const res = await fedimint.payInvoice(
+                    invoice.invoice,
+                    paymentFederation.id,
+                )
                 onAcceptRef.current(res)
             } else if (lnurlPayment) {
                 const res = await lnurlPay(

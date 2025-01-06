@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import { receiveEcash, validateEcash } from '@fedi/common/redux'
+import { receiveEcash } from '@fedi/common/redux'
 import type { MSats } from '@fedi/common/types'
 import { RpcEcashInfo } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -40,13 +40,8 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
     const [receiving, setReceiving] = useState(false)
 
     useEffect(() => {
-        dispatch(
-            validateEcash({
-                fedimint,
-                ecash,
-            }),
-        )
-            .unwrap()
+        fedimint
+            .validateEcash(ecash)
             .then(setValidatedEcash)
             .catch(() => toast.error(t, 'errors.invalid-ecash-token'))
     }, [ecash, dispatch, toast, t])

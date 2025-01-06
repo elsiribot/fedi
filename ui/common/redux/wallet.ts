@@ -21,7 +21,6 @@ import { Federation, MSats, ReceiveEcashResult, Usd, UsdCents } from '../types'
 import {
     JSONObject,
     RpcAmount,
-    RpcEcashInfo,
     RpcLockedSeek,
     RpcStabilityPoolAccountInfo,
     StabilityPoolDepositEvent,
@@ -161,46 +160,6 @@ export const {
 
 /*** Async thunk actions ***/
 
-export const generateAddress = createAsyncThunk<
-    string,
-    { fedimint: FedimintBridge; federationId: string },
-    { state: CommonState }
->('wallet/generateAddress', async ({ fedimint, federationId }) => {
-    return fedimint.generateAddress(federationId)
-})
-
-export const generateEcash = createAsyncThunk<
-    { ecash: string; cancelAt: number },
-    { fedimint: FedimintBridge; federationId: string; amount: MSats },
-    { state: CommonState }
->('wallet/generateEcash', async ({ fedimint, federationId, amount }) => {
-    return fedimint.generateEcash(amount, federationId)
-})
-
-export const generateInvoice = createAsyncThunk<
-    string,
-    {
-        fedimint: FedimintBridge
-        federationId: string
-        amount: MSats
-        description: string
-    },
-    { state: CommonState }
->(
-    'wallet/generateInvoice',
-    async ({ fedimint, federationId, amount, description }) => {
-        return fedimint.generateInvoice(amount, description, federationId)
-    },
-)
-
-export const payInvoice = createAsyncThunk<
-    { preimage: string },
-    { fedimint: FedimintBridge; federationId: string; invoice: string },
-    { state: CommonState }
->('wallet/payInvoice', async ({ fedimint, federationId, invoice }) => {
-    return fedimint.payInvoice(invoice, federationId)
-})
-
 /**
  * Tries to redeem ecash. Returns a Promise that resolves
  * once the ecash is redeemed/fails or the operation times out.
@@ -242,14 +201,6 @@ export const receiveEcash = createAsyncThunk<
             }
         })
     })
-})
-
-export const validateEcash = createAsyncThunk<
-    RpcEcashInfo,
-    { fedimint: FedimintBridge; ecash: string },
-    { state: CommonState }
->('wallet/validateEcash', async ({ fedimint, ecash }) => {
-    return fedimint.validateEcash(ecash)
 })
 
 export const generateReusedEcashProofs = createAsyncThunk<
