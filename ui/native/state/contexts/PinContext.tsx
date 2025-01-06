@@ -12,6 +12,7 @@ import { z } from 'zod'
 
 import {
     ProtectedFeatures,
+    selectDeviceId,
     selectProtectedFeatures,
     setFeatureUnlocked,
 } from '@fedi/common/redux'
@@ -38,8 +39,6 @@ type UsePinReturn = UsePinLoading | UsePinUnset | UsePinSet
 
 const PinContext = createContext<UsePinReturn>({ status: 'loading' })
 
-const service = 'pin' as const
-
 export function PinContextProvider({
     children,
 }: {
@@ -48,24 +47,33 @@ export function PinContextProvider({
     const [hasSetPin, setHasSetPin] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const checkRef = useRef<(digits: Array<number>) => boolean>(() => false)
-
+    const deviceId = useAppSelector(selectDeviceId)
     const dispatch = useAppDispatch()
     const protectedFeatures = useAppSelector(selectProtectedFeatures)
 
-    const set = useCallback(async (digits: Array<number>) => {
-        const parsedDigits = z
-            .array(z.number().nonnegative().int().lte(9))
-            .parse(digits)
+    const set = useCallback(
+        async (digits: Array<number>) => {
+            if (!deviceId) return
 
-        await Keychain.setGenericPassword(service, parsedDigits.join(''), {
-            service,
-        })
+            const parsedDigits = z
+                .array(z.number().nonnegative().int().lte(9))
+                .parse(digits)
 
-        setHasSetPin(true)
-    }, [])
+            await Keychain.setGenericPassword(deviceId, parsedDigits.join(''), {
+                service: 'pin',
+            })
+
+            setHasSetPin(true)
+        },
+        [deviceId],
+    )
 
     const unset = useCallback(async () => {
-        await Keychain.resetGenericPassword({ service })
+        if (!deviceId) return
+
+        await Keychain.resetGenericPassword({
+            service: 'pin',
+        })
 
         // Immediately unlocks all protected features once the pin is unset
         for (const [key, isProtected] of Object.entries(protectedFeatures)) {
@@ -80,33 +88,35 @@ export function PinContextProvider({
         }
 
         setHasSetPin(false)
-    }, [dispatch, protectedFeatures])
+    }, [deviceId, dispatch, protectedFeatures])
 
     useEffect(() => {
         const loadPinCheck = async () => {
-            const pin = await Keychain.getGenericPassword({ service })
+            const pin = await Keychain.getGenericPassword({ service: 'pin' })
 
-            if (!pin) {
-                setIsLoading(false)
-                return
+            if (
+                pin &&
+                pin.username === deviceId &&
+                pin.service === 'pin' &&
+                typeof pin.password === 'string'
+            ) {
+                checkRef.current = (digits: Array<number>) => {
+                    const digitsValidation = z
+                        .array(z.number().nonnegative().int().lte(9))
+                        .safeParse(digits)
+
+                    if (!digitsValidation.success) return false
+
+                    return digits.join('') === pin.password
+                }
+                setHasSetPin(true)
             }
 
-            checkRef.current = (digits: Array<number>) => {
-                const digitsValidation = z
-                    .array(z.number().nonnegative().int().lte(9))
-                    .safeParse(digits)
-
-                if (!digitsValidation.success) return false
-
-                return digits.join('') === pin.password
-            }
-
-            setHasSetPin(true)
             setIsLoading(false)
         }
 
         loadPinCheck()
-    }, [])
+    }, [deviceId])
 
     const value: UsePinReturn = useMemo(
         () =>

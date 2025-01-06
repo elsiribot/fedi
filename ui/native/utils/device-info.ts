@@ -1,6 +1,7 @@
 import RNDI from 'react-native-device-info'
 import { exists, readFile } from 'react-native-fs'
 import { getNumberFormatSettings, getTimeZone } from 'react-native-localize'
+import { v4 as uuidv4 } from 'uuid'
 
 import { RpcRegisteredDevice } from '@fedi/common/types/bindings'
 import dateUtils from '@fedi/common/utils/DateUtils'
@@ -103,17 +104,15 @@ export function getAllDeviceInfo() {
 /**
  * Generates the user's OS information for use as a deviceId.
  *
- * This id MUST be unique and never change for the same device
- * This id MUST never be the same for two different devices
- * This id SHOULD contain a human-readable section as formatted in
- * the example below to help users distinguish between devices in a list.
+ * This id must be unique and contain a human-readable section.
+ * The human-readable section should help users to distinguish
+ * devices within a device list.
  *
- * @returns {string} [Make / Model / Operating System]:Mobile:[uid]
+ * @returns {string} [Operating System]:Mobile:[uuid]
  * @example iPhone7,2:Mobile:3d8f8f3d-8f3d-3d8f-8f3d-3d8f8f3d8f3d
  */
-export async function generateDeviceId() {
-    const uid = await RNDI.syncUniqueId()
-    return `${RNDI.getDeviceId()}:Mobile:${uid}`
+export function generateDeviceId() {
+    return `${RNDI.getDeviceId()}:Mobile:${uuidv4()}`
 }
 
 export function getOsFromDeviceId() {

@@ -9,10 +9,12 @@ import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     fetchRegisteredDevices,
     fetchSocialRecovery,
+    initializeDeviceId,
     initializeFedimintVersion,
     initializeNostrKeys,
     previewAllDefaultChats,
     refreshFederations,
+    selectDeviceId,
     setDeviceIndexRequired,
     setShouldLockDevice,
     startMatrixClient,
@@ -47,9 +49,20 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const { t } = useTranslation()
     const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(false)
     const [bridgeError, setBridgeError] = useState<unknown>()
+    const deviceId = useAppSelector(selectDeviceId)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const dispatchRef = useUpdatingRef(dispatch)
     const isForeground = useAppIsInForeground()
+
+    // Initialize device ID
+    useEffect(() => {
+        const handleDeviceId = async () => {
+            await dispatch(
+                initializeDeviceId({ getDeviceId: generateDeviceId }),
+            ).unwrap()
+        }
+        if (!deviceId && hasLoadedStorage) handleDeviceId()
+    }, [deviceId, dispatch, hasLoadedStorage])
 
     // Initialize Native Event Listeners
     useEffect(() => {
@@ -68,14 +81,9 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
 
     // Initialize redux store and bridge
     useEffect(() => {
-        if (!hasLoadedStorage) return
+        if (!deviceId) return
         const start = Date.now()
-        // Get the device ID, guaranteed to be unique and consistent on the same device
-        generateDeviceId()
-            .then(deviceId => {
-                log.info('initializing bridge with deviceId', deviceId)
-                return initializeBridge(deviceId)
-            })
+        initializeBridge(deviceId)
             .then(() => {
                 const stop = Date.now()
                 log.info('initialized:', stop - start, 'ms OS:', Platform.OS)
@@ -134,7 +142,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                 // to show a screen
                 SplashScreen.hide()
             })
-    }, [hasLoadedStorage, dispatchRef])
+    }, [deviceId, dispatchRef])
 
     useEffect(() => {
         // Initialize push notification sender
