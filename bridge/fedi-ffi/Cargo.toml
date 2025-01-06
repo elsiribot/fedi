@@ -41,7 +41,7 @@ lightning-invoice = "0.32.0"
 futures = "0.3"
 tracing = { workspace = true }
 tracing-serde = "0.1.3"
-thiserror = "1.0.37"
+thiserror = "2.0.8"
 hex = { workspace = true }
 macro_rules_attribute = "0.1.3"
 mime = "0.3.17"

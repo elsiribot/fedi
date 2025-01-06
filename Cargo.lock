@@ -2534,7 +2534,7 @@ dependencies = [
  "slab",
  "stability-pool-client",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.8",
  "tokio",
  "tokio-util",
  "tracing",
@@ -2583,7 +2583,7 @@ dependencies = [
  "serde_json",
  "strum 0.24.1",
  "strum_macros 0.24.3",
- "thiserror 1.0.69",
+ "thiserror 2.0.8",
  "tracing",
 ]
 
@@ -2608,7 +2608,7 @@ dependencies = [
  "serde",
  "strum 0.24.1",
  "strum_macros 0.24.3",
- "thiserror 1.0.69",
+ "thiserror 2.0.8",
  "tracing",
  "tracing-subscriber",
 ]
@@ -2637,7 +2637,7 @@ dependencies = [
  "strum 0.24.1",
  "strum_macros 0.24.3",
  "subtle",
- "thiserror 1.0.69",
+ "thiserror 2.0.8",
  "tracing",
  "tracing-subscriber",
 ]
@@ -8228,7 +8228,7 @@ dependencies = [
  "secp256k1",
  "serde",
  "serde_json",
- "thiserror 1.0.69",
+ "thiserror 2.0.8",
  "tracing",
 ]
 
