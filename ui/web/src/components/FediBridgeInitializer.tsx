@@ -6,10 +6,9 @@ import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     fetchSocialRecovery,
-    initializeDeviceId,
+    initializeDeviceIdWeb,
     previewAllDefaultChats,
     refreshFederations,
-    selectDeviceId,
     selectHasSetMatrixDisplayName,
     selectSocialRecoveryQr,
     startMatrixClient,
@@ -35,7 +34,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { asPath } = useRouter()
-    const deviceId = useAppSelector(selectDeviceId)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const socialRecoveryId = useAppSelector(selectSocialRecoveryQr)
     const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
@@ -45,23 +43,18 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const tRef = useUpdatingRef(t)
     const dispatchRef = useUpdatingRef(dispatch)
 
-    // Initialize device ID
     useEffect(() => {
-        const handleDeviceId = async () => {
-            await dispatchRef
-                .current(initializeDeviceId({ getDeviceId: generateDeviceId }))
-                .unwrap()
-        }
-        if (!deviceId && hasLoadedStorage) handleDeviceId()
-    }, [deviceId, dispatchRef, hasLoadedStorage])
-
-    useEffect(() => {
-        if (!deviceId) return
+        if (!hasLoadedStorage) return
         const loadingTimeout = setTimeout(() => {
             setIsShowingLoading(true)
         }, 1000)
 
-        initializeBridge(deviceId)
+        const newDeviceId = generateDeviceId()
+
+        dispatchRef
+            .current(initializeDeviceIdWeb({ deviceId: newDeviceId }))
+            .unwrap()
+            .then(deviceId => initializeBridge(deviceId))
             .then(() => fedimint.bridgeStatus())
             .then(status => {
                 log.info('bridgeStatus', status)
@@ -97,7 +90,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             })
 
         return () => clearTimeout(loadingTimeout)
-    }, [deviceId, dispatchRef, tRef])
+    }, [dispatchRef, hasLoadedStorage, tRef])
 
     // Show an error message if the bridge panics while running.
     useEffect(() => {
