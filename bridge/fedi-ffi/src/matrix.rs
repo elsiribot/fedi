@@ -135,6 +135,11 @@ impl Matrix {
             )
             .await?;
         };
+        assert_eq!(
+            client.user_id().unwrap().localpart(),
+            user_name,
+            "username must stay same"
+        );
 
         client.set_sliding_sync_proxy(Some(url::Url::parse(&sliding_sync_proxy)?));
         let sync_service = SyncService::builder(client.clone()).build().await?;
