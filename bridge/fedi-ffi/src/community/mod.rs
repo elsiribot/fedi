@@ -6,7 +6,6 @@ use std::time::Duration;
 
 use anyhow::{bail, Context};
 use bech32;
-use data_encoding::BASE32;
 use fedimint_core::task::TaskGroup;
 use fedimint_core::util::backoff_util::aggressive_backoff;
 use fedimint_core::util::update_merge::UpdateMerge;
@@ -193,8 +192,7 @@ impl FromStr for CommunityInvite {
             bail!("Unexpected hrp: {hrp}");
         }
 
-        let decoded = BASE32.decode(&data)?;
-        let decoded_str = String::from_utf8(decoded)?;
+        let decoded_str = String::from_utf8(data)?;
         Ok(serde_json::from_str(&decoded_str)?)
     }
 }
@@ -324,4 +322,19 @@ async fn fetch_community_meta_json(
     .json::<CommunityJson>()
     .await
     .map_err(|e| ErrorCode::InvalidJson(e.to_string()))?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_decode_community_invite() -> anyhow::Result<()> {
+        let invite = "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309ankjum59enkjargw4382um9wf3k7mn5v4h8gtnrdakj7jtjdahxxmrpv3zx2a30x33nqvtpvejnzwry8pjrvcm9vvmnqvmyxqcxxvmx89jn2vrp89jz7unpwu386swyqqf";
+        assert_eq!(
+            CommunityInvite::from_str(invite)?.community_meta_url,
+            "https://gist.githubusercontent.com/IroncladDev/4c01afe18d8d6cec703d00c3f9e50a9d/raw"
+        );
+        Ok(())
+    }
 }
