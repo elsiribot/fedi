@@ -8,7 +8,6 @@ use anyhow::{anyhow, bail, Context, Result};
 use bech32::{self, Bech32};
 use bitcoin::key::{Keypair, XOnlyPublicKey};
 use bitcoin::secp256k1::{Message, Secp256k1};
-use data_encoding::BASE32;
 use fedi_social_client::{
     self, FediSocialCommonGen, RecoveryFile, SocialRecoveryClient, SocialRecoveryState,
 };
@@ -157,9 +156,8 @@ impl BridgeRuntime {
     pub async fn get_nostr_pubkey(&self) -> Result<RpcNostrPubkey> {
         let nostr_pubkey = self.nostr_pubkey().await;
         let hrp = bech32::Hrp::parse_unchecked("npub");
-        let data = BASE32.encode(&nostr_pubkey.serialize());
         Ok(RpcNostrPubkey {
-            npub: bech32::encode::<Bech32>(hrp, data.as_bytes())?,
+            npub: bech32::encode::<Bech32>(hrp, &nostr_pubkey.serialize())?,
             hex: nostr_pubkey.to_string(),
         })
     }
@@ -177,7 +175,7 @@ impl BridgeRuntime {
         let secp = Secp256k1::new();
         let bytes = self.nostr_secret_key(&secp).await?.secret_bytes();
         let hrp = bech32::Hrp::parse_unchecked("nsec");
-        let nsec = bech32::encode::<Bech32>(hrp, BASE32.encode(&bytes).as_bytes())?;
+        let nsec = bech32::encode::<Bech32>(hrp, &bytes)?;
         let hex = hex::encode(bytes);
 
         Ok(RpcNostrSecret { hex, nsec })

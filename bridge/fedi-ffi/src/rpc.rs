@@ -1674,7 +1674,6 @@ pub mod tests {
     use bech32::{self, Bech32m};
     use bitcoin::secp256k1::PublicKey;
     use bitcoin::Network;
-    use data_encoding::BASE32;
     use devimint::devfed::DevJitFed;
     use devimint::envs::FM_INVITE_CODE_ENV;
     use devimint::util::{ClnLightningCli, FedimintCli, LnCli, ProcessManager};
@@ -3557,10 +3556,7 @@ pub mod tests {
         };
         let invite_json_str = serde_json::to_string(&community_invite)?;
         let invite_bytes = invite_json_str.as_bytes();
-        let invite_code = bech32::encode::<Bech32m>(
-            COMMUNITY_INVITE_CODE_HRP,
-            BASE32.encode(invite_bytes).as_bytes(),
-        )?;
+        let invite_code = bech32::encode::<Bech32m>(COMMUNITY_INVITE_CODE_HRP, invite_bytes)?;
 
         let mock = server
             .mock("GET", invite_path)
@@ -3618,10 +3614,7 @@ pub mod tests {
         };
         let invite_json_str = serde_json::to_string(&community_invite)?;
         let invite_bytes = invite_json_str.as_bytes();
-        let invite_code_0 = bech32::encode::<Bech32m>(
-            COMMUNITY_INVITE_CODE_HRP,
-            BASE32.encode(invite_bytes).as_bytes(),
-        )?;
+        let invite_code_0 = bech32::encode::<Bech32m>(COMMUNITY_INVITE_CODE_HRP, invite_bytes)?;
 
         server
             .mock("GET", invite_path)
@@ -3637,10 +3630,7 @@ pub mod tests {
         };
         let invite_json_str = serde_json::to_string(&community_invite)?;
         let invite_bytes = invite_json_str.as_bytes();
-        let invite_code_1 = bech32::encode::<Bech32m>(
-            COMMUNITY_INVITE_CODE_HRP,
-            BASE32.encode(invite_bytes).as_bytes(),
-        )?;
+        let invite_code_1 = bech32::encode::<Bech32m>(COMMUNITY_INVITE_CODE_HRP, invite_bytes)?;
 
         server
             .mock("GET", invite_path)
@@ -3707,10 +3697,7 @@ pub mod tests {
         };
         let invite_json_str = serde_json::to_string(&community_invite)?;
         let invite_bytes = invite_json_str.as_bytes();
-        let invite_code = bech32::encode::<Bech32m>(
-            COMMUNITY_INVITE_CODE_HRP,
-            BASE32.encode(invite_bytes).as_bytes(),
-        )?;
+        let invite_code = bech32::encode::<Bech32m>(COMMUNITY_INVITE_CODE_HRP, invite_bytes)?;
 
         server
             .mock("GET", invite_path)
