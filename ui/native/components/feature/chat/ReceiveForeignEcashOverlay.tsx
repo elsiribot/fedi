@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 import { useFederationPreview } from '@fedi/common/hooks/federation'
 import { useMatrixPaymentEvent } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
 import { MatrixPaymentEvent } from '../../../types'
@@ -21,6 +22,8 @@ interface Props {
     onRejected: () => void
 }
 
+const log = makeLog('ReceiveForeignEcashOverlay')
+
 const ReceiveForeignEcashOverlay: React.FC<Props> = ({
     paymentEvent,
     show,
@@ -33,6 +36,7 @@ const ReceiveForeignEcashOverlay: React.FC<Props> = ({
     const [showFederationPreview, setShowFederationPreview] =
         useState<boolean>(false)
     const [hideOtherMethods, setHideOtherMethods] = useState<boolean>(true)
+    const [inviteCode, setInviteCode] = useState<string | null>(null)
     const style = styles(theme)
 
     const {
@@ -48,11 +52,26 @@ const ReceiveForeignEcashOverlay: React.FC<Props> = ({
         useFederationPreview(t, fedimint, federationInviteCode || '')
 
     useEffect(() => {
-        if (!federationInviteCode) return
+        if (!paymentEvent.content.ecash) return
+
+        fedimint.validateEcash(paymentEvent.content.ecash).then(validated => {
+            if (validated.federation_type === 'joined') {
+                log.error('federation should not be joined')
+                return
+            }
+
+            setInviteCode(
+                validated.federation_invite || federationInviteCode || '',
+            )
+        })
+    }, [paymentEvent.content.ecash, federationInviteCode])
+
+    useEffect(() => {
+        if (!inviteCode) return
         // skip handling the code if we already have a preview
         if (federationPreview) return
-        handleCode(federationInviteCode)
-    }, [federationPreview, federationInviteCode, handleCode])
+        handleCode(inviteCode)
+    }, [federationPreview, inviteCode, handleCode])
 
     const renderOverlayContents = () => {
         if (isFetchingPreview) return <ActivityIndicator />

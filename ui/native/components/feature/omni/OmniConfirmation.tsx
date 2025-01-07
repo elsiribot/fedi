@@ -75,7 +75,10 @@ export const OmniConfirmation = <T extends AnyParsedData>({
     } = ((): {
         contents: CustomOverlayContents
         continueText?: string
-        continueOnPress?: () => void
+        // undefined = show back button only
+        // null = show no buttons
+        // otherwise, show back button and continue button with continueOnPress action
+        continueOnPress?: (() => void) | null
     } => {
         // If they're not yet a member of a federation, they can only scan certain codes.
         if (
@@ -166,15 +169,35 @@ export const OmniConfirmation = <T extends AnyParsedData>({
                 return {
                     contents: {
                         title: t('feature.omni.confirm-receive-ecash'),
-                        body: <OmniReceiveEcash {...parsedData.data} />,
-                        buttons: parsedData.data.parsed.federation_type === 'joined' ? undefined : [],
+                        body: (
+                            <OmniReceiveEcash
+                                parsed={parsedData.data.parsed}
+                                onContinue={() =>
+                                    handleNavigate('ConfirmReceiveOffline', {
+                                        ecash: parsedData.data.token,
+                                    })
+                                }
+                            />
+                        ),
                     },
-                    continueOnPress: parsedData.data.parsed.federation_type === 'joined'
-                        ? () =>
-                              handleNavigate('ConfirmReceiveOffline', {
-                                  ecash: parsedData.data.token,
-                              })
-                        : undefined,
+                    // I would use if statements but eslint doesn't like them in switch statements
+                    continueOnPress:
+                        // If you haven't joined the federation
+                        // AND if it does include an invite code, don't show any buttons
+                        parsedData.data.parsed.federation_type ===
+                            'notJoined' &&
+                        parsedData.data.parsed.federation_invite
+                            ? null
+                            : // Otherwise if you haven't joined and it DOESN'T include an invite code
+                              // Show the "Go Back" button
+                              parsedData.data.parsed.federation_type ===
+                                'notJoined'
+                              ? undefined
+                              : // Otherwise, allow the user to claim the ecash or go back
+                                () =>
+                                    handleNavigate('ConfirmReceiveOffline', {
+                                        ecash: parsedData.data.token,
+                                    }),
                 }
             case ParserDataType.LnurlAuth:
                 return {
@@ -270,6 +293,8 @@ export const OmniConfirmation = <T extends AnyParsedData>({
 
     const goBackText = propsGoBackText || t('phrases.go-back')
     const buttons = useMemo(() => {
+        if (continueOnPress === null) return []
+
         const b = [
             {
                 text: goBackText,
@@ -290,7 +315,7 @@ export const OmniConfirmation = <T extends AnyParsedData>({
     return (
         <CustomOverlay
             show={!!contents}
-            contents={{ buttons, ...contents }}
+            contents={{ ...contents, buttons }}
             loading={isLoading}
             onBackdropPress={onGoBack}
         />

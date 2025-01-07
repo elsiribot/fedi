@@ -71,7 +71,7 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
             const res = await fedimint.generateEcash(
                 msats as MSats,
                 activeFederation.id,
-                true
+                true,
             )
 
             onAcceptRef.current(res.ecash)

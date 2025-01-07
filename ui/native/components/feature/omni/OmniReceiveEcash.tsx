@@ -1,4 +1,3 @@
-import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { useEffect, useMemo, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
@@ -14,17 +13,15 @@ import FederationPreview from '../onboarding/FederationPreview'
 
 export default function OmniReceiveEcash({
     parsed,
-    token,
+    onContinue,
 }: {
     parsed: RpcEcashInfo
-    token: string
+    onContinue: () => void
 }) {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const navigation = useNavigation()
     const [showFederationPreview, setShowFederationPreview] =
         useState<boolean>(false)
-    const [hasJoinedFederation, setHasJoinedFederation] = useState<boolean>(false)
 
     const inviteCode = useMemo(() => {
         return parsed.federation_type === 'notJoined'
@@ -44,42 +41,34 @@ export default function OmniReceiveEcash({
 
     const style = styles(theme)
 
-    // The OmniConfirmation component will show unless the content is falsy
-    // Once the federation has been joined, close the overlay and move on to the next screen
-    if (hasJoinedFederation) return null
-
-    let content: React.ReactNode
-
     if (parsed.federation_type === 'joined') {
-        content = <Text>{t('feature.omni.confirm-ecash-token')}</Text>
-    }
-
-    // In case the ecash generated does not include an invite code
-    if (!inviteCode) {
-        content = <Text>{t('errors.unknown-ecash-issuer')}</Text>
-    }
-
-    if (isFetchingPreview) {
-        content = <ActivityIndicator />
-    }
-
-    if (federationPreview && showFederationPreview) {
-        content = (
-            <FederationPreview
-                onJoin={() =>
-                    handleJoin(() => {
-                        setHasJoinedFederation(true)
-                        navigation.navigate('ConfirmReceiveOffline', {
-                            ecash: token,
-                        })
-                    })
-                }
-                onBack={() => setShowFederationPreview(false)}
-                federation={federationPreview}
-            />
+        return (
+            <View style={style.container}>
+                <Text style={style.center}>
+                    {t('feature.omni.confirm-ecash-token')}
+                </Text>
+            </View>
         )
-    } else if (federationPreview) {
-        content = (
+    }
+
+    const renderContent = () => {
+        // If the ecash does not include an invite code
+        if (!inviteCode) return <Text>{t('errors.unknown-ecash-issuer')}</Text>
+
+        if (isFetchingPreview || !federationPreview)
+            return <ActivityIndicator />
+
+        if (showFederationPreview) {
+            return (
+                <FederationPreview
+                    onJoin={() => handleJoin(onContinue)}
+                    onBack={() => setShowFederationPreview(false)}
+                    federation={federationPreview}
+                />
+            )
+        }
+
+        return (
             <Pressable
                 style={style.actionCardContainer}
                 onPress={() => setShowFederationPreview(true)}>
@@ -112,22 +101,19 @@ export default function OmniReceiveEcash({
         )
     }
 
-    return <View style={style.container}>{content}</View>
+    return <View style={style.container}>{renderContent()}</View>
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
+            flexDirection: 'column',
+            alignItems: 'stretch',
             paddingTop: theme.spacing.xl,
-        },
-        optionsList: {
-            paddingTop: theme.spacing.md,
-            alignItems: 'flex-start',
+            paddingHorizontal: theme.spacing.md,
+            gap: theme.spacing.lg,
             width: '100%',
-            gap: 16,
         },
         actionCardContainer: {
             padding: theme.spacing.md,
@@ -145,9 +131,8 @@ const styles = (theme: Theme) =>
             height: 40,
             width: 40,
         },
-        roundIconContainer: {
-            borderRadius: 20,
-        },
         arrowContainer: { marginLeft: 'auto' },
         darkGrey: { color: theme.colors.darkGrey },
+        buttonStyle: { width: '100%' },
+        center: { textAlign: 'center' },
     })
