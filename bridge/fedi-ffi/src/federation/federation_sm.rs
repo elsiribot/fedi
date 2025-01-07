@@ -11,6 +11,7 @@ use tokio::sync::RwLock;
 use tracing::{error, info};
 
 use super::federations_locker::FederationsLocker;
+use crate::error::RpcError;
 use crate::event::{Event, EventSink, TypedEventExt as _};
 use crate::features::FeatureCatalog;
 use crate::federation::federation_v2::FederationV2;
@@ -203,7 +204,7 @@ impl FederationStateMachine {
             }
             Err(err) => {
                 event_sink.typed_event(&Event::federation(RpcFederationMaybeLoading::Failed {
-                    error: err.to_string(),
+                    error: RpcError::from_anyhow(&err),
                     id: RpcFederationId(federation_id),
                 }));
                 *wstate = FederationStateInternal::LoadFailed(Arc::new(err));

@@ -19,7 +19,7 @@ use crate::api::LiveFediApi;
 use crate::error::ErrorCode;
 use crate::features::{FeatureCatalog, RuntimeEnvironment};
 use crate::remote::{fedimint_remote_initialize, fedimint_remote_rpc};
-use crate::rpc::{self, rpc_error};
+use crate::rpc::{self, rpc_error_json};
 use crate::types::{RpcAppFlavor, RpcInitOpts};
 
 lazy_static! {
@@ -40,16 +40,16 @@ pub async fn fedimint_initialize(event_sink: Box<dyn EventSink>, init_opts_json:
         Ok(Ok(())) => String::from("{}"),
         Ok(Err(e)) => {
             error!(?e);
-            rpc_error(&e)
+            rpc_error_json(&e)
         }
         Err(join_error) => {
             if join_error.is_panic() {
-                rpc_error(&anyhow::format_err!(ErrorCode::Panic))
+                rpc_error_json(&anyhow::format_err!(ErrorCode::Panic))
             } else {
                 // it should unreachable in theory, but didn't want to brick
                 // bridge in that case. currently there are 2 errors - panic or
                 // cancelled and we cancel never this task
-                rpc_error(&anyhow::format_err!("unknown join error"))
+                rpc_error_json(&anyhow::format_err!("unknown join error"))
             }
         }
     }
@@ -162,7 +162,7 @@ pub async fn fedimint_rpc(method: String, payload: String) -> String {
                     .expect("rpc failed");
             }
             let Some(bridge) = BRIDGE.lock().await.as_ref().cloned() else {
-                return rpc_error(&anyhow::format_err!(ErrorCode::NotInialized));
+                return rpc_error_json(&anyhow::format_err!(ErrorCode::NotInialized));
             };
             fedimint_rpc_async(bridge, method, payload).await
         })
@@ -171,12 +171,12 @@ pub async fn fedimint_rpc(method: String, payload: String) -> String {
         Ok(value) => value,
         Err(join_error) => {
             if join_error.is_panic() {
-                rpc_error(&anyhow::format_err!(ErrorCode::Panic))
+                rpc_error_json(&anyhow::format_err!(ErrorCode::Panic))
             } else {
                 // it should unreachable in theory, but didn't want to brick
                 // bridge in that case. currently there are 2 errors - panic or
                 // cancelled and we cancel never this task
-                rpc_error(&anyhow::format_err!("unknown join error"))
+                rpc_error_json(&anyhow::format_err!("unknown join error"))
             }
         }
     }
