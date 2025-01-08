@@ -16,6 +16,7 @@ import {
     previewAllDefaultChats,
     refreshFederations,
     selectDeviceId,
+    selectMatrixStarted,
     setDeviceIndexRequired,
     setShouldLockDevice,
     startMatrixClient,
@@ -49,13 +50,14 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(false)
+    const started = useAppSelector(selectMatrixStarted)
     const [bridgeError, setBridgeError] = useState<unknown>()
     const deviceId = useAppSelector(selectDeviceId)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const dispatchRef = useUpdatingRef(dispatch)
     const isForeground = useAppIsInForeground()
 
-    useObserveMatrixSyncStatus(bridgeIsReady)
+    useObserveMatrixSyncStatus(started)
 
     // Initialize device ID
     useEffect(() => {
