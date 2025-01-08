@@ -14,7 +14,7 @@ import {
     setActiveFederationId,
     setPublicFederations,
 } from '../redux'
-import { ClientConfigMetadata, JoinPreview } from '../types'
+import { FederationMetadata, JoinPreview } from '../types'
 import dateUtils from '../utils/DateUtils'
 import {
     fetchPublicFederations,
@@ -108,7 +108,7 @@ export function useIsOnchainDepositSupported() {
     )
 }
 
-export function usePopupFederationInfo(metadata?: ClientConfigMetadata) {
+export function usePopupFederationInfo(metadata?: FederationMetadata) {
     const activeFederationMetadata = useCommonSelector(selectFederationMetadata)
     const meta = metadata || activeFederationMetadata
 

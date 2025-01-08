@@ -3,7 +3,6 @@ import {
     FediMod,
     LoadedFederation,
     MSats,
-    Network,
     SupportedCurrency,
 } from '../../types'
 import {
@@ -21,7 +20,7 @@ const baseFed: LoadedFederation = {
     nodes: { '0': { name: 'alpha', url: 'alphaurl' } },
     balance: 0 as MSats,
     recovering: false,
-    network: Network.regtest,
+    network: 'regtest',
     version: 0,
     clientConfig: null,
     meta: {},

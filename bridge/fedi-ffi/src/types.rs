@@ -61,8 +61,7 @@ impl std::fmt::Display for RpcAmount {
 pub struct RpcFederation {
     pub balance: RpcAmount,
     pub id: RpcFederationId,
-    #[ts(type = "string | null")]
-    pub network: Option<Network>,
+    pub network: Option<RpcBitcoinNetwork>,
     pub name: String,
     pub invite_code: String,
     pub meta: BTreeMap<String, String>,
@@ -109,6 +108,38 @@ impl From<&BridgeFullInitError> for RpcBridgeFullInitError {
                 }
             }
             BridgeFullInitError::Other(error) => RpcBridgeFullInitError::Other(error.to_string()),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum RpcBitcoinNetwork {
+    /// Mainnet Bitcoin.
+    Bitcoin,
+    /// Bitcoin's testnet network. (In future versions this will be combined
+    /// into a single variant containing the version)
+    Testnet,
+    /// Bitcoin's testnet4 network. (In future versions this will be combined
+    /// into a single variant containing the version)
+    Testnet4,
+    /// Bitcoin's signet network.
+    Signet,
+    /// Bitcoin's regtest network.
+    Regtest,
+    Unknown,
+}
+
+impl From<Network> for RpcBitcoinNetwork {
+    fn from(value: Network) -> Self {
+        match value {
+            Network::Bitcoin => RpcBitcoinNetwork::Bitcoin,
+            Network::Testnet => RpcBitcoinNetwork::Testnet,
+            Network::Testnet4 => RpcBitcoinNetwork::Testnet4,
+            Network::Signet => RpcBitcoinNetwork::Signet,
+            Network::Regtest => RpcBitcoinNetwork::Regtest,
+            _ => RpcBitcoinNetwork::Unknown,
         }
     }
 }
@@ -244,7 +275,7 @@ impl From<fedimint_core::core::OperationId> for RpcOperationId {
 pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFederation {
     let id = RpcFederationId(federation.federation_id().to_string());
     let name = federation.federation_name();
-    let network = federation.get_network();
+    let network = federation.get_network().map(Into::into);
     let client_config = federation.client.config().await;
     let meta = federation.get_cached_meta().await;
     let nodes = client_config

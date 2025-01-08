@@ -216,6 +216,14 @@ export type RpcBackPaginationStatus =
 
 export type RpcBitcoinDetails = { address: string };
 
+export type RpcBitcoinNetwork =
+  | "bitcoin"
+  | "testnet"
+  | "testnet4"
+  | "signet"
+  | "regtest"
+  | "unknown";
+
 export type RpcBridgeFullInitError =
   | { type: "v2IdentifierMismatch"; existing: string; new: string }
   | ({ type: "other" } & string);
@@ -260,7 +268,7 @@ export type RpcError = {
 export type RpcFederation = {
   balance: RpcAmount;
   id: RpcFederationId;
-  network: string | null;
+  network: RpcBitcoinNetwork | null;
   name: string;
   inviteCode: string;
   meta: { [key in string]?: string };

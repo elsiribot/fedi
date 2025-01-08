@@ -141,14 +141,7 @@ export enum SupportedMetaFields {
     default_group_chats = 'default_group_chats',
 }
 
-export type ClientConfigMetadata = Record<string, string | undefined>
-
-export enum Network {
-    bitcoin = 'bitcoin',
-    testnet = 'testnet',
-    signet = 'signet',
-    regtest = 'regtest',
-}
+export type FederationMetadata = RpcFederation['meta']
 
 /**
  * Connection Status of a federation's guardians
@@ -174,9 +167,7 @@ export interface FederationInitFailure {
     readonly hasWallet: true
 }
 
-export type LoadedFederation = Omit<RpcFederation, 'network' | 'meta'> & {
-    meta: ClientConfigMetadata
-    network: Network | undefined
+export type LoadedFederation = RpcFederation & {
     status: FederationStatus
     readonly init_state: 'ready'
     readonly hasWallet: true
@@ -189,7 +180,7 @@ export type Federation =
 
 export type Community = Omit<RpcCommunity, 'meta'> & {
     id: Federation['id']
-    meta: ClientConfigMetadata
+    meta: FederationMetadata
     status: FederationStatus
     // Added for compatibility with Mods
     readonly network: undefined
@@ -226,9 +217,8 @@ export interface FederationApiVersion {
     minor: number
 }
 
-export type FederationPreview = Omit<RpcFederationPreview, 'meta'> & {
-    readonly hasWallet: true
-    meta: ClientConfigMetadata
+export type FederationPreview = RpcFederationPreview & {
+    hasWallet: true
 }
 
 /*
