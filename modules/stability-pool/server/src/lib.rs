@@ -42,8 +42,8 @@ use fedimint_core::{Amount, NumPeersExt, OutPoint, PeerId, ServerModule, Transac
 use futures::{stream, FutureExt, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
-use secp256k1::PublicKey;
 pub use stability_pool_common as common;
+use stability_pool_common::AccountId;
 use tokio::sync::{Mutex, RwLock};
 use tracing::{info, warn};
 
@@ -460,6 +460,10 @@ impl ServerModule for StabilityPool {
                 .amount()
                 .map_err(|e| StabilityPoolInputError::UnknownInputVariant(e.to_string()))?,
         );
+        // multi sig not allowed as input.
+        let Some(&pub_key) = account.as_single() else {
+            return Err(StabilityPoolInputError::MultiSigNotAllowed);
+        };
 
         // TODO shaurya ensure amount is greater than fee
         if amount == Amount::ZERO {
@@ -467,14 +471,14 @@ impl ServerModule for StabilityPool {
         }
 
         let (mut user_idle_balance, user_staged_seeks, user_staged_provides) = (
-            dbtx.get_value(&IdleBalanceKey(account))
+            dbtx.get_value(&IdleBalanceKey(account.id()))
                 .await
                 .unwrap_or(IdleBalance(Amount::ZERO))
                 .0,
-            dbtx.get_value(&StagedSeeksKey(account))
+            dbtx.get_value(&StagedSeeksKey(account.id()))
                 .await
                 .unwrap_or_default(),
-            dbtx.get_value(&StagedProvidesKey(account))
+            dbtx.get_value(&StagedProvidesKey(account.id()))
                 .await
                 .unwrap_or_default(),
         );
@@ -495,8 +499,11 @@ impl ServerModule for StabilityPool {
                 Amount::from_msats(user_idle_balance.msats.min(amount_to_satisfy.msats));
             user_idle_balance -= min_extractable;
             amount_to_satisfy -= min_extractable;
-            dbtx.insert_entry(&IdleBalanceKey(account), &IdleBalance(user_idle_balance))
-                .await;
+            dbtx.insert_entry(
+                &IdleBalanceKey(account.id()),
+                &IdleBalance(user_idle_balance),
+            )
+            .await;
         }
 
         if amount_to_satisfy != Amount::ZERO && !user_staged_seeks.is_empty() {
@@ -526,7 +533,7 @@ impl ServerModule for StabilityPool {
                 .into_iter()
                 .rev()
                 .collect();
-            dbtx.insert_entry(&StagedSeeksKey(account), &user_staged_seeks)
+            dbtx.insert_entry(&StagedSeeksKey(account.id()), &user_staged_seeks)
                 .await;
         }
 
@@ -560,7 +567,7 @@ impl ServerModule for StabilityPool {
                 .into_iter()
                 .rev()
                 .collect();
-            dbtx.insert_entry(&StagedProvidesKey(account), &user_staged_provides)
+            dbtx.insert_entry(&StagedProvidesKey(account.id()), &user_staged_provides)
                 .await;
         }
 
@@ -572,7 +579,7 @@ impl ServerModule for StabilityPool {
         let fee = Amount::ZERO;
         return Ok(InputMeta {
             amount: TransactionItemAmount { amount, fee },
-            pub_key: account,
+            pub_key,
         });
     }
 
@@ -630,13 +637,13 @@ impl ServerModule for StabilityPool {
         };
 
         let (mut user_staged_seeks, mut user_staged_provides, user_staged_cancellation) = (
-            dbtx.get_value(&StagedSeeksKey(account))
+            dbtx.get_value(&StagedSeeksKey(account.id()))
                 .await
                 .unwrap_or_default(),
-            dbtx.get_value(&StagedProvidesKey(account))
+            dbtx.get_value(&StagedProvidesKey(account.id()))
                 .await
                 .unwrap_or_default(),
-            dbtx.get_value(&StagedCancellationKey(account)).await,
+            dbtx.get_value(&StagedCancellationKey(account.id())).await,
         );
 
         let current_cycle = dbtx.get_value(&CurrentCycleKey).await;
@@ -647,11 +654,11 @@ impl ServerModule for StabilityPool {
                 ..
             }) => (
                 locked_seeks
-                    .get(&account)
+                    .get(&account.id())
                     .map(|vec| vec.as_slice())
                     .unwrap_or_default(),
                 locked_provides
-                    .get(&account)
+                    .get(&account.id())
                     .map(|vec| vec.as_slice())
                     .unwrap_or_default(),
             ),
@@ -677,7 +684,7 @@ impl ServerModule for StabilityPool {
 
                     dbtx.insert_entry(&StagedSeekSequenceKey, &(sequence + 1))
                         .await;
-                    dbtx.insert_entry(&StagedSeeksKey(account), &user_staged_seeks)
+                    dbtx.insert_entry(&StagedSeeksKey(account.id()), &user_staged_seeks)
                         .await;
                     Ok(TransactionItemAmount {
                         amount: seek.0,
@@ -705,7 +712,7 @@ impl ServerModule for StabilityPool {
 
                     dbtx.insert_entry(&StagedProvideSequenceKey, &(sequence + 1))
                         .await;
-                    dbtx.insert_entry(&StagedProvidesKey(account), &user_staged_provides)
+                    dbtx.insert_entry(&StagedProvidesKey(account.id()), &user_staged_provides)
                         .await;
                     Ok(TransactionItemAmount {
                         amount: provide.amount,
@@ -723,8 +730,11 @@ impl ServerModule for StabilityPool {
                     && user_staged_cancellation.is_none()
                     && (!user_locked_seeks.is_empty() ^ !user_locked_provides.is_empty())
                 {
-                    dbtx.insert_entry(&StagedCancellationKey(account), &(outpoint.txid, cancel))
-                        .await;
+                    dbtx.insert_entry(
+                        &StagedCancellationKey(account.id()),
+                        &(outpoint.txid, cancel),
+                    )
+                    .await;
                     Ok(TransactionItemAmount {
                         amount: Amount::ZERO,
                         fee,
@@ -736,7 +746,8 @@ impl ServerModule for StabilityPool {
             IntendedAction::UndoCancelRenewal => {
                 // Must have a staged cancellation
                 if user_staged_cancellation.is_some() {
-                    dbtx.remove_entry(&StagedCancellationKey(account)).await;
+                    dbtx.remove_entry(&StagedCancellationKey(account.id()))
+                        .await;
                     Ok(TransactionItemAmount {
                         amount: Amount::ZERO,
                         fee,
@@ -832,8 +843,8 @@ impl ServerModule for StabilityPool {
 }
 
 fn settle_locks(
-    locked_seeks: &mut BTreeMap<PublicKey, Vec<LockedSeek>>,
-    locked_provides: &mut BTreeMap<PublicKey, Vec<LockedProvide>>,
+    locked_seeks: &mut BTreeMap<AccountId, Vec<LockedSeek>>,
+    locked_provides: &mut BTreeMap<AccountId, Vec<LockedProvide>>,
     start_price: u128,
     new_price: u128,
     randomness: usize,
@@ -922,8 +933,8 @@ fn settle_locks(
 
 async fn apply_staged_cancellations(
     dbtx: &mut DatabaseTransaction<'_>,
-    locked_seeks: &mut BTreeMap<PublicKey, Vec<LockedSeek>>,
-    locked_provides: &mut BTreeMap<PublicKey, Vec<LockedProvide>>,
+    locked_seeks: &mut BTreeMap<AccountId, Vec<LockedSeek>>,
+    locked_provides: &mut BTreeMap<AccountId, Vec<LockedProvide>>,
     new_price: u128,
 ) {
     let staged_cancellations = dbtx
@@ -1041,15 +1052,15 @@ async fn apply_staged_cancellations(
 
 async fn restage_remaining_locks(
     dbtx: &mut DatabaseTransaction<'_>,
-    locked_seeks: BTreeMap<PublicKey, Vec<LockedSeek>>,
-    locked_provides: BTreeMap<PublicKey, Vec<LockedProvide>>,
+    locked_seeks: BTreeMap<AccountId, Vec<LockedSeek>>,
+    locked_provides: BTreeMap<AccountId, Vec<LockedProvide>>,
 ) {
-    for (account, account_locked_seeks) in locked_seeks {
+    for (account_id, account_locked_seeks) in locked_seeks {
         // If a staged seek with the same sequence exists, we just
         // increase its amount by the amount of the lock. Otherwise,
         // we insert a new staged seek.
         let new_staged_seeks = dbtx
-            .get_value(&StagedSeeksKey(account))
+            .get_value(&StagedSeeksKey(account_id))
             .await
             .unwrap_or_default()
             .into_iter()
@@ -1075,16 +1086,16 @@ async fn restage_remaining_locks(
                 }
             })
             .collect_vec();
-        dbtx.insert_entry(&StagedSeeksKey(account), &new_staged_seeks)
+        dbtx.insert_entry(&StagedSeeksKey(account_id), &new_staged_seeks)
             .await;
     }
 
-    for (account, account_locked_provides) in locked_provides {
+    for (account_id, account_locked_provides) in locked_provides {
         // If a staged provide with the same sequence exists, we just
         // increase its amount by the amount of the lock. Otherwise,
         // we insert a new staged provide.
         let new_staged_provides = dbtx
-            .get_value(&StagedProvidesKey(account))
+            .get_value(&StagedProvidesKey(account_id))
             .await
             .unwrap_or_default()
             .into_iter()
@@ -1116,7 +1127,7 @@ async fn restage_remaining_locks(
                 }
             })
             .collect_vec();
-        dbtx.insert_entry(&StagedProvidesKey(account), &new_staged_provides)
+        dbtx.insert_entry(&StagedProvidesKey(account_id), &new_staged_provides)
             .await;
     }
 }
@@ -1170,8 +1181,8 @@ async fn calculate_locks_and_write_cycle(
 async fn extract_sorted_staged_seeks_and_provides(
     dbtx: &mut DatabaseTransaction<'_>,
 ) -> (
-    VecDeque<(PublicKey, StagedSeek)>,
-    VecDeque<(PublicKey, StagedProvide)>,
+    VecDeque<(AccountId, StagedSeek)>,
+    VecDeque<(AccountId, StagedProvide)>,
 ) {
     // Sort all staged seeks by sequence
     let staged_seeks = dbtx
@@ -1218,14 +1229,14 @@ async fn extract_sorted_staged_seeks_and_provides(
 }
 
 struct LockedProvidesAndFeeRateResult {
-    locked_provides: Vec<(PublicKey, LockedProvide)>,
+    locked_provides: Vec<(AccountId, LockedProvide)>,
     included_provides_sum: u128,
     fee_rate: u64,
 }
 
 fn calculate_locked_provides_and_fee_rate(
-    staged_seeks: &VecDeque<(PublicKey, StagedSeek)>,
-    staged_provides: &mut VecDeque<(PublicKey, StagedProvide)>,
+    staged_seeks: &VecDeque<(AccountId, StagedSeek)>,
+    staged_provides: &mut VecDeque<(AccountId, StagedProvide)>,
     collateral_ratio_provider: u128,
     collateral_ratio_seeker: u128,
 ) -> LockedProvidesAndFeeRateResult {
@@ -1250,7 +1261,7 @@ fn calculate_locked_provides_and_fee_rate(
     let mut locked_provides = vec![];
     while remaining_coll_needed > 0 && !staged_provides.is_empty() {
         let (
-            account,
+            account_id,
             StagedProvide {
                 txid,
                 sequence,
@@ -1286,7 +1297,7 @@ fn calculate_locked_provides_and_fee_rate(
         included_provides_sum += amount_used;
         remaining_coll_needed -= amount_used;
         locked_provides.push((
-            *account,
+            *account_id,
             LockedProvide {
                 staged_txid: *txid,
                 staged_sequence: *sequence,
@@ -1312,12 +1323,12 @@ fn calculate_locked_provides_and_fee_rate(
 }
 
 fn calculate_locked_seeks(
-    staged_seeks: &mut VecDeque<(PublicKey, StagedSeek)>,
+    staged_seeks: &mut VecDeque<(AccountId, StagedSeek)>,
     fee_rate: u128,
     collateral_ratio_provider: u128,
     collateral_ratio_seeker: u128,
     included_provides_sum: u128,
-) -> Vec<(PublicKey, LockedSeek)> {
+) -> Vec<(AccountId, LockedSeek)> {
     let mut included_seeks_sum_before_fees = included_seeks_sum_before_fees(
         fee_rate,
         collateral_ratio_provider,
@@ -1363,15 +1374,15 @@ fn calculate_locked_seeks(
 
 async fn write_remaining_staged_seeks_and_provides(
     dbtx: &mut DatabaseTransaction<'_>,
-    staged_seeks: VecDeque<(PublicKey, StagedSeek)>,
-    staged_provides: VecDeque<(PublicKey, StagedProvide)>,
+    staged_seeks: VecDeque<(AccountId, StagedSeek)>,
+    staged_provides: VecDeque<(AccountId, StagedProvide)>,
 ) {
-    for (account, seeks) in staged_seeks.into_iter().into_group_map() {
-        dbtx.insert_entry(&StagedSeeksKey(account), &seeks).await;
+    for (account_id, seeks) in staged_seeks.into_iter().into_group_map() {
+        dbtx.insert_entry(&StagedSeeksKey(account_id), &seeks).await;
     }
 
-    for (account, provides) in staged_provides.into_iter().into_group_map() {
-        dbtx.insert_entry(&StagedProvidesKey(account), &provides)
+    for (account_id, provides) in staged_provides.into_iter().into_group_map() {
+        dbtx.insert_entry(&StagedProvidesKey(account_id), &provides)
             .await;
     }
 }
@@ -1379,8 +1390,8 @@ async fn write_remaining_staged_seeks_and_provides(
 #[allow(clippy::too_many_arguments)]
 async fn distribute_fees_and_write_cycle(
     dbtx: &mut DatabaseTransaction<'_>,
-    mut locked_seeks: Vec<(PublicKey, LockedSeek)>,
-    locked_provides: Vec<(PublicKey, LockedProvide)>,
+    mut locked_seeks: Vec<(AccountId, LockedSeek)>,
+    locked_provides: Vec<(AccountId, LockedProvide)>,
     fee_rate: u64,
     included_provides_sum: u128,
     cycle_index: u64,
@@ -1390,7 +1401,8 @@ async fn distribute_fees_and_write_cycle(
 ) {
     #[derive(PartialOrd, Ord, PartialEq, Eq)]
     struct AmountAndFeeKey {
-        pub_key: PublicKey,
+        // CHECK: might affect ordering
+        account_id: AccountId,
         txid: TransactionId,
         sequence: u64,
     }
@@ -1404,7 +1416,7 @@ async fn distribute_fees_and_write_cycle(
     let mut fee_pool = 0u128;
     locked_seeks.iter_mut().for_each(
         |(
-            account,
+            account_id,
             LockedSeek {
                 staged_txid,
                 staged_sequence,
@@ -1421,7 +1433,7 @@ async fn distribute_fees_and_write_cycle(
             let fee = Amount::from_msats(fee.try_into().unwrap());
             seek_amount_and_fee_map.insert(
                 AmountAndFeeKey {
-                    pub_key: *account,
+                    account_id: *account_id,
                     txid: *staged_txid,
                     sequence: *staged_sequence,
                 },
@@ -1437,14 +1449,14 @@ async fn distribute_fees_and_write_cycle(
     // Update seek metadatas in database
     for (
         AmountAndFeeKey {
-            pub_key,
+            account_id,
             txid,
             sequence,
         },
         amount_and_fee,
     ) in seek_amount_and_fee_map
     {
-        let seek_metadata_key = SeekMetadataKey(pub_key, txid);
+        let seek_metadata_key = SeekMetadataKey(account_id, txid);
         let seek_metadata = match dbtx.get_value(&seek_metadata_key).await {
             Some(existing) => SeekMetadata {
                 staged_sequence: existing.staged_sequence,
@@ -1483,13 +1495,13 @@ async fn distribute_fees_and_write_cycle(
     let mut draining_fee_pool = fee_pool;
     let mut provider_fee_owed_map = locked_provides_map
         .iter()
-        .map(|(account, provides)| {
+        .map(|(account_id, provides)| {
             let account_provides_amount = provides.iter().fold(0u128, |acc, locked_provide| {
                 acc + locked_provide.amount.msats as u128
             });
             let account_fee_owed = account_provides_amount * fee_pool / included_provides_sum;
             draining_fee_pool -= account_fee_owed;
-            (*account, account_fee_owed)
+            (*account_id, account_fee_owed)
         })
         .collect::<BTreeMap<_, _>>();
 
@@ -1503,8 +1515,8 @@ async fn distribute_fees_and_write_cycle(
     }
 
     // Update idle balances of providers to reflect fees paid
-    for (account, fee_owed) in provider_fee_owed_map {
-        let idle_balance_key = IdleBalanceKey(account);
+    for (account_id, fee_owed) in provider_fee_owed_map {
+        let idle_balance_key = IdleBalanceKey(account_id);
         let mut idle_balance = dbtx
             .get_value(&idle_balance_key)
             .await

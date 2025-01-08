@@ -4,8 +4,7 @@ use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiError, ApiVersion};
 use fedimint_core::Amount;
 use futures::{stream, StreamExt};
-use secp256k1::PublicKey;
-use stability_pool_common::{AccountInfo, LiquidityStats};
+use stability_pool_common::{AccountId, AccountInfo, LiquidityStats};
 
 use crate::db::{
     CurrentCycleKey, Cycle, IdleBalance, IdleBalanceKey, PastCycleKeyPrefix,
@@ -19,7 +18,7 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
         api_endpoint! {
             "account_info",
             ApiVersion::new(0, 0),
-            async |_module: &StabilityPool, context, request: PublicKey| -> AccountInfo {
+            async |_module: &StabilityPool, context, request: AccountId| -> AccountInfo {
                 Ok(account_info(&mut context.dbtx().into_nc(), request).await)
             }
         },
@@ -47,7 +46,7 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
         api_endpoint! {
             "wait_cancellation_processed",
             ApiVersion::new(0, 0),
-            async |_module: &StabilityPool, context, request: PublicKey| -> Amount {
+            async |_module: &StabilityPool, context, request: AccountId| -> Amount {
                 Ok(wait_cancellation_processed(context, request).await?)
             }
         },
@@ -68,7 +67,7 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
     ]
 }
 
-pub async fn account_info(dbtx: &mut DatabaseTransaction<'_>, account: PublicKey) -> AccountInfo {
+pub async fn account_info(dbtx: &mut DatabaseTransaction<'_>, account: AccountId) -> AccountInfo {
     let (locked_seeks, locked_provides) = match dbtx.get_value(&CurrentCycleKey).await {
         Some(Cycle {
             locked_seeks: seeker_locks,
@@ -170,7 +169,7 @@ pub async fn cycle_start_price(
 /// and return the amount of idle balance that can be withdrawn.
 pub async fn wait_cancellation_processed(
     context: &mut ApiEndpointContext<'_>,
-    account: PublicKey,
+    account: AccountId,
 ) -> anyhow::Result<Amount, ApiError> {
     let mut dbtx = context.dbtx().into_nc();
     let starting_idle_balance = match dbtx.get_value(&IdleBalanceKey(account)).await {
