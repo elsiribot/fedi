@@ -158,6 +158,7 @@
         "please-confirm": "Please confirm",
         "receive-pending": "Pending receive",
         "received-bitcoin": "Received bitcoin",
+        "recovery-in-progress": "Recovery in progress",
         "refund-pending": "Refund pending",
         "reload-app": "Reload application",
         "return-to-home": "Return to home",
@@ -176,7 +177,8 @@
         "view-public-federations": "View public communities",
         "wallet-balance": "Wallet balance: {{balance}} sats",
         "yearly-fee": "Yearly fee",
-        "you-are-offline": "You are currently in offline mode"
+        "you-are-offline": "You are currently in offline mode",
+        "youre-offline": "You're offline"
     },
     "errors": {
         "bad-connection": "Your network connection may be unstable. Please try again later or connect to another network.",
@@ -591,6 +593,7 @@
             "balance-not-spendable-offline": "This balance will not be able to be spent until you come back online",
             "bitcoin-request": "Bitcoin request",
             "cashu-ecash": "Cashu ecash",
+            "claim-ecash-online": "Come back online to claim it",
             "copied-payment-code": "Copied payment request",
             "enable-onchain-deposits": "Enable onchain deposits",
             "hide-other-methods": "Hide other methods",
@@ -604,6 +607,7 @@
             "receive-amount-unit": "Receive {{amount}} {{unit}}",
             "receive-bitcoin-offline": "Receive bitcoin offline",
             "receive-cashu": "Receive Cashu ecash",
+            "receive-ecash-from": "Receive eCash from",
             "reject-payment": "Reject payment",
             "request-bitcoin": "Request bitcoin",
             "request-sats": "Request {{amount}} SATS",

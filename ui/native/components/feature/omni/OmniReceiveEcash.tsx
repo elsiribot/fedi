@@ -53,7 +53,12 @@ export default function OmniReceiveEcash({
 
     const renderContent = () => {
         // If the ecash does not include an invite code
-        if (!inviteCode) return <Text>{t('errors.unknown-ecash-issuer')}</Text>
+        if (!inviteCode)
+            return (
+                <Text style={style.center}>
+                    {t('errors.unknown-ecash-issuer')}
+                </Text>
+            )
 
         if (isFetchingPreview || !federationPreview)
             return <ActivityIndicator />

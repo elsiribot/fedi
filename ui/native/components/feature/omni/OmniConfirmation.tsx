@@ -16,7 +16,11 @@ import {
 
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
-import { AnyParsedData, ParserDataType } from '../../../types'
+import {
+    AnyParsedData,
+    ParsedFedimintEcash,
+    ParserDataType,
+} from '../../../types'
 import { NavigationArgs, NavigationHook } from '../../../types/navigation'
 import CustomOverlay, { CustomOverlayContents } from '../../ui/CustomOverlay'
 import RecoveryInProgress from '../recovery/RecoveryInProgress'
@@ -66,6 +70,25 @@ export const OmniConfirmation = <T extends AnyParsedData>({
             toast.error(t, err)
         }
         setIsLoading(false)
+    }
+
+    const handleContinueFedimintEcash = ({ data }: ParsedFedimintEcash) => {
+        // If you haven't joined the federation
+        // AND if it does include an invite code, don't show any buttons
+        if (
+            data.parsed.federation_type === 'notJoined' &&
+            data.parsed.federation_invite
+        )
+            return null
+
+        // Otherwise if you haven't joined and it DOESN'T include an invite code
+        // Show the "Go Back" button
+        if (data.parsed.federation_type === 'notJoined') return undefined
+
+        return () =>
+            handleNavigate('ConfirmReceiveOffline', {
+                ecash: data.token,
+            })
     }
 
     const {
@@ -169,6 +192,10 @@ export const OmniConfirmation = <T extends AnyParsedData>({
                 return {
                     contents: {
                         title: t('feature.omni.confirm-receive-ecash'),
+                        icon:
+                            parsedData.data.parsed.federation_type === 'joined'
+                                ? 'Bolt'
+                                : undefined,
                         body: (
                             <OmniReceiveEcash
                                 parsed={parsedData.data.parsed}
@@ -181,23 +208,7 @@ export const OmniConfirmation = <T extends AnyParsedData>({
                         ),
                     },
                     // I would use if statements but eslint doesn't like them in switch statements
-                    continueOnPress:
-                        // If you haven't joined the federation
-                        // AND if it does include an invite code, don't show any buttons
-                        parsedData.data.parsed.federation_type ===
-                            'notJoined' &&
-                        parsedData.data.parsed.federation_invite
-                            ? null
-                            : // Otherwise if you haven't joined and it DOESN'T include an invite code
-                              // Show the "Go Back" button
-                              parsedData.data.parsed.federation_type ===
-                                'notJoined'
-                              ? undefined
-                              : // Otherwise, allow the user to claim the ecash or go back
-                                () =>
-                                    handleNavigate('ConfirmReceiveOffline', {
-                                        ecash: parsedData.data.token,
-                                    }),
+                    continueOnPress: handleContinueFedimintEcash(parsedData),
                 }
             case ParserDataType.LnurlAuth:
                 return {
