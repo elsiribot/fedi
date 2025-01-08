@@ -74,14 +74,15 @@ export const useMatrixHealthCheck = () => {
 // This hook gets the device's FCM token and publishes it
 // to the Matrix Sygnal server
 export const useMatrixPushNotifications = () => {
-    const { notificationsPermission } = useNotificationsPermission()
+    const { notificationsPermission: permissionGranted } =
+        useNotificationsPermission()
     const log = makeLog('useMatrixPushNotifications')
 
     const getDeviceToken = useMemo<() => Promise<string>>(() => {
         return async () => {
             try {
                 // Check and request notification permissions if needed
-                if (notificationsPermission !== 'granted') {
+                if (permissionGranted !== 'granted') {
                     const authStatus = await messaging().requestPermission()
                     if (
                         authStatus !==
@@ -129,11 +130,10 @@ export const useMatrixPushNotifications = () => {
                 throw error // Propagate the error if token cannot be retrieved
             }
         }
-    }, [notificationsPermission, log])
+    }, [permissionGranted, log])
 
     usePublishNotificationToken(
         getDeviceToken,
-        notificationsPermission == 'granted',
         DeviceInfo.getBundleId(),
         DeviceInfo.getApplicationName(),
     )

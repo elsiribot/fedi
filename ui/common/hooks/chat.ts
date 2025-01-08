@@ -30,7 +30,6 @@ const log = makeLog('common/hooks/chat')
 // so it can process push notifications for timeline events
 export function usePublishNotificationToken(
     getToken: () => Promise<string>,
-    needsPermission = false,
     appId: string,
     appName: string,
 ) {
@@ -41,14 +40,6 @@ export function usePublishNotificationToken(
 
     useEffect(() => {
         const publishToken = async () => {
-            // Permissions check
-            if (needsPermission) {
-                log.debug(
-                    'Permissions check is not passed. Skipping publish token.',
-                )
-                return
-            }
-
             // Check if matrix is ready
             if (!isMatrixReady) {
                 log.warn('Matrix is not ready. Skipping publish token.')
@@ -98,15 +89,7 @@ export function usePublishNotificationToken(
         }
 
         publishToken()
-    }, [
-        appId,
-        appName,
-        needsPermission,
-        isMatrixReady,
-        dispatch,
-        getToken,
-        latestToken,
-    ])
+    }, [appId, appName, isMatrixReady, dispatch, getToken, latestToken])
 
     return null
 }
