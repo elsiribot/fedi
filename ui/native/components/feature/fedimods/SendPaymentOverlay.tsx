@@ -22,7 +22,7 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
-import { MSats, Network } from '../../../types'
+import { MSats } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
 import FederationWalletSelector from '../send/FederationWalletSelector'
@@ -78,8 +78,8 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                         (a, b) =>
                             // Resolves to either 0 or 1 for true/false
                             // Sorts in descending order by network === bitcoin - network !== bitcoin
-                            Number(b.network === Network.bitcoin) -
-                            Number(a.network === Network.bitcoin),
+                            Number(b.network === 'bitcoin') -
+                            Number(a.network === 'bitcoin'),
                     )[0]
 
                 dispatch(
