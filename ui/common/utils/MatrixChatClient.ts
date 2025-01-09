@@ -523,7 +523,7 @@ export class MatrixChatClient {
         this.emitter.removeAllListeners(event)
     }
 
-    async observeSyncStatus() {
+    observeSyncStatus() {
         // Only observe the sync status once, subsequent calls are no-ops.
         if (this.syncStatusUnsubscribe !== undefined) return
 

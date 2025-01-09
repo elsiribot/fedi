@@ -408,14 +408,14 @@ export function useMatrixChatInvites(t: TFunction) {
     }
 }
 
-export function useObserveMatrixSyncStatus(isBridgeReady: boolean) {
+export function useObserveMatrixSyncStatus(isMatrixStarted: boolean) {
     const dispatch = useCommonDispatch()
     useEffect(() => {
-        if (!isBridgeReady) return
+        if (!isMatrixStarted) return
         dispatch(observeMatrixSyncStatus())
 
         return () => {
             dispatch(unsubscribeMatrixSyncStatus())
         }
-    }, [isBridgeReady, dispatch])
+    }, [isMatrixStarted, dispatch])
 }
