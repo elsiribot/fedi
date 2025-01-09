@@ -1,10 +1,12 @@
-import { useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { View } from 'react-native'
+import { Theme, useTheme } from '@rneui/themed'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
+import { StyleSheet, View } from 'react-native'
 import { RejectionError } from 'webln'
 
 import { useSendForm } from '@fedi/common/hooks/amount'
+import { useOmniPaymentState } from '@fedi/common/hooks/pay'
+import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     payInvoice,
@@ -22,10 +24,14 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
-import { MSats } from '../../../types'
+import { MSats, ParserDataType } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
+import LineBreak from '../../ui/LineBreak'
+import SvgImage from '../../ui/SvgImage'
 import FederationWalletSelector from '../send/FederationWalletSelector'
+import FeeOverlay from '../send/FeeOverlay'
+import SendPreviewDetails from '../send/SendPreviewDetails'
 
 const log = makeLog('SendPaymentOverlay')
 
@@ -37,6 +43,7 @@ interface Props {
 export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const { feeBreakdownTitle, makeLightningFeeContent } = useFeeDisplayUtils(t)
     const paymentFederation = useAppSelector(selectPaymentFederation)
     const walletFederations = useAppSelector(selectWalletFederations)
     const lnurlPayment = useAppSelector(selectLnurlPayment)
@@ -46,6 +53,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
     const [amountInputKey, setAmountInputKey] = useState(0)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
     const onRejectRef = useUpdatingRef(onReject)
     const onAcceptRef = useUpdatingRef(onAccept)
     const dispatch = useAppDispatch()
@@ -62,6 +70,17 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
         t,
         selectedPaymentFederation: true,
     })
+    const { feeDetails, handleOmniInput } = useOmniPaymentState(
+        fedimint,
+        paymentFederation?.id,
+        true,
+        t,
+    )
+    const { formattedTotalFee, feeItemsBreakdown } = useMemo(() => {
+        return feeDetails
+            ? makeLightningFeeContent(feeDetails)
+            : { feeItemsBreakdown: [], formattedTotalFee: '' }
+    }, [feeDetails, makeLightningFeeContent])
 
     // Reset form when it appears, requires a key bump to flush state.
     const isShowing = Boolean(invoice || lnurlPayment)
@@ -92,6 +111,15 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
             setError(null)
         }
     }, [isShowing, reset, paymentFederation, walletFederations, dispatch])
+
+    useEffect(() => {
+        if (!invoice) return
+
+        handleOmniInput({
+            type: ParserDataType.Bolt11,
+            data: invoice,
+        })
+    }, [handleOmniInput, invoice])
 
     const handleAccept = async () => {
         setSubmitAttempts(attempts => attempts + 1)
@@ -144,6 +172,8 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
         )
     }
 
+    const style = styles(theme)
+
     return (
         <CustomOverlay
             show={isShowing}
@@ -156,13 +186,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                     fediMod: siteInfo?.title,
                 }),
                 body: (
-                    <View
-                        style={{
-                            flex: 1,
-                            paddingTop: theme.spacing.xl,
-                            alignItems: 'center',
-                            gap: theme.spacing.lg,
-                        }}>
+                    <View style={style.container}>
                         <FederationWalletSelector />
                         <AmountInput
                             key={amountInputKey}
@@ -178,6 +202,38 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                                 setInputAmount(amount)
                             }}
                             error={error}
+                        />
+                        <View style={style.previewDetails}>
+                            <SendPreviewDetails
+                                onPressFees={() => setShowFeeBreakdown(true)}
+                                formattedTotalFee={formattedTotalFee}
+                                senderText={t(
+                                    'feature.stabilitypool.bitcoin-balance',
+                                )}
+                                isLoading={isLoading}
+                            />
+                        </View>
+                        <FeeOverlay
+                            show={showFeeBreakdown}
+                            onDismiss={() => setShowFeeBreakdown(false)}
+                            title={feeBreakdownTitle}
+                            feeItems={feeItemsBreakdown}
+                            description={
+                                <Trans
+                                    t={t}
+                                    i18nKey="feature.fees.guidance-lightning"
+                                    components={{
+                                        br: <LineBreak />,
+                                    }}
+                                />
+                            }
+                            icon={
+                                <SvgImage
+                                    name="Info"
+                                    size={32}
+                                    color={theme.colors.orange}
+                                />
+                            }
                         />
                     </View>
                 ),
@@ -196,3 +252,19 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
         />
     )
 }
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            flexDirection: 'column',
+            paddingTop: theme.spacing.xl,
+            alignItems: 'center',
+            gap: theme.spacing.lg,
+            width: '100%',
+            paddingHorizontal: theme.spacing.md,
+        },
+        previewDetails: {
+            width: '100%',
+        },
+    })
