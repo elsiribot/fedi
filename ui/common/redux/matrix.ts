@@ -75,6 +75,7 @@ const getMatrixClient = () => {
 /*** Initial State ***/
 
 const initialState = {
+    started: false,
     auth: null as null | MatrixAuth,
     status: MatrixSyncStatus.uninitialized,
     roomList: [] as MatrixRoomListItem[],
@@ -234,10 +235,12 @@ export const matrixSlice = createSlice({
         })
         builder.addCase(startMatrixClient.fulfilled, (state, action) => {
             state.auth = action.payload
+            state.started = true
         })
         builder.addCase(startMatrixClient.rejected, state => {
             log.debug('startMatrixClient.rejected')
             state.status = MatrixSyncStatus.stopped
+            state.started = false
         })
 
         builder.addCase(setMatrixDisplayName.fulfilled, (state, action) => {
@@ -434,7 +437,7 @@ export const startMatrixClient = createAsyncThunk<
     })
 
     // Start the client
-    return client.start(fedimint)
+    return await client.start(fedimint)
 })
 
 export const setMatrixDisplayName = createAsyncThunk<
@@ -1065,11 +1068,19 @@ export const previewAllDefaultChats = createAsyncThunk<
     return [...federationChats]
 })
 
-export const ensureHealthyMatrixStream = createAsyncThunk<void, void>(
-    'chat/ensureHealthyMatrixStream',
-    () => {
+export const observeMatrixSyncStatus = createAsyncThunk<void>(
+    'matrix/observeMatrixSyncStatus',
+    async () => {
         const client = getMatrixClient()
-        client.refreshSyncStatus()
+        client.observeSyncStatus()
+    },
+)
+
+export const unsubscribeMatrixSyncStatus = createAsyncThunk<void>(
+    'matrix/unsubscribeMatrixSyncStatus',
+    async () => {
+        const client = getMatrixClient()
+        client.unsubscribeSyncStatus()
     },
 )
 
@@ -1501,3 +1512,4 @@ export const selectChatDrafts = (s: CommonState) => s.matrix.drafts
 export const selectSelectedChatMessage = (s: CommonState) =>
     s.matrix.selectedChatMessage
 export const selectMessageToEdit = (s: CommonState) => s.matrix.messageToEdit
+export const selectMatrixStarted = (s: CommonState) => s.matrix.started

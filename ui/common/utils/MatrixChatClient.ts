@@ -125,13 +125,7 @@ export class MatrixChatClient {
                     // asynchronously get the user's avatarUrl
                     this.refetchAuth()
 
-                    this.observeRoomList()
-                        .then(() => {
-                            // Wait until after the roomlist is observed
-                            // to prevent flickering on startup
-                            this.observeSyncStatus()
-                        })
-                        .catch(reject)
+                    this.observeRoomList().catch(reject)
                 })
                 .catch(err => {
                     log.error('matrixInit', err)
@@ -437,21 +431,8 @@ export class MatrixChatClient {
         await this.observeRoomList()
     }
 
-    async refreshSyncStatus() {
-        // Clear existing observer
-        const oldSyncStatusUnsubscribe = this.syncStatusUnsubscribe
-        log.debug(
-            'refreshSyncStatus oldSyncStatusUnsubscribe',
-            oldSyncStatusUnsubscribe,
-        )
-
-        if (oldSyncStatusUnsubscribe !== undefined) {
-            log.debug('clearing observer:', oldSyncStatusUnsubscribe)
-            await oldSyncStatusUnsubscribe()
-            this.syncStatusUnsubscribe = undefined
-        }
-        // Recreate observer with fresh sync status
-        await this.observeSyncStatus()
+    async unsubscribeSyncStatus() {
+        await this.syncStatusUnsubscribe?.()
     }
 
     async configureNotificationsPusher(
@@ -542,9 +523,7 @@ export class MatrixChatClient {
         this.emitter.removeAllListeners(event)
     }
 
-    /*** Private methods ***/
-
-    private async observeSyncStatus() {
+    observeSyncStatus() {
         // Only observe the sync status once, subsequent calls are no-ops.
         if (this.syncStatusUnsubscribe !== undefined) return
 
@@ -568,6 +547,8 @@ export class MatrixChatClient {
         // store unsubscribe functions to cancel later if needed
         this.syncStatusUnsubscribe = unsubscribe
     }
+
+    /*** Private methods ***/
 
     private async observeRoomList() {
         // Only observe the roomList once, subsequent calls are no-ops.
