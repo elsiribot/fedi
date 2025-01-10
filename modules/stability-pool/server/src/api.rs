@@ -5,30 +5,22 @@ use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiEr
 use fedimint_core::Amount;
 use futures::{stream, StreamExt};
 use stability_pool_common::{
-    AccountId, AccountInfo, FiatAmount, LiquidityStats, UnlockRequestStatus,
+    AccountId, AccountType, LiquidityStats, SyncResponse, UnlockRequestStatus,
 };
 
 use crate::db::{
-    CurrentCycleKey, Cycle, IdleBalanceKey, PastCycleKeyPrefix, SeekMetadataAccountPrefix,
-    StagedProvidesKey, StagedProvidesKeyPrefix, StagedSeeksKey, StagedSeeksKeyPrefix,
-    UnlockRequestKey,
+    account_history_count, CurrentCycleKey, IdleBalanceKey, PastCycleKeyPrefix, StagedProvidesKey,
+    StagedProvidesKeyPrefix, StagedSeeksKey, StagedSeeksKeyPrefix, UnlockRequestKey,
 };
 use crate::StabilityPool;
 
 pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
     vec![
         api_endpoint! {
-            "account_info",
+            "sync",
             ApiVersion::new(0, 0),
-            async |_module: &StabilityPool, context, request: AccountId| -> AccountInfo {
-                Ok(account_info(&mut context.dbtx().into_nc(), request).await)
-            }
-        },
-        api_endpoint! {
-            "current_cycle_index",
-            ApiVersion::new(0, 0),
-            async |_module: &StabilityPool, context, _request: ()| -> u64 {
-                Ok(current_cycle_index(&mut context.dbtx().into_nc()).await?)
+            async |_module: &StabilityPool, context, request: AccountId| -> SyncResponse {
+                sync(&mut context.dbtx().into_nc(), request).await
             }
         },
         api_endpoint! {
@@ -36,13 +28,6 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
             ApiVersion::new(0, 0),
             async |module: &StabilityPool, context, _request: ()| -> SystemTime {
                 Ok(next_cycle_start_time(&mut context.dbtx().into_nc(), module).await?)
-            }
-        },
-        api_endpoint! {
-            "cycle_start_price",
-            ApiVersion::new(0, 0),
-            async |_module: &StabilityPool, context, _request: ()| -> FiatAmount {
-                Ok(cycle_start_price(&mut context.dbtx().into_nc()).await?)
             }
         },
         api_endpoint! {
@@ -69,64 +54,54 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
     ]
 }
 
-pub async fn account_info(dbtx: &mut DatabaseTransaction<'_>, account: AccountId) -> AccountInfo {
-    let (locked_seeks, locked_provides) = match dbtx.get_value(&CurrentCycleKey).await {
-        Some(Cycle {
-            locked_seeks: seeker_locks,
-            locked_provides: provider_locks,
-            ..
-        }) => (
-            seeker_locks
-                .get(&account)
-                .map(|v| v.to_vec())
-                .unwrap_or_default(),
-            provider_locks
-                .get(&account)
-                .map(|v| v.to_vec())
-                .unwrap_or_default(),
-        ),
-        None => (vec![], vec![]),
+/// See [`SyncResponse`]
+pub async fn sync(
+    dbtx: &mut DatabaseTransaction<'_>,
+    account: AccountId,
+) -> Result<SyncResponse, ApiError> {
+    let current_cycle = dbtx
+        .get_value(&CurrentCycleKey)
+        .await
+        .ok_or_else(|| ApiError::bad_request("disallowed before first cycle".to_owned()))?;
+    let locked_balance: Amount = match account.acc_type() {
+        AccountType::Seeker => current_cycle
+            .locked_seeks
+            .get(&account)
+            .map(|v| v.iter().map(|locked| locked.deposit.amount).sum())
+            .unwrap_or(Amount::ZERO),
+        AccountType::Provider => current_cycle
+            .locked_provides
+            .get(&account)
+            .map(|v| v.iter().map(|locked| locked.deposit.amount).sum())
+            .unwrap_or(Amount::ZERO),
     };
 
-    let seeks_metadata = dbtx
-        .find_by_prefix(&SeekMetadataAccountPrefix(account))
-        .await
-        .map(|(key, metadata)| (key.1, metadata))
-        .collect()
-        .await;
-
-    AccountInfo {
+    let staged_balance = match account.acc_type() {
+        AccountType::Seeker => dbtx
+            .get_value(&StagedSeeksKey(account))
+            .await
+            .unwrap_or_default()
+            .iter()
+            .map(|staged| staged.deposit.amount)
+            .sum(),
+        AccountType::Provider => dbtx
+            .get_value(&StagedProvidesKey(account))
+            .await
+            .unwrap_or_default()
+            .iter()
+            .map(|provide| provide.deposit.amount)
+            .sum(),
+    };
+    Ok(SyncResponse {
+        current_cycle: current_cycle.into(),
         idle_balance: dbtx
             .get_value(&IdleBalanceKey(account))
             .await
             .unwrap_or(Amount::ZERO),
-        staged_seeks: dbtx
-            .get_value(&StagedSeeksKey(account))
-            .await
-            .unwrap_or_default(),
-        staged_provides: dbtx
-            .get_value(&StagedProvidesKey(account))
-            .await
-            .unwrap_or_default(),
-        unlock_request: dbtx.get_value(&UnlockRequestKey(account)).await,
-        locked_seeks,
-        locked_provides,
-        seeks_metadata,
-    }
-}
-
-pub async fn current_cycle_index(
-    dbtx: &mut DatabaseTransaction<'_>,
-) -> anyhow::Result<u64, ApiError> {
-    let current_cycle_index = dbtx
-        .get_value(&CurrentCycleKey)
-        .await
-        .ok_or(ApiError::server_error(
-            "First cycle not yet started".to_owned(),
-        ))?
-        .index;
-
-    Ok(current_cycle_index)
+        staged_balance,
+        locked_balance,
+        account_history_count: account_history_count(dbtx, account).await,
+    })
 }
 
 pub async fn next_cycle_start_time(
@@ -144,20 +119,6 @@ pub async fn next_cycle_start_time(
     let cycle_duration = stability_pool.cfg.consensus.cycle_duration;
     let next_cycle_start_time = current_cycle_start_time + cycle_duration;
     Ok(next_cycle_start_time)
-}
-
-pub async fn cycle_start_price(
-    dbtx: &mut DatabaseTransaction<'_>,
-) -> anyhow::Result<FiatAmount, ApiError> {
-    let current_cycle_start_price = dbtx
-        .get_value(&CurrentCycleKey)
-        .await
-        .ok_or(ApiError::server_error(
-            "First cycle not yet started".to_owned(),
-        ))?
-        .start_price;
-
-    Ok(current_cycle_start_price)
 }
 
 /// See [`stability_pool_common::UnlockRequestStatus`]

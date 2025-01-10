@@ -498,6 +498,8 @@ pub enum StabilityPoolOutputError {
     CannotUndoAutoRenewalCancellation,
     #[error("{0}")]
     UnknownOutputVariant(String),
+    #[error("Operation is not allowed before first cycle.")]
+    NoCycle,
 }
 
 pub struct StabilityPoolModuleTypes;
@@ -666,4 +668,86 @@ pub struct LiquidityStats {
     pub locked_provides_sum_msat: u64,
     pub staged_seeks_sum_msat: u64,
     pub staged_provides_sum_msat: u64,
+}
+
+/// Client calls /sync endpoint to sync client state from server.
+///
+/// This state includes current cycle info, balance and account history
+// note: this is never stored in database of the server.
+// should we include average fee rate?
+#[derive(Serialize, Debug)]
+pub struct SyncResponse {
+    pub current_cycle: CycleInfo,
+    pub staged_balance: Amount,
+    pub locked_balance: Amount,
+    pub idle_balance: Amount,
+    /// Number of history items for this account.
+    ///
+    /// Client can use this if they have any new history item.
+    pub account_history_count: u64,
+}
+
+/// Some cycle details are sent to client along with cycle number to avoid
+/// multiple api calls.
+#[derive(Serialize, Encodable, Decodable, Debug, Clone, Copy)]
+pub struct CycleInfo {
+    pub idx: u64,
+    pub start_price: FiatAmount,
+    pub start_time: SystemTime,
+}
+
+/// - History is at account level
+/// - Every state transaction of deposit is tracked.
+/// - We don't keep history of idle balance.
+/// - Amounts are sent as msats and we also send the cycle price.
+#[derive(Serialize, Encodable, Decodable, Debug)]
+pub struct AccountHistoryItem {
+    /// Cycle in which the transaction happened
+    pub cycle: CycleInfo,
+    /// Kind of transaction
+    pub kind: AccountHistoryItemKind,
+}
+
+#[derive(Debug, Serialize, Encodable, Decodable)]
+pub enum AccountHistoryItemKind {
+    DepositToStaged {
+        deposit_sequence: u64,
+        amount: Amount,
+    },
+    StagedToLocked {
+        deposit_sequence: u64,
+        amount_moved: Amount,
+    },
+    LockedToStaged {
+        deposit_sequence: u64,
+        amount_moved: Amount,
+    },
+    LockedToIdle {
+        deposit_sequence: u64,
+        amount_withdrawn: Amount,
+    },
+    StagedToIdle {
+        desposit_sequence: u64,
+        amount_withdrawn: Amount,
+    },
+    LockedTransferIn {
+        desposit_sequence: u64,
+        amount: Amount,
+        from: AccountId,
+    },
+    LockedTransferOut {
+        desposit_sequence: u64,
+        amount: Amount,
+        to: AccountId,
+    },
+    StagedTransferIn {
+        desposit_sequence: u64,
+        amount: Amount,
+        from: AccountId,
+    },
+    StagedTransferOut {
+        desposit_sequence: u64,
+        amount: Amount,
+        to: AccountId,
+    },
 }
