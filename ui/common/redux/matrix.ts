@@ -18,6 +18,7 @@ import {
 } from '.'
 import {
     FederationListItem,
+    InputMedia,
     MSats,
     MatrixAuth,
     MatrixCreateRoomOptions,
@@ -48,6 +49,7 @@ import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import {
     MatrixEventContentType,
+    doesEventContentMatchPreviewMedia,
     getReceivablePaymentEvents,
     getRoomEventPowerLevel,
     getUserSuffix,
@@ -102,6 +104,11 @@ const initialState = {
         MatrixEventContentType<'m.text' | 'm.image' | 'm.video' | 'm.file'>
     > | null,
     messageToEdit: null as MatrixEvent<MatrixEventContentType<'m.text'>> | null,
+    previewMedia: [] as Array<{
+        // whether to show a placeholder ChatEvent for the sent `media`
+        visible: boolean
+        media: InputMedia
+    }>,
 }
 
 export type MatrixState = typeof initialState
@@ -226,6 +233,45 @@ export const matrixSlice = createSlice({
             > | null>,
         ) {
             state.messageToEdit = action.payload
+        },
+        addPreviewMedia(state, action: PayloadAction<InputMedia>) {
+            state.previewMedia = [
+                ...state.previewMedia,
+                { media: action.payload, visible: true },
+            ]
+        },
+        matchAndRemovePreviewMedia(
+            state,
+            action: PayloadAction<
+                MatrixEventContentType<'m.image' | 'm.video'>
+            >,
+        ) {
+            state.previewMedia = state.previewMedia.filter(
+                cached =>
+                    !doesEventContentMatchPreviewMedia(
+                        cached.media,
+                        action.payload,
+                    ),
+            )
+        },
+        matchAndHidePreviewMedia(
+            state,
+            action: PayloadAction<
+                MatrixEventContentType<'m.image' | 'm.video'>
+            >,
+        ) {
+            state.previewMedia = state.previewMedia.map(cached => {
+                if (
+                    doesEventContentMatchPreviewMedia(
+                        cached.media,
+                        action.payload,
+                    )
+                ) {
+                    return { ...cached, visible: false }
+                }
+
+                return cached
+            })
         },
     },
     extraReducers: builder => {
@@ -387,6 +433,9 @@ export const {
     setChatDraft,
     setSelectedChatMessage,
     setMessageToEdit,
+    addPreviewMedia,
+    matchAndHidePreviewMedia,
+    matchAndRemovePreviewMedia,
 } = matrixSlice.actions
 
 /*** Async thunk actions ***/
@@ -1513,3 +1562,13 @@ export const selectSelectedChatMessage = (s: CommonState) =>
     s.matrix.selectedChatMessage
 export const selectMessageToEdit = (s: CommonState) => s.matrix.messageToEdit
 export const selectMatrixStarted = (s: CommonState) => s.matrix.started
+export const selectPreviewMedia = (s: CommonState) => s.matrix.previewMedia
+
+// Find a preview media item matching a specific ChatVideoEvent or ChatImageEvent
+export const selectPreviewMediaMatchingEventContent = (
+    s: CommonState,
+    content: MatrixEventContentType<'m.video' | 'm.image'>,
+) =>
+    s.matrix.previewMedia.find(({ media }) =>
+        doesEventContentMatchPreviewMedia(media, content),
+    )
