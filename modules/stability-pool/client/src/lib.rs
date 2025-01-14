@@ -39,7 +39,7 @@ use futures::{Stream, StreamExt};
 use secp256k1::{Keypair, Secp256k1};
 use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
-use stability_pool_common::KIND;
+use stability_pool_common::{Account, KIND};
 use tokio::sync::Mutex;
 use tracing::{error, info};
 
@@ -518,6 +518,10 @@ pub struct ClientAccountInfo {
 }
 
 impl StabilityPoolClientModule {
+    fn our_account(&self) -> Account {
+        Account::single(self.client_key_pair.public_key())
+    }
+
     pub async fn account_info(&self, force_update: bool) -> anyhow::Result<ClientAccountInfo> {
         let _lock = self.account_info_lock.lock().await;
         let mut dbtx = self.db.begin_transaction_nc().await;
@@ -706,10 +710,7 @@ impl StabilityPoolClientModule {
         if unlocked_amount != Amount::ZERO {
             let input = ClientInput {
                 amount: unlocked_amount,
-                input: StabilityPoolInput::new_v0(
-                    self.client_key_pair.public_key(),
-                    unlocked_amount,
-                ),
+                input: StabilityPoolInput::new_v0(self.our_account(), unlocked_amount),
                 keys: vec![self.client_key_pair],
             };
             let sm = ClientInputSM {
@@ -962,9 +963,8 @@ async fn submit_tx_with_intended_action(
 ) -> anyhow::Result<(OperationId, TransactionId)> {
     let operation_id = OperationId::new_random();
     let client_ctx = &module.client_ctx;
-    let client_pub_key = module.client_key_pair.public_key();
     let stability_pool_output =
-        StabilityPoolOutput::new_v0(client_pub_key, intended_action.clone());
+        StabilityPoolOutput::new_v0(module.our_account(), intended_action.clone());
 
     let (transaction_id, _) = match intended_action {
         IntendedAction::Seek(Seek(amount)) | IntendedAction::Provide(Provide { amount, .. }) => {
@@ -1097,10 +1097,7 @@ async fn claim_idle_balance_input(
 ) -> StabilityPoolCancelLockedStateMachine {
     let input = ClientInput {
         amount: idle_balance,
-        input: StabilityPoolInput::new_v0(
-            context.module.client_key_pair.public_key(),
-            idle_balance,
-        ),
+        input: StabilityPoolInput::new_v0(context.module.our_account(), idle_balance),
         keys: vec![context.module.client_key_pair],
     };
     let state_machines = ClientInputSM {
@@ -1141,7 +1138,7 @@ async fn maybe_fund_cancellation_output(
                     vec![ClientOutput {
                         amount: Amount::ZERO,
                         output: StabilityPoolOutput::new_v0(
-                            context.module.client_key_pair.public_key(),
+                            context.module.our_account(),
                             IntendedAction::CancelRenewal(CancelRenewal { bps }),
                         ),
                     }],

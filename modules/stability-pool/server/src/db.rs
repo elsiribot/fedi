@@ -4,9 +4,8 @@ use std::time::SystemTime;
 use fedimint_core::db::{IDatabaseTransactionOpsCoreTyped, MigrationContext};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId, TransactionId};
-use secp256k1::PublicKey;
 use stability_pool_common::{
-    CancelRenewal, LockedProvide, LockedSeek, SeekMetadata, StabilityPoolConsensusItem,
+    AccountId, CancelRenewal, LockedProvide, LockedSeek, SeekMetadata, StabilityPoolConsensusItem,
     StagedProvide, StagedSeek,
 };
 
@@ -68,7 +67,7 @@ pub enum DbKeyPrefix {
 }
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct IdleBalanceKey(pub PublicKey);
+pub struct IdleBalanceKey(pub AccountId);
 
 #[derive(Debug, Encodable, Decodable)]
 pub struct IdleBalanceKeyPrefix;
@@ -85,7 +84,7 @@ impl_db_record!(
 impl_db_lookup!(key = IdleBalanceKey, query_prefix = IdleBalanceKeyPrefix);
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct StagedSeeksKey(pub PublicKey);
+pub struct StagedSeeksKey(pub AccountId);
 
 #[derive(Debug, Encodable, Decodable)]
 pub struct StagedSeeksKeyPrefix;
@@ -94,7 +93,7 @@ impl_db_record!(key = StagedSeeksKey, value = Vec<StagedSeek>, db_prefix = DbKey
 impl_db_lookup!(key = StagedSeeksKey, query_prefix = StagedSeeksKeyPrefix);
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct StagedProvidesKey(pub PublicKey);
+pub struct StagedProvidesKey(pub AccountId);
 
 #[derive(Debug, Encodable, Decodable)]
 pub struct StagedProvidesKeyPrefix;
@@ -106,7 +105,7 @@ impl_db_lookup!(
 );
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct StagedCancellationKey(pub PublicKey);
+pub struct StagedCancellationKey(pub AccountId);
 
 #[derive(Debug, Encodable, Decodable)]
 pub struct StagedCancellationKeyPrefix;
@@ -127,8 +126,8 @@ pub struct Cycle {
     pub start_time: SystemTime,
     pub start_price: u64,
     pub fee_rate: u64,
-    pub locked_seeks: BTreeMap<PublicKey, Vec<LockedSeek>>,
-    pub locked_provides: BTreeMap<PublicKey, Vec<LockedProvide>>,
+    pub locked_seeks: BTreeMap<AccountId, Vec<LockedSeek>>,
+    pub locked_provides: BTreeMap<AccountId, Vec<LockedProvide>>,
 }
 
 #[derive(Debug, Encodable, Decodable)]
@@ -213,10 +212,10 @@ impl_db_lookup!(
 );
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct SeekMetadataKey(pub PublicKey, pub TransactionId);
+pub struct SeekMetadataKey(pub AccountId, pub TransactionId);
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct SeekMetadataAccountPrefix(pub PublicKey);
+pub struct SeekMetadataAccountPrefix(pub AccountId);
 
 #[derive(Debug, Encodable, Decodable)]
 pub struct SeekMetadataKeyPrefix;

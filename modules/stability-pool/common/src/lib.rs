@@ -1,15 +1,19 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::{self, Display};
+use std::io;
 use std::time::SystemTime;
 
 use anyhow::bail;
+use bitcoin::hashes::sha256;
 use fedimint_core::core::{Decoder, ModuleInstanceId, ModuleKind};
-use fedimint_core::encoding::{Decodable, Encodable};
+use fedimint_core::encoding::{Decodable, DecodeError, Encodable};
+use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::{CommonModuleInit, ModuleCommon, ModuleConsensusVersion};
 use fedimint_core::{
     extensible_associated_module_type, plugin_types_trait_impl_common, Amount, TransactionId,
 };
 use secp256k1::PublicKey;
+use serde::de::Error as _;
 use serde::{Deserialize, Serialize};
 
 pub mod config;
@@ -20,6 +24,104 @@ pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::ne
 
 /// BPS unit for cancellation-related calculations
 pub const BPS_UNIT: u128 = 10_000;
+
+/// `Account` within the stability pool is represented as a naive multi-sig of
+/// pub keys + threshold. Within the DB, keys are the hashes of `Account`
+/// (represented by AccountId). However, whenever we wish to modify an account's
+/// state, the client must provide the full `Account` struct so that we can
+/// verify that the hash matches.
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Encodable, Serialize)]
+pub struct Account {
+    // invariant: length > 0
+    pub_keys: BTreeSet<PublicKey>,
+    // invariant: 0 < threshold < keys.length
+    threshold: u64,
+}
+
+/// Account without invariants that can be checked using try_into.
+#[derive(Decodable, Deserialize)]
+struct AccountUnchecked {
+    pub_keys: BTreeSet<PublicKey>,
+    threshold: u64,
+}
+
+impl TryFrom<AccountUnchecked> for Account {
+    type Error = anyhow::Error;
+    fn try_from(raw: AccountUnchecked) -> anyhow::Result<Account> {
+        if raw.threshold > raw.pub_keys.len().try_into().expect("usize to fit in u64")
+            || raw.threshold == 0
+            || raw.pub_keys.is_empty()
+        {
+            bail!("invalid account");
+        }
+        Ok(Account {
+            pub_keys: raw.pub_keys,
+            threshold: raw.threshold,
+        })
+    }
+}
+
+impl Decodable for Account {
+    fn consensus_decode<R: io::Read>(
+        r: &mut R,
+        modules: &ModuleDecoderRegistry,
+    ) -> Result<Self, DecodeError> {
+        let raw = AccountUnchecked::consensus_decode(r, modules)?;
+        Ok(raw.try_into()?)
+    }
+}
+
+impl<'de> Deserialize<'de> for Account {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let raw = AccountUnchecked::deserialize(deserializer)?;
+        raw.try_into().map_err(D::Error::custom)
+    }
+}
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    Hash,
+    Eq,
+    PartialEq,
+    Deserialize,
+    Serialize,
+    Encodable,
+    Decodable,
+    PartialOrd,
+    Ord,
+)]
+pub struct AccountId(sha256::Hash);
+
+impl Account {
+    pub fn id(&self) -> AccountId {
+        AccountId(self.consensus_hash())
+    }
+
+    pub fn single(key: PublicKey) -> Self {
+        Self {
+            pub_keys: BTreeSet::from([key]),
+            threshold: 1,
+        }
+    }
+
+    pub fn as_single(&self) -> Option<&PublicKey> {
+        if self.pub_keys.len() == 1 && self.threshold == 1 {
+            Some(self.pub_keys.first().expect("length checked above"))
+        } else {
+            None
+        }
+    }
+}
+
+impl Display for AccountId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 /// Withdrawing unlocked funds from the stability pool is technically just a
 /// fedimint transaction where the input comes from the stability pool module
@@ -43,7 +145,7 @@ pub const BPS_UNIT: u128 = 10_000;
 /// idle balance and staged balance.
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
 pub struct StabilityPoolInputV0 {
-    pub account: PublicKey,
+    pub account: Account,
     pub amount: Amount,
 }
 
@@ -54,13 +156,13 @@ extensible_associated_module_type!(
 );
 
 impl StabilityPoolInput {
-    pub fn new_v0(account: PublicKey, amount: Amount) -> StabilityPoolInput {
+    pub fn new_v0(account: Account, amount: Amount) -> StabilityPoolInput {
         StabilityPoolInput::V0(StabilityPoolInputV0 { account, amount })
     }
 
-    pub fn account(&self) -> anyhow::Result<PublicKey> {
+    pub fn account(&self) -> anyhow::Result<Account> {
         match self {
-            StabilityPoolInput::V0(StabilityPoolInputV0 { account, .. }) => Ok(*account),
+            StabilityPoolInput::V0(StabilityPoolInputV0 { account, .. }) => Ok(account.clone()),
             StabilityPoolInput::Default { variant, .. } => {
                 bail!("Unsupported variant {variant}")
             }
@@ -83,7 +185,7 @@ impl StabilityPoolInput {
 /// change).
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
 pub struct StabilityPoolOutputV0 {
-    pub account: PublicKey,
+    pub account: Account,
     pub intended_action: IntendedAction,
 }
 
@@ -94,16 +196,15 @@ extensible_associated_module_type!(
 );
 
 impl StabilityPoolOutput {
-    pub fn new_v0(account: PublicKey, intended_action: IntendedAction) -> StabilityPoolOutput {
+    pub fn new_v0(account: Account, intended_action: IntendedAction) -> StabilityPoolOutput {
         StabilityPoolOutput::V0(StabilityPoolOutputV0 {
             account,
             intended_action,
         })
     }
-
-    pub fn account(&self) -> anyhow::Result<PublicKey> {
+    pub fn account(&self) -> anyhow::Result<Account> {
         match self {
-            StabilityPoolOutput::V0(StabilityPoolOutputV0 { account, .. }) => Ok(*account),
+            StabilityPoolOutput::V0(StabilityPoolOutputV0 { account, .. }) => Ok(account.clone()),
             StabilityPoolOutput::Default { variant, .. } => {
                 bail!("Unsupported variant {variant}")
             }
@@ -273,6 +374,8 @@ pub enum StabilityPoolInputError {
     InvalidWithdrawalAmount,
     #[error("Sum of idle and staged balance is not enough to satisfy withdrawal request.")]
     InsufficientBalance,
+    #[error("Multi-sig keys are not allowed for this operation.")]
+    MultiSigNotAllowed,
     #[error("{0}")]
     UnknownInputVariant(String),
 }
@@ -352,7 +455,8 @@ impl Display for StabilityPoolInputV0 {
         write!(
             f,
             "Input for account {} with amount {}",
-            self.amount, self.account,
+            self.account.id(),
+            self.amount,
         )
     }
 }
@@ -362,7 +466,8 @@ impl Display for StabilityPoolOutputV0 {
         write!(
             f,
             "Output for account {} to {}",
-            self.account, self.intended_action,
+            self.account.id(),
+            self.intended_action,
         )
     }
 }
