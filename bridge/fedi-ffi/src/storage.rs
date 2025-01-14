@@ -298,7 +298,7 @@ impl Default for FediFeeSchedule {
             },
         );
         modules.insert(
-            stability_pool_client::common::KIND,
+            stability_pool_client_old::common::KIND,
             ModuleFediFeeSchedule {
                 send_ppm: default_send_ppm,
                 receive_ppm: 0,

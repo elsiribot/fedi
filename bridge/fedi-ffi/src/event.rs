@@ -222,25 +222,25 @@ impl Event {
     pub fn stability_pool_deposit(
         federation_id: String,
         operation_id: fedimint_core::core::OperationId,
-        state: stability_pool_client::StabilityPoolDepositOperationState,
+        state: stability_pool_client_old::StabilityPoolDepositOperationState,
     ) -> Self {
         Self::StabilityPoolDeposit(StabilityPoolDepositEvent {
             federation_id: RpcFederationId(federation_id),
             operation_id: RpcOperationId(operation_id),
             state: match state {
-                stability_pool_client::StabilityPoolDepositOperationState::Initiated => {
+                stability_pool_client_old::StabilityPoolDepositOperationState::Initiated => {
                     StabilityPoolDepositState::Initiated
                 }
-                stability_pool_client::StabilityPoolDepositOperationState::TxAccepted => {
+                stability_pool_client_old::StabilityPoolDepositOperationState::TxAccepted => {
                     StabilityPoolDepositState::TxAccepted
                 }
-                stability_pool_client::StabilityPoolDepositOperationState::TxRejected(e) => {
+                stability_pool_client_old::StabilityPoolDepositOperationState::TxRejected(e) => {
                     StabilityPoolDepositState::TxRejected(e.to_string())
                 }
-                stability_pool_client::StabilityPoolDepositOperationState::PrimaryOutputError(
+                stability_pool_client_old::StabilityPoolDepositOperationState::PrimaryOutputError(
                     e,
                 ) => StabilityPoolDepositState::PrimaryOutputError(e.to_string()),
-                stability_pool_client::StabilityPoolDepositOperationState::Success => {
+                stability_pool_client_old::StabilityPoolDepositOperationState::Success => {
                     StabilityPoolDepositState::Success
                 }
             },
@@ -250,25 +250,25 @@ impl Event {
     pub fn stability_pool_withdrawal(
         federation_id: String,
         operation_id: fedimint_core::core::OperationId,
-        state: stability_pool_client::StabilityPoolWithdrawalOperationState,
+        state: stability_pool_client_old::StabilityPoolWithdrawalOperationState,
     ) -> Self {
         Self::StabilityPoolWithdrawal(StabilityPoolWithdrawalEvent {
             federation_id: RpcFederationId(federation_id),
             operation_id: RpcOperationId(operation_id),
             state: match state {
-                stability_pool_client::StabilityPoolWithdrawalOperationState::InvalidOperationType => StabilityPoolWithdrawalState::InvalidOperationType,
-                stability_pool_client::StabilityPoolWithdrawalOperationState::WithdrawUnlockedInitiated(_) => StabilityPoolWithdrawalState::WithdrawUnlockedInitiated,
-                stability_pool_client::StabilityPoolWithdrawalOperationState::TxRejected(e) => StabilityPoolWithdrawalState::TxRejected(e.to_string()),
-                stability_pool_client::StabilityPoolWithdrawalOperationState::WithdrawUnlockedAccepted(_) => StabilityPoolWithdrawalState::WithdrawUnlockedAccepted,
-                stability_pool_client::StabilityPoolWithdrawalOperationState::PrimaryOutputError(e) => StabilityPoolWithdrawalState::PrimaryOutputError(e),
-                stability_pool_client::StabilityPoolWithdrawalOperationState::Success(_) => StabilityPoolWithdrawalState::Success,
-                stability_pool_client::StabilityPoolWithdrawalOperationState::CancellationSubmissionFailure(e) => StabilityPoolWithdrawalState::CancellationSubmissionFailure(e),
-                stability_pool_client::StabilityPoolWithdrawalOperationState::CancellationInitiated(_) => StabilityPoolWithdrawalState::CancellationInitiated,
-                stability_pool_client::StabilityPoolWithdrawalOperationState::CancellationAccepted(_) => StabilityPoolWithdrawalState::CancellationAccepted,
-                stability_pool_client::StabilityPoolWithdrawalOperationState::AwaitCycleTurnoverError(e) => StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e),
-                stability_pool_client::StabilityPoolWithdrawalOperationState::WithdrawIdleSubmissionFailure(e) => StabilityPoolWithdrawalState::WithdrawIdleSubmissionFailure(e),
-                stability_pool_client::StabilityPoolWithdrawalOperationState::WithdrawIdleInitiated(_) => StabilityPoolWithdrawalState::WithdrawIdleInitiated,
-                stability_pool_client::StabilityPoolWithdrawalOperationState::WithdrawIdleAccepted(_) => StabilityPoolWithdrawalState::WithdrawIdleAccepted,
+                stability_pool_client_old::StabilityPoolWithdrawalOperationState::InvalidOperationType => StabilityPoolWithdrawalState::InvalidOperationType,
+                stability_pool_client_old::StabilityPoolWithdrawalOperationState::WithdrawUnlockedInitiated(_) => StabilityPoolWithdrawalState::WithdrawUnlockedInitiated,
+                stability_pool_client_old::StabilityPoolWithdrawalOperationState::TxRejected(e) => StabilityPoolWithdrawalState::TxRejected(e.to_string()),
+                stability_pool_client_old::StabilityPoolWithdrawalOperationState::WithdrawUnlockedAccepted(_) => StabilityPoolWithdrawalState::WithdrawUnlockedAccepted,
+                stability_pool_client_old::StabilityPoolWithdrawalOperationState::PrimaryOutputError(e) => StabilityPoolWithdrawalState::PrimaryOutputError(e),
+                stability_pool_client_old::StabilityPoolWithdrawalOperationState::Success(_) => StabilityPoolWithdrawalState::Success,
+                stability_pool_client_old::StabilityPoolWithdrawalOperationState::CancellationSubmissionFailure(e) => StabilityPoolWithdrawalState::CancellationSubmissionFailure(e),
+                stability_pool_client_old::StabilityPoolWithdrawalOperationState::CancellationInitiated(_) => StabilityPoolWithdrawalState::CancellationInitiated,
+                stability_pool_client_old::StabilityPoolWithdrawalOperationState::CancellationAccepted(_) => StabilityPoolWithdrawalState::CancellationAccepted,
+                stability_pool_client_old::StabilityPoolWithdrawalOperationState::AwaitCycleTurnoverError(e) => StabilityPoolWithdrawalState::AwaitCycleTurnoverError(e),
+                stability_pool_client_old::StabilityPoolWithdrawalOperationState::WithdrawIdleSubmissionFailure(e) => StabilityPoolWithdrawalState::WithdrawIdleSubmissionFailure(e),
+                stability_pool_client_old::StabilityPoolWithdrawalOperationState::WithdrawIdleInitiated(_) => StabilityPoolWithdrawalState::WithdrawIdleInitiated,
+                stability_pool_client_old::StabilityPoolWithdrawalOperationState::WithdrawIdleAccepted(_) => StabilityPoolWithdrawalState::WithdrawIdleAccepted,
             },
         })
     }
