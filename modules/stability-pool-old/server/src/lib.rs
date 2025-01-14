@@ -43,7 +43,7 @@ use futures::{stream, FutureExt, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
 use secp256k1::PublicKey;
-pub use stability_pool_common as common;
+pub use stability_pool_common_old as common;
 use tokio::sync::{Mutex, RwLock};
 use tracing::{info, warn};
 

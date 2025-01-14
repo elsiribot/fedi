@@ -38,8 +38,8 @@ use fedimint_core::{apply, async_trait_maybe_send, Amount, OutPoint, Transaction
 use futures::{Stream, StreamExt};
 use secp256k1::{Keypair, Secp256k1};
 use serde::{Deserialize, Serialize};
-pub use stability_pool_common as common;
-use stability_pool_common::KIND;
+pub use stability_pool_common_old as common;
+use stability_pool_common_old::KIND;
 use tokio::sync::Mutex;
 use tracing::{error, info};
 

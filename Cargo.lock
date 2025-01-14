@@ -2458,7 +2458,7 @@ dependencies = [
  "fedi-social-client",
  "fedimint-build",
  "fedimint-cli",
- "stability-pool-client",
+ "stability-pool-client-old",
  "tokio",
 ]
 
@@ -2473,7 +2473,7 @@ dependencies = [
  "fedimint-build",
  "fedimint-core",
  "fedimintd",
- "stability-pool-server",
+ "stability-pool-server-old",
  "tokio",
  "tracing",
 ]
@@ -2531,7 +2531,7 @@ dependencies = [
  "serde_json",
  "serde_with",
  "slab",
- "stability-pool-client",
+ "stability-pool-client-old",
  "tempfile",
  "thiserror 2.0.8",
  "tokio",
@@ -8229,7 +8229,43 @@ dependencies = [
 ]
 
 [[package]]
+name = "stability-pool-client-old"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "async-stream",
+ "async-trait",
+ "bitcoin",
+ "erased-serde",
+ "fedimint-api-client",
+ "fedimint-client",
+ "fedimint-core",
+ "futures",
+ "rand",
+ "secp256k1",
+ "serde",
+ "serde_json",
+ "stability-pool-common-old",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "stability-pool-common"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "bitcoin",
+ "fedimint-core",
+ "secp256k1",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.8",
+ "tracing",
+]
+
+[[package]]
+name = "stability-pool-common-old"
 version = "0.3.0"
 dependencies = [
  "anyhow",
@@ -8265,7 +8301,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "stability-pool-server-old"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bitcoin",
+ "erased-serde",
+ "fedimint-core",
+ "futures",
+ "itertools 0.12.1",
+ "rand",
+ "reqwest 0.12.9",
+ "ring 0.17.8",
+ "secp256k1",
+ "serde",
+ "serde_json",
+ "stability-pool-common-old",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "stability-pool-tests"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "devimint",
+ "fedimint-core",
+ "fedimint-logging",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "stability-pool-tests-old"
 version = "0.3.0"
 dependencies = [
  "anyhow",

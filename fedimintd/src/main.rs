@@ -10,10 +10,10 @@ use fedimint_core::envs::is_env_var_set;
 use fedimint_core::module::ServerModuleInit;
 use fedimint_core::Amount;
 use fedimintd::Fedimintd;
-use stability_pool_server::common::config::{
+use stability_pool_server_old::common::config::{
     CollateralRatio, OracleConfig, StabilityPoolGenParams, StabilityPoolGenParamsConsensus,
 };
-use stability_pool_server::StabilityPoolInit;
+use stability_pool_server_old::StabilityPoolInit;
 use tracing::warn;
 
 #[tokio::main]
@@ -33,7 +33,7 @@ async fn main() -> anyhow::Result<()> {
         fedimintd = fedimintd
             .with_module_kind(StabilityPoolInit)
             .with_module_instance(
-                stability_pool_server::common::KIND,
+                stability_pool_server_old::common::KIND,
                 StabilityPoolGenParams {
                     local: Default::default(),
                     consensus: StabilityPoolGenParamsConsensus {

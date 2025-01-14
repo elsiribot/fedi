@@ -757,7 +757,7 @@ async fn setStabilityPoolModuleFediFeeSchedule(
     bridge
         .set_module_fedi_fee_schedule(
             federation_id,
-            stability_pool_client::common::KIND,
+            stability_pool_client_old::common::KIND,
             send_ppm,
             receive_ppm,
         )
@@ -2785,7 +2785,7 @@ pub mod tests {
             .fedi_fee_helper
             .get_fedi_fee_ppm(
                 federation.rpc_federation_id().0,
-                stability_pool_client::common::KIND,
+                stability_pool_client_old::common::KIND,
                 RpcTransactionDirection::Send,
             )
             .await?;
@@ -2882,7 +2882,7 @@ pub mod tests {
             .fedi_fee_helper
             .get_fedi_fee_ppm(
                 federation.rpc_federation_id().0,
-                stability_pool_client::common::KIND,
+                stability_pool_client_old::common::KIND,
                 RpcTransactionDirection::Send,
             )
             .await?;
@@ -3366,7 +3366,7 @@ pub mod tests {
             .fedi_fee_helper
             .get_fedi_fee_ppm(
                 federation.rpc_federation_id().0,
-                stability_pool_client::common::KIND,
+                stability_pool_client_old::common::KIND,
                 RpcTransactionDirection::Send,
             )
             .await?;

@@ -20,7 +20,7 @@ fedimint-ln-common = { workspace = true }
 fedimint-wallet-client = { workspace = true }
 fedimint-meta-client = { workspace = true }
 fedi-social-client = { workspace = true }
-stability-pool-client = { path = "../../modules/stability-pool/client" }
+stability-pool-client-old = { path = "../../modules/stability-pool-old/client" }
 fedi-bug-report = { path = "../../fedi-bug-report" }
 fedimint-derive-secret = { workspace = true }
 fedimint-logging = { workspace = true }

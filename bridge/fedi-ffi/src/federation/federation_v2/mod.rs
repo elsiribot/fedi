@@ -71,7 +71,7 @@ use futures::{FutureExt, StreamExt};
 use lightning_invoice::{Bolt11Invoice, RoutingFees};
 use meta::{LegacyMetaSourceWithExternalUrl, MetaEntries, MetaServiceExt};
 use serde::de::DeserializeOwned;
-use stability_pool_client::{
+use stability_pool_client_old::{
     ClientAccountInfo, StabilityPoolClientInit, StabilityPoolDepositOperationState,
     StabilityPoolMeta, StabilityPoolWithdrawalOperationState,
 };
@@ -2502,7 +2502,7 @@ impl FederationV2 {
             .fedi_fee_helper
             .get_fedi_fee_ppm(
                 self.federation_id().to_string(),
-                stability_pool_client::common::KIND,
+                stability_pool_client_old::common::KIND,
                 RpcTransactionDirection::Send,
             )
             .await?;
@@ -2570,7 +2570,7 @@ impl FederationV2 {
             .fedi_fee_helper
             .get_fedi_fee_ppm(
                 self.federation_id().to_string(),
-                stability_pool_client::common::KIND,
+                stability_pool_client_old::common::KIND,
                 RpcTransactionDirection::Receive,
             )
             .await?;

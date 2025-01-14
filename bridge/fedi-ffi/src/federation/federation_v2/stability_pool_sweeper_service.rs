@@ -4,7 +4,7 @@ use anyhow::anyhow;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
 use fedimint_core::Amount;
 use futures::StreamExt;
-use stability_pool_client::{ClientAccountInfo, StabilityPoolWithdrawalOperationState};
+use stability_pool_client_old::{ClientAccountInfo, StabilityPoolWithdrawalOperationState};
 use tracing::{error, info};
 
 use super::client::ClientExt;

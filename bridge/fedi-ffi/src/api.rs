@@ -188,7 +188,7 @@ impl IFediApi for LiveFediApi {
             },
         );
         modules.insert(
-            stability_pool_client::common::KIND,
+            stability_pool_client_old::common::KIND,
             ModuleFediFeeSchedule {
                 send_ppm: fee_schedule_v0.modules.stability_pool.send_ppm,
                 receive_ppm: fee_schedule_v0.modules.stability_pool.receive_ppm,

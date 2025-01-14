@@ -5,7 +5,7 @@ use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiEr
 use fedimint_core::Amount;
 use futures::{stream, StreamExt};
 use secp256k1::PublicKey;
-use stability_pool_common::{AccountInfo, LiquidityStats};
+use stability_pool_common_old::{AccountInfo, LiquidityStats};
 
 use crate::db::{
     CurrentCycleKey, Cycle, IdleBalance, IdleBalanceKey, PastCycleKeyPrefix,

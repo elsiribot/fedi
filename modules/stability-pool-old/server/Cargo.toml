@@ -1,5 +1,5 @@
 [package]
-name = "stability-pool-server"
+name = "stability-pool-server-old"
 version = "0.3.0"
 edition = "2021"
 
@@ -16,7 +16,7 @@ reqwest = { workspace = true }
 ring = { workspace = true }
 serde_json = { workspace = true }
 erased-serde = { workspace = true }
-stability-pool-common = { path = "../common" }
+stability-pool-common-old = { path = "../common" }
 rand = { workspace = true }
 itertools = { workspace = true }
 tokio = { workspace = true }

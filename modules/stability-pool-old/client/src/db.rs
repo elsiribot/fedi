@@ -2,7 +2,7 @@ use std::time::SystemTime;
 
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record};
-use stability_pool_common::AccountInfo;
+use stability_pool_common_old::AccountInfo;
 
 #[repr(u8)]
 #[derive(Clone, Debug)]

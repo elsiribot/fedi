@@ -14,7 +14,7 @@ use fedimint_ln_client::{LnPayState, LnReceiveState};
 use fedimint_wallet_client::{DepositStateV2, WithdrawState};
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
-use stability_pool_client::ClientAccountInfo;
+use stability_pool_client_old::ClientAccountInfo;
 use ts_rs::TS;
 
 use super::federation::federation_v2::FederationV2;

@@ -5,7 +5,7 @@ use fedimint_core::db::{IDatabaseTransactionOpsCoreTyped, MigrationContext};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId, TransactionId};
 use secp256k1::PublicKey;
-use stability_pool_common::{
+use stability_pool_common_old::{
     CancelRenewal, LockedProvide, LockedSeek, SeekMetadata, StabilityPoolConsensusItem,
     StagedProvide, StagedSeek,
 };

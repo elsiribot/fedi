@@ -1,12 +1,12 @@
 [package]
-name = "stability-pool-tests"
+name = "stability-pool-tests-old"
 version = "0.3.0"
 authors = ["The Fedimint Developers"]
 edition = "2021"
 description = "tests for stability pool module"
 
 [[test]]
-name = "fedimint-custom-tests"
+name = "fedimint-custom-tests-old"
 path = "tests/tests.rs"
 
 [dependencies]

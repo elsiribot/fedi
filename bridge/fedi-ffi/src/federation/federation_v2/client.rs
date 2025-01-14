@@ -2,7 +2,7 @@ use fedimint_client::{Client, ClientModuleInstance};
 use fedimint_ln_client::LightningClientModule;
 use fedimint_mint_client::MintClientModule;
 use fedimint_wallet_client::WalletClientModule;
-use stability_pool_client::StabilityPoolClientModule;
+use stability_pool_client_old::StabilityPoolClientModule;
 
 /// Helper functions for fedimint_client::Client
 pub trait ClientExt {

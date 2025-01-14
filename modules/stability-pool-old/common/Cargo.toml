@@ -1,5 +1,5 @@
 [package]
-name = "stability-pool-common"
+name = "stability-pool-common-old"
 version = "0.3.0"
 authors = ["The Stability Pool Developers"]
 description = "stability pool module for fedimint"
