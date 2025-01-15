@@ -19,11 +19,84 @@ use serde::{Deserialize, Serialize};
 pub mod config;
 use config::StabilityPoolClientConfig;
 
-pub const KIND: ModuleKind = ModuleKind::from_static_str("stability_pool");
-pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::new(2, 0);
+pub const KIND: ModuleKind = ModuleKind::from_static_str("multi_sig_stability_pool");
+pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::new(0, 0);
 
-/// BPS unit for cancellation-related calculations
-pub const BPS_UNIT: u128 = 10_000;
+pub const MSATS_PER_BTC: u128 = 100_000_000_000;
+
+/// Wrapper new-type for fiat-denominated amounts. The value is assumed to be
+/// expressed in the real-world granularity of the specific fiat currency. For
+/// example: cents (or hundredths) for most currencies. However some currencies
+/// may be denominated only in whole units in the real world, such as JPY or KRW
+/// or VND. As long as the base unit is consistent between client-server
+/// interactions and the oracle, everything should "just work".
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    Hash,
+    Eq,
+    PartialEq,
+    Encodable,
+    Decodable,
+    Serialize,
+    Deserialize,
+    PartialOrd,
+    Ord,
+)]
+pub struct FiatAmount(pub u64);
+
+impl FiatAmount {
+    pub fn from_btc_amount(btc_amount: Amount, price_per_btc: FiatAmount) -> FiatAmount {
+        // 1 BTC is worth price_per_btc FiatAmount
+        // 1 BTC = 10^8 SATS = 10^11 MSATS
+        // So 10^11 MSATS is worth price_per_btc FiatAmount
+        // x MSATS is worth (price_per_btc * x) / 10^11 FiatAmount
+        let price_times_amount = u128::from(price_per_btc.0) * u128::from(btc_amount.msats);
+        let fiat = price_times_amount / MSATS_PER_BTC;
+
+        // Since end result is an actual fiat value it should comfortably fit in u64
+        FiatAmount(fiat.try_into().expect("Valid fiat value should fit in u64"))
+    }
+
+    pub fn to_btc_amount(&self, price_per_btc: FiatAmount) -> Amount {
+        let fiat_amount = self;
+        // price_per_btc FiatAmount is worth 1 BTC
+        // 1 BTC = 10^8 SATS = 10^11 MSATS
+        // So price_per_btc FiatAmount is worth 10^11 MSATS
+        // fiat_amount FiatAmount is worth (fiat_amount * 10^11) / price_per_btc MSATS
+        let fiat_amount_times_exp = u128::from(fiat_amount.0) * MSATS_PER_BTC;
+        let msats = fiat_amount_times_exp / u128::from(price_per_btc.0);
+
+        // Since end result is an msat value it should comfortably fit in u64
+        Amount::from_msats(
+            msats
+                .try_into()
+                .expect("Valid MSAT value should fit in u64"),
+        )
+    }
+}
+
+/// An account may only act as a seeker or as a provider but not both at the
+/// same time.
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    Hash,
+    Eq,
+    PartialEq,
+    Encodable,
+    Decodable,
+    Serialize,
+    Deserialize,
+    PartialOrd,
+    Ord,
+)]
+pub enum AccountType {
+    Seeker,
+    Provider,
+}
 
 /// `Account` within the stability pool is represented as a naive multi-sig of
 /// pub keys + threshold. Within the DB, keys are the hashes of `Account`
@@ -32,6 +105,7 @@ pub const BPS_UNIT: u128 = 10_000;
 /// verify that the hash matches.
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Encodable, Serialize)]
 pub struct Account {
+    acc_type: AccountType,
     // invariant: length > 0
     pub_keys: BTreeSet<PublicKey>,
     // invariant: 0 < threshold < keys.length
@@ -41,6 +115,7 @@ pub struct Account {
 /// Account without invariants that can be checked using try_into.
 #[derive(Decodable, Deserialize)]
 struct AccountUnchecked {
+    acc_type: AccountType,
     pub_keys: BTreeSet<PublicKey>,
     threshold: u64,
 }
@@ -55,6 +130,7 @@ impl TryFrom<AccountUnchecked> for Account {
             bail!("invalid account");
         }
         Ok(Account {
+            acc_type: raw.acc_type,
             pub_keys: raw.pub_keys,
             threshold: raw.threshold,
         })
@@ -80,6 +156,7 @@ impl<'de> Deserialize<'de> for Account {
         raw.try_into().map_err(D::Error::custom)
     }
 }
+
 #[derive(
     Copy,
     Clone,
@@ -94,15 +171,22 @@ impl<'de> Deserialize<'de> for Account {
     PartialOrd,
     Ord,
 )]
-pub struct AccountId(sha256::Hash);
+pub struct AccountId {
+    acc_type: AccountType,
+    hash: sha256::Hash,
+}
 
 impl Account {
     pub fn id(&self) -> AccountId {
-        AccountId(self.consensus_hash())
+        AccountId {
+            acc_type: self.acc_type,
+            hash: self.consensus_hash(),
+        }
     }
 
-    pub fn single(key: PublicKey) -> Self {
+    pub fn single(key: PublicKey, acc_type: AccountType) -> Self {
         Self {
+            acc_type,
             pub_keys: BTreeSet::from([key]),
             threshold: 1,
         }
@@ -115,36 +199,62 @@ impl Account {
             None
         }
     }
+
+    pub fn acc_type(&self) -> AccountType {
+        self.acc_type
+    }
+}
+
+impl AccountId {
+    pub fn acc_type(&self) -> AccountType {
+        self.acc_type
+    }
 }
 
 impl Display for AccountId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "Type: {:?}, hash: {}", self.acc_type, self.hash)
     }
 }
 
-/// Withdrawing unlocked funds from the stability pool is technically just a
-/// fedimint transaction where the input comes from the stability pool module
-/// and the output comes from the e-cash module.
-///
-/// A user's holdings inside the stability pool are distributed into 3
-/// categories:
-/// 1. Idle balance: these are funds that were recovered by canceling auto
-///    renewal. They can be freely withdrawn.
-/// 2. Staged balance: the sum of any staged seeks or provides that have not
-///    been locked yet. They can be freely withdrawn.
-/// 3. Locked balance: the sum of any locked seeks or provides. This is not a
-///    realized amount, meaning it can fluctuate until the end of the cycle,
-///    when the locks are settled and paid out. This amount cannot be withdrawn,
-///    and the user must stage a cancellation so that when the cycle ends, a %
-///    (could be 100%) of the final payout is moved to idle balance instead of
-///    being re-staged and then re-locked.
-///
-/// The `amount` specified in the `StabilityPoolInput` must be less than or
-/// equal to the user's total unlocked balance, which is defined as the sum of
-/// idle balance and staged balance.
+/// Withdrawal is a 2-step process whereby the first step is the client telling
+/// the server to free up X cents in the idle balance, and second step is the
+/// client then sweeping up the idle balance.
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
-pub struct StabilityPoolInputV0 {
+pub enum StabilityPoolInputV0 {
+    UnlockForWithdrawal(UnlockForWithdrawalInput),
+    Withdrawal(WithdrawalInput),
+}
+
+impl StabilityPoolInputV0 {
+    pub fn account(&self) -> Account {
+        match self {
+            StabilityPoolInputV0::UnlockForWithdrawal(unlock) => unlock.account.clone(),
+            StabilityPoolInputV0::Withdrawal(withdrawal) => withdrawal.account.clone(),
+        }
+    }
+}
+
+/// UnlockForWithdrawalInput allows telling the server to set aside msats (in
+/// idle balance) for the given amount of fiat (or ALL) so that the entire
+/// msats might be withdrawn in a subsequent transaction.
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
+pub struct UnlockForWithdrawalInput {
+    pub account: Account,
+    pub amount: UnlockForWithdrawalAmount,
+}
+
+/// Request unlocking of the given FiatAmount, or ALL of the account's holdings.
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
+pub enum UnlockForWithdrawalAmount {
+    Fiat(FiatAmount),
+    All,
+}
+
+/// WithdrawalInput allows withdrawing the given amount of msats. Typically this
+/// is the second step in a withdrawal operation.
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
+pub struct WithdrawalInput {
     pub account: Account,
     pub amount: Amount,
 }
@@ -155,38 +265,32 @@ extensible_associated_module_type!(
     UnknownStabilityPoolInputVariantError
 );
 
-impl StabilityPoolInput {
-    pub fn new_v0(account: Account, amount: Amount) -> StabilityPoolInput {
-        StabilityPoolInput::V0(StabilityPoolInputV0 { account, amount })
-    }
-
-    pub fn account(&self) -> anyhow::Result<Account> {
-        match self {
-            StabilityPoolInput::V0(StabilityPoolInputV0 { account, .. }) => Ok(account.clone()),
-            StabilityPoolInput::Default { variant, .. } => {
-                bail!("Unsupported variant {variant}")
-            }
-        }
-    }
-
-    pub fn amount(&self) -> anyhow::Result<Amount> {
-        match self {
-            StabilityPoolInput::V0(StabilityPoolInputV0 { amount, .. }) => Ok(*amount),
-            StabilityPoolInput::Default { variant, .. } => {
-                bail!("Unsupported variant {variant}")
-            }
-        }
-    }
+/// Depositing funds into the stability pool can be the purpose of seeking or
+/// providing. In both these cases, the funds (input) are coming from the e-cash
+/// module.
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
+pub enum StabilityPoolOutputV0 {
+    DepositToSeek(DepositToSeekOutput),
+    DepositToProvide(DepositToProvideOutput),
 }
 
-/// Depositing funds into the stability pool is technically just a fedimint
-/// transaction where the input comes from the e-cash module and the outputs
-/// come from the stability pool module and the e-cash module (in case of any
-/// change).
+/// Represents a module output for depositing the given `amount` into the given
+/// `account_id`s staging balance as a seek. Seeks are assigned
+/// auto-incrementing sequences by the guardians.
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
-pub struct StabilityPoolOutputV0 {
-    pub account: Account,
-    pub intended_action: IntendedAction,
+pub struct DepositToSeekOutput {
+    pub account_id: AccountId,
+    pub seek: Seek,
+}
+
+/// Represents a module output for depositing the given `amount` into the given
+/// `account_id`s staging balance as a provide with the specified `min_fee_rate`
+/// in parts-per-billion. Provides are assigned auto-incrementing sequences by
+/// the guardians.
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
+pub struct DepositToProvideOutput {
+    pub account_id: AccountId,
+    pub provide: Provide,
 }
 
 extensible_associated_module_type!(
@@ -195,66 +299,6 @@ extensible_associated_module_type!(
     UnknownStabilityPoolOutputVariantError
 );
 
-impl StabilityPoolOutput {
-    pub fn new_v0(account: Account, intended_action: IntendedAction) -> StabilityPoolOutput {
-        StabilityPoolOutput::V0(StabilityPoolOutputV0 {
-            account,
-            intended_action,
-        })
-    }
-    pub fn account(&self) -> anyhow::Result<Account> {
-        match self {
-            StabilityPoolOutput::V0(StabilityPoolOutputV0 { account, .. }) => Ok(account.clone()),
-            StabilityPoolOutput::Default { variant, .. } => {
-                bail!("Unsupported variant {variant}")
-            }
-        }
-    }
-
-    pub fn intended_action(&self) -> anyhow::Result<IntendedAction> {
-        match self {
-            StabilityPoolOutput::V0(StabilityPoolOutputV0 {
-                intended_action, ..
-            }) => Ok(intended_action.clone()),
-            StabilityPoolOutput::Default { variant, .. } => {
-                bail!("Unsupported variant {variant}")
-            }
-        }
-    }
-}
-
-/// The user's intention behind the deposit must be specified using the
-/// `IntendedAction` enum out of the following 4 options:
-/// 1. `Seek`: means deposit the specified msat amount for staging a seek. A
-///    seek is accepted iff the user does NOT already have staged provides,
-///    locked provides, or staged cancellation. Seeks are assigned
-///    auto-incrementing sequences by the guardians.
-/// 2. `Provide`: means deposit the specified msat amount for staging a provide
-///    with the specified min fee rate (in PPB). A provide is accepted iff the
-///    user does NOT already have staged seeks, locked seeks, or staged
-///    cancellation. Provides are assigned auto-incrementing sequences by the
-///    guardians.
-/// 3. `CancelRenewal`: means stage a cancellation for the specified %
-///    (expressed in basis points) of the user's locked funds. This means that
-///    when the current cycle ends, the specified portion of the user's position
-///    is not auto-renewed, and is instead moved to their "idle balance" within
-///    the stability pool, waiting to be claimed by them later in a transaction.
-///    A % unit is used as it works for both seeks and provides (since provider
-///    doesn't know either the msats or the $ value that they will receive when
-///    the current cycle ends). A cancellation is accepted iff the user does NOT
-///    have any staged seeks or provides or staged cancellation AND has at least
-///    one locked seek or provide (but not both).
-/// 4. `UndoCancelRenewal`: means cancel any staged cancellation because the
-///    user changed their mind. Naturally the user must have a staged
-///    cancellation.
-#[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
-pub enum IntendedAction {
-    Seek(Seek),
-    Provide(Provide),
-    CancelRenewal(CancelRenewal),
-    UndoCancelRenewal,
-}
-
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct Seek(pub Amount);
 
@@ -262,11 +306,6 @@ pub struct Seek(pub Amount);
 pub struct Provide {
     pub amount: Amount,
     pub min_fee_rate: u64,
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
-pub struct CancelRenewal {
-    pub bps: u32,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
@@ -311,7 +350,7 @@ extensible_associated_module_type!(
 pub struct StabilityPoolConsensusItemV0 {
     pub next_cycle_index: u64,
     pub time: SystemTime,
-    pub price: u64,
+    pub price: FiatAmount,
 }
 
 extensible_associated_module_type!(
@@ -324,7 +363,7 @@ impl StabilityPoolConsensusItem {
     pub fn new_v0(
         next_cycle_index: u64,
         time: SystemTime,
-        price: u64,
+        price: FiatAmount,
     ) -> StabilityPoolConsensusItem {
         StabilityPoolConsensusItem::V0(StabilityPoolConsensusItemV0 {
             next_cycle_index,
@@ -354,7 +393,7 @@ impl StabilityPoolConsensusItem {
         }
     }
 
-    pub fn price(&self) -> anyhow::Result<u64> {
+    pub fn price(&self) -> anyhow::Result<FiatAmount> {
         match self {
             StabilityPoolConsensusItem::V0(StabilityPoolConsensusItemV0 { price, .. }) => {
                 Ok(*price)
@@ -376,6 +415,10 @@ pub enum StabilityPoolInputError {
     InsufficientBalance,
     #[error("Multi-sig keys are not allowed for this operation.")]
     MultiSigNotAllowed,
+    #[error("Temporary error, please try again later.")]
+    TemporaryError,
+    #[error("Previous unlock request must be completed before a new one can be accepted")]
+    DuplicateUnlockRequest,
     #[error("{0}")]
     UnknownInputVariant(String),
 }
@@ -390,6 +433,8 @@ pub enum StabilityPoolOutputError {
     CannotSeek,
     #[error("Cannot provide while staged/locked seeks or cancellation are active.")]
     CannotProvide,
+    #[error("Seeker account type cannot provide, and provider account type cannot seek")]
+    InvalidAccountTypeForOperation,
     #[error("Cannot seek or provide when auto-renewal cancellation is already staged.")]
     AutoRenewalCancellationAlreadyStaged,
     #[error("Seek or provide amount is below minimum required amount.")]
@@ -452,41 +497,43 @@ pub struct LockedProvide {
 
 impl Display for StabilityPoolInputV0 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Input for account {} with amount {}",
-            self.account.id(),
-            self.amount,
-        )
+        match self {
+            StabilityPoolInputV0::UnlockForWithdrawal(unlock) => write!(
+                f,
+                "Input to unlock {} fiat amount from account {}",
+                match unlock.amount {
+                    UnlockForWithdrawalAmount::Fiat(fiat) => fiat.0.to_string(),
+                    UnlockForWithdrawalAmount::All => "all".to_string(),
+                },
+                unlock.account.id(),
+            ),
+            StabilityPoolInputV0::Withdrawal(withdrawal) => {
+                write!(
+                    f,
+                    "Input to withdraw {} from account {}",
+                    withdrawal.amount,
+                    withdrawal.account.id()
+                )
+            }
+        }
     }
 }
 
 impl Display for StabilityPoolOutputV0 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Output for account {} to {}",
-            self.account.id(),
-            self.intended_action,
-        )
-    }
-}
-
-impl Display for IntendedAction {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            IntendedAction::Seek(Seek(amount)) => write!(f, "seek for {amount}"),
-            IntendedAction::Provide(Provide {
-                amount,
-                min_fee_rate,
-            }) => write!(
+            StabilityPoolOutputV0::DepositToSeek(seek_output) => write!(
                 f,
-                "provide for {amount} with min fee rate of {min_fee_rate}"
+                "Deposit {} into account {} for seeking",
+                seek_output.seek.0, seek_output.account_id
             ),
-            IntendedAction::CancelRenewal(CancelRenewal { bps }) => {
-                write!(f, "cancel renewal of {bps} BPS of currently locked funds")
-            }
-            IntendedAction::UndoCancelRenewal => write!(f, "undo cancellation of auto-renewal"),
+            StabilityPoolOutputV0::DepositToProvide(provide_output) => write!(
+                f,
+                "Deposit {} into account {} for providing with min fee rate {}",
+                provide_output.provide.amount,
+                provide_output.account_id,
+                provide_output.provide.min_fee_rate
+            ),
         }
     }
 }
@@ -501,8 +548,8 @@ impl Display for StabilityPoolConsensusItemV0 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Consensus item for cycle index {:?} with time {:?} and price {} in cents",
-            self.next_cycle_index, self.time, self.price
+            "Consensus item for cycle index {:?} with time {:?} and price {}",
+            self.next_cycle_index, self.time, self.price.0
         )
     }
 }
@@ -511,9 +558,9 @@ impl Display for StabilityPoolConsensusItemV0 {
 pub struct SeekMetadata {
     pub staged_sequence: u64,
     pub initial_amount: Amount,
-    pub initial_amount_cents: u64,
+    pub initial_fiat_amount: FiatAmount,
     pub withdrawn_amount: Amount,
-    pub withdrawn_amount_cents: u64,
+    pub withdrawn_fiat_amount: FiatAmount,
     pub fees_paid_so_far: Amount,
     pub first_lock_start_time: SystemTime,
     pub fully_withdrawn: bool,
@@ -524,9 +571,9 @@ impl Default for SeekMetadata {
         SeekMetadata {
             staged_sequence: 0,
             initial_amount: Amount::ZERO,
-            initial_amount_cents: 0,
+            initial_fiat_amount: FiatAmount(0),
             withdrawn_amount: Amount::ZERO,
-            withdrawn_amount_cents: 0,
+            withdrawn_fiat_amount: FiatAmount(0),
             fees_paid_so_far: Amount::ZERO,
             first_lock_start_time: fedimint_core::time::now(),
             fully_withdrawn: false,
@@ -539,7 +586,8 @@ pub struct AccountInfo {
     pub idle_balance: Amount,
     pub staged_seeks: Vec<StagedSeek>,
     pub staged_provides: Vec<StagedProvide>,
-    pub staged_cancellation: Option<CancelRenewal>,
+    // TODO shaurya expose pending unlocks in AccountInfo
+    // pub staged_cancellation: Option<CancelRenewal>,
     pub locked_seeks: Vec<LockedSeek>,
     pub locked_provides: Vec<LockedProvide>,
     pub seeks_metadata: BTreeMap<TransactionId, SeekMetadata>,
@@ -551,14 +599,4 @@ pub struct LiquidityStats {
     pub locked_provides_sum_msat: u64,
     pub staged_seeks_sum_msat: u64,
     pub staged_provides_sum_msat: u64,
-}
-
-/// Helper function to convert the given Amount quantity into
-/// cents using the given price.
-pub fn amount_to_cents(amount: Amount, price: u128) -> u64 {
-    // 1 BTC is worth price cents
-    // 1 BTC = 10^8 SATS = 10^11 MSATS
-    // So 10^11 MSATS is worth price cents
-    // x MSATS is worth (price * x) / 10^11 cents
-    ((price * amount.msats as u128) / 100_000_000_000) as u64
 }

@@ -4,12 +4,11 @@ use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiError, ApiVersion};
 use fedimint_core::Amount;
 use futures::{stream, StreamExt};
-use stability_pool_common::{AccountId, AccountInfo, LiquidityStats};
+use stability_pool_common::{AccountId, AccountInfo, FiatAmount, LiquidityStats};
 
 use crate::db::{
-    CurrentCycleKey, Cycle, IdleBalance, IdleBalanceKey, PastCycleKeyPrefix,
-    SeekMetadataAccountPrefix, StagedCancellationKey, StagedProvidesKey, StagedProvidesKeyPrefix,
-    StagedSeeksKey, StagedSeeksKeyPrefix,
+    CurrentCycleKey, Cycle, IdleBalanceKey, PastCycleKeyPrefix, SeekMetadataAccountPrefix,
+    StagedProvidesKey, StagedProvidesKeyPrefix, StagedSeeksKey, StagedSeeksKeyPrefix,
 };
 use crate::StabilityPool;
 
@@ -39,7 +38,7 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
         api_endpoint! {
             "cycle_start_price",
             ApiVersion::new(0, 0),
-            async |_module: &StabilityPool, context, _request: ()| -> u64 {
+            async |_module: &StabilityPool, context, _request: ()| -> FiatAmount {
                 Ok(cycle_start_price(&mut context.dbtx().into_nc()).await?)
             }
         },
@@ -97,8 +96,7 @@ pub async fn account_info(dbtx: &mut DatabaseTransaction<'_>, account: AccountId
         idle_balance: dbtx
             .get_value(&IdleBalanceKey(account))
             .await
-            .unwrap_or(IdleBalance(Amount::ZERO))
-            .0,
+            .unwrap_or(Amount::ZERO),
         staged_seeks: dbtx
             .get_value(&StagedSeeksKey(account))
             .await
@@ -107,10 +105,10 @@ pub async fn account_info(dbtx: &mut DatabaseTransaction<'_>, account: AccountId
             .get_value(&StagedProvidesKey(account))
             .await
             .unwrap_or_default(),
-        staged_cancellation: dbtx
-            .get_value(&StagedCancellationKey(account))
-            .await
-            .map(|(_, cancel)| cancel),
+        // staged_cancellation: dbtx
+        //     .get_value(&StagedCancellationKey(account))
+        //     .await
+        //     .map(|(_, cancel)| cancel),
         locked_seeks,
         locked_provides,
         seeks_metadata,
@@ -153,7 +151,7 @@ pub async fn next_cycle_start_time(
 
 pub async fn cycle_start_price(
     dbtx: &mut DatabaseTransaction<'_>,
-) -> anyhow::Result<u64, ApiError> {
+) -> anyhow::Result<FiatAmount, ApiError> {
     let current_cycle_start_price = dbtx
         .get_value(&CurrentCycleKey)
         .await
@@ -171,38 +169,40 @@ pub async fn wait_cancellation_processed(
     context: &mut ApiEndpointContext<'_>,
     account: AccountId,
 ) -> anyhow::Result<Amount, ApiError> {
-    let mut dbtx = context.dbtx().into_nc();
-    let starting_idle_balance = match dbtx.get_value(&IdleBalanceKey(account)).await {
-        Some(IdleBalance(amt)) => amt,
-        None => Amount::ZERO,
-    };
+    let _ = (context, account);
+    todo!()
+    // let mut dbtx = context.dbtx().into_nc();
+    // let starting_idle_balance = match
+    // dbtx.get_value(&IdleBalanceKey(account)).await {     Some(amt) =>
+    // amt,     None => Amount::ZERO,
+    // };
 
-    let staged_cancellation = dbtx.get_value(&StagedCancellationKey(account)).await;
-    drop(dbtx);
+    // let staged_cancellation =
+    // dbtx.get_value(&StagedCancellationKey(account)).await; drop(dbtx);
 
-    match staged_cancellation {
-        Some(_) => {
-            // Cancellation is successfully processed when a higher idle balance exists than
-            // the one we initially recorded.
-            let future = context
-                .wait_value_matches(IdleBalanceKey(account), |IdleBalance(new_idle_balance)| {
-                    *new_idle_balance > starting_idle_balance
-                });
-            Ok(future.await.0)
-        }
-        None => {
-            // If there's no staged cancellation but idle balance exists,
-            // it's possible that the staged cancellation was already processed.
-            // So we just return the amount of the idle balance.
-            if starting_idle_balance != Amount::ZERO {
-                Ok(starting_idle_balance)
-            } else {
-                Err(ApiError::bad_request(
-                    "No staged cancellation or idle balance for account".to_owned(),
-                ))
-            }
-        }
-    }
+    // match staged_cancellation {
+    //     Some(_) => {
+    //         // Cancellation is successfully processed when a higher idle
+    // balance exists than         // the one we initially recorded.
+    //         let future = context
+    //             .wait_value_matches(IdleBalanceKey(account),
+    // |IdleBalance(new_idle_balance)| {                 *new_idle_balance >
+    // starting_idle_balance             });
+    //         Ok(future.await.0)
+    //     }
+    //     None => {
+    //         // If there's no staged cancellation but idle balance exists,
+    //         // it's possible that the staged cancellation was already
+    // processed.         // So we just return the amount of the idle
+    // balance.         if starting_idle_balance != Amount::ZERO {
+    //             Ok(starting_idle_balance)
+    //         } else {
+    //             Err(ApiError::bad_request(
+    //                 "No staged cancellation or idle balance for
+    // account".to_owned(),             ))
+    //         }
+    //     }
+    // }
 }
 
 /// Return a snapshot of the current aggregate liquidity stats including

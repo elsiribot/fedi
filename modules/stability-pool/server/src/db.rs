@@ -1,12 +1,10 @@
 use std::collections::BTreeMap;
 use std::time::SystemTime;
 
-use fedimint_core::db::{IDatabaseTransactionOpsCoreTyped, MigrationContext};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId, TransactionId};
 use stability_pool_common::{
-    AccountId, CancelRenewal, LockedProvide, LockedSeek, SeekMetadata, StabilityPoolConsensusItem,
-    StagedProvide, StagedSeek,
+    AccountId, FiatAmount, LockedProvide, LockedSeek, SeekMetadata, StabilityPoolConsensusItem, StagedProvide, StagedSeek, UnlockForWithdrawalAmount
 };
 
 #[repr(u8)]
@@ -27,11 +25,14 @@ pub enum DbKeyPrefix {
     /// matched at the next cycle turnover.
     StagedProvides,
 
-    /// User account => staged cancellation in BPS.
-    /// If a staged cancellation exists for a user, the corresponding BPS of
-    /// their locked balance gets unlocked at the next cycle turnover. This
-    /// unlocked balance becomes idle balance.
-    StagedCancellation,
+    /// User account => unlock request amount
+    /// When a user wishes to withdraw their funds from the stability pool, the
+    /// first step is to submit a request to unlock msats corresponding to the
+    /// provided fiat amount (or ALL). This unlock request may be fully
+    /// completed immediately (in case there are enough funds in staged state),
+    /// or it may only be partially completed immediately and then need to
+    /// wait for the next cycle turnover.
+    UnlockRequests,
 
     /// The currently ongoing system cycle containing the cycle index, start
     /// time and price, as well as the list of locked seeks and provides.
@@ -72,12 +73,9 @@ pub struct IdleBalanceKey(pub AccountId);
 #[derive(Debug, Encodable, Decodable)]
 pub struct IdleBalanceKeyPrefix;
 
-#[derive(Debug, Encodable, Decodable)]
-pub struct IdleBalance(pub Amount);
-
 impl_db_record!(
     key = IdleBalanceKey,
-    value = IdleBalance,
+    value = Amount,
     db_prefix = DbKeyPrefix::IdleBalance,
     notify_on_modify = true,
 );
@@ -105,26 +103,27 @@ impl_db_lookup!(
 );
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct StagedCancellationKey(pub AccountId);
+pub struct UnlockRequestKey(pub AccountId);
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct StagedCancellationKeyPrefix;
+pub struct UnlockRequestsKeyPrefix;
 
 impl_db_record!(
-    key = StagedCancellationKey,
-    value = (TransactionId, CancelRenewal),
-    db_prefix = DbKeyPrefix::StagedCancellation
+    key = UnlockRequestKey,
+    value = UnlockForWithdrawalAmount,
+    db_prefix = DbKeyPrefix::UnlockRequests,
 );
+
 impl_db_lookup!(
-    key = StagedCancellationKey,
-    query_prefix = StagedCancellationKeyPrefix
+    key = UnlockRequestKey,
+    query_prefix = UnlockRequestsKeyPrefix,
 );
 
 #[derive(Debug, Encodable, Decodable)]
 pub struct Cycle {
     pub index: u64,
     pub start_time: SystemTime,
-    pub start_price: u64,
+    pub start_price: FiatAmount,
     pub fee_rate: u64,
     pub locked_seeks: BTreeMap<AccountId, Vec<LockedSeek>>,
     pub locked_provides: BTreeMap<AccountId, Vec<LockedProvide>>,
@@ -230,19 +229,3 @@ impl_db_lookup!(
     query_prefix = SeekMetadataAccountPrefix,
     query_prefix = SeekMetadataKeyPrefix
 );
-
-/// Migrate DB from version 1 to version 2 by wiping everything
-pub async fn migrate_to_v2(mut ctx: MigrationContext<'_>) -> Result<(), anyhow::Error> {
-    let mut dbtx = ctx.dbtx();
-    dbtx.remove_by_prefix(&IdleBalanceKeyPrefix).await;
-    dbtx.remove_by_prefix(&StagedSeeksKeyPrefix).await;
-    dbtx.remove_by_prefix(&StagedProvidesKeyPrefix).await;
-    dbtx.remove_by_prefix(&StagedCancellationKeyPrefix).await;
-    dbtx.remove_by_prefix(&CurrentCycleKeyPrefix).await;
-    dbtx.remove_by_prefix(&PastCycleKeyPrefix).await;
-    dbtx.remove_by_prefix(&StagedSeekSequenceKeyPrefix).await;
-    dbtx.remove_by_prefix(&StagedProvideSequenceKeyPrefix).await;
-    dbtx.remove_by_prefix(&CycleChangeVoteKeyPrefix).await;
-    dbtx.remove_by_prefix(&SeekMetadataKeyPrefix).await;
-    Ok(())
-}

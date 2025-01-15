@@ -39,7 +39,7 @@ use futures::{Stream, StreamExt};
 use secp256k1::{Keypair, Secp256k1};
 use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
-use stability_pool_common::{Account, KIND};
+use stability_pool_common::{Account, StabilityPoolInputV0, WithdrawalInput, KIND};
 use tokio::sync::Mutex;
 use tracing::{error, info};
 
@@ -1051,8 +1051,8 @@ async fn estimated_withdrawal_cents(
             .iter()
             .map(|l| {
                 if let Some(metadata) = account_info.seeks_metadata.get(&l.staged_txid) {
-                    metadata.initial_amount_cents
-                        - metadata.withdrawn_amount_cents
+                    metadata.initial_fiat_amount
+                        - metadata.withdrawn_fiat_amount
                         - amount_to_cents(metadata.fees_paid_so_far, current_price.into())
                 } else {
                     0
@@ -1097,7 +1097,10 @@ async fn claim_idle_balance_input(
 ) -> StabilityPoolCancelLockedStateMachine {
     let input = ClientInput {
         amount: idle_balance,
-        input: StabilityPoolInput::new_v0(context.module.our_account(), idle_balance),
+        input: StabilityPoolInput::V0(StabilityPoolInputV0::Withdrawal(WithdrawalInput {
+            account: context.module.our_account(),
+            amount: idle_balance,
+        })),
         keys: vec![context.module.client_key_pair],
     };
     let state_machines = ClientInputSM {
