@@ -199,6 +199,7 @@
         "failed-to-update-notification": "Failed to update notification setting for this chat",
         "files-may-not-exceed-20mb": "Files may not exceed 20MB",
         "get-nostr-pubkey-failed": "Failed to get nostr pub key",
+        "group-name-too-long": "Group name cannot exceed 30 characters",
         "history-render-error": "Encountered an error rendering this item",
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
         "insufficient-balance-send": "Insufficient balance for spend plus fees. You can send a maximum of {{sats}} sats",
