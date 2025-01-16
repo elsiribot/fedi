@@ -559,6 +559,8 @@ export type RpcMethods = {
   joinCommunity: [joinCommunity, RpcCommunity];
   leaveCommunity: [leaveCommunity, null];
   listCommunities: [listCommunities, Array<RpcCommunity>];
+  evilSpamInvoices: [evilSpamInvoices, null];
+  evilSpamAddress: [evilSpamAddress, null];
 };
 
 export type RpcModuleFediFeeSchedule = { sendPpm: number; receivePpm: number };
@@ -928,6 +930,10 @@ export type decodeInvoice = {
 export type deviceIndexAssignmentStatus = {};
 
 export type dumpDb = { federationId: string };
+
+export type evilSpamAddress = { federationId: RpcFederationId };
+
+export type evilSpamInvoices = { federationId: RpcFederationId };
 
 export type federationPreview = { inviteCode: string };
 
