@@ -611,6 +611,26 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                         toast.show('NUX reset!')
                     }}
                 />
+                <Button
+                    title="Evil Spam Invoices"
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={async () => {
+                        if (!activeFederation?.id) return
+                        await fedimint.evilSpamInvoices({
+                            federationId: activeFederation.id,
+                        })
+                    }}
+                />
+                <Button
+                    title="Evil Spam Address"
+                    containerStyle={styles(theme).buttonContainer}
+                    onPress={async () => {
+                        if (!activeFederation?.id) return
+                        await fedimint.evilSpamAddress({
+                            federationId: activeFederation.id,
+                        })
+                    }}
+                />
             </SettingsSection>
         </ScrollView>
     )

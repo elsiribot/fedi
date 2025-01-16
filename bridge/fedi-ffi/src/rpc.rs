@@ -893,6 +893,31 @@ async fn onAppForeground(bridge: &Bridge) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[macro_rules_derive(federation_rpc_method!)]
+async fn evilSpamInvoices(federation: Arc<FederationV2>) -> anyhow::Result<()> {
+    let mut futs = vec![];
+    for _ in 0..1000 {
+        futs.push(generateInvoice(
+            federation.clone(),
+            RpcAmount(fedimint_core::Amount::from_sats(100)),
+            String::from("evil was here"),
+            None,
+        ));
+    }
+    futures::future::try_join_all(futs).await?;
+    Ok(())
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
+async fn evilSpamAddress(federation: Arc<FederationV2>) -> anyhow::Result<()> {
+    let mut futs = vec![];
+    for _ in 0..1000 {
+        futs.push(generateAddress(federation.clone()));
+    }
+    futures::future::try_join_all(futs).await?;
+    Ok(())
+}
+
 macro_rules! ts_type_ser {
     ($name:ident: $ty:ty = $ts_ty:literal) => {
         #[derive(serde::Serialize, ts_rs::TS)]
@@ -1617,6 +1642,10 @@ rpc_methods!(RpcMethods {
     joinCommunity,
     leaveCommunity,
     listCommunities,
+
+    // evil rpcs to put app in bad states
+    evilSpamInvoices,
+    evilSpamAddress,
 });
 
 #[instrument(

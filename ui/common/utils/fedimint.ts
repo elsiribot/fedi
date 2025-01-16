@@ -690,6 +690,15 @@ export class FedimintBridge {
         return this.rpcTyped('listCommunities', args)
     }
 
+    /*** EVIL RPCs ***/
+
+    async evilSpamInvoices(args: bindings.RpcPayload<'evilSpamInvoices'>) {
+        return this.rpcTyped('evilSpamInvoices', args)
+    }
+
+    async evilSpamAddress(args: bindings.RpcPayload<'evilSpamAddress'>) {
+        return this.rpcTyped('evilSpamAddress', args)
+    }
     /*** BRIDGE EVENTS ***/
 
     private listeners = new Map<string, Array<(data: unknown) => void>>()
