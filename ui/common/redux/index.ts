@@ -256,6 +256,8 @@ export function initializeCommonStore({
                 else i18n.changeLanguage(language)
             })
         } else if (language) i18n.changeLanguage(language)
+
+        unsubscribeInitialLang()
     })
 
     return () => {
