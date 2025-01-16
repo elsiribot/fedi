@@ -262,6 +262,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
         }
     }, [editingMessage, isEditingMessage, messageText, t, toast, dispatch])
 
+    const trimmedMessageText = messageText
+        .trim()
+        // Matches three or more whitespace characters, including newlines, tabs, etc
+        .replace(/\s{3,}/g, match => match.slice(0, 2))
+
     useEffect(() => {
         const keyboardShownListener = Keyboard.addListener(
             'keyboardWillShow',
@@ -290,7 +295,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     const handleSend = useCallback(async () => {
         if (
-            (!messageText && !images.length && !attachments.length) ||
+            (!trimmedMessageText && !images.length && !attachments.length) ||
             isSending
         )
             return
@@ -327,7 +332,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 })
             }
 
-            await onMessageSubmitted(messageText, allAttachments)
+            await onMessageSubmitted(trimmedMessageText, allAttachments)
             setMessageText('')
             setImages([])
             setAttachments([])
@@ -336,7 +341,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         }
     }, [
         isSending,
-        messageText,
+        trimmedMessageText,
         onMessageSubmitted,
         toast,
         t,
