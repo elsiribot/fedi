@@ -2059,14 +2059,14 @@ impl FederationV2 {
         }
 
         let Ok(wallet) = self.client.wallet() else {
-            return None;
+            panic!("get deposit outcome called when wallet module is absent");
         };
 
         match wallet.subscribe_deposit(operation_id).await {
             Err(_) => None,
             Ok(UpdateStreamOrOutcome::Outcome(outcome)) => Some(outcome),
-            // don't block
-            Ok(UpdateStreamOrOutcome::UpdateStream(_)) => None,
+            // first item of this stream doesn't block: WaitingForTransaction
+            Ok(UpdateStreamOrOutcome::UpdateStream(mut stream)) => stream.next().await,
         }
     }
 
