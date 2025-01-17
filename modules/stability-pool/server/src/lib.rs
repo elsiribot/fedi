@@ -621,8 +621,8 @@ async fn process_unlock_input<'a, 'b>(
             match input.amount {
                 UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
                     let amount = fiat_amount.to_btc_amount(btc_price);
-                    let seeker_balance =
-                        staged_seeks.iter().map(|s| s.seek.0).sum::<Amount>() + locked_seeks_sum;
+                    let staged_balance = staged_seeks.iter().map(|s| s.seek.0).sum::<Amount>();
+                    let seeker_balance = staged_balance + locked_seeks_sum;
 
                     if seeker_balance < amount {
                         return Err(StabilityPoolInputError::InsufficientBalance);
@@ -631,20 +631,10 @@ async fn process_unlock_input<'a, 'b>(
                     // Drain staged seeks in reverse (newest to oldest).
                     let mut amount_needed = amount;
                     if staged_seeks.is_empty().not() {
-                        for s in staged_seeks.iter_mut().rev() {
-                            let min_extractable =
-                                Amount::from_msats(s.seek.0.msats.min(amount_needed.msats));
-                            amount_needed -= min_extractable;
-                            s.seek.0 -= min_extractable;
-
-                            idle_balance_credit += min_extractable;
-
-                            if amount_needed == Amount::ZERO {
-                                break;
-                            }
-                        }
-
-                        staged_seeks.retain(|s| s.seek.0 != Amount::ZERO);
+                        let drained =
+                            drain_in_reverse(&mut staged_seeks, |s| &mut s.seek.0, amount_needed);
+                        amount_needed -= drained;
+                        idle_balance_credit = drained;
                         dbtx.insert_entry(&staged_key, &staged_seeks).await;
                     }
 
@@ -668,7 +658,7 @@ async fn process_unlock_input<'a, 'b>(
                     // If applicable, clear all staged seeks and credit idle balance
                     if staged_seeks.is_empty().not() {
                         dbtx.remove_entry(&staged_key).await;
-                        idle_balance_credit += staged_seeks.iter().map(|s| s.seek.0).sum();
+                        idle_balance_credit = staged_seeks.iter().map(|s| s.seek.0).sum();
                     }
 
                     // If there are locked seeks present, register an unlock request for ALL
@@ -694,11 +684,11 @@ async fn process_unlock_input<'a, 'b>(
             match input.amount {
                 UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
                     let amount = fiat_amount.to_btc_amount(btc_price);
-                    let provider_balance = staged_provides
+                    let staged_balance = staged_provides
                         .iter()
                         .map(|p| p.provide.amount)
-                        .sum::<Amount>()
-                        + locked_provides_sum;
+                        .sum::<Amount>();
+                    let provider_balance = staged_balance + locked_provides_sum;
 
                     if provider_balance < amount {
                         return Err(StabilityPoolInputError::InsufficientBalance);
@@ -707,20 +697,13 @@ async fn process_unlock_input<'a, 'b>(
                     // Drain staged provides in reverse (newest to oldest)
                     let mut amount_needed = amount;
                     if staged_provides.is_empty().not() {
-                        for p in staged_provides.iter_mut().rev() {
-                            let min_extractable =
-                                Amount::from_msats(p.provide.amount.msats.min(amount_needed.msats));
-                            amount_needed -= min_extractable;
-                            p.provide.amount -= min_extractable;
-
-                            idle_balance_credit += min_extractable;
-
-                            if amount_needed == Amount::ZERO {
-                                break;
-                            }
-                        }
-
-                        staged_provides.retain(|p| p.provide.amount != Amount::ZERO);
+                        let drained = drain_in_reverse(
+                            &mut staged_provides,
+                            |s| &mut s.provide.amount,
+                            amount_needed,
+                        );
+                        amount_needed -= drained;
+                        idle_balance_credit = drained;
                         dbtx.insert_entry(&staged_key, &staged_provides).await;
                     }
 
@@ -744,7 +727,7 @@ async fn process_unlock_input<'a, 'b>(
                     // If applicable, clear all staged provides and credit idle balance
                     if staged_provides.is_empty().not() {
                         dbtx.remove_entry(&staged_key).await;
-                        idle_balance_credit +=
+                        idle_balance_credit =
                             staged_provides.iter().map(|p| p.provide.amount).sum();
                     }
 
@@ -992,101 +975,49 @@ async fn process_unlock_requests(
         .await;
 
     for (key @ UnlockRequestKey(account_id), unlock_amount) in unlock_requests {
-        let mut msats_already_unlocked = 0;
-        match account_id.acc_type() {
+        let amount_unlocked = match account_id.acc_type() {
             AccountType::Seeker => {
                 if let Some(seeks_list) = locked_seeks.get_mut(&key.0) {
-                    let mut msats_left_to_unlock = match unlock_amount {
+                    let amount_to_unlock = match unlock_amount {
                         UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
                             fiat_amount.to_btc_amount(new_price)
                         }
                         UnlockForWithdrawalAmount::All => seeks_list.iter().map(|s| s.amount).sum(),
-                    }
-                    .msats;
+                    };
 
-                    // Iterate in reverse to ensure older sequences are preserved
-                    for LockedSeek {
-                        amount,
-                        staged_txid,
-                        ..
-                    } in seeks_list.iter_mut().rev()
-                    {
-                        let cancellable = msats_left_to_unlock.min(amount.msats.into());
-                        msats_left_to_unlock -= cancellable;
-                        msats_already_unlocked += cancellable;
-
-                        // `cancellable` is the min of two valid msat values. Since an msat value is
-                        // guaranteed to fit within u64, so is `cancellable`.
-                        let cancellable = Amount::from_msats(cancellable.try_into().unwrap());
-                        *amount -= cancellable;
-
-                        let seek_metadata_key = SeekMetadataKey(key.0, *staged_txid);
-                        if let Some(mut metadata) = dbtx.get_value(&seek_metadata_key).await {
-                            metadata.withdrawn_amount += cancellable;
-                            metadata.withdrawn_fiat_amount.0 +=
-                                FiatAmount::from_btc_amount(cancellable, new_price).0;
-                            if *amount == Amount::ZERO {
-                                metadata.fully_withdrawn = true;
-                            }
-                            dbtx.insert_entry(&seek_metadata_key, &metadata).await;
-                        }
-
-                        if msats_left_to_unlock == 0 {
-                            break;
-                        }
-                    }
-
-                    // Remove seeks that have been fully drained
-                    seeks_list.retain(|LockedSeek { amount, .. }| *amount != Amount::ZERO);
+                    // TODO shaurya note that SeekMetadata updating was removed
+                    drain_in_reverse(seeks_list, |s| &mut s.amount, amount_to_unlock)
+                } else {
+                    Amount::ZERO
                 }
             }
             AccountType::Provider => {
                 if let Some(provides_list) = locked_provides.get_mut(&key.0) {
-                    let mut msats_left_to_unlock = match unlock_amount {
+                    let amount_to_unlock = match unlock_amount {
                         UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
                             fiat_amount.to_btc_amount(new_price)
                         }
                         UnlockForWithdrawalAmount::All => {
                             provides_list.iter().map(|p| p.amount).sum()
                         }
-                    }
-                    .msats;
+                    };
 
-                    // Iterate in reverse to ensure older sequences are preserved
-                    for LockedProvide { amount, .. } in provides_list.iter_mut().rev() {
-                        if msats_left_to_unlock == 0 {
-                            break;
-                        }
-
-                        let cancellable = msats_left_to_unlock.min(amount.msats.into());
-
-                        // `cancellable` is the min of two valid msat values. Since an msat value is
-                        // guaranteed to fit within u64, so is `cancellable`
-                        amount.msats -= TryInto::<u64>::try_into(cancellable).unwrap();
-                        msats_left_to_unlock -= cancellable;
-                        msats_already_unlocked += cancellable;
-                    }
-
-                    // Remove provides that have been fully drained
-                    provides_list.retain(|LockedProvide { amount, .. }| *amount != Amount::ZERO);
+                    drain_in_reverse(provides_list, |p| &mut p.amount, amount_to_unlock)
+                } else {
+                    Amount::ZERO
                 }
             }
-        }
+        };
 
         // Move unlocked msats to idle balance and remove account's unlock request
         let idle_balance_key = IdleBalanceKey(key.0);
-        let mut idle_balance = dbtx
+        let idle_balance = dbtx
             .get_value(&idle_balance_key)
             .await
             .unwrap_or(Amount::ZERO);
 
-        // `msats_already_unlocked` is an accrued value calculated by taking the user's
-        // seeks (or provides) and draining them according to the specified
-        // unlock request amount. Since the sum of the user's seeks (or provides)
-        // cannot exceed 21 million BTC, `msats_already_unlocked` cannot exceed
-        // 21 million BTC, and must therefore fit within u64.
-        idle_balance.msats += TryInto::<u64>::try_into(msats_already_unlocked).unwrap();
-        dbtx.insert_entry(&idle_balance_key, &idle_balance).await;
+        dbtx.insert_entry(&idle_balance_key, &(idle_balance + amount_unlocked))
+            .await;
         dbtx.remove_entry(&key).await;
     }
 }
@@ -1703,4 +1634,31 @@ fn ceil_division(dividend: u128, divisor: u128) -> u128 {
     } else {
         dividend / divisor + 1
     }
+}
+
+/// Remove amount from items in reverse order. If an item's amount hits 0, the
+/// item itself is removed. Returns the actual amount that was able to be
+/// drained from all items.
+fn drain_in_reverse<T>(
+    items: &mut Vec<T>,
+    get_amount: impl Fn(&mut T) -> &mut Amount,
+    total_to_drain: Amount,
+) -> Amount {
+    let mut left_to_drain = total_to_drain;
+    while let Some(mut item) = items.pop() {
+        if left_to_drain == Amount::ZERO {
+            break;
+        }
+
+        let item_amount = get_amount(&mut item);
+        let min_extractable = Amount::from_msats(item_amount.msats.min(left_to_drain.msats));
+        *item_amount -= min_extractable;
+        left_to_drain -= min_extractable;
+
+        // reinsert not completely drained value
+        if *item_amount != Amount::ZERO {
+            items.push(item);
+        }
+    }
+    total_to_drain - left_to_drain
 }

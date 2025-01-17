@@ -4,7 +4,8 @@ use std::time::SystemTime;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId, TransactionId};
 use stability_pool_common::{
-    AccountId, FiatAmount, LockedProvide, LockedSeek, SeekMetadata, StabilityPoolConsensusItem, StagedProvide, StagedSeek, UnlockForWithdrawalAmount
+    AccountId, FiatAmount, LockedProvide, LockedSeek, SeekMetadata, StabilityPoolConsensusItem,
+    StagedProvide, StagedSeek, UnlockForWithdrawalAmount,
 };
 
 #[repr(u8)]
