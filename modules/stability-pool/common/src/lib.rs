@@ -245,7 +245,7 @@ pub struct UnlockForWithdrawalInput {
 }
 
 /// Request unlocking of the given FiatAmount, or ALL of the account's holdings.
-#[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
 pub enum UnlockForWithdrawalAmount {
     Fiat(FiatAmount),
     All,
@@ -579,6 +579,34 @@ impl Default for SeekMetadata {
             fully_withdrawn: false,
         }
     }
+}
+
+/// After submitting the TX to unlock funds, clients will query the server for
+/// the status of the unlock request. Since we have decided that there can only
+/// be one at most 1 active unlock request at a time, there are two possible
+/// statuses:
+/// - Pending: the request hasn't been fully processed yet, meaning the cycle
+///   turnover hasn't yet happened. In this case we respond to the client with
+///   the start time of the next cycle so the client can sleep until the next
+///   cycle and then retry.
+/// - NoActiveRequest: the request is no longer present on the server.
+///   Theoretically, this could mean one of three things:
+///   1. An unlock request was never submitted in a TX (or the TX was rejected).
+///   2. The unlock request was able to be immediately satisfied using staged
+///      balance only.
+///   3. The unlock request was registered to be processed at the next cycle
+///      turnover, and that has already happened.
+///
+/// (1) is rather unlikely, as the client will start the withdrawal flow with an
+/// unlock request TX, and should that TX fail, it will not attempt to
+/// query the unlock request status. For both (2) and (3), the client only
+/// needs to know the amount that can now be swept from idle balance. Even
+/// though the client can query for the idle balance separately, we just
+/// return it within the status to save the client an extra API call.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encodable, Decodable)]
+pub enum UnlockRequestStatus {
+    Pending { next_cycle_start_time: u64 },
+    NoActiveRequest { idle_balance: Amount },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encodable, Decodable)]

@@ -4,11 +4,14 @@ use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiError, ApiVersion};
 use fedimint_core::Amount;
 use futures::{stream, StreamExt};
-use stability_pool_common::{AccountId, AccountInfo, FiatAmount, LiquidityStats};
+use stability_pool_common::{
+    AccountId, AccountInfo, FiatAmount, LiquidityStats, UnlockRequestStatus,
+};
 
 use crate::db::{
     CurrentCycleKey, Cycle, IdleBalanceKey, PastCycleKeyPrefix, SeekMetadataAccountPrefix,
     StagedProvidesKey, StagedProvidesKeyPrefix, StagedSeeksKey, StagedSeeksKeyPrefix,
+    UnlockRequestKey,
 };
 use crate::StabilityPool;
 
@@ -43,10 +46,10 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
             }
         },
         api_endpoint! {
-            "wait_cancellation_processed",
+            "unlock_request_status",
             ApiVersion::new(0, 0),
-            async |_module: &StabilityPool, context, request: AccountId| -> Amount {
-                Ok(wait_cancellation_processed(context, request).await?)
+            async |module: &StabilityPool, context, request: AccountId| -> UnlockRequestStatus {
+                Ok(unlock_request_status(context, request, module).await?)
             }
         },
         api_endpoint! {
@@ -163,46 +166,24 @@ pub async fn cycle_start_price(
     Ok(current_cycle_start_price)
 }
 
-/// Wait until the given account's staged cancellation is processed
-/// and return the amount of idle balance that can be withdrawn.
-pub async fn wait_cancellation_processed(
+/// See [`stability_pool_common::UnlockRequestStatus`]
+pub async fn unlock_request_status(
     context: &mut ApiEndpointContext<'_>,
     account: AccountId,
-) -> anyhow::Result<Amount, ApiError> {
-    let _ = (context, account);
-    todo!()
-    // let mut dbtx = context.dbtx().into_nc();
-    // let starting_idle_balance = match
-    // dbtx.get_value(&IdleBalanceKey(account)).await {     Some(amt) =>
-    // amt,     None => Amount::ZERO,
-    // };
-
-    // let staged_cancellation =
-    // dbtx.get_value(&StagedCancellationKey(account)).await; drop(dbtx);
-
-    // match staged_cancellation {
-    //     Some(_) => {
-    //         // Cancellation is successfully processed when a higher idle
-    // balance exists than         // the one we initially recorded.
-    //         let future = context
-    //             .wait_value_matches(IdleBalanceKey(account),
-    // |IdleBalance(new_idle_balance)| {                 *new_idle_balance >
-    // starting_idle_balance             });
-    //         Ok(future.await.0)
-    //     }
-    //     None => {
-    //         // If there's no staged cancellation but idle balance exists,
-    //         // it's possible that the staged cancellation was already
-    // processed.         // So we just return the amount of the idle
-    // balance.         if starting_idle_balance != Amount::ZERO {
-    //             Ok(starting_idle_balance)
-    //         } else {
-    //             Err(ApiError::bad_request(
-    //                 "No staged cancellation or idle balance for
-    // account".to_owned(),             ))
-    //         }
-    //     }
-    // }
+    stability_pool: &StabilityPool,
+) -> anyhow::Result<UnlockRequestStatus, ApiError> {
+    let mut dbtx = context.dbtx().into_nc();
+    Ok(match dbtx.get_value(&UnlockRequestKey(account)).await {
+        Some(_) => UnlockRequestStatus::Pending {
+            next_cycle_start_time: next_cycle_start_time(&mut dbtx, stability_pool).await?,
+        },
+        None => UnlockRequestStatus::NoActiveRequest {
+            idle_balance: dbtx
+                .get_value(&IdleBalanceKey(account))
+                .await
+                .unwrap_or(Amount::ZERO),
+        },
+    })
 }
 
 /// Return a snapshot of the current aggregate liquidity stats including
@@ -269,6 +250,12 @@ pub async fn average_fee_rate(
 ) -> anyhow::Result<u64, ApiError> {
     if num_cycles == 0 {
         return Err(ApiError::bad_request("num_cycles must be non-0".to_owned()));
+    }
+
+    if num_cycles > 2100 {
+        return Err(ApiError::bad_request(
+            "num_cycles cannot exceed 2100".to_owned(),
+        ));
     }
 
     let current_cycle = dbtx

@@ -1644,12 +1644,12 @@ fn drain_in_reverse<T>(
     get_amount: impl Fn(&mut T) -> &mut Amount,
     total_to_drain: Amount,
 ) -> Amount {
+    if total_to_drain == Amount::ZERO {
+        return Amount::ZERO;
+    }
+
     let mut left_to_drain = total_to_drain;
     while let Some(mut item) = items.pop() {
-        if left_to_drain == Amount::ZERO {
-            break;
-        }
-
         let item_amount = get_amount(&mut item);
         let min_extractable = Amount::from_msats(item_amount.msats.min(left_to_drain.msats));
         *item_amount -= min_extractable;
@@ -1658,6 +1658,10 @@ fn drain_in_reverse<T>(
         // reinsert not completely drained value
         if *item_amount != Amount::ZERO {
             items.push(item);
+        }
+
+        if left_to_drain == Amount::ZERO {
+            break;
         }
     }
     total_to_drain - left_to_drain
