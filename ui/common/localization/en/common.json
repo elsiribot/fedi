@@ -393,6 +393,7 @@
             "download-logs": "Download logs",
             "export-transactions-csv": "Export transactions CSV",
             "log-fcm-token": "Log FCM token",
+            "show-fcm-token": "Show FCM token",
             "logs": "Logs",
             "nightly": "nightly",
             "share-logs": "Share logs",
