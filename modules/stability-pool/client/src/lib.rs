@@ -8,8 +8,8 @@ use anyhow::bail;
 use async_stream::stream;
 use common::config::StabilityPoolClientConfig;
 use common::{
-    AccountInfo, LiquidityStats, Provide, Seek, StabilityPoolCommonGen, StabilityPoolInput,
-    StabilityPoolModuleTypes, StabilityPoolOutput,
+    AccountInfo, LiquidityStats, ProvideRequest, SeekRequest, StabilityPoolCommonGen,
+    StabilityPoolInput, StabilityPoolModuleTypes, StabilityPoolOutput,
 };
 use db::AccountInfoKey;
 use fedimint_api_client::api::{DynModuleApi, FederationApiExt as _, FederationError};
@@ -589,7 +589,7 @@ impl StabilityPoolClientModule {
             self,
             StabilityPoolOutputV0::DepositToSeek(DepositToSeekOutput {
                 account_id: self.our_account(AccountType::Seeker).id(),
-                seek: Seek(amount),
+                seek_request: SeekRequest(amount),
             }),
         )
         .await?;
@@ -605,7 +605,7 @@ impl StabilityPoolClientModule {
             self,
             StabilityPoolOutputV0::DepositToProvide(DepositToProvideOutput {
                 account_id: self.our_account(AccountType::Provider).id(),
-                provide: Provide {
+                provide_request: ProvideRequest {
                     amount,
                     min_fee_rate,
                 },
@@ -807,8 +807,8 @@ async fn submit_tx_with_output(
     let operation_id = OperationId::new_random();
     let client_ctx = &module.client_ctx;
     let amount = match output_v0 {
-        StabilityPoolOutputV0::DepositToSeek(ref output) => output.seek.0,
-        StabilityPoolOutputV0::DepositToProvide(ref output) => output.provide.amount,
+        StabilityPoolOutputV0::DepositToSeek(ref output) => output.seek_request.0,
+        StabilityPoolOutputV0::DepositToProvide(ref output) => output.provide_request.amount,
     };
     let output = ClientOutputBundle::new(
         vec![ClientOutput {
