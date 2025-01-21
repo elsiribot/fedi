@@ -340,16 +340,13 @@ pub struct Provide {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct StagedSeek {
-    pub txid: TransactionId,
-    pub sequence: u64,
-    pub seek: Seek,
+    pub deposit: Deposit,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct StagedProvide {
-    pub txid: TransactionId,
-    pub sequence: u64,
-    pub provide: Provide,
+    pub deposit: Deposit,
+    pub min_fee_rate: u64,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
@@ -512,17 +509,20 @@ plugin_types_trait_impl_common!(
 
 #[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct LockedSeek {
-    pub staged_txid: TransactionId,
-    pub staged_sequence: u64,
+    pub deposit: Deposit,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize, Hash)]
+pub struct Deposit {
+    pub txid: TransactionId,
+    pub sequence: u64,
     pub amount: Amount,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct LockedProvide {
-    pub staged_txid: TransactionId,
-    pub staged_sequence: u64,
-    pub staged_min_fee_rate: u64,
-    pub amount: Amount,
+    pub deposit: Deposit,
+    pub min_fee_rate: u64,
 }
 
 impl Display for StabilityPoolInputV0 {
