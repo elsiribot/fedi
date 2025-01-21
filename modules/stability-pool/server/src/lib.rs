@@ -30,13 +30,16 @@ use fedimint_core::config::{
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleInstanceId;
-use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
+use fedimint_core::db::{
+    DatabaseKey, DatabaseRecord, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped,
+};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
     ApiEndpoint, CoreConsensusVersion, InputMeta, ModuleConsensusVersion, ModuleInit, PeerHandle,
     ServerModuleInit, ServerModuleInitArgs, SupportedModuleApiVersions, TransactionItemAmount,
 };
 use fedimint_core::server::DynServerModule;
+use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{Amount, NumPeersExt, OutPoint, PeerId, ServerModule, TransactionId};
 use futures::{stream, StreamExt};
 use itertools::Itertools;
@@ -598,166 +601,78 @@ impl ServerModule for StabilityPool {
     }
 }
 
-async fn process_unlock_input<'a, 'b>(
-    dbtx: &mut DatabaseTransaction<'b>,
-    input: &'a UnlockForWithdrawalInput,
-) -> Result<InputMeta, StabilityPoolInputError> {
+async fn process_unlock_input_inner<K, D>(
+    dbtx: &mut DatabaseTransaction<'_>,
+    input: &UnlockForWithdrawalInput,
+    staged_key: &K,
+    locked_deposits: &[D],
+    btc_price: FiatAmount,
+) -> Result<InputMeta, StabilityPoolInputError>
+where
+    D: AsMut<Deposit> + AsRef<Deposit> + MaybeSend + MaybeSync,
+    K: DatabaseKey + DatabaseRecord<Value = Vec<D>> + MaybeSend + MaybeSync,
+{
     let unlock_key = UnlockRequestKey(input.account.id());
     if dbtx.get_value(&unlock_key).await.is_some() {
         return Err(StabilityPoolInputError::DuplicateUnlockRequest);
     }
 
-    let current_cycle = dbtx
-        .get_value(&CurrentCycleKey)
-        .await
-        .ok_or(StabilityPoolInputError::TemporaryError)?;
-    let btc_price = current_cycle.start_price;
-
     let mut idle_balance_credit = Amount::ZERO;
-    match input.account.acc_type() {
-        AccountType::Seeker => {
-            let staged_key = StagedSeeksKey(input.account.id());
-            let mut staged_seeks = dbtx.get_value(&staged_key).await.unwrap_or_default();
-            let locked_seeks_sum = current_cycle
-                .locked_seeks
-                .get(&input.account.id())
-                .map_or(Amount::ZERO, |seeks| {
-                    seeks.iter().map(|s| s.deposit.amount).sum()
-                });
-            match input.amount {
-                UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
-                    let amount = fiat_amount
-                        .to_btc_amount(btc_price)
-                        .map_err(|_| StabilityPoolInputError::TemporaryError)?;
-                    let staged_balance = staged_seeks
-                        .iter()
-                        .map(|s| s.deposit.amount)
-                        .sum::<Amount>();
-                    let seeker_balance = staged_balance + locked_seeks_sum;
+    let mut staged_deposits = dbtx.get_value(staged_key).await.unwrap_or_default();
+    let locked_deposits_sum = locked_deposits.iter().map(|d| d.as_ref().amount).sum();
+    match input.amount {
+        UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
+            let amount = fiat_amount
+                .to_btc_amount(btc_price)
+                .map_err(|_| StabilityPoolInputError::TemporaryError)?;
+            let staged_deposits_sum = staged_deposits
+                .iter()
+                .map(|d| d.as_ref().amount)
+                .sum::<Amount>();
+            let total_deposits_sum = staged_deposits_sum + locked_deposits_sum;
 
-                    if seeker_balance < amount {
-                        return Err(StabilityPoolInputError::InsufficientBalance);
-                    }
+            if total_deposits_sum < amount {
+                return Err(StabilityPoolInputError::InsufficientBalance);
+            }
 
-                    // Drain staged seeks in reverse (newest to oldest).
-                    let mut amount_needed = amount;
-                    if staged_seeks.is_empty().not() {
-                        let drained = drain_in_reverse(
-                            &mut staged_seeks,
-                            |s| &mut s.deposit.amount,
-                            amount_needed,
-                        );
-                        amount_needed -= drained;
-                        idle_balance_credit = drained;
-                        dbtx.insert_entry(&staged_key, &staged_seeks).await;
-                    }
+            // Drain staged deposits in reverse (newest to oldest).
+            let mut amount_needed = amount;
+            if staged_deposits.is_empty().not() {
+                let drained = drain_in_reverse(
+                    &mut staged_deposits,
+                    |d| &mut d.as_mut().amount,
+                    amount_needed,
+                );
+                amount_needed -= drained;
+                idle_balance_credit = drained;
+                dbtx.insert_entry(staged_key, &staged_deposits).await;
+            }
 
-                    // If staged seeks were not enough, register an unlock
-                    // request for the leftover fiat amount
-                    if amount_needed != Amount::ZERO {
-                        let leftover_fiat = FiatAmount::from_btc_amount(amount_needed, btc_price)
-                            .map_err(|_| StabilityPoolInputError::TemporaryError)?;
-                        dbtx.insert_entry(
-                            &unlock_key,
-                            &UnlockForWithdrawalAmount::Fiat(leftover_fiat),
-                        )
-                        .await;
-                    }
-                }
-                UnlockForWithdrawalAmount::All => {
-                    // If there are no staged or locked seeks, report error
-                    if staged_seeks.is_empty() && locked_seeks_sum == Amount::ZERO {
-                        return Err(StabilityPoolInputError::InsufficientBalance);
-                    }
-
-                    // If applicable, clear all staged seeks and credit idle balance
-                    if staged_seeks.is_empty().not() {
-                        dbtx.remove_entry(&staged_key).await;
-                        idle_balance_credit = staged_seeks.iter().map(|s| s.deposit.amount).sum();
-                    }
-
-                    // If there are locked seeks present, register an unlock request for ALL
-                    if locked_seeks_sum != Amount::ZERO {
-                        dbtx.insert_entry(
-                            &UnlockRequestKey(input.account.id()),
-                            &UnlockForWithdrawalAmount::All,
-                        )
-                        .await;
-                    }
-                }
+            // If staged deposits were not enough, register an unlock
+            // request for the leftover fiat amount
+            if amount_needed != Amount::ZERO {
+                let leftover_fiat = FiatAmount::from_btc_amount(amount_needed, btc_price)
+                    .map_err(|_| StabilityPoolInputError::TemporaryError)?;
+                dbtx.insert_entry(&unlock_key, &UnlockForWithdrawalAmount::Fiat(leftover_fiat))
+                    .await;
             }
         }
-        AccountType::Provider => {
-            let staged_key = StagedProvidesKey(input.account.id());
-            let mut staged_provides = dbtx.get_value(&staged_key).await.unwrap_or_default();
-            let locked_provides_sum = current_cycle
-                .locked_provides
-                .get(&input.account.id())
-                .map_or(Amount::ZERO, |provides| {
-                    provides.iter().map(|p| p.deposit.amount).sum()
-                });
-            match input.amount {
-                UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
-                    let amount = fiat_amount
-                        .to_btc_amount(btc_price)
-                        .map_err(|_| StabilityPoolInputError::TemporaryError)?;
-                    let staged_balance = staged_provides
-                        .iter()
-                        .map(|p| p.deposit.amount)
-                        .sum::<Amount>();
-                    let provider_balance = staged_balance + locked_provides_sum;
+        UnlockForWithdrawalAmount::All => {
+            // If there are no staged or locked deposits, report error
+            if staged_deposits.is_empty() && locked_deposits_sum == Amount::ZERO {
+                return Err(StabilityPoolInputError::InsufficientBalance);
+            }
 
-                    if provider_balance < amount {
-                        return Err(StabilityPoolInputError::InsufficientBalance);
-                    }
+            // If applicable, clear all staged deposits and credit idle balance
+            if staged_deposits.is_empty().not() {
+                dbtx.remove_entry(staged_key).await;
+                idle_balance_credit = staged_deposits.iter().map(|d| d.as_ref().amount).sum();
+            }
 
-                    // Drain staged provides in reverse (newest to oldest)
-                    let mut amount_needed = amount;
-                    if staged_provides.is_empty().not() {
-                        let drained = drain_in_reverse(
-                            &mut staged_provides,
-                            |s| &mut s.deposit.amount,
-                            amount_needed,
-                        );
-                        amount_needed -= drained;
-                        idle_balance_credit = drained;
-                        dbtx.insert_entry(&staged_key, &staged_provides).await;
-                    }
-
-                    // If staged provides were not enough, register an unlock
-                    // request for the leftover fiat amount
-                    if amount_needed != Amount::ZERO {
-                        let leftover_fiat = FiatAmount::from_btc_amount(amount_needed, btc_price)
-                            .map_err(|_| StabilityPoolInputError::TemporaryError)?;
-                        dbtx.insert_entry(
-                            &unlock_key,
-                            &UnlockForWithdrawalAmount::Fiat(leftover_fiat),
-                        )
-                        .await;
-                    }
-                }
-                UnlockForWithdrawalAmount::All => {
-                    // If there are no staged or locked provides, report error
-                    if staged_provides.is_empty() && locked_provides_sum == Amount::ZERO {
-                        return Err(StabilityPoolInputError::InsufficientBalance);
-                    }
-
-                    // If applicable, clear all staged provides and credit idle balance
-                    if staged_provides.is_empty().not() {
-                        dbtx.remove_entry(&staged_key).await;
-                        idle_balance_credit =
-                            staged_provides.iter().map(|p| p.deposit.amount).sum();
-                    }
-
-                    // If there are locked provides present, register an unlock request for ALL
-                    if locked_provides_sum != Amount::ZERO {
-                        dbtx.insert_entry(
-                            &UnlockRequestKey(input.account.id()),
-                            &UnlockForWithdrawalAmount::All,
-                        )
-                        .await;
-                    }
-                }
+            // If there are locked deposits present, register an unlock request for ALL
+            if locked_deposits_sum != Amount::ZERO {
+                dbtx.insert_entry(&unlock_key, &UnlockForWithdrawalAmount::All)
+                    .await;
             }
         }
     }
@@ -779,6 +694,47 @@ async fn process_unlock_input<'a, 'b>(
             .as_single()
             .ok_or(StabilityPoolInputError::MultiSigNotAllowed)?,
     })
+}
+
+async fn process_unlock_input<'a, 'b>(
+    dbtx: &mut DatabaseTransaction<'b>,
+    input: &'a UnlockForWithdrawalInput,
+) -> Result<InputMeta, StabilityPoolInputError> {
+    let current_cycle = dbtx
+        .get_value(&CurrentCycleKey)
+        .await
+        .ok_or(StabilityPoolInputError::TemporaryError)?;
+
+    match input.account.acc_type() {
+        AccountType::Seeker => {
+            let staged_key = StagedSeeksKey(input.account.id());
+            process_unlock_input_inner(
+                dbtx,
+                input,
+                &staged_key,
+                current_cycle
+                    .locked_seeks
+                    .get(&input.account.id())
+                    .unwrap_or(&vec![]),
+                current_cycle.start_price,
+            )
+            .await
+        }
+        AccountType::Provider => {
+            let staged_key = StagedProvidesKey(input.account.id());
+            process_unlock_input_inner(
+                dbtx,
+                input,
+                &staged_key,
+                current_cycle
+                    .locked_provides
+                    .get(&input.account.id())
+                    .unwrap_or(&vec![]),
+                current_cycle.start_price,
+            )
+            .await
+        }
+    }
 }
 
 async fn process_withdrawal_input<'a, 'b>(
@@ -1200,7 +1156,7 @@ async fn extract_sorted_staged_seeks_and_provides(
                     min_fee_rate: fee_b,
                     ..
                 },
-            )| fee_b.cmp(fee_a).then(a.sequence.cmp(&b.sequence)),
+            )| fee_a.cmp(fee_b).then(a.sequence.cmp(&b.sequence)),
         )
         .collect::<VecDeque<_>>();
     dbtx.remove_by_prefix(&StagedProvidesKeyPrefix).await;

@@ -349,6 +349,29 @@ pub struct Provide {
     pub min_fee_rate: u64,
 }
 
+impl AsRef<Deposit> for Seek {
+    fn as_ref(&self) -> &Deposit {
+        &self.deposit
+    }
+}
+impl AsRef<Deposit> for Provide {
+    fn as_ref(&self) -> &Deposit {
+        &self.deposit
+    }
+}
+
+impl AsMut<Deposit> for Seek {
+    fn as_mut(&mut self) -> &mut Deposit {
+        &mut self.deposit
+    }
+}
+
+impl AsMut<Deposit> for Provide {
+    fn as_mut(&mut self) -> &mut Deposit {
+        &mut self.deposit
+    }
+}
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct StabilityPoolOutputOutcomeV0;
 
