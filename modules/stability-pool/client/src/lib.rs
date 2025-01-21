@@ -1,11 +1,12 @@
 use std::collections::BTreeMap;
-use std::ffi;
 use std::ops::Not;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
+use std::{ffi, iter};
 
 use anyhow::bail;
 use async_stream::stream;
+use clap::{Parser, ValueEnum};
 use common::config::StabilityPoolClientConfig;
 use common::{
     AccountInfo, LiquidityStats, Provide, Seek, StabilityPoolCommonGen, StabilityPoolInput,
@@ -147,39 +148,19 @@ impl ClientModule for StabilityPoolClientModule {
         &self,
         args: &[ffi::OsString],
     ) -> anyhow::Result<serde_json::Value> {
-        if args.is_empty() {
-            bail!("Expected to be called with at least 1 argument: <command> …");
-        }
+        let command = CliCommand::parse_from(
+            iter::once(&ffi::OsString::from("stability-pool")).chain(args.iter()),
+        );
 
-        let command = args[0].to_string_lossy();
+        match command {
+            CliCommand::Pubkey => Ok(serde_json::to_value(self.client_key_pair.public_key())?),
 
-        // TODO shaurya update some of the commands below to optionally accept Account?
-        // TODO shaurya store in client DB all the Accounts we are part of?
-        // TODO shaurya include in module-level backup all the Accounts we are part of?
-        match command.as_ref() {
-            "pubkey" => Ok(serde_json::to_value(self.client_key_pair.public_key())?),
-            "account-info" => {
-                if args.len() != 2 {
-                    bail!("`account-info` command expects 1 arguments: seeker|provider");
-                }
+            CliCommand::AccountInfo { account_type } => Ok(serde_json::to_value(
+                self.account_info(account_type.into(), true).await?,
+            )?),
 
-                let acc_type = match args[1].to_string_lossy().to_lowercase().as_str() {
-                    "seeker" => AccountType::Seeker,
-                    "provider" => AccountType::Provider,
-                    acc_type => bail!("Invalid account type {acc_type}, must be one of \"seeker\" or \"provider\"")
-                };
-
-                Ok(serde_json::to_value(
-                    self.account_info(acc_type, true).await?,
-                )?)
-            }
-            "deposit-to-seek" => {
-                if args.len() != 2 {
-                    bail!("`deposit-to-seek` command expects 1 argument: <amount_msats>");
-                }
-
-                let seek_amount = args[1].to_string_lossy().parse::<Amount>()?;
-                let operation_id = self.deposit_to_seek(seek_amount).await?;
+            CliCommand::DepositToSeek { amount_msats } => {
+                let operation_id = self.deposit_to_seek(amount_msats).await?;
                 let mut updates = self
                     .subscribe_deposit_operation(operation_id)
                     .await?
@@ -201,18 +182,12 @@ impl ClientModule for StabilityPoolClientModule {
                     "deposit-to-seek success".to_string(),
                 ))
             }
-            "deposit-to-provide" => {
-                if args.len() != 3 {
-                    bail!(
-                        "`deposit-to-provide` command expects 2 arguments: <amount_msats> <fee_rate_ppb>"
-                    );
-                }
 
-                let provide_amount = args[1].to_string_lossy().parse::<Amount>()?;
-                let provide_fee_rate = args[2].to_string_lossy().parse::<u64>()?;
-                let operation_id = self
-                    .deposit_to_provide(provide_amount, provide_fee_rate)
-                    .await?;
+            CliCommand::DepositToProvide {
+                amount_msats,
+                fee_rate_ppb,
+            } => {
+                let operation_id = self.deposit_to_provide(amount_msats, fee_rate_ppb).await?;
                 let mut updates = self
                     .subscribe_deposit_operation(operation_id)
                     .await?
@@ -234,28 +209,12 @@ impl ClientModule for StabilityPoolClientModule {
                     "deposit-to-provide success".to_string(),
                 ))
             }
-            "withdraw" => {
-                if args.len() != 3 {
-                    bail!(
-                        "`withdraw` command expects 2 arguments: seeker|provider fiat_amount|all"
-                    );
-                }
 
-                let acc_type = match args[1].to_string_lossy().to_lowercase().as_str() {
-                    "seeker" => AccountType::Seeker,
-                    "provider" => AccountType::Provider,
-                    acc_type => bail!("Invalid account type {acc_type}, must be one of \"seeker\" or \"provider\"")
-                };
-
-                let withdrawal_amount = match args[2].to_string_lossy().parse::<u64>() {
-                    Ok(fiat) => UnlockForWithdrawalAmount::Fiat(FiatAmount(fiat)),
-                    Err(_) => match args[2].to_string_lossy().to_lowercase().as_str() {
-                        "all" => UnlockForWithdrawalAmount::All,
-                        amt => bail!("Invalid withdrawal amount {amt}, must be \"all\" or a u64"),
-                    },
-                };
-
-                let (operation_id, _) = self.withdraw(acc_type, withdrawal_amount).await?;
+            CliCommand::Withdraw {
+                account_type,
+                amount,
+            } => {
+                let (operation_id, _) = self.withdraw(account_type.into(), amount).await?;
                 let mut updates = self.subscribe_withdraw(operation_id).await?.into_stream();
 
                 while let Some(update) = updates.next().await {
@@ -278,17 +237,6 @@ impl ClientModule for StabilityPoolClientModule {
 
                 Ok(serde_json::Value::String("withdraw success".to_string()))
             }
-            command => bail!(
-                "Unknown command: {command}, supported commands: {}",
-                [
-                    "pubkey",
-                    "account-info",
-                    "deposit-to-seek",
-                    "deposit-to-provide",
-                    "withdraw",
-                ]
-                .join(", ")
-            ),
         }
     }
 }
@@ -914,4 +862,59 @@ where
     let StabilityPoolStateMachine::Withdrawal(sm) =
         stream.next().await.expect("Stream must have next");
     sm.state
+}
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ValueEnum)]
+pub enum AccountTypeArg {
+    Seeker,
+    Provider,
+}
+
+impl From<AccountTypeArg> for AccountType {
+    fn from(arg: AccountTypeArg) -> Self {
+        match arg {
+            AccountTypeArg::Seeker => AccountType::Seeker,
+            AccountTypeArg::Provider => AccountType::Provider,
+        }
+    }
+}
+
+fn parse_withdrawal_amount(s: &str) -> Result<UnlockForWithdrawalAmount, String> {
+    match s.to_lowercase().as_str() {
+        "all" => Ok(UnlockForWithdrawalAmount::All),
+        amount => amount
+            .parse::<u64>()
+            .map(|fiat| UnlockForWithdrawalAmount::Fiat(FiatAmount(fiat)))
+            .map_err(|_| format!("Invalid withdrawal amount {amount}, must be \"all\" or a u64")),
+    }
+}
+
+#[derive(Parser, Debug, Serialize)]
+pub enum CliCommand {
+    /// Get the public key of this client
+    Pubkey,
+    /// Get account info for seeker or provider account
+    AccountInfo {
+        #[arg(value_enum)]
+        account_type: AccountTypeArg,
+    },
+    /// Deposit amount to seek liquidity
+    DepositToSeek {
+        /// Amount in msats to deposit
+        amount_msats: Amount,
+    },
+    /// Deposit amount to provide liquidity
+    DepositToProvide {
+        /// Amount in msats to deposit
+        amount_msats: Amount,
+        /// Fee rate in parts per billion
+        fee_rate_ppb: u64,
+    },
+    /// Withdraw from seeker or provider account
+    Withdraw {
+        #[arg(value_enum)]
+        account_type: AccountTypeArg,
+        #[arg(value_parser = parse_withdrawal_amount)]
+        amount: UnlockForWithdrawalAmount,
+    },
 }
