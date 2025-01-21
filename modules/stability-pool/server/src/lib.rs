@@ -417,7 +417,7 @@ impl ServerModule for StabilityPool {
                 &mut current_cycle.locked_provides,
                 new_price,
             )
-            .await;
+            .await?;
             restage_remaining_locks(
                 dbtx,
                 current_cycle.locked_seeks,
@@ -437,7 +437,7 @@ impl ServerModule for StabilityPool {
             new_price,
             randomness,
         )
-        .await;
+        .await?;
         dbtx.remove_by_prefix(&vote_cycle_index_prefix).await;
         Ok(())
     }
@@ -620,7 +620,9 @@ async fn process_unlock_input<'a, 'b>(
                 .map_or(Amount::ZERO, |seeks| seeks.iter().map(|s| s.amount).sum());
             match input.amount {
                 UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
-                    let amount = fiat_amount.to_btc_amount(btc_price);
+                    let amount = fiat_amount
+                        .to_btc_amount(btc_price)
+                        .map_err(|_| StabilityPoolInputError::TemporaryError)?;
                     let staged_balance = staged_seeks.iter().map(|s| s.seek.0).sum::<Amount>();
                     let seeker_balance = staged_balance + locked_seeks_sum;
 
@@ -641,7 +643,8 @@ async fn process_unlock_input<'a, 'b>(
                     // If staged seeks were not enough, register an unlock
                     // request for the leftover fiat amount
                     if amount_needed != Amount::ZERO {
-                        let leftover_fiat = FiatAmount::from_btc_amount(amount_needed, btc_price);
+                        let leftover_fiat = FiatAmount::from_btc_amount(amount_needed, btc_price)
+                            .map_err(|_| StabilityPoolInputError::TemporaryError)?;
                         dbtx.insert_entry(
                             &unlock_key,
                             &UnlockForWithdrawalAmount::Fiat(leftover_fiat),
@@ -683,7 +686,9 @@ async fn process_unlock_input<'a, 'b>(
                 });
             match input.amount {
                 UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
-                    let amount = fiat_amount.to_btc_amount(btc_price);
+                    let amount = fiat_amount
+                        .to_btc_amount(btc_price)
+                        .map_err(|_| StabilityPoolInputError::TemporaryError)?;
                     let staged_balance = staged_provides
                         .iter()
                         .map(|p| p.provide.amount)
@@ -710,7 +715,8 @@ async fn process_unlock_input<'a, 'b>(
                     // If staged provides were not enough, register an unlock
                     // request for the leftover fiat amount
                     if amount_needed != Amount::ZERO {
-                        let leftover_fiat = FiatAmount::from_btc_amount(amount_needed, btc_price);
+                        let leftover_fiat = FiatAmount::from_btc_amount(amount_needed, btc_price)
+                            .map_err(|_| StabilityPoolInputError::TemporaryError)?;
                         dbtx.insert_entry(
                             &unlock_key,
                             &UnlockForWithdrawalAmount::Fiat(leftover_fiat),
@@ -967,7 +973,7 @@ async fn process_unlock_requests(
     locked_seeks: &mut BTreeMap<AccountId, Vec<LockedSeek>>,
     locked_provides: &mut BTreeMap<AccountId, Vec<LockedProvide>>,
     new_price: FiatAmount,
-) {
+) -> anyhow::Result<()> {
     let unlock_requests = dbtx
         .find_by_prefix(&UnlockRequestsKeyPrefix)
         .await
@@ -980,7 +986,7 @@ async fn process_unlock_requests(
                 if let Some(seeks_list) = locked_seeks.get_mut(&key.0) {
                     let amount_to_unlock = match unlock_amount {
                         UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
-                            fiat_amount.to_btc_amount(new_price)
+                            fiat_amount.to_btc_amount(new_price)?
                         }
                         UnlockForWithdrawalAmount::All => seeks_list.iter().map(|s| s.amount).sum(),
                     };
@@ -995,7 +1001,7 @@ async fn process_unlock_requests(
                 if let Some(provides_list) = locked_provides.get_mut(&key.0) {
                     let amount_to_unlock = match unlock_amount {
                         UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
-                            fiat_amount.to_btc_amount(new_price)
+                            fiat_amount.to_btc_amount(new_price)?
                         }
                         UnlockForWithdrawalAmount::All => {
                             provides_list.iter().map(|p| p.amount).sum()
@@ -1020,6 +1026,8 @@ async fn process_unlock_requests(
             .await;
         dbtx.remove_entry(&key).await;
     }
+
+    Ok(())
 }
 
 async fn restage_remaining_locks(
@@ -1111,7 +1119,7 @@ async fn calculate_locks_and_write_cycle(
     time: SystemTime,
     price: FiatAmount,
     randomness: usize,
-) {
+) -> anyhow::Result<()> {
     let (mut staged_seeks, mut staged_provides) =
         extract_sorted_staged_seeks_and_provides(dbtx).await;
     let LockedProvidesAndFeeRateResult {
@@ -1147,7 +1155,7 @@ async fn calculate_locks_and_write_cycle(
         price,
         randomness,
     )
-    .await;
+    .await
 }
 
 async fn extract_sorted_staged_seeks_and_provides(
@@ -1370,7 +1378,7 @@ async fn distribute_fees_and_write_cycle(
     cycle_time: SystemTime,
     cycle_price: FiatAmount,
     randomness: usize,
-) {
+) -> anyhow::Result<()> {
     #[derive(PartialOrd, Ord, PartialEq, Eq)]
     struct AmountAndFeeKey {
         // CHECK: might affect ordering
@@ -1442,7 +1450,7 @@ async fn distribute_fees_and_write_cycle(
             },
             None => {
                 let initial_fiat_amount =
-                    FiatAmount::from_btc_amount(amount_and_fee.amount, cycle_price);
+                    FiatAmount::from_btc_amount(amount_and_fee.amount, cycle_price)?;
                 SeekMetadata {
                     staged_sequence: sequence,
                     initial_amount: amount_and_fee.amount,
@@ -1524,6 +1532,8 @@ async fn distribute_fees_and_write_cycle(
         },
     )
     .await;
+
+    Ok(())
 }
 
 /// Returns the remaining collateral provider needed
@@ -1665,4 +1675,93 @@ fn drain_in_reverse<T>(
         }
     }
     total_to_drain - left_to_drain
+}
+
+#[cfg(test)]
+mod tests {
+    use anyhow::ensure;
+
+    use super::*;
+
+    #[test]
+    pub fn test_drain_in_reverse() -> anyhow::Result<()> {
+        // Single-item list, 0 amount
+        let mut items = vec![Amount::from_msats(10)];
+        ensure!(drain_in_reverse(&mut items, |i| i, Amount::ZERO) == Amount::ZERO);
+        ensure!(items.len() == 1);
+        ensure!(items[0] == Amount::from_msats(10));
+
+        // Single-item list, non-0 amount
+        let mut items = vec![Amount::from_msats(10)];
+        ensure!(
+            drain_in_reverse(&mut items, |i| i, Amount::from_msats(2)) == Amount::from_msats(2)
+        );
+        ensure!(items.len() == 1);
+        ensure!(items[0] == Amount::from_msats(8));
+
+        // Single-item list, excessive amount
+        let mut items = vec![Amount::from_msats(10)];
+        ensure!(
+            drain_in_reverse(&mut items, |i| i, Amount::from_msats(12)) == Amount::from_msats(10)
+        );
+        ensure!(items.is_empty());
+
+        // Multi-item list, 0 amount
+        let mut items = vec![
+            Amount::from_msats(10),
+            Amount::from_msats(15),
+            Amount::from_msats(20),
+            Amount::from_msats(25),
+        ];
+        ensure!(drain_in_reverse(&mut items, |i| i, Amount::ZERO) == Amount::ZERO);
+        ensure!(items.len() == 4);
+        ensure!(items[0] == Amount::from_msats(10));
+        ensure!(items[1] == Amount::from_msats(15));
+        ensure!(items[2] == Amount::from_msats(20));
+        ensure!(items[3] == Amount::from_msats(25));
+
+        // Multi-item list, non-0 amount, drain last item only
+        let mut items = vec![
+            Amount::from_msats(10),
+            Amount::from_msats(15),
+            Amount::from_msats(20),
+            Amount::from_msats(25),
+        ];
+        ensure!(
+            drain_in_reverse(&mut items, |i| i, Amount::from_msats(8)) == Amount::from_msats(8)
+        );
+        ensure!(items.len() == 4);
+        ensure!(items[0] == Amount::from_msats(10));
+        ensure!(items[1] == Amount::from_msats(15));
+        ensure!(items[2] == Amount::from_msats(20));
+        ensure!(items[3] == Amount::from_msats(17));
+
+        // Multi-item list, non-0 amount, drain multiple items
+        let mut items = vec![
+            Amount::from_msats(10),
+            Amount::from_msats(15),
+            Amount::from_msats(20),
+            Amount::from_msats(25),
+        ];
+        ensure!(
+            drain_in_reverse(&mut items, |i| i, Amount::from_msats(51)) == Amount::from_msats(51)
+        );
+        ensure!(items.len() == 2);
+        ensure!(items[0] == Amount::from_msats(10));
+        ensure!(items[1] == Amount::from_msats(9));
+
+        // Multi-item list, excessive amount
+        let mut items = vec![
+            Amount::from_msats(10),
+            Amount::from_msats(15),
+            Amount::from_msats(20),
+            Amount::from_msats(25),
+        ];
+        ensure!(
+            drain_in_reverse(&mut items, |i| i, Amount::from_msats(80)) == Amount::from_msats(70)
+        );
+        ensure!(items.is_empty());
+
+        Ok(())
+    }
 }

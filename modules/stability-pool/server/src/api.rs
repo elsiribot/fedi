@@ -1,4 +1,4 @@
-use std::time::UNIX_EPOCH;
+use std::time::SystemTime;
 
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiError, ApiVersion};
@@ -34,7 +34,7 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
         api_endpoint! {
             "next_cycle_start_time",
             ApiVersion::new(0, 0),
-            async |module: &StabilityPool, context, _request: ()| -> u64 {
+            async |module: &StabilityPool, context, _request: ()| -> SystemTime {
                 Ok(next_cycle_start_time(&mut context.dbtx().into_nc(), module).await?)
             }
         },
@@ -108,10 +108,7 @@ pub async fn account_info(dbtx: &mut DatabaseTransaction<'_>, account: AccountId
             .get_value(&StagedProvidesKey(account))
             .await
             .unwrap_or_default(),
-        // staged_cancellation: dbtx
-        //     .get_value(&StagedCancellationKey(account))
-        //     .await
-        //     .map(|(_, cancel)| cancel),
+        unlock_request: dbtx.get_value(&UnlockRequestKey(account)).await,
         locked_seeks,
         locked_provides,
         seeks_metadata,
@@ -135,7 +132,7 @@ pub async fn current_cycle_index(
 pub async fn next_cycle_start_time(
     dbtx: &mut DatabaseTransaction<'_>,
     stability_pool: &StabilityPool,
-) -> anyhow::Result<u64, ApiError> {
+) -> anyhow::Result<SystemTime, ApiError> {
     let current_cycle_start_time = dbtx
         .get_value(&CurrentCycleKey)
         .await
@@ -146,10 +143,7 @@ pub async fn next_cycle_start_time(
 
     let cycle_duration = stability_pool.cfg.consensus.cycle_duration;
     let next_cycle_start_time = current_cycle_start_time + cycle_duration;
-    Ok(next_cycle_start_time
-        .duration_since(UNIX_EPOCH)
-        .map_err(|_| ApiError::server_error("Server system clock error".to_owned()))?
-        .as_secs())
+    Ok(next_cycle_start_time)
 }
 
 pub async fn cycle_start_price(

@@ -1,16 +1,19 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::{self, Display};
 use std::io;
+use std::str::FromStr;
 use std::time::SystemTime;
 
-use anyhow::bail;
+use anyhow::{bail, Context};
+use bitcoin::bech32::{self, Bech32m, Hrp};
 use bitcoin::hashes::sha256;
 use fedimint_core::core::{Decoder, ModuleInstanceId, ModuleKind};
 use fedimint_core::encoding::{Decodable, DecodeError, Encodable};
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::{CommonModuleInit, ModuleCommon, ModuleConsensusVersion};
 use fedimint_core::{
-    extensible_associated_module_type, plugin_types_trait_impl_common, Amount, TransactionId,
+    extensible_associated_module_type, plugin_types_trait_impl_common, Amount, BitcoinHash,
+    TransactionId,
 };
 use secp256k1::PublicKey;
 use serde::de::Error as _;
@@ -47,7 +50,10 @@ pub const MSATS_PER_BTC: u128 = 100_000_000_000;
 pub struct FiatAmount(pub u64);
 
 impl FiatAmount {
-    pub fn from_btc_amount(btc_amount: Amount, price_per_btc: FiatAmount) -> FiatAmount {
+    pub fn from_btc_amount(
+        btc_amount: Amount,
+        price_per_btc: FiatAmount,
+    ) -> anyhow::Result<FiatAmount> {
         // 1 BTC is worth price_per_btc FiatAmount
         // 1 BTC = 10^8 SATS = 10^11 MSATS
         // So 10^11 MSATS is worth price_per_btc FiatAmount
@@ -56,10 +62,10 @@ impl FiatAmount {
         let fiat = price_times_amount / MSATS_PER_BTC;
 
         // Since end result is an actual fiat value it should comfortably fit in u64
-        FiatAmount(fiat.try_into().expect("Valid fiat value should fit in u64"))
+        Ok(FiatAmount(fiat.try_into()?))
     }
 
-    pub fn to_btc_amount(&self, price_per_btc: FiatAmount) -> Amount {
+    pub fn to_btc_amount(&self, price_per_btc: FiatAmount) -> anyhow::Result<Amount> {
         let fiat_amount = self;
         // price_per_btc FiatAmount is worth 1 BTC
         // 1 BTC = 10^8 SATS = 10^11 MSATS
@@ -69,11 +75,7 @@ impl FiatAmount {
         let msats = fiat_amount_times_exp / u128::from(price_per_btc.0);
 
         // Since end result is an msat value it should comfortably fit in u64
-        Amount::from_msats(
-            msats
-                .try_into()
-                .expect("Valid MSAT value should fit in u64"),
-        )
+        Ok(Amount::from_msats(msats.try_into()?))
     }
 }
 
@@ -211,9 +213,37 @@ impl AccountId {
     }
 }
 
+pub const SEEKER_HRP: Hrp = Hrp::parse_unchecked("sps");
+pub const PROVIDER_HRP: Hrp = Hrp::parse_unchecked("spp");
+
 impl Display for AccountId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Type: {:?}, hash: {}", self.acc_type, self.hash)
+        let hrp = match self.acc_type {
+            AccountType::Seeker => SEEKER_HRP,
+            AccountType::Provider => PROVIDER_HRP,
+        };
+        let encoded = bech32::encode::<Bech32m>(hrp, self.hash.as_ref()).map_err(|_| fmt::Error)?;
+        write!(f, "{}", encoded)
+    }
+}
+
+impl FromStr for AccountId {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (hrp, data) = bech32::decode(s)?;
+
+        let acc_type = if hrp.as_str() == SEEKER_HRP.as_str() {
+            AccountType::Seeker
+        } else if hrp.as_str() == PROVIDER_HRP.as_str() {
+            AccountType::Provider
+        } else {
+            bail!("Invalid account type");
+        };
+
+        let hash = sha256::Hash::from_slice(&data).context("Invalid data")?;
+
+        Ok(AccountId { acc_type, hash })
     }
 }
 
@@ -603,9 +633,9 @@ impl Default for SeekMetadata {
 /// needs to know the amount that can now be swept from idle balance. Even
 /// though the client can query for the idle balance separately, we just
 /// return it within the status to save the client an extra API call.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encodable, Decodable)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum UnlockRequestStatus {
-    Pending { next_cycle_start_time: u64 },
+    Pending { next_cycle_start_time: SystemTime },
     NoActiveRequest { idle_balance: Amount },
 }
 
@@ -614,8 +644,7 @@ pub struct AccountInfo {
     pub idle_balance: Amount,
     pub staged_seeks: Vec<StagedSeek>,
     pub staged_provides: Vec<StagedProvide>,
-    // TODO shaurya expose pending unlocks in AccountInfo
-    // pub staged_cancellation: Option<CancelRenewal>,
+    pub unlock_request: Option<UnlockForWithdrawalAmount>,
     pub locked_seeks: Vec<LockedSeek>,
     pub locked_provides: Vec<LockedProvide>,
     pub seeks_metadata: BTreeMap<TransactionId, SeekMetadata>,

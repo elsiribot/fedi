@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::ffi;
 use std::ops::Not;
 use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime};
 
 use anyhow::bail;
 use async_stream::stream;
@@ -33,6 +33,7 @@ use fedimint_core::module::{
     ApiRequestErased, ApiVersion, CommonModuleInit, ModuleInit, MultiApiVersion,
 };
 use fedimint_core::task::timeout;
+use fedimint_core::util::backoff_util::background_backoff;
 use fedimint_core::{apply, async_trait_maybe_send, Amount, OutPoint, TransactionId};
 use futures::{Stream, StreamExt};
 use secp256k1::{Keypair, Secp256k1};
@@ -157,7 +158,21 @@ impl ClientModule for StabilityPoolClientModule {
         // TODO shaurya include in module-level backup all the Accounts we are part of?
         match command.as_ref() {
             "pubkey" => Ok(serde_json::to_value(self.client_key_pair.public_key())?),
-            "account-info" => Ok(serde_json::to_value(self.account_info(true).await?)?),
+            "account-info" => {
+                if args.len() != 2 {
+                    bail!("`account-info` command expects 1 arguments: seeker|provider");
+                }
+
+                let acc_type = match args[1].to_string_lossy().to_lowercase().as_str() {
+                    "seeker" => AccountType::Seeker,
+                    "provider" => AccountType::Provider,
+                    acc_type => bail!("Invalid account type {acc_type}, must be one of \"seeker\" or \"provider\"")
+                };
+
+                Ok(serde_json::to_value(
+                    self.account_info(acc_type, true).await?,
+                )?)
+            }
             "deposit-to-seek" => {
                 if args.len() != 2 {
                     bail!("`deposit-to-seek` command expects 1 argument: <amount_msats>");
@@ -316,6 +331,7 @@ impl State for StabilityPoolStateMachine {
 
 #[derive(Debug, Clone, Eq, PartialEq, Decodable, Encodable, Hash)]
 pub struct StabilityPoolWithdrawalStateMachine {
+    pub account: Account,
     pub operation_id: OperationId,
     pub transaction_id: TransactionId,
     pub state: StabilityPoolWithdrawalState,
@@ -350,6 +366,7 @@ impl State for StabilityPoolWithdrawalStateMachine {
                 move |_, result, old_state: StabilityPoolWithdrawalStateMachine| match result {
                     Ok(_) => Box::pin(async move {
                         StabilityPoolWithdrawalStateMachine {
+                            account: old_state.account,
                             operation_id: old_state.operation_id,
                             transaction_id: old_state.transaction_id,
                             state: StabilityPoolWithdrawalState::Accepted,
@@ -357,6 +374,7 @@ impl State for StabilityPoolWithdrawalStateMachine {
                     }),
                     Err(reason) => Box::pin(async move {
                         StabilityPoolWithdrawalStateMachine {
+                            account: old_state.account,
                             operation_id: old_state.operation_id,
                             transaction_id: old_state.transaction_id,
                             state: StabilityPoolWithdrawalState::Rejected(reason),
@@ -365,7 +383,7 @@ impl State for StabilityPoolWithdrawalStateMachine {
                 },
             )],
             StabilityPoolWithdrawalState::Accepted => vec![StateTransition::new(
-                await_unlock_request_processed(context.clone()),
+                await_unlock_request_processed(context.clone(), self.account.clone()),
                 move |dbtx, result, old_state: StabilityPoolWithdrawalStateMachine| match result {
                     Ok(idle_balance) => Box::pin(claim_idle_balance_input(
                         dbtx,
@@ -376,6 +394,7 @@ impl State for StabilityPoolWithdrawalStateMachine {
                     )),
                     Err(reason) => Box::pin(async move {
                         StabilityPoolWithdrawalStateMachine {
+                            account: old_state.account,
                             operation_id: old_state.operation_id,
                             transaction_id: old_state.transaction_id,
                             state: StabilityPoolWithdrawalState::ProcessingError(reason),
@@ -447,11 +466,15 @@ impl StabilityPoolClientModule {
         Account::single(self.client_key_pair.public_key(), acc_type)
     }
 
-    pub async fn account_info(&self, force_update: bool) -> anyhow::Result<ClientAccountInfo> {
+    pub async fn account_info(
+        &self,
+        acc_type: AccountType,
+        force_update: bool,
+    ) -> anyhow::Result<ClientAccountInfo> {
         let _lock = self.account_info_lock.lock().await;
         let mut dbtx = self.db.begin_transaction_nc().await;
         let db_account_info = dbtx.get_value(&AccountInfoKey).await;
-        let account_id = self.our_account(AccountType::Seeker).id();
+        let account_id = self.our_account(acc_type).id();
 
         if db_account_info.is_none() || force_update {
             match self
@@ -511,7 +534,7 @@ impl StabilityPoolClientModule {
             .await
     }
 
-    pub async fn next_cycle_start_time(&self) -> anyhow::Result<u64, FederationError> {
+    pub async fn next_cycle_start_time(&self) -> anyhow::Result<SystemTime, FederationError> {
         self.module_api
             .request_current_consensus(
                 "next_cycle_start_time".to_string(),
@@ -614,16 +637,16 @@ impl StabilityPoolClientModule {
 
                     let tx_updates_stream = client_ctx.transaction_updates(operation_id);
                     match tx_updates_stream.await.await_tx_accepted(txid).await {
-                        Ok(_) => {
-                            yield StabilityPoolDepositOperationState::TxAccepted;
-                            if change_outpoints.is_empty() {
-                                yield StabilityPoolDepositOperationState::Success;
-                                return
-                            }
-                        }
-                        Err(e) => { yield StabilityPoolDepositOperationState::TxRejected(e);
-                            return
+                        Ok(_) => yield StabilityPoolDepositOperationState::TxAccepted,
+                        Err(e) => {
+                            yield StabilityPoolDepositOperationState::TxRejected(e);
+                            return;
                         },
+                    }
+
+                    if change_outpoints.is_empty() {
+                        yield StabilityPoolDepositOperationState::Success;
+                        return;
                     }
 
                     match client_ctx.await_primary_module_outputs(operation_id, change_outpoints).await {
@@ -648,11 +671,12 @@ impl StabilityPoolClientModule {
 
         let operation_id = OperationId::new_random();
 
+        let account = self.our_account(acc_type);
         let input = ClientInput {
             amount: Amount::ZERO,
             input: StabilityPoolInput::V0(StabilityPoolInputV0::UnlockForWithdrawal(
                 UnlockForWithdrawalInput {
-                    account: self.our_account(acc_type),
+                    account: account.clone(),
                     amount: unlock_amount,
                 },
             )),
@@ -662,6 +686,7 @@ impl StabilityPoolClientModule {
             state_machines: Arc::new(move |out_point_range| {
                 vec![StabilityPoolStateMachine::Withdrawal(
                     StabilityPoolWithdrawalStateMachine {
+                        account: account.clone(),
                         operation_id,
                         transaction_id: out_point_range.txid(),
                         state: StabilityPoolWithdrawalState::Created,
@@ -820,28 +845,24 @@ async fn await_tx_accepted(
 
 async fn await_unlock_request_processed(
     context: StabilityPoolClientContext,
+    account: Account,
 ) -> Result<Amount, String> {
-    // TODO shaurya maybe add some error condition? Like max number of retries on
-    // error? Or max number of sleeps on pending?
-    let account_id = context.module.our_account(AccountType::Seeker).id();
+    let cycle_duration = context.module.cfg.cycle_duration;
+    let mut backoff = background_backoff();
     loop {
-        match context.module.unlock_request_status(account_id).await {
+        match context.module.unlock_request_status(account.id()).await {
             Ok(UnlockRequestStatus::NoActiveRequest { idle_balance }) => break Ok(idle_balance),
             Ok(UnlockRequestStatus::Pending {
                 next_cycle_start_time,
             }) => {
-                // Sleep until next_cycle_start_time but max cycle_duration
-                let cycle_duration = context.module.cfg.cycle_duration;
-                let sleep_until = UNIX_EPOCH + Duration::from_secs(next_cycle_start_time);
-                let sleep_duration = sleep_until
-                    .duration_since(SystemTime::now())
-                    .unwrap_or(cycle_duration)
-                    .min(cycle_duration);
+                let sleep_duration = next_cycle_start_time
+                    .duration_since(fedimint_core::time::now())
+                    .unwrap_or_else(|_| backoff.next().unwrap_or(cycle_duration));
                 fedimint_core::task::sleep(sleep_duration).await
             }
             Err(e) => {
                 e.report_if_important();
-                fedimint_core::task::sleep(Duration::from_secs(10)).await
+                fedimint_core::task::sleep(backoff.next().unwrap_or(cycle_duration)).await
             }
         }
     }
@@ -857,7 +878,7 @@ async fn claim_idle_balance_input(
     let input = ClientInput {
         amount: idle_balance,
         input: StabilityPoolInput::V0(StabilityPoolInputV0::Withdrawal(WithdrawalInput {
-            account: context.module.our_account(AccountType::Seeker),
+            account: old_state.account.clone(),
             amount: idle_balance,
         })),
         keys: vec![context.module.client_key_pair],
@@ -875,6 +896,7 @@ async fn claim_idle_balance_input(
         .expect("Cannot claim input, additional funding needed");
 
     StabilityPoolWithdrawalStateMachine {
+        account: old_state.account,
         operation_id: old_state.operation_id,
         transaction_id: old_state.transaction_id,
         state: StabilityPoolWithdrawalState::Processed {
