@@ -2,6 +2,7 @@ pub mod api;
 pub mod db;
 pub mod oracle;
 use std::collections::{BTreeMap, VecDeque};
+use std::ops::Not;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -13,25 +14,24 @@ use common::config::{
     StabilityPoolGenParams,
 };
 use common::{
-    amount_to_cents, CancelRenewal, IntendedAction, LockedProvide, LockedSeek, Provide, Seek,
-    SeekMetadata, StabilityPoolCommonGen, StabilityPoolConsensusItem, StabilityPoolInput,
-    StabilityPoolInputError, StabilityPoolModuleTypes, StabilityPoolOutput,
-    StabilityPoolOutputError, StabilityPoolOutputOutcome, StabilityPoolOutputOutcomeV0,
-    StagedProvide, StagedSeek, BPS_UNIT, CONSENSUS_VERSION,
+    LockedProvide, LockedSeek, Provide, Seek, SeekMetadata, StabilityPoolCommonGen,
+    StabilityPoolConsensusItem, StabilityPoolInput, StabilityPoolInputError,
+    StabilityPoolModuleTypes, StabilityPoolOutput, StabilityPoolOutputError,
+    StabilityPoolOutputOutcome, StabilityPoolOutputOutcomeV0, StagedProvide, StagedSeek,
+    CONSENSUS_VERSION,
 };
 use db::{
-    migrate_to_v2, CurrentCycleKey, CurrentCycleKeyPrefix, Cycle, CycleChangeVoteIndexPrefix,
-    CycleChangeVoteKey, IdleBalance, IdleBalanceKey, IdleBalanceKeyPrefix, PastCycleKey,
-    SeekMetadataKey, StagedCancellationKey, StagedCancellationKeyPrefix, StagedProvideSequenceKey,
+    CurrentCycleKey, CurrentCycleKeyPrefix, Cycle, CycleChangeVoteIndexPrefix, CycleChangeVoteKey,
+    IdleBalanceKey, IdleBalanceKeyPrefix, PastCycleKey, SeekMetadataKey, StagedProvideSequenceKey,
     StagedProvidesKey, StagedProvidesKeyPrefix, StagedSeekSequenceKey, StagedSeeksKey,
-    StagedSeeksKeyPrefix,
+    StagedSeeksKeyPrefix, UnlockRequestKey, UnlockRequestsKeyPrefix,
 };
 use fedimint_core::config::{
     ConfigGenModuleParams, DkgResult, ServerModuleConfig, ServerModuleConsensusConfig,
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleInstanceId;
-use fedimint_core::db::{DatabaseTransaction, DatabaseVersion, IDatabaseTransactionOpsCoreTyped};
+use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
     ApiEndpoint, CoreConsensusVersion, InputMeta, ModuleConsensusVersion, ModuleInit, PeerHandle,
@@ -39,11 +39,15 @@ use fedimint_core::module::{
 };
 use fedimint_core::server::DynServerModule;
 use fedimint_core::{Amount, NumPeersExt, OutPoint, PeerId, ServerModule, TransactionId};
-use futures::{stream, FutureExt, StreamExt};
+use futures::{stream, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
 pub use stability_pool_common as common;
-use stability_pool_common::AccountId;
+use stability_pool_common::{
+    AccountId, AccountType, DepositToProvideOutput, DepositToSeekOutput, FiatAmount,
+    StabilityPoolInputV0, StabilityPoolOutputV0, UnlockForWithdrawalAmount,
+    UnlockForWithdrawalInput, WithdrawalInput,
+};
 use tokio::sync::{Mutex, RwLock};
 use tracing::{info, warn};
 
@@ -168,15 +172,6 @@ impl ServerModuleInit for StabilityPoolInit {
             min_allowed_cancellation_bps: config.min_allowed_cancellation_bps,
         })
     }
-
-    fn get_database_migrations(
-        &self,
-    ) -> BTreeMap<DatabaseVersion, fedimint_core::db::CoreMigrationFn> {
-        let mut migrations =
-            BTreeMap::<DatabaseVersion, fedimint_core::db::CoreMigrationFn>::default();
-        migrations.insert(DatabaseVersion(1), |ctx| migrate_to_v2(ctx).boxed());
-        migrations
-    }
 }
 
 /// Helper struct to encapsulate the price of Bitcoin in cents, along with the
@@ -184,7 +179,7 @@ impl ServerModuleInit for StabilityPoolInit {
 #[derive(Debug)]
 pub struct PrefetchedPrice {
     pub time: SystemTime,
-    pub price: u64,
+    pub price: FiatAmount,
 }
 
 #[derive(Debug)]
@@ -404,7 +399,7 @@ impl ServerModule for StabilityPool {
         //  If current_cycle exists
         //  - write current_cycle to PastCycle key store
         //  - settle locks using new price
-        //  - apply any staged cancellations
+        //  - process any unlock requests
         //  - move remaining locks to staged
         if let Some(mut current_cycle) = current_cycle {
             dbtx.insert_entry(&PastCycleKey(current_cycle.index), &current_cycle)
@@ -412,17 +407,17 @@ impl ServerModule for StabilityPool {
             settle_locks(
                 &mut current_cycle.locked_seeks,
                 &mut current_cycle.locked_provides,
-                current_cycle.start_price.into(),
-                new_price.into(),
+                current_cycle.start_price,
+                new_price,
                 randomness,
             );
-            apply_staged_cancellations(
+            process_unlock_requests(
                 dbtx,
                 &mut current_cycle.locked_seeks,
                 &mut current_cycle.locked_provides,
-                new_price.into(),
+                new_price,
             )
-            .await;
+            .await?;
             restage_remaining_locks(
                 dbtx,
                 current_cycle.locked_seeks,
@@ -442,7 +437,7 @@ impl ServerModule for StabilityPool {
             new_price,
             randomness,
         )
-        .await;
+        .await?;
         dbtx.remove_by_prefix(&vote_cycle_index_prefix).await;
         Ok(())
     }
@@ -452,135 +447,23 @@ impl ServerModule for StabilityPool {
         dbtx: &mut DatabaseTransaction<'c>,
         input: &'b StabilityPoolInput,
     ) -> Result<InputMeta, StabilityPoolInputError> {
-        let (account, amount) = (
-            input
-                .account()
-                .map_err(|e| StabilityPoolInputError::UnknownInputVariant(e.to_string()))?,
-            input
-                .amount()
-                .map_err(|e| StabilityPoolInputError::UnknownInputVariant(e.to_string()))?,
-        );
+        let v0 = input
+            .ensure_v0_ref()
+            .map_err(|e| StabilityPoolInputError::UnknownInputVariant(e.to_string()))?;
+
         // multi sig not allowed as input.
-        let Some(&pub_key) = account.as_single() else {
+        if v0.account().as_single().is_none() {
             return Err(StabilityPoolInputError::MultiSigNotAllowed);
         };
 
-        // TODO shaurya ensure amount is greater than fee
-        if amount == Amount::ZERO {
-            return Err(StabilityPoolInputError::InvalidWithdrawalAmount);
+        match v0 {
+            StabilityPoolInputV0::UnlockForWithdrawal(unlock) => {
+                process_unlock_input(dbtx, unlock).await
+            }
+            StabilityPoolInputV0::Withdrawal(withdrawal) => {
+                process_withdrawal_input(dbtx, withdrawal).await
+            }
         }
-
-        let (mut user_idle_balance, user_staged_seeks, user_staged_provides) = (
-            dbtx.get_value(&IdleBalanceKey(account.id()))
-                .await
-                .unwrap_or(IdleBalance(Amount::ZERO))
-                .0,
-            dbtx.get_value(&StagedSeeksKey(account.id()))
-                .await
-                .unwrap_or_default(),
-            dbtx.get_value(&StagedProvidesKey(account.id()))
-                .await
-                .unwrap_or_default(),
-        );
-
-        let total_user_balance = user_idle_balance
-            + user_staged_seeks.iter().map(|s| s.seek.0).sum()
-            + user_staged_provides.iter().map(|p| p.provide.amount).sum();
-        if amount > total_user_balance {
-            return Err(StabilityPoolInputError::InsufficientBalance);
-        }
-
-        // First drain idle balance, then staged seeks from newest to oldest,
-        // then staged provides from newest to oldest
-        let mut amount_to_satisfy = amount;
-
-        if user_idle_balance != Amount::ZERO {
-            let min_extractable =
-                Amount::from_msats(user_idle_balance.msats.min(amount_to_satisfy.msats));
-            user_idle_balance -= min_extractable;
-            amount_to_satisfy -= min_extractable;
-            dbtx.insert_entry(
-                &IdleBalanceKey(account.id()),
-                &IdleBalance(user_idle_balance),
-            )
-            .await;
-        }
-
-        if amount_to_satisfy != Amount::ZERO && !user_staged_seeks.is_empty() {
-            let user_staged_seeks = user_staged_seeks
-                .into_iter()
-                .rev()
-                .filter_map(|s| {
-                    if amount_to_satisfy == Amount::ZERO {
-                        Some(s)
-                    } else {
-                        let min_extractable =
-                            Amount::from_msats(s.seek.0.msats.min(amount_to_satisfy.msats));
-                        amount_to_satisfy -= min_extractable;
-
-                        if min_extractable == s.seek.0 {
-                            None
-                        } else {
-                            Some(StagedSeek {
-                                txid: s.txid,
-                                sequence: s.sequence,
-                                seek: Seek(s.seek.0 - min_extractable),
-                            })
-                        }
-                    }
-                })
-                .collect::<Vec<_>>()
-                .into_iter()
-                .rev()
-                .collect();
-            dbtx.insert_entry(&StagedSeeksKey(account.id()), &user_staged_seeks)
-                .await;
-        }
-
-        if amount_to_satisfy != Amount::ZERO && !user_staged_provides.is_empty() {
-            let user_staged_provides = user_staged_provides
-                .into_iter()
-                .rev()
-                .filter_map(|p| {
-                    if amount_to_satisfy == Amount::ZERO {
-                        Some(p)
-                    } else {
-                        let min_extractable =
-                            Amount::from_msats(p.provide.amount.msats.min(amount_to_satisfy.msats));
-                        amount_to_satisfy -= min_extractable;
-
-                        if min_extractable == p.provide.amount {
-                            None
-                        } else {
-                            Some(StagedProvide {
-                                txid: p.txid,
-                                sequence: p.sequence,
-                                provide: Provide {
-                                    amount: p.provide.amount - min_extractable,
-                                    min_fee_rate: p.provide.min_fee_rate,
-                                },
-                            })
-                        }
-                    }
-                })
-                .collect::<Vec<_>>()
-                .into_iter()
-                .rev()
-                .collect();
-            dbtx.insert_entry(&StagedProvidesKey(account.id()), &user_staged_provides)
-                .await;
-        }
-
-        if amount_to_satisfy != Amount::ZERO {
-            return Err(StabilityPoolInputError::InsufficientBalance);
-        }
-
-        // TODO shaurya decide on TX fee for withdrawals
-        let fee = Amount::ZERO;
-        return Ok(InputMeta {
-            amount: TransactionItemAmount { amount, fee },
-            pub_key,
-        });
     }
 
     async fn process_output<'a, 'b>(
@@ -589,173 +472,42 @@ impl ServerModule for StabilityPool {
         output: &'a StabilityPoolOutput,
         outpoint: OutPoint,
     ) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
-        let (account, intended_action) = (
-            output
-                .account()
-                .map_err(|e| StabilityPoolOutputError::UnknownOutputVariant(e.to_string()))?,
-            output
-                .intended_action()
-                .map_err(|e| StabilityPoolOutputError::UnknownOutputVariant(e.to_string()))?,
-        );
+        let v0 = output
+            .ensure_v0_ref()
+            .map_err(|e| StabilityPoolOutputError::UnknownOutputVariant(e.to_string()))?;
 
-        let fee = match intended_action {
-            IntendedAction::Seek(Seek(amount)) => {
-                if amount < self.cfg.consensus.min_allowed_seek {
-                    return Err(StabilityPoolOutputError::AmountTooLow);
-                }
-
-                // TODO shaurya decide on TX fee for seeks
-                Amount::ZERO
-            }
-            IntendedAction::Provide(Provide {
-                amount,
-                min_fee_rate,
-            }) => {
-                if amount < self.cfg.consensus.min_allowed_provide {
-                    return Err(StabilityPoolOutputError::AmountTooLow);
-                }
-
-                if min_fee_rate > self.cfg.consensus.max_allowed_provide_fee_rate_ppb {
-                    return Err(StabilityPoolOutputError::FeeRateTooHigh);
-                }
-
-                // TODO shaurya decide on TX fee for provides
-                Amount::ZERO
-            }
-            IntendedAction::CancelRenewal(CancelRenewal { bps }) => {
-                if bps < self.cfg.consensus.min_allowed_cancellation_bps || bps > 10_000 {
-                    return Err(StabilityPoolOutputError::InvalidBPSForCancelAutoRenewal);
-                }
-
-                // TODO shaurya decide on TX fee for auto-renew cancellations
-                Amount::ZERO
-            }
-            IntendedAction::UndoCancelRenewal => {
-                // TODO shaurya decide on TX fee for undoing cancellation
-                Amount::ZERO
-            }
+        let account_id = match v0 {
+            StabilityPoolOutputV0::DepositToSeek(s) => s.account_id,
+            StabilityPoolOutputV0::DepositToProvide(p) => p.account_id,
         };
 
-        let (mut user_staged_seeks, mut user_staged_provides, user_staged_cancellation) = (
-            dbtx.get_value(&StagedSeeksKey(account.id()))
+        if dbtx
+            .get_value(&UnlockRequestKey(account_id))
+            .await
+            .is_some()
+        {
+            return Err(StabilityPoolOutputError::PreviousIntentionNotFullyProcessed);
+        }
+
+        match v0 {
+            StabilityPoolOutputV0::DepositToSeek(deposit_to_seek)
+                if account_id.acc_type() == AccountType::Seeker =>
+            {
+                process_deposit_to_seek_output(self.cfg.clone(), dbtx, deposit_to_seek, outpoint)
+                    .await
+            }
+            StabilityPoolOutputV0::DepositToProvide(deposit_to_provide)
+                if account_id.acc_type() == AccountType::Provider =>
+            {
+                process_deposit_to_provide_output(
+                    self.cfg.clone(),
+                    dbtx,
+                    deposit_to_provide,
+                    outpoint,
+                )
                 .await
-                .unwrap_or_default(),
-            dbtx.get_value(&StagedProvidesKey(account.id()))
-                .await
-                .unwrap_or_default(),
-            dbtx.get_value(&StagedCancellationKey(account.id())).await,
-        );
-
-        let current_cycle = dbtx.get_value(&CurrentCycleKey).await;
-        let (user_locked_seeks, user_locked_provides) = match &current_cycle {
-            Some(Cycle {
-                locked_seeks,
-                locked_provides,
-                ..
-            }) => (
-                locked_seeks
-                    .get(&account.id())
-                    .map(|vec| vec.as_slice())
-                    .unwrap_or_default(),
-                locked_provides
-                    .get(&account.id())
-                    .map(|vec| vec.as_slice())
-                    .unwrap_or_default(),
-            ),
-            None => (&[] as &[LockedSeek], &[] as &[LockedProvide]),
-        };
-
-        match intended_action {
-            IntendedAction::Seek(seek) => {
-                // Must NOT have staged provides, locked provides, or staged cancellation
-                if user_staged_provides.is_empty()
-                    && user_locked_provides.is_empty()
-                    && user_staged_cancellation.is_none()
-                {
-                    let sequence = dbtx
-                        .get_value(&StagedSeekSequenceKey)
-                        .await
-                        .unwrap_or_default();
-                    user_staged_seeks.push(StagedSeek {
-                        txid: outpoint.txid,
-                        sequence,
-                        seek: seek.clone(),
-                    });
-
-                    dbtx.insert_entry(&StagedSeekSequenceKey, &(sequence + 1))
-                        .await;
-                    dbtx.insert_entry(&StagedSeeksKey(account.id()), &user_staged_seeks)
-                        .await;
-                    Ok(TransactionItemAmount {
-                        amount: seek.0,
-                        fee,
-                    })
-                } else {
-                    Err(StabilityPoolOutputError::CannotSeek)
-                }
             }
-            IntendedAction::Provide(provide) => {
-                // Must NOT have staged seeks, locked seeks, or staged cancellation
-                if user_staged_seeks.is_empty()
-                    && user_locked_seeks.is_empty()
-                    && user_staged_cancellation.is_none()
-                {
-                    let sequence = dbtx
-                        .get_value(&StagedProvideSequenceKey)
-                        .await
-                        .unwrap_or_default();
-                    user_staged_provides.push(StagedProvide {
-                        txid: outpoint.txid,
-                        sequence,
-                        provide: provide.clone(),
-                    });
-
-                    dbtx.insert_entry(&StagedProvideSequenceKey, &(sequence + 1))
-                        .await;
-                    dbtx.insert_entry(&StagedProvidesKey(account.id()), &user_staged_provides)
-                        .await;
-                    Ok(TransactionItemAmount {
-                        amount: provide.amount,
-                        fee,
-                    })
-                } else {
-                    Err(StabilityPoolOutputError::CannotProvide)
-                }
-            }
-            IntendedAction::CancelRenewal(cancel) => {
-                // Must NOT have any staged seeks or provides or staged cancellation
-                // AND must have at least one locked seek or provide (but not both)
-                if user_staged_seeks.is_empty()
-                    && user_staged_provides.is_empty()
-                    && user_staged_cancellation.is_none()
-                    && (!user_locked_seeks.is_empty() ^ !user_locked_provides.is_empty())
-                {
-                    dbtx.insert_entry(
-                        &StagedCancellationKey(account.id()),
-                        &(outpoint.txid, cancel),
-                    )
-                    .await;
-                    Ok(TransactionItemAmount {
-                        amount: Amount::ZERO,
-                        fee,
-                    })
-                } else {
-                    Err(StabilityPoolOutputError::CannotCancelAutoRenewal)
-                }
-            }
-            IntendedAction::UndoCancelRenewal => {
-                // Must have a staged cancellation
-                if user_staged_cancellation.is_some() {
-                    dbtx.remove_entry(&StagedCancellationKey(account.id()))
-                        .await;
-                    Ok(TransactionItemAmount {
-                        amount: Amount::ZERO,
-                        fee,
-                    })
-                } else {
-                    Err(StabilityPoolOutputError::CannotUndoAutoRenewalCancellation)
-                }
-            }
+            _ => Err(StabilityPoolOutputError::InvalidAccountTypeForOperation),
         }
     }
 
@@ -784,7 +536,7 @@ impl ServerModule for StabilityPool {
                 dbtx,
                 module_instance_id,
                 &IdleBalanceKeyPrefix,
-                |_, idle_bal| -(idle_bal.0.msats as i64),
+                |_, idle_bal| -(idle_bal.msats as i64),
             )
             .await;
 
@@ -842,11 +594,293 @@ impl ServerModule for StabilityPool {
     }
 }
 
+async fn process_unlock_input<'a, 'b>(
+    dbtx: &mut DatabaseTransaction<'b>,
+    input: &'a UnlockForWithdrawalInput,
+) -> Result<InputMeta, StabilityPoolInputError> {
+    let unlock_key = UnlockRequestKey(input.account.id());
+    if dbtx.get_value(&unlock_key).await.is_some() {
+        return Err(StabilityPoolInputError::DuplicateUnlockRequest);
+    }
+
+    let current_cycle = dbtx
+        .get_value(&CurrentCycleKey)
+        .await
+        .ok_or(StabilityPoolInputError::TemporaryError)?;
+    let btc_price = current_cycle.start_price;
+
+    let mut idle_balance_credit = Amount::ZERO;
+    match input.account.acc_type() {
+        AccountType::Seeker => {
+            let staged_key = StagedSeeksKey(input.account.id());
+            let mut staged_seeks = dbtx.get_value(&staged_key).await.unwrap_or_default();
+            let locked_seeks_sum = current_cycle
+                .locked_seeks
+                .get(&input.account.id())
+                .map_or(Amount::ZERO, |seeks| seeks.iter().map(|s| s.amount).sum());
+            match input.amount {
+                UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
+                    let amount = fiat_amount
+                        .to_btc_amount(btc_price)
+                        .map_err(|_| StabilityPoolInputError::TemporaryError)?;
+                    let staged_balance = staged_seeks.iter().map(|s| s.seek.0).sum::<Amount>();
+                    let seeker_balance = staged_balance + locked_seeks_sum;
+
+                    if seeker_balance < amount {
+                        return Err(StabilityPoolInputError::InsufficientBalance);
+                    }
+
+                    // Drain staged seeks in reverse (newest to oldest).
+                    let mut amount_needed = amount;
+                    if staged_seeks.is_empty().not() {
+                        let drained =
+                            drain_in_reverse(&mut staged_seeks, |s| &mut s.seek.0, amount_needed);
+                        amount_needed -= drained;
+                        idle_balance_credit = drained;
+                        dbtx.insert_entry(&staged_key, &staged_seeks).await;
+                    }
+
+                    // If staged seeks were not enough, register an unlock
+                    // request for the leftover fiat amount
+                    if amount_needed != Amount::ZERO {
+                        let leftover_fiat = FiatAmount::from_btc_amount(amount_needed, btc_price)
+                            .map_err(|_| StabilityPoolInputError::TemporaryError)?;
+                        dbtx.insert_entry(
+                            &unlock_key,
+                            &UnlockForWithdrawalAmount::Fiat(leftover_fiat),
+                        )
+                        .await;
+                    }
+                }
+                UnlockForWithdrawalAmount::All => {
+                    // If there are no staged or locked seeks, report error
+                    if staged_seeks.is_empty() && locked_seeks_sum == Amount::ZERO {
+                        return Err(StabilityPoolInputError::InsufficientBalance);
+                    }
+
+                    // If applicable, clear all staged seeks and credit idle balance
+                    if staged_seeks.is_empty().not() {
+                        dbtx.remove_entry(&staged_key).await;
+                        idle_balance_credit = staged_seeks.iter().map(|s| s.seek.0).sum();
+                    }
+
+                    // If there are locked seeks present, register an unlock request for ALL
+                    if locked_seeks_sum != Amount::ZERO {
+                        dbtx.insert_entry(
+                            &UnlockRequestKey(input.account.id()),
+                            &UnlockForWithdrawalAmount::All,
+                        )
+                        .await;
+                    }
+                }
+            }
+        }
+        AccountType::Provider => {
+            let staged_key = StagedProvidesKey(input.account.id());
+            let mut staged_provides = dbtx.get_value(&staged_key).await.unwrap_or_default();
+            let locked_provides_sum = current_cycle
+                .locked_provides
+                .get(&input.account.id())
+                .map_or(Amount::ZERO, |provides| {
+                    provides.iter().map(|p| p.amount).sum()
+                });
+            match input.amount {
+                UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
+                    let amount = fiat_amount
+                        .to_btc_amount(btc_price)
+                        .map_err(|_| StabilityPoolInputError::TemporaryError)?;
+                    let staged_balance = staged_provides
+                        .iter()
+                        .map(|p| p.provide.amount)
+                        .sum::<Amount>();
+                    let provider_balance = staged_balance + locked_provides_sum;
+
+                    if provider_balance < amount {
+                        return Err(StabilityPoolInputError::InsufficientBalance);
+                    }
+
+                    // Drain staged provides in reverse (newest to oldest)
+                    let mut amount_needed = amount;
+                    if staged_provides.is_empty().not() {
+                        let drained = drain_in_reverse(
+                            &mut staged_provides,
+                            |s| &mut s.provide.amount,
+                            amount_needed,
+                        );
+                        amount_needed -= drained;
+                        idle_balance_credit = drained;
+                        dbtx.insert_entry(&staged_key, &staged_provides).await;
+                    }
+
+                    // If staged provides were not enough, register an unlock
+                    // request for the leftover fiat amount
+                    if amount_needed != Amount::ZERO {
+                        let leftover_fiat = FiatAmount::from_btc_amount(amount_needed, btc_price)
+                            .map_err(|_| StabilityPoolInputError::TemporaryError)?;
+                        dbtx.insert_entry(
+                            &unlock_key,
+                            &UnlockForWithdrawalAmount::Fiat(leftover_fiat),
+                        )
+                        .await;
+                    }
+                }
+                UnlockForWithdrawalAmount::All => {
+                    // If there are no staged or locked provides, report error
+                    if staged_provides.is_empty() && locked_provides_sum == Amount::ZERO {
+                        return Err(StabilityPoolInputError::InsufficientBalance);
+                    }
+
+                    // If applicable, clear all staged provides and credit idle balance
+                    if staged_provides.is_empty().not() {
+                        dbtx.remove_entry(&staged_key).await;
+                        idle_balance_credit =
+                            staged_provides.iter().map(|p| p.provide.amount).sum();
+                    }
+
+                    // If there are locked provides present, register an unlock request for ALL
+                    if locked_provides_sum != Amount::ZERO {
+                        dbtx.insert_entry(
+                            &UnlockRequestKey(input.account.id()),
+                            &UnlockForWithdrawalAmount::All,
+                        )
+                        .await;
+                    }
+                }
+            }
+        }
+    }
+
+    if idle_balance_credit != Amount::ZERO {
+        let idle_bal_key = IdleBalanceKey(input.account.id());
+        let idle_balance = dbtx.get_value(&idle_bal_key).await.unwrap_or(Amount::ZERO);
+        dbtx.insert_entry(&idle_bal_key, &(idle_balance + idle_balance_credit))
+            .await;
+    }
+
+    Ok(InputMeta {
+        amount: TransactionItemAmount {
+            amount: Amount::ZERO,
+            fee: Amount::ZERO,
+        },
+        pub_key: *input
+            .account
+            .as_single()
+            .ok_or(StabilityPoolInputError::MultiSigNotAllowed)?,
+    })
+}
+
+async fn process_withdrawal_input<'a, 'b>(
+    dbtx: &mut DatabaseTransaction<'b>,
+    input: &'a WithdrawalInput,
+) -> Result<InputMeta, StabilityPoolInputError> {
+    if input.amount == Amount::ZERO {
+        return Err(StabilityPoolInputError::InvalidWithdrawalAmount);
+    }
+
+    let idle_balance = dbtx
+        .get_value(&IdleBalanceKey(input.account.id()))
+        .await
+        .unwrap_or(Amount::ZERO);
+
+    if input.amount < idle_balance {
+        return Err(StabilityPoolInputError::InsufficientBalance);
+    }
+
+    let new_idle_balance = idle_balance - input.amount;
+    dbtx.insert_entry(&IdleBalanceKey(input.account.id()), &new_idle_balance)
+        .await;
+
+    Ok(InputMeta {
+        amount: TransactionItemAmount {
+            amount: input.amount,
+            fee: Amount::ZERO,
+        },
+        pub_key: *input
+            .account
+            .as_single()
+            .ok_or(StabilityPoolInputError::MultiSigNotAllowed)?,
+    })
+}
+
+async fn process_deposit_to_seek_output<'a, 'b>(
+    config: StabilityPoolConfig,
+    dbtx: &mut DatabaseTransaction<'b>,
+    output: &'a DepositToSeekOutput,
+    outpoint: OutPoint,
+) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
+    if output.seek.0 < config.consensus.min_allowed_seek {
+        return Err(StabilityPoolOutputError::AmountTooLow);
+    }
+
+    let mut user_staged_seeks = dbtx
+        .get_value(&StagedSeeksKey(output.account_id))
+        .await
+        .unwrap_or_default();
+
+    let sequence = dbtx
+        .get_value(&StagedSeekSequenceKey)
+        .await
+        .unwrap_or_default();
+    user_staged_seeks.push(StagedSeek {
+        txid: outpoint.txid,
+        sequence,
+        seek: output.seek.clone(),
+    });
+
+    dbtx.insert_entry(&StagedSeekSequenceKey, &(sequence + 1))
+        .await;
+    dbtx.insert_entry(&StagedSeeksKey(output.account_id), &user_staged_seeks)
+        .await;
+    Ok(TransactionItemAmount {
+        amount: output.seek.0,
+        fee: Amount::ZERO,
+    })
+}
+
+async fn process_deposit_to_provide_output<'a, 'b>(
+    config: StabilityPoolConfig,
+    dbtx: &mut DatabaseTransaction<'b>,
+    output: &'a DepositToProvideOutput,
+    outpoint: OutPoint,
+) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
+    if output.provide.amount < config.consensus.min_allowed_provide {
+        return Err(StabilityPoolOutputError::AmountTooLow);
+    }
+
+    if config.consensus.max_allowed_provide_fee_rate_ppb < output.provide.min_fee_rate {
+        return Err(StabilityPoolOutputError::FeeRateTooHigh);
+    }
+
+    let mut user_staged_provides = dbtx
+        .get_value(&StagedProvidesKey(output.account_id))
+        .await
+        .unwrap_or_default();
+
+    let sequence = dbtx
+        .get_value(&StagedProvideSequenceKey)
+        .await
+        .unwrap_or_default();
+    user_staged_provides.push(StagedProvide {
+        txid: outpoint.txid,
+        sequence,
+        provide: output.provide.clone(),
+    });
+
+    dbtx.insert_entry(&StagedProvideSequenceKey, &(sequence + 1))
+        .await;
+    dbtx.insert_entry(&StagedProvidesKey(output.account_id), &user_staged_provides)
+        .await;
+    Ok(TransactionItemAmount {
+        amount: output.provide.amount,
+        fee: Amount::ZERO,
+    })
+}
+
 fn settle_locks(
     locked_seeks: &mut BTreeMap<AccountId, Vec<LockedSeek>>,
     locked_provides: &mut BTreeMap<AccountId, Vec<LockedProvide>>,
-    start_price: u128,
-    new_price: u128,
+    start_price: FiatAmount,
+    new_price: FiatAmount,
     randomness: usize,
 ) {
     let total_seek_msats = locked_seeks
@@ -868,7 +902,10 @@ fn settle_locks(
     // ceiling division with (new_price). We then min this with the
     // total_msats_available to ensure we don't overshoot what we have.
     // Whatever is left is what the provides get.
-    let msats_needed_for_seeks = ceil_division(total_seek_msats * start_price, new_price);
+    let msats_needed_for_seeks = ceil_division(
+        total_seek_msats * u128::from(start_price.0),
+        u128::from(new_price.0),
+    );
     let seeks_msat_pool = msats_needed_for_seeks.min(total_msats_available);
     let provides_msat_pool = total_msats_available - seeks_msat_pool;
 
@@ -931,123 +968,66 @@ fn settle_locks(
     }
 }
 
-async fn apply_staged_cancellations(
+async fn process_unlock_requests(
     dbtx: &mut DatabaseTransaction<'_>,
     locked_seeks: &mut BTreeMap<AccountId, Vec<LockedSeek>>,
     locked_provides: &mut BTreeMap<AccountId, Vec<LockedProvide>>,
-    new_price: u128,
-) {
-    let staged_cancellations = dbtx
-        .find_by_prefix(&StagedCancellationKeyPrefix)
+    new_price: FiatAmount,
+) -> anyhow::Result<()> {
+    let unlock_requests = dbtx
+        .find_by_prefix(&UnlockRequestsKeyPrefix)
         .await
         .collect::<Vec<_>>()
         .await;
 
-    for (key, (_, CancelRenewal { bps })) in staged_cancellations {
-        let mut msats_to_refund = 0;
-
-        // If account has seeks, cancel portion of seeks
-        let total_account_seeks_msat = locked_seeks
-            .get(&key.0)
-            .map(|vec| vec.as_slice())
-            .unwrap_or_default()
-            .iter()
-            .fold(0u128, |acc, LockedSeek { amount, .. }| {
-                acc + amount.msats as u128
-            });
-
-        if total_account_seeks_msat != 0 {
-            let mut seeks_msat_to_cancel =
-                ceil_division(total_account_seeks_msat * bps as u128, BPS_UNIT);
-
-            if let Some(seeks_list) = locked_seeks.get_mut(&key.0) {
-                // Iterate in reverse to ensure older sequences are preserved
-                for LockedSeek {
-                    amount,
-                    staged_txid,
-                    ..
-                } in seeks_list.iter_mut().rev()
-                {
-                    let cancellable = seeks_msat_to_cancel.min(amount.msats.into());
-                    seeks_msat_to_cancel -= cancellable;
-                    msats_to_refund += cancellable;
-
-                    // `cancellable` is the min of two valid msat values. Since an msat value is
-                    // guaranteed to fit within u64, so is `cancellable`.
-                    let cancellable = Amount::from_msats(cancellable.try_into().unwrap());
-                    *amount -= cancellable;
-
-                    let seek_metadata_key = SeekMetadataKey(key.0, *staged_txid);
-                    if let Some(mut metadata) = dbtx.get_value(&seek_metadata_key).await {
-                        metadata.withdrawn_amount += cancellable;
-                        metadata.withdrawn_amount_cents += amount_to_cents(cancellable, new_price);
-                        if *amount == Amount::ZERO {
-                            metadata.fully_withdrawn = true;
+    for (key @ UnlockRequestKey(account_id), unlock_amount) in unlock_requests {
+        let amount_unlocked = match account_id.acc_type() {
+            AccountType::Seeker => {
+                if let Some(seeks_list) = locked_seeks.get_mut(&key.0) {
+                    let amount_to_unlock = match unlock_amount {
+                        UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
+                            fiat_amount.to_btc_amount(new_price)?
                         }
-                        dbtx.insert_entry(&seek_metadata_key, &metadata).await;
-                    }
+                        UnlockForWithdrawalAmount::All => seeks_list.iter().map(|s| s.amount).sum(),
+                    };
 
-                    if seeks_msat_to_cancel == 0 {
-                        break;
-                    }
+                    // TODO shaurya note that SeekMetadata updating was removed
+                    drain_in_reverse(seeks_list, |s| &mut s.amount, amount_to_unlock)
+                } else {
+                    Amount::ZERO
                 }
-
-                // Remove seeks that have been fully drained
-                seeks_list.retain(|LockedSeek { amount, .. }| *amount != Amount::ZERO);
             }
-        }
+            AccountType::Provider => {
+                if let Some(provides_list) = locked_provides.get_mut(&key.0) {
+                    let amount_to_unlock = match unlock_amount {
+                        UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
+                            fiat_amount.to_btc_amount(new_price)?
+                        }
+                        UnlockForWithdrawalAmount::All => {
+                            provides_list.iter().map(|p| p.amount).sum()
+                        }
+                    };
 
-        // If account has provides, cancel portion of provides
-        let total_account_provides_msat = locked_provides
-            .get(&key.0)
-            .map(|vec| vec.as_slice())
-            .unwrap_or_default()
-            .iter()
-            .fold(0u128, |acc, LockedProvide { amount, .. }| {
-                acc + amount.msats as u128
-            });
-
-        if total_account_provides_msat != 0 {
-            let mut provides_msat_to_cancel =
-                ceil_division(total_account_provides_msat * bps as u128, BPS_UNIT);
-
-            if let Some(provides_list) = locked_provides.get_mut(&key.0) {
-                // Iterate in reverse to ensure older sequences are preserved
-                for LockedProvide { amount, .. } in provides_list.iter_mut().rev() {
-                    let cancellable = provides_msat_to_cancel.min(amount.msats.into());
-
-                    // `cancellable` is the min of two valid msat values. Since an msat value is
-                    // guaranteed to fit within u64, so is `cancellable`
-                    amount.msats -= TryInto::<u64>::try_into(cancellable).unwrap();
-                    provides_msat_to_cancel -= cancellable;
-                    msats_to_refund += cancellable;
-
-                    if provides_msat_to_cancel == 0 {
-                        break;
-                    }
+                    drain_in_reverse(provides_list, |p| &mut p.amount, amount_to_unlock)
+                } else {
+                    Amount::ZERO
                 }
-
-                // Remove provides that have been fully drained
-                provides_list.retain(|LockedProvide { amount, .. }| *amount != Amount::ZERO);
             }
-        }
+        };
 
-        // Refund cancelled locked amount and remove account's staged cancellation
+        // Move unlocked msats to idle balance and remove account's unlock request
         let idle_balance_key = IdleBalanceKey(key.0);
-        let mut idle_balance = dbtx
+        let idle_balance = dbtx
             .get_value(&idle_balance_key)
             .await
-            .unwrap_or(IdleBalance(Amount::ZERO));
+            .unwrap_or(Amount::ZERO);
 
-        // `msats_to_refund` is an accrued value calculated by taking the user's seeks
-        // (or provides) and draining the seeks according to the specified basis points.
-        // Since the sum of the user's seeks cannot exceed 21 million BTC,
-        // `msats_to_refund` cannot exceed 21 million BTC, and must therefore fit within
-        // u64.
-        idle_balance.0.msats += TryInto::<u64>::try_into(msats_to_refund).unwrap();
-        dbtx.insert_entry(&idle_balance_key, &idle_balance).await;
+        dbtx.insert_entry(&idle_balance_key, &(idle_balance + amount_unlocked))
+            .await;
         dbtx.remove_entry(&key).await;
     }
+
+    Ok(())
 }
 
 async fn restage_remaining_locks(
@@ -1137,9 +1117,9 @@ async fn calculate_locks_and_write_cycle(
     collateral_ratio: &CollateralRatio,
     index: u64,
     time: SystemTime,
-    price: u64,
+    price: FiatAmount,
     randomness: usize,
-) {
+) -> anyhow::Result<()> {
     let (mut staged_seeks, mut staged_provides) =
         extract_sorted_staged_seeks_and_provides(dbtx).await;
     let LockedProvidesAndFeeRateResult {
@@ -1175,7 +1155,7 @@ async fn calculate_locks_and_write_cycle(
         price,
         randomness,
     )
-    .await;
+    .await
 }
 
 async fn extract_sorted_staged_seeks_and_provides(
@@ -1396,9 +1376,9 @@ async fn distribute_fees_and_write_cycle(
     included_provides_sum: u128,
     cycle_index: u64,
     cycle_time: SystemTime,
-    cycle_price: u64,
+    cycle_price: FiatAmount,
     randomness: usize,
-) {
+) -> anyhow::Result<()> {
     #[derive(PartialOrd, Ord, PartialEq, Eq)]
     struct AmountAndFeeKey {
         // CHECK: might affect ordering
@@ -1461,21 +1441,22 @@ async fn distribute_fees_and_write_cycle(
             Some(existing) => SeekMetadata {
                 staged_sequence: existing.staged_sequence,
                 initial_amount: existing.initial_amount,
-                initial_amount_cents: existing.initial_amount_cents,
+                initial_fiat_amount: existing.initial_fiat_amount,
                 withdrawn_amount: existing.withdrawn_amount,
-                withdrawn_amount_cents: existing.withdrawn_amount_cents,
+                withdrawn_fiat_amount: existing.withdrawn_fiat_amount,
                 fees_paid_so_far: existing.fees_paid_so_far + amount_and_fee.fee,
                 first_lock_start_time: existing.first_lock_start_time,
                 fully_withdrawn: existing.fully_withdrawn,
             },
             None => {
-                let amount_cents = amount_to_cents(amount_and_fee.amount, cycle_price.into());
+                let initial_fiat_amount =
+                    FiatAmount::from_btc_amount(amount_and_fee.amount, cycle_price)?;
                 SeekMetadata {
                     staged_sequence: sequence,
                     initial_amount: amount_and_fee.amount,
-                    initial_amount_cents: amount_cents,
+                    initial_fiat_amount,
                     withdrawn_amount: Amount::ZERO,
-                    withdrawn_amount_cents: 0,
+                    withdrawn_fiat_amount: FiatAmount(0),
                     fees_paid_so_far: amount_and_fee.fee,
                     first_lock_start_time: cycle_time,
                     fully_withdrawn: false,
@@ -1520,7 +1501,7 @@ async fn distribute_fees_and_write_cycle(
         let mut idle_balance = dbtx
             .get_value(&idle_balance_key)
             .await
-            .unwrap_or(IdleBalance(Amount::ZERO));
+            .unwrap_or(Amount::ZERO);
         // `fee_owed` is calculated by taking the total fee amount owed to all the
         // providers which comes from all the seeks. Since the sum of seeks cannot
         // exceed 21 million BTC, the total fee amount owed to all the providers cannot
@@ -1528,7 +1509,7 @@ async fn distribute_fees_and_write_cycle(
         // amount and multiply it by a fraction representing the provider's share of the
         // total provided liquidity. Therefore, `fee_owed` cannot exceed 21 million BTC.
         // And hence it must fit within u64.
-        idle_balance.0.msats += TryInto::<u64>::try_into(fee_owed).unwrap();
+        idle_balance.msats += TryInto::<u64>::try_into(fee_owed).unwrap();
         dbtx.insert_entry(&idle_balance_key, &idle_balance).await;
     }
 
@@ -1551,6 +1532,8 @@ async fn distribute_fees_and_write_cycle(
         },
     )
     .await;
+
+    Ok(())
 }
 
 /// Returns the remaining collateral provider needed
@@ -1660,5 +1643,125 @@ fn ceil_division(dividend: u128, divisor: u128) -> u128 {
         dividend / divisor
     } else {
         dividend / divisor + 1
+    }
+}
+
+/// Remove amount from items in reverse order. If an item's amount hits 0, the
+/// item itself is removed. Returns the actual amount that was able to be
+/// drained from all items.
+fn drain_in_reverse<T>(
+    items: &mut Vec<T>,
+    get_amount: impl Fn(&mut T) -> &mut Amount,
+    total_to_drain: Amount,
+) -> Amount {
+    if total_to_drain == Amount::ZERO {
+        return Amount::ZERO;
+    }
+
+    let mut left_to_drain = total_to_drain;
+    while let Some(mut item) = items.pop() {
+        let item_amount = get_amount(&mut item);
+        let min_extractable = Amount::from_msats(item_amount.msats.min(left_to_drain.msats));
+        *item_amount -= min_extractable;
+        left_to_drain -= min_extractable;
+
+        // reinsert not completely drained value
+        if *item_amount != Amount::ZERO {
+            items.push(item);
+        }
+
+        if left_to_drain == Amount::ZERO {
+            break;
+        }
+    }
+    total_to_drain - left_to_drain
+}
+
+#[cfg(test)]
+mod tests {
+    use anyhow::ensure;
+
+    use super::*;
+
+    #[test]
+    pub fn test_drain_in_reverse() -> anyhow::Result<()> {
+        // Single-item list, 0 amount
+        let mut items = vec![Amount::from_msats(10)];
+        ensure!(drain_in_reverse(&mut items, |i| i, Amount::ZERO) == Amount::ZERO);
+        ensure!(items.len() == 1);
+        ensure!(items[0] == Amount::from_msats(10));
+
+        // Single-item list, non-0 amount
+        let mut items = vec![Amount::from_msats(10)];
+        ensure!(
+            drain_in_reverse(&mut items, |i| i, Amount::from_msats(2)) == Amount::from_msats(2)
+        );
+        ensure!(items.len() == 1);
+        ensure!(items[0] == Amount::from_msats(8));
+
+        // Single-item list, excessive amount
+        let mut items = vec![Amount::from_msats(10)];
+        ensure!(
+            drain_in_reverse(&mut items, |i| i, Amount::from_msats(12)) == Amount::from_msats(10)
+        );
+        ensure!(items.is_empty());
+
+        // Multi-item list, 0 amount
+        let mut items = vec![
+            Amount::from_msats(10),
+            Amount::from_msats(15),
+            Amount::from_msats(20),
+            Amount::from_msats(25),
+        ];
+        ensure!(drain_in_reverse(&mut items, |i| i, Amount::ZERO) == Amount::ZERO);
+        ensure!(items.len() == 4);
+        ensure!(items[0] == Amount::from_msats(10));
+        ensure!(items[1] == Amount::from_msats(15));
+        ensure!(items[2] == Amount::from_msats(20));
+        ensure!(items[3] == Amount::from_msats(25));
+
+        // Multi-item list, non-0 amount, drain last item only
+        let mut items = vec![
+            Amount::from_msats(10),
+            Amount::from_msats(15),
+            Amount::from_msats(20),
+            Amount::from_msats(25),
+        ];
+        ensure!(
+            drain_in_reverse(&mut items, |i| i, Amount::from_msats(8)) == Amount::from_msats(8)
+        );
+        ensure!(items.len() == 4);
+        ensure!(items[0] == Amount::from_msats(10));
+        ensure!(items[1] == Amount::from_msats(15));
+        ensure!(items[2] == Amount::from_msats(20));
+        ensure!(items[3] == Amount::from_msats(17));
+
+        // Multi-item list, non-0 amount, drain multiple items
+        let mut items = vec![
+            Amount::from_msats(10),
+            Amount::from_msats(15),
+            Amount::from_msats(20),
+            Amount::from_msats(25),
+        ];
+        ensure!(
+            drain_in_reverse(&mut items, |i| i, Amount::from_msats(51)) == Amount::from_msats(51)
+        );
+        ensure!(items.len() == 2);
+        ensure!(items[0] == Amount::from_msats(10));
+        ensure!(items[1] == Amount::from_msats(9));
+
+        // Multi-item list, excessive amount
+        let mut items = vec![
+            Amount::from_msats(10),
+            Amount::from_msats(15),
+            Amount::from_msats(20),
+            Amount::from_msats(25),
+        ];
+        ensure!(
+            drain_in_reverse(&mut items, |i| i, Amount::from_msats(80)) == Amount::from_msats(70)
+        );
+        ensure!(items.is_empty());
+
+        Ok(())
     }
 }
