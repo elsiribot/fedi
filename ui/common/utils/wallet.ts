@@ -464,9 +464,10 @@ export const makeTxnDetailItems = (
     let txnTypeText = t('words.unknown')
 
     if (txn.bitcoin) txnTypeText = t('words.onchain')
-    if (txn.lightning) txnTypeText = t('words.lightning')
-    if (txn.stabilityPoolState) txnTypeText = t('phrases.stability-pool')
-    if (txn.oobState) txnTypeText = t('words.ecash')
+    else if (txn.lightning) txnTypeText = t('words.lightning')
+    else if (txn.stabilityPoolState)
+        txnTypeText = t('feature.stabilitypool.stable-balance')
+    else if (txn.oobState) txnTypeText = t('words.ecash')
 
     items.push({
         label: t('words.type'),
