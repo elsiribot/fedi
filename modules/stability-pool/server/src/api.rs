@@ -198,13 +198,13 @@ pub async fn liquidity_stats(
         .locked_seeks
         .values()
         .flatten()
-        .map(|s| s.amount.msats)
+        .map(|s| s.deposit.amount.msats)
         .sum();
     let locked_provides_sum_msat: u64 = current_cycle
         .locked_provides
         .values()
         .flatten()
-        .map(|p| p.amount.msats)
+        .map(|p| p.deposit.amount.msats)
         .sum();
     let staged_seeks_sum_msat: u64 = dbtx
         .find_by_prefix(&StagedSeeksKeyPrefix)
@@ -213,7 +213,7 @@ pub async fn liquidity_stats(
         .collect::<Vec<_>>()
         .await
         .iter()
-        .map(|s| s.seek.0.msats)
+        .map(|s| s.deposit.amount.msats)
         .sum();
     let staged_provides_sum_msat: u64 = dbtx
         .find_by_prefix(&StagedProvidesKeyPrefix)
@@ -222,7 +222,7 @@ pub async fn liquidity_stats(
         .collect::<Vec<_>>()
         .await
         .iter()
-        .map(|p| p.provide.amount.msats)
+        .map(|p| p.deposit.amount.msats)
         .sum();
 
     Ok(LiquidityStats {

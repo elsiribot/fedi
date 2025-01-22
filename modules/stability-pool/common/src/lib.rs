@@ -310,7 +310,7 @@ pub enum StabilityPoolOutputV0 {
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
 pub struct DepositToSeekOutput {
     pub account_id: AccountId,
-    pub seek: Seek,
+    pub seek_request: SeekRequest,
 }
 
 /// Represents a module output for depositing the given `amount` into the given
@@ -320,7 +320,7 @@ pub struct DepositToSeekOutput {
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
 pub struct DepositToProvideOutput {
     pub account_id: AccountId,
-    pub provide: Provide,
+    pub provide_request: ProvideRequest,
 }
 
 extensible_associated_module_type!(
@@ -330,26 +330,46 @@ extensible_associated_module_type!(
 );
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
-pub struct Seek(pub Amount);
+pub struct SeekRequest(pub Amount);
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
-pub struct Provide {
+pub struct ProvideRequest {
     pub amount: Amount,
     pub min_fee_rate: u64,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
-pub struct StagedSeek {
-    pub txid: TransactionId,
-    pub sequence: u64,
-    pub seek: Seek,
+pub struct Seek {
+    pub deposit: Deposit,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
-pub struct StagedProvide {
-    pub txid: TransactionId,
-    pub sequence: u64,
-    pub provide: Provide,
+pub struct Provide {
+    pub deposit: Deposit,
+    pub min_fee_rate: u64,
+}
+
+impl AsRef<Deposit> for Seek {
+    fn as_ref(&self) -> &Deposit {
+        &self.deposit
+    }
+}
+impl AsRef<Deposit> for Provide {
+    fn as_ref(&self) -> &Deposit {
+        &self.deposit
+    }
+}
+
+impl AsMut<Deposit> for Seek {
+    fn as_mut(&mut self) -> &mut Deposit {
+        &mut self.deposit
+    }
+}
+
+impl AsMut<Deposit> for Provide {
+    fn as_mut(&mut self) -> &mut Deposit {
+        &mut self.deposit
+    }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
@@ -510,18 +530,10 @@ plugin_types_trait_impl_common!(
     StabilityPoolOutputError
 );
 
-#[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
-pub struct LockedSeek {
-    pub staged_txid: TransactionId,
-    pub staged_sequence: u64,
-    pub amount: Amount,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
-pub struct LockedProvide {
-    pub staged_txid: TransactionId,
-    pub staged_sequence: u64,
-    pub staged_min_fee_rate: u64,
+#[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize, Hash)]
+pub struct Deposit {
+    pub txid: TransactionId,
+    pub sequence: u64,
     pub amount: Amount,
 }
 
@@ -555,14 +567,14 @@ impl Display for StabilityPoolOutputV0 {
             StabilityPoolOutputV0::DepositToSeek(seek_output) => write!(
                 f,
                 "Deposit {} into account {} for seeking",
-                seek_output.seek.0, seek_output.account_id
+                seek_output.seek_request.0, seek_output.account_id
             ),
             StabilityPoolOutputV0::DepositToProvide(provide_output) => write!(
                 f,
                 "Deposit {} into account {} for providing with min fee rate {}",
-                provide_output.provide.amount,
+                provide_output.provide_request.amount,
                 provide_output.account_id,
-                provide_output.provide.min_fee_rate
+                provide_output.provide_request.min_fee_rate
             ),
         }
     }
@@ -642,11 +654,11 @@ pub enum UnlockRequestStatus {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encodable, Decodable)]
 pub struct AccountInfo {
     pub idle_balance: Amount,
-    pub staged_seeks: Vec<StagedSeek>,
-    pub staged_provides: Vec<StagedProvide>,
+    pub staged_seeks: Vec<Seek>,
+    pub staged_provides: Vec<Provide>,
     pub unlock_request: Option<UnlockForWithdrawalAmount>,
-    pub locked_seeks: Vec<LockedSeek>,
-    pub locked_provides: Vec<LockedProvide>,
+    pub locked_seeks: Vec<Seek>,
+    pub locked_provides: Vec<Provide>,
     pub seeks_metadata: BTreeMap<TransactionId, SeekMetadata>,
 }
 

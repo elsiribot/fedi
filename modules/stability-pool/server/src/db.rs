@@ -4,8 +4,8 @@ use std::time::SystemTime;
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId, TransactionId};
 use stability_pool_common::{
-    AccountId, FiatAmount, LockedProvide, LockedSeek, SeekMetadata, StabilityPoolConsensusItem,
-    StagedProvide, StagedSeek, UnlockForWithdrawalAmount,
+    AccountId, FiatAmount, Provide, Seek, SeekMetadata, StabilityPoolConsensusItem,
+    UnlockForWithdrawalAmount,
 };
 
 #[repr(u8)]
@@ -88,7 +88,7 @@ pub struct StagedSeeksKey(pub AccountId);
 #[derive(Debug, Encodable, Decodable)]
 pub struct StagedSeeksKeyPrefix;
 
-impl_db_record!(key = StagedSeeksKey, value = Vec<StagedSeek>, db_prefix = DbKeyPrefix::StagedSeeks);
+impl_db_record!(key = StagedSeeksKey, value = Vec<Seek>, db_prefix = DbKeyPrefix::StagedSeeks);
 impl_db_lookup!(key = StagedSeeksKey, query_prefix = StagedSeeksKeyPrefix);
 
 #[derive(Debug, Encodable, Decodable)]
@@ -97,7 +97,7 @@ pub struct StagedProvidesKey(pub AccountId);
 #[derive(Debug, Encodable, Decodable)]
 pub struct StagedProvidesKeyPrefix;
 
-impl_db_record!(key = StagedProvidesKey, value = Vec<StagedProvide>, db_prefix = DbKeyPrefix::StagedProvides);
+impl_db_record!(key = StagedProvidesKey, value = Vec<Provide>, db_prefix = DbKeyPrefix::StagedProvides);
 impl_db_lookup!(
     key = StagedProvidesKey,
     query_prefix = StagedProvidesKeyPrefix
@@ -126,8 +126,8 @@ pub struct Cycle {
     pub start_time: SystemTime,
     pub start_price: FiatAmount,
     pub fee_rate: u64,
-    pub locked_seeks: BTreeMap<AccountId, Vec<LockedSeek>>,
-    pub locked_provides: BTreeMap<AccountId, Vec<LockedProvide>>,
+    pub locked_seeks: BTreeMap<AccountId, Vec<Seek>>,
+    pub locked_provides: BTreeMap<AccountId, Vec<Provide>>,
 }
 
 #[derive(Debug, Encodable, Decodable)]
