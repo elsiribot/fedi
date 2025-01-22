@@ -115,11 +115,6 @@ export type FiatFXInfo = {
   btcToFiatHundredths: number;
 };
 
-export type GuardianStatus =
-  | { online: { guardian: string; latency_ms: number } }
-  | { error: { guardian: string; error: string } }
-  | { timeout: { guardian: string; elapsed: string } };
-
 export type LogEvent = { log: string };
 
 /**
@@ -412,7 +407,7 @@ export type RpcMethods = {
   federationPreview: [federationPreview, RpcFederationPreview];
   leaveFederation: [leaveFederation, null];
   listFederations: [listFederations, Array<RpcFederationMaybeLoading>];
-  guardianStatus: [guardianStatus, Array<GuardianStatus>];
+  getGuardianStatus: [getGuardianStatus, Array<GuardianStatus>];
   generateInvoice: [generateInvoice, string];
   decodeInvoice: [decodeInvoice, RpcInvoice];
   payInvoice: [payInvoice, RpcPayInvoiceResponse];
@@ -966,6 +961,8 @@ export type getAccruedPendingFediFeesPerTXType = {
   federationId: RpcFederationId;
 };
 
+export type getGuardianStatus = { federationId: RpcFederationId };
+
 export type getMnemonic = {};
 
 export type getNostrPubkey = {};
@@ -974,7 +971,10 @@ export type getNostrSecret = {};
 
 export type getSensitiveLog = {};
 
-export type guardianStatus = { federationId: RpcFederationId };
+export type GuardianStatus =
+  | { online: { guardian: string; latency_ms: number } }
+  | { error: { guardian: string; error: string } }
+  | { timeout: { guardian: string; elapsed: string } };
 
 export type joinCommunity = { inviteCode: string };
 

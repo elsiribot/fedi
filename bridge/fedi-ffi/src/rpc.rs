@@ -262,7 +262,7 @@ macro_rules! federation_recovering_rpc_method {
 }
 
 #[macro_rules_derive(federation_recovering_rpc_method!)]
-async fn guardianStatus(federation: Arc<FederationV2>) -> anyhow::Result<Vec<GuardianStatus>> {
+async fn getGuardianStatus(federation: Arc<FederationV2>) -> anyhow::Result<Vec<GuardianStatus>> {
     federation.guardian_status().await
 }
 
@@ -1516,7 +1516,7 @@ rpc_methods!(RpcMethods {
     federationPreview,
     leaveFederation,
     listFederations,
-    guardianStatus,
+    getGuardianStatus,
     // Lightning
     generateInvoice,
     decodeInvoice,

@@ -122,9 +122,9 @@ export class FedimintBridge {
         )
     }
 
-    async guardianStatus(federationId: string) {
-        return this.rpcTyped<'guardianStatus', GuardianStatus[]>(
-            'guardianStatus',
+    async getGuardianStatus(federationId: string) {
+        return this.rpcTyped<'getGuardianStatus', GuardianStatus[]>(
+            'getGuardianStatus',
             { federationId },
         )
     }

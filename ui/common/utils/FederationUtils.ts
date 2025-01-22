@@ -707,7 +707,7 @@ export const getGuardianStatuses = async (
     fedimint: FedimintBridge,
     federationId: string,
 ): Promise<GuardianStatus[]> => {
-    return fedimint.guardianStatus(federationId)
+    return fedimint.getGuardianStatus(federationId)
 }
 
 export const switchGateway = async (
@@ -722,7 +722,7 @@ export const getFederationStatus = async (
     fedimint: FedimintBridge,
     federationId: FederationListItem['id'],
 ): Promise<FederationStatus> => {
-    const guardianStatuses = await fedimint.guardianStatus(federationId)
+    const guardianStatuses = await fedimint.getGuardianStatus(federationId)
     const offlineGuardians = guardianStatuses.filter(status => {
         // Guardian is online
         if ('online' in status) return false
