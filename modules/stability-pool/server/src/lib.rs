@@ -849,6 +849,49 @@ async fn process_deposit_to_provide_output<'a, 'b>(
     })
 }
 
+// Starting with an msat pool, distribute amounts to every deposit based on the
+// deposit's stake. Here a deposit's "stake" is defined as its ratio of the
+// total deposits sum. If the pool is not fully drained by the end due to
+// rounding errors, randomly distribute any leftover msats.
+fn distribute_from_pool<D>(deposits: &mut [D], distribution_msat_pool: u128, randomness: usize)
+where
+    D: AsRef<Deposit> + AsMut<Deposit>,
+{
+    let total_deposits_msats = u128::from(
+        deposits
+            .iter()
+            .map(|d| d.as_ref().amount.msats)
+            .sum::<u64>(),
+    );
+
+    // Now we distribute msats owed to the deposits based on their share
+    // of distribution_msat_pool.
+    let mut draining_msat_pool = distribution_msat_pool;
+    for d in deposits.iter_mut() {
+        let deposit = d.as_ref();
+        let new_amount =
+            (distribution_msat_pool * deposit.amount.msats as u128) / total_deposits_msats;
+        draining_msat_pool -= new_amount;
+        // `distribution_msat_pool` fits in u64 since it cannot grow larger than 21
+        // million BTC. `new_amount` is less than `distribution_msat_pool`.
+        // Therefore, `new_amount` must fit in u64.
+        d.as_mut().amount.msats = new_amount.try_into().unwrap();
+    }
+
+    // If there's any left over msats owed to seeks (due to rounding),
+    // we allot them to an arbitrary seek.
+    if draining_msat_pool != 0 {
+        let rand_index = randomness % deposits.len();
+        if let Some(d) = deposits.get_mut(rand_index) {
+            // `draining_msat_pool` starts off as `distribution_msat_pool` and gets
+            // progressively smaller. `distribution_msat_pool` fits in u64 since it
+            // cannot grow larger than 21 million BTC. Therefore
+            // `draining_msat_pool` must also fit in u64.
+            d.as_mut().amount.msats += TryInto::<u64>::try_into(draining_msat_pool).unwrap();
+        }
+    }
+}
+
 fn settle_locks(
     locked_seeks: &mut BTreeMap<AccountId, Vec<Seek>>,
     locked_provides: &mut BTreeMap<AccountId, Vec<Provide>>,
@@ -884,62 +927,18 @@ fn settle_locks(
 
     // Now we distribute msats owed to the seeks based on their share
     // of total_seek_msats.
-    let mut draining_seeks_msat_pool = seeks_msat_pool;
-    locked_seeks
-        .values_mut()
-        .flatten()
-        .for_each(|Seek { deposit, .. }| {
-            let new_amount = (seeks_msat_pool * deposit.amount.msats as u128) / total_seek_msats;
-            draining_seeks_msat_pool -= new_amount;
-            // `seeks_msat_pool` fits in u64 since it cannot grow larger than 21 million
-            // BTC. `new_amount` is less than `seeks_msat_pool`. Therefore,
-            // `new_amount` must fit in u64.
-            deposit.amount.msats = new_amount.try_into().unwrap();
-        });
-
-    // If there's any left over msats owed to seeks (due to rounding),
-    // we allot them to an arbitrary seek.
-    if draining_seeks_msat_pool != 0 {
-        let mut seeks_vec = locked_seeks.values_mut().flatten().collect_vec();
-        let rand_index = randomness % seeks_vec.len();
-        if let Some(Seek { deposit, .. }) = seeks_vec.get_mut(rand_index) {
-            // `draining_seeks_msat_pool` starts off as `seeks_msat_pool` and gets
-            // progressively smaller. `seeks_msat_pool` fits in u64 since it
-            // cannot grow larger than 21 million BTC. Therefore
-            // `draining_seeks_msat_pool` must also fit in u64.
-            deposit.amount.msats += TryInto::<u64>::try_into(draining_seeks_msat_pool).unwrap();
-        }
-    }
-
     // Similarly we distribute msats owed to the provides based on their share
     // of total_provide_msats.
-    let mut draining_provides_msat_pool = provides_msat_pool;
-    locked_provides
-        .values_mut()
-        .flatten()
-        .for_each(|Provide { deposit, .. }| {
-            let new_amount =
-                (provides_msat_pool * deposit.amount.msats as u128) / total_provide_msats;
-            draining_provides_msat_pool -= new_amount;
-            // `provides_msat_pool` fits in u64 since it cannot grow larger than 21 million
-            // BTC. `new_amount` is less than `provides_msat_pool`. Therefore,
-            // `new_amount` must fit in u64.
-            deposit.amount.msats = new_amount.try_into().unwrap();
-        });
-
-    // If there's any left over msats owed to provides (due to rounding),
-    // we allot them to an arbitrary provide.
-    if draining_provides_msat_pool != 0 {
-        let mut provides_vec = locked_provides.values_mut().flatten().collect_vec();
-        let rand_index = randomness % provides_vec.len();
-        if let Some(Provide { deposit, .. }) = provides_vec.get_mut(rand_index) {
-            // `draining_provides_msat_pool` starts off as `provides_msat_pool` and gets
-            // progressively smaller. `provides_msat_pool` fits in u64 since it
-            // cannot grow larger than 21 million BTC. Therefore
-            // `draining_provides_msat_pool` must also fit in u64.
-            deposit.amount.msats += TryInto::<u64>::try_into(draining_provides_msat_pool).unwrap();
-        }
-    }
+    distribute_from_pool(
+        &mut locked_seeks.values_mut().flatten().collect_vec(),
+        seeks_msat_pool,
+        randomness,
+    );
+    distribute_from_pool(
+        &mut locked_provides.values_mut().flatten().collect_vec(),
+        provides_msat_pool,
+        randomness,
+    );
 }
 
 async fn process_unlock_requests(
