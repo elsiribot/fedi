@@ -404,7 +404,7 @@ impl Matrix {
                     .event_filter(|event, version| match event {
                         AnySyncTimelineEvent::MessageLike(
                             matrix_sdk::ruma::events::AnySyncMessageLikeEvent::RoomMessage(msg),
-                        ) if msg.as_original().map_or(false, |o| {
+                        ) if msg.as_original().is_some_and(|o| {
                             o.content.msgtype.msgtype().starts_with("xyz.fedi")
                         }) =>
                         {

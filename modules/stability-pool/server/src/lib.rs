@@ -688,9 +688,9 @@ where
     })
 }
 
-async fn process_unlock_input<'a, 'b>(
-    dbtx: &mut DatabaseTransaction<'b>,
-    input: &'a UnlockForWithdrawalInput,
+async fn process_unlock_input(
+    dbtx: &mut DatabaseTransaction<'_>,
+    input: &UnlockForWithdrawalInput,
 ) -> Result<InputMeta, StabilityPoolInputError> {
     let current_cycle = dbtx
         .get_value(&CurrentCycleKey)
@@ -729,9 +729,9 @@ async fn process_unlock_input<'a, 'b>(
     }
 }
 
-async fn process_withdrawal_input<'a, 'b>(
-    dbtx: &mut DatabaseTransaction<'b>,
-    input: &'a WithdrawalInput,
+async fn process_withdrawal_input(
+    dbtx: &mut DatabaseTransaction<'_>,
+    input: &WithdrawalInput,
 ) -> Result<InputMeta, StabilityPoolInputError> {
     if input.amount == Amount::ZERO {
         return Err(StabilityPoolInputError::InvalidWithdrawalAmount);
@@ -762,10 +762,10 @@ async fn process_withdrawal_input<'a, 'b>(
     })
 }
 
-async fn process_deposit_to_seek_output<'a, 'b>(
+async fn process_deposit_to_seek_output(
     config: StabilityPoolConfig,
-    dbtx: &mut DatabaseTransaction<'b>,
-    output: &'a DepositToSeekOutput,
+    dbtx: &mut DatabaseTransaction<'_>,
+    output: &DepositToSeekOutput,
 ) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
     if output.seek_request.0 < config.consensus.min_allowed_seek {
         return Err(StabilityPoolOutputError::AmountTooLow);
@@ -797,10 +797,10 @@ async fn process_deposit_to_seek_output<'a, 'b>(
     })
 }
 
-async fn process_deposit_to_provide_output<'a, 'b>(
+async fn process_deposit_to_provide_output(
     config: StabilityPoolConfig,
-    dbtx: &mut DatabaseTransaction<'b>,
-    output: &'a DepositToProvideOutput,
+    dbtx: &mut DatabaseTransaction<'_>,
+    output: &DepositToProvideOutput,
 ) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
     if output.provide_request.amount < config.consensus.min_allowed_provide {
         return Err(StabilityPoolOutputError::AmountTooLow);

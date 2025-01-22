@@ -7,6 +7,11 @@ edition = "2021"
 crate-type = ["staticlib", "cdylib", "rlib"]
 name = "fediffi"
 
+# TODO: remove after uniffi upgraded
+# https://github.com/mozilla/uniffi-rs/issues/2346
+[lints.clippy]
+empty-line-after-doc-comments = "allow"
+
 [dependencies]
 fedi-api-types = { workspace = true }
 fedi-core = { workspace = true }

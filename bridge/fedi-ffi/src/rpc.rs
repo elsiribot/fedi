@@ -1,5 +1,5 @@
 #![allow(non_snake_case, non_camel_case_types)]
-use std::panic::PanicInfo;
+use std::panic::PanicHookInfo;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::atomic::AtomicU64;
@@ -100,7 +100,7 @@ pub fn rpc_error_json(error: &anyhow::Error) -> String {
     serde_json::to_string(&RpcError::from_anyhow(error)).unwrap()
 }
 
-pub fn panic_hook(info: &PanicInfo, event_sink: &dyn IEventSink) {
+pub fn panic_hook(info: &PanicHookInfo, event_sink: &dyn IEventSink) {
     event_sink.typed_event(&Event::Panic(PanicEvent {
         message: info.to_string(),
     }))
@@ -125,7 +125,7 @@ impl<'a> TryGet<&'a BridgeFull> for &'a Bridge {
     }
 }
 
-impl<'a> TryGet<Arc<BridgeRuntime>> for &'a Bridge {
+impl TryGet<Arc<BridgeRuntime>> for &Bridge {
     fn try_get(self) -> anyhow::Result<Arc<BridgeRuntime>> {
         Ok(self.runtime().clone())
     }
@@ -843,13 +843,15 @@ async fn transferExistingDeviceRegistration(
 }
 
 async fn ensure_device_index_unassigned(runtime: &BridgeRuntime) -> anyhow::Result<()> {
-    Ok(anyhow::ensure!(
+    anyhow::ensure!(
         matches!(
             runtime.device_index_assignment_status().await,
             Ok(RpcDeviceIndexAssignmentStatus::Unassigned)
         ),
         "device index is already assigned"
-    ))
+    );
+
+    Ok(())
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -2504,7 +2506,7 @@ pub mod tests {
                 let transaction = ev_body.transaction;
                 if transaction
                     .lightning
-                    .map_or(false, |ln| ln.invoice == invoice_string)
+                    .is_some_and(|ln| ln.invoice == invoice_string)
                     && matches!(
                         transaction.ln_state,
                         Some(RpcLnState::RecvState(RpcLnReceiveState::Claimed))
@@ -2720,7 +2722,7 @@ pub mod tests {
                 let transaction = ev_body.transaction;
                 if transaction
                     .bitcoin
-                    .map_or(false, |btc| btc.address == address)
+                    .is_some_and(|btc| btc.address == address)
                     && matches!(
                         transaction.onchain_state,
                         Some(crate::types::RpcOnchainState::DepositState(

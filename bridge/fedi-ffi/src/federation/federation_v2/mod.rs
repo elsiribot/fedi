@@ -1072,7 +1072,7 @@ impl FederationV2 {
             .operation_log()
             .get_operation(payment_type.operation_id())
             .await
-            .map_or(false, |o| o.outcome::<PayState>().is_some())
+            .is_some_and(|o| o.outcome::<PayState>().is_some())
         {
             bail!(ErrorCode::PayLnInvoiceAlreadyPaid);
         }
@@ -1277,7 +1277,7 @@ impl FederationV2 {
                     if pay_meta.is_internal_payment
                         && operation
                             .outcome::<serde_json::Value>()
-                            .map_or(false, internal_pay_is_bad_state)
+                            .is_some_and(internal_pay_is_bad_state)
                     {
                         anyhow::bail!("not subscribe to failed transaction");
                     }
@@ -1633,7 +1633,7 @@ impl FederationV2 {
         let meta = op.meta::<MintOperationMeta>();
         let is_overissue_correction =
             serde_json::from_value::<EcashReceiveMetadata>(meta.extra_meta)
-                .map_or(false, |x| x.internal);
+                .is_ok_and(|x| x.internal);
         let mut updates = self
             .client
             .mint()?
@@ -2248,8 +2248,7 @@ impl FederationV2 {
                                 MintOperationMetaVariant::Reissuance { .. } => {
                                     let internal = serde_json::from_value::<EcashReceiveMetadata>(
                                         mint_meta.extra_meta,
-                                    )
-                                    .map_or(false, |x| x.internal);
+                                    ).is_ok_and(|x| x.internal);
                                     if !internal {
                                         let mut transaction = RpcTransaction::new(
                                             op.0.operation_id.fmt_full().to_string(),
@@ -2275,8 +2274,7 @@ impl FederationV2 {
                                 } => {
                                     let internal = serde_json::from_value::<EcashSendMetadata>(
                                         mint_meta.extra_meta,
-                                    )
-                                    .map_or(false, |x| x.internal);
+                                    ).is_ok_and(|x| x.internal);
 
                                     if !internal {
                                         let mut transaction = RpcTransaction::new(
@@ -2443,7 +2441,7 @@ impl FederationV2 {
     }
 
     /// Stability Pool
-
+    ///
     /// Get user's stability pool account info
     pub async fn stability_pool_account_info(
         &self,
