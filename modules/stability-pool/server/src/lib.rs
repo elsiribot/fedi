@@ -40,7 +40,7 @@ use fedimint_core::module::{
 };
 use fedimint_core::server::DynServerModule;
 use fedimint_core::task::{MaybeSend, MaybeSync};
-use fedimint_core::{Amount, NumPeersExt, OutPoint, PeerId, ServerModule, TransactionId};
+use fedimint_core::{Amount, NumPeersExt, OutPoint, PeerId, ServerModule};
 use futures::{stream, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
@@ -472,7 +472,7 @@ impl ServerModule for StabilityPool {
         &'a self,
         dbtx: &mut DatabaseTransaction<'b>,
         output: &'a StabilityPoolOutput,
-        outpoint: OutPoint,
+        _outpoint: OutPoint,
     ) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
         let v0 = output
             .ensure_v0_ref()
@@ -495,19 +495,12 @@ impl ServerModule for StabilityPool {
             StabilityPoolOutputV0::DepositToSeek(deposit_to_seek)
                 if account_id.acc_type() == AccountType::Seeker =>
             {
-                process_deposit_to_seek_output(self.cfg.clone(), dbtx, deposit_to_seek, outpoint)
-                    .await
+                process_deposit_to_seek_output(self.cfg.clone(), dbtx, deposit_to_seek).await
             }
             StabilityPoolOutputV0::DepositToProvide(deposit_to_provide)
                 if account_id.acc_type() == AccountType::Provider =>
             {
-                process_deposit_to_provide_output(
-                    self.cfg.clone(),
-                    dbtx,
-                    deposit_to_provide,
-                    outpoint,
-                )
-                .await
+                process_deposit_to_provide_output(self.cfg.clone(), dbtx, deposit_to_provide).await
             }
             _ => Err(StabilityPoolOutputError::InvalidAccountTypeForOperation),
         }
@@ -774,7 +767,6 @@ async fn process_deposit_to_seek_output<'a, 'b>(
     config: StabilityPoolConfig,
     dbtx: &mut DatabaseTransaction<'b>,
     output: &'a DepositToSeekOutput,
-    outpoint: OutPoint,
 ) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
     if output.seek_request.0 < config.consensus.min_allowed_seek {
         return Err(StabilityPoolOutputError::AmountTooLow);
@@ -791,7 +783,6 @@ async fn process_deposit_to_seek_output<'a, 'b>(
         .unwrap_or_default();
     user_staged_seeks.push(Seek {
         deposit: Deposit {
-            txid: outpoint.txid,
             sequence,
             amount: output.seek_request.0,
         },
@@ -811,7 +802,6 @@ async fn process_deposit_to_provide_output<'a, 'b>(
     config: StabilityPoolConfig,
     dbtx: &mut DatabaseTransaction<'b>,
     output: &'a DepositToProvideOutput,
-    outpoint: OutPoint,
 ) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
     if output.provide_request.amount < config.consensus.min_allowed_provide {
         return Err(StabilityPoolOutputError::AmountTooLow);
@@ -832,7 +822,6 @@ async fn process_deposit_to_provide_output<'a, 'b>(
         .unwrap_or_default();
     user_staged_provides.push(Provide {
         deposit: Deposit {
-            txid: outpoint.txid,
             sequence,
             amount: output.provide_request.amount,
         },
@@ -1025,7 +1014,6 @@ async fn restage_remaining_locks(
                 if prev.deposit.sequence == curr.deposit.sequence {
                     Ok(Seek {
                         deposit: Deposit {
-                            txid: prev.deposit.txid,
                             sequence: prev.deposit.sequence,
                             amount: prev.deposit.amount + curr.deposit.amount,
                         },
@@ -1054,7 +1042,6 @@ async fn restage_remaining_locks(
                 if prev.deposit.sequence == curr.deposit.sequence {
                     Ok(Provide {
                         deposit: Deposit {
-                            txid: prev.deposit.txid,
                             sequence: prev.deposit.sequence,
                             amount: prev.deposit.amount + curr.deposit.amount,
                         },
@@ -1198,12 +1185,7 @@ fn calculate_locked_provides_and_fee_rate(
         let (
             account_id,
             Provide {
-                deposit:
-                    Deposit {
-                        txid,
-                        sequence,
-                        amount,
-                    },
+                deposit: Deposit { sequence, amount },
                 min_fee_rate,
             },
         ) = &mut staged_provides[0];
@@ -1239,7 +1221,6 @@ fn calculate_locked_provides_and_fee_rate(
             *account_id,
             Provide {
                 deposit: Deposit {
-                    txid: *txid,
                     sequence: *sequence,
                     amount: Amount::from_msats(amount_used.try_into().unwrap()),
                 },
@@ -1283,12 +1264,7 @@ fn calculate_locked_seeks(
         let (
             account,
             Seek {
-                deposit:
-                    Deposit {
-                        txid,
-                        sequence,
-                        amount,
-                    },
+                deposit: Deposit { sequence, amount },
             },
         ) = &mut staged_seeks[0];
 
@@ -1298,7 +1274,6 @@ fn calculate_locked_seeks(
             *account,
             Seek {
                 deposit: Deposit {
-                    txid: *txid,
                     sequence: *sequence,
                     amount: Amount::from_msats(amount_used.try_into().unwrap()),
                 },
@@ -1345,9 +1320,7 @@ async fn distribute_fees_and_write_cycle(
 ) -> anyhow::Result<()> {
     #[derive(PartialOrd, Ord, PartialEq, Eq)]
     struct AmountAndFeeKey {
-        // CHECK: might affect ordering
         account_id: AccountId,
-        txid: TransactionId,
         sequence: u64,
     }
     struct AmountAndFeeValue {
@@ -1362,12 +1335,7 @@ async fn distribute_fees_and_write_cycle(
         |(
             account_id,
             Seek {
-                deposit:
-                    Deposit {
-                        txid,
-                        sequence,
-                        amount,
-                    },
+                deposit: Deposit { sequence, amount },
             },
         )| {
             // Ceiling division to ensure fee is never undercharged
@@ -1381,7 +1349,6 @@ async fn distribute_fees_and_write_cycle(
             seek_amount_and_fee_map.insert(
                 AmountAndFeeKey {
                     account_id: *account_id,
-                    txid: *txid,
                     sequence: *sequence,
                 },
                 AmountAndFeeValue {
@@ -1397,13 +1364,12 @@ async fn distribute_fees_and_write_cycle(
     for (
         AmountAndFeeKey {
             account_id,
-            txid,
             sequence,
         },
         amount_and_fee,
     ) in seek_amount_and_fee_map
     {
-        let seek_metadata_key = SeekMetadataKey(account_id, txid);
+        let seek_metadata_key = SeekMetadataKey(account_id, sequence);
         let seek_metadata = match dbtx.get_value(&seek_metadata_key).await {
             Some(existing) => SeekMetadata {
                 staged_sequence: existing.staged_sequence,

@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::time::SystemTime;
 
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId, TransactionId};
+use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId};
 use stability_pool_common::{
     AccountId, FiatAmount, Provide, Seek, SeekMetadata, StabilityPoolConsensusItem,
     UnlockForWithdrawalAmount,
@@ -61,7 +61,7 @@ pub enum DbKeyPrefix {
     /// threshold number of votes is received, cycle turnover happens.
     CycleChangeVote,
 
-    /// (User account, transaction ID) => seek metadata.
+    /// (User account, seek sequence) => seek metadata.
     /// Relevant history pertaining to the seek for client tracking purposes.
     /// Contains information such as initial value in sats and cents,
     /// withdrawn amounts in sats and cents, as well as fees debited so far.
@@ -212,7 +212,7 @@ impl_db_lookup!(
 );
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct SeekMetadataKey(pub AccountId, pub TransactionId);
+pub struct SeekMetadataKey(pub AccountId, pub u64); // (account, sequence)
 
 #[derive(Debug, Encodable, Decodable)]
 pub struct SeekMetadataAccountPrefix(pub AccountId);
