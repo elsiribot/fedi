@@ -22,3 +22,4 @@ stability-pool-common = { path = "../common" }
 rand = { workspace = true }
 async-stream = { workspace = true }
 tokio = { workspace = true }
+clap = { workspace = true, features = ["derive"] }

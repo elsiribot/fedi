@@ -8214,6 +8214,7 @@ dependencies = [
  "async-stream",
  "async-trait",
  "bitcoin",
+ "clap",
  "erased-serde",
  "fedimint-api-client",
  "fedimint-client",
