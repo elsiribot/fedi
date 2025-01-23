@@ -463,7 +463,7 @@
             "log-in-to-mod": "Log in to <bold>{{fediMod}}</bold> with <bold>{{method}}</bold>",
             "nostr-public-key": "Nostr Public Key",
             "nostr-secret-key": "Nostr Secret Key",
-            "nostr-settings": "Nostr Settings",
+            "nostr-settings": "Nostr Details",
             "wants-you-to-sign": "{{fediMod}} wants you to sign"
         },
         "notifications": {
