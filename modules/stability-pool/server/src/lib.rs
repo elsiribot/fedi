@@ -602,7 +602,7 @@ async fn process_unlock_input_inner<K, D>(
     btc_price: FiatAmount,
 ) -> Result<InputMeta, StabilityPoolInputError>
 where
-    D: AsMut<Deposit> + AsRef<Deposit> + MaybeSend + MaybeSync,
+    D: AsMut<Deposit> + AsRef<Deposit> + MaybeSend + MaybeSync + Clone,
     K: DatabaseKey + DatabaseRecord<Value = Vec<D>> + MaybeSend + MaybeSync,
 {
     let unlock_key = UnlockRequestKey(input.account.id());
@@ -631,13 +631,12 @@ where
             // Drain staged deposits in reverse (newest to oldest).
             let mut amount_needed = amount;
             if staged_deposits.is_empty().not() {
-                let drained = drain_in_reverse(
-                    &mut staged_deposits,
-                    |d| &mut d.as_mut().amount,
-                    amount_needed,
-                );
-                amount_needed -= drained;
-                idle_balance_credit = drained;
+                let drained_sum = drain_in_reverse(&mut staged_deposits, amount_needed)
+                    .iter()
+                    .map(|d| d.as_ref().amount)
+                    .sum();
+                amount_needed -= drained_sum;
+                idle_balance_credit = drained_sum;
                 dbtx.insert_entry(staged_key, &staged_deposits).await;
             }
 
@@ -955,8 +954,10 @@ async fn process_unlock_requests(
                         }
                     };
 
-                    // TODO shaurya note that SeekMetadata updating was removed
-                    drain_in_reverse(seeks_list, |s| &mut s.deposit.amount, amount_to_unlock)
+                    drain_in_reverse(seeks_list, amount_to_unlock)
+                        .iter()
+                        .map(|d| d.as_ref().amount)
+                        .sum()
                 } else {
                     Amount::ZERO
                 }
@@ -972,7 +973,10 @@ async fn process_unlock_requests(
                         }
                     };
 
-                    drain_in_reverse(provides_list, |p| &mut p.deposit.amount, amount_to_unlock)
+                    drain_in_reverse(provides_list, amount_to_unlock)
+                        .iter()
+                        .map(|d| d.as_ref().amount)
+                        .sum()
                 } else {
                     Amount::ZERO
                 }
@@ -1580,26 +1584,35 @@ fn ceil_division(dividend: u128, divisor: u128) -> u128 {
 }
 
 /// Remove amount from items in reverse order. If an item's amount hits 0, the
-/// item itself is removed. Returns the actual amount that was able to be
-/// drained from all items.
-fn drain_in_reverse<T>(
-    items: &mut Vec<T>,
-    get_amount: impl Fn(&mut T) -> &mut Amount,
-    total_to_drain: Amount,
-) -> Amount {
+/// item itself is removed. Returns the actual drained items (with the partial
+/// or exact amounts that were taken).
+fn drain_in_reverse<D>(items: &mut Vec<D>, total_to_drain: Amount) -> Vec<D>
+where
+    D: Clone + AsMut<Deposit>,
+{
+    let mut drained_items = Vec::new();
+
     if total_to_drain == Amount::ZERO {
-        return Amount::ZERO;
+        return drained_items;
     }
 
     let mut left_to_drain = total_to_drain;
     while let Some(mut item) = items.pop() {
-        let item_amount = get_amount(&mut item);
-        let min_extractable = Amount::from_msats(item_amount.msats.min(left_to_drain.msats));
-        *item_amount -= min_extractable;
+        assert_ne!(left_to_drain, Amount::ZERO);
+        let mut drained_clone = item.clone();
+        let deposit = item.as_mut();
+
+        let min_extractable = deposit.amount.min(left_to_drain);
+
+        // Clone the item to represent the portion drained
+        drained_clone.as_mut().amount = min_extractable;
+        drained_items.push(drained_clone);
+
+        deposit.amount -= min_extractable;
         left_to_drain -= min_extractable;
 
         // reinsert not completely drained value
-        if *item_amount != Amount::ZERO {
+        if deposit.amount != Amount::ZERO {
             items.push(item);
         }
 
@@ -1607,94 +1620,101 @@ fn drain_in_reverse<T>(
             break;
         }
     }
-    total_to_drain - left_to_drain
+    drained_items
 }
 
 #[cfg(test)]
 mod tests {
-    use anyhow::ensure;
-
     use super::*;
 
+    fn seek(sequence: u64, msats: u64) -> Seek {
+        Seek {
+            deposit: Deposit {
+                sequence,
+                amount: Amount::from_msats(msats),
+            },
+        }
+    }
+
     #[test]
-    pub fn test_drain_in_reverse() -> anyhow::Result<()> {
-        // Single-item list, 0 amount
-        let mut items = vec![Amount::from_msats(10)];
-        ensure!(drain_in_reverse(&mut items, |i| i, Amount::ZERO) == Amount::ZERO);
-        ensure!(items.len() == 1);
-        ensure!(items[0] == Amount::from_msats(10));
-
-        // Single-item list, non-0 amount
-        let mut items = vec![Amount::from_msats(10)];
-        ensure!(
-            drain_in_reverse(&mut items, |i| i, Amount::from_msats(2)) == Amount::from_msats(2)
-        );
-        ensure!(items.len() == 1);
-        ensure!(items[0] == Amount::from_msats(8));
-
-        // Single-item list, excessive amount
-        let mut items = vec![Amount::from_msats(10)];
-        ensure!(
-            drain_in_reverse(&mut items, |i| i, Amount::from_msats(12)) == Amount::from_msats(10)
-        );
-        ensure!(items.is_empty());
-
-        // Multi-item list, 0 amount
-        let mut items = vec![
-            Amount::from_msats(10),
-            Amount::from_msats(15),
-            Amount::from_msats(20),
-            Amount::from_msats(25),
+    fn test_drain_in_reverse() {
+        // Define test scenarios as (initial_items, drain_amount,
+        // expected_remaining_items, expected_drained_items)
+        let test_scenarios = vec![
+            // Zero drain scenario
+            (
+                vec![seek(1, 1000), seek(2, 2000), seek(3, 3000)],
+                Amount::ZERO,
+                vec![seek(1, 1000), seek(2, 2000), seek(3, 3000)],
+                Vec::<Seek>::new(),
+            ),
+            // Partial last item drain scenario
+            (
+                vec![seek(1, 1000), seek(2, 2000), seek(3, 3000)],
+                Amount::from_msats(1500),
+                vec![seek(1, 1000), seek(2, 2000), seek(3, 1500)],
+                vec![seek(3, 1500)],
+            ),
+            // Multiple items drain scenario
+            (
+                vec![seek(1, 1000), seek(2, 2000), seek(3, 3000), seek(4, 4000)],
+                Amount::from_msats(6500),
+                vec![seek(1, 1000), seek(2, 2000), seek(3, 500)],
+                vec![seek(4, 4000), seek(3, 2500)],
+            ),
+            // Exact items drain scenario
+            (
+                vec![seek(1, 1000), seek(2, 2000), seek(3, 3000)],
+                Amount::from_msats(5000),
+                vec![seek(1, 1000)],
+                vec![seek(3, 3000), seek(2, 2000)],
+            ),
+            // More than total drain scenario
+            (
+                vec![seek(1, 1000), seek(2, 2000), seek(3, 3000)],
+                Amount::from_msats(10000),
+                vec![],
+                vec![seek(3, 3000), seek(2, 2000), seek(1, 1000)],
+            ),
+            // Single item partial drain scenario
+            (
+                vec![seek(1, 1000)],
+                Amount::from_msats(600),
+                vec![seek(1, 400)],
+                vec![seek(1, 600)],
+            ),
+            // Single item exact drain scenario
+            (
+                vec![seek(1, 1000)],
+                Amount::from_msats(1000),
+                vec![],
+                vec![seek(1, 1000)],
+            ),
+            // Single item over drain scenario
+            (
+                vec![seek(1, 1000)],
+                Amount::from_msats(1500),
+                vec![],
+                vec![seek(1, 1000)],
+            ),
+            // empty and no amount
+            (vec![], Amount::ZERO, vec![], vec![]),
+            // empty and with amount
+            (vec![], Amount::from_msats(1000), vec![], vec![]),
         ];
-        ensure!(drain_in_reverse(&mut items, |i| i, Amount::ZERO) == Amount::ZERO);
-        ensure!(items.len() == 4);
-        ensure!(items[0] == Amount::from_msats(10));
-        ensure!(items[1] == Amount::from_msats(15));
-        ensure!(items[2] == Amount::from_msats(20));
-        ensure!(items[3] == Amount::from_msats(25));
 
-        // Multi-item list, non-0 amount, drain last item only
-        let mut items = vec![
-            Amount::from_msats(10),
-            Amount::from_msats(15),
-            Amount::from_msats(20),
-            Amount::from_msats(25),
-        ];
-        ensure!(
-            drain_in_reverse(&mut items, |i| i, Amount::from_msats(8)) == Amount::from_msats(8)
-        );
-        ensure!(items.len() == 4);
-        ensure!(items[0] == Amount::from_msats(10));
-        ensure!(items[1] == Amount::from_msats(15));
-        ensure!(items[2] == Amount::from_msats(20));
-        ensure!(items[3] == Amount::from_msats(17));
-
-        // Multi-item list, non-0 amount, drain multiple items
-        let mut items = vec![
-            Amount::from_msats(10),
-            Amount::from_msats(15),
-            Amount::from_msats(20),
-            Amount::from_msats(25),
-        ];
-        ensure!(
-            drain_in_reverse(&mut items, |i| i, Amount::from_msats(51)) == Amount::from_msats(51)
-        );
-        ensure!(items.len() == 2);
-        ensure!(items[0] == Amount::from_msats(10));
-        ensure!(items[1] == Amount::from_msats(9));
-
-        // Multi-item list, excessive amount
-        let mut items = vec![
-            Amount::from_msats(10),
-            Amount::from_msats(15),
-            Amount::from_msats(20),
-            Amount::from_msats(25),
-        ];
-        ensure!(
-            drain_in_reverse(&mut items, |i| i, Amount::from_msats(80)) == Amount::from_msats(70)
-        );
-        ensure!(items.is_empty());
-
-        Ok(())
+        // Run all test scenarios
+        for (initial_items, drain_amount, expected_remaining, expected_drained) in test_scenarios {
+            let mut items = initial_items;
+            let drained = drain_in_reverse(&mut items, drain_amount);
+            assert_eq!(
+                drained, expected_drained,
+                "Drained items didn't match expected"
+            );
+            assert_eq!(
+                items, expected_remaining,
+                "Remaining items didn't match expected"
+            );
+        }
     }
 }
