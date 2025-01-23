@@ -13,7 +13,6 @@ use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::{CommonModuleInit, ModuleCommon, ModuleConsensusVersion};
 use fedimint_core::{
     extensible_associated_module_type, plugin_types_trait_impl_common, Amount, BitcoinHash,
-    TransactionId,
 };
 use secp256k1::PublicKey;
 use serde::de::Error as _;
@@ -532,7 +531,6 @@ plugin_types_trait_impl_common!(
 
 #[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize, Hash)]
 pub struct Deposit {
-    pub txid: TransactionId,
     pub sequence: u64,
     pub amount: Amount,
 }
@@ -659,7 +657,7 @@ pub struct AccountInfo {
     pub unlock_request: Option<UnlockForWithdrawalAmount>,
     pub locked_seeks: Vec<Seek>,
     pub locked_provides: Vec<Provide>,
-    pub seeks_metadata: BTreeMap<TransactionId, SeekMetadata>,
+    pub seeks_metadata: BTreeMap<u64, SeekMetadata>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encodable, Decodable)]
