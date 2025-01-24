@@ -527,7 +527,7 @@ export function useMinMaxSendAmount(
         // If balance is less than 1000 msat (rounded down to 0 sats), don't allow send at all
         if (balance < 1000)
             return {
-                minimumAmount: 0 as Sats,
+                minimumAmount: 1 as Sats,
                 maximumAmount: 0 as Sats,
             }
 
