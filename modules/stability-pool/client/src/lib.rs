@@ -39,8 +39,8 @@ use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
 use stability_pool_common::{
     Account, AccountId, AccountType, DepositToProvideOutput, DepositToSeekOutput, FeeRate,
-    FiatAmount, StabilityPoolInputV0, StabilityPoolOutputV0, UnlockForWithdrawalAmount,
-    UnlockForWithdrawalInput, UnlockRequestStatus, WithdrawalInput, KIND,
+    FiatAmount, FiatOrAll, SignedTransferRequest, StabilityPoolInputV0, StabilityPoolOutputV0,
+    TransferOutput, UnlockForWithdrawalInput, UnlockRequestStatus, WithdrawalInput, KIND,
 };
 use tracing::info;
 
@@ -380,11 +380,17 @@ pub enum StabilityPoolMeta {
         change_outpoints: Vec<OutPoint>,
         amount: Amount,
     },
+    /// Submit request to transfer given FiatAmount (or all) between two
+    /// accounts.
+    Transfer {
+        txid: TransactionId,
+        signed_request: SignedTransferRequest,
+    },
     /// Submit a request to unlock the given FiatAmount (or all) followed by
     /// another TX to withdraw the unlocked idle balance.
     Withdrawal {
         txid: TransactionId,
-        unlock_amount: UnlockForWithdrawalAmount,
+        unlock_amount: FiatOrAll,
     },
 }
 
@@ -408,6 +414,13 @@ pub enum StabilityPoolDepositOperationState {
     TxRejected(String),
     PrimaryOutputError(String),
     Success,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum StabilityPoolTransferOperationState {
+    Initiated,
+    Success,
+    TxRejected(String),
 }
 
 impl StabilityPoolClientModule {
@@ -533,12 +546,49 @@ impl StabilityPoolClientModule {
         )
     }
 
+    pub async fn transfer(
+        &self,
+        signed_request: SignedTransferRequest,
+    ) -> anyhow::Result<OperationId> {
+        let transfer_output = TransferOutput { signed_request };
+
+        let (operation_id, _) =
+            submit_tx_with_output(self, StabilityPoolOutputV0::Transfer(transfer_output)).await?;
+        Ok(operation_id)
+    }
+
+    pub async fn subscribe_transfer_operation(
+        &self,
+        operation_id: OperationId,
+    ) -> anyhow::Result<UpdateStreamOrOutcome<StabilityPoolTransferOperationState>> {
+        let operation = stability_pool_operation(&self.client_ctx, operation_id).await?;
+        let txid = match operation.meta::<StabilityPoolMeta>() {
+            StabilityPoolMeta::Transfer { txid, .. } => txid,
+            _ => bail!("Operation is not of type transfer"),
+        };
+
+        let client_ctx = self.client_ctx.clone();
+        Ok(self
+            .client_ctx
+            .outcome_or_updates(&operation, operation_id, move || {
+                stream! {
+                    yield StabilityPoolTransferOperationState::Initiated;
+
+                    let tx_updates_stream = client_ctx.transaction_updates(operation_id);
+                    match tx_updates_stream.await.await_tx_accepted(txid).await {
+                        Ok(_) => yield StabilityPoolTransferOperationState::Success,
+                        Err(e) => yield StabilityPoolTransferOperationState::TxRejected(e),
+                    }
+                }
+            }))
+    }
+
     pub async fn withdraw(
         &self,
         acc_type: AccountType,
-        unlock_amount: UnlockForWithdrawalAmount,
+        unlock_amount: FiatOrAll,
     ) -> anyhow::Result<(OperationId, TransactionId)> {
-        if let UnlockForWithdrawalAmount::Fiat(amount) = unlock_amount {
+        if let FiatOrAll::Fiat(amount) = unlock_amount {
             if amount.0 == 0 {
                 bail!("Withdrawal amount must be non-0");
             }
@@ -684,27 +734,34 @@ async fn submit_tx_with_output(
     let amount = match output_v0 {
         StabilityPoolOutputV0::DepositToSeek(ref output) => output.seek_request.0,
         StabilityPoolOutputV0::DepositToProvide(ref output) => output.provide_request.amount,
+        StabilityPoolOutputV0::Transfer(_) => Amount::ZERO,
     };
     let output = ClientOutputBundle::new(
         vec![ClientOutput {
             amount,
-            output: StabilityPoolOutput::V0(output_v0),
+            output: StabilityPoolOutput::V0(output_v0.clone()),
         }],
         vec![ClientOutputSM {
             state_machines: Arc::new(move |_| Vec::<StabilityPoolStateMachine>::new()),
         }],
     );
     let tx = TransactionBuilder::new().with_outputs(client_ctx.make_client_outputs(output));
-    let deposit_meta_gen = |txid, change_outpoints| StabilityPoolMeta::Deposit {
-        txid,
-        change_outpoints,
-        amount,
+    let meta_gen = |txid, change_outpoints| match output_v0.clone() {
+        StabilityPoolOutputV0::Transfer(output) => StabilityPoolMeta::Transfer {
+            txid,
+            signed_request: output.signed_request,
+        },
+        _ => StabilityPoolMeta::Deposit {
+            txid,
+            change_outpoints,
+            amount,
+        },
     };
     let (transaction_id, _) = client_ctx
         .finalize_and_submit_transaction(
             operation_id,
             StabilityPoolCommonGen::KIND.as_str(),
-            deposit_meta_gen,
+            meta_gen,
             tx,
         )
         .await?;
@@ -806,12 +863,12 @@ impl From<AccountTypeArg> for AccountType {
     }
 }
 
-fn parse_withdrawal_amount(s: &str) -> Result<UnlockForWithdrawalAmount, String> {
+fn parse_withdrawal_amount(s: &str) -> Result<FiatOrAll, String> {
     match s.to_lowercase().as_str() {
-        "all" => Ok(UnlockForWithdrawalAmount::All),
+        "all" => Ok(FiatOrAll::All),
         amount => amount
             .parse::<u64>()
-            .map(|fiat| UnlockForWithdrawalAmount::Fiat(FiatAmount(fiat)))
+            .map(|fiat| FiatOrAll::Fiat(FiatAmount(fiat)))
             .map_err(|_| format!("Invalid withdrawal amount {amount}, must be \"all\" or a u64")),
     }
 }
@@ -850,6 +907,6 @@ pub enum CliCommand {
         #[arg(value_enum)]
         account_type: AccountTypeArg,
         #[arg(value_parser = parse_withdrawal_amount)]
-        amount: UnlockForWithdrawalAmount,
+        amount: FiatOrAll,
     },
 }
