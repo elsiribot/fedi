@@ -208,9 +208,11 @@ const ChatConversation: React.FC<MessagesListProps> = ({
 
     // Hide the preview cached media events when the ACTUAL chat image/video events come
     useEffect(() => {
-        events
-            .filter(e => isImageEvent(e) || isVideoEvent(e))
-            .forEach(e => dispatch(matchAndHidePreviewMedia(e.content)))
+        dispatch(
+            matchAndHidePreviewMedia(
+                events.filter(e => isImageEvent(e) || isVideoEvent(e)),
+            ),
+        )
     }, [events, dispatch])
 
     return (

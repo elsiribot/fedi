@@ -51,9 +51,9 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
 
             setIsSending(true)
             try {
-                attachments
-                    .filter(att => 'width' in att)
-                    .forEach(att => dispatch(addPreviewMedia(att)))
+                dispatch(
+                    addPreviewMedia(attachments.filter(att => 'width' in att)),
+                )
                 if (body) {
                     await dispatch(
                         sendMatrixMessage({
