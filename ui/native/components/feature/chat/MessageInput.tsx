@@ -42,6 +42,7 @@ import {
     setChatDraft,
     setMessageToEdit,
 } from '@fedi/common/redux'
+import { InputAttachment, InputMedia } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
@@ -96,6 +97,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     )
     const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
     const [messageText, setMessageText] = useState<string>(drafts[id] ?? '')
+    const [isSendingMessage, setIsSendingMessage] = useState(false)
     const directUserId = useMemo(
         () => existingRoom?.directUserId ?? null,
         [existingRoom],
@@ -296,9 +298,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const handleSend = useCallback(async () => {
         if (
             (!trimmedMessageText && !images.length && !attachments.length) ||
-            isSending
+            isSending ||
+            isSendingMessage
         )
             return
+
+        setIsSendingMessage(true)
 
         try {
             const allAttachments: Array<InputMedia | InputAttachment> = []
@@ -338,6 +343,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
             setAttachments([])
         } catch (err) {
             toast.error(t, err, 'errors.chat-unavailable')
+        } finally {
+            setIsSendingMessage(false)
         }
     }, [
         isSending,
@@ -347,6 +354,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         t,
         images,
         attachments,
+        isSendingMessage,
     ])
 
     // Re-focus input after it had been disabled
@@ -468,12 +476,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         style={style.sendButton}
                         onPress={handleSend}
                         hitSlop={10}
-                        disabled={inputDisabled}>
+                        disabled={inputDisabled || isSendingMessage}>
                         <SvgImage
                             name="SendArrowUpCircle"
                             size={SvgImageSize.md}
                             color={
-                                inputDisabled
+                                inputDisabled || isSendingMessage
                                     ? theme.colors.primaryVeryLight
                                     : theme.colors.blue
                             }
@@ -537,12 +545,14 @@ const MessageInput: React.FC<MessageInputProps> = ({
                                     style={style.sendButton}
                                     onPress={handleSend}
                                     hitSlop={10}
-                                    disabled={inputDisabled}>
+                                    disabled={
+                                        inputDisabled || isSendingMessage
+                                    }>
                                     <SvgImage
                                         name="SendArrowUpCircle"
                                         size={SvgImageSize.md}
                                         color={
-                                            inputDisabled
+                                            inputDisabled || isSendingMessage
                                                 ? theme.colors.primaryVeryLight
                                                 : theme.colors.blue
                                         }
@@ -682,11 +692,3 @@ const styles = (theme: Theme, insets: Insets) =>
     })
 
 export default MessageInput
-
-export type InputAttachment = {
-    fileName: string
-    uri: string
-    mimeType: string
-}
-
-export type InputMedia = InputAttachment & { width: number; height: number }
