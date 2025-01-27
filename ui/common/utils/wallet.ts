@@ -461,6 +461,19 @@ export const makeTxnDetailItems = (
         value: dateUtils.formatTimestamp(txn.createdAt, 'MMM dd yyyy, h:mmaaa'),
     })
 
+    let txnTypeText = t('words.unknown')
+
+    if (txn.bitcoin) txnTypeText = t('words.onchain')
+    else if (txn.lightning) txnTypeText = t('words.lightning')
+    else if (txn.stabilityPoolState)
+        txnTypeText = t('feature.stabilitypool.stable-balance')
+    else if (txn.oobState) txnTypeText = t('words.ecash')
+
+    items.push({
+        label: t('words.type'),
+        value: txnTypeText,
+    })
+
     // shows the value of ecash sent in/out of stabilitypool at today's price
     // in local currency (historical value at time of txn shows elsewhere)
     if (
@@ -648,6 +661,7 @@ export const makeStabilityTxnDetailItems = (
         label: t('words.time'),
         value: dateUtils.formatTimestamp(txn.createdAt, 'MMM dd yyyy, h:mmaaa'),
     })
+
     return items
 }
 
