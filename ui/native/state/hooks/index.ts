@@ -6,6 +6,7 @@ import DeviceInfo from 'react-native-device-info'
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 
 import { usePublishNotificationToken } from '@fedi/common/hooks/chat'
+import { usePushNotificationToken } from '@fedi/common/hooks/matrix'
 import {
     refreshActiveStabilityPool,
     selectCurrency,
@@ -19,6 +20,7 @@ import { makeLog } from '@fedi/common/utils/log'
 import { fedimint } from '../../bridge'
 import { NavigationHook } from '../../types/navigation'
 import { useNotificationsPermission } from '../../utils/hooks'
+import { updateZendeskPushNotificationToken } from '../../utils/support'
 import type { AppDispatch, AppState } from '../store'
 
 /**
@@ -45,11 +47,11 @@ export const useMatrixPushNotifications = () => {
     const { notificationsPermission: permissionGranted } =
         useNotificationsPermission()
     const log = makeLog('useMatrixPushNotifications')
+    const pushNotificationToken = usePushNotificationToken()
 
     const getDeviceToken = useMemo<() => Promise<string>>(() => {
         return async () => {
             try {
-                // Check and request notification permissions if needed
                 if (permissionGranted !== 'granted') {
                     const authStatus = await messaging().requestPermission()
                     if (
@@ -63,7 +65,7 @@ export const useMatrixPushNotifications = () => {
                         throw new Error(errorMsgNotGranted)
                     }
                 } else {
-                    log.info('Notification permissions are not granted')
+                    log.info('Notification permissions already granted')
                 }
 
                 if (!messaging().isDeviceRegisteredForRemoteMessages) {
@@ -72,7 +74,6 @@ export const useMatrixPushNotifications = () => {
 
                 // Fetch the APNs token (iOS only)
                 if (Platform.OS === 'ios') {
-                    // Ensure the device is registered for remote messages
                     const apnsToken = await messaging().getAPNSToken()
                     if (apnsToken) {
                         log.debug(`APNs Token: ${apnsToken}`)
@@ -95,7 +96,7 @@ export const useMatrixPushNotifications = () => {
                 log.error(
                     `Error fetching device tokens: ${JSON.stringify(error)}`,
                 )
-                throw error // Propagate the error if token cannot be retrieved
+                throw error
             }
         }
     }, [permissionGranted, log])
@@ -104,6 +105,9 @@ export const useMatrixPushNotifications = () => {
         getDeviceToken,
         DeviceInfo.getBundleId(),
         DeviceInfo.getApplicationName(),
+        permissionGranted === 'granted',
+        updateZendeskPushNotificationToken,
+        pushNotificationToken,
     )
 }
 

@@ -755,10 +755,23 @@
             }
         },
         "support": {
+            "title": "Support",
             "share-logs-warning": "Do not use this form unless explicitly directed to by the Fedi Council. Please report any issues to our team by going to Mods > Support.",
             "enter-ticket-number": "Enter the support ticket number given to you by our team.",
             "support-ticket-number": "Support Ticket Number (e.g. #1234)",
-            "invalid-ticket-number": "Invalid support ticket number. (e.g. #1234)"
+            "invalid-ticket-number": "Invalid support ticket number. (e.g. #1234)",
+            "privacy-policy": "Privacy policy",
+            "friendly-request": "A Quick Note",
+            "effective-support-1a": "By proceeding, you agree that Fedi may collect some ",
+            "effective-support-1b": " solely to provide you the best support possible.",
+            "effective-support-info": "info",
+            "effective-support-help-center": "Help Center",
+            "effective-support-2a": "Prefer not to share? No problem! You\ncan always explore our ",
+            "effective-support-2b": " for a wealth of Fedi knowledge.",
+            "open-chat": "Open chat",
+            "permssion-granted": "Support Center",
+            "how-to-launch": "If you need help, you may launch the support chat by clicking the button below.",
+            "zendesk-initialization-failed": "We couldn't reach the support chat. Please check your internet connection and try again."
         },
         "stabilitypool": {
             "amount-may-vary": "Amount may vary",

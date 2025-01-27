@@ -1,4 +1,5 @@
 PODS:
+  - Base64 (1.1.2)
   - boost (1.84.0)
   - BVLinearGradient (2.8.3):
     - React-Core
@@ -79,6 +80,8 @@ PODS:
   - hermes-engine (0.75.4):
     - hermes-engine/Pre-built (= 0.75.4)
   - hermes-engine/Pre-built (0.75.4)
+  - JWT (3.0.0-beta.12):
+    - Base64 (~> 1.1.2)
   - MMKV (2.0.2):
     - MMKVCore (~> 2.0.2)
   - MMKVCore (2.0.2)
@@ -1429,6 +1432,9 @@ PODS:
     - Yoga
   - react-native-netinfo (11.4.1):
     - React-Core
+  - react-native-pure-jwt (3.0.2):
+    - JWT (= 3.0.0-beta.12)
+    - React
   - react-native-quick-crypto (0.7.7):
     - DoubleConversion
     - glog
@@ -1541,6 +1547,9 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - react-native-zendesk-messaging (0.2.1):
+    - React-Core
+    - ZendeskSDKMessaging (= 2.13.0)
   - React-nativeconfig (0.75.4)
   - React-NativeModulesApple (0.75.4):
     - glog
@@ -2059,6 +2068,31 @@ PODS:
     - VisionCamera
     - Yoga
   - Yoga (0.0.0)
+  - Zendesk (1.13.0):
+    - ZendeskSDKConversationKit (~> 1.10.0)
+    - ZendeskSDKCoreUtilities (~> 1.4.0)
+  - ZendeskSDKConversationKit (1.10.0):
+    - ZendeskSDKCoreUtilities (~> 1.4.0)
+    - ZendeskSDKFayeClient (~> 1.5.0)
+    - ZendeskSDKHTTPClient (~> 0.13.0)
+    - ZendeskSDKStorage (~> 0.8.0)
+  - ZendeskSDKCoreUtilities (1.4.0)
+  - ZendeskSDKFayeClient (1.5.0):
+    - ZendeskSDKLogger (~> 0.8.0)
+    - ZendeskSDKSocketClient (~> 1.5.0)
+  - ZendeskSDKHTTPClient (0.13.0):
+    - ZendeskSDKLogger (~> 0.8.0)
+  - ZendeskSDKLogger (0.8.0)
+  - ZendeskSDKMessaging (2.13.0):
+    - Zendesk (~> 1.13.0)
+    - ZendeskSDKConversationKit (~> 1.10.0)
+    - ZendeskSDKCoreUtilities (~> 1.4.0)
+    - ZendeskSDKUIComponents (~> 2.8.0)
+  - ZendeskSDKSocketClient (1.5.0):
+    - ZendeskSDKLogger (~> 0.8.0)
+  - ZendeskSDKStorage (0.8.0):
+    - ZendeskSDKLogger (~> 0.8.0)
+  - ZendeskSDKUIComponents (2.8.0)
 
 DEPENDENCIES:
   - boost (from `../../node_modules/react-native/third-party-podspecs/boost.podspec`)
@@ -2110,12 +2144,14 @@ DEPENDENCIES:
   - react-native-image-picker (from `../../node_modules/react-native-image-picker`)
   - react-native-mmkv (from `../../node_modules/react-native-mmkv`)
   - "react-native-netinfo (from `../../node_modules/@react-native-community/netinfo`)"
+  - react-native-pure-jwt (from `../../node_modules/react-native-pure-jwt`)
   - react-native-quick-crypto (from `../../node_modules/react-native-quick-crypto`)
   - react-native-safe-area-context (from `../../node_modules/react-native-safe-area-context`)
   - react-native-splash-screen (from `../../node_modules/react-native-splash-screen`)
   - react-native-video (from `../../node_modules/react-native-video`)
   - react-native-webview (from `../../node_modules/react-native-webview`)
   - react-native-worklets-core (from `../../node_modules/react-native-worklets-core`)
+  - react-native-zendesk-messaging (from `../../node_modules/react-native-zendesk-messaging`)
   - React-nativeconfig (from `../../node_modules/react-native/ReactCommon`)
   - React-NativeModulesApple (from `../../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-perflogger (from `../../node_modules/react-native/ReactCommon/reactperflogger`)
@@ -2165,6 +2201,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - Base64
     - Firebase
     - FirebaseCore
     - FirebaseCoreExtension
@@ -2173,12 +2210,23 @@ SPEC REPOS:
     - FirebaseMessaging
     - GoogleDataTransport
     - GoogleUtilities
+    - JWT
     - MMKV
     - MMKVCore
     - nanopb
     - OpenSSL-Universal
     - PromisesObjC
     - SocketRocket
+    - Zendesk
+    - ZendeskSDKConversationKit
+    - ZendeskSDKCoreUtilities
+    - ZendeskSDKFayeClient
+    - ZendeskSDKHTTPClient
+    - ZendeskSDKLogger
+    - ZendeskSDKMessaging
+    - ZendeskSDKSocketClient
+    - ZendeskSDKStorage
+    - ZendeskSDKUIComponents
 
 EXTERNAL SOURCES:
   boost:
@@ -2268,6 +2316,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native-mmkv"
   react-native-netinfo:
     :path: "../../node_modules/@react-native-community/netinfo"
+  react-native-pure-jwt:
+    :path: "../../node_modules/react-native-pure-jwt"
   react-native-quick-crypto:
     :path: "../../node_modules/react-native-quick-crypto"
   react-native-safe-area-context:
@@ -2280,6 +2330,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native-webview"
   react-native-worklets-core:
     :path: "../../node_modules/react-native-worklets-core"
+  react-native-zendesk-messaging:
+    :path: "../../node_modules/react-native-zendesk-messaging"
   React-nativeconfig:
     :path: "../../node_modules/react-native/ReactCommon"
   React-NativeModulesApple:
@@ -2374,6 +2426,7 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
+  Base64: cecfb41a004124895a7bcee567a89bae5a89d49b
   boost: 4cb898d0bf20404aab1850c656dcea009429d6c1
   BVLinearGradient: 880f91a7854faff2df62518f0281afb1c60d49a3
   DoubleConversion: 76ab83afb40bddeeee456813d9c04f67f78771b5
@@ -2389,6 +2442,7 @@ SPEC CHECKSUMS:
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
   GoogleUtilities: 26a3abef001b6533cf678d3eb38fd3f614b7872d
   hermes-engine: ea92f60f37dba025e293cbe4b4a548fd26b610a0
+  JWT: 9b5c05abbcc1a0e69c3c91e1655b3387fc7e581d
   MMKV: 3eacda84cd1c4fc95cf848d3ecb69d85ed56006c
   MMKVCore: 508b4d3a8ce031f1b5c8bd235f0517fb3f4c73a9
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
@@ -2430,12 +2484,14 @@ SPEC CHECKSUMS:
   react-native-image-picker: 2fbbafdae7a7c6db9d25df2f2b1db4442d2ca2ad
   react-native-mmkv: 7d0b6c2a79e73100b933f2947a9c8741d664e18b
   react-native-netinfo: f0a9899081c185db1de5bb2fdc1c88c202a059ac
+  react-native-pure-jwt: c7aabf3e38f688922741774c5b37d1288fc64311
   react-native-quick-crypto: 8bc5592ecf674fbf6c90a852ddc2981ffaabc55e
   react-native-safe-area-context: 4532f1a0c5d34a46b9324ccaaedcb5582a302b7d
   react-native-splash-screen: 4312f786b13a81b5169ef346d76d33bc0c6dc457
   react-native-video: b687b8d0a8576535185adf78f0eeb27c7dc46b86
   react-native-webview: db71683cdc313a490afaee486a6efeb9d5a15b59
   react-native-worklets-core: 13837e78b876fb75154ff3594efef190befebcf9
+  react-native-zendesk-messaging: e4418f96cb02c6741cce7059972f01312eac8e0f
   React-nativeconfig: 8c83d992b9cc7d75b5abe262069eaeea4349f794
   React-NativeModulesApple: 9f7920224a3b0c7d04d77990067ded14cee3c614
   React-perflogger: 59e1a3182dca2cee7b9f1f7aab204018d46d1914
@@ -2473,7 +2529,7 @@ SPEC CHECKSUMS:
   RNKeychain: 4cfd0dc8634c2dd81a4607c8299ed424bfdee1a7
   RNLocalize: 298e85ce16540a11de40c1a588ead39fc5e9a072
   RNNotifee: bc20a5e3d581f629db988075944fdd944d363dfe
-  RNPermissions: 1347ea1e4d5e317a65f0f2bf70612199a26b7baf
+  RNPermissions: 6224a9abb3f1aa1c9ed360b5871032d3982b9b63
   RNReanimated: 060a4e2ae556c45476b3fc441f2d0a8d39a2b61e
   RNScreens: b03d696c70cc5235ce4587fcc27ae1a93a48f98c
   RNShare: d4f2ec7039556f046a5e9552be8a307a5ff1b567
@@ -2483,7 +2539,17 @@ SPEC CHECKSUMS:
   VisionCamera: 88df4dae7196c93ecd331f105f0e5d7d95702cb3
   VisionCameraCodeScanner: a104d55c13dccce4229c4d8a81b7af93c6300e4c
   Yoga: 055f92ad73f8c8600a93f0e25ac0b2344c3b07e6
+  Zendesk: 5e382df2c0034a0df4e43174ecbd7e9bed54b929
+  ZendeskSDKConversationKit: a93d5826c299240fb7ef4fa88956bd99e6762cf4
+  ZendeskSDKCoreUtilities: b44c8d51dd90ece3ef140efffe3ff5f154cfaadf
+  ZendeskSDKFayeClient: a06c403c1c38adb9ae5a341a4d54632c78275a3e
+  ZendeskSDKHTTPClient: 79dfe6b5e75beccb435003051a081c71e7361770
+  ZendeskSDKLogger: e59c678c74a88838a0844423996cb15dd88825d5
+  ZendeskSDKMessaging: 62e057ac0e68fabeb88a84409fb8b57d2a11b7de
+  ZendeskSDKSocketClient: 33c0eb83b065409723559c798738bbc504b0a967
+  ZendeskSDKStorage: 00d6f78a39a42b71c3730b1c39cc0a5c12690685
+  ZendeskSDKUIComponents: 59fab9ac52f3ac5ef3136188da8dc38b06d100f7
 
-PODFILE CHECKSUM: f44be7caf0da4fe19e8009ed2d7cfdf3d371db0c
+PODFILE CHECKSUM: 6cf4149f24af3a8f217f9aa3ab253e0e5c586ad2
 
 COCOAPODS: 1.16.2

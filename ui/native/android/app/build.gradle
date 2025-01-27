@@ -262,6 +262,8 @@ dependencies {
 
     implementation project(':react-native-splash-screen')
 
+    implementation "zendesk.messaging:messaging-android:$zendeskSdkVersion"
+
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

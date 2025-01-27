@@ -204,6 +204,14 @@ export interface StoredStateV21
     version: 21
 }
 
+export interface StoredStateV22 extends Omit<StoredStateV21, 'version'> {
+    version: 22
+    support: {
+        supportPermissionGranted: boolean
+        zendeskPushNotificationToken: string | null
+    }
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -228,9 +236,10 @@ export type AnyStoredState =
     | StoredStateV19
     | StoredStateV20
     | StoredStateV21
+    | StoredStateV22
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV21
+export type LatestStoredState = StoredStateV22
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

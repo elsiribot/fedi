@@ -4,12 +4,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Sats } from '@fedi/common/types'
 
 import { INVALID_NAME_PLACEHOLDER } from '../constants/matrix'
+import { emptyToken } from '../constants/support'
 import {
+    CommonDispatch,
     configureMatrixPushNotifications,
     previewAllDefaultChats,
     selectActiveFederationId,
     selectHasSetMatrixDisplayName,
-    selectIsMatrixReady,
     selectMatrixAuth,
     selectPaymentFederation,
     sendMatrixPaymentPush,
@@ -28,21 +29,26 @@ const log = makeLog('common/hooks/chat')
 
 // This hook sets a given device token to be published to the Matrix Sygnal Push server
 // so it can process push notifications for timeline events
+// We check against the current token to avoid unnecessary updates to Sygnal which might cause issues.
+// Any refresh of the token should be done through a seperate messaging.refreshToken() call
+
 export function usePublishNotificationToken(
     getToken: () => Promise<string>,
     appId: string,
     appName: string,
+    permissionGranted: boolean,
+    secondaryPublish: (token: string, dispatch: CommonDispatch) => void,
+    currentToken: string | null,
 ) {
-    const emptyToken = ''
     const dispatch = useCommonDispatch()
-    const isMatrixReady = useCommonSelector(selectIsMatrixReady)
-    const [latestToken, setLatestToken] = useState<string | null>(null) //we publish the first token if this is empty, then if it changes
 
     useEffect(() => {
         const publishToken = async () => {
-            // Check if matrix is ready
-            if (!isMatrixReady) {
-                log.warn('Matrix is not ready. Skipping publish token.')
+            // Check if permission is granted
+            if (!permissionGranted) {
+                log.info(
+                    'Notification permission not granted. Skipping publish token.',
+                )
                 return
             }
 
@@ -61,9 +67,10 @@ export function usePublishNotificationToken(
                 return
             }
 
-            if (newToken === latestToken) {
+            if (newToken === currentToken) {
                 log.debug(
-                    'Token matches the last published token. No update needed.',
+                    'Token matches the last published token. No update needed. Token was:',
+                    currentToken,
                 )
                 return
             }
@@ -71,11 +78,14 @@ export function usePublishNotificationToken(
             // Publish the token
             log.debug('Publishing push notification token:', newToken)
             dispatch(
-                configureMatrixPushNotifications({ getToken, appId, appName }),
+                configureMatrixPushNotifications({
+                    token: newToken,
+                    appId,
+                    appName,
+                }),
             )
                 .unwrap()
                 .then(() => {
-                    setLatestToken(newToken)
                     log.debug(
                         'Successfully published matrix push notification token',
                     )
@@ -86,10 +96,24 @@ export function usePublishNotificationToken(
                         err,
                     )
                 })
+
+            // Zendesk
+            secondaryPublish(newToken, dispatch)
+            log.debug(
+                'Successfully updated secondary publish push notification token',
+            )
         }
 
         publishToken()
-    }, [appId, appName, isMatrixReady, dispatch, getToken, latestToken])
+    }, [
+        appId,
+        appName,
+        dispatch,
+        getToken,
+        permissionGranted,
+        currentToken,
+        secondaryPublish,
+    ])
 
     return null
 }

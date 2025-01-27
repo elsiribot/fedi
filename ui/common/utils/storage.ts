@@ -22,13 +22,12 @@ import {
 } from './chat'
 
 export const STATE_STORAGE_KEY = 'fedi:state'
-
 /**
  * Given the current Redux state, transform it into the latest storage state.
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
-    return {
-        version: 21,
+    const transformedState: LatestStoredState = {
+        version: 22,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
@@ -48,7 +47,14 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         protectedFeatures: state.security.protectedFeatures,
         customGlobalMods: state.mod.customGlobalMods,
         modVisibility: state.mod.modVisibility,
+        support: {
+            supportPermissionGranted: state.support.supportPermissionGranted,
+            zendeskPushNotificationToken:
+                state.support.zendeskPushNotificationToken,
+        },
     }
+
+    return transformedState
 }
 
 /**
@@ -96,6 +102,8 @@ export function hasStorageStateChanged(
         ['security', 'protectedFeatures'],
         ['mod', 'customGlobalMods'],
         ['mod', 'modVisibility'],
+        ['support', 'supportPermissionGranted'],
+        ['support', 'zendeskPushNotificationToken'],
     ]
 
     for (const keysToCheck of keysetsToCheck) {
@@ -115,7 +123,6 @@ async function migrateStoredState(
     storage: StorageApi,
 ): Promise<LatestStoredState> {
     let migrationState = { ...state }
-
     // Version 0 -> 1
     if (migrationState.version === 0) {
         migrationState = {
@@ -567,6 +574,17 @@ async function migrateStoredState(
         migrationState = {
             ...rest,
             version: 21,
+        }
+    }
+
+    if (migrationState.version === 21) {
+        migrationState = {
+            ...migrationState,
+            version: 22,
+            support: {
+                supportPermissionGranted: false,
+                zendeskPushNotificationToken: null,
+            },
         }
     }
 

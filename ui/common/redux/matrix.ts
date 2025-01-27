@@ -965,12 +965,11 @@ export const sendMatrixReadReceipt = createAsyncThunk<
 
 export const configureMatrixPushNotifications = createAsyncThunk<
     string,
-    { getToken: () => Promise<string>; appId: string; appName: string }
+    { token: string; appId: string; appName: string }
 >(
     'matrix/configureMatrixPushNotifications',
-    async ({ getToken, appId, appName }) => {
+    async ({ token, appId, appName }) => {
         const client = getMatrixClient()
-        const token = await getToken()
         await client.configureNotificationsPusher(token, appId, appName)
         return token
     },
@@ -1146,8 +1145,9 @@ export const selectIsMatrixReady = createSelector(
     status => status === MatrixSyncStatus.synced,
 )
 
-export const selectMatrixPushNotificationToken = (s: CommonState) =>
-    s.matrix.pushNotificationToken
+export const selectMatrixPushNotificationToken = (
+    s: CommonState,
+): string | null => s.matrix.pushNotificationToken
 
 /**
  * Returns a list of matrix rooms, excluding any that are loading or missing room information.

@@ -40,6 +40,7 @@ import { nuxSlice } from './nux'
 import { recoverySlice } from './recovery'
 import { securitySlice } from './security'
 import { loadFromStorage, saveToStorage, storageSlice } from './storage'
+import { supportSlice } from './support'
 import { toastSlice } from './toast'
 import { addTransaction, transactionsSlice } from './transactions'
 import { walletSlice } from './wallet'
@@ -71,6 +72,7 @@ export const commonReducers = {
     wallet: walletSlice.reducer,
     security: securitySlice.reducer,
     browser: browserSlice.reducer,
+    support: supportSlice.reducer,
 }
 
 type CommonReducers = typeof commonReducers

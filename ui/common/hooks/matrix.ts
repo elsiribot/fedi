@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSelector } from 'react-redux'
 
 import {
     acceptMatrixPaymentRequest,
@@ -15,6 +16,7 @@ import {
     selectIsMatrixReady,
     selectLatestMatrixRoomEventId,
     selectMatrixAuth,
+    selectMatrixPushNotificationToken,
     selectMatrixRoom,
     selectMatrixRoomMember,
     selectMatrixUser,
@@ -40,6 +42,15 @@ import { useAmountFormatter } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
 import { useUpdatingRef } from './util'
+
+/**
+ * Hook to retrieve the push notification token from the Redux store.
+ * @returns The latest push notification token, or null if not set.
+ */
+export function usePushNotificationToken() {
+    const pushNotificationToken = useSelector(selectMatrixPushNotificationToken)
+    return pushNotificationToken
+}
 
 export function useMatrixUserSearch() {
     const dispatch = useCommonDispatch()
