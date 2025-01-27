@@ -17,7 +17,7 @@ import {
     selectFederationStabilityPoolConfig,
     selectReusedEcashFederations,
 } from '.'
-import { Federation, MSats, Usd, UsdCents } from '../types'
+import { Federation, MSats, ReceiveEcashResult, Usd, UsdCents } from '../types'
 import {
     JSONObject,
     RpcAmount,
@@ -201,12 +201,47 @@ export const payInvoice = createAsyncThunk<
     return fedimint.payInvoice(invoice, federationId)
 })
 
+/**
+ * Tries to redeem ecash. Returns a Promise that resolves
+ * once the ecash is redeemed/fails or the operation times out.
+ */
 export const receiveEcash = createAsyncThunk<
-    MSats,
+    ReceiveEcashResult,
     { fedimint: FedimintBridge; federationId: string; ecash: string },
     { state: CommonState }
 >('wallet/receiveEcash', async ({ fedimint, federationId, ecash }) => {
-    return fedimint.receiveEcash(ecash, federationId)
+    const [amount, operationId] = await fedimint.receiveEcash(
+        ecash,
+        federationId,
+    )
+
+    return new Promise(resolve => {
+        const timeout = setTimeout(() => {
+            unsubscribe()
+            // Assuming timeout indicates user cannot connect to federation
+            // TODO: Validate this assumption
+            resolve({ amount, status: 'pending' })
+        }, 5000) // 5s timeout
+
+        const unsubscribe = fedimint.addListener('transaction', event => {
+            if (event.transaction.id !== operationId) return
+
+            if (event.transaction.oobState?.type === 'done') {
+                clearTimeout(timeout)
+                unsubscribe()
+                resolve({ amount, status: 'success' })
+            } else if (event.transaction.oobState?.type === 'failed') {
+                clearTimeout(timeout)
+                unsubscribe()
+                resolve({
+                    amount,
+                    status: 'failed',
+                    // Is the ONLY error case that it's 'already claimed?'
+                    error: event.transaction.oobState?.error,
+                })
+            }
+        })
+    })
 })
 
 export const validateEcash = createAsyncThunk<

@@ -20,7 +20,7 @@ import {
     StabilityPoolDepositEvent,
     StabilityPoolWithdrawalEvent,
 } from './bindings'
-import { Usd, UsdCents } from './units'
+import { MSats, Usd, UsdCents } from './units'
 
 export type {
     SocialRecoveryApproval as GuardianApproval,
@@ -257,3 +257,21 @@ export type StabilityPoolTxn = {
     direction: 'deposit' | 'withdraw'
     status: 'pending' | 'complete'
 }
+
+export type ReceiveSuccessStatus = 'success' | 'pending'
+
+export type ReceiveSuccessData = {
+    amount: Transaction['amount']
+    bitcoin?: Transaction['bitcoin']
+}
+
+export type ReceiveEcashResult =
+    | {
+          amount: MSats
+          status: ReceiveSuccessStatus
+      }
+    | {
+          amount: MSats
+          status: 'failed'
+          error: string
+      }

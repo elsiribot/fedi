@@ -758,3 +758,22 @@ export const makeStabilityTxnAmountText = (
     }
     return `${sign}${formattedAmount}`
 }
+
+export const makeReceiveSuccessMessage = (
+    t: TFunction,
+    tx: Pick<Transaction, 'amount'> & Partial<Pick<Transaction, 'bitcoin'>>,
+    status: 'success' | 'pending',
+) => {
+    if (status === 'pending') {
+        return {
+            message: t('feature.receive.payment-received-pending'),
+            subtext: t('feature.receive.payment-received-pending-subtext'),
+        }
+    } else if (tx.bitcoin) {
+        return { message: t('feature.receive.pending-transaction') }
+    } else {
+        return {
+            message: t('feature.receive.you-received'),
+        }
+    }
+}

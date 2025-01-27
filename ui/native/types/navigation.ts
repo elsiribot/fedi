@@ -15,8 +15,9 @@ import {
     ParsedCashuEcash,
     ParsedLnurlPay,
     ParsedLnurlWithdraw,
+    ReceiveSuccessStatus,
+    ReceiveSuccessData,
     Sats,
-    Transaction,
 } from '@fedi/common/types'
 
 import { MSats } from '.'
@@ -110,7 +111,10 @@ export type RootStackParamList = {
     LocateSocialRecovery: undefined
     Receive: undefined
     ReceiveLightning: { parsedData?: ParsedLnurlWithdraw } | undefined
-    ReceiveSuccess: { tx: Pick<Transaction, 'amount' | 'bitcoin'> }
+    ReceiveSuccess: {
+        tx: ReceiveSuccessData
+        status?: ReceiveSuccessStatus
+    }
     ReceiveOffline: undefined
     RecoveryWords: undefined
     RecoveryAssistSuccess: undefined
