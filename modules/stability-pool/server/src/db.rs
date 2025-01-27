@@ -1,11 +1,14 @@
 use std::collections::BTreeMap;
+use std::ops::Range;
 use std::time::SystemTime;
 
+use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId};
+use futures::StreamExt;
 use stability_pool_common::{
-    AccountId, FiatAmount, Provide, Seek, SeekMetadata, StabilityPoolConsensusItem,
-    UnlockForWithdrawalAmount,
+    AccountHistoryItem, AccountId, CycleInfo, FiatAmount, Provide, Seek, SeekMetadata,
+    StabilityPoolConsensusItem, UnlockForWithdrawalAmount,
 };
 
 #[repr(u8)]
@@ -66,6 +69,11 @@ pub enum DbKeyPrefix {
     /// Contains information such as initial value in sats and cents,
     /// withdrawn amounts in sats and cents, as well as fees debited so far.
     SeekMetadata,
+
+    /// (Account, serial) => AccountHistoryItemDb
+    ///
+    /// Account transaction history.
+    AccountHistory,
 }
 
 #[derive(Debug, Encodable, Decodable)]
@@ -230,3 +238,78 @@ impl_db_lookup!(
     query_prefix = SeekMetadataAccountPrefix,
     query_prefix = SeekMetadataKeyPrefix
 );
+
+/// AccountId and serial counter.
+#[derive(Debug, Encodable, Decodable)]
+pub struct AccountHistoryItemKey(pub AccountId, pub u64);
+
+#[derive(Debug, Encodable, Decodable)]
+pub struct AccountHistoryItemPrefixAccount(pub AccountId);
+
+impl_db_record!(
+    key = AccountHistoryItemKey,
+    value = AccountHistoryItem,
+    db_prefix = DbKeyPrefix::AccountHistory
+);
+
+impl_db_lookup!(
+    key = AccountHistoryItemKey,
+    query_prefix = AccountHistoryItemPrefixAccount,
+);
+
+/// Insert new account history items for an account.
+pub async fn add_account_history_items<'a, 'b>(
+    dbtx: &mut DatabaseTransaction<'a>,
+    account_id: AccountId,
+    items: impl IntoIterator<Item = AccountHistoryItem> + 'b,
+) {
+    let mut next_idx = account_history_count(dbtx, account_id).await;
+    for item in items {
+        dbtx.insert_entry(&AccountHistoryItemKey(account_id, next_idx), &item)
+            .await;
+        next_idx += 1;
+    }
+}
+
+/// Find total number of account history items for an account.
+pub async fn account_history_count(
+    dbtx: &mut DatabaseTransaction<'_>,
+    account_id: AccountId,
+) -> u64 {
+    dbtx.find_by_prefix_sorted_descending(&AccountHistoryItemPrefixAccount(account_id))
+        .await
+        .next()
+        .await
+        .map_or(0, |(AccountHistoryItemKey(_, idx), _)| idx + 1)
+}
+
+impl From<Cycle> for CycleInfo {
+    fn from(value: Cycle) -> Self {
+        CycleInfo::from(&value)
+    }
+}
+
+impl From<&Cycle> for CycleInfo {
+    fn from(value: &Cycle) -> Self {
+        CycleInfo {
+            idx: value.index,
+            start_price: value.start_price,
+            start_time: value.start_time,
+        }
+    }
+}
+
+pub async fn get_account_history_items(
+    dbtx: &mut DatabaseTransaction<'_>,
+    account_id: AccountId,
+    items_range: Range<u64>,
+) -> Vec<AccountHistoryItem> {
+    dbtx.find_by_range(
+        AccountHistoryItemKey(account_id, items_range.start)
+            ..AccountHistoryItemKey(account_id, items_range.end),
+    )
+    .await
+    .map(|(_, val)| val)
+    .collect()
+    .await
+}
