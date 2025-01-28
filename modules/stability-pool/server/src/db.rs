@@ -7,7 +7,7 @@ use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId};
 use futures::StreamExt;
 use stability_pool_common::{
-    AccountHistoryItem, AccountId, CycleInfo, FiatAmount, Provide, Seek, SeekMetadata,
+    AccountHistoryItem, AccountId, CycleInfo, FiatAmount, Provide, Seek,
     StabilityPoolConsensusItem, UnlockForWithdrawalAmount,
 };
 
@@ -63,12 +63,6 @@ pub enum DbKeyPrefix {
     /// A mapping where a peer's vote for the next cycle is recorded. When a
     /// threshold number of votes is received, cycle turnover happens.
     CycleChangeVote,
-
-    /// (User account, seek sequence) => seek metadata.
-    /// Relevant history pertaining to the seek for client tracking purposes.
-    /// Contains information such as initial value in sats and cents,
-    /// withdrawn amounts in sats and cents, as well as fees debited so far.
-    SeekMetadata,
 
     /// (Account, serial) => AccountHistoryItemDb
     ///
@@ -217,26 +211,6 @@ impl_db_lookup!(
     key = CycleChangeVoteKey,
     query_prefix = CycleChangeVoteIndexPrefix,
     query_prefix = CycleChangeVoteKeyPrefix,
-);
-
-#[derive(Debug, Encodable, Decodable)]
-pub struct SeekMetadataKey(pub AccountId, pub u64); // (account, sequence)
-
-#[derive(Debug, Encodable, Decodable)]
-pub struct SeekMetadataAccountPrefix(pub AccountId);
-
-#[derive(Debug, Encodable, Decodable)]
-pub struct SeekMetadataKeyPrefix;
-
-impl_db_record!(
-    key = SeekMetadataKey,
-    value = SeekMetadata,
-    db_prefix = DbKeyPrefix::SeekMetadata
-);
-impl_db_lookup!(
-    key = SeekMetadataKey,
-    query_prefix = SeekMetadataAccountPrefix,
-    query_prefix = SeekMetadataKeyPrefix
 );
 
 /// AccountId and serial counter.
