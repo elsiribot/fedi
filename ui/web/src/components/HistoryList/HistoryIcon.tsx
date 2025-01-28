@@ -3,14 +3,16 @@ import React from 'react'
 import ArrowDownBadgeIcon from '@fedi/common/assets/svgs/arrow-down-badge.svg'
 import ArrowUpBadgeIcon from '@fedi/common/assets/svgs/arrow-up-badge.svg'
 import ExpiredBadgeIcon from '@fedi/common/assets/svgs/expired-badge.svg'
+import FailedBadgeIcon from '@fedi/common/assets/svgs/failed-badge.svg'
 import PendingBadgeIcon from '@fedi/common/assets/svgs/pending-badge.svg'
+import { TransactionBadgeType } from '@fedi/common/types'
 
 import { CSSProp, styled, theme } from '../../styles'
 import { Icon } from '../Icon'
 
 export interface HistoryIconProps {
     children: React.ReactNode
-    badge?: 'incoming' | 'outgoing' | 'pending' | 'expired'
+    badge?: TransactionBadgeType
     color?: CSSProp['color']
 }
 
@@ -33,6 +35,9 @@ export const HistoryIcon: React.FC<HistoryIconProps> = ({
     } else if (badge === 'expired') {
         badgeIcon = ExpiredBadgeIcon
         badgeColor = theme.colors.red
+    } else if (badge === 'failed') {
+        badgeIcon = FailedBadgeIcon
+        badgeColor = theme.colors.yellow
     }
 
     return (

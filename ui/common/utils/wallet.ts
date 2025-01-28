@@ -6,6 +6,7 @@ import {
     MSats,
     SupportedCurrency,
     Transaction,
+    TransactionBadgeType,
     TransactionDirection,
     UsdCents,
 } from '../types'
@@ -374,6 +375,82 @@ export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
             return ''
     }
 }
+
+export const makeTxnStatusIcon = (txn: Transaction) => {
+    let badge: TransactionBadgeType
+
+    switch (txn.direction) {
+        case TransactionDirection.send:
+            if (txn.lightning) {
+                switch (txn.lnState?.type) {
+                    case 'canceled':
+                    case 'refunded':
+                    case 'failed':
+                        badge = 'failed'
+                        break
+                    default:
+                        badge = 'outgoing'
+                        break
+                }
+            } else {
+                badge = 'outgoing'
+            }
+            break
+        case TransactionDirection.receive:
+            if (txn.lightning) {
+                if (txn.lnState) {
+                    switch (txn.lnState.type) {
+                        case 'waitingForPayment':
+                            badge = 'pending'
+                            break
+                        case 'canceled':
+                            badge = 'expired'
+                            break
+                        default:
+                            badge = 'incoming'
+                    }
+                } else {
+                    badge = 'pending'
+                }
+            } else if (txn.bitcoin) {
+                switch (txn.onchainState?.type) {
+                    case 'claimed':
+                        badge = 'incoming'
+                        break
+                    default:
+                        badge = 'pending'
+                }
+            } else if (txn.stabilityPoolState) {
+                switch (txn.stabilityPoolState.type) {
+                    case 'pendingWithdrawal':
+                        badge = 'pending'
+                        break
+                    default:
+                        badge = 'incoming'
+                }
+            } else if (txn.oobState) {
+                switch (txn.oobState.type) {
+                    case 'created':
+                    case 'issuing':
+                        badge = 'pending'
+                        break
+                    case 'failed':
+                        badge = 'failed'
+                        break
+                    default:
+                        badge = 'incoming'
+                }
+            } else {
+                badge = 'incoming'
+            }
+            break
+        default:
+            badge = 'incoming'
+    }
+
+    return badge
+}
+
 export const makeTxnFeeDetails = (
     t: TFunction,
     txn: Transaction,

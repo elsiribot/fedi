@@ -53,6 +53,7 @@ export { default as ExpiredBadgeIcon } from '@fedi/common/assets/svgs/expired-ba
 export { default as ExternalLink } from '@fedi/common/assets/svgs/external-link.svg'
 export { default as EyeClosed } from '@fedi/common/assets/svgs/eye-closed.svg'
 export { default as Eye } from '@fedi/common/assets/svgs/eye.svg'
+export { default as FailedBadgeIcon } from '@fedi/common/assets/svgs/failed-badge.svg'
 export { default as Federation } from '@fedi/common/assets/svgs/federation.svg'
 export { default as FederationxIcon } from '@fedi/common/assets/svgs/federationx-icon.svg'
 export { default as FediFile } from '@fedi/common/assets/svgs/fedi-file.svg'

@@ -275,3 +275,10 @@ export type ReceiveEcashResult =
           status: 'failed'
           error: string
       }
+
+export type TransactionBadgeType =
+    | 'incoming'
+    | 'outgoing'
+    | 'pending'
+    | 'expired'
+    | 'failed'
