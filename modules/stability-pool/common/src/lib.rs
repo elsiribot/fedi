@@ -247,6 +247,67 @@ impl FromStr for AccountId {
     }
 }
 
+/// Deposit represents user positions in the system. These positions can be
+/// seeks or provides. Different types of "meta" differentiate different types
+/// of positions.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Deposit<M> {
+    pub sequence: u64,
+    pub amount: Amount,
+    pub meta: M,
+}
+
+impl<M> Encodable for Deposit<M>
+where
+    M: Encodable,
+{
+    fn consensus_encode<W: std::io::Write>(&self, writer: &mut W) -> Result<usize, std::io::Error> {
+        (self.sequence, self.amount, &self.meta).consensus_encode(writer)
+    }
+}
+
+impl<M> Decodable for Deposit<M>
+where
+    M: Decodable,
+{
+    fn consensus_decode<R: std::io::Read>(
+        r: &mut R,
+        modules: &ModuleDecoderRegistry,
+    ) -> Result<Self, DecodeError> {
+        let (sequence, amount, meta) = <(u64, Amount, M)>::consensus_decode(r, modules)?;
+        Ok(Self {
+            sequence,
+            amount,
+            meta,
+        })
+    }
+}
+
+/// A seek is just a deposit without any additional meta.
+pub type Seek = Deposit<()>;
+
+/// Newtype to express fee rate in PPB (parts per billion).
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    Hash,
+    Eq,
+    PartialEq,
+    Encodable,
+    Decodable,
+    Serialize,
+    Deserialize,
+    PartialOrd,
+    Ord,
+)]
+pub struct FeeRate(pub u64);
+
+/// A provide is just a deposit with an additional meta of [`FeeRate`]. Every
+/// provide contains a minimum fee rate that the provider is willing to accept
+/// for the liquidity that they are providing.
+pub type Provide = Deposit<FeeRate>;
+
 /// Withdrawal is a 2-step process whereby the first step is the client telling
 /// the server to free up X cents in the idle balance, and second step is the
 /// client then sweeping up the idle balance.
@@ -335,41 +396,7 @@ pub struct SeekRequest(pub Amount);
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
 pub struct ProvideRequest {
     pub amount: Amount,
-    pub min_fee_rate: u64,
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
-pub struct Seek {
-    pub deposit: Deposit,
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
-pub struct Provide {
-    pub deposit: Deposit,
-    pub min_fee_rate: u64,
-}
-
-impl AsRef<Deposit> for Seek {
-    fn as_ref(&self) -> &Deposit {
-        &self.deposit
-    }
-}
-impl AsRef<Deposit> for Provide {
-    fn as_ref(&self) -> &Deposit {
-        &self.deposit
-    }
-}
-
-impl AsMut<Deposit> for Seek {
-    fn as_mut(&mut self) -> &mut Deposit {
-        &mut self.deposit
-    }
-}
-
-impl AsMut<Deposit> for Provide {
-    fn as_mut(&mut self) -> &mut Deposit {
-        &mut self.deposit
-    }
+    pub min_fee_rate: FeeRate,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
@@ -532,12 +559,6 @@ plugin_types_trait_impl_common!(
     StabilityPoolOutputError
 );
 
-#[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize, Hash)]
-pub struct Deposit {
-    pub sequence: u64,
-    pub amount: Amount,
-}
-
 impl Display for StabilityPoolInputV0 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -572,10 +593,10 @@ impl Display for StabilityPoolOutputV0 {
             ),
             StabilityPoolOutputV0::DepositToProvide(provide_output) => write!(
                 f,
-                "Deposit {} into account {} for providing with min fee rate {}",
+                "Deposit {} into account {} for providing with min fee rate {} ppb",
                 provide_output.provide_request.amount,
                 provide_output.account_id,
-                provide_output.provide_request.min_fee_rate
+                provide_output.provide_request.min_fee_rate.0
             ),
         }
     }
