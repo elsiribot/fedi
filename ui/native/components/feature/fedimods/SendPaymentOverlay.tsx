@@ -87,7 +87,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
 
     useEffect(() => {
         if (isShowing) {
-            // If no payment federation is set (e.g. your active federation is a non-wallet community), find a wallet federation to use
+            // If no payment federation is set (e.g. your active federation is a non-wallet community), find and select the best possible wallet federation
             if (!paymentFederation) {
                 const firstWalletFederation = walletFederations
                     // Sort by balance
@@ -245,6 +245,10 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                     {
                         primary: true,
                         text: t('words.accept'),
+                        disabled:
+                            !!error ||
+                            inputAmount < minimumAmount ||
+                            inputAmount > maximumAmount,
                         onPress: handleAccept,
                     },
                 ],

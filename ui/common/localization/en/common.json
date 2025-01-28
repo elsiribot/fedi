@@ -197,6 +197,7 @@
         "failed-to-load-tos": "Failed to load terms of service",
         "failed-to-load-video": "Failed to load video",
         "failed-to-remove-user": "Failed to remove user",
+        "failed-to-send-payment": "Failed to send payment",
         "failed-to-switch-gateways": "Failed to switch gateways",
         "failed-to-update-notification": "Failed to update notification setting for this chat",
         "files-may-not-exceed-20mb": "Files may not exceed 20MB",

@@ -251,7 +251,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                     content: t('errors.please-join-wallet-community'),
                     status: 'error',
                 })
-                throw new Error(t('errors.please-join-wallet-community'))
+                // Don't duplicate errors we display via toasts
+                throw new Error(t('errors.failed-to-send-payment'))
             }
 
             let invoice: Invoice
@@ -266,7 +267,8 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                     content: t('phrases.failed-to-decode-invoice'),
                     status: 'error',
                 })
-                throw Error(t('phrases.failed-to-decode-invoice'))
+                // Don't duplicate errors we display via toasts
+                throw Error(t('errors.failed-to-send-payment'))
             }
             // Wait for user to interact with alert
             return new Promise((resolve, reject) => {
