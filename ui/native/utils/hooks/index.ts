@@ -187,7 +187,7 @@ export function useStoragePermission() {
 
             case 'android':
                 if (Platform.Version >= 33) {
-                    return [PERMISSIONS.ANDROID.READ_MEDIA_IMAGES]
+                    return [] // No permissions needed on Android 11+
                 }
                 return [PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE]
 
