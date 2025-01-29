@@ -98,6 +98,11 @@ run-dev-ui mode="default":
 install-xcode:
   ./scripts/install-xcode.sh
 
+# installs Rosetta if necessary by calling the install-rosetta.sh script
+install-rosetta:
+  # Execute the script
+  ./scripts/ui/install-rosetta.sh
+
 pod-install:
   nix develop .#xcode --command ./scripts/ui/install-ios-deps.sh
 
