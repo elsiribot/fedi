@@ -29,6 +29,11 @@ function run_in_cache() {
     >&2 echo "$(date --rfc-3339=seconds) RUN job=$job_name dir=$(pwd)"
     CARGO_BUILD_TARGET_DIR="$(pwd)"
     export CARGO_BUILD_TARGET_DIR
+
+    export HOME
+    HOME="$(pwd)/home"
+    mkdir -p "$HOME"
+
     cd "$src_dir"
 
     function on_exit() {
@@ -47,6 +52,8 @@ export -f run_in_cache
 
 
 fs-dir-cache exec \
-    --key-file Cargo.lock --key-str "${CARGO_PROFILE-:dev}" --key-file flake.lock \
+    --key-file Cargo.lock \
+    --key-str "${CARGO_PROFILE-:dev}" \
+    --key-file flake.lock \
     -- \
     bash -c 'run_in_cache "$@"' _ "$@"
