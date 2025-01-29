@@ -20,7 +20,7 @@ import { makeLog } from '../utils/log'
 import { hasStorageStateChanged } from '../utils/storage'
 import { browserSlice } from './browser'
 import { currencySlice, fetchCurrencyPrices } from './currency'
-import { environmentSlice, selectLanguage } from './environment'
+import { environmentSlice } from './environment'
 import {
     federationSlice,
     joinFederation,
@@ -93,7 +93,7 @@ export const commonMiddleware = (
  * Sets up any initial redux behavior that is consistent across all platforms.
  */
 export function initializeCommonStore({
-    store: { dispatch, subscribe, getState },
+    store: { dispatch },
     fedimint,
     storage,
     i18n,
@@ -208,7 +208,14 @@ export function initializeCommonStore({
     // Load state from local storage, then start listener that syncs to storage
     // on changes to stored state after it's been loaded.
     let unsubscribeStorage: UnsubscribeListener = () => null
-    dispatch(loadFromStorage({ storage })).then(() => {
+    dispatch(
+        // Detects and sets the language (if applicable) or loads the selected one from stored state
+        loadFromStorage({
+            storage,
+            i18n,
+            detectLanguage,
+        }),
+    ).then(() => {
         unsubscribeStorage = listenerMiddleware.startListening({
             predicate: (_action, currentState, previousState) => {
                 return hasStorageStateChanged(currentState, previousState)
@@ -249,19 +256,6 @@ export function initializeCommonStore({
         },
     })
 
-    const unsubscribeInitialLang = subscribe(() => {
-        const language = selectLanguage(getState())
-
-        if (detectLanguage) {
-            detectLanguage().then(detectedLanguage => {
-                if (!language) i18n.changeLanguage(detectedLanguage)
-                else i18n.changeLanguage(language)
-            })
-        } else if (language) i18n.changeLanguage(language)
-
-        unsubscribeInitialLang()
-    })
-
     return () => {
         unsubscribeFederation()
         unsubscribeCommunities()
@@ -270,6 +264,5 @@ export function initializeCommonStore({
         unsubscribeRecovery()
         unsubscribeStorage()
         unsubscribeMatrixPayments()
-        unsubscribeInitialLang()
     }
 }
