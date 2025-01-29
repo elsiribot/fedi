@@ -52,6 +52,8 @@
 		9669CAA56EF84C4BBE47CA1C /* AlbertSans-LightItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D3A507DA54ED44A9B76ADA0D /* AlbertSans-LightItalic.ttf */; };
 		976B441AB8FF436A8DB9CC91 /* AlbertSans-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2B7020430C9340729EFFD0DE /* AlbertSans-ExtraBold.ttf */; };
 		9951E94F79E74B61B89E0A50 /* AlbertSans-Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0665FD33D8CC4EE5B91F83C7 /* AlbertSans-Thin.ttf */; };
+		A1E81D9B2D4A9F92009B406B /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1E81D992D4A9F92009B406B /* InfoPlist.strings */; };
+		A1E81D9C2D4A9F92009B406B /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1E81D992D4A9F92009B406B /* InfoPlist.strings */; };
 		A6B11B2AA56E44BAB94CF63D /* AlbertSans-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EE31B700324A4A70BB91B5F7 /* AlbertSans-Light.ttf */; };
 		B64E6B120C7D4BF89894DF2A /* AlbertSans-ThinItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2CA9C347DB3A4A33A044ADBB /* AlbertSans-ThinItalic.ttf */; };
 		BB56AE9D1B46C7DB7914AC82 /* libPods-FediReactNative-FediReactNativeTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A78793F22F20F868C5729FCD /* libPods-FediReactNative-FediReactNativeTests.a */; };
@@ -117,6 +119,12 @@
 		74127533118A8BCFD4A5DCB5 /* Pods-FediReactNative-FediNightly.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FediReactNative-FediNightly.release.xcconfig"; path = "Target Support Files/Pods-FediReactNative-FediNightly/Pods-FediReactNative-FediNightly.release.xcconfig"; sourceTree = "<group>"; };
 		7CC393CACA0C6BA9FE9B9F83 /* Pods-FediReactNative.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FediReactNative.debug.xcconfig"; path = "Target Support Files/Pods-FediReactNative/Pods-FediReactNative.debug.xcconfig"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* GradientLaunch.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = GradientLaunch.storyboard; path = FediReactNative/GradientLaunch.storyboard; sourceTree = "<group>"; };
+		A1E81D9A2D4A9F92009B406B /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1E81D9D2D4AA073009B406B /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1E81D9E2D4AA07D009B406B /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		A1E81D9F2D4AA083009B406B /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-PT"; path = "pt-PT.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		A1E81DA02D4AA087009B406B /* es-419 */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "es-419"; path = "es-419.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		A1E81DA12D4AA08D009B406B /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = id; path = id.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A2718C7E398D4E6D944B3C10 /* AlbertSans-Italic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-Italic.ttf"; path = "../assets/fonts/AlbertSans-Italic.ttf"; sourceTree = "<group>"; };
 		A78793F22F20F868C5729FCD /* libPods-FediReactNative-FediReactNativeTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-FediReactNative-FediReactNativeTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B629B376C532DB5BE64CF38D /* Pods-FediReactNative-FediReactNativeTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FediReactNative-FediReactNativeTests.release.xcconfig"; path = "Target Support Files/Pods-FediReactNative-FediReactNativeTests/Pods-FediReactNative-FediReactNativeTests.release.xcconfig"; sourceTree = "<group>"; };
@@ -198,6 +206,7 @@
 				13B07FB01A68108700A75B9A /* AppDelegate.mm */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
+				A1E81D992D4A9F92009B406B /* InfoPlist.strings */,
 				13B07FB71A68108700A75B9A /* main.m */,
 				81AB9BB72411601600AC10FF /* GradientLaunch.storyboard */,
 				28C547D7A8964C074604D4BA /* PrivacyInfo.xcprivacy */,
@@ -404,6 +413,11 @@
 			knownRegions = (
 				en,
 				Base,
+				fr,
+				"pt-BR",
+				"pt-PT",
+				"es-419",
+				id,
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
@@ -430,6 +444,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				81AB9BB82411601600AC10FF /* GradientLaunch.storyboard in Resources */,
+				A1E81D9B2D4A9F92009B406B /* InfoPlist.strings in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				F3FA384A62E446EFAA757304 /* AlbertSans-Regular.ttf in Resources */,
 				8518EE77A1C34B05A09B712F /* AlbertSans-Black.ttf in Resources */,
@@ -478,6 +493,7 @@
 				51BDE8B12AD5FFDF006CF72B /* AlbertSans-Medium.ttf in Resources */,
 				51BDE8B22AD5FFDF006CF72B /* AlbertSans-MediumItalic.ttf in Resources */,
 				51BDE8B32AD5FFDF006CF72B /* AlbertSans-SemiBold.ttf in Resources */,
+				A1E81D9C2D4A9F92009B406B /* InfoPlist.strings in Resources */,
 				51BDE8B42AD5FFDF006CF72B /* AlbertSans-SemiBoldItalic.ttf in Resources */,
 				FA38AC912BFE794D007C7E9E /* GoogleService-Info.plist in Resources */,
 				51BDE8B52AD5FFDF006CF72B /* AlbertSans-Thin.ttf in Resources */,
@@ -765,6 +781,22 @@
 			targetProxy = 00E356F41AD99517003FC87E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		A1E81D992D4A9F92009B406B /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A1E81D9A2D4A9F92009B406B /* en */,
+				A1E81D9D2D4AA073009B406B /* fr */,
+				A1E81D9E2D4AA07D009B406B /* pt-BR */,
+				A1E81D9F2D4AA083009B406B /* pt-PT */,
+				A1E81DA02D4AA087009B406B /* es-419 */,
+				A1E81DA12D4AA08D009B406B /* id */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		00E356F61AD99517003FC87E /* Debug */ = {
@@ -1076,6 +1108,7 @@
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				USE_HERMES = true;
 			};
 			name = Debug;
@@ -1154,6 +1187,7 @@
 				OTHER_LDFLAGS = "$(inherited)";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../../node_modules/react-native";
 				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				USE_HERMES = true;
 				VALIDATE_PRODUCT = YES;
 			};
