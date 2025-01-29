@@ -24,11 +24,11 @@ import { dumpDB } from '../device-info'
 import { generateLogsExportGzip } from '../log'
 
 export const useNativeExport = () => {
-    const exportTransactions = useExportTransactions(fedimint)
-    const [exportingFederationId, setExportingFederationId] =
-        useState<string>('')
     const toast = useToast()
     const { t } = useTranslation()
+    const exportTransactions = useExportTransactions(fedimint, t)
+    const [exportingFederationId, setExportingFederationId] =
+        useState<string>('')
 
     const log = makeLog('Settings/export')
 

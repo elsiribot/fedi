@@ -74,6 +74,7 @@ function DeveloperPage() {
                 makeTransactionHistoryCSV(
                     transactions,
                     makeFormattedAmountsFromMSats,
+                    t,
                 ),
             )
             hiddenElement.download = makeCSVFilename(
