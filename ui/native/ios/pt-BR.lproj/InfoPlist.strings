@@ -8,5 +8,5 @@
 "NSCameraUsageDescription" = "A Fedi precisa de acesso à câmera para escanear códigos QR";
 "NSLocationWhenInUseUsageDescription" = "A Fedi não usa sua localização";
 "NSMicrophoneUsageDescription" = "A Fedi precisa de acesso ao seu microfone para gravar um vídeo de backup social";
-"NSPhotoLibraryAddUsageDescription" = "A Fedi precisa de acesso para salvar fotos na sua biblioteca de fotos";
-"NSPhotoLibraryUsageDescription" = "A Fedi precisa de acesso à sua biblioteca de fotos para selecionar mídia para o seu avatar e anexos de chat";
+"NSPhotoLibraryAddUsageDescription" = "A Fedi precisa de acesso para salvar fotos na sua fototeca";
+"NSPhotoLibraryUsageDescription" = "A Fedi precisa de acesso à sua fototeca para selecionar mídia para o seu avatar e anexos de chat";
