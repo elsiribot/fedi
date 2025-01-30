@@ -129,8 +129,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
         <Overlay
             isVisible={show}
             onBackdropPress={onBackdropPress}
-            overlayStyle={style.overlayContainer}
-            animationType="fade">
+            overlayStyle={style.overlayContainer}>
             <Animated.View
                 onLayout={handleOverlayLayout}
                 style={{
