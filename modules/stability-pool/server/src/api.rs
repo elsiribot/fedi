@@ -5,17 +5,26 @@ use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiEr
 use fedimint_core::Amount;
 use futures::{stream, StreamExt};
 use stability_pool_common::{
-    AccountId, AccountType, LiquidityStats, SyncResponse, UnlockRequestStatus,
+    AccountHistoryItem, AccountHistoryRequest, AccountId, AccountType, LiquidityStats,
+    SyncResponse, UnlockRequestStatus,
 };
 
 use crate::db::{
-    account_history_count, CurrentCycleKey, IdleBalanceKey, PastCycleKeyPrefix, StagedProvidesKey,
-    StagedProvidesKeyPrefix, StagedSeeksKey, StagedSeeksKeyPrefix, UnlockRequestKey,
+    account_history_count, get_account_history_items, CurrentCycleKey, IdleBalanceKey,
+    PastCycleKeyPrefix, StagedProvidesKey, StagedProvidesKeyPrefix, StagedSeeksKey,
+    StagedSeeksKeyPrefix, UnlockRequestKey,
 };
 use crate::StabilityPool;
 
 pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
     vec![
+        api_endpoint! {
+            "account_history",
+            ApiVersion::new(0, 0),
+            async |_module: &StabilityPool, context, request: AccountHistoryRequest| -> Vec<AccountHistoryItem> {
+                Ok(get_account_history_items(&mut context.dbtx().into_nc(), request.account_id, request.range.start..request.range.end).await)
+            }
+        },
         api_endpoint! {
             "sync",
             ApiVersion::new(0, 0),

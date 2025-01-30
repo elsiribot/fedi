@@ -72,6 +72,7 @@ tempfile = "3.3.0"
 slab = "0.4.9"
 eyeball = "0.8.7"
 async-recursion = "1.1.0"
+tokio-stream = { version = "0.1.17", features = ["sync"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.17.5", features = ["wasm32_unknown_unknown_js"] }

@@ -1,6 +1,7 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 use std::fmt::{self, Display};
 use std::io;
+use std::ops::Range;
 use std::str::FromStr;
 use std::time::SystemTime;
 
@@ -652,17 +653,6 @@ pub enum UnlockRequestStatus {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encodable, Decodable)]
-pub struct AccountInfo {
-    pub idle_balance: Amount,
-    pub staged_seeks: Vec<Seek>,
-    pub staged_provides: Vec<Provide>,
-    pub unlock_request: Option<UnlockForWithdrawalAmount>,
-    pub locked_seeks: Vec<Seek>,
-    pub locked_provides: Vec<Provide>,
-    pub seeks_metadata: BTreeMap<u64, SeekMetadata>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encodable, Decodable)]
 pub struct LiquidityStats {
     pub locked_seeks_sum_msat: u64,
     pub locked_provides_sum_msat: u64,
@@ -673,9 +663,7 @@ pub struct LiquidityStats {
 /// Client calls /sync endpoint to sync client state from server.
 ///
 /// This state includes current cycle info, balance and account history
-// note: this is never stored in database of the server.
-// should we include average fee rate?
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Encodable, Decodable, Debug, Clone, PartialEq, Eq)]
 pub struct SyncResponse {
     pub current_cycle: CycleInfo,
     pub staged_balance: Amount,
@@ -687,9 +675,15 @@ pub struct SyncResponse {
     pub account_history_count: u64,
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct AccountHistoryRequest {
+    pub account_id: AccountId,
+    pub range: Range<u64>,
+}
+
 /// Some cycle details are sent to client along with cycle number to avoid
 /// multiple api calls.
-#[derive(Serialize, Encodable, Decodable, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Encodable, Decodable, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CycleInfo {
     pub idx: u64,
     pub start_price: FiatAmount,
@@ -700,7 +694,7 @@ pub struct CycleInfo {
 /// - Every state transaction of deposit is tracked.
 /// - We don't keep history of idle balance.
 /// - Amounts are sent as msats and we also send the cycle price.
-#[derive(Serialize, Encodable, Decodable, Debug)]
+#[derive(Serialize, Deserialize, Encodable, Decodable, Debug, Clone, PartialEq, Eq)]
 pub struct AccountHistoryItem {
     /// Cycle in which the transaction happened
     pub cycle: CycleInfo,
@@ -708,7 +702,7 @@ pub struct AccountHistoryItem {
     pub kind: AccountHistoryItemKind,
 }
 
-#[derive(Debug, Serialize, Encodable, Decodable)]
+#[derive(Debug, Serialize, Deserialize, Encodable, Decodable, Clone, PartialEq, Eq)]
 pub enum AccountHistoryItemKind {
     DepositToStaged {
         deposit_sequence: u64,
