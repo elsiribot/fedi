@@ -222,6 +222,7 @@
         "receive-ecash-failed-claimed": "Failed to receive ecash. This has already been claimed.",
         "receives-have-been-disabled": "Receives have been disabled for this community",
         "recovery-failed": "Recovery failed, please try again",
+        "recovery-failed-connection": "Recovery failed due to an issue with your connection",
         "title-too-short": "Title must be at least 3 characters",
         "title-too-long": "Title cannot exceed 24 characters",
         "unknown-ecash-issuer": "This ecash token was issued by a community you are not a member of",
