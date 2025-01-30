@@ -107,8 +107,8 @@ cd $REPO_ROOT/ui/native
 echo "Building & installing iOS app bundle"
 run_ios_result=0
 
-run_options="--extra-params ARCHS=x86_64 --udid $FEDI_DEVICE_ID --no-packager --verbose"
-run_command="npx react-native run-ios $run_options"
+run_options="--extra-params ARCHS=arm64 --udid $FEDI_DEVICE_ID --no-packager --verbose"
+run_command="arch -arm64 npx react-native run-ios $run_options"
 
 # Launch on selected iOS device
 $run_command || {
