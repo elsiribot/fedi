@@ -15,14 +15,14 @@ use common::config::{
     StabilityPoolGenParams,
 };
 use common::{
-    Provide, Seek, SeekMetadata, StabilityPoolCommonGen, StabilityPoolConsensusItem,
-    StabilityPoolInput, StabilityPoolInputError, StabilityPoolModuleTypes, StabilityPoolOutput,
+    Provide, Seek, StabilityPoolCommonGen, StabilityPoolConsensusItem, StabilityPoolInput,
+    StabilityPoolInputError, StabilityPoolModuleTypes, StabilityPoolOutput,
     StabilityPoolOutputError, StabilityPoolOutputOutcome, StabilityPoolOutputOutcomeV0,
     CONSENSUS_VERSION,
 };
 use db::{
     CurrentCycleKey, CurrentCycleKeyPrefix, Cycle, CycleChangeVoteIndexPrefix, CycleChangeVoteKey,
-    IdleBalanceKey, IdleBalanceKeyPrefix, PastCycleKey, SeekMetadataKey, StagedProvideSequenceKey,
+    IdleBalanceKey, IdleBalanceKeyPrefix, PastCycleKey, StagedProvideSequenceKey,
     StagedProvidesKey, StagedProvidesKeyPrefix, StagedSeekSequenceKey, StagedSeeksKey,
     StagedSeeksKeyPrefix, UnlockRequestKey, UnlockRequestsKeyPrefix,
 };
@@ -1513,24 +1513,13 @@ async fn distribute_fees_and_write_cycle(
     )
     .await?;
 
-    #[derive(PartialOrd, Ord, PartialEq, Eq)]
-    struct AmountAndFeeKey {
-        account_id: AccountId,
-        sequence: u64,
-    }
-    struct AmountAndFeeValue {
-        amount: Amount,
-        fee: Amount,
-    }
-    let mut seek_amount_and_fee_map: BTreeMap<AmountAndFeeKey, AmountAndFeeValue> = BTreeMap::new();
-
     // Reduce each locked seek by fee amount and calculate total fee pool
     let mut fee_pool = 0u128;
     locked_seeks.iter_mut().for_each(
         |(
-            account_id,
+            _account_id,
             Seek {
-                deposit: Deposit { sequence, amount },
+                deposit: Deposit { amount, .. },
             },
         )| {
             // Ceiling division to ensure fee is never undercharged
@@ -1541,58 +1530,9 @@ async fn distribute_fees_and_write_cycle(
             // within u64) and multiplying it by a fraction smaller than 1. Therefore `fee`
             // must fit within u64.
             let fee = Amount::from_msats(fee.try_into().unwrap());
-            seek_amount_and_fee_map.insert(
-                AmountAndFeeKey {
-                    account_id: *account_id,
-                    sequence: *sequence,
-                },
-                AmountAndFeeValue {
-                    amount: *amount,
-                    fee,
-                },
-            );
             *amount -= fee;
         },
     );
-
-    // Update seek metadatas in database
-    for (
-        AmountAndFeeKey {
-            account_id,
-            sequence,
-        },
-        amount_and_fee,
-    ) in seek_amount_and_fee_map
-    {
-        let seek_metadata_key = SeekMetadataKey(account_id, sequence);
-        let seek_metadata = match dbtx.get_value(&seek_metadata_key).await {
-            Some(existing) => SeekMetadata {
-                staged_sequence: existing.staged_sequence,
-                initial_amount: existing.initial_amount,
-                initial_fiat_amount: existing.initial_fiat_amount,
-                withdrawn_amount: existing.withdrawn_amount,
-                withdrawn_fiat_amount: existing.withdrawn_fiat_amount,
-                fees_paid_so_far: existing.fees_paid_so_far + amount_and_fee.fee,
-                first_lock_start_time: existing.first_lock_start_time,
-                fully_withdrawn: existing.fully_withdrawn,
-            },
-            None => {
-                let initial_fiat_amount =
-                    FiatAmount::from_btc_amount(amount_and_fee.amount, cycle_price)?;
-                SeekMetadata {
-                    staged_sequence: sequence,
-                    initial_amount: amount_and_fee.amount,
-                    initial_fiat_amount,
-                    withdrawn_amount: Amount::ZERO,
-                    withdrawn_fiat_amount: FiatAmount(0),
-                    fees_paid_so_far: amount_and_fee.fee,
-                    first_lock_start_time: cycle_time,
-                    fully_withdrawn: false,
-                }
-            }
-        };
-        dbtx.insert_entry(&seek_metadata_key, &seek_metadata).await;
-    }
 
     let locked_provides_map = locked_provides
         .into_iter()
