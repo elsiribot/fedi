@@ -115,6 +115,11 @@ export type FiatFXInfo = {
   btcToFiatHundredths: number;
 };
 
+export type GuardianStatus =
+  | { online: { guardian: string; latency_ms: number } }
+  | { error: { guardian: string; error: string } }
+  | { timeout: { guardian: string; elapsed: string } };
+
 export type LogEvent = { log: string };
 
 /**
@@ -742,6 +747,10 @@ export type RpcTransaction = {
   fediFeeStatus: RpcOperationFediFeeStatus | null;
   direction: RpcTransactionDirection;
   notes: string;
+  /**
+   * time when this operation was settled.
+   */
+  outcomeTime: number | null;
   onchainState: RpcOnchainState | null;
   bitcoin: RpcBitcoinDetails | null;
   lnState: RpcLnState | null;
@@ -970,11 +979,6 @@ export type getNostrPubkey = {};
 export type getNostrSecret = {};
 
 export type getSensitiveLog = {};
-
-export type GuardianStatus =
-  | { online: { guardian: string; latency_ms: number } }
-  | { error: { guardian: string; error: string } }
-  | { timeout: { guardian: string; elapsed: string } };
 
 export type joinCommunity = { inviteCode: string };
 
