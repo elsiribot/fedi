@@ -535,6 +535,9 @@ pub struct RpcTransaction {
     pub fedi_fee_status: Option<RpcOperationFediFeeStatus>,
     pub direction: RpcTransactionDirection,
     pub notes: String,
+    /// time when this operation was settled.
+    #[ts(type = "number | null")]
+    pub outcome_time: Option<u64>,
     pub onchain_state: Option<RpcOnchainState>,
     pub bitcoin: Option<RpcBitcoinDetails>,
     pub ln_state: Option<RpcLnState>,
@@ -561,6 +564,7 @@ impl RpcTransaction {
             direction,
             fedi_fee_status,
             notes: Default::default(),
+            outcome_time: None,
             onchain_state: Default::default(),
             bitcoin: Default::default(),
             ln_state: Default::default(),

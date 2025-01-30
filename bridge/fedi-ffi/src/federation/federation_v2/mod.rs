@@ -2122,8 +2122,9 @@ impl FederationV2 {
                         Some(RpcOperationFediFeeStatus::PendingSend { fedi_fee } | RpcOperationFediFeeStatus::Success { fedi_fee }) => fedi_fee.0.msats,
                         _ => 0,
                     };
+                    let outcome_time = op.1.outcome_time();
 
-                    match op.1.operation_module_kind() {
+                    let mut transaction = match op.1.operation_module_kind() {
                         LIGHTNING_OPERATION_TYPE => {
                             let lightning_meta: LightningOperationMeta = op.1.meta();
                             match lightning_meta.variant {
@@ -2385,7 +2386,15 @@ impl FederationV2 {
                                 op.1.operation_module_kind()
                             );
                         }
+                    };
+                    if let Some(transaction) = &mut transaction {
+                        if let Some(outcome_time) = outcome_time {
+                            if let Ok(unix_time) = to_unix_time(outcome_time) {
+                                transaction.outcome_time = Some(unix_time);
+                            }
+                        }
                     }
+                    transaction
                 },
             );
         futures::future::join_all(futures)
