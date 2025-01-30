@@ -38,8 +38,8 @@ use secp256k1::{Keypair, Secp256k1};
 use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
 use stability_pool_common::{
-    Account, AccountId, AccountType, DepositToProvideOutput, DepositToSeekOutput, FiatAmount,
-    StabilityPoolInputV0, StabilityPoolOutputV0, UnlockForWithdrawalAmount,
+    Account, AccountId, AccountType, DepositToProvideOutput, DepositToSeekOutput, FeeRate,
+    FiatAmount, StabilityPoolInputV0, StabilityPoolOutputV0, UnlockForWithdrawalAmount,
     UnlockForWithdrawalInput, UnlockRequestStatus, WithdrawalInput, KIND,
 };
 use tracing::info;
@@ -196,9 +196,9 @@ impl ClientModule for StabilityPoolClientModule {
 
             CliCommand::DepositToProvide {
                 amount_msats,
-                fee_rate_ppb,
+                fee_rate,
             } => {
-                let operation_id = self.deposit_to_provide(amount_msats, fee_rate_ppb).await?;
+                let operation_id = self.deposit_to_provide(amount_msats, fee_rate).await?;
                 let mut updates = self
                     .subscribe_deposit_operation(operation_id)
                     .await?
@@ -420,7 +420,10 @@ impl StabilityPoolClientModule {
     /// return the fee rate of the current ongoing cycle. If num_cycles is 2, we
     /// average the current cycle and previous cycle. If num_cyces is n, we
     /// average the current cycle and (n - 1) previous cycles.
-    pub async fn average_fee_rate(&self, num_cycles: u64) -> anyhow::Result<u64, FederationError> {
+    pub async fn average_fee_rate(
+        &self,
+        num_cycles: u64,
+    ) -> anyhow::Result<FeeRate, FederationError> {
         self.module_api
             .request_current_consensus(
                 "average_fee_rate".to_string(),
@@ -471,7 +474,7 @@ impl StabilityPoolClientModule {
     pub async fn deposit_to_provide(
         &self,
         amount: Amount,
-        min_fee_rate: u64,
+        min_fee_rate: FeeRate,
     ) -> anyhow::Result<OperationId> {
         let (operation_id, _) = submit_tx_with_output(
             self,
@@ -813,6 +816,13 @@ fn parse_withdrawal_amount(s: &str) -> Result<UnlockForWithdrawalAmount, String>
     }
 }
 
+fn parse_fee_rate(s: &str) -> Result<FeeRate, String> {
+    Ok(FeeRate(
+        s.parse::<u64>()
+            .map_err(|e| format!("Invalid fee rate: {e}"))?,
+    ))
+}
+
 #[derive(Parser, Debug, Serialize)]
 pub enum CliCommand {
     /// Get the public key of this client
@@ -832,7 +842,8 @@ pub enum CliCommand {
         /// Amount in msats to deposit
         amount_msats: Amount,
         /// Fee rate in parts per billion
-        fee_rate_ppb: u64,
+        #[arg(value_parser = parse_fee_rate)]
+        fee_rate: FeeRate,
     },
     /// Withdraw from seeker or provider account
     Withdraw {

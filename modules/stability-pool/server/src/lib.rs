@@ -48,7 +48,7 @@ use oracle::{AggregateOracle, MockOracle, Oracle};
 pub use stability_pool_common as common;
 use stability_pool_common::{
     AccountHistoryItem, AccountHistoryItemKind, AccountId, AccountType, CycleInfo, Deposit,
-    DepositToProvideOutput, DepositToSeekOutput, FiatAmount, StabilityPoolInputV0,
+    DepositToProvideOutput, DepositToSeekOutput, FeeRate, FiatAmount, StabilityPoolInputV0,
     StabilityPoolOutputV0, UnlockForWithdrawalAmount, UnlockForWithdrawalInput, WithdrawalInput,
 };
 use tokio::sync::{Mutex, RwLock};
@@ -547,12 +547,7 @@ impl ServerModule for StabilityPool {
                 dbtx,
                 module_instance_id,
                 &StagedSeeksKeyPrefix,
-                |_, seek_list| {
-                    -(seek_list
-                        .iter()
-                        .fold(0, |acc, s| acc + s.deposit.amount.msats)
-                        as i64)
-                },
+                |_, seek_list| -(seek_list.iter().fold(0, |acc, s| acc + s.amount.msats) as i64),
             )
             .await;
         audit
@@ -561,10 +556,7 @@ impl ServerModule for StabilityPool {
                 module_instance_id,
                 &StagedProvidesKeyPrefix,
                 |_, provide_list| {
-                    -(provide_list
-                        .iter()
-                        .fold(0, |acc, p| acc + p.deposit.amount.msats)
-                        as i64)
+                    -(provide_list.iter().fold(0, |acc, p| acc + p.amount.msats) as i64)
                 },
             )
             .await;
@@ -583,12 +575,12 @@ impl ServerModule for StabilityPool {
                         .locked_seeks
                         .iter()
                         .flat_map(|(_, seek_list)| seek_list)
-                        .fold(0, |acc, s| acc + s.deposit.amount.msats);
+                        .fold(0, |acc, s| acc + s.amount.msats);
                     let all_locked_provides = current_cycle
                         .locked_provides
                         .iter()
                         .flat_map(|(_, provide_list)| provide_list)
-                        .fold(0, |acc, p| acc + p.deposit.amount.msats);
+                        .fold(0, |acc, p| acc + p.amount.msats);
                     -((all_locked_seeks + all_locked_provides) as i64)
                 },
             )
@@ -600,16 +592,16 @@ impl ServerModule for StabilityPool {
     }
 }
 
-async fn process_unlock_input_inner<K, D>(
+async fn process_unlock_input_inner<K, M>(
     dbtx: &mut DatabaseTransaction<'_>,
     input: &UnlockForWithdrawalInput,
     staged_key: &K,
-    locked_deposits: &[D],
+    locked_deposits: &[Deposit<M>],
     current_cycle: &Cycle,
 ) -> Result<InputMeta, StabilityPoolInputError>
 where
-    D: AsMut<Deposit> + AsRef<Deposit> + MaybeSend + MaybeSync + Clone,
-    K: DatabaseKey + DatabaseRecord<Value = Vec<D>> + MaybeSend + MaybeSync,
+    M: MaybeSend + MaybeSync + Clone,
+    K: DatabaseKey + DatabaseRecord<Value = Vec<Deposit<M>>> + MaybeSend + MaybeSync,
 {
     let btc_price = current_cycle.start_price;
     let unlock_key = UnlockRequestKey(input.account.id());
@@ -618,7 +610,7 @@ where
     }
 
     let mut staged_deposits = dbtx.get_value(staged_key).await.unwrap_or_default();
-    let locked_deposits_sum = locked_deposits.iter().map(|d| d.as_ref().amount).sum();
+    let locked_deposits_sum = locked_deposits.iter().map(|d| d.amount).sum();
 
     let mut drained_staged_deposits = vec![];
     match input.amount {
@@ -626,10 +618,7 @@ where
             let amount = fiat_amount
                 .to_btc_amount(btc_price)
                 .map_err(|_| StabilityPoolInputError::TemporaryError)?;
-            let staged_deposits_sum = staged_deposits
-                .iter()
-                .map(|d| d.as_ref().amount)
-                .sum::<Amount>();
+            let staged_deposits_sum = staged_deposits.iter().map(|d| d.amount).sum::<Amount>();
             let total_deposits_sum = staged_deposits_sum + locked_deposits_sum;
 
             if total_deposits_sum < amount {
@@ -640,10 +629,7 @@ where
             let mut amount_needed = amount;
             if staged_deposits.is_empty().not() {
                 drained_staged_deposits = drain_in_reverse(&mut staged_deposits, amount_needed);
-                amount_needed -= drained_staged_deposits
-                    .iter()
-                    .map(|d| d.as_ref().amount)
-                    .sum();
+                amount_needed -= drained_staged_deposits.iter().map(|d| d.amount).sum();
                 dbtx.insert_entry(staged_key, &staged_deposits).await;
             }
 
@@ -676,10 +662,7 @@ where
         }
     }
 
-    let idle_balance_credit = drained_staged_deposits
-        .iter()
-        .map(|d| d.as_ref().amount)
-        .sum();
+    let idle_balance_credit = drained_staged_deposits.iter().map(|d| d.amount).sum();
     if idle_balance_credit != Amount::ZERO {
         let idle_bal_key = IdleBalanceKey(input.account.id());
         let idle_balance = dbtx.get_value(&idle_bal_key).await.unwrap_or(Amount::ZERO);
@@ -695,8 +678,8 @@ where
             .map(|drained| AccountHistoryItem {
                 cycle: current_cycle.into(),
                 kind: AccountHistoryItemKind::StagedToIdle {
-                    amount_withdrawn: drained.as_ref().amount,
-                    desposit_sequence: drained.as_ref().sequence,
+                    amount_withdrawn: drained.amount,
+                    desposit_sequence: drained.sequence,
                 },
             }),
     )
@@ -810,10 +793,9 @@ async fn process_deposit_to_seek_output(
         .await
         .unwrap_or_default();
     user_staged_seeks.push(Seek {
-        deposit: Deposit {
-            sequence,
-            amount: output.seek_request.0,
-        },
+        sequence,
+        amount: output.seek_request.0,
+        meta: (),
     });
 
     dbtx.insert_entry(&StagedSeekSequenceKey, &(sequence + 1))
@@ -847,7 +829,7 @@ async fn process_deposit_to_provide_output(
         return Err(StabilityPoolOutputError::AmountTooLow);
     }
 
-    if config.consensus.max_allowed_provide_fee_rate_ppb < output.provide_request.min_fee_rate {
+    if config.consensus.max_allowed_provide_fee_rate_ppb < output.provide_request.min_fee_rate.0 {
         return Err(StabilityPoolOutputError::FeeRateTooHigh);
     }
 
@@ -865,11 +847,9 @@ async fn process_deposit_to_provide_output(
         .await
         .unwrap_or_default();
     user_staged_provides.push(Provide {
-        deposit: Deposit {
-            sequence,
-            amount: output.provide_request.amount,
-        },
-        min_fee_rate: output.provide_request.min_fee_rate,
+        sequence,
+        amount: output.provide_request.amount,
+        meta: output.provide_request.min_fee_rate,
     });
 
     dbtx.insert_entry(&StagedProvideSequenceKey, &(sequence + 1))
@@ -898,29 +878,23 @@ async fn process_deposit_to_provide_output(
 // deposit's stake. Here a deposit's "stake" is defined as its ratio of the
 // total deposits sum. If the pool is not fully drained by the end due to
 // rounding errors, randomly distribute any leftover msats.
-fn distribute_from_pool<D>(deposits: &mut [D], distribution_msat_pool: u128, randomness: usize)
-where
-    D: AsRef<Deposit> + AsMut<Deposit>,
-{
-    let total_deposits_msats = u128::from(
-        deposits
-            .iter()
-            .map(|d| d.as_ref().amount.msats)
-            .sum::<u64>(),
-    );
+fn distribute_from_pool<M>(
+    deposits: &mut [&mut Deposit<M>],
+    distribution_msat_pool: u128,
+    randomness: usize,
+) {
+    let total_deposits_msats = u128::from(deposits.iter().map(|d| d.amount.msats).sum::<u64>());
 
     // Now we distribute msats owed to the deposits based on their share
     // of distribution_msat_pool.
     let mut draining_msat_pool = distribution_msat_pool;
     for d in deposits.iter_mut() {
-        let deposit = d.as_ref();
-        let new_amount =
-            (distribution_msat_pool * deposit.amount.msats as u128) / total_deposits_msats;
+        let new_amount = (distribution_msat_pool * d.amount.msats as u128) / total_deposits_msats;
         draining_msat_pool -= new_amount;
         // `distribution_msat_pool` fits in u64 since it cannot grow larger than 21
         // million BTC. `new_amount` is less than `distribution_msat_pool`.
         // Therefore, `new_amount` must fit in u64.
-        d.as_mut().amount.msats = new_amount.try_into().unwrap();
+        d.amount.msats = new_amount.try_into().unwrap();
     }
 
     // If there's any left over msats owed to seeks (due to rounding),
@@ -932,7 +906,7 @@ where
             // progressively smaller. `distribution_msat_pool` fits in u64 since it
             // cannot grow larger than 21 million BTC. Therefore
             // `draining_msat_pool` must also fit in u64.
-            d.as_mut().amount.msats += TryInto::<u64>::try_into(draining_msat_pool).unwrap();
+            d.amount.msats += TryInto::<u64>::try_into(draining_msat_pool).unwrap();
         }
     }
 }
@@ -947,14 +921,12 @@ fn settle_locks(
     let total_seek_msats = locked_seeks
         .values()
         .flatten()
-        .fold(0u128, |acc, Seek { deposit, .. }| {
-            acc + deposit.amount.msats as u128
-        });
+        .fold(0u128, |acc, Seek { amount, .. }| acc + amount.msats as u128);
     let total_provide_msats = locked_provides
         .values()
         .flatten()
-        .fold(0u128, |acc, Provide { deposit, .. }| {
-            acc + deposit.amount.msats as u128
+        .fold(0u128, |acc, Provide { amount, .. }| {
+            acc + amount.msats as u128
         });
     let total_msats_available = total_seek_msats + total_provide_msats;
 
@@ -986,15 +958,15 @@ fn settle_locks(
     );
 }
 
-async fn process_unlock_requests_inner<D>(
+async fn process_unlock_requests_inner<M>(
     dbtx: &mut DatabaseTransaction<'_>,
     account_id: AccountId,
     unlock_amount: UnlockForWithdrawalAmount,
-    locked_deposits: &mut Vec<D>,
+    locked_deposits: &mut Vec<Deposit<M>>,
     new_cycle_info: &CycleInfo,
 ) -> anyhow::Result<()>
 where
-    D: AsMut<Deposit> + AsRef<Deposit> + MaybeSend + MaybeSync + Clone,
+    M: MaybeSend + MaybeSync + Clone,
 {
     let drained_locked_deposits = match unlock_amount {
         UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
@@ -1005,10 +977,7 @@ where
     };
 
     // Move unlocked msats to idle balance and remove account's unlock request
-    let amount_unlocked = drained_locked_deposits
-        .iter()
-        .map(|d| d.as_ref().amount)
-        .sum();
+    let amount_unlocked = drained_locked_deposits.iter().map(|d| d.amount).sum();
     let idle_balance_key = IdleBalanceKey(account_id);
     let idle_balance = dbtx
         .get_value(&idle_balance_key)
@@ -1028,8 +997,8 @@ where
             .map(|drained| AccountHistoryItem {
                 cycle: *new_cycle_info,
                 kind: AccountHistoryItemKind::LockedToIdle {
-                    amount_withdrawn: drained.as_ref().amount,
-                    deposit_sequence: drained.as_ref().sequence,
+                    amount_withdrawn: drained.amount,
+                    deposit_sequence: drained.sequence,
                 },
             }),
     )
@@ -1078,65 +1047,50 @@ async fn process_unlock_requests(
     Ok(())
 }
 
+async fn restage_remaining_locks_inner<K, M>(
+    dbtx: &mut DatabaseTransaction<'_>,
+    staged_key: K,
+    locked_deposits: Vec<Deposit<M>>,
+) where
+    M: MaybeSend + MaybeSync + Clone,
+    K: DatabaseKey + DatabaseRecord<Value = Vec<Deposit<M>>> + MaybeSend + MaybeSync,
+{
+    // If a staged deposit with the same sequence exists, we just
+    // increase its amount by the amount of the lock. Otherwise,
+    // we insert a new staged deposit.
+    let new_staged_deposits = dbtx
+        .get_value(&staged_key)
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .chain(locked_deposits)
+        .sorted_unstable_by_key(|d| d.sequence)
+        .coalesce(|prev, curr| {
+            if prev.sequence == curr.sequence {
+                Ok(Deposit {
+                    sequence: prev.sequence,
+                    amount: prev.amount + curr.amount,
+                    meta: prev.meta,
+                })
+            } else {
+                Err((prev, curr))
+            }
+        })
+        .collect_vec();
+    dbtx.insert_entry(&staged_key, &new_staged_deposits).await;
+}
+
 async fn restage_remaining_locks(
     dbtx: &mut DatabaseTransaction<'_>,
     locked_seeks: &BTreeMap<AccountId, Vec<Seek>>,
     locked_provides: &BTreeMap<AccountId, Vec<Provide>>,
 ) {
-    for (&account_id, account_locked_seeks) in locked_seeks {
-        // If a staged seek with the same sequence exists, we just
-        // increase its amount by the amount of the lock. Otherwise,
-        // we insert a new staged seek.
-        let new_staged_seeks = dbtx
-            .get_value(&StagedSeeksKey(account_id))
-            .await
-            .unwrap_or_default()
-            .into_iter()
-            .chain(account_locked_seeks.clone())
-            .sorted_unstable_by_key(|staged_seek| staged_seek.deposit.sequence)
-            .coalesce(|prev, curr| {
-                if prev.deposit.sequence == curr.deposit.sequence {
-                    Ok(Seek {
-                        deposit: Deposit {
-                            sequence: prev.deposit.sequence,
-                            amount: prev.deposit.amount + curr.deposit.amount,
-                        },
-                    })
-                } else {
-                    Err((prev, curr))
-                }
-            })
-            .collect_vec();
-        dbtx.insert_entry(&StagedSeeksKey(account_id), &new_staged_seeks)
-            .await;
+    for (&account_id, locked_seeks) in locked_seeks {
+        restage_remaining_locks_inner(dbtx, StagedSeeksKey(account_id), locked_seeks.clone()).await;
     }
 
-    for (&account_id, account_locked_provides) in locked_provides {
-        // If a staged provide with the same sequence exists, we just
-        // increase its amount by the amount of the lock. Otherwise,
-        // we insert a new staged provide.
-        let new_staged_provides = dbtx
-            .get_value(&StagedProvidesKey(account_id))
-            .await
-            .unwrap_or_default()
-            .into_iter()
-            .chain(account_locked_provides.clone())
-            .sorted_unstable_by_key(|staged_provide| staged_provide.deposit.sequence)
-            .coalesce(|prev, curr| {
-                if prev.deposit.sequence == curr.deposit.sequence {
-                    Ok(Provide {
-                        deposit: Deposit {
-                            sequence: prev.deposit.sequence,
-                            amount: prev.deposit.amount + curr.deposit.amount,
-                        },
-                        min_fee_rate: prev.min_fee_rate,
-                    })
-                } else {
-                    Err((prev, curr))
-                }
-            })
-            .collect_vec();
-        dbtx.insert_entry(&StagedProvidesKey(account_id), &new_staged_provides)
+    for (&account_id, locked_provides) in locked_provides {
+        restage_remaining_locks_inner(dbtx, StagedProvidesKey(account_id), locked_provides.clone())
             .await;
     }
 }
@@ -1200,7 +1154,7 @@ async fn extract_sorted_staged_seeks_and_provides(
         .collect::<Vec<_>>()
         .await
         .into_iter()
-        .sorted_unstable_by_key(|(_, seek)| seek.deposit.sequence)
+        .sorted_unstable_by_key(|(_, seek)| seek.sequence)
         .collect::<VecDeque<_>>();
     dbtx.remove_by_prefix(&StagedSeeksKeyPrefix).await;
 
@@ -1216,19 +1170,19 @@ async fn extract_sorted_staged_seeks_and_provides(
             |(
                 _,
                 Provide {
-                    deposit: a,
-                    min_fee_rate: fee_a,
+                    sequence: seq_a,
+                    meta: fee_a,
                     ..
                 },
             ),
              (
                 _,
                 Provide {
-                    deposit: b,
-                    min_fee_rate: fee_b,
+                    sequence: seq_b,
+                    meta: fee_b,
                     ..
                 },
-            )| fee_a.cmp(fee_b).then(a.sequence.cmp(&b.sequence)),
+            )| fee_a.cmp(fee_b).then(seq_a.cmp(seq_b)),
         )
         .collect::<VecDeque<_>>();
     dbtx.remove_by_prefix(&StagedProvidesKeyPrefix).await;
@@ -1250,8 +1204,8 @@ fn calculate_locked_provides_and_fee_rate(
 ) -> LockedProvidesAndFeeRateResult {
     let seeks_sum = staged_seeks
         .iter()
-        .fold(0u128, |acc, (_, Seek { deposit, .. })| {
-            acc + deposit.amount.msats as u128
+        .fold(0u128, |acc, (_, Seek { amount, .. })| {
+            acc + amount.msats as u128
         });
     let mut fee_rate = 0u64;
     let mut included_provides_sum = 0u128;
@@ -1271,8 +1225,9 @@ fn calculate_locked_provides_and_fee_rate(
         let (
             account_id,
             Provide {
-                deposit: Deposit { sequence, amount },
-                min_fee_rate,
+                sequence,
+                amount,
+                meta: min_fee_rate,
             },
         ) = &mut staged_provides[0];
 
@@ -1283,10 +1238,10 @@ fn calculate_locked_provides_and_fee_rate(
         // fee might make the remaining collateral needed 0, in which case
         // we should stop. Otherwise, we use the new value of remaining
         // collateral needed, as well as the new fee rate.
-        if *min_fee_rate > fee_rate {
+        if min_fee_rate.0 > fee_rate {
             let new_remaining_coll_needed = remaining_provider_collateral_needed(
                 seeks_sum,
-                (*min_fee_rate).into(), // use fee rate of new provide
+                min_fee_rate.0.into(), // use fee rate of new provide
                 collateral_ratio_provider,
                 collateral_ratio_seeker,
                 included_provides_sum,
@@ -1296,7 +1251,7 @@ fn calculate_locked_provides_and_fee_rate(
                 break;
             }
 
-            fee_rate = *min_fee_rate;
+            fee_rate = min_fee_rate.0;
             remaining_coll_needed = new_remaining_coll_needed;
         }
 
@@ -1306,11 +1261,9 @@ fn calculate_locked_provides_and_fee_rate(
         locked_provides.push((
             *account_id,
             Provide {
-                deposit: Deposit {
-                    sequence: *sequence,
-                    amount: Amount::from_msats(amount_used.try_into().unwrap()),
-                },
-                min_fee_rate: *min_fee_rate,
+                sequence: *sequence,
+                amount: Amount::from_msats(amount_used.try_into().unwrap()),
+                meta: *min_fee_rate,
             },
         ));
 
@@ -1350,7 +1303,7 @@ fn calculate_locked_seeks(
         let (
             account,
             Seek {
-                deposit: Deposit { sequence, amount },
+                sequence, amount, ..
             },
         ) = &mut staged_seeks[0];
 
@@ -1359,10 +1312,9 @@ fn calculate_locked_seeks(
         locked_seeks.push((
             *account,
             Seek {
-                deposit: Deposit {
-                    sequence: *sequence,
-                    amount: Amount::from_msats(amount_used.try_into().unwrap()),
-                },
+                sequence: *sequence,
+                amount: Amount::from_msats(amount_used.try_into().unwrap()),
+                meta: (),
             },
         ));
 
@@ -1392,15 +1344,12 @@ async fn write_remaining_staged_seeks_and_provides(
     }
 }
 
-async fn update_history_for_locks<D>(
+async fn update_history_for_locks<M>(
     dbtx: &mut DatabaseTransaction<'_>,
-    old_cycle_locks: &BTreeMap<AccountId, Vec<D>>,
-    new_locks: &[(AccountId, D)],
+    old_cycle_locks: &BTreeMap<AccountId, Vec<Deposit<M>>>,
+    new_locks: &[(AccountId, Deposit<M>)],
     cycle_info: &CycleInfo,
-) -> anyhow::Result<()>
-where
-    D: AsRef<Deposit>,
-{
+) -> anyhow::Result<()> {
     // Build a unified map of (account_id, sequence) -> (old_amount, new_amount)
     let amount_map = {
         let mut amount_map: BTreeMap<(AccountId, u64), (Option<Amount>, Option<Amount>)> =
@@ -1409,22 +1358,20 @@ where
         // First populate old amounts
         for (account_id, old_items) in old_cycle_locks {
             for old_item in old_items {
-                let old_deposit = old_item.as_ref();
                 amount_map.insert(
-                    (*account_id, old_deposit.sequence),
-                    (Some(old_deposit.amount), None),
+                    (*account_id, old_item.sequence),
+                    (Some(old_item.amount), None),
                 );
             }
         }
 
         // Then populate new amounts
         for (account_id, item) in new_locks {
-            let deposit = item.as_ref();
-            let key = (*account_id, deposit.sequence);
+            let key = (*account_id, item.sequence);
             if let Some((_, new_amount)) = amount_map.get_mut(&key) {
-                *new_amount = Some(deposit.amount);
+                *new_amount = Some(item.amount);
             } else {
-                amount_map.insert(key, (None, Some(deposit.amount)));
+                amount_map.insert(key, (None, Some(item.amount)));
             }
         }
         amount_map
@@ -1515,13 +1462,9 @@ async fn distribute_fees_and_write_cycle(
 
     // Reduce each locked seek by fee amount and calculate total fee pool
     let mut fee_pool = 0u128;
-    locked_seeks.iter_mut().for_each(
-        |(
-            _account_id,
-            Seek {
-                deposit: Deposit { amount, .. },
-            },
-        )| {
+    locked_seeks
+        .iter_mut()
+        .for_each(|(_account_id, Seek { amount, .. })| {
             // Ceiling division to ensure fee is never undercharged
             let fee = ceil_division(amount.msats as u128 * fee_rate as u128, B);
             fee_pool += fee;
@@ -1531,8 +1474,7 @@ async fn distribute_fees_and_write_cycle(
             // must fit within u64.
             let fee = Amount::from_msats(fee.try_into().unwrap());
             *amount -= fee;
-        },
-    );
+        });
 
     let locked_provides_map = locked_provides
         .into_iter()
@@ -1546,7 +1488,7 @@ async fn distribute_fees_and_write_cycle(
         .iter()
         .map(|(account_id, provides)| {
             let account_provides_amount = provides.iter().fold(0u128, |acc, locked_provide| {
-                acc + locked_provide.deposit.amount.msats as u128
+                acc + locked_provide.amount.msats as u128
             });
             let account_fee_owed = account_provides_amount * fee_pool / included_provides_sum;
             draining_fee_pool -= account_fee_owed;
@@ -1594,7 +1536,7 @@ async fn distribute_fees_and_write_cycle(
             index: cycle_index,
             start_time: cycle_time,
             start_price: cycle_price,
-            fee_rate,
+            fee_rate: FeeRate(fee_rate),
             locked_seeks: locked_seeks_map,
             locked_provides: locked_provides_map,
         },
@@ -1717,9 +1659,9 @@ fn ceil_division(dividend: u128, divisor: u128) -> u128 {
 /// Remove amount from items in reverse order. If an item's amount hits 0, the
 /// item itself is removed. Returns the actual drained items (with the partial
 /// or exact amounts that were taken).
-fn drain_in_reverse<D>(items: &mut Vec<D>, total_to_drain: Amount) -> Vec<D>
+fn drain_in_reverse<M>(items: &mut Vec<Deposit<M>>, total_to_drain: Amount) -> Vec<Deposit<M>>
 where
-    D: Clone + AsMut<Deposit>,
+    M: Clone,
 {
     let mut drained_items = Vec::new();
 
@@ -1730,20 +1672,18 @@ where
     let mut left_to_drain = total_to_drain;
     while let Some(mut item) = items.pop() {
         assert_ne!(left_to_drain, Amount::ZERO);
-        let mut drained_clone = item.clone();
-        let deposit = item.as_mut();
-
-        let min_extractable = deposit.amount.min(left_to_drain);
+        let min_extractable = item.amount.min(left_to_drain);
 
         // Clone the item to represent the portion drained
-        drained_clone.as_mut().amount = min_extractable;
+        let mut drained_clone = item.clone();
+        drained_clone.amount = min_extractable;
         drained_items.push(drained_clone);
 
-        deposit.amount -= min_extractable;
+        item.amount -= min_extractable;
         left_to_drain -= min_extractable;
 
         // reinsert not completely drained value
-        if deposit.amount != Amount::ZERO {
+        if item.amount != Amount::ZERO {
             items.push(item);
         }
 
@@ -1760,10 +1700,9 @@ mod tests {
 
     fn seek(sequence: u64, msats: u64) -> Seek {
         Seek {
-            deposit: Deposit {
-                sequence,
-                amount: Amount::from_msats(msats),
-            },
+            sequence,
+            amount: Amount::from_msats(msats),
+            meta: (),
         }
     }
 

@@ -7,7 +7,7 @@ use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId};
 use futures::StreamExt;
 use stability_pool_common::{
-    AccountHistoryItem, AccountId, CycleInfo, FiatAmount, Provide, Seek,
+    AccountHistoryItem, AccountId, CycleInfo, FeeRate, FiatAmount, Provide, Seek,
     StabilityPoolConsensusItem, UnlockForWithdrawalAmount,
 };
 
@@ -127,7 +127,7 @@ pub struct Cycle {
     pub index: u64,
     pub start_time: SystemTime,
     pub start_price: FiatAmount,
-    pub fee_rate: u64,
+    pub fee_rate: FeeRate,
     pub locked_seeks: BTreeMap<AccountId, Vec<Seek>>,
     pub locked_provides: BTreeMap<AccountId, Vec<Provide>>,
 }

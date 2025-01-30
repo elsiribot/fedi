@@ -5,7 +5,7 @@ use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiEr
 use fedimint_core::Amount;
 use futures::{stream, StreamExt};
 use stability_pool_common::{
-    AccountHistoryItem, AccountHistoryRequest, AccountId, AccountType, LiquidityStats,
+    AccountHistoryItem, AccountHistoryRequest, AccountId, AccountType, FeeRate, LiquidityStats,
     SyncResponse, UnlockRequestStatus,
 };
 
@@ -56,7 +56,7 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
         api_endpoint! {
             "average_fee_rate",
             ApiVersion::new(0, 0),
-            async |_module: &StabilityPool, context, request: u64| -> u64 {
+            async |_module: &StabilityPool, context, request: u64| -> FeeRate {
                 Ok(average_fee_rate(&mut context.dbtx().into_nc(), request).await?)
             }
         },
@@ -76,12 +76,12 @@ pub async fn sync(
         AccountType::Seeker => current_cycle
             .locked_seeks
             .get(&account)
-            .map(|v| v.iter().map(|locked| locked.deposit.amount).sum())
+            .map(|v| v.iter().map(|locked| locked.amount).sum())
             .unwrap_or(Amount::ZERO),
         AccountType::Provider => current_cycle
             .locked_provides
             .get(&account)
-            .map(|v| v.iter().map(|locked| locked.deposit.amount).sum())
+            .map(|v| v.iter().map(|locked| locked.amount).sum())
             .unwrap_or(Amount::ZERO),
     };
 
@@ -91,14 +91,14 @@ pub async fn sync(
             .await
             .unwrap_or_default()
             .iter()
-            .map(|staged| staged.deposit.amount)
+            .map(|staged| staged.amount)
             .sum(),
         AccountType::Provider => dbtx
             .get_value(&StagedProvidesKey(account))
             .await
             .unwrap_or_default()
             .iter()
-            .map(|provide| provide.deposit.amount)
+            .map(|provide| provide.amount)
             .sum(),
     };
     Ok(SyncResponse {
@@ -168,13 +168,13 @@ pub async fn liquidity_stats(
         .locked_seeks
         .values()
         .flatten()
-        .map(|s| s.deposit.amount.msats)
+        .map(|s| s.amount.msats)
         .sum();
     let locked_provides_sum_msat: u64 = current_cycle
         .locked_provides
         .values()
         .flatten()
-        .map(|p| p.deposit.amount.msats)
+        .map(|p| p.amount.msats)
         .sum();
     let staged_seeks_sum_msat: u64 = dbtx
         .find_by_prefix(&StagedSeeksKeyPrefix)
@@ -183,7 +183,7 @@ pub async fn liquidity_stats(
         .collect::<Vec<_>>()
         .await
         .iter()
-        .map(|s| s.deposit.amount.msats)
+        .map(|s| s.amount.msats)
         .sum();
     let staged_provides_sum_msat: u64 = dbtx
         .find_by_prefix(&StagedProvidesKeyPrefix)
@@ -192,7 +192,7 @@ pub async fn liquidity_stats(
         .collect::<Vec<_>>()
         .await
         .iter()
-        .map(|p| p.deposit.amount.msats)
+        .map(|p| p.amount.msats)
         .sum();
 
     Ok(LiquidityStats {
@@ -211,7 +211,7 @@ pub async fn liquidity_stats(
 pub async fn average_fee_rate(
     dbtx: &mut DatabaseTransaction<'_>,
     num_cycles: u64,
-) -> anyhow::Result<u64, ApiError> {
+) -> anyhow::Result<FeeRate, ApiError> {
     if num_cycles == 0 {
         return Err(ApiError::bad_request("num_cycles must be non-0".to_owned()));
     }
@@ -243,12 +243,12 @@ pub async fn average_fee_rate(
         Ok(val) => val - 1,
         Err(e) => return Err(ApiError::bad_request(format!("invalid num_cycles: {e:?}"))),
     };
-    let fee_rate_sum = current_cycle.fee_rate
+    let fee_rate_sum = current_cycle.fee_rate.0
         + dbtx
             .find_by_prefix_sorted_descending(&PastCycleKeyPrefix)
             .await
             .take(num_prev_cycles)
-            .fold(0, |acc, (_, cycle)| async move { acc + cycle.fee_rate })
+            .fold(0, |acc, (_, cycle)| async move { acc + cycle.fee_rate.0 })
             .await;
-    Ok(fee_rate_sum / num_cycles)
+    Ok(FeeRate(fee_rate_sum / num_cycles))
 }
