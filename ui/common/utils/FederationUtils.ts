@@ -355,16 +355,10 @@ export const shouldShowSocialRecovery = (federation: LoadedFederation) => {
 export const shouldShowOfflineWallet = (
     metadata: FederationMetadata,
 ): boolean => {
-    const offline_wallet_disabled = getMetaField(
-        SupportedMetaFields.offline_wallet_disabled,
-        metadata,
+    return (
+        getMetaField(SupportedMetaFields.offline_wallet_disabled, metadata) !==
+        'true'
     )
-
-    if (offline_wallet_disabled) {
-        return offline_wallet_disabled === 'true' ? false : true
-    }
-
-    return true
 }
 
 export const shouldEnableOnchainDeposits = (metadata: FederationMetadata) => {
