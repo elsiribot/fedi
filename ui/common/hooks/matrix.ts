@@ -1,6 +1,5 @@
 import type { TFunction } from 'i18next'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useSelector } from 'react-redux'
 
 import {
     acceptMatrixPaymentRequest,
@@ -48,7 +47,9 @@ import { useUpdatingRef } from './util'
  * @returns The latest push notification token, or null if not set.
  */
 export function usePushNotificationToken() {
-    const pushNotificationToken = useSelector(selectMatrixPushNotificationToken)
+    const pushNotificationToken = useCommonSelector(
+        selectMatrixPushNotificationToken,
+    )
     return pushNotificationToken
 }
 

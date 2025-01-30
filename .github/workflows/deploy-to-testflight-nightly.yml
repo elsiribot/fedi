@@ -32,6 +32,13 @@ jobs:
               # xcode shell ensures we have cocoapods installed
               run: nix develop .#xcode -c ./scripts/ui/install-ios-deps.sh
 
+            - name: Inject secrets into .env file
+              run: |
+                  echo "CHANNEL_KEY_ANDROID=${{ secrets.CHANNEL_KEY_ANDROID }}" >> ui/native/.env
+                  echo "CHANNEL_KEY_IOS=${{ secrets.CHANNEL_KEY_IOS }}" >> ui/native/.env
+                  echo "ZENDESK_KID=${{ secrets.ZENDESK_KID }}" >> ui/native/.env
+                  echo "ZENDESK_SECRET_KEY=${{ secrets.ZENDESK_SECRET_KEY }}" >> ui/native/.env
+
             - name: Generate JSON credentials file
               env:
                   ASC_API_KEY_JSON_CREDENTIALS_ENCODED: ${{ secrets.ASC_API_KEY_JSON_CREDENTIALS_ENCODED }}
@@ -42,7 +49,6 @@ jobs:
                   GH_PAT_FEDI_FETCH_IOS_CERTS: ${{ secrets.GH_PAT_FEDI_FETCH_IOS_CERTS }}
                   MATCH_KEYCHAIN_NAME: ${{ secrets.APP_STORE_CONNECT_KEYCHAIN_NAME }}
                   MATCH_PASSWORD: ${{ secrets.APP_STORE_CONNECT_KEYCHAIN_PASSWORD }}
-                  # Consider: should we even have separate steps above for this?
                   BUILD_BRIDGE: 0
                   BUILD_UI_DEPS: 0
                   REINSTALL_PODS: 0

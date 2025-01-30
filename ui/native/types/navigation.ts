@@ -96,6 +96,7 @@ export type RootStackParamList = {
     FederationGreeting: undefined
     FederationAcceptTerms: { federation: FederationPreview }
     FediModSettings: { type?: string; federationId?: string }
+    HelpCentre: undefined
     Initializing: undefined
     JoinFederation: { invite?: string }
     LanguageSettings: undefined

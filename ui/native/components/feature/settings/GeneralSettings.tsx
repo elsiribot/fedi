@@ -7,12 +7,23 @@ import { requestNotifications } from 'react-native-permissions'
 
 import { EULA_URL } from '@fedi/common/constants/tos'
 import { useNuxStep } from '@fedi/common/hooks/nux'
+import {
+    useNpub,
+    useSupportPermission,
+    useZendeskInitialization,
+} from '@fedi/common/hooks/support'
+import { ToastHandler, useToast } from '@fedi/common/hooks/toast'
 import { selectDeveloperMode } from '@fedi/common/redux/environment'
 
 import { usePinContext } from '../../../state/contexts/PinContext'
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import { useNotificationsPermission } from '../../../utils/hooks'
+import {
+    useDisplayName,
+    zendeskInitialize,
+    zendeskOpenMessagingView,
+} from '../../../utils/support'
 import SettingsItem from './SettingsItem'
 
 export const GeneralSettings = () => {
@@ -21,6 +32,14 @@ export const GeneralSettings = () => {
     const style = styles(theme)
     const navigation = useNavigation<NavigationHook>()
     const { notificationsPermission } = useNotificationsPermission()
+
+    const { supportPermissionGranted } = useSupportPermission()
+    const displayName = useDisplayName()
+    const nostrPublic = useNpub()
+    const toast = useToast()
+    const nostrNpub = nostrPublic ?? null
+    const { zendeskInitialized, handleZendeskInitialization } =
+        useZendeskInitialization()
 
     const developerMode = useAppSelector(selectDeveloperMode)
     const [hasPerformedPersonalBackup] = useNuxStep(
@@ -37,6 +56,23 @@ export const GeneralSettings = () => {
             navigation.navigate('SetPin')
         } else {
             navigation.navigate('CreatePinInstructions')
+        }
+    }
+
+    const handleSupportPress = () => {
+        if (!zendeskInitialized) {
+            zendeskInitialize(
+                nostrNpub,
+                displayName,
+                handleZendeskInitialization,
+                toast as unknown as ToastHandler,
+                t,
+            )
+        }
+        if (supportPermissionGranted && zendeskInitialized) {
+            zendeskOpenMessagingView()
+        } else {
+            navigation.navigate('HelpCentre')
         }
     }
 
@@ -113,6 +149,11 @@ export const GeneralSettings = () => {
                 icon="Nostr"
                 label={t('feature.nostr.nostr-settings')}
                 onPress={() => navigation.navigate('NostrSettings')}
+            />
+            <SettingsItem
+                icon="SmileMessage"
+                label={t('feature.support.title')}
+                onPress={handleSupportPress}
             />
             <SettingsItem
                 icon="SpeakerPhone"

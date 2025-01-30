@@ -57,6 +57,7 @@ import StabilityHomeHeader from '../components/feature/stabilitypool/StabilityHo
 import StabilityWithdrawHeader from '../components/feature/stabilitypool/StabilityWithdrawHeader'
 import StableBalanceIntroHeader from '../components/feature/stabilitypool/StableBalanceIntroHeader'
 import WithdrawInitiatedHeader from '../components/feature/stabilitypool/WithdrawInitiatedHeader'
+import HelpCentreHeader from '../components/feature/support/HelpCentreHeader'
 import TransactionsHeader from '../components/feature/transaction-history/TransactionsHeader'
 import { CenteredHeader } from '../components/ui/CenteredHeader'
 import Header from '../components/ui/Header'
@@ -106,6 +107,7 @@ import FederationGreeting from './FederationGreeting'
 import FederationInvite from './FederationInvite'
 import FediModBrowser from './FediModBrowser'
 import FediModSettings from './FediModSettings'
+import HelpCentre from './HelpCentre'
 import Initializing from './Initializing'
 import JoinFederation from './JoinFederation'
 import LanguageSettings from './LanguageSettings'
@@ -251,6 +253,13 @@ export const MainNavigator = () => {
                         component={Eula}
                         options={{
                             header: () => <EulaHeader />,
+                        }}
+                    />
+                    <Stack.Screen
+                        name="HelpCentre"
+                        component={HelpCentre}
+                        options={{
+                            header: () => <HelpCentreHeader />,
                         }}
                     />
                     <Stack.Screen

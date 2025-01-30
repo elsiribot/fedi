@@ -125,7 +125,10 @@ export async function zendeskInitialize(
     } catch (error) {
         log.error('Zendesk initialization failed', error)
         setZendeskInitialized(false)
-        toast.error(t, error, 'feature.support.zendesk-initialization-failed')
+        toast.show({
+            content: t('feature.support.zendesk-initialization-failed'),
+            status: 'error',
+        })
     }
 }
 

@@ -11,7 +11,7 @@
             "path": "../injections"
         }
     ],
-    "include": ["./**/*.tsx", "./**/*.ts"],
+    "include": ["./**/*.tsx", "./**/*.ts", "@env.d.ts"],
     "exclude": [
         "node_modules",
         "./node_modules",

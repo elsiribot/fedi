@@ -17,7 +17,6 @@ import SvgImage, { SvgImageSize } from './components/ui/SvgImage'
 import { MainNavigator } from './screens/MainNavigator'
 import SwitchingFederations from './screens/SwitchingFederations'
 import { useOmniLinkContext } from './state/contexts/OmniLinkContext'
-import { useMatrixPushNotifications } from './state/hooks'
 import {
     DRAWER_NAVIGATION_ID,
     MainNavigatorDrawerParamList,
@@ -37,9 +36,6 @@ const Router = () => {
 
     const toast = useToast()
     const routeRef = useRef<string>()
-
-    // Publishes an FCM push notification token if chat is available
-    useMatrixPushNotifications()
 
     // Logs changes in navigation state for debugging
     const handleStateChange = useCallback(() => {
