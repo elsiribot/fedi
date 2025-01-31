@@ -262,7 +262,7 @@ const styles = (theme: Theme) =>
             padding: theme.spacing.md,
         },
         scrollTos: {
-            flex: 1,
+            flexGrow: 0,
             maxHeight: 100,
         },
         unsupportedContainer: {
