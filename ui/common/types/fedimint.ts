@@ -276,7 +276,7 @@ export type ReceiveEcashResult =
           error: string
       }
 
-export type TransactionBadgeType =
+export type TransactionStatusBadge =
     | 'incoming'
     | 'outgoing'
     | 'pending'

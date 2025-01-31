@@ -2,13 +2,13 @@ import { useTheme } from '@rneui/themed'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
 
-import { TransactionBadgeType } from '@fedi/common/types'
+import { TransactionStatusBadge } from '@fedi/common/types'
 
 import SvgImage, { SvgImageName } from '../../ui/SvgImage'
 
 export interface HistoryIconProps {
     children: React.ReactNode
-    badge?: TransactionBadgeType
+    badge?: TransactionStatusBadge
 }
 
 export const HistoryIcon: React.FC<HistoryIconProps> = ({
@@ -32,8 +32,8 @@ export const HistoryIcon: React.FC<HistoryIconProps> = ({
         badgeSvgName = 'ExpiredBadgeIcon'
         badgeColor = theme.colors.red
     } else if (badge === 'failed') {
-        badgeSvgName = 'FailedBadgeIcon'
-        badgeColor = theme.colors.yellow
+        badgeSvgName = 'FailedBadge'
+        badgeColor = theme.colors.red
     }
 
     const style = styles()

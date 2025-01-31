@@ -73,6 +73,7 @@
         "received": "Received",
         "receiving": "Receiving",
         "refund": "Refund",
+        "refunded": "Refunded",
         "reject": "Reject",
         "rejected": "Rejected",
         "remaining": "remaining",
@@ -602,6 +603,7 @@
             "request-sats": "Request {{amount}} SATS",
             "request-via-lightning": "Request via lightning",
             "send-a-lightning-request": "Send a lightning request to {{username}}",
+            "waiting-for-deposit": "Waiting for deposit",
             "withdraw-from-domain": "Withdraw from {{domain}}",
             "you-received": "You received",
             "you-received-amount-unit": "You received {{amount}} {{unit}}"
