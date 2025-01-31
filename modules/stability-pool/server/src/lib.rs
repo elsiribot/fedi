@@ -22,9 +22,8 @@ use common::{
 };
 use db::{
     CurrentCycleKey, CurrentCycleKeyPrefix, Cycle, CycleChangeVoteIndexPrefix, CycleChangeVoteKey,
-    IdleBalanceKey, IdleBalanceKeyPrefix, PastCycleKey, StagedProvideSequenceKey,
-    StagedProvidesKey, StagedProvidesKeyPrefix, StagedSeekSequenceKey, StagedSeeksKey,
-    StagedSeeksKeyPrefix, UnlockRequestKey, UnlockRequestsKeyPrefix,
+    IdleBalanceKey, IdleBalanceKeyPrefix, PastCycleKey, StagedProvidesKey, StagedProvidesKeyPrefix,
+    StagedSeeksKey, StagedSeeksKeyPrefix, UnlockRequestKey, UnlockRequestsKeyPrefix,
 };
 use fedimint_core::config::{
     ConfigGenModuleParams, DkgResult, ServerModuleConfig, ServerModuleConsensusConfig,
@@ -48,8 +47,9 @@ use oracle::{AggregateOracle, MockOracle, Oracle};
 pub use stability_pool_common as common;
 use stability_pool_common::{
     AccountHistoryItem, AccountHistoryItemKind, AccountId, AccountType, CycleInfo, Deposit,
-    DepositToProvideOutput, DepositToSeekOutput, FeeRate, FiatAmount, StabilityPoolInputV0,
-    StabilityPoolOutputV0, UnlockForWithdrawalAmount, UnlockForWithdrawalInput, WithdrawalInput,
+    DepositToProvideOutput, DepositToSeekOutput, FeeRate, FiatAmount, FiatOrAll,
+    SignedTransferRequest, StabilityPoolInputV0, StabilityPoolOutputV0, TransferOutput,
+    TransferRequestId, UnlockForWithdrawalInput, WithdrawalInput,
 };
 use tokio::sync::{Mutex, RwLock};
 use tracing::{info, warn};
@@ -487,6 +487,7 @@ impl ServerModule for StabilityPool {
         let account_id = match v0 {
             StabilityPoolOutputV0::DepositToSeek(s) => s.account_id,
             StabilityPoolOutputV0::DepositToProvide(p) => p.account_id,
+            StabilityPoolOutputV0::Transfer(t) => t.signed_request.details().from().id(),
         };
 
         if dbtx
@@ -507,6 +508,9 @@ impl ServerModule for StabilityPool {
                 if account_id.acc_type() == AccountType::Provider =>
             {
                 process_deposit_to_provide_output(self.cfg.clone(), dbtx, deposit_to_provide).await
+            }
+            StabilityPoolOutputV0::Transfer(transfer) => {
+                process_transfer_output(self.cfg.clone(), dbtx, transfer).await
             }
             _ => Err(StabilityPoolOutputError::InvalidAccountTypeForOperation),
         }
@@ -614,7 +618,7 @@ where
 
     let mut drained_staged_deposits = vec![];
     match input.amount {
-        UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
+        FiatOrAll::Fiat(fiat_amount) => {
             let amount = fiat_amount
                 .to_btc_amount(btc_price)
                 .map_err(|_| StabilityPoolInputError::TemporaryError)?;
@@ -638,11 +642,11 @@ where
             if amount_needed != Amount::ZERO {
                 let leftover_fiat = FiatAmount::from_btc_amount(amount_needed, btc_price)
                     .map_err(|_| StabilityPoolInputError::TemporaryError)?;
-                dbtx.insert_entry(&unlock_key, &UnlockForWithdrawalAmount::Fiat(leftover_fiat))
+                dbtx.insert_entry(&unlock_key, &FiatOrAll::Fiat(leftover_fiat))
                     .await;
             }
         }
-        UnlockForWithdrawalAmount::All => {
+        FiatOrAll::All => {
             // If there are no staged or locked deposits, report error
             if staged_deposits.is_empty() && locked_deposits_sum == Amount::ZERO {
                 return Err(StabilityPoolInputError::InsufficientBalance);
@@ -656,8 +660,7 @@ where
 
             // If there are locked deposits present, register an unlock request for ALL
             if locked_deposits_sum != Amount::ZERO {
-                dbtx.insert_entry(&unlock_key, &UnlockForWithdrawalAmount::All)
-                    .await;
+                dbtx.insert_entry(&unlock_key, &FiatOrAll::All).await;
             }
         }
     }
@@ -788,18 +791,13 @@ async fn process_deposit_to_seek_output(
         .await
         .unwrap_or_default();
 
-    let sequence = dbtx
-        .get_value(&StagedSeekSequenceKey)
-        .await
-        .unwrap_or_default();
+    let sequence = db::next_deposit_sequence(dbtx).await;
     user_staged_seeks.push(Seek {
         sequence,
         amount: output.seek_request.0,
         meta: (),
     });
 
-    dbtx.insert_entry(&StagedSeekSequenceKey, &(sequence + 1))
-        .await;
     dbtx.insert_entry(&StagedSeeksKey(output.account_id), &user_staged_seeks)
         .await;
     db::add_account_history_items(
@@ -842,18 +840,13 @@ async fn process_deposit_to_provide_output(
         .await
         .unwrap_or_default();
 
-    let sequence = dbtx
-        .get_value(&StagedProvideSequenceKey)
-        .await
-        .unwrap_or_default();
+    let sequence = db::next_deposit_sequence(dbtx).await;
     user_staged_provides.push(Provide {
         sequence,
         amount: output.provide_request.amount,
         meta: output.provide_request.min_fee_rate,
     });
 
-    dbtx.insert_entry(&StagedProvideSequenceKey, &(sequence + 1))
-        .await;
     dbtx.insert_entry(&StagedProvidesKey(output.account_id), &user_staged_provides)
         .await;
     db::add_account_history_items(
@@ -870,6 +863,263 @@ async fn process_deposit_to_provide_output(
     .await;
     Ok(TransactionItemAmount {
         amount: output.provide_request.amount,
+        fee: Amount::ZERO,
+    })
+}
+
+async fn process_transfer_output_inner<M, K>(
+    dbtx: &mut DatabaseTransaction<'_>,
+    signed_request: &SignedTransferRequest,
+    cycle_info: CycleInfo,
+    locked_deposits_map: &mut BTreeMap<AccountId, Vec<Deposit<M>>>,
+    from_staged_deposits_key: K,
+    to_staged_deposits_key: K,
+    new_deposit_meta: M,
+) -> Result<(), StabilityPoolOutputError>
+where
+    M: MaybeSend + MaybeSync + Clone,
+    K: DatabaseKey + DatabaseRecord<Value = Vec<Deposit<M>>> + MaybeSend + MaybeSync,
+{
+    // Ensure signatures are valid
+    signed_request
+        .validate_signatures()
+        .map_err(|e| StabilityPoolOutputError::InvalidTransferRequest(e.to_string()))?;
+
+    // Prevent replay attacks
+    db::ensure_unique_transfer_request_and_log(
+        &TransferRequestId::from(signed_request.details()),
+        dbtx,
+    )
+    .await
+    .map_err(|e| StabilityPoolOutputError::InvalidTransferRequest(e.to_string()))?;
+
+    // Calculate the total btc amount to transfer
+    let mut from_staged_deposits = dbtx
+        .get_value(&from_staged_deposits_key)
+        .await
+        .unwrap_or_default();
+    let from_staged_deposits_sum = from_staged_deposits
+        .iter()
+        .map(|d| d.amount)
+        .sum::<Amount>();
+    let from_locked_deposits_sum = locked_deposits_map
+        .get(&signed_request.details().from().id())
+        .unwrap_or(&vec![])
+        .iter()
+        .map(|d| d.amount)
+        .sum::<Amount>();
+    let total_to_transfer = match signed_request.details().amount() {
+        FiatOrAll::Fiat(fiat_amount) => {
+            let amount = fiat_amount
+                .to_btc_amount(cycle_info.start_price)
+                .map_err(|e| StabilityPoolOutputError::InvalidTransferRequest(e.to_string()))?;
+
+            if amount > from_staged_deposits_sum + from_locked_deposits_sum {
+                return Err(StabilityPoolOutputError::InvalidTransferRequest(
+                    "Insufficient from account balance".to_string(),
+                ));
+            }
+
+            amount
+        }
+        FiatOrAll::All => {
+            if from_staged_deposits_sum == Amount::ZERO && from_locked_deposits_sum == Amount::ZERO
+            {
+                return Err(StabilityPoolOutputError::InvalidTransferRequest(
+                    "From account has 0 balance".to_string(),
+                ));
+            }
+
+            from_staged_deposits_sum + from_locked_deposits_sum
+        }
+    };
+
+    // We can use the same sequence for both staged and locked deposit in case both
+    // get created for "to" account. This just simulates a split, something we
+    // already do when a staged deposit was only partially locked.
+    let next_sequence = db::next_deposit_sequence(dbtx).await;
+
+    // Start by draining staged deposits in reverse.
+    let mut left_to_transfer = total_to_transfer;
+    let drained_staged_deposits = drain_in_reverse(&mut from_staged_deposits, left_to_transfer);
+    left_to_transfer -= drained_staged_deposits.iter().map(|d| d.amount).sum();
+
+    let mut from_account_history_items = vec![];
+    let mut to_account_history_items = vec![];
+    if drained_staged_deposits.is_empty().not() {
+        // Write updated staged deposits for "from"
+        dbtx.insert_entry(&from_staged_deposits_key, &from_staged_deposits)
+            .await;
+
+        // Write updated staged deposits for "to"
+        let mut to_staged_deposits = dbtx
+            .get_value(&to_staged_deposits_key)
+            .await
+            .unwrap_or_default();
+        let new_to_staged_deposit = Deposit {
+            sequence: next_sequence,
+            amount: drained_staged_deposits.iter().map(|d| d.amount).sum(),
+            meta: new_deposit_meta.clone(),
+        };
+        to_staged_deposits.push(new_to_staged_deposit.clone());
+        dbtx.insert_entry(&to_staged_deposits_key, &to_staged_deposits)
+            .await;
+
+        // Add account history items for "from" and "to"
+        from_account_history_items.extend(&mut drained_staged_deposits.into_iter().map(|d| {
+            AccountHistoryItem {
+                cycle: cycle_info,
+                kind: AccountHistoryItemKind::StagedTransferOut {
+                    desposit_sequence: d.sequence,
+                    amount: d.amount,
+                    to: *signed_request.details().to(),
+                    meta: signed_request.details().meta().to_vec(),
+                },
+            }
+        }));
+        to_account_history_items.push(AccountHistoryItem {
+            cycle: cycle_info,
+            kind: AccountHistoryItemKind::StagedTransferIn {
+                desposit_sequence: new_to_staged_deposit.sequence,
+                amount: new_to_staged_deposit.amount,
+                from: signed_request.details().from().id(),
+                meta: signed_request.details().meta().to_vec(),
+            },
+        });
+    }
+
+    // If needed, drain locked deposits in reverse as well.
+    if left_to_transfer != Amount::ZERO {
+        let drained_locked_deposits = drain_in_reverse(
+            locked_deposits_map
+                .get_mut(&signed_request.details().from().id())
+                .unwrap_or(&mut vec![]),
+            left_to_transfer,
+        );
+        let amount = drained_locked_deposits.iter().map(|d| d.amount).sum();
+        debug_assert!(amount != Amount::ZERO, "Transfer amount validated above");
+        let new_to_locked_deposit = Deposit {
+            sequence: next_sequence,
+            amount,
+            meta: new_deposit_meta,
+        };
+        locked_deposits_map
+            .entry(*signed_request.details().to())
+            .or_default()
+            .push(new_to_locked_deposit.clone());
+
+        // Add account history items for "from" and "to"
+        from_account_history_items.extend(&mut drained_locked_deposits.into_iter().map(|d| {
+            AccountHistoryItem {
+                cycle: cycle_info,
+                kind: AccountHistoryItemKind::LockedTransferOut {
+                    desposit_sequence: d.sequence,
+                    amount: d.amount,
+                    to: *signed_request.details().to(),
+                    meta: signed_request.details().meta().to_vec(),
+                },
+            }
+        }));
+        to_account_history_items.push(AccountHistoryItem {
+            cycle: cycle_info,
+            kind: AccountHistoryItemKind::LockedTransferIn {
+                desposit_sequence: new_to_locked_deposit.sequence,
+                amount: new_to_locked_deposit.amount,
+                from: signed_request.details().from().id(),
+                meta: signed_request.details().meta().to_vec(),
+            },
+        });
+    }
+
+    db::add_account_history_items(
+        dbtx,
+        signed_request.details().from().id(),
+        from_account_history_items,
+    )
+    .await;
+    db::add_account_history_items(
+        dbtx,
+        *signed_request.details().to(),
+        to_account_history_items,
+    )
+    .await;
+
+    Ok(())
+}
+
+async fn process_transfer_output(
+    config: StabilityPoolConfig,
+    dbtx: &mut DatabaseTransaction<'_>,
+    output: &TransferOutput,
+) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
+    let TransferOutput { signed_request } = output;
+    // Ensure account types match
+    if signed_request.details().from().acc_type() != signed_request.details().to().acc_type() {
+        return Err(StabilityPoolOutputError::InvalidTransferRequest(
+            "Cannot cross-transfer between seeker and provider".to_string(),
+        ));
+    }
+
+    let current_cycle = dbtx.get_value(&CurrentCycleKey).await;
+    debug_assert!(
+        current_cycle.is_some(),
+        "Transfer impossible without active cycle"
+    );
+    let Some(mut current_cycle) = current_cycle else {
+        return Err(StabilityPoolOutputError::InvalidTransferRequest(
+            "Try again later".to_string(),
+        ));
+    };
+    let cycle_info = CycleInfo::from(&current_cycle);
+
+    if signed_request.details().valid_until_cycle() < current_cycle.index {
+        return Err(StabilityPoolOutputError::InvalidTransferRequest(
+            "Transfer request has expired".to_string(),
+        ));
+    }
+
+    // Handle provider and seeker separately
+    match signed_request.details().from().acc_type() {
+        AccountType::Seeker => {
+            process_transfer_output_inner(
+                dbtx,
+                signed_request,
+                cycle_info,
+                &mut current_cycle.locked_seeks,
+                StagedSeeksKey(signed_request.details().from().id()),
+                StagedSeeksKey(*signed_request.details().to()),
+                (),
+            )
+            .await
+        }
+        AccountType::Provider => {
+            if let Some(fee_rate) = signed_request.details().new_fee_rate() {
+                if config.consensus.max_allowed_provide_fee_rate_ppb < fee_rate.0 {
+                    return Err(StabilityPoolOutputError::FeeRateTooHigh);
+                }
+                process_transfer_output_inner(
+                    dbtx,
+                    signed_request,
+                    cycle_info,
+                    &mut current_cycle.locked_provides,
+                    StagedProvidesKey(signed_request.details().from().id()),
+                    StagedProvidesKey(*signed_request.details().to()),
+                    fee_rate,
+                )
+                .await
+            } else {
+                return Err(StabilityPoolOutputError::InvalidTransferRequest(
+                    "Missing fee rate for provider-to-provider transfer".to_string(),
+                ));
+            }
+        }
+    }?;
+
+    // If call to inner function was successful, write the updated current cycle
+    // to the DB
+    dbtx.insert_entry(&CurrentCycleKey, &current_cycle).await;
+    Ok(TransactionItemAmount {
+        amount: Amount::ZERO,
         fee: Amount::ZERO,
     })
 }
@@ -961,7 +1211,7 @@ fn settle_locks(
 async fn process_unlock_requests_inner<M>(
     dbtx: &mut DatabaseTransaction<'_>,
     account_id: AccountId,
-    unlock_amount: UnlockForWithdrawalAmount,
+    unlock_amount: FiatOrAll,
     locked_deposits: &mut Vec<Deposit<M>>,
     new_cycle_info: &CycleInfo,
 ) -> anyhow::Result<()>
@@ -969,11 +1219,11 @@ where
     M: MaybeSend + MaybeSync + Clone,
 {
     let drained_locked_deposits = match unlock_amount {
-        UnlockForWithdrawalAmount::Fiat(fiat_amount) => {
+        FiatOrAll::Fiat(fiat_amount) => {
             let amount_to_unlock = fiat_amount.to_btc_amount(new_cycle_info.start_price)?;
             drain_in_reverse(locked_deposits, amount_to_unlock)
         }
-        UnlockForWithdrawalAmount::All => locked_deposits.drain(..).collect_vec(),
+        FiatOrAll::All => locked_deposits.drain(..).collect_vec(),
     };
 
     // Move unlocked msats to idle balance and remove account's unlock request

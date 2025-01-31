@@ -1,11 +1,11 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::{self, Display};
 use std::io;
 use std::ops::Range;
 use std::str::FromStr;
 use std::time::SystemTime;
 
-use anyhow::{bail, Context};
+use anyhow::{anyhow, bail, ensure, Context};
 use bitcoin::bech32::{self, Bech32m, Hrp};
 use bitcoin::hashes::sha256;
 use fedimint_core::core::{Decoder, ModuleInstanceId, ModuleKind};
@@ -15,7 +15,7 @@ use fedimint_core::module::{CommonModuleInit, ModuleCommon, ModuleConsensusVersi
 use fedimint_core::{
     extensible_associated_module_type, plugin_types_trait_impl_common, Amount, BitcoinHash,
 };
-use secp256k1::PublicKey;
+use secp256k1::{schnorr, PublicKey};
 use serde::de::Error as _;
 use serde::{Deserialize, Serialize};
 
@@ -332,14 +332,23 @@ impl StabilityPoolInputV0 {
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
 pub struct UnlockForWithdrawalInput {
     pub account: Account,
-    pub amount: UnlockForWithdrawalAmount,
+    pub amount: FiatOrAll,
 }
 
 /// Request unlocking of the given FiatAmount, or ALL of the account's holdings.
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
-pub enum UnlockForWithdrawalAmount {
+pub enum FiatOrAll {
     Fiat(FiatAmount),
     All,
+}
+
+impl Display for FiatOrAll {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FiatOrAll::Fiat(fiat_amount) => write!(f, "{} in fiat", fiat_amount.0),
+            FiatOrAll::All => write!(f, "full balance"),
+        }
+    }
 }
 
 /// WithdrawalInput allows withdrawing the given amount of msats. Typically this
@@ -359,10 +368,14 @@ extensible_associated_module_type!(
 /// Depositing funds into the stability pool can be the purpose of seeking or
 /// providing. In both these cases, the funds (input) are coming from the e-cash
 /// module.
+///
+/// Transferring funds from one account to another is also represented via an
+/// output, albeit a 0-amount output that contains valid signatures.
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
 pub enum StabilityPoolOutputV0 {
     DepositToSeek(DepositToSeekOutput),
     DepositToProvide(DepositToProvideOutput),
+    Transfer(TransferOutput),
 }
 
 /// Represents a module output for depositing the given `amount` into the given
@@ -384,6 +397,13 @@ pub struct DepositToProvideOutput {
     pub provide_request: ProvideRequest,
 }
 
+/// Represents a module output for transferring funds (staged and locked) from
+/// one account to another.
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
+pub struct TransferOutput {
+    pub signed_request: SignedTransferRequest,
+}
+
 extensible_associated_module_type!(
     StabilityPoolOutput,
     StabilityPoolOutputV0,
@@ -397,6 +417,180 @@ pub struct SeekRequest(pub Amount);
 pub struct ProvideRequest {
     pub amount: Amount,
     pub min_fee_rate: FeeRate,
+}
+
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
+pub struct TransferRequest {
+    /// Having a nonce as part of the TransferRequest allows for having multiple
+    /// identical transfer requests as far as "from" account, "to" account, and
+    /// "amount", while still allowing for signature reuse/replay prevention.
+    /// As such it is the client's responsibility to ensure that nonces are not
+    /// reused. This does put an upper limit of u64::MAX for transfer requests
+    /// with the same "from", "to", and "amount", but that seems more than
+    /// reasonable.
+    nonce: u64,
+    from: Account,
+    transfer_amount: FiatOrAll,
+    to: AccountId,
+
+    /// This meta field allows embedding additional arbitrary information as
+    /// part of the transfer request.
+    meta: Vec<u8>,
+
+    /// To ensure that a signed transfer request cannot be delayed indefinitely
+    /// (to abuse the "All" transfer amount, for example), we set a cycle index
+    /// expiry for this transfer request.
+    valid_until_cycle: u64,
+
+    /// In case of a provider-to-provider transfer, we need to include a new fee
+    /// rate which will apply for the newly created provider position of the
+    /// "to" account. This is necessary because it gives the user more
+    /// control, and doesn't let the server make an arbitrary decision as to
+    /// what the new fee rate should be (especially if multiple provides
+    /// needed to be drained from "from" to create the new provide for
+    /// "to").
+    new_fee_rate: Option<FeeRate>,
+}
+
+impl TransferRequest {
+    pub fn new(
+        nonce: u64,
+        from: Account,
+        transfer_amount: FiatOrAll,
+        to: AccountId,
+        meta: Vec<u8>,
+        valid_until_cycle: u64,
+        new_fee_rate: Option<FeeRate>,
+    ) -> anyhow::Result<Self> {
+        // Ensure account types match
+        ensure!(
+            from.acc_type == to.acc_type,
+            "From and to account types must match"
+        );
+
+        // Transfer amount must be non-zero or All
+        if let FiatOrAll::Fiat(fiat) = transfer_amount {
+            ensure!(fiat.0 != 0, "Transfer amount must not be 0");
+        }
+
+        // Fee rate must only be set for a provider-to-provider transfer
+        match from.acc_type {
+            AccountType::Seeker => ensure!(
+                new_fee_rate.is_none(),
+                "Fee rate only applies to provider-to-provider transfer"
+            ),
+            AccountType::Provider => ensure!(
+                new_fee_rate.is_some(),
+                "Fee rate only applies to provider-to-provider transfer"
+            ),
+        }
+
+        Ok(Self {
+            nonce,
+            from,
+            transfer_amount,
+            to,
+            meta,
+            valid_until_cycle,
+            new_fee_rate,
+        })
+    }
+
+    pub fn from(&self) -> &Account {
+        &self.from
+    }
+
+    pub fn amount(&self) -> FiatOrAll {
+        self.transfer_amount
+    }
+
+    pub fn to(&self) -> &AccountId {
+        &self.to
+    }
+
+    pub fn valid_until_cycle(&self) -> u64 {
+        self.valid_until_cycle
+    }
+
+    pub fn new_fee_rate(&self) -> Option<FeeRate> {
+        self.new_fee_rate
+    }
+
+    pub fn meta(&self) -> &[u8] {
+        &self.meta
+    }
+}
+
+#[derive(Debug, Clone, Encodable, Decodable)]
+pub struct TransferRequestId(pub sha256::Hash);
+
+impl From<&TransferRequest> for TransferRequestId {
+    fn from(value: &TransferRequest) -> Self {
+        Self(value.consensus_hash())
+    }
+}
+
+impl From<&TransferRequestId> for secp256k1::Message {
+    fn from(value: &TransferRequestId) -> Self {
+        Self::from_digest(value.0.to_byte_array())
+    }
+}
+
+/// Requires at least a threshold number of valid signatures, with the signed
+/// message being the actual [`TransferRequest`].
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
+pub struct SignedTransferRequest {
+    /// Key is index (0-based) of the corresponding pubkey within the "from"
+    /// Account representation. Value is Schnorr signature for the
+    /// corresponding pubkey. The message that's signed is the entire
+    /// [`TransferRequest`].
+    signatures: BTreeMap<u64, schnorr::Signature>,
+    transfer_request: TransferRequest,
+}
+
+impl SignedTransferRequest {
+    /// Ensures that the signatures over the [`TransferRequest`] are valid.
+    pub fn new(
+        transfer_request: TransferRequest,
+        signatures: BTreeMap<u64, schnorr::Signature>,
+    ) -> anyhow::Result<Self> {
+        let this = Self {
+            signatures,
+            transfer_request,
+        };
+        this.validate_signatures()?;
+        Ok(this)
+    }
+
+    pub fn validate_signatures(&self) -> anyhow::Result<()> {
+        ensure!(
+            self.signatures.len() >= self.transfer_request.from.threshold.try_into()?,
+            "Signature threshold not met"
+        );
+
+        let message = secp256k1::Message::from(&TransferRequestId::from(&self.transfer_request));
+        for (idx, sig) in self.signatures.iter() {
+            let pubkey = self
+                .transfer_request
+                .from
+                .pub_keys
+                .iter()
+                .nth((*idx).try_into()?)
+                .ok_or(anyhow!("Invalid pubkey index"))?;
+
+            sig.verify(&message, &pubkey.x_only_public_key().0)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn signatures(&self) -> &BTreeMap<u64, schnorr::Signature> {
+        &self.signatures
+    }
+
+    pub fn details(&self) -> &TransferRequest {
+        &self.transfer_request
+    }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
@@ -524,6 +718,8 @@ pub enum StabilityPoolOutputError {
     InvalidBPSForCancelAutoRenewal,
     #[error("No active request to cancel auto renewal.")]
     CannotUndoAutoRenewalCancellation,
+    #[error("Transfer request rejected: {0}")]
+    InvalidTransferRequest(String),
     #[error("{0}")]
     UnknownOutputVariant(String),
     #[error("Operation is not allowed before first cycle.")]
@@ -566,8 +762,8 @@ impl Display for StabilityPoolInputV0 {
                 f,
                 "Input to unlock {} fiat amount from account {}",
                 match unlock.amount {
-                    UnlockForWithdrawalAmount::Fiat(fiat) => fiat.0.to_string(),
-                    UnlockForWithdrawalAmount::All => "all".to_string(),
+                    FiatOrAll::Fiat(fiat) => fiat.0.to_string(),
+                    FiatOrAll::All => "all".to_string(),
                 },
                 unlock.account.id(),
             ),
@@ -597,6 +793,16 @@ impl Display for StabilityPoolOutputV0 {
                 provide_output.provide_request.amount,
                 provide_output.account_id,
                 provide_output.provide_request.min_fee_rate.0
+            ),
+            StabilityPoolOutputV0::Transfer(transfer_output) => write!(
+                f,
+                "Transfer {} from account {} to account {}",
+                transfer_output
+                    .signed_request
+                    .transfer_request
+                    .transfer_amount,
+                transfer_output.signed_request.transfer_request.from.id(),
+                transfer_output.signed_request.transfer_request.to,
             ),
         }
     }
@@ -749,20 +955,24 @@ pub enum AccountHistoryItemKind {
         desposit_sequence: u64,
         amount: Amount,
         from: AccountId,
+        meta: Vec<u8>,
     },
     LockedTransferOut {
         desposit_sequence: u64,
         amount: Amount,
         to: AccountId,
+        meta: Vec<u8>,
     },
     StagedTransferIn {
         desposit_sequence: u64,
         amount: Amount,
         from: AccountId,
+        meta: Vec<u8>,
     },
     StagedTransferOut {
         desposit_sequence: u64,
         amount: Amount,
         to: AccountId,
+        meta: Vec<u8>,
     },
 }

@@ -2,13 +2,14 @@ use std::collections::BTreeMap;
 use std::ops::Range;
 use std::time::SystemTime;
 
+use anyhow::ensure;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId};
 use futures::StreamExt;
 use stability_pool_common::{
-    AccountHistoryItem, AccountId, CycleInfo, FeeRate, FiatAmount, Provide, Seek,
-    StabilityPoolConsensusItem, UnlockForWithdrawalAmount,
+    AccountHistoryItem, AccountId, CycleInfo, FeeRate, FiatAmount, FiatOrAll, Provide, Seek,
+    StabilityPoolConsensusItem, TransferRequestId,
 };
 
 #[repr(u8)]
@@ -47,17 +48,13 @@ pub enum DbKeyPrefix {
     /// turnover, the current (ending) cycle gets written here.
     PastCycle,
 
-    /// An incrementing, nonce-like identifier assigned to all incoming seek
-    /// requests. This sequence is used to prioritize seeks in a
+    /// An incrementing, nonce-like identifier assigned to all incoming
+    /// deposits. This sequence is used to prioritize deposits in
     /// first-come-first-server fashion.
-    StagedSeekSequence,
-
-    /// An incrementing, nonce-like identifier assigned to all incoming provide
-    /// requests. This sequence is used to prioritize provides in a
-    /// first-come-first-server fashion. Provides with lower fees will
-    /// always have higher priority when matching, but if two provides have
-    /// the same fees, lower sequence wins.
-    StagedProvideSequence,
+    ///
+    /// Provides with lower fees will always have higher priority when matching,
+    /// but if two provides have the same fees, lower sequence wins.
+    DepositSequence,
 
     /// (Cycle index, peer ID) => consensus item.
     /// A mapping where a peer's vote for the next cycle is recorded. When a
@@ -68,6 +65,11 @@ pub enum DbKeyPrefix {
     ///
     /// Account transaction history.
     AccountHistory,
+
+    /// TransferRequestId => ()
+    /// Every [`TransferRequest`] coming to the client is hashed and stored in
+    /// the server DB to guard against replay attacks.
+    TransferRequests,
 }
 
 #[derive(Debug, Encodable, Decodable)]
@@ -113,7 +115,7 @@ pub struct UnlockRequestsKeyPrefix;
 
 impl_db_record!(
     key = UnlockRequestKey,
-    value = UnlockForWithdrawalAmount,
+    value = FiatOrAll,
     db_prefix = DbKeyPrefix::UnlockRequests,
 );
 
@@ -159,37 +161,20 @@ impl_db_record!(
 impl_db_lookup!(key = PastCycleKey, query_prefix = PastCycleKeyPrefix);
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct StagedSeekSequenceKey;
+pub struct DepositSequenceKey;
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct StagedSeekSequenceKeyPrefix;
+pub struct DepositSequenceKeyPrefix;
 
 impl_db_record!(
-    key = StagedSeekSequenceKey,
+    key = DepositSequenceKey,
     value = u64,
-    db_prefix = DbKeyPrefix::StagedSeekSequence
+    db_prefix = DbKeyPrefix::DepositSequence,
 );
 
 impl_db_lookup!(
-    key = StagedSeekSequenceKey,
-    query_prefix = StagedSeekSequenceKeyPrefix,
-);
-
-#[derive(Debug, Encodable, Decodable)]
-pub struct StagedProvideSequenceKey;
-
-#[derive(Debug, Encodable, Decodable)]
-pub struct StagedProvideSequenceKeyPrefix;
-
-impl_db_record!(
-    key = StagedProvideSequenceKey,
-    value = u64,
-    db_prefix = DbKeyPrefix::StagedProvideSequence
-);
-
-impl_db_lookup!(
-    key = StagedProvideSequenceKey,
-    query_prefix = StagedProvideSequenceKeyPrefix,
+    key = DepositSequenceKey,
+    query_prefix = DepositSequenceKeyPrefix,
 );
 
 #[derive(Debug, Encodable, Decodable)]
@@ -229,6 +214,15 @@ impl_db_record!(
 impl_db_lookup!(
     key = AccountHistoryItemKey,
     query_prefix = AccountHistoryItemPrefixAccount,
+);
+
+#[derive(Debug, Encodable, Decodable)]
+pub struct TransferRequestsKey(pub TransferRequestId);
+
+impl_db_record!(
+    key = TransferRequestsKey,
+    value = (),
+    db_prefix = DbKeyPrefix::TransferRequests
 );
 
 /// Insert new account history items for an account.
@@ -286,4 +280,35 @@ pub async fn get_account_history_items(
     .map(|(_, val)| val)
     .collect()
     .await
+}
+
+/// Given a dbtx, ensures that `id` hasn't been registered before as a
+/// TransferRequestId. After successful verification, registers `id` in
+/// the DB before returning Ok.
+pub async fn ensure_unique_transfer_request_and_log(
+    id: &TransferRequestId,
+    dbtx: &mut DatabaseTransaction<'_>,
+) -> anyhow::Result<()> {
+    let db_key = TransferRequestsKey(id.clone());
+    ensure!(
+        dbtx.get_value(&db_key).await.is_none(),
+        "Transfer request re-used!"
+    );
+
+    dbtx.insert_entry(&db_key, &()).await;
+    Ok(())
+}
+
+/// Given a dbtx, return the next deposit sequence (nonce) to be assigned to an
+/// incoming deposit.
+pub async fn next_deposit_sequence(dbtx: &mut DatabaseTransaction<'_>) -> u64 {
+    let sequence = dbtx
+        .get_value(&DepositSequenceKey)
+        .await
+        .unwrap_or_default();
+
+    dbtx.insert_entry(&DepositSequenceKey, &(sequence + 1))
+        .await;
+
+    sequence
 }
