@@ -178,13 +178,6 @@
             ];
             typos.pre-commit.enable = false;
             git.pre-commit.trailing_newline = false;
-            git.pre-commit.hooks.native_environment_file_hook = ''
-              # Check if ui/native/.env has been staged
-              if git diff --cached --name-only | grep -q 'ui/native/.env'; then
-                  >&2 echo "Error: Changes to ui/native/.env are not allowed. Please unstage it before committing."
-                  exit 1
-              fi
-            '';
             # we must not use --workspace anywhere
             just.rules.clippy.content = lib.mkForce ''
               # run `cargo clippy` on everything
