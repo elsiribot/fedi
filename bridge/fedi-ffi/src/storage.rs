@@ -15,7 +15,7 @@ use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::{apply, async_trait_maybe_send};
 use fedimint_derive_secret::DerivableSecret;
-use matrix_sdk::matrix_auth::MatrixSession;
+use matrix_sdk::authentication::matrix::MatrixSession;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::error;

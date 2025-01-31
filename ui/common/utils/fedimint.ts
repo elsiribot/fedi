@@ -19,6 +19,7 @@ import {
     RpcPayAddressResponse,
     RpcRoomId,
     RpcStabilityPoolAccountInfo,
+    RpcTimelineEventItemId,
 } from '../types/bindings'
 import { isDev } from './environment'
 import { formatBridgeError } from './error'
@@ -397,7 +398,7 @@ export class FedimintBridge {
 
     async matrixEditMessage(
         roomId: RpcRoomId,
-        eventId: string,
+        eventId: RpcTimelineEventItemId,
         newContent: string,
     ) {
         return this.rpcTyped('matrixEditMessage', {
@@ -409,7 +410,7 @@ export class FedimintBridge {
 
     async matrixDeleteMessage(
         roomId: RpcRoomId,
-        eventId: string,
+        eventId: RpcTimelineEventItemId,
         reason: string | null,
     ) {
         return this.rpcTyped('matrixDeleteMessage', { roomId, eventId, reason })
@@ -467,12 +468,6 @@ export class FedimintBridge {
 
     async matrixRoomList(args: bindings.RpcPayload<'matrixRoomList'>) {
         return this.rpcTyped('matrixRoomList', args)
-    }
-
-    async matrixRoomListUpdateRanges(
-        args: bindings.RpcPayload<'matrixRoomListUpdateRanges'>,
-    ) {
-        return this.rpcTyped('matrixRoomListUpdateRanges', args)
     }
 
     async matrixRoomTimelineItems(

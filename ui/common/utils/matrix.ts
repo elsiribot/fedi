@@ -19,6 +19,7 @@ import {
     MatrixTimelineItem,
     MatrixUser,
 } from '../types'
+import { RpcTimelineEventItemId } from '../types/bindings'
 import { makeLog } from './log'
 
 const log = makeLog('common/utils/matrix')
@@ -184,6 +185,12 @@ export type MatrixEventContentType<T extends keyof typeof contentSchemas> =
 export type MatrixEventContent =
     | z.infer<(typeof contentSchemas)[keyof typeof contentSchemas]>
     | MatrixEventUnknownContent
+
+export function getEventId(event: MatrixEvent): RpcTimelineEventItemId {
+    return event.eventId
+        ? { eventId: event.eventId }
+        : { transactionId: event.txnId || '' }
+}
 
 export function formatMatrixEventContent(
     content: MatrixEventContent,
