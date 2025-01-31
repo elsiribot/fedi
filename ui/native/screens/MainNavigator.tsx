@@ -96,17 +96,18 @@ import ConfirmSendOnChain from './ConfirmSendOnChain'
 import CreateGroup from './CreateGroup'
 import CreatePinInstructions from './CreatePinInstructions'
 import CreatedPin from './CreatedPin'
-import CurrencySettings from './CurrencySettings'
 import DeveloperSettings from './DeveloperSettings'
 import EditGroup from './EditGroup'
 import EditProfileSettings from './EditProfileSettings'
 import EnterDisplayName from './EnterDisplayName'
 import Eula from './Eula'
+import FederationCurrency from './FederationCurrency'
 import FederationDetails from './FederationDetails'
 import FederationGreeting from './FederationGreeting'
 import FederationInvite from './FederationInvite'
 import FediModBrowser from './FediModBrowser'
 import FediModSettings from './FediModSettings'
+import GlobalCurrency from './GlobalCurrency'
 import HelpCentre from './HelpCentre'
 import Initializing from './Initializing'
 import JoinFederation from './JoinFederation'
@@ -844,14 +845,28 @@ export const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="CurrencySettings"
-                                component={CurrencySettings}
+                                name="FederationCurrency"
+                                component={FederationCurrency}
                                 options={() => ({
                                     header: () => (
                                         <CenteredHeader
                                             backButton
                                             title={t(
-                                                'phrases.display-currency',
+                                                'phrases.select-local-currency',
+                                            )}
+                                        />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="GlobalCurrency"
+                                component={GlobalCurrency}
+                                options={() => ({
+                                    header: () => (
+                                        <CenteredHeader
+                                            backButton
+                                            title={t(
+                                                'phrases.select-global-currency',
                                             )}
                                         />
                                     ),

@@ -124,7 +124,7 @@ export const GeneralSettings = () => {
             <SettingsItem
                 icon="Usd"
                 label={t('phrases.display-currency')}
-                onPress={() => navigation.navigate('CurrencySettings')}
+                onPress={() => navigation.navigate('GlobalCurrency')}
             />
             <SettingsItem
                 icon="Note"

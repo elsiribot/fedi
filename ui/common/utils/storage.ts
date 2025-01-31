@@ -27,7 +27,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     const transformedState: LatestStoredState = {
-        version: 22,
+        version: 23,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
@@ -35,9 +35,10 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         amountInputType: state.environment.amountInputType,
         showFiatTxnAmounts: state.environment.showFiatTxnAmounts,
         deviceId: state.environment.deviceId,
-        currency: state.currency.selectedFiatCurrency,
+        currency: state.currency.overrideCurrency,
         btcUsdRate: state.currency.btcUsdRate,
         fiatUsdRates: state.currency.fiatUsdRates,
+        customFederationCurrencies: state.currency.customFederationCurrencies,
         activeFederationId: state.federation.activeFederationId,
         authenticatedGuardian: state.federation.authenticatedGuardian,
         externalMeta: state.federation.externalMeta,
@@ -585,6 +586,14 @@ async function migrateStoredState(
                 supportPermissionGranted: false,
                 zendeskPushNotificationToken: null,
             },
+        }
+    }
+
+    if (migrationState.version === 22) {
+        migrationState = {
+            ...migrationState,
+            version: 23,
+            customFederationCurrencies: {},
         }
     }
 
