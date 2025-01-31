@@ -12,6 +12,7 @@ import {
     selectCanClaimPayment,
     selectCanPayFromOtherFeds,
     selectCanSendPayment,
+    selectIsInternetUnreachable,
     selectIsMatrixReady,
     selectLatestMatrixRoomEventId,
     selectMatrixAuth,
@@ -181,6 +182,7 @@ export function useMatrixPaymentEvent({
     onPayWithForeignEcash?: () => void
 }) {
     const dispatch = useCommonDispatch()
+    const isOffline = useCommonSelector(selectIsInternetUnreachable)
     const canClaimPayment = useCommonSelector(s =>
         selectCanClaimPayment(s, event),
     )
@@ -336,6 +338,7 @@ export function useMatrixPaymentEvent({
                 {
                     label: t('words.cancel'),
                     handler: handleCancel,
+                    disabled: isOffline,
                     loading: isCanceling,
                 },
             ]
@@ -354,6 +357,7 @@ export function useMatrixPaymentEvent({
                     label: t('words.cancel'),
                     handler: handleCancel,
                     loading: isCanceling,
+                    disabled: isOffline,
                 },
             ]
         } else {
